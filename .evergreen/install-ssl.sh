@@ -6,7 +6,7 @@ SSL=${SSL:-no}
 INSTALL_DIR=$(pwd)/install-dir
 
 install_openssl_fips() {
-   curl --retry 5 -o fips.tar.gz https://www.openssl.org/source/openssl-fips-2.0.14.tar.gz
+   curl --retry 5 -o fips.tar.gz https://www.openssl.org/source/openssl-fips-2.0.16.tar.gz
    tar zxvf fips.tar.gz
    cd openssl-fips-2.0.14
    ./config --prefix=$INSTALL_DIR -fPIC
