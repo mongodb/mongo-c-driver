@@ -18,6 +18,7 @@
 #define MONGOC_CHANGE_STREAM_PRIVATE_H
 
 #include "mongoc-change-stream.h"
+#include "mongoc-client-session.h"
 #include "mongoc-collection.h"
 #include "mongoc-cursor.h"
 
@@ -34,6 +35,8 @@ struct _mongoc_change_stream_t {
    mongoc_collection_t *coll;
    int64_t max_await_time_ms;
    int32_t batch_size;
+
+   mongoc_client_session_t *implicit_session;
 };
 
 mongoc_change_stream_t *
