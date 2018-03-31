@@ -1057,9 +1057,17 @@ if (ENABLE_BSON STREQUAL BUNDLED AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTM
          -P ${PROJECT_SOURCE_DIR}/build/cmake/make_dist/MakeDistCheck.cmake
    )
 else ()
-   message (WARNING
-      "'dist'/'distcheck' targets disabled. Set ENABLE_BSON=BUNDLED, \
-      ENABLE_MAN_PAGES=ON, and ENABLE_HTML_DOCS=ON to enable."
+   string (CONCAT DISTERRMSG
+      "The dist and distcheck targets disabled. Set ENABLE_BSON=BUNDLED, "
+      "ENABLE_MAN_PAGES=ON, and ENABLE_HTML_DOCS=ON to enable."
+   )
+
+   add_custom_target (dist
+      COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
+   )
+
+   add_custom_target (distcheck
+      COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
    )
 endif ()
 
