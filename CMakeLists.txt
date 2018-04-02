@@ -906,9 +906,8 @@ if (ENABLE_TESTS)
    add_custom_target (valgrind COMMAND
       ${CMAKE_COMMAND} -E env "MONGOC_TEST_VALGRIND=on"
       valgrind --error-exitcode=1 --leak-check=full --gen-suppressions=all
-      --num-callers=32 --suppressions=${SOURCE_DIR}/valgrind.suppressions
-      ${PROJECT_BINARY_DIR}/test-libmongoc --no-fork
-      WORKING_DIRECTORY ${SOURCE_DIR}
+      --num-callers=32 --suppressions=valgrind.suppressions
+      ./test-libmongoc --no-fork
       DEPENDS test-libmongoc)
 endif ()
 
@@ -930,6 +929,7 @@ mongoc_add_example (mongoc-tail TRUE ${SOURCE_DIR}/examples/mongoc-tail.c)
 mongoc_add_example (fam TRUE ${SOURCE_DIR}/examples/find_and_modify_with_opts/fam.c)
 if (NOT WIN32)
    mongoc_add_example (example-pool TRUE ${SOURCE_DIR}/examples/example-pool.c)
+   target_link_libraries (example-pool Threads::Threads)
 endif ()
 mongoc_add_example (example-collection-watch TRUE ${SOURCE_DIR}/examples/example-collection-watch.c)
 mongoc_add_example (example-update TRUE ${SOURCE_DIR}/examples/example-update.c)

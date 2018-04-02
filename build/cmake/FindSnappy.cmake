@@ -1,18 +1,10 @@
 include (CheckSymbolExists)
 
-if (NOT (ENABLE_SNAPPY STREQUAL SYSTEM
-   OR ENABLE_SNAPPY STREQUAL AUTO
-   OR ENABLE_SNAPPY STREQUAL OFF))
-   message (FATAL_ERROR
-      "ENABLE_SNAPPY option must be SYSTEM, AUTO, or OFF")
+if (NOT ENABLE_SNAPPY MATCHES "SYSTEM|AUTO|OFF")
+   message (FATAL_ERROR "ENABLE_SNAPPY option must be SYSTEM, AUTO, or OFF")
 endif ()
 
-
-if (ENABLE_SNAPPY STREQUAL OFF)
-   set (SNAPPY_INCLUDE_DIRS)
-   set (SNAPPY_LIBS)
-   set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
-else ()
+if (NOT ENABLE_SNAPPY STREQUAL OFF)
    message (STATUS "Searching for compression library header snappy-c.h")
    find_path (
       SNAPPY_INCLUDE_DIRS NAMES snappy-c.h
@@ -46,7 +38,12 @@ else ()
 
    if (SNAPPY_INCLUDE_DIRS AND SNAPPY_LIBS)
       set (MONGOC_ENABLE_COMPRESSION_SNAPPY 1)
-   else ()
-      set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
+      set (MONGOC_ENABLE_COMPRESSION 1)
    endif ()
+endif ()
+
+if (NOT SNAPPY_INCLUDE_DIRS OR NOT SNAPPY_LIBS)
+   set (SNAPPY_INCLUDE_DIRS "")
+   set (SNAPPY_LIBS "")
+   set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 endif ()
