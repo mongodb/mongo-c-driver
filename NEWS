@@ -4,6 +4,12 @@ Next release
 This version drops support for MongoDB 2.6 and adds the following features and
 bugfixes:
 
+  * libbson and libmongoc are now maintained in the mongo-c-driver repository,
+    although they are still built as separate libraries and libbson can still be
+    used without libmongoc.
+  * Building libbson and libmongoc now requires CMake on all platforms. The
+    Autotools build scripts ("configure" and related scripts) have been deleted.
+    See the "installing" page for updated instructions.
   * The internal preprocessor symbol HAVE_STRINGS_H has been renamed
     BSON_HAVE_STRINGS_H. If you maintain a handwritten bson-config.h you must
     rename this symbol.
