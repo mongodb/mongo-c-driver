@@ -541,6 +541,51 @@ test_topology_events_pooled (void)
    _test_topology_events (true);
 }
 
+static void
+test_topology_events_disabled (void)
+{
+   mongoc_client_t *client;
+   context_t context;
+   bool r;
+   bson_error_t error;
+   bson_iter_t events_iter;
+   bson_iter_t event_iter;
+   uint32_t i;
+
+   context_init (&context);
+
+   client = test_framework_client_new ();
+   client_set_topology_event_callbacks (client, &context);
+
+   r = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   /* disable callbacks before destroying so we don't see a topology closed
+    * event */
+   mongoc_client_set_apm_callbacks (client, NULL, NULL);
+   mongoc_client_destroy (client);
+
+   /* first event is topology opening */
+   bson_iter_init (&events_iter, &context.events);
+   bson_iter_next (&events_iter);
+   ASSERT (bson_iter_recurse (&events_iter, &event_iter));
+   ASSERT (bson_iter_find (&event_iter, "topology_opening_event"));
+
+   /* move forward to the last event */
+   for (i = 1; i < context.n_events; i++) {
+      ASSERT (bson_iter_next (&events_iter));
+   }
+
+   /* verify we didn't receive a topology closed event */
+   ASSERT (bson_iter_recurse (&events_iter, &event_iter));
+   ASSERT (!bson_iter_find (&event_iter, "topology_closed_event"));
+
+   /* no more events */
+   ASSERT (!bson_iter_next (&events_iter));
+
+   context_destroy (&context);
+}
 static bool
 responder (request_t *request, void *data)
 {
@@ -694,6 +739,10 @@ test_sdam_monitoring_install (TestSuite *suite)
       suite,
       "/server_discovery_and_monitoring/monitoring/topology/pooled",
       test_topology_events_pooled);
+   TestSuite_AddLive (
+      suite,
+      "/server_discovery_and_monitoring/monitoring/topology/disabled",
+      test_topology_events_disabled);
    TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/single/succeeded",
