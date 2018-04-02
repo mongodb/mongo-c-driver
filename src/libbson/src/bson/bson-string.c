@@ -23,7 +23,7 @@
 #include "bson-memory.h"
 #include "bson-utf8.h"
 
-#ifdef HAVE_STRINGS_H
+#ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
 #else
 #include <string.h>

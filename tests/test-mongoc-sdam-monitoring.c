@@ -10,7 +10,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 
-#ifdef HAVE_STRINGS_H
+#ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
 #endif
 

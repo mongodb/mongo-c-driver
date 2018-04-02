@@ -24,7 +24,7 @@
 #include <bson.h>
 #include "mongoc.h"
 
-#ifdef HAVE_STRINGS_H
+#ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
 #endif
 

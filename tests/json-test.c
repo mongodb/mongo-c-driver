@@ -32,7 +32,7 @@
 #include <dirent.h>
 #endif
 
-#ifdef HAVE_STRINGS_H
+#ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
 #endif
 

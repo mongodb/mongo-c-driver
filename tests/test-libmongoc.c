@@ -30,7 +30,7 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 
-#ifdef HAVE_STRINGS_H
+#ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
 #endif
 

@@ -283,9 +283,6 @@ else ()
    set (MONGOC_NO_AUTOMATIC_GLOBALS 1)
 endif ()
 
-include (CheckIncludeFiles)
-CHECK_INCLUDE_FILES (strings.h HAVE_STRINGS_H)
-
 include (CheckTypeSize)
 if (WIN32)
    SET (CMAKE_EXTRA_INCLUDE_FILES "ws2tcpip.h")
@@ -470,6 +467,7 @@ endif ()
 
 if (NOT ENABLE_ZLIB STREQUAL "OFF")
    # At this point the system zlib was found, or the bundled library was used
+   include (CheckIncludeFiles)
    check_include_files ("unistd.h" HAVE_UNISTD_H)
    check_include_files ("stdarg.h" HAVE_STDARG_H)
    set (MONGOC_ENABLE_COMPRESSION 1)

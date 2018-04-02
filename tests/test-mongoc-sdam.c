@@ -5,7 +5,7 @@
 #include "json-test.h"
 
 #include "mongoc-client-private.h"
-#ifdef HAVE_STRINGS_H
+#ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
 #endif
 

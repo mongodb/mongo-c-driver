@@ -90,6 +90,13 @@ else ()
    set (BSON_OS 1)
 endif ()
 
+include (CheckIncludeFiles)
+
+CHECK_INCLUDE_FILE (strings.h BSON_HAVE_STRINGS_H)
+if (NOT BSON_HAVE_STRINGS_H)
+   set (BSON_HAVE_STRINGS_H 0)
+endif ()
+
 if (MSVC)
    set (BSON_HAVE_CLOCK_GETTIME 0)
    set (BSON_HAVE_STDBOOL_H 0)
@@ -114,7 +121,6 @@ else ()
    if (NOT BSON_HAVE_SYSCALL_TID OR APPLE OR ANDROID)
       set (BSON_HAVE_SYSCALL_TID 0)
    endif ()
-   CHECK_INCLUDE_FILE (strings.h HAVE_STRINGS_H)
 endif ()
 
 set (BSON_HAVE_ATOMIC_32_ADD_AND_FETCH 1)

@@ -20,7 +20,7 @@
 #include "bson-thread-private.h"
 #undef BSON_INSIDE
 
-#ifdef HAVE_STRINGS_H
+#ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
 #endif
 
