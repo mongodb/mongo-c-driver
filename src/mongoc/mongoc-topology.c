@@ -355,6 +355,12 @@ mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
       memcpy (&topology->scanner->apm_callbacks,
               callbacks,
               sizeof (mongoc_apm_callbacks_t));
+   } else {
+      memset (&topology->description.apm_callbacks,
+              0,
+              sizeof (mongoc_apm_callbacks_t));
+      memset (
+         &topology->scanner->apm_callbacks, 0, sizeof (mongoc_apm_callbacks_t));
    }
 
    topology->description.apm_context = context;
@@ -405,7 +411,9 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
 }
 
 
-static void mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown) {
+static void
+mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
+{
    /* since the last scan, members may be added or removed from the topology
     * description based on ismaster responses in connection handshakes, see
     * _mongoc_topology_update_from_handshake. retire scanner nodes for removed
