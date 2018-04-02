@@ -5,19 +5,22 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
 #       CC            Which compiler to use
-#       SSL           Which SSL Library to use
-#       SASL          Enable or disable SASL
+#       SSL           OPENSSL, WINDOWS, or OFF
+#       SASL          AUTO, SSPI, CYRUS, or OFF
 #       RELEASE       Enable release-build MSVC flags (default: debug flags)
 
 
 INSTALL_DIR="C:/mongoc"
-CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF -DENABLE_MAINTAINER_FLAGS=ON -DENABLE_BSON=BUNDLED"
+CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DCMAKE_PREFIX_PATH=${INSTALL_DIR} -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF -DENABLE_MAINTAINER_FLAGS=ON -DENABLE_BSON=BUNDLED"
 BUILD_FLAGS="/m"  # Number of concurrent processes. No value=# of cpus
 CMAKE="/cygdrive/c/cmake/bin/cmake"
 CC=${CC:-"Visual Studio 14 2015 Win64"}
+SSL=${SSL:-WINDOWS}
+SASL=${SASL:-SSPI}
 
 echo "CC: $CC"
 echo "RELEASE: $RELEASE"
+echo "SASL: $SASL"
 
 if [ "$RELEASE" ]; then
    # Build from the release tarball.
@@ -26,36 +29,16 @@ if [ "$RELEASE" ]; then
    cd build-dir
 fi
 
-case "$SASL" in
-   no)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL:BOOL=OFF"
-   ;;
-   sasl)
-   case "$CC" in
-      *Win64)
-         CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL=CYRUS"
-      ;;
-      *)
-         CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL:BOOL=OFF"
-      ;;
-   esac
-   ;;
-   sspi)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL=SSPI"
-   ;;
-   *)
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL:BOOL=OFF"
-   ;;
-esac
+CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL=$SASL"
 
 case "$SSL" in
-   openssl)
+   OPENSSL)
       CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=OPENSSL"
       ;;
-   winssl)
+   WINDOWS)
       CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=WINDOWS"
       ;;
-   no)
+   OFF)
       CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL:BOOL=OFF"
       ;;
    *)

@@ -28,31 +28,23 @@ else
    SSL=0
 fi
 
+DIR=$(dirname $0)
+. $DIR/set-path.sh
+
 case "$OS" in
    cygwin*)
-      export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
-      chmod +x ./Debug/* src/libbson/Debug/*
       PING="./Debug/mongoc-ping.exe"
       TEST_GSSAPI="./Debug/test-mongoc-gssapi.exe"
       IP_ADDR=`getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}'`
       ;;
 
    darwin)
-      sed -i'.bak' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' mongoc-ping
-      sed -i'.bak' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' test-mongoc-gssapi
-      export DYLD_LIBRARY_PATH="install-dir/lib:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
       TEST_GSSAPI="./test-mongoc-gssapi"
       IP_ADDR=`dig $AUTH_HOST +short | tail -1`
       ;;
 
    *)
-      # This libtool wrapper script was built in a unique dir like
-      # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongoc",
-      # replace its absolute path with "." so it can run in the CWD.
-      sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' mongoc-ping
-      sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' test-mongoc-gssapi
-      export LD_LIBRARY_PATH="install-dir/lib:.libs:src/libbson/.libs"
       PING="./mongoc-ping"
       TEST_GSSAPI="./test-mongoc-gssapi"
       IP_ADDR=`getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}'`

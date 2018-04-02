@@ -21,19 +21,6 @@ case "$OS" in
       export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
       chmod +x ./Debug/* src/libbson/Debug/* || true
       ;;
-
-   darwin)
-      sed -i'.bak' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' src/libbson/test-libbson
-      export DYLD_LIBRARY_PATH=".libs"
-      ;;
-
-   *)
-      # This libtool wrapper script was built in a unique dir like
-      # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongoc",
-      # replace its absolute path with "." so it can run in the CWD.
-      sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' src/libbson/test-libbson
-      export LD_LIBRARY_PATH=".libs"
-      ;;
 esac
 
 cd src/libbson

@@ -2,6 +2,9 @@
 #       C Benchmark Tests             #
 #######################################
 
+DIR=$(dirname $0)
+. $DIR/find-cmake.sh
+
 #######################################
 #            Variables                #
 #######################################
@@ -33,7 +36,6 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
-          CMAKE=/opt/cmake/bin/cmake
           $CMAKE -DENABLE_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=mongoc . && make -j8 && make install
           git clone git@github.com:mongodb/mongo-c-driver-performance.git
           cd mongo-c-driver-performance
@@ -45,7 +47,6 @@ c_driver_variables:
           set -o errexit
           set -o verbose
           ulimit -c unlimited || true
-          CMAKE=/opt/cmake/bin/cmake
           $CMAKE -DENABLE_TESTS=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=mongoc . && make -j8 && make install
           git clone git@github.com:mongodb/mongo-c-driver-performance.git
           cd mongo-c-driver-performance
@@ -149,7 +150,7 @@ functions:
 
         echo "Running Benchmark tests "
         start_time=$(date +%s)
-        LD_LIBRARY_PATH=`pwd`/.libs:`pwd`/mongoc/lib:$LD_LIBRARY_PATH ./mongo-c-driver-performance/mongo-c-performance ./data
+        LD_LIBRARY_PATH=`pwd`/mongoc/lib:$LD_LIBRARY_PATH ./mongo-c-driver-performance/mongo-c-performance ./data
         set +o errexit
         result=$?
 
@@ -195,7 +196,7 @@ functions:
           shopt -s nullglob
           for i in *.core; do
              echo $i
-             echo "backtrace full" | ./libtool --mode execute gdb -q mongo-c-performance $i
+             echo "backtrace full" | execute gdb -q mongo-c-performance $i
           done
 
 pre:

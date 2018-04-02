@@ -63,38 +63,8 @@ if [ "$CC" = "mingw" ]; then
    exit 0
 fi
 
-case "$OS" in
-   cygwin*)
-      export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
-      export PATH=$PATH:`pwd`/tests:`pwd`/Release:`pwd`/src/libbson/Release
-      chmod +x ./Debug/* src/libbson/Debug/* || true
-      chmod +x ./Release/* src/libbson/Release/* || true
-      ;;
-
-   darwin)
-      sed -i'.bak' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' test-libmongoc
-      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs"
-      ;;
-
-   *)
-      #if test -f /tmp/drivers.keytab; then
-         # See CDRIVER-2000
-         #export MONGOC_TEST_GSSAPI_USER="drivers%40LDAPTEST.10GEN.CC"
-         #export MONGOC_TEST_GSSAPI_HOST="LDAPTEST.10GEN.CC"
-         #kinit -k -t /tmp/drivers.keytab -p drivers@LDAPTEST.10GEN.CC
-      #fi
-      # This libtool wrapper script was built in a unique dir like
-      # "/data/mci/998e754a0d1ed79b8bf733f405b87778/mongoc",
-      # replace its absolute path with "." so it can run in the CWD.
-      sed -i'' 's/\/data\/mci\/[a-z0-9]\{32\}\/mongoc/./g' test-libmongoc
-      export LD_LIBRARY_PATH=".libs:src/libbson/.libs"
-      ;;
-esac
-
-#if ldconfig -N -v 2>/dev/null | grep -q libSegFault.so; then
-   #export SEGFAULT_SIGNALS="all"
-   #export LD_PRELOAD="libSegFault.so"
-#fi
+DIR=$(dirname $0)
+. $DIR/set-path.sh
 
 case "$OS" in
    cygwin*)
@@ -107,8 +77,7 @@ case "$OS" in
       if [ "$VALGRIND" = "on" ]; then
          make valgrind;
       else
-         TEST_ARGS="--no-fork $TEST_ARGS"
-         make -o test-libmongoc test TEST_ARGS="$TEST_ARGS"
+         ./test-libmongoc --no-fork $TEST_ARGS
       fi
 
       ;;

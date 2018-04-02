@@ -14,8 +14,11 @@ esac
 which sphinx-build
 sphinx-build --version
 
-./autogen.sh --enable-html-docs --enable-man-pages --with-snappy=auto --with-zlib=bundled --with-libbson=bundled
-make distcheck
+DIR=$(dirname $0)
+. $DIR/find-cmake.sh
+
+$CMAKE -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED -DENABLE_BSON=BUNDLED .
+make -j 8 distcheck
 
 # Check that docs were included, but sphinx temp files weren't.
 tarfile=mongo-c-driver-*.tar.gz

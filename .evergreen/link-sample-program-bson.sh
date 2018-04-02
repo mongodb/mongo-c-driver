@@ -9,6 +9,9 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
+DIR=$(dirname $0)
+. $DIR/find-cmake.sh
+
 if command -v gtar 2>/dev/null; then
   TAR=gtar
 else
@@ -16,12 +19,10 @@ else
 fi
 
 if [ $(uname) = "Darwin" ]; then
-  CMAKE=${CMAKE:-/Applications/cmake-3.2.2-Darwin-x86_64/CMake.app/Contents/bin/cmake}
   SO=dylib
   LIB_SO=libbson-1.0.0.dylib
   LDD="otool -L"
 else
-  CMAKE=${CMAKE:-/opt/cmake/bin/cmake}
   SO=so
   LIB_SO=libbson-1.0.so.0
   LDD=ldd

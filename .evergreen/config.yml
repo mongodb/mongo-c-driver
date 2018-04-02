@@ -434,20 +434,6 @@ functions:
               cat .evergreen/kerberos.realm | $SUDO tee -a /etc/krb5.conf
            fi
 
-  "link sample program autotools" :
-    - command: shell.exec
-      type: test
-      params:
-        working_dir: "mongoc"
-        script: |
-          set -o errexit
-          # Build libmongoc with the Autotools and compile a program
-          # that links dynamically or statically to libmongoc, using
-          # variables from pkg-config.
-          export ENABLE_SSL=${ENABLE_SSL}
-          BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
-          BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
-
   "link sample program" :
     - command: shell.exec
       type: test
@@ -455,15 +441,13 @@ functions:
         working_dir: "mongoc"
         script: |
           set -o errexit
-          # Build libmongoc with the Autotools or CMake and compile a program
-          # that links dynamically or statically to libmongoc, using
-          # variables from CMake's find_package command.
+          # Compile a program that links dynamically or statically to libmongoc,
+          # using variables from pkg-config or CMake's find_package command.
           export BUILD_SAMPLE_WITH_CMAKE=${BUILD_SAMPLE_WITH_CMAKE}
           export ENABLE_SSL=${ENABLE_SSL}
-          BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program.sh
-          BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program.sh
-          BUILD_MONGOC_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program.sh
-          BUILD_MONGOC_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program.sh
+          export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+          LINK_STATIC=  sh .evergreen/link-sample-program.sh
+          LINK_STATIC=1 sh .evergreen/link-sample-program.sh
 
   "link sample program bson" :
     - command: shell.exec
@@ -472,9 +456,8 @@ functions:
         working_dir: "mongoc"
         script: |
           set -o errexit
-          # Build libbson with CMake, compile a program that links dynamically
-          # or statically to libbson, using variables from pkg-config or from
-          # CMake's find_package command.
+          # Compile a program that links dynamically or statically to libbson,
+          # using variables from pkg-config or from CMake's find_package command.
           BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
           BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
           BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
@@ -579,7 +562,7 @@ tasks:
               set -o xtrace
               export CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O"
               export LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now"
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=no ZLIB=no sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=OFF ZLIB=OFF sh .evergreen/compile.sh
         - func: "upload build"
 
 
@@ -613,7 +596,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=no ZLIB=bundled sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=OFF ZLIB=BUNDLED sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-compression-snappy
@@ -626,7 +609,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=system ZLIB=no sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=SYSTEM ZLIB=OFF sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-compression
@@ -639,7 +622,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SNAPPY=system ZLIB=bundled sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=SYSTEM ZLIB=BUNDLED sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: test-latest-server-compression-zlib
@@ -716,7 +699,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-c11
@@ -729,7 +712,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c11 -D_XOPEN_SOURCE=600' sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c11 -D_XOPEN_SOURCE=600' sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-c99
@@ -742,7 +725,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c99 -D_XOPEN_SOURCE=600' sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c99 -D_XOPEN_SOURCE=600' sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-c89
@@ -755,7 +738,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c89 -D_POSIX_C_SOURCE=200112L -pedantic' sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c89 -D_POSIX_C_SOURCE=200112L -pedantic' sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-valgrind
@@ -768,7 +751,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              VALGRIND=yes DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
+              VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-valgrind-memcheck
@@ -781,7 +764,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              VALGRIND=yes DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+              VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-coverage
@@ -794,7 +777,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' COVERAGE=yes sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' COVERAGE=ON sh .evergreen/compile.sh
         - func: "upload coverage"
         - func: "upload build"
 
@@ -806,7 +789,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
-              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=address' CXXFLAGS="$CFLAGS" SNAPPY=no sh .evergreen/compile.sh
+              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=address' CXXFLAGS="$CFLAGS" SNAPPY=OFF sh .evergreen/compile.sh
 
     - name: debug-compile-sanitizer-address-gcc
       commands:
@@ -815,7 +798,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
-              DEBUG=1 MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=address' CXXFLAGS="$CFLAGS" SNAPPY=no sh .evergreen/compile.sh
+              DEBUG=1 MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=address' CXXFLAGS="$CFLAGS" SNAPPY=OFF sh .evergreen/compile.sh
 
     - name: debug-compile-sanitizer-undefined
       commands:
@@ -824,7 +807,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
-              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=yes CFLAGS='-fsanitize=undefined' CXXFLAGS="$CFLAGS" SNAPPY=no sh .evergreen/compile.sh
+              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=1 CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=undefined' CXXFLAGS="$CFLAGS" SNAPPY=OFF sh .evergreen/compile.sh
 
     - name: debug-compile-scan-build
       tags: ["debug-compile", "special", "scan-build", "clang"]
@@ -836,7 +819,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC=clang ANALYZE=yes MARCH='${MARCH}' sh .evergreen/compile.sh
+              DEBUG=ON CC=clang ANALYZE=ON MARCH='${MARCH}' sh .evergreen/compile.sh
         - func: "upload scan artifacts"
         - func: "upload build"
         - command: shell.exec
@@ -861,7 +844,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              RELEASE=yes CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+              RELEASE=ON CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: link-with-cmake
@@ -901,6 +884,18 @@ tasks:
           vars:
             BUILD_SAMPLE_WITH_CMAKE: "1"
             ENABLE_SNAPPY: "1"
+
+    - name: link-with-cmake-mac
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+        - func: "link sample program"
+          vars:
+            BUILD_SAMPLE_WITH_CMAKE: "1"
 
     - name: link-with-cmake-windows
       depends_on:
@@ -992,17 +987,6 @@ tasks:
           vars:
             VERSION: "3.6"
         - func: "link sample program"
-
-    - name: link-with-pkg-config-mac
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.6"
-        # No CMake on Mac in Evergreen yet, BUILD-3995
-        - func: "link sample program autotools"
 
     - name: link-with-pkg-config-ssl
       depends_on:
@@ -1186,7 +1170,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=no sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-nosasl-openssl
@@ -1199,7 +1183,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-nosasl-darwinssl
@@ -1212,7 +1196,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=darwin sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=DARWIN sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-nosasl-winssl
@@ -1225,7 +1209,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=winssl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=WINDOWS sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-sasl-nossl
@@ -1238,7 +1222,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sasl SSL=no sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OFF sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-sasl-openssl
@@ -1251,7 +1235,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sasl SSL=openssl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-sasl-darwinssl
@@ -1264,7 +1248,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sasl SSL=darwin sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=DARWIN sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-sasl-winssl
@@ -1277,7 +1261,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sasl SSL=winssl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=WINDOWS sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-sspi-nossl
@@ -1290,7 +1274,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sspi SSL=no sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=OFF sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-sspi-openssl
@@ -1303,7 +1287,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sspi SSL=openssl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=OPENSSL sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-sspi-winssl
@@ -1316,7 +1300,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sspi SSL=winssl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=WINDOWS sh .evergreen/compile.sh
         - func: "upload build"
 
     # Verify that retryWrites=true is ignored with standalone
@@ -6419,7 +6403,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=sasl SSL=openssl CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
         - func: "run auth tests"
 
     - name: build-and-run-authentication-tests-openssl-0.9.8
@@ -6434,7 +6418,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
         - func: "run auth tests"
           vars:
             obsolete_tls: true
@@ -6452,7 +6436,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
         - func: "run auth tests"
           vars:
             obsolete_tls: true
@@ -6471,7 +6455,7 @@ tasks:
               set -o errexit
               set -o xtrace
               export CFLAGS=-Wno-redundant-decls # OpenSSL 1.0.1 warning
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
@@ -6488,7 +6472,7 @@ tasks:
               set -o errexit
               set -o xtrace
               export CFLAGS=-Wno-redundant-decls # OpenSSL 1.0.1 warning
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl OPENSSL_FIPS=1 sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL OPENSSL_FIPS=1 sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
@@ -6504,7 +6488,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
@@ -6520,7 +6504,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=openssl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
@@ -6536,7 +6520,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=yes CC='${CC}' MARCH='${MARCH}' SASL=no SSL=libressl sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL sh .evergreen/compile.sh
         - func: "run auth tests"
         - func: "upload build"
 
@@ -6658,6 +6642,9 @@ buildvariants:
     - name: "link-with-cmake"
     - name: "link-with-cmake-ssl"
     - name: "link-with-cmake-snappy"
+    - name: "link-with-cmake-mac"
+      distros:
+      - macos-1012
     - name: "link-with-cmake-windows"
       distros:
       - windows-64-vs2015-compile
@@ -6671,10 +6658,10 @@ buildvariants:
       distros:
       - windows-64-vs2013-compile
     - name: "link-with-pkg-config"
-    - name: "link-with-pkg-config-ssl"
-    - name: "link-with-pkg-config-mac"
       distros:
+      - ubuntu1604-test
       - macos-1012
+    - name: "link-with-pkg-config-ssl"
     - name: "link-with-bson"
     - name: "link-with-bson-windows"
       distros:

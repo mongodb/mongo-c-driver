@@ -3,6 +3,7 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
+# Options for this script:
 #       CFLAGS                  Additional compiler flags
 #       MARCH                   Machine Architecture. Defaults to lowercase uname -m
 #       RELEASE                 Use the fully qualified release archive
@@ -11,18 +12,26 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       CC                      Which compiler to use
 #       ANALYZE                 Run the build through clangs scan-build
 #       COVERAGE                Produce code coverage reports
+# Options for CMake:
 #       LIBBSON                 Build against bundled or external libbson
 #       EXTRA_CONFIGURE_FLAGS   Extra configure flags to use
+#       ZLIB                    Build against bundled or external zlib, or none
+#       SNAPPY                  Build against bundled or external Snappy, or none
+#       SSL                     Build against OpenSSL or native or none
+#       SASL                    Build against SASL or not
 
-RELEASE=${RELEASE:-no}
-DEBUG=${DEBUG:-no}
-VALGRIND=${VALGRIND:-no}
-ANALYZE=${ANALYZE:-no}
-COVERAGE=${COVERAGE:-no}
-SASL=${SASL:-no}
-SSL=${SSL:-no}
-SNAPPY=${SNAPPY:-auto}
-ZLIB=${ZLIB:-bundled}
+# Options for this script.
+RELEASE=${RELEASE:-OFF}
+DEBUG=${DEBUG:-OFF}
+VALGRIND=${VALGRIND:-OFF}
+ANALYZE=${ANALYZE:-OFF}
+COVERAGE=${COVERAGE:-OFF}
+
+# CMake options.
+SASL=${SASL:-OFF}
+SSL=${SSL:-OFF}
+SNAPPY=${SNAPPY:-AUTO}
+ZLIB=${ZLIB:-BUNDLED}
 INSTALL_DIR=$(pwd)/install-dir
 
 echo "CFLAGS: $CFLAGS"
@@ -33,6 +42,7 @@ echo "VALGRIND: $VALGRIND"
 echo "CC: $CC"
 echo "ANALYZE: $ANALYZE"
 echo "COVERAGE: $COVERAGE"
+echo "ZLIB: $ZLIB"
 
 # Get the kernel name, lowercased
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -42,42 +52,34 @@ echo "OS: $OS"
 # as an environment variable (e.g. to force 32bit)
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 
-# Default configure flags for debug builds and release builds
-DEBUG_FLAGS="\
-   --with-libbson=bundled \
-   --enable-html-docs=no \
-   --enable-man-pages=no \
-   --enable-optimizations=no \
-   --enable-extra-align=no \
-   --enable-maintainer-flags \
-   --enable-debug \
-   --disable-silent-rules \
-   --disable-automatic-init-and-cleanup \
-   --prefix=$INSTALL_DIR \
+# Default CMake flags for debug builds and release builds.
+# CMAKE_SKIP_RPATH avoids hardcoding absolute paths to dependency libraries.
+# TODO: enable maintainer flags, CDRIVER-2511
+DEBUG_AND_RELEASE_FLAGS="\
+   -DCMAKE_SKIP_RPATH=TRUE \
+   -DENABLE_BSON=BUNDLED \
+   -DENABLE_MAN_PAGES=OFF \
+   -DENABLE_HTML_DOCS=OFF \
+   -DENABLE_MAINTAINER_FLAGS=OFF \
+   -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
+   -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
+   -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
 "
 
-RELEASE_FLAGS="\
-   --with-libbson=bundled \
-   --enable-man-pages=no \
-   --enable-html-docs=no \
-   --enable-extra-align=no \
-   --enable-optimizations \
-   --disable-automatic-init-and-cleanup \
-   --prefix=$INSTALL_DIR \
-"
 if [ ! -z "$ZLIB" ]; then
-   RELEASE_FLAGS="$RELEASE_FLAGS --with-zlib=${ZLIB}"
-   DEBUG_FLAGS="$DEBUG_FLAGS --with-zlib=${ZLIB}"
+   DEBUG_AND_RELEASE_FLAGS="$DEBUG_AND_RELEASE_FLAGS -DENABLE_ZLIB=${ZLIB}"
 fi
+
 if [ ! -z "$SNAPPY" ]; then
-   RELEASE_FLAGS="$RELEASE_FLAGS --with-snappy=${SNAPPY}"
-   DEBUG_FLAGS="$DEBUG_FLAGS --with-snappy=${SNAPPY}"
+   DEBUG_AND_RELEASE_FLAGS="$DEBUG_AND_RELEASE_FLAGS -DENABLE_SNAPPY=${SNAPPY}"
 fi
 
-# By default we build from git clone, which requires autotools
-# This gets overwritten if we detect we should use the release archive
-CONFIGURE_SCRIPT="./autogen.sh"
+DEBUG_FLAGS="${DEBUG_AND_RELEASE_FLAGS} -DCMAKE_BUILD_TYPE=Debug"
+RELEASE_FLAGS="${DEBUG_AND_RELEASE_FLAGS} -DCMAKE_BUILD_TYPE=Release"
 
+DIR=$(dirname $0)
+. $DIR/find-cmake.sh
+. $DIR/set-path.sh
 
 # --strip-components is an GNU tar extension. Check if the platform
 # has GNU tar installed as `gtar`, otherwise we assume to be on
@@ -90,41 +92,33 @@ else
 fi
 
 # Available on our Ubuntu 16.04 images
-[ "$ANALYZE" = "yes" ] && SCAN_BUILD="scan-build -o scan --status-bugs"
+[ "$ANALYZE" = "ON" ] && SCAN_BUILD="scan-build -o scan --status-bugs"
 
-[ "$DEBUG" = "yes" ] && CONFIGURE_FLAGS=$DEBUG_FLAGS || CONFIGURE_FLAGS=$RELEASE_FLAGS
+[ "$DEBUG" = "ON" ] && CONFIGURE_FLAGS=$DEBUG_FLAGS || CONFIGURE_FLAGS=$RELEASE_FLAGS
 
-CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-sasl=${SASL}"
-CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-ssl=${SSL}"
-[ "$COVERAGE" = "yes" ] && CONFIGURE_FLAGS="$CONFIGURE_FLAGS --enable-coverage --disable-examples"
+CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL=${SASL}"
+CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=${SSL}"
+[ "$COVERAGE" = "ON" ] && CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
 
-[ "$VALGRIND" = "yes" ] && TARGET="valgrind" || TARGET="test"
-
-if [ "$RELEASE" = "yes" ]; then
+if [ "$RELEASE" = "ON" ]; then
    # Build from the release tarball.
    mkdir build-dir
    $TAR xf ../mongoc.tar.gz -C build-dir --strip-components=1
    cd build-dir
-   CONFIGURE_SCRIPT="./configure"
 fi
 
-#if ldconfig -N -v 2>/dev/null | grep -q libSegFault.so; then
-   #export SEGFAULT_SIGNALS="all"
-   #export LD_PRELOAD="libSegFault.so"
-#fi
-
 # UndefinedBehaviorSanitizer configuration
-UBSAN_OPTIONS="print_stacktrace=1 abort_on_error=1"
+export UBSAN_OPTIONS="print_stacktrace=1 abort_on_error=1"
 # AddressSanitizer configuration
-ASAN_OPTIONS="detect_leaks=1 abort_on_error=1"
+export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1"
 # LeakSanitizer configuration
-LSAN_OPTIONS="log_pointers=true"
+export LSAN_OPTIONS="log_pointers=true"
 
 case "$MARCH" in
    i386)
       CFLAGS="$CFLAGS -m32 -march=i386"
       CXXFLAGS="$CXXFLAGS -m32 -march=i386"
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS --with-snappy=auto --with-zlib=bundled"
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=AUTO -DENABLE_ZLIB=BUNDLED"
    ;;
    s390x)
       CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"
@@ -139,22 +133,12 @@ case "$MARCH" in
       CXXFLAGS="$CXXFLAGS -mcpu=power8 -mtune=power8 -mcmodel=medium"
    ;;
 esac
-CFLAGS="$CFLAGS -Werror"
-
 
 case "$OS" in
    darwin)
       CFLAGS="$CFLAGS -Wno-unknown-pragmas"
-      export DYLD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
       # llvm-cov is installed from brew
       export PATH=$PATH:/usr/local/opt/llvm/bin
-   ;;
-
-   linux)
-      # Make linux builds a tad faster by parallelise the build
-      cpus=$(grep -c '^processor' /proc/cpuinfo)
-      MAKEFLAGS="-j${cpus}"
-      export LD_LIBRARY_PATH=".libs:src/libbson/.libs:$LD_LIBRARY_PATH"
    ;;
 esac
 
@@ -184,34 +168,34 @@ export PATH=$INSTALL_DIR/bin:$PATH
 echo "OpenSSL Version:"
 pkg-config --modversion libssl || true
 
-$SCAN_BUILD $CONFIGURE_SCRIPT $CONFIGURE_FLAGS
-export LD_LIBRARY_PATH=$EXTRA_LIB_PATH:$LD_LIBRARY_PATH
-export DYLD_LIBRARY_PATH=$EXTRA_LIB_PATH:$DYLD_LIBRARY_PATH
+$SCAN_BUILD $CMAKE $CONFIGURE_FLAGS
+
 openssl version
 if [ -n "$SSL_VERSION" ]; then
    openssl version | grep -q $SSL_VERSION
 fi
 # This should fail when using fips capable OpenSSL when fips mode is enabled
 openssl md5 README.rst || true
-$SCAN_BUILD make all
+$SCAN_BUILD make -j8 all
 
 ulimit -c unlimited || true
 
 # Write stderr to error.log and to console.
+# TODO: valgrind
 mkfifo pipe || true
 if [ -e pipe ]; then
    tee error.log < pipe &
-   $SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json" 2>pipe
+   $SCAN_BUILD ./test-libmongoc -d -F test-results.json 2>pipe
    rm pipe
 else
-   $SCAN_BUILD make $TARGET TEST_ARGS="-d -F test-results.json"
+   $SCAN_BUILD ./test-libmongoc -d -F test-results.json
 fi
 
 # Check if the error.log exists, and is more than 0 byte
 if [ -s error.log ]; then
    cat error.log
 
-   if [ "$CHECK_LOG" = "yes" ]; then
+   if [ "$CHECK_LOG" = "ON" ]; then
       # Ignore ar(1) warnings, and check the log again
       grep -v "^ar: " error.log > log.log
       if [ -s log.log ]; then
@@ -223,7 +207,7 @@ if [ -s error.log ]; then
 fi
 
 
-if [ "$COVERAGE" = "yes" ]; then
+if [ "$COVERAGE" = "ON" ]; then
    case "$CC" in
       clang)
          lcov --gcov-tool `pwd`/.evergreen/llvm-gcov.sh --capture --derive-func-data --directory . --output-file .coverage.lcov --no-external
