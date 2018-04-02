@@ -9,7 +9,7 @@ find_path (
 if (SASL_INCLUDE_DIRS)
     message (STATUS "  Found in ${SASL_INCLUDE_DIRS}")
 else ()
-    message (STATUS "  Not found (specify -DCMAKE_INCLUDE_PATH=C:/path/to/sasl/include for SASL support)")
+    message (STATUS "  Not found (specify -DCMAKE_INCLUDE_PATH=/path/to/sasl/include for SASL support)")
 endif ()
 
 message (STATUS "Searching for libsasl2")
@@ -21,7 +21,7 @@ find_library (
 if (SASL_LIBS)
     message (STATUS "  Found ${SASL_LIBS}")
 else ()
-    message (STATUS "  Not found (specify -DCMAKE_LIBRARY_PATH=C:/path/to/sasl/lib for SASL support)")
+    message (STATUS "  Not found (specify -DCMAKE_LIBRARY_PATH=/path/to/sasl/lib for SASL support)")
 endif ()
 
 if (SASL_INCLUDE_DIRS AND SASL_LIBS)
