@@ -117,3 +117,4 @@ libmongoc-static-1.0-config.cmake
 src/zlib-1.2.11/zconf.h
 .githooks
 cmake-build
+dist_manifest.txt
