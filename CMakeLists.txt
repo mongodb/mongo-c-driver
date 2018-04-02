@@ -31,6 +31,7 @@ option (ENABLE_MAINTAINER_FLAGS "Use strict compiler checks" OFF)
 option (ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GCC only)" ON)
 option (ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
 option (ENABLE_TRACING "Turn on verbose debug output" OFF)
+option (ENABLE_COVERAGE "Turn on compile options for lcov" OFF)
 set (ENABLE_SHM_COUNTERS AUTO CACHE STRING "Enable shared memory performance counters. Set to ON/AUTO/OFF, default AUTO.")
 set (ENABLE_BSON AUTO CACHE STRING "Where to find libbson. Set to BUNDLED/SYSTEM/AUTO, default AUTO.")
 set (ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support")
@@ -372,6 +373,10 @@ set (MONGOC_USER_SET_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
 
 if (ENABLE_TRACING)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMONGOC_TRACE")
+endif ()
+
+if (ENABLE_COVERAGE)
+   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
 endif ()
 
 if (NOT ENABLE_SHM_COUNTERS MATCHES "ON|OFF|AUTO")
