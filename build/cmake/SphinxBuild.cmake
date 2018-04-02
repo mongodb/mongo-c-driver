@@ -117,7 +117,8 @@ function (sphinx_build_man target_name)
       # Only those with the :man_page: tag at the beginning build man pages
       file (READ ${rst} rst_head LIMIT 256)
       string (FIND "${rst_head}" ":man_page: " man_tag_pos)
-      if (man_tag_pos GREATER_EQUAL "0")
+      # GREATER_EQUAL not in CMake until 3.7.
+      if (NOT man_tag_pos LESS "0")
          string (REGEX REPLACE
             "^.*:man_page: +([a-z0-9_]+).*$" "man\/\\1.3"
             man

@@ -5,7 +5,6 @@
 extra_dist_generated (
    .nojekyll
    objects.inv
-   _static/
    _static/ajax-loader.gif
    _static/basic.css
    _static/comment-bright.png
