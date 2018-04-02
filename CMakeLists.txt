@@ -893,7 +893,23 @@ mongoc_add_test (test-mongoc-gssapi TRUE ${SOURCE_DIR}/tests/test-mongoc-gssapi.
 
 if (ENABLE_TESTS)
    enable_testing ()
-   add_test (NAME test-libmongoc COMMAND test-libmongoc --no-fork -d)
+   add_test (NAME test-libmongoc
+      COMMAND test-libmongoc
+      WORKING_DIRECTORY ${SOURCE_DIR})
+
+   # "make test" doesn't compile tests, so we create "make check" which compiles
+   # and runs tests: https://gitlab.kitware.com/cmake/cmake/issues/8774
+   add_custom_target (check COMMAND ${CMAKE_CTEST_COMMAND} -V
+      DEPENDS test-libmongoc)
+
+   # Set MONGOC_TEST_VALGRIND to disable asserts that may fail in valgrind.
+   add_custom_target (valgrind COMMAND
+      ${CMAKE_COMMAND} -E env "MONGOC_TEST_VALGRIND=on"
+      valgrind --error-exitcode=1 --leak-check=full --gen-suppressions=all
+      --num-callers=32 --suppressions=${SOURCE_DIR}/valgrind.suppressions
+      ${PROJECT_BINARY_DIR}/test-libmongoc --no-fork
+      WORKING_DIRECTORY ${SOURCE_DIR}
+      DEPENDS test-libmongoc)
 endif ()
 
 mongoc_add_example (example-gridfs TRUE ${SOURCE_DIR}/examples/example-gridfs.c)
@@ -1102,7 +1118,3 @@ else ()
       COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
    )
 endif ()
-
-add_custom_target (check
-   COMMAND ${CMAKE_COMMAND} -E echo "'check' target does nothing for now"
-)
