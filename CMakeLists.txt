@@ -150,7 +150,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       message ("-- Searching for LibreSSL/libtls")
       pkg_check_modules (LIBRESSL libtls)
       if (LIBRESSL_FOUND)
-         message ("  -- Found ${LIBRESSL_LIBRARIES}")
+         message ("--   Found ${LIBRESSL_LIBRARIES}")
          set (SSL_LIBS ${LIBRESSL_LIBRARIES})
          include_directories ("${LIBRESSL_INCLUDE_DIRS}")
          link_directories ("${LIBRESSL_LIBRARY_DIRS}")
@@ -911,12 +911,14 @@ if (ENABLE_TESTS)
    enable_testing ()
    add_test (NAME test-libmongoc
       COMMAND test-libmongoc
-      WORKING_DIRECTORY ${SOURCE_DIR})
+      WORKING_DIRECTORY ${SOURCE_DIR}
+   )
 
    # "make test" doesn't compile tests, so we create "make check" which compiles
    # and runs tests: https://gitlab.kitware.com/cmake/cmake/issues/8774
    add_custom_target (check COMMAND ${CMAKE_CTEST_COMMAND} -V
-      DEPENDS test-libmongoc)
+      DEPENDS test-libmongoc
+   )
 
    # Set MONGOC_TEST_VALGRIND to disable asserts that may fail in valgrind.
    add_custom_target (valgrind COMMAND
@@ -924,7 +926,8 @@ if (ENABLE_TESTS)
       valgrind --error-exitcode=1 --leak-check=full --gen-suppressions=all
       --num-callers=32 --suppressions=valgrind.suppressions
       ./test-libmongoc --no-fork
-      DEPENDS test-libmongoc)
+      DEPENDS test-libmongoc
+   )
 endif ()
 
 mongoc_add_example (example-gridfs TRUE ${SOURCE_DIR}/examples/example-gridfs.c)
@@ -943,7 +946,7 @@ mongoc_add_example (mongoc-dump TRUE ${SOURCE_DIR}/examples/mongoc-dump.c)
 mongoc_add_example (mongoc-ping TRUE ${SOURCE_DIR}/examples/mongoc-ping.c)
 mongoc_add_example (mongoc-tail TRUE ${SOURCE_DIR}/examples/mongoc-tail.c)
 mongoc_add_example (fam TRUE ${SOURCE_DIR}/examples/find_and_modify_with_opts/fam.c)
-if (NOT WIN32)
+if (NOT WIN32 AND ENABLE_EXAMPLES)
    mongoc_add_example (example-pool TRUE ${SOURCE_DIR}/examples/example-pool.c)
    target_link_libraries (example-pool Threads::Threads)
 endif ()
