@@ -1,7 +1,8 @@
 include (CheckSymbolExists)
 
-if (NOT ENABLE_SNAPPY MATCHES "SYSTEM|AUTO|OFF")
-   message (FATAL_ERROR "ENABLE_SNAPPY option must be SYSTEM, AUTO, or OFF")
+# Allow old "SYSTEM" option but prefer ON/AUTO/OFF.
+if (NOT ENABLE_SNAPPY MATCHES "ON|SYSTEM|AUTO|OFF")
+   message (FATAL_ERROR "ENABLE_SNAPPY option must be ON, AUTO, or OFF")
 endif ()
 
 if (NOT ENABLE_SNAPPY STREQUAL OFF)
@@ -12,7 +13,7 @@ if (NOT ENABLE_SNAPPY STREQUAL OFF)
       DOC "Searching for snappy-c.h")
 
    if (NOT SNAPPY_INCLUDE_DIRS)
-      if (ENABLE_SNAPPY STREQUAL SYSTEM)
+      if (ENABLE_SNAPPY MATCHES "ON|SYSTEM")
          message (FATAL_ERROR "  Not found (specify -DCMAKE_INCLUDE_PATH=/path/to/snappy/include for Snappy compression)")
       else ()
          message (STATUS "  Not found (specify -DCMAKE_INCLUDE_PATH=/path/to/snappy/include for Snappy compression)")
@@ -28,7 +29,7 @@ if (NOT ENABLE_SNAPPY STREQUAL OFF)
       if (SNAPPY_LIBS)
          message (STATUS "  Found ${SNAPPY_LIBS}")
       else ()
-         if (ENABLE_SNAPPY STREQUAL SYSTEM)
+         if (ENABLE_SNAPPY MATCHES "ON|SYSTEM")
             message (FATAL_ERROR "  Not found (specify -DCMAKE_LIBRARY_PATH=/path/to/snappy/lib for Snappy compression)")
          else ()
             message (STATUS "  Not found (specify -DCMAKE_LIBRARY_PATH=/path/to/snappy/lib for Snappy compression)")

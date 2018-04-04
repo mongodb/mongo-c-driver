@@ -609,7 +609,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=SYSTEM ZLIB=OFF sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=ON ZLIB=OFF sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-compression
@@ -622,7 +622,7 @@ tasks:
             script: |
               set -o errexit
               set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=SYSTEM ZLIB=BUNDLED sh .evergreen/compile.sh
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=ON ZLIB=BUNDLED sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: test-latest-server-compression-zlib
