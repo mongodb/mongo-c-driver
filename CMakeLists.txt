@@ -34,7 +34,7 @@ option (ENABLE_TRACING "Turn on verbose debug output" OFF)
 set (ENABLE_SHM_COUNTERS AUTO CACHE STRING "Enable shared memory performance counters. Set to ON/AUTO/OFF, default AUTO.")
 set (ENABLE_BSON AUTO CACHE STRING "Where to find libbson. Set to BUNDLED/SYSTEM/AUTO, default AUTO.")
 set (ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support")
-set (ENABLE_ZLIB BUNDLED CACHE STRING "Enable zlib support")
+set (ENABLE_ZLIB AUTO CACHE STRING "Enable zlib support")
 option (ENABLE_MAN_PAGES "Build MongoDB C Driver manual pages." OFF)
 option (ENABLE_HTML_DOCS "Build MongoDB C Driver HTML documentation." OFF)
 
@@ -401,7 +401,14 @@ set (MONGOC_INTERNAL_INCLUDE_DIRS "")
 # Sets SNAPPY_LIBS and SNAPPY_INCLUDE_DIRS.
 include (FindSnappy)
 if (SNAPPY_INCLUDE_DIRS)
+   set (MONGOC_ENABLE_COMPRESSION 1)
    include_directories ("${SNAPPY_INCLUDE_DIRS}")
+endif ()
+
+if (NOT ENABLE_ZLIB MATCHES "SYSTEM|AUTO|BUNDLED|OFF")
+   message (FATAL_ERROR
+      "ENABLE_ZLIB option must be SYSTEM, BUNDLED, AUTO, or OFF"
+   )
 endif ()
 
 set (ZLIB_SOURCES
@@ -428,12 +435,29 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
    COPYONLY
 )
-if (ENABLE_ZLIB STREQUAL "BUNDLED")
+if (ENABLE_ZLIB MATCHES "SYSTEM|AUTO")
+   message (STATUS "Searching for zlib CMake packages")
+   include (FindZLIB)
+   if (ZLIB_FOUND)
+      message ("--   zlib found version \"${ZLIB_VERSION_STRING}\"")
+      message ("--   zlib include path \"${ZLIB_INCLUDE_DIRS}\"")
+      message ("--   zlib libraries \"${ZLIB_LIBRARIES}\"")
+      include_directories ("${ZLIB_INCLUDE_DIRS}")
+   else ()
+      if (ENABLE_ZLIB STREQUAL "SYSTEM")
+         message (FATAL_ERROR
+            "Unable to find system zlib package. Either specify the zlib \
+            location by setting ZLIB_ROOT, or else set ENABLE_ZLIB=BUNDLED or \
+            set ENABLE_ZLIB=OFF."
+         )
+      endif()
+      set (ZLIB_LIBRARIES "")
+   endif ()
+endif ()
+
+if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
+        OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
    message (STATUS "Enabling zlib compression (bundled)")
-   check_include_files ("unistd.h" HAVE_UNISTD_H)
-   check_include_files ("stdarg.h" HAVE_STDARG_H)
-   set (MONGOC_ENABLE_COMPRESSION 1)
-   set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
    set (SOURCES ${SOURCES} ${ZLIB_SOURCES})
 
    list (
@@ -442,6 +466,16 @@ if (ENABLE_ZLIB STREQUAL "BUNDLED")
       "${SOURCE_DIR}/src/zlib-1.2.11"
       "${PROJECT_BINARY_DIR}/src/zlib-1.2.11"
    )
+endif ()
+
+if (NOT ENABLE_ZLIB STREQUAL "OFF")
+   # At this point the system zlib was found, or the bundled library was used
+   check_include_files ("unistd.h" HAVE_UNISTD_H)
+   check_include_files ("stdarg.h" HAVE_STDARG_H)
+   set (MONGOC_ENABLE_COMPRESSION 1)
+   set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
+else ()
+   message (STATUS "Disabling zlib compression")
 endif ()
 
 configure_file (
@@ -682,7 +716,7 @@ if (CMAKE_USE_PTHREADS_INIT)
    set (THREAD_LIB ${CMAKE_THREAD_LIBS_INIT})
 endif ()
 
-set (LIBS ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${RESOLV_LIBS} ${SNAPPY_LIBS} Threads::Threads)
+set (LIBS ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${RESOLV_LIBS} ${SNAPPY_LIBS} ${ZLIB_LIBRARIES} Threads::Threads)
 if (WIN32)
    set (LIBS ${LIBS} ws2_32)
 endif ()
