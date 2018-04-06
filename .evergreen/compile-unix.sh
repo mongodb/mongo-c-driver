@@ -91,9 +91,6 @@ else
    TAR=tar
 fi
 
-# Available on our Ubuntu 16.04 images
-[ "$ANALYZE" = "ON" ] && SCAN_BUILD="scan-build -o scan --status-bugs"
-
 [ "$DEBUG" = "ON" ] && CONFIGURE_FLAGS=$DEBUG_FLAGS || CONFIGURE_FLAGS=$RELEASE_FLAGS
 
 CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL=${SASL}"
@@ -168,7 +165,16 @@ export PATH=$INSTALL_DIR/bin:$PATH
 echo "OpenSSL Version:"
 pkg-config --modversion libssl || true
 
-$SCAN_BUILD $CMAKE $CONFIGURE_FLAGS
+if [ "$ANALYZE" = "ON" ]; then
+   # Clang static analyzer, available on Ubuntu 16.04 images.
+   # https://clang-analyzer.llvm.org/scan-build.html
+   scan-build $CMAKE $CONFIGURE_FLAGS
+
+   # Put clang static analyzer results in scan/ and fail build if warnings found.
+   SCAN_BUILD="scan-build -o scan --status-bugs"
+else
+   $CMAKE $CONFIGURE_FLAGS
+fi
 
 openssl version
 if [ -n "$SSL_VERSION" ]; then
