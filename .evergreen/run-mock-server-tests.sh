@@ -28,8 +28,8 @@ case "$OS" in
       ulimit -c unlimited || true
 
       if [ "$VALGRIND" = "on" ]; then
-         # TODO
-         make valgrind;
+         . $DIR/valgrind.sh
+         run_valgrind ./test-libmongoc --no-fork $TEST_ARGS
       else
          ./test-libmongoc --no-fork $TEST_ARGS
       fi

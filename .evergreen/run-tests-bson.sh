@@ -34,7 +34,9 @@ case "$OS" in
       ulimit -c unlimited || true
 
       if [ "$VALGRIND" = "on" ]; then
-         make valgrind
+         DIR=$(dirname $0)
+         . $DIR/valgrind.sh
+         run_valgrind ./test-libmongoc --no-fork $TEST_ARGS
       else
          ./.libs/test-libbson "--no-fork $TEST_ARGS"
       fi

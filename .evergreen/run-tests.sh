@@ -65,6 +65,7 @@ fi
 
 DIR=$(dirname $0)
 . $DIR/set-path.sh
+. $DIR/valgrind.sh
 
 case "$OS" in
    cygwin*)
@@ -75,7 +76,8 @@ case "$OS" in
       ulimit -c unlimited || true
 
       if [ "$VALGRIND" = "on" ]; then
-         make valgrind;
+         . $DIR/valgrind.sh
+         run_valgrind ./test-libmongoc --no-fork $TEST_ARGS
       else
          ./test-libmongoc --no-fork $TEST_ARGS
       fi

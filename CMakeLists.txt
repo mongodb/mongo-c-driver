@@ -919,15 +919,6 @@ if (ENABLE_TESTS)
    add_custom_target (check COMMAND ${CMAKE_CTEST_COMMAND} -V
       DEPENDS test-libmongoc
    )
-
-   # Set MONGOC_TEST_VALGRIND to disable asserts that may fail in valgrind.
-   add_custom_target (valgrind COMMAND
-      ${CMAKE_COMMAND} -E env "MONGOC_TEST_VALGRIND=on"
-      valgrind --error-exitcode=1 --leak-check=full --gen-suppressions=all
-      --num-callers=32 --suppressions=valgrind.suppressions
-      ./test-libmongoc --no-fork
-      DEPENDS test-libmongoc
-   )
 endif ()
 
 mongoc_add_example (example-gridfs TRUE ${SOURCE_DIR}/examples/example-gridfs.c)
