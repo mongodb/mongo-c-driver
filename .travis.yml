@@ -36,7 +36,7 @@ script:
   - ulimit -c unlimited || true
   - cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_MAINTAINER_FLAGS=ON -ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF .
   - make -j 8
-  - make test ARGS="-V"
+  - make check
 
 
 after_failure:
