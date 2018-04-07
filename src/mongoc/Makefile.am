@@ -314,7 +314,7 @@ libmongoc_la_LIBADD = \
 	$(SHM_LIB) \
 	$(SSL_LIBS) \
 	$(SNAPPY_LIBS) \
-	$(ZLIB_LIBS) \
+	$(ZLIB_LIBRARIES) \
 	$(SASL_LIBS) \
 	$(RESOLV_LIBS)
 

@@ -74,7 +74,7 @@ MONGOC_LIBS="${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${RESOLV_LIBS}"
 if test "x$with_zlib" = "xbundled"; then
    AC_SUBST(MONGOC_ZLIB_BUNDLED, 1)
 else
-   MONGOC_LIBS="${MONGOC_LIBS} ${ZLIB_LIBS}"
+   MONGOC_LIBS="${MONGOC_LIBS} ${ZLIB_LIBRARIES}"
 fi
 
 if test "x$with_snappy" = "xno"; then

@@ -12,7 +12,7 @@ AS_IF([test "x${with_zlib}" = xauto -o "x${with_zlib}" = xsystem], [
       AC_CHECK_LIB([zlib], [compress2], [
          AC_CHECK_HEADER([zlib.h], [
             found_zlib=yes
-            ZLIB_LIBS=-lz
+            ZLIB_LIBRARIES=-lz
          ])
       ])
    ])
@@ -41,7 +41,7 @@ AS_IF([test "x${found_zlib}" = "xyes"], [
 AS_IF([test "x${with_zlib}" = xbundled],[
    AC_MSG_CHECKING(whether to enable bundled zlib)
    AC_MSG_RESULT(yes)
-   ZLIB_LIBS=
+   ZLIB_LIBRARIES=
    ZLIB_CFLAGS="-Isrc/zlib-1.2.11"
 ])
 
@@ -50,6 +50,6 @@ if test "x${with_zlib}" != "xno"; then
 else
    AC_SUBST(MONGOC_ENABLE_COMPRESSION_ZLIB, 0)
 fi
-AC_SUBST(ZLIB_LIBS)
+AC_SUBST(ZLIB_LIBRARIES)
 AC_SUBST(ZLIB_CFLAGS)
 
