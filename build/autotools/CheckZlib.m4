@@ -5,6 +5,7 @@ found_zlib=no
 AS_IF([test "x${with_zlib}" = xauto -o "x${with_zlib}" = xsystem], [
    PKG_CHECK_MODULES(ZLIB, [zlib], [
       found_zlib=yes
+      ZLIB_LIBRARIES="${ZLIB_LIBS}"
    ], [
       # If we didn't find zlib with pkgconfig, search manually. If that
       # fails and with-zlib=system, fail, or if with-zlib=auto, use
