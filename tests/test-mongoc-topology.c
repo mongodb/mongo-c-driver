@@ -1553,6 +1553,21 @@ test_compatible_null_error_pointer (void)
    mock_server_destroy (server);
 }
 
+static char *
+cluster_time_fmt (int t)
+{
+   return bson_strdup_printf (
+      "{"
+      "  'clusterTime': {'$timestamp': {'t': %d, 'i': 1}},"
+      "  'signature': {"
+      "    'hash': {'$binary': {'subType': '0', 'base64': 'Yw=='}},"
+      "    'keyId': {'$numberLong': '6446735049323708417'}"
+      "   },"
+      "  'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
+      "}",
+      t);
+}
+
 static void
 test_cluster_time_updated_during_handshake ()
 {
@@ -1563,20 +1578,12 @@ test_cluster_time_updated_during_handshake ()
    bool r;
    bson_error_t error;
    char *cluster_time;
-   const char *cluster_time_fmt;
    mongoc_server_description_t *sd;
-
-   cluster_time_fmt = "{'clusterTime': {'$timestamp': {'t': %d, 'i': 1}},"
-                      "'signature': {"
-                      "'hash': {'$binary': {'subType': '0', 'base64': 'Yw=='}},"
-                      "'keyId': {'$numberLong': '6446735049323708417'}"
-                      "},"
-                      "'operationTime': {'$timestamp': {'t': 1, 'i': 1}}}";
 
    server = mock_server_new ();
    mock_server_run (server);
    mock_server_autoresponds (server, auto_ping, NULL, NULL);
-   cluster_time = bson_strdup_printf (cluster_time_fmt, 1);
+   cluster_time = cluster_time_fmt (1);
    mock_server_auto_ismaster (server,
                               "{'ok': 1, 'ismaster': true, 'setName': 'rs', "
                               "'minWireVersion': 2, 'maxWireVersion': 7, "
@@ -1604,7 +1611,7 @@ test_cluster_time_updated_during_handshake ()
    ASSERT_MATCH (&client->topology->description.cluster_time, cluster_time);
    mongoc_mutex_unlock (&client->topology->mutex);
    bson_free (cluster_time);
-   cluster_time = bson_strdup_printf (cluster_time_fmt, 2);
+   cluster_time = cluster_time_fmt (2);
 
    /* primary changes clusterTime */
    mock_server_auto_ismaster (server,
