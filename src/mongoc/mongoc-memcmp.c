@@ -43,7 +43,7 @@ mongoc_memcmp (const void *const b1_, const void *const b2_, size_t len)
    size_t i;
    unsigned char d = (unsigned char) 0U;
 
-#if MONGOC_HAVE_WEAK_SYMBOLS
+#ifdef MONGOC_HAVE_WEAK_SYMBOLS
    _mongoc_dummy_symbol_to_prevent_memcmp_lto (b1, b2, len);
 #endif
    for (i = 0U; i < len; i++) {
