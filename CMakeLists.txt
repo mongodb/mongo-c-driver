@@ -980,7 +980,7 @@ set (libdir "\${prefix}/lib")
 foreach (
       FLAG
       ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${RESOLV_LIBS} ${THREAD_LIB}
-      ${ZLIB_LIBS} ${SNAPPY_LIBS})
+      ${ZLIB_LIBRARIES} ${SNAPPY_LIBS})
 
    if (IS_ABSOLUTE "${FLAG}")
       get_filename_component (FLAG_DIR "${FLAG}" DIRECTORY)
