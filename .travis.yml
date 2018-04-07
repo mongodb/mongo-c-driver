@@ -30,11 +30,12 @@ addons:
     packages:
       - gdb
 
+# TODO: enable maintainer flags, CDRIVER-2511
 script:
   - sudo sh -c 'echo "\n::1 localhost\n" >> /etc/hosts'
   - ulimit -a
   - ulimit -c unlimited || true
-  - cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_MAINTAINER_FLAGS=ON -ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF .
+  - cmake -DCMAKE_BUILD_TYPE=Debug -DENABLE_MAINTAINER_FLAGS=OFF -ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF .
   - make -j 8
   - make check
 
