@@ -106,8 +106,8 @@ bson_metrics_visit_utf8 (const bson_iter_t *iter,
                          const char *v_utf8,
                          void *data)
 {
-   bson_metrics_state_t *state = data;
-   state->utf8_size_tally += v_utf8_len;
+   bson_metrics_state_t *s = data;
+   s->utf8_size_tally += v_utf8_len;
 
    return false;
 }
@@ -115,12 +115,12 @@ bson_metrics_visit_utf8 (const bson_iter_t *iter,
 static bool
 bson_metrics_visit_before (const bson_iter_t *iter, const char *key, void *data)
 {
-   bson_metrics_state_t *state = data;
+   bson_metrics_state_t *s = data;
    bson_type_t btype;
-   ++state->element_count;
-   state->key_size_tally += strlen (key); /* TODO - filter out array keys(?) */
+   ++s->element_count;
+   s->key_size_tally += strlen (key); /* TODO - filter out array keys(?) */
    btype = bson_iter_type (iter);
-   ++state->bson_type_metrics[btype].count;
+   ++s->bson_type_metrics[btype].count;
 
    return false;
 }
@@ -157,18 +157,18 @@ bson_metrics_visit_document (const bson_iter_t *iter,
                              const bson_t *v_document,
                              void *data)
 {
-   bson_metrics_state_t *state = data;
+   bson_metrics_state_t *s = data;
    bson_iter_t child;
 
-   if (state->depth >= MAX_RECURSION) {
+   if (s->depth >= MAX_RECURSION) {
       fprintf (stderr, "Invalid document, max recursion reached.\n");
       return true;
    }
 
    if (bson_iter_init (&child, v_document)) {
-      state->depth++;
+      s->depth++;
       bson_iter_visit_all (&child, &bson_metrics_visitors, data);
-      state->depth--;
+      s->depth--;
    }
 
    return false;
@@ -180,18 +180,18 @@ bson_metrics_visit_array (const bson_iter_t *iter,
                           const bson_t *v_array,
                           void *data)
 {
-   bson_metrics_state_t *state = data;
+   bson_metrics_state_t *s = data;
    bson_iter_t child;
 
-   if (state->depth >= MAX_RECURSION) {
+   if (s->depth >= MAX_RECURSION) {
       fprintf (stderr, "Invalid document, max recursion reached.\n");
       return true;
    }
 
    if (bson_iter_init (&child, v_array)) {
-      state->depth++;
+      s->depth++;
       bson_iter_visit_all (&child, &bson_metrics_visitors, data);
-      state->depth--;
+      s->depth--;
    }
 
    return false;
@@ -201,8 +201,8 @@ static void
 bson_metrics (const bson_t *bson, size_t *length, void *data)
 {
    bson_iter_t iter;
-   bson_metrics_state_t *state = data;
-   ++state->doc_count;
+   bson_metrics_state_t *s = data;
+   ++s->doc_count;
 
    if (bson_iter_init (&iter, bson)) {
       bson_iter_visit_all (&iter, &bson_metrics_visitors, data);
