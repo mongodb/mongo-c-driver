@@ -625,6 +625,20 @@ tasks:
               DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=ON ZLIB=BUNDLED sh .evergreen/compile.sh
         - func: "upload build"
 
+    - name: debug-compile-no-align
+      tags: ["debug-compile"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=OFF ZLIB=BUNDLED  sh .evergreen/compile.sh
+        - func: "upload build"
+
     - name: test-latest-server-compression-zlib
       tags: ["zlib", "compression", "latest"]
       depends_on:
@@ -645,7 +659,6 @@ tasks:
             AUTH: "noauth"
             SSL: "nossl"
             COMPRESSORS: zlib
-
 
     - name: test-latest-server-compression-snappy
       tags: ["snappy", "compression", "latest"]
@@ -789,6 +802,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
+              export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
               PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=on CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=address' CXXFLAGS="$CFLAGS" SNAPPY=OFF sh .evergreen/compile.sh
 
     - name: debug-compile-sanitizer-address-gcc
@@ -798,6 +812,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
+              export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
               DEBUG=ON MARCH='${MARCH}' DEBUG=on CHECK_LOG=ON CFLAGS='-fsanitize=address' CXXFLAGS="$CFLAGS" SNAPPY=OFF sh .evergreen/compile.sh
 
     - name: debug-compile-sanitizer-undefined
@@ -807,6 +822,7 @@ tasks:
           params:
             working_dir: "mongoc"
             script: |
+              export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
               PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=ON CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=undefined' CXXFLAGS="$CFLAGS" SNAPPY=OFF sh .evergreen/compile.sh
 
     - name: debug-compile-scan-build
@@ -6754,6 +6770,7 @@ buildvariants:
     - "debug-compile-scan-build"
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-no-align"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
@@ -6774,6 +6791,7 @@ buildvariants:
     - "debug-compile-sanitizer-undefined"
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-no-align"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
@@ -6874,6 +6892,7 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-no-align"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
     - ".3.6 .nossl .nosasl"
@@ -6892,6 +6911,7 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-no-align"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"
@@ -6915,6 +6935,7 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-no-align"
     - ".debug-compile .darwinssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .clang"
@@ -6938,6 +6959,7 @@ buildvariants:
     - ".compression !.snappy"
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-no-align"
     - ".debug-compile .winssl"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
@@ -6964,6 +6986,7 @@ buildvariants:
     - ".compression !.snappy"
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-no-align"
       # No 32bit OpenSSL builds
     - ".debug-compile .sspi !.openssl"
     - ".debug-compile .winssl .nosasl"
@@ -7063,6 +7086,7 @@ buildvariants:
   - windows-64-vs2013-compile
   tasks:
     - "debug-compile"
+    - "debug-compile-no-align"
     - ".debug-compile .nossl .nosasl"
     - ".debug-compile .winssl .sspi"
     - ".latest .nossl .nosasl .server"
@@ -7079,6 +7103,7 @@ buildvariants:
     - ".compression !.snappy"
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-no-align"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     # CDRIVER-2000 Kerberos doesn't work on PowerPC.
@@ -7120,6 +7145,7 @@ buildvariants:
     - ".compression !.snappy"
     - "debug-compile-scan-build"
     - "debug-compile-coverage"
+    - "debug-compile-no-align"
     - "release-compile"
     - "debug-compile"
     - ".debug-compile !.sspi .openssl"
@@ -7141,6 +7167,7 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-no-align"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"

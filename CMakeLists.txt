@@ -38,6 +38,11 @@ set (ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support. Set to ON/AUTO/OFF,
 set (ENABLE_ZLIB AUTO CACHE STRING "Enable zlib support")
 option (ENABLE_MAN_PAGES "Build MongoDB C Driver manual pages." OFF)
 option (ENABLE_HTML_DOCS "Build MongoDB C Driver HTML documentation." OFF)
+option (ENABLE_EXTRA_ALIGNMENT
+   "Turn on extra alignment of libbson types. Set to ON/OFF, default ON."
+   " Required for the 1.0 ABI but better disabled."
+   ON
+)
 
 project (libmongoc C)
 
@@ -63,6 +68,16 @@ include (MaintainerFlags)
 
 if ( (ENABLE_BUILD_DEPENDECIES STREQUAL OFF) AND (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR) )
    set (ENABLE_BUILD_DEPENDECIES ON)
+endif ()
+
+if (NOT ENABLE_EXTRA_ALIGNMENT MATCHES "ON|OFF")
+   message (FATAL_ERROR "ENABLE_EXTRA_ALIGNMENT option must be ON or OFF")
+endif ()
+
+if (ENABLE_EXTRA_ALIGNMENT STREQUAL ON)
+   set (BSON_EXTRA_ALIGN 1)
+else ()
+   set (BSON_EXTRA_ALIGN 0)
 endif ()
 
 if (NOT ENABLE_BSON MATCHES "SYSTEM|AUTO|BUNDLED")
