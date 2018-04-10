@@ -1,6 +1,7 @@
 libmongoc (1.9.4+dfsg-1) unstable; urgency=low
 
   * New upstream release
+  * Update to Standards-Version 4.1.4 (no changes)
 
  -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Tue, 10 Apr 2018 08:14:08 -0400
 
