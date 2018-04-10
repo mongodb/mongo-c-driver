@@ -12,14 +12,14 @@ function (message)
 endfunction ()
 
 set (ENABLE_SSL AUTO CACHE STRING
-   "Enable TLS connections and SCRAM-SHA-1 authentication.\ Options are
+   "Enable TLS connections and SCRAM-SHA-1 authentication. Options are
    \"DARWIN\" to use Apple's Secure Transport, \"WINDOWS\" to use Windows
    Secure Channel, \"OPENSSL\", \"LIBRESSL\", \"AUTO\",\ or \"OFF\". These options are
    case-sensitive. The default is \"AUTO\". Note\ that SCRAM-SHA-1 is
    required for authenticating to MongoDB 3.0 and later.")
 
 set (ENABLE_SASL AUTO CACHE STRING
-   "Enable SASL authentication (Kerberos).\ Options are \"CYRUS\" to use Cyrus
+   "Enable SASL authentication (Kerberos). Options are \"CYRUS\" to use Cyrus
    SASL, \"SSPI\" to use Windows Native SSPI, \"GSSAPI\" to use macOS Native GSS,
    \"AUTO\",\ or \"OFF\". These options are case-sensitive.")
 
