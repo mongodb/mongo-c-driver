@@ -49,6 +49,63 @@ bugfixes:
     result is cached for 10 minutes.
 
 
+mongo-c-driver 1.9.4
+====================
+
+It is my pleasure to announce mongo-c-driver 1.9.4. This release offers
+compatibility with Sphinx 1.7.0 and above and fixes two bugs:
+
+  * Ensure a change stream uses the proper session id while iterating
+  * Fix a rare crash in pooled mode when a replica set member was disconnected
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Kevin Albertson
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.9.3
+====================
+
+It is my pleasure to announce mongo-c-driver 1.9.3. This version fixes a
+session-management bug that could cause an authentication error while connected
+to MongoDB 3.6+ and iterating a cursor, and it permits the $gleStats modifier
+with mongoc_collection_aggregate.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Jeremy Mikola
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.9.2
+====================
+
+No change since 1.9.1; released to keep pace with libbson's version number.
+
+-- A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.9.1
+====================
+
+It is my pleasure to announce mongo-c-driver 1.9.1. This release fixes a bug
+that caused session ID to be included in authentication and server monitoring
+commands. Thanks to Jeremy Mikola for finding and fixing the issue.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.9.0
 ====================
 

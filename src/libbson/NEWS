@@ -1,5 +1,54 @@
-1.9.0
-=====
+Libbson-1.9.4
+=============
+
+It is my pleasure to announce Libbson-1.9.4. This release offers compatibility
+with Sphinx 1.7.0 and later.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+Libbson-1.9.3
+=============
+
+No change since 1.9.2; released to keep pace with libmongoc's version.
+
+-- A. Jesse Jiryu Davis
+
+
+Libbson-1.9.2
+=============
+
+It is my pleasure to announce Libbson-1.9.2. This release completes reverting a
+changed macro definition that broke API compatibility. The revert in 1.9.1 did
+not completely fix the BC break. Thanks to Petr Písař for finding and fixing the
+mistake.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+Libbson-1.9.1
+=============
+
+It is my pleasure to announce Libbson-1.9.1. This release reverts a changed
+macro definition that broke API compatibility, and fixes an off-by-one error
+in bson_append_regex that resulted in corrupt BSON.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Derick Rethans
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+Libbson-1.9.0
+=============
 
 It is my pleasure to announce Libbson-1.9.0.
 
