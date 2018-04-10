@@ -19,14 +19,9 @@ Parameters
 Description
 -----------
 
-Checks to see if a cursor is in a state that allows contacting a server to check for more documents.  Note that even if false, there may be documents already retrieved that can be iterated using :symbol:`mongoc_cursor_next()`.
-
-This is primarily useful with tailable cursors.
-
-See also :symbol:`mongoc_cursor_more()`.
+This function is superseded by :symbol:`mongoc_cursor_more()`, which has equivalent behavior.
 
 Returns
 -------
 
-true if the cursor will be able to attempt to retrieve more results from a server.
-
+See :symbol:`mongoc_cursor_more()`.
