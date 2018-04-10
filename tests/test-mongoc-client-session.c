@@ -1,6 +1,7 @@
 #include "mongoc.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-change-stream-private.h"
 #include "mongoc-collection-private.h"
 #include "utlist.h"
 #include "TestSuite.h"
@@ -1923,7 +1924,7 @@ test_find_indexes (session_test_t *test)
       const mongoc_server_session_t *_tmp;                      \
       int _n_sessions;                                          \
       CDL_COUNT ((_topology)->session_pool, _tmp, _n_sessions); \
-      ASSERT_CMPINT (_n_sessions, ==, (int) (_expected_size));   \
+      ASSERT_CMPINT (_n_sessions, ==, (int) (_expected_size));  \
    } while (0)
 
 
@@ -1973,6 +1974,53 @@ test_cursor_implicit_session (void *ctx)
 
    bson_destroy (&find_lsid);
    mongoc_cursor_destroy (cursor);
+   session_test_destroy (test);
+}
+
+
+static void
+test_change_stream_implicit_session (void *ctx)
+{
+   session_test_t *test;
+   mongoc_topology_t *topology;
+   mongoc_client_session_t *cs;
+   bson_error_t error;
+   mongoc_change_stream_t *change_stream;
+   bson_t pipeline = BSON_INITIALIZER;
+   const bson_t *doc;
+   bson_t aggregate_lsid;
+
+   test = session_test_new (CORRECT_CLIENT, NOT_CAUSAL);
+   test->expect_explicit_lsid = false;
+   topology = test->client->topology;
+   cs = mongoc_client_start_session (test->client, NULL, &error);
+   ASSERT_OR_PRINT (cs, error);
+   change_stream =
+      mongoc_collection_watch (test->session_collection, &pipeline, NULL);
+   bson_destroy (&pipeline);
+   bson_copy_to (&test->sent_lsid, &aggregate_lsid);
+   ASSERT_POOL_SIZE (topology, 0);
+   BSON_ASSERT (change_stream->implicit_session);
+
+   /* push a new server session into the pool */
+   mongoc_client_session_destroy (cs);
+   ASSERT_POOL_SIZE (topology, 1);
+   ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &topology->session_pool->lsid);
+
+   /* "getMore" uses the same lsid as "aggregate" did */
+   bson_reinit (&test->sent_lsid);
+   mongoc_change_stream_next (change_stream, &doc);
+   ASSERT_SESSIONS_MATCH (
+      &test->sent_lsid, &change_stream->implicit_session->server_session->lsid);
+   ASSERT_SESSIONS_MATCH (
+      &test->sent_lsid,
+      &change_stream->cursor->client_session->server_session->lsid);
+   ASSERT_SESSIONS_MATCH (&test->sent_lsid, &aggregate_lsid);
+   ASSERT_OR_PRINT (
+      !mongoc_change_stream_error_document (change_stream, &error, NULL),
+      error);
+   bson_destroy (&aggregate_lsid);
+   mongoc_change_stream_destroy (change_stream);
    session_test_destroy (test);
 }
 
@@ -2310,6 +2358,13 @@ test_session_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/Session/cursor_implicit_session",
                       test_cursor_implicit_session,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_cluster_time,
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/Session/change_stream_implicit_session",
+                      test_change_stream_implicit_session,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_cluster_time,

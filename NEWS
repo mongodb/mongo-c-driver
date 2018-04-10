@@ -1,3 +1,22 @@
+mongo-c-driver 1.9.4
+====================
+
+It is my pleasure to announce mongo-c-driver 1.9.4. This release offers
+compatibility with Sphinx 1.7.0 and above and fixes two bugs:
+
+  * Ensure a change stream uses the proper session id while iterating
+  * Fix a rare crash in pooled mode when a replica set member was disconnected
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Kevin Albertson
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.9.3
 ====================
 
