@@ -20,6 +20,7 @@
 #include "mongoc-cursor-private.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-client-session-private.h"
+#include "mongoc-rpc-private.h"
 
 #define CHANGE_STREAM_ERR(_str)         \
    bson_set_error (&stream->err,        \
@@ -88,7 +89,7 @@ _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
             size_t keyLen =
                bson_uint32_to_string (key_int, &key_str, buf, sizeof (buf));
             bson_append_value (
-               &pipeline, key_str, keyLen, bson_iter_value (&child_iter));
+               &pipeline, key_str, (int) keyLen, bson_iter_value (&child_iter));
             ++key_int;
          }
       }
@@ -118,6 +119,31 @@ _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
    if (bson_iter_init_find (&iter, &command_opts, "sessionId")) {
       if (!_mongoc_client_session_from_iter (
              stream->coll->client, &iter, &cs, &stream->err)) {
+         goto cleanup;
+      }
+   } else if (stream->implicit_session) {
+      /* If an implicit session was created before, and this cursor is now
+       * being recreated after resuming, then use the same session as before. */
+      cs = stream->implicit_session;
+      if (!mongoc_client_session_append (cs, &command_opts, &stream->err)) {
+         goto cleanup;
+      }
+   } else {
+      /* Create an implicit session. This session lsid must be the same for the
+       * agg command and the subsequent getMores. Thus, this implicit session is
+       * passed as if it were an explicit session to
+       * collection_read_command_with_opts and cursor_new_from_reply, but it is
+       * still implicit and its lifetime is owned by this change_stream_t. */
+      mongoc_session_opt_t *session_opts;
+      session_opts = mongoc_session_opts_new ();
+      mongoc_session_opts_set_causal_consistency (session_opts, false);
+      /* returns NULL if sessions aren't supported. ignore errors. */
+      cs =
+         mongoc_client_start_session (stream->coll->client, session_opts, NULL);
+      stream->implicit_session = cs;
+      mongoc_session_opts_destroy (session_opts);
+      if (cs &&
+          !mongoc_client_session_append (cs, &command_opts, &stream->err)) {
          goto cleanup;
       }
    }
@@ -161,7 +187,8 @@ _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
    }
 
    if (stream->batch_size > 0) {
-      mongoc_cursor_set_batch_size (stream->cursor, stream->batch_size);
+      mongoc_cursor_set_batch_size (stream->cursor,
+                                    (uint32_t) stream->batch_size);
    }
 
 cleanup:
@@ -177,7 +204,7 @@ _mongoc_change_stream_new (const mongoc_collection_t *coll,
 {
    bool full_doc_set = false;
    mongoc_change_stream_t *stream =
-      (mongoc_change_stream_t *) bson_malloc (sizeof (mongoc_change_stream_t));
+      (mongoc_change_stream_t *) bson_malloc0 (sizeof (mongoc_change_stream_t));
 
    BSON_ASSERT (coll);
    BSON_ASSERT (pipeline);
@@ -190,8 +217,6 @@ _mongoc_change_stream_new (const mongoc_collection_t *coll,
    bson_init (&stream->opts);
    bson_init (&stream->resume_token);
    bson_init (&stream->err_doc);
-   memset (&stream->err, 0, sizeof (bson_error_t));
-   stream->cursor = NULL;
 
    /*
     * The passed options may consist of:
@@ -260,12 +285,13 @@ bool
 mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
 {
    bson_iter_t iter;
+   bool ret = false;
 
    BSON_ASSERT (stream);
    BSON_ASSERT (bson);
 
    if (stream->err.code != 0) {
-      return false;
+      goto end;
    }
 
    if (!mongoc_cursor_next (stream->cursor, bson)) {
@@ -275,7 +301,7 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
 
       if (!mongoc_cursor_error_document (stream->cursor, &err, &err_doc)) {
          /* No error occurred, just no documents left */
-         return false;
+         goto end;
       }
 
       /* Change Streams Spec: An error is resumable if it is not a server error,
@@ -311,7 +337,7 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
                !mongoc_cursor_error_document (stream->cursor, &err, &err_doc);
             if (resumable) {
                /* Empty batch. */
-               return false;
+               goto end;
             }
          }
       }
@@ -320,7 +346,7 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
          stream->err = err;
          bson_destroy (&stream->err_doc);
          bson_copy_to (err_doc, &stream->err_doc);
-         return false;
+         goto end;
       }
    }
 
@@ -332,14 +358,25 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
                       MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
                       "Cannot provide resume functionality when the resume "
                       "token is missing");
-      return false;
+      goto end;
    }
 
    /* Copy the resume token */
    bson_reinit (&stream->resume_token);
    BSON_APPEND_VALUE (
       &stream->resume_token, "resumeAfter", bson_iter_value (&iter));
-   return true;
+   ret = true;
+
+end:
+   /* Driver Sessions Spec: "When an implicit session is associated with a
+    * cursor for use with getMore operations, the session MUST be returned to
+    * the pool immediately following a getMore operation that indicates that the
+    * cursor has been exhausted." */
+   if (stream->implicit_session && stream->cursor->rpc.reply.cursor_id == 0) {
+      mongoc_client_session_destroy (stream->implicit_session);
+      stream->implicit_session = NULL;
+   }
+   return ret;
 }
 
 bool
@@ -372,6 +409,9 @@ mongoc_change_stream_destroy (mongoc_change_stream_t *stream)
    bson_destroy (&stream->err_doc);
    if (stream->cursor) {
       mongoc_cursor_destroy (stream->cursor);
+   }
+   if (stream->implicit_session) {
+      mongoc_client_session_destroy (stream->implicit_session);
    }
    mongoc_collection_destroy (stream->coll);
    bson_free (stream);

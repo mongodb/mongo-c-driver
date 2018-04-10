@@ -721,6 +721,10 @@ _mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
    sd = _mongoc_stream_run_ismaster (
       cluster, node->stream, node->connection_address, server_id);
 
+   if (!sd) {
+      return NULL;
+   }
+
    if (sd->type == MONGOC_SERVER_UNKNOWN) {
       memcpy (error, &sd->error, sizeof (bson_error_t));
       mongoc_server_description_destroy (sd);
