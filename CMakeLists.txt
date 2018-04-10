@@ -39,8 +39,8 @@ set (ENABLE_ZLIB AUTO CACHE STRING "Enable zlib support")
 option (ENABLE_MAN_PAGES "Build MongoDB C Driver manual pages." OFF)
 option (ENABLE_HTML_DOCS "Build MongoDB C Driver HTML documentation." OFF)
 option (ENABLE_EXTRA_ALIGNMENT
-   "Turn on extra alignment of libbson types. Set to ON/OFF, default ON."
-   " Required for the 1.0 ABI but better disabled."
+   "Turn on extra alignment of libbson types. Set to ON/OFF, default ON.\
+ Required for the 1.0 ABI but better disabled."
    ON
 )
 
