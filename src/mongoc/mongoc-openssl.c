@@ -658,6 +658,9 @@ _mongoc_openssl_thread_cleanup (void)
    if (CRYPTO_get_locking_callback () ==
        _mongoc_openssl_thread_locking_callback) {
       CRYPTO_set_locking_callback (NULL);
+   }
+
+   if (CRYPTO_get_id_callback () == _mongoc_openssl_thread_id_callback) {
       CRYPTO_set_id_callback (NULL);
    }
 
