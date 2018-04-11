@@ -31,4 +31,13 @@ See Also
     mongoc_apm_set_command_failed_cb
     mongoc_apm_set_command_started_cb
     mongoc_apm_set_command_succeeded_cb
+    mongoc_apm_set_server_changed_cb
+    mongoc_apm_set_server_closed_cb
+    mongoc_apm_set_server_heartbeat_failed_cb
+    mongoc_apm_set_server_heartbeat_started_cb
+    mongoc_apm_set_server_heartbeat_succeeded_cb
+    mongoc_apm_set_server_opening_cb
+    mongoc_apm_set_topology_changed_cb
+    mongoc_apm_set_topology_closed_cb
+    mongoc_apm_set_topology_opening_cb
 
