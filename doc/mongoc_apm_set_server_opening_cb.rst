@@ -13,7 +13,7 @@ Synopsis
 
   void
   mongoc_apm_set_server_opening_cb (mongoc_apm_callbacks_t *callbacks,
-                                       mongoc_apm_server_opening_cb_t cb);
+                                    mongoc_apm_server_opening_cb_t cb);
 
 Receive an event notification whenever the driver adds a :symbol:`mongoc_server_description_t` for a new server it was not monitoring before.
 

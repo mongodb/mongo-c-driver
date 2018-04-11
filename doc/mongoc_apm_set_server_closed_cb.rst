@@ -13,7 +13,7 @@ Synopsis
 
   void
   mongoc_apm_set_server_closed_cb (mongoc_apm_callbacks_t *callbacks,
-                                       mongoc_apm_server_closed_cb_t cb);
+                                   mongoc_apm_server_closed_cb_t cb);
 
 Receive an event notification whenever the driver stops monitoring a server and removes its :symbol:`mongoc_server_description_t`.
 

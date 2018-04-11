@@ -13,7 +13,7 @@ Synopsis
 
   void
   mongoc_apm_set_topology_opening_cb (mongoc_apm_callbacks_t *callbacks,
-                                       mongoc_apm_topology_opening_cb_t cb);
+                                      mongoc_apm_topology_opening_cb_t cb);
 
 Receive an event notification whenever the driver initializes a :symbol:`mongoc_topology_description_t`.
 

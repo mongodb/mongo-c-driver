@@ -13,7 +13,7 @@ Synopsis
 
   void
   mongoc_apm_set_topology_changed_cb (mongoc_apm_callbacks_t *callbacks,
-                                       mongoc_apm_topology_changed_cb_t cb);
+                                      mongoc_apm_topology_changed_cb_t cb);
 
 Receive an event notification whenever the driver observes a change in any of the servers it is connected to or a change in the overall server topology.
 
