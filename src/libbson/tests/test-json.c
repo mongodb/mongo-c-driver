@@ -1045,6 +1045,33 @@ test_bson_json_read_corrupt_utf8 (void)
 }
 
 
+/* exercise early exit from _bson_as_json_visit_document/array, CDRIVER-2541 */
+static void
+test_bson_json_read_corrupt_document (void)
+{
+   /* like {a: {a: "\x80"}}, the value is invalid UTF-8 */
+   const char bad_doc[] = "\x16\x00\x00\x00" /* length */
+                          "\x03\x61\x00"     /* subdoc field with key "a" */
+                          "\x0e\x00\x00\x00" /* length of subdoc in bytes */
+                          "\x02\x61\x00\x02\x00\x00\x00\x80\x00" /* a: "\x80" */
+                          "\x00"; /* terminator */
+
+   /* like {a: ["\x80"]}, the inner value is invalid UTF-8 */
+   const char bad_array[] = "\x16\x00\x00\x00" /* length */
+                            "\x04\x61\x00"     /* array field with key "a" */
+                            "\x0e\x00\x00\x00" /* length of array in bytes */
+                            "\x02\x30\x00"     /* key "0" */
+                            "\x02\x00\x00\x00\x80\x00" /* string "\x80" */
+                            "\x00";                    /* terminator */
+
+   bson_t bson;
+   bson_init_static (&bson, (uint8_t *) bad_doc, sizeof (bad_doc));
+   BSON_ASSERT (!bson_as_json (&bson, NULL));
+   bson_init_static (&bson, (uint8_t *) bad_array, sizeof (bad_array));
+   BSON_ASSERT (!bson_as_json (&bson, NULL));
+}
+
+
 static void
 test_bson_json_read_decimal128 (void)
 {
@@ -2917,6 +2944,9 @@ test_json_install (TestSuite *suite)
       suite, "/bson/json/read/raw_utf8", test_bson_json_read_raw_utf8);
    TestSuite_Add (
       suite, "/bson/json/read/corrupt_utf8", test_bson_json_read_corrupt_utf8);
+   TestSuite_Add (suite,
+                  "/bson/json/read/corrupt_document",
+                  test_bson_json_read_corrupt_document);
    TestSuite_Add (
       suite, "/bson/json/read/decimal128", test_bson_json_read_decimal128);
    TestSuite_Add (

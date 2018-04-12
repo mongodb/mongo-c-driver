@@ -1555,8 +1555,11 @@ bson_append_regex (bson_t *bson,
 
 
 bool
-bson_append_regex_w_len (bson_t *bson, const char *key, int key_length,
-                         const char *regex, int regex_length,
+bson_append_regex_w_len (bson_t *bson,
+                         const char *key,
+                         int key_length,
+                         const char *regex,
+                         int regex_length,
                          const char *options)
 {
    static const uint8_t type = BSON_TYPE_REGEX;
@@ -1586,21 +1589,22 @@ bson_append_regex_w_len (bson_t *bson, const char *key, int key_length,
 
    _bson_append_regex_options_sorted (options_sorted, options);
 
-   r = _bson_append (bson,
-                     6,
-                     (1 + key_length + 1 + regex_length + 1 + options_sorted->len + 1),
-                     1,
-                     &type,
-                     key_length,
-                     key,
-                     1,
-                     &gZero,
-                     regex_length,
-                     regex,
-                     1,
-                     &gZero,
-                     options_sorted->len + 1,
-                     options_sorted->str);
+   r = _bson_append (
+      bson,
+      6,
+      (1 + key_length + 1 + regex_length + 1 + options_sorted->len + 1),
+      1,
+      &type,
+      key_length,
+      key,
+      1,
+      &gZero,
+      regex_length,
+      regex,
+      1,
+      &gZero,
+      options_sorted->len + 1,
+      options_sorted->str);
 
    bson_string_free (options_sorted, true);
 
@@ -2191,7 +2195,7 @@ bson_copy_to (const bson_t *src, bson_t *dst)
    if ((src->flags & BSON_FLAG_INLINE)) {
 #ifdef BSON_MEMCHECK
       dst->len = src->len;
-      dst->canary = malloc(1);
+      dst->canary = malloc (1);
       memcpy (dst->padding, src->padding, sizeof dst->padding);
 #else
       memcpy (dst, src, sizeof *dst);
@@ -2963,10 +2967,10 @@ _bson_as_json_visit_code (const bson_iter_t *iter,
 
 static bool
 _bson_as_json_visit_symbol (const bson_iter_t *iter,
-                                     const char *key,
-                                     size_t v_symbol_len,
-                                     const char *v_symbol,
-                                     void *data)
+                            const char *key,
+                            size_t v_symbol_len,
+                            const char *v_symbol,
+                            void *data)
 {
    bson_json_state_t *state = data;
    char *escaped;
@@ -3032,30 +3036,18 @@ _bson_as_json_visit_codewscope (const bson_iter_t *iter,
 
 
 static const bson_visitor_t bson_as_json_visitors = {
-   _bson_as_json_visit_before,
-   NULL, /* visit_after */
-   _bson_as_json_visit_corrupt,
-   _bson_as_json_visit_double,
-   _bson_as_json_visit_utf8,
-   _bson_as_json_visit_document,
-   _bson_as_json_visit_array,
-   _bson_as_json_visit_binary,
-   _bson_as_json_visit_undefined,
-   _bson_as_json_visit_oid,
-   _bson_as_json_visit_bool,
-   _bson_as_json_visit_date_time,
-   _bson_as_json_visit_null,
-   _bson_as_json_visit_regex,
-   _bson_as_json_visit_dbpointer,
-   _bson_as_json_visit_code,
-   _bson_as_json_visit_symbol,
-   _bson_as_json_visit_codewscope,
-   _bson_as_json_visit_int32,
-   _bson_as_json_visit_timestamp,
-   _bson_as_json_visit_int64,
-   _bson_as_json_visit_maxkey,
-   _bson_as_json_visit_minkey,
-   NULL, /* visit_unsupported_type */
+   _bson_as_json_visit_before,     NULL, /* visit_after */
+   _bson_as_json_visit_corrupt,    _bson_as_json_visit_double,
+   _bson_as_json_visit_utf8,       _bson_as_json_visit_document,
+   _bson_as_json_visit_array,      _bson_as_json_visit_binary,
+   _bson_as_json_visit_undefined,  _bson_as_json_visit_oid,
+   _bson_as_json_visit_bool,       _bson_as_json_visit_date_time,
+   _bson_as_json_visit_null,       _bson_as_json_visit_regex,
+   _bson_as_json_visit_dbpointer,  _bson_as_json_visit_code,
+   _bson_as_json_visit_symbol,     _bson_as_json_visit_codewscope,
+   _bson_as_json_visit_int32,      _bson_as_json_visit_timestamp,
+   _bson_as_json_visit_int64,      _bson_as_json_visit_maxkey,
+   _bson_as_json_visit_minkey,     NULL, /* visit_unsupported_type */
    _bson_as_json_visit_decimal128,
 };
 
@@ -3080,6 +3072,7 @@ _bson_as_json_visit_document (const bson_iter_t *iter,
       child_state.depth = state->depth + 1;
       child_state.mode = state->mode;
       if (bson_iter_visit_all (&child, &bson_as_json_visitors, &child_state)) {
+         bson_string_free (child_state.str, true);
          return true;
       }
 
@@ -3112,6 +3105,7 @@ _bson_as_json_visit_array (const bson_iter_t *iter,
       child_state.depth = state->depth + 1;
       child_state.mode = state->mode;
       if (bson_iter_visit_all (&child, &bson_as_json_visitors, &child_state)) {
+         bson_string_free (child_state.str, true);
          return true;
       }
 
