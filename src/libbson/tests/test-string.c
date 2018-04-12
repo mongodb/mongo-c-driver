@@ -279,6 +279,9 @@ test_bson_strncpy (void)
    ASSERT_CMPSTR ("foo", buf);
    bson_strncpy (buf, "foobar", sizeof buf);
    ASSERT_CMPSTR ("foob", buf);
+   /* CDRIVER-2596 make sure strncpy with size 0 doesn't write to buf[-1] */
+   bson_strncpy (buf + 1, "z", 0);
+   ASSERT_CMPSTR ("foob", buf);
 }
 
 

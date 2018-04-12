@@ -562,6 +562,10 @@ bson_strncpy (char *dst,       /* IN */
               const char *src, /* IN */
               size_t size)     /* IN */
 {
+   if (size == 0) {
+      return;
+   }
+
 #ifdef _MSC_VER
    strncpy_s (dst, size, src, _TRUNCATE);
 #else
