@@ -190,33 +190,6 @@ Build and install the driver:
   $ make
   $ sudo make install
 
-Native TLS Support on Mac OS X / Darwin (Secure Transport)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The MongoDB C Driver supports the Darwin native TLS and crypto libraries.
-Using the native libraries there is no need to install OpenSSL. By
-default however, the driver will compile against OpenSSL if it
-detects it being available. If OpenSSL is not available, it will
-fall back on the native libraries.
-
-To compile against the Darwin native TLS and crypto libraries, even when
-OpenSSL is available, configure the driver like so:
-
-.. code-block:: none
-
-  $ ./configure --enable-ssl=darwin
-
-OpenSSL support in Mac OS X
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Beginning in OS X 10.11 El Capitan, OS X no longer includes the OpenSSL headers. To build the driver with OpenSSL on El Capitan and later:
-
-.. code-block:: none
-
-  $ brew install openssl
-  $ export LDFLAGS="-L/usr/local/opt/openssl/lib"
-  $ export CPPFLAGS="-I/usr/local/opt/openssl/include"
-
 .. _build-on-windows:
 
 Building on Windows with Visual Studio
@@ -260,8 +233,6 @@ Now let's do the same for the MongoDB C driver.
   mkdir cmake-build
   cd cmake-build
   cmake -G "Visual Studio 14 2015 Win64" \\
-    "-DENABLE_SSL=WINDOWS" \\
-    "-DENABLE_SASL=SSPI" \\
     "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
     "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver" \\
     "-DCMAKE_BUILD_TYPE=Release" \\
@@ -277,52 +248,6 @@ To build and install debug binaries, remove the
 ``/p:Configuration=Release`` to ``msbuild.exe``.
 
 To use the driver libraries in your program, see :doc:`visual-studio-guide`.
-
-Native TLS Support on Windows (Secure Channel)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The MongoDB C Driver supports the Windows native TLS and crypto libraries.
-Using the native libraries there is no need to install OpenSSL. By
-default however, the driver will compile against OpenSSL if it
-detects it being available. If OpenSSL is not available, it will
-fallback on the native libraries.
-
-To compile against the Windows native TLS and crypto libraries, even when
-OpenSSL is available, configure the driver like so:
-
-.. code-block:: none
-
-  cmake -G "Visual Studio 14 2015 Win64" \
-    "-DENABLE_SSL=WINDOWS" \
-    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \
-    "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver" \
-    ..
-
-Native SASL Support on Windows (SSPI)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The MongoDB C Driver supports the Windows native Kerberos and Active Directory
-interface, SSPI. Using the native libraries there is no need to install any
-dependencies, such as cyrus-sasl.  By default however, the driver will compile
-against cyrus-sasl.
-
-To compile against the Windows native SSPI, configure the driver like so:
-
-.. code-block:: none
-
-  cmake -G "Visual Studio 14 2015 Win64" \
-    "-DENABLE_SASL=SSPI" \
-    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \
-    "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver" \
-    ..
-
-OpenSSL support on Windows
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-For backwards compatibility CMake will default to OpenSSL support.
-If not found, it will fallback to native TLS support provided by the platform.
-
-OpenSSL 1.1.0 support requires CMake 3.7 or later on Windows.
 
 Building on Windows with MinGW-W64 and MSYS2
 --------------------------------------------

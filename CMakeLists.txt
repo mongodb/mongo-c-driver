@@ -155,8 +155,9 @@ if (NOT ENABLE_SSL MATCHES "DARWIN|WINDOWS|OPENSSL|LIBRESSL|AUTO|OFF")
 endif ()
 
 if (NOT ENABLE_SSL STREQUAL OFF)
-   # If "AUTO", try OpenSSL. In version 2.0 we'll default to "DARWIN" on Mac.
-   if (ENABLE_SSL MATCHES "AUTO|OPENSSL")
+   # Try OpenSSL automatically everywhere but Mac and Windows.
+   if (ENABLE_SSL STREQUAL "OPENSSL"
+       OR (NOT APPLE AND NOT WIN32 AND ENABLE_SSL STREQUAL "AUTO"))
       # Sets OPENSSL_FOUND on success.
       include (FindOpenSSL)
    endif ()
@@ -176,7 +177,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       endif ()
    endif ()
 
-   if (ENABLE_SSL STREQUAL DARWIN)
+   if (ENABLE_SSL STREQUAL DARWIN OR (APPLE AND ENABLE_SSL STREQUAL "AUTO"))
       if (APPLE)
          set (SECURE_TRANSPORT 1)
       else ()
@@ -184,20 +185,12 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       endif ()
    endif ()
 
-   if (ENABLE_SSL STREQUAL AUTO AND NOT OPENSSL_FOUND AND APPLE)
-      set (SECURE_TRANSPORT 1)
-   endif ()
-
-   if (ENABLE_SSL STREQUAL WINDOWS)
+   if (ENABLE_SSL STREQUAL WINDOWS OR (WIN32 AND ENABLE_SSL STREQUAL "AUTO"))
       if (WIN32)
          set (SECURE_CHANNEL 1)
       else ()
          message (FATAL_ERROR "ENABLE_SSL=WINDOWS only supported on Windows")
       endif ()
-   endif ()
-
-   if (ENABLE_SSL STREQUAL AUTO AND NOT OPENSSL_FOUND AND WIN32)
-      set (SECURE_CHANNEL 1)
    endif ()
 
    if (NOT OPENSSL_FOUND AND NOT SECURE_TRANSPORT AND NOT SECURE_CHANNEL AND NOT LIBRESSL)
