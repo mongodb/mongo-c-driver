@@ -520,9 +520,25 @@ if (UNIX AND NOT APPLE)
    set (SHM_LIB -lrt)
 endif ()
 
-if (APPLE)
-   cmake_policy (SET CMP0042 OLD)
-endif ()
+# Ensure the default behavior: don't ignore RPATH settings.
+set (CMAKE_SKIP_BUILD_RPATH OFF)
+
+# Ensure the default behavior: don't use the final install destination as the
+# temporary RPATH for executables (ensure we can run tests and programs from
+# the build directory).
+
+set (CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
+# Include any custom library paths in the final RPATH.
+
+set (CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+# Install libs with names like @rpath/libmongoc-1.0.0.dylib, not bare names.
+
+set (CMAKE_MACOSX_RPATH ON)
+
+# https://cmake.org/cmake/help/v3.11/policy/CMP0042.html
+# Enable a CMake 3.0+ policy that sets CMAKE_MACOSX_RPATH by default, and
+# silence a CMake 3.11 warning that the old behavior is deprecated.
+cmake_policy (SET CMP0042 NEW)
 
 if (MSVC)
    add_definitions (-D_CRT_SECURE_NO_WARNINGS)
