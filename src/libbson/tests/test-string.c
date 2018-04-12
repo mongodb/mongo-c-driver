@@ -286,6 +286,17 @@ test_bson_strncpy (void)
 
 
 static void
+test_bson_snprintf (void)
+{
+   char buf[] = "ab";
+
+   /* CDRIVER-2595 make sure snprintf with size 0 doesn't write to buf[-1] */
+   ASSERT_CMPINT (bson_snprintf (buf + 1, 0, "%d", 1), ==, 0);
+   ASSERT_CMPSTR (buf, "ab");
+}
+
+
+static void
 test_bson_strcasecmp (void)
 {
    BSON_ASSERT (!bson_strcasecmp ("FoO", "foo"));
@@ -309,6 +320,7 @@ test_string_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/string/strndup", test_bson_strndup);
    TestSuite_Add (suite, "/bson/string/ascii_strtoll", test_bson_ascii_strtoll);
    TestSuite_Add (suite, "/bson/string/strncpy", test_bson_strncpy);
+   TestSuite_Add (suite, "/bson/string/snprintf", test_bson_snprintf);
    TestSuite_Add (suite, "/bson/string/strnlen", test_bson_strnlen);
    TestSuite_Add (suite, "/bson/string/strcasecmp", test_bson_strcasecmp);
 }

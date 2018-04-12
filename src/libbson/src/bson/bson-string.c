@@ -608,10 +608,11 @@ bson_vsnprintf (char *str,          /* IN */
 
    BSON_ASSERT (str);
 
-   if (size != 0) {
-      r = _vsnprintf_s (str, size, _TRUNCATE, format, ap);
+   if (size == 0) {
+      return 0;
    }
 
+   r = _vsnprintf_s (str, size, _TRUNCATE, format, ap);
    if (r == -1) {
       r = _vscprintf (format, ap);
    }
@@ -621,6 +622,12 @@ bson_vsnprintf (char *str,          /* IN */
    return r;
 #else
    int r;
+
+   BSON_ASSERT (str);
+
+   if (size == 0) {
+      return 0;
+   }
 
    r = vsnprintf (str, size, format, ap);
    str[size - 1] = '\0';
