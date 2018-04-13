@@ -21,5 +21,8 @@ Parameters
 Description
 -----------
 
-Copies up to ``size`` bytes from ``src`` into ``dst``. ``dst`` must be at least ``size`` bytes in size. A trailing ``\0`` will be set.
+Copies up to ``size`` bytes from ``src`` into ``dst``. ``dst`` must be at least ``size`` bytes in size. A trailing ``\0`` is always set.
 
+Does nothing if ``size`` is zero.
+
+``bson_strncpy`` matches the behavior of the C11 standard ``strncpy_s``, rather than ``strncpy``. This means that ``bson_strncpy`` always writes a null terminator to ``dst``, even if ``dst`` is too short to fit the entire string from ``src``. If there is additional space left in ``dst`` after copying ``src``, ``bson_strncpy`` does not fill the remaining space with null characters.
