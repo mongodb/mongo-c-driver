@@ -10,7 +10,8 @@ os:
 
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install mongodb; fi
+  # "brew install" can succeed but return 1 if it has "caveats".
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install mongodb || true; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew services start mongodb; fi
 
 before_script:
