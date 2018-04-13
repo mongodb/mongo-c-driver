@@ -1306,7 +1306,7 @@ dollar_query_test_t tests[] = {
    {NULL}};
 
 static void
-test_cluster_ismaster_fails (void)
+_test_cluster_ismaster_fails (bool hangup)
 {
    mock_server_t *mock_server;
    mongoc_uri_t *uri;
@@ -1326,6 +1326,7 @@ test_cluster_ismaster_fails (void)
    /* increase heartbeatFrequencyMS to prevent background server selection. */
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
    pool = mongoc_client_pool_new (uri);
+   mongoc_client_pool_set_error_api (pool, 2);
    mongoc_uri_destroy (uri);
    client = mongoc_client_pool_pop (pool);
    /* do server selection to add this server to the topology. this does not add
@@ -1343,14 +1344,40 @@ test_cluster_ismaster_fails (void)
    /* CDRIVER-2576: the server replies with an error, so
     * _mongoc_stream_run_ismaster returns NULL, which
     * _mongoc_cluster_run_ismaster must check. */
-   mock_server_replies_simple (request, "{'ok': 0}");
+
+   if (hangup) {
+      capture_logs (true); /* suppress "failed to buffer" warning */
+      mock_server_hangs_up (request);
+      BSON_ASSERT (!future_get_bool (future));
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket err");
+   } else {
+      mock_server_replies_simple (request, "{'ok': 0, 'code': 123}");
+      BSON_ASSERT (!future_get_bool (future));
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_SERVER, 123, "Unknown command error");
+   }
+
    request_destroy (request);
-   future_wait (future);
    future_destroy (future);
    mock_server_destroy (mock_server);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
 }
+
+static void
+test_cluster_ismaster_fails (void)
+{
+   _test_cluster_ismaster_fails (false);
+}
+
+
+static void
+test_cluster_ismaster_hangup (void)
+{
+   _test_cluster_ismaster_fails (true);
+}
+
 
 void
 test_cluster_install (TestSuite *suite)
@@ -1474,4 +1501,6 @@ test_cluster_install (TestSuite *suite)
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (
       suite, "/Cluster/ismaster_fails", test_cluster_ismaster_fails);
+   TestSuite_AddMockServerTest (
+      suite, "/Cluster/ismaster_hangup", test_cluster_ismaster_hangup);
 }
