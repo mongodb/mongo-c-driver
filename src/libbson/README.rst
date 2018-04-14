@@ -62,4 +62,4 @@ Installation
 ============
 
 Detailed installation instructions are in the manual:
-http://mongoc.org/libbson/current/installing.html
+http://mongoc.org/libmongoc/current/installing.html

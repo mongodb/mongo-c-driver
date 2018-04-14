@@ -1,9 +1,9 @@
 :man_page: mongoc_installing
 
-Installing the MongoDB C Driver
-===============================
+Installing the MongoDB C Driver (libmongoc) and BSON library (libbson)
+======================================================================
 
-The following guide will step you through the process of downloading, building, and installing the current release of the MongoDB C Driver.
+The following guide will step you through the process of downloading, building, and installing the current release of the MongoDB C Driver (libmongoc) and BSON library (libbson).
 
 Supported Platforms
 -------------------
@@ -23,8 +23,10 @@ The MongoDB C Driver is `continuously tested <https://evergreen.mongodb.com/wate
 - Visual Studio 2010, 2013, 2015
 - x86, x86_64, ARM (aarch64), Power8 (ppc64le), zSeries (s390x)
 
-Install with a Package Manager
-------------------------------
+Install libmongoc with a Package Manager
+----------------------------------------
+
+Several Linux distributions provide packages for libmongoc and its dependencies. One advantage of installing libmongoc with a package manager is that its dependencies (including libbson) will be installed automatically.
 
 The libmongoc package is available on recent versions of Debian and Ubuntu.
 
@@ -38,17 +40,41 @@ On Fedora, a mongo-c-driver package is available in the default repositories and
 
   $ dnf install mongo-c-driver
 
-On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver package is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. To check version available, see `https://apps.fedoraproject.org/packages/mongo-c-driver <https://apps.fedoraproject.org/packages/mongo-c-driver>`_. The package can be installed with:
+On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver package is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. To check which version is available, see `https://apps.fedoraproject.org/packages/mongo-c-driver <https://apps.fedoraproject.org/packages/mongo-c-driver>`_. The package can be installed with:
 
 .. code-block:: none
 
   $ yum install mongo-c-driver
 
+Install libbson with a Package Manager
+--------------------------------------
+
+The libbson package is available on recent versions of Debian and Ubuntu. If you have installed libmongoc, then libbson will have already been installed as a dependency. It is also possible to install libbson without libmongoc.
+
+.. code-block:: none
+
+  $ apt-get install libbson-1.0
+
+On Fedora, a libbson package is available in the default repositories and can be installed with:
+
+.. code-block:: none
+
+  $ dnf install libbson
+
+On recent Red Hat systems, such as CentOS and RHEL 7, a libbson package
+is available in the `EPEL <https://fedoraproject.org/wiki/EPEL>`_ repository. To check
+which version is available, see `https://apps.fedoraproject.org/packages/libbson <https://apps.fedoraproject.org/packages/libbson>`_.
+The package can be installed with:
+
+.. code-block:: none
+
+  $ yum install libbson
+
 Building on Unix
 ----------------
 
-Prerequisites
-^^^^^^^^^^^^^
+Prerequisites for libmongoc
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 OpenSSL is required for authentication or for SSL connections to MongoDB. Kerberos or LDAP support requires Cyrus SASL.
 
@@ -56,63 +82,62 @@ To install all optional dependencies on RedHat / Fedora:
 
 .. code-block:: none
 
-  $ sudo yum install pkg-config openssl-devel cyrus-sasl-devel
+  $ sudo yum install cmake openssl-devel cyrus-sasl-devel
 
 On Debian / Ubuntu:
 
 .. code-block:: none
 
-  $ sudo apt-get install pkg-config libssl-dev libsasl2-dev
+  $ sudo apt-get install cmake libssl-dev libsasl2-dev
 
 On FreeBSD:
 
 .. code-block:: none
 
-  $ su -c 'pkg install pkgconf openssl cyrus-sasl'
+  $ su -c 'pkg install cmake openssl cyrus-sasl'
+
+Prerequisites for libbson
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The only prerequisite for building libbson is ``cmake``. The command lines above can be adjusted to install only ``cmake``.
 
 Building from a release tarball
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Unless you intend on contributing to the mongo-c-driver, you will want to build from a release tarball.
+Unless you intend to contribute to mongo-c-driver and/or libbson, you will want to build from a release tarball.
 
-The most recent release of libmongoc is |release| and can be :release:`downloaded here <>`. The following snippet will download and extract the driver, and configure it:
+The most recent release of libmongoc and libbson, both of which are included in mongo-c-driver, is |release| and can be :release:`downloaded here <>`. The instructions in this document utilize ``cmake``'s out-of-source build feature to keep build artifacts separate from source files.
+
+The following snippet will download and extract the driver, and configure it:
 
 .. parsed-literal::
 
   $ wget |release_download|
   $ tar xzf mongo-c-driver-|release|.tar.gz
   $ cd mongo-c-driver-|release|
-  $ ./configure --disable-automatic-init-and-cleanup
+  $ mkdir cmake-build
+  $ cd cmake-build
+  $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..
 
-The ``--disable-automatic-init-and-cleanup`` option is recommended, see :doc:`init-cleanup`. For a list of all configure options, run ``./configure --help``.
+The ``-DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF`` option is recommended, see :doc:`init-cleanup`. Another useful ``cmake`` option is ``-DCMAKE_BUILD_TYPE=Release`` for a release optimized build and ``-DCMAKE_BUILD_TYPE=Debug`` for a debug build. For a list of all configure options, run ``cmake -L ..``.
 
-If ``configure`` completed successfully, you'll see something like the following describing your build configuration.
+If ``cmake`` completed successfully, you will see a considerable amount of output describing your build configuration. The final line of output should look something like this:
 
 .. parsed-literal::
 
-  libmongoc |release| was configured with the following options:
+  -- Build files have been written to: /home/user/mongo-c-driver-|release|/cmake-build
 
-  Build configuration:
-    Enable debugging (slow)                          : no
-    Compile with debug symbols (slow)                : no
-    Enable GCC build optimization                    : yes
-    Enable automatic init and cleanup                : no
-    Enable maintainer flags                          : no
-    Code coverage support                            : no
-    Cross Compiling                                  : no
-    Fast counters                                    : no
-    Shared memory performance counters               : yes
-    SASL                                             : sasl2
-    SSL                                              : openssl
-    Snappy Compression                               : no
-    Zlib Compression                                 : bundled
-    Libbson                                          : bundled
+If ``cmake`` concludes with anything different, then there is likely an error or some other problem with the build. Review the output to identify and correct the problem.
 
-  Documentation:
-    man                                              : no
-    HTML                                             : no
+mongo-c-driver contains a copy of libbson, in case your system does not already have libbson installed. The build will detect if libbson is not installed and use the bundled libbson.
 
-mongo-c-driver contains a copy of libbson, in case your system does not already have libbson installed. The configure script will detect if libbson is not installed and use the bundled libbson.
+Additionally, it is possible to build only libbson by setting the ``-DENABLE_BSON=ONLY`` option:
+
+.. parsed-literal::
+
+  $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_BSON=ONLY ..
+
+A build configuration description similar to the one above will be displayed, though with fewer entries. Once the configuration is complete, the selected items can be built and installed with these commands:
 
 .. code-block:: none
 
@@ -122,34 +147,16 @@ mongo-c-driver contains a copy of libbson, in case your system does not already 
 Building from git
 ^^^^^^^^^^^^^^^^^
 
-To build an unreleased version of the driver from git requires additional dependencies.
-
-RedHat / Fedora:
-
-.. code-block:: none
-
-  $ sudo yum install git gcc automake autoconf libtool
-
-Debian / Ubuntu:
-
-.. code-block:: none
-
-  $ sudo apt-get install git gcc automake autoconf libtool
-
-FreeBSD:
-
-.. code-block:: none
-
-  $ su -c 'pkg install git gcc automake autoconf libtool'
-
-Once you have the dependencies installed, clone the repository and build the current master or a particular release tag:
+Clone the repository and build the current master or a particular release tag:
 
 .. code-block:: none
 
   $ git clone https://github.com/mongodb/mongo-c-driver.git
   $ cd mongo-c-driver
   $ git checkout x.y.z  # To build a particular release
-  $ ./autogen.sh --with-libbson=bundled
+  $ mkdir cmake-build
+  $ cd cmake-build
+  $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..
   $ make
   $ sudo make install
 
@@ -160,8 +167,17 @@ Install `Sphinx <http://www.sphinx-doc.org/>`_, then:
 
 .. code-block:: none
 
-  $ ./configure --enable-html-docs --enable-man-pages
-  $ make man html
+  $ cmake -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON ..
+  $ make mongoc-doc
+
+To build only the libbson documentation:
+
+.. code-block:: none
+
+  $ cmake -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON ..
+  $ make bson-doc
+
+The ``-DENABLE_MAN_PAGES=ON`` and ``-DENABLE_HTML_DOCS=ON`` can also be added as options to a normal build from a release tarball or from git so that the documentation is built at the same time as other components.
 
 Building on Mac OS X
 --------------------
@@ -170,9 +186,9 @@ Install the XCode Command Line Tools::
 
   $ xcode-select --install
 
-The ``pkg-config`` utility is also required. First `install Homebrew according to its instructions <http://brew.sh/>`_, then::
+The ``cmake`` utility is also required. First `install Homebrew according to its instructions <https://brew.sh/>`_, then::
 
-  $ brew install pkgconfig
+  $ brew install cmake
 
 Download the latest release tarball:
 
@@ -186,9 +202,11 @@ Build and install the driver:
 
 .. code-block:: none
 
-  $ ./configure
-  $ make
-  $ sudo make install
+  $ mkdir cmake-build
+  $ cd cmake-build
+  $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..
+
+All of the same variations described above (e.g., building only libbson, building documentation, etc.) are available when building on Mac OS X.
 
 .. _build-on-windows:
 
@@ -197,35 +215,7 @@ Building on Windows with Visual Studio
 
 Building on Windows requires Windows Vista or newer and Visual Studio 2010 or newer. Additionally, ``cmake`` is required to generate Visual Studio project files.
 
-Let's start by generating Visual Studio project files for libbson, a dependency of the C driver. The following assumes we are compiling for 64-bit Windows using Visual Studio 2015 Express, which can be freely downloaded from Microsoft. We will be utilizing ``cmake``'s out-of-source build feature to keep build artifacts separate from source files. The default build type is ``Debug``, so a release build is specified as you see below.
-
-.. parsed-literal::
-
-  cd mongo-c-driver-|release|\\src\\libbson
-  mkdir cmake-build
-  cd cmake-build
-  cmake -G "Visual Studio 14 2015 Win64" \\
-    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
-    "-DCMAKE_BUILD_TYPE=Release" \\
-    ..
-
-(Run ``cmake -LH .`` for a list of other options.)
-
-Now that we have project files generated, we can either open the project in Visual Studio or compile from the command line. Let's build using the command line program ``msbuild.exe``
-
-.. code-block:: none
-
-  msbuild.exe /p:Configuration=Release ALL_BUILD.vcxproj
-
-Now that libbson is compiled, let's install it using msbuild. It will be installed to the path specified by ``CMAKE_INSTALL_PREFIX``.
-
-.. code-block:: none
-
-  msbuild.exe /p:Configuration=Release INSTALL.vcxproj
-
-You should now see libbson installed in ``C:\mongo-c-driver``
-
-Now let's do the same for the MongoDB C driver.
+Let's start by generating Visual Studio project files. The following assumes we are compiling for 64-bit Windows using Visual Studio 2015 Express, which can be freely downloaded from Microsoft. We will be utilizing ``cmake``'s out-of-source build feature to keep build artifacts separate from source files. The default build type is ``Debug``, so a release build is specified as you see below.
 
 .. parsed-literal::
 
@@ -235,17 +225,23 @@ Now let's do the same for the MongoDB C driver.
   cmake -G "Visual Studio 14 2015 Win64" \\
     "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
     "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver" \\
-    "-DCMAKE_BUILD_TYPE=Release" \\
     ..
 
-  msbuild.exe /p:Configuration=Release ALL_BUILD.vcxproj
-  msbuild.exe /p:Configuration=Release INSTALL.vcxproj
+(Run ``cmake -LH ..`` for a list of other options.)
 
-All of the MongoDB C Driver's components will now have been build in release
-mode and can be found in ``C:\mongo-c-driver``.
-To build and install debug binaries, remove the
-``"-DCMAKE_BUILD_TYPE=Release"`` argument to ``cmake`` and
-``/p:Configuration=Release`` to ``msbuild.exe``.
+Now that we have project files generated, we can either open the project in Visual Studio or compile from the command line. Let's build using the command line program ``msbuild.exe``
+
+.. code-block:: none
+
+  msbuild.exe ALL_BUILD.vcxproj
+
+Now that libmongoc and libbson are compiled, let's install them using msbuild. It will be installed to the path specified by ``CMAKE_INSTALL_PREFIX``.
+
+.. code-block:: none
+
+  msbuild.exe INSTALL.vcxproj
+
+You should now see libmongoc and libbson installed in ``C:\mongo-c-driver``
 
 To use the driver libraries in your program, see :doc:`visual-studio-guide`.
 
