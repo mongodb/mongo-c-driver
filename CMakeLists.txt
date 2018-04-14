@@ -33,7 +33,7 @@ option (ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" 
 option (ENABLE_TRACING "Turn on verbose debug output" OFF)
 option (ENABLE_COVERAGE "Turn on compile options for lcov" OFF)
 set (ENABLE_SHM_COUNTERS AUTO CACHE STRING "Enable shared memory performance counters. Set to ON/AUTO/OFF, default AUTO.")
-set (ENABLE_BSON AUTO CACHE STRING "Where to find libbson. Set to BUNDLED/SYSTEM/AUTO, default AUTO.")
+set (ENABLE_BSON AUTO CACHE STRING "Where to find libbson. Set to BUNDLED/SYSTEM/AUTO/ONLY, default AUTO.")
 set (ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support. Set to ON/AUTO/OFF, default AUTO.")
 set (ENABLE_ZLIB AUTO CACHE STRING "Enable zlib support")
 option (ENABLE_MAN_PAGES "Build MongoDB C Driver manual pages." OFF)
@@ -76,7 +76,7 @@ else ()
    set (BSON_EXTRA_ALIGN 0)
 endif ()
 
-if (NOT ENABLE_BSON MATCHES "SYSTEM|AUTO|BUNDLED")
+if (NOT ENABLE_BSON MATCHES "SYSTEM|AUTO|BUNDLED|ONLY")
    message (FATAL_ERROR "ENABLE_BSON option must be SYSTEM, BUNDLED, or AUTO")
 endif ()
 
@@ -138,6 +138,11 @@ if (NOT BSON_LIBRARIES)
    set (BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src/bson" "${PROJECT_BINARY_DIR}/src/libbson/src/bson")
    set (BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src/bson" "${PROJECT_BINARY_DIR}/src/libbson/src/bson")
    set (BSON_STATIC_DEFINITIONS "BSON_STATIC")
+endif ()
+
+# This allows skipping all the non-bson components
+if (ENABLE_BSON STREQUAL ONLY)
+   return ()
 endif ()
 
 if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC)
