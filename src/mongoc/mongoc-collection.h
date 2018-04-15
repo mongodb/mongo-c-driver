@@ -291,7 +291,7 @@ MONGOC_EXPORT (bool)
 mongoc_collection_stats (mongoc_collection_t *collection,
                          const bson_t *options,
                          bson_t *reply,
-                         bson_error_t *error);
+                         bson_error_t *error) BSON_GNUC_DEPRECATED;
 MONGOC_EXPORT (mongoc_bulk_operation_t *)
 mongoc_collection_create_bulk_operation (
    mongoc_collection_t *collection,
@@ -329,7 +329,7 @@ MONGOC_EXPORT (bool)
 mongoc_collection_validate (mongoc_collection_t *collection,
                             const bson_t *options,
                             bson_t *reply,
-                            bson_error_t *error);
+                            bson_error_t *error) BSON_GNUC_DEPRECATED;
 MONGOC_EXPORT (mongoc_change_stream_t *)
 mongoc_collection_watch (const mongoc_collection_t *coll,
                          const bson_t *pipeline,

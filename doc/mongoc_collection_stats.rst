@@ -12,7 +12,12 @@ Synopsis
   mongoc_collection_stats (mongoc_collection_t *collection,
                            const bson_t *options,
                            bson_t *reply,
-                           bson_error_t *error);
+                           bson_error_t *error) BSON_GNUC_DEPRECATED;
+
+Deprecated
+----------
+
+This helper function is deprecated and should not be used in new code. Run the `collStats <https://docs.mongodb.com/manual/reference/command/collStats/>`_ command directly with :symbol:`mongoc_client_read_command_with_opts()` instead.
 
 Parameters
 ----------

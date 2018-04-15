@@ -162,7 +162,6 @@ _test_server_selection_uds_auth_failure (bool pooled)
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    bson_error_t error;
-   bson_t reply;
    char *path;
    char *uri_str;
 
@@ -188,7 +187,9 @@ _test_server_selection_uds_auth_failure (bool pooled)
    capture_logs (true);
 
    ASSERT_OR_PRINT (
-      !mongoc_client_get_server_status (client, NULL, &reply, &error), error);
+      !mongoc_client_read_command_with_opts (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
+      error);
 
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_CLIENT);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_CLIENT_AUTHENTICATE);
@@ -200,7 +201,6 @@ _test_server_selection_uds_auth_failure (bool pooled)
       mongoc_client_destroy (client);
    }
 
-   bson_destroy (&reply);
    bson_free (path);
    bson_free (uri_str);
    mongoc_uri_destroy (uri);
@@ -225,7 +225,6 @@ _test_server_selection_uds_not_found (bool pooled)
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    bson_error_t error;
-   bson_t reply;
 
    uri = mongoc_uri_new ("mongodb:///tmp/mongodb-so-close.sock");
    ASSERT (uri);
@@ -248,11 +247,10 @@ _test_server_selection_uds_not_found (bool pooled)
    test_framework_set_ssl_opts (client);
 #endif
 
-   ASSERT (!mongoc_client_get_server_status (client, NULL, &reply, &error));
+   ASSERT (!mongoc_client_read_command_with_opts (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error));
    ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER_SELECTION);
    ASSERT_CMPINT (error.code, ==, MONGOC_ERROR_SERVER_SELECTION_FAILURE);
-
-   bson_destroy (&reply);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);

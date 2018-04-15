@@ -438,7 +438,8 @@ test_mongoc_client_authenticate (void *context)
       r = mongoc_database_write_command_with_opts (
          database,
          tmp_bson ("{'createUser': '%s', 'pwd': 'testpass',"
-                   " 'roles': [{'role': 'read', 'db': 'test'}]}", username),
+                   " 'roles': [{'role': 'read', 'db': 'test'}]}",
+                   username),
          NULL,
          NULL,
          &error);
@@ -2035,8 +2036,10 @@ test_server_status (void)
    client = test_framework_client_new ();
    BSON_ASSERT (client);
 
+   BEGIN_IGNORE_DEPRECATIONS
    ASSERT_OR_PRINT (
       mongoc_client_get_server_status (client, NULL, &reply, &error), error);
+   END_IGNORE_DEPRECATIONS
 
    BSON_ASSERT (bson_iter_init_find (&iter, &reply, "host"));
    BSON_ASSERT (bson_iter_init_find (&iter, &reply, "version"));
@@ -2111,8 +2114,6 @@ _test_mongoc_client_ipv6 (bool pooled)
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    bson_error_t error;
-   bson_iter_t iter;
-   bson_t reply;
 
    uri_str = test_framework_add_user_password_from_env ("mongodb://[::1]/");
    uri = mongoc_uri_new (uri_str);
@@ -2128,11 +2129,9 @@ _test_mongoc_client_ipv6 (bool pooled)
    }
 
    ASSERT_OR_PRINT (
-      mongoc_client_get_server_status (client, NULL, &reply, &error), error);
-
-   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "host"));
-   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "version"));
-   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "ok"));
+      mongoc_client_read_command_with_opts (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
+      error);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -2141,7 +2140,6 @@ _test_mongoc_client_ipv6 (bool pooled)
       mongoc_client_destroy (client);
    }
 
-   bson_destroy (&reply);
    mongoc_uri_destroy (uri);
    bson_free (uri_str);
 }
@@ -2167,8 +2165,6 @@ test_mongoc_client_unix_domain_socket (void *context)
    mongoc_client_t *client;
    bson_error_t error;
    char *uri_str;
-   bson_iter_t iter;
-   bson_t reply;
 
    uri_str = test_framework_get_unix_domain_socket_uri_str ();
    client = mongoc_client_new (uri_str);
@@ -2177,13 +2173,10 @@ test_mongoc_client_unix_domain_socket (void *context)
    BSON_ASSERT (client);
 
    ASSERT_OR_PRINT (
-      mongoc_client_get_server_status (client, NULL, &reply, &error), error);
+      mongoc_client_read_command_with_opts (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
+      error);
 
-   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "host"));
-   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "version"));
-   BSON_ASSERT (bson_iter_init_find (&iter, &reply, "ok"));
-
-   bson_destroy (&reply);
    mongoc_client_destroy (client);
    bson_free (uri_str);
 }

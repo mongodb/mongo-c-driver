@@ -8,6 +8,7 @@
 #endif
 
 #include "ssl-test.h"
+#include "test-conveniences.h"
 #include "TestSuite.h"
 
 #define TIMEOUT 10000 /* milliseconds */
@@ -268,7 +269,8 @@ handshake_stall_client (void *ptr)
 
    /* we should time out after about 200ms */
    start_time = bson_get_monotonic_time ();
-   mongoc_client_get_server_status (client, NULL, &reply, &error);
+   mongoc_client_read_command_with_opts (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &reply, &error);
 
    /* time is in microseconds */
    duration_ms = (bson_get_monotonic_time () - start_time) / 1000;

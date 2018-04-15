@@ -1076,7 +1076,6 @@ _test_set_callbacks (bool pooled)
    mongoc_apm_callbacks_t *callbacks;
    int n_calls = 0;
    bson_error_t error;
-   bson_t b;
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, test_set_callbacks_cb);
@@ -1092,8 +1091,10 @@ _test_set_callbacks (bool pooled)
          client, callbacks, (void *) &n_calls));
    }
 
-   ASSERT_OR_PRINT (mongoc_client_get_server_status (client, NULL, &b, &error),
-                    error);
+   ASSERT_OR_PRINT (
+      mongoc_client_read_command_with_opts (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
+      error);
    ASSERT_CMPINT (1, ==, n_calls);
 
    capture_logs (true);
@@ -1123,7 +1124,6 @@ _test_set_callbacks (bool pooled)
       mongoc_client_destroy (client);
    }
 
-   bson_destroy (&b);
    mongoc_apm_callbacks_destroy (callbacks);
 }
 

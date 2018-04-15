@@ -3255,8 +3255,10 @@ test_stats (void)
       mongoc_collection_insert_one (collection, &doc, NULL, NULL, &error),
       error);
 
+   BEGIN_IGNORE_DEPRECATIONS
    ASSERT_OR_PRINT (mongoc_collection_stats (collection, NULL, &stats, &error),
                     error);
+   END_IGNORE_DEPRECATIONS
 
    BSON_ASSERT (bson_iter_init_find (&iter, &stats, "ns"));
 
