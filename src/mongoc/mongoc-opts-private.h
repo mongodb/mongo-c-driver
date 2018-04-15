@@ -15,33 +15,6 @@
  *************************************************/
 /* clang-format off */
 
-typedef struct _mongoc_find_one_opts_t {
-   bson_t projection;
-   bson_t sort;
-   int64_t skip;
-   int64_t limit;
-   int64_t batchSize;
-   bool exhaust;
-   bson_value_t hint;
-   bool allowPartialResults;
-   bool awaitData;
-   bson_t collation;
-   const char *comment;
-   bson_t max;
-   int64_t maxScan;
-   int64_t maxTimeMS;
-   int64_t maxAwaitTimeMS;
-   bson_t min;
-   bool noCursorTimeout;
-   bool oplogReplay;
-   bool returnKey;
-   bool showRecordId;
-   bool singleBatch;
-   bool snapshot;
-   bool tailable;
-   bson_t extra;
-} mongoc_find_one_opts_t;
-
 typedef struct _mongoc_crud_opts_t {
    mongoc_write_concern_t *writeConcern;
    bool write_concern_owned;

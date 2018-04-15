@@ -140,50 +140,6 @@ server_option = ('serverId', {
 })
 
 opts_structs = OrderedDict([
-    ('mongoc_find_one_opts_t', Struct([
-        ('projection', {'type': 'document'}),
-        ('sort', {'type': 'document'}),
-        ('skip', {
-            'type': 'int64_t',
-            'convert': '_mongoc_convert_int64_positive'
-        }),
-        ('limit', {
-            'type': 'int64_t',
-            'convert': '_mongoc_convert_int64_positive'
-        }),
-        ('batchSize', {
-            'type': 'int64_t',
-            'convert': '_mongoc_convert_int64_positive'
-        }),
-        ('exhaust', {'type': 'bool'}),
-        ('hint', {'type': 'bson_value_t'}),
-        ('allowPartialResults', {'type': 'bool'}),
-        ('awaitData', {'type': 'bool'}),
-        ('collation', {'type': 'document'}),
-        ('comment', {'type': 'utf8'}),
-        ('max', {'type': 'document'}),
-        ('maxScan', {
-            'type': 'int64_t',
-            'convert': '_mongoc_convert_int64_positive'
-        }),
-        ('maxTimeMS', {
-            'type': 'int64_t',
-            'convert': '_mongoc_convert_int64_positive'
-        }),
-        ('maxAwaitTimeMS', {
-            'type': 'int64_t',
-            'convert': '_mongoc_convert_int64_positive'
-        }),
-        ('min', {'type': 'document'}),
-        ('noCursorTimeout', {'type': 'bool'}),
-        ('oplogReplay', {'type': 'bool'}),
-        ('returnKey', {'type': 'bool'}),
-        ('showRecordId', {'type': 'bool'}),
-        ('singleBatch', {'type': 'bool'}),
-        ('snapshot', {'type': 'bool'}),
-        ('tailable', {'type': 'bool'})
-    ], generate_rst=False)),
-
     ('mongoc_crud_opts_t', Shared([
         write_concern_option,
         session_option,
