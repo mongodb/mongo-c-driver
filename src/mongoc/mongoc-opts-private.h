@@ -71,7 +71,6 @@ typedef struct _mongoc_insert_many_opts_t {
 
 typedef struct _mongoc_delete_one_opts_t {
    mongoc_crud_opts_t crud;
-   mongoc_write_bypass_document_validation_t bypass;
    bson_t collation;
    bson_t extra;
 } mongoc_delete_one_opts_t;
@@ -167,16 +166,6 @@ typedef struct _mongoc_read_write_opts_t {
    uint32_t serverId;
    bson_t extra;
 } mongoc_read_write_opts_t;
-
-bool
-_mongoc_find_one_opts_parse (
-   mongoc_client_t *client,
-   const bson_t *opts,
-   mongoc_find_one_opts_t *mongoc_find_one_opts,
-   bson_error_t *error);
-
-void
-_mongoc_find_one_opts_cleanup (mongoc_find_one_opts_t *mongoc_find_one_opts);
 
 bool
 _mongoc_insert_one_opts_parse (

@@ -511,8 +511,6 @@ _mongoc_delete_one_opts_parse (
    mongoc_delete_one_opts->crud.write_concern_owned = false;
    mongoc_delete_one_opts->crud.client_session = NULL;
    mongoc_delete_one_opts->crud.validate = BSON_VALIDATE_NONE;
-   mongoc_delete_one_opts->bypass =
-      MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
    bson_init (&mongoc_delete_one_opts->collation);
    bson_init (&mongoc_delete_one_opts->extra);
 
@@ -554,15 +552,6 @@ _mongoc_delete_one_opts_parse (
                client,
                &iter,
                &mongoc_delete_one_opts->crud.validate,
-               error)) {
-            return false;
-         }
-      }
-      else if (!strcmp (bson_iter_key (&iter), "bypassDocumentValidation")) {
-         if (!_mongoc_convert_mongoc_write_bypass_document_validation_t (
-               client,
-               &iter,
-               &mongoc_delete_one_opts->bypass,
                error)) {
             return false;
          }
