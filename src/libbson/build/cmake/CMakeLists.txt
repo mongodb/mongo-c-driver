@@ -1,5 +1,3 @@
-add_subdirectory (bson)
-
 set (src_libbson_build_cmake_MODULES
    BSONPackage.cmake
 )
@@ -19,6 +17,5 @@ set_local_dist (src_libbson_build_cmake_DIST_local
 
 set (src_libbson_build_cmake_DIST
    ${src_libbson_build_cmake_DIST_local}
-   ${src_libbson_build_cmake_bson_DIST}
    PARENT_SCOPE
 )

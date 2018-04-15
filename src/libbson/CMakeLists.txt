@@ -142,11 +142,6 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/bson/bson-version.h"
 )
 
-configure_file (
-   "${PROJECT_SOURCE_DIR}/build/cmake/bson/bson-stdint.h"
-   "${PROJECT_BINARY_DIR}/src/bson/bson-stdint.h"
-)
-
 include_directories ("${PROJECT_BINARY_DIR}/src/bson")
 include_directories ("${PROJECT_SOURCE_DIR}/src/bson")
 include_directories ("${PROJECT_SOURCE_DIR}/src")
@@ -184,7 +179,6 @@ set (SOURCES
 
 set (HEADERS
    ${PROJECT_BINARY_DIR}/src/bson/bson-config.h
-   ${PROJECT_BINARY_DIR}/src/bson/bson-stdint.h
    ${PROJECT_BINARY_DIR}/src/bson/bson-version.h
    ${PROJECT_SOURCE_DIR}/src/bson/bcon.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-atomic.h
@@ -203,7 +197,6 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/bson/bson-memory.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-oid.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-reader.h
-   ${PROJECT_SOURCE_DIR}/src/bson/bson-stdint-win32.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-string.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-types.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-utf8.h
