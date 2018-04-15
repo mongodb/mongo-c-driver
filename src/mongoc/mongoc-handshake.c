@@ -93,10 +93,6 @@ _get_config_bitfield (void)
    bf |= MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE;
 #endif
 
-#ifdef MONGOC_HAVE_WEAK_SYMBOLS
-   bf |= MONGOC_MD_FLAG_HAVE_WEAK_SYMBOLS;
-#endif
-
 #ifdef MONGOC_NO_AUTOMATIC_GLOBALS
    bf |= MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS;
 #endif

@@ -203,19 +203,6 @@
 
 
 /*
- * MONGOC_HAVE_WEAK_SYMBOLS is set from configure to determine if the
- * compiler supports the (weak) annotation. We use it to prevent
- * Link-Time-Optimization (LTO) in our constant-time mongoc_memcmp()
- * This is known to work with GNU GCC and Solaris Studio
- */
-#define MONGOC_HAVE_WEAK_SYMBOLS @MONGOC_HAVE_WEAK_SYMBOLS@
-
-#if MONGOC_HAVE_WEAK_SYMBOLS != 1
-#  undef MONGOC_HAVE_WEAK_SYMBOLS
-#endif
-
-
-/*
  * Disable automatic calls to mongoc_init() and mongoc_cleanup()
  * before main() is called, and after exit() (respectively).
  */

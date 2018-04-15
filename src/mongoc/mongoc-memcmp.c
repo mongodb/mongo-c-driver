@@ -17,37 +17,15 @@
 
 #include "mongoc-memcmp-private.h"
 
-#ifdef MONGOC_HAVE_WEAK_SYMBOLS
-__attribute__ ((weak)) void
-_mongoc_dummy_symbol_to_prevent_memcmp_lto (const unsigned char *b1,
-                                            const unsigned char *b2,
-                                            const size_t len)
-{
-   (void) b1;
-   (void) b2;
-   (void) len;
-}
-#endif
-
-/* See: http://doc.libsodium.org/helpers/index.html#constant-time-comparison */
 int
-mongoc_memcmp (const void *const b1_, const void *const b2_, size_t len)
+mongoc_memcmp (const void *const b1, const void *const b2, size_t len)
 {
-#ifdef MONGOC_HAVE_WEAK_SYMBOLS
-   const unsigned char *b1 = (const unsigned char *) b1_;
-   const unsigned char *b2 = (const unsigned char *) b2_;
-#else
-   const volatile unsigned char *b1 = (const volatile unsigned char *) b1_;
-   const volatile unsigned char *b2 = (const volatile unsigned char *) b2_;
-#endif
-   size_t i;
-   unsigned char d = (unsigned char) 0U;
+   const unsigned char *p1 = b1, *p2 = b2;
+   int ret = 0;
 
-#ifdef MONGOC_HAVE_WEAK_SYMBOLS
-   _mongoc_dummy_symbol_to_prevent_memcmp_lto (b1, b2, len);
-#endif
-   for (i = 0U; i < len; i++) {
-      d |= b1[i] ^ b2[i];
+   for (; len > 0; len--) {
+      ret |= *p1++ ^ *p2++;
    }
-   return (int) ((1 & ((d - 1) >> 8)) - 1);
+
+   return ret ? 1 : 0;
 }
