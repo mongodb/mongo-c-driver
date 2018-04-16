@@ -85,11 +85,17 @@ case "$OS" in
       ;;
    *)
       echo "{ \"releases\": { \"default\": \"`pwd`/mongodb/bin\" } }" > orchestration.config
-      # Make sure MO is running latest version
-      python -m virtualenv venv
+      if [ -f /opt/python/2.7/bin/python ]; then
+         # Python toolchain installation.
+         PYTHON=/opt/python/2.7/bin/python
+      else
+         PYTHON=python
+      fi
+      $PYTHON -m virtualenv venv
       cd venv
       . bin/activate
       rm -rf mongo-orchestration
+      # Make sure MO is running latest version
       git clone --depth 1 git@github.com:10gen/mongo-orchestration.git
       cd mongo-orchestration
       # Our zSeries machines are static-provisioned, cache corruptions persist.
