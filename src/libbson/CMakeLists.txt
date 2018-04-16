@@ -122,15 +122,13 @@ else ()
    endif ()
 endif ()
 
-# TODO: CDRIVER-2584, port the Autotools config check to CMake.
-set (BSON_HAVE_ATOMIC_32_ADD_AND_FETCH 0)
-set (BSON_HAVE_ATOMIC_64_ADD_AND_FETCH 0)
-
 if (BSON_BIG_ENDIAN)
    set (BSON_BYTE_ORDER 4321)
 else ()
    set (BSON_BYTE_ORDER 1234)
 endif ()
+
+include (CheckAtomics)
 
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/bson/bson-config.h.in"
