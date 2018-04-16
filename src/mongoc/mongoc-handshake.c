@@ -157,6 +157,14 @@ _get_config_bitfield (void)
    bf |= MONGOC_MD_FLAG_ENABLE_DNSAPI;
 #endif
 
+#ifdef MONGOC_HAVE_RDTSCP
+   bf |= MONGOC_MD_FLAG_ENABLE_RDTSCP;
+#endif
+
+#ifdef MONGOC_HAVE_SCHED_GETCPU
+   bf |= MONGOC_MD_FLAG_HAVE_SCHED_GETCPU;
+#endif
+
    return bf;
 }
 

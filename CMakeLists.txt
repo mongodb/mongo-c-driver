@@ -43,6 +43,10 @@ option (ENABLE_EXTRA_ALIGNMENT
  Required for the 1.0 ABI but better disabled."
    ON
 )
+option (ENABLE_RDTSCP
+   "Fast performance counters on Intel using the RDTSCP instruction"
+   OFF
+)
 
 project (libmongoc C)
 
@@ -74,6 +78,12 @@ if (ENABLE_EXTRA_ALIGNMENT STREQUAL ON)
    set (BSON_EXTRA_ALIGN 1)
 else ()
    set (BSON_EXTRA_ALIGN 0)
+endif ()
+
+if (ENABLE_RDTSCP)
+   set (MONGOC_ENABLE_RDTSCP 1)
+else ()
+   set (MONGOC_ENABLE_RDTSCP 0)
 endif ()
 
 if (NOT ENABLE_BSON MATCHES "SYSTEM|AUTO|BUNDLED|ONLY")
@@ -322,6 +332,7 @@ else ()
 endif ()
 
 include (FindResSearch)
+include (CheckSchedGetCPU)
 
 function (mongoc_get_accept_args ARG2 ARG3)
    SET (VAR 0)

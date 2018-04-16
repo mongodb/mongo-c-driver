@@ -332,6 +332,28 @@
 
 
 /*
+ * Set if we have enabled fast counters on Intel using the RDTSCP instruction
+ *
+ */
+#define MONGOC_ENABLE_RDTSCP @MONGOC_ENABLE_RDTSCP@
+
+#if MONGOC_ENABLE_RDTSCP != 1
+#  undef MONGOC_ENABLE_RDTSCP
+#endif
+
+
+/*
+ * Set if we have the sched_getcpu() function for use with counters
+ *
+ */
+#define MONGOC_HAVE_SCHED_GETCPU @MONGOC_HAVE_SCHED_GETCPU@
+
+#if MONGOC_HAVE_SCHED_GETCPU != 1
+#  undef MONGOC_HAVE_SCHED_GETCPU
+#endif
+
+
+/*
  * NOTICE:
  * If you're about to update this file and add a config flag, make sure to
  * update:

@@ -20,10 +20,15 @@ AC_CHECK_FUNCS([shm_open], [SHM_LIB=],
 AC_SUBST([SHM_LIB])
 
 # Check for sched_getcpu
-AC_CHECK_FUNCS([sched_getcpu])
+AC_CHECK_FUNCS([sched_getcpu],
+               [AC_SUBST(MONGOC_HAVE_SCHED_GETCPU, 1)],
+               [AC_SUBST(MONGOC_HAVE_SCHED_GETCPU, 0)])
 
-AS_IF([test "$enable_rdtscp" = "yes"],
-      [CPPFLAGS="$CPPFLAGS -DENABLE_RDTSCP"])
+AS_IF([test "enable_rdtscp" = "yes"], [
+   AC_SUBST(MONGOC_ENABLE_RDTSCP, 1)
+], [
+   AC_SUBST(MONGOC_ENABLE_RDTSCP, 0)
+])
 
 AS_IF([test "$enable_shm_counters" = "yes"],
       [CPPFLAGS="$CPPFLAGS -DMONGOC_ENABLE_SHM_COUNTERS"])

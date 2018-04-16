@@ -12,6 +12,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       CC                      Which compiler to use
 #       ANALYZE                 Run the build through clangs scan-build
 #       COVERAGE                Produce code coverage reports
+#       RDTSCP                  Use Intel RDTSCP instruction
 # Options for CMake:
 #       LIBBSON                 Build against bundled or external libbson
 #       EXTRA_CONFIGURE_FLAGS   Extra configure flags to use
@@ -26,6 +27,7 @@ DEBUG=${DEBUG:-OFF}
 VALGRIND=${VALGRIND:-OFF}
 ANALYZE=${ANALYZE:-OFF}
 COVERAGE=${COVERAGE:-OFF}
+RDTSCP=${RDTSCP:-OFF}
 
 # CMake options.
 SASL=${SASL:-OFF}
@@ -62,6 +64,7 @@ DEBUG_AND_RELEASE_FLAGS="\
    -DENABLE_HTML_DOCS=OFF \
    -DENABLE_MAINTAINER_FLAGS=OFF \
    -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
+   -DENABLE_RDTSCP=$RDTSCP \
    -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
    -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
 "

@@ -1306,6 +1306,18 @@ tasks:
               DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=OPENSSL sh .evergreen/compile.sh
         - func: "upload build"
 
+    - name: debug-compile-rdtscp
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}'  sh .evergreen/compile.sh
+        - func: "upload build"
+
     - name: debug-compile-sspi-winssl
       tags: ["debug-compile", "sspi", "winssl"]
       commands:
@@ -6700,6 +6712,7 @@ buildvariants:
     - "debug-compile-scan-build"
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-rdtscp"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"
@@ -6811,6 +6824,7 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-rdtscp"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"
@@ -6935,6 +6949,7 @@ buildvariants:
     - "debug-compile-coverage"
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-rdtscp"
     - "debug-compile-no-align"
     - ".debug-compile .darwinssl"
     - ".debug-compile !.sspi .nossl"
@@ -7028,6 +7043,7 @@ buildvariants:
   tasks:
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-rdtscp"
     - ".debug-compile .sspi !.openssl"
     - ".debug-compile .winssl .nosasl"
     - ".debug-compile !.sspi .nossl .nosasl"
@@ -7047,6 +7063,7 @@ buildvariants:
     - ".compression !.snappy"
     - "release-compile"
     - "debug-compile"
+    - "debug-compile-rdtscp"
     - ".debug-compile .winssl"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"

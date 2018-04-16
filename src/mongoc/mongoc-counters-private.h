@@ -91,7 +91,7 @@ _mongoc_get_cpu_count (void)
 #define _mongoc_counter_add(v, count) bson_atomic_int64_add (&(v), (count))
 
 
-#if defined(ENABLE_RDTSCP)
+#if defined(MONGOC_ENABLE_RDTSCP)
 static BSON_INLINE unsigned
 _mongoc_sched_getcpu (void)
 {
@@ -102,7 +102,7 @@ _mongoc_sched_getcpu (void)
    core_id = rcx & 0xFFF;
    return core_id;
 }
-#elif defined(HAVE_SCHED_GETCPU)
+#elif defined(MONGOC_HAVE_SCHED_GETCPU)
 #define _mongoc_sched_getcpu sched_getcpu
 #else
 #define _mongoc_sched_getcpu() (0)
