@@ -1022,7 +1022,7 @@ test_getmore_await (void)
                                        NULL,
                                        NULL);
 
-      ASSERT (mongoc_cursor_is_alive (cursor));
+      ASSERT (mongoc_cursor_more (cursor));
 
       ASSERT_CMPINT (0, ==, mongoc_cursor_get_max_await_time_ms (cursor));
       mongoc_cursor_set_max_await_time_ms (cursor, 123);
@@ -1047,7 +1047,7 @@ test_getmore_await (void)
 
       /* no result or error */
       ASSERT (future_get_bool (future));
-      ASSERT (mongoc_cursor_is_alive (cursor));
+      ASSERT (mongoc_cursor_more (cursor));
 
       future_destroy (future);
       request_destroy (request);
@@ -1083,7 +1083,7 @@ test_getmore_await (void)
       /* no result or error */
       ASSERT (!future_get_bool (future));
       ASSERT (!mongoc_cursor_error (cursor, NULL));
-      ASSERT (!mongoc_cursor_is_alive (cursor));
+      ASSERT (!mongoc_cursor_more (cursor));
       ASSERT (!doc);
 
       future_destroy (future);

@@ -304,11 +304,11 @@ test_exhaust_cursor_multi_batch (void *context)
    i = 0;
    while (mongoc_cursor_next (cursor, &cursor_doc)) {
       i++;
-      ASSERT (mongoc_cursor_is_alive (cursor));
+      ASSERT (mongoc_cursor_more (cursor));
    }
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-   ASSERT (!mongoc_cursor_is_alive (cursor));
+   ASSERT (!mongoc_cursor_more (cursor));
    ASSERT_CMPINT (i, ==, 1000);
 
    mongoc_cursor_destroy (cursor);

@@ -264,7 +264,6 @@ test_limit (void)
       }
 
       ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-      ASSERT (!mongoc_cursor_is_alive (cursor));
       ASSERT (!mongoc_cursor_more (cursor));
       ASSERT_CMPINT (n_docs, ==, 5);
       ASSERT (!mongoc_cursor_set_limit (cursor, 123)); /* no effect */
@@ -729,13 +728,11 @@ test_cursor_empty_collection (void)
 
    ASSERT (cursor);
    ASSERT (!mongoc_cursor_error (cursor, &error));
-   ASSERT (mongoc_cursor_is_alive (cursor));
    ASSERT (mongoc_cursor_more (cursor));
 
    mongoc_cursor_next (cursor, &doc);
 
    ASSERT (!mongoc_cursor_error (cursor, &error));
-   ASSERT (!mongoc_cursor_is_alive (cursor));
    ASSERT (!mongoc_cursor_more (cursor));
 
    mongoc_cursor_destroy (cursor);
@@ -1392,17 +1389,15 @@ test_tailable_alive (void)
                                     NULL,
                                     NULL);
 
-   ASSERT (mongoc_cursor_is_alive (cursor));
+   ASSERT (mongoc_cursor_more (cursor));
    ASSERT (mongoc_cursor_next (cursor, &doc));
 
    /* still alive */
-   ASSERT (mongoc_cursor_is_alive (cursor));
    ASSERT (mongoc_cursor_more (cursor));
 
    /* no next document, but still alive and could return more in the future
     * see CDRIVER-1530 */
    ASSERT (!mongoc_cursor_next (cursor, &doc));
-   ASSERT (mongoc_cursor_is_alive (cursor));
    ASSERT (mongoc_cursor_more (cursor));
 
    mongoc_cursor_destroy (cursor);
@@ -1413,11 +1408,11 @@ test_tailable_alive (void)
       tmp_bson ("{'tailable': true, 'awaitData': true}"),
       NULL);
 
-   ASSERT (mongoc_cursor_is_alive (cursor));
+   ASSERT (mongoc_cursor_more (cursor));
    ASSERT (mongoc_cursor_next (cursor, &doc));
 
    /* still alive */
-   ASSERT (mongoc_cursor_is_alive (cursor));
+   ASSERT (mongoc_cursor_more (cursor));
 
    mongoc_cursor_destroy (cursor);
 

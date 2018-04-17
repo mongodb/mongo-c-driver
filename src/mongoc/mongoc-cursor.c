@@ -1255,15 +1255,7 @@ mongoc_cursor_clone (const mongoc_cursor_t *cursor)
  *
  * mongoc_cursor_is_alive --
  *
- *       Checks to see if a cursor is alive.
- *
- *       This is primarily useful with tailable cursors.
- *
- * Returns:
- *       true if the cursor is alive.
- *
- * Side effects:
- *       None.
+ *       Deprecated for mongoc_cursor_more.
  *
  *--------------------------------------------------------------------------
  */

@@ -3561,7 +3561,7 @@ test_many_return (void)
 
    cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
    BSON_ASSERT (cursor);
-   BSON_ASSERT (mongoc_cursor_is_alive (cursor));
+   BSON_ASSERT (mongoc_cursor_more (cursor));
    bson_destroy (&query);
 
    i = 0;
@@ -3569,7 +3569,7 @@ test_many_return (void)
    while (mongoc_cursor_next (cursor, &doc)) {
       BSON_ASSERT (doc);
       i++;
-      BSON_ASSERT (mongoc_cursor_is_alive (cursor));
+      BSON_ASSERT (mongoc_cursor_more (cursor));
    }
 
    BSON_ASSERT (i == N_BSONS);
@@ -3577,7 +3577,7 @@ test_many_return (void)
    BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
    r = mongoc_cursor_next (cursor, &doc);
    BSON_ASSERT (!r);
-   BSON_ASSERT (!mongoc_cursor_is_alive (cursor));
+   BSON_ASSERT (!mongoc_cursor_more (cursor));
    /* mongoc_cursor_next after done is considered an error */
    BSON_ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_ERROR_CONTAINS (error,

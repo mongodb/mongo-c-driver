@@ -57,6 +57,8 @@ bugfixes:
       mongoc_client_get_server_status
       mongoc_collection_stats
       mongoc_collection_validate
+  * mongoc_cursor_is_alive is now deprecated for mongoc_cursor_more, which is
+    functionally equivalent.
 
 
 mongo-c-driver 1.9.4
