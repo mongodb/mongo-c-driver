@@ -113,12 +113,12 @@ case "$OS" in
 esac
 
 sleep 15
-curl http://localhost:8889/ --silent --max-time 120 --fail
+curl http://localhost:8889/ -sS --max-time 120 --fail
 
 sleep 5
 
 pwd
-curl --silent --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL" --max-time 300 --fail
+curl -sS --data @"$ORCHESTRATION_FILE" "$ORCHESTRATION_URL" --max-time 300 --fail
 
 sleep 15
 

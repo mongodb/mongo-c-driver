@@ -30,7 +30,7 @@ cd %BUILD_DIR%
 
 if "%ENABLE_SNAPPY%"=="1" (
   rem Enable Snappy
-  curl --silent --retry 5 -LO https://github.com/google/snappy/archive/1.1.7.tar.gz
+  curl -sS --retry 5 -LO https://github.com/google/snappy/archive/1.1.7.tar.gz
   %TAR% xzf 1.1.7.tar.gz
   cd snappy-1.1.7
   %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% .

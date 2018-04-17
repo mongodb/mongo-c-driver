@@ -222,7 +222,7 @@ download_and_extract ()
    EXTRACT=$2
 
    if ! test -d mongodb -a -x mongodb/bin/mongod; then
-      curl --retry 5 $MONGODB_DOWNLOAD_URL --silent --max-time 120 --fail --output mongodb-binaries.tgz
+      curl --retry 15 $MONGODB_DOWNLOAD_URL -sS --max-time 300 --fail --output mongodb-binaries.tgz
 
       $EXTRACT mongodb-binaries.tgz
 

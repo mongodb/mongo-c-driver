@@ -93,7 +93,7 @@ functions:
         set -o verbose
         set -o errexit
         rm -rf mongo-c-driver*
-        curl --retry 5 http://s3.amazonaws.com/mciuploads/mongo-c-driver/c-driver-benchmark-compile/${revision}/artifacts/${file}.tar.gz -o c-perf-binaries.tar.gz --silent --max-time 120
+        curl --retry 5 http://s3.amazonaws.com/mciuploads/mongo-c-driver/c-driver-benchmark-compile/${revision}/artifacts/${file}.tar.gz -o c-perf-binaries.tar.gz -sS --max-time 120
         ${decompress} c-perf-binaries.tar.gz
         rm c-perf-binaries.tar.gz
 
@@ -116,7 +116,7 @@ functions:
       script: |
         set -o verbose
         set -o errexit
-        curl --retry 5 https://s3.amazonaws.com/boxes.10gen.com/build/driver-test-data.tar.gz -o driver-test-data.tar.gz --silent --max-time 120
+        curl --retry 5 https://s3.amazonaws.com/boxes.10gen.com/build/driver-test-data.tar.gz -o driver-test-data.tar.gz -sS --max-time 120
         ${decompress} driver-test-data.tar.gz
 
   "run benchmark tests" :
