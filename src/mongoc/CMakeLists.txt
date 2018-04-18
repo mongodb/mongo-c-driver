@@ -92,8 +92,6 @@ set (src_mongoc_DIST_noinst_hs
    mongoc-crypto-common-crypto-private.h
    mongoc-crypto-openssl-private.h
    mongoc-crypto-private.h
-   mongoc-cursor-array-private.h
-   mongoc-cursor-cursorid-private.h
    mongoc-cursor-private.h
    mongoc-cyrus-private.h
    mongoc-database-private.h
@@ -170,8 +168,13 @@ set (src_mongoc_DIST_cs
    mongoc-compression.c
    mongoc-counters.c
    mongoc-cursor.c
+   mongoc-cursor-legacy.c
    mongoc-cursor-array.c
-   mongoc-cursor-cursorid.c
+   mongoc-cursor-find.c
+   mongoc-cursor-find-cmd.c
+   mongoc-cursor-find-opquery.c
+   mongoc-cursor-cmd.c
+   mongoc-cursor-cmd-deprecated.c
    mongoc-database.c
    mongoc-find-and-modify.c
    mongoc-host-list.c

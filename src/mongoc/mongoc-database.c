@@ -19,8 +19,6 @@
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-cursor.h"
-#include "mongoc-cursor-array-private.h"
-#include "mongoc-cursor-cursorid-private.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-database.h"
 #include "mongoc-database-private.h"
@@ -183,13 +181,8 @@ mongoc_database_command (mongoc_database_t *database,
     */
 
    /* flags, skip, limit, batch_size, fields are unused */
-   return _mongoc_cursor_new_with_opts (database->client,
-                                        ns,
-                                        false /* is_find */,
-                                        command,
-                                        NULL /* opts */,
-                                        read_prefs,
-                                        NULL /* read concern */);
+   return _mongoc_cursor_cmd_deprecated_new (
+      database->client, ns, command, read_prefs);
 }
 
 
@@ -760,17 +753,11 @@ mongoc_database_find_collections_with_opts (mongoc_database_t *database,
 
    /* Enumerate Collections Spec: "run listCollections on the primary node in
     * replicaset mode" */
-   cursor = _mongoc_cursor_new_with_opts (database->client,
-                                          database->name,
-                                          false /* is_find */,
-                                          NULL,
-                                          opts,
-                                          NULL,
-                                          NULL);
-
-   _mongoc_cursor_cursorid_init (cursor, &cmd);
-   (void) _mongoc_cursor_cursorid_prime (cursor);
-
+   cursor = _mongoc_cursor_cmd_new (
+      database->client, database->name, &cmd, opts, NULL, NULL);
+   if (cursor->error.domain == 0) {
+      cursor->state = cursor->impl.prime (cursor);
+   }
    bson_destroy (&cmd);
 
    return cursor;

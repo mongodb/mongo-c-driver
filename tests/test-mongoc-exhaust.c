@@ -324,6 +324,7 @@ test_cursor_set_max_await_time_ms (void)
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    mongoc_cursor_t *cursor;
+   const bson_t *bson;
 
    client = test_framework_client_new ();
    collection =
@@ -342,7 +343,7 @@ test_cursor_set_max_await_time_ms (void)
    ASSERT_CMPINT (0, ==, mongoc_cursor_get_max_await_time_ms (cursor));
    mongoc_cursor_set_max_await_time_ms (cursor, 123);
    ASSERT_CMPINT (123, ==, mongoc_cursor_get_max_await_time_ms (cursor));
-   _mongoc_cursor_next (cursor, NULL);
+   mongoc_cursor_next (cursor, &bson);
 
    /* once started, cursor ignores set_max_await_time_ms () */
    mongoc_cursor_set_max_await_time_ms (cursor, 42);

@@ -40,20 +40,30 @@ _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
 {
    mongoc_gridfs_file_list_t *list;
    mongoc_cursor_t *cursor;
+   bool use_unwrapped;
+   bson_t opts;
+   bson_t unwrapped;
+   bson_error_t error;
+   bson_init (&opts);
+   use_unwrapped = _mongoc_cursor_translate_dollar_query_opts (
+      query, &opts, &unwrapped, &error);
 
-   cursor = _mongoc_cursor_new (gridfs->client,
-                                gridfs->files->ns,
-                                MONGOC_QUERY_NONE,
-                                0,
-                                limit,
-                                0,
-                                true /* is_find */,
-                                query,
-                                NULL,
-                                gridfs->files->read_prefs,
-                                gridfs->files->read_concern);
 
+   cursor = _mongoc_cursor_find_new (gridfs->client,
+                                     gridfs->files->ns,
+                                     use_unwrapped ? &unwrapped : query,
+                                     &opts,
+                                     gridfs->files->read_prefs,
+                                     gridfs->files->read_concern);
    BSON_ASSERT (cursor);
+   bson_destroy (&opts);
+   if (limit) {
+      mongoc_cursor_set_limit (cursor, limit);
+   }
+   bson_destroy (&unwrapped);
+   if (error.domain) {
+      memcpy (&cursor->error, &error, sizeof (bson_error_t));
+   }
 
    list = (mongoc_gridfs_file_list_t *) bson_malloc0 (sizeof *list);
 

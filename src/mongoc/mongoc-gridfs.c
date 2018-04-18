@@ -382,8 +382,9 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
    bson_iter_t iter;
    bson_t *files_q = NULL;
    bson_t *chunks_q = NULL;
-   bson_t q = BSON_INITIALIZER;
-   bson_t fields = BSON_INITIALIZER;
+   bson_t find_filter = BSON_INITIALIZER;
+   bson_t find_opts = BSON_INITIALIZER;
+   bson_t find_opts_project;
    bson_t ar = BSON_INITIALIZER;
    bson_t opts = BSON_INITIALIZER;
 
@@ -402,20 +403,17 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
     * strictly required!
     */
 
-   BSON_APPEND_UTF8 (&q, "filename", filename);
-   BSON_APPEND_INT32 (&fields, "_id", 1);
+   BSON_APPEND_UTF8 (&find_filter, "filename", filename);
+   BSON_APPEND_DOCUMENT_BEGIN (&find_opts, "projection", &find_opts_project);
+   BSON_APPEND_INT32 (&find_opts_project, "_id", 1);
+   bson_append_document_end (&find_opts, &find_opts_project);
 
-   cursor = _mongoc_cursor_new (gridfs->client,
-                                gridfs->files->ns,
-                                MONGOC_QUERY_NONE,
-                                0,
-                                0,
-                                0,
-                                true /* is_find */,
-                                &q,
-                                &fields,
-                                NULL,
-                                NULL);
+   cursor = _mongoc_cursor_find_new (gridfs->client,
+                                     gridfs->files->ns,
+                                     &find_filter,
+                                     &find_opts,
+                                     NULL /* read_prefs */,
+                                     NULL /* read_concern */);
 
    BSON_ASSERT (cursor);
 
@@ -470,8 +468,8 @@ failure:
    if (bulk_chunks) {
       mongoc_bulk_operation_destroy (bulk_chunks);
    }
-   bson_destroy (&q);
-   bson_destroy (&fields);
+   bson_destroy (&find_filter);
+   bson_destroy (&find_opts);
    bson_destroy (&ar);
    if (files_q) {
       bson_destroy (files_q);

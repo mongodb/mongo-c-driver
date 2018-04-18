@@ -31,17 +31,10 @@ test_get_host (void)
    hosts = mongoc_uri_get_hosts (uri);
 
    client = test_framework_client_new ();
-   cursor = _mongoc_cursor_new (client,
-                                "test.test",
-                                MONGOC_QUERY_NONE,
-                                0,
-                                1,
-                                1,
-                                true /* is_find */,
-                                &q,
-                                NULL,
-                                NULL,
-                                NULL);
+   cursor = _mongoc_cursor_find_new (client, "test.test", &q, NULL, NULL, NULL);
+   ASSERT (cursor);
+   mongoc_cursor_set_batch_size (cursor, 1);
+   ASSERT (mongoc_cursor_set_limit (cursor, 1));
    r = mongoc_cursor_next (cursor, &doc);
    if (!r && mongoc_cursor_error (cursor, &error)) {
       test_error ("%s", error.message);
@@ -106,18 +99,10 @@ test_clone (void)
       mongoc_collection_destroy (col);
    }
 
-   cursor = _mongoc_cursor_new (client,
-                                "test.test",
-                                MONGOC_QUERY_NONE,
-                                0,
-                                1,
-                                1,
-                                true /* is_find */,
-                                &q,
-                                NULL,
-                                NULL,
-                                NULL);
+   cursor = _mongoc_cursor_find_new (client, "test.test", &q, NULL, NULL, NULL);
    ASSERT (cursor);
+   mongoc_cursor_set_batch_size (cursor, 1);
+   ASSERT (mongoc_cursor_set_limit (cursor, 1));
 
    r = mongoc_cursor_next (cursor, &doc);
    if (!r || mongoc_cursor_error (cursor, &error)) {
@@ -178,18 +163,11 @@ test_clone_with_concerns (void)
    mongoc_read_concern_set_level (read_concern,
                                   MONGOC_READ_CONCERN_LEVEL_LOCAL);
 
-   cursor = _mongoc_cursor_new (client,
-                                "test.test",
-                                MONGOC_QUERY_NONE,
-                                0,
-                                1,
-                                1,
-                                true /* is_find */,
-                                &q,
-                                NULL,
-                                NULL,
-                                read_concern);
+   cursor = _mongoc_cursor_find_new (
+      client, "test.test", &q, NULL, NULL, read_concern);
    ASSERT (cursor);
+   mongoc_cursor_set_batch_size (cursor, 1);
+   ASSERT (mongoc_cursor_set_limit (cursor, 1));
 
    write_concern = mongoc_write_concern_new ();
    ASSERT (write_concern);
@@ -368,6 +346,8 @@ killcursors_succeeded (const mongoc_apm_command_succeeded_t *event)
    ASSERT_CMPINT64 (ctx->cursor_id, ==, bson_iter_int64 (&array));
 }
 
+extern void
+_mongoc_cursor_impl_find_opquery_init (mongoc_cursor_t *cursor, bson_t *filter);
 
 /* test killing a cursor with mongo_cursor_destroy and a real server */
 static void
@@ -421,21 +401,16 @@ test_kill_cursor_live (void)
 
    ASSERT_CMPINT (ctx.succeeded_count, ==, 1);
 
-   cursor = _mongoc_cursor_new (client,
-                                collection->ns,
-                                MONGOC_QUERY_NONE,
-                                0,
-                                0,
-                                0,
-                                true, /* is find */
-                                b,
-                                NULL,
-                                NULL,
-                                NULL);
+   b = bson_new ();
+   cursor =
+      _mongoc_cursor_find_new (client, collection->ns, b, NULL, NULL, NULL);
+   /* override the typical priming, and immediately transition to an OPQUERY
+    * find cursor. */
+   cursor->impl.destroy(&cursor->impl);
+   _mongoc_cursor_impl_find_opquery_init (cursor, b);
 
-   cursor->rpc.reply.cursor_id = ctx.cursor_id;
-   cursor->sent = true;
-   cursor->end_of_event = true; /* meaning, "finished reading first batch" */
+   cursor->cursor_id = ctx.cursor_id;
+   cursor->state = END_OF_BATCH; /* meaning, "finished reading first batch" */
    r = mongoc_cursor_next (cursor, &doc);
    ASSERT (!r);
    ASSERT (mongoc_cursor_error (cursor, &error));
@@ -1822,6 +1797,78 @@ test_error_document_getmore (void)
    mongoc_client_destroy (client);
 }
 
+/* test that an error during constructing a find cursor causes the cursor to
+ * be marked as failed, so mongoc_cursor_is_alive and mongoc_cursor_more return
+ * false */
+static void
+test_find_error_is_alive (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_cursor_t *cursor;
+   bson_error_t err;
+   const bson_t *bson;
+   client = test_framework_client_new ();
+   coll = mongoc_client_get_collection (client, "test", "test");
+   cursor =
+      mongoc_collection_find (coll,
+                              MONGOC_QUERY_NONE,
+                              0,
+                              0,
+                              0,
+                              tmp_bson ("{'$query': {}, 'non_dollar': {}}"),
+                              NULL,
+                              NULL);
+   BSON_ASSERT (mongoc_cursor_error (cursor, &err));
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Cannot mix $query with non-dollar field");
+   BSON_ASSERT (!mongoc_cursor_is_alive (cursor));
+   BSON_ASSERT (!mongoc_cursor_more (cursor));
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &bson));
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_list_databases_clone (void)
+{
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor, *cursor_clone;
+   mongoc_collection_t *coll;
+   bson_error_t err;
+   const bson_t *bson;
+   const bson_t *bson_clone;
+   bool ret;
+   /* ensure at least one database exists by inserting. */
+   client = test_framework_client_new ();
+   coll = mongoc_client_get_collection (client, "test", "test");
+   ret = mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &err);
+   ASSERT_OR_PRINT (ret, err);
+   cursor = mongoc_client_find_databases_with_opts (client, NULL);
+   cursor_clone = mongoc_cursor_clone (cursor);
+   while (mongoc_cursor_next (cursor, &bson)) {
+      bson_iter_t iter;
+      const char* lhs, *rhs;
+      BSON_ASSERT (mongoc_cursor_next (cursor_clone, &bson_clone));
+      /* check that the database names match. */
+      bson_iter_init_find(&iter, bson, "name");
+      lhs = bson_iter_utf8(&iter, NULL);
+      bson_iter_init_find(&iter, bson_clone, "name");
+      rhs = bson_iter_utf8(&iter, NULL);
+      if (bson_compare (bson, bson_clone) != 0) {
+         fprintf(stderr, "bson does not match\n");
+         printf("lhs=%s, rhs=%s\n", bson_as_json(bson, NULL), bson_as_json(bson_clone, NULL));
+      }
+      ASSERT_CMPSTR (lhs, rhs);
+   }
+   mongoc_cursor_destroy (cursor);
+   mongoc_cursor_destroy (cursor_clone);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
 
 void
 test_cursor_install (TestSuite *suite)
@@ -1831,7 +1878,10 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddLive (
       suite, "/Cursor/clone_with_concerns", test_clone_with_concerns);
    TestSuite_AddLive (suite, "/Cursor/limit", test_limit);
-   TestSuite_AddLive (suite, "/Cursor/kill/live", test_kill_cursor_live);
+   TestSuite_AddLive (suite,
+                      ""
+                      "/Cursor/kill/live",
+                      test_kill_cursor_live);
    TestSuite_AddMockServerTest (
       suite, "/Cursor/kill/single", test_kill_cursors_single);
    TestSuite_AddMockServerTest (
@@ -1914,4 +1964,8 @@ test_cursor_install (TestSuite *suite)
       suite, "/Cursor/error_document/getmore", test_error_document_getmore);
    TestSuite_AddLive (
       suite, "/Cursor/error_document/command", test_error_document_command);
+   TestSuite_AddLive (
+      suite, "/Cursor/find_error/is_alive", test_find_error_is_alive);
+   TestSuite_AddLive (
+      suite, "/Cursor/list_databases/clone", test_list_databases_clone);
 }

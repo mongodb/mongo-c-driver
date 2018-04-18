@@ -166,7 +166,7 @@ _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
 
    if (cs) {
       stream->cursor->client_session = cs;
-      stream->cursor->explicit_session = 1;
+      stream->cursor->explicit_session = true;
    }
 
    /* maxTimeMS is only appended to getMores if these are set in cursor opts */
@@ -372,7 +372,7 @@ end:
     * cursor for use with getMore operations, the session MUST be returned to
     * the pool immediately following a getMore operation that indicates that the
     * cursor has been exhausted." */
-   if (stream->implicit_session && stream->cursor->rpc.reply.cursor_id == 0) {
+   if (stream->implicit_session && stream->cursor->cursor_id == 0) {
       mongoc_client_session_destroy (stream->implicit_session);
       stream->implicit_session = NULL;
    }

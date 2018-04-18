@@ -26,8 +26,6 @@
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-cursor-private.h"
-#include "mongoc-cursor-cursorid-private.h"
-#include "mongoc-cursor-array-private.h"
 #include "mongoc-error.h"
 #include "mongoc-index.h"
 #include "mongoc-log.h"
@@ -41,26 +39,6 @@
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
-
-
-static mongoc_cursor_t *
-_mongoc_collection_cursor_new (mongoc_collection_t *collection,
-                               mongoc_query_flags_t flags,
-                               const mongoc_read_prefs_t *prefs,
-                               bool is_command)
-{
-   return _mongoc_cursor_new (collection->client,
-                              collection->ns,
-                              flags,
-                              0,           /* skip */
-                              0,           /* limit */
-                              0,           /* batch_size */
-                              !is_command, /* is_find */
-                              NULL,        /* query */
-                              NULL,        /* fields */
-                              prefs,       /* read prefs */
-                              NULL);       /* read concern */
-}
 
 static void
 _mongoc_collection_write_command_execute (
@@ -276,6 +254,46 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
 }
 
 
+static bool
+_make_agg_cmd (const char *coll,
+               const bson_t *pipeline,
+               const bson_t *opts,
+               bson_t *command,
+               bson_error_t *err)
+{
+   bson_iter_t iter;
+   int32_t batch_size = 0;
+   bson_t child;
+
+   bson_init (command);
+   BSON_APPEND_UTF8 (command, "aggregate", coll);
+   /*
+    * The following will allow @pipeline to be either an array of
+    * items for the pipeline, or {"pipeline": [...]}.
+    */
+   if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
+       BSON_ITER_HOLDS_ARRAY (&iter)) {
+      if (!bson_append_iter (command, "pipeline", 8, &iter)) {
+         bson_set_error (err,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Failed to append \"pipeline\" to create command.");
+         return false;
+      }
+   } else {
+      BSON_APPEND_ARRAY (command, "pipeline", pipeline);
+   }
+
+   bson_append_document_begin (command, "cursor", 6, &child);
+   if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
+       BSON_ITER_HOLDS_NUMBER (&iter)) {
+      batch_size = (int32_t) bson_iter_as_int64 (&iter);
+      BSON_APPEND_INT32 (&child, "batchSize", batch_size);
+   }
+   bson_append_document_end (command, &child);
+   return true;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -329,19 +347,36 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    bson_iter_t ar;
    mongoc_cursor_t *cursor;
    uint32_t server_id;
-   int32_t batch_size = 0;
    bson_iter_t iter;
    bson_t command;
-   bson_t child;
+   bson_t cursor_opts;
+   bool slave_ok;
+   bool created_command;
+   bson_error_t create_cmd_err = {0};
 
    ENTRY;
 
    BSON_ASSERT (collection);
    BSON_ASSERT (pipeline);
 
-   bson_init (&command);
+   bson_init (&cursor_opts);
+   _mongoc_cursor_flags_to_opts (flags, &cursor_opts, &slave_ok);
+   created_command = _make_agg_cmd (
+      collection->collection, pipeline, opts, &command, &create_cmd_err);
+   cursor = _mongoc_cursor_cmd_new (collection->client,
+                                    collection->ns,
+                                    created_command ? &command : NULL,
+                                    &cursor_opts,
+                                    read_prefs,
+                                    NULL /* read concern */);
+   bson_destroy (&command);
+   bson_destroy (&cursor_opts);
 
-   cursor = _mongoc_collection_cursor_new (collection, flags, read_prefs, true);
+   if (!created_command) {
+      /* copy error back to cursor. */
+      memcpy (&cursor->error, &create_cmd_err, sizeof (bson_error_t));
+      GOTO (done);
+   }
 
    if (!_mongoc_get_server_id_from_opts (opts,
                                          MONGOC_ERROR_COMMAND,
@@ -386,25 +421,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       GOTO (done);
    }
 
-   BSON_APPEND_UTF8 (&command, "aggregate", collection->collection);
-
-   /*
-    * The following will allow @pipeline to be either an array of
-    * items for the pipeline, or {"pipeline": [...]}.
-    */
-   if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
-       BSON_ITER_HOLDS_ARRAY (&iter)) {
-      if (!bson_append_iter (&command, "pipeline", 8, &iter)) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Failed to append \"pipeline\" to create command.");
-         GOTO (done);
-      }
-   } else {
-      BSON_APPEND_ARRAY (&command, "pipeline", pipeline);
-   }
-
    if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
        BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &ar)) {
       while (bson_iter_next (&ar)) {
@@ -414,14 +430,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
          }
       }
    }
-
-   bson_append_document_begin (&command, "cursor", 6, &child);
-   if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
-       BSON_ITER_HOLDS_NUMBER (&iter)) {
-      batch_size = (int32_t) bson_iter_as_int64 (&iter);
-      BSON_APPEND_INT32 (&child, "batchSize", batch_size);
-   }
-   bson_append_document_end (&command, &child);
 
    if (opts) {
       bson_concat (&cursor->opts, opts);
@@ -455,11 +463,8 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
          mongoc_collection_get_read_concern (collection));
    }
 
-   _mongoc_cursor_cursorid_init (cursor, &command);
-
 done:
    mongoc_server_stream_cleanup (server_stream); /* null ok */
-   bson_destroy (&command);
 
    /* we always return the cursor, even if it fails; users can detect the
     * failure on performing a cursor operation. see CDRIVER-880. */
@@ -522,6 +527,12 @@ mongoc_collection_find (mongoc_collection_t *collection,       /* IN */
                         const bson_t *fields,                  /* IN */
                         const mongoc_read_prefs_t *read_prefs) /* IN */
 {
+   bool has_unwrapped;
+   bson_t unwrapped;
+   bson_error_t error = {0};
+   bson_t opts;
+   bool slave_ok;
+   mongoc_cursor_t *cursor;
    BSON_ASSERT (collection);
    BSON_ASSERT (query);
 
@@ -531,17 +542,42 @@ mongoc_collection_find (mongoc_collection_t *collection,       /* IN */
       read_prefs = collection->read_prefs;
    }
 
-   return _mongoc_cursor_new (collection->client,
-                              collection->ns,
-                              flags,
-                              skip,
-                              limit,
-                              batch_size,
-                              true /* is_find */,
-                              query,
-                              fields,
-                              COALESCE (read_prefs, collection->read_prefs),
-                              collection->read_concern);
+   bson_init (&opts);
+   _mongoc_cursor_flags_to_opts (flags, &opts, &slave_ok);
+   /* check if the query is wrapped in $query */
+   has_unwrapped = _mongoc_cursor_translate_dollar_query_opts (
+      query, &opts, &unwrapped, &error);
+   if (!bson_empty0 (fields)) {
+      bson_append_document (
+         &opts, MONGOC_CURSOR_PROJECTION, MONGOC_CURSOR_PROJECTION_LEN, fields);
+   }
+   cursor = _mongoc_cursor_find_new (collection->client,
+                                     collection->ns,
+                                     has_unwrapped ? &unwrapped : query,
+                                     &opts,
+                                     read_prefs,
+                                     collection->read_concern);
+   if (skip) {
+      _mongoc_cursor_set_opt_int64 (cursor, MONGOC_CURSOR_SKIP, skip);
+   }
+   if (limit) {
+      /* limit must be cast to int32_t. Although the argument is a uint32_t,
+       * callers can specify a negative limit by casting to a signed int32_t
+       * value to uint32_t. E.g. to set a limit of -4, the caller passes
+       * UINT32_MAX - 3 */
+      (void) mongoc_cursor_set_limit (cursor, (int32_t) limit);
+   }
+   if (batch_size) {
+      mongoc_cursor_set_batch_size (cursor, batch_size);
+   }
+   bson_destroy (&unwrapped);
+   bson_destroy (&opts);
+
+   if (error.domain) {
+      memcpy (&cursor->error, &error, sizeof (error));
+   }
+
+   return cursor;
 }
 
 
@@ -587,10 +623,9 @@ mongoc_collection_find_with_opts (mongoc_collection_t *collection,
       read_prefs = collection->read_prefs;
    }
 
-   return _mongoc_cursor_new_with_opts (
+   return _mongoc_cursor_find_new (
       collection->client,
       collection->ns,
-      true /* is_find */,
       filter,
       opts,
       COALESCE (read_prefs, collection->read_prefs),
@@ -638,6 +673,7 @@ mongoc_collection_command (mongoc_collection_t *collection,
                            const mongoc_read_prefs_t *read_prefs)
 {
    char ns[MONGOC_NAMESPACE_MAX];
+   mongoc_cursor_t *cursor;
 
    BSON_ASSERT (collection);
    BSON_ASSERT (query);
@@ -662,13 +698,9 @@ mongoc_collection_command (mongoc_collection_t *collection,
     */
 
    /* flags, skip, limit, batch_size, fields are unused */
-   return _mongoc_cursor_new_with_opts (collection->client,
-                                        ns,
-                                        false /* is_find */,
-                                        query,
-                                        NULL,
-                                        read_prefs,
-                                        NULL);
+   cursor = _mongoc_cursor_cmd_deprecated_new (
+      collection->client, ns, query, read_prefs);
+   return cursor;
 }
 
 
@@ -1361,33 +1393,23 @@ mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
 
    /* No read preference. Index Enumeration Spec: "run listIndexes on the
     * primary node in replicaSet mode". */
-   cursor = _mongoc_cursor_new_with_opts (collection->client,
-                                          collection->ns,
-                                          false /* is_find */,
-                                          &cmd,
-                                          opts,
-                                          NULL /* read prefs */,
-                                          NULL /* read concern */);
+   cursor = _mongoc_cursor_cmd_new (collection->client,
+                                    collection->ns,
+                                    &cmd,
+                                    opts,
+                                    NULL /* read prefs */,
+                                    NULL /* read concern */);
 
-   _mongoc_cursor_cursorid_init (cursor, &cmd);
+   if (!mongoc_cursor_error (cursor, &error)) {
+      cursor->impl.prime (cursor);
+   }
 
-   if (_mongoc_cursor_cursorid_prime (cursor)) {
-      /* intentionally empty */
-   } else if (mongoc_cursor_error (cursor, &error) &&
-              error.code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
-
-      bson_t empty_arr = BSON_INITIALIZER;
-      /* collection does not exist. in accordance with the spec we return
-       * an empty array. Also we need to clear out the error. */
-      error.code = 0;
-      error.domain = 0;
-      mongoc_cursor_destroy (cursor);
-      cursor = _mongoc_collection_cursor_new (
-         collection, MONGOC_QUERY_SLAVE_OK, NULL /* read prefs */, true);
-
-      _mongoc_cursor_array_init (cursor, NULL, NULL);
-      _mongoc_cursor_array_set_bson (cursor, &empty_arr);
-      bson_destroy (&empty_arr);
+   if (mongoc_cursor_error (cursor, &error) &&
+       error.code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
+      /* collection does not exist. from spec: return no documents but no err:
+       * https://github.com/mongodb/specifications/blob/master/source/enumerate-indexes.rst#enumeration-getting-index-information
+       */
+      _mongoc_cursor_set_empty (cursor);
    }
 
    bson_destroy (&cmd);
