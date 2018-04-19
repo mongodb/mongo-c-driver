@@ -2601,7 +2601,10 @@ test_example_change_stream (mongoc_database_t *db)
    bson_destroy (pipeline);
 
    /* Start Changestream Example 4 */
-   pipeline = BCON_NEW ("$match",
+   pipeline = BCON_NEW ("pipeline",
+                        "[",
+                        "{",
+                        "$match",
                         "{",
                         "$or",
                         "[",
@@ -2614,7 +2617,9 @@ test_example_change_stream (mongoc_database_t *db)
                         BCON_UTF8 ("delete"),
                         "}",
                         "]",
-                        "}");
+                        "}",
+                        "}",
+                        "]");
 
    stream = mongoc_collection_watch (collection, pipeline, &opts);
    mongoc_change_stream_next (stream, &change);

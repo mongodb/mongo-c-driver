@@ -271,10 +271,22 @@ _mongoc_change_stream_new (const mongoc_collection_t *coll,
       }
    }
 
+   /* Accept two forms of user pipeline:
+    * 1. A document like: { "pipeline": [...] }
+    * 2. An array-like document: { "0": {}, "1": {}, ... }
+    * If the passed pipeline is invalid, we pass it along and let the server
+    * error instead.
+    */
    if (!bson_empty (pipeline)) {
       bson_iter_t iter;
-      if (bson_iter_init_find (&iter, pipeline, "pipeline")) {
+      if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
+          BSON_ITER_HOLDS_ARRAY (&iter)) {
          SET_BSON_OR_ERR (&stream->pipeline_to_append, "pipeline");
+      } else {
+         if (!BSON_APPEND_ARRAY (
+                &stream->pipeline_to_append, "pipeline", pipeline)) {
+            CHANGE_STREAM_ERR ("pipeline");
+         }
       }
    }
 
