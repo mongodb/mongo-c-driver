@@ -398,6 +398,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    mongoc_topology_description_destroy (&topology->description);
    mongoc_topology_scanner_destroy (topology->scanner);
 
+   /* free sessions if we failed to run _mongoc_topology_end_sessions */
    CDL_FOREACH_SAFE (topology->session_pool, ss, tmp1, tmp2)
    {
       _mongoc_server_session_destroy (ss);
@@ -1400,31 +1401,47 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
  *
  * _mongoc_topology_end_sessions --
  *
- *       Internal function. End all server sessions. @cmd is an
- *       uninitialized document.
+ *       Internal function. End up to 10,000 server sessions. @cmd is an
+ *       uninitialized document. Sessions are destroyed as their ids are
+ *       appended to @cmd.
+ *
+ *       Driver Sessions Spec: "If the number of sessions is very large the
+ *       endSessions command SHOULD be run multiple times to end 10,000
+ *       sessions at a time (in order to avoid creating excessively large
+ *       commands)."
+ *
+ * Returns:
+ *      true if any session ids were appended to @cmd.
  *
  *--------------------------------------------------------------------------
  */
 
-void
+bool
 _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
 {
+   mongoc_server_session_t *ss, *tmp1, *tmp2;
    char buf[16];
    const char *key;
    uint32_t i;
-   mongoc_server_session_t *ss;
    bson_t ar;
 
    bson_init (cmd);
    BSON_APPEND_ARRAY_BEGIN (cmd, "endSessions", &ar);
 
    i = 0;
-   CDL_FOREACH (topology->session_pool, ss)
+   CDL_FOREACH_SAFE (topology->session_pool, ss, tmp1, tmp2)
    {
       bson_uint32_to_string (i, &key, buf, sizeof buf);
       BSON_APPEND_DOCUMENT (&ar, key, &ss->lsid);
-      i++;
+      CDL_DELETE (topology->session_pool, ss);
+      _mongoc_server_session_destroy (ss);
+
+      if (++i == 10000) {
+         break;
+      }
    }
 
    bson_append_array_end (cmd, &ar);
+
+   return i > 0;
 }

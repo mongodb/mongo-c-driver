@@ -2760,27 +2760,32 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
          return;
       }
 
-      _mongoc_topology_end_sessions_cmd (t, &cmd);
-      mongoc_cmd_parts_init (
-         &parts, client, "admin", MONGOC_QUERY_SLAVE_OK, &cmd);
-      parts.assembled.operation_id = ++cluster->operation_id;
-      parts.prohibit_lsid = true;
+      /* end sessions in chunks */
+      while (_mongoc_topology_end_sessions_cmd (t, &cmd)) {
+         mongoc_cmd_parts_init (
+            &parts, client, "admin", MONGOC_QUERY_SLAVE_OK, &cmd);
+         parts.assembled.operation_id = ++cluster->operation_id;
+         parts.prohibit_lsid = true;
 
-      r = mongoc_cmd_parts_assemble (&parts, stream, &error);
-      if (!r) {
-         MONGOC_WARNING ("Couldn't construct \"endSessions\" command: %s",
-                         error.message);
-      } else {
-         r = mongoc_cluster_run_command_monitored (
-            cluster, &parts.assembled, NULL, &error);
-
+         r = mongoc_cmd_parts_assemble (&parts, stream, &error);
          if (!r) {
-            MONGOC_WARNING ("Couldn't send \"endSessions\": %s", error.message);
+            MONGOC_WARNING ("Couldn't construct \"endSessions\" command: %s",
+                            error.message);
+         } else {
+            r = mongoc_cluster_run_command_monitored (
+               cluster, &parts.assembled, NULL, &error);
+
+            if (!r) {
+               MONGOC_WARNING ("Couldn't send \"endSessions\": %s",
+                               error.message);
+            }
          }
+
+         bson_destroy (&cmd);
+         mongoc_cmd_parts_cleanup (&parts);
       }
 
       bson_destroy (&cmd);
-      mongoc_cmd_parts_cleanup (&parts);
       mongoc_server_stream_cleanup (stream);
    }
 }

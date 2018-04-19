@@ -504,13 +504,16 @@ test_mock_end_sessions_pooled (void)
 typedef struct {
    int started_calls;
    int succeeded_calls;
-   bson_t cmd;
+   mongoc_array_t cmds;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
 } endsessions_test_t;
 
 static void
 endsessions_started_cb (const mongoc_apm_command_started_t *event)
 {
    endsessions_test_t *test;
+   bson_t *cmd;
 
    if (strcmp (mongoc_apm_command_started_get_command_name (event),
                "endSessions") != 0) {
@@ -519,8 +522,8 @@ endsessions_started_cb (const mongoc_apm_command_started_t *event)
 
    test = (endsessions_test_t *) mongoc_apm_command_started_get_context (event);
    test->started_calls++;
-   bson_destroy (&test->cmd);
-   bson_copy_to (mongoc_apm_command_started_get_command (event), &test->cmd);
+   cmd = bson_copy (mongoc_apm_command_started_get_command (event));
+   _mongoc_array_append_vals (&test->cmds, &cmd, 1);
 }
 
 static void
@@ -539,11 +542,76 @@ endsessions_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 }
 
 static void
+endsessions_test_init (endsessions_test_t *test, bool pooled)
+{
+   mongoc_apm_callbacks_t *callbacks;
+
+   test->started_calls = test->succeeded_calls = 0;
+   _mongoc_array_init (&test->cmds, sizeof (bson_t *));
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, endsessions_started_cb);
+   mongoc_apm_set_command_succeeded_cb (callbacks, endsessions_succeeded_cb);
+
+   if (pooled) {
+      test->pool = test_framework_client_pool_new ();
+      ASSERT (
+         mongoc_client_pool_set_apm_callbacks (test->pool, callbacks, test));
+      test->client = mongoc_client_pool_pop (test->pool);
+   } else {
+      test->pool = NULL;
+      test->client = test_framework_client_new ();
+      ASSERT (mongoc_client_set_apm_callbacks (test->client, callbacks, test));
+   }
+
+   mongoc_apm_callbacks_destroy (callbacks);
+}
+
+static void
+endsessions_test_destroy_client (endsessions_test_t *test)
+{
+   if (test->pool) {
+      mongoc_client_pool_push (test->pool, test->client);
+      mongoc_client_pool_destroy (test->pool);
+   } else {
+      mongoc_client_destroy (test->client);
+   }
+}
+
+static void
+endsessions_test_get_ended_lsids (endsessions_test_t *test,
+                                  size_t index,
+                                  bson_t *ended_lsids)
+{
+   bson_iter_t iter;
+
+   ASSERT_CMPINT (test->started_calls, >, (int) index);
+
+   BSON_ASSERT (
+      bson_iter_init_find (&iter,
+                           _mongoc_array_index (&test->cmds, bson_t *, index),
+                           "endSessions"));
+
+   BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
+   bson_iter_bson (&iter, ended_lsids);
+}
+
+static void
+endsessions_test_cleanup (endsessions_test_t *test)
+{
+   size_t i;
+
+   for (i = 0; i < test->cmds.len; i++) {
+      bson_destroy (_mongoc_array_index (&test->cmds, bson_t *, i));
+   }
+
+   _mongoc_array_destroy (&test->cmds);
+}
+
+static void
 _test_end_sessions (bool pooled)
 {
    endsessions_test_t test;
-   mongoc_apm_callbacks_t *callbacks;
-   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    bson_error_t error;
    mongoc_client_session_t *cs1;
@@ -554,29 +622,15 @@ _test_end_sessions (bool pooled)
    bson_t opts2 = BSON_INITIALIZER;
    bool lsid1_ended = false;
    bool lsid2_ended = false;
+   bson_t ended_lsids;
    bson_iter_t iter;
-   bson_iter_t ended_lsids;
    bson_t ended_lsid;
    char errmsg[1000];
    match_ctx_t ctx = {0};
    bool r;
 
-   bson_init (&test.cmd);
-   test.started_calls = test.succeeded_calls = 0;
-   callbacks = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_command_started_cb (callbacks, endsessions_started_cb);
-   mongoc_apm_set_command_succeeded_cb (callbacks, endsessions_succeeded_cb);
-
-   if (pooled) {
-      pool = test_framework_client_pool_new ();
-      ASSERT (mongoc_client_pool_set_apm_callbacks (pool, callbacks, &test));
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = test_framework_client_new ();
-      ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, &test));
-   }
-
-   mongoc_apm_callbacks_destroy (callbacks);
+   endsessions_test_init (&test, pooled);
+   client = test.client;
 
    /*
     * create and use sessions 1 and 2
@@ -604,13 +658,7 @@ _test_end_sessions (bool pooled)
     */
    mongoc_client_session_destroy (cs1);
    mongoc_client_session_destroy (cs2);
-
-   if (pooled) {
-      mongoc_client_pool_push (pool, client);
-      mongoc_client_pool_destroy (pool);
-   } else {
-      mongoc_client_destroy (client);
-   }
+   endsessions_test_destroy_client (&test);
 
    /*
     * sessions were ended on server
@@ -618,16 +666,15 @@ _test_end_sessions (bool pooled)
    ASSERT_CMPINT (test.started_calls, ==, 1);
    ASSERT_CMPINT (test.succeeded_calls, ==, 1);
 
-   BSON_ASSERT (bson_iter_init_find (&iter, &test.cmd, "endSessions"));
-   BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
-   BSON_ASSERT (bson_iter_recurse (&iter, &ended_lsids));
+   endsessions_test_get_ended_lsids (&test, 0, &ended_lsids);
 
    ctx.errmsg = errmsg;
    ctx.errmsg_len = sizeof errmsg;
 
-   while (bson_iter_next (&ended_lsids)) {
-      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&ended_lsids));
-      bson_iter_bson (&ended_lsids, &ended_lsid);
+   BSON_ASSERT (bson_iter_init (&iter, &ended_lsids));
+   while (bson_iter_next (&iter)) {
+      BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+      bson_iter_bson (&iter, &ended_lsid);
       if (match_bson_with_ctx (&ended_lsid, &lsid1, false, &ctx)) {
          lsid1_ended = true;
       } else if (match_bson_with_ctx (&ended_lsid, &lsid2, false, &ctx)) {
@@ -638,11 +685,11 @@ _test_end_sessions (bool pooled)
    BSON_ASSERT (lsid1_ended);
    BSON_ASSERT (lsid2_ended);
 
-   bson_destroy (&test.cmd);
    bson_destroy (&lsid1);
    bson_destroy (&opts1);
    bson_destroy (&lsid2);
    bson_destroy (&opts2);
+   endsessions_test_cleanup (&test);
 }
 
 static void
@@ -655,6 +702,65 @@ static void
 test_end_sessions_pooled (void *ctx)
 {
    _test_end_sessions (true);
+}
+
+
+static void
+_test_end_sessions_many (bool pooled)
+{
+   endsessions_test_t test;
+   mongoc_client_t *client;
+   int i;
+   mongoc_client_session_t *sessions[10001];
+   bson_error_t error;
+   bson_t ended_lsids;
+
+   endsessions_test_init (&test, pooled);
+   client = test.client;
+   /* connect */
+   ASSERT_OR_PRINT (
+      mongoc_client_command_simple (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error),
+      error);
+
+   /*
+    * create and destroy 10,001 sessions
+    */
+   for (i = 0; i < sizeof sessions / sizeof (mongoc_client_session_t *); i++) {
+      sessions[i] = mongoc_client_start_session (client, NULL, &error);
+      ASSERT_OR_PRINT (sessions[i], error);
+   }
+
+   for (i = 0; i < sizeof sessions / sizeof (mongoc_client_session_t *); i++) {
+      mongoc_client_session_destroy (sessions[i]);
+   }
+
+   endsessions_test_destroy_client (&test);
+
+   /*
+    * sessions were ended on the server, ten thousand at a time
+    */
+   ASSERT_CMPINT (test.started_calls, ==, 2);
+   ASSERT_CMPINT (test.succeeded_calls, ==, 2);
+
+   endsessions_test_get_ended_lsids (&test, 0, &ended_lsids);
+   ASSERT_CMPINT (bson_count_keys (&ended_lsids), ==, 10000);
+   endsessions_test_get_ended_lsids (&test, 1, &ended_lsids);
+   ASSERT_CMPINT (bson_count_keys (&ended_lsids), ==, 1);
+
+   endsessions_test_cleanup (&test);
+}
+
+static void
+test_end_sessions_many_single (void *ctx)
+{
+   _test_end_sessions_many (false);
+}
+
+static void
+test_end_sessions_many_pooled (void *ctx)
+{
+   _test_end_sessions_many (true);
 }
 
 static void
@@ -2374,6 +2480,20 @@ test_session_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/Session/end/pooled",
                       test_end_sessions_pooled,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_crypto,
+                      test_framework_skip_if_max_wire_version_less_than_6);
+   TestSuite_AddFull (suite,
+                      "/Session/end/many/single",
+                      test_end_sessions_many_single,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_crypto,
+                      test_framework_skip_if_max_wire_version_less_than_6);
+   TestSuite_AddFull (suite,
+                      "/Session/end/many/pooled",
+                      test_end_sessions_many_pooled,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto,
