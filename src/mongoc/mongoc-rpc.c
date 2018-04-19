@@ -983,7 +983,8 @@ _mongoc_rpc_scatter_reply_header_only (mongoc_rpc_t *rpc,
    if (BSON_UNLIKELY (buflen < sizeof (mongoc_rpc_reply_header_t))) {
       return false;
    }
-
+   mongoc_counter_op_ingress_reply_inc ();
+   mongoc_counter_op_ingress_total_inc ();
    return _mongoc_rpc_scatter_reply_header (&rpc->reply_header, buf, buflen);
 }
 

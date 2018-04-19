@@ -23,7 +23,7 @@
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-file.h"
 #include "mongoc-trace-private.h"
-
+#include "mongoc-counters-private.h"
 
 /*
  * TODO: This does not respect timeouts or set O_NONBLOCK.
@@ -75,6 +75,9 @@ _mongoc_stream_file_destroy (mongoc_stream_t *stream)
    }
 
    bson_free (file);
+
+   mongoc_counter_streams_active_dec ();
+   mongoc_counter_streams_disposed_inc ();
 
    EXIT;
 }
@@ -129,23 +132,31 @@ _mongoc_stream_file_readv (mongoc_stream_t *stream, /* IN */
    for (i = 0; i < iovcnt; i++) {
       nread = _read (file->fd, iov[i].iov_base, iov[i].iov_len);
       if (nread < 0) {
-         RETURN (ret ? ret : -1);
+         ret = ret ? ret : -1;
+         GOTO (done);
       } else if (nread == 0) {
-         RETURN (ret ? ret : 0);
+         ret = ret ? ret : 0;
+         GOTO (done);
       } else {
          ret += nread;
          if (nread != iov[i].iov_len) {
-            RETURN (ret ? ret : -1);
+            ret = ret ? ret : -1;
+            GOTO (done);
          }
       }
    }
 
-   RETURN (ret);
+   GOTO (done);
 #else
    ENTRY;
    ret = readv (file->fd, iov, (int) iovcnt);
-   RETURN (ret);
+   GOTO (done);
 #endif
+done:
+   if (ret > 0) {
+      mongoc_counter_streams_ingress_add (ret);
+   }
+   return ret;
 }
 
 
@@ -156,24 +167,30 @@ _mongoc_stream_file_writev (mongoc_stream_t *stream, /* IN */
                             int32_t timeout_msec)    /* IN */
 {
    mongoc_stream_file_t *file = (mongoc_stream_file_t *) stream;
+   ssize_t ret = 0;
 
 #ifdef _WIN32
-   ssize_t ret = 0;
    ssize_t nwrite;
    size_t i;
 
    for (i = 0; i < iovcnt; i++) {
       nwrite = _write (file->fd, iov[i].iov_base, iov[i].iov_len);
       if (nwrite != iov[i].iov_len) {
-         return ret ? ret : -1;
+         ret = ret ? ret : -1;
+         goto done;
       }
       ret += nwrite;
    }
-
-   return ret;
+   goto done;
 #else
-   return writev (file->fd, iov, (int) iovcnt);
+   ret = writev (file->fd, iov, (int) iovcnt);
+   goto done;
 #endif
+done:
+   if (ret > 0) {
+      mongoc_counter_streams_egress_add (ret);
+   }
+   return ret;
 }
 
 
@@ -202,6 +219,7 @@ mongoc_stream_file_new (int fd) /* IN */
    stream->vtable.check_closed = _mongoc_stream_file_check_closed;
    stream->fd = fd;
 
+   mongoc_counter_streams_active_inc ();
    return (mongoc_stream_t *) stream;
 }
 

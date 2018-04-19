@@ -231,7 +231,10 @@ _mongoc_socket_wait (mongoc_socket_t *sock, /* IN */
             RETURN (false);
          }
       } else {
-/* ret == 0, poll timed out */
+         /* ret == 0, poll timed out */
+         if (timeout) {
+            mongoc_counter_streams_timeout_inc ();
+         }
 #ifdef _WIN32
          sock->errno_ = timeout ? WSAETIMEDOUT : EAGAIN;
 #else
@@ -1420,6 +1423,9 @@ mongoc_socket_sendv (mongoc_socket_t *sock,  /* IN */
          BSON_ASSERT (iovcnt - cur);
          BSON_ASSERT (iov[cur].iov_len);
       } else if (OPERATION_EXPIRED (expire_at)) {
+         if (expire_at > 0) {
+            mongoc_counter_streams_timeout_inc ();
+         }
          GOTO (CLEANUP);
       }
 

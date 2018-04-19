@@ -102,6 +102,7 @@ test_libmongoc_SOURCES = \
 	tests/test-mongoc-collection-find-with-opts.c \
 	tests/test-mongoc-connection-uri.c \
 	tests/test-mongoc-command-monitoring.c \
+	tests/test-mongoc-counters.c \
 	tests/test-mongoc-cursor.c \
 	tests/test-mongoc-database.c \
 	tests/test-mongoc-error.c \

@@ -20,6 +20,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-socket-private.h"
 #include "mongoc-errno-private.h"
+#include "mongoc-counters-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream"
@@ -78,6 +79,9 @@ _mongoc_stream_socket_destroy (mongoc_stream_t *stream)
    }
 
    bson_free (ss);
+
+   mongoc_counter_streams_active_dec ();
+   mongoc_counter_streams_disposed_inc ();
 
    EXIT;
 }
@@ -328,5 +332,6 @@ mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
    stream->vtable.poll = _mongoc_stream_socket_poll;
    stream->sock = sock;
 
+   mongoc_counter_streams_active_inc ();
    return (mongoc_stream_t *) stream;
 }

@@ -201,6 +201,8 @@ test_cyrus_install (TestSuite *suite);
 #endif
 extern void
 test_happy_eyeballs_install (TestSuite *suite);
+extern void
+test_counters_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2121,98 +2123,47 @@ test_framework_skip_if_not_replset (void)
    return !test_framework_skip_if_replset ();
 }
 
-int
-test_framework_skip_if_max_wire_version_less_than_4 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
+/* convenience skip functions based on the wire version. */
+#define WIRE_VERSION_CHECKS(wv)                                         \
+   int test_framework_skip_if_max_wire_version_more_than_##wv ()        \
+   {                                                                    \
+      if (!TestSuite_CheckLive ()) {                                    \
+         return 0;                                                      \
+      }                                                                 \
+      return test_framework_max_wire_version_at_least (wv + 1) ? 0 : 1; \
+   }                                                                    \
+   int test_framework_skip_if_max_wire_version_less_than_##wv ()        \
+   {                                                                    \
+      if (!TestSuite_CheckLive ()) {                                    \
+         return 0;                                                      \
+      }                                                                 \
+      return test_framework_max_wire_version_at_least (wv);             \
+   }                                                                    \
+   int test_framework_skip_if_not_rs_version_##wv (void)                \
+   {                                                                    \
+      if (!TestSuite_CheckLive ()) {                                    \
+         return 0;                                                      \
+      }                                                                 \
+      return (test_framework_max_wire_version_at_least (wv) &&          \
+              test_framework_is_replset ())                             \
+                ? 1                                                     \
+                : 0;                                                    \
+   }                                                                    \
+   int test_framework_skip_if_rs_version_##wv (void)                    \
+   {                                                                    \
+      if (!TestSuite_CheckLive ()) {                                    \
+         return 0;                                                      \
+      }                                                                 \
+      return (test_framework_max_wire_version_at_least (wv) &&          \
+              test_framework_is_replset ())                             \
+                ? 0                                                     \
+                : 1;                                                    \
    }
-   return test_framework_max_wire_version_at_least (4);
-}
 
-int
-test_framework_skip_if_max_wire_version_more_than_4 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return test_framework_max_wire_version_at_least (5) ? 0 : 1;
-}
-
-int
-test_framework_skip_if_max_wire_version_less_than_5 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return test_framework_max_wire_version_at_least (5);
-}
-
-int
-test_framework_skip_if_max_wire_version_less_than_6 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return test_framework_max_wire_version_at_least (6);
-}
-
-int
-test_framework_skip_if_max_wire_version_more_than_6 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return test_framework_max_wire_version_at_least (6) ? 0 : 1;
-}
-
-int
-test_framework_skip_if_not_rs_version_5 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return (test_framework_max_wire_version_at_least (5) &&
-           test_framework_is_replset ())
-             ? 1
-             : 0;
-}
-
-int
-test_framework_skip_if_rs_version_5 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return (test_framework_max_wire_version_at_least (5) &&
-           test_framework_is_replset ())
-             ? 0
-             : 1;
-}
-
-int
-test_framework_skip_if_not_rs_version_6 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return (test_framework_max_wire_version_at_least (6) &&
-           test_framework_is_replset ())
-             ? 1
-             : 0;
-}
-
-int
-test_framework_skip_if_rs_version_6 (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   return (test_framework_max_wire_version_at_least (6) &&
-           test_framework_is_replset ())
-             ? 0
-             : 1;
-}
+WIRE_VERSION_CHECKS (3)
+WIRE_VERSION_CHECKS (4)
+WIRE_VERSION_CHECKS (5)
+WIRE_VERSION_CHECKS (6)
 
 bool
 test_framework_skip_if_no_dual_ip_hostname (void)
@@ -2248,6 +2199,21 @@ test_framework_skip_if_no_dual_ip_hostname (void)
 
    ASSERT_CMPINT (res_count, >, 0);
    return res_count > 1;
+}
+
+bool
+test_framework_skip_if_no_compressors (void)
+{
+   char *compressors = test_framework_get_compressors ();
+   bool ret = compressors != NULL;
+   bson_free (compressors);
+   return ret;
+}
+
+bool
+test_framework_skip_if_compressors (void)
+{
+   return !test_framework_skip_if_no_compressors ();
 }
 
 static char MONGOC_TEST_UNIQUE[32];
@@ -2367,6 +2333,7 @@ main (int argc, char *argv[])
    test_cyrus_install (&suite);
 #endif
    test_happy_eyeballs_install (&suite);
+   test_counters_install (&suite);
 
    ret = TestSuite_Run (&suite);
 

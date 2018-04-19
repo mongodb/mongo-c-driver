@@ -126,11 +126,15 @@ test_framework_skip_if_crypto (void);
 int
 test_framework_skip_if_no_crypto (void);
 int
+test_framework_skip_if_max_wire_version_more_than_3 (void);
+int
 test_framework_skip_if_max_wire_version_less_than_4 (void);
 int
 test_framework_skip_if_max_wire_version_more_than_4 (void);
 int
 test_framework_skip_if_max_wire_version_less_than_5 (void);
+int
+test_framework_skip_if_max_wire_version_more_than_5 (void);
 int
 test_framework_skip_if_max_wire_version_less_than_6 (void);
 int
@@ -187,5 +191,14 @@ test_framework_str_to_version (const char *version_str);
 
 bool
 test_framework_skip_if_no_dual_ip_hostname (void);
+
+char *
+test_framework_get_compressors (void);
+
+bool
+test_framework_skip_if_no_compressors (void);
+
+bool
+test_framework_skip_if_compressors (void);
 
 #endif
