@@ -20,7 +20,6 @@
 #include "mongoc-cursor-private.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-client-session-private.h"
-#include "mongoc-rpc-private.h"
 
 #define CHANGE_STREAM_ERR(_str)         \
    bson_set_error (&stream->err,        \
@@ -36,33 +35,24 @@
       }                                                               \
    } while (0);
 
+/* Construct the aggregate command in cmd:
+ * { aggregate: collname, pipeline: [], cursor: { batchSize: x } } */
 static void
-_mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
+_make_command (mongoc_change_stream_t *stream, bson_t *command)
 {
-   mongoc_client_session_t *cs = NULL;
+   bson_iter_t iter;
    bson_t change_stream_stage; /* { $changeStream: <change_stream_doc> } */
    bson_t change_stream_doc;
    bson_t pipeline;
    bson_t cursor_doc;
-   bson_t command_opts;
-   bson_t command; /* { aggregate: "coll", pipeline: [], ... } */
-   bson_t reply;
-   bson_iter_t iter;
-   bson_error_t err = {0};
-   mongoc_server_description_t *sd;
-   uint32_t server_id;
 
-   BSON_ASSERT (stream);
-
-   /* Construct the aggregate command */
-   /* { aggregate: collname, pipeline: [], cursor: { batchSize: x } } */
-   bson_init (&command);
-   bson_append_utf8 (&command,
+   bson_init (command);
+   bson_append_utf8 (command,
                      "aggregate",
                      9,
                      stream->coll->collection,
                      stream->coll->collectionlen);
-   bson_append_array_begin (&command, "pipeline", 8, &pipeline);
+   bson_append_array_begin (command, "pipeline", 8, &pipeline);
 
    /* Append the $changeStream stage */
    bson_append_document_begin (&pipeline, "0", 1, &change_stream_stage);
@@ -85,36 +75,54 @@ _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
 
       BSON_ASSERT (bson_iter_recurse (&iter, &child_iter));
       while (bson_iter_next (&child_iter)) {
-         if (BSON_ITER_HOLDS_DOCUMENT (&child_iter)) {
-            size_t keyLen =
-               bson_uint32_to_string (key_int, &key_str, buf, sizeof (buf));
-            bson_append_value (
-               &pipeline, key_str, (int) keyLen, bson_iter_value (&child_iter));
-            ++key_int;
-         }
+         /* The user pipeline may consist of invalid stages or non-documents.
+          * Append anyway, and rely on the server error. */
+         size_t keyLen =
+            bson_uint32_to_string (key_int, &key_str, buf, sizeof (buf));
+         bson_append_value (
+            &pipeline, key_str, (int) keyLen, bson_iter_value (&child_iter));
+         ++key_int;
       }
    }
 
-   bson_append_array_end (&command, &pipeline);
+   bson_append_array_end (command, &pipeline);
 
    /* Add batch size if needed */
-   bson_append_document_begin (&command, "cursor", 6, &cursor_doc);
+   bson_append_document_begin (command, "cursor", 6, &cursor_doc);
    if (stream->batch_size > 0) {
       bson_append_int32 (&cursor_doc, "batchSize", 9, stream->batch_size);
    }
-   bson_append_document_end (&command, &cursor_doc);
+   bson_append_document_end (command, &cursor_doc);
+}
 
+/* Construct and send the aggregate command and create the resulting cursor.
+ * Returns false on error, and sets stream->err. On error, stream->cursor
+ * remains NULL, otherwise it is created and must be destroyed. */
+static bool
+_make_cursor (mongoc_change_stream_t *stream)
+{
+   mongoc_client_session_t *cs = NULL;
+   bson_t command_opts;
+   bson_t command; /* { aggregate: "coll", pipeline: [], ... } */
+   bson_t reply;
+   bson_iter_t iter;
+   mongoc_server_description_t *sd;
+   uint32_t server_id;
+
+   BSON_ASSERT (stream);
+   BSON_ASSERT (!stream->cursor);
+   _make_command (stream, &command);
    bson_copy_to (&stream->opts, &command_opts);
-
    sd = mongoc_client_select_server (stream->coll->client,
                                      false /* for_writes */,
                                      stream->coll->read_prefs,
-                                     &err);
-
+                                     &stream->err);
    if (!sd) {
-      stream->err = err;
       goto cleanup;
    }
+   server_id = mongoc_server_description_id (sd);
+   bson_append_int32 (&command_opts, "serverId", 8, server_id);
+   mongoc_server_description_destroy (sd);
 
    if (bson_iter_init_find (&iter, &command_opts, "sessionId")) {
       if (!_mongoc_client_session_from_iter (
@@ -148,16 +156,12 @@ _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
       }
    }
 
-   server_id = mongoc_server_description_id (sd);
-   bson_append_int32 (&command_opts, "serverId", 8, server_id);
-
    /* use inherited read preference and read concern of the collection */
    if (!mongoc_collection_read_command_with_opts (
-          stream->coll, &command, NULL, &command_opts, &reply, &err)) {
+          stream->coll, &command, NULL, &command_opts, &reply, &stream->err)) {
       bson_destroy (&stream->err_doc);
       bson_copy_to (&reply, &stream->err_doc);
       bson_destroy (&reply);
-      stream->err = err;
       goto cleanup;
    }
 
@@ -194,7 +198,7 @@ _mongoc_change_stream_make_cursor (mongoc_change_stream_t *stream)
 cleanup:
    bson_destroy (&command);
    bson_destroy (&command_opts);
-   mongoc_server_description_destroy (sd);
+   return stream->err.code == 0;
 }
 
 mongoc_change_stream_t *
@@ -275,7 +279,7 @@ _mongoc_change_stream_new (const mongoc_collection_t *coll,
    }
 
    if (stream->err.code == 0) {
-      _mongoc_change_stream_make_cursor (stream);
+      (void) _make_cursor (stream);
    }
 
    return stream;
@@ -294,6 +298,7 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
       goto end;
    }
 
+   BSON_ASSERT (stream->cursor);
    if (!mongoc_cursor_next (stream->cursor, bson)) {
       const bson_t *err_doc;
       bson_error_t err;
@@ -330,8 +335,12 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
       }
 
       if (resumable) {
+         /* recreate the cursor */
          mongoc_cursor_destroy (stream->cursor);
-         _mongoc_change_stream_make_cursor (stream);
+         stream->cursor = NULL;
+         if (!_make_cursor (stream)) {
+            goto end;
+         }
          if (!mongoc_cursor_next (stream->cursor, bson)) {
             resumable =
                !mongoc_cursor_error_document (stream->cursor, &err, &err_doc);
@@ -372,9 +381,12 @@ end:
     * cursor for use with getMore operations, the session MUST be returned to
     * the pool immediately following a getMore operation that indicates that the
     * cursor has been exhausted." */
-   if (stream->implicit_session && stream->cursor->cursor_id == 0) {
-      mongoc_client_session_destroy (stream->implicit_session);
-      stream->implicit_session = NULL;
+   if (stream->implicit_session) {
+      /* If creating the change stream cursor errored, it may be null. */
+      if (!stream->cursor || stream->cursor->cursor_id == 0) {
+         mongoc_client_session_destroy (stream->implicit_session);
+         stream->implicit_session = NULL;
+      }
    }
    return ret;
 }
