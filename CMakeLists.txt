@@ -32,7 +32,7 @@ option (ENABLE_AUTOMATIC_INIT_AND_CLEANUP "Enable automatic init and cleanup (GC
 option (ENABLE_CRYPTO_SYSTEM_PROFILE "Use system crypto profile (OpenSSL only)" OFF)
 option (ENABLE_TRACING "Turn on verbose debug output" OFF)
 option (ENABLE_COVERAGE "Turn on compile options for lcov" OFF)
-set (ENABLE_SHM_COUNTERS AUTO CACHE STRING "Enable shared memory performance counters. Set to ON/AUTO/OFF, default AUTO.")
+set (ENABLE_SHM_COUNTERS AUTO CACHE STRING "Enable memory performance counters that use shared memory on Linux. Set to ON/AUTO/OFF, default AUTO.")
 set (ENABLE_BSON AUTO CACHE STRING "Where to find libbson. Set to BUNDLED/SYSTEM/AUTO/ONLY, default AUTO.")
 set (ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support. Set to ON/AUTO/OFF, default AUTO.")
 set (ENABLE_ZLIB AUTO CACHE STRING "Enable zlib support")
@@ -408,6 +408,8 @@ if (ENABLE_COVERAGE)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
 endif ()
 
+set (MONGOC_ENABLE_SHM_COUNTERS 0)
+
 if (NOT ENABLE_SHM_COUNTERS MATCHES "ON|OFF|AUTO")
    message (FATAL_ERROR "ENABLE_SHM_COUNTERS option must be ON, OFF, or AUTO")
 endif ()
@@ -424,7 +426,7 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
          FATAL_ERROR
          "Shared memory performance counters not supported on Mac or Windows")
    endif ()
-   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMONGOC_ENABLE_SHM_COUNTERS")
+   set (MONGOC_ENABLE_SHM_COUNTERS 1)
 endif ()
 
 set (MONGOC_INTERNAL_INCLUDE_DIRS "")

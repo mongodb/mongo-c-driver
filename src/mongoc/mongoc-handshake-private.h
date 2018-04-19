@@ -70,6 +70,7 @@ typedef enum {
    MONGOC_MD_FLAG_ENABLE_DNSAPI = 1 << 26,
    MONGOC_MD_FLAG_ENABLE_RDTSCP = 1 << 27,
    MONGOC_MD_FLAG_HAVE_SCHED_GETCPU = 1 << 28,
+   MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS = 1 << 29
 } mongoc_handshake_config_flags_t;
 
 

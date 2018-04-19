@@ -20,6 +20,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       SNAPPY                  Build against bundled or external Snappy, or none
 #       SSL                     Build against OpenSSL or native or none
 #       SASL                    Build against SASL or not
+#       ENABLE_SHM_COUNTERS     Build with SHM counters
 
 # Options for this script.
 RELEASE=${RELEASE:-OFF}
@@ -28,6 +29,7 @@ VALGRIND=${VALGRIND:-OFF}
 ANALYZE=${ANALYZE:-OFF}
 COVERAGE=${COVERAGE:-OFF}
 RDTSCP=${RDTSCP:-OFF}
+ENABLE_SHM_COUNTERS=${ENABLE_SHM_COUNTERS:-AUTO}
 
 # CMake options.
 SASL=${SASL:-OFF}
@@ -67,6 +69,7 @@ DEBUG_AND_RELEASE_FLAGS="\
    -DENABLE_RDTSCP=$RDTSCP \
    -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
    -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+   -DENABLE_SHM_COUNTERS=$ENABLE_SHM_COUNTERS \
 "
 
 if [ ! -z "$ZLIB" ]; then

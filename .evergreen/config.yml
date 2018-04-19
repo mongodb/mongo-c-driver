@@ -794,6 +794,18 @@ tasks:
         - func: "upload coverage"
         - func: "upload build"
 
+    - name: debug-compile-no-counters
+      tags: ["debug-compile", "no-counters"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' ENABLE_SHM_COUNTERS=OFF sh .evergreen/compile.sh
+        - func: "upload build"
 
     - name: debug-compile-sanitizer-address-clang
       commands:
@@ -6667,6 +6679,7 @@ buildvariants:
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - "debug-compile-valgrind"
+    - "debug-compile-no-counters"
     - name: "link-with-cmake"
     - name: "link-with-cmake-ssl"
     - name: "link-with-cmake-snappy"

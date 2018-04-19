@@ -21,6 +21,7 @@
 #error "Only <mongoc.h> can be included directly."
 #endif
 
+#include <mongoc.h>
 #include <bson.h>
 
 #ifdef __linux__
@@ -137,7 +138,7 @@ enum {
    LAST_COUNTER
 };
 
-
+#ifdef MONGOC_ENABLE_SHM_COUNTERS
 #define COUNTER(ident, Category, Name, Description)                   \
    static BSON_INLINE void mongoc_counter_##ident##_add (int64_t val) \
    {                                                                  \
@@ -165,7 +166,24 @@ enum {
    }
 #include "mongoc-counters.defs"
 #undef COUNTER
-
+#else
+/* when counters are disabled, these functions are no-ops */
+#define COUNTER(ident, Category, Name, Description)                   \
+   static BSON_INLINE void mongoc_counter_##ident##_add (int64_t val) \
+   {                                                                  \
+   }                                                                  \
+   static BSON_INLINE void mongoc_counter_##ident##_inc (void)        \
+   {                                                                  \
+   }                                                                  \
+   static BSON_INLINE void mongoc_counter_##ident##_dec (void)        \
+   {                                                                  \
+   }                                                                  \
+   static BSON_INLINE void mongoc_counter_##ident##_reset (void)      \
+   {                                                                  \
+   }
+#include "mongoc-counters.defs"
+#undef COUNTER
+#endif
 
 BSON_END_DECLS
 

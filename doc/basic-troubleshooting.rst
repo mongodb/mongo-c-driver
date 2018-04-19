@@ -12,18 +12,23 @@ The following is a short list of things to check when you have a problem.
 * Have you leaked any clients or cursors as can be found with ``mongoc-stat <PID>``?
 * Have packets been delivered to the server? See egress bytes from ``mongoc-stat <PID>``.
 * Does ``valgrind`` show any leaks? Ensure you call ``mongoc_cleanup()`` at the end of your process to cleanup lingering allocations from the MongoDB C driver.
-* If compiling your own copy of MongoDB C driver, consider configuring with ``--enable-tracing`` to enable function tracing and hex dumps of network packets to ``STDERR`` and ``STDOUT``.
+* If compiling your own copy of MongoDB C Driver, consider using the cmake option ``-DENABLE_TRACING=ON`` to enable function tracing and hex dumps of network packets to ``STDERR`` and ``STDOUT``.
 
 Performance Counters
 --------------------
 
-The MongoDB C driver comes with a unique feature to help developers and sysadmins troubleshoot problems in production.
+The MongoDB C driver comes with an optional unique feature to help developers and sysadmins troubleshoot problems in production.
 Performance counters are available for each process using the driver.
-The counters can be accessed outside of the application process via a shared memory segment.
+If available, the counters can be accessed outside of the application process via a shared memory segment.
 This means that you can graph statistics about your application process easily from tools like Munin or Nagios.
 Your author often uses ``watch --interval=0.5 -d mongoc-stat $PID`` to monitor an application.
 
-Counters are currently available on UNIX platforms (besides macOS) that support shared memory segments.
+Performance counters are only available on Linux platforms supporting shared memory segments.
+On supported platforms they are enabled by default.
+Applications can be built without the counters by specifying the cmake option ``-DENABLE_SHM_COUNTERS=OFF``. Additionally, if
+performance counters are already compiled, they can be disabled at runtime by specifying the environment variable ``MONGOC_DISABLE_SHM``.
+
+Performance counters keep track of the following:
 
 * Active and Disposed Cursors
 * Active and Disposed Clients, Client Pools, and Socket Streams.

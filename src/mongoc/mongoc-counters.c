@@ -62,14 +62,18 @@ typedef struct {
 
 BSON_STATIC_ASSERT2 (counters_t, sizeof (mongoc_counters_t) == 64);
 
+#ifdef MONGOC_ENABLE_SHM_COUNTERS
+/* When counters are enabled at compile time but fail to initiate a shared
+ * memory segment, then fall back to a malloc'd segment. This malloc'd segment
+ * isn't useful to anyone. But by using this fallback, the counter increment
+ * functions can behave the same. I.e. they do not need to have a runtime check
+ * for whether or not initiating the shared memory segment succeeded. */
 static void *gCounterFallback = NULL;
-
 
 #define COUNTER(ident, Category, Name, Description) \
    mongoc_counter_t __mongoc_counter_##ident;
 #include "mongoc-counters.defs"
 #undef COUNTER
-
 
 /**
  * mongoc_counters_use_shm:
@@ -78,14 +82,11 @@ static void *gCounterFallback = NULL;
  *
  * Returns: true if SHM is to be used.
  */
-#if defined(BSON_OS_UNIX) && defined(MONGOC_ENABLE_SHM_COUNTERS)
 static bool
 mongoc_counters_use_shm (void)
 {
    return !getenv ("MONGOC_DISABLE_SHM");
 }
-#endif
-
 
 /**
  * mongoc_counters_calc_size:
@@ -115,6 +116,7 @@ mongoc_counters_calc_size (void)
    return size;
 #endif
 }
+#endif
 
 
 /**
@@ -125,6 +127,7 @@ mongoc_counters_calc_size (void)
 void
 _mongoc_counters_cleanup (void)
 {
+#ifdef MONGOC_ENABLE_SHM_COUNTERS
    if (gCounterFallback) {
       bson_free (gCounterFallback);
       gCounterFallback = NULL;
@@ -138,9 +141,11 @@ _mongoc_counters_cleanup (void)
       shm_unlink (name);
 #endif
    }
+#endif
 }
 
 
+#ifdef MONGOC_ENABLE_SHM_COUNTERS
 /**
  * mongoc_counters_alloc:
  * @size: The size of the shared memory segment.
@@ -268,7 +273,7 @@ mongoc_counters_register (mongoc_counters_t *counters,
 
    return infos->offset;
 }
-
+#endif
 
 /**
  * mongoc_counters_init:
@@ -279,6 +284,7 @@ mongoc_counters_register (mongoc_counters_t *counters,
 void
 _mongoc_counters_init (void)
 {
+#ifdef MONGOC_ENABLE_SHM_COUNTERS
    mongoc_counter_info_t *info;
    mongoc_counters_t *counters;
    size_t infos_size;
@@ -314,4 +320,5 @@ _mongoc_counters_init (void)
     */
    bson_memory_barrier ();
    counters->size = (uint32_t) size;
+#endif
 }

@@ -318,6 +318,12 @@
 #endif
 
 
+#define MONGOC_ENABLE_SHM_COUNTERS @MONGOC_ENABLE_SHM_COUNTERS@
+
+#if MONGOC_ENABLE_SHM_COUNTERS != 1
+#  undef MONGOC_ENABLE_SHM_COUNTERS
+#endif
+
 /*
  * Set if we have enabled fast counters on Intel using the RDTSCP instruction
  *
