@@ -2,8 +2,7 @@
 #       C Benchmark Tests             #
 #######################################
 
-DIR=$(dirname $0)
-. $DIR/find-cmake.sh
+
 
 #######################################
 #            Variables                #
@@ -14,10 +13,8 @@ c_driver_variables:
   ## Task list
   benchmark_compile: &benchmark_compile
     - name: "compile"
-    - name: "compile_debug"
   benchmark_test_list: &benchmark_tests
     - name: "BenchMarkTests"
-    - name: "BenchMarkTests_debug"
 
   ## Common download urls (merge in as hashes)
   mongo_download_url_prefixes:
@@ -36,21 +33,12 @@ c_driver_variables:
         compile_script: |
           set -o errexit
           set -o verbose
+          . "./.evergreen/find-cmake.sh"
+
           $CMAKE -DENABLE_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=mongoc . && make -j8 && make install
           git clone git@github.com:mongodb/mongo-c-driver-performance.git
           cd mongo-c-driver-performance
           $CMAKE -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=../mongoc . && make -j8
-
-    compile_debug:
-      unix: &compile_unix_debug
-        compile_script: |
-          set -o errexit
-          set -o verbose
-          ulimit -c unlimited || true
-          $CMAKE -DENABLE_TESTS=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=mongoc . && make -j8 && make install
-          git clone git@github.com:mongodb/mongo-c-driver-performance.git
-          cd mongo-c-driver-performance
-          $CMAKE -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=../mongoc . && make -j8
 
     mongodb:
       start_mongod_command: &start_mongod_command
@@ -128,6 +116,7 @@ functions:
         set -o verbose
 
         result=-1  # Negative one.
+        ulimit -c unlimited || true
 
         # Run this function on exit.
         done=false
@@ -189,14 +178,14 @@ functions:
   "backtrace":
     - command: shell.exec
       params:
-        working_dir: "mongoc"
+        working_dir: "mongo-c-driver"
         script: |
           echo "Debugging core files"
 
           shopt -s nullglob
-          for i in *.core; do
+          for i in *core*; do
              echo $i
-             echo "backtrace full" | execute gdb -q mongo-c-performance $i
+             echo "backtrace full" | gdb -q ./mongo-c-driver-performance/mongo-c-performance $i
           done
 
 pre:
@@ -245,32 +234,6 @@ tasks:
             permissions: public-read
             content_type: ${content_type|application/x-gzip}
 
-    - name: compile_debug
-      commands:
-        - func: "fetch source"
-        - command: git.apply_patch
-          params:
-            directory: "mongo-c-driver"
-        - func: "compile function"
-          vars:
-            <<: *compile_unix_debug
-        - command: shell.exec
-          params:
-              working_dir: "mongo-c-driver"
-              script: |
-                set -o errexit
-                set -o verbose
-                tar czf ../mongo-c-driver.tar.gz .
-        - command: s3.put
-          params:
-            aws_key: ${aws_key}
-            aws_secret: ${aws_secret}
-            local_file: mongo-c-driver.tar.gz
-            remote_file: mongo-c-driver/${build_variant}/${revision}/artifacts/c-perf-binaries-debug.tar.gz
-            bucket: mciuploads
-            permissions: public-read
-            content_type: ${content_type|application/x-gzip}
-
     - name: BenchMarkTests
       depends_on:
       - variant: c-driver-benchmark-compile
@@ -285,17 +248,6 @@ tasks:
         - func: "attach benchmark test results"
         - func: "send dashboard data"
 
-    - name: BenchMarkTests_debug
-      depends_on:
-      - variant: c-driver-benchmark-compile
-        name: compile_debug
-      commands:
-        - func: "fetch artifacts"
-          vars:
-            file: c-perf-binaries-debug
-        - func: "fetch mongodb"
-        - func: "fetch driver test data"
-        - func: "run benchmark tests"
 
 #######################################
 #           Buildvariants             #
