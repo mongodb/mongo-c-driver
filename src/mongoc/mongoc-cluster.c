@@ -146,9 +146,8 @@ _bson_error_message_printf (bson_error_t *error, const char *format, ...)
    }
 }
 
-#define RUN_CMD_ERR(_domain, _code, _msg)                          \
+#define RUN_CMD_ERR_DECORATE                                       \
    do {                                                            \
-      bson_set_error (error, _domain, _code, _msg);                \
       _bson_error_message_printf (                                 \
          error,                                                    \
          "Failed to send \"%s\" command with database \"%s\": %s", \
@@ -157,6 +156,11 @@ _bson_error_message_printf (bson_error_t *error, const char *format, ...)
          error->message);                                          \
    } while (0)
 
+#define RUN_CMD_ERR(_domain, _code, ...)                   \
+   do {                                                    \
+      bson_set_error (error, _domain, _code, __VA_ARGS__); \
+      RUN_CMD_ERR_DECORATE;                                \
+   } while (0)
 
 /*
  *--------------------------------------------------------------------------
@@ -259,13 +263,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
       mongoc_cluster_disconnect_node (cluster, server_id, true, error);
 
       /* add info about the command to writev_full's error message */
-      _bson_error_message_printf (
-         error,
-         "Failed to send \"%s\" command with database \"%s\": %s",
-         cmd->command_name,
-         cmd->db_name,
-         error->message);
-
+      RUN_CMD_ERR_DECORATE;
       GOTO (done);
    }
 
@@ -2579,6 +2577,8 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                                     cluster->sockettimeoutms,
                                     error);
    if (!ok) {
+      /* add info about the command to writev_full's error message */
+      RUN_CMD_ERR_DECORATE;
       mongoc_cluster_disconnect_node (
          cluster, server_stream->sd->id, true, error);
       bson_free (output);
@@ -2590,6 +2590,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    ok = _mongoc_buffer_append_from_stream (
       &buffer, server_stream->stream, 4, cluster->sockettimeoutms, error);
    if (!ok) {
+         RUN_CMD_ERR_DECORATE;
       mongoc_cluster_disconnect_node (
          cluster, server_stream->sd->id, true, error);
       bson_free (output);
@@ -2602,8 +2603,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    memcpy (&msg_len, buffer.data, 4);
    msg_len = BSON_UINT32_FROM_LE (msg_len);
    if ((msg_len < 16) || (msg_len > server_stream->sd->max_msg_size)) {
-      bson_set_error (
-         error,
+         RUN_CMD_ERR (
          MONGOC_ERROR_PROTOCOL,
          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
          "Message size %d is not within expected range 16-%d bytes",
@@ -2623,6 +2623,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                                            cluster->sockettimeoutms,
                                            error);
    if (!ok) {
+         RUN_CMD_ERR_DECORATE;
       mongoc_cluster_disconnect_node (
          cluster, server_stream->sd->id, true, error);
       bson_free (output);
@@ -2633,8 +2634,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
 
    ok = _mongoc_rpc_scatter (&rpc, buffer.data, buffer.len);
    if (!ok) {
-      bson_set_error (error,
-                      MONGOC_ERROR_PROTOCOL,
+         RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Malformed message from server");
       bson_free (output);
@@ -2648,8 +2648,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
 
       output = bson_realloc (output, len);
       if (!_mongoc_rpc_decompress (&rpc, (uint8_t *) output, len)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_PROTOCOL,
+            RUN_CMD_ERR (MONGOC_ERROR_PROTOCOL,
                          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                          "Could not decompress message from server");
          mongoc_cluster_disconnect_node (

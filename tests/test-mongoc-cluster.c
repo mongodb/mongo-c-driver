@@ -1378,6 +1378,69 @@ test_cluster_ismaster_hangup (void)
    _test_cluster_ismaster_fails (true);
 }
 
+static void
+_test_cluster_command_error (bool use_op_msg)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   bson_error_t err;
+   request_t *request;
+   future_t *future;
+
+   if (use_op_msg) {
+      server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   } else {
+      server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG - 1);
+   }
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   future = future_client_command_simple (client,
+                                          "db",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* opts */,
+                                          NULL /* read prefs */,
+                                          &err);
+   if (use_op_msg) {
+      request = mock_server_receives_msg (
+         server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+   } else {
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+   }
+   mock_server_hangs_up (request);
+   BSON_ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   request_destroy (request);
+   if (use_op_msg) {
+      /* _mongoc_buffer_append_from_stream, used by opmsg gives more detail. */
+      ASSERT_ERROR_CONTAINS (err,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "Failed to send \"ping\" command with database "
+                             "\"db\": Failed to read 4 bytes: socket error or "
+                             "timeout");
+   } else {
+      ASSERT_ERROR_CONTAINS (err,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "Failed to send \"ping\" command with database "
+                             "\"db\": socket error or timeout");
+   }
+   mock_server_destroy (server);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_cluster_command_error_op_msg ()
+{
+   _test_cluster_command_error (true);
+}
+
+static void
+test_cluster_command_error_op_query ()
+{
+   _test_cluster_command_error (false);
+}
 
 void
 test_cluster_install (TestSuite *suite)
@@ -1503,4 +1566,10 @@ test_cluster_install (TestSuite *suite)
       suite, "/Cluster/ismaster_fails", test_cluster_ismaster_fails);
    TestSuite_AddMockServerTest (
       suite, "/Cluster/ismaster_hangup", test_cluster_ismaster_hangup);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/command_error/op_msg",
+                                test_cluster_command_error_op_msg);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/command_error/op_query",
+                                test_cluster_command_error_op_query);
 }
