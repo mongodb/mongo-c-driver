@@ -463,11 +463,10 @@ test_counters_streams (void *ctx)
 static void
 test_counters_auth (void *ctx)
 {
+   char *host_and_port = test_framework_get_host_and_port ();
    char *uri_str = test_framework_get_uri_str ();
-   char *uri_str_bad = bson_strdup_printf ("mongodb://%s:%s@%s/",
-                                           "bad_user",
-                                           "bad_pass",
-                                           test_framework_get_host_and_port ());
+   char *uri_str_bad = bson_strdup_printf (
+      "mongodb://%s:%s@%s/", "bad_user", "bad_pass", host_and_port);
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    bool ret;
@@ -486,8 +485,10 @@ test_counters_auth (void *ctx)
    ASSERT_OR_PRINT (ret, err);
    DIFF_AND_RESET (auth_success, ==, 1);
    DIFF_AND_RESET (auth_failure, ==, 0);
+   mongoc_uri_destroy (uri);
    bson_free (uri_str);
    bson_free (uri_str_bad);
+   bson_free (host_and_port);
    mongoc_client_destroy (client);
 }
 
@@ -591,7 +592,8 @@ test_counters_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_more_than_3,
-                      test_framework_skip_if_compressors);
+                      test_framework_skip_if_compressors,
+                      test_framework_skip_if_auth);
    TestSuite_AddLive (suite, "/counters/cursors", test_counters_cursors);
    TestSuite_AddLive (suite, "/counters/clients", test_counters_clients);
    TestSuite_AddFull (suite,
