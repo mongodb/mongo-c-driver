@@ -2598,7 +2598,6 @@ test_example_change_stream (mongoc_database_t *db)
    /* End Changestream Example 3 */
    bson_destroy (&opts);
    bson_destroy (&pipeline);
-   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
 }
 

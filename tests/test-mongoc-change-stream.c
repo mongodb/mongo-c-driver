@@ -1095,6 +1095,97 @@ typedef struct {
    int agg_count;
 } array_started_ctx_t;
 
+static void
+_accepts_array_started (const mongoc_apm_command_started_t *event)
+{
+   const bson_t *cmd = mongoc_apm_command_started_get_command (event);
+   const char *cmd_name = mongoc_apm_command_started_get_command_name (event);
+   array_started_ctx_t *ctx =
+      (array_started_ctx_t *) mongoc_apm_command_started_get_context (event);
+   if (strcmp (cmd_name, "aggregate") != 0) {
+      return;
+   }
+   ctx->agg_count++;
+   ASSERT_MATCH (cmd, ctx->pattern);
+}
+
+/* Test that watch accepts an array document {0: {}, 1: {}} as the pipeline,
+ * similar to mongoc_collection_aggregate */
+static void
+test_change_stream_accepts_array (void *test_ctx)
+{
+   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new ();
+   array_started_ctx_t ctx = {0};
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   const bson_t *bson;
+   bson_error_t err;
+   bson_t *opts =
+      tmp_bson ("{'maxAwaitTimeMS': 1}"); /* to speed up the test. */
+
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   /* set up apm callbacks to listen for the agg commands. */
+   ctx.pattern =
+      bson_strdup ("{'aggregate': 'coll', 'pipeline': [ {'$changeStream': {}}, "
+                   "{'$match': {'x': 1}}, {'$project': {'x': 1}}]}");
+   mongoc_apm_set_command_started_cb (callbacks, _accepts_array_started);
+   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
+   coll = mongoc_client_get_collection (client, "db", "coll");
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (coll, tmp_bson (NULL), NULL, NULL, &err),
+      err);
+   /* try starting a change stream with a { "pipeline": [...] } argument */
+   stream = mongoc_collection_watch (
+      coll,
+      tmp_bson ("{'pipeline': [{'$match': {'x': 1}}, {'$project': {'x': 1}}]}"),
+      opts);
+   (void) mongoc_change_stream_next (stream, &bson);
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, &bson),
+                    err);
+   ASSERT_CMPINT32 (ctx.agg_count, ==, 1);
+   mongoc_change_stream_destroy (stream);
+   /* try with an array like document. */
+   stream = mongoc_collection_watch (
+      coll,
+      tmp_bson ("{'0': {'$match': {'x': 1}}, '1': {'$project': {'x': 1}}}"),
+      opts);
+   (void) mongoc_change_stream_next (stream, &bson);
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, &bson),
+                    err);
+   ASSERT_CMPINT32 (ctx.agg_count, ==, 2);
+   mongoc_change_stream_destroy (stream);
+   /* try with malformed { "pipeline": [...] } argument. */
+   bson_free (ctx.pattern);
+   ctx.pattern = bson_strdup (
+      "{'aggregate': 'coll', 'pipeline': [ {'$changeStream': {}}, 42 ]}");
+   stream =
+      mongoc_collection_watch (coll, tmp_bson ("{'pipeline': [42] }"), NULL);
+   (void) mongoc_change_stream_next (stream, &bson);
+   BSON_ASSERT (mongoc_change_stream_error_document (stream, &err, &bson));
+   ASSERT_ERROR_CONTAINS (
+      err,
+      MONGOC_ERROR_SERVER,
+      14,
+      "Each element of the 'pipeline' array must be an object");
+   ASSERT_CMPINT32 (ctx.agg_count, ==, 3);
+   mongoc_change_stream_destroy (stream);
+   /* try with malformed array doc argument. */
+   stream = mongoc_collection_watch (coll, tmp_bson ("{'0': 42 }"), NULL);
+   (void) mongoc_change_stream_next (stream, &bson);
+   BSON_ASSERT (mongoc_change_stream_error_document (stream, &err, &bson));
+   ASSERT_ERROR_CONTAINS (
+      err,
+      MONGOC_ERROR_SERVER,
+      14,
+      "Each element of the 'pipeline' array must be an object");
+   ASSERT_CMPINT32 (ctx.agg_count, ==, 4);
+   mongoc_change_stream_destroy (stream);
+   bson_free (ctx.pattern);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
 
 void
 test_change_stream_install (TestSuite *suite)
@@ -1162,6 +1253,13 @@ test_change_stream_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/change_stream/next_after_error",
                       test_change_stream_next_after_error,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_rs_version_6);
+
+   TestSuite_AddFull (suite,
+                      "/change_stream/accepts_array",
+                      test_change_stream_accepts_array,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_rs_version_6);
