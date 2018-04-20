@@ -408,8 +408,6 @@ if (ENABLE_COVERAGE)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
 endif ()
 
-set (MONGOC_ENABLE_SHM_COUNTERS 0)
-
 if (NOT ENABLE_SHM_COUNTERS MATCHES "ON|OFF|AUTO")
    message (FATAL_ERROR "ENABLE_SHM_COUNTERS option must be ON, OFF, or AUTO")
 endif ()
@@ -426,7 +424,7 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
          FATAL_ERROR
          "Shared memory performance counters not supported on Mac or Windows")
    endif ()
-   set (MONGOC_ENABLE_SHM_COUNTERS 1)
+   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMONGOC_ENABLE_SHM_COUNTERS")
 endif ()
 
 set (MONGOC_INTERNAL_INCLUDE_DIRS "")
