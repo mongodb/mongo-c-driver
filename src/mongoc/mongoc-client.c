@@ -2164,6 +2164,7 @@ _mongoc_client_monitor_op_killcursors_failed (
    int64_t operation_id)
 {
    mongoc_client_t *client;
+   bson_t doc;
    mongoc_apm_command_failed_t event;
 
    ENTRY;
@@ -2174,10 +2175,15 @@ _mongoc_client_monitor_op_killcursors_failed (
       EXIT;
    }
 
+   /* fake server reply to killCursors command: {ok: 0} */
+   bson_init (&doc);
+   bson_append_int32 (&doc, "ok", 2, 0);
+
    mongoc_apm_command_failed_init (&event,
                                    duration,
                                    "killCursors",
                                    error,
+                                   &doc,
                                    cluster->request_id,
                                    operation_id,
                                    &server_stream->sd->host,
@@ -2187,6 +2193,7 @@ _mongoc_client_monitor_op_killcursors_failed (
    client->apm_callbacks.failed (&event);
 
    mongoc_apm_command_failed_cleanup (&event);
+   bson_destroy (&doc);
 }
 
 
