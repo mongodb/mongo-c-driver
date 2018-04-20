@@ -938,6 +938,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    if (cursor->write_concern &&
        !mongoc_write_concern_is_default (cursor->write_concern) &&
        server_stream->sd->max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN) {
+      parts.assembled.is_acknowledged =
+         mongoc_write_concern_is_acknowledged (cursor->write_concern);
       mongoc_write_concern_append (cursor->write_concern, &parts.extra);
    }
 

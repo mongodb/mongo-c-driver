@@ -1811,6 +1811,8 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       if (!mongoc_write_concern_is_default (default_wc) &&
           !read_write_opts.write_concern_owned &&
           wire_version >= wc_wire_version) {
+         parts.assembled.is_acknowledged =
+            mongoc_write_concern_is_acknowledged (default_wc);
          bson_append_document (&parts.extra,
                                "writeConcern",
                                12,
