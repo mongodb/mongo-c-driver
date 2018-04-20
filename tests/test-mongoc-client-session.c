@@ -876,6 +876,9 @@ started (const mongoc_apm_command_started_t *event)
             abort ();
          }
       }
+   } else {
+      /* unacknowledged commands should never include lsid */
+      BSON_ASSERT (!bson_has_field (cmd, "lsid"));
    }
 
    has_cluster_time = bson_iter_init_find (&iter, cmd, "$clusterTime");
@@ -2169,32 +2172,73 @@ test_read_concern (void *ctx)
 
 
 static void
-test_unacknowledged (void *ctx)
+_test_unacknowledged (session_test_fn_t test_fn,
+                      bool explicit_cs,
+                      bool inherit_wc)
 {
    session_test_t *test;
    mongoc_write_concern_t *wc;
    bson_error_t error;
 
+   /* The following tests assert that unacknowledged command does not set the
+    * operationTime. Additionally, the "started" APM callback asserts that the
+    * command does not include an lsid. */
    test = session_test_new (CORRECT_CLIENT, CAUSAL);
-   test->expect_explicit_lsid = true;
    test->acknowledged = false;
-   ASSERT_OR_PRINT (
-      mongoc_client_session_append (test->cs, &test->opts, &error), error);
 
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 0);
-   BSON_ASSERT (mongoc_write_concern_append_bad (wc, &test->opts));
 
-   /* unacknowledged exchange does NOT set operationTime */
-   test_insert_one (test);
+   if (explicit_cs) {
+      ASSERT_OR_PRINT (
+         mongoc_client_session_append (test->cs, &test->opts, &error), error);
+   }
+
+   if (inherit_wc) {
+      mongoc_client_set_write_concern (test->client, wc);
+      mongoc_database_set_write_concern (test->db, wc);
+      mongoc_collection_set_write_concern (test->collection, wc);
+   } else {
+      BSON_ASSERT (mongoc_write_concern_append_bad (wc, &test->opts));
+   }
+
+   test_fn (test);
    check_success (test);
    ASSERT_MATCH (last_non_getmore_cmd (test), "{'writeConcern': {'w': 0}}");
-   BSON_ASSERT (!bson_has_field (last_non_getmore_cmd (test), "readConcern"));
    ASSERT_CMPUINT32 (test->cs->operation_timestamp, ==, (uint32_t) 0);
 
    mongoc_write_concern_destroy (wc);
    session_test_destroy (test);
 }
+
+
+static void
+test_unacknowledged_explicit_cs_inherit_wc (void *ctx)
+{
+   _test_unacknowledged ((session_test_fn_t) ctx, true, true);
+}
+
+
+static void
+test_unacknowledged_implicit_cs_explicit_wc (void *ctx)
+{
+   _test_unacknowledged ((session_test_fn_t) ctx, true, false);
+}
+
+
+static void
+test_unacknowledged_implicit_cs_inherit_wc (void *ctx)
+{
+   _test_unacknowledged ((session_test_fn_t) ctx, false, true);
+}
+
+
+static void
+test_unacknowledged_explicit_cs_explicit_wc (void *ctx)
+{
+   _test_unacknowledged ((session_test_fn_t) ctx, false, false);
+}
+
 
 #define add_session_test(_suite, _name, _test_fn, _allow_read_concern) \
    TestSuite_AddFull (_suite,                                          \
@@ -2216,6 +2260,21 @@ test_unacknowledged (void *ctx)
                       test_framework_skip_if_no_cluster_time,                  \
                       test_framework_skip_if_no_crypto,                        \
                       __VA_ARGS__)
+
+#define add_unacknowledged_test(                                        \
+   _suite, _name, _test_fn, _explicit_cs, _inherit_wc)                  \
+   TestSuite_AddFull (                                                  \
+      _suite,                                                           \
+      _name,                                                            \
+      (_explicit_cs)                                                    \
+         ? (_inherit_wc ? test_unacknowledged_explicit_cs_inherit_wc    \
+                        : test_unacknowledged_implicit_cs_explicit_wc)  \
+         : (_inherit_wc ? test_unacknowledged_implicit_cs_inherit_wc    \
+                        : test_unacknowledged_explicit_cs_explicit_wc), \
+      NULL,                                                             \
+      (void *) (_test_fn),                                              \
+      test_framework_skip_if_no_cluster_time,                           \
+      test_framework_skip_if_no_crypto)
 
 
 void
@@ -2405,11 +2464,106 @@ test_session_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_cluster_time,
                       test_framework_skip_if_no_crypto);
-   TestSuite_AddFull (suite,
-                      "/Session/unacknowledged",
-                      test_unacknowledged,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_cluster_time,
-                      test_framework_skip_if_no_crypto);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/insert_one/explicit_cs/inherit_wc",
+      test_insert_one,
+      true,
+      true);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/insert_one/explicit_cs/explicit_wc",
+      test_insert_one,
+      true,
+      false);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/insert_one/implicit_cs/inherit_wc",
+      test_insert_one,
+      false,
+      true);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/insert_one/implicit_cs/explicit_wc",
+      test_insert_one,
+      false,
+      false);
+   /* find_and_modify_with_opts only inherits acknowledged write concerns, so
+    * skip tests that inherit a write concern. Technically, an explicit
+    * unacknowledged write concern doesn't make much sense with findAndModify,
+    * but this is testing the common code path for command execution. */
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/find_and_modify/explicit_cs/explicit_wc",
+      test_fam,
+      true,
+      false);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/find_and_modify/implicit_cs/explicit_wc",
+      test_fam,
+      false,
+      false);
+   /* command_with_opts also does not inherit write concerns, but we still want
+    * to test the common code path for command execution. */
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/db_cmd/explicit_cs/explicit_wc",
+      test_db_cmd,
+      true,
+      false);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/db_cmd/implicit_cs/explicit_wc",
+      test_db_cmd,
+      false,
+      false);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/read_write_cmd/explicit_cs/inherit_wc",
+      test_read_write_cmd,
+      true,
+      true);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/read_write_cmd/explicit_cs/explicit_wc",
+      test_read_write_cmd,
+      true,
+      false);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/read_write_cmd/implicit_cs/inherit_wc",
+      test_read_write_cmd,
+      false,
+      true);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/read_write_cmd/implicit_cs/explicit_wc",
+      test_read_write_cmd,
+      false,
+      false);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/write_cmd/explicit_cs/inherit_wc",
+      test_write_cmd,
+      true,
+      true);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/write_cmd/explicit_cs/explicit_wc",
+      test_write_cmd,
+      true,
+      false);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/write_cmd/implicit_cs/inherit_wc",
+      test_write_cmd,
+      false,
+      true);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/write_cmd/implicit_cs/explicit_wc",
+      test_write_cmd,
+      false,
+      false);
 }
