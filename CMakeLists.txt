@@ -400,13 +400,17 @@ set (MONGOC_CC ${CMAKE_C_COMPILER})
 set (MONGOC_USER_SET_CFLAGS ${CMAKE_C_FLAGS})
 set (MONGOC_USER_SET_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
 
+set (MONGOC_TRACE 0)
+
 if (ENABLE_TRACING)
-   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMONGOC_TRACE")
+   set (MONGOC_TRACE 1)
 endif ()
 
 if (ENABLE_COVERAGE)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
 endif ()
+
+set (MONGOC_ENABLE_SHM_COUNTERS 0)
 
 if (NOT ENABLE_SHM_COUNTERS MATCHES "ON|OFF|AUTO")
    message (FATAL_ERROR "ENABLE_SHM_COUNTERS option must be ON, OFF, or AUTO")
@@ -424,7 +428,7 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
          FATAL_ERROR
          "Shared memory performance counters not supported on Mac or Windows")
    endif ()
-   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DMONGOC_ENABLE_SHM_COUNTERS")
+   set (MONGOC_ENABLE_SHM_COUNTERS 1)
 endif ()
 
 set (MONGOC_INTERNAL_INCLUDE_DIRS "")

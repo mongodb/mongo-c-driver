@@ -25,4 +25,5 @@ fi
 
 
 AS_IF([test "$enable_tracing" = "yes"],
-      [CPPFLAGS="$CPPFLAGS -DMONGOC_TRACE"])
+      [AC_SUBST(MONGOC_TRACE, 1)],
+      [AC_SUBST(MONGOC_TRACE, 0)])
