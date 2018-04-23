@@ -267,17 +267,14 @@ test_bson_oid_get_time_t (void)
 {
    bson_context_t *context;
    bson_oid_t oid;
-   bson_oid_t oid2;
+   uint32_t start = (uint32_t) time (NULL);
 
-   /*
-    * Test that the bson time_t matches the current time. This can race, but
-    * i dont think that matters much.
-    */
    context = bson_context_new (BSON_CONTEXT_NONE);
    bson_oid_init (&oid, context);
-   bson_oid_init (&oid2, context);
-   BSON_ASSERT (bson_oid_get_time_t (&oid) == bson_oid_get_time_t (&oid2));
-   BSON_ASSERT (time (NULL) == bson_oid_get_time_t (&oid2));
+   ASSERT_CMPUINT32 ((uint32_t) bson_oid_get_time_t (&oid), >=, start);
+   ASSERT_CMPUINT32 (
+      (uint32_t) bson_oid_get_time_t (&oid), >=, (uint32_t) time (NULL));
+
    bson_context_destroy (context);
 }
 
