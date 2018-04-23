@@ -524,7 +524,7 @@ test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
 /* test when clients try connecting to servers varying the DNS results of the
  * clients and the socket binding of the server. */
 static void
-test_topology_scanner_dns ()
+test_topology_scanner_dns (void)
 {
    /* server can bind to: {ipv4 only, ipv6 only, both}
     * client can connect to: {127.0.0.1, ::1, localhost}
@@ -583,7 +583,7 @@ null_initiator (mongoc_async_cmd_t *acmd)
  * retired node failed to establish a connection.
  */
 static void
-test_topology_retired_fails_to_initiate ()
+test_topology_retired_fails_to_initiate (void)
 {
    mock_server_t *server;
    mongoc_topology_scanner_t *scanner;
