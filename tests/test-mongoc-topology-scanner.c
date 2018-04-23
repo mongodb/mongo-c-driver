@@ -537,8 +537,8 @@ test_topology_scanner_dns (void)
                              {"both", "127.0.0.1", true, 1, "ipv4"},
                              {"both", "[::1]", true, 1, "ipv6"}};
    /* these tests require a hostname mapping to both IPv4 and IPv6 local.
- * this can be localhost normally, but some configurations may have localhost
- * only mapping to 127.0.0.1, not ::1. */
+    * this can be localhost normally, but some configurations may have localhost
+    * only mapping to 127.0.0.1, not ::1. */
    dns_testcase_t tests_with_ipv4_and_ipv6_uri[] = {
       {"ipv4", "<placeholder>", true, 2, "ipv4"},
       {"ipv6", "<placeholder>", true, 2, "ipv6"},
@@ -569,7 +569,7 @@ _retired_fails_to_initiate_cb (uint32_t id,
                                const bson_error_t *error /* IN */)
 {
    /* this should never get called. */
-  BSON_ASSERT(false);
+   BSON_ASSERT (false);
 }
 
 static mongoc_stream_t *
@@ -618,6 +618,89 @@ test_topology_retired_fails_to_initiate (void)
    mock_server_destroy (server);
 }
 
+static void
+heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
+{
+   bson_error_t error;
+   bool *failed =
+      (bool *) mongoc_apm_server_heartbeat_failed_get_context (event);
+
+   mongoc_apm_server_heartbeat_failed_get_error (event, &error);
+
+   MONGOC_ERROR ("heartbeat failed: %s\n", error.message);
+
+   *failed = true;
+}
+
+/* CDRIVER-2624: due to a bug, we repeated the TLS handshake on each heartbeat,
+ * causing some MongoDB versions to hang up */
+static void
+_test_topology_scanner_does_not_renegotiate (bool pooled)
+{
+   mongoc_uri_t *uri;
+   mongoc_apm_callbacks_t *callbacks;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client;
+   bool failed = false;
+   bool r;
+   bson_error_t error;
+
+   uri = test_framework_get_uri ();
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
+   /* faster pool shutdown to make the test quick */
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 100);
+
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_server_heartbeat_failed_cb (callbacks, heartbeat_failed);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      test_framework_set_pool_ssl_opts (pool);
+      mongoc_client_pool_set_apm_callbacks (pool, callbacks, &failed);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      mongoc_client_set_apm_callbacks (client, callbacks, &failed);
+      test_framework_set_ssl_opts (client);
+   }
+
+   /* ensure connection */
+   r = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   _mongoc_usleep (1500 * 1000); /* 1.5 seconds */
+
+   r = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   /* no heartbeats failed */
+   BSON_ASSERT (!failed);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_uri_destroy (uri);
+}
+
+static void
+test_topology_scanner_does_not_renegotiate_single (void *ctx)
+{
+   _test_topology_scanner_does_not_renegotiate (false);
+}
+
+static void
+test_topology_scanner_does_not_renegotiate_pooled (void *ctx)
+{
+   _test_topology_scanner_does_not_renegotiate (true);
+}
+
 void
 test_topology_scanner_install (TestSuite *suite)
 {
@@ -647,4 +730,18 @@ test_topology_scanner_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/retired_fails_to_initiate",
                                 test_topology_retired_fails_to_initiate);
+   TestSuite_AddFull (suite,
+                      "/TOPOLOGY/scanner/renegotiate/single",
+                      test_topology_scanner_does_not_renegotiate_single,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow_or_live,
+                      test_framework_skip_if_valgrind);
+   TestSuite_AddFull (suite,
+                      "/TOPOLOGY/scanner/renegotiate/pooled",
+                      test_topology_scanner_does_not_renegotiate_pooled,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_slow_or_live,
+                      test_framework_skip_if_valgrind);
 }

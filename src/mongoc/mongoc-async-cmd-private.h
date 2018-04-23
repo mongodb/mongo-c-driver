@@ -78,6 +78,7 @@ typedef struct _mongoc_async_cmd {
 mongoc_async_cmd_t *
 mongoc_async_cmd_new (mongoc_async_t *async,
                       mongoc_stream_t *stream,
+                      bool is_setup_done,
                       struct addrinfo *dns_result,
                       mongoc_async_cmd_initiate_t initiator,
                       int64_t initiate_delay_ms,

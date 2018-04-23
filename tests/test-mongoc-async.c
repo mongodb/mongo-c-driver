@@ -145,6 +145,7 @@ test_ismaster_impl (bool with_ssl)
 
       mongoc_async_cmd_new (async,
                             sock_streams[i],
+                            false,
                             NULL /* dns result, n/a. */,
                             NULL, /* initiator. */
                             0,    /* initiate delay. */
@@ -273,6 +274,7 @@ test_large_ismaster (void *ctx)
    async = mongoc_async_new ();
    mongoc_async_cmd_new (async,
                          sock_stream,
+                         false, /* is setup done. */
                          NULL /* dns result, n/a. */,
                          NULL, /* initiator. */
                          0,    /* initiate delay. */
@@ -335,6 +337,7 @@ test_ismaster_delay ()
    BSON_ASSERT (bson_append_int32 (&ismaster_cmd, "isMaster", 8, 1));
    mongoc_async_cmd_new (async,
                          NULL, /* stream, initialized after delay. */
+                         false, /* is setup done. */
                          NULL, /* dns result. */
                          test_ismaster_delay_initializer,
                          100,  /* delay 100ms. */
@@ -345,7 +348,6 @@ test_ismaster_delay ()
                          &test_ismaster_delay_callback,
                          &stream_with_result,
                          TIMEOUT);
-
 
    mongoc_async_run (async);
 

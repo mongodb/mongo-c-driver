@@ -156,11 +156,11 @@ _mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname)
 }
 
 void
-_mongoc_async_cmd_state_start (mongoc_async_cmd_t *acmd)
+_mongoc_async_cmd_state_start (mongoc_async_cmd_t *acmd, bool is_setup_done)
 {
    if (!acmd->stream) {
       acmd->state = MONGOC_ASYNC_CMD_INITIATE;
-   } else if (acmd->setup) {
+   } else if (acmd->setup && !is_setup_done) {
       acmd->state = MONGOC_ASYNC_CMD_SETUP;
    } else {
       acmd->state = MONGOC_ASYNC_CMD_SEND;
@@ -172,6 +172,7 @@ _mongoc_async_cmd_state_start (mongoc_async_cmd_t *acmd)
 mongoc_async_cmd_t *
 mongoc_async_cmd_new (mongoc_async_t *async,
                       mongoc_stream_t *stream,
+                      bool is_setup_done,
                       struct addrinfo *dns_result,
                       mongoc_async_cmd_initiate_t initiator,
                       int64_t initiate_delay_ms,
@@ -207,7 +208,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
 
    _mongoc_async_cmd_init_send (acmd, dbname);
 
-   _mongoc_async_cmd_state_start (acmd);
+   _mongoc_async_cmd_state_start (acmd, is_setup_done);
 
    async->ncmds++;
    DL_APPEND (async->cmds, acmd);

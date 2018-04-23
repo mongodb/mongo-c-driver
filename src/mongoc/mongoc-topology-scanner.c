@@ -164,6 +164,7 @@ _mongoc_topology_scanner_get_ismaster (mongoc_topology_scanner_t *ts)
 static void
 _begin_ismaster_cmd (mongoc_topology_scanner_node_t *node,
                      mongoc_stream_t *stream,
+                     bool is_setup_done,
                      struct addrinfo *dns_result,
                      int64_t initiate_delay_ms)
 {
@@ -182,10 +183,11 @@ _begin_ismaster_cmd (mongoc_topology_scanner_node_t *node,
    }
 
    /* if the node should connect with a TCP socket, stream will be null, and
-   * dns_result will be set. The async loop is responsible for calling the
-   * _tcp_initiator to construct TCP sockets. */
+    * dns_result will be set. The async loop is responsible for calling the
+    * _tcp_initiator to construct TCP sockets. */
    mongoc_async_cmd_new (ts->async,
                          stream,
+                         is_setup_done,
                          dns_result,
                          _mongoc_topology_scanner_tcp_initiate,
                          initiate_delay_ms,
@@ -646,11 +648,11 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node,
    }
 
    if (node->successful_dns_result) {
-      _begin_ismaster_cmd (node, NULL, node->successful_dns_result, 0);
+      _begin_ismaster_cmd (node, NULL, false, node->successful_dns_result, 0);
    } else {
       LL_FOREACH2 (node->dns_results, iter, ai_next)
       {
-         _begin_ismaster_cmd (node, NULL, iter, delay);
+         _begin_ismaster_cmd (node, NULL, false, iter, delay);
          /* each subsequent DNS result will have an additional 250ms delay. */
          delay += HAPPY_EYEBALLS_DELAY_MS;
       }
@@ -713,7 +715,11 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
    stream = _mongoc_topology_scanner_node_setup_stream_for_tls (
       node, mongoc_stream_socket_new (sock));
    if (stream) {
-      _begin_ismaster_cmd (node, stream, NULL /* dns result. */, 0 /* delay */);
+      _begin_ismaster_cmd (node,
+                           stream,
+                           false /* is_setup_done */,
+                           NULL /* dns result */,
+                           0 /* delay */);
       RETURN (true);
    }
    RETURN (false);
@@ -745,7 +751,8 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 
    /* if there is already a working stream, push it back to be re-scanned. */
    if (node->stream) {
-      _begin_ismaster_cmd (node, node->stream, NULL, 0);
+      _begin_ismaster_cmd (
+         node, node->stream, true /* is_setup_done */, NULL, 0);
       node->stream = NULL;
       return;
    }
@@ -757,7 +764,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
          node->ts->uri, &node->host, node->ts->initiator_context, error);
       if (stream) {
          success = true;
-         _begin_ismaster_cmd (node, stream, NULL, 0);
+         _begin_ismaster_cmd (node, stream, false, NULL, 0);
       }
    } else {
       if (node->host.family == AF_UNIX) {
