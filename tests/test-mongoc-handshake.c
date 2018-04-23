@@ -316,12 +316,16 @@ _test_platform (bool platform_oversized)
 }
 
 
-static void test_mongoc_handshake_big_platform (void) {
+static void
+test_mongoc_handshake_big_platform (void)
+{
    _test_platform (false);
 }
 
 
-static void test_mongoc_handshake_oversized_platform (void) {
+static void
+test_mongoc_handshake_oversized_platform (void)
+{
    _test_platform (true);
 }
 
@@ -510,6 +514,174 @@ test_mongoc_handshake_cannot_send (void)
    _reset_handshake ();
 }
 
+extern char *
+_mongoc_handshake_get_config_hex_string (void);
+
+static bool
+_get_bit (char *config_str, uint32_t bit)
+{
+   /* get the location of the two byte chars for this bit. */
+   uint32_t byte = bit / 8;
+   uint32_t bit_of_byte = bit % 8;
+   uint32_t char_loc;
+   uint32_t as_num;
+   char byte_str[3];
+
+   /* byte 0 is represented at the last two characters. */
+   char_loc = (uint32_t) strlen (config_str) - 2 - (byte * 2);
+   /* index should be past the prefixed "0x" */
+   ASSERT_CMPINT32 (char_loc, >, 1);
+   /* get the number representation of the byte. */
+   byte_str[0] = config_str[char_loc];
+   byte_str[1] = config_str[char_loc + 1];
+   byte_str[2] = '\0';
+   as_num = (uint8_t) strtol (byte_str, NULL, 16);
+   return (as_num & (1u << bit_of_byte)) > 0u;
+}
+
+void
+test_handshake_platform_config ()
+{
+   /* Parse the config string, and check that it matches the defined flags. */
+   char *config_str = _mongoc_handshake_get_config_hex_string ();
+   uint32_t total_bytes = (LAST_MONGOC_MD_FLAG + 7) / 8;
+   uint32_t total_bits = 8 * total_bytes;
+   uint32_t i;
+   /* config_str should have the form 0x?????. */
+   ASSERT_CMPINT ((int) strlen (config_str), ==, 2 + (2 * total_bytes));
+   BSON_ASSERT (strncmp (config_str, "0x", 2) == 0);
+
+/* go through all flags. */
+#ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+   BSON_ASSERT (_get_bit (config_str, MONGOC_ENABLE_SSL_SECURE_CHANNEL));
+#endif
+
+#ifdef MONGOC_ENABLE_CRYPTO_CNG
+   BSON_ASSERT (_get_bit (config_str, MONGOC_ENABLE_CRYPTO_CNG));
+#endif
+
+#ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
+   BSON_ASSERT (
+      _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SSL_SECURE_TRANSPORT));
+#endif
+
+#ifdef MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO
+   BSON_ASSERT (
+      _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CRYPTO_COMMON_CRYPTO));
+#endif
+
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SSL_OPENSSL));
+#endif
+
+#ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CRYPTO_LIBCRYPTO));
+#endif
+
+#ifdef MONGOC_ENABLE_SSL
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SSL));
+#endif
+
+#ifdef MONGOC_ENABLE_CRYPTO
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CRYPTO));
+#endif
+
+#ifdef MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE
+   BSON_ASSERT (
+      _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CRYPTO_SYSTEM_PROFILE));
+#endif
+
+#ifdef MONGOC_ENABLE_SASL
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SASL));
+#endif
+
+#ifdef MONGOC_HAVE_SASL_CLIENT_DONE
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE));
+#endif
+
+#ifdef MONGOC_NO_AUTOMATIC_GLOBALS
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS));
+#endif
+
+#ifdef MONGOC_EXPERIMENTAL_FEATURES
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES));
+#endif
+
+#ifdef MONGOC_ENABLE_SSL_LIBRESSL
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL));
+#endif
+
+#ifdef MONGOC_ENABLE_SASL_CYRUS
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SASL_CYRUS));
+#endif
+
+#ifdef MONGOC_ENABLE_SASL_SSPI
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SASL_SSPI));
+#endif
+
+#ifdef MONGOC_HAVE_SOCKLEN
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_HAVE_SOCKLEN));
+#endif
+
+#ifdef MONGOC_ENABLE_COMPRESSION
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_COMPRESSION));
+#endif
+
+#ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
+   BSON_ASSERT (
+      _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_COMPRESSION_SNAPPY));
+#endif
+
+#ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_COMPRESSION_ZLIB));
+#endif
+
+#ifdef MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI));
+#endif
+
+#ifdef MONGOC_HAVE_RES_NSEARCH
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_RES_NSEARCH));
+#endif
+
+#ifdef MONGOC_HAVE_RES_NDESTROY
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_RES_NDESTROY));
+#endif
+
+#ifdef MONGOC_HAVE_RES_NCLOSE
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_RES_NCLOSE));
+#endif
+
+#ifdef MONGOC_HAVE_RES_SEARCH
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_RES_SEARCH));
+#endif
+
+#ifdef MONGOC_HAVE_DNSAPI
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_DNSAPI));
+#endif
+
+#ifdef MONGOC_HAVE_RDTSCP
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_RDTSCP));
+#endif
+
+#ifdef MONGOC_HAVE_SCHED_GETCPU
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_HAVE_SCHED_GETCPU));
+#endif
+
+#ifdef MONGOC_ENABLE_SHM_COUNTERS
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS));
+#endif
+
+#ifdef MONGOC_TRACE
+   BSON_ASSERT (_get_bit (config_str, MONGOC_TRACE));
+#endif
+   /* any excess bits should all be zero. */
+   for (i = LAST_MONGOC_MD_FLAG; i < total_bits; i++) {
+      BSON_ASSERT (!_get_bit (config_str, i));
+   }
+   bson_free (config_str);
+}
+
 void
 test_handshake_install (TestSuite *suite)
 {
@@ -540,4 +712,7 @@ test_handshake_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/MongoDB/handshake/cannot_send",
                                 test_mongoc_handshake_cannot_send);
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/platform_config",
+                  test_handshake_platform_config);
 }

@@ -43,132 +43,156 @@
  */
 static mongoc_handshake_t gMongocHandshake;
 
-
-static uint32_t
-_get_config_bitfield (void)
+static void
+_set_bit (uint8_t *bf, uint32_t byte_count, uint32_t bit)
 {
-   uint32_t bf = 0;
+   uint32_t byte = bit / 8;
+   uint32_t bit_of_byte = (bit) % 8;
+   /* byte 0 is the last location in bf. */
+   bf[(byte_count - 1) - byte] |= 1u << bit_of_byte;
+}
+
+/* returns a hex string for all config flag bits, which must be freed. */
+char *
+_mongoc_handshake_get_config_hex_string (void)
+{
+   uint32_t byte_count;
+   uint8_t *bf;
+   bson_string_t *str;
+   int i;
+
+   byte_count = (LAST_MONGOC_MD_FLAG + 7) / 8; /* ceil (num_bits / 8) */
+   /* allocate enough bytes to fit all config bits. */
+   bf = (uint8_t *) bson_malloc0 (byte_count);
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
-   bf |= MONGOC_MD_FLAG_ENABLE_SSL_SECURE_CHANNEL;
+   _set_bit (bf, byte_count, MONGOC_ENABLE_SSL_SECURE_CHANNEL);
 #endif
 
 #ifdef MONGOC_ENABLE_CRYPTO_CNG
-   bf |= MONGOC_MD_FLAG_ENABLE_CRYPTO_CNG;
+   _set_bit (bf, byte_count, MONGOC_ENABLE_CRYPTO_CNG);
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
-   bf |= MONGOC_MD_FLAG_ENABLE_SSL_SECURE_TRANSPORT;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SSL_SECURE_TRANSPORT);
 #endif
 
 #ifdef MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO
-   bf |= MONGOC_MD_FLAG_ENABLE_CRYPTO_COMMON_CRYPTO;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_CRYPTO_COMMON_CRYPTO);
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   bf |= MONGOC_MD_FLAG_ENABLE_SSL_OPENSSL;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SSL_OPENSSL);
 #endif
 
 #ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
-   bf |= MONGOC_MD_FLAG_ENABLE_CRYPTO_LIBCRYPTO;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_CRYPTO_LIBCRYPTO);
 #endif
 
 #ifdef MONGOC_ENABLE_SSL
-   bf |= MONGOC_MD_FLAG_ENABLE_SSL;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SSL);
 #endif
 
 #ifdef MONGOC_ENABLE_CRYPTO
-   bf |= MONGOC_MD_FLAG_ENABLE_CRYPTO;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_CRYPTO);
 #endif
 
 #ifdef MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE
-   bf |= MONGOC_MD_FLAG_ENABLE_CRYPTO_SYSTEM_PROFILE;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_CRYPTO_SYSTEM_PROFILE);
 #endif
 
 #ifdef MONGOC_ENABLE_SASL
-   bf |= MONGOC_MD_FLAG_ENABLE_SASL;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SASL);
 #endif
 
 #ifdef MONGOC_HAVE_SASL_CLIENT_DONE
-   bf |= MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_HAVE_SASL_CLIENT_DONE);
 #endif
 
 #ifdef MONGOC_NO_AUTOMATIC_GLOBALS
-   bf |= MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_NO_AUTOMATIC_GLOBALS);
 #endif
 
 #ifdef MONGOC_EXPERIMENTAL_FEATURES
-   bf |= MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_EXPERIMENTAL_FEATURES);
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_LIBRESSL
-   bf |= MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SSL_LIBRESSL);
 #endif
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
-   bf |= MONGOC_MD_FLAG_ENABLE_SASL_CYRUS;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SASL_CYRUS);
 #endif
 
 #ifdef MONGOC_ENABLE_SASL_SSPI
-   bf |= MONGOC_MD_FLAG_ENABLE_SASL_SSPI;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SASL_SSPI);
 #endif
 
 #ifdef MONGOC_HAVE_SOCKLEN
-   bf |= MONGOC_MD_FLAG_HAVE_SOCKLEN;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_HAVE_SOCKLEN);
 #endif
 
 #ifdef MONGOC_ENABLE_COMPRESSION
-   bf |= MONGOC_MD_FLAG_ENABLE_COMPRESSION;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_COMPRESSION);
 #endif
 
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
-   bf |= MONGOC_MD_FLAG_ENABLE_COMPRESSION_SNAPPY;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_COMPRESSION_SNAPPY);
 #endif
 
 #ifdef MONGOC_ENABLE_COMPRESSION_ZLIB
-   bf |= MONGOC_MD_FLAG_ENABLE_COMPRESSION_ZLIB;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_COMPRESSION_ZLIB);
 #endif
 
 #ifdef MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI
-   bf |= MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI);
 #endif
 
 #ifdef MONGOC_HAVE_RES_NSEARCH
-   bf |= MONGOC_MD_FLAG_ENABLE_RES_NSEARCH;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_RES_NSEARCH);
 #endif
 
 #ifdef MONGOC_HAVE_RES_NDESTROY
-   bf |= MONGOC_MD_FLAG_ENABLE_RES_NDESTROY;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_RES_NDESTROY);
 #endif
 
 #ifdef MONGOC_HAVE_RES_NCLOSE
-   bf |= MONGOC_MD_FLAG_ENABLE_RES_NCLOSE;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_RES_NCLOSE);
 #endif
 
 #ifdef MONGOC_HAVE_RES_SEARCH
-   bf |= MONGOC_MD_FLAG_ENABLE_RES_SEARCH;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_RES_SEARCH);
 #endif
 
 #ifdef MONGOC_HAVE_DNSAPI
-   bf |= MONGOC_MD_FLAG_ENABLE_DNSAPI;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_DNSAPI);
 #endif
 
 #ifdef MONGOC_HAVE_RDTSCP
-   bf |= MONGOC_MD_FLAG_ENABLE_RDTSCP;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_RDTSCP);
 #endif
 
 #ifdef MONGOC_HAVE_SCHED_GETCPU
-   bf |= MONGOC_MD_FLAG_HAVE_SCHED_GETCPU;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_HAVE_SCHED_GETCPU);
 #endif
 
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
-   bf |= MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS;
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS);
 #endif
 
 #ifdef MONGOC_TRACE
-   bf |= MONGOC_MD_FLAG_TRACE;
+   _set_bit (bf, byte_count, MONGOC_TRACE);
 #endif
-   return bf;
+
+   str = bson_string_new ("0x");
+   for (i = 0; i < byte_count; i++) {
+      bson_string_append_printf (str, "%02x", bf[i]);
+   }
+   bson_free (bf);
+   /* free the bson_string_t, but keep the underlying char* alive. */
+   return bson_string_free (str, false);
+
 }
 
 static char *
@@ -336,10 +360,13 @@ static void
 _set_platform_string (mongoc_handshake_t *handshake)
 {
    bson_string_t *str;
+   char *config_str;
 
    str = bson_string_new ("");
 
-   bson_string_append_printf (str, "cfg=0x%x", _get_config_bitfield ());
+   config_str = _mongoc_handshake_get_config_hex_string ();
+   bson_string_append_printf (str, "cfg=%s", config_str);
+   bson_free (config_str);
 
 #ifdef _POSIX_VERSION
    bson_string_append_printf (str, " posix=%ld", _POSIX_VERSION);
