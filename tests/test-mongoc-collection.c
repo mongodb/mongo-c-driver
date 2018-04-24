@@ -925,50 +925,6 @@ test_insert_command_keys (void)
 }
 
 
-/* number of docs that should go in a batch that starts at "offset" */
-int
-expected_batch_size (const bson_t **bsons,
-                     int n_bsons,
-                     int max_message_size,
-                     int max_bson_size,
-                     bool continue_on_err,
-                     int *offset,         /* IN / OUT */
-                     bool *has_oversized) /* OUT */
-{
-   int batch_sz = 0;
-   int msg_sz = 0;
-   bool oversized;
-   int n_oversized = 0;
-
-   for (; *offset < n_bsons; (*offset)++) {
-      oversized = (bsons[*offset]->len > max_bson_size);
-
-      if (oversized) {
-         n_oversized++;
-
-         if (!continue_on_err) {
-            /* stop here */
-            return batch_sz;
-         }
-      } else {
-         /* not oversized, regular document */
-         msg_sz += bsons[*offset]->len;
-
-         if (msg_sz >= max_message_size) {
-            /* batch is full of regular documents */
-            break;
-         }
-
-         batch_sz++;
-      }
-   }
-
-   *has_oversized = (bool) n_oversized;
-
-   return batch_sz;
-}
-
-
 static void
 test_save (void)
 {
