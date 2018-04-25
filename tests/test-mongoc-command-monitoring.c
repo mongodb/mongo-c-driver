@@ -1745,6 +1745,157 @@ test_killcursors_deprecated (void)
 }
 
 
+typedef struct {
+   int failed_calls;
+   bson_t reply;
+} cmd_failed_reply_test_t;
+
+
+static void
+cmd_failed_reply_test_init (cmd_failed_reply_test_t *test)
+{
+   memset (test, 0, sizeof *test);
+   bson_init (&test->reply);
+}
+
+
+static void
+cmd_failed_reply_test_cleanup (cmd_failed_reply_test_t *test)
+{
+   bson_destroy (&test->reply);
+}
+
+
+static void
+command_failed_reply_command_failed_cb (
+   const mongoc_apm_command_failed_t *event)
+{
+   cmd_failed_reply_test_t *test;
+
+   test =
+      (cmd_failed_reply_test_t *) mongoc_apm_command_failed_get_context (event);
+   test->failed_calls++;
+   bson_destroy (&test->reply);
+
+   bson_copy_to (mongoc_apm_command_failed_get_reply (event), &test->reply);
+}
+
+
+static void
+test_command_failed_reply_mock (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_apm_callbacks_t *callbacks;
+   mongoc_collection_t *collection;
+   cmd_failed_reply_test_t test;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+
+   /* test that the command_failed_event's reply is the same as a mocked reply
+    */
+   cmd_failed_reply_test_init (&test);
+
+   server = mock_server_with_autoismaster (4);
+   mock_server_run (server);
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_failed_cb (callbacks,
+                                     command_failed_reply_command_failed_cb);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
+
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   cursor = mongoc_collection_find (
+      collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_request (server);
+   mock_server_replies_simple (request,
+                               "{'ok': 0, 'code': 42, 'errmsg': 'bad!'}");
+
+   ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   request_destroy (request);
+
+   ASSERT_MATCH (&test.reply, "{'ok': 0, 'code': 42, 'errmsg': 'bad!'}");
+   ASSERT_CMPINT (test.failed_calls, ==, 1);
+
+   mock_server_destroy (server);
+
+   /* client logs warning because it can't send killCursors or endSessions */
+   capture_logs (true);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+
+   mongoc_client_destroy (client);
+
+   cmd_failed_reply_test_cleanup (&test);
+   mongoc_apm_callbacks_destroy (callbacks);
+}
+
+
+static void
+test_command_failed_reply_hangup (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_apm_callbacks_t *callbacks;
+   mongoc_collection_t *collection;
+   cmd_failed_reply_test_t test;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+
+   /* test that the command_failed_event's reply is empty if there is a network
+    * error (i.e. the server hangs up) */
+   cmd_failed_reply_test_init (&test);
+
+   server = mock_server_with_autoismaster (4);
+   mock_server_run (server);
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_failed_cb (callbacks,
+                                     command_failed_reply_command_failed_cb);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
+
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   cursor = mongoc_collection_find (
+      collection, MONGOC_QUERY_NONE, 0, 0, 1, tmp_bson ("{}"), NULL, NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_request (server);
+   mock_server_replies_simple (request,
+                               "{'ok': 0, 'code': 42, 'errmsg': 'bad!'}");
+
+   ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   mock_server_hangs_up (request);
+   request_destroy (request);
+
+   ASSERT_MATCH (&test.reply, "{}");
+   ASSERT_CMPINT (test.failed_calls, ==, 1);
+
+   mock_server_destroy (server);
+
+   /* client logs warning because it can't send killCursors or endSessions */
+   capture_logs (true);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+
+   mongoc_client_destroy (client);
+
+   cmd_failed_reply_test_cleanup (&test);
+   mongoc_apm_callbacks_destroy (callbacks);
+}
+
+
 void
 test_command_monitoring_install (TestSuite *suite)
 {
@@ -1790,4 +1941,10 @@ test_command_monitoring_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/command_monitoring/killcursors_deprecated",
                       test_killcursors_deprecated);
+   TestSuite_AddMockServerTest (suite,
+                                "/command_monitoring/failed_reply_mock",
+                                test_command_failed_reply_mock);
+   TestSuite_AddMockServerTest (suite,
+                                "/command_monitoring/failed_reply_hangup",
+                                test_command_failed_reply_hangup);
 }

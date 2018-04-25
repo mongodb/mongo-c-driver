@@ -728,6 +728,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
 {
    mongoc_apm_command_failed_t event;
    mongoc_client_t *client;
+   bson_t reply;
 
    ENTRY;
 
@@ -737,10 +738,17 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
       EXIT;
    }
 
+   /* we sent OP_QUERY/OP_GETMORE, fake a reply to find/getMore command:
+    * {ok: 0}
+    */
+   bson_init (&reply);
+   bson_append_int32 (&reply, "ok", 2, 0);
+
    mongoc_apm_command_failed_init (&event,
                                    duration,
                                    cmd_name,
                                    &cursor->error,
+                                   &reply,
                                    client->cluster.request_id,
                                    cursor->operation_id,
                                    &stream->sd->host,
@@ -750,6 +758,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
    client->apm_callbacks.failed (&event);
 
    mongoc_apm_command_failed_cleanup (&event);
+   bson_destroy (&reply);
 
    EXIT;
 }

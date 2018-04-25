@@ -75,6 +75,7 @@ struct _mongoc_apm_command_failed_t {
    int64_t duration;
    const char *command_name;
    const bson_error_t *error;
+   const bson_t *reply;
    int64_t request_id;
    int64_t operation_id;
    const mongoc_host_list_t *host;
@@ -181,6 +182,7 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t duration,
                                 const char *command_name,
                                 const bson_error_t *error,
+                                const bson_t *reply,
                                 int64_t request_id,
                                 int64_t operation_id,
                                 const mongoc_host_list_t *host,

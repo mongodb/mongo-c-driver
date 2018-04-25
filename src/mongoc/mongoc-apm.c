@@ -191,15 +191,19 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t duration,
                                 const char *command_name,
                                 const bson_error_t *error,
+                                const bson_t *reply,
                                 int64_t request_id,
                                 int64_t operation_id,
                                 const mongoc_host_list_t *host,
                                 uint32_t server_id,
                                 void *context)
 {
+   BSON_ASSERT (reply);
+
    event->duration = duration;
    event->command_name = command_name;
    event->error = error;
+   event->reply = reply;
    event->request_id = request_id;
    event->operation_id = operation_id;
    event->host = host;
@@ -375,6 +379,11 @@ mongoc_apm_command_failed_get_error (const mongoc_apm_command_failed_t *event,
    memcpy (error, event->error, sizeof *event->error);
 }
 
+const bson_t *
+mongoc_apm_command_failed_get_reply (const mongoc_apm_command_failed_t *event)
+{
+   return event->reply;
+}
 
 int64_t
 mongoc_apm_command_failed_get_request_id (
