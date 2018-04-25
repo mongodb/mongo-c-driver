@@ -512,9 +512,31 @@ request_matches_kill_cursors (const request_t *request, int64_t cursor_id)
    return true;
 }
 
+/*--------------------------------------------------------------------------
+ *
+ * request_matches_msg --
+ *
+ *       Test that a client OP_MSG matches a pattern. The OP_MSG consists
+ *       of at least one document (the command body) and optional sequence
+ *       of additional documents (e.g., documents in a bulk insert). The
+ *       documents in the actual client message are compared pairwise to
+ *       the patterns in @docs.
+ *
+ * Returns:
+ *       True if the body and document sequence of the request match
+ *       the given pattern.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 
 bool
-request_matches_msgv (const request_t *request, uint32_t flags, va_list *args)
+request_matches_msg (const request_t *request,
+                     uint32_t flags,
+                     const bson_t **docs,
+                     size_t n_docs)
 {
    const bson_t *doc;
    const bson_t *pattern;
@@ -528,8 +550,9 @@ request_matches_msgv (const request_t *request, uint32_t flags, va_list *args)
 
    BSON_ASSERT (request->docs.len >= 1);
 
-   i = 0;
-   while ((pattern = va_arg (*args, const bson_t *))) {
+   for (i = 0; i < n_docs; i++) {
+      pattern = docs[i];
+
       /* make sure the pattern is reasonable, e.g. that we didn't pass a string
        * instead of a bson_t* by mistake */
       BSON_ASSERT (bson_validate (
@@ -550,10 +573,10 @@ request_matches_msgv (const request_t *request, uint32_t flags, va_list *args)
       i++;
    }
 
-   if (i < request->docs.len) {
+   if (n_docs < request->docs.len) {
       fprintf (stderr,
-               "Expected %d documents in request, got %zu\n",
-               i,
+               "Expected %zu documents in request, got %zu\n",
+               n_docs,
                request->docs.len);
       return false;
    }
@@ -568,6 +591,46 @@ request_matches_msgv (const request_t *request, uint32_t flags, va_list *args)
    }
 
    return true;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * request_matches_msgv --
+ *
+ *       Variable-args version of request_matches_msg.
+ *
+ * Returns:
+ *       True if the body and document sequence of the request match
+ *       the given pattern.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+request_matches_msgv (const request_t *request, uint32_t flags, va_list *args)
+{
+   const bson_t **docs;
+   size_t n_docs, allocated;
+   bool r;
+
+   n_docs = 0;
+   allocated = 1;
+   docs = bson_malloc (allocated * sizeof (bson_t *));
+   while ((docs[n_docs] = va_arg (*args, const bson_t *))) {
+      n_docs++;
+      if (n_docs == allocated) {
+         allocated = bson_next_power_of_two (allocated + 1);
+         docs = bson_realloc (docs, allocated * sizeof (bson_t *));
+      }
+   }
+
+   r = request_matches_msg (request, flags, docs, n_docs);
+   bson_free (docs);
+   return r;
 }
 
 
@@ -1029,6 +1092,8 @@ request_from_op_msg (request_t *request, const mongoc_rpc_t *rpc)
 {
    const mongoc_rpc_section_t *section;
    int32_t section_no;
+   const char *identifier;
+   int32_t id_len;
    const bson_t *doc;
    bson_iter_t iter;
    bson_string_t *msg_as_str = bson_string_new ("OP_MSG");
@@ -1044,12 +1109,16 @@ request_from_op_msg (request_t *request, const mongoc_rpc_t *rpc)
          break;
       case 1:
          /* a sequence of BSON documents */
-         bson_string_append (msg_as_str, section->payload.sequence.identifier);
+         identifier = section->payload.sequence.identifier;
+         id_len = (int32_t) strlen (identifier);
+         bson_string_append (msg_as_str, identifier);
          bson_string_append (msg_as_str, ": [");
+         /* a sequence has 4-byte length prefix, a string with NIL, then docs */
          parse_op_msg_doc (request,
                            section->payload.sequence.bson_documents,
-                           section->payload.sequence.size,
+                           section->payload.sequence.size - id_len - 1 - 4,
                            msg_as_str);
+
          bson_string_append (msg_as_str, "]");
          break;
       default:

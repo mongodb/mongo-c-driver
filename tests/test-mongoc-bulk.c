@@ -3100,84 +3100,89 @@ test_large_inserts_unordered (void *ctx)
 
 
 static void
+execute_numerous_bulk_op (mock_server_t *server,
+                          mongoc_bulk_operation_t *bulk,
+                          const char *doc_json)
+{
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   const bson_t *docs[4];
+   int i, j;
+
+   future = future_bulk_operation_execute (bulk, NULL, &error);
+
+   /* accept anything for the command body */
+   docs[0] = tmp_bson ("{}");
+
+   /* test that driver sends 7 documents in batches of up to 3 */
+   for (i = 0; i < 7;) {
+      for (j = 0; j < 3 && i < 7; i++, j++) {
+         docs[j + 1] = tmp_bson (doc_json);
+      }
+
+      request = mock_server_receives_request (server);
+      BSON_ASSERT (request_matches_msg (request, 0, &docs[0], j + 1));
+      mock_server_replies_ok_and_destroys (request);
+   }
+
+   ASSERT_OR_PRINT (future_get_uint32_t (future), error);
+   future_destroy (future);
+}
+
+
+static void
 _test_numerous (bool ordered)
 {
+   mock_server_t *server;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
-   bson_t opts = BSON_INITIALIZER;
    mongoc_bulk_operation_t *bulk;
-   bson_t reply;
-   bson_error_t error;
-   int n_docs;
-   bson_t doc;
-   bson_iter_t iter;
    int i;
+   bson_t *opts = tmp_bson ("{'ordered': %s}", ordered ? "true" : "false");
+   bson_t *doc = tmp_bson ("{'_id': 1}");
 
-   n_docs = 4 * (int) test_framework_max_write_batch_size () + 100;
+   server = mock_server_new ();
+   /* the real OP_MSG max batch is 100k docs, choose 3 for faster test */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1.0,"
+                              " 'ismaster': true,"
+                              " 'minWireVersion': 0,"
+                              " 'maxWireVersion': %d,"
+                              " 'maxWriteBatchSize': 3}",
+                              WIRE_VERSION_OP_MSG);
 
-   client = test_framework_client_new ();
-   BSON_ASSERT (client);
+   mock_server_run (server);
 
-   collection = get_test_collection (client, "test_numerous_inserts");
-   BSON_ASSERT (collection);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
 
-   bson_append_bool (&opts, "ordered", 7, ordered);
-   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
+#define TEST_NUMEROUS(_one_write, _doc_format)                                 \
+   do {                                                                        \
+      bulk =                                                                   \
+         mongoc_collection_create_bulk_operation_with_opts (collection, opts); \
+      for (i = 0; i < 7; i++) {                                                \
+         mongoc_bulk_operation_##_one_write;                                   \
+      }                                                                        \
+      execute_numerous_bulk_op (server, bulk, _doc_format);                    \
+      mongoc_bulk_operation_destroy (bulk);                                    \
+   } while (0)
 
-   /* insert docs {_id: 0} through {_id: n_docs-1} */
-   bson_init (&doc);
-   BSON_APPEND_INT32 (&doc, "_id", 0);
-   bson_iter_init_find (&iter, &doc, "_id");
+   TEST_NUMEROUS (insert (bulk, doc), "{'_id': 1}");
+   TEST_NUMEROUS (remove_many_with_opts (bulk, doc, NULL, NULL),
+                  "{'q': {'_id': 1}, 'limit': 0}");
+   TEST_NUMEROUS (remove_one (bulk, doc), "{'q': {'_id': 1}, 'limit': 1}");
+   TEST_NUMEROUS (replace_one (bulk, doc, tmp_bson ("{}"), false),
+                  "{'q': {'_id': 1}, 'u': {}}");
+   TEST_NUMEROUS (update_one (bulk, doc, tmp_bson ("{'$set': {'x': 1}}"), NULL),
+                  "{'q': {'_id': 1}, 'u': {'$set': {'x': 1}}}");
+   TEST_NUMEROUS (update_many_with_opts (
+                     bulk, doc, tmp_bson ("{'$set': {'x': 1}}"), NULL, NULL),
+                  "{'q': {'_id': 1}, 'u': {'$set': {'x': 1}}}");
 
-   for (i = 0; i < n_docs; i++) {
-      bson_iter_overwrite_int32 (&iter, i);
-      mongoc_bulk_operation_insert (bulk, &doc);
-   }
-
-   ASSERT_OR_PRINT ((bool) mongoc_bulk_operation_execute (bulk, &reply, &error),
-                    error);
-
-   assert_n_inserted (n_docs, &reply);
-   ASSERT_COUNT (n_docs, collection);
-
-   bson_destroy (&reply);
-   mongoc_bulk_operation_destroy (bulk);
-   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
-
-   /* use remove_one for docs {_id: 0}, {_id: 2}, ..., {_id: n_docs-2} */
-   for (i = 0; i < n_docs; i += 2) {
-      bson_iter_overwrite_int32 (&iter, i);
-      mongoc_bulk_operation_remove_one (bulk, &doc);
-   }
-
-   ASSERT_OR_PRINT ((bool) mongoc_bulk_operation_execute (bulk, &reply, &error),
-                    error);
-
-   assert_n_removed (n_docs / 2, &reply);
-   ASSERT_COUNT (n_docs / 2, collection);
-
-   bson_destroy (&reply);
-   mongoc_bulk_operation_destroy (bulk);
-   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
-
-   /* use remove for docs {_id: 1}, {_id: 3}, ..., {_id: n_docs-1} */
-   for (i = 1; i < n_docs; i += 2) {
-      bson_iter_overwrite_int32 (&iter, i);
-      mongoc_bulk_operation_remove (bulk, &doc);
-   }
-
-   ASSERT_OR_PRINT ((bool) mongoc_bulk_operation_execute (bulk, &reply, &error),
-                    error);
-
-   assert_n_removed (n_docs / 2, &reply);
-   ASSERT_COUNT (0, collection);
-
-   bson_destroy (&doc);
-   bson_destroy (&reply);
-   mongoc_bulk_operation_destroy (bulk);
-   bson_destroy (&opts);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+   mock_server_destroy (server);
 }
 
 

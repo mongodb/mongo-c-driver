@@ -695,6 +695,7 @@ test_rs_failover (void)
    future_t *future;
    request_t *request;
    bson_error_t error;
+   bson_t *b = tmp_bson ("{}");
 
    rs = mock_rs_with_autoismaster (WIRE_VERSION_OP_MSG,
                                    true /* has primary */,
@@ -711,10 +712,9 @@ test_rs_failover (void)
    ASSERT_OR_PRINT (mongoc_client_session_append (cs, &opts, &error), error);
 
    /* initial insert triggers replica set discovery */
-   future = future_collection_insert_one (
-      collection, tmp_bson ("{}"), &opts, NULL, &error);
+   future = future_collection_insert_one (collection, b, &opts, NULL, &error);
    request =
-      mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"));
+      mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    mock_server_replies_ok_and_destroys (request);
    BSON_ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -728,13 +728,13 @@ test_rs_failover (void)
       collection, tmp_bson ("{}"), &opts, NULL, &error);
 
    request =
-      mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"));
+      mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
    mock_server_replies_simple (request, "{'ok': 0, 'errmsg': 'not master'}");
    request_destroy (request);
 
    request =
-      mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"));
+      mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
    mock_server_replies_ok_and_destroys (request);
    BSON_ASSERT (future_get_bool (future));
@@ -855,7 +855,8 @@ test_insert_one_unacknowledged (void)
       server,
       2, /* set moreToCome bit in mongoc_op_msg_flags_t */
       tmp_bson (
-         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
+         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
+      tmp_bson ("{}"));
    ASSERT (future_get_bool (future));
    mock_server_auto_endsessions (server);
 
@@ -907,7 +908,8 @@ test_update_one_unacknowledged (void)
       server,
       2, /* set moreToCome bit in mongoc_op_msg_flags_t */
       tmp_bson (
-         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
+         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
+      tmp_bson ("{'q': {}, 'u': {'$set': {'x': 1}}}"));
    ASSERT (future_get_bool (future));
 
    mongoc_write_concern_destroy (wc);
@@ -953,7 +955,8 @@ test_delete_one_unacknowledged (void)
       server,
       2, /* set moreToCome bit in mongoc_op_msg_flags_t */
       tmp_bson (
-         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
+         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
+      tmp_bson ("{'q': {}, 'limit': 1}"));
    ASSERT (future_get_bool (future));
 
    mongoc_write_concern_destroy (wc);
@@ -1001,7 +1004,8 @@ test_bulk_operation_execute_unacknowledged (void)
       server,
       2, /* set moreToCome bit in mongoc_op_msg_flags_t */
       tmp_bson (
-         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
+         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
+      tmp_bson ("{'_id': 1}"));
    ASSERT (future_get_uint32_t (future) == 1);
 
    mongoc_write_concern_destroy (wc);
@@ -1047,7 +1051,8 @@ test_remove_unacknowledged (void)
       server,
       2, /* set moreToCome bit in mongoc_op_msg_flags_t */
       tmp_bson (
-         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"));
+         "{'txnNumber': {'$exists': false}, 'lsid': {'$exists': false}}"),
+      tmp_bson ("{'q': {'a': 1}, 'limit': 0}"));
    ASSERT (future_get_bool (future));
 
    mongoc_write_concern_destroy (wc);

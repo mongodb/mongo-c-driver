@@ -102,6 +102,12 @@ bool
 request_matches_kill_cursors (const request_t *request, int64_t cursor_id);
 
 bool
+request_matches_msg (const request_t *request,
+                     uint32_t flags,
+                     const bson_t **docs,
+                     size_t n_docs);
+
+bool
 request_matches_msgv (const request_t *request, uint32_t flags, va_list *args);
 
 uint16_t
