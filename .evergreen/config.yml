@@ -365,7 +365,20 @@ functions:
         silent: true
         working_dir: "mongoc"
         script: |
-           AUTH_HOST='${auth_host}' AUTH_PLAIN='${auth_plain}' AUTH_MONGODBCR='${auth_mongodbcr}' AUTH_GSSAPI='${auth_gssapi}' AUTH_CROSSREALM='${auth_crossrealm}' AUTH_GSSAPI_UTF8='${auth_gssapi_utf8}' ATLAS_FREE='${atlas_free}' ATLAS_REPLSET='${atlas_replset}' ATLAS_SHARD='${atlas_shard}' OBSOLETE_TLS='${obsolete_tls}' sh .evergreen/run-auth-tests.sh
+          export AUTH_HOST='${auth_host}'
+          export AUTH_PLAIN='${auth_plain}'
+          export AUTH_MONGODBCR='${auth_mongodbcr}'
+          export AUTH_GSSAPI='${auth_gssapi}'
+          export AUTH_CROSSREALM='${auth_crossrealm}'
+          export AUTH_GSSAPI_UTF8='${auth_gssapi_utf8}'
+          export ATLAS_FREE='${atlas_free}'
+          export ATLAS_REPLSET='${atlas_replset}'
+          export ATLAS_SHARD='${atlas_shard}'
+          export ATLAS_TLS11='${atlas_tls11}'
+          export ATLAS_TLS12='${atlas_tls12}'
+          export REQUIRE_TLS12='${require_tls12}'
+          export OBSOLETE_TLS='${obsolete_tls}'
+          sh .evergreen/run-auth-tests.sh
 
   "run mock server tests":
     - command: shell.exec
@@ -6564,6 +6577,8 @@ tasks:
               set -o xtrace
               DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL sh .evergreen/compile.sh
         - func: "run auth tests"
+          vars:
+            require_tls12: true
         - func: "upload build"
 
     - name: compile-libmongocapi

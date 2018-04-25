@@ -12,6 +12,9 @@ set +o xtrace   # Don't echo commands
 # ATLAS_FREE=${atlas_free} # Evergreen variable
 # ATLAS_REPLSET=${atlas_replset} # Evergreen variable
 # ATLAS_SHARD=${atlas_shard} # Evergreen variable
+# ATLAS_TLS11=${atlas_tls11} # Evergreen variable
+# ATLAS_TLS12=${atlas_tls12} # Evergreen variable
+# REQUIRE_TLS12=${require_tls12} # libmongoc requires TLS 1.2+
 # OBSOLETE_TLS=${obsolete_tls} # libmongoc was built with old TLS lib, don't try connecting to Atlas
 
 
@@ -81,6 +84,12 @@ if [ $SSL -eq 1 ]; then
       $PING "$ATLAS_REPLSET&${C_TIMEOUT}"
       echo "Connecting to Atlas Sharded Cluster"
       $PING "$ATLAS_SHARD&${C_TIMEOUT}"
+      if [ -z "$REQUIRE_TLS12" ]; then
+         echo "Connecting to Atlas with only TLS 1.1 enabled"
+         $PING "$ATLAS_TLS11&${C_TIMEOUT}"
+      fi
+      echo "Connecting to Atlas with only TLS 1.2 enabled"
+      $PING "$ATLAS_TLS12&${C_TIMEOUT}"
    fi
 fi
 
