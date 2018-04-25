@@ -277,7 +277,11 @@ srv_callback (const char *service,
    bool ret = false;
 
    data = ns_rr_rdata (*rr);
-   port = ntohs (*(short *) (data + 4));
+   /* memcpy the network endian port before converting to host endian. we cannot
+    * cast (data + 4) directly as a uint16_t*, because it may not align on an
+    * 2-byte boundary. */
+   memcpy (&port, data + 4, sizeof (port));
+   port = ntohs (port);
    size = dn_expand (ns_msg_base (*ns_answer),
                      ns_msg_end (*ns_answer),
                      data + 6,
@@ -1563,9 +1567,8 @@ retry:
     * a new writable stream and retry. If server selection fails or the selected
     * server does not support retryable writes, fall through and allow the
     * original error to be reported. */
-   if (!ret && is_retryable &&
-       (error->domain == MONGOC_ERROR_STREAM ||
-        mongoc_cluster_is_not_master_error (error))) {
+   if (!ret && is_retryable && (error->domain == MONGOC_ERROR_STREAM ||
+                                mongoc_cluster_is_not_master_error (error))) {
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */
@@ -1578,8 +1581,9 @@ retry:
       retry_server_stream =
          mongoc_cluster_stream_for_writes (&client->cluster, &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream &&
+          retry_server_stream->sd->max_wire_version >=
+             WIRE_VERSION_RETRY_WRITES) {
          parts->assembled.server_stream = retry_server_stream;
          _mongoc_bson_destroy_if_set (reply);
          GOTO (retry);
