@@ -1,5 +1,7 @@
 #!/bin/sh
 set -o errexit  # Exit the script with error if any of the commands fail
+set +o xtrace   # Don't echo commands
+
 # The following expansions are set in the evergreen project:
 # AUTH_HOST=${auth_host} # Evergreen variable
 # AUTH_PLAIN=${auth_plain} # Evergreen variable
