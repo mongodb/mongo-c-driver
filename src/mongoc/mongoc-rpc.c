@@ -521,20 +521,28 @@
    rpc->n_##_name = 1;                        \
    buf = NULL;                                \
    buflen = 0;
-#define SECTION_ARRAY_FIELD(_name)                                 \
-   do {                                                            \
-      uint32_t __l;                                                \
-      mongoc_rpc_section_t *section = &rpc->_name[rpc->n_##_name]; \
-      section->payload_type = buf[0];                              \
-      buf++;                                                       \
-      buflen -= 1;                                                 \
-      memcpy (&__l, buf, 4);                                       \
-      __l = BSON_UINT32_FROM_LE (__l);                             \
-      section->payload.bson_document = (uint8_t *) buf;            \
-      buf += __l;                                                  \
-      buflen -= __l;                                               \
-   } while (0);                                                    \
-   rpc->n_##_name++;
+#define SECTION_ARRAY_FIELD(_name)                                          \
+   do {                                                                     \
+      uint32_t __l;                                                         \
+      mongoc_rpc_section_t *section = &rpc->_name[rpc->n_##_name];          \
+      section->payload_type = buf[0];                                       \
+      buf++;                                                                \
+      buflen -= 1;                                                          \
+      memcpy (&__l, buf, 4);                                                \
+      __l = BSON_UINT32_FROM_LE (__l);                                      \
+      if (section->payload_type == 0) {                                     \
+         section->payload.bson_document = buf;                              \
+      } else {                                                              \
+         const uint8_t *section_buf = buf + 4;                              \
+         section->payload.sequence.size = __l;                              \
+         section->payload.sequence.identifier = (const char *) section_buf; \
+         section_buf += strlen ((const char *) section_buf) + 1;            \
+         section->payload.sequence.bson_documents = section_buf;            \
+      }                                                                     \
+      buf += __l;                                                           \
+      buflen -= __l;                                                        \
+      rpc->n_##_name++;                                                     \
+   } while (buflen);
 #define RAW_BUFFER_FIELD(_name)         \
    rpc->_name = (void *) buf;           \
    rpc->_name##_len = (int32_t) buflen; \
