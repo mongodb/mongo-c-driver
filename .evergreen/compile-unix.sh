@@ -114,8 +114,6 @@ fi
 export UBSAN_OPTIONS="print_stacktrace=1 abort_on_error=1"
 # AddressSanitizer configuration
 export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1"
-# LeakSanitizer configuration
-export LSAN_OPTIONS="log_pointers=true"
 
 case "$MARCH" in
    i386)

@@ -825,7 +825,8 @@ tasks:
             working_dir: "mongoc"
             script: |
               export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-              DEBUG=ON MARCH='${MARCH}' DEBUG=on CHECK_LOG=ON CFLAGS='-fsanitize=address' CXXFLAGS="$CFLAGS" SNAPPY=OFF sh .evergreen/compile.sh
+              # include -pthread in CFLAGS on gcc to address the issue explained here: https://groups.google.com/forum/#!topic/address-sanitizer/JxnwgrWOLuc
+              DEBUG=ON MARCH='${MARCH}' DEBUG=on CHECK_LOG=ON CFLAGS='-fsanitize=address -pthread' CXXFLAGS="$CFLAGS" SNAPPY=OFF sh .evergreen/compile.sh
 
     - name: debug-compile-sanitizer-undefined
       commands:
@@ -6909,7 +6910,7 @@ buildvariants:
       # Debian 8.1 only supports MongoDB 3.4+
 
 - name: gcc53-i386
-  display_name: "GCC 5.3 (i386) (Ubuntu 16.04)"
+  display_name: "GCC 5.4 (i386) (Ubuntu 16.04)"
   expansions:
     CC: "gcc"
     MARCH: "i386"
@@ -6927,7 +6928,7 @@ buildvariants:
       # Ubuntu16.04 only supports MongoDB 3.4+
 
 - name: gcc53
-  display_name: "GCC 5.3 (Ubuntu 16.04)"
+  display_name: "GCC 5.4 (Ubuntu 16.04)"
   expansions:
     CC: "gcc"
   run_on:
