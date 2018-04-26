@@ -22,12 +22,12 @@ if (NOT ENABLE_SNAPPY STREQUAL OFF)
       message (STATUS "  Found in ${SNAPPY_INCLUDE_DIRS}")
       message (STATUS "Searching for libsnappy")
       find_library (
-         SNAPPY_LIBS NAMES snappy
+         SNAPPY_LIBRARIES NAMES snappy
          PATHS /usr/lib /lib /usr/local/lib /usr/share/lib /opt/lib /opt/share/lib /var/lib c:/snappy/lib
          DOC "Searching for libsnappy")
 
-      if (SNAPPY_LIBS)
-         message (STATUS "  Found ${SNAPPY_LIBS}")
+      if (SNAPPY_LIBRARIES)
+         message (STATUS "  Found ${SNAPPY_LIBRARIES}")
       else ()
          if (ENABLE_SNAPPY MATCHES "ON|SYSTEM")
             message (FATAL_ERROR "  Not found (specify -DCMAKE_LIBRARY_PATH=/path/to/snappy/lib for Snappy compression)")
@@ -37,14 +37,14 @@ if (NOT ENABLE_SNAPPY STREQUAL OFF)
       endif ()
    endif ()
 
-   if (SNAPPY_INCLUDE_DIRS AND SNAPPY_LIBS)
+   if (SNAPPY_INCLUDE_DIRS AND SNAPPY_LIBRARIES)
       set (MONGOC_ENABLE_COMPRESSION_SNAPPY 1)
       set (MONGOC_ENABLE_COMPRESSION 1)
    endif ()
 endif ()
 
-if (NOT SNAPPY_INCLUDE_DIRS OR NOT SNAPPY_LIBS)
+if (NOT SNAPPY_INCLUDE_DIRS OR NOT SNAPPY_LIBRARIES)
    set (SNAPPY_INCLUDE_DIRS "")
-   set (SNAPPY_LIBS "")
+   set (SNAPPY_LIBRARIES "")
    set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 endif ()

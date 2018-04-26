@@ -178,7 +178,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
       pkg_check_modules (LIBRESSL libtls)
       if (LIBRESSL_FOUND)
          message ("--   Found ${LIBRESSL_LIBRARIES}")
-         set (SSL_LIBS ${LIBRESSL_LIBRARIES})
+         set (SSL_LIBRARIES ${LIBRESSL_LIBRARIES})
          include_directories ("${LIBRESSL_INCLUDE_DIRS}")
          link_directories ("${LIBRESSL_LIBRARY_DIRS}")
          set (LIBRESSL 1)
@@ -289,7 +289,7 @@ set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
 
 if (NOT ENABLE_SASL STREQUAL OFF)
    if (ENABLE_SASL MATCHES "AUTO|CYRUS")
-      # Sets SASL_LIBS.
+      # Sets SASL_LIBRARIES.
       include (FindSASL2)
    endif ()
 
@@ -433,7 +433,7 @@ endif ()
 
 set (MONGOC_INTERNAL_INCLUDE_DIRS "")
 
-# Sets SNAPPY_LIBS and SNAPPY_INCLUDE_DIRS.
+# Sets SNAPPY_LIBRARIES and SNAPPY_INCLUDE_DIRS.
 include (FindSnappy)
 if (SNAPPY_INCLUDE_DIRS)
    set (MONGOC_ENABLE_COMPRESSION 1)
@@ -701,10 +701,10 @@ if (NOT ENABLE_SSL STREQUAL OFF)
          ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
          ${SOURCE_DIR}/src/mongoc/mongoc-openssl.c
       )
-      set (SSL_LIBS ${OPENSSL_LIBRARIES})
+      set (SSL_LIBRARIES ${OPENSSL_LIBRARIES})
       include_directories (${OPENSSL_INCLUDE_DIR})
       if (WIN32)
-         set (SSL_LIBS ${SSL_LIBS} crypt32.lib)
+         set (SSL_LIBRARIES ${SSL_LIBRARIES} crypt32.lib)
       endif ()
    elseif (SECURE_TRANSPORT)
       message (STATUS "Compiling against Secure Transport")
@@ -714,7 +714,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
          ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-transport.c
          ${SOURCE_DIR}/src/mongoc/mongoc-secure-transport.c
       )
-      set (SSL_LIBS "-framework CoreFoundation -framework Security")
+      set (SSL_LIBRARIES "-framework CoreFoundation -framework Security")
    elseif (SECURE_CHANNEL)
       message (STATUS "Compiling against Secure Channel")
       set (SOURCES ${SOURCES}
@@ -723,7 +723,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
          ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-secure-channel.c
          ${SOURCE_DIR}/src/mongoc/mongoc-secure-channel.c
       )
-      set (SSL_LIBS secur32.lib crypt32.lib Bcrypt.lib)
+      set (SSL_LIBRARIES secur32.lib crypt32.lib Bcrypt.lib)
    elseif (LIBRESSL)
       message (STATUS "Compiling against LibreSSL")
       set (SOURCES ${SOURCES}
@@ -732,7 +732,7 @@ if (NOT ENABLE_SSL STREQUAL OFF)
          ${SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.c
          ${SOURCE_DIR}/src/mongoc/mongoc-libressl.c
       )
-      set (SSL_LIBS -ltls -lcrypto)
+      set (SSL_LIBRARIES -ltls -lcrypto)
    endif ()
 else ()
    message (STATUS "SSL disabled")
@@ -751,13 +751,13 @@ if (MONGOC_ENABLE_SASL)
       message (STATUS "Compiling against Windows SSPI")
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cluster-sspi.c)
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-sspi.c)
-      set (SASL_LIBS secur32.lib crypt32.lib Shlwapi.lib)
+      set (SASL_LIBRARIES secur32.lib crypt32.lib Shlwapi.lib)
    elseif (MONGOC_ENABLE_SASL_GSSAPI)
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-cluster-gssapi.c)
       set (SOURCES ${SOURCES} ${SOURCE_DIR}/src/mongoc/mongoc-gssapi.c)
       if (APPLE)
          message (STATUS "Compiling against macOS GSS")
-         set (LIBS ${LIBS} -framework GSS)
+         set (LIBRARIES ${LIBRARIES} -framework GSS)
       else ()
          message (FATAL_ERROR "gssapi missing krb5-config support in cmake")
       endif ()
@@ -773,14 +773,18 @@ if (CMAKE_USE_PTHREADS_INIT)
    set (THREAD_LIB ${CMAKE_THREAD_LIBS_INIT})
 endif ()
 
-set (LIBS ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${RESOLV_LIBS} ${SNAPPY_LIBS} ${ZLIB_LIBRARIES} Threads::Threads)
+set (LIBRARIES
+   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIB} ${RESOLV_LIBRARIES}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} Threads::Threads
+)
+
 if (WIN32)
-   set (LIBS ${LIBS} ws2_32)
+   set (LIBRARIES ${LIBRARIES} ws2_32)
 endif ()
 
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
-target_link_libraries (mongoc_shared ${LIBS} ${BSON_LIBRARIES})
+target_link_libraries (mongoc_shared ${LIBRARIES} ${BSON_LIBRARIES})
 target_include_directories (mongoc_shared BEFORE PUBLIC ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
 target_compile_definitions (mongoc_shared PUBLIC MONGOC_COMPILATION ${BSON_DEFINITIONS})
 
@@ -792,7 +796,7 @@ set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "mongoc-${MONGOC_API
 
 if (MONGOC_ENABLE_STATIC)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS})
-   target_link_libraries (mongoc_static ${LIBS} ${BSON_STATIC_LIBRARIES})
+   target_link_libraries (mongoc_static ${LIBRARIES} ${BSON_STATIC_LIBRARIES})
    target_include_directories (mongoc_static BEFORE PUBLIC ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
    target_compile_definitions (mongoc_static PUBLIC MONGOC_COMPILATION MONGOC_STATIC ${BSON_STATIC_DEFINITIONS})
    set_target_properties (mongoc_static PROPERTIES VERSION ${MONGOC_VERSION})
@@ -818,7 +822,7 @@ function (mongoc_add_test test use_shared)
          target_link_libraries (${test} mongoc_static)
          target_include_directories (${test} PRIVATE ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
       endif ()
-      target_link_libraries (${test} ${RESOLV_LIBS})
+      target_link_libraries (${test} ${RESOLV_LIBRARIES})
       if (WIN32)
          target_link_libraries (${test} shlwapi)
       else ()
@@ -1023,20 +1027,20 @@ set (libdir "\${prefix}/lib")
 
 foreach (
       FLAG
-      ${SASL_LIBS} ${SSL_LIBS} ${SHM_LIB} ${RESOLV_LIBS} ${THREAD_LIB}
-      ${ZLIB_LIBRARIES} ${SNAPPY_LIBS})
+      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIB} ${RESOLV_LIBRARIES}
+      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES})
 
    if (IS_ABSOLUTE "${FLAG}")
       get_filename_component (FLAG_DIR "${FLAG}" DIRECTORY)
       get_filename_component (FLAG_FILE "${FLAG}" NAME_WE)
       STRING (REGEX REPLACE "^lib" "" FLAG_FILE "${FLAG_FILE}")
-      set (MONGOC_LIBS "${MONGOC_LIBS} -L${FLAG_DIR} -l${FLAG_FILE}")
+      set (MONGOC_LIBRARIES "${MONGOC_LIBRARIES} -L${FLAG_DIR} -l${FLAG_FILE}")
    elseif (FLAG MATCHES "^-.*")
       # Flag starts with dash, add it as-is.
-      set (MONGOC_LIBS "${MONGOC_LIBS} ${FLAG}")
+      set (MONGOC_LIBRARIES "${MONGOC_LIBRARIES} ${FLAG}")
    else ()
       # Flag doesn't start with dash, add it with a dash.
-      set (MONGOC_LIBS "${MONGOC_LIBS} -l${FLAG}")
+      set (MONGOC_LIBRARIES "${MONGOC_LIBRARIES} -l${FLAG}")
    endif ()
 endforeach ()
 

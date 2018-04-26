@@ -14,17 +14,17 @@ endif ()
 
 message (STATUS "Searching for libsasl2")
 find_library (
-    SASL_LIBS NAMES sasl2
+    SASL_LIBRARIES NAMES sasl2
     PATHS /usr/lib /lib /usr/local/lib /usr/share/lib /opt/lib /opt/share/lib /var/lib c:/sasl/lib
     DOC "Searching for libsasl2")
 
-if (SASL_LIBS)
-    message (STATUS "  Found ${SASL_LIBS}")
+if (SASL_LIBRARIES)
+    message (STATUS "  Found ${SASL_LIBRARIES}")
 else ()
     message (STATUS "  Not found (specify -DCMAKE_LIBRARY_PATH=/path/to/sasl/lib for SASL support)")
 endif ()
 
-if (SASL_INCLUDE_DIRS AND SASL_LIBS)
+if (SASL_INCLUDE_DIRS AND SASL_LIBRARIES)
     set (SASL_FOUND 1)
 
     check_symbol_exists (
@@ -41,7 +41,7 @@ else ()
     if (ENABLE_SASL STREQUAL AUTO)
         set (SASL_FOUND 0)
         set (SASL_INCLUDE_DIRS "")
-        set (SASL_LIBS "")
+        set (SASL_LIBRARIES "")
         set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
     else ()
         message (FATAL_ERROR "  SASL not found")

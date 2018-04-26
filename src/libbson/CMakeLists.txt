@@ -45,7 +45,7 @@ find_library (RT_LIBRARY rt)
 if (RT_LIBRARY)
    #set required libraries for CHECK_FUNCTION_EXISTS
    set (CMAKE_REQUIRED_LIBRARIES ${RT_LIBRARY})
-   set (BSON_LIBS ${BSON_LIBS} ${RT_LIBRARY})
+   set (BSON_LIBRARIES ${BSON_LIBRARIES} ${RT_LIBRARY})
 endif ()
 
 # See https://public.kitware.com/Bug/view.php?id=15659
@@ -219,22 +219,22 @@ endif ()
 find_library (M_LIBRARY m)
 if (M_LIBRARY)
    target_link_libraries (bson_shared ${M_LIBRARY})
-   set (BSON_LIBS ${BSON_LIBS} ${M_LIBRARY})
+   set (BSON_LIBRARIES ${BSON_LIBRARIES} ${M_LIBRARY})
 endif ()
 
 set (THREADS_PREFER_PTHREAD_FLAG 1)
 find_package (Threads REQUIRED)
 target_link_libraries (bson_shared Threads::Threads)
 if (CMAKE_USE_PTHREADS_INIT)
-   set (BSON_LIBS ${BSON_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+   set (BSON_LIBRARIES ${BSON_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif ()
 
-if (NOT UNIX)
+if (WIN32)
    # gethostbyname
    target_link_libraries (bson_shared ws2_32)
    # Can't find_library () system dependencies
    # must be handled specially since we can't resolve them
-   set (BSON_SYSTEM_LIBS ${BSON_SYSTEM_LIBS} ws2_32)
+   set (BSON_SYSTEM_LIBRARIES ${BSON_SYSTEM_LIBRARIES} ws2_32)
 endif ()
 
 if (ENABLE_STATIC MATCHES "ON|AUTO")
@@ -298,17 +298,17 @@ install (
    DESTINATION ${BSON_HEADER_INSTALL_DIR}
 )
 
-set (LIBBSON_LIBS "")
-foreach (_lib ${CMAKE_C_IMPLICIT_LINK_LIBRARIES} ${BSON_LIBS})
+set (LIBBSON_LIBRARIES "")
+foreach (_lib ${CMAKE_C_IMPLICIT_LINK_LIBRARIES} ${BSON_LIBRARIES})
    if (_lib MATCHES ".*/.*" OR _lib MATCHES "^-")
-      set (LIBBSON_LIBS          "${LIBBSON_LIBS} ${_lib}")
+      set (LIBBSON_LIBRARIES "${LIBBSON_LIBRARIES} ${_lib}")
    else ()
-      set (LIBBSON_LIBS          "${LIBBSON_LIBS} -l${_lib}")
+      set (LIBBSON_LIBRARIES "${LIBBSON_LIBRARIES} -l${_lib}")
    endif ()
 endforeach ()
 # System dependencies don't match the above regexs, but also don't want the -l
-foreach (_lib ${BSON_SYSTEM_LIBS})
-   set (LIBBSON_LIBS          "${LIBBSON_LIBS} ${_lib}")
+foreach (_lib ${BSON_SYSTEM_LIBRARIES})
+   set (LIBBSON_LIBRARIES "${LIBBSON_LIBRARIES} ${_lib}")
 endforeach ()
 
 set (VERSION "${BSON_VERSION}")
