@@ -791,7 +791,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
             _largest_cluster_time (&server_stream->cluster_time, cluster_time);
       }
 
-      if (cluster_time) {
+      if (cluster_time && server_type != MONGOC_SERVER_STANDALONE) {
          _mongoc_cmd_parts_ensure_copied (parts);
          bson_append_document (
             &parts->assembled_body, "$clusterTime", 12, cluster_time);

@@ -1471,6 +1471,66 @@ test_cluster_command_error_op_query ()
    _test_cluster_command_error (false);
 }
 
+static void
+test_advanced_cluster_time_not_sent_to_standalone (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_client_session_t *cs;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+   bson_error_t error;
+
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1.0,"
+                              " 'ismaster': true,"
+                              " 'minWireVersion': 0,"
+                              " 'maxWireVersion': 6,"
+                              " 'logicalSessionTimeoutMinutes': 30}");
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   cs = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (cs, error);
+
+   mongoc_client_session_advance_cluster_time (
+      cs, tmp_bson ("{'clusterTime': {'$timestamp': {'t': 1, 'i': 1}}}"));
+
+   ASSERT_OR_PRINT (mongoc_client_session_append (cs, &opts, &error), error);
+
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), &opts, NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_msg (
+      server,
+      0,
+      tmp_bson ("{"
+                "   'find': 'collection', 'filter': {},"
+                "   '$clusterTime': {'$exists': false}"
+                "}"));
+   mock_server_replies_to_find (
+      request, MONGOC_QUERY_NONE, 0, 0, "db.collection", "", true);
+
+   BSON_ASSERT (!future_get_bool (future));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (&opts);
+   mongoc_collection_destroy (collection);
+   mongoc_client_session_destroy (cs);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
 void
 test_cluster_install (TestSuite *suite)
 {
@@ -1559,6 +1619,11 @@ test_cluster_install (TestSuite *suite)
                                 "/Cluster/cluster_time/comparison/pooled",
                                 test_cluster_time_comparison_pooled,
                                 test_framework_skip_if_slow);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Cluster/cluster_time/advanced_not_sent_to_standalone",
+      test_advanced_cluster_time_not_sent_to_standalone,
+      test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/not_master/single/op_query",
                                 test_not_master_single_op_query,
