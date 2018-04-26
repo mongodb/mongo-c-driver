@@ -131,7 +131,14 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk, bson_t *request)
    name = bson_lookup_utf8 (request, "name");
    bson_lookup_doc (request, "arguments", &args);
 
-   if (!strcmp (name, "deleteOne")) {
+   if (!strcmp (name, "deleteMany")) {
+      bson_t filter;
+
+      bson_lookup_doc (&args, "filter", &filter);
+
+      r = mongoc_bulk_operation_remove_many_with_opts (
+         bulk, &filter, &opts, &error);
+   } else if (!strcmp (name, "deleteOne")) {
       bson_t filter;
 
       bson_lookup_doc (&args, "filter", &filter);
@@ -159,6 +166,20 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk, bson_t *request)
 
       r = mongoc_bulk_operation_replace_one_with_opts (
          bulk, &filter, &replacement, &opts, &error);
+   } else if (!strcmp (name, "updateMany")) {
+      bson_t filter;
+      bson_t update;
+
+      bson_lookup_doc (&args, "filter", &filter);
+      bson_lookup_doc (&args, "update", &update);
+
+      if (bson_has_field (&args, "upsert")) {
+         BSON_APPEND_BOOL (
+            &opts, "upsert", _mongoc_lookup_bool (&args, "upsert", false));
+      }
+
+      r = mongoc_bulk_operation_update_many_with_opts (
+         bulk, &filter, &update, &opts, &error);
    } else if (!strcmp (name, "updateOne")) {
       bson_t filter;
       bson_t update;

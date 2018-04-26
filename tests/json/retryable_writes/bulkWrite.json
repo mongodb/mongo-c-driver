@@ -629,7 +629,132 @@
         "result": {
           "deletedCount": 0,
           "insertedIds": {
-            "0": 2
+            "1": 2
+          },
+          "matchedCount": 1,
+          "modifiedCount": 1,
+          "upsertedCount": 0,
+          "upsertedIds": {}
+        },
+        "collection": {
+          "data": [
+            {
+              "_id": 1,
+              "x": 12
+            },
+            {
+              "_id": 2,
+              "x": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "description": "Single-document write following deleteMany is retried",
+      "failPoint": {
+        "mode": {
+          "times": 1
+        },
+        "data": {
+          "failBeforeCommitExceptionCode": 1
+        }
+      },
+      "operation": {
+        "name": "bulkWrite",
+        "arguments": {
+          "requests": [
+            {
+              "name": "deleteMany",
+              "arguments": {
+                "filter": {
+                  "x": 11
+                }
+              }
+            },
+            {
+              "name": "insertOne",
+              "arguments": {
+                "document": {
+                  "_id": 2,
+                  "x": 22
+                }
+              }
+            }
+          ],
+          "options": {
+            "ordered": true
+          }
+        }
+      },
+      "outcome": {
+        "result": {
+          "deletedCount": 1,
+          "insertedIds": {
+            "1": 2
+          },
+          "matchedCount": 0,
+          "modifiedCount": 0,
+          "upsertedCount": 0,
+          "upsertedIds": {}
+        },
+        "collection": {
+          "data": [
+            {
+              "_id": 2,
+              "x": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "description": "Single-document write following updateMany is retried",
+      "failPoint": {
+        "mode": {
+          "times": 1
+        },
+        "data": {
+          "failBeforeCommitExceptionCode": 1
+        }
+      },
+      "operation": {
+        "name": "bulkWrite",
+        "arguments": {
+          "requests": [
+            {
+              "name": "updateMany",
+              "arguments": {
+                "filter": {
+                  "x": 11
+                },
+                "update": {
+                  "$inc": {
+                    "x": 1
+                  }
+                }
+              }
+            },
+            {
+              "name": "insertOne",
+              "arguments": {
+                "document": {
+                  "_id": 2,
+                  "x": 22
+                }
+              }
+            }
+          ],
+          "options": {
+            "ordered": true
+          }
+        }
+      },
+      "outcome": {
+        "result": {
+          "deletedCount": 0,
+          "insertedIds": {
+            "1": 2
           },
           "matchedCount": 1,
           "modifiedCount": 1,
