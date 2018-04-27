@@ -1143,6 +1143,9 @@ static bool
 auto_ismaster (request_t *request, void *data)
 {
    dollar_query_test_t *test;
+   const char *cluster_time = "";
+   const char *server_type;
+   char *ismaster;
 
    if (!request->is_command ||
        strcasecmp (request->command_name, "ismaster") != 0) {
@@ -1150,20 +1153,29 @@ auto_ismaster (request_t *request, void *data)
    }
 
    test = (dollar_query_test_t *) data;
+
    if (test->cluster_time) {
-      mock_server_replies_simple (
-         request,
-         "{'ok': 1, "
-         " 'minWireVersion': 0,"
-         " 'maxWireVersion': 6,"
-         " '$clusterTime': {'clusterTime': {'$timestamp': {'t': 1, 'i': 1}}}}");
-   } else {
-      mock_server_replies_simple (request,
-                                  "{'ok': 1, "
-                                  " 'minWireVersion': 0,"
-                                  " 'maxWireVersion': 6}");
+      cluster_time =
+         ", '$clusterTime': {'clusterTime': {'$timestamp': {'t': 1, 'i': 1}}}";
    }
 
+   if (test->secondary) {
+      server_type = ", 'ismaster': false, 'secondary': true";
+   } else {
+      server_type = ", 'ismaster': true, 'secondary': false";
+   }
+
+   ismaster = bson_strdup_printf ("{'ok': 1.0,"
+                                  " 'minWireVersion': 0,"
+                                  " 'maxWireVersion': %d,"
+                                  " 'setName': 'rs' %s %s}",
+                                  WIRE_VERSION_OP_MSG,
+                                  server_type,
+                                  cluster_time);
+
+   mock_server_replies_simple (request, ismaster);
+
+   bson_free (ismaster);
    request_destroy (request);
 
    return true;
