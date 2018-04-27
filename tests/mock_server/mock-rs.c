@@ -108,7 +108,7 @@ static char *
 ismaster_json (mock_rs_t *rs, mongoc_server_description_type_t type)
 {
    char *server_type;
-   char *ls_timeout;
+   char *mongos_36_fields = "";
    char *hosts_str;
    char *json;
 
@@ -122,9 +122,16 @@ ismaster_json (mock_rs_t *rs, mongoc_server_description_type_t type)
    }
 
    if (rs->max_wire_version >= WIRE_VERSION_OP_MSG) {
-      ls_timeout = "'logicalSessionTimeoutMinutes': 30, ";
-   } else {
-      ls_timeout = "";
+      mongos_36_fields =
+         "'$clusterTime': {"
+         "  'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
+         "  'signature': {"
+         "    'hash': {'$binary': {'subType': '0', 'base64': ''}},"
+         "    'keyId': {'$numberLong': '6446735049323708417'}"
+         "  },"
+         "  'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
+         "}, "
+         "'logicalSessionTimeoutMinutes': 30, ";
    }
 
    hosts_str = hosts (&rs->servers);
@@ -132,7 +139,7 @@ ismaster_json (mock_rs_t *rs, mongoc_server_description_type_t type)
    json = bson_strdup_printf ("{'ok': 1, %s %s 'maxWireVersion': %d, "
                               "'setName': 'rs', 'hosts': [%s]}",
                               server_type,
-                              ls_timeout,
+                              mongos_36_fields,
                               rs->max_wire_version,
                               hosts_str);
 
