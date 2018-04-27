@@ -388,7 +388,7 @@ mock_rs_get_uri (mock_rs_t *rs)
 
 /*--------------------------------------------------------------------------
  *
- * mock_rs_receives_query --
+ * mock_rs_receives_request --
  *
  *       Pop a client request if one is enqueued, or wait up to
  *       request_timeout_ms for the client to send a request.
