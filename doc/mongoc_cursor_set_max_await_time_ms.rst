@@ -25,6 +25,8 @@ The maximum amount of time for the server to wait on new documents to satisfy a 
 
 The ``max_await_time_ms`` cannot be changed after the first call to :symbol:`mongoc_cursor_next`.
 
+This is not applicable to all cursors. Calling :symbol:`mongoc_cursor_set_batch_size` on a cursor returned by :symbol:`mongoc_client_find_databases_with_opts`, :symbol:`mongoc_database_find_collections_with_opts`, or :symbol:`mongoc_collection_find_indexes_with_opts` will not change the results.
+
 See Also
 --------
 

@@ -26,6 +26,8 @@ This function is useful for setting the limit on a cursor after the cursor is cr
 
 Calling this function after :symbol:`mongoc_cursor_next` has no effect.
 
+This is not applicable to all cursors. Calling :symbol:`mongoc_cursor_set_limit` on a cursor returned by :symbol:`mongoc_client_find_databases_with_opts`, :symbol:`mongoc_database_find_collections_with_opts`, or :symbol:`mongoc_collection_find_indexes_with_opts` will not change the results.
+
 Returns
 -------
 

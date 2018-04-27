@@ -24,3 +24,4 @@ Limits the number of documents returned in one batch. Each batch requires a roun
 
 See `Cursor Batches <https://docs.mongodb.org/manual/core/cursors/#cursor-batches>`_ in the MongoDB Manual.
 
+This is not applicable to all cursors. Calling :symbol:`mongoc_cursor_set_batch_size` on a cursor returned by :symbol:`mongoc_client_find_databases_with_opts`, :symbol:`mongoc_database_find_collections_with_opts`, or :symbol:`mongoc_collection_find_indexes_with_opts` will not change the results.

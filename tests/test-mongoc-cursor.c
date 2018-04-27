@@ -11,202 +11,172 @@
 #include "mongoc-write-concern-private.h"
 #include "test-conveniences.h"
 
+#define CURSOR_COMMON_SETUP                                         \
+   do {                                                             \
+      bson_error_t _err;                                            \
+      bool _ret;                                                    \
+      client = test_framework_client_new ();                        \
+      coll = mongoc_client_get_collection (client, "test", "test"); \
+      /* populate to ensure db and coll exist. */                   \
+      _ret = mongoc_collection_insert_one (                         \
+         coll, tmp_bson ("{}"), NULL, NULL, &_err);                 \
+      ASSERT_OR_PRINT (_ret, _err);                                 \
+      ctor = (make_cursor_fn) ctx;                                  \
+   } while (0)
+
+#define CURSOR_COMMON_TEARDOWN          \
+   do {                                 \
+      mongoc_collection_destroy (coll); \
+      mongoc_client_destroy (client);   \
+   } while (0)
+
+typedef mongoc_cursor_t *(*make_cursor_fn) (mongoc_collection_t *);
+
+static mongoc_cursor_t *
+_make_find_cursor (mongoc_collection_t *coll)
+{
+   return mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), NULL, NULL);
+}
+
+
+static mongoc_cursor_t *
+_make_cmd_cursor (mongoc_collection_t *coll)
+{
+   return mongoc_collection_aggregate (
+      coll, MONGOC_QUERY_NONE, tmp_bson ("{}"), NULL, NULL);
+}
+
+
+static mongoc_cursor_t *
+_make_cmd_deprecated_cursor (mongoc_collection_t *coll)
+{
+   return mongoc_collection_command (
+      coll, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson ("{'ping': 1}"), NULL, NULL);
+}
+
+
+static mongoc_cursor_t *
+_make_array_cursor (mongoc_collection_t *coll)
+{
+   return mongoc_client_find_databases_with_opts (coll->client, NULL);
+}
+
 
 static void
-test_get_host (void)
+_test_common_get_host (void *ctx)
 {
-   const mongoc_host_list_t *hosts;
-   mongoc_host_list_t host;
    mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   make_cursor_fn ctor;
    mongoc_cursor_t *cursor;
-   char *uri_str = test_framework_get_uri_str ();
+   const mongoc_host_list_t *hosts;
+   mongoc_host_list_t cursor_host;
    mongoc_uri_t *uri;
    const bson_t *doc;
-   bson_error_t error;
-   bool r;
-   bson_t q = BSON_INITIALIZER;
+   bson_error_t err;
+   bool ret;
 
-   uri = mongoc_uri_new (uri_str);
-
+   CURSOR_COMMON_SETUP;
+   cursor = ctor (coll);
+   uri = test_framework_get_uri ();
    hosts = mongoc_uri_get_hosts (uri);
-
-   client = test_framework_client_new ();
-   cursor = _mongoc_cursor_find_new (client, "test.test", &q, NULL, NULL, NULL);
-   ASSERT (cursor);
-   mongoc_cursor_set_batch_size (cursor, 1);
-   ASSERT (mongoc_cursor_set_limit (cursor, 1));
-   r = mongoc_cursor_next (cursor, &doc);
-   if (!r && mongoc_cursor_error (cursor, &error)) {
-      test_error ("%s", error.message);
+   ret = mongoc_cursor_next (cursor, &doc);
+   if (!ret && mongoc_cursor_error (cursor, &err)) {
+      test_error ("%s", err.message);
       abort ();
    }
-
-   BSON_ASSERT (doc == mongoc_cursor_current (cursor));
-
-   mongoc_cursor_get_host (cursor, &host);
-
+   mongoc_cursor_get_host (cursor, &cursor_host);
    /* In a production deployment the driver can discover servers not in the seed
     * list, but for this test assume the cursor uses one of the seeds. */
    while (hosts) {
-      if (!strcmp (host.host_and_port, hosts->host_and_port)) {
+      if (strcmp (cursor_host.host_and_port, hosts->host_and_port) == 0) {
          /* the cursor is using this server */
-         ASSERT_CMPSTR (host.host, hosts->host);
-         ASSERT_CMPINT (host.port, ==, hosts->port);
-         ASSERT_CMPINT (host.family, ==, hosts->family);
+         ASSERT_CMPSTR (cursor_host.host, hosts->host);
+         ASSERT_CMPINT (cursor_host.port, ==, hosts->port);
+         ASSERT_CMPINT (cursor_host.family, ==, hosts->family);
          break;
       }
-
       hosts = hosts->next;
    }
-
-   if (!hosts) {
-      test_error (
-         "cursor using host %s not in seeds: %s", host.host_and_port, uri_str);
-      abort ();
-   }
-
-   bson_destroy (&q);
-   bson_free (uri_str);
    mongoc_uri_destroy (uri);
    mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
+   CURSOR_COMMON_TEARDOWN;
 }
 
+
 static void
-test_clone (void)
+_test_common_clone (void *ctx)
 {
-   mongoc_cursor_t *cloned;
-   mongoc_cursor_t *cursor;
    mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   make_cursor_fn ctor;
+   mongoc_cursor_t *cursor;
+   mongoc_cursor_t *cloned;
    const bson_t *doc;
-   bson_error_t error;
-   bool r;
-   bson_t q = BSON_INITIALIZER;
+   bson_error_t err;
 
-   client = test_framework_client_new ();
-
-   {
-      /*
-       * Ensure test.test has a document.
-       */
-
-      mongoc_collection_t *col;
-
-      col = mongoc_client_get_collection (client, "test", "test");
-      r = mongoc_collection_insert_one (col, &q, NULL, NULL, &error);
-      ASSERT (r);
-
-      mongoc_collection_destroy (col);
-   }
-
-   cursor = _mongoc_cursor_find_new (client, "test.test", &q, NULL, NULL, NULL);
-   ASSERT (cursor);
-   mongoc_cursor_set_batch_size (cursor, 1);
-   ASSERT (mongoc_cursor_set_limit (cursor, 1));
-
-   r = mongoc_cursor_next (cursor, &doc);
-   if (!r || mongoc_cursor_error (cursor, &error)) {
-      test_error ("%s", error.message);
-      abort ();
-   }
-   ASSERT (doc);
-
+   CURSOR_COMMON_SETUP;
+   cursor = ctor (coll);
    cloned = mongoc_cursor_clone (cursor);
-   ASSERT (cursor);
-
-   r = mongoc_cursor_next (cloned, &doc);
-   if (!r || mongoc_cursor_error (cloned, &error)) {
-      test_error ("%s", error.message);
-      abort ();
+   /* check that both cursors return the same number of documents. don't check
+    * that they return the same exact documents. A cursor on the listDatabases
+    * returns the database size, which may change in the background. */
+   while (mongoc_cursor_next (cursor, &doc)) {
+      BSON_ASSERT (mongoc_cursor_next (cloned, &doc));
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cloned, &err), err);
    }
-   ASSERT (doc);
-
-   bson_destroy (&q);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &err), err);
+   BSON_ASSERT (!mongoc_cursor_next (cloned, &doc));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cloned, &err), err);
    mongoc_cursor_destroy (cursor);
    mongoc_cursor_destroy (cloned);
-   mongoc_client_destroy (client);
+   CURSOR_COMMON_TEARDOWN;
 }
 
 
 static void
-test_clone_with_concerns (void)
+_test_common_clone_w_concerns (void *ctx)
 {
-   mongoc_cursor_t *cloned;
-   mongoc_cursor_t *cursor;
    mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   make_cursor_fn ctor;
+   mongoc_cursor_t *cursor;
+   mongoc_cursor_t *cloned;
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;
    const bson_t *bson;
    bson_iter_t iter;
-   bson_error_t error;
-   bool r;
-   bson_t q = BSON_INITIALIZER;
 
-   client = test_framework_client_new ();
-
-   {
-      /*
-       * Ensure test.test has a document.
-       */
-
-      mongoc_collection_t *col;
-
-      col = mongoc_client_get_collection (client, "test", "test");
-      r = mongoc_collection_insert_one (col, &q, NULL, NULL, &error);
-      ASSERT (r);
-
-      mongoc_collection_destroy (col);
-   }
-
+   CURSOR_COMMON_SETUP;
+   cursor = ctor (coll);
    read_concern = mongoc_read_concern_new ();
    ASSERT (read_concern);
    mongoc_read_concern_set_level (read_concern,
                                   MONGOC_READ_CONCERN_LEVEL_LOCAL);
-
-   cursor = _mongoc_cursor_find_new (
-      client, "test.test", &q, NULL, NULL, read_concern);
-   ASSERT (cursor);
-   mongoc_cursor_set_batch_size (cursor, 1);
-   ASSERT (mongoc_cursor_set_limit (cursor, 1));
-
    write_concern = mongoc_write_concern_new ();
    ASSERT (write_concern);
    mongoc_write_concern_set_fsync (write_concern, true);
    mongoc_write_concern_set_journal (write_concern, true);
    mongoc_write_concern_set_wmajority (write_concern, 1000);
-
    cursor->write_concern = write_concern;
-
-   /*
-    * Don't call mongoc_cursor_next (), since the test may run against a version
-    * of MongoDB that doesn't support read/write concerns, and we are only
-    * interested in testing if the clone process works.
-    */
-
+   mongoc_read_concern_destroy (cursor->read_concern);
+   cursor->read_concern = read_concern;
+   /* don't call mongoc_cursor_next (), since the test may run against a version
+   * of MongoDB that doesn't support read/write concerns, and we are only
+   * interested in testing if the clone process works. */
    cloned = mongoc_cursor_clone (cursor);
-   ASSERT (cursor);
-
-   /*
-    * Test cloned read_concern.
-    */
+   /* test cloned read_concern. */
    ASSERT (!mongoc_read_concern_is_default (cloned->read_concern));
    ASSERT_CMPSTR (mongoc_read_concern_get_level (cloned->read_concern),
                   MONGOC_READ_CONCERN_LEVEL_LOCAL);
-
-   /*
-    * Test cloned write_concern.
-    */
+   /* test cloned write_concern. */
    ASSERT (mongoc_write_concern_get_wmajority (cloned->write_concern));
    ASSERT (mongoc_write_concern_get_wtimeout (cloned->write_concern) == 1000);
    ASSERT (mongoc_write_concern_get_w (cloned->write_concern) ==
            MONGOC_WRITE_CONCERN_W_MAJORITY);
-
-   /*
-    * Check generated bson in cloned cursor.
-    */
+   /* check generated bson in cloned cursor. */
    ASSERT_MATCH (_mongoc_read_concern_get_bson (cloned->read_concern),
                  "{'level': 'local'}");
-
    bson = _mongoc_write_concern_get_bson (cloned->write_concern);
    ASSERT (bson);
    ASSERT (bson_iter_init_find (&iter, bson, "fsync") &&
@@ -216,12 +186,82 @@ test_clone_with_concerns (void)
    ASSERT (bson_iter_init_find (&iter, bson, "w") &&
            BSON_ITER_HOLDS_UTF8 (&iter));
    ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "majority");
-
-   bson_destroy (&q);
-   mongoc_read_concern_destroy (read_concern);
    mongoc_cursor_destroy (cursor);
    mongoc_cursor_destroy (cloned);
-   mongoc_client_destroy (client);
+   CURSOR_COMMON_TEARDOWN;
+}
+
+
+static void
+_test_common_advancing_past_end (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   make_cursor_fn ctor;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   const bson_t *current;
+   const bson_t *err_doc;
+   bson_error_t err;
+
+   CURSOR_COMMON_SETUP;
+   cursor = ctor (coll);
+   while (mongoc_cursor_next (cursor, &doc)) {
+      current = mongoc_cursor_current (cursor);
+      /* should be same address. */
+      BSON_ASSERT (doc == current);
+      ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &err), err);
+      /* cursor will report more until certain there are no documents left. */
+      ASSERT (mongoc_cursor_more (cursor));
+   }
+   /* advance one past the end. */
+   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (mongoc_cursor_error (cursor, &err));
+   BSON_ASSERT (mongoc_cursor_error_document (cursor, &err, &err_doc));
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Cannot advance a completed or failed cursor.");
+   /* this is not a server error, the error document shoudl be NULL. */
+   BSON_ASSERT (bson_empty (err_doc));
+   mongoc_cursor_destroy (cursor);
+   CURSOR_COMMON_TEARDOWN;
+}
+
+
+#define TEST_FOREACH_CURSOR(prefix, fn)                                       \
+   TestSuite_AddFull (suite,                                                  \
+                      prefix "/find",                                         \
+                      fn,                                                     \
+                      NULL,                                                   \
+                      _make_find_cursor,                                      \
+                      TestSuite_CheckLive);                                   \
+   TestSuite_AddFull (                                                        \
+      suite, prefix "/cmd", fn, NULL, _make_cmd_cursor, TestSuite_CheckLive); \
+   TestSuite_AddFull (suite,                                                  \
+                      prefix "/cmd_deprecated",                               \
+                      fn,                                                     \
+                      NULL,                                                   \
+                      _make_cmd_deprecated_cursor,                            \
+                      TestSuite_CheckLive);                                   \
+   TestSuite_AddFull (suite,                                                  \
+                      prefix "/array",                                        \
+                      fn,                                                     \
+                      NULL,                                                   \
+                      _make_array_cursor,                                     \
+                      TestSuite_CheckLive);
+
+
+static void
+test_common_cursor_functions_install (TestSuite *suite)
+{
+   /* test functionality common to all cursor implementations. */
+   TEST_FOREACH_CURSOR ("/Cursor/common/get_host", _test_common_get_host);
+   TEST_FOREACH_CURSOR ("/Cursor/common/clone", _test_common_clone);
+   TEST_FOREACH_CURSOR ("/Cursor/common/clone_w_concerns",
+                        _test_common_clone_w_concerns);
+   TEST_FOREACH_CURSOR ("/Cursor/common/advancing_past_end",
+                        _test_common_advancing_past_end);
 }
 
 
@@ -1827,53 +1867,11 @@ test_find_error_is_alive (void)
    mongoc_client_destroy (client);
 }
 
-static void
-test_list_databases_clone (void)
-{
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor, *cursor_clone;
-   mongoc_collection_t *coll;
-   bson_error_t err;
-   const bson_t *bson;
-   const bson_t *bson_clone;
-   bool ret;
-   /* ensure at least one database exists by inserting. */
-   client = test_framework_client_new ();
-   coll = mongoc_client_get_collection (client, "test", "test");
-   ret = mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &err);
-   ASSERT_OR_PRINT (ret, err);
-   cursor = mongoc_client_find_databases_with_opts (client, NULL);
-   cursor_clone = mongoc_cursor_clone (cursor);
-   while (mongoc_cursor_next (cursor, &bson)) {
-      bson_iter_t iter;
-      const char *lhs, *rhs;
-      BSON_ASSERT (mongoc_cursor_next (cursor_clone, &bson_clone));
-      /* check that the database names match. */
-      bson_iter_init_find (&iter, bson, "name");
-      lhs = bson_iter_utf8 (&iter, NULL);
-      bson_iter_init_find (&iter, bson_clone, "name");
-      rhs = bson_iter_utf8 (&iter, NULL);
-      if (bson_compare (bson, bson_clone) != 0) {
-         fprintf (stderr, "bson does not match\n");
-         printf ("lhs=%s, rhs=%s\n",
-                 bson_as_json (bson, NULL),
-                 bson_as_json (bson_clone, NULL));
-      }
-      ASSERT_CMPSTR (lhs, rhs);
-   }
-   mongoc_cursor_destroy (cursor);
-   mongoc_cursor_destroy (cursor_clone);
-   mongoc_collection_destroy (coll);
-   mongoc_client_destroy (client);
-}
 
 void
 test_cursor_install (TestSuite *suite)
 {
-   TestSuite_AddLive (suite, "/Cursor/get_host", test_get_host);
-   TestSuite_AddLive (suite, "/Cursor/clone", test_clone);
-   TestSuite_AddLive (
-      suite, "/Cursor/clone_with_concerns", test_clone_with_concerns);
+   test_common_cursor_functions_install (suite);
    TestSuite_AddLive (suite, "/Cursor/limit", test_limit);
    TestSuite_AddLive (suite,
                       ""
@@ -1963,6 +1961,4 @@ test_cursor_install (TestSuite *suite)
       suite, "/Cursor/error_document/command", test_error_document_command);
    TestSuite_AddLive (
       suite, "/Cursor/find_error/is_alive", test_find_error_is_alive);
-   TestSuite_AddLive (
-      suite, "/Cursor/list_databases/clone", test_list_databases_clone);
 }

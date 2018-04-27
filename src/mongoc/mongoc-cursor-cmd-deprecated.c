@@ -45,6 +45,14 @@ _pop_from_batch (mongoc_cursor_t *cursor)
 {
    data_cmd_deprecated_t *data = (data_cmd_deprecated_t *) cursor->impl.data;
    cursor->current = &data->reply;
+   /* don't return DONE here. a cursor is marked DONE when it returns NULL. */
+   return END_OF_BATCH;
+}
+
+static mongoc_cursor_state_t
+_get_next_batch (mongoc_cursor_t *cursor)
+{
+   /* there's no next batch to get, return DONE immediately. */
    return DONE;
 }
 
@@ -84,6 +92,7 @@ _mongoc_cursor_cmd_deprecated_new (mongoc_client_t *client,
    bson_init (&data->reply);
    cursor->impl.prime = _prime;
    cursor->impl.pop_from_batch = _pop_from_batch;
+   cursor->impl.get_next_batch = _get_next_batch;
    cursor->impl.data = data;
    cursor->impl.clone = _clone;
    cursor->impl.destroy = _destroy;

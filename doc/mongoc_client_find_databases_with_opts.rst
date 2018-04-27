@@ -29,3 +29,5 @@ Returns
 -------
 
 A cursor where each result corresponds to the server's representation of a database.
+
+The cursor functions :symbol:`mongoc_cursor_set_limit`, :symbol:`mongoc_cursor_set_batch_size`, and :symbol:`mongoc_cursor_set_max_await_time_ms` have no use on the returned cursor.
