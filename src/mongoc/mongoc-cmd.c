@@ -722,7 +722,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
    if (!parts->is_write_command && IS_PREF_PRIMARY (parts->read_prefs) &&
        server_stream->topology_type == MONGOC_TOPOLOGY_SINGLE &&
-       server_stream->sd->type != MONGOC_SERVER_MONGOS) {
+       server_type != MONGOC_SERVER_MONGOS) {
       prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
       prefs_ptr = prefs;
    } else {
