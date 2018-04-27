@@ -278,19 +278,22 @@ if (ENABLE_EXAMPLES)
    add_example (json-to-bson examples/json-to-bson.c)
 endif () # ENABLE_EXAMPLES
 
-set (BSON_HEADER_INSTALL_DIR "include/libbson-${BSON_API_VERSION}")
+set (BSON_HEADER_INSTALL_DIR
+   "${CMAKE_INSTALL_INCLUDEDIR}/libbson-${BSON_API_VERSION}"
+)
+
 install (
    TARGETS bson_shared ${EXAMPLES}
-   LIBRARY DESTINATION lib
-   ARCHIVE DESTINATION lib
-   RUNTIME DESTINATION bin
+   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 if (ENABLE_STATIC MATCHES "ON|AUTO")
    install (
       TARGETS bson_static ${EXAMPLES}
-      LIBRARY DESTINATION lib
-      ARCHIVE DESTINATION lib
-      RUNTIME DESTINATION bin
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
 endif ()
 install (
@@ -321,9 +324,9 @@ configure_file (
 
 install (
    FILES
-   ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-1.0.pc
+      ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-1.0.pc
    DESTINATION
-   lib/pkgconfig
+      ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
 
 if (ENABLE_STATIC MATCHES "ON|AUTO")
@@ -334,9 +337,9 @@ if (ENABLE_STATIC MATCHES "ON|AUTO")
 
    install (
       FILES
-      ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-static-1.0.pc
+         ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-static-1.0.pc
       DESTINATION
-      lib/pkgconfig
+         ${CMAKE_INSTALL_LIBDIR}/pkgconfig
    )
 endif ()
 

@@ -56,7 +56,7 @@ function (sphinx_build_html target_name doc_dir)
       install (FILES
          ${CMAKE_CURRENT_BINARY_DIR}/${html}
          DESTINATION
-         share/doc/${doc_dir}/html
+         ${CMAKE_INSTALL_DOCDIR}/${doc_dir}/html
       )
    endforeach ()
 
@@ -67,18 +67,18 @@ function (sphinx_build_html target_name doc_dir)
       ${SPHINX_HTML_DIR}/objects.inv
       ${SPHINX_HTML_DIR}/searchindex.js
       DESTINATION
-      share/doc/${doc_dir}/html
+      ${CMAKE_INSTALL_DOCDIR}/${doc_dir}/html
    )
    install (DIRECTORY
       ${SPHINX_HTML_DIR}/_static
       DESTINATION
-      share/doc/${doc_dir}/html
+      ${CMAKE_INSTALL_DOCDIR}/${doc_dir}/html
    )
    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/static)
       install (DIRECTORY
          ${SPHINX_HTML_DIR}/_images
          DESTINATION
-         share/doc/${doc_dir}/html
+         ${CMAKE_INSTALL_DOCDIR}/${doc_dir}/html
       )
    endif ()
 
@@ -150,7 +150,7 @@ function (sphinx_build_man target_name)
       install (FILES
          ${CMAKE_CURRENT_BINARY_DIR}/${man}
          DESTINATION
-         share/man/man3
+         ${CMAKE_INSTALL_MANDIR}/man3
       )
    endforeach ()
 

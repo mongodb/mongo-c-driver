@@ -57,6 +57,7 @@ set (CMAKE_MODULE_PATH
 )
 
 include (InstallRequiredSystemLibraries)
+include (GNUInstallDirs)
 
 # Set MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION, etc.
 include (LoadVersion)
@@ -999,21 +1000,23 @@ file (COPY ${SOURCE_DIR}/tests/release_files DESTINATION ${PROJECT_BINARY_DIR}/t
 
 install (
    TARGETS mongoc_shared ${EXAMPLES}
-   LIBRARY DESTINATION lib
-   ARCHIVE DESTINATION lib
-   RUNTIME DESTINATION bin
+   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 if (MONGOC_ENABLE_STATIC)
    install (
       TARGETS mongoc_shared mongoc_static ${EXAMPLES}
-      LIBRARY DESTINATION lib
-      ARCHIVE DESTINATION lib
-      RUNTIME DESTINATION bin
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
    )
 endif ()
 
-set (MONGOC_HEADER_INSTALL_DIR "include/libmongoc-${MONGOC_API_VERSION}")
+set (MONGOC_HEADER_INSTALL_DIR
+   "${CMAKE_INSTALL_INCLUDEDIR}/libmongoc-${MONGOC_API_VERSION}"
+)
 
 install (
    FILES ${HEADERS}
@@ -1050,7 +1053,7 @@ configure_file (
 @ONLY)
 install (
    FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
-   DESTINATION lib/pkgconfig
+   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
 if (MONGOC_ENABLE_STATIC)
    configure_file (
@@ -1059,7 +1062,7 @@ if (MONGOC_ENABLE_STATIC)
    @ONLY)
    install (
       FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc
-      DESTINATION lib/pkgconfig
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
    )
 endif ()
 # Deprecated alias for libmongoc-1.0.pc, see CDRIVER-2086.
@@ -1070,7 +1073,7 @@ if (MONGOC_ENABLE_SSL)
    @ONLY)
    install (
       FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-ssl-1.0.pc
-      DESTINATION lib/pkgconfig
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
    )
 endif ()
 
