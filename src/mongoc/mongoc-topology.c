@@ -254,6 +254,10 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       MONGOC_URI_SERVERSELECTIONTIMEOUTMS,
       MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS);
 
+   /* tests can override this */
+   topology->min_heartbeat_frequency_msec =
+      MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS;
+
    topology->local_threshold_msec =
       mongoc_uri_get_local_threshold_option (topology->uri);
 
@@ -653,7 +657,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
          if (topology->stale) {
             /* how soon are we allowed to scan? */
             scan_ready = topology->last_scan +
-                         MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS * 1000;
+                         topology->min_heartbeat_frequency_msec * 1000;
 
             if (scan_ready > expire_at && !try_once) {
                /* selection timeout will expire before min heartbeat passes */
@@ -1097,7 +1101,7 @@ _mongoc_topology_run_background (void *data)
          /* if someone's specifically asked for a scan, use a shorter interval
           */
          if (topology->scan_requested) {
-            force_timeout = MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS -
+            force_timeout = topology->min_heartbeat_frequency_msec -
                             ((now - last_scan) / 1000);
 
             timeout = BSON_MIN (timeout, force_timeout);

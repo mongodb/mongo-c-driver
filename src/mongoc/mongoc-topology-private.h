@@ -49,6 +49,8 @@ typedef struct _mongoc_topology_t {
    int64_t local_threshold_msec;
    int64_t connect_timeout_msec;
    int64_t server_selection_timeout_msec;
+   /* defaults to 500ms, configurable by tests */
+   int64_t min_heartbeat_frequency_msec;
 
    mongoc_mutex_t mutex;
    mongoc_cond_t cond_client;

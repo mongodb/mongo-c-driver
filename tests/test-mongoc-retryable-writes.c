@@ -576,16 +576,6 @@ execute_test (mongoc_collection_t *collection,
       fflush (stdout);
    }
 
-   if (!check_server_version (test) ||
-       !test_framework_skip_if_not_rs_version_6 ()) {
-      if (test_suite_debug_output ()) {
-         printf ("      SKIP, server version or not rs version 6\n");
-         fflush (stdout);
-      }
-
-      goto done;
-   }
-
    /* Select a primary for testing */
    server_id = mongoc_topology_select_server_id (
       collection->client->topology, MONGOC_SS_WRITE, NULL, &error);
@@ -622,10 +612,7 @@ execute_test (mongoc_collection_t *collection,
       check_outcome_collection (collection, test);
    }
 
-done:
-   if (server_id) {
-      deactivate_fail_point (collection->client, server_id);
-   }
+   deactivate_fail_point (collection->client, server_id);
 }
 
 
@@ -634,63 +621,67 @@ _test_retryable_writes_cb (bson_t *scenario, bool explicit_session)
 {
    bson_iter_t scenario_iter;
    bson_iter_t tests_iter;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_client_session_t *session = NULL;
+   mongoc_collection_t *collection;
+   uint32_t server_id;
+   bson_error_t error;
 
    ASSERT (scenario);
+
+   if (!check_server_version (scenario)) {
+      if (test_suite_debug_output ()) {
+         printf ("      SKIP, server version too old\n");
+         fflush (stdout);
+      }
+
+      return;
+   }
 
    ASSERT (bson_iter_init_find (&scenario_iter, scenario, "tests"));
    ASSERT (BSON_ITER_HOLDS_ARRAY (&scenario_iter));
    ASSERT (bson_iter_recurse (&scenario_iter, &tests_iter));
 
+   uri = test_framework_get_uri ();
+   mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
+
+   client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
+   /* reconnect right away after the failpoint causes a disconnect */
+   client->topology->min_heartbeat_frequency_msec = 0;
+   mongoc_uri_destroy (uri);
+
+   /* clean up in case a previous test aborted */
+   server_id = mongoc_topology_select_server_id (
+      client->topology, MONGOC_SS_WRITE, NULL, &error);
+   ASSERT_OR_PRINT (server_id, error);
+   deactivate_fail_point (client, server_id);
+
+   if (explicit_session) {
+      session = mongoc_client_start_session (client, NULL, &error);
+      ASSERT_OR_PRINT (session, error);
+   }
+
+   collection = get_test_collection (client, "retryable_writes");
+
    while (bson_iter_next (&tests_iter)) {
-      mongoc_uri_t *uri;
-      mongoc_client_t *client;
-      uint32_t server_id;
-      mongoc_collection_t *collection;
-      mongoc_client_session_t *session = NULL;
       bson_t test;
-      bson_error_t error;
 
       ASSERT (BSON_ITER_HOLDS_DOCUMENT (&tests_iter));
       bson_iter_bson (&tests_iter, &test);
 
-      uri = test_framework_get_uri ();
-      mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
-
-      client = mongoc_client_new_from_uri (uri);
-      test_framework_set_ssl_opts (client);
-      mongoc_uri_destroy (uri);
-
-      /* clean up in case a previous test aborted */
-      server_id = mongoc_topology_select_server_id (
-         client->topology, MONGOC_SS_WRITE, NULL, &error);
-      ASSERT_OR_PRINT (server_id, error);
-      deactivate_fail_point (client, server_id);
-
-      collection = get_test_collection (client, "retryable_writes");
-
-      if (explicit_session) {
-         session = mongoc_client_start_session (client, NULL, &error);
-         ASSERT_OR_PRINT (session, error);
-      }
-
       insert_data (collection, scenario);
       execute_test (collection, &test, session);
-
-      if (!mongoc_collection_drop (collection, &error)) {
-         if (strcmp (error.message, "ns not found")) {
-            /* an error besides ns not found */
-            ASSERT_OR_PRINT (false, error);
-         }
-      }
-
-      if (session) {
-         mongoc_client_session_destroy (session);
-      }
-
       bson_destroy (&test);
-      mongoc_collection_destroy (collection);
-      mongoc_client_destroy (client);
    }
+
+   if (session) {
+      mongoc_client_session_destroy (session);
+   }
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
 }
 
 
@@ -1122,7 +1113,7 @@ test_all_spec_tests (TestSuite *suite)
                                        resolved,
                                        test_retryable_writes_cb,
                                        test_framework_skip_if_no_crypto,
-                                       test_framework_skip_if_not_rs_version_6);
+                                       test_framework_skip_if_not_replset);
 }
 
 void
