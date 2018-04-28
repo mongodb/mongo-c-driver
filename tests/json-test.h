@@ -45,19 +45,6 @@ assemble_path (const char *parent_path,
                const char *child_name,
                char *dst /* OUT */);
 
-void
-install_json_test_suite (TestSuite *suite,
-                         const char *dir_path,
-                         test_hook callback);
-void
-_install_json_test_suite_with_check (TestSuite *suite,
-                                     const char *dir_path,
-                                     test_hook callback,
-                                     ...);
-
-#define install_json_test_suite_with_check(_suite, _dir_path, ...) \
-   _install_json_test_suite_with_check (_suite, _dir_path, __VA_ARGS__, NULL)
-
 mongoc_topology_description_type_t
 topology_type_from_test (const char *type);
 
@@ -77,5 +64,30 @@ test_server_selection_logic_cb (bson_t *test);
 
 mongoc_server_description_type_t
 server_type_from_test (const char *type);
+
+void
+activate_fail_point (mongoc_client_t *client,
+                     uint32_t server_id,
+                     const bson_t *opts);
+
+void
+deactivate_fail_point (mongoc_client_t *client, uint32_t server_id);
+
+void
+run_json_general_test (const bson_t *scenario, bool explicit_session);
+
+void
+_install_json_test_suite_with_check (TestSuite *suite,
+                                     const char *dir_path,
+                                     test_hook callback,
+                                     ...);
+
+void
+install_json_test_suite (TestSuite *suite,
+                         const char *dir_path,
+                         test_hook callback);
+
+#define install_json_test_suite_with_check(_suite, _dir_path, ...) \
+   _install_json_test_suite_with_check (_suite, _dir_path, __VA_ARGS__, NULL)
 
 #endif
