@@ -705,7 +705,14 @@ check_server_version (const bson_t *test)
       bson_free (padded);
       server_version = test_framework_get_server_version ();
 
-      return server_version <= test_version;
+      if (server_version > test_version) {
+         if (test_suite_debug_output ()) {
+            printf ("      SKIP, maxServerVersion=\"%s\"\n", s);
+            fflush (stdout);
+         }
+
+         return false;
+      }
    }
 
    if (bson_has_field (test, "minServerVersion")) {
@@ -713,7 +720,14 @@ check_server_version (const bson_t *test)
       test_version = test_framework_str_to_version (s);
       server_version = test_framework_get_server_version ();
 
-      return server_version >= test_version;
+      if (server_version < test_version) {
+         if (test_suite_debug_output ()) {
+            printf ("      SKIP, minServerVersion=\"%s\"\n", s);
+            fflush (stdout);
+         }
+
+         return false;
+      }
    }
 
    /* server version is ok, don't skip the test */
@@ -1360,11 +1374,6 @@ run_json_general_test (const bson_t *scenario, bool explicit_session)
    ASSERT (scenario);
 
    if (!check_server_version (scenario)) {
-      if (test_suite_debug_output ()) {
-         printf ("      SKIP, server version or not rs version 6\n");
-         fflush (stdout);
-      }
-
       return;
    }
 
