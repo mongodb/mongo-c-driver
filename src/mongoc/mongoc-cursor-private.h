@@ -239,6 +239,8 @@ _mongoc_cursor_check_and_copy_to (mongoc_cursor_t *cursor,
                                   const char *err_prefix,
                                   const bson_t *src,
                                   bson_t *dst);
+void
+_mongoc_cursor_prime (mongoc_cursor_t *cursor);
 /* legacy functions defined in mongoc-cursor-legacy.c */
 bool
 _mongoc_cursor_next (mongoc_cursor_t *cursor, const bson_t **bson);

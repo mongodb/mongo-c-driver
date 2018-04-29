@@ -1617,3 +1617,9 @@ _mongoc_cursor_set_empty (mongoc_cursor_t *cursor)
    bson_reinit (&cursor->error_doc);
    cursor->state = IN_BATCH;
 }
+
+void
+_mongoc_cursor_prime (mongoc_cursor_t *cursor)
+{
+   cursor->state = cursor->impl.prime (cursor);
+}

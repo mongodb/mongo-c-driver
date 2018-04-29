@@ -1401,7 +1401,7 @@ mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
                                     NULL /* read concern */);
 
    if (!mongoc_cursor_error (cursor, &error)) {
-      cursor->impl.prime (cursor);
+      _mongoc_cursor_prime (cursor);
    }
 
    if (mongoc_cursor_error (cursor, &error) &&

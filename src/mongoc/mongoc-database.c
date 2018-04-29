@@ -756,7 +756,7 @@ mongoc_database_find_collections_with_opts (mongoc_database_t *database,
    cursor = _mongoc_cursor_cmd_new (
       database->client, database->name, &cmd, opts, NULL, NULL);
    if (cursor->error.domain == 0) {
-      cursor->state = cursor->impl.prime (cursor);
+      _mongoc_cursor_prime (cursor);
    }
    bson_destroy (&cmd);
 
