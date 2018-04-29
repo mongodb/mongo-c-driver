@@ -738,19 +738,24 @@ check_server_version (const bson_t *test)
 static void
 insert_data (mongoc_collection_t *collection, const bson_t *scenario)
 {
+   mongoc_client_t *client;
+   mongoc_collection_t *tmp_collection;
+   bool r;
    bson_error_t error;
    mongoc_bulk_operation_t *bulk;
    bson_t documents;
    bson_iter_t iter;
    uint32_t server_id;
-   bson_t reply;
 
-   if (!mongoc_collection_drop (collection, &error)) {
-      if (strcmp (error.message, "ns not found")) {
-         /* an error besides ns not found */
-         ASSERT_OR_PRINT (false, error);
-      }
-   }
+   /* clear data using a fresh client not configured with retryWrites etc. */
+   client = test_framework_client_new ();
+   tmp_collection = mongoc_client_get_collection (
+      client, collection->db, collection->collection);
+   r = mongoc_collection_delete_many (
+      tmp_collection, tmp_bson ("{}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   mongoc_collection_destroy (tmp_collection);
+   mongoc_client_destroy (client);
 
    bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
 
@@ -759,7 +764,6 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
 
    while (bson_iter_next (&iter)) {
       bson_t document;
-      bool r;
       bson_t opts = BSON_INITIALIZER;
 
       bson_iter_bson (&iter, &document);
@@ -770,11 +774,10 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
       bson_destroy (&opts);
    }
 
-   server_id = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   server_id = mongoc_bulk_operation_execute (bulk, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
    bson_destroy (&documents);
-   bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
 }
 
