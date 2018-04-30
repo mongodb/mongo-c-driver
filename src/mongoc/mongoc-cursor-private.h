@@ -165,7 +165,7 @@ _mongoc_cursor_flags_to_opts (mongoc_query_flags_t qflags,
 bool
 _mongoc_cursor_translate_dollar_query_opts (const bson_t *query,
                                             bson_t *opts,
-                                            bson_t *filter,
+                                            bson_t *unwrapped,
                                             bson_error_t *error);
 mongoc_server_stream_t *
 _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor);
