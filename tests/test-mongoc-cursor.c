@@ -405,7 +405,7 @@ test_kill_cursor_live (void)
       _mongoc_cursor_find_new (client, collection->ns, b, NULL, NULL, NULL);
    /* override the typical priming, and immediately transition to an OPQUERY
     * find cursor. */
-   cursor->impl.destroy(&cursor->impl);
+   cursor->impl.destroy (&cursor->impl);
    _mongoc_cursor_impl_find_opquery_init (cursor, b);
 
    cursor->cursor_id = ctx.cursor_id;
@@ -1846,16 +1846,18 @@ test_list_databases_clone (void)
    cursor_clone = mongoc_cursor_clone (cursor);
    while (mongoc_cursor_next (cursor, &bson)) {
       bson_iter_t iter;
-      const char* lhs, *rhs;
+      const char *lhs, *rhs;
       BSON_ASSERT (mongoc_cursor_next (cursor_clone, &bson_clone));
       /* check that the database names match. */
-      bson_iter_init_find(&iter, bson, "name");
-      lhs = bson_iter_utf8(&iter, NULL);
-      bson_iter_init_find(&iter, bson_clone, "name");
-      rhs = bson_iter_utf8(&iter, NULL);
+      bson_iter_init_find (&iter, bson, "name");
+      lhs = bson_iter_utf8 (&iter, NULL);
+      bson_iter_init_find (&iter, bson_clone, "name");
+      rhs = bson_iter_utf8 (&iter, NULL);
       if (bson_compare (bson, bson_clone) != 0) {
-         fprintf(stderr, "bson does not match\n");
-         printf("lhs=%s, rhs=%s\n", bson_as_json(bson, NULL), bson_as_json(bson_clone, NULL));
+         fprintf (stderr, "bson does not match\n");
+         printf ("lhs=%s, rhs=%s\n",
+                 bson_as_json (bson, NULL),
+                 bson_as_json (bson_clone, NULL));
       }
       ASSERT_CMPSTR (lhs, rhs);
    }
