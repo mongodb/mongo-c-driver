@@ -543,11 +543,12 @@ test_limit (void)
       mongoc_cursor_destroy (cursor);
 
       if (limits[i] > 0) {
-         opts = tmp_bson ("{'limit': {'$numberLong': '%d'}}", limits[i]);
-      } else {
          opts =
-            tmp_bson ("{'singleBatch': true, 'limit': {'$numberLong': '%d'}}",
-                      -limits[i]);
+            tmp_bson ("{'limit': {'$numberLong': '%" PRId64 "'}}", limits[i]);
+      } else {
+         opts = tmp_bson (
+            "{'singleBatch': true, 'limit': {'$numberLong': '%" PRId64 "'}}",
+            -limits[i]);
       }
 
       cursor = mongoc_collection_find_with_opts (
