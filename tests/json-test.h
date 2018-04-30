@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 MongoDB, Inc.
+ * Copyright 2015-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,20 @@
 #include <bson.h>
 #include <mongoc.h>
 
-#include "mongoc-server-description-private.h"
-#include "mongoc-topology-description-private.h"
-
 #include "test-conveniences.h"
+#include "json-test-monitoring.h"
 
 #define MAX_NUM_TESTS 100
 
 typedef void (*test_hook) (bson_t *test);
+
+typedef struct {
+   const bson_t *scenario;
+   bool explicit_session;
+   json_test_events_check_cb_t events_check_cb;
+} json_test_config_t;
+
+#define JSON_TEST_CONFIG_INIT {NULL, false, NULL};
 
 bson_t *
 get_bson_from_json_file (char *filename);
@@ -57,9 +63,6 @@ process_sdam_test_ismaster_responses (bson_t *phase,
                                       mongoc_topology_description_t *td);
 
 void
-check_json_apm_events (const bson_t *events, const bson_t *expectations);
-
-void
 test_server_selection_logic_cb (bson_t *test);
 
 mongoc_server_description_type_t
@@ -71,10 +74,13 @@ activate_fail_point (mongoc_client_t *client,
                      const bson_t *opts);
 
 void
-deactivate_fail_point (mongoc_client_t *client, uint32_t server_id);
+deactivate_fail_points (mongoc_client_t *client, uint32_t server_id);
 
 void
-run_json_general_test (const bson_t *scenario, bool explicit_session);
+run_json_general_test (const json_test_config_t *config);
+
+void
+json_test_config_cleanup (json_test_config_t *config);
 
 void
 _install_json_test_suite_with_check (TestSuite *suite,

@@ -13,8 +13,13 @@
 static void
 test_retryable_writes_cb (bson_t *scenario)
 {
-   run_json_general_test (scenario, true /* explicit_session */);
-   run_json_general_test (scenario, false /* implicit_session */);
+   json_test_config_t config = JSON_TEST_CONFIG_INIT;
+
+   config.scenario = scenario;
+   config.explicit_session = true;
+   run_json_general_test (&config);
+   config.explicit_session = false;
+   run_json_general_test (&config);
 }
 
 
@@ -109,7 +114,7 @@ test_command_with_opts (void *ctx)
    server_id = mongoc_topology_select_server_id (
       client->topology, MONGOC_SS_WRITE, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
-   deactivate_fail_point (client, server_id);
+   deactivate_fail_points (client, server_id);
 
    collection = get_test_collection (client, "retryable_writes");
 
@@ -141,7 +146,7 @@ test_command_with_opts (void *ctx)
    bson_lookup_doc (&reply, "value", &reply_result);
    ASSERT (match_bson (&reply_result, tmp_bson ("{'_id': 1, 'x': 2}"), false));
 
-   deactivate_fail_point (client, server_id);
+   deactivate_fail_points (client, server_id);
 
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
 

@@ -875,6 +875,8 @@ set (test-libmongoc-sources
    ${SOURCE_DIR}src/libbson/tests/test-bcon-extract.c
    ${SOURCE_DIR}/tests/debug-stream.c
    ${SOURCE_DIR}/tests/json-test.c
+   ${SOURCE_DIR}/tests/json-test-monitoring.c
+   ${SOURCE_DIR}/tests/json-test-operations.c
    ${SOURCE_DIR}/tests/mock_server/future.c
    ${SOURCE_DIR}/tests/mock_server/future-functions.c
    ${SOURCE_DIR}/tests/mock_server/future-value.c
