@@ -195,10 +195,10 @@ ulimit -c unlimited || true
 mkfifo pipe || true
 if [ -e pipe ]; then
    tee error.log < pipe &
-   $SCAN_BUILD ./test-libmongoc -d -F test-results.json 2>pipe
+   ./test-libmongoc -d -F test-results.json 2>pipe
    rm pipe
 else
-   $SCAN_BUILD ./test-libmongoc -d -F test-results.json
+   ./test-libmongoc -d -F test-results.json
 fi
 
 # Check if the error.log exists, and is more than 0 byte
