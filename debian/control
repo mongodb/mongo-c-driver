@@ -3,7 +3,7 @@ Priority: optional
 Maintainer: A. Jesse Jiryu Davis <jesse@mongodb.com>
 Build-Depends: debhelper (>= 9),
                dh-autoreconf,
-               libbson-dev (>= 1.9.4),
+               libbson-dev (>= 1.9.5),
                libssl-dev,
                pkg-config,
                python3-sphinx,

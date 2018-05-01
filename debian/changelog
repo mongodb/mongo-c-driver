@@ -1,3 +1,9 @@
+libmongoc (1.9.5+dfsg-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Mon, 30 Apr 2018 22:44:57 -0400
+
 libmongoc (1.9.4+dfsg-2) unstable; urgency=low
 
   * Update libbson build dependency
