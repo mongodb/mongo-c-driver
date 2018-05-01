@@ -21,6 +21,8 @@
 
 #include "mongoc-macros.h"
 
+BSON_BEGIN_DECLS
+
 typedef struct _mongoc_change_stream_t mongoc_change_stream_t;
 
 MONGOC_EXPORT (void)
@@ -33,5 +35,7 @@ MONGOC_EXPORT (bool)
 mongoc_change_stream_error_document (const mongoc_change_stream_t *,
                                      bson_error_t *,
                                      const bson_t **);
+
+BSON_END_DECLS
 
 #endif /* MONGOC_CHANGE_STREAM_H */

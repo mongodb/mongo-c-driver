@@ -1306,7 +1306,7 @@ dollar_query_test_t tests[] = {
    {NULL}};
 
 static void
-test_cluster_ismaster_fails (void)
+_test_cluster_ismaster_fails (bool hangup)
 {
    mock_server_t *mock_server;
    mongoc_uri_t *uri;
@@ -1326,6 +1326,7 @@ test_cluster_ismaster_fails (void)
    /* increase heartbeatFrequencyMS to prevent background server selection. */
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
    pool = mongoc_client_pool_new (uri);
+   mongoc_client_pool_set_error_api (pool, 2);
    mongoc_uri_destroy (uri);
    client = mongoc_client_pool_pop (pool);
    /* do server selection to add this server to the topology. this does not add
@@ -1343,13 +1344,102 @@ test_cluster_ismaster_fails (void)
    /* CDRIVER-2576: the server replies with an error, so
     * _mongoc_stream_run_ismaster returns NULL, which
     * _mongoc_cluster_run_ismaster must check. */
-   mock_server_replies_simple (request, "{'ok': 0}");
+
+   if (hangup) {
+      capture_logs (true); /* suppress "failed to buffer" warning */
+      mock_server_hangs_up (request);
+      BSON_ASSERT (!future_get_bool (future));
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket err");
+   } else {
+      mock_server_replies_simple (request, "{'ok': 0, 'code': 123}");
+      BSON_ASSERT (!future_get_bool (future));
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_SERVER, 123, "Unknown command error");
+   }
+
    request_destroy (request);
-   future_wait (future);
    future_destroy (future);
    mock_server_destroy (mock_server);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
+}
+
+static void
+test_cluster_ismaster_fails (void)
+{
+   _test_cluster_ismaster_fails (false);
+}
+
+
+static void
+test_cluster_ismaster_hangup (void)
+{
+   _test_cluster_ismaster_fails (true);
+}
+
+static void
+_test_cluster_command_error (bool use_op_msg)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   bson_error_t err;
+   request_t *request;
+   future_t *future;
+
+   if (use_op_msg) {
+      server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   } else {
+      server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG - 1);
+   }
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   future = future_client_command_simple (client,
+                                          "db",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* opts */,
+                                          NULL /* read prefs */,
+                                          &err);
+   if (use_op_msg) {
+      request = mock_server_receives_msg (
+         server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+   } else {
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+   }
+   mock_server_hangs_up (request);
+   BSON_ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   request_destroy (request);
+   if (use_op_msg) {
+      /* _mongoc_buffer_append_from_stream, used by opmsg gives more detail. */
+      ASSERT_ERROR_CONTAINS (err,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "Failed to send \"ping\" command with database "
+                             "\"db\": Failed to read 4 bytes: socket error or "
+                             "timeout");
+   } else {
+      ASSERT_ERROR_CONTAINS (err,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "Failed to send \"ping\" command with database "
+                             "\"db\": socket error or timeout");
+   }
+   mock_server_destroy (server);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_cluster_command_error_op_msg ()
+{
+   _test_cluster_command_error (true);
+}
+
+static void
+test_cluster_command_error_op_query ()
+{
+   _test_cluster_command_error (false);
 }
 
 void
@@ -1474,4 +1564,12 @@ test_cluster_install (TestSuite *suite)
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (
       suite, "/Cluster/ismaster_fails", test_cluster_ismaster_fails);
+   TestSuite_AddMockServerTest (
+      suite, "/Cluster/ismaster_hangup", test_cluster_ismaster_hangup);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/command_error/op_msg",
+                                test_cluster_command_error_op_msg);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/command_error/op_query",
+                                test_cluster_command_error_op_query);
 }
