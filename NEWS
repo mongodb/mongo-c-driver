@@ -1,3 +1,26 @@
+mongo-c-driver 1.9.5
+====================
+
+It is my pleasure to announce mongo-c-driver 1.9.5. This release fixes the following bugs:
+
+  * New change streams API functions were not marked extern "C"
+  * mongoc_collection_watch now accepts a pipeline argument as a BSON array, in
+    addition to accepting a BSON document with a "pipeline" array field
+  * Crashes in several change stream error handling paths
+  * Commands could return false with an empty bson_error_t after a replica set
+    reconfig
+  * Network error messages omitted the command name when using OP_MSG
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Kevin Albertson
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.9.4
 ====================
 
