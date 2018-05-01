@@ -1557,7 +1557,6 @@ test_cursor_hint_mongos_cmd (void)
 }
 
 
-#ifdef TODO_CDRIVER_2286
 /* Tests CDRIVER-562: after calling ismaster to handshake a new connection we
  * must update topology description with the server response. If not, this test
  * fails under auth with "auth failed" because we use the wrong auth protocol.
@@ -1613,7 +1612,6 @@ test_hint_no_warmup_pooled (void)
 {
    _test_cursor_hint_no_warmup (true);
 }
-#endif
 
 
 static void
@@ -2172,12 +2170,10 @@ test_cursor_install (TestSuite *suite)
       suite, "/Cursor/hint/mongos", test_cursor_hint_mongos);
    TestSuite_AddMockServerTest (
       suite, "/Cursor/hint/mongos/cmd", test_cursor_hint_mongos_cmd);
-#ifdef TODO_CDRIVER_2286
    TestSuite_AddLive (
       suite, "/Cursor/hint/no_warmup/single", test_hint_no_warmup_single);
    TestSuite_AddLive (
       suite, "/Cursor/hint/no_warmup/pooled", test_hint_no_warmup_pooled);
-#endif
    TestSuite_AddLive (suite, "/Cursor/tailable/alive", test_tailable_alive);
    TestSuite_AddMockServerTest (
       suite, "/Cursor/n_return/find_cmd", test_n_return_find_cmd);
