@@ -464,6 +464,10 @@ set (ZLIB_SOURCES
    ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
    ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
 )
+
+# Disable warnings on bundled zlib source files.
+set_source_files_properties (${ZLIB_SOURCES} PROPERTIES COMPILE_FLAGS -w)
+
 # Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
 # will look for zconf.h in that location.
 configure_file (

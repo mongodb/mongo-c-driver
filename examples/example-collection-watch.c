@@ -60,4 +60,5 @@ main ()
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
    mongoc_cleanup ();
+   return 0;
 }

@@ -570,7 +570,6 @@ request_matches_msg (const request_t *request,
       /* pass is_command=true for first doc, including "find" command */
       is_command_doc = (i == 0);
       match_bson (doc, pattern, is_command_doc);
-      i++;
    }
 
    if (n_docs < request->docs.len) {

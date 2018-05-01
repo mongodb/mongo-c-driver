@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <mongoc-util-private.h>
 #if !defined(_WIN32)
 #include <sys/types.h>
 #include <inttypes.h>
@@ -52,6 +53,7 @@ static TestSuite *gTestSuite;
 #define TEST_TRACE (1 << 4)
 #define TEST_VALGRIND (1 << 5)
 
+MONGOC_PRINTF_FORMAT (1, 2)
 static void
 test_msg (const char *format, ...)
 {
@@ -1012,6 +1014,7 @@ test_suite_valgrind (void)
 }
 
 
+MONGOC_PRINTF_FORMAT (1, 2)
 void
 test_suite_mock_server_log (const char *msg, ...)
 {

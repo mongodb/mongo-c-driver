@@ -49,6 +49,12 @@
 #define END_IGNORE_DEPRECATIONS
 #endif
 
+#ifndef _WIN32
+#define MONGOC_PRINTF_FORMAT(a, b) \
+   __attribute__ ((format (__printf__, a, b)))
+#else
+#define MONGOC_PRINTF_FORMAT(a, b) /* no-op */
+#endif
 
 #define COALESCE(x, y) ((x == 0) ? (y) : (x))
 

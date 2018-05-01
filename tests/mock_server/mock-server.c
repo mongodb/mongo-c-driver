@@ -528,6 +528,7 @@ auto_ismaster (request_t *request, void *data)
  *--------------------------------------------------------------------------
  */
 
+MONGOC_PRINTF_FORMAT (2, 3)
 int
 mock_server_auto_ismaster (mock_server_t *server,
                            const char *response_json,
@@ -831,6 +832,7 @@ mock_server_receives_request (mock_server_t *server)
  *--------------------------------------------------------------------------
  */
 
+MONGOC_PRINTF_FORMAT (4, 5)
 request_t *
 mock_server_receives_command (mock_server_t *server,
                               const char *database_name,

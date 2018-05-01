@@ -1057,7 +1057,7 @@ test_remove_unacknowledged (void)
    mongoc_write_concern_set_journal (wc, false);
 
    future = future_collection_remove (
-      collection, 1, tmp_bson ("{'a': 1}"), wc, &error);
+      collection, MONGOC_REMOVE_NONE, tmp_bson ("{'a': 1}"), wc, &error);
 
    request = mock_server_receives_msg (
       server,

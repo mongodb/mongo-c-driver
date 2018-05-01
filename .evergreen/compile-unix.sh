@@ -58,13 +58,12 @@ echo "OS: $OS"
 
 # Default CMake flags for debug builds and release builds.
 # CMAKE_SKIP_RPATH avoids hardcoding absolute paths to dependency libraries.
-# TODO: enable maintainer flags, CDRIVER-2511
 DEBUG_AND_RELEASE_FLAGS="\
    -DCMAKE_SKIP_RPATH=TRUE \
    -DENABLE_BSON=BUNDLED \
    -DENABLE_MAN_PAGES=OFF \
    -DENABLE_HTML_DOCS=OFF \
-   -DENABLE_MAINTAINER_FLAGS=OFF \
+   -DENABLE_MAINTAINER_FLAGS=ON \
    -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
    -DENABLE_RDTSCP=$RDTSCP \
    -DCMAKE_PREFIX_PATH=$INSTALL_DIR \

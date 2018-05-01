@@ -72,32 +72,6 @@ assert_n_inserted (int n, const bson_t *reply)
 
 /*--------------------------------------------------------------------------
  *
- * assert_n_removed --
- *
- *       Check a bulk operation reply's nRemoved field.
- *
- * Returns:
- *       None.
- *
- * Side effects:
- *       Aborts if the field is incorrect.
- *
- *--------------------------------------------------------------------------
- */
-
-static void
-assert_n_removed (int n, const bson_t *reply)
-{
-   bson_iter_t iter;
-
-   BSON_ASSERT (bson_iter_init_find (&iter, reply, "nRemoved"));
-   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
-   ASSERT_CMPINT (n, ==, bson_iter_int32 (&iter));
-}
-
-
-/*--------------------------------------------------------------------------
- *
  * oid_created_on_client --
  *
  *       Check that a document's _id contains this process's pid.

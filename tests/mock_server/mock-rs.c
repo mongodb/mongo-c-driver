@@ -16,6 +16,7 @@
 
 
 #include <bson.h>
+#include <mongoc-util-private.h>
 
 #include "mongoc-client-private.h"
 
@@ -505,6 +506,7 @@ mock_rs_reply_to_find (mock_rs_t           *rs,
  *--------------------------------------------------------------------------
  */
 
+MONGOC_PRINTF_FORMAT (4, 5)
 request_t *
 mock_rs_receives_command (mock_rs_t *rs,
                           const char *database_name,

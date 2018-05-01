@@ -74,6 +74,7 @@ test_conveniences_cleanup ()
 }
 
 
+MONGOC_PRINTF_FORMAT (1, 2)
 bson_t *
 tmp_bson (const char *json, ...)
 {
@@ -368,6 +369,7 @@ single_quotes_to_double (const char *str)
  *--------------------------------------------------------------------------
  */
 
+MONGOC_PRINTF_FORMAT (6, 7)
 bool
 match_json (const bson_t *doc,
             bool is_command,
@@ -453,6 +455,7 @@ match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
 }
 
 
+MONGOC_PRINTF_FORMAT (2, 3)
 static void
 match_err (match_ctx_t *ctx, const char *fmt, ...)
 {
