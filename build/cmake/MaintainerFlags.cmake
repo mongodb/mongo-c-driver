@@ -1,4 +1,4 @@
-if (ENABLE_MAINTAINER_FLAGS AND NOT MSVC)
+if (ENABLE_MAINTAINER_FLAGS AND NOT MSVC AND NOT MONGOC_MAINTAINER_FLAGS_SET)
    include (CheckCCompilerFlag)
 
    message (STATUS "Detecting available maintainer flags")
@@ -25,4 +25,5 @@ if (ENABLE_MAINTAINER_FLAGS AND NOT MSVC)
    endforeach ()
 
    message (STATUS "Maintainer flags: ${CMAKE_C_FLAGS}")
+   set (MONGOC_MAINTAINER_FLAGS_SET 1)
 endif ()

@@ -150,6 +150,10 @@ endif ()
 
 include (MaintainerFlags)
 
+if (ENABLE_COVERAGE)
+   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
+endif ()
+
 set (SOURCES
    ${PROJECT_SOURCE_DIR}/src/bson/bcon.c
    ${PROJECT_SOURCE_DIR}/src/bson/bson.c
