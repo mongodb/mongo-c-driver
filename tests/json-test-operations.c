@@ -244,13 +244,12 @@ execute_bulk_operation (mongoc_bulk_operation_t *bulk, const bson_t *test)
    if (_mongoc_lookup_bool (test, "outcome.error", false)) {
       ASSERT (!server_id);
    } else if (bson_has_field (test, "outcome.result")) {
-      ASSERT_OR_PRINT (server_id, error);
       bson_t spec_result;
       bson_t *expected_result;
 
+      ASSERT_OR_PRINT (server_id, error);
       bson_lookup_doc (test, "outcome.result", &spec_result);
       expected_result = convert_spec_result_to_bulk_write_result (&spec_result);
-
       ASSERT (match_bson (&reply, expected_result, false));
    }
 
@@ -485,6 +484,7 @@ count (mongoc_collection_t *collection,
    append_session (session, &opts);
    mongoc_collection_count_with_opts (
       collection, MONGOC_QUERY_NONE, &filter, 0, 0, NULL, read_prefs, NULL);
+   bson_destroy (&opts);
 }
 
 
