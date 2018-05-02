@@ -26,10 +26,12 @@ typedef struct _data_find_opquery_t {
 static bool
 _hit_limit (mongoc_cursor_t *cursor)
 {
-   int64_t limit;
+   int64_t limit, limit_abs;
    limit = mongoc_cursor_get_limit (cursor);
+   /* don't use llabs, that is a C99 function. */
+   limit_abs = limit > 0 ? limit : -limit;
    /* mark as done if we've hit the limit. */
-   if (limit && cursor->count >= llabs (limit)) {
+   if (limit && cursor->count >= limit_abs) {
       return true;
    }
    return false;

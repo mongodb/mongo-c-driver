@@ -6720,7 +6720,7 @@ buildvariants:
     - name: "make-release-archive"
     - "release-compile"
     - "debug-compile"
-    - ".debug-compile .stdflags !.c89"
+    - ".debug-compile .stdflags"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - "debug-compile-valgrind"

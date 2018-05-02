@@ -754,7 +754,7 @@ test_decimal128_from_string_w_len__special (void)
    bson_decimal128_t number_two;
    bson_decimal128_t negative_number;
 
-   // These strings have more bytes than the length indicates.
+   /* These strings have more bytes than the length indicates. */
    bson_decimal128_from_string_w_len ("12345678901234567abcd", 17, &number);
    bson_decimal128_from_string_w_len ("989898983458abcd", 12, &number_two);
    bson_decimal128_from_string_w_len (

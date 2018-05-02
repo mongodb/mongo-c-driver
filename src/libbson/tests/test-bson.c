@@ -452,27 +452,27 @@ test_bson_append_code_with_scope (void)
       0x00,
       0x00,
       0x00,
-      0x00, // length of doc (set below)
-      0x0F, // code_w_s type
-      0x00, // empty key
+      0x00, /* length of doc (set below) */
+      0x0F, /* code_w_s type */
+      0x00, /* empty key */
       0x10,
       0x00,
       0x00,
-      0x00, // code_w_s length (needs to be > 14 for initial
-      // validation so give a non-empty scope doc)
+      0x00, /* code_w_s length (needs to be > 14 for initial */
+      /* validation so give a non-empty scope doc) */
       0x00,
       0x00,
       0x00,
-      0x00, // invalid string length (must have trailing \0)
+      0x00, /* invalid string length (must have trailing \0) */
       0x08,
       0x00,
       0x00,
-      0x00, // scope doc length
+      0x00, /* scope doc length */
       0x08,
       0x00,
-      0x00, // "" : false
-      0x00, // end of scope doc
-      0x00  // end of doc
+      0x00, /* "" : false */
+      0x00, /* end of scope doc */
+      0x00  /* end of doc */
    };
 
    /* Test with NULL bson, which converts to just CODE type. */
