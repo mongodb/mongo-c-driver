@@ -14,7 +14,8 @@
 #define TIMEOUT 10000 /* milliseconds */
 
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
-   !defined(MONGOC_ENABLE_SSL_LIBRESSL)
+   !defined(MONGOC_ENABLE_SSL_LIBRESSL) && \
+   !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 /** run as a child thread by test_mongoc_tls_hangup
  *
  * It:
@@ -266,11 +267,17 @@ handshake_stall_client (void *ptr)
                                  connect_timeout_ms);
 
    client = mongoc_client_new (uri_str);
+   mongoc_client_set_ssl_opts (client, data->client);
 
    /* we should time out after about 200ms */
    start_time = bson_get_monotonic_time ();
    mongoc_client_read_command_with_opts (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &reply, &error);
+
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "socket timeout");
 
    /* time is in microseconds */
    duration_ms = (bson_get_monotonic_time () - start_time) / 1000;
@@ -292,8 +299,8 @@ handshake_stall_client (void *ptr)
 }
 
 
-/* CDRIVER-2222 this should be reenabled for Apple Secure Channel too */
-#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+/* CDRIVER-2222 this should be reenabled for Apple Secure Transport too */
+#if !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 static void
 test_mongoc_tls_handshake_stall (void)
 {
@@ -305,8 +312,10 @@ test_mongoc_tls_handshake_stall (void)
    mongoc_thread_t threads[2];
    int i, r;
 
+   sopt.ca_file = CERT_CA;
    sopt.pem_file = CERT_SERVER;
    sopt.weak_cert_validation = 1;
+   copt.ca_file = CERT_CA;
    copt.weak_cert_validation = 1;
 
    data.server = &sopt;
@@ -338,7 +347,7 @@ test_mongoc_tls_handshake_stall (void)
    ASSERT (sr.result == SSL_TEST_SUCCESS);
 }
 
-#endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL */
+#endif /* !MONGOC_ENABLE_SSL_SECURE_TRANSPORT */
 #endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
 
 void
@@ -350,8 +359,8 @@ test_stream_tls_error_install (TestSuite *suite)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 #endif
 
-/* CDRIVER-2222 this should be reenabled for Apple Secure Channel too */
-#if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+/* CDRIVER-2222 this should be reenabled for Apple Secure Transport too */
+#if !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    TestSuite_Add (
       suite, "/TLS/handshake_stall", test_mongoc_tls_handshake_stall);
 #endif
