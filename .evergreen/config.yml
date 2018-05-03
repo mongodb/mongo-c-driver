@@ -5,7 +5,8 @@
 stepback: true
 command_type: system
 
-exec_timeout_secs: 2400 # 40 minutes is the longest we'll ever run
+exec_timeout_secs: 2400 # 40 minutes is the longest we'll ever run (except on
+# valgrind tasks, which we give 60 minutes).
 
 timeout:
   - command: shell.exec
@@ -1397,6 +1398,7 @@ tasks:
 # Test Matrix {{{
     - name: test-valgrind-latest-server-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1418,6 +1420,7 @@ tasks:
 
     - name: test-valgrind-3.6-server-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1438,6 +1441,7 @@ tasks:
             URI: ""
     - name: test-valgrind-3.4-server-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1459,6 +1463,7 @@ tasks:
 
     - name: test-valgrind-3.2-server-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1480,6 +1485,7 @@ tasks:
 
     - name: test-valgrind-3.0-server-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1501,6 +1507,7 @@ tasks:
 
     - name: test-valgrind-latest-replica-set-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1522,6 +1529,7 @@ tasks:
 
     - name: test-valgrind-3.6-replica-set-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1543,6 +1551,7 @@ tasks:
 
     - name: test-valgrind-3.4-replica-set-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1564,6 +1573,7 @@ tasks:
 
     - name: test-valgrind-3.2-replica-set-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1585,6 +1595,7 @@ tasks:
 
     - name: test-valgrind-3.0-replica-set-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1606,6 +1617,7 @@ tasks:
 
     - name: test-valgrind-latest-sharded-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1627,6 +1639,7 @@ tasks:
 
     - name: test-valgrind-3.6-sharded-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1648,6 +1661,7 @@ tasks:
 
     - name: test-valgrind-3.4-sharded-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1669,6 +1683,7 @@ tasks:
 
     - name: test-valgrind-3.2-sharded-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1690,6 +1705,7 @@ tasks:
 
     - name: test-valgrind-3.0-sharded-noauth-nosasl-nossl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-nossl"
       commands:
@@ -1711,6 +1727,7 @@ tasks:
 
     - name: test-valgrind-latest-server-auth-nosasl-openssl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -1732,6 +1749,7 @@ tasks:
 
     - name: test-valgrind-3.6-server-auth-nosasl-openssl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -1753,6 +1771,7 @@ tasks:
 
     - name: test-valgrind-3.4-server-auth-nosasl-openssl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -1774,6 +1793,7 @@ tasks:
 
     - name: test-valgrind-3.2-server-auth-nosasl-openssl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -1795,6 +1815,7 @@ tasks:
 
     - name: test-valgrind-3.0-server-auth-nosasl-openssl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -1816,6 +1837,7 @@ tasks:
 
     - name: test-valgrind-latest-sharded-auth-openssl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -1837,6 +1859,7 @@ tasks:
 
     - name: test-valgrind-3.6-sharded-auth-openssl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -1858,6 +1881,7 @@ tasks:
 
     - name: test-valgrind-3.4-sharded-auth-openssl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -1879,6 +1903,7 @@ tasks:
 
     - name: test-valgrind-3.2-sharded-auth-openssl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -1900,6 +1925,7 @@ tasks:
 
     - name: test-valgrind-3.0-sharded-auth-openssl
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-nosasl-openssl"
       commands:
@@ -1921,6 +1947,7 @@ tasks:
 
     - name: test-valgrind-memcheck-server
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-valgrind-memcheck"
       commands:
@@ -1942,6 +1969,7 @@ tasks:
 
     - name: test-valgrind-memcheck-replica-set
       tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
       depends_on:
         - name: "debug-compile-valgrind-memcheck"
       commands:
