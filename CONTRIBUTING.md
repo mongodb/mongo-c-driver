@@ -217,3 +217,44 @@ $ make debug TEST_ARGS="-l /WriteConcern/bson_omits_defaults"
 
 This will build all dependencies and leave you in a debugger ready to run the
 test.
+
+## Creating and checking a distribution tarball
+
+The `make distcheck` command can be used to confirm that any modifications are
+able to be packaged into the distribution tarball and that the resulting
+distribution tarball can be used to successfully build the project.
+
+A failure of the `make distcheck` target is an indicator of an oversight in the
+modification to the project. For example, if a new source file is added to the
+project but it is not added to the proper distribution list, it is possible that
+the distribution tarball will be created without that file. An attempt to build
+the project without the file is likely to fail.
+
+When `make distcheck` is invoked, several things happen. The `dist` target is
+executed to create a distribution tarball. Then the tarball is unpacked,
+configured (with an invocation of `cmake`), built (by calling `make`), installed
+(by calling `make install`), and tested (by calling `make check`). Three
+environment variables can be used to modify these steps.
+
+To adjust the options passed to `make` during the build step, set:
+
+* `DISTCHECK_BUILD_OPTS`
+
+If this variable is not set, then `make` is called with a default of "-j 8".
+
+To adjust the options passed to `make install` during the installation step,
+set:
+
+* `DISTCHECK_INSTALL_OPTS`
+
+To adjust the options passed to `make check` during the test step, set:
+
+* `DISTCHECK_CHECK_OPTS`
+
+Remember, if you want to modify the top-level `make` invocation, you will need
+to pass options on the command line as normal.
+
+For example, the command `make -j 6 distcheck DISTCHECK_BUILD_OPTS="-j 4"` will
+call the standard sequence of targets depended upon by `distcheck` with a
+parallelism level of 6, while the build step that is later called by the
+`distcheck` target will be executed with a parallelism level of 4.

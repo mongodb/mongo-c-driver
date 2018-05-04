@@ -58,22 +58,32 @@ function (RUN_DIST_CHECK PACKAGE_PREFIX EXT)
    )
 
    # Run make in the build directory
+   if (DEFINED ENV{DISTCHECK_BUILD_OPTS})
+      set (build_opts $ENV{DISTCHECK_BUILD_OPTS})
+   else ()
+      set (build_opts "-j 8")
+   endif ()
+   separate_arguments (build_opts)
    execute_process_and_check_result (
-      COMMAND ${MY_CMAKE_COMMAND} ${MAKE_COMMAND}
+      COMMAND ${MY_CMAKE_COMMAND} ${MAKE_COMMAND} ${build_opts}
       WORKING_DIRECTORY ${BUILD_DIR}
       ERROR_MSG "Make build failed."
    )
 
    # Run make install
+   set (install_opts $ENV{DISTCHECK_INSTALL_OPTS})
+   separate_arguments (install_opts)
    execute_process_and_check_result (
-      COMMAND ${MY_CMAKE_COMMAND} ${MAKE_COMMAND} install
+      COMMAND ${MY_CMAKE_COMMAND} ${MAKE_COMMAND} install ${install_opts}
       WORKING_DIRECTORY ${BUILD_DIR}
       ERROR_MSG "Make install failed."
    )
 
    # Run make check in the build directory
+   set (check_opts $ENV{DISTCHECK_CHECK_OPTS})
+   separate_arguments (check_opts)
    execute_process_and_check_result (
-      COMMAND ${MY_CMAKE_COMMAND} ${MAKE_COMMAND} check
+      COMMAND ${MY_CMAKE_COMMAND} ${MAKE_COMMAND} check ${check_opts}
       WORKING_DIRECTORY ${BUILD_DIR}
       ERROR_MSG "Make check failed."
    )
