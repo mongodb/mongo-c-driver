@@ -216,6 +216,7 @@ endif ()
 # Defaults.
 set (MONGOC_ENABLE_SSL 0)
 set (MONGOC_ENABLE_SSL_OPENSSL 0)
+set (MONGOC_HAVE_ASN1_STRING_GET0_DATA 0)
 set (MONGOC_ENABLE_SSL_LIBRESSL 0)
 set (MONGOC_ENABLE_SSL_SECURE_TRANSPORT 0)
 set (MONGOC_ENABLE_SSL_SECURE_CHANNEL 0)
@@ -240,6 +241,14 @@ if (OPENSSL_FOUND)
    if (APPLE AND NOT OPENSSL_ROOT_DIR)
       message (WARNING "Building with OpenSSL but OPENSSL_ROOT_DIR not defined. If build fails to link"
          " to OpenSSL, define OPENSSL_ROOT_DIR as the path to the OpenSSL installation directory.")
+   endif ()
+   include (CheckLibraryExists)
+   # Check for newer OpenSSL string function.
+   check_library_exists (ssl
+      ASN1_STRING_get0_data "openssl/asn1.h" HAVE_ASN1_STRING_GET0_DATA
+   )
+   if (HAVE_ASN1_STRING_GET0_DATA)
+      set (MONGOC_HAVE_ASN1_STRING_GET0_DATA 1)
    endif ()
    set (MONGOC_ENABLE_SSL 1)
    set (MONGOC_ENABLE_SSL_OPENSSL 1)
@@ -268,12 +277,6 @@ if (ENABLE_CRYPTO_SYSTEM_PROFILE)
    else ()
       message (FATAL_ERROR "ENABLE_CRYPTO_SYSTEM_PROFILE only available with OpenSSL")
    endif ()
-endif ()
-
-include (CheckLibraryExists)
-CHECK_LIBRARY_EXISTS (ssl ASN1_STRING_get0_data "openssl/asn1.h" MONGOC_HAVE_ASN1_STRING_GET0_DATA)
-if (NOT MONGOC_HAVE_ASN1_STRING_GET0_DATA)
-   set (MONGOC_HAVE_ASN1_STRING_GET0_DATA 0)
 endif ()
 
 if (NOT ENABLE_SASL MATCHES "CYRUS|GSSAPI|SSPI|AUTO|OFF")
