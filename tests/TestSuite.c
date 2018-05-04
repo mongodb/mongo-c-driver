@@ -125,7 +125,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
    suite->prgname = bson_strdup (argv[0]);
    suite->silent = false;
 
-   for (i = 0; i < argc; i++) {
+   for (i = 1; i < argc; i++) {
       if (0 == strcmp ("-d", argv[i])) {
          suite->flags |= TEST_DEBUGOUTPUT;
       } else if ((0 == strcmp ("-f", argv[i])) ||
@@ -169,6 +169,9 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
             exit (EXIT_FAILURE);
          }
          suite->testname = bson_strdup (argv[++i]);
+      } else {
+         test_error ("Unknown option: %s", argv[i]);
+         exit (EXIT_FAILURE);
       }
    }
 
