@@ -125,6 +125,9 @@ _mongoc_cursor_op_getmore (mongoc_cursor_t *cursor,
    cluster = &cursor->client->cluster;
 
    server_stream = _mongoc_cursor_fetch_stream (cursor);
+   if (!server_stream) {
+      return;
+   }
 
    if (!_mongoc_cursor_opts_to_flags (cursor, server_stream, &flags)) {
       GOTO (fail);
@@ -465,6 +468,9 @@ _mongoc_cursor_op_query_find (mongoc_cursor_t *cursor,
    ENTRY;
 
    server_stream = _mongoc_cursor_fetch_stream (cursor);
+   if (!server_stream) {
+      return false;
+   }
 
    started = bson_get_monotonic_time ();
 
