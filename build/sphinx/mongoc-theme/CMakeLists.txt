@@ -1,4 +1,4 @@
-set_dist_list (src_libbson_doc_mongoc-theme_DIST
+set_dist_list (build_sphinx_mongoc-theme_DIST
    CMakeLists.txt
    globaltoc.html
    layout.html

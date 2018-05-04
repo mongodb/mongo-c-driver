@@ -2,12 +2,12 @@
 import os.path
 import sys
 
-from sphinx import version_info as sphinx_version_info
-
 # Ensure we can import "mongoc" and "taglist" extension modules.
-sys.path.append(os.path.dirname(__file__))
+this_path = os.path.dirname(__file__)
+sys.path.append(this_path)
+sys.path.append(os.path.normpath(os.path.join(this_path, '../build/sphinx')))
 
-needs_sphinx = '1.6'
+from mongoc_common import *
 
 extensions = [
     'mongoc',
@@ -52,60 +52,16 @@ intersphinx_mapping = {
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme_path = ['.']
+html_theme_path = ['../build/sphinx']
 html_theme = 'mongoc-theme'
 html_title = html_shorttitle = 'MongoDB C Driver %s' % version
 # html_favicon = None
-
-if sphinx_version_info >= (1, 6):
-    smart_quotes = False
-else:
-    html_use_smartypants = False
 
 html_sidebars = {
     '**': ['globaltoc.html'],
     'errors': [],  # Make more room for the big table.
     'mongoc_uri_t': [],  # Make more room for the big table.
 }
-html_show_sourcelink = False
-
-# Note: http://www.sphinx-doc.org/en/1.5.1/config.html#confval-html_copy_source
-# This will degrade the Javascript quicksearch if we ever use it.
-html_copy_source = False
-
-# -- Options for manual page output ---------------------------------------
-
-# HACK: Just trick Sphinx's ManualPageBuilder into thinking there are pages
-# configured - we'll do it dynamically in process_nodes.
-man_pages = [True]
-
-# If true, show URL addresses after external links.
-#
-# man_show_urls = False
-from docutils.nodes import title
-
-
-# To publish HTML docs at GitHub Pages, create .nojekyll file. In Sphinx 1.4 we
-# could use the githubpages extension, but old Ubuntu still has Sphinx 1.3.
-def create_nojekyll(app, env):
-    if app.builder.format == 'html':
-        path = os.path.join(app.builder.outdir, '.nojekyll')
-        with open(path, 'wt') as f:
-            f.write('foo')
-
-
-def add_ga_javascript(app, pagename, templatename, context, doctree):
-    if not app.env.config.analytics:
-        return
-
-    context['metatags'] = context.get('metatags', '') + """<script>
-  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push(
-      {'gtm.start': new Date().getTime(),event:'gtm.js'}
-    );var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    '//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-JQHP');
-</script>"""
 
 
 def add_canonical_link(app, pagename, templatename, context, doctree):
@@ -116,34 +72,5 @@ def add_canonical_link(app, pagename, templatename, context, doctree):
 
 
 def setup(app):
-    app.connect('doctree-read', process_nodes)
-    app.connect('env-updated', create_nojekyll)
-    app.connect('html-page-context', add_ga_javascript)
-    # Run sphinx-build -D analytics=1 to enable Google Analytics.
-    app.add_config_value('analytics', False, 'html')
+    mongoc_common_setup(app)
     app.connect('html-page-context', add_canonical_link)
-
-
-def process_nodes(app, doctree):
-    if man_pages == [True]:
-        man_pages.pop()
-
-    env = app.env
-    metadata = env.metadata[env.docname]
-
-    # A page like installing.rst sets its name with ":man_page: mongoc_installing"
-    page_name = metadata.get('man_page')
-    if not page_name:
-        print('Not creating man page for %s' % env.docname)
-        return
-
-    page_title = find_node(doctree, title)
-    man_pages.append((env.docname, page_name, page_title.astext(), [author], 3))
-
-
-def find_node(doctree, klass):
-    matches = doctree.traverse(lambda node: isinstance(node, klass))
-    if not matches:
-        raise IndexError("No %s in %s" % (klass, doctree))
-
-    return matches[0]

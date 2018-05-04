@@ -12,8 +12,6 @@ endif()
 
 add_subdirectory (html)
 add_subdirectory (man)
-add_subdirectory (mongoc)
-add_subdirectory (mongoc-theme)
 
 file (GLOB src_libbson_doc_DIST_rsts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rst)
 
@@ -26,7 +24,6 @@ set_local_dist (src_libbson_doc_DIST_local
    CMakeLists.txt
    ${src_libbson_doc_DIST_rsts}
    conf.py
-   taglist.py
 )
 
 set (src_libbson_doc_DIST
