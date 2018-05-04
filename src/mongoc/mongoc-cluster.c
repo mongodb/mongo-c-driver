@@ -665,9 +665,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
 
-   command = _mongoc_topology_scanner_get_ismaster (
-      cluster->client->topology->scanner);
-
+   command = _mongoc_topology_get_ismaster (cluster->client->topology);
    start = bson_get_monotonic_time ();
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, server_id, stream, error);

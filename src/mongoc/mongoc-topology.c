@@ -625,15 +625,19 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    BSON_ASSERT (topology);
    ts = topology->scanner;
 
+   mongoc_mutex_lock (&topology->mutex);
+   /* It isn't strictly necessary to lock here, because if the topology
+    * is invalid, it will never become valid. Lock anyway for consistency. */
    if (!mongoc_topology_scanner_valid (ts)) {
       if (error) {
          mongoc_topology_scanner_get_error (ts, error);
          error->domain = MONGOC_ERROR_SERVER_SELECTION;
          error->code = MONGOC_ERROR_SERVER_SELECTION_FAILURE;
       }
-
+      mongoc_mutex_unlock (&topology->mutex);
       return 0;
    }
+   mongoc_mutex_unlock (&topology->mutex);
 
    heartbeat_msec = topology->description.heartbeat_msec;
    local_threshold_ms = topology->local_threshold_msec;
@@ -1448,4 +1452,14 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
    bson_append_array_end (cmd, &ar);
 
    return i > 0;
+}
+
+/* Locks topology->mutex and retrieves (possibly constructing) the handshake
+ * on the topology scanner. */
+bson_t* _mongoc_topology_get_ismaster (mongoc_topology_t* topology) {
+   bson_t* cmd;
+   mongoc_mutex_lock (&topology->mutex);
+   cmd = _mongoc_topology_scanner_get_ismaster (topology->scanner);
+   mongoc_mutex_unlock (&topology->mutex);
+   return cmd;
 }

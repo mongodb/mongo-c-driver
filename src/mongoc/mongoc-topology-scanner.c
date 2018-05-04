@@ -141,6 +141,10 @@ _build_ismaster_with_handshake (mongoc_topology_scanner_t *ts)
    return res;
 }
 
+/* Caller must lock topology->mutex to protect ismaster_cmd_with_handshake. This
+ * is called at the start of the scan in _mongoc_topology_run_background, when a
+ * node is added in _mongoc_topology_reconcile_add_nodes, or when running an
+ * ismaster directly on a node in _mongoc_stream_run_ismaster. */
 bson_t *
 _mongoc_topology_scanner_get_ismaster (mongoc_topology_scanner_t *ts)
 {
