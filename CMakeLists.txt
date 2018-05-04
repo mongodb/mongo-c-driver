@@ -535,7 +535,7 @@ configure_file (
 include_directories ("${PROJECT_BINARY_DIR}/src/mongoc")
 include_directories ("${SOURCE_DIR}/src/mongoc")
 
-if (UNIX AND NOT APPLE)
+if (UNIX AND NOT APPLE AND NOT ANDROID)
    set (SHM_LIB -lrt)
 endif ()
 
