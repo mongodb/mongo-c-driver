@@ -33,8 +33,7 @@
 
 #ifndef MONGOC_NO_AUTOMATIC_GLOBALS
 #pragma message( \
-   "Configure the driver with --disable-automatic-init-and-cleanup\
- (if using ./configure) or ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF (with cmake).\
+   "Configure the driver with ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF.\
  Automatic cleanup is deprecated and will be removed in version 2.0.")
 #endif
 

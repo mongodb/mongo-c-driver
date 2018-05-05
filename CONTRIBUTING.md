@@ -86,11 +86,7 @@ $ mongo --eval "db.createUser({user: 'admin', pwd: 'pass', roles: ['root']})" ad
 ```
 
 Authentication in MongoDB 3.0 and later uses SCRAM-SHA-1, which in turn
-requires a driver built with SSL:
-
-```
-$ ./configure --enable-ssl`
-```
+requires a driver built with SSL.
 
 Set the user and password environment variables, then build and run the tests:
 
