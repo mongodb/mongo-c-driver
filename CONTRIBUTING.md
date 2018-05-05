@@ -97,7 +97,7 @@ Set the user and password environment variables, then build and run the tests:
 ```
 $ export MONGOC_TEST_USER=admin
 $ export MONGOC_TEST_PASSWORD=pass
-$ make test
+$ ./test-libmongoc
 ```
 
 Additional environment variables:
@@ -115,7 +115,7 @@ Additional environment variables:
 * `MONGOC_TEST_COMPRESSORS=snappy,zlib`: wire protocol compressors to use
 
 If you start `mongod` with SSL, set these variables to configure how
-`make test` connects to it:
+`test-libmongoc` connects to it:
 
 * `MONGOC_TEST_SSL`: set to `on` to connect to the server with SSL.
 * `MONGOC_TEST_SSL_PEM_FILE`: path to a client PEM file.
@@ -183,40 +183,16 @@ All tests should pass before submitting a patch.
 
 ## Configuring the test runner
 
-The test runner can be configured by declaring the `TEST_ARGS` environment
-variable. The following options can be provided:
-
-```
-    -h, --help    Show this help menu.
-    -f, --no-fork Do not spawn a process per test (abort on first error).
-    -l NAME       Run test by name, e.g. "/Client/command" or "/Client/*".
-    -s, --silent  Suppress all output.
-    -F FILENAME   Write test results (JSON) to FILENAME.
-    -d            Print debug output (useful if a test hangs).
-    -t, --trace   Enable mongoc tracing (useful to debug tests).
-```
-
-`TEST_ARGS` is set to "--no-fork" by default, meaning that the suite aborts on
-the first test failure. Use "--fork" to continue after failures.
+The test runner can be configured with command-line options. Run `test-libmongoc
+--help` for details.
 
 To run just a specific portion of the test suite use the -l option like so:
 
 ```
-$ make test TEST_ARGS="-l /server_selection/*"
+$ ./test-libmongoc -l "/server_selection/*"
 ```
 
 The full list of tests is shown in the help.
-
-## Debugging failed tests
-
-The easiest way to debug a failed tests is to use the `debug` make target:
-
-```
-$ make debug TEST_ARGS="-l /WriteConcern/bson_omits_defaults"
-```
-
-This will build all dependencies and leave you in a debugger ready to run the
-test.
 
 ## Creating and checking a distribution tarball
 
