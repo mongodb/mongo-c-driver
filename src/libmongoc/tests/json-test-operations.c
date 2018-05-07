@@ -25,6 +25,7 @@
 #include "mongoc-util-private.h"
 #include "mongoc-util-private.h"
 
+#include "json-test.h"
 #include "json-test-operations.h"
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -32,20 +33,75 @@
 
 
 void
-json_test_ctx_init (json_test_ctx_t *ctx)
+json_test_ctx_init (json_test_ctx_t *ctx,
+                    const bson_t *test,
+                    mongoc_client_t *client)
 {
+   char *session_name;
+   char *session_opts_path;
+   int i;
+   bson_error_t error;
+
    ctx->n_events = 0;
    bson_init (&ctx->events);
    ctx->test_framework_uri = test_framework_get_uri ();
    ctx->cursor_id = 0;
    ctx->acknowledged = true;
    ctx->verbose = test_framework_getenv_bool ("MONGOC_TEST_MONITORING_VERBOSE");
+   bson_init (&ctx->lsids[0]);
+   bson_init (&ctx->lsids[1]);
+   ctx->sessions[0] = NULL;
+   ctx->sessions[1] = NULL;
+   ctx->has_sessions = test_framework_session_timeout_minutes () > -1 &&
+                       test_framework_skip_if_no_crypto ();
+
+   /* transactions tests require two sessions named session1 and session2,
+    * retryable writes use one explicit session or none */
+   if (ctx->has_sessions) {
+      for (i = 0; i < 2; i++) {
+         session_name = bson_strdup_printf ("session%d", i);
+         session_opts_path = bson_strdup_printf ("sessionOptions.session%d", i);
+         if (bson_has_field (test, session_opts_path)) {
+            ctx->sessions[i] =
+               bson_lookup_session (test, session_opts_path, client);
+         } else {
+            ctx->sessions[i] =
+               mongoc_client_start_session (client, NULL, &error);
+         }
+
+         ASSERT_OR_PRINT (ctx->sessions[i], error);
+         bson_concat (&ctx->lsids[i],
+                      mongoc_client_session_get_lsid (ctx->sessions[i]));
+
+         bson_free (session_name);
+         bson_free (session_opts_path);
+      }
+   }
+}
+
+
+void
+json_test_ctx_end_sessions (json_test_ctx_t *ctx)
+{
+   int i;
+
+   if (ctx->has_sessions) {
+      for (i = 0; i < 2; i++) {
+         if (ctx->sessions[i]) {
+            mongoc_client_session_destroy (ctx->sessions[i]);
+            ctx->sessions[i] = NULL;
+         }
+      }
+   }
 }
 
 
 void
 json_test_ctx_cleanup (json_test_ctx_t *ctx)
 {
+   json_test_ctx_end_sessions (ctx);
+   bson_destroy (&ctx->lsids[0]);
+   bson_destroy (&ctx->lsids[1]);
    bson_destroy (&ctx->events);
    mongoc_uri_destroy (ctx->test_framework_uri);
 }
@@ -64,8 +120,79 @@ append_session (mongoc_client_session_t *session, bson_t *opts)
 }
 
 
+static bool
+get_successful_result (const bson_t *test,
+                       const bson_t *operation,
+                       bson_t *result)
+{
+   /* retryable writes tests specify result at the end of the whole test:
+    *   operation:
+    *     name: insertOne
+    *     arguments: ...
+    *   outcome:
+    *     result:
+    *       insertedId: 3
+    *
+    * command monitoring tests have no results
+    */
+   if (bson_has_field (test, "outcome.result")) {
+      bson_lookup_doc (test, "outcome.result", result);
+   } else {
+      return false;
+   }
+
+   return true;
+}
+
+
 static void
-add_request_to_bulk (mongoc_bulk_operation_t *bulk, bson_t *request)
+check_success_expected (const bson_t *operation,
+                        bool succeeded,
+                        bool expected,
+                        const bson_error_t *error)
+{
+   char *json = bson_as_json (operation, NULL);
+
+   if (!succeeded && expected) {
+      test_error (
+         "Expected success, got error \"%s\":\n%s", error->message, json);
+   }
+   if (succeeded && !expected) {
+      test_error ("Expected error, got success:\n%s", json);
+   }
+
+   bson_free (json);
+}
+
+
+static void
+check_result (const bson_t *test,
+              const bson_t *operation,
+              bool succeeded,
+              const bson_t *reply,
+              const bson_error_t *error)
+{
+   /* retryable writes tests specify error: false at the end of the whole test:
+    *   operation:
+    *     name: insertOne
+    *   outcome:
+    *     error: true
+    */
+   if (bson_has_field (test, "outcome.result.error")) {
+      check_success_expected (
+         operation,
+         succeeded,
+         _mongoc_lookup_bool (test, "outcome.result.error", false),
+         error);
+   } else if (bson_has_field (operation, "result")) {
+      /* operation expected to succeed */
+      check_success_expected (operation, succeeded, true, error);
+   }
+}
+
+
+static void
+add_request_to_bulk (mongoc_bulk_operation_t *bulk, const bson_t *request)
 {
    const char *name;
    bson_t args;
@@ -146,7 +273,6 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk, bson_t *request)
 
    ASSERT_OR_PRINT (r, error);
 
-   bson_destroy (&args);
    bson_destroy (&opts);
 }
 
@@ -233,22 +359,19 @@ convert_spec_result_to_bulk_write_result (const bson_t *spec_result)
 
 
 static void
-execute_bulk_operation (mongoc_bulk_operation_t *bulk, const bson_t *test)
+execute_bulk_operation (mongoc_bulk_operation_t *bulk,
+                        const bson_t *test,
+                        const bson_t *operation)
 {
    uint32_t server_id;
-   bson_t reply;
    bson_error_t error;
+   bson_t reply;
+   bson_t spec_result;
+   bson_t *expected_result;
 
    server_id = mongoc_bulk_operation_execute (bulk, &reply, &error);
-
-   if (_mongoc_lookup_bool (test, "outcome.error", false)) {
-      ASSERT (!server_id);
-   } else if (bson_has_field (test, "outcome.result")) {
-      bson_t spec_result;
-      bson_t *expected_result;
-
-      ASSERT_OR_PRINT (server_id, error);
-      bson_lookup_doc (test, "outcome.result", &spec_result);
+   check_result (test, operation, server_id != 0, &reply, &error);
+   if (get_successful_result (test, operation, &spec_result)) {
       expected_result = convert_spec_result_to_bulk_write_result (&spec_result);
       ASSERT (match_bson (&reply, expected_result, false));
    }
@@ -256,8 +379,9 @@ execute_bulk_operation (mongoc_bulk_operation_t *bulk, const bson_t *test)
    bson_destroy (&reply);
 }
 
+
 static bson_t *
-create_bulk_write_opts (const bson_t *test,
+create_bulk_write_opts (const bson_t *operation,
                         mongoc_client_session_t *session,
                         mongoc_write_concern_t *wc)
 {
@@ -266,8 +390,8 @@ create_bulk_write_opts (const bson_t *test,
 
    opts = tmp_bson ("{}");
 
-   if (bson_has_field (test, "operation.arguments.options")) {
-      bson_lookup_doc (test, "operation.arguments.options", &tmp);
+   if (bson_has_field (operation, "arguments.options")) {
+      bson_lookup_doc (operation, "arguments.options", &tmp);
       bson_concat (opts, &tmp);
    }
 
@@ -284,6 +408,7 @@ create_bulk_write_opts (const bson_t *test,
 static void
 bulk_write (mongoc_collection_t *collection,
             const bson_t *test,
+            const bson_t *operation,
             mongoc_client_session_t *session,
             mongoc_write_concern_t *wc)
 {
@@ -292,10 +417,10 @@ bulk_write (mongoc_collection_t *collection,
    bson_t requests;
    bson_iter_t iter;
 
-   opts = create_bulk_write_opts (test, session, wc);
+   opts = create_bulk_write_opts (operation, session, wc);
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, opts);
 
-   bson_lookup_doc (test, "operation.arguments.requests", &requests);
+   bson_lookup_doc (operation, "arguments.requests", &requests);
    ASSERT (bson_iter_init (&iter, &requests));
 
    while (bson_iter_next (&iter)) {
@@ -306,7 +431,7 @@ bulk_write (mongoc_collection_t *collection,
    }
 
    bson_destroy (&requests);
-   execute_bulk_operation (bulk, test);
+   execute_bulk_operation (bulk, test, operation);
    mongoc_bulk_operation_destroy (bulk);
 }
 
@@ -314,23 +439,19 @@ bulk_write (mongoc_collection_t *collection,
 static void
 single_write (mongoc_collection_t *collection,
               const bson_t *test,
+              const bson_t *operation,
               mongoc_client_session_t *session,
               mongoc_write_concern_t *wc)
 {
    bson_t *opts;
    mongoc_bulk_operation_t *bulk;
-   bson_t operation;
 
    /* for ease, use bulk for all writes, not mongoc_collection_insert_one etc */
    opts = create_bulk_write_opts (test, session, wc);
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, opts);
 
-   bson_lookup_doc (test, "operation", &operation);
-   add_request_to_bulk (bulk, &operation);
-
-   execute_bulk_operation (bulk, test);
-
-   bson_destroy (&operation);
+   add_request_to_bulk (bulk, operation);
+   execute_bulk_operation (bulk, test, operation);
    mongoc_bulk_operation_destroy (bulk);
 }
 
@@ -381,7 +502,7 @@ create_find_and_modify_opts (const char *name,
    mongoc_find_and_modify_opts_set_flags (opts, flags);
    append_session (session, &extra);
 
-   if (wc) {
+   if (!mongoc_write_concern_is_default (wc)) {
       BSON_ASSERT (mongoc_write_concern_append (wc, &extra));
    }
 
@@ -395,6 +516,7 @@ create_find_and_modify_opts (const char *name,
 static void
 find_and_modify (mongoc_collection_t *collection,
                  const bson_t *test,
+                 const bson_t *operation,
                  mongoc_client_session_t *session,
                  mongoc_write_concern_t *wc)
 {
@@ -402,44 +524,31 @@ find_and_modify (mongoc_collection_t *collection,
    bson_t args;
    bson_t filter;
    mongoc_find_and_modify_opts_t *opts;
-   bool r;
    bson_t reply;
    bson_error_t error;
+   bool r;
 
-   name = bson_lookup_utf8 (test, "operation.name");
-   bson_lookup_doc (test, "operation.arguments", &args);
-   bson_lookup_doc (test, "operation.arguments.filter", &filter);
+   name = bson_lookup_utf8 (operation, "name");
+   bson_lookup_doc (operation, "arguments", &args);
+   bson_lookup_doc (operation, "arguments.filter", &filter);
 
    opts = create_find_and_modify_opts (name, &args, session, wc);
    r = mongoc_collection_find_and_modify_with_opts (
       collection, &filter, opts, &reply, &error);
+
+   check_result (test, operation, r, &reply, &error);
+
    mongoc_find_and_modify_opts_destroy (opts);
-
-   if (_mongoc_lookup_bool (test, "outcome.error", false)) {
-      ASSERT (!r);
-   } else {
-      ASSERT_OR_PRINT (r, error);
-   }
-
-   if (bson_has_field (test, "outcome.result")) {
-      bson_t expected_result;
-      bson_t reply_result;
-
-      bson_lookup_doc (test, "outcome.result", &expected_result);
-      bson_lookup_doc (&reply, "value", &reply_result);
-
-      ASSERT (match_bson (&reply_result, &expected_result, false));
-   }
-
+   bson_destroy (&reply);
    bson_destroy (&args);
    bson_destroy (&filter);
-   bson_destroy (&reply);
 }
 
 
 static void
 insert_many (mongoc_collection_t *collection,
              const bson_t *test,
+             const bson_t *operation,
              mongoc_client_session_t *session,
              mongoc_write_concern_t *wc)
 {
@@ -448,10 +557,10 @@ insert_many (mongoc_collection_t *collection,
    mongoc_bulk_operation_t *bulk;
    bson_iter_t iter;
 
-   opts = create_bulk_write_opts (test, session, wc);
+   opts = create_bulk_write_opts (operation, session, wc);
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, opts);
 
-   bson_lookup_doc (test, "operation.arguments.documents", &documents);
+   bson_lookup_doc (operation, "arguments.documents", &documents);
    ASSERT (bson_iter_init (&iter, &documents));
    while (bson_iter_next (&iter)) {
       bson_t document;
@@ -464,8 +573,7 @@ insert_many (mongoc_collection_t *collection,
       ASSERT_OR_PRINT (r, error);
    }
 
-   execute_bulk_operation (bulk, test);
-
+   execute_bulk_operation (bulk, test, operation);
    bson_destroy (&documents);
    mongoc_bulk_operation_destroy (bulk);
 }
@@ -474,34 +582,94 @@ insert_many (mongoc_collection_t *collection,
 static void
 count (mongoc_collection_t *collection,
        const bson_t *test,
+       const bson_t *operation,
        mongoc_client_session_t *session,
        const mongoc_read_prefs_t *read_prefs)
 {
    bson_t filter;
    bson_t opts = BSON_INITIALIZER;
+   bson_error_t error;
+   int64_t r;
 
-   bson_lookup_doc (test, "operation.arguments.filter", &filter);
+   bson_lookup_doc (operation, "arguments.filter", &filter);
    append_session (session, &opts);
-   mongoc_collection_count_with_opts (
-      collection, MONGOC_QUERY_NONE, &filter, 0, 0, NULL, read_prefs, NULL);
+   r = mongoc_collection_count_with_opts (
+      collection, MONGOC_QUERY_NONE, &filter, 0, 0, &opts, read_prefs, &error);
+
+   check_result (test, operation, r > -1, NULL, &error);
+
    bson_destroy (&opts);
+}
+
+
+static void
+distinct (mongoc_collection_t *collection,
+          const bson_t *test,
+          const bson_t *operation,
+          mongoc_client_session_t *session,
+          const mongoc_read_prefs_t *read_prefs)
+{
+   bson_t opts = BSON_INITIALIZER;
+   const char *field_name;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   append_session (session, &opts);
+   field_name = bson_lookup_utf8 (operation, "arguments.fieldName");
+   r = mongoc_collection_read_command_with_opts (
+      collection,
+      tmp_bson (
+         "{'distinct': '%s', 'key': '%s'}", collection->collection, field_name),
+      read_prefs,
+      &opts,
+      &reply,
+      &error);
+
+   check_result (test, operation, r, &reply, &error);
+
+   bson_destroy (&reply);
+   bson_destroy (&opts);
+}
+
+
+static void
+check_cursor (mongoc_cursor_t *cursor,
+              const bson_t *test,
+              const bson_t *operation)
+{
+   const bson_t *doc;
+   bson_error_t error;
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+   }
+
+   check_result (
+      test, operation, !mongoc_cursor_error (cursor, &error), NULL, &error);
 }
 
 
 static void
 find (mongoc_collection_t *collection,
       const bson_t *test,
+      const bson_t *operation,
       mongoc_client_session_t *session,
       const mongoc_read_prefs_t *read_prefs)
 {
    bson_t arguments;
+   bson_t tmp;
    bson_t filter;
    bson_t opts = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
-   const bson_t *doc;
+   bson_error_t error;
 
-   bson_lookup_doc (test, "operation.arguments", &arguments);
-   bson_lookup_doc (&arguments, "filter", &filter);
+   bson_lookup_doc (operation, "arguments", &arguments);
+   if (bson_has_field (&arguments, "filter")) {
+      bson_lookup_doc (&arguments, "filter", &tmp);
+      bson_copy_to (&tmp, &filter);
+   } else {
+      bson_init (&filter);
+   }
 
    /* Command Monitoring Spec tests use OP_QUERY-style modifiers for "find":
     *   arguments:
@@ -518,7 +686,6 @@ find (mongoc_collection_t *collection,
       bson_t modifiers;
       bson_t *query = tmp_bson ("{'$query': {}}");
       bson_t unwrapped;
-      bson_error_t error;
       bool r;
 
       bson_lookup_doc (&arguments, "modifiers", &modifiers);
@@ -529,96 +696,184 @@ find (mongoc_collection_t *collection,
       bson_destroy (&unwrapped);
    }
 
-   bson_copy_to_excluding_noinit (
-      &arguments, &opts, "filter", "modifiers", NULL);
+   bson_copy_to_excluding_noinit (&arguments,
+                                  &opts,
+                                  "filter",
+                                  "modifiers",
+                                  "readPreference",
+                                  "session",
+                                  NULL);
 
    append_session (session, &opts);
 
    cursor =
       mongoc_collection_find_with_opts (collection, &filter, &opts, read_prefs);
 
-   while (mongoc_cursor_next (cursor, &doc)) {
-   }
+   check_cursor (cursor, test, operation);
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (&filter);
+   bson_destroy (&opts);
+}
 
-   /* can cause a killCursors command */
+
+static void
+aggregate (mongoc_collection_t *collection,
+           const bson_t *test,
+           const bson_t *operation,
+           mongoc_client_session_t *session,
+           const mongoc_read_prefs_t *read_prefs)
+{
+   bson_t arguments;
+   bson_t pipeline;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor;
+
+   bson_lookup_doc (operation, "arguments", &arguments);
+   bson_lookup_doc (&arguments, "pipeline", &pipeline);
+   append_session (session, &opts);
+   bson_copy_to_excluding_noinit (
+      &arguments, &opts, "pipeline", "session", "readPreference", NULL);
+
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, &pipeline, &opts, read_prefs);
+
+   check_cursor (cursor, test, operation);
    mongoc_cursor_destroy (cursor);
    bson_destroy (&opts);
 }
 
 
 void
-json_test_operation (json_test_ctx_t *ctx,
-                     const bson_t *test,
+json_test_operation (const bson_t *test,
+                     const bson_t *operation,
                      mongoc_collection_t *collection,
                      mongoc_client_session_t *session)
 {
-   bson_t operation;
-   bson_t tmp_args;
-   bson_t args;
-   bson_t tmp_opts;
-   bson_t opts;
    const char *op_name;
    mongoc_read_prefs_t *read_prefs = NULL;
    mongoc_write_concern_t *wc;
 
-   bson_lookup_doc (test, "operation", &operation);
-   op_name = bson_lookup_utf8 (&operation, "name");
-   bson_lookup_doc (&operation, "arguments", &tmp_args);
-
-   if (bson_has_field (&tmp_args, "options")) {
-      bson_lookup_doc (&tmp_args, "options", &tmp_opts);
-   } else {
-      bson_init (&tmp_opts);
+   op_name = bson_lookup_utf8 (operation, "name");
+   if (bson_has_field (operation, "read_preference")) {
+      /* command monitoring tests */
+      read_prefs = bson_lookup_read_prefs (operation, "read_preference");
+   } else if (bson_has_field (operation, "arguments.readPreference")) {
+      /* transactions tests */
+      read_prefs =
+         bson_lookup_read_prefs (operation, "arguments.readPreference");
    }
 
-   /* make a copy of "options" and maybe append the sessionId */
-   bson_copy_to (&tmp_opts, &opts);
-   append_session (session, &opts);
-
-   if (bson_has_field (&operation, "read_preference")) {
-      read_prefs = bson_lookup_read_prefs (&operation, "read_preference");
-   }
-
-   if (bson_has_field (&operation, "arguments.writeConcern")) {
-      wc = bson_lookup_write_concern (&operation, "arguments.writeConcern");
+   if (bson_has_field (operation, "arguments.writeConcern")) {
+      wc = bson_lookup_write_concern (operation, "arguments.writeConcern");
    } else {
       wc = mongoc_write_concern_new ();
    }
 
-   ctx->acknowledged = mongoc_write_concern_is_acknowledged (wc);
-
-   /* arguments besides "options" / "read_preference" are passed to commands */
-   bson_init (&args);
-   bson_copy_to_excluding_noinit (
-      &tmp_args, &args, "options", "read_preference", NULL);
-
    if (!strcmp (op_name, "bulkWrite")) {
-      bulk_write (collection, test, session, wc);
+      bulk_write (collection, test, operation, session, wc);
    } else if (!strcmp (op_name, "deleteOne") ||
               !strcmp (op_name, "deleteMany") ||
               !strcmp (op_name, "insertOne") ||
               !strcmp (op_name, "replaceOne") ||
               !strcmp (op_name, "updateOne") ||
               !strcmp (op_name, "updateMany")) {
-      single_write (collection, test, session, wc);
+      single_write (collection, test, operation, session, wc);
    } else if (!strcmp (op_name, "findOneAndDelete") ||
               !strcmp (op_name, "findOneAndReplace") ||
               !strcmp (op_name, "findOneAndUpdate")) {
-      find_and_modify (collection, test, session, wc);
+      find_and_modify (collection, test, operation, session, wc);
    } else if (!strcmp (op_name, "insertMany")) {
-      insert_many (collection, test, session, wc);
+      insert_many (collection, test, operation, session, wc);
    } else if (!strcmp (op_name, "count")) {
-      count (collection, test, session, read_prefs);
+      count (collection, test, operation, session, read_prefs);
+   } else if (!strcmp (op_name, "distinct")) {
+      distinct (collection, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "find")) {
-      find (collection, test, session, read_prefs);
+      find (collection, test, operation, session, read_prefs);
+   } else if (!strcmp (op_name, "aggregate")) {
+      aggregate (collection, test, operation, session, read_prefs);
    } else {
       test_error ("unrecognized operation name %s", op_name);
-      abort ();
    }
 
-   bson_destroy (&args);
-   bson_destroy (&tmp_opts);
-   bson_destroy (&opts);
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_write_concern_destroy (wc);
+}
+
+
+static void
+one_operation (const json_test_config_t *config,
+               json_test_ctx_t *ctx,
+               const bson_t *test,
+               const bson_t *operation,
+               mongoc_collection_t *collection)
+{
+   const char *op_name;
+   const char *session_name;
+   mongoc_client_session_t *session;
+   mongoc_write_concern_t *wc;
+
+   op_name = bson_lookup_utf8 (operation, "name");
+   if (ctx->verbose) {
+      printf ("     %s\n", op_name);
+      fflush (stdout);
+   }
+
+   if (bson_has_field (operation, "arguments.session")) {
+      session_name = bson_lookup_utf8 (operation, "arguments.session");
+      if (!strcmp (session_name, "session0")) {
+         session = ctx->sessions[0];
+      } else if (!strcmp (session_name, "session1")) {
+         session = ctx->sessions[1];
+      } else {
+         MONGOC_ERROR ("Unrecognized session name: %s", session_name);
+         abort ();
+      }
+   } else {
+      session = ctx->sessions[0];
+   }
+
+   if (bson_has_field (operation, "arguments.writeConcern")) {
+      wc = bson_lookup_write_concern (operation, "arguments.writeConcern");
+      ctx->acknowledged = mongoc_write_concern_is_acknowledged (wc);
+      mongoc_write_concern_destroy (wc);
+   } else {
+      ctx->acknowledged = true;
+   }
+
+   if (config->run_operation_cb) {
+      config->run_operation_cb (
+         config->ctx, test, operation, collection, session);
+   } else {
+      test_error ("set json_test_config_t.run_operation_cb to a callback"
+                  " that executes json_test_operation()");
+   }
+}
+
+
+void
+json_test_operations (const json_test_config_t *config,
+                      json_test_ctx_t *ctx,
+                      const bson_t *test,
+                      mongoc_collection_t *collection)
+{
+   bson_t operations;
+   bson_t operation;
+   bson_iter_t iter;
+
+   /* run each CRUD operation in the test, using the config's run-operation
+    * callback, by default json_test_operation(). retryable writes tests have
+    * one operation each, transactions tests have an array of them. */
+   if (bson_has_field (test, "operation")) {
+      bson_lookup_doc (test, "operation", &operation);
+      one_operation (config, ctx, test, &operation, collection);
+   } else {
+      bson_lookup_doc (test, "operations", &operations);
+      ASSERT_CMPUINT32 (bson_count_keys (&operations), >, (uint32_t) 0);
+      BSON_ASSERT (bson_iter_init (&iter, &operations));
+      while (bson_iter_next (&iter)) {
+         bson_iter_bson (&iter, &operation);
+         one_operation (config, ctx, test, &operation, collection);
+      }
+   }
 }

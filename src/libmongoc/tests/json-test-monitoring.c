@@ -66,12 +66,26 @@ ends_with (const char *s, const char *suffix)
 }
 
 
+static bool
+lsids_match (const bson_t *a, const bson_t *b)
+{
+   /* need a match context in case lsids DON'T match, since match_bson() without
+    * context aborts on mismatch */
+   char errmsg[1000];
+   match_ctx_t ctx = {0};
+   ctx.errmsg = errmsg;
+   ctx.errmsg_len = sizeof (errmsg);
+
+   return match_bson_with_ctx (a, b, false, &ctx);
+}
+
+
 /* Convert "ok" values to doubles, cursor ids and error codes to 42, and
  * error messages to "". See README at
  * github.com/mongodb/specifications/tree/master/source/command-monitoring/tests
  */
 static void
-convert_command_for_test (json_test_ctx_t *ctx,
+convert_message_for_test (json_test_ctx_t *ctx,
                           const bson_t *src,
                           bson_t *dst,
                           const char *path)
@@ -82,11 +96,20 @@ convert_command_for_test (json_test_ctx_t *ctx,
    bson_t src_child;
    bson_t dst_child;
    char *child_path;
+   bson_t lsid;
 
    if (bson_empty (src) && !ctx->acknowledged) {
       /* spec tests say unacknowledged writes reply "ok": 1, but we don't */
       BSON_APPEND_DOUBLE (dst, "ok", 1.0);
       return;
+   }
+
+   if (!path && !bson_empty (src)) {
+      const char *cmd_name = _mongoc_get_command_name (src);
+      if (!strcmp (cmd_name, "find") || !strcmp (cmd_name, "aggregate")) {
+         /* New query. Next server reply or getMore will set cursor_id. */
+         ctx->cursor_id = 0;
+      }
    }
 
    bson_iter_init (&iter, src);
@@ -109,19 +132,10 @@ convert_command_for_test (json_test_ctx_t *ctx,
          BSON_APPEND_UTF8 (dst, key, "");
 
       } else if (!strcmp (key, "id") && ends_with (path, "cursor")) {
-         /* "When encountering a cursor or getMore value of "42" in a test, the
-          * driver MUST assert that the values are equal to each other and
-          * greater than zero."
-          */
-         if (ctx->cursor_id == 0) {
-            ctx->cursor_id = bson_iter_int64 (&iter);
-         } else if (bson_iter_int64 (&iter) != 0) {
-            ASSERT_CMPINT64 (ctx->cursor_id, ==, bson_iter_int64 (&iter));
-         }
-
-         /* replace the reply's cursor id with 42 or 0 - check_expectations()
-          * will assert it matches the value from the JSON test */
+         /* store find/aggregate reply's cursor id, replace with 42 or 0 */
+         ctx->cursor_id = bson_iter_int64 (&iter);
          BSON_APPEND_INT64 (dst, key, fake_cursor_id (&iter));
+
       } else if (ends_with (path, "cursors") ||
                  ends_with (path, "cursorsUnknown")) {
          /* payload of a killCursors command-started event:
@@ -133,13 +147,42 @@ convert_command_for_test (json_test_ctx_t *ctx,
          BSON_APPEND_INT64 (dst, key, 42);
 
       } else if (!strcmp (key, "getMore")) {
-         ASSERT_CMPINT64 (ctx->cursor_id, ==, bson_iter_int64 (&iter));
+         /* "When encountering a cursor or getMore value of "42" in a test, the
+          * driver MUST assert that the values are equal to each other and
+          * greater than zero."
+          */
+         if (ctx->cursor_id == 0) {
+            ctx->cursor_id = bson_iter_int64 (&iter);
+         } else {
+            ASSERT_CMPINT64 (ctx->cursor_id, ==, bson_iter_int64 (&iter));
+         }
+
          BSON_APPEND_INT64 (dst, key, fake_cursor_id (&iter));
 
       } else if (!strcmp (key, "code")) {
          /* "code values of 42 MUST assert that the value is present and
           * greater than zero" */
          ASSERT_CMPINT64 (bson_iter_as_int64 (&iter), >, (int64_t) 0);
+         BSON_APPEND_INT32 (dst, key, 42);
+
+      } else if (!strcmp (key, "lsid") && BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         /* Transactions tests: "Each command-started event in "expectations"
+          * includes an lsid with the value "session0" or "session1". Tests MUST
+          * assert that the command's actual lsid matches the id of the correct
+          * ClientSession named session0 or session1." */
+         bson_iter_bson (&iter, &lsid);
+         if (lsids_match (&ctx->lsids[0], &lsid)) {
+            BSON_APPEND_UTF8 (dst, key, "session0");
+         } else if (lsids_match (&ctx->lsids[1], &lsid)) {
+            BSON_APPEND_UTF8 (dst, key, "session1");
+         }
+
+      } else if (!strcmp (key, "afterClusterTime") &&
+                 BSON_ITER_HOLDS_TIMESTAMP (&iter) && path &&
+                 !strcmp (path, "readConcern")) {
+         /* Transactions tests: "A readConcern.afterClusterTime value of 42 in
+          * a command-started event is a fake cluster time. Drivers MUST assert
+          * that the actual command includes an afterClusterTime." */
          BSON_APPEND_INT32 (dst, key, 42);
 
       } else if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
@@ -151,7 +194,7 @@ convert_command_for_test (json_test_ctx_t *ctx,
 
          bson_iter_bson (&iter, &src_child);
          bson_append_document_begin (dst, key, -1, &dst_child);
-         convert_command_for_test (
+         convert_message_for_test (
             ctx, &src_child, &dst_child, child_path); /* recurse */
          bson_append_document_end (dst, &dst_child);
          bson_free (child_path);
@@ -164,13 +207,20 @@ convert_command_for_test (json_test_ctx_t *ctx,
 
          bson_iter_bson (&iter, &src_child);
          bson_append_array_begin (dst, key, -1, &dst_child);
-         convert_command_for_test (
+         convert_message_for_test (
             ctx, &src_child, &dst_child, child_path); /* recurse */
          bson_append_array_end (dst, &dst_child);
          bson_free (child_path);
       } else {
          bson_append_value (dst, key, -1, bson_iter_value (&iter));
       }
+   }
+
+   /* transaction tests expect "new: false" explicitly; we don't send it */
+   if (!bson_empty (src) &&
+       !strcmp ("findAndModify", _mongoc_get_command_name (src)) &&
+       !bson_has_field (src, "new")) {
+      bson_append_bool (dst, "new", 3, false);
    }
 }
 
@@ -221,7 +271,7 @@ started_cb (const mongoc_apm_command_started_t *event)
    BSON_ASSERT (mongoc_apm_command_started_get_server_id (event) > 0);
    /* check that event->host is sane */
    assert_host_in_uri (event->host, ctx->test_framework_uri);
-   convert_command_for_test (ctx, event->command, &cmd, NULL);
+   convert_message_for_test (ctx, event->command, &cmd, NULL);
    new_event = BCON_NEW ("command_started_event",
                          "{",
                          "command",
@@ -265,7 +315,7 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
    BSON_ASSERT (mongoc_apm_command_succeeded_get_request_id (event) > 0);
    BSON_ASSERT (mongoc_apm_command_succeeded_get_server_id (event) > 0);
    assert_host_in_uri (event->host, ctx->test_framework_uri);
-   convert_command_for_test (ctx, event->reply, &reply, NULL);
+   convert_message_for_test (ctx, event->reply, &reply, NULL);
    new_event = BCON_NEW ("command_succeeded_event",
                          "{",
                          "reply",
@@ -325,14 +375,20 @@ failed_cb (const mongoc_apm_command_failed_t *event)
 
 
 void
-set_apm_callbacks (mongoc_client_t *client, void *ctx)
+set_apm_callbacks (mongoc_client_t *client,
+                   bool command_started_events_only,
+                   void *ctx)
 {
    mongoc_apm_callbacks_t *callbacks;
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, started_cb);
-   mongoc_apm_set_command_succeeded_cb (callbacks, succeeded_cb);
-   mongoc_apm_set_command_failed_cb (callbacks, failed_cb);
+
+   if (!command_started_events_only) {
+      mongoc_apm_set_command_succeeded_cb (callbacks, succeeded_cb);
+      mongoc_apm_set_command_failed_cb (callbacks, failed_cb);
+   }
+
    mongoc_client_set_apm_callbacks (client, callbacks, ctx);
    mongoc_apm_callbacks_destroy (callbacks);
 }

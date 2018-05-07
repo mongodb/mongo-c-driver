@@ -87,16 +87,18 @@ server_type_from_test (const char *type)
 static mongoc_read_mode_t
 read_mode_from_test (const char *mode)
 {
-   if (strcmp (mode, "Primary") == 0) {
+   if (bson_strcasecmp (mode, "Primary") == 0) {
       return MONGOC_READ_PRIMARY;
-   } else if (strcmp (mode, "PrimaryPreferred") == 0) {
+   } else if (bson_strcasecmp (mode, "PrimaryPreferred") == 0) {
       return MONGOC_READ_PRIMARY_PREFERRED;
-   } else if (strcmp (mode, "Secondary") == 0) {
+   } else if (bson_strcasecmp (mode, "Secondary") == 0) {
       return MONGOC_READ_SECONDARY;
-   } else if (strcmp (mode, "SecondaryPreferred") == 0) {
+   } else if (bson_strcasecmp (mode, "SecondaryPreferred") == 0) {
       return MONGOC_READ_SECONDARY_PREFERRED;
-   } else if (strcmp (mode, "Nearest") == 0) {
+   } else if (bson_strcasecmp (mode, "Nearest") == 0) {
       return MONGOC_READ_NEAREST;
+   } else {
+      test_error ("Unknown read preference mode \"%s\"", mode);
    }
 
    return MONGOC_READ_PRIMARY;
@@ -747,6 +749,7 @@ static void
 insert_data (mongoc_collection_t *collection, const bson_t *scenario)
 {
    mongoc_client_t *client;
+   mongoc_database_t *db;
    mongoc_collection_t *tmp_collection;
    bool r;
    bson_error_t error;
@@ -757,18 +760,37 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
 
    /* clear data using a fresh client not configured with retryWrites etc. */
    client = test_framework_client_new ();
-   tmp_collection = mongoc_client_get_collection (
-      client, collection->db, collection->collection);
-   r = mongoc_collection_delete_many (
-      tmp_collection, tmp_bson ("{}"), NULL, NULL, &error);
-   ASSERT_OR_PRINT (r, error);
+   db = mongoc_client_get_database (client, collection->db);
+   tmp_collection = mongoc_database_get_collection (db, collection->collection);
+   mongoc_collection_delete_many (
+      tmp_collection,
+      tmp_bson ("{}"),
+      tmp_bson ("{'writeConcern': {'w': 'majority'}}"),
+      NULL,
+      NULL);
+
    mongoc_collection_destroy (tmp_collection);
+   /* ignore failure if it already exists */
+   tmp_collection = mongoc_database_create_collection (
+      db,
+      collection->collection,
+      tmp_bson ("{'writeConcern': {'w': 'majority'}}"),
+      &error);
+
+   if (tmp_collection) {
+      mongoc_collection_destroy (tmp_collection);
+   }
+
+   mongoc_database_destroy (db);
    mongoc_client_destroy (client);
 
-   bulk = mongoc_collection_create_bulk_operation (collection, true, NULL);
-
    bson_lookup_doc (scenario, "data", &documents);
+   if (!bson_count_keys (&documents)) {
+      return;
+   }
+
    bson_iter_init (&iter, &documents);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    while (bson_iter_next (&iter)) {
       bson_t document;
@@ -785,7 +807,6 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
    server_id = mongoc_bulk_operation_execute (bulk, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
-   bson_destroy (&documents);
    mongoc_bulk_operation_destroy (bulk);
 }
 
@@ -797,11 +818,12 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
    bson_iter_t iter;
    mongoc_cursor_t *cursor;
    bson_t query = BSON_INITIALIZER;
+   mongoc_read_prefs_t *prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_lookup_doc (test, "outcome.collection.data", &data);
    ASSERT (bson_iter_init (&iter, &data));
 
-   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, prefs);
 
    while (bson_iter_next (&iter)) {
       bson_t expected_doc;
@@ -815,6 +837,7 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
    ASSERT_CURSOR_DONE (cursor);
 
    bson_destroy (&data);
+   mongoc_read_prefs_destroy (prefs);
    bson_destroy (&query);
    mongoc_cursor_destroy (cursor);
 }
@@ -823,8 +846,7 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
 static void
 execute_test (const json_test_config_t *config,
               mongoc_collection_t *collection,
-              bson_t *test,
-              mongoc_client_session_t *session)
+              bson_t *test)
 {
    json_test_ctx_t ctx;
    uint32_t server_id;
@@ -832,9 +854,7 @@ execute_test (const json_test_config_t *config,
 
    if (test_suite_debug_output ()) {
       const char *description = bson_lookup_utf8 (test, "description");
-      printf ("  - %s (%s session)\n",
-              description,
-              session ? "explicit" : "implicit");
+      printf ("  - %s\n", description);
       fflush (stdout);
    }
 
@@ -842,8 +862,9 @@ execute_test (const json_test_config_t *config,
       return;
    }
 
-   json_test_ctx_init (&ctx);
-   set_apm_callbacks (collection->client, &ctx);
+   json_test_ctx_init (&ctx, test, collection->client);
+   set_apm_callbacks (
+      collection->client, config->command_started_events_only, &ctx);
 
    /* Select a primary for testing */
    server_id = mongoc_topology_select_server_id (
@@ -857,7 +878,8 @@ execute_test (const json_test_config_t *config,
       activate_fail_point (collection->client, server_id, &opts);
    }
 
-   json_test_operation (&ctx, test, collection, session);
+   json_test_operations (config, &ctx, test, collection);
+   json_test_ctx_end_sessions (&ctx);
 
    if (bson_has_field (test, "expectations")) {
       bson_t expectations;
@@ -951,17 +973,36 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
 
    BSON_ASSERT (bson_iter_init (&iter, opts));
    while (bson_iter_next (&iter)) {
-      if (BSON_ITER_HOLDS_UTF8 (&iter)) {
-         mongoc_uri_set_option_as_utf8 (
-            uri, bson_iter_key (&iter), bson_iter_utf8 (&iter, NULL));
-      } else if (BSON_ITER_HOLDS_BOOL (&iter)) {
+      /* can't use bson_lookup_write_concern etc. with clientOptions format */
+      if (!strcmp (bson_iter_key (&iter), "w")) {
+         mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+         if (BSON_ITER_HOLDS_UTF8 (&iter)) {
+            mongoc_write_concern_set_wtag (wc, bson_iter_utf8 (&iter, NULL));
+         } else if (BSON_ITER_HOLDS_INT (&iter)) {
+            mongoc_write_concern_set_w (wc,
+                                        (int32_t) bson_iter_as_int64 (&iter));
+         } else {
+            test_error ("Unrecognized type for 'w': %d",
+                        bson_iter_type (&iter));
+         }
+
+         mongoc_uri_set_write_concern (uri, wc);
+         mongoc_write_concern_destroy (wc);
+      } else if (!strcmp (bson_iter_key (&iter), "readConcernLevel")) {
+         mongoc_read_concern_t *rc = mongoc_read_concern_new ();
+         mongoc_read_concern_set_level (rc, bson_iter_utf8 (&iter, NULL));
+         mongoc_uri_set_read_concern (uri, rc);
+         mongoc_read_concern_destroy (rc);
+      } else if (!strcmp (bson_iter_key (&iter), "readPreference")) {
+         mongoc_read_prefs_t *read_prefs = mongoc_read_prefs_new (
+            read_mode_from_test (bson_iter_utf8 (&iter, NULL)));
+         mongoc_uri_set_read_prefs_t (uri, read_prefs);
+         mongoc_read_prefs_destroy (read_prefs);
+      } else if (!strcmp (bson_iter_key (&iter), "retryWrites")) {
          mongoc_uri_set_option_as_bool (
-            uri, bson_iter_key (&iter), bson_iter_bool (&iter));
-      } else if (BSON_ITER_HOLDS_NUMBER (&iter)) {
-         mongoc_uri_set_option_as_int32 (
-            uri, bson_iter_key (&iter), bson_iter_int32 (&iter));
+            uri, "retryWrites", bson_iter_bool (&iter));
       } else {
-         MONGOC_ERROR ("Unsupported clientOptions type for field \"%s\" in %s",
+         MONGOC_ERROR ("Unsupported clientOptions field \"%s\" in %s",
                        bson_iter_key (&iter),
                        bson_as_json (opts, NULL));
          abort ();
@@ -1011,16 +1052,26 @@ run_json_general_test (const json_test_config_t *config)
 
    while (bson_iter_next (&tests_iter)) {
       bson_t test;
+      char *selected_test;
       bson_iter_t client_opts_iter;
       mongoc_uri_t *uri;
       mongoc_client_t *client;
-      mongoc_client_session_t *session = NULL;
       mongoc_collection_t *collection;
       uint32_t server_id;
       bson_error_t error;
 
       ASSERT (BSON_ITER_HOLDS_DOCUMENT (&tests_iter));
       bson_iter_bson (&tests_iter, &test);
+
+      selected_test = test_framework_getenv ("MONGOC_JSON_SUBTEST");
+      if (selected_test &&
+          strcmp (selected_test, bson_lookup_utf8 (&test, "description")) !=
+             0) {
+         bson_free (selected_test);
+         continue;
+      }
+
+      bson_free (selected_test);
 
       uri = test_framework_get_uri ();
       if (bson_iter_init_find (&client_opts_iter, &test, "clientOptions")) {
@@ -1042,21 +1093,19 @@ run_json_general_test (const json_test_config_t *config)
          client->topology, MONGOC_SS_WRITE, NULL, &error);
       ASSERT_OR_PRINT (server_id, error);
       deactivate_fail_points (client, server_id);
-
-      if (config->explicit_session) {
-         session = mongoc_client_start_session (client, NULL, &error);
-         ASSERT_OR_PRINT (session, error);
-      }
+      mongoc_client_command_with_opts (client,
+                                       "admin",
+                                       tmp_bson ("{'killAllSessions': 1}"),
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       NULL);
 
       collection =
          mongoc_client_get_collection (client, db_name, collection_name);
 
       insert_data (collection, scenario);
-      execute_test (config, collection, &test, session);
-
-      if (session) {
-         mongoc_client_session_destroy (session);
-      }
+      execute_test (config, collection, &test);
 
       mongoc_collection_destroy (collection);
       mongoc_client_destroy (client);

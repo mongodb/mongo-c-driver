@@ -24,18 +24,21 @@
 
 #include "test-conveniences.h"
 #include "json-test-monitoring.h"
+#include "json-test-operations.h"
 
 #define MAX_NUM_TESTS 100
 
 typedef void (*test_hook) (bson_t *test);
 
-typedef struct {
+typedef struct _json_test_config_t {
+   void *ctx;
    const bson_t *scenario;
-   bool explicit_session;
+   json_test_operation_cb_t run_operation_cb;
    json_test_events_check_cb_t events_check_cb;
+   bool command_started_events_only;
 } json_test_config_t;
 
-#define JSON_TEST_CONFIG_INIT {NULL, false, NULL};
+#define JSON_TEST_CONFIG_INIT {NULL, NULL, NULL, NULL, false};
 
 bson_t *
 get_bson_from_json_file (char *filename);

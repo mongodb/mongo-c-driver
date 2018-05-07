@@ -27,7 +27,9 @@
 typedef void (*json_test_events_check_cb_t) (const bson_t *events);
 
 void
-set_apm_callbacks (mongoc_client_t *client, void *ctx);
+set_apm_callbacks (mongoc_client_t *client,
+                   bool command_started_events_only,
+                   void *ctx);
 
 void
 check_json_apm_events (const bson_t *events, const bson_t *expectations);

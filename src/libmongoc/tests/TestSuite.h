@@ -24,6 +24,8 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "mongoc-util-private.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -376,7 +378,11 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 
 #define ASSERT_CONTAINS(a, b)                                 \
    do {                                                       \
-      if (NULL == strstr ((a), (b))) {                        \
+      char *_a_lower = bson_strdup (a);                       \
+      char *_b_lower = bson_strdup (b);                       \
+      mongoc_lowercase (_a_lower, _a_lower);                  \
+      mongoc_lowercase (_b_lower, _b_lower);                  \
+      if (NULL == strstr ((_a_lower), (_b_lower))) {          \
          fprintf (stderr,                                     \
                   "%s:%d %s(): [%s] does not contain [%s]\n", \
                   __FILE__,                                   \
@@ -386,6 +392,8 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   b);                                         \
          abort ();                                            \
       }                                                       \
+      bson_free (_a_lower);                                   \
+      bson_free (_b_lower);                                   \
    } while (0)
 
 #define ASSERT_STARTSWITH(a, b)                                    \

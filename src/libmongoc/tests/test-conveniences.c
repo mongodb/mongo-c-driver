@@ -141,6 +141,26 @@ bson_iter_bson (const bson_iter_t *iter, bson_t *bson)
 
 /*--------------------------------------------------------------------------
  *
+ * bson_lookup_type --
+ *
+ *       Find the type of an element. Abort if the element is absent.
+ *
+ *--------------------------------------------------------------------------
+ */
+bson_type_t
+bson_lookup_type (const bson_t *b, const char *key)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   return bson_iter_type (&descendent);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * bson_lookup_utf8 --
  *
  *       Return a string by key, or BSON_ASSERT and abort.
@@ -244,6 +264,28 @@ bson_lookup_int64 (const bson_t *b, const char *key)
 
 /*--------------------------------------------------------------------------
  *
+ * bson_lookup_read_concern --
+ *
+ *       Find a subdocument like {level: "majority"} and interpret it as a
+ *       mongoc_read_concern_t, or BSON_ASSERT and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_read_concern_t *
+bson_lookup_read_concern (const bson_t *b, const char *key)
+{
+   bson_t doc;
+   mongoc_read_concern_t *rc = mongoc_read_concern_new ();
+
+   bson_lookup_doc (b, key, &doc);
+   mongoc_read_concern_set_level (rc, bson_lookup_utf8 (&doc, "level"));
+
+   return rc;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * bson_lookup_write_concern --
  *
  *       Find a subdocument like {w: <int32>} and interpret it as a
@@ -254,12 +296,25 @@ bson_lookup_int64 (const bson_t *b, const char *key)
 mongoc_write_concern_t *
 bson_lookup_write_concern (const bson_t *b, const char *key)
 {
-   bson_t doc;
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   bson_t doc;
+   bson_iter_t iter;
+   bson_iter_t w;
 
    bson_lookup_doc (b, key, &doc);
+   bson_iter_init (&iter, &doc);
+
    /* current command monitoring tests always have "w" and no other fields */
-   mongoc_write_concern_set_w (wc, bson_lookup_int32 (&doc, "w"));
+   ASSERT_CMPUINT32 (bson_count_keys (&doc), ==, (uint32_t) 1);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, "w", &w));
+
+   if (BSON_ITER_HOLDS_NUMBER (&w)) {
+      mongoc_write_concern_set_w (wc, (int32_t) bson_iter_as_int64 (&w));
+   } else if (!strcmp (bson_iter_utf8 (&w, NULL), "majority")) {
+      mongoc_write_concern_set_wmajority (wc, 0);
+   } else {
+      mongoc_write_concern_set_wtag (wc, bson_iter_utf8 (&w, NULL));
+   }
 
    return wc;
 }
@@ -300,6 +355,53 @@ bson_lookup_read_prefs (const bson_t *b, const char *key)
    }
 
    return mongoc_read_prefs_new (mode);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_session_opts --
+ *
+ *       Interpret a subdocument as client session options.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_session_opt_t *
+bson_lookup_session_opts (const bson_t *b, const char *key)
+{
+   bson_t doc;
+   mongoc_session_opt_t *opts;
+
+   bson_lookup_doc (b, key, &doc);
+   opts = mongoc_session_opts_new ();
+
+   mongoc_session_opts_set_causal_consistency (
+      opts, _mongoc_lookup_bool (&doc, "causalConsistency", true));
+
+   return opts;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_session --
+ *
+ *       Interpret a subdocument as a client session with options.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_session_t *
+bson_lookup_session (const bson_t *b, const char *key, mongoc_client_t *client)
+{
+   mongoc_session_opt_t *opts;
+   mongoc_client_session_t *session;
+   bson_error_t error;
+
+   opts = bson_lookup_session_opts (b, key);
+   session = mongoc_client_start_session (client, opts, &error);
+   ASSERT_OR_PRINT (session, error);
+   mongoc_session_opts_destroy (opts);
+   return session;
 }
 
 
@@ -688,7 +790,8 @@ _is_operator (const char *op_name, const bson_value_t *value, bool *op_val)
  *       Is value a subdocument like {"$exists": bool}?
  *
  * Returns:
- *       True if the value is a subdocument with the first key "$exists".
+ *       True if the value is a subdocument with the first key "$exists",
+ *       or if value is BSON null.
  *
  * Side effects:
  *       If the function returns true, *exists is set to true or false,
@@ -700,7 +803,16 @@ _is_operator (const char *op_name, const bson_value_t *value, bool *op_val)
 static bool
 get_exists_operator (const bson_value_t *value, bool *exists)
 {
-   return _is_operator ("$exists", value, exists);
+   if (_is_operator ("$exists", value, exists)) {
+      return true;
+   }
+
+   if (value->value_type == BSON_TYPE_NULL) {
+      *exists = false;
+      return true;
+   }
+
+   return false;
 }
 
 

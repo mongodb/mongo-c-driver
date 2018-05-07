@@ -8,17 +8,34 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 
+static void
+retryable_writes_test_run_operation (void *ctx,
+                                     const bson_t *test,
+                                     const bson_t *operation,
+                                     mongoc_collection_t *collection,
+                                     mongoc_client_session_t *session)
+{
+   bool *explicit_session = (bool *) ctx;
+
+   json_test_operation (
+      test, operation, collection, *explicit_session ? session : NULL);
+}
+
 
 /* Callback for JSON tests from Retryable Writes Spec */
 static void
 test_retryable_writes_cb (bson_t *scenario)
 {
+   bool explicit_session;
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
 
+   /* use the context pointer to send "explicit_session" to the callback */
+   config.ctx = &explicit_session;
+   config.run_operation_cb = retryable_writes_test_run_operation;
    config.scenario = scenario;
-   config.explicit_session = true;
+   explicit_session = true;
    run_json_general_test (&config);
-   config.explicit_session = false;
+   explicit_session = false;
    run_json_general_test (&config);
 }
 

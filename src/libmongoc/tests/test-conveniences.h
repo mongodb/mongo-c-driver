@@ -40,6 +40,9 @@ bson_iter_bson (const bson_iter_t *iter, bson_t *bson);
 #endif
 
 
+bson_type_t
+bson_lookup_type (const bson_t *b, const char *key);
+
 const char *
 bson_lookup_utf8 (const bson_t *b, const char *key);
 
@@ -55,11 +58,20 @@ bson_lookup_int32 (const bson_t *b, const char *key);
 int64_t
 bson_lookup_int64 (const bson_t *b, const char *key);
 
+mongoc_read_concern_t *
+bson_lookup_read_concern (const bson_t *b, const char *key);
+
 mongoc_write_concern_t *
 bson_lookup_write_concern (const bson_t *b, const char *key);
 
 mongoc_read_prefs_t *
 bson_lookup_read_prefs (const bson_t *b, const char *key);
+
+mongoc_session_opt_t *
+bson_lookup_session_opts (const bson_t *b, const char *key);
+
+mongoc_client_session_t *
+bson_lookup_session (const bson_t *b, const char *key, mongoc_client_t *client);
 
 char *
 single_quotes_to_double (const char *str);
