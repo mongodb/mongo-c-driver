@@ -29,7 +29,7 @@
 #include "tls.h"
 #endif
 #include "mongoc-thread-private.h"
-#include "mongoc-b64-private.h"
+#include "common-b64-private.h"
 
 #ifndef MONGOC_NO_AUTOMATIC_GLOBALS
 #pragma message( \
@@ -91,7 +91,7 @@ static MONGOC_ONCE_FUN (_mongoc_do_init)
    tls_init ();
 #endif
 
-   mongoc_b64_initialize_rmap ();
+   bson_b64_initialize_rmap ();
 
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    /* The following functions should not use tracing, as they may be invoked

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB Inc.
+ * Copyright 2018-present MongoDB Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,26 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_B64_PRIVATE_H
-#define MONGOC_B64_PRIVATE_H
+#ifndef BSON_B64_PRIVATE_H
+#define BSON_B64_PRIVATE_H
 
-#if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#if !defined(MONGOC_COMPILATION) && !defined(BSON_COMPILATION) && \
+   !defined(BSON_INSIDE)
+#error "Only <mongoc.h> or <bson.h> can be included directly."
 #endif
 
 #include <bson.h>
 
-#include "mongoc-config.h"
-
 int
-mongoc_b64_ntop (uint8_t const *src,
-                 size_t srclength,
-                 char *target,
-                 size_t targsize);
+bson_b64_ntop (uint8_t const *src,
+               size_t srclength,
+               char *target,
+               size_t targsize);
 
 void
-mongoc_b64_initialize_rmap (void);
+bson_b64_initialize_rmap (void);
 
 int
-mongoc_b64_pton (char const *src, uint8_t *target, size_t targsize);
+bson_b64_pton (char const *src, uint8_t *target, size_t targsize);
 
-#endif /* MONGOC_B64_PRIVATE_H */
+#endif /* BSON_B64_PRIVATE_H */

@@ -143,6 +143,7 @@ configure_file (
 include_directories ("${PROJECT_BINARY_DIR}/src/bson")
 include_directories ("${PROJECT_SOURCE_DIR}/src/bson")
 include_directories ("${PROJECT_SOURCE_DIR}/src")
+include_directories ("${PROJECT_SOURCE_DIR}/../../src/common")
 
 if (APPLE)
    cmake_policy (SET CMP0042 OLD)
@@ -177,6 +178,7 @@ set (SOURCES
    ${PROJECT_SOURCE_DIR}/src/bson/bson-version-functions.c
    ${PROJECT_SOURCE_DIR}/src/bson/bson-writer.c
    ${PROJECT_SOURCE_DIR}/src/jsonsl/jsonsl.c
+   ${PROJECT_SOURCE_DIR}/../../src/common/common-b64.c
 )
 
 set (HEADERS

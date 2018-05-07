@@ -24,8 +24,8 @@
 #include "bson-config.h"
 #include "bson-json.h"
 #include "bson-iso8601-private.h"
-#include "b64_pton.h"
 
+#include "common-b64-private.h"
 #include "jsonsl/jsonsl.h"
 
 #ifdef _WIN32
@@ -831,7 +831,7 @@ _bson_json_parse_binary_elem (bson_json_reader_t *reader,
 
    if (bs == BSON_JSON_LF_BINARY) {
       data->binary.has_binary = true;
-      binary_len = b64_pton (val_w_null, NULL, 0);
+      binary_len = bson_b64_pton (val_w_null, NULL, 0);
       if (binary_len < 0) {
          _bson_json_read_set_error (
             reader,
@@ -840,9 +840,9 @@ _bson_json_parse_binary_elem (bson_json_reader_t *reader,
       }
 
       _bson_json_buf_ensure (&bson->bson_type_buf[0], (size_t) binary_len + 1);
-      if (b64_pton (val_w_null,
-                    bson->bson_type_buf[0].buf,
-                    (size_t) binary_len + 1) < 0) {
+      if (bson_b64_pton (val_w_null,
+                         bson->bson_type_buf[0].buf,
+                         (size_t) binary_len + 1) < 0) {
          _bson_json_read_set_error (
             reader,
             "Invalid input string \"%s\", looking for base64-encoded binary",

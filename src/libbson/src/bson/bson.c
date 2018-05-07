@@ -17,10 +17,11 @@
 
 #include "bson.h"
 #include "bson-config.h"
-#include "b64_ntop.h"
 #include "bson-private.h"
 #include "bson-string.h"
 #include "bson-iso8601-private.h"
+
+#include "common-b64-private.h"
 
 #include <string.h>
 #include <math.h>
@@ -2706,7 +2707,7 @@ _bson_as_json_visit_binary (const bson_iter_t *iter,
 
    b64_len = (v_binary_len / 3 + 1) * 4 + 1;
    b64 = bson_malloc0 (b64_len);
-   b64_ntop (v_binary, v_binary_len, b64, b64_len);
+   bson_b64_ntop (v_binary, v_binary_len, b64, b64_len);
 
    if (state->mode == BSON_JSON_MODE_CANONICAL ||
        state->mode == BSON_JSON_MODE_RELAXED) {

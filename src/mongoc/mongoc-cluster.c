@@ -34,7 +34,7 @@
 #include "mongoc-ssl-private.h"
 #include "mongoc-stream-tls.h"
 #endif
-#include "mongoc-b64-private.h"
+#include "common-b64-private.h"
 #include "mongoc-scram-private.h"
 #include "mongoc-set-private.h"
 #include "mongoc-socket.h"
@@ -993,7 +993,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
 
    str = bson_strdup_printf ("%c%s%c%s", '\0', username, '\0', password);
    len = strlen (username) + strlen (password) + 2;
-   buflen = mongoc_b64_ntop ((const uint8_t *) str, len, buf, sizeof buf);
+   buflen = bson_b64_ntop ((const uint8_t *) str, len, buf, sizeof buf);
    bson_free (str);
 
    if (buflen == -1) {

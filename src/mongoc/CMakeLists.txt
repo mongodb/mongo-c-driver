@@ -72,7 +72,6 @@ set (src_mongoc_DIST_noinst_hs
    mongoc-array-private.h
    mongoc-async-cmd-private.h
    mongoc-async-private.h
-   mongoc-b64-private.h
    mongoc-buffer-private.h
    mongoc-bulk-operation-private.h
    mongoc-change-stream-private.h
@@ -159,7 +158,6 @@ set (src_mongoc_DIST_cs
    mongoc-async-cmd.c
    mongoc-buffer.c
    mongoc-bulk-operation.c
-   mongoc-b64.c
    mongoc-change-stream.c
    mongoc-client.c
    mongoc-client-pool.c

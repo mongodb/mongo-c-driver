@@ -534,6 +534,7 @@ configure_file (
 
 include_directories ("${PROJECT_BINARY_DIR}/src/mongoc")
 include_directories ("${SOURCE_DIR}/src/mongoc")
+include_directories ("${PROJECT_SOURCE_DIR}/src/common")
 
 if (UNIX AND NOT APPLE AND NOT ANDROID)
    set (SHM_LIB -lrt)
@@ -576,7 +577,6 @@ set (SOURCES ${SOURCES}
    ${SOURCE_DIR}/src/mongoc/mongoc-array.c
    ${SOURCE_DIR}/src/mongoc/mongoc-async.c
    ${SOURCE_DIR}/src/mongoc/mongoc-async-cmd.c
-   ${SOURCE_DIR}/src/mongoc/mongoc-b64.c
    ${SOURCE_DIR}/src/mongoc/mongoc-buffer.c
    ${SOURCE_DIR}/src/mongoc/mongoc-bulk-operation.c
    ${SOURCE_DIR}/src/mongoc/mongoc-change-stream.c
@@ -641,6 +641,7 @@ set (SOURCES ${SOURCES}
    ${SOURCE_DIR}/src/mongoc/mongoc-write-command.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-command-legacy.c
    ${SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
+   ${PROJECT_SOURCE_DIR}/src/common/common-b64.c
 )
 
 set (HEADERS
@@ -1138,6 +1139,7 @@ set (ALL_DIST
    ${src_DIST}
    ${src_libbson_DIST}
    ${tests_DIST}
+   ${src_common_DIST}
 )
 
 # Write a dist manifest
