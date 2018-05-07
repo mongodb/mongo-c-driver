@@ -1498,6 +1498,7 @@ test_advanced_cluster_time_not_sent_to_standalone (void)
    bson_error_t error;
 
    server = mock_server_new ();
+   mock_server_auto_endsessions (server);
    mock_server_auto_ismaster (server,
                               "{'ok': 1.0,"
                               " 'ismaster': true,"
