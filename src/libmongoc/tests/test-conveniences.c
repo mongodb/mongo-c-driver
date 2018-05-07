@@ -141,26 +141,6 @@ bson_iter_bson (const bson_iter_t *iter, bson_t *bson)
 
 /*--------------------------------------------------------------------------
  *
- * bson_lookup_type --
- *
- *       Find the type of an element. Abort if the element is absent.
- *
- *--------------------------------------------------------------------------
- */
-bson_type_t
-bson_lookup_type (const bson_t *b, const char *key)
-{
-   bson_iter_t iter;
-   bson_iter_t descendent;
-
-   bson_iter_init (&iter, b);
-   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
-   return bson_iter_type (&descendent);
-}
-
-
-/*--------------------------------------------------------------------------
- *
  * bson_lookup_utf8 --
  *
  *       Return a string by key, or BSON_ASSERT and abort.
@@ -178,6 +158,26 @@ bson_lookup_utf8 (const bson_t *b, const char *key)
    BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&descendent));
 
    return bson_iter_utf8 (&descendent, NULL);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * bson_lookup_value --
+ *
+ *       Return a bson_value_t or BSON_ASSERT and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+bson_lookup_value (const bson_t *b, const char *key, bson_value_t *value)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   bson_value_copy (bson_iter_value (&iter), value);
 }
 
 
@@ -806,7 +806,7 @@ find (bson_value_t *value,
 }
 
 
-static bool
+bool
 bson_init_from_value (bson_t *b, const bson_value_t *v)
 {
    BSON_ASSERT (v->value_type == BSON_TYPE_ARRAY ||
@@ -966,7 +966,7 @@ is_number_type (bson_type_t t)
 }
 
 
-static int64_t
+int64_t
 bson_value_as_int64 (const bson_value_t *value)
 {
    if (value->value_type == BSON_TYPE_DOUBLE) {

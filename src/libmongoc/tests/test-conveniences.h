@@ -39,12 +39,12 @@ bson_iter_bson (const bson_iter_t *iter, bson_t *bson);
    GetFullPathName (path, PATH_MAX, expanded, NULL)
 #endif
 
-
-bson_type_t
-bson_lookup_type (const bson_t *b, const char *key);
-
 const char *
 bson_lookup_utf8 (const bson_t *b, const char *key);
+
+
+void
+bson_lookup_value (const bson_t *b, const char *key, bson_value_t *value);
 
 void
 bson_lookup_doc (const bson_t *b, const char *key, bson_t *doc);
@@ -76,6 +76,9 @@ bson_lookup_session_opts (const bson_t *b, const char *key);
 mongoc_client_session_t *
 bson_lookup_session (const bson_t *b, const char *key, mongoc_client_t *client);
 
+bool
+bson_init_from_value (bson_t *b, const bson_value_t *v);
+
 char *
 single_quotes_to_double (const char *str);
 
@@ -88,6 +91,9 @@ typedef struct {
 
 bool
 match_bson (const bson_t *doc, const bson_t *pattern, bool is_command);
+
+int64_t
+bson_value_as_int64 (const bson_value_t *value);
 
 bool
 match_bson_value (const bson_value_t *doc,
