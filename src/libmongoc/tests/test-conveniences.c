@@ -360,6 +360,48 @@ bson_lookup_read_prefs (const bson_t *b, const char *key)
 
 /*--------------------------------------------------------------------------
  *
+ * bson_lookup_txn_opts --
+ *
+ *       Interpret a subdocument as transaction options.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_transaction_opt_t *
+bson_lookup_txn_opts (const bson_t *b, const char *key)
+{
+   bson_t doc;
+   mongoc_transaction_opt_t *opts;
+   mongoc_read_concern_t *rc;
+   mongoc_write_concern_t *wc;
+   mongoc_read_prefs_t *prefs;
+
+   bson_lookup_doc (b, key, &doc);
+   opts = mongoc_transaction_opts_new ();
+
+   if (bson_has_field (&doc, "readConcern")) {
+      rc = bson_lookup_read_concern (&doc, "readConcern");
+      mongoc_transaction_opts_set_read_concern (opts, rc);
+      mongoc_read_concern_destroy (rc);
+   }
+
+   if (bson_has_field (&doc, "writeConcern")) {
+      wc = bson_lookup_write_concern (&doc, "writeConcern");
+      mongoc_transaction_opts_set_write_concern (opts, wc);
+      mongoc_write_concern_destroy (wc);
+   }
+
+   if (bson_has_field (&doc, "readPreference")) {
+      prefs = bson_lookup_read_prefs (&doc, "readPreference");
+      mongoc_transaction_opts_set_read_prefs (opts, prefs);
+      mongoc_read_prefs_destroy (prefs);
+   }
+
+   return opts;
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * bson_lookup_session_opts --
  *
  *       Interpret a subdocument as client session options.
@@ -377,6 +419,14 @@ bson_lookup_session_opts (const bson_t *b, const char *key)
 
    mongoc_session_opts_set_causal_consistency (
       opts, _mongoc_lookup_bool (&doc, "causalConsistency", true));
+
+   if (bson_has_field (&doc, "defaultTransactionOptions")) {
+      mongoc_transaction_opt_t *txn_opts;
+
+      txn_opts = bson_lookup_txn_opts (&doc, "defaultTransactionOptions");
+      mongoc_session_opts_set_default_transaction_opts (opts, txn_opts);
+      mongoc_transaction_opts_destroy (txn_opts);
+   }
 
    return opts;
 }

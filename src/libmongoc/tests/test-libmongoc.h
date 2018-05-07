@@ -126,20 +126,6 @@ test_framework_skip_if_crypto (void);
 int
 test_framework_skip_if_no_crypto (void);
 int
-test_framework_skip_if_max_wire_version_more_than_3 (void);
-int
-test_framework_skip_if_max_wire_version_less_than_4 (void);
-int
-test_framework_skip_if_max_wire_version_more_than_4 (void);
-int
-test_framework_skip_if_max_wire_version_less_than_5 (void);
-int
-test_framework_skip_if_max_wire_version_more_than_5 (void);
-int
-test_framework_skip_if_max_wire_version_less_than_6 (void);
-int
-test_framework_skip_if_max_wire_version_more_than_6 (void);
-int
 test_framework_skip_if_not_rs_version_5 (void);
 int
 test_framework_skip_if_rs_version_5 (void);
@@ -171,6 +157,18 @@ int
 test_framework_skip_if_slow_or_live (void);
 int
 test_framework_skip_if_valgrind (void);
+
+#define WIRE_VERSION_CHECK_DECLS(wv)                                  \
+   int test_framework_skip_if_max_wire_version_less_than_##wv (void); \
+   int test_framework_skip_if_max_wire_version_more_than_##wv (void);
+
+WIRE_VERSION_CHECK_DECLS (3)
+WIRE_VERSION_CHECK_DECLS (4)
+WIRE_VERSION_CHECK_DECLS (5)
+WIRE_VERSION_CHECK_DECLS (6)
+WIRE_VERSION_CHECK_DECLS (7)
+
+#undef WIRE_VERSION_CHECK_DECLS
 
 typedef struct _debug_stream_stats_t {
    mongoc_client_t *client;

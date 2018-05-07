@@ -730,6 +730,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-transactions.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-session.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-set.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-socket.c

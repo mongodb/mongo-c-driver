@@ -7,18 +7,19 @@
 #include "mock_server/mock-rs.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
+#include "json-test-operations.h"
+
 
 static void
-retryable_writes_test_run_operation (void *ctx,
+retryable_writes_test_run_operation (json_test_ctx_t *ctx,
                                      const bson_t *test,
                                      const bson_t *operation,
-                                     mongoc_collection_t *collection,
-                                     mongoc_client_session_t *session)
+                                     mongoc_collection_t *collection)
 {
-   bool *explicit_session = (bool *) ctx;
+   bool *explicit_session = (bool *) ctx->config->ctx;
 
    json_test_operation (
-      test, operation, collection, *explicit_session ? session : NULL);
+      test, operation, collection, *explicit_session ? ctx->sessions[0] : NULL);
 }
 
 

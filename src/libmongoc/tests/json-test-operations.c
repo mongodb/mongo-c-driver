@@ -35,13 +35,15 @@
 void
 json_test_ctx_init (json_test_ctx_t *ctx,
                     const bson_t *test,
-                    mongoc_client_t *client)
+                    mongoc_client_t *client,
+                    const json_test_config_t *config)
 {
    char *session_name;
    char *session_opts_path;
    int i;
    bson_error_t error;
 
+   ctx->config = config;
    ctx->n_events = 0;
    bson_init (&ctx->events);
    ctx->test_framework_uri = test_framework_get_uri ();
@@ -133,10 +135,19 @@ get_successful_result (const bson_t *test,
     *     result:
     *       insertedId: 3
     *
+    * transactions tests specify the result of each operation:
+    *    operations:
+    *      - name: insertOne
+    *        arguments: ...
+    *        result:
+    *          insertedId: 3
+    *
     * command monitoring tests have no results
     */
    if (bson_has_field (test, "outcome.result")) {
       bson_lookup_doc (test, "outcome.result", result);
+   } else if (bson_has_field (operation, "result")) {
+      bson_lookup_doc (operation, "result", result);
    } else {
       return false;
    }
@@ -184,10 +195,39 @@ check_result (const bson_t *test,
          succeeded,
          _mongoc_lookup_bool (test, "outcome.result.error", false),
          error);
+   }
+   /* transactions tests specify server error code name per-operation:
+    *    operations:
+    *      - name: insertOne
+    *        arguments: ...
+    *        result:
+    *          errorCodeName: WriteConflict
+    */
+   else if (bson_has_field (operation, "result.errorCodeName")) {
+      check_success_expected (operation, succeeded, false, error);
+      /* tests with errorCodeName should exercise only functions with replies */
+      BSON_ASSERT (reply);
+   }
+   /* transactions tests specify client error message per-operation:
+    *    operations:
+    *      - name: insertOne
+    *        arguments: ...
+    *        result:
+    *          errorContains: "message substring"
+    */
+   else if (bson_has_field (operation, "result.errorContains")) {
+      const char *msg;
+
+      check_success_expected (operation, succeeded, false, error);
+      msg = bson_lookup_utf8 (operation, "result.errorContains");
+      ASSERT_CONTAINS (error->message, msg);
    } else if (bson_has_field (operation, "result")) {
       /* operation expected to succeed */
       check_success_expected (operation, succeeded, true, error);
    }
+
+   /* if there's no "result", e.g. in the command monitoring tests, we don't
+    * know if the command is expected to succeed or fail */
 }
 
 
@@ -743,6 +783,57 @@ aggregate (mongoc_collection_t *collection,
 }
 
 
+static void
+start_transaction (const bson_t *test,
+                   const bson_t *operation,
+                   mongoc_client_session_t *session)
+{
+   mongoc_transaction_opt_t *opts = NULL;
+   bson_error_t error;
+   bool r;
+
+   if (bson_has_field (operation, "arguments.options")) {
+      opts = bson_lookup_txn_opts (operation, "arguments.options");
+   }
+
+   r = mongoc_client_session_start_transaction (session, opts, &error);
+   check_result (test, operation, r, NULL, &error);
+
+   if (opts) {
+      mongoc_transaction_opts_destroy (opts);
+   }
+}
+
+
+static void
+commit_transaction (const bson_t *test,
+                    const bson_t *operation,
+                    mongoc_client_session_t *session)
+{
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   r = mongoc_client_session_commit_transaction (session, &reply, &error);
+   check_result (test, operation, r, &reply, &error);
+
+   bson_destroy (&reply);
+}
+
+
+static void
+abort_transaction (const bson_t *test,
+                   const bson_t *operation,
+                   mongoc_client_session_t *session)
+{
+   bson_error_t error;
+   bool r;
+
+   r = mongoc_client_session_abort_transaction (session, &error);
+   check_result (test, operation, r, NULL, &error);
+}
+
+
 void
 json_test_operation (const bson_t *test,
                      const bson_t *operation,
@@ -792,6 +883,12 @@ json_test_operation (const bson_t *test,
       find (collection, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "aggregate")) {
       aggregate (collection, test, operation, session, read_prefs);
+   } else if (!strcmp (op_name, "startTransaction")) {
+      start_transaction (test, operation, session);
+   } else if (!strcmp (op_name, "commitTransaction")) {
+      commit_transaction (test, operation, session);
+   } else if (!strcmp (op_name, "abortTransaction")) {
+      abort_transaction (test, operation, session);
    } else {
       test_error ("unrecognized operation name %s", op_name);
    }
@@ -809,28 +906,12 @@ one_operation (const json_test_config_t *config,
                mongoc_collection_t *collection)
 {
    const char *op_name;
-   const char *session_name;
-   mongoc_client_session_t *session;
    mongoc_write_concern_t *wc;
 
    op_name = bson_lookup_utf8 (operation, "name");
    if (ctx->verbose) {
       printf ("     %s\n", op_name);
       fflush (stdout);
-   }
-
-   if (bson_has_field (operation, "arguments.session")) {
-      session_name = bson_lookup_utf8 (operation, "arguments.session");
-      if (!strcmp (session_name, "session0")) {
-         session = ctx->sessions[0];
-      } else if (!strcmp (session_name, "session1")) {
-         session = ctx->sessions[1];
-      } else {
-         MONGOC_ERROR ("Unrecognized session name: %s", session_name);
-         abort ();
-      }
-   } else {
-      session = ctx->sessions[0];
    }
 
    if (bson_has_field (operation, "arguments.writeConcern")) {
@@ -842,8 +923,7 @@ one_operation (const json_test_config_t *config,
    }
 
    if (config->run_operation_cb) {
-      config->run_operation_cb (
-         config->ctx, test, operation, collection, session);
+      config->run_operation_cb (ctx, test, operation, collection);
    } else {
       test_error ("set json_test_config_t.run_operation_cb to a callback"
                   " that executes json_test_operation()");

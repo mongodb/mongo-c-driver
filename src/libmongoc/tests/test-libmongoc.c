@@ -174,6 +174,8 @@ test_topology_description_install (TestSuite *suite);
 extern void
 test_topology_reconcile_install (TestSuite *suite);
 extern void
+test_transactions_install (TestSuite *suite);
+extern void
 test_topology_scanner_install (TestSuite *suite);
 extern void
 test_uri_install (TestSuite *suite);
@@ -2164,6 +2166,7 @@ WIRE_VERSION_CHECKS (3)
 WIRE_VERSION_CHECKS (4)
 WIRE_VERSION_CHECKS (5)
 WIRE_VERSION_CHECKS (6)
+WIRE_VERSION_CHECKS (7)
 
 bool
 test_framework_skip_if_no_dual_ip_hostname (void)
@@ -2313,6 +2316,7 @@ main (int argc, char *argv[])
    test_socket_install (&suite);
    test_topology_scanner_install (&suite);
    test_topology_reconcile_install (&suite);
+   test_transactions_install (&suite);
    test_samples_install (&suite);
    test_scram_install (&suite);
    test_sdam_install (&suite);

@@ -20,6 +20,7 @@
 struct _json_test_config_t;
 
 typedef struct {
+   const struct _json_test_config_t *config;
    uint32_t n_events;
    bson_t events;
    mongoc_uri_t *test_framework_uri;
@@ -34,7 +35,8 @@ typedef struct {
 void
 json_test_ctx_init (json_test_ctx_t *ctx,
                     const bson_t *test,
-                    mongoc_client_t *client);
+                    mongoc_client_t *client,
+                    const struct _json_test_config_t *config);
 
 void
 json_test_ctx_end_sessions (json_test_ctx_t *ctx);
@@ -42,11 +44,10 @@ json_test_ctx_end_sessions (json_test_ctx_t *ctx);
 void
 json_test_ctx_cleanup (json_test_ctx_t *ctx);
 
-typedef void (*json_test_operation_cb_t) (void *ctx,
+typedef void (*json_test_operation_cb_t) (json_test_ctx_t *ctx,
                                           const bson_t *test,
                                           const bson_t *operation,
-                                          mongoc_collection_t *collection,
-                                          mongoc_client_session_t *session);
+                                          mongoc_collection_t *collection);
 
 void
 json_test_operation (const bson_t *test,

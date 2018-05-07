@@ -67,6 +67,9 @@ bson_lookup_write_concern (const bson_t *b, const char *key);
 mongoc_read_prefs_t *
 bson_lookup_read_prefs (const bson_t *b, const char *key);
 
+mongoc_transaction_opt_t *
+bson_lookup_txn_opts (const bson_t *b, const char *key);
+
 mongoc_session_opt_t *
 bson_lookup_session_opts (const bson_t *b, const char *key);
 

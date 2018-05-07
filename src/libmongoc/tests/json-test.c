@@ -862,7 +862,7 @@ execute_test (const json_test_config_t *config,
       return;
    }
 
-   json_test_ctx_init (&ctx, test, collection->client);
+   json_test_ctx_init (&ctx, test, collection->client, config);
    set_apm_callbacks (
       collection->client, config->command_started_events_only, &ctx);
 
