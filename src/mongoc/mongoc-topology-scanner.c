@@ -485,6 +485,13 @@ _async_error_or_timeout (mongoc_async_cmd_t *acmd,
          message = default_err_msg;
       }
 
+      /* invalidate any cached DNS results. */
+      if (node->dns_results) {
+         freeaddrinfo (node->dns_results);
+         node->dns_results = NULL;
+         node->successful_dns_result = NULL;
+      }
+
       bson_set_error (&node->last_error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_STREAM_CONNECT,
