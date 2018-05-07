@@ -48,10 +48,24 @@ typedef struct _mongoc_server_session_t {
    int64_t txn_number; /* transaction number */
 } mongoc_server_session_t;
 
+typedef enum {
+   MONGOC_TRANSACTION_NONE,
+   MONGOC_TRANSACTION_STARTING,
+   MONGOC_TRANSACTION_IN_PROGRESS,
+   MONGOC_TRANSACTION_COMMITTED,
+   MONGOC_TRANSACTION_ABORTED,
+} mongoc_transaction_state_t;
+
+typedef struct _mongoc_transaction_t {
+   mongoc_transaction_state_t state;
+   mongoc_transaction_opt_t opts;
+} mongoc_transaction_t;
+
 struct _mongoc_client_session_t {
    mongoc_client_t *client;
    mongoc_session_opt_t opts;
    mongoc_server_session_t *server_session;
+   mongoc_transaction_t txn;
    uint32_t client_session_id;
    bson_t cluster_time;
    uint32_t operation_timestamp;
@@ -92,5 +106,16 @@ _mongoc_client_session_from_iter (mongoc_client_t *client,
                                   const bson_iter_t *iter,
                                   mongoc_client_session_t **cs,
                                   bson_error_t *error);
+
+bool
+_mongoc_client_session_append_txn (mongoc_client_session_t *session,
+                                   bson_t *cmd,
+                                   bson_error_t *error);
+
+bool
+_mongoc_client_session_in_txn (const mongoc_client_session_t *session);
+
+bool
+_mongoc_client_session_txn_in_progress (const mongoc_client_session_t *session);
 
 #endif /* MONGOC_CLIENT_SESSION_PRIVATE_H */

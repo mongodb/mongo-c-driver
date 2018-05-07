@@ -19,22 +19,10 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-rand-private.h"
+#include "mongoc-util-private.h"
+#include "mongoc-read-prefs-private.h"
 
 #define SESSION_NEVER_USED (-1)
-
-static void
-txn_opts_copy (const mongoc_transaction_opt_t *src,
-               mongoc_transaction_opt_t *dst)
-{
-   BSON_ASSERT (!dst->read_concern);
-   BSON_ASSERT (!dst->write_concern);
-   BSON_ASSERT (!dst->read_prefs);
-   /* null inputs are ok for these copy functions */
-   dst->read_concern = mongoc_read_concern_copy (src->read_concern);
-   dst->write_concern = mongoc_write_concern_copy (src->write_concern);
-   dst->read_prefs = mongoc_read_prefs_copy (src->read_prefs);
-}
-
 
 static void
 txn_opts_cleanup (mongoc_transaction_opt_t *opts)
@@ -43,6 +31,86 @@ txn_opts_cleanup (mongoc_transaction_opt_t *opts)
    mongoc_read_concern_destroy (opts->read_concern);
    mongoc_write_concern_destroy (opts->write_concern);
    mongoc_read_prefs_destroy (opts->read_prefs);
+   /* prepare opts for reuse */
+   opts->read_concern = NULL;
+   opts->write_concern = NULL;
+   opts->read_prefs = NULL;
+}
+
+
+static void
+txn_opts_copy (const mongoc_transaction_opt_t *src,
+               mongoc_transaction_opt_t *dst)
+{
+   txn_opts_cleanup (dst);
+   /* null inputs are ok for these copy functions */
+   dst->read_concern = mongoc_read_concern_copy (src->read_concern);
+   dst->write_concern = mongoc_write_concern_copy (src->write_concern);
+   dst->read_prefs = mongoc_read_prefs_copy (src->read_prefs);
+}
+
+
+typedef enum {
+   TXN_COMMIT,
+   TXN_ABORT,
+} mongoc_txn_intent_t;
+
+
+static bool
+txn_finish (mongoc_client_session_t *session,
+            mongoc_txn_intent_t intent,
+            bson_t *reply,
+            bson_error_t *error)
+{
+   const char *cmd_name;
+   bson_t cmd = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
+   bson_error_t err_local;
+   bson_error_t *err_ptr = error ? error : &err_local;
+   bool r = false;
+
+   cmd_name = (intent == TXN_COMMIT ? "commitTransaction" : "abortTransaction");
+
+   if (!mongoc_client_session_append (session, &opts, err_ptr)) {
+      _mongoc_bson_init_if_set (reply);
+      GOTO (done);
+   }
+
+   if (session->txn.opts.write_concern) {
+      if (!mongoc_write_concern_append (session->txn.opts.write_concern,
+                                        &opts)) {
+         bson_set_error (err_ptr,
+                         MONGOC_ERROR_TRANSACTION,
+                         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                         "Invalid transaction write concern");
+         _mongoc_bson_init_if_set (reply);
+         GOTO (done);
+      }
+   }
+
+   BSON_APPEND_INT32 (&cmd, cmd_name, 1);
+
+   r = mongoc_client_write_command_with_opts (
+      session->client, "admin", &cmd, &opts, reply, err_ptr);
+
+   /* Transactions Spec: "Drivers MUST retry the commitTransaction command once
+    * after it fails with a retryable error", same for abort */
+   if (!r && (err_ptr->domain == MONGOC_ERROR_STREAM ||
+              mongoc_cluster_is_not_master_error (err_ptr))) {
+      _mongoc_bson_destroy_if_set (reply);
+      r = mongoc_client_write_command_with_opts (
+         session->client, "admin", &cmd, &opts, reply, err_ptr);
+   }
+
+   /* we won't return an error from abortTransaction, so warn */
+   if (intent == TXN_ABORT && !r) {
+      MONGOC_WARNING ("Error in %s: %s", cmd_name, err_ptr->message);
+   }
+
+done:
+   bson_destroy (&cmd);
+   bson_destroy (&opts);
+   return r;
 }
 
 
@@ -587,6 +655,21 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
 
    BSON_ASSERT (session);
 
+   if (session->txn.state == MONGOC_TRANSACTION_STARTING ||
+       session->txn.state == MONGOC_TRANSACTION_IN_PROGRESS) {
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "Transaction already in progress");
+      RETURN (false);
+   }
+
+   if (opts) {
+      txn_opts_copy (opts, &session->txn.opts);
+   }
+
+   session->txn.state = MONGOC_TRANSACTION_STARTING;
+
    RETURN (true);
 }
 
@@ -596,15 +679,45 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
                                           bson_t *reply,
                                           bson_error_t *error)
 {
+   bool r = false;
+
    ENTRY;
 
    BSON_ASSERT (session);
 
-   if (reply) {
-      bson_init (&reply);
+   /* See Transactions Spec for state diagram. In COMMITTED state, user can call
+    * commit again to retry after network error */
+
+   switch (session->txn.state) {
+   case MONGOC_TRANSACTION_NONE:
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "No transaction started");
+      _mongoc_bson_init_if_set (reply);
+      break;
+   case MONGOC_TRANSACTION_STARTING:
+      /* we sent no commands, not actually started on server */
+      session->txn.state = MONGOC_TRANSACTION_COMMITTED;
+      _mongoc_bson_init_if_set (reply);
+      r = true;
+      break;
+   case MONGOC_TRANSACTION_IN_PROGRESS:
+   case MONGOC_TRANSACTION_COMMITTED:
+      r = txn_finish (session, TXN_COMMIT, reply, error);
+      session->txn.state = MONGOC_TRANSACTION_COMMITTED;
+      break;
+   case MONGOC_TRANSACTION_ABORTED:
+   default:
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "Cannot call commit after abort");
+      _mongoc_bson_init_if_set (reply);
+      break;
    }
 
-   RETURN (true);
+   RETURN (r);
 }
 
 
@@ -616,7 +729,36 @@ mongoc_client_session_abort_transaction (mongoc_client_session_t *session,
 
    BSON_ASSERT (session);
 
-   RETURN (true);
+   switch (session->txn.state) {
+   case MONGOC_TRANSACTION_STARTING:
+      /* we sent no commands, not actually started on server */
+      session->txn.state = MONGOC_TRANSACTION_ABORTED;
+      RETURN (true);
+   case MONGOC_TRANSACTION_IN_PROGRESS:
+      /* Transactions Spec: ignore errors from abortTransaction command */
+      txn_finish (session, TXN_ABORT, NULL, NULL);
+      session->txn.state = MONGOC_TRANSACTION_ABORTED;
+      RETURN (true);
+   case MONGOC_TRANSACTION_COMMITTED:
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "Cannot call abort after commit");
+      RETURN (false);
+   case MONGOC_TRANSACTION_ABORTED:
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "Cannot call abort twice");
+      RETURN (false);
+   case MONGOC_TRANSACTION_NONE:
+   default:
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "No transaction started");
+      RETURN (false);
+   }
 }
 
 
@@ -639,6 +781,80 @@ _mongoc_client_session_from_iter (mongoc_client_t *client,
 
    RETURN (_mongoc_client_lookup_session (
       client, (uint32_t) bson_iter_int64 (iter), cs, error));
+}
+
+
+bool
+_mongoc_client_session_append_txn (mongoc_client_session_t *session,
+                                   bson_t *cmd,
+                                   bson_error_t *error)
+{
+   mongoc_transaction_t *txn;
+
+   ENTRY;
+
+   BSON_ASSERT (session);
+   BSON_ASSERT (cmd);
+
+   txn = &session->txn;
+
+   /* See Transactions Spec for state transitions. In COMMITTED / ABORTED, the
+    * next operation resets the session and moves to TRANSACTION_NONE */
+   switch (session->txn.state) {
+   case MONGOC_TRANSACTION_STARTING:
+      txn->state = MONGOC_TRANSACTION_IN_PROGRESS;
+      session->server_session->txn_number++;
+
+      /* TODO: coordinate read concern with causal consistency */
+      if (!mongoc_read_concern_is_default (txn->opts.read_concern)) {
+         if (!mongoc_read_concern_append (txn->opts.read_concern, cmd)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_TRANSACTION,
+                            MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                            "Invalid read concern in transaction");
+            RETURN (false);
+         }
+      }
+
+      bson_append_bool (cmd, "startTransaction", 16, true);
+      /* FALL THROUGH */
+   case MONGOC_TRANSACTION_IN_PROGRESS:
+      bson_append_int64 (
+         cmd, "txnNumber", 9, session->server_session->txn_number);
+      bson_append_bool (cmd, "autocommit", 10, false);
+      RETURN (true);
+   case MONGOC_TRANSACTION_COMMITTED:
+   case MONGOC_TRANSACTION_ABORTED:
+      txn_opts_cleanup (&session->txn.opts);
+      txn->state = MONGOC_TRANSACTION_NONE;
+      RETURN (true);
+   case MONGOC_TRANSACTION_NONE:
+   default:
+      RETURN (true);
+   }
+}
+
+
+bool
+_mongoc_client_session_in_txn (const mongoc_client_session_t *session)
+{
+   if (!session) {
+      return false;
+   }
+
+   return session->txn.state == MONGOC_TRANSACTION_STARTING ||
+          session->txn.state == MONGOC_TRANSACTION_IN_PROGRESS;
+}
+
+
+bool
+_mongoc_client_session_txn_in_progress (const mongoc_client_session_t *session)
+{
+   if (!session) {
+      return false;
+   }
+
+   return session->txn.state == MONGOC_TRANSACTION_IN_PROGRESS;
 }
 
 
