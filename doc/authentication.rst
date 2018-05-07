@@ -43,7 +43,7 @@ The default authentication mechanism when talking to MongoDB 3.0 and later is ``
 Legacy Authentication (MONGODB-CR)
 ----------------------------------
 
-The MONGODB-CR authMechanism is deprecated and will no longer function in the next major server release. Instead, specify no authMechanism and the driver
+The MONGODB-CR authMechanism is deprecated and will no longer function in MongoDB 4.0. Instead, specify no authMechanism and the driver
 will use an authentication mechanism compatible with your server.
 
 .. _authentication_kerberos:
