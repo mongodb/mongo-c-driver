@@ -164,7 +164,6 @@ test_insert_one_unacknowledged (void)
    mock_server_t *server;
    mongoc_collection_t *collection;
    mongoc_client_t *client;
-   mongoc_client_session_t *cs;
    mongoc_write_concern_t *wc;
    bson_t opts = BSON_INITIALIZER;
    future_t *future;
@@ -177,12 +176,6 @@ test_insert_one_unacknowledged (void)
    mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
    client = mongoc_client_new_from_uri (uri);
    collection = mongoc_client_get_collection (client, "db", "collection");
-
-   /* Create a session intentionally. However, unacknowledged writes should not
-    * use session so the session id won't be included in the request. */
-   cs = mongoc_client_start_session (client, NULL, &error);
-   ASSERT_OR_PRINT (cs, error);
-   ASSERT_OR_PRINT (mongoc_client_session_append (cs, &opts, &error), error);
 
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 0);
@@ -207,7 +200,6 @@ test_insert_one_unacknowledged (void)
    bson_destroy (&opts);
    future_destroy (future);
    mongoc_collection_destroy (collection);
-   mongoc_client_session_destroy (cs);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }

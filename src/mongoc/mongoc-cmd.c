@@ -753,12 +753,24 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          }
       }
 
-      /* Driver Sessions Spec: "drivers MUST NOT send a session ID with
-       * unacknowledged writes." We intentionally do not restrict this logic to
-       * parts->is_write_command, since mongoc_client_command_with_opts() does
-       * not identify as a write command but may still include a write concern.
+      /* Driver Sessions Spec: "For unacknowledged writes with an explicit
+       * session, drivers SHOULD raise an error.... Without an explicit
+       * session, drivers SHOULD NOT use an implicit session." We intentionally
+       * do not restrict this logic to parts->is_write_command, since
+       * mongoc_client_command_with_opts() does not identify as a write
+       * command but may still include a write concern.
        */
-      if (cs && !parts->prohibit_lsid && parts->assembled.is_acknowledged) {
+      if (cs && !parts->prohibit_lsid) {
+         if (!parts->assembled.is_acknowledged) {
+            bson_set_error (
+               error,
+               MONGOC_ERROR_COMMAND,
+               MONGOC_ERROR_COMMAND_INVALID_ARG,
+               "Cannot use client session with unacknowledged command");
+            mongoc_read_prefs_destroy (prefs); /* NULL ok */
+            RETURN (false);
+         }
+
          _mongoc_cmd_parts_ensure_copied (parts);
          bson_append_document (&parts->assembled_body,
                                "lsid",

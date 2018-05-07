@@ -1280,6 +1280,15 @@ check_success_no_commands (session_test_t *test)
       return;
    }
 
+   if (test->expect_explicit_lsid && !test->acknowledged) {
+      BSON_ASSERT (!test->succeeded);
+      ASSERT_ERROR_CONTAINS (test->error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "session with unacknowledged");
+      return;
+   }
+
    ASSERT_OR_PRINT (test->succeeded, test->error);
 }
 
@@ -1289,7 +1298,7 @@ check_success (session_test_t *test)
 {
    check_success_no_commands (test);
 
-   if (test->session_client == test->client) {
+   if (test->succeeded) {
       ASSERT_CMPINT (test->n_started, >, 0);
       ASSERT_CMPINT (test->n_succeeded, >, 0);
    }
@@ -2290,6 +2299,7 @@ _test_unacknowledged (session_test_fn_t test_fn,
     * operationTime. Additionally, the "started" APM callback asserts that the
     * command does not include an lsid. */
    test = session_test_new (CORRECT_CLIENT, CAUSAL);
+   test->expect_explicit_lsid = explicit_cs;
    test->acknowledged = false;
 
    wc = mongoc_write_concern_new ();
@@ -2310,8 +2320,11 @@ _test_unacknowledged (session_test_fn_t test_fn,
 
    test_fn (test);
    check_success (test);
-   ASSERT_MATCH (last_non_getmore_cmd (test), "{'writeConcern': {'w': 0}}");
-   ASSERT_CMPUINT32 (test->cs->operation_timestamp, ==, (uint32_t) 0);
+
+   if (test->succeeded) {
+      ASSERT_MATCH (last_non_getmore_cmd (test), "{'writeConcern': {'w': 0}}");
+      ASSERT_CMPUINT32 (test->cs->operation_timestamp, ==, (uint32_t) 0);
+   }
 
    mongoc_write_concern_destroy (wc);
    session_test_destroy (test);

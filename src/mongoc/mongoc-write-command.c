@@ -975,6 +975,16 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
       }
    }
 
+   if (crud->client_session &&
+       !mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
+      result->failed = true;
+      bson_set_error (&result->error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Cannot use client session with unacknowledged writes");
+      EXIT;
+   }
+
    if (command->payload.len == 0) {
       _empty_error (command, &result->error);
       EXIT;

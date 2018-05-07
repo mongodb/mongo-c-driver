@@ -25,6 +25,8 @@ Description
 
 This function appends a logical session id to command options. Use it to configure a session for any function that takes an options document, such as :symbol:`mongoc_client_write_command_with_opts`.
 
+It is an error to use a session for unacknowledged writes.
+
 Returns
 -------
 

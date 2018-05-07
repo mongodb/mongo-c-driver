@@ -24,6 +24,7 @@ bugfixes:
     connections.
   * All functions that accept read concern now prohibit it if MongoDB is too
     old to support it (pre-3.2).
+  * Client sessions are now prohibited with unacknowledged writes.
   * mongoc_collection_find_and_modify_with_opts now prohibits write concern if
     MongoDB is too old to support it (pre-3.2).
   * Other helper functions for commands that write, now prohibit write concern

@@ -2,7 +2,7 @@ Start a session with :symbol:`mongoc_client_start_session`, use the session for 
 
 By default, sessions are `causally consistent <http://dochub.mongodb.org/core/causal-consistency>`_. To disable causal consistency, before starting a session create a :symbol:`mongoc_session_opt_t` with :symbol:`mongoc_session_opts_new()` and call :symbol:`mongoc_session_opts_set_causal_consistency()`, then free the struct with :symbol:`mongoc_session_opts_destroy`.
 
-Unacknowledged writes are not causally consistent. If you execute a write operation with a :symbol:`mongoc_write_concern_t` on which you have called :symbol:`mongoc_write_concern_set_w` with a value of 0, the write does not participate in causal consistency.
+Unacknowledged writes are prohibited with sessions.
 
 .. the timeout warning is mandated by the Driver Sessions Spec
 
