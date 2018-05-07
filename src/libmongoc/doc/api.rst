@@ -47,6 +47,7 @@ API Reference
    mongoc_stream_t
    mongoc_stream_tls_t
    mongoc_topology_description_t
+   mongoc_transaction_opt_t
    mongoc_update_flags_t
    mongoc_uri_t
    mongoc_version

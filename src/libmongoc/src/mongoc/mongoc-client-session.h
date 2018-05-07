@@ -28,6 +28,38 @@
 
 BSON_BEGIN_DECLS
 
+/* these options types are named "opt_t" but their functions are named with
+ * "opts", for consistency with the older mongoc_ssl_opt_t */
+MONGOC_EXPORT (mongoc_transaction_opt_t *)
+mongoc_transaction_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
+
+MONGOC_EXPORT (mongoc_transaction_opt_t *)
+mongoc_transaction_opts_clone (const mongoc_transaction_opt_t *opts);
+
+MONGOC_EXPORT (void)
+mongoc_transaction_opts_destroy (mongoc_transaction_opt_t *opts);
+
+MONGOC_EXPORT (void)
+mongoc_transaction_set_read_concern (mongoc_transaction_opt_t *opts,
+                                     const mongoc_read_concern_t *read_concern);
+
+MONGOC_EXPORT (const mongoc_read_concern_t *)
+mongoc_transaction_get_read_concern (const mongoc_transaction_opt_t *opts);
+
+MONGOC_EXPORT (void)
+mongoc_transaction_set_write_concern (
+   mongoc_transaction_opt_t *opts, const mongoc_write_concern_t *write_concern);
+
+MONGOC_EXPORT (const mongoc_write_concern_t *)
+mongoc_transaction_get_write_concern (const mongoc_transaction_opt_t *opts);
+
+MONGOC_EXPORT (void)
+mongoc_transaction_set_read_prefs (mongoc_transaction_opt_t *opts,
+                                   const mongoc_read_prefs_t *read_prefs);
+
+MONGOC_EXPORT (const mongoc_read_prefs_t *)
+mongoc_transaction_get_read_prefs (const mongoc_transaction_opt_t *opts);
+
 MONGOC_EXPORT (mongoc_session_opt_t *)
 mongoc_session_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
 
@@ -37,6 +69,22 @@ mongoc_session_opts_set_causal_consistency (mongoc_session_opt_t *opts,
 
 MONGOC_EXPORT (bool)
 mongoc_session_opts_get_causal_consistency (const mongoc_session_opt_t *opts);
+
+MONGOC_EXPORT (void)
+mongoc_session_opts_set_auto_start_transaction (mongoc_session_opt_t *opts,
+                                                bool auto_start_transaction);
+
+MONGOC_EXPORT (bool)
+mongoc_session_opts_get_auto_start_transaction (
+   const mongoc_session_opt_t *opts);
+
+MONGOC_EXPORT (void)
+mongoc_session_opts_set_default_transaction_opts (
+   mongoc_session_opt_t *opts, const mongoc_transaction_opt_t *txn_opts);
+
+MONGOC_EXPORT (const mongoc_transaction_opt_t *)
+mongoc_session_opts_get_default_transaction_opts (
+   const mongoc_session_opt_t *opts);
 
 MONGOC_EXPORT (mongoc_session_opt_t *)
 mongoc_session_opts_clone (const mongoc_session_opt_t *opts);
@@ -70,6 +118,20 @@ MONGOC_EXPORT (void)
 mongoc_client_session_advance_operation_time (mongoc_client_session_t *session,
                                               uint32_t timestamp,
                                               uint32_t increment);
+
+MONGOC_EXPORT (bool)
+mongoc_client_session_start_transaction (mongoc_client_session_t *session,
+                                         mongoc_transaction_opt_t *opts,
+                                         bson_error_t *error);
+
+MONGOC_EXPORT (bool)
+mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
+                                          bson_t *reply,
+                                          bson_error_t *error);
+
+MONGOC_EXPORT (bool)
+mongoc_client_session_abort_transaction (mongoc_client_session_t *session,
+                                         bson_error_t *error);
 
 MONGOC_EXPORT (bool)
 mongoc_client_session_append (const mongoc_client_session_t *client_session,

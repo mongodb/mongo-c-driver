@@ -1,0 +1,19 @@
+:man_page: mongoc_transaction_opts_destroy
+
+mongoc_transaction_opts_destroy()
+=================================
+
+Synopsis
+--------
+
+.. code-block:: c
+
+  void
+  mongoc_transaction_opts_destroy (mongoc_transaction_opt_t *opts);
+
+Free a :symbol:`mongoc_transaction_opt_t`.
+
+.. only:: html
+
+  .. taglist:: See Also:
+    :tags: session

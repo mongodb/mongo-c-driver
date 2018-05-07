@@ -24,13 +24,21 @@
 #include <bson.h>
 #include "mongoc-client-session.h"
 
+struct _mongoc_transaction_opt_t {
+   mongoc_read_concern_t *read_concern;
+   mongoc_write_concern_t *write_concern;
+   mongoc_read_prefs_t *read_prefs;
+};
+
 typedef enum {
    MONGOC_SESSION_NO_OPTS = 0,
    MONGOC_SESSION_CAUSAL_CONSISTENCY = (1 << 0),
+   MONGOC_SESSION_AUTO_START_TRANSACTION = (1 << 1),
 } mongoc_session_flag_t;
 
 struct _mongoc_session_opt_t {
    mongoc_session_flag_t flags;
+   mongoc_transaction_opt_t default_txn_opts;
 };
 
 typedef struct _mongoc_server_session_t {

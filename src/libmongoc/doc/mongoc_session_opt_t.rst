@@ -26,7 +26,11 @@ See the example code for :symbol:`mongoc_session_opts_set_causal_consistency`.
     :maxdepth: 1
 
     mongoc_session_opts_new
+    mongoc_session_opts_get_auto_start_transaction
+    mongoc_session_opts_set_auto_start_transaction
     mongoc_session_opts_get_causal_consistency
     mongoc_session_opts_set_causal_consistency
+    mongoc_session_opts_get_default_transaction_opts
+    mongoc_session_opts_set_default_transaction_opts
     mongoc_session_opts_clone
     mongoc_session_opts_destroy

@@ -76,6 +76,7 @@ typedef struct _mongoc_client_t mongoc_client_t;
 
 typedef struct _mongoc_client_session_t mongoc_client_session_t;
 typedef struct _mongoc_session_opt_t mongoc_session_opt_t;
+typedef struct _mongoc_transaction_opt_t mongoc_transaction_opt_t;
 
 /**
  * mongoc_stream_initiator_t:
