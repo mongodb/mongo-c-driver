@@ -118,7 +118,7 @@ To disable all logging, including warnings, critical messages and errors, provid
 Tracing
 -------
 
-If compiling your own copy of the MongoDB C driver, consider configuring with ``--enable-tracing`` to enable function tracing and hex dumps of network packets to ``STDERR`` and ``STDOUT`` during development and debugging.
+If compiling your own copy of the MongoDB C driver, consider configuring with ``-DENABLE_TRACING=ON`` to enable function tracing and hex dumps of network packets to ``STDERR`` and ``STDOUT`` during development and debugging.
 
 This is especially useful when debugging what may be going on internally in the driver.
 
@@ -126,5 +126,5 @@ Trace messages can be enabled and disabled by calling ``mongoc_log_trace_enable(
 
 .. note::
 
-        Compiling the driver with ``--enable-tracing`` will affect its performance. Disabling tracing with ``mongoc_log_trace_disable()`` significantly reduces the overhead, but cannot remove it completely.
+        Compiling the driver with ``-DENABLE_TRACING=ON`` will affect its performance. Disabling tracing with ``mongoc_log_trace_disable()`` significantly reduces the overhead, but cannot remove it completely.
 
