@@ -6629,6 +6629,7 @@ tasks:
               set -o errexit
               set -o verbose
               . ./.evergreen/find-cmake.sh
+              ${setup_android_toolchain|}
               export ${libmongocapi_compile_env|}
               mkdir cmake-build-libmongocapi
               $CMAKE \
@@ -6641,6 +6642,7 @@ tasks:
                 -DENABLE_SRV=OFF \
                 -DENABLE_EXAMPLES=OFF \
                 -DENABLE_STATIC=OFF \
+                -DENABLE_SHM_COUNTERS=OFF \
                 ${libmongocapi_cmake_flags}
               make install VERBOSE=1
 
@@ -7362,5 +7364,51 @@ buildvariants:
       -DCMAKE_C_FLAGS="-arch x86_64 -isysroot $(xcrun --sdk iphonesimulator --show-sdk-path) -miphoneos-version-min=10.2"
       -DCMAKE_INSTALL_NAME_DIR=@rpath
     libmongocapi_compile_env: DEVELOPER_DIR=/Applications/Xcode9.2.app
+  tasks:
+  - name: compile-libmongocapi
+
+- name: android-debug-arm64
+  display_name: "Android arm64 (Ubuntu 16.04)"
+  run_on:
+  - ubuntu1604-build
+  batchtime: 1440 # 1 day
+  expansions:
+    libmongocapi_cmake_flags: >-
+      -DANDROID_NATIVE_API_LEVEL=24
+      -DANDROID_ABI=arm64-v8a
+      -DTHREADS_PTHREAD_ARG=2
+      -DCMAKE_TOOLCHAIN_FILE=$WORKDIR/android_sdk/ndk-bundle/build/cmake/android.toolchain.cmake
+      -DCMAKE_FIND_ROOT_PATH="$WORKDIR/android_toolchain"
+      -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
+      -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
+      -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
+      -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+      -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib
+    compile_env: DEVELOPER_DIR=/Applications/Xcode8.3.app
+    setup_android_toolchain: |
+      JAVA_HOME=/opt/java/jdk8/ ./.evergreen/setup-android-toolchain.sh arm64-v8a arm64
+  tasks:
+  - name: compile-libmongocapi
+
+- name: android-debug-x86
+  display_name: "Android x86_64 (Ubuntu 16.04)"
+  run_on:
+  - ubuntu1604-build
+  batchtime: 1440 # 1 day
+  expansions:
+    libmongocapi_cmake_flags: >-
+      -DANDROID_NATIVE_API_LEVEL=24
+      -DANDROID_ABI=x86_64
+      -DTHREADS_PTHREAD_ARG=2
+      -DCMAKE_TOOLCHAIN_FILE=$WORKDIR/android_sdk/ndk-bundle/build/cmake/android.toolchain.cmake
+      -DCMAKE_FIND_ROOT_PATH=$WORKDIR/android_toolchain
+      -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
+      -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
+      -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
+      -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+      -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib
+    compile_env: DEVELOPER_DIR=/Applications/Xcode8.3.app
+    setup_android_toolchain: |
+      JAVA_HOME=/opt/java/jdk8/ ./.evergreen/setup-android-toolchain.sh x86_64 x86_64
   tasks:
   - name: compile-libmongocapi
