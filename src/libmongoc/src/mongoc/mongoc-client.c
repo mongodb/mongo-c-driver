@@ -1569,9 +1569,8 @@ retry:
       retry_server_stream =
          mongoc_cluster_stream_for_writes (&client->cluster, &ignored_error);
 
-      if (retry_server_stream &&
-          retry_server_stream->sd->max_wire_version >=
-             WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
+                                    WIRE_VERSION_RETRY_WRITES) {
          parts->assembled.server_stream = retry_server_stream;
          _mongoc_bson_destroy_if_set (reply);
          GOTO (retry);
@@ -1803,33 +1802,17 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
       if (!mongoc_write_concern_is_default (default_wc) &&
           !read_write_opts.write_concern_owned &&
           wire_version >= wc_wire_version) {
-         parts.assembled.is_acknowledged =
-            mongoc_write_concern_is_acknowledged (default_wc);
-         bson_append_document (&parts.extra,
-                               "writeConcern",
-                               12,
-                               _mongoc_write_concern_get_bson (default_wc));
+         if (!mongoc_cmd_parts_set_write_concern (
+                &parts, default_wc, wire_version, error)) {
+            GOTO (err);
+         }
       }
    }
 
-   /* use read prefs and read concern for read commands, unless in opts */
-   if ((mode & MONGOC_CMD_READ) &&
-       !mongoc_read_concern_is_default (default_rc) &&
-       bson_empty (&read_write_opts.readConcern)) {
-      if (wire_version >= WIRE_VERSION_READ_CONCERN) {
-         bson_append_document (&parts.extra,
-                               "readConcern",
-                               11,
-                               _mongoc_read_concern_get_bson (default_rc));
-      } else {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "\"%s\" command does not support readConcern with "
-                         "wire version %d, wire version %d is required",
-                         command_name,
-                         wire_version,
-                         WIRE_VERSION_READ_CONCERN);
+   /* use default read concern for read command, unless it's in opts */
+   if ((mode & MONGOC_CMD_READ) && bson_empty (&read_write_opts.readConcern)) {
+      if (!mongoc_cmd_parts_set_read_concern (
+             &parts, default_rc, wire_version, error)) {
          GOTO (err);
       }
    }

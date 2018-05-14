@@ -331,8 +331,7 @@ _mongoc_write_command_init_update_idl (mongoc_write_command_t *command,
 void
 _mongoc_write_command_init (bson_t *doc,
                             mongoc_write_command_t *command,
-                            const char *collection,
-                            const mongoc_write_concern_t *write_concern)
+                            const char *collection)
 {
    ENTRY;
 
@@ -341,12 +340,6 @@ _mongoc_write_command_init (bson_t *doc,
    }
 
    BSON_APPEND_UTF8 (doc, gCommandNames[command->type], collection);
-   if (write_concern && !mongoc_write_concern_is_default (write_concern)) {
-      BSON_APPEND_DOCUMENT (doc,
-                            "writeConcern",
-                            _mongoc_write_concern_get_bson (
-                               (mongoc_write_concern_t *) (write_concern)));
-   }
    BSON_APPEND_BOOL (doc, "ordered", command->flags.ordered);
 
    if (command->flags.bypass_document_validation !=
@@ -483,12 +476,17 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
       mongoc_server_stream_max_write_batch_size (server_stream);
 
    bson_init (&cmd);
-   _mongoc_write_command_init (&cmd, command, collection, write_concern);
+   _mongoc_write_command_init (&cmd, command, collection);
    mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
    parts.assembled.operation_id = command->operation_id;
    parts.is_write_command = true;
-   parts.assembled.is_acknowledged =
-      mongoc_write_concern_is_acknowledged (write_concern);
+   if (!mongoc_cmd_parts_set_write_concern (
+          &parts, write_concern, server_stream->sd->max_wire_version, error)) {
+      bson_destroy (&cmd);
+      mongoc_cmd_parts_cleanup (&parts);
+      EXIT;
+   }
+
    if (parts.assembled.is_acknowledged) {
       mongoc_cmd_parts_set_session (&parts, cs);
    }
@@ -726,7 +724,7 @@ again:
    has_more = false;
    i = 0;
 
-   _mongoc_write_command_init (&cmd, command, collection, write_concern);
+   _mongoc_write_command_init (&cmd, command, collection);
 
    /* 1 byte to specify array type, 1 byte for field name's null terminator */
    overhead = cmd.len + 2 + gCommandFieldLens[command->type];
@@ -771,8 +769,17 @@ again:
       mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
       parts.is_write_command = true;
       parts.assembled.operation_id = command->operation_id;
-      parts.assembled.is_acknowledged =
-         mongoc_write_concern_is_acknowledged (write_concern);
+      if (!mongoc_cmd_parts_set_write_concern (
+             &parts,
+             write_concern,
+             server_stream->sd->max_wire_version,
+             error)) {
+         bson_reader_destroy (reader);
+         bson_destroy (&cmd);
+         mongoc_cmd_parts_cleanup (&parts);
+         EXIT;
+      }
+
       BSON_ASSERT (bson_iter_init (&iter, &command->cmd_opts));
       if (!mongoc_cmd_parts_append_opts (
              &parts, &iter, server_stream->sd->max_wire_version, error)) {

@@ -99,8 +99,7 @@ _mongoc_write_command_destroy (mongoc_write_command_t *command);
 void
 _mongoc_write_command_init (bson_t *doc,
                             mongoc_write_command_t *command,
-                            const char *collection,
-                            const mongoc_write_concern_t *write_concern);
+                            const char *collection);
 void
 _mongoc_write_command_init_insert (mongoc_write_command_t *command,
                                    const bson_t *document,

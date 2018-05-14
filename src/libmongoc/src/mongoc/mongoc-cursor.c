@@ -900,21 +900,12 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       mongoc_session_opts_destroy (session_opts);
    }
 
-   if (cursor->read_concern->level) {
-      if (server_stream->sd->max_wire_version < WIRE_VERSION_READ_CONCERN) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "The selected server does not support readConcern "
-                         "for the \"%s\" command",
-                         _mongoc_get_command_name (command));
-
-         _mongoc_bson_init_if_set (reply);
-         GOTO (done);
-      }
-
-      bson_concat (&parts.read_concern_document,
-                   _mongoc_read_concern_get_bson (cursor->read_concern));
+   if (!mongoc_cmd_parts_set_read_concern (&parts,
+                                           cursor->read_concern,
+                                           server_stream->sd->max_wire_version,
+                                           &cursor->error)) {
+      _mongoc_bson_init_if_set (reply);
+      GOTO (done);
    }
 
    bson_strncpy (db, cursor->ns, cursor->dblen + 1);

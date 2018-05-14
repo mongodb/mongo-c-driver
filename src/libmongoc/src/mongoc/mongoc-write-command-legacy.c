@@ -29,19 +29,21 @@ _mongoc_monitor_legacy_write (mongoc_client_t *client,
                               int64_t request_id)
 {
    bson_t doc;
+   bson_t wc;
    mongoc_apm_command_started_t event;
-   mongoc_write_concern_t *wc;
 
    ENTRY;
 
    if (!client->apm_callbacks.started) {
       EXIT;
    }
-   wc = mongoc_write_concern_new ();
-   mongoc_write_concern_set_w (wc, 0);
 
    bson_init (&doc);
-   _mongoc_write_command_init (&doc, command, collection, wc);
+   _mongoc_write_command_init (&doc, command, collection);
+   BSON_APPEND_DOCUMENT_BEGIN (&doc, "writeConcern", &wc);
+   BSON_APPEND_INT32 (&wc, "w", 0);
+   bson_append_document_end (&doc, &wc);
+
    _append_array_from_command (command, &doc);
 
    mongoc_apm_command_started_init (
@@ -58,7 +60,6 @@ _mongoc_monitor_legacy_write (mongoc_client_t *client,
    client->apm_callbacks.started (&event);
 
    mongoc_apm_command_started_cleanup (&event);
-   mongoc_write_concern_destroy (wc);
    bson_destroy (&doc);
 }
 

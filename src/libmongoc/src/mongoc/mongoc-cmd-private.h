@@ -64,6 +64,7 @@ typedef struct _mongoc_cmd_parts_t {
    mongoc_query_flags_t user_query_flags;
    const bson_t *body;
    bson_t read_concern_document;
+   bson_t write_concern_document;
    bson_t extra;
    const mongoc_read_prefs_t *read_prefs;
    bson_t assembled_body;
@@ -93,6 +94,12 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                               bson_iter_t *iter,
                               int max_wire_version,
                               bson_error_t *error);
+
+bool
+mongoc_cmd_parts_set_read_concern (mongoc_cmd_parts_t *parts,
+                                   const mongoc_read_concern_t *rc,
+                                   int max_wire_version,
+                                   bson_error_t *error);
 
 bool
 mongoc_cmd_parts_set_write_concern (mongoc_cmd_parts_t *parts,

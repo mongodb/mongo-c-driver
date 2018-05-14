@@ -766,6 +766,61 @@ test_read_prefs_mongos_tags (void)
 }
 
 
+/* test that we add readConcern only inside $query, not outside it too */
+static void
+test_mongos_read_concern (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_read_prefs_t *prefs;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+
+   server = mock_mongos_new (WIRE_VERSION_READ_CONCERN);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "test", "test");
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   cursor = mongoc_collection_find_with_opts (
+      collection,
+      tmp_bson ("{'a': 1}"),
+      tmp_bson ("{'readConcern': {'level': 'foo'}}"),
+      prefs);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (
+      server,
+      "test",
+      MONGOC_QUERY_SLAVE_OK,
+      "{"
+      "  '$query': {"
+      "    'find': 'test', 'filter': {}, 'readConcern': {'level': 'foo'}"
+      "  },"
+      "  '$readPreference': {"
+      "    'mode': 'secondary'"
+      "  },"
+      "  'readConcern': {'$exists': false}"
+      "}");
+
+   mock_server_replies_to_find (
+      request, MONGOC_QUERY_SLAVE_OK, 0, 1, "db.collection", "{}", true);
+
+   /* mongoc_cursor_next returned true */
+   BSON_ASSERT (future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 typedef mongoc_cursor_t *(*test_op_msg_direct_fn_t) (mongoc_collection_t *,
                                                      mongoc_read_prefs_t *);
 
@@ -919,6 +974,8 @@ test_read_prefs_install (TestSuite *suite)
                                 test_read_prefs_mongos_secondary_preferred);
    TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/mongos/tags", test_read_prefs_mongos_tags);
+   TestSuite_AddMockServerTest (
+      suite, "/ReadPrefs/mongos/readConcern", test_mongos_read_concern);
    TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/OP_MSG/secondary", test_op_msg_direct_secondary);
    TestSuite_AddMockServerTest (
