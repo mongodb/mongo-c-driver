@@ -1,5 +1,5 @@
-set (PACKAGE_INCLUDE_INSTALL_DIRS ${BSON_HEADER_INSTALL_DIR})
-set (PACKAGE_LIBRARY_INSTALL_DIRS ${CMAKE_INSTALL_LIBDIR})
+set (INCLUDE_INSTALL_DIRS ${BSON_HEADER_INSTALL_DIR})
+set (LIBRARY_INSTALL_DIRS ${CMAKE_INSTALL_LIBDIR})
 set (PACKAGE_LIBRARIES bson-1.0)
 
 include (CMakePackageConfigHelpers)
@@ -11,7 +11,7 @@ function (install_package_config_file prefix)
          build/cmake/libbson-${prefix}-${suffix}.in
          ${CMAKE_CURRENT_BINARY_DIR}/libbson-${prefix}-${suffix}
          INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/libbson-${prefix}
-         PATH_VARS PACKAGE_INCLUDE_INSTALL_DIRS PACKAGE_LIBRARY_INSTALL_DIRS
+         PATH_VARS INCLUDE_INSTALL_DIRS LIBRARY_INSTALL_DIRS
       )
 
       install (
