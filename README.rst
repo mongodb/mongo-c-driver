@@ -5,10 +5,12 @@ mongo-c-driver
 About
 =====
 
-mongo-c-driver is a client library written in C for MongoDB.
+mongo-c-driver is a project that includes two libraries:
 
-mongo-c-driver depends on `Libbson <https://github.com/mongodb/libbson>`_.
-Libbson will automatically be built if you do not have it installed on your system.
+- libmongoc, a client library written in C for MongoDB.
+- libbson, a library providing useful routines related to building, parsing, and iterating BSON documents.
+
+If libmongoc is not needed, it is possible to build and install only libbson.
 
 Documentation / Support / Feedback
 ==================================

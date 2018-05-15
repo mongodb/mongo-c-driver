@@ -30,12 +30,12 @@ extern "C" {
 #endif
 
 #ifndef OS_RELEASE_FILE_DIR
-#define OS_RELEASE_FILE_DIR "tests/release_files"
+#define OS_RELEASE_FILE_DIR "src/libmongoc/tests/release_files"
 #endif
 
 
 #ifndef BINARY_DIR
-#define BINARY_DIR "tests/binary"
+#define BINARY_DIR "src/libmongoc/tests/binary"
 #endif
 
 #ifndef BSON_BINARY_DIR
@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 #ifndef JSON_DIR
-#define JSON_DIR "tests/json"
+#define JSON_DIR "src/libmongoc/tests/json"
 #endif
 
 #ifndef BSON_JSON_DIR
@@ -51,7 +51,7 @@ extern "C" {
 #endif
 
 #ifndef CERT_TEST_DIR
-#define CERT_TEST_DIR "tests/x509gen"
+#define CERT_TEST_DIR "src/libmongoc/tests/x509gen"
 #endif
 
 

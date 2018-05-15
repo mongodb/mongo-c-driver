@@ -1,6 +1,7 @@
 # sub-directory 'libbson' was already included at the top-level
 #add_subdirectory (libbson)
-add_subdirectory (mongoc)
+# sub-directory 'libmongoc' was already included at the top-level
+#add_subdirectory (libmongoc)
 add_subdirectory (tools)
 add_subdirectory (common)
 
@@ -28,14 +29,10 @@ endforeach ()
 
 set_local_dist (src_DIST_local
    CMakeLists.txt
-   libmongoc-1.0.pc.in
-   libmongoc-ssl-1.0.pc.in
-   libmongoc-static-1.0.pc.in
 )
 
 set (src_DIST
    ${src_DIST_local}
-   ${src_mongoc_DIST}
    ${src_tools_DIST}
    ${src_zlib_DIST}
    ${src_common_DIST}

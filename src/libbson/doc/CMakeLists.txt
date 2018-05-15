@@ -8,7 +8,7 @@ endif ()
 if (ENABLE_MAN_PAGES)
    sphinx_build_man (bson-man)
    set (src_libbson_doc_DIST_mans ${doc_DIST_mans})
-endif()
+endif ()
 
 add_subdirectory (html)
 add_subdirectory (man)

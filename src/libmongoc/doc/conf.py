@@ -5,7 +5,7 @@ import sys
 # Ensure we can import "mongoc" and "taglist" extension modules.
 this_path = os.path.dirname(__file__)
 sys.path.append(this_path)
-sys.path.append(os.path.normpath(os.path.join(this_path, '../build/sphinx')))
+sys.path.append(os.path.normpath(os.path.join(this_path, '../../../build/sphinx')))
 
 from mongoc_common import *
 
@@ -52,7 +52,7 @@ intersphinx_mapping = {
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme_path = ['../build/sphinx']
+html_theme_path = ['../../../build/sphinx']
 html_theme = 'mongoc-theme'
 html_title = html_shorttitle = 'MongoDB C Driver %s' % version
 # html_favicon = None

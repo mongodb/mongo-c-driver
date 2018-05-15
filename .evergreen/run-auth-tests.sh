@@ -22,12 +22,12 @@ C_TIMEOUT="connectTimeoutMS=30000&serverSelectionTryOnce=false"
 
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-if grep -q "#define MONGOC_ENABLE_SASL 1" src/mongoc/mongoc-config.h; then
+if grep -q "#define MONGOC_ENABLE_SASL 1" src/libmongoc/src/mongoc/mongoc-config.h; then
    SASL=1
 else
    SASL=0
 fi
-if grep -q "#define MONGOC_ENABLE_SSL 1" src/mongoc/mongoc-config.h; then
+if grep -q "#define MONGOC_ENABLE_SSL 1" src/libmongoc/src/mongoc/mongoc-config.h; then
    SSL=1
 else
    SSL=0
@@ -38,20 +38,20 @@ DIR=$(dirname $0)
 
 case "$OS" in
    cygwin*)
-      PING="./Debug/mongoc-ping.exe"
-      TEST_GSSAPI="./Debug/test-mongoc-gssapi.exe"
+      PING="./Debug/src/libmongoc/mongoc-ping.exe"
+      TEST_GSSAPI="./Debug/src/libmongoc/test-mongoc-gssapi.exe"
       IP_ADDR=`getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}'`
       ;;
 
    darwin)
-      PING="./mongoc-ping"
-      TEST_GSSAPI="./test-mongoc-gssapi"
+      PING="./src/libmongoc/mongoc-ping"
+      TEST_GSSAPI="./src/libmongoc/test-mongoc-gssapi"
       IP_ADDR=`dig $AUTH_HOST +short | tail -1`
       ;;
 
    *)
-      PING="./mongoc-ping"
-      TEST_GSSAPI="./test-mongoc-gssapi"
+      PING="./src/libmongoc/mongoc-ping"
+      TEST_GSSAPI="./src/libmongoc/test-mongoc-gssapi"
       IP_ADDR=`getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}'`
 esac
 

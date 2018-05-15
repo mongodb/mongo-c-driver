@@ -1,4 +1,4 @@
-set (src_mongoc_DIST_defs
+set (src_libmongoc_src_mongoc_DIST_defs
    op-delete.def
    op-get-more.def
    op-header.def
@@ -13,7 +13,7 @@ set (src_mongoc_DIST_defs
    mongoc-counters.defs
 )
 
-set (src_mongoc_DIST_hs
+set (src_libmongoc_src_mongoc_DIST_hs
    mongoc-apm.h
    mongoc-bulk-operation.h
    mongoc-change-stream.h
@@ -67,7 +67,7 @@ extra_dist_generated (
    mongoc-version.h
 )
 
-set (src_mongoc_DIST_noinst_hs
+set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-apm-private.h
    mongoc-array-private.h
    mongoc-async-cmd-private.h
@@ -151,7 +151,7 @@ set (src_mongoc_DIST_noinst_hs
    mongoc-write-concern-private.h
 )
 
-set (src_mongoc_DIST_cs
+set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-apm.c
    mongoc-array.c
    mongoc-async.c
@@ -245,10 +245,10 @@ set (src_mongoc_DIST_cs
    mongoc-gssapi.c
 )
 
-set_dist_list (src_mongoc_DIST
+set_dist_list (src_libmongoc_src_mongoc_DIST
    CMakeLists.txt
-   ${src_mongoc_DIST_cs}
-   ${src_mongoc_DIST_hs}
-   ${src_mongoc_DIST_noinst_hs}
-   ${src_mongoc_DIST_defs}
+   ${src_libmongoc_src_mongoc_DIST_cs}
+   ${src_libmongoc_src_mongoc_DIST_hs}
+   ${src_libmongoc_src_mongoc_DIST_noinst_hs}
+   ${src_libmongoc_src_mongoc_DIST_defs}
 )

@@ -51,8 +51,8 @@ fi
 
 echo "Checking that all C files are included in tarball"
 # Check that all C files were included.
-TAR_CFILES=`tar --wildcards -tf mongo-c-driver-*.tar.gz 'mongo-c-driver-*/src/mongoc/*.c' | cut -d / -f 4 | sort`
-SRC_CFILES=`echo src/mongoc/*.c | xargs -n 1 | cut -d / -f 3 | sort`
+TAR_CFILES=`tar --wildcards -tf mongo-c-driver-*.tar.gz 'mongo-c-driver-*/src/libmongoc/src/mongoc/*.c' | cut -d / -f 4 | sort`
+SRC_CFILES=`echo src/libmongoc/src/mongoc/*.c | xargs -n 1 | cut -d / -f 3 | sort`
 if [ "$TAR_CFILES" != "$SRC_CFILES" ]; then
    echo "Not all C files are in the release archive"
    echo $TAR_CFILES > tar_cfiles.txt

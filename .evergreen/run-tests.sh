@@ -58,7 +58,7 @@ if [ "$CC" = "mingw" ]; then
       echo "ERROR - DNS tests not implemented for MinGW yet"
       exit 1
    fi
-   chmod +x test-libmongoc.exe
+   chmod +x ./src/libmongoc/test-libmongoc.exe
    cmd.exe /c .evergreen\\run-tests-mingw.bat
    exit 0
 fi
@@ -69,7 +69,7 @@ DIR=$(dirname $0)
 
 case "$OS" in
    cygwin*)
-      test-libmongoc.exe $TEST_ARGS
+      ./src/libmongoc/test-libmongoc.exe $TEST_ARGS
       ;;
 
    *)
@@ -77,9 +77,9 @@ case "$OS" in
 
       if [ "$VALGRIND" = "on" ]; then
          . $DIR/valgrind.sh
-         run_valgrind ./test-libmongoc --no-fork $TEST_ARGS
+         run_valgrind ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
       else
-         ./test-libmongoc --no-fork $TEST_ARGS
+         ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
       fi
 
       ;;

@@ -12,17 +12,9 @@ set (build_cmake_MODULES
    SphinxBuild.cmake
 )
 
-set (build_cmake_PKGCONFIG
-   libmongoc-1.0-config-version.cmake.in
-   libmongoc-1.0-config.cmake.in
-   libmongoc-static-1.0-config-version.cmake.in
-   libmongoc-static-1.0-config.cmake.in
-)
-
 set_local_dist (build_cmake_DIST_local
    CMakeLists.txt
    ${build_cmake_MODULES}
-   ${build_cmake_PKGCONFIG}
 )
 
 set (build_cmake_DIST

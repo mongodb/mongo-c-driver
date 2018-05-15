@@ -1,5 +1,5 @@
 rem Ensure Cygwin executables like sh.exe are not in PATH
-set PATH=C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongoc;src\libbson
+set PATH=C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongoc;src\libbson;src\libmongoc
 
 echo CONFIGURE_FLAGS %CONFIGURE_FLAGS%
 
@@ -12,4 +12,4 @@ set CC=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\gcc.exe
 %CMAKE_MAKE_PROGRAM%
 
 set MONGOC_TEST_SKIP_LIVE=on
-test-libmongoc.exe --no-fork -d -F test-results.json
+.\src\libmongoc\test-libmongoc.exe --no-fork -d -F test-results.json

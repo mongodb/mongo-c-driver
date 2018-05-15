@@ -21,7 +21,7 @@ DIR=$(dirname $0)
 
 case "$OS" in
    cygwin*)
-      test-libmongoc.exe $TEST_ARGS
+      ./src/libmongoc/test-libmongoc.exe $TEST_ARGS
       ;;
 
    *)
@@ -29,7 +29,7 @@ case "$OS" in
 
       if [ "$VALGRIND" = "on" ]; then
          . $DIR/valgrind.sh
-         run_valgrind ./test-libmongoc --no-fork $TEST_ARGS
+         run_valgrind ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
       else
          ./test-libmongoc --no-fork $TEST_ARGS
       fi
