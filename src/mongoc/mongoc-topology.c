@@ -33,9 +33,6 @@
 static void
 _mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
 
-static void
-_mongoc_topology_request_scan (mongoc_topology_t *topology);
-
 static bool
 _mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd,
                                       mongoc_topology_t *topology)
@@ -888,7 +885,7 @@ _mongoc_topology_host_by_id (mongoc_topology_t *topology,
  *--------------------------------------------------------------------------
  */
 
-static void
+void
 _mongoc_topology_request_scan (mongoc_topology_t *topology)
 {
    topology->scan_requested = true;
@@ -1456,8 +1453,10 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
 
 /* Locks topology->mutex and retrieves (possibly constructing) the handshake
  * on the topology scanner. */
-bson_t* _mongoc_topology_get_ismaster (mongoc_topology_t* topology) {
-   bson_t* cmd;
+bson_t *
+_mongoc_topology_get_ismaster (mongoc_topology_t *topology)
+{
+   bson_t *cmd;
    mongoc_mutex_lock (&topology->mutex);
    cmd = _mongoc_topology_scanner_get_ismaster (topology->scanner);
    mongoc_mutex_unlock (&topology->mutex);

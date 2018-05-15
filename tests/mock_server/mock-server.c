@@ -1936,3 +1936,50 @@ mock_server_set_bind_opts (mock_server_t *server, mock_server_bind_opts_t *opts)
 {
    server->bind_opts = *opts;
 }
+
+void
+rs_response_to_ismaster (mock_server_t *server, bool primary, int has_tags, ...)
+{
+   va_list ap;
+   bson_string_t *hosts;
+   bool first;
+   mock_server_t *host;
+   char *ismaster_response;
+
+   hosts = bson_string_new ("");
+
+   va_start (ap, has_tags);
+
+   first = true;
+   while ((host = va_arg (ap, mock_server_t *))) {
+      if (first) {
+         first = false;
+      } else {
+         bson_string_append (hosts, ",");
+      }
+
+      bson_string_append_printf (
+         hosts, "'%s'", mock_server_get_host_and_port (host));
+   }
+
+   va_end (ap);
+
+   ismaster_response = bson_strdup_printf ("{'ok': 1, "
+                                           " 'setName': 'rs',"
+                                           " 'ismaster': %s,"
+                                           " 'secondary': %s,"
+                                           " 'tags': {%s},"
+                                           " 'minWireVersion': 3,"
+                                           " 'maxWireVersion': 6,"
+                                           " 'hosts': [%s]"
+                                           "}",
+                                           primary ? "true" : "false",
+                                           primary ? "false" : "true",
+                                           has_tags ? "'key': 'value'" : "",
+                                           hosts->str);
+
+   mock_server_auto_ismaster (server, "%s", ismaster_response);
+
+   bson_free (ismaster_response);
+   bson_string_free (hosts, true);
+}

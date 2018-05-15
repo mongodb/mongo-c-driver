@@ -937,13 +937,20 @@ typedef struct {
 } test_error_msg_t;
 
 
-test_error_msg_t errors[] = {{"not master", true},
-                             {"not master or secondary", true},
-                             {"node is recovering", true},
-                             {"foo", false},
-                             {0}};
+test_error_msg_t errors[] = {
+   {"not master", true},
+   {"not master or secondary", true},
+   {"node is recovering", true},
+   {"not master and slaveOk=false", true},
+   {"replicatedToNum called but not master anymore", true},
+   {"??? node is recovering ???", true},
+   {"??? not master ???", true},
+   {"foo", false},
+   {0}};
 
-/* a "not master" or "node is recovering" error marks server Unknown */
+/* a "not master" or "node is recovering" error marks server Unknown.
+   "not master" and "node is recovering" need only be substrings of the error
+   message. */
 static void
 _test_not_master (bool pooled,
                   bool use_op_msg,

@@ -209,4 +209,13 @@ mock_server_reply_multi (request_t *request,
 void
 mock_server_destroy (mock_server_t *server);
 
+void
+rs_response_to_ismaster (mock_server_t *server,
+                         bool primary,
+                         int has_tags,
+                         ...);
+
+#define RS_RESPONSE_TO_ISMASTER(server, primary, has_tags, ...) \
+   rs_response_to_ismaster (server, primary, has_tags, __VA_ARGS__, NULL)
+
 #endif /* MOCK_SERVER_H */

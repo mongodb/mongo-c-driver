@@ -407,10 +407,17 @@ done:
 
 
 bool
+mongoc_cluster_is_not_master_or_recovering_error (const bson_error_t *error)
+{
+   return strstr (error->message, "not master") ||
+          strstr (error->message, "node is recovering");
+}
+
+
+bool
 mongoc_cluster_is_not_master_error (const bson_error_t *error)
 {
-   return !strncmp (error->message, "not master", 10) ||
-          !strncmp (error->message, "node is recovering", 18);
+   return strstr (error->message, "not master") != NULL;
 }
 
 
@@ -419,13 +426,32 @@ handle_not_master_error (mongoc_cluster_t *cluster,
                          uint32_t server_id,
                          const bson_error_t *error)
 {
-   if (mongoc_cluster_is_not_master_error (error)) {
+   mongoc_topology_t *topology = cluster->client->topology;
+
+   if (mongoc_cluster_is_not_master_or_recovering_error (error)) {
       /* Server Discovery and Monitoring Spec: "When the client sees a 'not
        * master' or 'node is recovering' error it MUST replace the server's
        * description with a default ServerDescription of type Unknown."
        */
-      mongoc_topology_invalidate_server (
-         cluster->client->topology, server_id, error);
+      mongoc_topology_invalidate_server (topology, server_id, error);
+      if (topology->single_threaded) {
+         /* SDAM Spec: "For single-threaded clients, in the case of a 'not
+          * master' error, the client MUST check the server immediately... For a
+          * 'node is recovering' error, single-threaded clients MUST NOT check
+          * the server, as an immediate server check is unlikely to find a
+          * usable server."
+          * Instead of an immediate check, mark the topology as stale so the
+          * next command scans all servers (to find the new primary). */
+         if (mongoc_cluster_is_not_master_error (error)) {
+            cluster->client->topology->stale = true;
+         }
+      } else {
+         /* SDAM Spec: "Multi-threaded and asynchronous clients MUST request an
+          * immediate check of the server."
+          * Instead of requesting a check of the one server, request a scan
+          * to all servers (to find the new primary). */
+         _mongoc_topology_request_scan (topology);
+      }
    }
 }
 

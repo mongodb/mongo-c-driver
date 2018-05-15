@@ -1,5 +1,6 @@
 #include <mongoc.h>
 #include <mongoc-uri-private.h>
+#include <mongoc-client-pool-private.h>
 
 #include "mongoc-client-private.h"
 #include "mongoc-util-private.h"
@@ -1640,6 +1641,207 @@ test_cluster_time_updated_during_handshake ()
    mongoc_uri_destroy (uri);
 }
 
+/* returns the last time the topology completed a full scan. */
+static int64_t
+_get_last_scan (mongoc_client_t *client)
+{
+   int64_t last_scan;
+   mongoc_topology_t *topology = client->topology;
+   mongoc_mutex_lock (&topology->mutex);
+   last_scan = topology->last_scan;
+   mongoc_mutex_unlock (&topology->mutex);
+   return last_scan;
+}
+
+static void
+_server_changed (const mongoc_apm_server_changed_t *event)
+{
+   const mongoc_server_description_t *sd;
+   int64_t *when_transitioned_to_unknown;
+   when_transitioned_to_unknown =
+      (int64_t *) mongoc_apm_server_changed_get_context (event);
+   sd = mongoc_apm_server_changed_get_new_description (event);
+   if (sd->type == MONGOC_SERVER_UNKNOWN) {
+      *when_transitioned_to_unknown = bson_get_monotonic_time ();
+   }
+}
+
+/* test that when a command receives a "not master" or "node is recovering"
+ * error that the client takes the appropriate action:
+ * - a pooled client should mark the server as unknown and request a full scan
+ *   of the topology
+ * - a single-threaded client should mark the server as unknown and mark the
+ *   topology as stale.
+ */
+static void
+_test_request_scan_on_error (bool pooled,
+                             const char *err_response,
+                             bool should_scan,
+                             bool should_mark_unknown)
+{
+   mock_server_t *primary, *secondary;
+   char *uri_str;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *client_pool = NULL;
+   mongoc_client_t *client = NULL;
+   bson_t reply;
+   bson_error_t error = {0};
+   future_t *future = NULL;
+   request_t *request;
+   const int64_t minHBMS = 50;
+   int64_t last_scan = 0;
+   mongoc_read_prefs_t *read_prefs;
+   mongoc_apm_callbacks_t *callbacks;
+   int64_t when_transitioned_to_unknown = 0;
+
+   primary = mock_server_new ();
+   secondary = mock_server_new ();
+   mock_server_run (primary);
+   mock_server_run (secondary);
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
+
+   RS_RESPONSE_TO_ISMASTER (primary, true, false, primary, secondary);
+   RS_RESPONSE_TO_ISMASTER (secondary, false, false, primary, secondary);
+
+   /* set a high heartbeatFrequency. Only the first and requested scans run. */
+   uri_str = bson_strdup_printf (
+      "mongodb://%s,%s/?replicaSet=rs&heartbeatFrequencyMS=999999",
+      mock_server_get_host_and_port (primary),
+      mock_server_get_host_and_port (secondary));
+   uri = mongoc_uri_new (uri_str);
+   bson_free (uri_str);
+
+   if (pooled) {
+      mongoc_topology_t *topology;
+      client_pool = mongoc_client_pool_new (uri);
+      topology = _mongoc_client_pool_get_topology (client_pool);
+      /* set a small minHeartbeatFrequency, so scans don't block for 500ms. */
+      topology->min_heartbeat_frequency_msec = minHBMS;
+      client = mongoc_client_pool_pop (client_pool);
+      /* upon popping a client, the background monitoring thread is started. */
+      /* wait for the initial server selection to finish. */
+      WAIT_UNTIL (_get_last_scan (client) > last_scan);
+   } else {
+      mongoc_server_description_t *sd;
+      client = mongoc_client_new_from_uri (uri);
+      /* set a small minHeartbeatFrequency, so scans don't block for 500ms. */
+      client->topology->min_heartbeat_frequency_msec = minHBMS;
+      sd = mongoc_client_select_server (client, false, NULL, &error);
+      ASSERT_OR_PRINT (sd, error);
+      mongoc_server_description_destroy (sd);
+   }
+   mongoc_uri_destroy (uri);
+   /* now that the initial server selection is completed, record the time. */
+   last_scan = _get_last_scan (client);
+   /* listen for transition to UNKNOWN */
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_server_changed_cb (callbacks, _server_changed);
+   if (pooled) {
+      mongoc_client_pool_set_apm_callbacks (
+         client_pool, callbacks, &when_transitioned_to_unknown);
+   } else {
+      mongoc_client_set_apm_callbacks (
+         client, callbacks, &when_transitioned_to_unknown);
+   }
+   mongoc_apm_callbacks_destroy (callbacks);
+   /* run a ping command on the primary. */
+   future = future_client_command_simple (
+      client, "db", tmp_bson ("{'ping': 1}"), read_prefs, &reply, &error);
+   request = mock_server_receives_msg (
+      primary, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+   mock_server_replies_simple (request, err_response);
+   request_destroy (request);
+   BSON_ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   bson_destroy (&reply);
+
+   if (should_mark_unknown) {
+      /* between sending the 'ping' command and returning, the server should
+       * have been marked as unknown. */
+      ASSERT_CMPINT64 (last_scan, <=, when_transitioned_to_unknown);
+      ASSERT_CMPINT64 (
+         when_transitioned_to_unknown, <=, bson_get_monotonic_time ());
+   } else {
+      ASSERT_CMPINT64 (when_transitioned_to_unknown, ==, (int64_t) 0);
+   }
+
+   if (pooled) {
+      if (should_scan) {
+         /* a scan is requested immediately. wait for the scan to finish. */
+         WAIT_UNTIL (_get_last_scan (client) > last_scan);
+      } else {
+         /* wait a short while to make sure no scan occurs. */
+         _mongoc_usleep (10 * 1000);
+      }
+   } else {
+      /* a single threaded client may mark the topology as stale. if a scan
+       * should occur, it won't be triggered until the next command. */
+      future = future_client_command_simple (
+         client, "db", tmp_bson ("{'ping': 1}"), read_prefs, &reply, &error);
+      if (should_scan || !should_mark_unknown) {
+         request = mock_server_receives_msg (
+            primary, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+      } else {
+         /* if the primary was marked as UNKNOWN, and no scan occurred, the ping
+          * goes to the secondary. */
+         request = mock_server_receives_msg (
+            secondary, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+      }
+      mock_server_replies_simple (request, "{'ok': 1}");
+      request_destroy (request);
+      BSON_ASSERT (future_get_bool (future));
+      future_destroy (future);
+      bson_destroy (&reply);
+   }
+
+   if (should_scan) {
+      ASSERT_CMPINT64 (last_scan, <, _get_last_scan (client));
+   } else {
+      ASSERT_CMPINT64 (last_scan, ==, _get_last_scan (client));
+   }
+
+   mongoc_read_prefs_destroy (read_prefs);
+   if (pooled) {
+      mongoc_client_pool_push (client_pool, client);
+      mongoc_client_pool_destroy (client_pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+   mock_server_destroy (primary);
+   mock_server_destroy (secondary);
+}
+
+
+static void
+test_request_scan_on_error ()
+{
+   _test_request_scan_on_error (false /* pooled */,
+                                "{'ok': 0, 'errmsg': 'not master'}",
+                                true /* should_scan */,
+                                true /* should_mark_unknown */);
+   _test_request_scan_on_error (false /* pooled */,
+                                "{'ok': 0, 'errmsg': 'node is recovering'}",
+                                false /* should_scan */,
+                                true /* should_mark_unknown */);
+   _test_request_scan_on_error (false /* pooled */,
+                                "{'ok': 0, 'errmsg': 'random error'}",
+                                false /* should_scan */,
+                                false /* should_mark_unknown */);
+   _test_request_scan_on_error (true /* pooled */,
+                                "{'ok': 0, 'errmsg': 'not master'}",
+                                true /* should_scan */,
+                                true /* should_mark_unknown */);
+   _test_request_scan_on_error (true /* pooled */,
+                                "{'ok': 0, 'errmsg': 'node is recovering'}",
+                                true /* should_scan */,
+                                true /* should_mark_unknown */);
+   _test_request_scan_on_error (true /* pooled */,
+                                "{'ok': 0, 'errmsg': 'random error'}",
+                                false /* should_scan */,
+                                false /* should_mark_unknown */);
+}
+
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -1779,4 +1981,6 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/handshake/updates_clustertime",
                                 test_cluster_time_updated_during_handshake);
+   TestSuite_AddMockServerTest (
+      suite, "/Topology/request_scan_on_error", test_request_scan_on_error);
 }

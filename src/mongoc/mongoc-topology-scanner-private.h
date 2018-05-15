@@ -88,7 +88,6 @@ typedef struct mongoc_topology_scanner {
    mongoc_topology_scanner_setup_err_cb_t setup_err_cb;
    mongoc_topology_scanner_cb_t cb;
    void *cb_data;
-   bool in_progress;
    const mongoc_uri_t *uri;
    mongoc_async_cmd_setup_t setup;
    mongoc_stream_initiator_t initiator;
@@ -192,6 +191,10 @@ void
 mongoc_topology_scanner_set_ssl_opts (mongoc_topology_scanner_t *ts,
                                       mongoc_ssl_opt_t *opts);
 #endif
+
+bool
+mongoc_topology_scanner_node_in_cooldown (mongoc_topology_scanner_node_t *node,
+                                          int64_t when);
 
 /* for testing. */
 mongoc_stream_t *

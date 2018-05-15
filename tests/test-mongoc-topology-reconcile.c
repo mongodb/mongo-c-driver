@@ -64,58 +64,6 @@ has_server_description (mongoc_topology_t *topology, const char *host_and_port)
 }
 
 
-void
-rs_response_to_ismaster (mock_server_t *server, bool primary, int has_tags, ...)
-{
-   va_list ap;
-   bson_string_t *hosts;
-   bool first;
-   mock_server_t *host;
-   char *ismaster_response;
-
-   hosts = bson_string_new ("");
-
-   va_start (ap, has_tags);
-
-   first = true;
-   while ((host = va_arg (ap, mock_server_t *))) {
-      if (first) {
-         first = false;
-      } else {
-         bson_string_append (hosts, ",");
-      }
-
-      bson_string_append_printf (
-         hosts, "'%s'", mock_server_get_host_and_port (host));
-   }
-
-   va_end (ap);
-
-   ismaster_response = bson_strdup_printf ("{'ok': 1, "
-                                           " 'setName': 'rs',"
-                                           " 'ismaster': %s,"
-                                           " 'secondary': %s,"
-                                           " 'tags': {%s},"
-                                           " 'minWireVersion': 2,"
-                                           " 'maxWireVersion': 5,"
-                                           " 'hosts': [%s]"
-                                           "}",
-                                           primary ? "true" : "false",
-                                           primary ? "false" : "true",
-                                           has_tags ? "'key': 'value'" : "",
-                                           hosts->str);
-
-   mock_server_auto_ismaster (server, ismaster_response);
-
-   bson_free (ismaster_response);
-   bson_string_free (hosts, true);
-}
-
-
-#define RS_RESPONSE_TO_ISMASTER(server, primary, has_tags, ...) \
-   rs_response_to_ismaster (server, primary, has_tags, __VA_ARGS__, NULL)
-
-
 bool
 selects_server (mongoc_client_t *client,
                 mongoc_read_prefs_t *read_prefs,

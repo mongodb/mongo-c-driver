@@ -814,7 +814,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
  *
  *--------------------------------------------------------------------------
  */
-static bool
+bool
 mongoc_topology_scanner_node_in_cooldown (mongoc_topology_scanner_node_t *node,
                                           int64_t when)
 {
@@ -860,7 +860,9 @@ mongoc_topology_scanner_in_cooldown (mongoc_topology_scanner_t *ts,
  *
  *      Initializes the scanner and begins a full topology check. This
  *      should be called once before calling mongoc_topology_scanner_work()
- *      repeatedly to complete the scan.
+ *      to complete the scan.
+ *
+ *      The topology mutex must be held by the caller.
  *
  *      If "obey_cooldown" is true, this is a single-threaded blocking scan
  *      that must obey the Server Discovery And Monitoring Spec's cooldownMS:
@@ -886,10 +888,6 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
    int64_t now;
 
    BSON_ASSERT (ts);
-
-   if (ts->in_progress) {
-      return;
-   }
 
    _delete_retired_nodes (ts);
 

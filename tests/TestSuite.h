@@ -575,6 +575,7 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                      BSON_FUNC);                                       \
             abort ();                                                  \
          }                                                             \
+         _mongoc_usleep (10 * 1000);                                   \
       }                                                                \
    } while (0)
 

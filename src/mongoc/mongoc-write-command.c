@@ -593,7 +593,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
           * and allow the original error to be reported. */
          if (!ret && is_retryable &&
              (error->domain == MONGOC_ERROR_STREAM ||
-              mongoc_cluster_is_not_master_error (error))) {
+                mongoc_cluster_is_not_master_or_recovering_error (error))) {
             bson_error_t ignored_error;
 
             /* each write command may be retried at most once */
