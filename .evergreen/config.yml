@@ -137,7 +137,7 @@ functions:
     - command: shell.exec
       params:
         silent: true
-        working_dir: "mongoc"
+        working_dir: "mongoc/src/libmongoc"
         script: |
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
@@ -146,7 +146,7 @@ functions:
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
-        local_file:  mongoc/doc/html/index.html
+        local_file:  mongoc/src/libmongoc/doc/html/index.html
         remote_file: ${project}/docs/libmongoc/${CURRENT_VERSION}/index.html
         bucket: mciuploads
         permissions: public-read
@@ -196,6 +196,7 @@ functions:
         working_dir: "mongoc"
         script: |
            . venv/bin/activate
+           cd src/libmongoc
 
            for doc in doc/man/*.3; do
              echo $doc
@@ -211,12 +212,12 @@ functions:
            sudo apt-get install -y awscli
            aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
 
-           sh .evergreen/man-page-image-list.sh man-page-images > man-page-images/index.html
+           sh ../../.evergreen/man-page-image-list.sh man-page-images > man-page-images/index.html
     - command: s3.put
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
-        local_file:  mongoc/man-page-images/index.html
+        local_file:  mongoc/src/libmongoc/man-page-images/index.html
         remote_file: ${project}/man-page-images/libmongoc/${CURRENT_VERSION}/index.html
         bucket: mciuploads
         permissions: public-read
