@@ -40,7 +40,7 @@ set (MONGOC_STATIC_LIBRARIES ${MONGOC_STATIC_LIBRARY} ${ZLIB_STATIC_LIBRARY} ${B
 # "-framework CoreFoundation -framework Security". Split into a CMake array
 # like "-framework CoreFoundation;-framework Security".
 set (IS_FRAMEWORK_VAR 0)
-foreach (LIB @SASL_LIBRARIES@ @SSL_LIBRARIES@ @SHM_LIB@ @ZLIB_LIBRARIES@ @SNAPPY_LIBRARIES@ @RESOLV_LIBRARIES@)
+foreach (LIB @SASL_LIBRARIES@ @SSL_LIBRARIES@ @SHM_LIBRARIES@ @ZLIB_LIBRARIES@ @SNAPPY_LIBRARIES@ @RESOLV_LIBRARIES@)
    if (LIB STREQUAL "-framework")
       set (IS_FRAMEWORK_VAR 1)
       continue ()

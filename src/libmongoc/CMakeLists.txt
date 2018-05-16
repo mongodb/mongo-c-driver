@@ -275,6 +275,7 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
          "Shared memory performance counters not supported on Mac or Windows")
    endif ()
    set (MONGOC_ENABLE_SHM_COUNTERS 1)
+   set (SHM_LIBRARIES rt)
 endif ()
 
 set (MONGOC_INTERNAL_INCLUDE_DIRS "")
@@ -504,7 +505,7 @@ if (CMAKE_USE_PTHREADS_INIT)
 endif ()
 
 set (LIBRARIES
-   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIB} ${RESOLV_LIBRARIES}
+   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} Threads::Threads
 )
 
@@ -764,7 +765,7 @@ set (libdir "\${prefix}/lib")
 
 foreach (
       FLAG
-      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIB} ${RESOLV_LIBRARIES}
+      ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
       ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES})
 
    if (IS_ABSOLUTE "${FLAG}")

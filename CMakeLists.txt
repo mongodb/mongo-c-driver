@@ -261,10 +261,6 @@ else ()
    message (STATUS "Disabling zlib compression")
 endif ()
 
-if (UNIX AND NOT APPLE AND NOT ANDROID)
-   set (SHM_LIB -lrt)
-endif ()
-
 # Ensure the default behavior: don't ignore RPATH settings.
 set (CMAKE_SKIP_BUILD_RPATH OFF)
 
