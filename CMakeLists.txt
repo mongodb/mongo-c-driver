@@ -171,20 +171,6 @@ endif ()
 
 set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
 
-if (ENABLE_MONGOC STREQUAL ON)
-   add_subdirectory (src/libmongoc)
-endif ()
-
-set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
-
-include (CPack)
-
-if (NOT ENABLE_ZLIB MATCHES "SYSTEM|AUTO|BUNDLED|OFF")
-   message (FATAL_ERROR
-      "ENABLE_ZLIB option must be SYSTEM, BUNDLED, AUTO, or OFF"
-   )
-endif ()
-
 set (ZLIB_SOURCES
    ${SOURCE_DIR}/src/zlib-1.2.11/adler32.c
    ${SOURCE_DIR}/src/zlib-1.2.11/crc32.c
@@ -203,59 +189,13 @@ set (ZLIB_SOURCES
    ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
 )
 
-# Disable warnings on bundled zlib source files.
-set_source_files_properties (${ZLIB_SOURCES} PROPERTIES COMPILE_FLAGS -w)
-
-# Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
-# will look for zconf.h in that location.
-configure_file (
-   "${SOURCE_DIR}/src/zlib-1.2.11/zconf.h.in"
-   "${PROJECT_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
-   COPYONLY
-)
-if (ENABLE_ZLIB MATCHES "SYSTEM|AUTO")
-   message (STATUS "Searching for zlib CMake packages")
-   include (FindZLIB)
-   if (ZLIB_FOUND)
-      message ("--   zlib found version \"${ZLIB_VERSION_STRING}\"")
-      message ("--   zlib include path \"${ZLIB_INCLUDE_DIRS}\"")
-      message ("--   zlib libraries \"${ZLIB_LIBRARIES}\"")
-      include_directories ("${ZLIB_INCLUDE_DIRS}")
-   else ()
-      if (ENABLE_ZLIB STREQUAL "SYSTEM")
-         message (FATAL_ERROR
-            "Unable to find system zlib package. Either specify the zlib \
-            location by setting ZLIB_ROOT, or else set ENABLE_ZLIB=BUNDLED or \
-            set ENABLE_ZLIB=OFF."
-         )
-      endif ()
-      set (ZLIB_LIBRARIES "")
-   endif ()
+if (ENABLE_MONGOC STREQUAL ON)
+   add_subdirectory (src/libmongoc)
 endif ()
 
-if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
-        OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
-   message (STATUS "Enabling zlib compression (bundled)")
-   set (SOURCES ${SOURCES} ${ZLIB_SOURCES})
+set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 
-   list (
-      APPEND
-      MONGOC_INTERNAL_INCLUDE_DIRS
-      "${SOURCE_DIR}/src/zlib-1.2.11"
-      "${PROJECT_BINARY_DIR}/src/zlib-1.2.11"
-   )
-endif ()
-
-if (NOT ENABLE_ZLIB STREQUAL "OFF")
-   # At this point the system zlib was found, or the bundled library was used
-   include (CheckIncludeFiles)
-   check_include_files ("unistd.h" HAVE_UNISTD_H)
-   check_include_files ("stdarg.h" HAVE_STDARG_H)
-   set (MONGOC_ENABLE_COMPRESSION 1)
-   set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
-else ()
-   message (STATUS "Disabling zlib compression")
-endif ()
+include (CPack)
 
 # Ensure the default behavior: don't ignore RPATH settings.
 set (CMAKE_SKIP_BUILD_RPATH OFF)
