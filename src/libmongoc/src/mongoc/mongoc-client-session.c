@@ -24,6 +24,27 @@
 
 #define SESSION_NEVER_USED (-1)
 
+
+static void
+txn_opts_set (mongoc_transaction_opt_t *opts,
+              const mongoc_read_concern_t *read_concern,
+              const mongoc_write_concern_t *write_concern,
+              const mongoc_read_prefs_t *read_prefs)
+{
+   if (read_concern) {
+      mongoc_transaction_opts_set_read_concern (opts, read_concern);
+   }
+
+   if (write_concern) {
+      mongoc_transaction_opts_set_write_concern (opts, write_concern);
+   }
+
+   if (read_prefs) {
+      mongoc_transaction_opts_set_read_prefs (opts, read_prefs);
+   }
+}
+
+
 static void
 txn_opts_cleanup (mongoc_transaction_opt_t *opts)
 {
@@ -153,8 +174,8 @@ mongoc_transaction_opts_destroy (mongoc_transaction_opt_t *opts)
 
 
 void
-mongoc_transaction_set_read_concern (mongoc_transaction_opt_t *opts,
-                                     const mongoc_read_concern_t *read_concern)
+mongoc_transaction_opts_set_read_concern (
+   mongoc_transaction_opt_t *opts, const mongoc_read_concern_t *read_concern)
 {
    BSON_ASSERT (opts);
    mongoc_read_concern_destroy (opts->read_concern);
@@ -163,7 +184,7 @@ mongoc_transaction_set_read_concern (mongoc_transaction_opt_t *opts,
 
 
 const mongoc_read_concern_t *
-mongoc_transaction_get_read_concern (const mongoc_transaction_opt_t *opts)
+mongoc_transaction_opts_get_read_concern (const mongoc_transaction_opt_t *opts)
 {
    BSON_ASSERT (opts);
    return opts->read_concern;
@@ -171,7 +192,7 @@ mongoc_transaction_get_read_concern (const mongoc_transaction_opt_t *opts)
 
 
 void
-mongoc_transaction_set_write_concern (
+mongoc_transaction_opts_set_write_concern (
    mongoc_transaction_opt_t *opts, const mongoc_write_concern_t *write_concern)
 {
    BSON_ASSERT (opts);
@@ -179,8 +200,9 @@ mongoc_transaction_set_write_concern (
    opts->write_concern = mongoc_write_concern_copy (write_concern);
 }
 
+
 const mongoc_write_concern_t *
-mongoc_transaction_get_write_concern (const mongoc_transaction_opt_t *opts)
+mongoc_transaction_opts_get_write_concern (const mongoc_transaction_opt_t *opts)
 {
    BSON_ASSERT (opts);
    return opts->write_concern;
@@ -188,8 +210,8 @@ mongoc_transaction_get_write_concern (const mongoc_transaction_opt_t *opts)
 
 
 void
-mongoc_transaction_set_read_prefs (mongoc_transaction_opt_t *opts,
-                                   const mongoc_read_prefs_t *read_prefs)
+mongoc_transaction_opts_set_read_prefs (mongoc_transaction_opt_t *opts,
+                                        const mongoc_read_prefs_t *read_prefs)
 {
    BSON_ASSERT (opts);
    mongoc_read_prefs_destroy (opts->read_prefs);
@@ -198,7 +220,7 @@ mongoc_transaction_set_read_prefs (mongoc_transaction_opt_t *opts,
 
 
 const mongoc_read_prefs_t *
-mongoc_transaction_get_read_prefs (const mongoc_transaction_opt_t *opts)
+mongoc_transaction_opts_get_read_prefs (const mongoc_transaction_opt_t *opts)
 {
    BSON_ASSERT (opts);
    return opts->read_prefs;
@@ -284,8 +306,10 @@ mongoc_session_opts_set_default_transaction_opts (
    BSON_ASSERT (opts);
    BSON_ASSERT (txn_opts);
 
-   txn_opts_cleanup (&opts->default_txn_opts);
-   txn_opts_copy (txn_opts, &opts->default_txn_opts);
+   txn_opts_set (&opts->default_txn_opts,
+                 txn_opts->read_concern,
+                 txn_opts->write_concern,
+                 txn_opts->read_prefs);
 
    EXIT;
 }
@@ -335,6 +359,7 @@ mongoc_session_opts_destroy (mongoc_session_opt_t *opts)
 
    BSON_ASSERT (opts);
 
+   txn_opts_cleanup (&opts->default_txn_opts);
    bson_free (opts);
 
    EXIT;
@@ -540,8 +565,17 @@ _mongoc_client_session_new (mongoc_client_t *client,
    session->client_session_id = client_session_id;
    bson_init (&session->cluster_time);
 
+   txn_opts_set (&session->opts.default_txn_opts,
+                 client->read_concern,
+                 client->write_concern,
+                 client->read_prefs);
+
    if (opts) {
       _mongoc_session_opts_copy (opts, &session->opts);
+      txn_opts_set (&session->opts.default_txn_opts,
+                    opts->default_txn_opts.read_concern,
+                    opts->default_txn_opts.write_concern,
+                    opts->default_txn_opts.read_prefs);
    } else {
       /* sessions are causally consistent by default */
       session->opts.flags = MONGOC_SESSION_CAUSAL_CONSISTENCY;
@@ -648,7 +682,7 @@ mongoc_client_session_advance_operation_time (mongoc_client_session_t *session,
 
 bool
 mongoc_client_session_start_transaction (mongoc_client_session_t *session,
-                                         mongoc_transaction_opt_t *opts,
+                                         const mongoc_transaction_opt_t *opts,
                                          bson_error_t *error)
 {
    ENTRY;
@@ -664,8 +698,16 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
       RETURN (false);
    }
 
+   txn_opts_set (&session->txn.opts,
+                 session->opts.default_txn_opts.read_concern,
+                 session->opts.default_txn_opts.write_concern,
+                 session->opts.default_txn_opts.read_prefs);
+
    if (opts) {
-      txn_opts_copy (opts, &session->txn.opts);
+      txn_opts_set (&session->txn.opts,
+                    opts->read_concern,
+                    opts->write_concern,
+                    opts->read_prefs);
    }
 
    session->txn.state = MONGOC_TRANSACTION_STARTING;
@@ -886,6 +928,13 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
    ENTRY;
 
    BSON_ASSERT (session);
+
+   if (_mongoc_client_session_in_txn (session)) {
+      mongoc_client_session_abort_transaction (session, NULL);
+   }
+
+   txn_opts_cleanup (&session->opts.default_txn_opts);
+   txn_opts_cleanup (&session->txn.opts);
 
    _mongoc_client_unregister_session (session->client, session);
    _mongoc_client_push_server_session (session->client,

@@ -10,11 +10,11 @@ Synopsis
 
   bool
   mongoc_client_session_start_transaction (mongoc_client_session_t *session,
-                                           mongoc_transaction_opt_t *opts,
+                                           const mongoc_transaction_opt_t *opts,
                                            bson_error_t *error);
 
 
-Start a multi-document transaction for all following operations in this session. Any options provided in ``opts`` override options passed to :symbol:`mongoc_session_opts_set_default_transaction_opts`.
+Start a multi-document transaction for all following operations in this session. Any options provided in ``opts`` override options passed to :symbol:`mongoc_session_opts_set_default_transaction_opts`, and options inherited from the :symbol:`mongoc_client_t`. The ``opts`` argument is copied and can be freed after calling this function.
 
 The transaction must be completed with :symbol:`mongoc_client_session_commit_transaction` or :symbol:`mongoc_client_session_abort_transaction`. An in-progress transaction is automatically aborted by :symbol:`mongoc_client_session_destroy`.
 
