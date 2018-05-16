@@ -30,6 +30,10 @@ set (MONGOC_ENABLE_COMPRESSION 0)
 set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
 
+if (ENABLE_COVERAGE)
+   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
+endif ()
+
 if (NOT ENABLE_SSL STREQUAL OFF)
    # Try OpenSSL automatically everywhere but Mac and Windows.
    if (ENABLE_SSL STREQUAL "OPENSSL"

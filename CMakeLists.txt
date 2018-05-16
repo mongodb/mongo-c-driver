@@ -179,10 +179,6 @@ set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 
 include (CPack)
 
-if (ENABLE_COVERAGE)
-   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
-endif ()
-
 if (NOT ENABLE_ZLIB MATCHES "SYSTEM|AUTO|BUNDLED|OFF")
    message (FATAL_ERROR
       "ENABLE_ZLIB option must be SYSTEM, BUNDLED, AUTO, or OFF"
