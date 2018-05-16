@@ -16,7 +16,7 @@ CONFIGURE_FLAGS="\
    -DCMAKE_PREFIX_PATH=${INSTALL_DIR} \
    -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
    -DENABLE_MAINTAINER_FLAGS=ON \
-   -DENABLE_BSON=BUNDLED"
+   -DENABLE_BSON=ON"
 BUILD_FLAGS="/m"  # Number of concurrent processes. No value=# of cpus
 CMAKE="/cygdrive/c/cmake/bin/cmake"
 CC=${CC:-"Visual Studio 14 2015 Win64"}

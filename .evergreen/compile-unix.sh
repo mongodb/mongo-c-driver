@@ -60,7 +60,7 @@ echo "OS: $OS"
 # CMAKE_SKIP_RPATH avoids hardcoding absolute paths to dependency libraries.
 DEBUG_AND_RELEASE_FLAGS="\
    -DCMAKE_SKIP_RPATH=TRUE \
-   -DENABLE_BSON=BUNDLED \
+   -DENABLE_BSON=ON \
    -DENABLE_MAN_PAGES=OFF \
    -DENABLE_HTML_DOCS=OFF \
    -DENABLE_MAINTAINER_FLAGS=ON \

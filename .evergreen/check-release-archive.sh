@@ -17,7 +17,7 @@ sphinx-build --version
 DIR=$(dirname $0)
 . $DIR/find-cmake.sh
 
-$CMAKE -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED -DENABLE_BSON=BUNDLED .
+$CMAKE -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED -DENABLE_BSON=ON .
 make -j 8 distcheck
 
 # Check that docs were included, but sphinx temp files weren't.

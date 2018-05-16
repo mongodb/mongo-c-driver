@@ -34,7 +34,7 @@ option (ENABLE_TRACING "Turn on verbose debug output" OFF)
 option (ENABLE_COVERAGE "Turn on compile options for lcov" OFF)
 set (ENABLE_SHM_COUNTERS AUTO CACHE STRING "Enable memory performance counters that use shared memory on Linux. Set to ON/AUTO/OFF, default AUTO.")
 set (ENABLE_MONGOC ON CACHE STRING "Whether to build libmongoc. Set to ON/OFF, default ON.")
-set (ENABLE_BSON AUTO CACHE STRING "Whether to build libbson. Set to ON/AUTO/OFF, default AUTO.")
+set (ENABLE_BSON AUTO CACHE STRING "Whether to build libbson. Set to ON/AUTO/SYSTEM, default AUTO.")
 set (ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support. Set to ON/AUTO/OFF, default AUTO.")
 set (ENABLE_ZLIB AUTO CACHE STRING "Enable zlib support")
 option (ENABLE_MAN_PAGES "Build MongoDB C Driver manual pages." OFF)
@@ -87,15 +87,11 @@ if (NOT ENABLE_MONGOC MATCHES "ON|OFF")
    message (FATAL_ERROR "ENABLE_MONGOC option must be ON or OFF")
 endif ()
 
-if (NOT ENABLE_BSON MATCHES "ON|AUTO|OFF|SYSTEM|BUNDLED")
-   message (FATAL_ERROR "ENABLE_BSON option must be ON, AUTO, or OFF")
+if (NOT ENABLE_BSON MATCHES "ON|AUTO|SYSTEM")
+   message (FATAL_ERROR "ENABLE_BSON option must be ON, AUTO, or SYSTEM")
 endif ()
 
-if (ENABLE_MONGOC STREQUAL OFF AND ENABLE_BSON MATCHES "OFF|SYSTEM")
-   message (FATAL_ERROR "At least one of ENABLE_BSON and ENABLE_MONGOC must be ON")
-endif ()
-
-if (NOT ENABLE_BSON STREQUAL BUNDLED)
+if (ENABLE_BSON STREQUAL SYSTEM)
    # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
    # but you should use the standard CMAKE_PREFIX_PATH instead.
    message (STATUS "Searching for libbson CMake packages")
@@ -112,6 +108,8 @@ if (NOT ENABLE_BSON STREQUAL BUNDLED)
       message ("--   libbson found version \"${BSON_VERSION}\"")
       message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
       message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
+      message ("--   disabling test-libmongoc since using system libbson")
+      SET (ENABLE_TESTS OFF)
 
       if (ENABLE_STATIC MATCHES "ON|AUTO")
          find_package (libbson-static-1.0
@@ -156,7 +154,7 @@ if (NOT BSON_LIBRARIES)
 endif ()
 
 # This allows skipping all the non-bson components
-if (ENABLE_MONGOC STREQUAL OFF OR ENABLE_BSON STREQUAL ONLY)
+if (ENABLE_MONGOC STREQUAL OFF)
    return ()
 endif ()
 
@@ -295,7 +293,7 @@ add_custom_command (OUTPUT ${DIST_FILE}
       ${ALL_DIST} ${dist_generated_depends}
 )
 
-if (ENABLE_BSON MATCHES "ON|BUNDLED" AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
+if (ENABLE_BSON MATCHES "ON|AUTO" AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
    # Since our 'dist' implementation does not add top-level targets for every
    # file to be included, we declare a dependency on the 'mongo-doc' target so
    # that documentation is built before the distribution tarball is generated.
