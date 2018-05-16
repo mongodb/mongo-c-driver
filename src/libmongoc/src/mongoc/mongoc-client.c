@@ -1643,7 +1643,8 @@ mongoc_client_command_simple (mongoc_client_t *client,
     * configuration. The generic command method SHOULD allow an optional read
     * preference argument."
     */
-   server_stream = mongoc_cluster_stream_for_reads (cluster, read_prefs, error);
+   server_stream =
+      mongoc_cluster_stream_for_reads (cluster, read_prefs, NULL, error);
 
    if (server_stream) {
       ret = _mongoc_client_command_with_stream (
@@ -1766,8 +1767,8 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    } else if (parts.is_write_command) {
       server_stream = mongoc_cluster_stream_for_writes (cluster, error);
    } else {
-      server_stream =
-         mongoc_cluster_stream_for_reads (cluster, default_prefs, error);
+      server_stream = mongoc_cluster_stream_for_reads (
+         cluster, default_prefs, read_write_opts.client_session, error);
    }
 
    if (!server_stream) {

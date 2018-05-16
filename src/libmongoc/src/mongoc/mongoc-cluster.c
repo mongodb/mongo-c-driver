@@ -2050,10 +2050,17 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
+                                 const mongoc_client_session_t *cs,
                                  bson_error_t *error)
 {
+   const mongoc_read_prefs_t *prefs_override = read_prefs;
+
+   if (_mongoc_client_session_in_txn (cs)) {
+      prefs_override = cs->txn.opts.read_prefs;
+   }
+
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_READ, read_prefs, error);
+      cluster, MONGOC_SS_READ, prefs_override, error);
 }
 
 /*

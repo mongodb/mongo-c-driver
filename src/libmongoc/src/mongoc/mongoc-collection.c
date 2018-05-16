@@ -361,6 +361,10 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
 
    bson_init (&cursor_opts);
    _mongoc_cursor_flags_to_opts (flags, &cursor_opts, &slave_ok);
+   if (opts) {
+      bson_concat (&cursor_opts, opts);
+   }
+
    created_command = _make_agg_cmd (
       collection->collection, pipeline, opts, &command, &create_cmd_err);
    cursor = _mongoc_cursor_cmd_new (collection->client,
@@ -401,8 +405,11 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
          GOTO (done);
       }
    } else {
-      server_stream = mongoc_cluster_stream_for_reads (
-         &collection->client->cluster, read_prefs, &cursor->error);
+      server_stream =
+         mongoc_cluster_stream_for_reads (&collection->client->cluster,
+                                          cursor->read_prefs,
+                                          cursor->client_session,
+                                          &cursor->error);
 
       if (!server_stream) {
          GOTO (done);
@@ -429,10 +436,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
             has_out_key |= bson_iter_find (&kiter, "$out");
          }
       }
-   }
-
-   if (opts) {
-      bson_concat (&cursor->opts, opts);
    }
 
    has_write_concern = bson_has_field (&cursor->opts, "writeConcern");
@@ -1283,8 +1286,8 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    bson_append_document_end (&ar, &doc);
    bson_append_array_end (&cmd, &ar);
 
-   server_stream = mongoc_cluster_stream_for_reads (
-      &collection->client->cluster, NULL, error);
+   server_stream =
+      mongoc_cluster_stream_for_writes (&collection->client->cluster, error);
 
    if (!server_stream) {
       GOTO (done);

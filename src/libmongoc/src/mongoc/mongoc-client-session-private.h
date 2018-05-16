@@ -52,6 +52,7 @@ typedef enum {
    MONGOC_TRANSACTION_STARTING,
    MONGOC_TRANSACTION_IN_PROGRESS,
    MONGOC_TRANSACTION_COMMITTED,
+   MONGOC_TRANSACTION_COMMITTED_EMPTY,
    MONGOC_TRANSACTION_ABORTED,
 } mongoc_transaction_state_t;
 
@@ -107,14 +108,20 @@ _mongoc_client_session_from_iter (mongoc_client_t *client,
                                   bson_error_t *error);
 
 bool
-_mongoc_client_session_append_txn (mongoc_client_session_t *session,
-                                   bson_t *cmd,
-                                   bson_error_t *error);
-
-bool
 _mongoc_client_session_in_txn (const mongoc_client_session_t *session);
 
 bool
 _mongoc_client_session_txn_in_progress (const mongoc_client_session_t *session);
+
+bool
+_mongoc_client_session_append_txn (mongoc_client_session_t *session,
+                                   bson_t *cmd,
+                                   bson_error_t *error);
+
+void
+_mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
+                                            const bson_t *user_read_concern,
+                                            bool is_read_command,
+                                            bson_t *cmd);
 
 #endif /* MONGOC_CLIENT_SESSION_PRIVATE_H */

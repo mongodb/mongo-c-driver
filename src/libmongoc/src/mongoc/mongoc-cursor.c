@@ -18,6 +18,7 @@
 #include "mongoc-cursor.h"
 #include "mongoc-cursor-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-client-session-private.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-error.h"
 #include "mongoc-log.h"
@@ -290,9 +291,15 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          opts, &cursor->opts, "serverId", "sessionId", NULL);
    }
 
-   cursor->read_prefs = read_prefs
-                           ? mongoc_read_prefs_copy (read_prefs)
-                           : mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   if (cursor->explicit_session &&
+       _mongoc_client_session_in_txn (cursor->client_session)) {
+      cursor->read_prefs =
+         mongoc_read_prefs_copy (cursor->client_session->txn.opts.read_prefs);
+   } else if (read_prefs) {
+      cursor->read_prefs = mongoc_read_prefs_copy (read_prefs);
+   } else {
+      cursor->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   }
 
    cursor->read_concern = read_concern ? mongoc_read_concern_copy (read_concern)
                                        : mongoc_read_concern_new ();
@@ -590,8 +597,10 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
                                            true /* reconnect_ok */,
                                            &cursor->error);
    } else {
-      server_stream = mongoc_cluster_stream_for_reads (
-         &cursor->client->cluster, cursor->read_prefs, &cursor->error);
+      server_stream = mongoc_cluster_stream_for_reads (&cursor->client->cluster,
+                                                       cursor->read_prefs,
+                                                       cursor->client_session,
+                                                       &cursor->error);
 
       if (server_stream) {
          cursor->server_id = server_stream->sd->id;
