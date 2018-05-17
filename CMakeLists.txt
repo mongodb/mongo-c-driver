@@ -187,10 +187,6 @@ set (ZLIB_SOURCES
    ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
 )
 
-if (ENABLE_MONGOC STREQUAL ON)
-   add_subdirectory (src/libmongoc)
-endif ()
-
 set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 
 include (CPack)
@@ -227,6 +223,9 @@ if (APPLE)
    add_definitions (-Wno-deprecated-declarations)
 endif ()
 
+if (ENABLE_MONGOC STREQUAL ON)
+   add_subdirectory (src/libmongoc)
+endif ()
 
 if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
    find_package (Sphinx REQUIRED)
