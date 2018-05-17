@@ -359,7 +359,7 @@ test_stream_tls_error_install (TestSuite *suite)
    TestSuite_Add (suite, "/TLS/hangup", test_mongoc_tls_hangup);
 #endif
 
-/* CDRIVER-2222 this should be reenabled for Apple Secure Transport too */
+/* see CDRIVER-2222 this occasionally stalls for a few 100ms on Mac */
 #if !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    TestSuite_Add (
       suite, "/TLS/handshake_stall", test_mongoc_tls_handshake_stall);
