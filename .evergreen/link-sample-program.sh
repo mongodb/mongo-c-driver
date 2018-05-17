@@ -167,11 +167,9 @@ else
   fi
 fi
 
-cd $SRCROOT
-
 if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
   # Test our CMake package config file with CMake's find_package command.
-  EXAMPLE_DIR=$SRCROOT/examples/cmake/find_package
+  EXAMPLE_DIR=$SRCROOT/src/libmongoc/examples/cmake/find_package
 
   if [ "$LINK_STATIC" ]; then
     EXAMPLE_DIR="${EXAMPLE_DIR}_static"
@@ -183,7 +181,7 @@ if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
 else
   # Test our pkg-config file.
   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
-  cd $SRCROOT/examples
+  cd $SRCROOT/src/libmongoc/examples
 
   if [ "$LINK_STATIC" ]; then
     echo "pkg-config output:"
