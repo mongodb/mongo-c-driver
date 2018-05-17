@@ -76,7 +76,7 @@ if not exist %INSTALL_DIR%\lib\mongoc-static-1.0.lib (
 cd %SRCROOT%
 
 rem Test our CMake package config file with CMake's find_package command.
-set EXAMPLE_DIR=%SRCROOT%\examples\cmake\find_package
+set EXAMPLE_DIR=%SRCROOT%\src\libmongoc\examples\cmake\find_package
 
 if "%LINK_STATIC%"=="1" (
   set EXAMPLE_DIR="%EXAMPLE_DIR%_static"

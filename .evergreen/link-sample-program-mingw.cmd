@@ -55,7 +55,7 @@ if not exist %INSTALL_DIR%\lib\libmongoc-static-1.0.a (
 cd %SRCROOT%
 
 rem Test our pkg-config file
-set EXAMPLE_DIR=%SRCROOT%\examples\
+set EXAMPLE_DIR=%SRCROOT%\src\libmongoc\examples\
 cd %EXAMPLE_DIR%
 
 rem Proceed from here once we have pkg-config on Windows
