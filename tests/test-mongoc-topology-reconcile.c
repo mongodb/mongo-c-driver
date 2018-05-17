@@ -522,8 +522,8 @@ _test_topology_reconcile_retire (bool pooled)
     * step 4 & 5: the primary tells the scanner to retire the secondary node */
    future = future_client_read_command_with_opts (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error);
-   request = mock_server_receives_command (
-      primary, "admin", MONGOC_QUERY_NONE, "{'ping': 1}");
+   request = mock_server_receives_msg (
+      primary, MONGOC_QUERY_NONE, tmp_bson("{'ping': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
@@ -661,8 +661,8 @@ _test_topology_reconcile_add (bool pooled)
     * step 4 & 5: we add the secondary to the topology description */
    future = future_client_read_command_with_opts (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error);
-   request = mock_server_receives_command (
-      primary, "admin", MONGOC_QUERY_NONE, "{'ping': 1}");
+   request = mock_server_receives_msg (
+      primary, MONGOC_QUERY_NONE, tmp_bson("{'ping': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
