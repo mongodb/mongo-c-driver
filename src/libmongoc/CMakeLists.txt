@@ -342,8 +342,6 @@ if (ENABLE_SHM_COUNTERS STREQUAL "ON")
    set (SHM_LIBRARIES rt)
 endif ()
 
-set (MONGOC_INTERNAL_INCLUDE_DIRS "")
-
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
