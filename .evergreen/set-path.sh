@@ -5,10 +5,10 @@ set_path ()
 {
    case "$OS" in
       cygwin*)
-         export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
-         export PATH=$PATH:`pwd`/tests:`pwd`/Release:`pwd`/src/libbson/Release
-         chmod +x ./Debug/* src/libbson/Debug/* || true
-         chmod +x ./Release/* src/libbson/Release/* || true
+         export PATH=$PATH:`pwd`/src/libbson/Debug
+         export PATH=$PATH:`pwd`/src/libbson/Release
+         chmod +x src/libmongoc/Debug/* src/libbson/Debug/* || true
+         chmod +x src/libmongoc/Release/* src/libbson/Release/* || true
          ;;
 
       darwin)

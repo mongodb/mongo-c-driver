@@ -18,8 +18,8 @@ fi
 
 case "$OS" in
    cygwin*)
-      export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug
-      chmod +x ./Debug/* src/libbson/Debug/* || true
+      export PATH=$PATH:`pwd`/src/libbson/Debug
+      chmod +x src/libmongoc/Debug/* src/libbson/Debug/* || true
       ;;
 esac
 

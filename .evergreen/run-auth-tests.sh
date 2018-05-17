@@ -38,8 +38,8 @@ DIR=$(dirname $0)
 
 case "$OS" in
    cygwin*)
-      PING="./Debug/src/libmongoc/mongoc-ping.exe"
-      TEST_GSSAPI="./Debug/src/libmongoc/test-mongoc-gssapi.exe"
+      PING="./src/libmongoc/Debug/mongoc-ping.exe"
+      TEST_GSSAPI="./src/libmongoc/Debug/test-mongoc-gssapi.exe"
       IP_ADDR=`getent hosts $AUTH_HOST | head -n 1 | awk '{print $1}'`
       ;;
 
