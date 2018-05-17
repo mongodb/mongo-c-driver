@@ -58,7 +58,7 @@ if [ "$CC" = "mingw" ]; then
       echo "ERROR - DNS tests not implemented for MinGW yet"
       exit 1
    fi
-   chmod +x ./src/libmongoc/Debug/test-libmongoc.exe
+   chmod +x ./src/libmongoc/test-libmongoc.exe
    cmd.exe /c .evergreen\\run-tests-mingw.bat
    exit 0
 fi
