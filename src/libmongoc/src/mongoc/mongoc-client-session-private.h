@@ -33,7 +33,6 @@ struct _mongoc_transaction_opt_t {
 typedef enum {
    MONGOC_SESSION_NO_OPTS = 0,
    MONGOC_SESSION_CAUSAL_CONSISTENCY = (1 << 0),
-   MONGOC_SESSION_AUTO_START_TRANSACTION = (1 << 1),
 } mongoc_session_flag_t;
 
 struct _mongoc_session_opt_t {

@@ -72,14 +72,6 @@ MONGOC_EXPORT (bool)
 mongoc_session_opts_get_causal_consistency (const mongoc_session_opt_t *opts);
 
 MONGOC_EXPORT (void)
-mongoc_session_opts_set_auto_start_transaction (mongoc_session_opt_t *opts,
-                                                bool auto_start_transaction);
-
-MONGOC_EXPORT (bool)
-mongoc_session_opts_get_auto_start_transaction (
-   const mongoc_session_opt_t *opts);
-
-MONGOC_EXPORT (void)
 mongoc_session_opts_set_default_transaction_opts (
    mongoc_session_opt_t *opts, const mongoc_transaction_opt_t *txn_opts);
 
