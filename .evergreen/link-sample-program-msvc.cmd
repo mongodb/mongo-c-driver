@@ -85,8 +85,8 @@ if "%LINK_STATIC%"=="1" (
 cd %EXAMPLE_DIR%
 
 if "%ENABLE_SSL%"=="1" (
-  cp ..\..\..\tests\x509gen\client.pem .
-  cp ..\..\..\tests\x509gen\ca.pem .
+  cp ..\..\..\src\libmongoc\tests\x509gen\client.pem .
+  cp ..\..\..\src\libmongoc\tests\x509gen\ca.pem .
   set MONGODB_EXAMPLE_URI="mongodb://localhost/?ssl=true&sslclientcertificatekeyfile=client.pem&sslcertificateauthorityfile=ca.pem&sslallowinvalidhostnames=true"
 )
 

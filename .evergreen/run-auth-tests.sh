@@ -75,7 +75,7 @@ if [ $SSL -eq 1 ]; then
    # FIXME: CDRIVER-2008
    if [ "${OS%_*}" != "cygwin" ]; then
       echo "Authenticating using X.509"
-      $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${AUTH_HOST}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=./tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true&${C_TIMEOUT}"
+      $PING "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US@${AUTH_HOST}/?ssl=true&authMechanism=MONGODB-X509&sslClientCertificateKeyFile=./src/libmongoc/tests/x509gen/legacy-x509.pem&sslCertificateAuthorityFile=src/libmongoc/tests/x509gen/legacy-ca.crt&sslAllowInvalidHostnames=true&${C_TIMEOUT}"
    fi
    if [ "${OBSOLETE_TLS}" != "true" ]; then
       echo "Connecting to Atlas Free Tier"

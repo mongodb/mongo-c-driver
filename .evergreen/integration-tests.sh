@@ -48,7 +48,7 @@ if [ ! -z "$AUTHSOURCE" ]; then
 fi
 
 if [ "$SSL" != "nossl" ]; then
-   cp -f tests/x509gen/* $MONGO_ORCHESTRATION_HOME/lib/
+   cp -f src/libmongoc/tests/x509gen/* $MONGO_ORCHESTRATION_HOME/lib/
    # find print0 and xargs -0 not available on Solaris. Lets hope for good paths
    find orchestration_configs -name \*.json | xargs perl -p -i -e "s|/tmp/orchestration-home|$MONGO_ORCHESTRATION_HOME/lib|g"
    ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-ssl"
