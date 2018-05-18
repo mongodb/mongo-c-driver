@@ -232,7 +232,6 @@ if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
    add_custom_target (doc
       ALL
       DEPENDS
-      $<$<STREQUAL:"${ENABLE_BSON}","BUNDLED">:bson-doc>
       $<$<STREQUAL:"${ENABLE_BSON}","ON">:bson-doc>
       $<$<STREQUAL:"${ENABLE_MONGOC}","ON">:mongoc-doc>
    )
