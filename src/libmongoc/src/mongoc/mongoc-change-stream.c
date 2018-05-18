@@ -35,6 +35,44 @@
       }                                                               \
    } while (0);
 
+
+/* the caller knows either a client or server error has occurred.
+ * `reply` contains the server reply or an empty document. */
+static bool
+_is_resumable_error (const bson_t *reply)
+{
+   const char *msg = "";
+   uint32_t code;
+
+   /* Change Streams Spec resumable criteria: "any error encountered which is
+    * not a server error (e.g. a timeout error or network error)" */
+   if (bson_empty (reply)) {
+      return true;
+   }
+
+   if (!_mongoc_parse_error_reply (reply, false /* check_wce */, &code, &msg)) {
+      return true;
+   }
+
+   /* Change Streams Spec resumable criteria: "a server error response with an
+    * error message containing the substring 'not master' or 'node is
+    * recovering' */
+   if (strstr (msg, "not master") || strstr (msg, "node is recovering")) {
+      return true;
+   }
+
+   /* Change Streams Spec resumable criteria: "any server error response from a
+    * getMore command excluding those containing the following error codes" */
+   switch (code) {
+   case 11601: /* Interrupted */
+   case 136:   /* CappedPositionLost */
+   case 237:   /* CursorKilled */
+   case 0:     /* error code omitted */
+      return false;
+   default:
+      return true;
+   }
+}
 /* Construct the aggregate command in cmd:
  * { aggregate: collname, pipeline: [], cursor: { batchSize: x } } */
 static void
@@ -321,31 +359,7 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
          goto end;
       }
 
-      /* Change Streams Spec: An error is resumable if it is not a server error,
-       * or if it has error code 43 (cursor not found) or is "not master" */
-      if (!bson_empty (err_doc)) {
-         /* This is a server error */
-         bson_iter_t err_iter;
-         if (bson_iter_init_find (&err_iter, err_doc, "errmsg") &&
-             BSON_ITER_HOLDS_UTF8 (&err_iter)) {
-            uint32_t len;
-            const char *errmsg = bson_iter_utf8 (&err_iter, &len);
-            if (strncmp (errmsg, "not master", len) == 0) {
-               resumable = true;
-            }
-         }
-
-         if (bson_iter_init_find (&err_iter, err_doc, "code") &&
-             BSON_ITER_HOLDS_INT (&err_iter)) {
-            if (bson_iter_as_int64 (&err_iter) == 43) {
-               resumable = true;
-            }
-         }
-      } else {
-         /* This is a client error */
-         resumable = true;
-      }
-
+      resumable = _is_resumable_error (err_doc);
       if (resumable) {
          /* recreate the cursor */
          mongoc_cursor_destroy (stream->cursor);

@@ -593,7 +593,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
           * and allow the original error to be reported. */
          if (!ret && is_retryable &&
              (error->domain == MONGOC_ERROR_STREAM ||
-                mongoc_cluster_is_not_master_or_recovering_error (error))) {
+              _mongoc_write_is_retryable_error (&reply))) {
             bson_error_t ignored_error;
 
             /* each write command may be retried at most once */
@@ -1447,4 +1447,35 @@ _mongoc_write_result_complete (
    }
 
    RETURN (!result->failed && result->error.code == 0);
+}
+
+bool
+_mongoc_write_is_retryable_error (const bson_t *reply)
+{
+   const char *msg = "";
+   uint32_t code;
+   if (!_mongoc_parse_error_reply (reply, true /* check_wce */, &code, &msg)) {
+      return false;
+   }
+
+   switch (code) {
+   case 11600: /* InterruptedAtShutdown */
+   case 11602: /* InterruptedDueToReplStateChange */
+   case 10107: /* NotMaster */
+   case 13435: /* NotMasterNoSlaveOk */
+   case 13436: /* NotMasterOrSecondary */
+   case 189:   /* PrimarySteppedDown */
+   case 91:    /* ShutdownInProgress */
+   case 64:    /* WriteConcernFailed */
+   case 7:     /* HostNotFound */
+   case 6:     /* HostUnreachable */
+   case 89:    /* NetworkTimeout */
+   case 9001:  /* SocketException */
+      return true;
+   default:
+      if (strstr (msg, "not master") || strstr (msg, "node is recovering")) {
+         return true;
+      }
+      return false;
+   }
 }

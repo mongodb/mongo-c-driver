@@ -540,6 +540,114 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
    mongoc_collection_destroy (coll);
 }
 
+static void
+_test_getmore_error (const char *server_reply,
+                     bool should_resume,
+                     bool resume_kills_cursor)
+{
+   mock_server_t *server;
+   request_t *request;
+   future_t *future;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   const bson_t *next_doc = NULL;
+
+   server = mock_server_with_autoismaster (5);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   coll = mongoc_client_get_collection (client, "db", "coll");
+   future = future_collection_watch (coll, tmp_bson ("{}"), NULL);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK, "{ 'aggregate': 'coll' }");
+   mock_server_replies_simple (
+      request,
+      "{'cursor': {'id': 123, 'ns': 'db.coll','firstBatch': []},'ok': 1 }");
+   stream = future_get_mongoc_change_stream_ptr (future);
+   BSON_ASSERT (stream);
+   future_destroy (future);
+   request_destroy (request);
+
+   /* the first getMore receives an error. */
+   future = future_change_stream_next (stream, &next_doc);
+   request =
+      mock_server_receives_command (server,
+                                    "db",
+                                    MONGOC_QUERY_SLAVE_OK,
+                                    "{ 'getMore': 123, 'collection': 'coll' }");
+   mock_server_replies_simple (request, server_reply);
+   request_destroy (request);
+   if (should_resume) {
+      /* client should retry the aggregate. */
+      if (resume_kills_cursor) {
+         /* errors that are considered "not master" or "node is recovering"
+          * errors by SDAM will mark the connected server as UNKNOWN, and no
+          * killCursors will be executed. */
+         request = mock_server_receives_command (
+            server, "db", MONGOC_QUERY_SLAVE_OK, "{'killCursors': 'coll'}");
+         mock_server_replies_simple (request, "{'cursorsKilled': [123]}");
+         request_destroy (request);
+      }
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_SLAVE_OK, "{ 'aggregate': 'coll' }");
+      mock_server_replies_simple (request,
+                                  "{'cursor':"
+                                  "  {'id': 124,"
+                                  "   'ns': 'db.coll',"
+                                  "   'firstBatch': [{'_id': 1}]},"
+                                  "'ok': 1}");
+      request_destroy (request);
+      BSON_ASSERT (future_get_bool (future));
+      BSON_ASSERT (!mongoc_change_stream_error_document (stream, NULL, NULL));
+      DESTROY_CHANGE_STREAM (124);
+   } else {
+      BSON_ASSERT (!future_get_bool (future));
+      BSON_ASSERT (mongoc_change_stream_error_document (stream, NULL, NULL));
+      DESTROY_CHANGE_STREAM (123);
+   }
+   future_destroy (future);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+/* Test a variety of resumable and non-resumable errors that may be returned
+ * from a getMore. */
+static void
+test_getmore_errors (void)
+{
+   _test_getmore_error ("{'ok': 0, 'code': 1, 'errmsg': 'internal error'}",
+                        true /* should_resume */,
+                        true /* resume_kills_cursor */);
+   _test_getmore_error ("{'ok': 0, 'code': 6, 'errmsg': 'host unreachable'}",
+                        true /* should_resume */,
+                        true /* resume_kills_cursor */);
+   _test_getmore_error ("{'ok': 0, 'code': 12345, 'errmsg': 'random error'}",
+                        true /* should_resume */,
+                        true /* resume_kills_cursor */);
+   /* most error codes are resumable, excluding a few blacklisted ones. */
+   _test_getmore_error ("{'ok': 0, 'code': 11601, 'errmsg': 'interrupted'}",
+                        false /* should_resume */,
+                        false /* ignored */);
+   _test_getmore_error (
+      "{'ok': 0, 'code': 136, 'errmsg': 'capped position lost'}",
+      false /* should_resume */,
+      true /* resume_kills_cursor */);
+   _test_getmore_error ("{'ok': 0, 'code': 237, 'errmsg': 'cursor killed'}",
+                        false /* should_resume */,
+                        false /* ignored */);
+   /* if the error code is missing, a message containing 'not master' or 'node
+    * is recovering' is still considered resumable. */
+   _test_getmore_error ("{'ok': 0, 'errmsg': 'not master'}",
+                        true /* should_resume */,
+                        false /* resume_kills_cursor */);
+   _test_getmore_error ("{'ok': 0, 'errmsg': 'node is recovering'}",
+                        true /* should_resume */,
+                        false /* resume_kills_cursor */);
+   _test_getmore_error ("{'ok': 0, 'errmsg': 'random error'}",
+                        false /* should_resume */,
+                        false /* resume_kills_cursor */);
+}
 /* From Change Streams Spec tests:
  * "ChangeStream will automatically resume one time on a resumable error
  * (including not master) with the initial pipeline and options, except for the
@@ -548,7 +656,7 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
  * allowed to throw an exception."
  */
 static void
-test_change_stream_resumable_error ()
+test_change_stream_resumable_error (void)
 {
    mock_server_t *server;
    request_t *request;
@@ -592,19 +700,16 @@ test_change_stream_resumable_error ()
    future_destroy (future);
    request_destroy (request);
 
+   /* Test that a network hangup results in a resumable error */
    future = future_change_stream_next (stream, &next_doc);
-
    request =
       mock_server_receives_command (server,
                                     "db",
                                     MONGOC_QUERY_SLAVE_OK,
                                     "{ 'getMore': 123, 'collection': 'coll' }");
-   mock_server_replies_simple (request, not_master_err);
+   mock_server_hangs_up (request);
    request_destroy (request);
-   /* On a resumable error, the change stream establishes a new cursor with the
-    * same command. No killCursors since "not master" caused the driver to
-    * disconnect from the server.
-    */
+
    /* Retry command */
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK, watch_cmd);
@@ -626,53 +731,21 @@ test_change_stream_resumable_error ()
    ASSERT (next_doc == NULL);
    future_destroy (future);
 
-   /* Test that a network hangup also results in a resumable error */
+   /* Test the "notmaster" resumable error occurring twice in a row */
    future = future_change_stream_next (stream, &next_doc);
    request =
       mock_server_receives_command (server,
                                     "db",
                                     MONGOC_QUERY_SLAVE_OK,
                                     "{ 'getMore': 124, 'collection': 'coll' }");
-   mock_server_hangs_up (request);
-   request_destroy (request);
-
-   /* Retry command */
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, watch_cmd);
-   mock_server_replies_simple (
-      request,
-      "{'cursor': {'id': 125,'ns': 'db.coll','firstBatch': []},'ok': 1 }");
-   request_destroy (request);
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SLAVE_OK,
-                                    "{ 'getMore': 125, 'collection': 'coll' }");
-   mock_server_replies_simple (request,
-                               "{ 'cursor': { 'nextBatch': [] }, 'ok': 1 }");
-   request_destroy (request);
-   ASSERT (!future_get_bool (future));
-   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
-                    err);
-   ASSERT (next_doc == NULL);
-   future_destroy (future);
-
-   /* Test the "ismaster" resumable error occuring twice in a row */
-   future = future_change_stream_next (stream, &next_doc);
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SLAVE_OK,
-                                    "{ 'getMore': 125, 'collection': 'coll' }");
    mock_server_replies_simple (request, not_master_err);
-
    request_destroy (request);
 
    /* Retry command */
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK, watch_cmd);
    mock_server_replies_simple (request,
-                               "{'cursor': {'id': 126, 'ns': "
+                               "{'cursor': {'id': 125, 'ns': "
                                "'db.coll','firstBatch': []},'ok': 1 "
                                "}");
    request_destroy (request);
@@ -681,7 +754,7 @@ test_change_stream_resumable_error ()
       mock_server_receives_command (server,
                                     "db",
                                     MONGOC_QUERY_SLAVE_OK,
-                                    "{ 'getMore': 126, 'collection': 'coll' }");
+                                    "{ 'getMore': 125, 'collection': 'coll' }");
    mock_server_replies_simple (request, not_master_err);
    request_destroy (request);
 
@@ -734,70 +807,6 @@ test_change_stream_resumable_error ()
 
    mongoc_change_stream_destroy (stream);
    mongoc_uri_destroy (uri);
-   mongoc_collection_destroy (coll);
-   mongoc_client_destroy (client);
-   mock_server_destroy (server);
-}
-
-/* From Change Streams Spec tests:
- * "ChangeStream will not attempt to resume on a server error"
- */
-static void
-test_change_stream_nonresumable_error ()
-{
-   mock_server_t *server;
-   request_t *request;
-   future_t *future;
-   mongoc_client_t *client;
-   mongoc_collection_t *coll;
-   mongoc_change_stream_t *stream;
-   const bson_t *next_doc = NULL;
-
-   server = mock_server_with_autoismaster (5);
-   mock_server_run (server);
-
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-   ASSERT (client);
-
-   coll = mongoc_client_get_collection (client, "db", "coll");
-   ASSERT (coll);
-
-   future = future_collection_watch (coll, tmp_bson ("{}"), NULL);
-
-   request = mock_server_receives_command (
-      server,
-      "db",
-      MONGOC_QUERY_SLAVE_OK,
-      "{ 'aggregate': 'coll', 'pipeline' "
-      ": [ { '$changeStream': { 'fullDocument': 'default' } } ], "
-      "'cursor': {  } }");
-
-   mock_server_replies_simple (request,
-                               "{'cursor': {'id': 123, 'ns': "
-                               "'db.coll','firstBatch': []},'ok': 1 "
-                               "}");
-   stream = future_get_mongoc_change_stream_ptr (future);
-   ASSERT (stream);
-   future_destroy (future);
-   request_destroy (request);
-
-   future = future_change_stream_next (stream, &next_doc);
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SLAVE_OK,
-                                    "{ 'getMore': 123, 'collection': 'coll' }");
-   mock_server_replies_simple (
-      request, "{ 'code': 1, 'errmsg': 'Internal Error', 'ok': 0 }");
-   request_destroy (request);
-   ASSERT (!future_get_bool (future));
-   ASSERT (mongoc_change_stream_error_document (stream, NULL, NULL));
-   ASSERT (next_doc == NULL);
-
-   future_destroy (future);
-
-   DESTROY_CHANGE_STREAM (123);
-
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
@@ -1228,10 +1237,6 @@ test_change_stream_install (TestSuite *suite)
                                 "/change_stream/resumable_error",
                                 test_change_stream_resumable_error);
 
-   TestSuite_AddMockServerTest (suite,
-                                "/change_stream/nonresumable_error",
-                                test_change_stream_nonresumable_error);
-
    TestSuite_AddMockServerTest (
       suite, "/change_stream/options", test_change_stream_options);
 
@@ -1266,4 +1271,6 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_rs_version_6);
+   TestSuite_AddMockServerTest (
+      suite, "/change_stream/getmore_errors", test_getmore_errors);
 }

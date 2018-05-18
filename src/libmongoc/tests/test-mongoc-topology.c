@@ -1751,7 +1751,9 @@ _test_request_scan_on_error (bool pooled,
       primary, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
    mock_server_replies_simple (request, err_response);
    request_destroy (request);
-   BSON_ASSERT (!future_get_bool (future));
+   /* don't check the return value of future. write concern errors are still
+    * considered successful results. */
+   future_wait (future);
    future_destroy (future);
    bson_destroy (&reply);
 
@@ -1815,30 +1817,60 @@ _test_request_scan_on_error (bool pooled,
 static void
 test_request_scan_on_error ()
 {
-   _test_request_scan_on_error (false /* pooled */,
-                                "{'ok': 0, 'errmsg': 'not master'}",
-                                true /* should_scan */,
-                                true /* should_mark_unknown */);
-   _test_request_scan_on_error (false /* pooled */,
-                                "{'ok': 0, 'errmsg': 'node is recovering'}",
-                                false /* should_scan */,
-                                true /* should_mark_unknown */);
-   _test_request_scan_on_error (false /* pooled */,
-                                "{'ok': 0, 'errmsg': 'random error'}",
-                                false /* should_scan */,
-                                false /* should_mark_unknown */);
-   _test_request_scan_on_error (true /* pooled */,
-                                "{'ok': 0, 'errmsg': 'not master'}",
-                                true /* should_scan */,
-                                true /* should_mark_unknown */);
-   _test_request_scan_on_error (true /* pooled */,
-                                "{'ok': 0, 'errmsg': 'node is recovering'}",
-                                true /* should_scan */,
-                                true /* should_mark_unknown */);
-   _test_request_scan_on_error (true /* pooled */,
-                                "{'ok': 0, 'errmsg': 'random error'}",
-                                false /* should_scan */,
-                                false /* should_mark_unknown */);
+#define TEST_POOLED(msg, should_scan, should_mark_unknown) \
+   _test_request_scan_on_error (true, msg, should_scan, should_mark_unknown)
+#define TEST_SINGLE(msg, should_scan, should_mark_unknown) \
+   _test_request_scan_on_error (false, msg, should_scan, should_mark_unknown)
+#define TEST_BOTH(msg, should_scan, should_mark_unknown) \
+   TEST_POOLED (msg, should_scan, should_mark_unknown);  \
+   TEST_SINGLE (msg, should_scan, should_mark_unknown)
+
+   TEST_BOTH ("{'ok': 0, 'errmsg': 'not master'}",
+              true /* should_scan */,
+              true /* should_mark_unknown */);
+   /* "node is recovering" behaves differently for single and pooled clients. */
+   TEST_SINGLE ("{'ok': 0, 'errmsg': 'node is recovering'}",
+                false /* should_scan */,
+                true /* should_mark_unknown */);
+   TEST_POOLED ("{'ok': 0, 'errmsg': 'node is recovering'}",
+                true /* should_scan */,
+                true /* should_mark_unknown */);
+   TEST_BOTH ("{'ok': 0, 'errmsg': 'random error'}",
+              false /* should_scan */,
+              false /* should_mark_unknown */);
+   /* check the error code for NotMaster, which should be considered a "not
+    * master" error. */
+   TEST_BOTH ("{'ok': 0, 'code': 10107 }",
+              true /* should_scan */,
+              true /* should_mark_unknown */);
+   /* for an unknown code, the message should still be checked. */
+   TEST_BOTH ("{'ok': 0, 'code': 12345, 'errmsg': 'not master'}",
+              true /* should_scan */,
+              true /* should_mark_unknown */);
+   /* check the error code for InterruptedAtShutdown, which should be considered
+    * a "node is recovering" error. */
+   TEST_SINGLE ("{'ok': 0, 'code': 11600 }",
+                false /* should_scan */,
+                true /* should_mark_unknown */);
+   TEST_POOLED ("{'ok': 0, 'code': 11600 }",
+                true /* should_scan */,
+                true /* should_mark_unknown */);
+   /* with a "not master" error code but a "node is recovery" message, the error
+    * code takes precedence */
+   TEST_BOTH ("{'ok': 0, 'code': 10107, 'errmsg': 'node is recovering'}",
+              true /* should_scan */,
+              true /* should_mark_unknown */);
+   /* write concern errors are also checked. */
+   TEST_BOTH ("{'ok': 1, 'writeConcernError': { 'errmsg': 'not master' }}",
+              true, /* should_scan */
+              true /* should_mark_unknown */);
+   TEST_BOTH ("{'ok': 1, 'writeConcernError': { 'code': 10107 }}",
+              true, /* should_scan */
+              true /* should_mark_unknown */);
+
+#undef TEST_BOTH
+#undef TEST_POOLED
+#undef TEST_SINGLE
 }
 
 

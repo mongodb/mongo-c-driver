@@ -1091,7 +1091,7 @@ _mongoc_cmd_check_ok (const bson_t *doc,
    mongoc_error_domain_t domain =
       error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER
                                                       : MONGOC_ERROR_QUERY;
-   uint32_t code = MONGOC_ERROR_QUERY_FAILURE;
+   uint32_t code;
    bson_iter_t iter;
    const char *msg = "Unknown command error";
 
@@ -1104,21 +1104,14 @@ _mongoc_cmd_check_ok (const bson_t *doc,
       RETURN (true);
    }
 
-   if (bson_iter_init_find (&iter, doc, "code") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-      code = (uint32_t) bson_iter_int32 (&iter);
+   if (!_mongoc_parse_error_reply (doc, false /* check_wce */, &code, &msg)) {
+      RETURN (true);
    }
 
    if (code == MONGOC_ERROR_PROTOCOL_ERROR || code == 13390) {
       code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
-   }
-
-   if (bson_iter_init_find (&iter, doc, "errmsg") &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
-      msg = bson_iter_utf8 (&iter, NULL);
-   } else if (bson_iter_init_find (&iter, doc, "$err") &&
-              BSON_ITER_HOLDS_UTF8 (&iter)) {
-      msg = bson_iter_utf8 (&iter, NULL);
+   } else if (code == 0) {
+      code = MONGOC_ERROR_QUERY_FAILURE;
    }
 
    bson_set_error (error, domain, code, "%s", msg);
@@ -1127,6 +1120,65 @@ _mongoc_cmd_check_ok (const bson_t *doc,
    RETURN (false);
 }
 
+/* returns true if an error was found. */
+bool
+_mongoc_parse_error_reply (const bson_t *doc,
+                           bool check_wce,
+                           uint32_t *code,
+                           const char **msg)
+{
+   bson_iter_t iter;
+   bool found_error = false;
+
+   ENTRY;
+
+   BSON_ASSERT (doc);
+   BSON_ASSERT (code);
+   *code = 0;
+
+   if (bson_iter_init_find (&iter, doc, "code") &&
+       BSON_ITER_HOLDS_INT32 (&iter)) {
+      *code = (uint32_t) bson_iter_int32 (&iter);
+      found_error = true;
+   }
+
+   if (bson_iter_init_find (&iter, doc, "errmsg") &&
+       BSON_ITER_HOLDS_UTF8 (&iter)) {
+      *msg = bson_iter_utf8 (&iter, NULL);
+      found_error = true;
+   } else if (bson_iter_init_find (&iter, doc, "$err") &&
+              BSON_ITER_HOLDS_UTF8 (&iter)) {
+      *msg = bson_iter_utf8 (&iter, NULL);
+      found_error = true;
+   }
+
+   if (found_error) {
+      /* there was a command error */
+      RETURN (true);
+   }
+
+   if (check_wce) {
+      /* check for a write concern error */
+      if (bson_iter_init_find (&iter, doc, "writeConcernError") &&
+          BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         bson_iter_t child;
+         BSON_ASSERT (bson_iter_recurse (&iter, &child));
+         if (bson_iter_find (&child, "code") &&
+             BSON_ITER_HOLDS_INT32 (&child)) {
+            *code = (uint32_t) bson_iter_int32 (&child);
+            found_error = true;
+         }
+         BSON_ASSERT (bson_iter_recurse (&iter, &child));
+         if (bson_iter_find (&child, "errmsg") &&
+             BSON_ITER_HOLDS_UTF8 (&child)) {
+            *msg = bson_iter_utf8 (&child, NULL);
+            found_error = true;
+         }
+      }
+   }
+
+   RETURN (found_error);
+}
 
 /* helper function to parse error reply document to an OP_QUERY */
 static void

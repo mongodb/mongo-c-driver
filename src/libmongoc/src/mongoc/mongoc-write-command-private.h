@@ -210,6 +210,8 @@ _mongoc_write_result_destroy (mongoc_write_result_t *result);
 void
 _append_array_from_command (mongoc_write_command_t *command, bson_t *bson);
 
+bool
+_mongoc_write_is_retryable_error (const bson_t *reply);
 
 BSON_END_DECLS
 

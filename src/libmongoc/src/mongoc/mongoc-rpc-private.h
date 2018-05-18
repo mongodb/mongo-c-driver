@@ -113,7 +113,7 @@ typedef union {
 BSON_STATIC_ASSERT2 (sizeof_rpc_header, sizeof (mongoc_rpc_header_t) == 16);
 BSON_STATIC_ASSERT2 (offsetof_rpc_header,
                      offsetof (mongoc_rpc_header_t, opcode) ==
-                     offsetof (mongoc_rpc_reply_t, opcode));
+                        offsetof (mongoc_rpc_reply_t, opcode));
 BSON_STATIC_ASSERT2 (sizeof_reply_header,
                      sizeof (mongoc_rpc_reply_header_t) == 36);
 
@@ -174,6 +174,12 @@ _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
                       int32_t compressor_id,
                       mongoc_rpc_t *rpc_le,
                       bson_error_t *error);
+
+bool
+_mongoc_parse_error_reply (const bson_t *doc,
+                           bool check_wce,
+                           uint32_t *code,
+                           const char **msg);
 
 BSON_END_DECLS
 
