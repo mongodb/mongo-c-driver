@@ -1,6 +1,6 @@
 The MongoDB C Driver uses third-party code distributed under different licenses.
 
-License notice for mongoc-b64.c
+License notice for common-b64.c
 -------------------------------------------------------------------------------
 
 ISC License

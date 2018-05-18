@@ -146,7 +146,7 @@ if (OPENSSL_FOUND)
    if (WIN32 AND OPENSSL_VERSION GREATER 1.1 AND NOT
          ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.7)
       message (FATAL_ERROR "Building against OpenSSL 1.1.0 and later requires CMake 3.7 or later (hint:"
-         "You can also compile against Windows Secure Transport with -DENABLE_SSL=WINDOWS")
+         " You can also compile against Windows Secure Transport with -DENABLE_SSL=WINDOWS")
    endif ()
    if (APPLE AND NOT OPENSSL_ROOT_DIR)
       message (WARNING "Building with OpenSSL but OPENSSL_ROOT_DIR not defined. If build fails to link"
