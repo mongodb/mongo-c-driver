@@ -1,6 +1,3 @@
-# The html distribution list was set by sphinx_build_html ()
-#extra_dist_generated (${src_libbson_doc_DIST_htmls})
-
 # Additional generated static files
 extra_dist_generated (
    .nojekyll

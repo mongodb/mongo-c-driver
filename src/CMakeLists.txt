@@ -1,7 +1,5 @@
 # sub-directory 'libbson' was already included at the top-level
-#add_subdirectory (libbson)
 # sub-directory 'libmongoc' was already included at the top-level
-#add_subdirectory (libmongoc)
 add_subdirectory (tools)
 add_subdirectory (common)
 

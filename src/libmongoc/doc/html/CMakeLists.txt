@@ -1,6 +1,3 @@
-# The html distribution list was set by sphinx_build_html ()
-#extra_dist_generated (${src_libmongoc_doc_DIST_htmls})
-
 file (GLOB_RECURSE _images_pngs
    RELATIVE ${PROJECT_SOURCE_DIR}/doc/static
    ${PROJECT_SOURCE_DIR}/doc/static/*.png
