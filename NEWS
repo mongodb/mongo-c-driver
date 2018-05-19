@@ -1,18 +1,21 @@
-Next release
-============
+mongo-c-driver 1.10.0
+=====================
 
-This version drops support for MongoDB 2.6 and adds the following features and
-bugfixes:
+It is my pleasure to announce MongoDB C Driver 1.10.0. This version drops
+support for MongoDB 2.6 and adds the following features and bugfixes:
 
   * libbson and libmongoc are now maintained in the mongo-c-driver repository,
-    although they are still built as separate libraries and libbson can still be
-    used without libmongoc.
+    although they are still built as separate libraries, and libbson can still
+    be used without libmongoc.
   * Building libbson and libmongoc now requires CMake on all platforms. The
     Autotools build scripts ("configure" and related scripts) have been deleted.
-    See the "installing" page for updated instructions.
-  * The internal preprocessor symbol HAVE_STRINGS_H has been renamed
-    BSON_HAVE_STRINGS_H. If you maintain a handwritten bson-config.h you must
-    rename this symbol.
+    See the "installing" page for updated instructions, including the new
+    ENABLE_MONGOC option and changes to the ENABLE_BSON option.
+  * IPv6 is now fully supported and conforms to RFC-6555. If a hostname has both
+    IPv4 and IPv6 DNS records, the driver tries connecting with IPv6 first. If a
+    connection can't be established after 250ms then IPv4 is tried in parallel.
+    Whichever succeeds connection first cancels the other. The successful DNS
+    result is cached for 10 minutes.
   * If CMake is configured with ENABLE_SSL=AUTO (the default), libmongoc now
     uses native TLS libraries on Mac and Windows, and OpenSSL everywhere else.
     Before, it would search for OpenSSL on all platforms and only use native
@@ -22,11 +25,11 @@ bugfixes:
     SChannel. (SSL handshakes with Apple's Secure Transport are still serial.)
     A larger receive buffer with SChannel increases performance over slow
     connections.
-  * All functions that accept read concern now prohibit it if MongoDB is too
-    old to support it (pre-3.2).
+  * All functions that accept read concern now prohibit it, if MongoDB is too
+    old to support it (MongoDB 3.0).
   * Client sessions are now prohibited with unacknowledged writes.
   * mongoc_collection_find_and_modify_with_opts now prohibits write concern if
-    MongoDB is too old to support it (pre-3.2).
+    MongoDB is too old to support it (MongoDB 3.0).
   * Other helper functions for commands that write, now prohibit write concern
     if MongoDB is too old to support it (pre-3.4):
       mongoc_client_read_write_command_with_opts
@@ -47,11 +50,11 @@ bugfixes:
     "w=-1" is still allowed, as a synonym for "w=0".
   * The Kerberos URI option authMechanismProperties=CANONICALIZE_HOST_NAME:true
     is now implemented with the Windows Kerberos provider, SSPI.
-  * IPv6 is now fully supported and conforms to RFC-6555. If a hostname has both
-    IPv4 and IPv6 DNS records, the driver tries connecting with IPv6 first. If a
-    connection can't be established after 250ms then IPv4 is tried in parallel.
-    Whichever succeeds connection first cancels the other. The successful DNS
-    result is cached for 10 minutes.
+  * This repository now includes GDB and LLDB customizations for pretty-printing
+    bson_t structs as JSON while debugging. See the "debugging" page.
+  * The internal preprocessor symbol HAVE_STRINGS_H has been renamed
+    BSON_HAVE_STRINGS_H. If you maintain a handwritten bson-config.h you must
+    rename this symbol.
   * The following helper functions do not work with mongoc_client_session_t,
     they are deprecated in favor of running MongoDB commands directly with a
     function like mongoc_client_read_command_with_opts:
@@ -60,6 +63,48 @@ bugfixes:
       mongoc_collection_validate
   * mongoc_cursor_is_alive is now deprecated for mongoc_cursor_more, which is
     functionally equivalent.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Kevin Albertson
+  * Roberto C. Sánchez
+  * Jeremy Mikola
+  * Xiangyu Yao
+  * Jeroen Ooms
+  * Derick Rethans
+  * Kaitlin Mahar
+  * Pavithra Vetriselvan
+  * NotSpooky
+  * Iulian Rotaru
+  * Katherine Walker
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+mongo-c-driver 1.9.5
+====================
+
+It is my pleasure to announce mongo-c-driver 1.9.5. This release fixes the following bugs:
+
+  * New change streams API functions were not marked extern "C"
+  * mongoc_collection_watch now accepts a pipeline argument as a BSON array, in
+    addition to accepting a BSON document with a "pipeline" array field
+  * Crashes in several change stream error handling paths
+  * Commands could return false with an empty bson_error_t after a replica set
+    reconfig
+  * Network error messages omitted the command name when using OP_MSG
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Kevin Albertson
+
+Peace,
+
+    A. Jesse Jiryu Davis
 
 
 mongo-c-driver 1.9.4
