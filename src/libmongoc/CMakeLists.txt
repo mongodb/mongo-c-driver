@@ -894,8 +894,6 @@ add_subdirectory (tests)
 set_local_dist (src_libmongoc_DIST_local
    CMakeLists.txt
    THIRD_PARTY_NOTICES
-   VERSION_CURRENT
-   VERSION_RELEASED
 )
 
 set (src_libmongoc_DIST
