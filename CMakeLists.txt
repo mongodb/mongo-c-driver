@@ -62,8 +62,8 @@ include (GNUInstallDirs)
 
 # Set MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION, etc.
 include (LoadVersion)
-LoadVersion (${PROJECT_SOURCE_DIR}/src/libmongoc/VERSION_CURRENT MONGOC)
-LoadVersion (${PROJECT_SOURCE_DIR}/src/libmongoc/VERSION_RELEASED MONGOC_RELEASED)
+LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
+LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_RELEASED MONGOC_RELEASED)
 
 include (MaintainerFlags)
 
@@ -259,6 +259,8 @@ set (top_DIST_local
    NEWS
    README.rst
    THIRD_PARTY_NOTICES
+   VERSION_CURRENT
+   VERSION_RELEASED
 )
 
 set_local_dist (top_DIST ${top_DIST_local})

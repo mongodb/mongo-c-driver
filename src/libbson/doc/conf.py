@@ -18,9 +18,11 @@ extensions = [
 project = 'Libbson'
 copyright = '2017-present, MongoDB, Inc'
 
-version_path = os.path.join(os.path.dirname(__file__), '..', 'VERSION_CURRENT')
+version_path = os.path.join(
+    os.path.dirname(__file__), '../../..', 'VERSION_CURRENT')
 version = open(version_path).read().strip()
-release_path = os.path.join(os.path.dirname(__file__), '..', 'VERSION_RELEASED')
+release_path = os.path.join(
+    os.path.dirname(__file__), '../../..', 'VERSION_RELEASED')
 release = open(release_path).read().strip()
 release_major, release_minor, release_patch = release.split('.')
 release_download = 'https://github.com/mongodb/libbson/releases/download/{0}/libbson-{0}.tar.gz'.format(release)
