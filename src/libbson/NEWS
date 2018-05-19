@@ -1,3 +1,44 @@
+libbson 1.10.0
+==============
+
+It is my pleasure to announce libbson 1.10.0. This version adds the following
+features:
+
+  * libbson and libmongoc are now maintained in the mongo-c-driver repository,
+    although they are still built as separate libraries, and libbson can still
+    be used without libmongoc.
+  * Building libbson and libmongoc now requires CMake on all platforms. The
+    Autotools build scripts ("configure" and related scripts) have been deleted.
+    See the "installing" page for updated instructions.
+  * Additional functions for strings of known length (not necessarily null-
+    terminated):
+      bson_iter_find_w_len
+      bson_iter_init_find_w_len
+      bson_append_regex_w_len
+      bson_decimal128_from_string_w_len
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Roberto C. Sánchez
+  * Xiangyu Yao
+  * Kevin Albertson
+  * Mansuro
+  * Petr Písař
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+Libbson-1.9.5
+=============
+
+No change since 1.9.4; released to keep pace with libmongoc's version.
+
+-- A. Jesse Jiryu Davis
+
+
 Libbson-1.9.4
 =============
 
