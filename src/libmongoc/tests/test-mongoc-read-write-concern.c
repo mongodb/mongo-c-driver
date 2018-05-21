@@ -161,6 +161,6 @@ test_read_write_concern_install (TestSuite *suite)
       realpath (JSON_DIR "/read_write_concern/connection-string", resolved));
    install_json_test_suite (suite, resolved, &test_rw_concern_uri);
 
-   ASSERT (realpath (JSON_DIR "/read_write_concern/document", resolved));
+   test_framework_resolve_path (JSON_DIR "/read_write_concern/document", resolved);
    install_json_test_suite (suite, resolved, &test_rw_concern_document);
 }

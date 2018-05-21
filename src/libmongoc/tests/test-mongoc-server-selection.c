@@ -1,6 +1,7 @@
 #include <mongoc.h>
 
 #include "json-test.h"
+#include "test-libmongoc.h"
 
 
 /*
@@ -55,11 +56,11 @@ test_all_spec_tests (TestSuite *suite)
    char resolved[PATH_MAX];
 
    /* RTT calculation */
-   ASSERT (realpath (JSON_DIR "/server_selection/rtt", resolved));
+   test_framework_resolve_path (JSON_DIR "/server_selection/rtt", resolved);
    install_json_test_suite (suite, resolved, &test_rtt_calculation_cb);
 
    /* SS logic */
-   ASSERT (realpath (JSON_DIR "/server_selection/server_selection", resolved));
+   test_framework_resolve_path (JSON_DIR "/server_selection/server_selection", resolved);
    install_json_test_suite (suite, resolved, &test_server_selection_logic_cb);
 }
 

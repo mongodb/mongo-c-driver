@@ -429,7 +429,7 @@ test_all_spec_tests (TestSuite *suite)
 {
    char resolved[PATH_MAX];
 
-   ASSERT (realpath (JSON_DIR "/retryable_writes", resolved));
+   test_framework_resolve_path (JSON_DIR "/retryable_writes", resolved);
    install_json_test_suite_with_check (suite,
                                        resolved,
                                        test_retryable_writes_cb,

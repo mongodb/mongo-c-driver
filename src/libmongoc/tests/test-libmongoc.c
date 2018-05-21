@@ -2216,6 +2216,15 @@ test_framework_skip_if_compressors (void)
    return !test_framework_skip_if_no_compressors ();
 }
 
+void
+test_framework_resolve_path (const char* path, char* resolved) {
+   if (!realpath(path, resolved)) {
+      MONGOC_ERROR ("Cannot resolve path %s\n", path);
+      MONGOC_ERROR ("Run test-libmongoc in repository root directory.\n");
+      ASSERT (false);
+   }
+}
+
 static char MONGOC_TEST_UNIQUE[32];
 
 int

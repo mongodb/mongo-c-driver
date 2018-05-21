@@ -531,6 +531,7 @@ collect_tests_from_dir (char (*paths)[MAX_TEST_NAME_LENGTH] /* OUT */,
    dir = opendir (dir_path);
    if (!dir) {
       MONGOC_ERROR ("Cannot open \"%s\"", dir_path);
+      MONGOC_ERROR ("Run test-libmongoc in repository root directory.\n");
       abort ();
    }
 

@@ -5,6 +5,8 @@
 #include "json-test.h"
 
 #include "mongoc-client-private.h"
+#include "test-libmongoc.h"
+
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>
 #endif
@@ -187,7 +189,7 @@ test_all_spec_tests (TestSuite *suite)
    install_json_test_suite (suite, resolved, &test_sdam_cb);
 
    /* Replica set */
-   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/rs", resolved));
+   test_framework_resolve_path (JSON_DIR "/server_discovery_and_monitoring/rs", resolved);
    install_json_test_suite (suite, resolved, &test_sdam_cb);
 
    /* Sharded */

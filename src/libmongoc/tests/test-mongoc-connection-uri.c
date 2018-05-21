@@ -204,10 +204,10 @@ test_all_spec_tests (TestSuite *suite)
 {
    char resolved[PATH_MAX];
 
-   ASSERT (realpath (JSON_DIR "/connection_uri", resolved));
+   test_framework_resolve_path (JSON_DIR "/connection_uri", resolved);
    install_json_test_suite (suite, resolved, &test_connection_uri_cb);
 
-   ASSERT (realpath (JSON_DIR "/auth", resolved));
+   test_framework_resolve_path (JSON_DIR "/auth", resolved);
    install_json_test_suite (suite, resolved, &test_connection_uri_cb);
 }
 

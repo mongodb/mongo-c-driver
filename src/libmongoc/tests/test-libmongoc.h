@@ -201,4 +201,7 @@ test_framework_skip_if_no_compressors (void);
 bool
 test_framework_skip_if_compressors (void);
 
+void
+test_framework_resolve_path (const char* path, char* resolved);
+
 #endif
