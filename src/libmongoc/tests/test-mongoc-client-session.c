@@ -1268,7 +1268,7 @@ session_test_destroy (session_test_t *test)
 
 
 static void
-check_success_no_commands (session_test_t *test)
+check_sessions_from_same_client_enforced (session_test_t *test)
 {
    if (test->session_client != test->client) {
       BSON_ASSERT (!test->succeeded);
@@ -1276,27 +1276,33 @@ check_success_no_commands (session_test_t *test)
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
                              "Invalid sessionId");
-
-      return;
    }
+}
 
+
+static void
+check_sessions_with_w0_prohibited (session_test_t *test)
+{
    if (test->expect_explicit_lsid && !test->acknowledged) {
       BSON_ASSERT (!test->succeeded);
       ASSERT_ERROR_CONTAINS (test->error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
                              "session with unacknowledged");
-      return;
    }
-
-   ASSERT_OR_PRINT (test->succeeded, test->error);
 }
 
 
 static void
 check_success (session_test_t *test)
 {
-   check_success_no_commands (test);
+   check_sessions_from_same_client_enforced (test);
+   check_sessions_with_w0_prohibited (test);
+
+   if (test->session_client == test->client &&
+       test->expect_explicit_lsid == test->acknowledged) {
+      ASSERT_OR_PRINT (test->succeeded, test->error);
+   }
 
    if (test->succeeded) {
       ASSERT_CMPINT (test->n_started, >, 0);
@@ -2015,7 +2021,7 @@ test_bulk (session_test_t *test)
 
    test->succeeded = mongoc_bulk_operation_insert_with_opts (
       bulk, tmp_bson ("{}"), NULL, &test->error);
-   check_success_no_commands (test);
+   check_sessions_from_same_client_enforced (test);
 
    test->succeeded = mongoc_bulk_operation_update_one_with_opts (
       bulk,
@@ -2023,14 +2029,15 @@ test_bulk (session_test_t *test)
       tmp_bson ("{'$set': {'x': 1}}"),
       NULL,
       &test->error);
-   check_success_no_commands (test);
+   check_sessions_from_same_client_enforced (test);
 
    test->succeeded = mongoc_bulk_operation_remove_one_with_opts (
       bulk, tmp_bson ("{}"), NULL, &test->error);
-   check_success_no_commands (test);
+   check_sessions_from_same_client_enforced (test);
 
    i = mongoc_bulk_operation_execute (bulk, NULL, &test->error);
    test->succeeded = (i != 0);
+   check_sessions_with_w0_prohibited (test);
 
    mongoc_bulk_operation_destroy (bulk);
 }
@@ -2619,6 +2626,30 @@ test_session_install (TestSuite *suite)
       suite,
       "/Session/unacknowledged/insert_one/implicit_cs/explicit_wc",
       test_insert_one,
+      false,
+      false);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/bulk/explicit_cs/inherit_wc",
+      test_bulk,
+      true,
+      true);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/bulk/explicit_cs/explicit_wc",
+      test_bulk,
+      true,
+      false);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/bulk/implicit_cs/inherit_wc",
+      test_bulk,
+      false,
+      true);
+   add_unacknowledged_test (
+      suite,
+      "/Session/unacknowledged/bulk/implicit_cs/explicit_wc",
+      test_bulk,
       false,
       false);
    /* find_and_modify_with_opts only inherits acknowledged write concerns, so

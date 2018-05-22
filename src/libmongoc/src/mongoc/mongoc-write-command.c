@@ -887,6 +887,14 @@ _mongoc_write_command_execute (
    }
 
    if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
+      if (cs && !mongoc_write_concern_is_acknowledged (write_concern)) {
+         bson_set_error (
+            &result->error,
+            MONGOC_ERROR_COMMAND,
+            MONGOC_ERROR_COMMAND_INVALID_ARG,
+            "Cannot use client session with unacknowledged writes");
+         EXIT;
+      }
       _mongoc_write_opmsg (command,
                            client,
                            server_stream,
