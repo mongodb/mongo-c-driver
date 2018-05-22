@@ -382,6 +382,9 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       GOTO (done);
    }
 
+   /* Get serverId from opts; if invalid set cursor err. _mongoc_cursor_cmd_new
+    * has already done this, but we want a COMMAND error, not CURSOR, since that
+    * has been the contract since serverId was first implemented. */
    if (!_mongoc_get_server_id_from_opts (opts,
                                          MONGOC_ERROR_COMMAND,
                                          MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -390,10 +393,12 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       GOTO (done);
    }
 
-   if (server_id) {
-      /* will set slaveok bit if server is not mongos */
-      (void) mongoc_cursor_set_hint (cursor, server_id);
+   if (mongoc_cursor_error (cursor, NULL)) {
+      /* something else is wrong with opts */
+      GOTO (done);
+   }
 
+   if (server_id) {
       /* server id isn't enough. ensure we're connected & know wire version */
       server_stream =
          mongoc_cluster_stream_for_server (&collection->client->cluster,
