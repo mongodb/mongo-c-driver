@@ -8,6 +8,7 @@ html/*.js
 html/*.png
 html/_sources
 html/_static
+html/_images/
 html/.buildinfo
 html/.nojekyll
 man/*.3
