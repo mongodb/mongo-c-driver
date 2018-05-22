@@ -33,8 +33,8 @@ from jinja2 import Environment, FileSystemLoader  # Please "pip install jinja2".
 
 this_dir = dirname(__file__)
 template_dir = joinpath(this_dir, 'opts_templates')
-src_dir = normpath(joinpath(this_dir, '../src/mongoc'))
-doc_includes = normpath(joinpath(this_dir, '../doc/includes'))
+src_dir = normpath(joinpath(this_dir, '../src/libmongoc/src/mongoc'))
+doc_includes = normpath(joinpath(this_dir, '../src/libmongoc/doc/includes'))
 
 
 def flatten(items):
