@@ -89,6 +89,8 @@ txn_finish (mongoc_client_session_t *session,
    bson_t opts = BSON_INITIALIZER;
    bson_error_t err_local;
    bson_error_t *err_ptr = error ? error : &err_local;
+   bson_t reply_local = BSON_INITIALIZER;
+   bson_t *reply_ptr = reply ? reply : &reply_local;
    bool r = false;
 
    cmd_name = (intent == TXN_COMMIT ? "commitTransaction" : "abortTransaction");
@@ -113,15 +115,15 @@ txn_finish (mongoc_client_session_t *session,
    BSON_APPEND_INT32 (&cmd, cmd_name, 1);
 
    r = mongoc_client_write_command_with_opts (
-      session->client, "admin", &cmd, &opts, reply, err_ptr);
+      session->client, "admin", &cmd, &opts, reply_ptr, err_ptr);
 
    /* Transactions Spec: "Drivers MUST retry the commitTransaction command once
     * after it fails with a retryable error", same for abort */
    if (!r && (err_ptr->domain == MONGOC_ERROR_STREAM ||
-              _mongoc_write_is_retryable_error (reply))) {
-      _mongoc_bson_destroy_if_set (reply);
+              _mongoc_write_is_retryable_error (reply_ptr))) {
+      bson_destroy (reply_ptr);
       r = mongoc_client_write_command_with_opts (
-         session->client, "admin", &cmd, &opts, reply, err_ptr);
+         session->client, "admin", &cmd, &opts, reply_ptr, err_ptr);
    }
 
    /* we won't return an error from abortTransaction, so warn */
@@ -130,6 +132,7 @@ txn_finish (mongoc_client_session_t *session,
    }
 
 done:
+   bson_destroy (&reply_local);
    bson_destroy (&cmd);
    bson_destroy (&opts);
    return r;
