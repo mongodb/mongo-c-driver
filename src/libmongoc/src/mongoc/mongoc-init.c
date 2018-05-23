@@ -30,6 +30,10 @@
 #endif
 #include "mongoc-thread-private.h"
 #include "common-b64-private.h"
+#if defined(MONGOC_ENABLE_CRYPTO_CNG)
+#include "mongoc-crypto-private.h"
+#include "mongoc-crypto-cng-private.h"
+#endif
 
 #ifndef MONGOC_NO_AUTOMATIC_GLOBALS
 #pragma message( \
@@ -123,6 +127,10 @@ static MONGOC_ONCE_FUN (_mongoc_do_init)
    }
 #endif
 
+#if defined(MONGOC_ENABLE_CRYPTO_CNG)
+   mongoc_crypto_cng_init ();
+#endif
+
    _mongoc_handshake_init ();
 
    MONGOC_ONCE_RETURN;
@@ -152,6 +160,10 @@ static MONGOC_ONCE_FUN (_mongoc_do_cleanup)
 
 #ifdef _WIN32
    WSACleanup ();
+#endif
+
+#if defined(MONGOC_ENABLE_CRYPTO_CNG)
+   mongoc_crypto_cng_cleanup ();
 #endif
 
    _mongoc_counters_cleanup ();

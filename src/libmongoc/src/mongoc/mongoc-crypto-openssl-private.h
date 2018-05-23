@@ -35,15 +35,29 @@ void
 mongoc_crypto_openssl_hmac_sha1 (mongoc_crypto_t *crypto,
                                  const void *key,
                                  int key_len,
-                                 const unsigned char *d,
-                                 int n,
-                                 unsigned char *md /* OUT */);
+                                 const unsigned char *data,
+                                 int data_len,
+                                 unsigned char *hmac_out);
 
 bool
 mongoc_crypto_openssl_sha1 (mongoc_crypto_t *crypto,
                             const unsigned char *input,
                             const size_t input_len,
-                            unsigned char *output /* OUT */);
+                            unsigned char *hash_out);
+
+void
+mongoc_crypto_openssl_hmac_sha256 (mongoc_crypto_t *crypto,
+                                   const void *key,
+                                   int key_len,
+                                   const unsigned char *data,
+                                   int data_len,
+                                   unsigned char *hmac_out);
+
+bool
+mongoc_crypto_openssl_sha256 (mongoc_crypto_t *crypto,
+                              const unsigned char *input,
+                              const size_t input_len,
+                              unsigned char *hash_out);
 
 BSON_END_DECLS
 #endif /* MONGOC_CRYPTO_OPENSSL_PRIVATE_H */

@@ -26,9 +26,7 @@
 #include "mongoc-error.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
-#ifdef MONGOC_ENABLE_SASL
 #include "mongoc-cluster-sasl-private.h"
-#endif
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
 #include "mongoc-ssl-private.h"
@@ -1079,13 +1077,20 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
 }
 
 
-#ifdef MONGOC_ENABLE_SSL
 static bool
 _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
                                 mongoc_stream_t *stream,
                                 mongoc_server_description_t *sd,
                                 bson_error_t *error)
 {
+#ifndef MONGOC_ENABLE_SSL
+   bson_set_error (error,
+                   MONGOC_ERROR_CLIENT,
+                   MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                   "The MONGODB-X509 authentication mechanism requires "
+                   "libmongoc built with ENABLE_SSL");
+   return false;
+#else
    mongoc_cmd_parts_t parts;
    const char *username_from_uri = NULL;
    char *username_from_subject = NULL;
@@ -1153,8 +1158,8 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
    bson_destroy (&reply);
 
    return ret;
-}
 #endif
+}
 
 
 #ifdef MONGOC_ENABLE_CRYPTO
@@ -1162,6 +1167,7 @@ static bool
 _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
                                  mongoc_stream_t *stream,
                                  mongoc_server_description_t *sd,
+                                 mongoc_crypto_hash_algorithm_t algo,
                                  bson_error_t *error)
 {
    mongoc_cmd_parts_t parts;
@@ -1186,7 +1192,7 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
       auth_source = "admin";
    }
 
-   _mongoc_scram_init (&scram);
+   _mongoc_scram_init (&scram, algo);
 
    _mongoc_scram_set_pass (&scram, mongoc_uri_get_password (cluster->uri));
    _mongoc_scram_set_user (&scram, mongoc_uri_get_username (cluster->uri));
@@ -1206,7 +1212,13 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
 
       if (scram.step == 1) {
          BSON_APPEND_INT32 (&cmd, "saslStart", 1);
-         BSON_APPEND_UTF8 (&cmd, "mechanism", "SCRAM-SHA-1");
+         if (algo == MONGOC_CRYPTO_ALGORITHM_SHA_1) {
+            BSON_APPEND_UTF8 (&cmd, "mechanism", "SCRAM-SHA-1");
+         } else if (algo == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
+            BSON_APPEND_UTF8 (&cmd, "mechanism", "SCRAM-SHA-256");
+         } else {
+            BSON_ASSERT (false);
+         }
          bson_append_binary (
             &cmd, "payload", 7, BSON_SUBTYPE_BINARY, buf, buflen);
          BSON_APPEND_INT32 (&cmd, "autoAuthorize", 1);
@@ -1303,6 +1315,43 @@ failure:
 }
 #endif
 
+static bool
+_mongoc_cluster_auth_node_scram_sha_1 (mongoc_cluster_t *cluster,
+                                       mongoc_stream_t *stream,
+                                       mongoc_server_description_t *sd,
+                                       bson_error_t *error)
+{
+#ifndef MONGOC_ENABLE_CRYPTO
+   bson_set_error (error,
+                   MONGOC_ERROR_CLIENT,
+                   MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                   "The SCRAM_SHA_1 authentication mechanism requires "
+                   "libmongoc built with ENABLE_SSL");
+   return false;
+#else
+   return _mongoc_cluster_auth_node_scram (
+      cluster, stream, sd, MONGOC_CRYPTO_ALGORITHM_SHA_1, error);
+#endif
+}
+
+static bool
+_mongoc_cluster_auth_node_scram_sha_256 (mongoc_cluster_t *cluster,
+                                         mongoc_stream_t *stream,
+                                         mongoc_server_description_t *sd,
+                                         bson_error_t *error)
+{
+#ifndef MONGOC_ENABLE_CRYPTO
+   bson_set_error (error,
+                   MONGOC_ERROR_CLIENT,
+                   MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                   "The SCRAM_SHA_256 authentication mechanism requires "
+                   "libmongoc built with ENABLE_SSL");
+   return false;
+#else
+   return _mongoc_cluster_auth_node_scram (
+      cluster, stream, sd, MONGOC_CRYPTO_ALGORITHM_SHA_256, error);
+#endif
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -1342,38 +1391,14 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
    if (0 == strcasecmp (mechanism, "MONGODB-CR")) {
       ret = _mongoc_cluster_auth_node_cr (cluster, stream, sd, error);
    } else if (0 == strcasecmp (mechanism, "MONGODB-X509")) {
-#ifdef MONGOC_ENABLE_SSL
       ret = _mongoc_cluster_auth_node_x509 (cluster, stream, sd, error);
-#else
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "The \"%s\" authentication mechanism requires libmongoc "
-                      "built with --enable-ssl",
-                      mechanism);
-#endif
    } else if (0 == strcasecmp (mechanism, "SCRAM-SHA-1")) {
-#ifdef MONGOC_ENABLE_CRYPTO
-      ret = _mongoc_cluster_auth_node_scram (cluster, stream, sd, error);
-#else
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "The \"%s\" authentication mechanism requires libmongoc "
-                      "built with --enable-ssl",
-                      mechanism);
-#endif
+      ret = _mongoc_cluster_auth_node_scram_sha_1 (cluster, stream, sd, error);
+   } else if (0 == strcasecmp (mechanism, "SCRAM-SHA-256")) {
+      ret =
+         _mongoc_cluster_auth_node_scram_sha_256 (cluster, stream, sd, error);
    } else if (0 == strcasecmp (mechanism, "GSSAPI")) {
-#ifdef MONGOC_ENABLE_SASL
       ret = _mongoc_cluster_auth_node_sasl (cluster, stream, sd, error);
-#else
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                      "The \"%s\" authentication mechanism requires libmongoc "
-                      "built with --enable-sasl",
-                      mechanism);
-#endif
    } else if (0 == strcasecmp (mechanism, "PLAIN")) {
       ret = _mongoc_cluster_auth_node_plain (cluster, stream, sd, error);
    } else {
@@ -1546,6 +1571,8 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    /* take critical fields from a fresh ismaster */
    cluster_node = _mongoc_cluster_node_new (stream, host->host_and_port);
 
+   /* CDRIVER-2579 pass 'saslSupportedMechs' to ismaster to determine the
+    * default auth mechanism. */
    sd = _mongoc_cluster_run_ismaster (cluster, cluster_node, server_id, error);
    if (!sd) {
       GOTO (error);

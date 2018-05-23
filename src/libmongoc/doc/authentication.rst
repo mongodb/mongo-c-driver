@@ -23,12 +23,52 @@ Currently supported values for the authMechanism connection string option are:
 * :ref:`PLAIN <authentication_plain>`
 * :ref:`X509 <authentication_x509>`
 
+.. _authentication_scram_sha_256:
+
+Basic Authentication (SCRAM-SHA-256)
+------------------------------------
+
+MongoDB 4.0 introduces support for authenticating using the SCRAM protocol
+with the more secure SHA-256 hash described in `RFC 7677
+<https://tools.ietf.org/html/rfc7677>`_. Using this authentication mechanism
+means that the password is never actually sent over the wire when
+authenticating, but rather a computed proof that the client password is the
+same as the password the server knows. In MongoDB 4.0, the C driver can
+determine the correct default authentication mechanism for users with stored
+SCRAM-SHA-1 and SCRAM-SHA-256 credentials:
+
+.. code-block:: none
+
+  mongoc_client_t *client =  mongoc_client_new ("mongodb://user:password@localhost/?authSource=mydb");
+  /* the correct authMechanism is negotiated between the driver and server. */
+
+Alternatively, SCRAM-SHA-256 can be explicitly specified as an authMechanism.
+
+.. code-block:: none
+
+  mongoc_client_t *client =  mongoc_client_new ("mongodb://user:password@localhost/?authMechanism=SCRAM-SHA-256&authSource=mydb");
+
+Passwords for SCRAM-SHA-256 undergo the preprocessing step known as SASLPrep
+specified in `RFC 4013 <https://tools.ietf.org/html/rfc4013>`_. SASLPrep will
+only be performed for passwords containing non-ASCII characters.  SASLPrep
+requires libicu. If libicu is not available, attempting to authenticate over
+SCRAM-SHA-256 with non-ASCII passwords will result in error.
+
+Usernames *never* undergo SASLPrep.
+
+By default, when building the C driver libicu is linked if available. This can
+be changed with the ``ENABLE_ICU`` cmake option. To specify an installation
+path of libicu, specify ``ICU_ROOT`` as a cmake option. See the
+`FindICU <https://cmake.org/cmake/help/v3.7/module/FindICU.html>`_ documentation
+for more information.
+
+
 .. _authentication_scram_sha_1:
 
 Basic Authentication (SCRAM-SHA-1)
 ----------------------------------
 
-The default authentication mechanism when talking to MongoDB 3.0 and later is ``SCRAM-SHA-1`` (`RFC 5802 <http://tools.ietf.org/html/rfc5802>`_). Using this authentication mechanism means that the password is never actually sent over the wire when authenticating, but rather a computed proof that the client password is the same as the password the server knows.
+The default authentication mechanism before MongoDB 4.0 is ``SCRAM-SHA-1`` (`RFC 5802 <http://tools.ietf.org/html/rfc5802>`_). Using this authentication mechanism means that the password is never actually sent over the wire when authenticating, but rather a computed proof that the client password is the same as the password the server knows.
 
 .. code-block:: none
 

@@ -30,22 +30,26 @@
 
 BSON_BEGIN_DECLS
 
-#define MONGOC_SCRAM_HASH_SIZE 20
+#define MONGOC_SCRAM_SHA_1_HASH_SIZE 20
+#define MONGOC_SCRAM_SHA_256_HASH_SIZE 32
+/* SCRAM-SHA-1 uses a hash size of 20, and SCRAM-SHA-256 uses a hash size
+ * of 32. Stack allocations should be large enough for either. */
+#define MONGOC_SCRAM_HASH_MAX_SIZE MONGOC_SCRAM_SHA_256_HASH_SIZE
 
 #define MONGOC_SCRAM_B64_ENCODED_SIZE(n) (2 * n)
 
-#define MONGOC_SCRAM_B64_HASH_SIZE \
-   MONGOC_SCRAM_B64_ENCODED_SIZE (MONGOC_SCRAM_HASH_SIZE)
+#define MONGOC_SCRAM_B64_HASH_MAX_SIZE \
+   MONGOC_SCRAM_B64_ENCODED_SIZE (MONGOC_SCRAM_HASH_MAX_SIZE)
 
 typedef struct _mongoc_scram_cache_t {
    /* pre-secrets */
    char *hashed_password;
-   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_SIZE];
+   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE];
    uint32_t iterations;
    /* secrets */
-   uint8_t client_key[MONGOC_SCRAM_HASH_SIZE];
-   uint8_t server_key[MONGOC_SCRAM_HASH_SIZE];
-   uint8_t salted_password[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t client_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t server_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t salted_password[MONGOC_SCRAM_HASH_MAX_SIZE];
 } mongoc_scram_cache_t;
 
 typedef struct _mongoc_scram_t {
@@ -54,11 +58,11 @@ typedef struct _mongoc_scram_t {
    char *user;
    char *pass;
    char *hashed_password;
-   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_SIZE];
+   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE];
    uint32_t iterations;
-   uint8_t client_key[MONGOC_SCRAM_HASH_SIZE];
-   uint8_t server_key[MONGOC_SCRAM_HASH_SIZE];
-   uint8_t salted_password[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t client_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t server_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t salted_password[MONGOC_SCRAM_HASH_MAX_SIZE];
    char encoded_nonce[48];
    int32_t encoded_nonce_len;
    uint8_t *auth_message;
@@ -70,8 +74,10 @@ typedef struct _mongoc_scram_t {
    mongoc_scram_cache_t *cache;
 } mongoc_scram_t;
 
+#ifdef MONGOC_ENABLE_CRYPTO
 void
-_mongoc_scram_init (mongoc_scram_t *scram);
+_mongoc_scram_init (mongoc_scram_t *scram, mongoc_crypto_hash_algorithm_t algo);
+#endif
 
 mongoc_scram_cache_t *
 _mongoc_scram_get_cache (mongoc_scram_t *scram);
@@ -119,10 +125,7 @@ _mongoc_sasl_prep_required (const char *str);
  * null on error and sets err.
  * `name` should be "username" or "password". */
 char *
-_mongoc_sasl_prep (const char *name,
-                   const char *in_utf8,
-                   int in_utf8_len,
-                   bson_error_t *err);
+_mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err);
 
 BSON_END_DECLS
 

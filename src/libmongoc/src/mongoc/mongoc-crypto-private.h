@@ -31,37 +31,42 @@
 BSON_BEGIN_DECLS
 
 typedef struct _mongoc_crypto_t mongoc_crypto_t;
+typedef enum {
+   MONGOC_CRYPTO_ALGORITHM_SHA_1,
+   MONGOC_CRYPTO_ALGORITHM_SHA_256
+} mongoc_crypto_hash_algorithm_t;
 
 struct _mongoc_crypto_t {
-   void (*hmac_sha1) (mongoc_crypto_t *crypto,
-                      const void *key,
-                      int key_len,
-                      const unsigned char *d,
-                      int n,
-                      unsigned char *md /* OUT */);
-   bool (*sha1) (mongoc_crypto_t *crypto,
+   void (*hmac) (mongoc_crypto_t *crypto,
+                 const void *key,
+                 int key_len,
+                 const unsigned char *data,
+                 int data_len,
+                 unsigned char *hmac_out);
+   bool (*hash) (mongoc_crypto_t *crypto,
                  const unsigned char *input,
                  const size_t input_len,
-                 unsigned char *output /* OUT */);
+                 unsigned char *hash_out);
+   mongoc_crypto_hash_algorithm_t algorithm;
 };
 
 void
-mongoc_crypto_init (mongoc_crypto_t *crypto);
+mongoc_crypto_init (mongoc_crypto_t *crypto,
+                    mongoc_crypto_hash_algorithm_t algo);
 
 void
-mongoc_crypto_hmac_sha1 (mongoc_crypto_t *crypto,
-                         const void *key,
-                         int key_len,
-                         const unsigned char *d,
-                         int n,
-                         unsigned char *md /* OUT */);
+mongoc_crypto_hmac (mongoc_crypto_t *crypto,
+                    const void *key,
+                    int key_len,
+                    const unsigned char *data,
+                    int data_len,
+                    unsigned char *hmac_out);
 
 bool
-mongoc_crypto_sha1 (mongoc_crypto_t *crypto,
+mongoc_crypto_hash (mongoc_crypto_t *crypto,
                     const unsigned char *input,
                     const size_t input_len,
-                    unsigned char *output /* OUT */);
-
+                    unsigned char *hash_out);
 
 BSON_END_DECLS
 #endif /* MONGOC_CRYPTO_PRIVATE_H */

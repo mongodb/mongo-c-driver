@@ -30,12 +30,12 @@ void
 mongoc_crypto_openssl_hmac_sha1 (mongoc_crypto_t *crypto,
                                  const void *key,
                                  int key_len,
-                                 const unsigned char *d,
-                                 int n,
-                                 unsigned char *md /* OUT */)
+                                 const unsigned char *data,
+                                 int data_len,
+                                 unsigned char *hmac_out)
 {
    /* U1 = HMAC(input, salt + 0001) */
-   HMAC (EVP_sha1 (), key, key_len, d, n, md, NULL);
+   HMAC (EVP_sha1 (), key, key_len, data, data_len, hmac_out, NULL);
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
@@ -57,7 +57,7 @@ bool
 mongoc_crypto_openssl_sha1 (mongoc_crypto_t *crypto,
                             const unsigned char *input,
                             const size_t input_len,
-                            unsigned char *output /* OUT */)
+                            unsigned char *hash_out)
 {
    EVP_MD_CTX *digest_ctxp = EVP_MD_CTX_new ();
    bool rval = false;
@@ -70,7 +70,7 @@ mongoc_crypto_openssl_sha1 (mongoc_crypto_t *crypto,
       goto cleanup;
    }
 
-   rval = (1 == EVP_DigestFinal_ex (digest_ctxp, output, NULL));
+   rval = (1 == EVP_DigestFinal_ex (digest_ctxp, hash_out, NULL));
 
 cleanup:
    EVP_MD_CTX_free (digest_ctxp);
@@ -78,5 +78,41 @@ cleanup:
    return rval;
 }
 
+void
+mongoc_crypto_openssl_hmac_sha256 (mongoc_crypto_t *crypto,
+                                   const void *key,
+                                   int key_len,
+                                   const unsigned char *data,
+                                   int data_len,
+                                   unsigned char *hmac_out)
+{
+   /* U1 = HMAC(input, salt + 0001) */
+   HMAC (EVP_sha256 (), key, key_len, data, data_len, hmac_out, NULL);
+}
+
+bool
+mongoc_crypto_openssl_sha256 (mongoc_crypto_t *crypto,
+                              const unsigned char *input,
+                              const size_t input_len,
+                              unsigned char *hash_out)
+{
+   EVP_MD_CTX *digest_ctxp = EVP_MD_CTX_new ();
+   bool rval = false;
+
+   if (1 != EVP_DigestInit_ex (digest_ctxp, EVP_sha256 (), NULL)) {
+      goto cleanup;
+   }
+
+   if (1 != EVP_DigestUpdate (digest_ctxp, input, input_len)) {
+      goto cleanup;
+   }
+
+   rval = (1 == EVP_DigestFinal_ex (digest_ctxp, hash_out, NULL));
+
+cleanup:
+   EVP_MD_CTX_free (digest_ctxp);
+
+   return rval;
+}
 
 #endif

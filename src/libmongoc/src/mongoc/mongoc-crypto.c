@@ -29,37 +29,56 @@
 #endif
 
 void
-mongoc_crypto_init (mongoc_crypto_t *crypto)
+mongoc_crypto_init (mongoc_crypto_t *crypto,
+                    mongoc_crypto_hash_algorithm_t algo)
 {
+   crypto->hmac = NULL;
+   crypto->hash = NULL;
+   if (algo == MONGOC_CRYPTO_ALGORITHM_SHA_1) {
 #ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
-   crypto->hmac_sha1 = mongoc_crypto_openssl_hmac_sha1;
-   crypto->sha1 = mongoc_crypto_openssl_sha1;
+      crypto->hmac = mongoc_crypto_openssl_hmac_sha1;
+      crypto->hash = mongoc_crypto_openssl_sha1;
 #elif defined(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO)
-   crypto->hmac_sha1 = mongoc_crypto_common_crypto_hmac_sha1;
-   crypto->sha1 = mongoc_crypto_common_crypto_sha1;
+      crypto->hmac = mongoc_crypto_common_crypto_hmac_sha1;
+      crypto->hash = mongoc_crypto_common_crypto_sha1;
 #elif defined(MONGOC_ENABLE_CRYPTO_CNG)
-   crypto->hmac_sha1 = mongoc_crypto_cng_hmac_sha1;
-   crypto->sha1 = mongoc_crypto_cng_sha1;
+      crypto->hmac = mongoc_crypto_cng_hmac_sha1;
+      crypto->hash = mongoc_crypto_cng_sha1;
 #endif
+   } else if (algo == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
+#ifdef MONGOC_ENABLE_CRYPTO_LIBCRYPTO
+      crypto->hmac = mongoc_crypto_openssl_hmac_sha256;
+      crypto->hash = mongoc_crypto_openssl_sha256;
+#elif defined(MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO)
+      crypto->hmac = mongoc_crypto_common_crypto_hmac_sha256;
+      crypto->hash = mongoc_crypto_common_crypto_sha256;
+#elif defined(MONGOC_ENABLE_CRYPTO_CNG)
+      crypto->hmac = mongoc_crypto_cng_hmac_sha256;
+      crypto->hash = mongoc_crypto_cng_sha256;
+#endif
+   }
+   BSON_ASSERT (crypto->hmac);
+   BSON_ASSERT (crypto->hash);
+   crypto->algorithm = algo;
 }
 
 void
-mongoc_crypto_hmac_sha1 (mongoc_crypto_t *crypto,
-                         const void *key,
-                         int key_len,
-                         const unsigned char *d,
-                         int n,
-                         unsigned char *md /* OUT */)
+mongoc_crypto_hmac (mongoc_crypto_t *crypto,
+                    const void *key,
+                    int key_len,
+                    const unsigned char *data,
+                    int data_len,
+                    unsigned char *hmac_out)
 {
-   crypto->hmac_sha1 (crypto, key, key_len, d, n, md);
+   crypto->hmac (crypto, key, key_len, data, data_len, hmac_out);
 }
 
 bool
-mongoc_crypto_sha1 (mongoc_crypto_t *crypto,
+mongoc_crypto_hash (mongoc_crypto_t *crypto,
                     const unsigned char *input,
                     const size_t input_len,
-                    unsigned char *output /* OUT */)
+                    unsigned char *output)
 {
-   return crypto->sha1 (crypto, input, input_len, output);
+   return crypto->hash (crypto, input, input_len, output);
 }
 #endif

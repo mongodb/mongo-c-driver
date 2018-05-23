@@ -33,6 +33,16 @@
 #define MONGOC_SCRAM_SERVER_KEY "Server Key"
 #define MONGOC_SCRAM_CLIENT_KEY "Client Key"
 
+static int
+_scram_hash_size (mongoc_scram_t *scram)
+{
+   if (scram->crypto.algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_1) {
+      return MONGOC_SCRAM_SHA_1_HASH_SIZE;
+   } else if (scram->crypto.algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
+      return MONGOC_SCRAM_SHA_256_HASH_SIZE;
+   }
+   return 0;
+}
 
 /* Copies the cache's secrets to scram */
 static void
@@ -153,13 +163,13 @@ _mongoc_scram_set_user (mongoc_scram_t *scram, const char *user)
 
 
 void
-_mongoc_scram_init (mongoc_scram_t *scram)
+_mongoc_scram_init (mongoc_scram_t *scram, mongoc_crypto_hash_algorithm_t algo)
 {
    BSON_ASSERT (scram);
 
    memset (scram, 0, sizeof *scram);
 
-   mongoc_crypto_init (&scram->crypto);
+   mongoc_crypto_init (&scram->crypto, algo);
 }
 
 
@@ -394,8 +404,8 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
                              uint32_t salt_len,
                              uint32_t iterations)
 {
-   uint8_t intermediate_digest[MONGOC_SCRAM_HASH_SIZE];
-   uint8_t start_key[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t intermediate_digest[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t start_key[MONGOC_SCRAM_HASH_MAX_SIZE];
 
    int i;
    int k;
@@ -408,26 +418,26 @@ _mongoc_scram_salt_password (mongoc_scram_t *scram,
    start_key[salt_len + 2] = 0;
    start_key[salt_len + 3] = 1;
 
-   mongoc_crypto_hmac_sha1 (&scram->crypto,
-                            password,
-                            password_len,
-                            start_key,
-                            sizeof (start_key),
-                            output);
+   mongoc_crypto_hmac (&scram->crypto,
+                       password,
+                       password_len,
+                       start_key,
+                       _scram_hash_size (scram),
+                       output);
 
-   memcpy (intermediate_digest, output, MONGOC_SCRAM_HASH_SIZE);
+   memcpy (intermediate_digest, output, _scram_hash_size (scram));
 
    /* intermediateDigest contains Ui and output contains the accumulated XOR:ed
     * result */
    for (i = 2; i <= iterations; i++) {
-      mongoc_crypto_hmac_sha1 (&scram->crypto,
-                               password,
-                               password_len,
-                               intermediate_digest,
-                               sizeof (intermediate_digest),
-                               intermediate_digest);
+      mongoc_crypto_hmac (&scram->crypto,
+                          password,
+                          password_len,
+                          intermediate_digest,
+                          _scram_hash_size (scram),
+                          intermediate_digest);
 
-      for (k = 0; k < MONGOC_SCRAM_HASH_SIZE; k++) {
+      for (k = 0; k < _scram_hash_size (scram); k++) {
          output[k] ^= intermediate_digest[k];
       }
    }
@@ -440,42 +450,44 @@ _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
                                      uint32_t outbufmax,
                                      uint32_t *outbuflen)
 {
-   uint8_t stored_key[MONGOC_SCRAM_HASH_SIZE];
-   uint8_t client_signature[MONGOC_SCRAM_HASH_SIZE];
-   unsigned char client_proof[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t stored_key[MONGOC_SCRAM_HASH_MAX_SIZE];
+   uint8_t client_signature[MONGOC_SCRAM_HASH_MAX_SIZE];
+   unsigned char client_proof[MONGOC_SCRAM_HASH_MAX_SIZE];
    int i;
    int r = 0;
 
    if (!*scram->client_key) {
       /* ClientKey := HMAC(saltedPassword, "Client Key") */
-      mongoc_crypto_hmac_sha1 (&scram->crypto,
-                               scram->salted_password,
-                               MONGOC_SCRAM_HASH_SIZE,
-                               (uint8_t *) MONGOC_SCRAM_CLIENT_KEY,
-                               strlen (MONGOC_SCRAM_CLIENT_KEY),
-                               scram->client_key);
+      mongoc_crypto_hmac (&scram->crypto,
+                          scram->salted_password,
+                          _scram_hash_size (scram),
+                          (uint8_t *) MONGOC_SCRAM_CLIENT_KEY,
+                          (int) strlen (MONGOC_SCRAM_CLIENT_KEY),
+                          scram->client_key);
    }
 
    /* StoredKey := H(client_key) */
-   mongoc_crypto_sha1 (
-      &scram->crypto, scram->client_key, MONGOC_SCRAM_HASH_SIZE, stored_key);
+   mongoc_crypto_hash (&scram->crypto,
+                       scram->client_key,
+                       (size_t) _scram_hash_size (scram),
+                       stored_key);
 
    /* ClientSignature := HMAC(StoredKey, AuthMessage) */
-   mongoc_crypto_hmac_sha1 (&scram->crypto,
-                            stored_key,
-                            MONGOC_SCRAM_HASH_SIZE,
-                            scram->auth_message,
-                            scram->auth_messagelen,
-                            client_signature);
+   mongoc_crypto_hmac (&scram->crypto,
+                       stored_key,
+                       _scram_hash_size (scram),
+                       scram->auth_message,
+                       scram->auth_messagelen,
+                       client_signature);
 
    /* ClientProof := ClientKey XOR ClientSignature */
 
-   for (i = 0; i < MONGOC_SCRAM_HASH_SIZE; i++) {
+   for (i = 0; i < _scram_hash_size (scram); i++) {
       client_proof[i] = scram->client_key[i] ^ client_signature[i];
    }
 
    r = bson_b64_ntop (client_proof,
-                      sizeof (client_proof),
+                      _scram_hash_size (scram),
                       (char *) outbuf + *outbuflen,
                       outbufmax - *outbuflen);
 
@@ -520,21 +532,39 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    char *tmp;
    char *hashed_password;
 
-   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_SIZE] = {0};
+   uint8_t decoded_salt[MONGOC_SCRAM_B64_HASH_MAX_SIZE] = {0};
    int32_t decoded_salt_len;
+   /* the decoded salt leaves four trailing bytes to add the int32 0x00000001 */
+   const int32_t expected_salt_length = _scram_hash_size (scram) - 4;
    bool rval = true;
 
    int iterations;
+
 
    BSON_ASSERT (scram);
    BSON_ASSERT (outbuf);
    BSON_ASSERT (outbufmax);
    BSON_ASSERT (outbuflen);
 
-   /* all our passwords go through md5 thanks to MONGODB-CR */
-   tmp = bson_strdup_printf ("%s:mongo:%s", scram->user, scram->pass);
-   hashed_password = _mongoc_hex_md5 (tmp);
-   bson_zero_free (tmp, strlen (tmp));
+   if (scram->crypto.algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_1) {
+      /* Auth spec for SCRAM-SHA-1: "The password variable MUST be the mongodb
+       * hashed variant. The mongo hashed variant is computed as hash = HEX(
+       * MD5( UTF8( username + ':mongo:' + plain_text_password )))" */
+      tmp = bson_strdup_printf ("%s:mongo:%s", scram->user, scram->pass);
+      hashed_password = _mongoc_hex_md5 (tmp);
+      bson_zero_free (tmp, strlen (tmp));
+   } else if (scram->crypto.algorithm == MONGOC_CRYPTO_ALGORITHM_SHA_256) {
+      /* Auth spec for SCRAM-SHA-256: "Passwords MUST be prepared with SASLprep,
+       * per RFC 5802. Passwords are used directly for key derivation; they
+       * MUST NOT be digested as they are in SCRAM-SHA-1." */
+      hashed_password =
+         _mongoc_sasl_prep (scram->pass, (int) strlen (scram->pass), error);
+      if (!hashed_password) {
+         goto FAIL;
+      }
+   } else {
+      BSON_ASSERT (false);
+   }
 
    /* we need all of the incoming message for the final client proof */
    if (!_mongoc_scram_buf_write ((char *) inbuf,
@@ -574,7 +604,6 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
                          "SCRAM Failure: unknown key (%c) in sasl step 2",
                          *ptr);
          goto FAIL;
-         break;
       }
 
       ptr++;
@@ -682,7 +711,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
       goto FAIL;
    }
 
-   if (16 != decoded_salt_len) {
+   if (expected_salt_length != decoded_salt_len) {
       bson_set_error (error,
                       MONGOC_ERROR_SCRAM,
                       MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
@@ -709,6 +738,17 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
                       MONGOC_ERROR_SCRAM,
                       MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
                       "SCRAM Failure: iterations is negative in sasl step2");
+      goto FAIL;
+   }
+
+   /* drivers MUST enforce a minimum iteration count of 4096 and MUST error if
+    * the authentication conversation specifies a lower count. This mitigates
+    * downgrade attacks by a man-in-the-middle attacker. */
+   if (iterations < 4096) {
+      bson_set_error (error,
+                      MONGOC_ERROR_SCRAM,
+                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                      "SCRAM Failure: iterations must be at least 4096");
       goto FAIL;
    }
 
@@ -773,31 +813,31 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
                                        uint8_t *verification,
                                        uint32_t len)
 {
-   char encoded_server_signature[MONGOC_SCRAM_B64_HASH_SIZE];
+   char encoded_server_signature[MONGOC_SCRAM_B64_HASH_MAX_SIZE];
    int32_t encoded_server_signature_len;
-   uint8_t server_signature[MONGOC_SCRAM_HASH_SIZE];
+   uint8_t server_signature[MONGOC_SCRAM_HASH_MAX_SIZE];
 
    if (!*scram->server_key) {
       /* ServerKey := HMAC(SaltedPassword, "Server Key") */
-      mongoc_crypto_hmac_sha1 (&scram->crypto,
-                               scram->salted_password,
-                               MONGOC_SCRAM_HASH_SIZE,
-                               (uint8_t *) MONGOC_SCRAM_SERVER_KEY,
-                               strlen (MONGOC_SCRAM_SERVER_KEY),
-                               scram->server_key);
+      mongoc_crypto_hmac (&scram->crypto,
+                          scram->salted_password,
+                          _scram_hash_size (scram),
+                          (uint8_t *) MONGOC_SCRAM_SERVER_KEY,
+                          strlen (MONGOC_SCRAM_SERVER_KEY),
+                          scram->server_key);
    }
 
    /* ServerSignature := HMAC(ServerKey, AuthMessage) */
-   mongoc_crypto_hmac_sha1 (&scram->crypto,
-                            scram->server_key,
-                            MONGOC_SCRAM_HASH_SIZE,
-                            scram->auth_message,
-                            scram->auth_messagelen,
-                            server_signature);
+   mongoc_crypto_hmac (&scram->crypto,
+                       scram->server_key,
+                       _scram_hash_size (scram),
+                       scram->auth_message,
+                       scram->auth_messagelen,
+                       server_signature);
 
    encoded_server_signature_len =
       bson_b64_ntop (server_signature,
-                     sizeof (server_signature),
+                     _scram_hash_size (scram),
                      encoded_server_signature,
                      sizeof (encoded_server_signature));
    if (encoded_server_signature_len == -1) {
@@ -853,7 +893,6 @@ _mongoc_scram_step3 (mongoc_scram_t *scram,
                          "SCRAM Failure: unknown key (%c) in sasl step 3",
                          *ptr);
          goto FAIL;
-         break;
       }
 
       ptr++;
@@ -952,25 +991,19 @@ _mongoc_scram_step (mongoc_scram_t *scram,
    switch (scram->step) {
    case 1:
       return _mongoc_scram_start (scram, outbuf, outbufmax, outbuflen, error);
-      break;
    case 2:
       return _mongoc_scram_step2 (
          scram, inbuf, inbuflen, outbuf, outbufmax, outbuflen, error);
-      break;
    case 3:
       return _mongoc_scram_step3 (
          scram, inbuf, inbuflen, outbuf, outbufmax, outbuflen, error);
-      break;
    default:
       bson_set_error (error,
                       MONGOC_ERROR_SCRAM,
                       MONGOC_ERROR_SCRAM_NOT_DONE,
                       "SCRAM Failure: maximum steps detected");
       return false;
-      break;
    }
-
-   return true;
 }
 
 bool
@@ -1095,16 +1128,19 @@ _mongoc_sasl_prep_impl (const char *name,
 #endif
 
 char *
-_mongoc_sasl_prep (const char *name,
-                   const char *in_utf8,
-                   int in_utf8_len,
-                   bson_error_t *err)
+_mongoc_sasl_prep (const char *in_utf8, int in_utf8_len, bson_error_t *err)
 {
 #ifdef MONGOC_ENABLE_ICU
-   return _mongoc_sasl_prep_impl (name, in_utf8, in_utf8_len, err);
+   return _mongoc_sasl_prep_impl ("password", in_utf8, in_utf8_len, err);
 #else
-   fprintf (stderr, "sasl_prep is not enabled.");
-   BSON_ASSERT (false);
+   if (_mongoc_sasl_prep_required (in_utf8)) {
+      bson_set_error (err,
+                      MONGOC_ERROR_SCRAM,
+                      MONGOC_ERROR_SCRAM_PROTOCOL_ERROR,
+                      "SCRAM Failure: ICU required to SASLPrep password");
+      return NULL;
+   }
+   return bson_strdup (in_utf8);
 #endif
 }
 #endif
