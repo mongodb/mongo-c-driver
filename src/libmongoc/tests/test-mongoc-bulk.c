@@ -871,6 +871,111 @@ test_update_with_opts_validate (void)
 }
 
 
+/* Tests that documents in `coll` found with `selector` all match `match` */
+static void
+_test_docs_in_coll_matches (mongoc_collection_t *coll,
+                            bson_t *selector,
+                            const char *match,
+                            uint32_t expected_count)
+{
+   const bson_t *next_doc;
+   mongoc_cursor_t *cursor =
+      mongoc_collection_find_with_opts (coll, selector, NULL, NULL);
+   while (expected_count > 0) {
+      ASSERT (mongoc_cursor_next (cursor, &next_doc));
+      if (match) {
+         ASSERT_MATCH (next_doc, match);
+      }
+      --expected_count;
+   }
+   ASSERT_CMPINT (expected_count, ==, 0);
+   mongoc_cursor_destroy (cursor);
+}
+
+
+static void
+test_update_arrayfilters (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_bulk_operation_t *bulk;
+
+   bson_error_t err;
+   bson_t reply;
+   bool ret = false;
+   int i;
+
+   client = test_framework_client_new ();
+   BSON_ASSERT (client);
+
+   collection = get_test_collection (client, "test_update_arrayfilters");
+   BSON_ASSERT (collection);
+
+   mongoc_collection_drop (collection, NULL);
+
+   bson_append_bool (&opts, "ordered", 7, true);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
+   BSON_ASSERT (bulk);
+
+   for (i = 1; i < 4; i++) {
+      ret = mongoc_bulk_operation_insert_with_opts (
+         bulk,
+         tmp_bson ("{'_id': %d, 'a': [{'x':1}, {'x':2}]}", i),
+         NULL,
+         &err);
+      ASSERT_OR_PRINT (ret, err);
+   }
+
+   ret = mongoc_bulk_operation_update_one_with_opts (
+      bulk,
+      tmp_bson ("{'_id': 1}"),
+      tmp_bson ("{'$set': {'a.$[i].x': 3}}"),
+      tmp_bson ("{'arrayFilters': [{'i.x': {'$gt': 1}}]}"),
+      &err);
+   ASSERT_OR_PRINT (ret, err);
+
+   ret = mongoc_bulk_operation_update_many_with_opts (
+      bulk,
+      tmp_bson ("{'_id': {'$gt': 1}}"),
+      tmp_bson ("{'$set': {'a.$[i].x': 4}}"),
+      tmp_bson ("{'arrayFilters': [{'i.x': {'$gt': 1}}]}"),
+      &err);
+   ASSERT_OR_PRINT (ret, err);
+
+   ASSERT_OR_PRINT ((bool) mongoc_bulk_operation_execute (bulk, &reply, &err),
+                    err);
+
+   ASSERT_MATCH (&reply,
+                 "{'nInserted': 3,"
+                 " 'nMatched':  3,"
+                 " 'nModified': 3,"
+                 " 'nRemoved':  0,"
+                 " 'nUpserted': 0,"
+                 " 'upserted': {'$exists': false},"
+                 " 'writeErrors': []}");
+   bson_destroy (&reply);
+
+   ASSERT_COUNT (3, collection);
+
+   _test_docs_in_coll_matches (
+      collection, tmp_bson ("{'_id':1}"), "{'a': [{'x':1}, {'x':3}]}", 1);
+
+   _test_docs_in_coll_matches (
+      collection, tmp_bson ("{'_id':2}"), "{'a': [{'x':1}, {'x':4}]}", 1);
+
+   _test_docs_in_coll_matches (
+      collection, tmp_bson ("{'_id':3}"), "{'a': [{'x':1}, {'x':4}]}", 1);
+
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &err), err);
+
+   mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&opts);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 static void
 test_replace_one (bool ordered)
 {
@@ -4479,6 +4584,12 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_with_opts_validate",
                       test_update_with_opts_validate);
+   TestSuite_AddFull (suite,
+                      "/BulkOperation/update_arrayfilters",
+                      test_update_arrayfilters,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_less_than_6);
    TestSuite_AddLive (
       suite, "/BulkOperation/replace_one_ordered", test_replace_one_ordered);
    TestSuite_AddLive (suite,

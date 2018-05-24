@@ -211,13 +211,19 @@ opts_structs = OrderedDict([
     ])),
 
     ('mongoc_bulk_update_one_opts_t', Struct(
-        [('update', {'type': 'mongoc_bulk_update_opts_t'})],
+        [
+            ('update', {'type': 'mongoc_bulk_update_opts_t'}),
+            array_filters_option,
+        ],
         multi='false',
         validate='_mongoc_default_update_vflags',
         allow_extra=False)),
 
     ('mongoc_bulk_update_many_opts_t', Struct(
-        [('update', {'type': 'mongoc_bulk_update_opts_t'})],
+        [
+            ('update', {'type': 'mongoc_bulk_update_opts_t'}),
+            array_filters_option,
+        ],
         multi='true',
         validate='_mongoc_default_update_vflags',
         allow_extra=False)),

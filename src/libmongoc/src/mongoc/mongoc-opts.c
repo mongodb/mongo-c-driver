@@ -932,6 +932,7 @@ _mongoc_bulk_update_one_opts_parse (
    bson_init (&mongoc_bulk_update_one_opts->update.collation);
    mongoc_bulk_update_one_opts->update.upsert = false;
    mongoc_bulk_update_one_opts->update.multi = false;
+   bson_init (&mongoc_bulk_update_one_opts->arrayFilters);
    bson_init (&mongoc_bulk_update_one_opts->extra);
 
    if (!opts) {
@@ -992,6 +993,15 @@ _mongoc_bulk_update_one_opts_parse (
             return false;
          }
       }
+      else if (!strcmp (bson_iter_key (&iter), "arrayFilters")) {
+         if (!_mongoc_convert_array (
+               client,
+               &iter,
+               &mongoc_bulk_update_one_opts->arrayFilters,
+               error)) {
+            return false;
+         }
+      }
       else {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -1009,6 +1019,7 @@ void
 _mongoc_bulk_update_one_opts_cleanup (mongoc_bulk_update_one_opts_t *mongoc_bulk_update_one_opts)
 {
    bson_destroy (&mongoc_bulk_update_one_opts->update.collation);
+   bson_destroy (&mongoc_bulk_update_one_opts->arrayFilters);
    bson_destroy (&mongoc_bulk_update_one_opts->extra);
 }
 
@@ -1027,6 +1038,7 @@ _mongoc_bulk_update_many_opts_parse (
    bson_init (&mongoc_bulk_update_many_opts->update.collation);
    mongoc_bulk_update_many_opts->update.upsert = false;
    mongoc_bulk_update_many_opts->update.multi = true;
+   bson_init (&mongoc_bulk_update_many_opts->arrayFilters);
    bson_init (&mongoc_bulk_update_many_opts->extra);
 
    if (!opts) {
@@ -1087,6 +1099,15 @@ _mongoc_bulk_update_many_opts_parse (
             return false;
          }
       }
+      else if (!strcmp (bson_iter_key (&iter), "arrayFilters")) {
+         if (!_mongoc_convert_array (
+               client,
+               &iter,
+               &mongoc_bulk_update_many_opts->arrayFilters,
+               error)) {
+            return false;
+         }
+      }
       else {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -1104,6 +1125,7 @@ void
 _mongoc_bulk_update_many_opts_cleanup (mongoc_bulk_update_many_opts_t *mongoc_bulk_update_many_opts)
 {
    bson_destroy (&mongoc_bulk_update_many_opts->update.collation);
+   bson_destroy (&mongoc_bulk_update_many_opts->arrayFilters);
    bson_destroy (&mongoc_bulk_update_many_opts->extra);
 }
 
