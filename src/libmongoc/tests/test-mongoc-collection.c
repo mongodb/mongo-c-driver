@@ -4703,7 +4703,7 @@ _test_docs_in_coll_matches (mongoc_collection_t *coll,
       }
       --expected_count;
    }
-   ASSERT (expected_count == 0);
+   ASSERT_CMPINT (expected_count, ==, 0);
    mongoc_cursor_destroy (cursor);
 }
 
