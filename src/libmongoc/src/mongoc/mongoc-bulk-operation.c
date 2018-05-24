@@ -394,7 +394,8 @@ _mongoc_bulk_operation_update_append (
    mongoc_bulk_operation_t *bulk,
    const bson_t *selector,
    const bson_t *document,
-   const mongoc_bulk_update_opts_t *update_opts)
+   const mongoc_bulk_update_opts_t *update_opts,
+   const bson_t *extra_opts)
 {
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
@@ -408,6 +409,10 @@ _mongoc_bulk_operation_update_append (
    has_collation = !bson_empty (&update_opts->collation);
    if (has_collation) {
       bson_append_document (&opts, "collation", 9, &update_opts->collation);
+   }
+
+   if (extra_opts) {
+      bson_concat (&opts, extra_opts);
    }
 
    if (bulk->commands.len) {
@@ -438,6 +443,7 @@ _mongoc_bulk_operation_update_with_opts (
    const bson_t *selector,
    const bson_t *document,
    const mongoc_bulk_update_opts_t *update_opts,
+   const bson_t *extra_opts,
    bool multi,
    bson_error_t *error) /* OUT */
 {
@@ -463,7 +469,8 @@ _mongoc_bulk_operation_update_with_opts (
       RETURN (false);
    }
 
-   _mongoc_bulk_operation_update_append (bulk, selector, document, update_opts);
+   _mongoc_bulk_operation_update_append (
+      bulk, selector, document, update_opts, extra_opts);
 
    RETURN (true);
 }
@@ -488,8 +495,18 @@ mongoc_bulk_operation_update_one_with_opts (mongoc_bulk_operation_t *bulk,
       RETURN (false);
    }
 
-   ret = _mongoc_bulk_operation_update_with_opts (
-      bulk, selector, document, &update_opts.update, false /* multi */, error);
+   if (!bson_empty (&update_opts.arrayFilters)) {
+      bson_append_array (
+         &update_opts.extra, "arrayFilters", 12, &update_opts.arrayFilters);
+   }
+
+   ret = _mongoc_bulk_operation_update_with_opts (bulk,
+                                                  selector,
+                                                  document,
+                                                  &update_opts.update,
+                                                  &update_opts.extra,
+                                                  false /* multi */,
+                                                  error);
 
    _mongoc_bulk_update_one_opts_cleanup (&update_opts);
    RETURN (ret);
@@ -515,8 +532,18 @@ mongoc_bulk_operation_update_many_with_opts (mongoc_bulk_operation_t *bulk,
       RETURN (false);
    }
 
-   ret = _mongoc_bulk_operation_update_with_opts (
-      bulk, selector, document, &update_opts.update, true /* multi */, error);
+   if (!bson_empty (&update_opts.arrayFilters)) {
+      bson_append_array (
+         &update_opts.extra, "arrayFilters", 12, &update_opts.arrayFilters);
+   }
+
+   ret = _mongoc_bulk_operation_update_with_opts (bulk,
+                                                  selector,
+                                                  document,
+                                                  &update_opts.update,
+                                                  &update_opts.extra,
+                                                  true /* multi */,
+                                                  error);
 
    _mongoc_bulk_update_many_opts_cleanup (&update_opts);
    RETURN (ret);
@@ -619,7 +646,8 @@ mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t *bulk,
       GOTO (done);
    }
 
-   _mongoc_bulk_operation_update_append (bulk, selector, document, update_opts);
+   _mongoc_bulk_operation_update_append (
+      bulk, selector, document, update_opts, &repl_opts.extra);
    ret = true;
 
 done:

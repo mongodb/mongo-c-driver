@@ -95,11 +95,13 @@ typedef struct _mongoc_bulk_update_opts_t {
 
 typedef struct _mongoc_bulk_update_one_opts_t {
    mongoc_bulk_update_opts_t update;
+   bson_t arrayFilters;
    bson_t extra;
 } mongoc_bulk_update_one_opts_t;
 
 typedef struct _mongoc_bulk_update_many_opts_t {
    mongoc_bulk_update_opts_t update;
+   bson_t arrayFilters;
    bson_t extra;
 } mongoc_bulk_update_many_opts_t;
 
