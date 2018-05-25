@@ -66,8 +66,34 @@ when adding a new symbol.
 ### Documentation
 
 We strive to document all symbols. See doc/ for documentation examples. If you
-add a new function, add a new .rst file describing the function so that we can
-generate man pages and HTML for it.
+add a new public function, add a new .rst file describing the function so that
+we can generate man pages and HTML for it.
+
+For complex internal functions, comment above the function definition with
+a block comment like the following:
+
+```
+/* --------------------------------------------------------------------------
+ *
+ * mongoc_cmd_parts_append_read_write --
+ *
+ *       Append user-supplied options to @parts->command_extra, taking the
+ *       selected server's max wire version into account.
+ *
+ * Return:
+ *       True if the options were successfully applied. If any options are
+ *       invalid, returns false and fills out @error. In that case @parts is
+ *       invalid and must not be used.
+ *
+ * Side effects:
+ *       May partly apply options before returning an error.
+ *
+ *--------------------------------------------------------------------------
+ */
+```
+
+Public functions do not need these comment blocks, since they are documented in
+the .rst files.
 
 
 ### Testing

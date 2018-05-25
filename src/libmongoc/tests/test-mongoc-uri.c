@@ -1562,7 +1562,7 @@ test_mongoc_uri_ssl (void)
       mongoc_uri_get_username (uri),
       "CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New York,C=US");
    ASSERT (!mongoc_uri_get_password (uri));
-   ASSERT_CMPSTR (mongoc_uri_get_database (uri), "");
+   ASSERT (!mongoc_uri_get_database (uri));
    ASSERT_CMPSTR (mongoc_uri_get_auth_source (uri), "$external");
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509");
 

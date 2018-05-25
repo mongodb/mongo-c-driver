@@ -24,5 +24,5 @@ Fetches the database portion of an URI if provided. This is the portion after th
 Returns
 -------
 
-A string which should not be modified or freed.
+A string which should not be modified or freed or ``NULL``.
 

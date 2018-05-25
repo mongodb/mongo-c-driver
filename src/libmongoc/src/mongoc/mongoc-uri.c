@@ -489,7 +489,21 @@ error:
    return false;
 }
 
-
+/* -----------------------------------------------------------------------------
+ *
+ * mongoc_uri_parse_database --
+ *
+ *        Parse the database after @str. @str is expected to point after the
+ *        host list to the character immediately after the / in the uri string.
+ *        If no database is specified in the uri, e.g. the uri has a form like:
+ *        mongodb://localhost/?option=X then uri->database remains NULL after
+ *        parsing.
+ *
+ * Return:
+ *        True if the parsed database is valid. An empty database is considered
+ *        valid.
+ * -----------------------------------------------------------------------------
+ */
 static bool
 mongoc_uri_parse_database (mongoc_uri_t *uri, const char *str, const char **end)
 {
@@ -499,6 +513,13 @@ mongoc_uri_parse_database (mongoc_uri_t *uri, const char *str, const char **end)
    const char *tmp;
 
    if ((uri->database = scan_to_unichar (str, '?', "", &end_database))) {
+      if (strcmp (uri->database, "") == 0) {
+         /* no database is found, don't store the empty string. */
+         bson_free (uri->database);
+         uri->database = NULL;
+         /* but it is valid to have an empty database. */
+         return true;
+      }
       *end = end_database;
    } else if (*str) {
       uri->database = bson_strdup (str);
@@ -991,6 +1012,16 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
             MONGOC_URI_ERROR (error,
                               "'%s' authentication mechanism requires username",
                               mongoc_uri_get_auth_mechanism (uri));
+            return false;
+         }
+      }
+      /* MONGODB-X509 errors if a password is supplied. */
+      if (!strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509")) {
+         if (mongoc_uri_get_password (uri)) {
+            MONGOC_URI_ERROR (
+               error,
+               "'%s' authentication mechanism does not accept a password",
+               mongoc_uri_get_auth_mechanism (uri));
             return false;
          }
       }
@@ -1575,12 +1606,31 @@ const char *
 mongoc_uri_get_auth_source (const mongoc_uri_t *uri)
 {
    bson_iter_t iter;
+   const char *mechanism;
 
    BSON_ASSERT (uri);
 
    if (bson_iter_init_find_case (
           &iter, &uri->credentials, MONGOC_URI_AUTHSOURCE)) {
       return bson_iter_utf8 (&iter, NULL);
+   }
+
+   /* Auth spec:
+    * "For GSSAPI and MONGODB-X509 authMechanisms the authSource defaults to
+    * $external. For PLAIN the authSource defaults to the database name if
+    * supplied on the connection string or $external. For MONGODB-CR,
+    * SCRAM-SHA-1 and SCRAM-SHA-256 authMechanisms, the authSource defaults to
+    * the database name if supplied on the connection string or admin."
+    */
+   mechanism = mongoc_uri_get_auth_mechanism (uri);
+   if (mechanism) {
+      if (!strcasecmp (mechanism, "GSSAPI") ||
+          !strcasecmp (mechanism, "MONGODB-X509")) {
+         return "$external";
+      }
+      if (!strcasecmp (mechanism, "PLAIN")) {
+         return uri->database ? uri->database : "$external";
+      }
    }
 
    return uri->database ? uri->database : "admin";
