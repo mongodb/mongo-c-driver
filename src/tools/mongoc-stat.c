@@ -16,6 +16,7 @@
 
 
 #include <bson.h>
+#include <mongoc.h>
 
 
 #if defined(BSON_OS_UNIX) && defined(MONGOC_ENABLE_SHM_COUNTERS)
