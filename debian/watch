@@ -1,0 +1,4 @@
+version=3
+
+opts="dversionmangle=s/\+dfsg[.\d]*//" \
+https://github.com/mongodb/mongo-c-driver/releases /mongodb/mongo-c-driver/releases/download/\d\S*/mongo-c-driver-(\d\S*)\.tar\.gz

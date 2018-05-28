@@ -1,0 +1,7 @@
+The upstream libmongoc bundles zLib for compression support on systems where it
+is not available.  The Debian package does not build using this embedded code.
+Instead it depends on zlib1g-dev.  In order to prevent issues with shipping an
+embedded copy of source code from another package, the upstream source is
+modified to remove the bundled zlib sources.  This is accomplished by using the
+--git-prebuild option of git-buildpackage to handle generation of the upstream
+tarball without the embedded code.  See debian/gbp.conf for details.

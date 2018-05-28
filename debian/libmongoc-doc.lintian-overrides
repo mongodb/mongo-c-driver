@@ -1,0 +1,4 @@
+# Sphinx embeds jQuery
+libmongoc-doc: embedded-javascript-library
+# This man page shows some long URIs that we cannot linebreak
+libmongoc-doc: manpage-has-errors-from-man usr/share/man/man3/mongoc_uri_new_with_error.3.gz 77: warning [p 1, 6.2i]: cannot adjust line

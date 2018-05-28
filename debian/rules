@@ -1,0 +1,37 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#DH_VERBOSE = 1
+
+# see EXAMPLES in dpkg-buildflags(1) and read /usr/share/dpkg/*
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/default.mk
+
+# see FEATURE AREAS in dpkg-buildflags(1)
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# see ENVIRONMENT in dpkg-buildflags(1)
+# package maintainers to append CFLAGS
+#export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+# package maintainers to append LDFLAGS
+export DEB_LDFLAGS_MAINT_APPEND := -lpthread
+
+# main packaging script based on dh7 syntax
+%:
+	dh $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+	-DENABLE_MONGOC=ON \
+	-DENABLE_BSON=ON \
+	-DENABLE_MAN_PAGES=ON \
+	-DENABLE_HTML_DOCS=ON \
+	-DENABLE_MAINTAINER_FLAGS=ON \
+	-DENABLE_TESTS=OFF \
+	-DENABLE_ZLIB=SYSTEM
+
+#override_dh_install:
+#	dh_install -a -X.la -Xmongoc-stat -Xdoc/mongo-c-driver -Xdoc/libbson -Xman/man3 -X-priv.so -X-priv.pc --fail-missing
+
+override_dh_makeshlibs:
+	dh_makeshlibs -V

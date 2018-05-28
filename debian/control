@@ -1,0 +1,93 @@
+Source: mongo-c-driver
+Priority: optional
+Maintainer: A. Jesse Jiryu Davis <jesse@mongodb.com>
+Build-Depends: debhelper (>= 11),
+               cmake,
+               libssl-dev,
+               pkg-config,
+               python3-sphinx,
+               zlib1g-dev,
+               libicu-dev,
+               libsasl2-dev,
+               libsnappy-dev
+Standards-Version: 4.1.4
+Section: libs
+Homepage: https://github.com/mongodb/mongo-c-driver
+Vcs-Git: https://github.com/mongodb/mongo-c-driver.git
+Vcs-Browser: https://github.com/mongodb/mongo-c-driver/tree/debian
+
+Package: libmongoc-dev
+Section: libdevel
+Architecture: any
+Depends: libmongoc-1.0-0 (= ${binary:Version}),
+         libbson-dev (= ${binary:Version}),
+         libssl-dev,
+         zlib1g-dev,
+         libsnappy-dev,
+         ${misc:Depends}
+Description: MongoDB C client library - dev files
+ libmongoc is the officially supported MongoDB client library for C
+ applications.
+ .
+ This package contains all files necessary to develop applications which
+ use libmongoc.
+
+Package: libmongoc-1.0-0
+Architecture: any
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Description: MongoDB C client library - runtime files
+ libmongoc is the officially supported MongoDB client library for C
+ applications.
+ .
+ This package contains the libmongoc runtime libraries, for applications that
+ have been built with libmongoc.
+
+Package: libmongoc-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}
+Description: MongoDB C client library - documentation
+ libmongoc is the officially supported MongoDB client library for C
+ applications.
+ .
+ This package contains the man pages for libmongoc.
+
+Package: libbson-dev
+Section: libdevel
+Architecture: any
+Depends: libbson-1.0-0 (= ${binary:Version}),
+         ${misc:Depends}
+Description: Library to parse and generate BSON documents - dev files
+ libbson parses and generates BSON documents, the data format for
+ MongoDB. It is a dependency for libmongoc, the MongoDB client library,
+ for which it provides BSON support as well as platform-compatibility
+ functions and macros.
+ .
+ This package contains all files necessary to develop applications which
+ use libbson.
+
+Package: libbson-1.0-0
+Architecture: any
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Description: Library to parse and generate BSON documents - runtime files
+ libbson parses and generates BSON documents, the data format for
+ MongoDB. It is a dependency for libmongoc, the MongoDB client library,
+ for which it provides BSON support as well as platform-compatibility
+ functions and macros.
+ .
+ This package contains the libbson runtime libraries, for applications that
+ have been built with libbson.
+
+Package: libbson-doc
+Section: doc
+Architecture: all
+Depends: ${misc:Depends}
+Description: Library to parse and generate BSON documents - documentation
+ libbson parses and generates BSON documents, the data format for
+ MongoDB. It is a dependency for libmongoc, the MongoDB client library,
+ for which it provides BSON support as well as platform-compatibility
+ functions and macros.
+ .
+ This package contains the man pages for libbson.
