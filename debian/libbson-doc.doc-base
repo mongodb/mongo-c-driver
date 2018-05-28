@@ -1,0 +1,9 @@
+Document: libbson-doc
+Title: libbson Documentation
+Author: MongoDB, Inc.
+Abstract: Documentation for developing with the MongoDB BSON library
+Section: Programming
+
+Format: HTML
+Index: /usr/share/doc/libbson-dev/html/index.html
+Files: /usr/share/doc/libbson-dev/html/*.html

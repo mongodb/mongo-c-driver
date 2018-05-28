@@ -1,0 +1,5 @@
+usr/include/libmongoc*/*.h
+usr/lib/*/libmongoc-[0-9]*.so
+usr/lib/*/pkgconfig/libmongoc-[0-9]*
+usr/lib/*/pkgconfig/libmongoc-ssl-[0-9]*
+usr/lib/*/cmake/libmongoc*
