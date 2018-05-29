@@ -167,6 +167,20 @@ else
   fi
 fi
 
+if [ $(uname) = "Darwin" ]; then
+  if test -f $INSTALL_DIR/bin/mongoc-stat; then
+    echo "mongoc-stat shouldn't have been installed"
+    exit 1
+  fi
+else
+  if test ! -f $INSTALL_DIR/bin/mongoc-stat; then
+    echo "mongoc-stat missing!"
+    exit 1
+  else
+    echo "mongoc-stat check ok"
+  fi
+fi
+
 if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
   # Test our CMake package config file with CMake's find_package command.
   EXAMPLE_DIR=$SRCROOT/src/libmongoc/examples/cmake/find_package
