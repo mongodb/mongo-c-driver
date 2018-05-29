@@ -597,6 +597,13 @@ endif ()
 add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
 target_link_libraries (mongoc-stat mongoc_shared)
 
+# mongoc-stat works if shared memory performance counters are enabled.
+if (ENABLE_SHM_COUNTERS STREQUAL "ON")
+   install (PROGRAMS ${PROJECT_BINARY_DIR}/mongoc-stat
+      DESTINATION ${CMAKE_INSTALL_BINDIR}
+   )
+endif ()
+
 function (mongoc_add_test test use_shared)
    if (ENABLE_TESTS)
       add_executable (${test} ${ARGN})
