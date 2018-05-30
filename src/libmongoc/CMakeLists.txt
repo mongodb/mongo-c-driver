@@ -593,10 +593,7 @@ target_link_libraries (mongoc_shared ${LIBRARIES} ${BSON_LIBRARIES})
 target_include_directories (mongoc_shared BEFORE PUBLIC ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
 target_compile_definitions (mongoc_shared PUBLIC MONGOC_COMPILATION ${BSON_DEFINITIONS})
 
-# CMake wants to make different symlinks than the Autotools, see
-# https://cmake.org/pipermail/cmake/2007-September/016501.html
-# This hack sets up standard symlink, libmongoc-1.0.so -> libmongoc-1.0.0.so
-set_target_properties (mongoc_shared PROPERTIES VERSION 0 SOVERSION ${MONGOC_MAJOR_VERSION})
+set_target_properties (mongoc_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "mongoc-${MONGOC_API_VERSION}" PREFIX "lib")
 
 if (MONGOC_ENABLE_STATIC)
@@ -604,7 +601,7 @@ if (MONGOC_ENABLE_STATIC)
    target_link_libraries (mongoc_static ${LIBRARIES} ${BSON_STATIC_LIBRARIES})
    target_include_directories (mongoc_static BEFORE PUBLIC ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
    target_compile_definitions (mongoc_static PUBLIC MONGOC_COMPILATION MONGOC_STATIC ${BSON_STATIC_DEFINITIONS})
-   set_target_properties (mongoc_static PROPERTIES VERSION ${MONGOC_VERSION})
+   set_target_properties (mongoc_static PROPERTIES VERSION 0.0.0)
    set_target_properties (mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
 endif ()
 

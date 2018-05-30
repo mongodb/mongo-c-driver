@@ -211,10 +211,7 @@ set (HEADERS
 add_library (bson_shared SHARED ${SOURCES} ${HEADERS})
 set (CMAKE_CXX_VISIBILITY_PRESET hidden)
 set_target_properties (bson_shared PROPERTIES COMPILE_DEFINITIONS "BSON_COMPILATION;JSONSL_PARSE_NAN")
-# CMake wants to make different symlinks than the Autotools, see
-# https://cmake.org/pipermail/cmake/2007-September/016501.html
-# This hack sets up standard symlink, libbson-1.0.so -> libbson-1.0.0.so
-set_target_properties (bson_shared PROPERTIES VERSION 0 SOVERSION ${BSON_MAJOR_VERSION})
+set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "bson-${BSON_API_VERSION}" PREFIX "lib")
 
 if (RT_LIBRARY)
@@ -245,7 +242,7 @@ endif ()
 if (ENABLE_STATIC MATCHES "ON|AUTO")
    add_library (bson_static STATIC ${SOURCES} ${HEADERS})
    set_target_properties (bson_static PROPERTIES COMPILE_DEFINITIONS "BSON_COMPILATION;BSON_STATIC;JSONSL_PARSE_NAN")
-   set_target_properties (bson_static PROPERTIES VERSION ${BSON_VERSION})
+   set_target_properties (bson_static PROPERTIES VERSION 0.0.0)
    set_target_properties (bson_static PROPERTIES OUTPUT_NAME "bson-static-${BSON_API_VERSION}")
    target_link_libraries (bson_static Threads::Threads)
    if (RT_LIBRARY)
