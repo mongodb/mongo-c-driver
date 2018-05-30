@@ -1,3 +1,31 @@
+mongo-c-driver 1.10.1
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.10.1. This release fixes
+the following bugs introduced in version 1.10.0:
+
+  * Client sessions were not prohibited with unacknowledged write concern and
+    mongoc_bulk_operation_execute; now they are prohibited. Client sessions have
+    been prohibited with all other unacknowledged writes since 1.10.
+  * The "arrayFilters" update option, new in MongoDB 3.6 and supported since
+    libmongoc 1.9.0, was inadvertently prohibited by
+    mongoc_bulk_operation_update_one_with_opts and
+    mongoc_bulk_operation_update_many_with_opts in 1.10. The option is now
+    permitted again.
+  * The mongoc-stat tool for displaying shared counters was disabled on Linux
+    and not installed; it is now restored.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Jeremy Mikola
+  * Remi Collet
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 mongo-c-driver 1.10.0
 =====================
 
