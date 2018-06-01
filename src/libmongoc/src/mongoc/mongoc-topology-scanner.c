@@ -35,6 +35,7 @@
 #include "utlist.h"
 #include "mongoc-topology-private.h"
 #include "mongoc-host-list-private.h"
+#include "mongoc-uri-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"
@@ -145,7 +146,7 @@ _build_ismaster_with_handshake (mongoc_topology_scanner_t *ts)
  * is called at the start of the scan in _mongoc_topology_run_background, when a
  * node is added in _mongoc_topology_reconcile_add_nodes, or when running an
  * ismaster directly on a node in _mongoc_stream_run_ismaster. */
-bson_t *
+const bson_t *
 _mongoc_topology_scanner_get_ismaster (mongoc_topology_scanner_t *ts)
 {
    /* If this is the first time using the node or if it's the first time
@@ -180,6 +181,11 @@ _begin_ismaster_cmd (mongoc_topology_scanner_node_t *node,
       bson_copy_to (&ts->ismaster_cmd, &cmd);
    } else {
       bson_copy_to (_mongoc_topology_scanner_get_ismaster (ts), &cmd);
+   }
+
+   if (node->ts->negotiate_sasl_supported_mechs &&
+       !node->negotiated_sasl_supported_mechs) {
+      _mongoc_handshake_append_sasl_supported_mechs (ts->uri, &cmd);
    }
 
    if (!bson_empty (&ts->cluster_time)) {
@@ -343,6 +349,9 @@ mongoc_topology_scanner_node_disconnect (mongoc_topology_scanner_node_t *node,
       }
 
       node->stream = NULL;
+      memset (
+         &node->sasl_supported_mechs, 0, sizeof (node->sasl_supported_mechs));
+      node->negotiated_sasl_supported_mechs = false;
    }
 }
 
@@ -448,6 +457,13 @@ _async_success (mongoc_async_cmd_t *acmd,
    /* set our successful stream. */
    BSON_ASSERT (!node->stream);
    node->stream = stream;
+
+   if (ts->negotiate_sasl_supported_mechs &&
+       !node->negotiated_sasl_supported_mechs) {
+      _mongoc_handshake_parse_sasl_supported_mechs (
+         ismaster_response, &node->sasl_supported_mechs);
+   }
+
    ts->cb (node->id, ismaster_response, rtt_msec, ts->cb_data, &acmd->error);
 }
 

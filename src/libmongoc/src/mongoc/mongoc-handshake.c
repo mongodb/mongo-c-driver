@@ -595,3 +595,41 @@ _mongoc_handshake_appname_is_valid (const char *appname)
 {
    return strlen (appname) <= MONGOC_HANDSHAKE_APPNAME_MAX;
 }
+
+void
+_mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri,
+                                               bson_t *cmd)
+{
+   const char *username;
+   char *db_user;
+   username = mongoc_uri_get_username (uri);
+   db_user =
+      bson_strdup_printf ("%s.%s", mongoc_uri_get_auth_source (uri), username);
+   bson_append_utf8 (cmd, "saslSupportedMechs", 18, db_user, -1);
+   bson_free (db_user);
+}
+
+void
+_mongoc_handshake_parse_sasl_supported_mechs (
+   const bson_t *ismaster,
+   mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs)
+{
+   bson_iter_t iter;
+   memset (sasl_supported_mechs, 0, sizeof (*sasl_supported_mechs));
+   if (bson_iter_init_find (&iter, ismaster, "saslSupportedMechs")) {
+      bson_iter_t array_iter;
+      if (BSON_ITER_HOLDS_ARRAY (&iter)) {
+         bson_iter_recurse (&iter, &array_iter);
+         while (bson_iter_next (&array_iter)) {
+            if (BSON_ITER_HOLDS_UTF8 (&array_iter)) {
+               const char *mechanism_name = bson_iter_utf8 (&array_iter, NULL);
+               if (0 == strcmp (mechanism_name, "SCRAM-SHA-256")) {
+                  sasl_supported_mechs->scram_sha_256 = true;
+               } else if (0 == strcmp (mechanism_name, "SCRAM-SHA-1")) {
+                  sasl_supported_mechs->scram_sha_1 = true;
+               }
+            }
+         }
+      }
+   }
+}

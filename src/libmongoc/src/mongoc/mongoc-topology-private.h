@@ -150,7 +150,8 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd);
 void
 _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
                                    bson_error_t *error);
-bson_t* _mongoc_topology_get_ismaster (mongoc_topology_t* topology);
+const bson_t *
+_mongoc_topology_get_ismaster (mongoc_topology_t *topology);
 void
 _mongoc_topology_request_scan (mongoc_topology_t *topology);
 #endif

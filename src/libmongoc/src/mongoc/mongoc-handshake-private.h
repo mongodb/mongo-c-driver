@@ -22,6 +22,7 @@
 #error "Only <mongoc.h> can be included directly."
 #endif
 #include <bson.h>
+#include <mongoc.h>
 
 BSON_BEGIN_DECLS
 
@@ -110,6 +111,20 @@ _mongoc_handshake_get (void);
 
 bool
 _mongoc_handshake_appname_is_valid (const char *appname);
+
+typedef struct {
+   bool scram_sha_256;
+   bool scram_sha_1;
+} mongoc_handshake_sasl_supported_mechs_t;
+
+void
+_mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri,
+                                               bson_t *ismaster);
+
+void
+_mongoc_handshake_parse_sasl_supported_mechs (
+   const bson_t *ismaster,
+   mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs);
 
 BSON_END_DECLS
 

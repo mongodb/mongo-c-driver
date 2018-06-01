@@ -26,6 +26,7 @@
 #include <bson.h>
 #include "mongoc-async-private.h"
 #include "mongoc-async-cmd-private.h"
+#include "mongoc-handshake-private.h"
 #include "mongoc-host-list.h"
 #include "mongoc-apm-private.h"
 
@@ -73,6 +74,11 @@ typedef struct mongoc_topology_scanner_node {
    struct addrinfo *dns_results;
    struct addrinfo *successful_dns_result;
    int64_t last_dns_cache;
+
+   /* used by single-threaded clients to store negotiated sasl mechanisms on a
+    * node. */
+   mongoc_handshake_sasl_supported_mechs_t sasl_supported_mechs;
+   bool negotiated_sasl_supported_mechs;
 } mongoc_topology_scanner_node_t;
 
 typedef struct mongoc_topology_scanner {
@@ -101,6 +107,8 @@ typedef struct mongoc_topology_scanner {
    mongoc_apm_callbacks_t apm_callbacks;
    void *apm_context;
    int64_t dns_cache_timeout_ms;
+   /* only used by single-threaded clients to negotiate auth mechanisms. */
+   bool negotiate_sasl_supported_mechs;
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *
@@ -164,7 +172,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts, uint32_t id);
 
-bson_t *
+const bson_t *
 _mongoc_topology_scanner_get_ismaster (mongoc_topology_scanner_t *ts);
 
 bool

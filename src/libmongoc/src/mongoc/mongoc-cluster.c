@@ -49,6 +49,7 @@
 #include "mongoc-compression-private.h"
 #include "mongoc-cmd-private.h"
 #include "utlist.h"
+#include "mongoc-handshake-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"
@@ -683,11 +684,13 @@ mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
  *
  * _mongoc_stream_run_ismaster --
  *
- *       Run an ismaster command on the given stream.
+ *       Run an ismaster command on the given stream. If
+ *       @negotiate_sasl_supported_mechs is true, then saslSupportedMechs is
+ *       added to the ismaster command.
  *
  * Returns:
- *       A mongoc_server_description_t you must destroy. If the call failed
- *       its error is set and its type is MONGOC_SERVER_UNKNOWN.
+ *       A mongoc_server_description_t you must destroy or NULL. If the call
+ *       failed its error is set and its type is MONGOC_SERVER_UNKNOWN.
  *
  *--------------------------------------------------------------------------
  */
@@ -696,6 +699,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
                              mongoc_stream_t *stream,
                              const char *address,
                              uint32_t server_id,
+                             bool negotiate_sasl_supported_mechs,
                              bson_error_t *error)
 {
    const bson_t *command;
@@ -705,7 +709,9 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    int64_t rtt_msec;
    mongoc_server_description_t *sd;
    mongoc_server_stream_t *server_stream;
+   bson_t *copied_command = NULL;
    bool r;
+   bson_iter_t iter;
 
    ENTRY;
 
@@ -713,6 +719,14 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    BSON_ASSERT (stream);
 
    command = _mongoc_topology_get_ismaster (cluster->client->topology);
+
+   if (negotiate_sasl_supported_mechs) {
+      copied_command = bson_copy (command);
+      _mongoc_handshake_append_sasl_supported_mechs (cluster->uri,
+                                                     copied_command);
+      command = copied_command;
+   }
+
    start = bson_get_monotonic_time ();
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, server_id, stream, error);
@@ -725,6 +739,18 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    parts.prohibit_lsid = true;
    if (!mongoc_cluster_run_command_parts (
           cluster, server_stream, &parts, &reply, error)) {
+      if (negotiate_sasl_supported_mechs) {
+         if (bson_iter_init_find (&iter, &reply, "ok") &&
+             !bson_iter_as_bool (&iter)) {
+            /* ismaster response returned ok: 0. According to auth spec: "If the
+             * isMaster of the MongoDB Handshake fails with an error, drivers
+             * MUST treat this an an authentication error." */
+            error->domain = MONGOC_ERROR_CLIENT;
+            error->code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
+         }
+      }
+
+      bson_destroy (copied_command);
       bson_destroy (&reply);
       mongoc_server_stream_cleanup (server_stream);
       RETURN (NULL);
@@ -753,6 +779,10 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
 
    mongoc_server_stream_cleanup (server_stream);
 
+   if (copied_command) {
+      bson_destroy (copied_command);
+   }
+
    RETURN (sd);
 }
 
@@ -761,7 +791,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
  *
  * _mongoc_cluster_run_ismaster --
  *
- *       Run an ismaster command for the given node and handle result.
+ *       Run an initial ismaster command for the given node and handle result.
  *
  * Returns:
  *       mongoc_server_description_t on success, NULL otherwise.
@@ -788,7 +818,12 @@ _mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
    BSON_ASSERT (node->stream);
 
    sd = _mongoc_stream_run_ismaster (
-      cluster, node->stream, node->connection_address, server_id, error);
+      cluster,
+      node->stream,
+      node->connection_address,
+      server_id,
+      _mongoc_uri_requires_auth_negotiation (cluster->uri),
+      error);
 
    if (!sd) {
       return NULL;
@@ -1370,10 +1405,12 @@ _mongoc_cluster_auth_node_scram_sha_256 (mongoc_cluster_t *cluster,
  */
 
 static bool
-_mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
-                           mongoc_stream_t *stream,
-                           mongoc_server_description_t *sd,
-                           bson_error_t *error)
+_mongoc_cluster_auth_node (
+   mongoc_cluster_t *cluster,
+   mongoc_stream_t *stream,
+   mongoc_server_description_t *sd,
+   const mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs,
+   bson_error_t *error)
 {
    bool ret = false;
    const char *mechanism;
@@ -1385,7 +1422,18 @@ _mongoc_cluster_auth_node (mongoc_cluster_t *cluster,
    mechanism = mongoc_uri_get_auth_mechanism (cluster->uri);
 
    if (!mechanism) {
-      mechanism = "SCRAM-SHA-1";
+      if (sasl_supported_mechs->scram_sha_256) {
+         /* Auth spec: "If SCRAM-SHA-256 is present in the list of mechanisms,
+          * then it MUST be used as the default; otherwise, SCRAM-SHA-1 MUST be
+          * used as the default, regardless of whether SCRAM-SHA-1 is in the
+          * list. Drivers MUST NOT attempt to use any other mechanism (e.g.
+          * PLAIN) as the default." [...] "If saslSupportedMechs is not present
+          * in the isMaster results for mechanism negotiation, then SCRAM-SHA-1
+          * MUST be used when talking to servers >= 3.0." */
+         mechanism = "SCRAM-SHA-256";
+      } else {
+         mechanism = "SCRAM-SHA-1";
+      }
    }
 
    if (0 == strcasecmp (mechanism, "MONGODB-CR")) {
@@ -1545,6 +1593,7 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *cluster_node = NULL;
    mongoc_stream_t *stream;
    mongoc_server_description_t *sd;
+   mongoc_handshake_sasl_supported_mechs_t sasl_supported_mechs;
 
    ENTRY;
 
@@ -1571,16 +1620,17 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    /* take critical fields from a fresh ismaster */
    cluster_node = _mongoc_cluster_node_new (stream, host->host_and_port);
 
-   /* CDRIVER-2579 pass 'saslSupportedMechs' to ismaster to determine the
-    * default auth mechanism. */
    sd = _mongoc_cluster_run_ismaster (cluster, cluster_node, server_id, error);
    if (!sd) {
       GOTO (error);
    }
 
+   _mongoc_handshake_parse_sasl_supported_mechs (&sd->last_is_master,
+                                                 &sasl_supported_mechs);
+
    if (cluster->requires_auth) {
       if (!_mongoc_cluster_auth_node (
-             cluster, cluster_node->stream, sd, error)) {
+             cluster, cluster_node->stream, sd, &sasl_supported_mechs, error)) {
          MONGOC_WARNING ("Failed authentication to %s (%s)",
                          host->host_and_port,
                          error->message);
@@ -1816,8 +1866,11 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
 
    /* stream open but not auth'ed: first use since connect or reconnect */
    if (cluster->requires_auth && !scanner_node->has_auth) {
-      if (!_mongoc_cluster_auth_node (
-             cluster, scanner_node->stream, sd, &sd->error)) {
+      if (!_mongoc_cluster_auth_node (cluster,
+                                      scanner_node->stream,
+                                      sd,
+                                      &scanner_node->sasl_supported_mechs,
+                                      &sd->error)) {
          memcpy (error, &sd->error, sizeof *error);
          mongoc_server_description_destroy (sd);
          return NULL;

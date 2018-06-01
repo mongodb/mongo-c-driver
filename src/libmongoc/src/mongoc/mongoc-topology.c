@@ -282,6 +282,14 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    mongoc_cond_init (&topology->cond_client);
    mongoc_cond_init (&topology->cond_server);
 
+   if (single_threaded) {
+      /* single threaded clients negotiate sasl supported mechanisms during
+       * a topology scan. */
+      if (_mongoc_uri_requires_auth_negotiation (uri)) {
+         topology->scanner->negotiate_sasl_supported_mechs = true;
+      }
+   }
+
    topology_valid = true;
    service = mongoc_uri_get_service (uri);
    if (service) {
@@ -1451,12 +1459,23 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
    return i > 0;
 }
 
-/* Locks topology->mutex and retrieves (possibly constructing) the handshake
- * on the topology scanner. */
-bson_t *
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_get_ismaster --
+ *
+ *       Locks topology->mutex and retrieves (possibly constructing) the
+ *       handshake on the topology scanner.
+ *
+ * Returns:
+ *      A bson_t representing an ismaster command.
+ *
+ *--------------------------------------------------------------------------
+ */
+const bson_t *
 _mongoc_topology_get_ismaster (mongoc_topology_t *topology)
 {
-   bson_t *cmd;
+   const bson_t *cmd;
    mongoc_mutex_lock (&topology->mutex);
    cmd = _mongoc_topology_scanner_get_ismaster (topology->scanner);
    mongoc_mutex_unlock (&topology->mutex);

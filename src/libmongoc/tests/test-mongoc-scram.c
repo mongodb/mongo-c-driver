@@ -188,29 +188,44 @@ _drop_scram_users (void)
 }
 
 static void
-_check_mechanism (const char *user,
-                  const char *pwd,
-                  const char *mechanism,
-                  const char *mechanism_expected)
+_check_mechanism (bool pooled,
+                  const char *client_mech,
+                  const char *server_mechs,
+                  const char *expected_used_mech)
 {
    mock_server_t *server;
-   mongoc_client_t *client;
+   mongoc_client_pool_t *client_pool = NULL;
+   mongoc_client_t *client = NULL;
    mongoc_uri_t *uri;
    future_t *future;
    request_t *request;
    const bson_t *sasl_doc;
-   const char *mechanism_used;
+   const char *used_mech;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1, 'minWireVersion': 3, "
+                              "'maxWireVersion': %d, 'ismaster': true, "
+                              "'saslSupportedMechs': [%s]}",
+                              WIRE_VERSION_MAX,
+                              server_mechs ? server_mechs : "");
+
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_username (uri, user);
-   mongoc_uri_set_password (uri, pwd);
-   if (mechanism) {
-      mongoc_uri_set_auth_mechanism (uri, mechanism);
+   mongoc_uri_set_username (uri, "user");
+   mongoc_uri_set_password (uri, "password");
+   if (client_mech) {
+      mongoc_uri_set_auth_mechanism (uri, client_mech);
    }
 
-   client = mongoc_client_new_from_uri (uri);
+   if (pooled) {
+      client_pool = mongoc_client_pool_new (uri);
+      client = mongoc_client_pool_pop (client_pool);
+      /* suppress the auth failure logs from pooled clients. */
+      capture_logs (true);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+   }
    future = future_client_command_simple (client,
                                           "admin",
                                           tmp_bson ("{'dbstats': 1}"),
@@ -220,26 +235,34 @@ _check_mechanism (const char *user,
    request =
       mock_server_receives_msg (server, MONGOC_QUERY_NONE, tmp_bson ("{}"));
    sasl_doc = request_get_doc (request, 0);
-   mechanism_used = bson_lookup_utf8 (sasl_doc, "mechanism");
-   ASSERT_CMPSTR (mechanism_used, mechanism_expected);
+   used_mech = bson_lookup_utf8 (sasl_doc, "mechanism");
+   ASSERT_CMPSTR (used_mech, expected_used_mech);
    /* we're not actually going to auth, just hang up. */
    mock_server_hangs_up (request);
    future_wait (future);
    future_destroy (future);
    request_destroy (request);
    mongoc_uri_destroy (uri);
-   mongoc_client_destroy (client);
+   if (pooled) {
+      mongoc_client_pool_push (client_pool, client);
+      mongoc_client_pool_destroy (client_pool);
+      capture_logs (false);
+   } else {
+      mongoc_client_destroy (client);
+   }
    mock_server_destroy (server);
 }
 
 static void
-_try_auth (const char *user,
+_try_auth (bool pooled,
+           const char *user,
            const char *pwd,
            const char *mechanism,
            bool should_succeed)
 {
    mongoc_uri_t *uri;
-   mongoc_client_t *client;
+   mongoc_client_pool_t *client_pool = NULL;
+   mongoc_client_t *client = NULL;
    bson_error_t error;
    bson_t reply;
    bool res;
@@ -250,8 +273,16 @@ _try_auth (const char *user,
    if (mechanism) {
       mongoc_uri_set_auth_mechanism (uri, mechanism);
    }
-   client = mongoc_client_new_from_uri (uri);
-   mongoc_client_set_error_api (client, 2);
+   if (pooled) {
+      client_pool = mongoc_client_pool_new (uri);
+      mongoc_client_pool_set_error_api (client_pool, 2);
+      client = mongoc_client_pool_pop (client_pool);
+      /* suppress the auth failure logs from pooled clients. */
+      capture_logs (true);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      mongoc_client_set_error_api (client, 2);
+   }
    res = mongoc_client_command_simple (client,
                                        "admin",
                                        tmp_bson ("{'dbstats': 1}"),
@@ -263,14 +294,76 @@ _try_auth (const char *user,
       ASSERT_MATCH (&reply, "{'db': 'admin', 'ok': 1}");
    } else {
       ASSERT (!res);
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_CLIENT,
-                             MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                             "Authentication failed");
+      if (0 == strcmp (user, "unknown_user")) {
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_CLIENT,
+                                MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                                "Could not find user");
+      } else {
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_CLIENT,
+                                MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                                "Authentication failed");
+      }
    }
    bson_destroy (&reply);
    mongoc_uri_destroy (uri);
-   mongoc_client_destroy (client);
+   if (pooled) {
+      mongoc_client_pool_push (client_pool, client);
+      mongoc_client_pool_destroy (client_pool);
+      capture_logs (false);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+static void
+_test_mongoc_scram_auth (bool pooled)
+{
+   /* Auth spec: "For each test user, verify that you can connect and run a
+   command requiring authentication for the following cases:
+   - Explicitly specifying each mechanism the user supports.
+   - Specifying no mechanism and relying on mechanism negotiation." */
+   _try_auth (pooled, "sha1", "sha1", NULL, true);
+   _try_auth (pooled, "sha1", "sha1", "SCRAM-SHA-1", true);
+   _try_auth (pooled, "sha256", "sha256", NULL, true);
+   _try_auth (pooled, "sha256", "sha256", "SCRAM-SHA-256", true);
+   _try_auth (pooled, "both", "both", NULL, true);
+   _try_auth (pooled, "both", "both", "SCRAM-SHA-1", true);
+   _try_auth (pooled, "both", "both", "SCRAM-SHA-256", true);
+
+   _check_mechanism (pooled, NULL, NULL, "SCRAM-SHA-1");
+   _check_mechanism (pooled, NULL, "'SCRAM-SHA-1'", "SCRAM-SHA-1");
+   _check_mechanism (pooled, NULL, "'SCRAM-SHA-256'", "SCRAM-SHA-256");
+   _check_mechanism (
+      pooled, NULL, "'SCRAM-SHA-1','SCRAM-SHA-256'", "SCRAM-SHA-256");
+
+   _check_mechanism (pooled, "SCRAM-SHA-1", NULL, "SCRAM-SHA-1");
+   _check_mechanism (pooled, "SCRAM-SHA-1", "'SCRAM-SHA-1'", "SCRAM-SHA-1");
+   _check_mechanism (pooled, "SCRAM-SHA-1", "'SCRAM-SHA-256'", "SCRAM-SHA-1");
+   _check_mechanism (
+      pooled, "SCRAM-SHA-1", "'SCRAM-SHA-1','SCRAM-SHA-256'", "SCRAM-SHA-1");
+
+   _check_mechanism (pooled, "SCRAM-SHA-256", NULL, "SCRAM-SHA-256");
+   _check_mechanism (pooled, "SCRAM-SHA-256", "'SCRAM-SHA-1'", "SCRAM-SHA-256");
+   _check_mechanism (
+      pooled, "SCRAM-SHA-256", "'SCRAM-SHA-256'", "SCRAM-SHA-256");
+   _check_mechanism (pooled,
+                     "SCRAM-SHA-256",
+                     "'SCRAM-SHA-1','SCRAM-SHA-256'",
+                     "SCRAM-SHA-256");
+
+   /* Test some failure auths. */
+   _try_auth (pooled, "sha1", "bad", NULL, false);
+   _try_auth (pooled, "sha256", "bad", NULL, false);
+   _try_auth (pooled, "both", "bad", NULL, false);
+   _try_auth (pooled, "sha1", "bad", "SCRAM-SHA-256", false);
+   _try_auth (pooled, "sha256", "bad", "SCRAM-SHA-1", false);
+
+   /* Auth spec: "For a non-existent username, verify that not specifying a
+    * mechanism when connecting fails with the same error type that would occur
+    * with a correct username but incorrect password or mechanism." */
+   _try_auth (pooled, "unknown_user", "bad", NULL, false);
 }
 
 /* test the auth tests described in the auth spec. */
@@ -280,36 +373,10 @@ test_mongoc_scram_auth (void *ctx)
    /* Auth spec: "Create three test users, one with only SHA-1, one with only
     * SHA-256 and one with both" */
    _create_scram_users ();
-   /* Auth spec: "For each test user, verify that you can connect and run a
-      command requiring authentication for the following cases:
-      - Explicitly specifying each mechanism the user supports.
-      - Specifying no mechanism and relying on mechanism negotiation."
-   */
-   _try_auth ("sha1", "sha1", NULL, true);
-   _try_auth ("sha1", "sha1", "SCRAM-SHA-1", true);
-   _try_auth ("sha256", "sha256", "SCRAM-SHA-256", true);
-   _try_auth ("both", "both", NULL, true);
-   _try_auth ("both", "both", "SCRAM-SHA-1", true);
-   _try_auth ("both", "both", "SCRAM-SHA-256", true);
 
-   /* Auth spec: "For a test user supporting both SCRAM-SHA-1 and SCRAM-SHA-256,
-    * drivers should verify that negotiation selects SCRAM-SHA-256" */
-   /* TODO: CDRIVER-2579, after mechanism is negotiated, SCRAM-SHA-256 should be
-    * the default:
-    * _check_mechanism ("sha256", "sha256", NULL, "SCRAM-SHA-256");
-    * _try_auth ("sha256", "sha256", NULL, true);
-    */
-   _check_mechanism ("sha1", "sha1", NULL, "SCRAM-SHA-1");
-   _check_mechanism ("both", "both", NULL, "SCRAM-SHA-1");
-   _check_mechanism ("both", "both", "SCRAM-SHA-1", "SCRAM-SHA-1");
-   _check_mechanism ("both", "both", "SCRAM-SHA-256", "SCRAM-SHA-256");
+   _test_mongoc_scram_auth (false);
+   _test_mongoc_scram_auth (true);
 
-   /* Test some failure auths. */
-   _try_auth ("sha1", "bad", NULL, false);
-   _try_auth ("sha256", "bad", NULL, false);
-   _try_auth ("both", "bad", NULL, false);
-   _try_auth ("sha1", "bad", "SCRAM-SHA-256", false);
-   _try_auth ("sha256", "bad", "SCRAM-SHA-1", false);
    _drop_scram_users ();
 }
 

@@ -2318,3 +2318,24 @@ mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri,
 
    return true;
 }
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_uri_requires_auth_negotiation --
+ *
+ *       Returns true if auth mechanism is necessary for this uri. According
+ *       to the auth spec: "If an application provides a username but does
+ *       not provide an authentication mechanism, drivers MUST negotiate a
+ *       mechanism".
+ *
+ * Returns:
+ *       true if the driver should negotiate the auth mechanism for the uri
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+_mongoc_uri_requires_auth_negotiation (const mongoc_uri_t *uri)
+{
+   return mongoc_uri_get_username (uri) && !mongoc_uri_get_auth_mechanism (uri);
+}
