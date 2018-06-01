@@ -13,13 +13,12 @@
 static void
 retryable_writes_test_run_operation (json_test_ctx_t *ctx,
                                      const bson_t *test,
-                                     const bson_t *operation,
-                                     mongoc_collection_t *collection)
+                                     const bson_t *operation)
 {
    bool *explicit_session = (bool *) ctx->config->ctx;
 
    json_test_operation (
-      test, operation, collection, *explicit_session ? ctx->sessions[0] : NULL);
+      ctx, test, operation, *explicit_session ? ctx->sessions[0] : NULL);
 }
 
 
@@ -148,10 +147,13 @@ test_command_with_opts (void *ctx)
          collection, tmp_bson ("{'_id':1, 'x': 1}"), NULL, NULL, &error),
       error);
 
-   activate_fail_point (client,
-                        server_id,
-                        tmp_bson ("{'mode': {'times': 1}, 'data': "
-                                  "{'failBeforeCommitExceptionCode': 1}}"));
+   cmd = tmp_bson ("{'configureFailPoint': 'onPrimaryTransactionalWrite',"
+                   " 'mode': {'times': 1},"
+                   " 'data': {'failBeforeCommitExceptionCode': 1}}");
+
+   ASSERT_OR_PRINT (mongoc_client_command_simple_with_server_id (
+                       client, "admin", cmd, NULL, server_id, NULL, &error),
+                    error);
 
    cmd = tmp_bson ("{'findAndModify': '%s', 'query': {'_id': 1}, 'update': "
                    "{'$inc': {'x': 1}}, 'new': true}",

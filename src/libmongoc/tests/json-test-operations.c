@@ -34,10 +34,28 @@
 #include "TestSuite.h"
 
 
+mongoc_client_session_t *
+session_from_name (json_test_ctx_t *ctx, const char *session_name)
+{
+   if (!session_name) {
+      return NULL;
+   } else if (!strcmp (session_name, "session0")) {
+      return ctx->sessions[0];
+   } else if (!strcmp (session_name, "session1")) {
+      return ctx->sessions[1];
+   } else {
+      MONGOC_ERROR ("Unrecognized session name: %s", session_name);
+      abort ();
+   }
+}
+
+
 void
 json_test_ctx_init (json_test_ctx_t *ctx,
                     const bson_t *test,
                     mongoc_client_t *client,
+                    mongoc_database_t *db,
+                    mongoc_collection_t *collection,
                     const json_test_config_t *config)
 {
    char *session_name;
@@ -45,6 +63,9 @@ json_test_ctx_init (json_test_ctx_t *ctx,
    int i;
    bson_error_t error;
 
+   ctx->client = client;
+   ctx->db = db;
+   ctx->collection = collection;
    ctx->config = config;
    ctx->n_events = 0;
    bson_init (&ctx->events);
@@ -131,6 +152,21 @@ value_init_from_doc (bson_value_t *value, const bson_t *doc)
    value->value.v_doc.data = bson_malloc ((size_t) doc->len);
    memcpy (value->value.v_doc.data, bson_get_data (doc), (size_t) doc->len);
    value->value.v_doc.data_len = doc->len;
+}
+
+
+static char *
+value_to_str (const bson_value_t *value)
+{
+   bson_t doc;
+
+   if (value->value_type == BSON_TYPE_DOCUMENT ||
+       value->value_type == BSON_TYPE_ARRAY) {
+      bson_init_from_value (&doc, value);
+      return bson_as_json (&doc, NULL);
+   } else {
+      return bson_strdup_printf ("%" PRId64, bson_value_as_int64 (value));
+   }
 }
 
 
@@ -300,6 +336,8 @@ error_code_from_name (const char *name)
       return 251;
    } else if (!strcmp (name, "WriteConflict")) {
       return 112;
+   } else if (!strcmp (name, "Interrupted")) {
+      return 11601;
    }
 
    test_error ("Add errorCodeName \"%s\" to error_code_from_name()", name);
@@ -309,17 +347,101 @@ error_code_from_name (const char *name)
 }
 
 
-static char *
-value_to_str (const bson_value_t *value)
+static void
+check_error_code_name (const bson_t *operation, const bson_error_t *error)
 {
-   bson_t doc;
+   const char *code_name;
 
-   if (value->value_type == BSON_TYPE_DOCUMENT ||
-       value->value_type == BSON_TYPE_ARRAY) {
-      bson_init_from_value (&doc, value);
-      return bson_as_json (&doc, NULL);
-   } else {
-      return bson_strdup_printf ("%" PRId64, bson_value_as_int64 (value));
+   if (!bson_has_field (operation, "result.errorCodeName")) {
+      return;
+   }
+
+   code_name = bson_lookup_utf8 (operation, "result.errorCodeName");
+   ASSERT_CMPUINT32 (error->code, ==, error_code_from_name (code_name));
+}
+
+
+static void
+check_error_contains (const bson_t *operation, const bson_error_t *error)
+{
+   const char *msg;
+
+   if (!bson_has_field (operation, "result.errorContains")) {
+      return;
+   }
+
+   msg = bson_lookup_utf8 (operation, "result.errorContains");
+   ASSERT_CONTAINS (error->message, msg);
+}
+
+
+static void
+check_error_labels_contain (const bson_t *operation, const bson_value_t *result)
+{
+   bson_t reply;
+   bson_iter_t operation_iter;
+   bson_iter_t expected_labels;
+   bson_iter_t expected_label;
+   const char *expected_label_str;
+   bson_t labels;
+
+   if (!bson_has_field (operation, "result.errorLabelsContain")) {
+      return;
+   }
+
+   bson_iter_init (&operation_iter, operation);
+   BSON_ASSERT (bson_iter_find_descendant (
+      &operation_iter, "result.errorLabelsContain", &expected_labels));
+   BSON_ASSERT (bson_iter_recurse (&expected_labels, &expected_label));
+
+   /* if the test has "errorLabelsContain" then result must be an error reply */
+   ASSERT_CMPSTR (_mongoc_bson_type_to_str (result->value_type), "DOCUMENT");
+   bson_init_from_value (&reply, result);
+   bson_lookup_doc (&reply, "errorLabels", &labels);
+
+   while (bson_iter_next (&expected_label)) {
+      expected_label_str = bson_iter_utf8 (&expected_label, NULL);
+      if (!_mongoc_bson_array_has_label (&labels, expected_label_str)) {
+         test_error ("Expected label \"%s\" not found in %s",
+                     expected_label_str,
+                     bson_as_json (&labels, NULL));
+      }
+   }
+}
+
+
+static void
+check_error_labels_omit (const bson_t *operation, const bson_value_t *result)
+{
+   bson_t reply;
+   bson_t labels;
+   bson_t omitted_labels;
+   bson_iter_t omitted_label;
+
+   if (!bson_has_field (operation, "result.errorLabelsOmit")) {
+      return;
+   }
+
+   if (result->value_type != BSON_TYPE_DOCUMENT) {
+      /* successful result from count, distinct, etc. */
+      return;
+   }
+
+   bson_init_from_value (&reply, result);
+   if (!bson_has_field (&reply, "errorLabels")) {
+      return;
+   }
+
+   bson_lookup_doc (&reply, "errorLabels", &labels);
+   bson_lookup_doc (operation, "result.errorLabelsOmit", &omitted_labels);
+   BSON_ASSERT (bson_iter_init (&omitted_label, &omitted_labels));
+   while (bson_iter_next (&omitted_label)) {
+      if (_mongoc_bson_array_has_label (
+             &labels, bson_iter_utf8 (&omitted_label, NULL))) {
+         test_error ("Label \"%s\" should have been omitted %s",
+                     bson_iter_utf8 (&omitted_label, NULL),
+                     value_to_str (result));
+      }
    }
 }
 
@@ -381,35 +503,18 @@ check_result (const bson_t *test,
          _mongoc_lookup_bool (test, "outcome.result.error", false),
          error);
    }
-   /* some transactions tests specify server error code names per-operation:
-    *    operations:
-    *      - name: insertOne
-    *        arguments: ...
-    *        result:
-    *          errorCodeName: WriteConflict
-    */
-   else if (bson_has_field (operation, "result.errorCodeName")) {
-      const char *code_name;
 
-      check_success_expected (operation, succeeded, false, error);
-      code_name = bson_lookup_utf8 (operation, "result.errorCodeName");
-      ASSERT_CMPUINT32 (error->code, ==, error_code_from_name (code_name));
+   /* if there's no "result", e.g. in the command monitoring tests, we don't
+    * know if the command is expected to succeed or fail */
+   if (!bson_has_field (operation, "result")) {
+      return;
    }
-   /* other transactions tests specify client error messages per-operation:
-    *    operations:
-    *      - name: insertOne
-    *        arguments: ...
-    *        result:
-    *          errorContains: "message substring"
-    */
-   else if (bson_has_field (operation, "result.errorContains")) {
-      const char *msg;
 
-      check_success_expected (operation, succeeded, false, error);
-      msg = bson_lookup_utf8 (operation, "result.errorContains");
-      ASSERT_CONTAINS (error->message, msg);
-   } else if (bson_has_field (operation, "result")) {
-      /* operation expected to succeed */
+   if (!bson_has_field (operation, "result.errorCodeName") &&
+       !bson_has_field (operation, "result.errorContains") &&
+       !bson_has_field (operation, "result.errorLabelsContain") &&
+       !bson_has_field (operation, "result.errorLabelsOmit")) {
+      /* expect the operation has succeeded */
       check_success_expected (operation, succeeded, true, error);
       if (!get_successful_result (test, operation, &expected_result)) {
          /* some tests don't verify the return value */
@@ -427,10 +532,25 @@ check_result (const bson_t *test,
       }
 
       bson_value_destroy (&expected_result);
+      return;
    }
 
-   /* if there's no "result", e.g. in the command monitoring tests, we don't
-    * know if the command is expected to succeed or fail */
+   /* transactions tests specify errors per-operation, with one or more details:
+    *    operations:
+    *      - name: insertOne
+    *        arguments: ...
+    *        result:
+    *          errorCodeName: WriteConflict
+    *          errorContains: "message substring"
+    *          errorLabelsContain: ["TransientTransactionError"]
+    *          errorLabelsOmit: ["UnknownTransactionCommitResult"]
+    */
+
+   check_success_expected (operation, succeeded, false, error);
+   check_error_code_name (operation, error);
+   check_error_contains (operation, error);
+   check_error_labels_contain (operation, result);
+   check_error_labels_omit (operation, result);
 }
 
 
@@ -555,7 +675,7 @@ create_bulk_write_opts (const bson_t *operation,
 
    append_session (session, opts);
 
-   if (wc) {
+   if (!mongoc_write_concern_is_default (wc)) {
       BSON_ASSERT (mongoc_write_concern_append (wc, opts));
    }
 
@@ -764,6 +884,7 @@ count (mongoc_collection_t *collection,
        const mongoc_read_prefs_t *read_prefs)
 {
    bson_t filter;
+   bson_t reply = BSON_INITIALIZER;
    bson_t opts = BSON_INITIALIZER;
    bson_error_t error;
    int64_t r;
@@ -774,10 +895,18 @@ count (mongoc_collection_t *collection,
    r = mongoc_collection_count_with_opts (
       collection, MONGOC_QUERY_NONE, &filter, 0, 0, &opts, read_prefs, &error);
 
-   value.value_type = BSON_TYPE_INT64;
-   value.value.v_int64 = r;
+   if (r >= 0) {
+      value.value_type = BSON_TYPE_INT64;
+      value.value.v_int64 = r;
+   } else {
+      /* fake a reply for the test framework's sake */
+      value_init_from_doc (&value, &reply);
+   }
+
    check_result (test, operation, r > -1, &value, &error);
 
+   bson_value_destroy (&value);
+   bson_destroy (&reply);
    bson_destroy (&opts);
 }
 
@@ -814,6 +943,8 @@ distinct (mongoc_collection_t *collection,
     *   { ok: 1, values: [1, 2, 3]} */
    if (r) {
       bson_lookup_value (&reply, "values", &value);
+   } else {
+      value_init_from_doc (&value, &reply);
    }
 
    check_result (test, operation, r, &value, &error);
@@ -843,10 +974,14 @@ check_cursor (mongoc_cursor_t *cursor,
       BSON_APPEND_DOCUMENT (&result, keyptr, doc);
    }
 
-   value_init_from_doc (&value, &result);
-   value.value_type = BSON_TYPE_ARRAY;
-   check_result (
-      test, operation, !mongoc_cursor_error (cursor, &error), &value, &error);
+   if (mongoc_cursor_error_document (cursor, &error, &doc)) {
+      value_init_from_doc (&value, doc);
+      check_result (test, operation, false, &value, &error);
+   } else {
+      value_init_from_doc (&value, &result);
+      value.value_type = BSON_TYPE_ARRAY;
+      check_result (test, operation, true, &value, &error);
+   }
 
    bson_value_destroy (&value);
    bson_destroy (&result);
@@ -948,13 +1083,45 @@ aggregate (mongoc_collection_t *collection,
 
 
 static void
-start_transaction (const bson_t *test,
-                   const bson_t *operation,
-                   mongoc_client_session_t *session)
+command (mongoc_database_t *db,
+         const bson_t *test,
+         const bson_t *operation,
+         mongoc_client_session_t *session,
+         const mongoc_read_prefs_t *read_prefs)
 {
+   bson_t cmd;
+   bson_t opts = BSON_INITIALIZER;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+   bson_value_t value;
+
+   bson_lookup_doc (operation, "arguments.command", &cmd);
+   append_session (session, &opts);
+
+   r = mongoc_database_command_with_opts (
+      db, &cmd, read_prefs, &opts, &reply, &error);
+
+   value_init_from_doc (&value, &reply);
+   check_result (test, operation, r, &value, &error);
+   bson_value_destroy (&value);
+   bson_destroy (&reply);
+   bson_destroy (&opts);
+   bson_destroy (&cmd);
+}
+
+
+static void
+start_transaction (json_test_ctx_t *ctx,
+                   const bson_t *test,
+                   const bson_t *operation)
+{
+   mongoc_client_session_t *session;
    mongoc_transaction_opt_t *opts = NULL;
    bson_error_t error;
    bool r;
+
+   session = session_from_name (ctx, bson_lookup_utf8 (operation, "object"));
 
    if (bson_has_field (operation, "arguments.options")) {
       opts = bson_lookup_txn_opts (operation, "arguments.options");
@@ -970,15 +1137,17 @@ start_transaction (const bson_t *test,
 
 
 static void
-commit_transaction (const bson_t *test,
-                    const bson_t *operation,
-                    mongoc_client_session_t *session)
+commit_transaction (json_test_ctx_t *ctx,
+                    const bson_t *test,
+                    const bson_t *operation)
 {
+   mongoc_client_session_t *session;
    bson_t reply;
    bson_value_t value;
    bson_error_t error;
    bool r;
 
+   session = session_from_name (ctx, bson_lookup_utf8 (operation, "object"));
    r = mongoc_client_session_commit_transaction (session, &reply, &error);
    value_init_from_doc (&value, &reply);
    check_result (test, operation, r, &value, &error);
@@ -988,29 +1157,45 @@ commit_transaction (const bson_t *test,
 
 
 static void
-abort_transaction (const bson_t *test,
-                   const bson_t *operation,
-                   mongoc_client_session_t *session)
+abort_transaction (json_test_ctx_t *ctx,
+                   const bson_t *test,
+                   const bson_t *operation)
 {
+   mongoc_client_session_t *session;
+   bson_t reply = BSON_INITIALIZER;
+   bson_value_t value;
    bson_error_t error;
    bool r;
 
+   session = session_from_name (ctx, bson_lookup_utf8 (operation, "object"));
    r = mongoc_client_session_abort_transaction (session, &error);
-   check_result (test, operation, r, NULL, &error);
+   /* fake a reply for the test framework's sake */
+   value_init_from_doc (&value, &reply);
+   check_result (test, operation, r, &value, &error);
+   bson_value_destroy (&value);
+   bson_destroy (&reply);
 }
 
 
 void
-json_test_operation (const bson_t *test,
+json_test_operation (json_test_ctx_t *ctx,
+                     const bson_t *test,
                      const bson_t *operation,
-                     mongoc_collection_t *collection,
                      mongoc_client_session_t *session)
 {
    const char *op_name;
    mongoc_read_prefs_t *read_prefs = NULL;
    mongoc_write_concern_t *wc;
+   mongoc_collection_t *collection;
 
    op_name = bson_lookup_utf8 (operation, "name");
+   /* databaseOptions don't yet exist in tests, therefore not implemented */
+   BSON_ASSERT (!bson_has_field (operation, "databaseOptions"));
+   collection = mongoc_collection_copy (ctx->collection);
+   if (bson_has_field (operation, "collectionOptions")) {
+      bson_lookup_collection_opts (operation, "collectionOptions", collection);
+   }
+
    if (bson_has_field (operation, "read_preference")) {
       /* command monitoring tests */
       read_prefs = bson_lookup_read_prefs (operation, "read_preference");
@@ -1049,30 +1234,31 @@ json_test_operation (const bson_t *test,
       find (collection, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "aggregate")) {
       aggregate (collection, test, operation, session, read_prefs);
+   } else if (!strcmp (op_name, "runCommand")) {
+      command (ctx->db, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "startTransaction")) {
-      start_transaction (test, operation, session);
+      start_transaction (ctx, test, operation);
    } else if (!strcmp (op_name, "commitTransaction")) {
-      commit_transaction (test, operation, session);
+      commit_transaction (ctx, test, operation);
    } else if (!strcmp (op_name, "abortTransaction")) {
-      abort_transaction (test, operation, session);
+      abort_transaction (ctx, test, operation);
    } else {
       test_error ("unrecognized operation name %s", op_name);
    }
 
+   mongoc_collection_destroy (collection);
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_write_concern_destroy (wc);
 }
 
 
 static void
-one_operation (const json_test_config_t *config,
-               json_test_ctx_t *ctx,
+one_operation (json_test_ctx_t *ctx,
                const bson_t *test,
-               const bson_t *operation,
-               mongoc_collection_t *collection)
+               const bson_t *operation)
 {
    const char *op_name;
-   mongoc_write_concern_t *wc;
+   mongoc_write_concern_t *wc = NULL;
 
    op_name = bson_lookup_utf8 (operation, "name");
    if (ctx->verbose) {
@@ -1082,14 +1268,20 @@ one_operation (const json_test_config_t *config,
 
    if (bson_has_field (operation, "arguments.writeConcern")) {
       wc = bson_lookup_write_concern (operation, "arguments.writeConcern");
+   } else if (bson_has_field (operation, "collectionOptions.writeConcern")) {
+      wc = bson_lookup_write_concern (operation,
+                                      "collectionOptions.writeConcern");
+   }
+
+   if (wc) {
       ctx->acknowledged = mongoc_write_concern_is_acknowledged (wc);
       mongoc_write_concern_destroy (wc);
    } else {
       ctx->acknowledged = true;
    }
 
-   if (config->run_operation_cb) {
-      config->run_operation_cb (ctx, test, operation, collection);
+   if (ctx->config->run_operation_cb) {
+      ctx->config->run_operation_cb (ctx, test, operation);
    } else {
       test_error ("set json_test_config_t.run_operation_cb to a callback"
                   " that executes json_test_operation()");
@@ -1098,10 +1290,7 @@ one_operation (const json_test_config_t *config,
 
 
 void
-json_test_operations (const json_test_config_t *config,
-                      json_test_ctx_t *ctx,
-                      const bson_t *test,
-                      mongoc_collection_t *collection)
+json_test_operations (json_test_ctx_t *ctx, const bson_t *test)
 {
    bson_t operations;
    bson_t operation;
@@ -1112,14 +1301,14 @@ json_test_operations (const json_test_config_t *config,
     * one operation each, transactions tests have an array of them. */
    if (bson_has_field (test, "operation")) {
       bson_lookup_doc (test, "operation", &operation);
-      one_operation (config, ctx, test, &operation, collection);
+      one_operation (ctx, test, &operation);
    } else {
       bson_lookup_doc (test, "operations", &operations);
       ASSERT_CMPUINT32 (bson_count_keys (&operations), >, (uint32_t) 0);
       BSON_ASSERT (bson_iter_init (&iter, &operations));
       while (bson_iter_next (&iter)) {
          bson_iter_bson (&iter, &operation);
-         one_operation (config, ctx, test, &operation, collection);
+         one_operation (ctx, test, &operation);
       }
    }
 }

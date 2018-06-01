@@ -845,6 +845,8 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
 
 static void
 execute_test (const json_test_config_t *config,
+              mongoc_client_t *client,
+              mongoc_database_t *db,
               mongoc_collection_t *collection,
               bson_t *test)
 {
@@ -862,23 +864,27 @@ execute_test (const json_test_config_t *config,
       return;
    }
 
-   json_test_ctx_init (&ctx, test, collection->client, config);
-   set_apm_callbacks (
-      collection->client, config->command_started_events_only, &ctx);
-
    /* Select a primary for testing */
    server_id = mongoc_topology_select_server_id (
       collection->client->topology, MONGOC_SS_WRITE, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
    if (bson_has_field (test, "failPoint")) {
-      bson_t opts;
+      bson_t command;
+      bool r;
 
-      bson_lookup_doc (test, "failPoint", &opts);
-      activate_fail_point (collection->client, server_id, &opts);
+      bson_lookup_doc (test, "failPoint", &command);
+      ASSERT_CMPSTR (_mongoc_get_command_name (&command), "configureFailPoint");
+      r = mongoc_client_command_simple_with_server_id (
+         client, "admin", &command, NULL, server_id, NULL, &error);
+      ASSERT_OR_PRINT (r, error);
    }
 
-   json_test_operations (config, &ctx, test, collection);
+   json_test_ctx_init (&ctx, test, client, db, collection, config);
+   set_apm_callbacks (
+      collection->client, config->command_started_events_only, &ctx);
+
+   json_test_operations (&ctx, test);
    json_test_ctx_end_sessions (&ctx);
 
    if (bson_has_field (test, "expectations")) {
@@ -898,35 +904,6 @@ execute_test (const json_test_config_t *config,
    mongoc_client_set_apm_callbacks (collection->client, NULL, NULL);
    json_test_ctx_cleanup (&ctx);
    deactivate_fail_points (collection->client, server_id);
-}
-
-
-/*
- *-----------------------------------------------------------------------
- *
- * activate_fail_point --
- *
- *      Activate the onPrimaryTransactionalWrite failpoint on a server
- *      with id @server_id, passing options @opts.
- *
- *-----------------------------------------------------------------------
- */
-
-void
-activate_fail_point (mongoc_client_t *client,
-                     uint32_t server_id,
-                     const bson_t *opts)
-{
-   bson_t *command;
-   bool r;
-   bson_error_t error;
-
-   command = tmp_bson ("{'configureFailPoint': 'onPrimaryTransactionalWrite'}");
-   bson_copy_to_excluding_noinit (opts, command, "configureFailPoint", NULL);
-
-   r = mongoc_client_command_simple_with_server_id (
-      client, "admin", command, NULL, server_id, NULL, &error);
-   ASSERT_OR_PRINT (r, error);
 }
 
 
@@ -956,6 +933,13 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
       command =
          tmp_bson ("{'configureFailPoint': 'onPrimaryTransactionalWrite',"
                    " 'mode': 'off'}");
+
+      r = mongoc_client_command_simple_with_server_id (
+         client, "admin", command, NULL, server_id, NULL, &error);
+      ASSERT_OR_PRINT (r, error);
+
+      command = tmp_bson ("{'configureFailPoint': 'failCommand',"
+                          " 'mode': 'off'}");
 
       r = mongoc_client_command_simple_with_server_id (
          client, "admin", command, NULL, server_id, NULL, &error);
@@ -1053,20 +1037,24 @@ run_json_general_test (const json_test_config_t *config)
    while (bson_iter_next (&tests_iter)) {
       bson_t test;
       char *selected_test;
+      const char *description;
       bson_iter_t client_opts_iter;
       mongoc_uri_t *uri;
       mongoc_client_t *client;
+      mongoc_database_t *db;
       mongoc_collection_t *collection;
       uint32_t server_id;
       bson_error_t error;
+      bool r;
 
       ASSERT (BSON_ITER_HOLDS_DOCUMENT (&tests_iter));
       bson_iter_bson (&tests_iter, &test);
 
       selected_test = test_framework_getenv ("MONGOC_JSON_SUBTEST");
-      if (selected_test &&
-          strcmp (selected_test, bson_lookup_utf8 (&test, "description")) !=
-             0) {
+      description = bson_lookup_utf8 (&test, "description");
+      if (selected_test && strcmp (selected_test, description) != 0) {
+         fprintf (
+            stderr, "  - %s SKIPPED by MONGOC_JSON_SUBTEST\n", description);
          bson_free (selected_test);
          continue;
       }
@@ -1093,21 +1081,26 @@ run_json_general_test (const json_test_config_t *config)
          client->topology, MONGOC_SS_WRITE, NULL, &error);
       ASSERT_OR_PRINT (server_id, error);
       deactivate_fail_points (client, server_id);
-      mongoc_client_command_with_opts (client,
-                                       "admin",
-                                       tmp_bson ("{'killAllSessions': 1}"),
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       NULL);
+      r = mongoc_client_command_with_opts (client,
+                                           "admin",
+                                           tmp_bson ("{'killAllSessions': []}"),
+                                           NULL,
+                                           NULL,
+                                           NULL,
+                                           &error);
 
-      collection =
-         mongoc_client_get_collection (client, db_name, collection_name);
+      /* expect "operation was interrupted", ignore "command not found" */
+      if (!r && error.code != 11601 && error.code != 59) {
+         MONGOC_WARNING ("Error in killAllSessions: %s", error.message);
+      }
 
+      db = mongoc_client_get_database (client, db_name);
+      collection = mongoc_database_get_collection (db, collection_name);
       insert_data (collection, scenario);
-      execute_test (config, collection, &test);
+      execute_test (config, client, db, collection, &test);
 
       mongoc_collection_destroy (collection);
+      mongoc_database_destroy (db);
       mongoc_client_destroy (client);
    }
 }

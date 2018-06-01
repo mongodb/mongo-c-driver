@@ -55,11 +55,10 @@ check_operation_ids (const bson_t *events)
 static void
 command_monitoring_test_run_operation (json_test_ctx_t *ctx,
                                        const bson_t *test,
-                                       const bson_t *operation,
-                                       mongoc_collection_t *collection)
+                                       const bson_t *operation)
 {
    /* Command Monitoring tests don't use explicit session */
-   json_test_operation (test, operation, collection, NULL);
+   json_test_operation (ctx, test, operation, NULL);
 }
 
 

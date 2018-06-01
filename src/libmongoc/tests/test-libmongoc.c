@@ -301,6 +301,23 @@ has_captured_logs (void)
 
 
 void
+assert_all_captured_logs_have_prefix (const char *prefix)
+{
+   size_t i;
+   log_entry_t *log_entry;
+
+   mongoc_mutex_lock (&captured_logs_mutex);
+
+   for (i = 0; i < captured_logs.len; i++) {
+      log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
+      ASSERT_STARTSWITH (log_entry->msg, prefix);
+   }
+
+   mongoc_mutex_unlock (&captured_logs_mutex);
+}
+
+
+void
 print_captured_logs (const char *prefix)
 {
    size_t i;
@@ -2220,8 +2237,9 @@ test_framework_skip_if_compressors (void)
 }
 
 void
-test_framework_resolve_path (const char* path, char* resolved) {
-   if (!realpath(path, resolved)) {
+test_framework_resolve_path (const char *path, char *resolved)
+{
+   if (!realpath (path, resolved)) {
       MONGOC_ERROR ("Cannot resolve path %s\n", path);
       MONGOC_ERROR ("Run test-libmongoc in repository root directory.\n");
       ASSERT (false);

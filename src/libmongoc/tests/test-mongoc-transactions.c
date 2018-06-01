@@ -13,41 +13,20 @@
 static void
 transactions_test_run_operation (json_test_ctx_t *ctx,
                                  const bson_t *test,
-                                 const bson_t *operation,
-                                 mongoc_collection_t *collection)
+                                 const bson_t *operation)
 {
-   const char *description;
-   const char *session_name;
-   mongoc_client_session_t *session;
+   mongoc_client_session_t *session = NULL;
 
    if (bson_has_field (operation, "arguments.session")) {
-      session_name = bson_lookup_utf8 (operation, "arguments.session");
-      if (!strcmp (session_name, "session0")) {
-         session = ctx->sessions[0];
-      } else if (!strcmp (session_name, "session1")) {
-         session = ctx->sessions[1];
-      } else {
-         MONGOC_ERROR ("Unrecognized session name: %s", session_name);
-         abort ();
-      }
-   } else {
-      session = NULL;
+      session = session_from_name (
+         ctx, bson_lookup_utf8 (operation, "arguments.session"));
    }
 
-   description = bson_lookup_utf8 (test, "description");
-
-   /* we log warnings from abortTransaction. suppress warnings that we expect,
-    * but don't suppress all: we want to know if any other tests log warnings */
-   if (!strcmp (description, "write conflict abort") ||
-       !strcmp (description, "abort ignores TransactionAborted") ||
-       !strcmp (description, "abort does not apply writeConcern")) {
-      capture_logs (true);
-   }
-
-   /* json_test_operations() chose session0 or session1 from the
-    * arguments.session field in the JSON test */
-   json_test_operation (test, operation, collection, session);
-
+   /* expect some warnings from abortTransaction, but don't suppress others: we
+    * want to know if any other tests log warnings */
+   capture_logs (true);
+   json_test_operation (ctx, test, operation, session);
+   assert_all_captured_logs_have_prefix ("Error in abortTransaction:");
    capture_logs (false);
 }
 
@@ -60,6 +39,65 @@ test_transactions_cb (bson_t *scenario)
    config.scenario = scenario;
    config.command_started_events_only = true;
    run_json_general_test (&config);
+}
+
+
+static void
+test_transactions_supported (void *ctx)
+{
+   bool supported;
+   mongoc_client_t *client;
+   mongoc_client_session_t *session;
+   mongoc_database_t *db;
+   mongoc_collection_t *collection;
+   bson_t opts = BSON_INITIALIZER;
+   bson_error_t error;
+   bool r;
+
+   supported = test_framework_max_wire_version_at_least (7) &&
+               test_framework_is_replset ();
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   db = mongoc_client_get_database (client, "transaction-tests");
+
+   /* drop and create collection outside of transaction */
+   mongoc_database_write_command_with_opts (
+      db, tmp_bson ("{'drop': 'test'}"), NULL, NULL, NULL);
+   collection = mongoc_database_create_collection (db, "test", NULL, &error);
+   ASSERT_OR_PRINT (collection, error);
+
+   session = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (session, error);
+
+   /* Transactions Spec says "startTransaction SHOULD report an error if the
+    * driver can detect that transactions are not supported by the deployment",
+    * but we take advantage of the wiggle room and don't error here. */
+   r = mongoc_client_session_start_transaction (session, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   r = mongoc_client_session_append (session, &opts, &error);
+   ASSERT_OR_PRINT (r, error);
+   r = mongoc_collection_insert_one (
+      collection, tmp_bson ("{}"), &opts, NULL, &error);
+
+   if (supported) {
+      ASSERT_OR_PRINT (r, error);
+   } else {
+      BSON_ASSERT (!r);
+      ASSERT_CMPINT32 (error.domain, ==, MONGOC_ERROR_SERVER);
+      ASSERT_CONTAINS (error.message, "transaction");
+   }
+
+   bson_destroy (&opts);
+   mongoc_collection_destroy (collection);
+
+   if (!supported) {
+      /* suppress "error in abortTransaction" warning from session_destroy */
+      capture_logs (true);
+   }
+
+   mongoc_client_session_destroy (session);
+   mongoc_client_destroy (client);
 }
 
 
@@ -77,4 +115,12 @@ test_transactions_install (TestSuite *suite)
       test_framework_skip_if_no_sessions,
       test_framework_skip_if_not_replset,
       test_framework_skip_if_max_wire_version_less_than_7);
+
+   TestSuite_AddFull (suite,
+                      "/transactions/supported",
+                      test_transactions_supported,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_crypto);
 }

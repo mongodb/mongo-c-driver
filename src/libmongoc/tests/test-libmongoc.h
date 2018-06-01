@@ -31,6 +31,8 @@ void
 clear_captured_logs (void);
 bool
 has_captured_log (mongoc_log_level_t level, const char *msg);
+void
+assert_all_captured_logs_have_prefix (const char *prefix);
 bool
 has_captured_logs (void);
 void
@@ -200,6 +202,6 @@ bool
 test_framework_skip_if_compressors (void);
 
 void
-test_framework_resolve_path (const char* path, char* resolved);
+test_framework_resolve_path (const char *path, char *resolved);
 
 #endif

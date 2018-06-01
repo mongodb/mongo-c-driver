@@ -13,6 +13,11 @@
       "comment": "On a 2.4 server, no GLE is sent and requires a client-side manufactured reply",
       "operation": {
         "name": "bulkWrite",
+        "collectionOptions": {
+          "writeConcern": {
+            "w": 0
+          }
+        },
         "arguments": {
           "requests": [
             {
@@ -27,9 +32,6 @@
           ],
           "options": {
             "ordered": false
-          },
-          "writeConcern": {
-            "w": 0
           }
         }
       },
