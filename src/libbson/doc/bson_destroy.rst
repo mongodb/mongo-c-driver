@@ -19,7 +19,7 @@ Parameters
 Description
 -----------
 
-The :symbol:`bson_destroy()` function shall free an allocated :symbol:`bson_t` structure.
+The :symbol:`bson_destroy()` function shall free an allocated :symbol:`bson_t` structure. Does nothing if ``bson`` is NULL.
 
 This function should always be called when you are done with a :symbol:`bson_t` unless otherwise specified.
 

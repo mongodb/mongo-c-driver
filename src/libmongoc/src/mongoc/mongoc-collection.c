@@ -186,7 +186,7 @@ _mongoc_collection_new (mongoc_client_t *client,
  *       None.
  *
  * Side effects:
- *       Everything.
+ *       None.
  *
  *--------------------------------------------------------------------------
  */
@@ -196,7 +196,9 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
 {
    ENTRY;
 
-   BSON_ASSERT (collection);
+   if (!collection) {
+      EXIT;
+   }
 
    bson_clear (&collection->gle);
 

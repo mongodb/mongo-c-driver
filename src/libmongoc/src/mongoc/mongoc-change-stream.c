@@ -439,7 +439,10 @@ mongoc_change_stream_error_document (const mongoc_change_stream_t *stream,
 void
 mongoc_change_stream_destroy (mongoc_change_stream_t *stream)
 {
-   BSON_ASSERT (stream);
+   if (!stream) {
+      return;
+   }
+
    bson_destroy (&stream->pipeline_to_append);
    bson_destroy (&stream->full_document);
    bson_destroy (&stream->opts);

@@ -122,7 +122,9 @@ mongoc_gridfs_file_list_error (mongoc_gridfs_file_list_t *list,
 void
 mongoc_gridfs_file_list_destroy (mongoc_gridfs_file_list_t *list)
 {
-   BSON_ASSERT (list);
+   if (!list) {
+      return;
+   }
 
    mongoc_cursor_destroy (list->cursor);
    bson_free (list);

@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-Frees a ``mongoc_gridfs_file_list_t`` and releases any associated resources.
-
+Frees a ``mongoc_gridfs_file_list_t`` and releases any associated resources. Does nothing if ``list`` is NULL.

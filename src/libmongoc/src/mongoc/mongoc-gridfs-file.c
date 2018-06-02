@@ -370,7 +370,9 @@ mongoc_gridfs_file_destroy (mongoc_gridfs_file_t *file)
 {
    ENTRY;
 
-   BSON_ASSERT (file);
+   if (!file) {
+      EXIT;
+   }
 
    if (file->page) {
       _mongoc_gridfs_file_page_destroy (file->page);

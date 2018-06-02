@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-Destroys the :symbol:`mongoc_gridfs_file_t` instance and any resources associated with it.
-
+Destroys the :symbol:`mongoc_gridfs_file_t` instance and any resources associated with it. Does nothing if ``file`` is NULL.

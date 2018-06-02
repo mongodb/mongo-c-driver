@@ -160,6 +160,10 @@ mongoc_server_description_destroy (mongoc_server_description_t *description)
 {
    ENTRY;
 
+   if (!description) {
+      EXIT;
+   }
+
    mongoc_server_description_cleanup (description);
 
    bson_free (description);

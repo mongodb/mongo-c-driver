@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-Releases any resources associated with ``value``.
-
+Releases any resources associated with ``value``. Does nothing if ``value`` is NULL.

@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-Frees all resources associated with a uri.
-
+Frees all resources associated with a uri. Does nothing if ``uri`` is NULL.

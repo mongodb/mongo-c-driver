@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-Frees a read preference and all associated resources.
-
+Frees a read preference and all associated resources. Does nothing if ``read_prefs`` is NULL.

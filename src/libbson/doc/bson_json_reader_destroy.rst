@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-Frees a bson_json_reader_t.
-
+Frees a bson_json_reader_t. Does nothing if ``reader`` is NULL.

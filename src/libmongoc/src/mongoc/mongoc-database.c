@@ -103,7 +103,9 @@ mongoc_database_destroy (mongoc_database_t *database)
 {
    ENTRY;
 
-   BSON_ASSERT (database);
+   if (!database) {
+      EXIT;
+   }
 
    if (database->read_prefs) {
       mongoc_read_prefs_destroy (database->read_prefs);

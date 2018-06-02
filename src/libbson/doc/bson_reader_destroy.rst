@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-Destroys and releases all resources associated with ``reader``.
-
+Destroys and releases all resources associated with ``reader``. Does nothing if ``reader`` is NULL.

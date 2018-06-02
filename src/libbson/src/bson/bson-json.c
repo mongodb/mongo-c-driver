@@ -2145,8 +2145,15 @@ void
 bson_json_reader_destroy (bson_json_reader_t *reader) /* IN */
 {
    int i;
-   bson_json_reader_producer_t *p = &reader->producer;
-   bson_json_reader_bson_t *b = &reader->bson;
+   bson_json_reader_producer_t *p;
+   bson_json_reader_bson_t *b;
+
+   if (!reader) {
+      return;
+   }
+
+   p = &reader->producer;
+   b = &reader->bson;
 
    if (reader->producer.dcb) {
       reader->producer.dcb (reader->producer.data);

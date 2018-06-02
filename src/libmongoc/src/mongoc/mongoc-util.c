@@ -251,20 +251,6 @@ _mongoc_bson_type_to_str (bson_type_t t)
    }
 }
 
-void
-_mongoc_bson_destroy_if_set (bson_t *bson)
-{
-   if (bson) {
-      bson_destroy (bson);
-   }
-}
-
-size_t
-_mongoc_strlen_or_zero (const char *s)
-{
-   return s ? strlen (s) : 0;
-}
-
 
 /* Get "serverId" from opts. Sets *server_id to the serverId from "opts" or 0
  * if absent. On error, fills out *error with domain and code and return false.

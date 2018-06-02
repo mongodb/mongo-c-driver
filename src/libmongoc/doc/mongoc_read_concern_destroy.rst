@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-Frees all resources associated with the read concern structure.
-
+Frees all resources associated with the read concern structure. Does nothing if ``read_concern`` is NULL.

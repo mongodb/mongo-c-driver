@@ -142,6 +142,10 @@ bson_value_copy (const bson_value_t *src, /* IN */
 void
 bson_value_destroy (bson_value_t *value) /* IN */
 {
+   if (!value) {
+      return;
+   }
+
    switch (value->value_type) {
    case BSON_TYPE_UTF8:
       bson_free (value->value.v_utf8.str);

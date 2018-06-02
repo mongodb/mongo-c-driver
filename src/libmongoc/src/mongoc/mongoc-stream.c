@@ -103,7 +103,9 @@ mongoc_stream_destroy (mongoc_stream_t *stream)
 {
    ENTRY;
 
-   BSON_ASSERT (stream);
+   if (!stream) {
+      EXIT;
+   }
 
    BSON_ASSERT (stream->destroy);
 

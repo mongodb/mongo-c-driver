@@ -539,7 +539,9 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
    char db[MONGOC_NAMESPACE_MAX];
    ENTRY;
 
-   BSON_ASSERT (cursor);
+   if (!cursor) {
+      EXIT;
+   }
 
    if (cursor->impl.destroy) {
       cursor->impl.destroy (&cursor->impl);

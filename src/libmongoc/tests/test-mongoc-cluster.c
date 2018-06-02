@@ -422,7 +422,7 @@ test_cluster_time_cmd_started_cb (const mongoc_apm_command_started_t *event)
       (cluster_time_test_t *) mongoc_apm_command_started_get_context (event);
 
    test->calls++;
-   _mongoc_bson_destroy_if_set (test->command);
+   bson_destroy (test->command);
    test->command = bson_copy (cmd);
 
    /* Only a MongoDB 3.6+ server reports $clusterTime. If we've received a
@@ -471,7 +471,7 @@ test_cluster_time_cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
       BSON_ASSERT (bson_iter_init_find (&iter, reply, "$clusterTime"));
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
       bson_iter_document (&iter, &len, &data);
-      _mongoc_bson_destroy_if_set (test->cluster_time);
+      bson_destroy (test->cluster_time);
       test->cluster_time = bson_new_from_data (data, len);
    }
 }
@@ -529,8 +529,8 @@ _test_cluster_time (bool pooled, command_fn_t command)
    }
 
    mongoc_apm_callbacks_destroy (callbacks);
-   _mongoc_bson_destroy_if_set (cluster_time_test.command);
-   _mongoc_bson_destroy_if_set (cluster_time_test.cluster_time);
+   bson_destroy (cluster_time_test.command);
+   bson_destroy (cluster_time_test.cluster_time);
 }
 
 

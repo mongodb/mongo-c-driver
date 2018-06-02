@@ -19,7 +19,7 @@ Parameters
 Description
 -----------
 
-This function shall destroy a :symbol:`mongoc_collection_t` and its associated resources.
+This function shall destroy a :symbol:`mongoc_collection_t` and its associated resources. Does nothing if ``collection`` is NULL.
 
 .. warning::
 

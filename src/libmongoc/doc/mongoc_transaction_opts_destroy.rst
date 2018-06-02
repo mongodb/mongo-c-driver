@@ -11,7 +11,12 @@ Synopsis
   void
   mongoc_transaction_opts_destroy (mongoc_transaction_opt_t *opts);
 
-Free a :symbol:`mongoc_transaction_opt_t`.
+Free a :symbol:`mongoc_transaction_opt_t`. Does nothing if ``opts`` is NULL.
+
+Parameters
+----------
+
+* ``opts``: A :symbol:`mongoc_transaction_opt_t`.
 
 .. only:: html
 

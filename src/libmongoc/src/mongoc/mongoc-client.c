@@ -1572,7 +1572,7 @@ retry:
       if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
                                     WIRE_VERSION_RETRY_WRITES) {
          parts->assembled.server_stream = retry_server_stream;
-         _mongoc_bson_destroy_if_set (reply);
+         bson_destroy (reply);
          GOTO (retry);
       }
    }

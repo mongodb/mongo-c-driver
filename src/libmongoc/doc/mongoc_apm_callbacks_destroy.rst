@@ -11,7 +11,7 @@ Synopsis
   void
   mongoc_apm_callbacks_destroy (mongoc_apm_callbacks_t *callbacks);
 
-Free a :symbol:`mongoc_apm_callbacks_t`.
+Free a :symbol:`mongoc_apm_callbacks_t`. Does nothing if ``callbacks`` is NULL.
 
 See Also
 --------

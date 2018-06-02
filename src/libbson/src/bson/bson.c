@@ -2311,7 +2311,9 @@ bson_copy_to_excluding_noinit (const bson_t *src,
 void
 bson_destroy (bson_t *bson)
 {
-   BSON_ASSERT (bson);
+   if (!bson) {
+      return;
+   }
 
    if (!(bson->flags &
          (BSON_FLAG_RDONLY | BSON_FLAG_INLINE | BSON_FLAG_NO_FREE))) {

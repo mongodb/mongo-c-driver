@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-Clean up all memory associated with the server description.
-
+Clean up all memory associated with the server description. Does nothing if ``description`` is NULL.

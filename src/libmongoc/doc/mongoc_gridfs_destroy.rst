@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-This function shall destroy the gridfs structure referenced by ``gridfs`` and any resources associated with the gridfs.
-
+This function shall destroy the gridfs structure referenced by ``gridfs`` and any resources associated with the gridfs. Does nothing if ``gridfs`` is NULL.

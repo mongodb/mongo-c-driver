@@ -20,5 +20,5 @@ Parameters
 Description
 -----------
 
-Frees all resources associated with the find and modify builder structure.
+Frees all resources associated with the find and modify builder structure. Does nothing if ``find_and_modify_opts`` is NULL.
 

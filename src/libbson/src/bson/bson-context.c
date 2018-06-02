@@ -463,10 +463,7 @@ bson_context_new (bson_context_flags_t flags)
 void
 bson_context_destroy (bson_context_t *context) /* IN */
 {
-   if (context != &gContextDefault) {
-      memset (context, 0, sizeof *context);
-      bson_free (context);
-   }
+   bson_free (context);
 }
 
 

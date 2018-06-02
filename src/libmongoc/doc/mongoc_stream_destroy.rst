@@ -16,5 +16,4 @@ Parameters
 
 * ``stream``: A :symbol:`mongoc_stream_t`.
 
-This function shall release all resources associated with a :symbol:`mongoc_stream_t`, including freeing the structure. It is invalid to use ``stream`` after calling this function.
-
+This function shall release all resources associated with a :symbol:`mongoc_stream_t`, including freeing the structure. It is invalid to use ``stream`` after calling this function. Does nothing if ``stream`` is NULL.

@@ -165,7 +165,9 @@ mongoc_gridfs_destroy (mongoc_gridfs_t *gridfs)
 {
    ENTRY;
 
-   BSON_ASSERT (gridfs);
+   if (!gridfs) {
+      EXIT;
+   }
 
    mongoc_collection_destroy (gridfs->files);
    mongoc_collection_destroy (gridfs->chunks);

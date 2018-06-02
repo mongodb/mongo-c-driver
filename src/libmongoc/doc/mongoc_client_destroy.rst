@@ -11,7 +11,7 @@ Synopsis
   void
   mongoc_client_destroy (mongoc_client_t *client);
 
-Release all resources associated with ``client`` and free the structure.
+Release all resources associated with ``client`` and free the structure. Does nothing if ``client`` is NULL.
 
 Parameters
 ----------

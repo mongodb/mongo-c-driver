@@ -19,7 +19,7 @@ Parameters
 Description
 -----------
 
-The ``bson_context_destroy()`` function shall release all resources associated with ``context``.
+The ``bson_context_destroy()`` function shall release all resources associated with ``context``. Does nothing if ``context`` is NULL.
 
 This should be called when you are no longer using a :symbol:`bson_context_t` that you have allocated with :symbol:`bson_context_new()`.
 

@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-Frees all resources associated with the write concern structure.
-
+Frees all resources associated with the write concern structure. Does nothing if ``write_concern`` is NULL.

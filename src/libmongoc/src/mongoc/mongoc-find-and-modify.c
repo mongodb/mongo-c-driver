@@ -49,7 +49,7 @@ mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t *opts,
    BSON_ASSERT (opts);
 
    if (sort) {
-      _mongoc_bson_destroy_if_set (opts->sort);
+      bson_destroy (opts->sort);
       opts->sort = bson_copy (sort);
       return true;
    }
@@ -78,7 +78,7 @@ mongoc_find_and_modify_opts_set_update (mongoc_find_and_modify_opts_t *opts,
    BSON_ASSERT (opts);
 
    if (update) {
-      _mongoc_bson_destroy_if_set (opts->update);
+      bson_destroy (opts->update);
       opts->update = bson_copy (update);
       return true;
    }
@@ -107,7 +107,7 @@ mongoc_find_and_modify_opts_set_fields (mongoc_find_and_modify_opts_t *opts,
    BSON_ASSERT (opts);
 
    if (fields) {
-      _mongoc_bson_destroy_if_set (opts->fields);
+      bson_destroy (opts->fields);
       opts->fields = bson_copy (fields);
       return true;
    }
@@ -220,9 +220,9 @@ void
 mongoc_find_and_modify_opts_destroy (mongoc_find_and_modify_opts_t *opts)
 {
    if (opts) {
-      _mongoc_bson_destroy_if_set (opts->sort);
-      _mongoc_bson_destroy_if_set (opts->update);
-      _mongoc_bson_destroy_if_set (opts->fields);
+      bson_destroy (opts->sort);
+      bson_destroy (opts->update);
+      bson_destroy (opts->fields);
       bson_destroy (&opts->extra);
       bson_free (opts);
    }

@@ -19,5 +19,4 @@ Parameters
 Description
 -----------
 
-Frees a :symbol:`mongoc_cursor_t` and releases all associated resources. If a server-side cursor has been allocated, it will be released as well.
-
+Frees a :symbol:`mongoc_cursor_t` and releases all associated resources. If a server-side cursor has been allocated, it will be released as well. Does nothing if ``cursor`` is NULL.

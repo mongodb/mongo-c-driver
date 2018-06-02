@@ -11,7 +11,7 @@ Synopsis
   void
   mongoc_database_destroy (mongoc_database_t *database);
 
-Releases all resources associated with ``database``, including freeing the structure.
+Releases all resources associated with ``database``, including freeing the structure. Does nothing if ``database`` is NULL.
 
 Parameters
 ----------

@@ -160,7 +160,9 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   BSON_ASSERT (pool);
+   if (!pool) {
+      EXIT;
+   }
 
    if (pool->topology->session_pool) {
       client = mongoc_client_pool_pop (pool);

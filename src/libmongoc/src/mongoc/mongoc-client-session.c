@@ -168,7 +168,9 @@ mongoc_transaction_opts_destroy (mongoc_transaction_opt_t *opts)
 {
    ENTRY;
 
-   BSON_ASSERT (opts);
+   if (!opts) {
+      EXIT;
+   }
 
    txn_opts_cleanup (opts);
    bson_free (opts);
@@ -331,7 +333,9 @@ mongoc_session_opts_destroy (mongoc_session_opt_t *opts)
 {
    ENTRY;
 
-   BSON_ASSERT (opts);
+   if (!opts) {
+      EXIT;
+   }
 
    txn_opts_cleanup (&opts->default_txn_opts);
    bson_free (opts);
@@ -1008,7 +1012,9 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
 {
    ENTRY;
 
-   BSON_ASSERT (session);
+   if (!session) {
+      EXIT;
+   }
 
    if (_mongoc_client_session_in_txn (session)) {
       mongoc_client_session_abort_transaction (session, NULL);
