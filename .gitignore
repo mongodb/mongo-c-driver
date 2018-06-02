@@ -37,6 +37,7 @@ example-gridfs
 example-matcher
 example-session
 example-sdam-monitoring
+example-transaction
 example-update
 filter-bsondump
 find-and-modify

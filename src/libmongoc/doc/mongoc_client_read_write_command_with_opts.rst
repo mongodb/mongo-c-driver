@@ -20,9 +20,9 @@ Synopsis
 
 Execute a command on the server, applying logic for commands that both read and write, and taking the MongoDB server version into account. To send a raw command to the server without any of this logic, use :symbol:`mongoc_client_command_simple`.
 
-Use this function for commands that both read and write, such as "mapReduce" with an output collection.
+.. |opts-source| replace:: ``client``
 
-Read concern is applied from ``opts`` or else from ``client``. Collation is applied from ``opts`` (:ref:`see example for the "distinct" command with opts <mongoc_client_read_command_with_opts_example>`). Read preferences are *not* applied. Write concern is applied from ``opts``, or else from ``client``. The write concern is omitted for MongoDB before 3.4.
+.. include:: includes/read-write-opts-sources.txt
 
 ``reply`` is always initialized, and must be freed with :symbol:`bson:bson_destroy()`.
 

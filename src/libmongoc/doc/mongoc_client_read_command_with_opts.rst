@@ -19,7 +19,9 @@ Synopsis
 
 Execute a command on the server, applying logic that is specific to commands that read, and taking the MongoDB server version into account. To send a raw command to the server without any of this logic, use :symbol:`mongoc_client_command_simple`.
 
-Use this function for commands that read such as "count" or "distinct". Read concern is applied from ``opts`` or else from ``client``. Collation is applied from ``opts`` (see example below). Read preferences are applied from ``read_prefs`` or else from ``client``. No write concern is applied.
+.. |opts-source| replace:: ``client``
+
+.. include:: includes/read-cmd-opts-sources.txt
 
 ``reply`` is always initialized, and must be freed with :symbol:`bson:bson_destroy()`.
 

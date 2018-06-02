@@ -22,6 +22,13 @@ When a session is first created with :symbol:`mongoc_client_start_session`, it i
 
 Pass the resulting transaction options to :symbol:`mongoc_client_session_start_transaction`. Each field set in the transaction options overrides the inherited client configuration.
 
+Example
+-------
+
+.. literalinclude:: ../examples/example-transaction.c
+   :language: c
+   :caption: example-transaction.c
+
 .. only:: html
 
   Functions

@@ -30,6 +30,15 @@ Return
 
 Returns true if the transaction was started. Returns ``false`` and sets ``error`` if there are invalid arguments, such as a session with a transaction already in progress.
 
+.. _mongoc_client_session_start_transaction_example:
+
+Example
+-------
+
+.. literalinclude:: ../examples/example-transaction.c
+   :language: c
+   :caption: example-transaction.c
+
 .. only:: html
 
   .. taglist:: See Also:

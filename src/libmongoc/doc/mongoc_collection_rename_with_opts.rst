@@ -25,6 +25,8 @@ Parameters
 * ``drop_target_before_rename``: If an existing collection matches the new name, drop it before the rename.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
+.. |opts-source| replace:: ``collection``
+
 .. include:: includes/write-opts.txt
 
 Description

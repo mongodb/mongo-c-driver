@@ -803,6 +803,7 @@ mongoc_add_example (example-command-with-opts TRUE ${PROJECT_SOURCE_DIR}/example
 mongoc_add_example (example-create-indexes TRUE ${PROJECT_SOURCE_DIR}/examples/example-create-indexes.c)
 mongoc_add_example (example-scram TRUE ${PROJECT_SOURCE_DIR}/examples/example-scram.c)
 mongoc_add_example (example-session TRUE ${PROJECT_SOURCE_DIR}/examples/example-session.c)
+mongoc_add_example (example-transaction TRUE ${PROJECT_SOURCE_DIR}/examples/example-transaction.c)
 mongoc_add_example (mongoc-dump TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-dump.c)
 mongoc_add_example (mongoc-ping TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-ping.c)
 mongoc_add_example (mongoc-tail TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-tail.c)

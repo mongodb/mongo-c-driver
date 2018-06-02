@@ -30,6 +30,10 @@ Query on ``collection``, passing arbitrary query options to the server in ``opts
 
 To target a specific server, include an integer "serverId" field in ``opts`` with an id obtained first by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.
 
+.. |opts-source| replace:: ``collection``
+
+.. include:: includes/read-opts-sources.txt
+
 Returns
 -------
 
@@ -117,17 +121,21 @@ Option                   BSON type           Option               BSON type
 ``limit``                non-negative int64  ``min``              document
 ``batchSize``            non-negative int64  ``noCursorTimeout``  bool
 ``exhaust``              bool                ``oplogReplay``      bool
-``hint``                 string or document  ``returnKey``        bool
-``allowPartialResults``  bool                ``showRecordId``     bool
-``awaitData``            bool                ``singleBatch``      bool
-``collation``            document            ``tailable``         bool
-``comment``              string
+``hint``                 string or document  ``readConcern``      document
+``allowPartialResults``  bool                ``returnKey``        bool
+``awaitData``            bool                ``sessionId``        (none)
+``collation``            document            ``showRecordId``     bool
+``comment``              string              ``singleBatch``      bool
 =======================  ==================  ===================  ==================
 
-All options are documented in the reference page for `the "find" command`_ in the MongoDB server manual, except for "maxAwaitTimeMS".
+All options are documented in the reference page for `the "find" command`_ in the MongoDB server manual, except for "maxAwaitTimeMS" and "sessionId".
 
 "maxAwaitTimeMS" is the maximum amount of time for the server to wait on new documents to satisfy a query, if "tailable" and "awaitData" are both true.
 If no new documents are found, the tailable cursor receives an empty batch. The "maxAwaitTimeMS" option is ignored for MongoDB older than 3.4.
+
+To add a "sessionId", construct a :symbol:`mongoc_client_session_t` with :symbol:`mongoc_client_start_session`. You can begin a transaction with :symbol:`mongoc_client_session_start_transaction`, optionally with a :symbol:`mongoc_transaction_opt_t` that overrides the options inherited from ``collection``. Then use :symbol:`mongoc_client_session_append` to add the session to ``opts``. See the example code for :symbol:`mongoc_client_session_t`.
+
+To add a "readConcern", construct a :symbol:`mongoc_read_concern_t` with :symbol:`mongoc_read_concern_new` and configure it with :symbol:`mongoc_read_concern_set_level`. Then use :symbol:`mongoc_read_concern_append` to add the read concern to ``opts``.
 
 For some options like "collation", the driver returns an error if the server version is too old to support the feature.
 Any fields in ``opts`` that are not listed here are passed to the server unmodified.
