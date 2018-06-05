@@ -28,6 +28,10 @@ Parameters
 
 This function shall create a new user with access to ``database``.
 
+.. warning::
+
+  Do not call this function without TLS.
+
 Errors
 ------
 

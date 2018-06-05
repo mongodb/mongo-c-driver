@@ -432,21 +432,12 @@ test_mongoc_client_authenticate (void *context)
    bson_init (&roles);
    BCON_APPEND (&roles, "0", "{", "role", "read", "db", "test", "}");
 
-   /* MongoDB 4+ prohibits hashed password, call createUser directly until we
-    * update mongoc_database_add_user */
-   if (test_framework_max_wire_version_at_least (7)) {
-      r = mongoc_database_write_command_with_opts (
-         database,
-         tmp_bson ("{'createUser': '%s', 'pwd': 'testpass',"
-                   " 'roles': [{'role': 'read', 'db': 'test'}]}",
-                   username),
-         NULL,
-         NULL,
-         &error);
-   } else {
-      r = mongoc_database_add_user (
-         database, username, "testpass", &roles, NULL, &error);
-   }
+   r = mongoc_database_add_user (database,
+                                 username,
+                                 "testpass",
+                                 tmp_bson ("[{'role': 'read', 'db': 'test'}]"),
+                                 NULL,
+                                 &error);
 
    ASSERT_OR_PRINT (r, error);
    mongoc_database_destroy (database);

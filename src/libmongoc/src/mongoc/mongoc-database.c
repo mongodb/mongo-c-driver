@@ -429,8 +429,6 @@ mongoc_database_add_user (mongoc_database_t *database,
 {
    bson_t cmd;
    bson_t ar;
-   char *input;
-   char *hashed_password;
    bool ret = false;
 
    ENTRY;
@@ -438,15 +436,10 @@ mongoc_database_add_user (mongoc_database_t *database,
    BSON_ASSERT (database);
    BSON_ASSERT (username);
 
-   /* usersInfo succeeded or failed with auth err, we're on modern mongod */
-   input = bson_strdup_printf ("%s:mongo:%s", username, password);
-   hashed_password = _mongoc_hex_md5 (input);
-   bson_free (input);
-
    bson_init (&cmd);
    BSON_APPEND_UTF8 (&cmd, "createUser", username);
-   BSON_APPEND_UTF8 (&cmd, "pwd", hashed_password);
-   BSON_APPEND_BOOL (&cmd, "digestPassword", false);
+   BSON_APPEND_UTF8 (&cmd, "pwd", password);
+
    if (custom_data) {
       BSON_APPEND_DOCUMENT (&cmd, "customData", custom_data);
    }
@@ -459,7 +452,6 @@ mongoc_database_add_user (mongoc_database_t *database,
 
    ret = mongoc_database_command_simple (database, &cmd, NULL, NULL, error);
 
-   bson_free (hashed_password);
    bson_destroy (&cmd);
 
    RETURN (ret);
