@@ -14,6 +14,7 @@ echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
 DIR=$(dirname $0)
 . $DIR/find-cmake.sh
+. $DIR/check-symlink.sh
 
 if command -v gtar 2>/dev/null; then
   TAR=gtar
@@ -76,28 +77,36 @@ $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/
 make
 make install
 
+ls -l $INSTALL_DIR/lib
 
-LIB=$INSTALL_DIR/lib/libmongoc-1.0.$SO
-if test ! -L $LIB; then
-   echo "$LIB should be a symlink"
-   exit 1
-fi
+set +o xtrace
 
-TARGET=$(readlink $LIB)
-if test ! -f $INSTALL_DIR/lib/$TARGET; then
-  echo "$LIB target $INSTALL_DIR/lib/$TARGET is missing!"
-  exit 1
+# Check on Linux that libmongoc is installed into lib/ like:
+# libmongoc-1.0.so -> libmongoc-1.0.so.0
+# libmongoc-1.0.so.0 -> libmongoc-1.0.so.0.0.0
+# libmongoc-1.0.so.0.0.0
+if [ "$OS" != "darwin" ]; then
+  # From check-symlink.sh
+  check_symlink libmongoc-1.0.so libmongoc-1.0.so.0
+  check_symlink libmongoc-1.0.so.0 libmongoc-1.0.so.0.0.0
+  SONAME=$(objdump -p $INSTALL_DIR/lib/$LIB_SO|grep SONAME|awk '{print $2}')
+  EXPECTED_SONAME="libmongoc-1.0.so.0"
+  if [ "$SONAME" != "$EXPECTED_SONAME" ]; then
+    echo "SONAME should be $EXPECTED_SONAME, not $SONAME"
+    exit 1
+  else
+    echo "library name check ok, SONAME=$SONAME"
+  fi
 else
-  echo "$LIB target $INSTALL_DIR/lib/$TARGET check ok"
+  # Just test that the shared lib was installed.
+  if test ! -f $INSTALL_DIR/lib/$LIB_SO; then
+    echo "$LIB_SO missing!"
+    exit 1
+  else
+    echo "$LIB_SO check ok"
+  fi
 fi
 
-
-if test ! -f $INSTALL_DIR/lib/$LIB_SO; then
-  echo "$LIB_SO missing!"
-  exit 1
-else
-  echo "$LIB_SO check ok"
-fi
 
 if test ! -f $INSTALL_DIR/lib/pkgconfig/libmongoc-1.0.pc; then
   echo "libmongoc-1.0.pc missing!"
@@ -167,7 +176,7 @@ else
   fi
 fi
 
-if [ $(uname) = "Darwin" ]; then
+if [ "$OS" = "darwin" ]; then
   if test -f $INSTALL_DIR/bin/mongoc-stat; then
     echo "mongoc-stat shouldn't have been installed"
     exit 1
@@ -180,6 +189,8 @@ else
     echo "mongoc-stat check ok"
   fi
 fi
+
+set -o xtrace
 
 if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
   # Test our CMake package config file with CMake's find_package command.
@@ -209,7 +220,7 @@ else
 fi
 
 if [ ! "$LINK_STATIC" ]; then
-  if [ $(uname) = "Darwin" ]; then
+  if [ "$OS" = "darwin" ]; then
     export DYLD_LIBRARY_PATH=$INSTALL_DIR/lib
   else
     export LD_LIBRARY_PATH=$INSTALL_DIR/lib
