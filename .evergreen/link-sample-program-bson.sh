@@ -11,6 +11,7 @@ echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
 
 DIR=$(dirname $0)
 . $DIR/find-cmake.sh
+. $DIR/check-symlink.sh
 
 if command -v gtar 2>/dev/null; then
   TAR=gtar
@@ -18,13 +19,17 @@ else
   TAR=tar
 fi
 
-if [ $(uname) = "Darwin" ]; then
+# Get the kernel name, lowercased
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+echo "OS: $OS"
+
+if [ "$OS" = "darwin" ]; then
   SO=dylib
   LIB_SO=libbson-1.0.0.dylib
   LDD="otool -L"
 else
   SO=so
-  LIB_SO=libbson-1.0.so.0
+  LIB_SO=libbson-1.0.so.0.0.0
   LDD=ldd
 fi
 
@@ -76,28 +81,34 @@ else
 
 fi
 
+ls -l $INSTALL_DIR/lib
+
 set +o xtrace
 
-LIB=$INSTALL_DIR/lib/libbson-1.0.$SO
-if test ! -L $LIB; then
-   echo "$LIB should be a symlink"
-   exit 1
-fi
-
-TARGET=$(readlink $LIB)
-if test ! -f $INSTALL_DIR/lib/$TARGET; then
-  echo "$LIB target $INSTALL_DIR/lib/$TARGET is missing!"
-  exit 1
+# Check on Linux that libbson is installed into lib/ like:
+# libbson-1.0.so -> libbson-1.0.so.0
+# libbson-1.0.so.0 -> libbson-1.0.so.0.0.0
+# libbson-1.0.so.0.0.0
+if [ "$OS" != "darwin" ]; then
+  # From check-symlink.sh
+  check_symlink libbson-1.0.so libbson-1.0.so.0
+  check_symlink libbson-1.0.so.0 libbson-1.0.so.0.0.0
+  SONAME=$(objdump -p $INSTALL_DIR/lib/$LIB_SO|grep SONAME|awk '{print $2}')
+  EXPECTED_SONAME="libbson-1.0.so.0"
+  if [ "$SONAME" != "$EXPECTED_SONAME" ]; then
+    echo "SONAME should be $EXPECTED_SONAME, not $SONAME"
+    exit 1
+  else
+    echo "library name check ok, SONAME=$SONAME"
+  fi
 else
-  echo "$LIB target $INSTALL_DIR/lib/$TARGET check ok"
-fi
-
-
-if test ! -f $INSTALL_DIR/lib/$LIB_SO; then
-  echo "$LIB_SO missing!"
-  exit 1
-else
-  echo "$LIB_SO check ok"
+  # Just test that the shared lib was installed.
+  if test ! -f $INSTALL_DIR/lib/$LIB_SO; then
+    echo "$LIB_SO missing!"
+    exit 1
+  else
+    echo "$LIB_SO check ok"
+  fi
 fi
 
 if test ! -f $INSTALL_DIR/lib/pkgconfig/libbson-1.0.pc; then
@@ -177,7 +188,7 @@ else
 fi
 
 if [ ! "$LINK_STATIC" ]; then
-  if [ $(uname) = "Darwin" ]; then
+  if [ "$OS" = "darwin" ]; then
     export DYLD_LIBRARY_PATH=$INSTALL_DIR/lib
   else
     export LD_LIBRARY_PATH=$INSTALL_DIR/lib
