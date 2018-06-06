@@ -48,10 +48,11 @@ static TestSuite *gTestSuite;
 
 
 #define TEST_NOFORK (1 << 1)
-#define TEST_HELPONLY (1 << 2)
+#define TEST_HELPTEXT (1 << 2)
 #define TEST_DEBUGOUTPUT (1 << 3)
 #define TEST_TRACE (1 << 4)
 #define TEST_VALGRIND (1 << 5)
+#define TEST_LISTTESTS (1 << 6)
 
 MONGOC_PRINTF_FORMAT (1, 2)
 static void
@@ -137,12 +138,10 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          suite->flags |= TEST_TRACE;
 #else
          test_error ("-t requires mongoc compiled with --enable-tracing.");
-         exit (EXIT_FAILURE);
 #endif
       } else if (0 == strcmp ("-F", argv[i])) {
          if (argc - 1 == i) {
             test_error ("-F requires a filename argument.");
-            exit (EXIT_FAILURE);
          }
          filename = argv[++i];
          if (0 != strcmp ("-", filename)) {
@@ -159,19 +158,21 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          }
       } else if ((0 == strcmp ("-h", argv[i])) ||
                  (0 == strcmp ("--help", argv[i]))) {
-         suite->flags |= TEST_HELPONLY;
+         suite->flags |= TEST_HELPTEXT;
+      } else if (0 == strcmp ("--list-tests", argv[i])) {
+         suite->flags |= TEST_LISTTESTS;
       } else if ((0 == strcmp ("-s", argv[i])) ||
                  (0 == strcmp ("--silent", argv[i]))) {
          suite->silent = true;
-      } else if ((0 == strcmp ("-l", argv[i]))) {
+      } else if (0 == strcmp ("-l", argv[i])) {
          if (argc - 1 == i) {
             test_error ("-l requires an argument.");
-            exit (EXIT_FAILURE);
          }
          suite->testname = bson_strdup (argv[++i]);
       } else {
-         test_error ("Unknown option: %s", argv[i]);
-         exit (EXIT_FAILURE);
+         test_error ("Unknown option: %s\n"
+                     "Try using the --help option.",
+                     argv[i]);
       }
    }
 
@@ -571,7 +572,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
    t1 = bson_get_monotonic_time ();
 
 
-   if ((suite->flags & TEST_NOFORK)) {
+   if (suite->flags & TEST_NOFORK) {
 #ifdef MONGOC_TRACE
       if (suite->flags & TEST_TRACE) {
          mongoc_log_set_handler (mongoc_log_default_handler, NULL);
@@ -645,33 +646,37 @@ done:
 
 
 static void
-TestSuite_PrintHelp (TestSuite *suite, /* IN */
-                     FILE *stream)     /* IN */
+TestSuite_PrintHelp (TestSuite *suite) /* IN */
+{
+   printf ("usage: %s [OPTIONS]\n"
+           "\n"
+           "Options:\n"
+           "    -h, --help    Show this help menu.\n"
+           "    --list-tests  Print list of available tests.\n"
+           "    -f, --no-fork Do not spawn a process per test (abort on first "
+           "error).\n"
+           "    -l NAME       Run test by name, e.g. \"/Client/command\" or "
+           "\"/Client/*\".\n"
+           "    -s, --silent  Suppress all output.\n"
+           "    -F FILENAME   Write test results (JSON) to FILENAME.\n"
+           "    -d            Print debug output (useful if a test hangs).\n"
+           "    -t, --trace   Enable mongoc tracing (useful to debug tests).\n"
+           "\n",
+           suite->prgname);
+}
+
+
+static void
+TestSuite_PrintTests (TestSuite *suite) /* IN */
 {
    Test *iter;
 
-   fprintf (stream,
-            "usage: %s [OPTIONS]\n"
-            "\n"
-            "Options:\n"
-            "    -h, --help    Show this help menu.\n"
-            "    -f, --no-fork Do not spawn a process per test (abort on first "
-            "error).\n"
-            "    -l NAME       Run test by name, e.g. \"/Client/command\" or "
-            "\"/Client/*\".\n"
-            "    -s, --silent  Suppress all output.\n"
-            "    -F FILENAME   Write test results (JSON) to FILENAME.\n"
-            "    -d            Print debug output (useful if a test hangs).\n"
-            "    -t, --trace   Enable mongoc tracing (useful to debug tests).\n"
-            "\n"
-            "Tests:\n",
-            suite->prgname);
-
+   printf ("\nTests:\n");
    for (iter = suite->tests; iter; iter = iter->next) {
-      fprintf (stream, "    %s%s\n", suite->name, iter->name);
+      printf ("%s%s\n", suite->name, iter->name);
    }
 
-   fprintf (stream, "\n");
+   printf ("\n");
 }
 
 
@@ -928,8 +933,15 @@ TestSuite_Run (TestSuite *suite) /* IN */
 {
    int failures = 0;
 
-   if ((suite->flags & TEST_HELPONLY)) {
-      TestSuite_PrintHelp (suite, stderr);
+   if (suite->flags & TEST_HELPTEXT) {
+      TestSuite_PrintHelp (suite);
+   }
+
+   if (suite->flags & TEST_LISTTESTS) {
+      TestSuite_PrintTests (suite);
+   }
+
+   if ((suite->flags & TEST_HELPTEXT) || (suite->flags & TEST_LISTTESTS)) {
       return 0;
    }
 
