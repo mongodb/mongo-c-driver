@@ -91,5 +91,5 @@ main (int argc, char *argv[])
    example ();
    mongoc_cleanup ();
 
-   return 0;
+   return EXIT_SUCCESS;
 }

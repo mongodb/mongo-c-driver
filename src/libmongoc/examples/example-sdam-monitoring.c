@@ -195,7 +195,9 @@ main (int argc, char *argv[])
    mongoc_client_t *client;
    mongoc_apm_callbacks_t *cbs;
    stats_t stats = {0};
-   const char *uristr = "mongodb://127.0.0.1/?appname=sdam-monitoring-example";
+   const char *uri_string =
+      "mongodb://127.0.0.1/?appname=sdam-monitoring-example";
+   mongoc_uri_t *uri;
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
    bson_error_t error;
@@ -203,13 +205,21 @@ main (int argc, char *argv[])
    mongoc_init ();
 
    if (argc > 1) {
-      uristr = argv[1];
+      uri_string = argv[1];
    }
 
-   client = mongoc_client_new (uristr);
+   uri = mongoc_uri_new_with_error (uri_string, &error);
+   if (!uri) {
+      fprintf (stderr,
+               "failed to parse URI: %s\n"
+               "error message:       %s\n",
+               uri_string,
+               error.message);
+      return EXIT_FAILURE;
+   }
 
+   client = mongoc_client_new_from_uri (uri);
    if (!client) {
-      fprintf (stderr, "Failed to parse URI.\n");
       return EXIT_FAILURE;
    }
 
@@ -231,6 +241,7 @@ main (int argc, char *argv[])
    /* the driver connects on demand to perform first operation */
    BSON_APPEND_INT32 (&cmd, "buildinfo", 1);
    mongoc_client_command_simple (client, "admin", &cmd, NULL, &reply, &error);
+   mongoc_uri_destroy (uri);
    mongoc_client_destroy (client);
 
    printf ("Events:\n"

@@ -72,19 +72,37 @@ main (int argc, char *argv[])
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
+   const char *uri_string = "mongodb://localhost/?appname=bulk2-example";
+   mongoc_uri_t *uri;
+   bson_error_t error;
 
    mongoc_init ();
 
-   client = mongoc_client_new ("mongodb://localhost/?appname=bulk2-example");
+   uri = mongoc_uri_new_with_error (uri_string, &error);
+   if (!uri) {
+      fprintf (stderr,
+               "failed to parse URI: %s\n"
+               "error message:       %s\n",
+               uri_string,
+               error.message);
+      return EXIT_FAILURE;
+   }
+
+   client = mongoc_client_new_from_uri (uri);
+   if (!client) {
+      return EXIT_FAILURE;
+   }
+
    mongoc_client_set_error_api (client, 2);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    bulk2 (collection);
 
+   mongoc_uri_destroy (uri);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 
    mongoc_cleanup ();
 
-   return 0;
+   return EXIT_SUCCESS;
 }

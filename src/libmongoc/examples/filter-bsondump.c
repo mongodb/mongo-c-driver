@@ -61,5 +61,5 @@ main (int argc, char *argv[])
    bson_reader_destroy (reader);
    bson_destroy (spec);
 
-   return 0;
+   return EXIT_SUCCESS;
 }

@@ -13,9 +13,10 @@ main (int argc, char *argv[])
    int exit_code = EXIT_FAILURE;
 
    mongoc_client_t *client;
+   const char *uri_string = "mongodb://127.0.0.1/?appname=session-example";
+   mongoc_uri_t *uri;
    mongoc_client_session_t *client_session = NULL;
    mongoc_collection_t *collection = NULL;
-   const char *uristr = "mongodb://127.0.0.1/?appname=session-example";
    bson_error_t error;
    bson_t *selector = NULL;
    bson_t *update = NULL;
@@ -30,13 +31,21 @@ main (int argc, char *argv[])
    mongoc_init ();
 
    if (argc > 1) {
-      uristr = argv[1];
+      uri_string = argv[1];
    }
 
-   client = mongoc_client_new (uristr);
+   uri = mongoc_uri_new_with_error (uri_string, &error);
+   if (!uri) {
+      fprintf (stderr,
+               "failed to parse URI: %s\n"
+               "error message:       %s\n",
+               uri_string,
+               error.message);
+      goto done;
+   }
 
+   client = mongoc_client_new_from_uri (uri);
    if (!client) {
-      fprintf (stderr, "Failed to parse URI.\n");
       goto done;
    }
 
@@ -84,10 +93,6 @@ main (int argc, char *argv[])
    cursor = mongoc_collection_find_with_opts (
       collection, selector, find_opts, secondary);
 
-   bson_destroy (selector);
-   mongoc_read_prefs_destroy (secondary);
-   bson_destroy (find_opts);
-
    while (mongoc_cursor_next (cursor, &doc)) {
       str = bson_as_json (doc, NULL);
       fprintf (stdout, "%s\n", str);
@@ -126,6 +131,9 @@ done:
    }
    if (client_session) {
       mongoc_client_session_destroy (client_session);
+   }
+   if (uri) {
+      mongoc_uri_destroy (uri);
    }
    if (client) {
       mongoc_client_destroy (client);

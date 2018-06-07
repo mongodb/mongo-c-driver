@@ -40,8 +40,9 @@ insert_data (mongoc_collection_t *collection)
 void
 print_res (const bson_t *reply)
 {
+   char *str;
    BSON_ASSERT (reply);
-   char *str = bson_as_canonical_extended_json (reply, NULL);
+   str = bson_as_canonical_extended_json (reply, NULL);
    printf ("%s\n", str);
    bson_free (str);
 }

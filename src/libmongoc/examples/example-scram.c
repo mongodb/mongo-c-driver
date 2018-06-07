@@ -14,15 +14,17 @@ main (int argc, char *argv[])
    mongoc_collection_t *collection = NULL;
    mongoc_cursor_t *cursor = NULL;
    bson_error_t error;
-   const char *uristr = "mongodb://127.0.0.1/";
+   const char *uri_string = "mongodb://127.0.0.1/";
+   mongoc_uri_t *uri = NULL;
    const char *authuristr;
    bson_t roles;
    bson_t query;
    const bson_t *doc;
+   int exit_code = EXIT_FAILURE;
 
    if (argc != 2) {
       printf ("%s - [implicit|scram]\n", argv[0]);
-      return 1;
+      return exit_code;
    }
 
    if (strcmp (argv[1], "implicit") == 0) {
@@ -32,24 +34,32 @@ main (int argc, char *argv[])
                    "test?appname=scram-example&authMechanism=SCRAM-SHA-1";
    } else {
       printf ("%s - [implicit|scram]\n", argv[0]);
-      return 1;
+      return exit_code;
    }
 
    mongoc_init ();
 
-   client = mongoc_client_new (uristr);
+   bson_init (&roles);
+   bson_init (&query);
 
+   uri = mongoc_uri_new_with_error (uri_string, &error);
+   if (!uri) {
+      fprintf (stderr,
+               "failed to parse URI: %s\n"
+               "error message:       %s\n",
+               uri_string,
+               error.message);
+      goto CLEANUP;
+   }
+
+   client = mongoc_client_new_from_uri (uri);
    if (!client) {
-      fprintf (stderr, "Failed to parse URI.\n");
-      return EXIT_FAILURE;
+      goto CLEANUP;
    }
 
    mongoc_client_set_error_api (client, 2);
 
    database = mongoc_client_get_database (client, "test");
-
-   bson_init (&roles);
-   bson_init (&query);
 
    BCON_APPEND (&roles, "0", "{", "role", "root", "db", "admin", "}");
 
@@ -78,6 +88,8 @@ main (int argc, char *argv[])
       fprintf (stderr, "Auth error: %s\n", error.message);
       goto CLEANUP;
    }
+   
+   exit_code = EXIT_SUCCESS;
 
 CLEANUP:
 
@@ -86,6 +98,10 @@ CLEANUP:
 
    if (collection) {
       mongoc_collection_destroy (collection);
+   }
+
+   if (uri) {
+      mongoc_uri_destroy (uri);
    }
 
    if (client) {
@@ -98,5 +114,5 @@ CLEANUP:
 
    mongoc_cleanup ();
 
-   return EXIT_SUCCESS;
+   return exit_code;
 }

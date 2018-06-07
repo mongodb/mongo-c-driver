@@ -789,31 +789,50 @@ if (ENABLE_TESTS)
    )
 endif ()
 
-mongoc_add_example (example-gridfs TRUE ${PROJECT_SOURCE_DIR}/examples/example-gridfs.c)
-mongoc_add_example (
-   example-command-monitoring TRUE
-   ${PROJECT_SOURCE_DIR}/examples/example-command-monitoring.c
-)
-mongoc_add_example (
-   example-sdam-monitoring TRUE
-   ${PROJECT_SOURCE_DIR}/examples/example-sdam-monitoring.c
-)
+# examples/
 mongoc_add_example (example-client TRUE ${PROJECT_SOURCE_DIR}/examples/example-client.c)
+mongoc_add_example (example-collection-watch TRUE ${PROJECT_SOURCE_DIR}/examples/example-collection-watch.c)
+mongoc_add_example (example-command-monitoring TRUE ${PROJECT_SOURCE_DIR}/examples/example-command-monitoring.c)
 mongoc_add_example (example-command-with-opts TRUE ${PROJECT_SOURCE_DIR}/examples/example-command-with-opts.c)
 mongoc_add_example (example-create-indexes TRUE ${PROJECT_SOURCE_DIR}/examples/example-create-indexes.c)
-mongoc_add_example (example-scram TRUE ${PROJECT_SOURCE_DIR}/examples/example-scram.c)
-mongoc_add_example (example-session TRUE ${PROJECT_SOURCE_DIR}/examples/example-session.c)
-mongoc_add_example (example-transaction TRUE ${PROJECT_SOURCE_DIR}/examples/example-transaction.c)
-mongoc_add_example (mongoc-dump TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-dump.c)
-mongoc_add_example (mongoc-ping TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-ping.c)
-mongoc_add_example (mongoc-tail TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-tail.c)
-mongoc_add_example (fam TRUE ${PROJECT_SOURCE_DIR}/examples/find_and_modify_with_opts/fam.c)
+mongoc_add_example (example-gridfs TRUE ${PROJECT_SOURCE_DIR}/examples/example-gridfs.c)
+mongoc_add_example (example-matcher TRUE ${PROJECT_SOURCE_DIR}/examples/example-matcher.c)
 if (NOT WIN32 AND ENABLE_EXAMPLES)
    mongoc_add_example (example-pool TRUE ${PROJECT_SOURCE_DIR}/examples/example-pool.c)
    target_link_libraries (example-pool Threads::Threads)
 endif ()
-mongoc_add_example (example-collection-watch TRUE ${PROJECT_SOURCE_DIR}/examples/example-collection-watch.c)
+mongoc_add_example (example-scram TRUE ${PROJECT_SOURCE_DIR}/examples/example-scram.c)
+mongoc_add_example (example-sdam-monitoring TRUE ${PROJECT_SOURCE_DIR}/examples/example-sdam-monitoring.c)
+mongoc_add_example (example-session TRUE ${PROJECT_SOURCE_DIR}/examples/example-session.c)
+mongoc_add_example (example-transaction TRUE ${PROJECT_SOURCE_DIR}/examples/example-transaction.c)
 mongoc_add_example (example-update TRUE ${PROJECT_SOURCE_DIR}/examples/example-update.c)
+mongoc_add_example (filter-bsondump TRUE ${PROJECT_SOURCE_DIR}/examples/filter-bsondump.c)
+mongoc_add_example (find-and-modify TRUE ${PROJECT_SOURCE_DIR}/examples/find-and-modify.c)
+mongoc_add_example (hello_mongoc TRUE ${PROJECT_SOURCE_DIR}/examples/hello_mongoc.c)
+mongoc_add_example (mongoc-dump TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-dump.c)
+mongoc_add_example (mongoc-ping TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-ping.c)
+mongoc_add_example (mongoc-tail TRUE ${PROJECT_SOURCE_DIR}/examples/mongoc-tail.c)
+
+# examples/aggregation/
+mongoc_add_example (aggregation1 TRUE ${PROJECT_SOURCE_DIR}/examples/aggregation/aggregation1.c)
+
+# examples/basic_aggregation/
+mongoc_add_example (basic-aggregation TRUE ${PROJECT_SOURCE_DIR}/examples/basic_aggregation/basic-aggregation.c)
+
+# examples/bulk/
+mongoc_add_example (bulk-collation TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk-collation.c)
+mongoc_add_example (bulk1 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk1.c)
+mongoc_add_example (bulk2 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk2.c)
+mongoc_add_example (bulk3 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk3.c)
+mongoc_add_example (bulk4 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk4.c)
+mongoc_add_example (bulk5 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk5.c)
+mongoc_add_example (bulk6 TRUE ${PROJECT_SOURCE_DIR}/examples/bulk/bulk6.c)
+
+# examples/common_operations/
+mongoc_add_example (common-operations TRUE ${PROJECT_SOURCE_DIR}/examples/common_operations/common-operations.c)
+
+# examples/find_and_modify_with_opts/
+mongoc_add_example (fam TRUE ${PROJECT_SOURCE_DIR}/examples/find_and_modify_with_opts/fam.c)
 
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/tests)

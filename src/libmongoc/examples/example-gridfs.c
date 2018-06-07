@@ -12,6 +12,8 @@ main (int argc, char *argv[])
    mongoc_gridfs_file_list_t *list;
    mongoc_gridfs_file_opt_t opt = {0};
    mongoc_client_t *client;
+   const char *uri_string = "mongodb://127.0.0.1:27017/?appname=gridfs-example";
+   mongoc_uri_t *uri;
    mongoc_stream_t *stream;
    bson_t filter;
    bson_t opts;
@@ -26,7 +28,7 @@ main (int argc, char *argv[])
 
    if (argc < 2) {
       fprintf (stderr, "usage - %s command ...\n", argv[0]);
-      return 1;
+      return EXIT_FAILURE;
    }
 
    mongoc_init ();
@@ -35,8 +37,17 @@ main (int argc, char *argv[])
    iov.iov_len = sizeof buf;
 
    /* connect to localhost client */
-   client =
-      mongoc_client_new ("mongodb://127.0.0.1:27017/?appname=gridfs-example");
+   uri = mongoc_uri_new_with_error (uri_string, &error);
+   if (!uri) {
+      fprintf (stderr,
+               "failed to parse URI: %s\n"
+               "error message:       %s\n",
+               uri_string,
+               error.message);
+      return EXIT_FAILURE;
+   }
+
+   client = mongoc_client_new_from_uri (uri);
    assert (client);
    mongoc_client_set_error_api (client, 2);
 
@@ -50,7 +61,7 @@ main (int argc, char *argv[])
    if (strcmp (command, "read") == 0) {
       if (argc != 3) {
          fprintf (stderr, "usage - %s read filename\n", argv[0]);
-         return 1;
+         return EXIT_FAILURE;
       }
       file = mongoc_gridfs_find_one_by_filename (gridfs, filename, &error);
       assert (file);
@@ -99,7 +110,7 @@ main (int argc, char *argv[])
    } else if (strcmp (command, "write") == 0) {
       if (argc != 4) {
          fprintf (stderr, "usage - %s write filename input_file\n", argv[0]);
-         return 1;
+         return EXIT_FAILURE;
       }
 
       stream = mongoc_stream_file_new_for_path (argv[3], O_RDONLY, 0);
@@ -118,20 +129,21 @@ main (int argc, char *argv[])
          BSON type */
       if (!mongoc_gridfs_file_set_id (file, &id, &error)) {
          fprintf (stderr, "%s\n", error.message);
-         return 1;
+         return EXIT_FAILURE;
       }
 
       mongoc_gridfs_file_save (file);
       mongoc_gridfs_file_destroy (file);
    } else {
       fprintf (stderr, "Unknown command");
-      return 1;
+      return EXIT_FAILURE;
    }
 
    mongoc_gridfs_destroy (gridfs);
+   mongoc_uri_destroy (uri);
    mongoc_client_destroy (client);
 
    mongoc_cleanup ();
 
-   return 0;
+   return EXIT_SUCCESS;
 }

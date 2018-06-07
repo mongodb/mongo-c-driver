@@ -11,8 +11,10 @@ int
 main (int argc, char *argv[])
 {
    mongoc_client_t *client;
+   const char *uri_string =
+      "mongodb://127.0.0.1/?appname=create-indexes-example";
+   mongoc_uri_t *uri;
    mongoc_database_t *db;
-   const char *uristr = "mongodb://127.0.0.1/?appname=create-indexes-example";
    const char *collection_name = "test";
    bson_t keys;
    char *index_name;
@@ -25,17 +27,25 @@ main (int argc, char *argv[])
    mongoc_init ();
 
    if (argc > 1) {
-      uristr = argv[1];
+      uri_string = argv[1];
    }
 
    if (argc > 2) {
       collection_name = argv[2];
    }
 
-   client = mongoc_client_new (uristr);
+   uri = mongoc_uri_new_with_error (uri_string, &error);
+   if (!uri) {
+      fprintf (stderr,
+               "failed to parse URI: %s\n"
+               "error message:       %s\n",
+               uri_string,
+               error.message);
+      return EXIT_FAILURE;
+   }
 
+   client = mongoc_client_new_from_uri (uri);
    if (!client) {
-      fprintf (stderr, "Failed to parse URI.\n");
       return EXIT_FAILURE;
    }
 
@@ -73,6 +83,7 @@ main (int argc, char *argv[])
    bson_destroy (&reply);
    bson_destroy (create_indexes);
    mongoc_database_destroy (db);
+   mongoc_uri_destroy (uri);
    mongoc_client_destroy (client);
 
    mongoc_cleanup ();

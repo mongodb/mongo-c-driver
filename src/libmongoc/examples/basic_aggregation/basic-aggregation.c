@@ -33,8 +33,10 @@ main (int argc, char *argv[])
    mongoc_database_t *database = NULL;
    mongoc_client_t *client = NULL;
    mongoc_collection_t *collection = NULL;
+   mongoc_uri_t *uri = NULL;
+   bson_error_t error;
    char *host_and_port = NULL;
-   int res = 0;
+   int exit_code = EXIT_FAILURE;
 
    if (argc != 2) {
       fprintf (stderr, "usage: %s CONNECTION-STRING\n", argv[0]);
@@ -46,7 +48,7 @@ main (int argc, char *argv[])
                "mongodb://user:pass@localhost:27017\t"
                "local machine on port 27017, and authenticate with username "
                "user and password pass\n");
-      return 1;
+      return exit_code;
    }
 
    mongoc_init ();
@@ -57,11 +59,18 @@ main (int argc, char *argv[])
       host_and_port = bson_strdup_printf ("mongodb://%s", argv[1]);
    }
 
-   client = mongoc_client_new (host_and_port);
+   uri = mongoc_uri_new_with_error (host_and_port, &error);
+   if (!uri) {
+      fprintf (stderr,
+               "failed to parse URI: %s\n"
+               "error message:       %s\n",
+               host_and_port,
+               error.message);
+      goto cleanup;
+   }
 
+   client = mongoc_client_new_from_uri (uri);
    if (!client) {
-      fprintf (stderr, "Invalid hostname or port: %s\n", host_and_port);
-      res = 2;
       goto cleanup;
    }
 
@@ -71,27 +80,25 @@ main (int argc, char *argv[])
 
    printf ("Inserting data\n");
    if (!insert_data (collection)) {
-      res = 3;
       goto cleanup;
    }
 
    printf ("distinct\n");
    if (!distinct (database)) {
-      res = 4;
       goto cleanup;
    }
 
    printf ("map reduce\n");
    if (!map_reduce_basic (database)) {
-      res = 5;
       goto cleanup;
    }
 
    printf ("more complicated map reduce\n");
    if (!map_reduce_advanced (database)) {
-      res = 6;
       goto cleanup;
    }
+   
+   exit_code = EXIT_SUCCESS;
 
 cleanup:
    if (collection) {
@@ -106,10 +113,14 @@ cleanup:
       mongoc_client_destroy (client);
    }
 
+   if (uri) {
+      mongoc_uri_destroy (uri);
+   }
+
    if (host_and_port) {
       bson_free (host_and_port);
    }
 
    mongoc_cleanup ();
-   return res;
+   return exit_code;
 }

@@ -32,7 +32,8 @@ int
 main (int argc, char *argv[])
 {
    mongoc_client_t *client;
-   const char *uristr = "mongodb://127.0.0.1/?appname=client-example";
+   const char *uri_string = "mongodb://127.0.0.1/?appname=client-example";
+   mongoc_uri_t *uri;
    bson_t *cmd;
    bson_t *opts;
    mongoc_write_concern_t *write_concern;
@@ -45,13 +46,21 @@ main (int argc, char *argv[])
    mongoc_init ();
 
    if (argc > 1) {
-      uristr = argv[1];
+      uri_string = argv[1];
    }
 
-   client = mongoc_client_new (uristr);
+   uri = mongoc_uri_new_with_error (uri_string, &error);
+   if (!uri) {
+      fprintf (stderr,
+               "failed to parse URI: %s\n"
+               "error message:       %s\n",
+               uri_string,
+               error.message);
+      return EXIT_FAILURE;
+   }
 
+   client = mongoc_client_new_from_uri (uri);
    if (!client) {
-      fprintf (stderr, "Failed to parse URI.\n");
       return EXIT_FAILURE;
    }
 
@@ -129,6 +138,7 @@ main (int argc, char *argv[])
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_read_concern_destroy (read_concern);
    mongoc_write_concern_destroy (write_concern);
+   mongoc_uri_destroy (uri);
    mongoc_client_destroy (client);
 
    mongoc_cleanup ();

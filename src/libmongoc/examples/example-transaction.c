@@ -25,7 +25,8 @@ main (int argc, char *argv[])
    mongoc_transaction_opt_t *txn_opts = NULL;
    mongoc_read_concern_t *read_concern = NULL;
    mongoc_write_concern_t *write_concern = NULL;
-   const char *uristr = "mongodb://127.0.0.1/?appname=transaction-example";
+   const char *uri_string = "mongodb://127.0.0.1/?appname=transaction-example";
+   mongoc_uri_t *uri;
    bson_error_t error;
    bson_t *doc = NULL;
    bson_t *insert_opts = NULL;
@@ -38,12 +39,20 @@ main (int argc, char *argv[])
    mongoc_init ();
 
    if (argc > 1) {
-      uristr = argv[1];
+      uri_string = argv[1];
    }
 
-   client = mongoc_client_new (uristr);
+   uri = mongoc_uri_new_with_error (uri_string, &error);
+   if (!uri) {
+      MONGOC_ERROR ("failed to parse URI: %s\n"
+                    "error message:       %s\n",
+                    uri_string,
+                    error.message);
+      goto done;
+   }
+
+   client = mongoc_client_new_from_uri (uri);
    if (!client) {
-      MONGOC_ERROR ("Failed to parse URI.");
       goto done;
    }
 
@@ -163,6 +172,7 @@ done:
    mongoc_client_session_destroy (session);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
+   mongoc_uri_destroy (uri);
    mongoc_client_destroy (client);
 
    mongoc_cleanup ();

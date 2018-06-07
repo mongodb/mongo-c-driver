@@ -33,6 +33,8 @@ main (int argc, char *argv[])
    mongoc_database_t *database = NULL;
    mongoc_client_t *client = NULL;
    mongoc_collection_t *collection = NULL;
+   mongoc_uri_t *uri = NULL;
+   bson_error_t error;
    char *host_and_port;
    int res = 0;
    char *other_host_and_port = NULL;
@@ -51,7 +53,7 @@ main (int argc, char *argv[])
                "mongodb://user:pass@localhost:27017\t"
                "local machine on port 27017, and authenticate with username "
                "user and password pass\n");
-      return 1;
+      return EXIT_FAILURE;
    }
 
    mongoc_init ();
@@ -63,11 +65,20 @@ main (int argc, char *argv[])
    }
    other_host_and_port = argc > 2 ? argv[2] : NULL;
 
-   client = mongoc_client_new (host_and_port);
+   uri = mongoc_uri_new_with_error (host_and_port, &error);
+   if (!uri) {
+      fprintf (stderr,
+               "failed to parse URI: %s\n"
+               "error message:       %s\n",
+               host_and_port,
+               error.message);
+      res = EXIT_FAILURE;
+      goto cleanup;
+   }
 
+   client = mongoc_client_new_from_uri (uri);
    if (!client) {
-      fprintf (stderr, "Invalid hostname or port: %s\n", host_and_port);
-      res = 2;
+      res = EXIT_FAILURE;
       goto cleanup;
    }
 
@@ -77,26 +88,26 @@ main (int argc, char *argv[])
 
    printf ("Inserting data\n");
    if (!insert_data (collection)) {
-      res = 3;
+      res = EXIT_FAILURE;
       goto cleanup;
    }
 
    printf ("explain\n");
    if (!explain (collection)) {
-      res = 4;
+      res = EXIT_FAILURE;
       goto cleanup;
    }
 
    if (other_host_and_port) {
       printf ("copydb\n");
       if (!copydb (client, other_host_and_port)) {
-         res = 5;
+         res = EXIT_FAILURE;
          goto cleanup;
       }
 
       printf ("clone collection\n");
       if (!clone_collection (database, other_host_and_port)) {
-         res = 6;
+         res = EXIT_FAILURE;
          goto cleanup;
       }
    }
@@ -112,6 +123,10 @@ cleanup:
 
    if (client) {
       mongoc_client_destroy (client);
+   }
+
+   if (uri) {
+      mongoc_uri_destroy (uri);
    }
 
    bson_free (host_and_port);

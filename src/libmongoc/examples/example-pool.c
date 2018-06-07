@@ -52,8 +52,9 @@ worker (void *data)
 int
 main (int argc, char *argv[])
 {
-   const char *uristr = "mongodb://127.0.0.1/?appname=pool-example";
+   const char *uri_string = "mongodb://127.0.0.1/?appname=pool-example";
    mongoc_uri_t *uri;
+   bson_error_t error;
    mongoc_client_pool_t *pool;
    pthread_t threads[10];
    unsigned i;
@@ -63,12 +64,16 @@ main (int argc, char *argv[])
    mongoc_init ();
 
    if (argc > 1) {
-      uristr = argv[1];
+      uri_string = argv[1];
    }
 
-   uri = mongoc_uri_new (uristr);
+   uri = mongoc_uri_new_with_error (uri_string, &error);
    if (!uri) {
-      fprintf (stderr, "Failed to parse URI: \"%s\".\n", uristr);
+      fprintf (stderr,
+               "failed to parse URI: %s\n"
+               "error message:       %s\n",
+               uri_string,
+               error.message);
       return EXIT_FAILURE;
    }
 
@@ -93,5 +98,5 @@ main (int argc, char *argv[])
 
    mongoc_cleanup ();
 
-   return 0;
+   return EXIT_SUCCESS;
 }

@@ -29,12 +29,13 @@ main (int argc, char *argv[])
    bson_error_t error;
    bson_t ping;
    char *host_and_port;
+   mongoc_uri_t *uri;
    char *str;
    bool r;
 
    if (argc < 2 || argc > 3) {
       fprintf (stderr, "usage: %s HOSTNAME [PORT]\n", argv[0]);
-      return 1;
+      return EXIT_FAILURE;
    }
 
    mongoc_init ();
@@ -48,14 +49,21 @@ main (int argc, char *argv[])
       host_and_port = bson_strdup_printf ("mongodb://%s:%hu", argv[1], port);
    }
 
-   client = mongoc_client_new (host_and_port);
-
-   if (!client) {
-      fprintf (stderr, "Invalid hostname or port: %s\n", host_and_port);
-      bson_free (host_and_port);
-      return 2;
+   uri = mongoc_uri_new_with_error (host_and_port, &error);
+   if (!uri) {
+      fprintf (stderr,
+               "failed to parse URI: %s\n"
+               "error message:       %s\n",
+               host_and_port,
+               error.message);
+      return EXIT_FAILURE;
    }
    bson_free (host_and_port);
+
+   client = mongoc_client_new_from_uri (uri);
+   if (!client) {
+      return EXIT_FAILURE;
+   }
 
    mongoc_client_set_error_api (client, 2);
 
@@ -76,6 +84,7 @@ main (int argc, char *argv[])
    bson_destroy (&ping);
    bson_destroy (&reply);
    mongoc_database_destroy (database);
+   mongoc_uri_destroy (uri);
    mongoc_client_destroy (client);
 
    return r ? 0 : 3;
