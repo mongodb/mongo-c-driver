@@ -749,6 +749,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    bool is_get_more;
    bool is_txn_finish;
    const mongoc_read_prefs_t *prefs_ptr;
+   bool ret = false;
 
    ENTRY;
 
@@ -775,7 +776,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Empty command document");
-      RETURN (false);
+      GOTO (done);
    }
 
    TRACE ("Preparing '%s'", cmd_name);
@@ -805,7 +806,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                             MONGOC_ERROR_TRANSACTION,
                             MONGOC_ERROR_TRANSACTION_INVALID_STATE,
                             "Read preference in a transaction must be primary");
-            RETURN (false);
+            GOTO (done);
          }
       } else if (!IS_PREF_PRIMARY (prefs_ptr)) {
          _mongoc_cmd_parts_add_read_prefs (&parts->extra, prefs_ptr);
@@ -840,8 +841,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                MONGOC_ERROR_COMMAND,
                MONGOC_ERROR_COMMAND_INVALID_ARG,
                "Cannot use client session with unacknowledged command");
-            mongoc_read_prefs_destroy (prefs); /* NULL ok */
-            RETURN (false);
+            GOTO (done);
          }
 
          _mongoc_cmd_parts_ensure_copied (parts);
@@ -904,17 +904,21 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
       if (!_mongoc_client_session_append_txn (
              cs, &parts->assembled_body, error)) {
-         mongoc_read_prefs_destroy (prefs); /* NULL ok */
-         RETURN (false);
+         GOTO (done);
       }
+
+      ret = true;
    } else if (server_type == MONGOC_SERVER_MONGOS) {
       _mongoc_cmd_parts_assemble_mongos (parts, server_stream);
+      ret = true;
    } else {
       _mongoc_cmd_parts_assemble_mongod (parts, server_stream);
+      ret = true;
    }
 
+done:
    mongoc_read_prefs_destroy (prefs);
-   RETURN (true);
+   RETURN (ret);
 }
 
 /*
