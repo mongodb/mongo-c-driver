@@ -1,3 +1,16 @@
+libbson 1.10.2
+==============
+
+It is my pleasure to announce libbson 1.10.0. This release fixes the installed
+library filenames and SONAME on Linux. They had changed unintentionally with the
+switch to CMake in 1.10.0; they are now consistent with 1.9.x and previous
+releases. Thanks to Roberto C. Sánchez for the fix.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 libbson 1.10.1
 ==============
 
