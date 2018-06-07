@@ -73,11 +73,11 @@ typedef struct {
 
 
 MONGOC_EXPORT (const mongoc_index_opt_t *)
-mongoc_index_opt_get_default (void) BSON_GNUC_CONST;
+mongoc_index_opt_get_default (void) BSON_GNUC_PURE;
 MONGOC_EXPORT (const mongoc_index_opt_geo_t *)
-mongoc_index_opt_geo_get_default (void) BSON_GNUC_CONST;
+mongoc_index_opt_geo_get_default (void) BSON_GNUC_PURE;
 MONGOC_EXPORT (const mongoc_index_opt_wt_t *)
-mongoc_index_opt_wt_get_default (void) BSON_GNUC_CONST;
+mongoc_index_opt_wt_get_default (void) BSON_GNUC_PURE;
 MONGOC_EXPORT (void)
 mongoc_index_opt_init (mongoc_index_opt_t *opt);
 MONGOC_EXPORT (void)

@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   bson_context_t *
-  bson_context_get_default (void) BSON_GNUC_CONST;
+  bson_context_get_default (void);
 
 Returns
 -------

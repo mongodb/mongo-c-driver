@@ -220,10 +220,10 @@
 
 
 #if defined(__GNUC__)
-#define BSON_GNUC_CONST __attribute__ ((const))
+#define BSON_GNUC_PURE __attribute__ ((pure))
 #define BSON_GNUC_WARN_UNUSED_RESULT __attribute__ ((warn_unused_result))
 #else
-#define BSON_GNUC_CONST
+#define BSON_GNUC_PURE
 #define BSON_GNUC_WARN_UNUSED_RESULT
 #endif
 

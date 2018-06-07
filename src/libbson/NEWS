@@ -1,3 +1,9 @@
+Next Release
+============
+
+  * Functions incorrectly marked with the "const" compiler attribute now have
+    the attribute removed or changed to "pure"
+
 libbson 1.10.1
 ==============
 

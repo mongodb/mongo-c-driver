@@ -730,6 +730,32 @@ tasks:
               DEBUG=ON CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         - func: "upload build"
 
+    - name: debug-compile-lto
+      tags: ["debug-compile-lto"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' CFLAGS='-flto' sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-lto-thin
+      tags: ["debug-compile-lto-thin"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' CFLAGS='-flto=thin' sh .evergreen/compile.sh
+        - func: "upload build"
+
     - name: debug-compile-c11
       tags: ["debug-compile", "special", "c11", "stdflags"]
       commands:
@@ -7048,6 +7074,8 @@ buildvariants:
     - ".3.2 .nossl !.nosasl"
     - "test-dns-darwinssl"
     - "test-dns-auth-darwinssl"
+    - "debug-compile-lto"
+    - "debug-compile-lto-thin"
 
 - name: windows-2015
   display_name: "Windows (VS 2015)"
