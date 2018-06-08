@@ -54,6 +54,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->assembled.payload = NULL;
    parts->assembled.session = NULL;
    parts->assembled.is_acknowledged = true;
+   parts->assembled.is_txn_finish = false;
 }
 
 
@@ -747,7 +748,6 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    mongoc_read_prefs_t *prefs = NULL;
    const char *cmd_name;
    bool is_get_more;
-   bool is_txn_finish;
    const mongoc_read_prefs_t *prefs_ptr;
    bool ret = false;
 
@@ -782,8 +782,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    TRACE ("Preparing '%s'", cmd_name);
 
    is_get_more = !strcmp (cmd_name, "getMore");
-   is_txn_finish = !strcmp (cmd_name, "commitTransaction") ||
-                   !strcmp (cmd_name, "abortTransaction");
+   parts->assembled.is_txn_finish = !strcmp (cmd_name, "commitTransaction") ||
+                                    !strcmp (cmd_name, "abortTransaction");
 
    if (!parts->is_write_command && IS_PREF_PRIMARY (parts->read_prefs) &&
        server_stream->topology_type == MONGOC_TOPOLOGY_SINGLE &&
@@ -898,7 +898,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          }
       }
 
-      if (is_txn_finish || !_mongoc_client_session_in_txn (cs)) {
+      if (parts->assembled.is_txn_finish ||
+          !_mongoc_client_session_in_txn (cs)) {
          _mongoc_cmd_parts_add_write_concern (parts);
       }
 

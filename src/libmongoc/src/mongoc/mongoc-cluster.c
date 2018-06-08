@@ -2570,6 +2570,32 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
    RETURN (true);
 }
 
+
+static void
+network_error_reply (bson_t *reply, mongoc_cmd_t *cmd)
+{
+   bson_t labels;
+
+   if (!reply) {
+      return;
+   }
+
+   bson_init (reply);
+
+   /* Transactions Spec defines TransientTransactionError: "Any
+    * network error or server selection error encountered running any
+    * command besides commitTransaction in a transaction. In the case
+    * of command errors, the server adds the label; in the case of
+    * network errors or server selection errors where the client
+    * receives no server reply, the client adds the label." */
+   if (_mongoc_client_session_in_txn (cmd->session) && !cmd->is_txn_finish) {
+      BSON_APPEND_ARRAY_BEGIN (reply, "errorLabels", &labels);
+      BSON_APPEND_UTF8 (&labels, "0", TRANSIENT_TXN_ERR);
+      bson_append_array_end (reply, &labels);
+   }
+}
+
+
 static bool
 mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                           mongoc_cmd_t *cmd,
@@ -2663,7 +2689,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       mongoc_cluster_disconnect_node (
          cluster, server_stream->sd->id, true, error);
       bson_free (output);
-      _mongoc_bson_init_if_set (reply);
+      network_error_reply (reply, cmd);
       _mongoc_buffer_destroy (&buffer);
       return false;
    }
@@ -2677,7 +2703,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
          mongoc_cluster_disconnect_node (
             cluster, server_stream->sd->id, true, error);
          bson_free (output);
-         _mongoc_bson_init_if_set (reply);
+         network_error_reply (reply, cmd);
          _mongoc_buffer_destroy (&buffer);
          return false;
       }
@@ -2695,7 +2721,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
          mongoc_cluster_disconnect_node (
             cluster, server_stream->sd->id, true, error);
          bson_free (output);
-         _mongoc_bson_init_if_set (reply);
+         network_error_reply (reply, cmd);
          _mongoc_buffer_destroy (&buffer);
          return false;
       }
@@ -2710,7 +2736,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
          mongoc_cluster_disconnect_node (
             cluster, server_stream->sd->id, true, error);
          bson_free (output);
-         _mongoc_bson_init_if_set (reply);
+         network_error_reply (reply, cmd);
          _mongoc_buffer_destroy (&buffer);
          return false;
       }
@@ -2721,7 +2747,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                       MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
                       "Malformed message from server");
          bson_free (output);
-         _mongoc_bson_init_if_set (reply);
+         network_error_reply (reply, cmd);
          _mongoc_buffer_destroy (&buffer);
          return false;
       }
@@ -2737,7 +2763,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
             mongoc_cluster_disconnect_node (
                cluster, server_stream->sd->id, true, error);
             bson_free (output);
-            _mongoc_bson_init_if_set (reply);
+            network_error_reply (reply, cmd);
             _mongoc_buffer_destroy (&buffer);
             return false;
          }

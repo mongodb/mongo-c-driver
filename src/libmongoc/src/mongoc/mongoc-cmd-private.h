@@ -56,6 +56,7 @@ typedef struct _mongoc_cmd_t {
    int64_t operation_id;
    mongoc_client_session_t *session;
    bool is_acknowledged;
+   bool is_txn_finish;
 } mongoc_cmd_t;
 
 

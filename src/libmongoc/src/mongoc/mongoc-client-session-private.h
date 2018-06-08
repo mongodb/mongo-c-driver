@@ -24,6 +24,10 @@
 #include <bson.h>
 #include "mongoc-client-session.h"
 
+/* error labels: see Transactions Spec */
+#define TRANSIENT_TXN_ERR "TransientTransactionError"
+#define UNKNOWN_COMMIT_RESULT "UnknownTransactionCommitResult"
+
 struct _mongoc_transaction_opt_t {
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;

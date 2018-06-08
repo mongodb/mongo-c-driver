@@ -78,6 +78,37 @@ typedef enum {
 } mongoc_txn_intent_t;
 
 
+static void
+copy_labels_plus_unknown_commit_result (const bson_t *src, bson_t *dst)
+{
+   bson_iter_t iter;
+   bson_iter_t src_label;
+   bson_t dst_labels;
+   char str[16];
+   uint32_t i = 0;
+   const char *key;
+
+   BSON_APPEND_ARRAY_BEGIN (dst, "errorLabels", &dst_labels);
+   BSON_APPEND_UTF8 (&dst_labels, "0", UNKNOWN_COMMIT_RESULT);
+
+   /* append any other errorLabels already in "src" */
+   if (bson_iter_init_find (&iter, src, "errorLabels") &&
+       bson_iter_recurse (&iter, &src_label)) {
+      while (bson_iter_next (&src_label) && BSON_ITER_HOLDS_UTF8 (&src_label)) {
+         if (strcmp (bson_iter_utf8 (&src_label, NULL),
+                     UNKNOWN_COMMIT_RESULT) != 0) {
+            i++;
+            bson_uint32_to_string (i, &key, str, sizeof str);
+            BSON_APPEND_UTF8 (
+               &dst_labels, key, bson_iter_utf8 (&src_label, NULL));
+         }
+      }
+   }
+
+   bson_append_array_end (dst, &dst_labels);
+}
+
+
 static bool
 txn_finish (mongoc_client_session_t *session,
             mongoc_txn_intent_t intent,
@@ -90,13 +121,13 @@ txn_finish (mongoc_client_session_t *session,
    bson_error_t err_local;
    bson_error_t *err_ptr = error ? error : &err_local;
    bson_t reply_local = BSON_INITIALIZER;
-   bson_t *reply_ptr = reply ? reply : &reply_local;
    bool r = false;
+
+   _mongoc_bson_init_if_set (reply);
 
    cmd_name = (intent == TXN_COMMIT ? "commitTransaction" : "abortTransaction");
 
    if (!mongoc_client_session_append (session, &opts, err_ptr)) {
-      _mongoc_bson_init_if_set (reply);
       GOTO (done);
    }
 
@@ -107,7 +138,6 @@ txn_finish (mongoc_client_session_t *session,
                          MONGOC_ERROR_TRANSACTION,
                          MONGOC_ERROR_TRANSACTION_INVALID_STATE,
                          "Invalid transaction write concern");
-         _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
    }
@@ -115,19 +145,35 @@ txn_finish (mongoc_client_session_t *session,
    BSON_APPEND_INT32 (&cmd, cmd_name, 1);
 
    r = mongoc_client_write_command_with_opts (
-      session->client, "admin", &cmd, &opts, reply_ptr, err_ptr);
+      session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
 
    /* Transactions Spec: "Drivers MUST retry the commitTransaction command once
     * after it fails with a retryable error", same for abort */
    if (!r && (err_ptr->domain == MONGOC_ERROR_STREAM ||
-              _mongoc_write_is_retryable_error (reply_ptr))) {
-      bson_destroy (reply_ptr);
+              _mongoc_write_is_retryable_error (&reply_local))) {
+      bson_destroy (&reply_local);
       r = mongoc_client_write_command_with_opts (
-         session->client, "admin", &cmd, &opts, reply_ptr, err_ptr);
+         session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
    }
 
-   /* we won't return an error from abortTransaction, so warn */
-   if (intent == TXN_ABORT && !r) {
+   /* Transactions Spec: "add the UnknownTransactionCommitResult error label
+    * when commitTransaction fails with a network error, server selection
+    * error, or write concern failed / timeout." */
+   if (intent == TXN_COMMIT && reply) {
+      if (!r && (err_ptr->domain == MONGOC_ERROR_STREAM ||
+                 _mongoc_write_is_retryable_error (&reply_local))) {
+         bson_copy_to_excluding_noinit (
+            &reply_local, reply, "errorLabels", NULL);
+         copy_labels_plus_unknown_commit_result (&reply_local, reply);
+      } else {
+         /* maintain invariants: reply & reply_local are valid until the end */
+         bson_destroy (reply);
+         bson_steal (reply, &reply_local);
+         bson_init (&reply_local);
+      }
+
+   } else if (intent == TXN_ABORT && !r) {
+      /* we won't return an error from abortTransaction, so warn */
       MONGOC_WARNING ("Error in %s: %s", cmd_name, err_ptr->message);
    }
 
@@ -690,6 +736,16 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
                     opts->read_prefs);
    }
 
+   if (!mongoc_write_concern_is_acknowledged (
+          session->txn.opts.write_concern)) {
+      bson_set_error (
+         error,
+         MONGOC_ERROR_TRANSACTION,
+         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+         "Transactions do not support unacknowledged write concern");
+      RETURN (false);
+   }
+
    session->txn.state = MONGOC_TRANSACTION_STARTING;
 
    RETURN (true);
@@ -879,7 +935,7 @@ _mongoc_client_session_append_txn (mongoc_client_session_t *session,
    case MONGOC_TRANSACTION_STARTING:
       txn->state = MONGOC_TRANSACTION_IN_PROGRESS;
       bson_append_bool (cmd, "startTransaction", 16, true);
-      /* FALL THROUGH */
+   /* FALL THROUGH */
    case MONGOC_TRANSACTION_IN_PROGRESS:
       bson_append_int64 (
          cmd, "txnNumber", 9, session->server_session->txn_number);
@@ -893,7 +949,7 @@ _mongoc_client_session_append_txn (mongoc_client_session_t *session,
          bson_append_bool (cmd, "autocommit", 10, false);
          RETURN (true);
       }
-      /* FALL THROUGH */
+   /* FALL THROUGH */
    case MONGOC_TRANSACTION_COMMITTED_EMPTY:
    case MONGOC_TRANSACTION_ABORTED:
       txn_opts_cleanup (&session->txn.opts);

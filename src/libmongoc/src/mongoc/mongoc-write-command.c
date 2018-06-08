@@ -1069,6 +1069,7 @@ _mongoc_write_result_init (mongoc_write_result_t *result) /* IN */
    bson_init (&result->upserted);
    bson_init (&result->writeConcernErrors);
    bson_init (&result->writeErrors);
+   bson_init (&result->errorLabels);
 
    EXIT;
 }
@@ -1084,6 +1085,7 @@ _mongoc_write_result_destroy (mongoc_write_result_t *result)
    bson_destroy (&result->upserted);
    bson_destroy (&result->writeConcernErrors);
    bson_destroy (&result->writeErrors);
+   bson_destroy (&result->errorLabels);
 
    EXIT;
 }
@@ -1179,6 +1181,7 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
    bson_iter_t ar;
    int32_t n_upserted = 0;
    int32_t affected = 0;
+   bson_iter_t label;
 
    ENTRY;
 
@@ -1274,6 +1277,18 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
       }
 
       result->n_writeConcernErrors++;
+   }
+
+   /* inefficient if there are ever large numbers: for each label in each err,
+    * we linear-search result->errorLabels to see if it's included yet */
+   if (bson_iter_init_find (&iter, reply, "errorLabels") &&
+       bson_iter_recurse (&iter, &label)) {
+      while (bson_iter_next (&label)) {
+         if (BSON_ITER_HOLDS_UTF8 (&label)) {
+            _mongoc_bson_array_add_label (&result->errorLabels,
+                                          bson_iter_utf8 (&label, NULL));
+         }
+      }
    }
 
    EXIT;
@@ -1455,6 +1470,10 @@ _mongoc_write_result_complete (
                                 MONGOC_ERROR_WRITE_CONCERN,
                                 "write concern",
                                 &result->error);
+   }
+
+   if (!bson_empty (&result->errorLabels)) {
+      BSON_APPEND_ARRAY (bson, "errorLabels", &result->errorLabels);
    }
 
    if (error) {

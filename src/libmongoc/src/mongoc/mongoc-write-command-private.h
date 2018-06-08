@@ -82,6 +82,8 @@ typedef struct {
    uint32_t n_writeConcernErrors;
    /* like [{"code": 64, "errmsg": "duplicate"}, ...] */
    bson_t writeConcernErrors;
+   /* like ["TransientTransactionError", ...] */
+   bson_t errorLabels;
    bool failed;    /* The command failed */
    bool must_stop; /* The stream may have been disconnected */
    bson_error_t error;
