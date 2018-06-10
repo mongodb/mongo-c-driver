@@ -29,6 +29,7 @@ Macro                                   Description                 First MongoD
 MONGOC_READ_CONCERN_LEVEL_LOCAL         Level "local", the default. 3.2
 MONGOC_READ_CONCERN_LEVEL_MAJORITY      Level "majority".           3.2
 MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE  Level "linearizable".       3.4
+MONGOC_READ_CONCERN_LEVEL_AVAILABLE     Level "available".          3.6
 ======================================  =========================== =====================
 
 For the sake of compatibility with future versions of MongoDB, :symbol:`mongoc_read_concern_set_level` allows any string, not just this list of known read concern levels.
