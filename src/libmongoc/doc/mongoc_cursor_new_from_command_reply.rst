@@ -12,6 +12,14 @@ Synopsis
   mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
                                         bson_t *reply,
                                         uint32_t server_id);
+     BSON_GNUC_DEPRECATED_FOR (mongoc_cursor_new_from_command_reply_with_opts);
+
+Deprecated
+----------
+
+This function is deprecated and should not be used in new code.
+
+Please use :symbol:`mongoc_cursor_new_from_command_reply_with_opts()` instead.
 
 Parameters
 ----------

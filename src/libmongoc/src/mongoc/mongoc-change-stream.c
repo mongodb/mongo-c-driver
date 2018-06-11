@@ -143,6 +143,7 @@ _make_cursor (mongoc_change_stream_t *stream)
    bson_t command_opts;
    bson_t command; /* { aggregate: "coll", pipeline: [], ... } */
    bson_t reply;
+   bson_t getmore_opts = BSON_INITIALIZER;
    bson_iter_t iter;
    mongoc_server_description_t *sd;
    uint32_t server_id;
@@ -160,6 +161,7 @@ _make_cursor (mongoc_change_stream_t *stream)
    }
    server_id = mongoc_server_description_id (sd);
    bson_append_int32 (&command_opts, "serverId", 8, server_id);
+   bson_append_int32 (&getmore_opts, "serverId", 8, server_id);
    mongoc_server_description_destroy (sd);
 
    if (bson_iter_init_find (&iter, &command_opts, "sessionId")) {
@@ -194,6 +196,10 @@ _make_cursor (mongoc_change_stream_t *stream)
       }
    }
 
+   if (cs && !mongoc_client_session_append (cs, &getmore_opts, &stream->err)) {
+      goto cleanup;
+   }
+
    /* use inherited read preference and read concern of the collection */
    if (!mongoc_collection_read_command_with_opts (
           stream->coll, &command, NULL, &command_opts, &reply, &stream->err)) {
@@ -203,39 +209,36 @@ _make_cursor (mongoc_change_stream_t *stream)
       goto cleanup;
    }
 
-   stream->cursor = mongoc_cursor_new_from_command_reply (
-      stream->coll->client, &reply, server_id); /* steals reply */
-
-   if (cs) {
-      stream->cursor->client_session = cs;
-      stream->cursor->explicit_session = true;
-   }
-
-   /* maxTimeMS is only appended to getMores if these are set in cursor opts */
-   bson_append_bool (&stream->cursor->opts,
-                     MONGOC_CURSOR_TAILABLE,
-                     MONGOC_CURSOR_TAILABLE_LEN,
-                     true);
-   bson_append_bool (&stream->cursor->opts,
+   bson_append_bool (
+      &getmore_opts, MONGOC_CURSOR_TAILABLE, MONGOC_CURSOR_TAILABLE_LEN, true);
+   bson_append_bool (&getmore_opts,
                      MONGOC_CURSOR_AWAIT_DATA,
                      MONGOC_CURSOR_AWAIT_DATA_LEN,
                      true);
 
+   /* maxTimeMS is only appended to getMores if these are set in cursor opts */
    if (stream->max_await_time_ms > 0) {
-      BSON_ASSERT (
-         _mongoc_cursor_set_opt_int64 (stream->cursor,
-                                       MONGOC_CURSOR_MAX_AWAIT_TIME_MS,
-                                       stream->max_await_time_ms));
+      bson_append_int64 (&getmore_opts,
+                         MONGOC_CURSOR_MAX_AWAIT_TIME_MS,
+                         MONGOC_CURSOR_MAX_AWAIT_TIME_MS_LEN,
+                         stream->max_await_time_ms);
    }
 
    if (stream->batch_size > 0) {
-      mongoc_cursor_set_batch_size (stream->cursor,
-                                    (uint32_t) stream->batch_size);
+      bson_append_int64 (&getmore_opts,
+                         MONGOC_CURSOR_BATCH_SIZE,
+                         MONGOC_CURSOR_BATCH_SIZE_LEN,
+                         stream->batch_size);
    }
+
+   /* steals reply */
+   stream->cursor = mongoc_cursor_new_from_command_reply_with_opts (
+      stream->coll->client, &reply, &getmore_opts);
 
 cleanup:
    bson_destroy (&command);
    bson_destroy (&command_opts);
+   bson_destroy (&getmore_opts);
    return stream->err.code == 0;
 }
 

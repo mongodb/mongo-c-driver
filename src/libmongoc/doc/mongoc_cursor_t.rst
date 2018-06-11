@@ -59,6 +59,7 @@ Example
     mongoc_cursor_is_alive
     mongoc_cursor_more
     mongoc_cursor_new_from_command_reply
+    mongoc_cursor_new_from_command_reply_with_opts
     mongoc_cursor_next
     mongoc_cursor_set_batch_size
     mongoc_cursor_set_hint

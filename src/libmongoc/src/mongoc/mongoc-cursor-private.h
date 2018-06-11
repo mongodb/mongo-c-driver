@@ -283,8 +283,7 @@ mongoc_cursor_t *
 _mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client,
                                    const bson_t *cmd,
                                    const bson_t *opts,
-                                   bson_t *reply,
-                                   uint32_t server_id);
+                                   bson_t *reply);
 
 mongoc_cursor_t *
 _mongoc_cursor_cmd_deprecated_new (mongoc_client_t *client,

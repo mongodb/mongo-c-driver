@@ -1418,28 +1418,7 @@ mongoc_cursor_get_max_await_time_ms (const mongoc_cursor_t *cursor)
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cursor_new_from_command_reply --
- *
- *       Low-level function to initialize a mongoc_cursor_t from the
- *       reply to a command like "aggregate", "find", or "listCollections".
- *
- *       Useful in drivers that wrap the C driver; in applications, use
- *       high-level functions like mongoc_collection_aggregate instead.
- *
- * Returns:
- *       A cursor.
- *
- * Side effects:
- *       On failure, the cursor's error is set: retrieve it with
- *       mongoc_cursor_error. On success or failure, "reply" is
- *       destroyed.
- *
- *--------------------------------------------------------------------------
- */
-
+/* deprecated for mongoc_cursor_new_from_command_reply_with_opts */
 mongoc_cursor_t *
 mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
                                       bson_t *reply,
@@ -1461,10 +1440,31 @@ mongoc_cursor_new_from_command_reply (mongoc_client_t *client,
                                   "$gleStats",
                                   NULL);
 
-   cursor =
-      _mongoc_cursor_cmd_new_from_reply (client, &cmd, &opts, reply, server_id);
+   if (server_id) {
+      bson_append_int64 (&opts, "serverId", 8, server_id);
+   }
+
+   cursor = _mongoc_cursor_cmd_new_from_reply (client, &cmd, &opts, reply);
    bson_destroy (&cmd);
    bson_destroy (&opts);
+
+   return cursor;
+}
+
+
+mongoc_cursor_t *
+mongoc_cursor_new_from_command_reply_with_opts (mongoc_client_t *client,
+                                                bson_t *reply,
+                                                const bson_t *opts)
+{
+   mongoc_cursor_t *cursor;
+   bson_t cmd = BSON_INITIALIZER;
+
+   BSON_ASSERT (client);
+   BSON_ASSERT (reply);
+
+   cursor = _mongoc_cursor_cmd_new_from_reply (client, &cmd, opts, reply);
+   bson_destroy (&cmd);
 
    return cursor;
 }

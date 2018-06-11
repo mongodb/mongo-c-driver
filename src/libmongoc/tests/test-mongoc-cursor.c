@@ -967,8 +967,8 @@ _test_cursor_new_from_command (const char *cmd_json,
    server_id = sd->id;
    mongoc_client_command_simple_with_server_id (
       client, "test", tmp_bson (cmd_json), NULL, server_id, &reply, &error);
-   cmd_cursor =
-      mongoc_cursor_new_from_command_reply (client, &reply, server_id);
+   cmd_cursor = mongoc_cursor_new_from_command_reply_with_opts (
+      client, &reply, tmp_bson ("{'serverId': %d}", server_id));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cmd_cursor, &error), error);
    ASSERT_CMPUINT32 (server_id, ==, mongoc_cursor_get_hint (cmd_cursor));
    ASSERT_CMPINT (count_docs (cmd_cursor), ==, 2);
@@ -1060,7 +1060,7 @@ test_cursor_new_invalid (void)
    const bson_t *error_doc;
 
    client = test_framework_client_new ();
-   cursor = mongoc_cursor_new_from_command_reply (client, &b, 0);
+   cursor = mongoc_cursor_new_from_command_reply_with_opts (client, &b, NULL);
    ASSERT (cursor);
    ASSERT (mongoc_cursor_error (cursor, &error));
    ASSERT_ERROR_CONTAINS (error,
@@ -1091,7 +1091,7 @@ test_cursor_new_tailable_await (void)
    mock_server_run (server);
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-   cursor = mongoc_cursor_new_from_command_reply (
+   cursor = mongoc_cursor_new_from_command_reply_with_opts (
       client,
       bson_copy (tmp_bson ("{'ok': 1,"
                            " 'cursor': {"
@@ -1103,7 +1103,10 @@ test_cursor_new_tailable_await (void)
                            " 'awaitData': true,"
                            " 'maxAwaitTimeMS': 100"
                            "}")),
-      0);
+      tmp_bson ("{'tailable': true,"
+                " 'awaitData': true,"
+                " 'maxAwaitTimeMS': 100"
+                "}"));
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
@@ -1140,13 +1143,14 @@ test_cursor_new_ignores_fields (void)
    mock_server_t *server;
    mongoc_client_t *client;
    mongoc_cursor_t *cursor;
+   const bson_t *doc;
    bson_error_t error;
 
    server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
-   cursor = mongoc_cursor_new_from_command_reply (
+   cursor = mongoc_cursor_new_from_command_reply_with_opts (
       client,
       bson_copy (tmp_bson ("{'ok': 1,"
                            " 'cursor': {"
@@ -1156,14 +1160,14 @@ test_cursor_new_ignores_fields (void)
                            " },"
                            " 'operationTime' : {},"
                            " '$clusterTime': {},"
-                           " '$gleStats': {},"
-                           " 'batchSize': 10"
+                           " '$gleStats': {}"
                            "}")),
-      0);
+      tmp_bson ("{'batchSize': 10}"));
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-
    ASSERT_MATCH (&cursor->opts, "{'batchSize': 10}");
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    mongoc_cursor_destroy (cursor);
    mongoc_client_destroy (client);
@@ -1270,14 +1274,16 @@ test_cursor_new_static (void)
    /* test heap-allocated bson */
    client = test_framework_client_new ();
    bson_copied = bson_copy (bson_alloced);
-   cursor = mongoc_cursor_new_from_command_reply (client, bson_copied, 0);
+   cursor = mongoc_cursor_new_from_command_reply_with_opts (
+      client, bson_copied, NULL);
 
    ASSERT (cursor);
    ASSERT (!mongoc_cursor_error (cursor, &error));
    mongoc_cursor_destroy (cursor);
 
    /* test static bson */
-   cursor = mongoc_cursor_new_from_command_reply (client, &bson_static, 0);
+   cursor = mongoc_cursor_new_from_command_reply_with_opts (
+      client, &bson_static, NULL);
    ASSERT (cursor);
    ASSERT (!mongoc_cursor_error (cursor, &error));
 

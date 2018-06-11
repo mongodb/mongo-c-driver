@@ -180,8 +180,7 @@ mongoc_cursor_t *
 _mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client,
                                    const bson_t *cmd,
                                    const bson_t *opts,
-                                   bson_t *reply,
-                                   uint32_t server_id)
+                                   bson_t *reply)
 {
    mongoc_cursor_t *cursor =
       _mongoc_cursor_cmd_new (client, NULL, cmd, opts, NULL, NULL);
@@ -189,7 +188,7 @@ _mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client,
 
    data->reading_from = CMD_RESPONSE;
    cursor->state = IN_BATCH;
-   cursor->server_id = server_id;
+
    bson_destroy (&data->response.reply);
    if (!bson_steal (&data->response.reply, reply)) {
       bson_destroy (&data->response.reply);
