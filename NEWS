@@ -4,7 +4,8 @@ Next Release
   * All "destroy" functions such as bson_destroy or mongoc_collection_destroy
     now ignore a NULL argument.
   * Functions incorrectly marked with the "const" compiler attribute are now
-    marked as "pure"
+    marked as "pure".
+  * Fix a crash when parsing binary data from JSON if mongoc_init isn't called.
 
 
 mongo-c-driver 1.10.1
