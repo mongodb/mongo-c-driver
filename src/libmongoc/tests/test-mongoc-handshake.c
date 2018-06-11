@@ -286,14 +286,21 @@ _test_platform (bool platform_oversized)
    bson_t doc = BSON_INITIALIZER;
 
    _mongoc_handshake_cleanup ();
+   _mongoc_handshake_init ();
 
    md = _mongoc_handshake_get ();
-   md->frozen = false;
+
+   bson_free (md->os_type);
    md->os_type = bson_strdup ("foo");
+   bson_free (md->os_name);
    md->os_name = bson_strdup ("foo");
+   bson_free (md->os_version);
    md->os_version = bson_strdup ("foo");
+   bson_free (md->os_architecture);
    md->os_architecture = bson_strdup ("foo");
+   bson_free (md->driver_name);
    md->driver_name = bson_strdup ("foo");
+   bson_free (md->driver_version);
    md->driver_version = bson_strdup ("foo");
 
    platform_len = HANDSHAKE_MAX_SIZE;
@@ -301,6 +308,7 @@ _test_platform (bool platform_oversized)
       platform_len += 100;
    }
 
+   bson_free (md->platform);
    md->platform = bson_malloc (platform_len);
    memset (md->platform, 'a', platform_len - 1);
    md->platform[platform_len - 1] = '\0';
@@ -348,9 +356,6 @@ test_mongoc_handshake_data_append_after_cmd (void)
 
    capture_logs (true);
    ASSERT (!mongoc_handshake_data_append ("a", "a", "a"));
-   ASSERT_CAPTURED_LOG ("mongoc_handshake_data_append",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Cannot set handshake more than once");
    capture_logs (false);
 
    mongoc_client_pool_push (pool, client);
@@ -682,6 +687,41 @@ test_handshake_platform_config ()
    bson_free (config_str);
 }
 
+/* Called by a single thread in test_mongoc_handshake_race_condition */
+static void *
+handshake_append_worker (void *data)
+{
+   const char *driver_name = "php driver";
+   const char *driver_version = "version abc";
+   const char *platform = "./configure -nottoomanyflags";
+
+   mongoc_handshake_data_append (driver_name, driver_version, platform);
+
+   return NULL;
+}
+
+/* Run 1000 iterations of mongoc_handshake_data_append() using 4 threads */
+static void
+test_mongoc_handshake_race_condition (void)
+{
+   unsigned i, j;
+   mongoc_thread_t threads[4];
+
+   for (i = 0; i < 1000; ++i) {
+      _reset_handshake ();
+
+      for (j = 0; j < 4; ++j) {
+         mongoc_thread_create (&threads[j], &handshake_append_worker, NULL);
+      }
+
+      for (j = 0; j < 4; ++j) {
+         mongoc_thread_join (threads[j]);
+      }
+   }
+
+   _reset_handshake ();
+}
+
 void
 test_handshake_install (TestSuite *suite)
 {
@@ -715,4 +755,7 @@ test_handshake_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/MongoDB/handshake/platform_config",
                   test_handshake_platform_config);
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/race_condition",
+                  test_mongoc_handshake_race_condition);
 }
