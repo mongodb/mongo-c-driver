@@ -91,8 +91,6 @@ static MONGOC_ONCE_FUN (_mongoc_do_init)
    tls_init ();
 #endif
 
-   bson_b64_initialize_rmap ();
-
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    /* The following functions should not use tracing, as they may be invoked
     * before mongoc_log_set_handler() can complete. */

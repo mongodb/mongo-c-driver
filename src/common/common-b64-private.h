@@ -30,9 +30,6 @@ bson_b64_ntop (uint8_t const *src,
                char *target,
                size_t targsize);
 
-void
-bson_b64_initialize_rmap (void);
-
 int
 bson_b64_pton (char const *src, uint8_t *target, size_t targsize);
 
