@@ -727,8 +727,11 @@ _test_get_collection_info_getmore ()
    future =
       future_database_get_collection_names_with_opts (database, NULL, NULL);
 
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, "{'listCollections': 1}");
+   request =
+      mock_server_receives_command (server,
+                                    "db",
+                                    MONGOC_QUERY_SLAVE_OK,
+                                    "{'listCollections': 1, 'nameOnly': true}");
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -816,7 +819,8 @@ test_get_collection_names (void)
    mongoc_client_t *client;
    bson_error_t error = {0};
    bson_t options;
-   int namecount = 0;
+   int namecount;
+   int explicit_nameonly;
 
    char **names;
    char **name;
@@ -872,30 +876,41 @@ test_get_collection_names (void)
    BSON_ASSERT (collection);
    mongoc_collection_destroy (collection);
 
-   names =
-      mongoc_database_get_collection_names_with_opts (database, NULL, &error);
-   BSON_ASSERT (!error.domain);
-   BSON_ASSERT (!error.code);
+   for (explicit_nameonly = 0; explicit_nameonly <= 1; explicit_nameonly++) {
+      namecount = 0;
 
-   for (name = names; *name; ++name) {
-      /* inefficient, but OK for a unit test. */
-      curname = *name;
-
-      if (0 == strcmp (curname, name1) || 0 == strcmp (curname, name2) ||
-          0 == strcmp (curname, name3) || 0 == strcmp (curname, name4) ||
-          0 == strcmp (curname, name5)) {
-         ++namecount;
-      } else if (0 ==
-                 strncmp (curname, system_prefix, strlen (system_prefix))) {
-         /* Collections prefixed with 'system.' are system collections */
+      /* ensure that if users happen to pass nameOnly in opts we don't
+       * append it again and cause a "duplicate field" server error */
+      if (explicit_nameonly) {
+         names = mongoc_database_get_collection_names_with_opts (
+            database, tmp_bson ("{'nameOnly': true}"), &error);
       } else {
-         BSON_ASSERT (false);
+         names = mongoc_database_get_collection_names_with_opts (
+            database, NULL, &error);
+      }
+      BSON_ASSERT (!error.domain);
+      BSON_ASSERT (!error.code);
+
+      for (name = names; *name; ++name) {
+         /* inefficient, but OK for a unit test. */
+         curname = *name;
+
+         if (0 == strcmp (curname, name1) || 0 == strcmp (curname, name2) ||
+             0 == strcmp (curname, name3) || 0 == strcmp (curname, name4) ||
+             0 == strcmp (curname, name5)) {
+            ++namecount;
+         } else if (0 ==
+                    strncmp (curname, system_prefix, strlen (system_prefix))) {
+            /* Collections prefixed with 'system.' are system collections */
+         } else {
+            BSON_ASSERT (false);
+         }
+
+         bson_free (curname);
       }
 
-      bson_free (curname);
+      BSON_ASSERT (namecount == 5);
    }
-
-   BSON_ASSERT (namecount == 5);
 
    bson_free (name1);
    bson_free (name2);
@@ -938,8 +953,11 @@ test_get_collection_names_error (void)
    database = mongoc_client_get_database (client, "test");
    future =
       future_database_get_collection_names_with_opts (database, NULL, &error);
-   request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SLAVE_OK, "{'listCollections': 1}");
+   request =
+      mock_server_receives_command (server,
+                                    "test",
+                                    MONGOC_QUERY_SLAVE_OK,
+                                    "{'listCollections': 1, 'nameOnly': true}");
    mock_server_hangs_up (request);
    names = future_get_char_ptr_ptr (future);
    BSON_ASSERT (!names);

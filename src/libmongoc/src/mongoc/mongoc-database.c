@@ -772,6 +772,7 @@ mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
                                                 const bson_t *opts,
                                                 bson_error_t *error)
 {
+   bson_t opts_copy;
    bson_iter_t col;
    const char *name;
    char *namecopy;
@@ -782,7 +783,19 @@ mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
 
    BSON_ASSERT (database);
 
-   cursor = mongoc_database_find_collections_with_opts (database, opts);
+   if (opts) {
+      bson_copy_to (opts, &opts_copy);
+   } else {
+      bson_init (&opts_copy);
+   }
+
+   /* nameOnly option is faster in MongoDB 4+, ignored by older versions,
+    * see Enumerating Collections Spec */
+   if (!bson_has_field (&opts_copy, "nameOnly")) {
+      bson_append_bool (&opts_copy, "nameOnly", 8, true);
+   }
+
+   cursor = mongoc_database_find_collections_with_opts (database, &opts_copy);
 
    _mongoc_array_init (&strv_buf, sizeof (char *));
 
@@ -807,6 +820,7 @@ mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
    }
 
    mongoc_cursor_destroy (cursor);
+   bson_destroy (&opts_copy);
 
    return ret;
 }
