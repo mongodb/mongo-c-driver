@@ -518,7 +518,6 @@ test_get_collection_info (void)
    bson_error_t error = {0};
    bson_iter_t col_iter;
    bson_t capped_options = BSON_INITIALIZER;
-   bson_t autoindexid_options = BSON_INITIALIZER;
    bson_t noopts_options = BSON_INITIALIZER;
    bson_t name_filter = BSON_INITIALIZER;
    const bson_t *doc;
@@ -527,7 +526,6 @@ test_get_collection_info (void)
    const char *name;
    char *dbname;
    char *capped_name;
-   char *autoindexid_name;
    char *noopts_name;
 
    client = test_framework_client_new ();
@@ -544,17 +542,10 @@ test_get_collection_info (void)
    BSON_APPEND_INT32 (&capped_options, "size", 10000000);
    BSON_APPEND_INT32 (&capped_options, "max", 1024);
 
-   autoindexid_name = gen_collection_name ("autoindexid");
-
    noopts_name = gen_collection_name ("noopts");
 
    collection = mongoc_database_create_collection (
       database, capped_name, &capped_options, &error);
-   ASSERT_OR_PRINT (collection, error);
-   mongoc_collection_destroy (collection);
-
-   collection = mongoc_database_create_collection (
-      database, autoindexid_name, &autoindexid_options, &error);
    ASSERT_OR_PRINT (collection, error);
    mongoc_collection_destroy (collection);
 
@@ -599,10 +590,8 @@ test_get_collection_info (void)
 
    bson_free (capped_name);
    bson_free (noopts_name);
-   bson_free (autoindexid_name);
 
    bson_destroy (&capped_options);
-   bson_destroy (&autoindexid_options);
    bson_destroy (&noopts_options);
    bson_destroy (&name_filter);
 
