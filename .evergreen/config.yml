@@ -925,7 +925,7 @@ tasks:
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "3.6"
+            VERSION: "4.0"
         - func: "link sample program"
           vars:
             BUILD_SAMPLE_WITH_CMAKE: "1"
@@ -937,7 +937,7 @@ tasks:
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "3.6"
+            VERSION: "4.0"
         - func: "link sample program"
           vars:
             BUILD_SAMPLE_WITH_CMAKE: "1"
@@ -975,7 +975,7 @@ tasks:
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "3.6"
+            VERSION: "4.0"
         - command: shell.exec
           type: test
           params:
@@ -995,7 +995,7 @@ tasks:
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "3.6"
+            VERSION: "4.0"
             SSL: "winssl"
         - command: shell.exec
           type: test
@@ -1038,7 +1038,7 @@ tasks:
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "3.6"
+            VERSION: "4.0"
         - command: shell.exec
           type: test
           params:
@@ -1056,7 +1056,7 @@ tasks:
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "3.6"
+            VERSION: "4.0"
         - func: "link sample program"
 
     - name: link-with-pkg-config-mac
@@ -1066,7 +1066,7 @@ tasks:
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "3.6"
+            VERSION: "4.0"
         - func: "link sample program"
 
     - name: link-with-pkg-config-ssl
@@ -1076,7 +1076,7 @@ tasks:
       commands:
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "3.6"
+            VERSION: "4.0"
         - func: "link sample program"
           vars:
             ENABLE_SSL: "1"
@@ -1455,6 +1455,28 @@ tasks:
             SSL: "nossl"
             URI: ""
 
+    - name: test-valgrind-4.0-server-noauth-nosasl-nossl
+      tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            VALGRIND: "on"
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+
     - name: test-valgrind-3.6-server-noauth-nosasl-nossl
       tags: ["test-valgrind"]
       exec_timeout_secs: 3600
@@ -1476,6 +1498,7 @@ tasks:
             AUTH: "noauth"
             SSL: "nossl"
             URI: ""
+
     - name: test-valgrind-3.4-server-noauth-nosasl-nossl
       tags: ["test-valgrind"]
       exec_timeout_secs: 3600
@@ -1564,7 +1587,7 @@ tasks:
             SSL: "nossl"
             URI: ""
 
-    - name: test-valgrind-3.6-replica-set-noauth-nosasl-nossl
+    - name: test-valgrind-4.0-replica-set-noauth-nosasl-nossl
       tags: ["test-valgrind"]
       exec_timeout_secs: 3600
       depends_on:
@@ -1575,7 +1598,7 @@ tasks:
             BUILD_NAME: "debug-compile-nosasl-nossl"
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "3.6"
+            VERSION: "4.0"
             TOPOLOGY: "replica_set"
             AUTH: "noauth"
             SSL: "nossl"
@@ -1664,6 +1687,28 @@ tasks:
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "latest"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            VALGRIND: "on"
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+
+    - name: test-valgrind-4.0-sharded-noauth-nosasl-nossl
+      tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
             TOPOLOGY: "sharded_cluster"
             AUTH: "noauth"
             SSL: "nossl"
@@ -1784,6 +1829,28 @@ tasks:
             SSL: "openssl"
             URI: ""
 
+    - name: test-valgrind-4.0-server-auth-nosasl-openssl
+      tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
+      depends_on:
+        - name: "debug-compile-nosasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            VALGRIND: "on"
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+
     - name: test-valgrind-3.6-server-auth-nosasl-openssl
       tags: ["test-valgrind"]
       exec_timeout_secs: 3600
@@ -1884,6 +1951,28 @@ tasks:
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "latest"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            VALGRIND: "on"
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+
+    - name: test-valgrind-4.0-sharded-auth-openssl
+      tags: ["test-valgrind"]
+      exec_timeout_secs: 3600
+      depends_on:
+        - name: "debug-compile-nosasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
             TOPOLOGY: "sharded_cluster"
             AUTH: "auth"
             SSL: "openssl"
@@ -5570,6 +5659,888 @@ tasks:
             URI: ""
 
 
+    - name: test-4.0-server-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+
+
+    - name: test-4.0-server-noauth-nosasl-openssl
+      tags: ["openssl", "nosasl", "noauth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-server-noauth-nosasl-darwinssl
+      tags: ["darwinssl", "nosasl", "noauth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-server-noauth-nosasl-winssl
+      tags: ["winssl", "nosasl", "noauth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "winssl"
+            URI: ""
+
+
+    - name: test-4.0-server-noauth-sasl-nossl
+      tags: ["nossl", "sasl", "noauth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+
+
+    - name: test-4.0-server-noauth-sasl-openssl
+      tags: ["openssl", "sasl", "noauth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-server-noauth-sasl-darwinssl
+      tags: ["darwinssl", "sasl", "noauth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-server-noauth-sasl-winssl
+      tags: ["winssl", "sasl", "noauth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "winssl"
+            URI: ""
+
+
+    - name: test-4.0-server-auth-nosasl-openssl
+      tags: ["openssl", "nosasl", "auth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-server-auth-nosasl-darwinssl
+      tags: ["darwinssl", "nosasl", "auth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-server-auth-nosasl-winssl
+      tags: ["winssl", "nosasl", "auth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "winssl"
+            URI: ""
+
+
+    - name: test-4.0-server-auth-sasl-openssl
+      tags: ["openssl", "sasl", "auth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-server-auth-sasl-darwinssl
+      tags: ["darwinssl", "sasl", "auth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-server-auth-sasl-winssl
+      tags: ["winssl", "sasl", "auth", "server", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "winssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-noauth-nosasl-openssl
+      tags: ["openssl", "nosasl", "noauth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-noauth-nosasl-darwinssl
+      tags: ["darwinssl", "nosasl", "noauth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-noauth-nosasl-winssl
+      tags: ["winssl", "nosasl", "noauth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "winssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-noauth-sasl-nossl
+      tags: ["nossl", "sasl", "noauth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-noauth-sasl-openssl
+      tags: ["openssl", "sasl", "noauth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-noauth-sasl-darwinssl
+      tags: ["darwinssl", "sasl", "noauth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-noauth-sasl-winssl
+      tags: ["winssl", "sasl", "noauth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "winssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-auth-nosasl-openssl
+      tags: ["openssl", "nosasl", "auth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-auth-nosasl-darwinssl
+      tags: ["darwinssl", "nosasl", "auth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-auth-nosasl-winssl
+      tags: ["winssl", "nosasl", "auth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "winssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-auth-sasl-openssl
+      tags: ["openssl", "sasl", "auth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-auth-sasl-darwinssl
+      tags: ["darwinssl", "sasl", "auth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-replica-set-auth-sasl-winssl
+      tags: ["winssl", "sasl", "auth", "replica-set", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "winssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-noauth-nosasl-openssl
+      tags: ["openssl", "nosasl", "noauth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-noauth-nosasl-darwinssl
+      tags: ["darwinssl", "nosasl", "noauth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-noauth-nosasl-winssl
+      tags: ["winssl", "nosasl", "noauth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "winssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-noauth-sasl-nossl
+      tags: ["nossl", "sasl", "noauth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-noauth-sasl-openssl
+      tags: ["openssl", "sasl", "noauth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-noauth-sasl-darwinssl
+      tags: ["darwinssl", "sasl", "noauth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-noauth-sasl-winssl
+      tags: ["winssl", "sasl", "noauth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "winssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-auth-nosasl-openssl
+      tags: ["openssl", "nosasl", "auth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-auth-nosasl-darwinssl
+      tags: ["darwinssl", "nosasl", "auth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-auth-nosasl-winssl
+      tags: ["winssl", "nosasl", "auth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-nosasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "winssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-auth-sasl-openssl
+      tags: ["openssl", "sasl", "auth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-auth-sasl-darwinssl
+      tags: ["darwinssl", "sasl", "auth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "darwinssl"
+            URI: ""
+
+
+    - name: test-4.0-sharded-cluster-auth-sasl-winssl
+      tags: ["winssl", "sasl", "auth", "sharded-cluster", "4.0"]
+      depends_on:
+        - name: "debug-compile-sasl-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "winssl"
+            URI: ""
+
+
     - name: test-latest-server-noauth-nosasl-nossl
       tags: ["nossl", "nosasl", "noauth", "server", "latest"]
       depends_on:
@@ -6828,6 +7799,7 @@ buildvariants:
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
+    - ".4.0 .openssl !.nosasl .server"
     - ".3.6 .openssl !.nosasl .server"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.2 .openssl !.nosasl .server"
@@ -6848,7 +7820,7 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
-    - ".3.6 .openssl !.nosasl .server"
+    - ".4.0 .openssl !.nosasl .server"
       # Debian 8.1 only supports MongoDB 3.4+
 
 - name: openssl
@@ -6878,6 +7850,7 @@ buildvariants:
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"
     - ".latest .nossl !.nosasl"
+    - ".4.0 .nossl !.nosasl"
     - ".3.6 .nossl !.nosasl"
     - ".3.4 .nossl !.nosasl"
     - ".3.2 .nossl !.nosasl" # No enterprise build for Archlinux, SSL not available
@@ -6898,6 +7871,7 @@ buildvariants:
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
+    - ".4.0 .nossl .nosasl"
     - ".3.6 .nossl .nosasl"
       # We don't have i386 builds of OpenSSL or Cyrus SASL installed
       # Ubuntu16.04 only supports MongoDB 3.4+
@@ -6922,6 +7896,7 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+    - ".4.0 .openssl !.nosasl .server"
     - ".3.6 .openssl !.nosasl .server"
       # Ubuntu16.04 only supports MongoDB 3.4+
 
@@ -6941,6 +7916,7 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+    # TODO: test MongoDB 4
     - ".3.6 .openssl !.nosasl .server"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.2 .openssl !.nosasl .server"
@@ -6961,6 +7937,7 @@ buildvariants:
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".latest .nossl !.nosasl !.ipv4-ipv6"
+    - ".4.0 .openssl !.nosasl .server"
     - ".3.6 .openssl !.nosasl .server"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.2 .openssl !.nosasl .server"
@@ -6984,6 +7961,7 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+    - ".4.0 .openssl !.nosasl .server"
     - ".3.6 .openssl !.nosasl .server"
     - ".3.4 .openssl !.nosasl .server"
     - ".3.2 .openssl !.nosasl .server"
@@ -7003,7 +7981,7 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
-    - ".3.6 .openssl !.nosasl .server"
+    - ".4.0 .openssl !.nosasl .server"
       # Debian 8.1 only supports MongoDB 3.4+
 
 - name: gcc54-i386
@@ -7020,7 +7998,7 @@ buildvariants:
     - "debug-compile-no-align"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
-    - ".3.6 .nossl .nosasl"
+    - ".4.0 .nossl .nosasl"
       # We don't have i386 builds of OpenSSL or Cyrus SASL installed
       # Ubuntu16.04 only supports MongoDB 3.4+
 
@@ -7045,7 +8023,7 @@ buildvariants:
     - "retry-true-3.4-replica-set"
     - "retry-true-latest-server"
     # Ubuntu16.04 only supports MongoDB 3.4+
-    - ".3.6 .openssl !.nosasl .server"
+    - ".4.0 .openssl !.nosasl .server"
     - "test-dns-openssl"
     - "test-dns-auth-openssl"
 
@@ -7068,6 +8046,7 @@ buildvariants:
     - ".authentication-tests .darwinssl"
     - ".latest .darwinssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+    - ".4.0 .darwinssl !.nosasl .server"
     - ".3.6 .darwinssl !.nosasl .server"
     - ".3.4 .darwinssl !.nosasl .server"
     - ".3.2 .darwinssl !.nosasl .server"
@@ -7097,6 +8076,7 @@ buildvariants:
     - ".latest .winssl !.nosasl .server"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+    - ".4.0 .winssl !.nosasl .server"
     - ".3.6 .winssl !.nosasl .server"
     - ".3.4 .winssl !.nosasl .server"
     - ".3.2 .winssl !.nosasl .server"
@@ -7123,7 +8103,7 @@ buildvariants:
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
-    - ".3.6 .winssl .nosasl .server"
+    - ".4.0 .winssl .nosasl .server"
 
 - name: windows-2013
   display_name: "Windows (VS 2013)"
@@ -7145,7 +8125,7 @@ buildvariants:
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".latest .sspi"
-    - ".3.6 .winssl !.nosasl .server"
+    - ".4.0 .winssl !.nosasl .server"
 
 - name: windows-2013-32
   display_name: "Windows (i386) (VS 2013)"
@@ -7164,7 +8144,7 @@ buildvariants:
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
-    - ".3.6 .winssl .nosasl .server"
+    - ".4.0 .winssl .nosasl .server"
 
 - name: windows-2010
   display_name: "Windows (VS 2010)"
@@ -7187,7 +8167,7 @@ buildvariants:
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
     - ".latest .sspi"
-    - ".3.6 .winssl !.nosasl .server"
+    - ".4.0 .winssl !.nosasl .server"
 
 - name: windows-2010-32
   display_name: "Windows (i386) (VS 2010)"
@@ -7206,7 +8186,7 @@ buildvariants:
     - ".latest .winssl .nosasl .server"
     - ".latest .nossl .nosasl"
     - ".latest .sspi"
-    - ".3.6 .winssl .nosasl .server"
+    - ".4.0 .winssl .nosasl .server"
 
 - name: mingw
   display_name: "MinGW-W64"
@@ -7240,7 +8220,7 @@ buildvariants:
     - ".authentication-tests .openssl !.sasl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
-    - ".3.6 .openssl !.nosasl .server"
+    - ".4.0 .openssl !.nosasl .server"
       # RHEL 7.1 ppc64le is only supported by MongoDB 3.2+
 
 - name: power8-ubuntu1604
@@ -7260,7 +8240,7 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
-    - ".3.6 .openssl !.nosasl .server"
+    - ".4.0 .openssl !.nosasl .server"
       # Ubuntu16.04 ppc64le is only supported by MongoDB 3.4+
     - "test-dns-openssl"
 
@@ -7283,7 +8263,7 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
-    - ".3.6 .openssl !.nosasl .server"
+    - ".4.0 .openssl !.nosasl .server"
       # Ubuntu16.04 aarch64 is only supported by MongoDB 3.4+
     - "test-dns-openssl"
 
@@ -7303,8 +8283,9 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+      # TODO CDRIVER-2686: test MongoDB 4 once it's built for zseries
     - ".3.6 .openssl !.nosasl .server"
-#      # RHEL7.2  s390x is only supported by MongoDB 3.4+
+      # RHEL7.2 s390x is only supported by MongoDB 3.4+
 
 - name: zseries-ubuntu1604
   display_name: "zSeries (s390x) (Ubuntu 16.04)"
@@ -7322,6 +8303,7 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+      # TODO CDRIVER-2686: test MongoDB 4 once it's built for zseries
     - ".3.6 .openssl !.nosasl .server"
       # Ubuntu16.04 s390x is only supported by MongoDB 3.4+
     - "test-dns-openssl"
@@ -7342,6 +8324,7 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl !.nosasl"
+      # TODO CDRIVER-2686: test MongoDB 4 once it's built for zseries
     - ".3.6 .openssl !.nosasl .server"
       # SUSE12 s390x is only supported by MongoDB 3.4+
 
