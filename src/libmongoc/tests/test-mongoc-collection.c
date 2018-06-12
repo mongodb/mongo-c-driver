@@ -655,8 +655,8 @@ test_insert_many (void)
 
    ASSERT_CMPINT32 (bson_lookup_int32 (&reply, "insertedCount"), ==, 10);
    bson_destroy (&reply);
-   count = mongoc_collection_count (
-      collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
+   count = mongoc_collection_count_documents (
+      collection, &q, NULL, NULL, NULL, &error);
    ASSERT (count == 5);
 
    for (i = 8; i < 10; i++) {
@@ -676,8 +676,8 @@ test_insert_many (void)
    ASSERT_CMPINT32 (bson_lookup_int32 (&reply, "insertedCount"), ==, 0);
    bson_destroy (&reply);
 
-   count = mongoc_collection_count (
-      collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
+   count = mongoc_collection_count_documents (
+      collection, &q, NULL, NULL, NULL, &error);
    ASSERT (count == 5);
 
    r = mongoc_collection_insert_many (collection,
@@ -691,8 +691,8 @@ test_insert_many (void)
    ASSERT_CMPINT32 (bson_lookup_int32 (&reply, "insertedCount"), ==, 2);
    bson_destroy (&reply);
 
-   count = mongoc_collection_count (
-      collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
+   count = mongoc_collection_count_documents (
+      collection, &q, NULL, NULL, NULL, &error);
    ASSERT (count == 6);
 
    /* test validate */
@@ -1023,8 +1023,8 @@ test_regex (void)
 
    BSON_APPEND_REGEX (&q, "hello", "^/wo", "i");
 
-   count = mongoc_collection_count (
-      collection, MONGOC_QUERY_NONE, &q, 0, 0, NULL, &error);
+   count = mongoc_collection_count_documents (
+      collection, &q, NULL, NULL, NULL, &error);
 
    ASSERT (count > 0);
    ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
@@ -1079,8 +1079,8 @@ test_decimal128 (void *ctx)
    }
    ASSERT (r);
 
-   count = mongoc_collection_count (
-      collection, MONGOC_QUERY_NONE, &query, 0, 0, NULL, &error);
+   count = mongoc_collection_count_documents (
+      collection, &query, NULL, NULL, NULL, &error);
    ASSERT (count > 0);
 
    cursor = mongoc_collection_find (
@@ -2356,6 +2356,132 @@ static void
 test_count_with_collation_fail (void)
 {
    test_count_with_collation (WIRE_VERSION_COLLATION - 1);
+}
+
+
+static void
+test_count_documents (void)
+{
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   bson_t reply;
+   const char *server_reply = "{'cursor': {'firstBatch': [{'n': 123}], '_id': "
+                              "0, 'ns': 'db.coll'}, 'ok': 1}";
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "coll");
+
+   future =
+      future_collection_count_documents (collection,
+                                         tmp_bson ("{'x': 1}"),
+                                         tmp_bson ("{'limit': 2, 'skip': 1}"),
+                                         NULL,
+                                         &reply,
+                                         &error);
+
+   request = mock_server_receives_msg (
+      server, 0, tmp_bson ("{'aggregate': 'coll', 'pipeline': [{'$match': "
+                           "{'x': 1}}, {'$skip': 1}, {'$limit': 2}, {'$group': "
+                           "{'n': {'$sum': 1}}}]}"));
+   mock_server_replies_simple (request, server_reply);
+   ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
+   ASSERT_MATCH (&reply, server_reply);
+
+   bson_destroy (&reply);
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_count_documents_live (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   int64_t count;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+   ASSERT (collection);
+
+   count = mongoc_collection_count_documents (
+      collection, tmp_bson ("{}"), NULL, NULL, NULL, &error);
+
+   ASSERT_OR_PRINT (count != -1, error);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_estimated_document_count (void)
+{
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   bson_t reply;
+   const char *server_reply = "{'n': 123, 'ok': 1}";
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "coll");
+
+   future = future_collection_estimated_document_count (
+      collection, tmp_bson ("{'limit': 2, 'skip': 1}"), NULL, &reply, &error);
+
+   request = mock_server_receives_msg (
+      server, 0, tmp_bson ("{'count': 'coll', 'limit': 2, 'skip': 1}"));
+   mock_server_replies_simple (request, server_reply);
+   ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
+   ASSERT_MATCH (&reply, server_reply);
+
+   bson_destroy (&reply);
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
+test_estimated_document_count_live (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   bson_error_t error;
+   int64_t count;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   collection = mongoc_client_get_collection (client, "test", "test");
+   ASSERT (collection);
+
+   count = mongoc_collection_estimated_document_count (
+      collection, NULL, NULL, NULL, &error);
+
+   ASSERT (count != -1);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
 }
 
 
@@ -4713,8 +4839,8 @@ _test_no_docs_match (mongoc_collection_t *coll, const char *selector)
    bson_error_t error;
    int64_t ret;
 
-   ret = mongoc_collection_count_with_opts (
-      coll, MONGOC_QUERY_NONE, tmp_bson (selector), 0, 0, NULL, NULL, &error);
+   ret = mongoc_collection_count_documents (
+      coll, tmp_bson (selector), NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (ret != -1, error);
    ASSERT_CMPINT64 (ret, ==, (int64_t) 0);
 }
@@ -5782,4 +5908,14 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/delete/collation", test_delete_collation);
    TestSuite_AddMockServerTest (
       suite, "/Collection/update/collation", test_update_collation);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/count_documents", test_count_documents);
+   TestSuite_AddLive (
+      suite, "/Collection/count_documents_live", test_count_documents_live);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/estimated_document_count",
+                                test_estimated_document_count);
+   TestSuite_AddLive (suite,
+                      "/Collection/estimated_document_count_live",
+                      test_estimated_document_count_live);
 }

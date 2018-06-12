@@ -551,8 +551,8 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 
 #define ASSERT_COUNT(n, collection)                                     \
    do {                                                                 \
-      int count = (int) mongoc_collection_count (                       \
-         collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, NULL);        \
+      int count = (int) mongoc_collection_count_documents (             \
+         collection, tmp_bson ("{}"), NULL, NULL, NULL, NULL);          \
       if ((n) != count) {                                               \
          fprintf (stderr,                                               \
                   "FAIL\n\nAssert Failure: count of %s is %d, not %d\n" \

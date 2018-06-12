@@ -658,13 +658,12 @@ _check_chunk_count (mongoc_gridfs_t *gridfs, int64_t len, int64_t chunk_size)
 
    /* division, rounding up */
    expected_chunks = (len + chunk_size - 1) / chunk_size;
-   cnt = mongoc_collection_count (mongoc_gridfs_get_chunks (gridfs),
-                                  MONGOC_QUERY_NONE,
-                                  tmp_bson (NULL),
-                                  0,
-                                  0,
-                                  NULL,
-                                  &error);
+   cnt = mongoc_collection_count_documents (mongoc_gridfs_get_chunks (gridfs),
+                                            tmp_bson (NULL),
+                                            NULL,
+                                            NULL,
+                                            NULL,
+                                            &error);
 
    ASSERT_CMPINT64 (expected_chunks, ==, cnt);
 }
@@ -832,13 +831,12 @@ test_write_past_end (void)
    ASSERT_CMPSSIZE_T (r, ==, len);
    mongoc_gridfs_file_save (file);
 
-   cnt = mongoc_collection_count (mongoc_gridfs_get_chunks (gridfs),
-                                  MONGOC_QUERY_NONE,
-                                  tmp_bson (NULL),
-                                  0,
-                                  0,
-                                  NULL,
-                                  &error);
+   cnt = mongoc_collection_count_documents (mongoc_gridfs_get_chunks (gridfs),
+                                            tmp_bson (NULL),
+                                            NULL,
+                                            NULL,
+                                            NULL,
+                                            &error);
 
    ASSERT_OR_PRINT (cnt != -1, error);
    ASSERT_CMPINT64 (expected_chunks, ==, cnt);

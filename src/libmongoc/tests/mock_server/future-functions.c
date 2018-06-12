@@ -1035,6 +1035,53 @@ background_mongoc_collection_replace_one (void *data)
    return NULL;
 }
 
+static void *
+background_mongoc_collection_count_documents (void *data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_int64_t_type;
+
+   future_value_set_int64_t (
+      &return_value,
+      mongoc_collection_count_documents (
+         future_value_get_mongoc_collection_ptr (future_get_param (future, 0)),
+         future_value_get_const_bson_ptr (future_get_param (future, 1)),
+         future_value_get_const_bson_ptr (future_get_param (future, 2)),
+         future_value_get_const_mongoc_read_prefs_ptr (future_get_param (future, 3)),
+         future_value_get_bson_ptr (future_get_param (future, 4)),
+         future_value_get_bson_error_ptr (future_get_param (future, 5))
+      ));
+
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
+background_mongoc_collection_estimated_document_count (void *data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_int64_t_type;
+
+   future_value_set_int64_t (
+      &return_value,
+      mongoc_collection_estimated_document_count (
+         future_value_get_mongoc_collection_ptr (future_get_param (future, 0)),
+         future_value_get_const_bson_ptr (future_get_param (future, 1)),
+         future_value_get_const_mongoc_read_prefs_ptr (future_get_param (future, 2)),
+         future_value_get_bson_ptr (future_get_param (future, 3)),
+         future_value_get_bson_error_ptr (future_get_param (future, 4))
+      ));
+
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
 
 
 future_t *
@@ -2290,6 +2337,70 @@ future_collection_replace_one (
       future_get_param (future, 5), error);
    
    future_start (future, background_mongoc_collection_replace_one);
+   return future;
+}
+
+future_t *
+future_collection_count_documents (
+   mongoc_collection_ptr coll,
+   const_bson_ptr filter,
+   const_bson_ptr opts,
+   const_mongoc_read_prefs_ptr read_prefs,
+   bson_ptr reply,
+   bson_error_ptr error)
+{
+   future_t *future = future_new (future_value_int64_t_type,
+                                  6);
+   
+   future_value_set_mongoc_collection_ptr (
+      future_get_param (future, 0), coll);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 1), filter);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 2), opts);
+   
+   future_value_set_const_mongoc_read_prefs_ptr (
+      future_get_param (future, 3), read_prefs);
+   
+   future_value_set_bson_ptr (
+      future_get_param (future, 4), reply);
+   
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 5), error);
+   
+   future_start (future, background_mongoc_collection_count_documents);
+   return future;
+}
+
+future_t *
+future_collection_estimated_document_count (
+   mongoc_collection_ptr coll,
+   const_bson_ptr opts,
+   const_mongoc_read_prefs_ptr read_prefs,
+   bson_ptr reply,
+   bson_error_ptr error)
+{
+   future_t *future = future_new (future_value_int64_t_type,
+                                  5);
+   
+   future_value_set_mongoc_collection_ptr (
+      future_get_param (future, 0), coll);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 1), opts);
+   
+   future_value_set_const_mongoc_read_prefs_ptr (
+      future_get_param (future, 2), read_prefs);
+   
+   future_value_set_bson_ptr (
+      future_get_param (future, 3), reply);
+   
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 4), error);
+   
+   future_start (future, background_mongoc_collection_estimated_document_count);
    return future;
 }
 

@@ -2247,15 +2247,11 @@ test_update_continue_on_error (void)
 
    assert_error_count (1, &reply);
    ASSERT_COUNT (2, collection);
-   ASSERT_CMPINT (1,
-                  ==,
-                  (int) mongoc_collection_count (collection,
-                                                 MONGOC_QUERY_NONE,
-                                                 tmp_bson ("{'b': 2}"),
-                                                 0,
-                                                 0,
-                                                 NULL,
-                                                 NULL));
+   ASSERT_CMPINT (
+      1,
+      ==,
+      (int) mongoc_collection_count_documents (
+         collection, tmp_bson ("{'b': 2}"), NULL, NULL, NULL, NULL));
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);
