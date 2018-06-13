@@ -910,6 +910,7 @@ test_get_collection_names (void)
       }
 
       BSON_ASSERT (namecount == 5);
+      bson_free (names);
    }
 
    bson_free (name1);
@@ -917,8 +918,6 @@ test_get_collection_names (void)
    bson_free (name3);
    bson_free (name4);
    bson_free (name5);
-
-   bson_free (names);
 
    ASSERT_OR_PRINT (mongoc_database_drop (database, &error), error);
    BSON_ASSERT (!error.domain);
