@@ -389,7 +389,13 @@ void
 mongoc_lowercase (const char *src, char *buf /* OUT */)
 {
    for (; *src; ++src, ++buf) {
-      *buf = tolower (*src);
+      /* UTF8 non-ascii characters have a 1 at the leftmost bit. If this is the
+       * case, just copy */
+      if ((*src & (0x1 << 7)) == 0) {
+         *buf = (char) tolower (*src);
+      } else {
+         *buf = *src;
+      }
    }
 }
 
