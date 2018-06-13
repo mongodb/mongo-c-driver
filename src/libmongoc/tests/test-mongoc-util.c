@@ -46,10 +46,28 @@ test_rand_simple (void)
    }
 }
 
+static void
+test_lowercase_utf8 (void)
+{
+   char *snowman = "\xE2\x9b\x84";
+   char *letters = "aBcDe";
+   char *buf = bson_malloc0 (strlen (snowman) + 1);
+
+   mongoc_lowercase (snowman, buf);
+   ASSERT_CMPSTR (snowman, buf);
+   bson_free (buf);
+
+   buf = bson_malloc0 (strlen (letters) + 1);
+   mongoc_lowercase (letters, buf);
+   ASSERT_CMPSTR ("abcde", buf);
+   bson_free (buf);
+}
+
 
 void
 test_util_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Util/command_name", test_command_name);
    TestSuite_Add (suite, "/Util/rand_simple", test_rand_simple);
+   TestSuite_Add (suite, "/Util/lowercase_utf8", test_lowercase_utf8);
 }
