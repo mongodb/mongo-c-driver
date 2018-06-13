@@ -7,7 +7,7 @@
     {
       "procParams": {
         "ipv6": true,
-        "bind_ip": "",
+        "bind_ip": "127.0.0.1,::1",
         "journal": true,
         "noprealloc": true,
         "nssize": 1,
@@ -25,7 +25,7 @@
     {
       "procParams": {
         "ipv6": true,
-        "bind_ip": "",
+        "bind_ip": "127.0.0.1,::1",
         "journal": true,
         "noprealloc": true,
         "nssize": 1,
@@ -43,7 +43,7 @@
     {
       "procParams": {
         "ipv6": true,
-        "bind_ip": "",
+        "bind_ip": "127.0.0.1,::1",
         "journal": true,
         "noprealloc": true,
         "nssize": 1,
