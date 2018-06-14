@@ -1472,7 +1472,7 @@ _mongoc_write_result_complete (
                                 &result->error);
    }
 
-   if (!bson_empty (&result->errorLabels)) {
+   if (bson && !bson_empty (&result->errorLabels)) {
       BSON_APPEND_ARRAY (bson, "errorLabels", &result->errorLabels);
    }
 
