@@ -31,7 +31,7 @@ struct _bson_context_t {
    int flags : 7;
    bool pidbe_once : 1;
    uint8_t pidbe[2];
-   uint8_t md5[3];
+   uint8_t fnv[3];
    int32_t seq32;
    int64_t seq64;
 

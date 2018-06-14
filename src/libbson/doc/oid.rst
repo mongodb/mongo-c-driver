@@ -11,7 +11,7 @@ Composition
 -----------
 
 * 4 bytes : The UNIX timestamp in big-endian format.
-* 3 bytes : The first 3 bytes of ``MD5(hostname)``.
+* 3 bytes : A hash of the hostname.
 * 2 bytes : The ``pid_t`` of the current process. Alternatively the task-id if configured.
 * 3 bytes : A 24-bit monotonic counter incrementing from ``rand()`` in big-endian.
 

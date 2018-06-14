@@ -25,6 +25,7 @@ set (src_libbson_src_bson_DIST_hs
    bson-private.h
    bson-iso8601-private.h
    bson-context-private.h
+   bson-fnv-private.h
    bson-thread-private.h
    bson-timegm-private.h
 )
@@ -40,6 +41,7 @@ set (src_libbson_src_bson_DIST_cs
    bson-context.c
    bson-decimal128.c
    bson-error.c
+   bson-fnv.c
    bson-iter.c
    bson-iso8601.c
    bson-json.c

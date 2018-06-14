@@ -19,7 +19,7 @@ Synopsis
 Description
 -----------
 
-bson_md5_t encapsulates an implementation of the MD5 algorithm. This is used in OID generation for the MD5(hostname) bytes. It is also used by some libraries such as the MongoDB C driver.
+bson_md5_t encapsulates an implementation of the MD5 algorithm.
 
 .. only:: html
 

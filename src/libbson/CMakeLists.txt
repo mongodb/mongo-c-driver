@@ -162,6 +162,7 @@ set (SOURCES
    ${PROJECT_SOURCE_DIR}/src/bson/bson-context.c
    ${PROJECT_SOURCE_DIR}/src/bson/bson-decimal128.c
    ${PROJECT_SOURCE_DIR}/src/bson/bson-error.c
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-fnv.c
    ${PROJECT_SOURCE_DIR}/src/bson/bson-iso8601.c
    ${PROJECT_SOURCE_DIR}/src/bson/bson-iter.c
    ${PROJECT_SOURCE_DIR}/src/bson/bson-json.c

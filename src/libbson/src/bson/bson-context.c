@@ -26,7 +26,7 @@
 #include "bson-clock.h"
 #include "bson-context.h"
 #include "bson-context-private.h"
-#include "bson-md5.h"
+#include "bson-fnv-private.h"
 #include "bson-memory.h"
 #include "bson-thread-private.h"
 
@@ -60,7 +60,7 @@ bson_gettid (void)
  *
  * _bson_context_get_oid_host --
  *
- *       Retrieves the first three bytes of MD5(hostname) and assigns them
+ *       Retrieves a 3 byte hash of the hostname and assigns those bytes
  *       to the host portion of oid.
  *
  * Returns:
@@ -77,8 +77,7 @@ _bson_context_get_oid_host (bson_context_t *context, /* IN */
                             bson_oid_t *oid)         /* OUT */
 {
    uint8_t *bytes = (uint8_t *) oid;
-   uint8_t digest[16];
-   bson_md5_t md5;
+   uint32_t fnv1a_hash;
    char hostname[HOST_NAME_MAX];
 
    BSON_ASSERT (context);
@@ -87,14 +86,11 @@ _bson_context_get_oid_host (bson_context_t *context, /* IN */
    gethostname (hostname, sizeof hostname);
    hostname[HOST_NAME_MAX - 1] = '\0';
 
-   bson_md5_init (&md5);
-   bson_md5_append (
-      &md5, (const uint8_t *) hostname, (uint32_t) strlen (hostname));
-   bson_md5_finish (&md5, &digest[0]);
+   fnv1a_hash = _mongoc_fnv_24a_str (hostname);
 
-   bytes[4] = digest[0];
-   bytes[5] = digest[1];
-   bytes[6] = digest[2];
+   bytes[4] = (uint8_t) ((fnv1a_hash >> (0 * 8)) & 0xff);
+   bytes[5] = (uint8_t) ((fnv1a_hash >> (1 * 8)) & 0xff);
+   bytes[6] = (uint8_t) ((fnv1a_hash >> (2 * 8)) & 0xff);
 }
 
 
@@ -103,7 +99,7 @@ _bson_context_get_oid_host (bson_context_t *context, /* IN */
  *
  * _bson_context_get_oid_host_cached --
  *
- *       Fetch the cached copy of the MD5(hostname).
+ *       Fetch the cached copy of the 3 byte hash of the hostname
  *
  * Returns:
  *       None.
@@ -121,9 +117,9 @@ _bson_context_get_oid_host_cached (bson_context_t *context, /* IN */
    BSON_ASSERT (context);
    BSON_ASSERT (oid);
 
-   oid->bytes[4] = context->md5[0];
-   oid->bytes[5] = context->md5[1];
-   oid->bytes[6] = context->md5[2];
+   oid->bytes[4] = context->fnv[0];
+   oid->bytes[5] = context->fnv[1];
+   oid->bytes[6] = context->fnv[2];
 }
 
 
@@ -364,9 +360,9 @@ _bson_context_init (bson_context_t *context,    /* IN */
       context->oid_get_host = _bson_context_get_oid_host;
    } else {
       _bson_context_get_oid_host (context, &oid);
-      context->md5[0] = oid.bytes[4];
-      context->md5[1] = oid.bytes[5];
-      context->md5[2] = oid.bytes[6];
+      context->fnv[0] = oid.bytes[4];
+      context->fnv[1] = oid.bytes[5];
+      context->fnv[2] = oid.bytes[6];
    }
 
    if ((flags & BSON_CONTEXT_THREAD_SAFE)) {
