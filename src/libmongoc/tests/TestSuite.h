@@ -227,15 +227,18 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 
-#define ASSERT_CMPINT_HELPER(a, eq, b, fmt)                        \
+#define ASSERT_CMPINT_HELPER(a, eq, b, fmt, type)                  \
    do {                                                            \
-      if (!((a) eq (b))) {                                         \
+      /* evaluate once */                                          \
+      type _a = a;                                                 \
+      type _b = b;                                                 \
+      if (!((_a) eq (_b))) {                                       \
          fprintf (stderr,                                          \
                   "FAIL\n\nAssert Failure: %" fmt " %s %" fmt "\n" \
                   "%s:%d  %s()\n",                                 \
-                  a,                                               \
+                  _a,                                              \
                   #eq,                                             \
-                  b,                                               \
+                  _b,                                              \
                   __FILE__,                                        \
                   __LINE__,                                        \
                   BSON_FUNC);                                      \
@@ -244,19 +247,27 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 
-#define ASSERT_CMPINT(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "d")
-#define ASSERT_CMPUINT(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "u")
-#define ASSERT_CMPLONG(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "ld")
-#define ASSERT_CMPULONG(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "lu")
-#define ASSERT_CMPINT32(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRId32)
-#define ASSERT_CMPINT64(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRId64)
-#define ASSERT_CMPUINT16(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "hu")
-#define ASSERT_CMPUINT32(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRIu32)
-#define ASSERT_CMPUINT64(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, PRIu64)
-#define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "zd")
-#define ASSERT_CMPSSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "zx")
-#define ASSERT_CMPDOUBLE(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "f")
-#define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "p")
+#define ASSERT_CMPINT(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "d", int)
+#define ASSERT_CMPUINT(a, eq, b) \
+   ASSERT_CMPINT_HELPER (a, eq, b, "u", unsigned int)
+#define ASSERT_CMPLONG(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "ld", long)
+#define ASSERT_CMPULONG(a, eq, b) \
+   ASSERT_CMPINT_HELPER (a, eq, b, "lu", unsigned long)
+#define ASSERT_CMPINT32(a, eq, b) \
+   ASSERT_CMPINT_HELPER (a, eq, b, PRId32, int32_t)
+#define ASSERT_CMPINT64(a, eq, b) \
+   ASSERT_CMPINT_HELPER (a, eq, b, PRId64, int64_t)
+#define ASSERT_CMPUINT16(a, eq, b) \
+   ASSERT_CMPINT_HELPER (a, eq, b, "hu", uint16_t)
+#define ASSERT_CMPUINT32(a, eq, b) \
+   ASSERT_CMPINT_HELPER (a, eq, b, PRIu32, uint32_t)
+#define ASSERT_CMPUINT64(a, eq, b) \
+   ASSERT_CMPINT_HELPER (a, eq, b, PRIu64, uint64_t)
+#define ASSERT_CMPSIZE_T(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "zd", size_t)
+#define ASSERT_CMPSSIZE_T(a, eq, b) \
+   ASSERT_CMPINT_HELPER (a, eq, b, "zx", ssize_t)
+#define ASSERT_CMPDOUBLE(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "f", double)
+#define ASSERT_CMPVOID(a, eq, b) ASSERT_CMPINT_HELPER (a, eq, b, "p", void *)
 
 #define ASSERT_MEMCMP(a, b, n)                                       \
    do {                                                              \
@@ -316,12 +327,16 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 
-#define ASSERT_CMPSTR(a, b)                                                    \
-   do {                                                                        \
-      if (((a) != (b)) && !!strcmp ((a), (b))) {                               \
-         fprintf (stderr, "FAIL\n\nAssert Failure: \"%s\" != \"%s\"\n", a, b); \
-         abort ();                                                             \
-      }                                                                        \
+#define ASSERT_CMPSTR(a, b)                                                \
+   do {                                                                    \
+      /* evaluate once */                                                  \
+      const char *_a = a;                                                  \
+      const char *_b = b;                                                  \
+      if (((_a) != (_b)) && !!strcmp ((_a), (_b))) {                       \
+         fprintf (                                                         \
+            stderr, "FAIL\n\nAssert Failure: \"%s\" != \"%s\"\n", _a, _b); \
+         abort ();                                                         \
+      }                                                                    \
    } while (0)
 
 #define ASSERT_CMPJSON(_a, _b)                                 \
@@ -398,14 +413,17 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 
 #define ASSERT_STARTSWITH(a, b)                                    \
    do {                                                            \
-      if ((a) != strstr ((a), (b))) {                              \
+      /* evaluate once */                                          \
+      const char *_a = a;                                          \
+      const char *_b = b;                                          \
+      if ((_a) != strstr ((_a), (_b))) {                           \
          fprintf (stderr,                                          \
                   "%s:%d %s(): : [%s] does not start with [%s]\n", \
                   __FILE__,                                        \
                   __LINE__,                                        \
                   BSON_FUNC,                                       \
-                  a,                                               \
-                  b);                                              \
+                  _a,                                              \
+                  _b);                                             \
          abort ();                                                 \
       }                                                            \
    } while (0)
