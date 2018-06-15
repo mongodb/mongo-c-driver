@@ -943,7 +943,11 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
 
       r = mongoc_client_command_simple_with_server_id (
          client, "admin", command, NULL, server_id, NULL, &error);
-      ASSERT_OR_PRINT (r, error);
+
+      /* ignore error from servers that predate "failCommand" fail point */
+      if (!r && !strstr (error.message, "failCommand not found")) {
+         ASSERT_OR_PRINT (r, error);
+      }
    }
 
    mongoc_server_description_destroy (sd);
@@ -1071,6 +1075,7 @@ run_json_general_test (const json_test_config_t *config)
       }
 
       client = mongoc_client_new_from_uri (uri);
+      mongoc_client_set_error_api (client, 2);
       test_framework_set_ssl_opts (client);
       /* reconnect right away, if a fail point causes a disconnect */
       client->topology->min_heartbeat_frequency_msec = 0;
@@ -1090,7 +1095,8 @@ run_json_general_test (const json_test_config_t *config)
                                            &error);
 
       /* expect "operation was interrupted", ignore "command not found" */
-      if (!r && error.code != 11601 && error.code != 59) {
+      if (!r && (error.domain != MONGOC_ERROR_SERVER ||
+                 (error.code != 11601 && error.code != 59))) {
          MONGOC_WARNING ("Error in killAllSessions: %s", error.message);
       }
 
