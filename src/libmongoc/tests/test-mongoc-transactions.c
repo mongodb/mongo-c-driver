@@ -61,10 +61,13 @@ test_transactions_supported (void *ctx)
    db = mongoc_client_get_database (client, "transaction-tests");
 
    /* drop and create collection outside of transaction */
-   mongoc_database_write_command_with_opts (
-      db, tmp_bson ("{'drop': 'test'}"), NULL, NULL, NULL);
    collection = mongoc_database_create_collection (db, "test", NULL, &error);
-   ASSERT_OR_PRINT (collection, error);
+   if (!collection && error.domain == MONGOC_ERROR_SERVER && error.code == 48) {
+      /* already exists */
+      collection = mongoc_database_get_collection (db, "test");
+   } else {
+      ASSERT_OR_PRINT (collection, error);
+   }
 
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session, error);
@@ -97,6 +100,7 @@ test_transactions_supported (void *ctx)
    }
 
    mongoc_client_session_destroy (session);
+   mongoc_database_destroy (db);
    mongoc_client_destroy (client);
 }
 
