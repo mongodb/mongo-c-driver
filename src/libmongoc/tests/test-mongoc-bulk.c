@@ -4172,7 +4172,7 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
             error,
             MONGOC_ERROR_COMMAND,
             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-            "Collation is not supported by the selected server");
+            "The selected server does not support collation");
       } else {
          ASSERT_ERROR_CONTAINS (
             error,
@@ -4247,7 +4247,7 @@ _test_bulk_collation_multi (int w, int wire_version)
             error,
             MONGOC_ERROR_COMMAND,
             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-            "Collation is not supported by the selected server");
+            "The selected server does not support collation");
       } else {
          ASSERT_ERROR_CONTAINS (
             error,
