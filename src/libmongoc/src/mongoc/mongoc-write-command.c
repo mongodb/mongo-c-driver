@@ -836,6 +836,8 @@ _mongoc_write_command_execute (
    mongoc_client_session_t *cs,                 /* IN */
    mongoc_write_result_t *result)               /* OUT */
 {
+   mongoc_crud_opts_t crud = {0};
+
    ENTRY;
 
    BSON_ASSERT (command);
@@ -858,83 +860,17 @@ _mongoc_write_command_execute (
       EXIT;
    }
 
-   if (command->flags.has_collation) {
-      if (!mongoc_write_concern_is_acknowledged (write_concern)) {
-         result->failed = true;
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Cannot set collation for unacknowledged writes");
-         EXIT;
-      }
-      if (server_stream->sd->max_wire_version < WIRE_VERSION_COLLATION) {
-         bson_set_error (&result->error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                         "Collation is not supported by the selected server");
-         result->failed = true;
-         EXIT;
-      }
-   }
-   if (command->flags.bypass_document_validation !=
-       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
-      if (!mongoc_write_concern_is_acknowledged (write_concern)) {
-         result->failed = true;
-         bson_set_error (
-            &result->error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_COMMAND_INVALID_ARG,
-            "Cannot set bypassDocumentValidation for unacknowledged writes");
-         EXIT;
-      }
-   }
-   if (command->payload.len == 0) {
-      _empty_error (command, &result->error);
-      EXIT;
-   }
+   crud.client_session = cs;
+   crud.writeConcern = (mongoc_write_concern_t *) write_concern;
 
-   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
-      if (cs && !mongoc_write_concern_is_acknowledged (write_concern)) {
-         bson_set_error (
-            &result->error,
-            MONGOC_ERROR_COMMAND,
-            MONGOC_ERROR_COMMAND_INVALID_ARG,
-            "Cannot use client session with unacknowledged writes");
-         EXIT;
-      }
-      _mongoc_write_opmsg (command,
-                           client,
-                           server_stream,
-                           database,
-                           collection,
-                           write_concern,
-                           offset,
-                           cs,
-                           result,
-                           &result->error);
-   } else {
-      if (mongoc_write_concern_is_acknowledged (write_concern)) {
-         _mongoc_write_opquery (command,
-                                client,
-                                server_stream,
-                                database,
-                                collection,
-                                write_concern,
-                                offset,
-                                result,
-                                &result->error);
-      } else {
-         gLegacyWriteOps[command->type](command,
-                                        client,
-                                        server_stream,
-                                        database,
-                                        collection,
-                                        offset,
-                                        result,
-                                        &result->error);
-      }
-   }
-
+   _mongoc_write_command_execute_idl (command,
+                                      client,
+                                      server_stream,
+                                      database,
+                                      collection,
+                                      offset,
+                                      &crud,
+                                      result);
    EXIT;
 }
 
