@@ -50,6 +50,7 @@ test_transactions_supported (void *ctx)
    mongoc_client_session_t *session;
    mongoc_database_t *db;
    mongoc_collection_t *collection;
+   bson_t *majority = tmp_bson ("{'writeConcern': {'w': 'majority'}}");
    bson_t opts = BSON_INITIALIZER;
    bson_error_t error;
    bool r;
@@ -61,13 +62,11 @@ test_transactions_supported (void *ctx)
    db = mongoc_client_get_database (client, "transaction-tests");
 
    /* drop and create collection outside of transaction */
-   collection = mongoc_database_create_collection (db, "test", NULL, &error);
-   if (!collection && error.domain == MONGOC_ERROR_SERVER && error.code == 48) {
-      /* already exists */
-      collection = mongoc_database_get_collection (db, "test");
-   } else {
-      ASSERT_OR_PRINT (collection, error);
-   }
+   mongoc_database_write_command_with_opts (
+      db, tmp_bson ("{'drop': 'test'}"), majority, NULL, NULL);
+   collection =
+      mongoc_database_create_collection (db, "test", majority, &error);
+   ASSERT_OR_PRINT (collection, error);
 
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session, error);
