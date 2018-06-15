@@ -15,18 +15,6 @@ The MongoDB C driver supports matching a subset of the MongoDB query specificati
 
 Currently, basic numeric, string, subdocument, and array equality, ``$gt``, ``$gte``, ``$lt``, ``$lte``, ``$in``, ``$nin``, ``$ne``, ``$exists``, ``$type``, ``$and``, and ``$or`` are supported. As this is not the same implementation as the MongoDB server, some inconsistencies may occur. Please file a bug if you find such a case.
 
-The following example performs a basic query against a BSON document.
-
-.. literalinclude:: ../examples/example-matcher.c
-   :language: c
-   :caption: example-matcher.c
-
-The following example shows how to process a BSON stream from ``stdin`` and match it against a query. This can be useful if you need to perform simple matching against ``mongodump`` backups.
-
-.. literalinclude:: ../examples/filter-bsondump.c
-   :language: c
-   :caption: filter-bsondump.c
-
 To test this, perform a ``mongodump`` of a single collection and pipe it to the program.
 
 .. code-block:: none
