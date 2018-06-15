@@ -144,6 +144,8 @@ txn_finish (mongoc_client_session_t *session,
 
    BSON_APPEND_INT32 (&cmd, cmd_name, 1);
 
+   /* will be reinitialized by mongoc_client_write_command_with_opts */
+   bson_destroy (&reply_local);
    r = mongoc_client_write_command_with_opts (
       session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
 
