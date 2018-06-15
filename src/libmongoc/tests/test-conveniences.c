@@ -177,7 +177,7 @@ bson_lookup_value (const bson_t *b, const char *key, bson_value_t *value)
 
    bson_iter_init (&iter, b);
    BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
-   bson_value_copy (bson_iter_value (&iter), value);
+   bson_value_copy (bson_iter_value (&descendent), value);
 }
 
 

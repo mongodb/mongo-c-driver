@@ -712,6 +712,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-connection-uri.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-command-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-counters.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-crud.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cursor.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-database.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-error.c

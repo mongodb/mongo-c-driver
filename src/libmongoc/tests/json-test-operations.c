@@ -884,32 +884,66 @@ count (mongoc_collection_t *collection,
        const mongoc_read_prefs_t *read_prefs)
 {
    bson_t filter;
-   bson_t reply = BSON_INITIALIZER;
+   bson_t reply;
    bson_t opts = BSON_INITIALIZER;
    bson_error_t error;
-   int64_t r;
+   int64_t r = -1;
    bson_value_t value;
+   const char *name;
 
-   bson_lookup_doc (operation, "arguments.filter", &filter);
+   if (bson_has_field (operation, "arguments.filter")) {
+      bson_lookup_doc (operation, "arguments.filter", &filter);
+   }
+   if (bson_has_field (operation, "arguments.skip")) {
+      BSON_APPEND_INT64 (
+         &opts, "skip", bson_lookup_int32 (operation, "arguments.skip"));
+   }
+   if (bson_has_field (operation, "arguments.limit")) {
+      BSON_APPEND_INT64 (
+         &opts, "limit", bson_lookup_int32 (operation, "arguments.limit"));
+   }
+   if (bson_has_field (operation, "arguments.collation")) {
+      bson_t collation;
+      bson_lookup_doc (operation, "arguments.collation", &collation);
+      BSON_APPEND_DOCUMENT (&opts, "collation", &collation);
+   }
    append_session (session, &opts);
-   r = mongoc_collection_count_with_opts (
-      collection, MONGOC_QUERY_NONE, &filter, 0, 0, &opts, read_prefs, &error);
+
+   name = bson_lookup_utf8 (operation, "name");
+   if (!strcmp (name, "countDocuments")) {
+      r = mongoc_collection_count_documents (
+         collection, &filter, &opts, read_prefs, &reply, &error);
+   } else if (!strcmp (name, "estimatedDocumentCount")) {
+      r = mongoc_collection_estimated_document_count (
+         collection, &opts, read_prefs, &reply, &error);
+   } else if (!strcmp (name, "count")) {
+      /* deprecated old count function */
+      r = mongoc_collection_count_with_opts (collection,
+                                             MONGOC_QUERY_NONE,
+                                             &filter,
+                                             0,
+                                             0,
+                                             &opts,
+                                             read_prefs,
+                                             &error);
+      /* fake a reply for the test framework's sake */
+      bson_init (&reply);
+   } else {
+      test_error ("count() called with unrecognized operation name %s", name);
+   }
 
    if (r >= 0) {
       value.value_type = BSON_TYPE_INT64;
       value.value.v_int64 = r;
    } else {
-      /* fake a reply for the test framework's sake */
       value_init_from_doc (&value, &reply);
    }
-
    check_result (test, operation, r > -1, &value, &error);
 
    bson_value_destroy (&value);
    bson_destroy (&reply);
    bson_destroy (&opts);
 }
-
 
 static void
 distinct (mongoc_collection_t *collection,
@@ -1227,6 +1261,10 @@ json_test_operation (json_test_ctx_t *ctx,
    } else if (!strcmp (op_name, "insertMany")) {
       insert_many (collection, test, operation, session, wc);
    } else if (!strcmp (op_name, "count")) {
+      count (collection, test, operation, session, read_prefs);
+   } else if (!strcmp (op_name, "estimatedDocumentCount")) {
+      count (collection, test, operation, session, read_prefs);
+   } else if (!strcmp (op_name, "countDocuments")) {
       count (collection, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "distinct")) {
       distinct (collection, test, operation, session, read_prefs);
