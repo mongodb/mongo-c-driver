@@ -16,7 +16,7 @@ main (int argc, char *argv[])
 {
    int exit_code = EXIT_FAILURE;
 
-   mongoc_client_t *client;
+   mongoc_client_t *client = NULL;
    mongoc_database_t *database = NULL;
    mongoc_collection_t *collection = NULL;
    mongoc_client_session_t *session = NULL;

@@ -12,9 +12,9 @@ main (int argc, char *argv[])
 {
    int exit_code = EXIT_FAILURE;
 
-   mongoc_client_t *client;
+   mongoc_client_t *client = NULL;
    const char *uri_string = "mongodb://127.0.0.1/?appname=session-example";
-   mongoc_uri_t *uri;
+   mongoc_uri_t *uri = NULL;
    mongoc_client_session_t *client_session = NULL;
    mongoc_collection_t *collection = NULL;
    bson_error_t error;
