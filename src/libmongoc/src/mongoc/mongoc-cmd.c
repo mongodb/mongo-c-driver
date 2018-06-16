@@ -801,7 +801,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
       if (_mongoc_client_session_in_txn (cs)) {
          if (!IS_PREF_PRIMARY (cs->txn.opts.read_prefs) &&
-             parts->is_read_command) {
+             !parts->is_write_command) {
             bson_set_error (error,
                             MONGOC_ERROR_TRANSACTION,
                             MONGOC_ERROR_TRANSACTION_INVALID_STATE,

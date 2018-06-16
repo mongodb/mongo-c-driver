@@ -223,7 +223,8 @@ mongoc_cursor_t *
 _mongoc_cursor_new_with_opts (mongoc_client_t *client,
                               const char *db_and_collection,
                               const bson_t *opts,
-                              const mongoc_read_prefs_t *read_prefs,
+                              const mongoc_read_prefs_t *user_prefs,
+                              const mongoc_read_prefs_t *default_prefs,
                               const mongoc_read_concern_t *read_concern)
 {
    mongoc_cursor_t *cursor;
@@ -291,12 +292,38 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          opts, &cursor->opts, "serverId", "sessionId", NULL);
    }
 
-   if (cursor->explicit_session &&
-       _mongoc_client_session_in_txn (cursor->client_session)) {
+   if (_mongoc_client_session_in_txn (cursor->client_session)) {
+      if (!IS_PREF_PRIMARY (user_prefs)) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                         "Read preference in a transaction must be primary");
+         GOTO (finish);
+      }
+
+      if (user_prefs) {
+         bson_set_error (
+            &cursor->error,
+            MONGOC_ERROR_CURSOR,
+            MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+            "Cannot set read preferences after starting transaction");
+         GOTO (finish);
+      }
+
       cursor->read_prefs =
          mongoc_read_prefs_copy (cursor->client_session->txn.opts.read_prefs);
-   } else if (read_prefs) {
-      cursor->read_prefs = mongoc_read_prefs_copy (read_prefs);
+
+      if (bson_has_field (opts, "readConcern")) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_CURSOR,
+                         MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                         "Cannot set read concern after starting transaction");
+         GOTO (finish);
+      }
+   } else if (user_prefs) {
+      cursor->read_prefs = mongoc_read_prefs_copy (user_prefs);
+   } else if (default_prefs) {
+      cursor->read_prefs = mongoc_read_prefs_copy (default_prefs);
    } else {
       cursor->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
    }
@@ -329,7 +356,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       }
    }
 
-   (void) _mongoc_read_prefs_validate (read_prefs, &cursor->error);
+   (void) _mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error);
 
 finish:
    mongoc_counter_cursors_active_inc ();

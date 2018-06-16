@@ -86,13 +86,14 @@ _mongoc_cursor_find_new (mongoc_client_t *client,
                          const char *db_and_coll,
                          const bson_t *filter,
                          const bson_t *opts,
-                         const mongoc_read_prefs_t *read_prefs,
+                         const mongoc_read_prefs_t *user_prefs,
+                         const mongoc_read_prefs_t *default_prefs,
                          const mongoc_read_concern_t *read_concern)
 {
    mongoc_cursor_t *cursor;
    data_find_t *data = bson_malloc0 (sizeof (data_find_t));
    cursor = _mongoc_cursor_new_with_opts (
-      client, db_and_coll, opts, read_prefs, read_concern);
+      client, db_and_coll, opts, user_prefs, default_prefs, read_concern);
    _mongoc_cursor_check_and_copy_to (cursor, "filter", filter, &data->filter);
    cursor->impl.prime = _prime;
    cursor->impl.clone = _clone;

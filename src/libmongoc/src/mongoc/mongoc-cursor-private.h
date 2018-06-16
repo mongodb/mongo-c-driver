@@ -255,7 +255,8 @@ mongoc_cursor_t *
 _mongoc_cursor_new_with_opts (mongoc_client_t *client,
                               const char *db_and_collection,
                               const bson_t *opts,
-                              const mongoc_read_prefs_t *read_prefs,
+                              const mongoc_read_prefs_t *user_prefs,
+                              const mongoc_read_prefs_t *default_prefs,
                               const mongoc_read_concern_t *read_concern);
 void
 _mongoc_cursor_response_legacy_init (mongoc_cursor_response_legacy_t *response);
@@ -268,7 +269,8 @@ _mongoc_cursor_find_new (mongoc_client_t *client,
                          const char *db_and_coll,
                          const bson_t *filter,
                          const bson_t *opts,
-                         const mongoc_read_prefs_t *read_prefs,
+                         const mongoc_read_prefs_t *user_prefs,
+                         const mongoc_read_prefs_t *default_prefs,
                          const mongoc_read_concern_t *read_concern);
 
 mongoc_cursor_t *

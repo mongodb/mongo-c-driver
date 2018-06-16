@@ -222,6 +222,20 @@ convert_message_for_test (json_test_ctx_t *ctx,
        !bson_has_field (src, "new")) {
       bson_append_bool (dst, "new", 3, false);
    }
+
+   /* transaction tests expect "multi: false" and "upsert: false" explicitly;
+    * we don't send them. fix when path is like "updates.0", "updates.1", ... */
+   if (path && strstr (path, "updates.") == path) {
+      const char *suffix = strchr (path, '.') + 1;
+      if (isdigit (suffix[0])) {
+         if (!bson_has_field (src, "multi")) {
+            BSON_APPEND_BOOL (dst, "multi", false);
+         }
+         if (!bson_has_field (src, "upsert")) {
+            BSON_APPEND_BOOL (dst, "upsert", false);
+         }
+      }
+   }
 }
 
 /* test that an event's "host" field is set to a reasonable value */

@@ -673,8 +673,8 @@ test_kill_cursor_live (void)
    ASSERT_CMPINT (ctx.succeeded_count, ==, 1);
 
    b = bson_new ();
-   cursor =
-      _mongoc_cursor_find_new (client, collection->ns, b, NULL, NULL, NULL);
+   cursor = _mongoc_cursor_find_new (
+      client, collection->ns, b, NULL, NULL, NULL, NULL);
    /* override the typical priming, and immediately transition to an OPQUERY
     * find cursor. */
    cursor->impl.destroy (&cursor->impl);

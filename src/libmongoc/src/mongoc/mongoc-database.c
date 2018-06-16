@@ -212,6 +212,7 @@ mongoc_database_command_simple (mongoc_database_t *database,
                                             NULL /* opts */,
                                             MONGOC_QUERY_NONE,
                                             read_prefs,
+                                            NULL, /* user prefs */
                                             NULL /* read concern */,
                                             NULL /* write concern */,
                                             reply,
@@ -227,18 +228,18 @@ mongoc_database_read_command_with_opts (mongoc_database_t *database,
                                         bson_t *reply,
                                         bson_error_t *error)
 {
-   return _mongoc_client_command_with_opts (
-      database->client,
-      database->name,
-      command,
-      MONGOC_CMD_READ,
-      opts,
-      MONGOC_QUERY_NONE,
-      COALESCE (read_prefs, database->read_prefs),
-      database->read_concern,
-      database->write_concern,
-      reply,
-      error);
+   return _mongoc_client_command_with_opts (database->client,
+                                            database->name,
+                                            command,
+                                            MONGOC_CMD_READ,
+                                            opts,
+                                            MONGOC_QUERY_NONE,
+                                            read_prefs,
+                                            database->read_prefs,
+                                            database->read_concern,
+                                            database->write_concern,
+                                            reply,
+                                            error);
 }
 
 
@@ -255,6 +256,7 @@ mongoc_database_write_command_with_opts (mongoc_database_t *database,
                                             MONGOC_CMD_WRITE,
                                             opts,
                                             MONGOC_QUERY_NONE,
+                                            NULL, /* user prefs */
                                             database->read_prefs,
                                             database->read_concern,
                                             database->write_concern,
@@ -272,18 +274,18 @@ mongoc_database_read_write_command_with_opts (
    bson_t *reply,
    bson_error_t *error)
 {
-   return _mongoc_client_command_with_opts (
-      database->client,
-      database->name,
-      command,
-      MONGOC_CMD_RW,
-      opts,
-      MONGOC_QUERY_NONE,
-      COALESCE (read_prefs, database->read_prefs),
-      database->read_concern,
-      database->write_concern,
-      reply,
-      error);
+   return _mongoc_client_command_with_opts (database->client,
+                                            database->name,
+                                            command,
+                                            MONGOC_CMD_RW,
+                                            opts,
+                                            MONGOC_QUERY_NONE,
+                                            read_prefs,
+                                            database->read_prefs,
+                                            database->read_concern,
+                                            database->write_concern,
+                                            reply,
+                                            error);
 }
 
 
@@ -302,6 +304,7 @@ mongoc_database_command_with_opts (mongoc_database_t *database,
                                             opts,
                                             MONGOC_QUERY_NONE,
                                             read_prefs,
+                                            NULL, /* default prefs */
                                             database->read_concern,
                                             database->write_concern,
                                             reply,
@@ -354,6 +357,7 @@ mongoc_database_drop_with_opts (mongoc_database_t *database,
                                            MONGOC_CMD_WRITE,
                                            opts,
                                            MONGOC_QUERY_NONE,
+                                           NULL, /* user prefs */
                                            database->read_prefs,
                                            database->read_concern,
                                            database->write_concern,
@@ -949,6 +953,7 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                          MONGOC_CMD_WRITE,
                                          opts,
                                          MONGOC_QUERY_NONE,
+                                         NULL, /* user prefs */
                                          database->read_prefs,
                                          database->read_concern,
                                          database->write_concern,

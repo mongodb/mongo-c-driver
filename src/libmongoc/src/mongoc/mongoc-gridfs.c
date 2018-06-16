@@ -414,7 +414,8 @@ mongoc_gridfs_remove_by_filename (mongoc_gridfs_t *gridfs,
                                      gridfs->files->ns,
                                      &find_filter,
                                      &find_opts,
-                                     NULL /* read_prefs */,
+                                     NULL /* user_prefs */,
+                                     NULL /* default_prefs */,
                                      NULL /* read_concern */);
 
    BSON_ASSERT (cursor);

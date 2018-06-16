@@ -92,8 +92,8 @@ _mongoc_cursor_array_new (mongoc_client_t *client,
                           const bson_t *opts,
                           const char *field_name)
 {
-   mongoc_cursor_t *cursor =
-      _mongoc_cursor_new_with_opts (client, db_and_coll, opts, NULL, NULL);
+   mongoc_cursor_t *cursor = _mongoc_cursor_new_with_opts (
+      client, db_and_coll, opts, NULL, NULL, NULL);
    data_array_t *data = bson_malloc0 (sizeof (*data));
    bson_copy_to (cmd, &data->cmd);
    bson_init (&data->array);

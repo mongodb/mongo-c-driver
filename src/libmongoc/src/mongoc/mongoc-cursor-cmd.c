@@ -161,8 +161,12 @@ _mongoc_cursor_cmd_new (mongoc_client_t *client,
    mongoc_cursor_t *cursor;
    data_cmd_t *data = bson_malloc0 (sizeof (*data));
 
-   cursor = _mongoc_cursor_new_with_opts (
-      client, db_and_coll, opts, read_prefs, read_concern);
+   cursor = _mongoc_cursor_new_with_opts (client,
+                                          db_and_coll,
+                                          opts,
+                                          read_prefs /* user prefs */,
+                                          NULL /* default prefs */,
+                                          read_concern);
    _mongoc_cursor_response_legacy_init (&data->response_legacy);
    _mongoc_cursor_check_and_copy_to (cursor, "command", cmd, &data->cmd);
    bson_init (&data->response.reply);
