@@ -53,4 +53,4 @@ matrix:
     os: osx
 
 git:
-  depth: 1
+  depth: 20
