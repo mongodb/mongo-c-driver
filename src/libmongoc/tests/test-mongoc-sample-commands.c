@@ -2637,6 +2637,350 @@ test_example_change_stream (mongoc_database_t *db)
 
 
 static void
+test_sample_aggregation (mongoc_database_t *db)
+{
+   /* Start Aggregation Example 1 */
+   mongoc_collection_t *collection;
+   bson_t *pipeline;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+
+   collection = mongoc_database_get_collection (db, "sales");
+
+   pipeline = BCON_NEW ("pipeline", "[",
+                        "{",
+                        "$match", "{",
+                        "items.fruit", BCON_UTF8 ("banana"),
+                        "}",
+                        "}",
+                        "{",
+                        "$sort", "{",
+                        "date", BCON_INT32 (1),
+                        "}",
+                        "}",
+                        "]");
+
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+   bson_destroy (pipeline);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      /* Do something with each doc here */
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   /* End Aggregation Example 1 */
+
+   /* Start Aggregation Example 2 */
+   pipeline = BCON_NEW ("pipeline", "[",
+                        "{",
+                        "$unwind", BCON_UTF8 ("$items"),
+                        "}",
+                        "{",
+                        "$match", "{",
+                        "items.fruit", BCON_UTF8 ("banana"),
+                        "}",
+                        "}",
+                        "{",
+                        "$group", "{",
+                        "_id", "{",
+                        "day", "{",
+                        "$dayOfWeek", BCON_UTF8 ("$date"),
+                        "}",
+                        "}",
+                        "count", "{",
+                        "$sum", BCON_UTF8 ("$items.quantity"),
+                        "}",
+                        "}",
+                        "}",
+                        "{",
+                        "$project", "{",
+                        "dayOfWeek", BCON_UTF8 ("$_id.day"),
+                        "numberSold", BCON_UTF8 ("$count"),
+                        "_id", BCON_INT32 (0),
+                        "}",
+                        "}",
+                        "{",
+                        "$sort", "{",
+                        "numberSold", BCON_INT32 (1),
+                        "}",
+                        "}",
+                        "]");
+
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+   bson_destroy (pipeline);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      /* Do something with each doc here */
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   /* End Aggregation Example 2 */
+
+   /* Start Aggregation Example 3 */
+   pipeline = BCON_NEW ("pipeline", "[",
+                        "{",
+                        "$unwind", BCON_UTF8 ("$items"),
+                        "}",
+                        "{",
+                        "$group", "{",
+                        "_id", "{",
+                        "day", "{",
+                        "$dayOfWeek", BCON_UTF8 ("$date"),
+                        "}",
+                        "}",
+                        "items_sold", "{",
+                        "$sum", BCON_UTF8 ("$items.quantity"),
+                        "}",
+                        "revenue", "{",
+                        "$sum", "{",
+                        "$multiply", "[",
+                        BCON_UTF8 ("$items.quantity"),
+                        BCON_UTF8 ("$items.price"),
+                        "]",
+                        "}",
+                        "}",
+                        "}",
+                        "}",
+                        "{",
+                        "$project", "{",
+                        "day", BCON_UTF8 ("$_id.day"),
+                        "revenue", BCON_INT32 (1),
+                        "items_sold", BCON_INT32 (1),
+                        "discount", "{",
+                        "$cond", "{",
+                        "if", "{",
+                        "$lte", "[",
+                        "$revenue",
+                        BCON_INT32 (250),
+                        "]",
+                        "}",
+                        "then", BCON_INT32 (25),
+                        "else", BCON_INT32 (0),
+                        "}",
+                        "}",
+                        "}",
+                        "}",
+                        "]");
+
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+   bson_destroy (pipeline);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      /* Do something with each doc here */
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   /* End Aggregation Example 3 */
+
+   mongoc_collection_destroy (collection);
+
+
+   /* Need MongoDB 3.6 to use unrelated subqueries */
+   if(test_framework_skip_if_max_wire_version_less_than_6 ()){
+
+   /* Start Aggregation Example 4 */
+   collection = mongoc_database_get_collection (db, "air_alliances");
+   pipeline = BCON_NEW ("pipeline", "[",
+                        "{",
+                        "$lookup", "{",
+                        "from", BCON_UTF8 ("air_airlines"),
+                        "let", "{",
+                        "constituents", BCON_UTF8 ("$airlines"),
+                        "}",
+                        "pipeline", "[",
+                        "{",
+                        "$match", "{",
+                        "$expr", "{",
+                        "$in", "[",
+                        "$name",
+                        BCON_UTF8 ("$$constituents"),
+                        "]",
+                        "}",
+                        "}",
+                        "}",
+                        "]",
+                        "as", BCON_UTF8 ("airlines"),
+                        "}",
+                        "}",
+                        "{",
+                        "$project", "{",
+                        "_id", BCON_INT32 (0),
+                        "name", BCON_INT32 (1),
+                        "airlines", "{",
+                        "$filter", "{",
+                        "input", BCON_UTF8 ("$airlines"),
+                        "as", BCON_UTF8 ("airline"),
+                        "cond", "{",
+                        "$eq", "[",
+                        BCON_UTF8 ("$$airline.country"),
+                        BCON_UTF8 ("Canada"),
+                        "]",
+                        "}",
+                        "}",
+                        "}",
+                        "}",
+                        "}",
+                        "]");
+
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, pipeline, NULL, NULL);
+   bson_destroy (pipeline);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+      /* Do something with each doc here */
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   /* End Aggregation Example 4 */
+
+   }
+
+   ASSERT_NO_CAPTURED_LOGS ("sample aggregation examples");
+}
+
+static void
+test_sample_run_command (mongoc_database_t *db)
+{
+   /* Start runCommand Example 1 */
+   bson_t *run_command;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   run_command = BCON_NEW ("buildInfo", BCON_INT32 (1));
+
+   r = mongoc_database_write_command_with_opts (
+      db, run_command, NULL /* opts */, &reply, &error);
+   bson_destroy (run_command);
+
+   if (!r) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   /* Do something with reply here */
+
+   bson_destroy (&reply);
+   /* End runCommand Example 1 */
+
+   /* Start runCommand Example 2 */
+   run_command = BCON_NEW ("collStats", BCON_UTF8 ("restaurants"));
+
+   r = mongoc_database_write_command_with_opts (
+      db, run_command, NULL /* opts */, &reply, &error);
+   bson_destroy (run_command);
+
+   if (!r) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   /* Do something with reply here */
+
+   bson_destroy (&reply);
+   /* End runCommand Example 2 */
+
+   ASSERT_NO_CAPTURED_LOGS ("sample runCommand examples");
+}
+
+static void
+test_sample_indexes (mongoc_database_t *db)
+{
+   /* Start Index Example 1 */
+   const char *collection_name = "records";
+   char *index_name;
+   bson_t *create_indexes;
+   bson_t reply;
+   bson_t keys;
+   bson_error_t error;
+   bool r;
+
+   bson_init (&keys);
+   BSON_APPEND_INT32 (&keys, "score", 1);
+   index_name = mongoc_collection_keys_to_index_string (&keys);
+
+   create_indexes = BCON_NEW ("createIndexes", BCON_UTF8 (collection_name),
+                              "indexes", "[",
+                              "{",
+                              "key", BCON_DOCUMENT (&keys),
+                              "name", BCON_UTF8 (index_name),
+                              "}",
+                              "]");
+
+   r = mongoc_database_write_command_with_opts (
+      db, create_indexes, NULL /* opts */, &reply, &error);
+   bson_destroy (create_indexes);
+   bson_free(index_name);
+
+   if (!r) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   /* Do something with reply here */
+
+   bson_destroy (&reply);
+   bson_destroy (&keys);
+   /* End Index Example 1 */
+
+   /* Start Index Example 2 */
+   collection_name = "restaurants";
+
+   bson_init (&keys);
+   BSON_APPEND_INT32 (&keys, "cuisine", 1);
+   BSON_APPEND_INT32 (&keys, "name", 1);
+   index_name = mongoc_collection_keys_to_index_string (&keys);
+   create_indexes = BCON_NEW ("createIndexes", BCON_UTF8 (collection_name),
+                              "indexes", "[",
+                              "{",
+                              "key", BCON_DOCUMENT (&keys),
+                              "partialFilterExpression", "{",
+                              "rating", "{",
+                              "$gt", BCON_INT32 (5),
+                              "}",
+                              "}",
+                              "name", BCON_UTF8 (index_name),
+                              "}",
+                              "]");
+
+   r = mongoc_database_write_command_with_opts (
+      db, create_indexes, NULL /* opts */, &reply, &error);
+   bson_destroy (create_indexes);
+   bson_free(index_name);
+
+   if (!r) {
+      MONGOC_ERROR ("%s\n", error.message);
+   }
+
+   /* Do something with reply here */
+
+   bson_destroy (&reply);
+   bson_destroy (&keys);
+   /* End Index Example 2 */
+
+   ASSERT_NO_CAPTURED_LOGS ("sample index examples");
+}
+
+
+static void
 test_sample_commands (void)
 {
    mongoc_client_t *client;
@@ -2704,6 +3048,9 @@ test_sample_commands (void)
    test_sample_command (test_example_58, 58, db, collection, false);
    test_sample_command (test_example_56, 56, db, collection, true);
    test_sample_change_stream_command (test_example_change_stream, db);
+   test_sample_aggregation (db);
+   test_sample_indexes (db);
+   test_sample_run_command (db);
 
    mongoc_collection_drop (collection, NULL);
 
