@@ -73,7 +73,7 @@ For complex internal functions, comment above the function definition with
 a block comment like the following:
 
 ```
-/* --------------------------------------------------------------------------
+/*--------------------------------------------------------------------------
  *
  * mongoc_cmd_parts_append_read_write --
  *
