@@ -695,17 +695,13 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
 
    BSON_ASSERT (bulk);
 
-   if (reply) {
-      bson_init (reply);
-   }
-
    if (!bulk->client) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "mongoc_bulk_operation_execute() requires a client "
                       "and one has not been set.");
-      RETURN (false);
+      GOTO (err);
    }
    cluster = &bulk->client->cluster;
 
@@ -722,14 +718,14 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "mongoc_bulk_operation_execute() requires a database "
                       "and one has not been set.");
-      RETURN (false);
+      GOTO (err);
    } else if (!bulk->collection) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "mongoc_bulk_operation_execute() requires a collection "
                       "and one has not been set.");
-      RETURN (false);
+      GOTO (err);
    }
 
    /* error stored by functions like mongoc_bulk_operation_insert that
@@ -739,7 +735,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
          memcpy (error, &bulk->result.error, sizeof (bson_error_t));
       }
 
-      RETURN (false);
+      GOTO (err);
    }
 
    if (!bulk->commands.len) {
@@ -747,20 +743,29 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
                       "Cannot do an empty bulk write");
-      RETURN (false);
+      GOTO (err);
    }
 
    for (i = 0; i < bulk->commands.len; i++) {
       if (bulk->server_id) {
-         server_stream = mongoc_cluster_stream_for_server (
-            cluster, bulk->server_id, true /* reconnect_ok */, error);
+         server_stream =
+            mongoc_cluster_stream_for_server (cluster,
+                                              bulk->server_id,
+                                              true /* reconnect_ok */,
+                                              bulk->session,
+                                              reply,
+                                              error);
       } else {
-         server_stream = mongoc_cluster_stream_for_writes (cluster, error);
+         server_stream = mongoc_cluster_stream_for_writes (
+            cluster, bulk->session, reply, error);
       }
 
       if (!server_stream) {
+         /* stream_for_server and stream_for_writes initialize reply on error */
          RETURN (false);
       }
+
+      _mongoc_bson_init_if_set (reply);
 
       command =
          &_mongoc_array_index (&bulk->commands, mongoc_write_command_t, i);
@@ -796,6 +801,10 @@ cleanup:
                                        error);
 
    RETURN (ret ? bulk->server_id : 0);
+
+err:
+   _mongoc_bson_init_if_set (reply);
+   RETURN (false);
 }
 
 void

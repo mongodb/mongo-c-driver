@@ -398,8 +398,12 @@ _check_error (mongoc_client_t *client,
                              "socket error or timeout");
 
       /* socket was discarded */
-      ASSERT (!mongoc_cluster_stream_for_server (
-         &client->cluster, server_id, false /* don't reconnect */, &error));
+      ASSERT (!mongoc_cluster_stream_for_server (&client->cluster,
+                                                 server_id,
+                                                 false /* don't reconnect */,
+                                                 NULL,
+                                                 NULL,
+                                                 &error));
 
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,

@@ -127,6 +127,13 @@ mongoc_parse_port (uint16_t *port, const char *str);
 void
 _mongoc_bson_array_add_label (bson_t *bson, const char *label);
 
+void
+_mongoc_bson_array_copy_labels_to (const bson_t *reply, bson_t *dst);
+
+void
+_mongoc_bson_init_with_transient_txn_error (const mongoc_client_session_t *cs,
+                                            bson_t *reply);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_UTIL_PRIVATE_H */

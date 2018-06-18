@@ -61,8 +61,8 @@ test_topology_client_creation (void)
    BSON_ASSERT (topology_a->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF);
 
    /* ensure that we are sharing streams with the client */
-   server_stream =
-      mongoc_cluster_stream_for_reads (&client_a->cluster, NULL, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_reads (
+      &client_a->cluster, NULL, NULL, NULL, &error);
 
    ASSERT_OR_PRINT (server_stream, error);
    node = mongoc_topology_scanner_get_node (client_a->topology->scanner,
@@ -315,8 +315,8 @@ _test_topology_invalidate_server (bool pooled)
    td = &client->topology->description;
 
    /* call explicitly */
-   server_stream =
-      mongoc_cluster_stream_for_reads (&client->cluster, NULL, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_reads (
+      &client->cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    sd = server_stream->sd;
    id = server_stream->sd->id;
@@ -347,7 +347,7 @@ _test_topology_invalidate_server (bool pooled)
    mongoc_topology_scanner_add (
       client->topology->scanner, &fake_host_list, fake_id);
    BSON_ASSERT (!mongoc_cluster_stream_for_server (
-      &client->cluster, fake_id, true, &error));
+      &client->cluster, fake_id, true, NULL, NULL, &error));
    mongoc_mutex_lock (&client->topology->mutex);
    sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, fake_id);
    if (!pooled && test_framework_is_replset ()) {
@@ -409,8 +409,8 @@ test_invalid_cluster_node (void *ctx)
    _mongoc_usleep (100 * 1000);
 
    /* load stream into cluster */
-   server_stream =
-      mongoc_cluster_stream_for_reads (&client->cluster, NULL, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_reads (
+      &client->cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
    mongoc_server_stream_cleanup (server_stream);
@@ -433,8 +433,8 @@ test_invalid_cluster_node (void *ctx)
    mongoc_mutex_unlock (&client->topology->mutex);
 
    /* cluster discards node and creates new one */
-   server_stream =
-      mongoc_cluster_stream_for_server (&client->cluster, id, true, &error);
+   server_stream = mongoc_cluster_stream_for_server (
+      &client->cluster, id, true, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (cluster->nodes, id);
    ASSERT_CMPINT64 (cluster_node->timestamp, >, scanner_node_ts);
@@ -478,8 +478,8 @@ test_max_wire_version_race_condition (void *ctx)
    client = mongoc_client_pool_pop (pool);
 
    /* load stream into cluster */
-   server_stream =
-      mongoc_cluster_stream_for_reads (&client->cluster, NULL, NULL, &error);
+   server_stream = mongoc_cluster_stream_for_reads (
+      &client->cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
    mongoc_server_stream_cleanup (server_stream);
@@ -495,8 +495,8 @@ test_max_wire_version_race_condition (void *ctx)
    mongoc_server_description_reset (sd);
 
    /* new stream, ensure that we can still auth with cached wire version */
-   server_stream =
-      mongoc_cluster_stream_for_server (&client->cluster, id, true, &error);
+   server_stream = mongoc_cluster_stream_for_server (
+      &client->cluster, id, true, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    BSON_ASSERT (server_stream);
 

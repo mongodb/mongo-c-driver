@@ -53,7 +53,7 @@ _mongoc_collection_write_command_execute (
    ENTRY;
 
    server_stream = mongoc_cluster_stream_for_writes (
-      &collection->client->cluster, &result->error);
+      &collection->client->cluster, cs, NULL, &result->error);
 
    if (!server_stream) {
       /* result->error has been filled out */
@@ -84,14 +84,20 @@ _mongoc_collection_write_command_execute_idl (
    mongoc_write_result_t *result)
 {
    mongoc_server_stream_t *server_stream;
+   bson_t reply;
 
    ENTRY;
 
-   server_stream = mongoc_cluster_stream_for_writes (
-      &collection->client->cluster, &result->error);
+   server_stream =
+      mongoc_cluster_stream_for_writes (&collection->client->cluster,
+                                        crud->client_session,
+                                        &reply,
+                                        &result->error);
 
    if (!server_stream) {
-      /* result->error has been filled out */
+      /* result->error and reply have been filled out */
+      _mongoc_bson_array_copy_labels_to (&reply, &result->errorLabels);
+      bson_destroy (&reply);
       EXIT;
    }
 
@@ -416,29 +422,14 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    }
 
    if (server_id) {
-      /* server id isn't enough. ensure we're connected & know wire version */
-      server_stream =
-         mongoc_cluster_stream_for_server (&collection->client->cluster,
-                                           cursor->server_id,
-                                           true /* reconnect ok */,
-                                           &cursor->error);
-
-      if (!server_stream) {
-         GOTO (done);
-      }
-   } else {
-      server_stream =
-         mongoc_cluster_stream_for_reads (&collection->client->cluster,
-                                          cursor->read_prefs,
-                                          cursor->client_session,
-                                          &cursor->error);
-
-      if (!server_stream) {
-         GOTO (done);
-      }
-
       /* don't use mongoc_cursor_set_hint, don't want special slaveok logic */
-      cursor->server_id = server_stream->sd->id;
+      cursor->server_id = server_id;
+   }
+
+   /* server id isn't enough. ensure we're connected & know wire version */
+   server_stream = _mongoc_cursor_fetch_stream (cursor);
+   if (!server_stream) {
+      GOTO (done);
    }
 
    if (!read_prefs && !server_id) {
@@ -1135,15 +1126,15 @@ mongoc_collection_count_documents (mongoc_collection_t *coll,
       coll, &aggregate_cmd, read_prefs, &aggregate_opts, &cmd_reply, error);
    bson_destroy (&aggregate_cmd);
    bson_destroy (&aggregate_opts);
+   if (reply) {
+      bson_copy_to (&cmd_reply, reply);
+   }
+
    if (!ret) {
-      _mongoc_bson_init_if_set (reply);
       bson_destroy (&cmd_reply);
       GOTO (done);
    }
 
-   if (reply) {
-      bson_copy_to (&cmd_reply, reply);
-   }
    /* steals reply */
    cursor = mongoc_cursor_new_from_command_reply_with_opts (
       coll->client, &cmd_reply, NULL);
@@ -1501,10 +1492,11 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
    bson_append_document_end (&ar, &doc);
    bson_append_array_end (&cmd, &ar);
 
-   server_stream =
-      mongoc_cluster_stream_for_writes (&collection->client->cluster, error);
+   server_stream = mongoc_cluster_stream_for_writes (
+      &collection->client->cluster, parsed.client_session, reply, error);
 
    if (!server_stream) {
+      reply_initialized = true;
       GOTO (done);
    }
 
@@ -2094,9 +2086,14 @@ _mongoc_collection_update_or_replace (
    }
 
    server_stream =
-      mongoc_cluster_stream_for_writes (&collection->client->cluster, error);
+      mongoc_cluster_stream_for_writes (&collection->client->cluster,
+                                        update_opts->crud.client_session,
+                                        reply,
+                                        error);
 
    if (!server_stream) {
+      /* mongoc_cluster_stream_for_writes inits reply on error */
+      reply_initialized = true;
       GOTO (done);
    }
 
@@ -3178,6 +3175,7 @@ mongoc_collection_find_and_modify_with_opts (
    bson_error_t *error)
 {
    mongoc_cluster_t *cluster;
+   mongoc_client_session_t *cs = NULL;
    mongoc_cmd_parts_t parts;
    bool is_retryable;
    bson_iter_t iter;
@@ -3196,7 +3194,6 @@ mongoc_collection_find_and_modify_with_opts (
    BSON_ASSERT (query);
 
    reply_ptr = reply ? reply : &reply_local;
-   bson_init (reply_ptr);
    cluster = &collection->client->cluster;
 
    mongoc_cmd_parts_init (
@@ -3204,11 +3201,25 @@ mongoc_collection_find_and_modify_with_opts (
    parts.is_read_command = true;
    parts.is_write_command = true;
 
-   server_stream = mongoc_cluster_stream_for_writes (cluster, error);
+   /* we need a session to fetch a stream to call cmd_parts_append_opts
+    * below, which parses the session from opts->extra *again*
+    */
+   if (bson_iter_init_find (&iter, &opts->extra, "sessionId")) {
+      if (!_mongoc_client_session_from_iter (
+             collection->client, &iter, &cs, error)) {
+         bson_init (reply_ptr);
+         GOTO (done);
+      }
+   }
+
+   server_stream =
+      mongoc_cluster_stream_for_writes (cluster, cs, reply_ptr, error);
+
    if (!server_stream) {
       GOTO (done);
    }
 
+   bson_init (reply_ptr);
    name = mongoc_collection_get_name (collection);
    BSON_APPEND_UTF8 (&command, "findAndModify", name);
    BSON_APPEND_DOCUMENT (&command, "query", query);
@@ -3320,8 +3331,8 @@ retry:
 
       /* each write command may be retried at most once */
       is_retryable = false;
-      retry_server_stream =
-         mongoc_cluster_stream_for_writes (cluster, &ignored_error);
+      retry_server_stream = mongoc_cluster_stream_for_writes (
+         cluster, parts.assembled.session, NULL /* reply */, &ignored_error);
 
       if (retry_server_stream &&
           retry_server_stream->sd->max_wire_version >=

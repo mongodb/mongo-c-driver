@@ -602,7 +602,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
             }
 
             retry_server_stream = mongoc_cluster_stream_for_writes (
-               &client->cluster, &ignored_error);
+               &client->cluster, cs, NULL, &ignored_error);
 
             if (retry_server_stream &&
                 retry_server_stream->sd->max_wire_version >=
@@ -1137,7 +1137,6 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
    bson_iter_t ar;
    int32_t n_upserted = 0;
    int32_t affected = 0;
-   bson_iter_t label;
 
    ENTRY;
 
@@ -1237,15 +1236,7 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
 
    /* inefficient if there are ever large numbers: for each label in each err,
     * we linear-search result->errorLabels to see if it's included yet */
-   if (bson_iter_init_find (&iter, reply, "errorLabels") &&
-       bson_iter_recurse (&iter, &label)) {
-      while (bson_iter_next (&label)) {
-         if (BSON_ITER_HOLDS_UTF8 (&label)) {
-            _mongoc_bson_array_add_label (&result->errorLabels,
-                                          bson_iter_utf8 (&label, NULL));
-         }
-      }
-   }
+   _mongoc_bson_array_copy_labels_to (reply, &result->errorLabels);
 
    EXIT;
 }

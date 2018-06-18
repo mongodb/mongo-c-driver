@@ -1730,6 +1730,8 @@ mongoc_server_stream_t *
 _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                    uint32_t server_id,
                                    bool reconnect_ok,
+                                   const mongoc_client_session_t *cs,
+                                   bson_t *reply,
                                    bson_error_t *error /* OUT */)
 {
    mongoc_topology_t *topology;
@@ -1762,6 +1764,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
        * error was filled by fetch_stream_single/pooled, pass it to disconnect()
        */
       mongoc_cluster_disconnect_node (cluster, server_id, true, err_ptr);
+      _mongoc_bson_init_with_transient_txn_error (cs, reply);
    }
 
    RETURN (server_stream);
@@ -1783,7 +1786,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
  * Side effects:
  *       May add a node or reconnect one, if @reconnect_ok.
  *       Authenticates the stream if needed.
- *       May set @error.
+ *       Sets @error and initializes @reply on error.
  *
  *--------------------------------------------------------------------------
  */
@@ -1792,6 +1795,8 @@ mongoc_server_stream_t *
 mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                   uint32_t server_id,
                                   bool reconnect_ok,
+                                  const mongoc_client_session_t *cs,
+                                  bson_t *reply,
                                   bson_error_t *error)
 {
    mongoc_server_stream_t *server_stream = NULL;
@@ -1807,7 +1812,7 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
    }
 
    server_stream = _mongoc_cluster_stream_for_server (
-      cluster, server_id, reconnect_ok, error);
+      cluster, server_id, reconnect_ok, cs, reply, error);
 
    if (!server_stream) {
       /* failed */
@@ -2077,8 +2082,8 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
  *       mongoc_server_stream_cleanup, or NULL on failure (sets @error)
  *
  * Side effects:
- *       May set @error.
- *       May add new nodes to @cluster->nodes.
+ *       May add or disconnect nodes in @cluster->nodes.
+ *       Sets @error and initializes @reply on error.
  *
  *--------------------------------------------------------------------------
  */
@@ -2087,6 +2092,8 @@ static mongoc_server_stream_t *
 _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
                                    mongoc_ss_optype_t optype,
                                    const mongoc_read_prefs_t *read_prefs,
+                                   const mongoc_client_session_t *cs,
+                                   bson_t *reply,
                                    bson_error_t *error)
 {
    mongoc_server_stream_t *server_stream;
@@ -2101,6 +2108,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
       mongoc_topology_select_server_id (topology, optype, read_prefs, error);
 
    if (!server_id) {
+      _mongoc_bson_init_with_transient_txn_error (cs, reply);
       RETURN (NULL);
    }
 
@@ -2110,13 +2118,14 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
          mongoc_topology_select_server_id (topology, optype, read_prefs, error);
 
       if (!server_id) {
+         _mongoc_bson_init_with_transient_txn_error (cs, reply);
          RETURN (NULL);
       }
    }
 
    /* connect or reconnect to server if necessary */
    server_stream = _mongoc_cluster_stream_for_server (
-      cluster, server_id, true /* reconnect_ok */, error);
+      cluster, server_id, true /* reconnect_ok */, cs, reply, error);
 
    RETURN (server_stream);
 }
@@ -2134,7 +2143,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
  *       mongoc_server_stream_cleanup, or NULL on failure (sets @error)
  *
  * Side effects:
- *       May set @error.
+ *       Sets @error and initializes @reply on error.
  *       May add new nodes to @cluster->nodes.
  *
  *--------------------------------------------------------------------------
@@ -2144,6 +2153,7 @@ mongoc_server_stream_t *
 mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
                                  const mongoc_client_session_t *cs,
+                                 bson_t *reply,
                                  bson_error_t *error)
 {
    const mongoc_read_prefs_t *prefs_override = read_prefs;
@@ -2153,7 +2163,7 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
    }
 
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_READ, prefs_override, error);
+      cluster, MONGOC_SS_READ, prefs_override, cs, reply, error);
 }
 
 /*
@@ -2168,7 +2178,7 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
  *       mongoc_server_stream_cleanup, or NULL on failure (sets @error)
  *
  * Side effects:
- *       May set @error.
+ *       Sets @error and initializes @reply on error.
  *       May add new nodes to @cluster->nodes.
  *
  *--------------------------------------------------------------------------
@@ -2176,10 +2186,12 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
 
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
+                                  const mongoc_client_session_t *cs,
+                                  bson_t *reply,
                                   bson_error_t *error)
 {
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_WRITE, NULL, error);
+      cluster, MONGOC_SS_WRITE, NULL, cs, reply, error);
 }
 
 static bool

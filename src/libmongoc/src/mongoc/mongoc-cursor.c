@@ -616,6 +616,7 @@ mongoc_server_stream_t *
 _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
 {
    mongoc_server_stream_t *server_stream;
+   bson_t reply;
 
    ENTRY;
 
@@ -624,16 +625,25 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
          mongoc_cluster_stream_for_server (&cursor->client->cluster,
                                            cursor->server_id,
                                            true /* reconnect_ok */,
+                                           cursor->client_session,
+                                           &reply,
                                            &cursor->error);
    } else {
       server_stream = mongoc_cluster_stream_for_reads (&cursor->client->cluster,
                                                        cursor->read_prefs,
                                                        cursor->client_session,
+                                                       &reply,
                                                        &cursor->error);
 
       if (server_stream) {
          cursor->server_id = server_stream->sd->id;
       }
+   }
+
+   if (!server_stream) {
+      bson_destroy (&cursor->error_doc);
+      bson_copy_to (&reply, &cursor->error_doc);
+      bson_destroy (&reply);
    }
 
    RETURN (server_stream);

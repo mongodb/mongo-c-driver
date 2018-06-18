@@ -22,6 +22,7 @@
 
 #include "mongoc-util-private.h"
 #include "mongoc-client.h"
+#include "mongoc-client-session-private.h"
 #include "mongoc-trace-private.h"
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =
@@ -416,7 +417,7 @@ mongoc_parse_port (uint16_t *port, const char *str)
 }
 
 
-/* --------------------------------------------------------------------------
+/*--------------------------------------------------------------------------
  *
  * _mongoc_bson_array_add_label --
  *
@@ -449,4 +450,73 @@ _mongoc_bson_array_add_label (bson_t *bson, const char *label)
 
    bson_uint32_to_string (i, &key, buf, sizeof buf);
    BSON_APPEND_UTF8 (bson, key, label);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * _mongoc_bson_array_copy_labels_to --
+ *
+ *       Copy error labels like "TransientTransactionError" from a server
+ *       reply to a BSON array iff the array does not already contain it.
+ *
+ * Side effects:
+ *       Aborts if @dst is invalid or contains non-string elements.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_bson_array_copy_labels_to (const bson_t *reply, bson_t *dst)
+{
+   bson_iter_t iter;
+   bson_iter_t label;
+
+   if (bson_iter_init_find (&iter, reply, "errorLabels")) {
+      BSON_ASSERT (bson_iter_recurse (&iter, &label));
+      while (bson_iter_next (&label)) {
+         if (BSON_ITER_HOLDS_UTF8 (&label)) {
+            _mongoc_bson_array_add_label (dst, bson_iter_utf8 (&label, NULL));
+         }
+      }
+   }
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * _mongoc_bson_init_with_transient_txn_error --
+ *
+ *       If @reply is not NULL, initialize it. If @cs is not NULL and in a
+ *       transaction, add errorLabels: ["TransientTransactionError"] to @cs.
+ *
+ *       Transactions Spec: TransientTransactionError includes "server
+ *       selection error encountered running any command besides
+ *       commitTransaction in a transaction. ...in the case of network errors
+ *       or server selection errors where the client receives no server reply,
+ *       the client adds the label."
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_bson_init_with_transient_txn_error (const mongoc_client_session_t *cs,
+                                            bson_t *reply)
+{
+   bson_t labels;
+
+   if (!reply) {
+      return;
+   }
+
+   bson_init (reply);
+
+   if (_mongoc_client_session_in_txn (cs)) {
+      BSON_APPEND_ARRAY_BEGIN (reply, "errorLabels", &labels);
+      BSON_APPEND_UTF8 (&labels, "0", TRANSIENT_TXN_ERR);
+      bson_append_array_end (reply, &labels);
+   }
 }

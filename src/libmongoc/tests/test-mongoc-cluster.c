@@ -24,7 +24,7 @@ server_id_for_reads (mongoc_cluster_t *cluster)
    uint32_t id;
 
    server_stream =
-      mongoc_cluster_stream_for_reads (cluster, NULL, NULL, &error);
+      mongoc_cluster_stream_for_reads (cluster, NULL, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
 
@@ -1085,7 +1085,8 @@ future_command_private (mongoc_client_t *client)
    bson_error_t error;
    mongoc_server_stream_t *server_stream;
 
-   server_stream = mongoc_cluster_stream_for_writes (&client->cluster, &error);
+   server_stream =
+      mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
 
    mongoc_cmd_parts_init (
