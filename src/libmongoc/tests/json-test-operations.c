@@ -887,7 +887,7 @@ count (mongoc_collection_t *collection,
    bson_t reply;
    bson_t opts = BSON_INITIALIZER;
    bson_error_t error;
-   int64_t r = -1;
+   int64_t r;
    bson_value_t value;
    const char *name;
 
@@ -930,6 +930,7 @@ count (mongoc_collection_t *collection,
       bson_init (&reply);
    } else {
       test_error ("count() called with unrecognized operation name %s", name);
+      return;
    }
 
    if (r >= 0) {
