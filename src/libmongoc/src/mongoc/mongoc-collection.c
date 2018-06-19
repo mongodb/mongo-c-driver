@@ -3437,5 +3437,5 @@ mongoc_collection_watch (const mongoc_collection_t *coll,
                          const bson_t *pipeline,
                          const bson_t *opts)
 {
-   return _mongoc_change_stream_new (coll, pipeline, opts);
+   return _mongoc_change_stream_new_from_collection (coll, pipeline, opts);
 }

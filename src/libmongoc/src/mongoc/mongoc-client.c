@@ -62,6 +62,7 @@
 #include "mongoc-ssl-private.h"
 #include "mongoc-cmd-private.h"
 #include "mongoc-opts-private.h"
+#include "mongoc-change-stream-private.h"
 
 #endif
 
@@ -2794,4 +2795,12 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
       bson_destroy (&cmd);
       mongoc_server_stream_cleanup (stream);
    }
+}
+
+mongoc_change_stream_t *
+mongoc_client_watch (mongoc_client_t *client,
+                     const bson_t *pipeline,
+                     const bson_t *opts)
+{
+   return _mongoc_change_stream_new_from_client (client, pipeline, opts);
 }

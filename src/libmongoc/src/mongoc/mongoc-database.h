@@ -147,6 +147,10 @@ mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
                                                 bson_error_t *error);
 MONGOC_EXPORT (mongoc_collection_t *)
 mongoc_database_get_collection (mongoc_database_t *database, const char *name);
+MONGOC_EXPORT (mongoc_change_stream_t *)
+mongoc_database_watch (const mongoc_database_t *db,
+                       const bson_t *pipeline,
+                       const bson_t *opts);
 
 BSON_END_DECLS
 

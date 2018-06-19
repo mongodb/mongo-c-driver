@@ -1,7 +1,7 @@
-:man_page: mongoc_collection_watch
+:man_page: mongoc_client_watch
 
-mongoc_collection_watch()
-=========================
+mongoc_client_watch()
+=====================
 
 Synopsis
 --------
@@ -9,14 +9,14 @@ Synopsis
 .. code-block:: c
 
   mongoc_change_stream_t*
-  mongoc_collection_watch (const mongoc_collection_t *coll,
-                           const bson_t *pipeline,
-                           const bson_t *opts);
+  mongoc_client_watch (mongoc_client_t *client,
+                       const bson_t *pipeline,
+                       const bson_t *opts);
 
 A helper function to create a change stream. It is preferred to call this
 function over using a raw aggregation to create a change stream.
 
-This function uses the read preference and read concern of the collection. If
+This function uses the read preference and read concern of the client. If
 the change stream needs to re-establish connection, the same read preference
 will be used. This may happen if the change stream encounters a resumable error.
 
@@ -27,7 +27,7 @@ will be used. This may happen if the change stream encounters a resumable error.
 Parameters
 ----------
 
-* ``coll``: A :symbol:`mongoc_collection_t` specifying the collection which the change stream listens to.
+* ``db``: A :symbol:`mongoc_client_t` specifying the client which the change stream listens to.
 * ``pipeline``: A :symbol:`bson:bson_t` representing an aggregation pipeline appended to the change stream. This may be an empty document.
 * ``opts``: A :symbol:`bson:bson_t` containing change stream options or ``NULL``.
 
@@ -50,6 +50,6 @@ calls to :symbol:`mongoc_change_stream_next` will return ``false``.
 
 See Also
 --------
-:doc:`mongoc_client_watch`
-
 :doc:`mongoc_database_watch`
+
+:doc:`mongoc_collection_watch`

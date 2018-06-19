@@ -128,14 +128,6 @@ test_framework_skip_if_crypto (void);
 int
 test_framework_skip_if_no_crypto (void);
 int
-test_framework_skip_if_not_rs_version_5 (void);
-int
-test_framework_skip_if_rs_version_5 (void);
-int
-test_framework_skip_if_not_rs_version_6 (void);
-int
-test_framework_skip_if_rs_version_6 (void);
-int
 test_framework_skip_if_mongos (void);
 int
 test_framework_skip_if_replset (void);
@@ -162,7 +154,9 @@ test_framework_skip_if_valgrind (void);
 
 #define WIRE_VERSION_CHECK_DECLS(wv)                                  \
    int test_framework_skip_if_max_wire_version_less_than_##wv (void); \
-   int test_framework_skip_if_max_wire_version_more_than_##wv (void);
+   int test_framework_skip_if_max_wire_version_more_than_##wv (void); \
+   int test_framework_skip_if_rs_version_##wv (void);                 \
+   int test_framework_skip_if_not_rs_version_##wv (void);
 
 WIRE_VERSION_CHECK_DECLS (3)
 WIRE_VERSION_CHECK_DECLS (4)

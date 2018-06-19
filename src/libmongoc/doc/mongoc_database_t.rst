@@ -51,6 +51,7 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_database_set_read_concern
     mongoc_database_set_read_prefs
     mongoc_database_set_write_concern
+    mongoc_database_watch
     mongoc_database_write_command_with_opts
 
 Examples

@@ -32,6 +32,8 @@ Example
     :titlesonly:
     :maxdepth: 1
 
+    mongoc_client_watch
+    mongoc_database_watch
     mongoc_collection_watch
     mongoc_change_stream_next
     mongoc_change_stream_error_document

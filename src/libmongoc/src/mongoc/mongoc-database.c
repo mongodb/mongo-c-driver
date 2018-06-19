@@ -27,7 +27,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
-
+#include "mongoc-change-stream-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "database"
@@ -995,4 +995,13 @@ mongoc_database_get_name (mongoc_database_t *database)
    BSON_ASSERT (database);
 
    return database->name;
+}
+
+
+mongoc_change_stream_t *
+mongoc_database_watch (const mongoc_database_t *db,
+                       const bson_t *pipeline,
+                       const bson_t *opts)
+{
+   return _mongoc_change_stream_new_from_database (db, pipeline, opts);
 }

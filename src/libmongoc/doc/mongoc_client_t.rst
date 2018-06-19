@@ -83,5 +83,6 @@ Example
     mongoc_client_set_stream_initiator
     mongoc_client_set_write_concern
     mongoc_client_start_session
+    mongoc_client_watch
     mongoc_client_write_command_with_opts
 

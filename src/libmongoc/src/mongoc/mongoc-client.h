@@ -256,6 +256,10 @@ MONGOC_EXPORT (bool)
 mongoc_client_set_error_api (mongoc_client_t *client, int32_t version);
 MONGOC_EXPORT (bool)
 mongoc_client_set_appname (mongoc_client_t *client, const char *appname);
+MONGOC_EXPORT (mongoc_change_stream_t *)
+mongoc_client_watch (mongoc_client_t *client,
+                     const bson_t *pipeline,
+                     const bson_t *opts);
 BSON_END_DECLS
 
 
