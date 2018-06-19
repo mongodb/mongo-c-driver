@@ -51,6 +51,7 @@ struct _mongoc_bulk_write_flags_t {
    mongoc_write_bypass_document_validation_t bypass_document_validation;
    bool has_collation;
    bool has_multi_write;
+   bool has_array_filters;
 };
 
 

@@ -395,16 +395,23 @@ _mongoc_bulk_operation_update_append (
    const bson_t *selector,
    const bson_t *document,
    const mongoc_bulk_update_opts_t *update_opts,
+   const bson_t *array_filters,
    const bson_t *extra_opts)
 {
    mongoc_write_command_t command = {0};
    mongoc_write_command_t *last;
    bson_t opts;
    bool has_collation;
+   bool has_array_filters;
 
    bson_init (&opts);
    bson_append_bool (&opts, "upsert", 6, update_opts->upsert);
    bson_append_bool (&opts, "multi", 5, update_opts->multi);
+
+   has_array_filters = !bson_empty0 (array_filters);
+   if (has_array_filters) {
+      bson_append_document (&opts, "arrayFilters", 12, array_filters);
+   }
 
    has_collation = !bson_empty (&update_opts->collation);
    if (has_collation) {
@@ -430,6 +437,7 @@ _mongoc_bulk_operation_update_append (
    _mongoc_write_command_init_update (
       &command, selector, document, &opts, bulk->flags, bulk->operation_id);
 
+   command.flags.has_array_filters = has_array_filters;
    command.flags.has_collation = has_collation;
    command.flags.has_multi_write = update_opts->multi;
 
@@ -443,6 +451,7 @@ _mongoc_bulk_operation_update_with_opts (
    const bson_t *selector,
    const bson_t *document,
    const mongoc_bulk_update_opts_t *update_opts,
+   const bson_t *array_filters,
    const bson_t *extra_opts,
    bool multi,
    bson_error_t *error) /* OUT */
@@ -470,7 +479,7 @@ _mongoc_bulk_operation_update_with_opts (
    }
 
    _mongoc_bulk_operation_update_append (
-      bulk, selector, document, update_opts, extra_opts);
+      bulk, selector, document, update_opts, array_filters, extra_opts);
 
    RETURN (true);
 }
@@ -495,15 +504,11 @@ mongoc_bulk_operation_update_one_with_opts (mongoc_bulk_operation_t *bulk,
       RETURN (false);
    }
 
-   if (!bson_empty (&update_opts.arrayFilters)) {
-      bson_append_array (
-         &update_opts.extra, "arrayFilters", 12, &update_opts.arrayFilters);
-   }
-
    ret = _mongoc_bulk_operation_update_with_opts (bulk,
                                                   selector,
                                                   document,
                                                   &update_opts.update,
+                                                  &update_opts.arrayFilters,
                                                   &update_opts.extra,
                                                   false /* multi */,
                                                   error);
@@ -532,15 +537,11 @@ mongoc_bulk_operation_update_many_with_opts (mongoc_bulk_operation_t *bulk,
       RETURN (false);
    }
 
-   if (!bson_empty (&update_opts.arrayFilters)) {
-      bson_append_array (
-         &update_opts.extra, "arrayFilters", 12, &update_opts.arrayFilters);
-   }
-
    ret = _mongoc_bulk_operation_update_with_opts (bulk,
                                                   selector,
                                                   document,
                                                   &update_opts.update,
+                                                  &update_opts.arrayFilters,
                                                   &update_opts.extra,
                                                   true /* multi */,
                                                   error);
@@ -647,7 +648,7 @@ mongoc_bulk_operation_replace_one_with_opts (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_bulk_operation_update_append (
-      bulk, selector, document, update_opts, &repl_opts.extra);
+      bulk, selector, document, update_opts, NULL, &repl_opts.extra);
    ret = true;
 
 done:

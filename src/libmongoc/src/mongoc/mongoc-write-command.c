@@ -913,6 +913,26 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
       }
    }
 
+   if (command->flags.has_array_filters) {
+      if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
+         result->failed = true;
+         bson_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot use array filters with unacknowledged writes");
+         EXIT;
+      }
+
+      if (server_stream->sd->max_wire_version < WIRE_VERSION_ARRAY_FILTERS) {
+         bson_set_error (&result->error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "The selected server does not support array filters");
+         result->failed = true;
+         EXIT;
+      }
+   }
+
    if (command->flags.bypass_document_validation !=
        MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
       if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {

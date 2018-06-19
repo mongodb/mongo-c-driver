@@ -2050,13 +2050,16 @@ _mongoc_collection_update_or_replace (
    const bson_t *update,
    mongoc_update_opts_t *update_opts,
    mongoc_write_bypass_document_validation_t bypass,
+   const bson_t *array_filters,
    bson_t *extra,
    bson_t *reply,
    bson_error_t *error)
 {
    mongoc_write_command_t command;
    mongoc_write_result_t result;
-   bool ret;
+   mongoc_server_stream_t *server_stream = NULL;
+   bool reply_initialized = false;
+   bool ret = false;
 
    ENTRY;
 
@@ -2073,6 +2076,13 @@ _mongoc_collection_update_or_replace (
       bson_append_document (extra, "collation", 9, &update_opts->collation);
    }
 
+   if (!bson_empty0 (array_filters)) {
+      bson_append_array (extra,
+                         "arrayFilters",
+                         12,
+                         array_filters);
+   }
+
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_update_idl (
       &command,
@@ -2086,8 +2096,42 @@ _mongoc_collection_update_or_replace (
       command.flags.has_collation = true;
    }
 
-   _mongoc_collection_write_command_execute_idl (
-      &command, collection, &update_opts->crud, &result);
+   server_stream =
+      mongoc_cluster_stream_for_writes (&collection->client->cluster, error);
+
+   if (!server_stream) {
+      GOTO (done);
+   }
+
+   if (!bson_empty0 (array_filters)) {
+      if (server_stream->sd->max_wire_version < WIRE_VERSION_ARRAY_FILTERS) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "The selected server does not support array filters");
+         GOTO (done);
+      }
+
+      if (!mongoc_write_concern_is_acknowledged (
+             update_opts->crud.writeConcern)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                         "Cannot use array filters with unacknowledged writes");
+         GOTO (done);
+      }
+   }
+
+   _mongoc_write_command_execute_idl (&command,
+                                      collection->client,
+                                      server_stream,
+                                      collection->db,
+                                      collection->collection,
+                                      0 /* offset */,
+                                      &update_opts->crud,
+                                      &result);
+
+   reply_initialized = true;
 
    /* set fields described in CRUD spec for the UpdateResult */
    ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
@@ -2102,8 +2146,14 @@ _mongoc_collection_update_or_replace (
                                        "upsertedCount",
                                        "upsertedId");
 
+done:
    _mongoc_write_result_destroy (&result);
+   mongoc_server_stream_cleanup (server_stream);
    _mongoc_write_command_destroy (&command);
+
+   if (!reply_initialized) {
+      _mongoc_bson_init_if_set (reply);
+   }
 
    RETURN (ret);
 }
@@ -2138,18 +2188,12 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
       return false;
    }
 
-   if (!bson_empty (&update_one_opts.arrayFilters)) {
-      bson_append_array (&update_one_opts.extra,
-                         "arrayFilters",
-                         12,
-                         &update_one_opts.arrayFilters);
-   }
-
    ret = _mongoc_collection_update_or_replace (collection,
                                                selector,
                                                update,
                                                &update_one_opts.update,
                                                update_one_opts.update.bypass,
+                                               &update_one_opts.arrayFilters,
                                                &update_one_opts.extra,
                                                reply,
                                                error);
@@ -2190,18 +2234,13 @@ mongoc_collection_update_many (mongoc_collection_t *collection,
    }
 
    bson_append_bool (&update_many_opts.extra, "multi", 5, true);
-   if (!bson_empty (&update_many_opts.arrayFilters)) {
-      bson_append_array (&update_many_opts.extra,
-                         "arrayFilters",
-                         12,
-                         &update_many_opts.arrayFilters);
-   }
 
    ret = _mongoc_collection_update_or_replace (collection,
                                                selector,
                                                update,
                                                &update_many_opts.update,
                                                update_many_opts.update.bypass,
+                                               &update_many_opts.arrayFilters,
                                                &update_many_opts.extra,
                                                reply,
                                                error);
@@ -2246,6 +2285,7 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
                                                replacement,
                                                &replace_one_opts.update,
                                                replace_one_opts.update.bypass,
+                                               NULL,
                                                &replace_one_opts.extra,
                                                reply,
                                                error);

@@ -2386,9 +2386,11 @@ test_count_documents (void)
                                          &error);
 
    request = mock_server_receives_msg (
-      server, 0, tmp_bson ("{'aggregate': 'coll', 'pipeline': [{'$match': "
-                           "{'x': 1}}, {'$skip': 1}, {'$limit': 2}, {'$group': "
-                           "{'n': {'$sum': 1}}}]}"));
+      server,
+      0,
+      tmp_bson ("{'aggregate': 'coll', 'pipeline': [{'$match': "
+                "{'x': 1}}, {'$skip': 1}, {'$limit': 2}, {'$group': "
+                "{'n': {'$sum': 1}}}]}"));
    mock_server_replies_simple (request, server_reply);
    ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
    ASSERT_MATCH (&reply, server_reply);
@@ -5215,30 +5217,41 @@ _test_update_and_replace (bool is_replace, bool is_multi)
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
                              "invalid argument for replace");
    } else {
-      /* Test arrayFilters if the servers supports it */
+      /* Test update_one and update_many with arrayFilters */
+      ret = mongoc_collection_insert_one (
+         coll,
+         tmp_bson ("{'_id': 6, 'a': [{'x':1},{'x':2}]}"),
+         &opts_with_wc,
+         NULL,
+         &err);
+
+      ASSERT_OR_PRINT (ret, err);
+
+      update = tmp_bson ("{'$set': {'a.$[i].x': 3}}");
+      ret = fn (coll,
+                tmp_bson ("{'_id': 6}"),
+                update,
+                tmp_bson ("{'arrayFilters': [{'i.x': {'$gt': 1}}]}"),
+                &reply,
+                &err);
+
       if (test_framework_max_wire_version_at_least (6)) {
-         ret = mongoc_collection_insert_one (
-            coll,
-            tmp_bson ("{'_id': 6, 'a': [{'x':1},{'x':2}]}"),
-            &opts_with_wc,
-            NULL,
-            &err);
-         ASSERT_OR_PRINT (ret, err);
-         update = tmp_bson ("{'$set': {'a.$[i].x': 3}}");
-         ret = fn (coll,
-                   tmp_bson ("{'_id': 6}"),
-                   update,
-                   tmp_bson ("{'arrayFilters': [{'i.x': {'$gt': 1}}]}"),
-                   &reply,
-                   &err);
          ASSERT_OR_PRINT (ret, err);
          ASSERT_MATCH (&reply,
                        "{'modifiedCount': 1, 'matchedCount': 1, "
                        "'upsertedId': {'$exists': false}}");
-         bson_destroy (&reply);
          _test_docs_in_coll_matches (
             coll, tmp_bson ("{'_id':6}"), "{'a': [{'x':1},{'x':3}]}", 1);
+      } else {
+         BSON_ASSERT (!ret);
+         ASSERT_ERROR_CONTAINS (
+            err,
+            MONGOC_ERROR_COMMAND,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+            "The selected server does not support array filters");
       }
+
+      bson_destroy (&reply);
 
       /* Test update that fails */
       ctx.expected_command = "{'update': 'coll'}";

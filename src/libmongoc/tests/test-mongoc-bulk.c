@@ -13,6 +13,18 @@
 #include "test-conveniences.h"
 #include "mock_server/mock-rs.h"
 
+
+typedef void (*update_fn) (mongoc_bulk_operation_t *bulk,
+                           const bson_t *selector,
+                           const bson_t *document,
+                           bool upsert);
+
+typedef bool (*update_with_opts_fn) (mongoc_bulk_operation_t *bulk,
+                                     const bson_t *selector,
+                                     const bson_t *document,
+                                     const bson_t *opts,
+                                     bson_error_t *error);
+
 /*--------------------------------------------------------------------------
  *
  * assert_error_count --
@@ -977,6 +989,52 @@ test_update_arrayfilters (void *ctx)
 
 
 static void
+test_update_arrayfilters_unsupported (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t err;
+   bool ret;
+   int i;
+
+   update_with_opts_fn fns[] = {
+      mongoc_bulk_operation_update_one_with_opts,
+      mongoc_bulk_operation_update_many_with_opts,
+   };
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_update_arrayfilters_err");
+
+   for (i = 0; i < 2; i++) {
+      bulk =
+         mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+      ret = fns[i](bulk,
+                   tmp_bson ("{'_id': 1}"),
+                   tmp_bson ("{'$set': {'a.$[i].x': 3}}"),
+                   tmp_bson ("{'arrayFilters': [{'i.x': {'$gt': 1}}]}"),
+                   &err);
+
+      /* adding the updateOne/updateMany operation to the bulk succeeds */
+      ASSERT_OR_PRINT (ret, err);
+
+      ret = mongoc_bulk_operation_execute (bulk, NULL, &err) > 0;
+      BSON_ASSERT (!ret);
+      ASSERT_ERROR_CONTAINS (
+         err,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+         "The selected server does not support array filters");
+
+      mongoc_bulk_operation_destroy (bulk);
+   }
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_replace_one (bool ordered)
 {
    bson_t opts = BSON_INITIALIZER;
@@ -1476,17 +1534,6 @@ test_update_many_with_opts_check_keys (void)
    _test_update_check_keys (true, true);
 }
 
-
-typedef void (*update_fn) (mongoc_bulk_operation_t *bulk,
-                           const bson_t *selector,
-                           const bson_t *document,
-                           bool upsert);
-
-typedef bool (*update_with_opts_fn) (mongoc_bulk_operation_t *bulk,
-                                     const bson_t *selector,
-                                     const bson_t *document,
-                                     const bson_t *opts,
-                                     bson_error_t *error);
 
 typedef struct {
    const char *bad_update_json;
@@ -4586,6 +4633,12 @@ test_bulk_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_6);
+   TestSuite_AddFull (suite,
+                      "/BulkOperation/update_arrayfilters/unsupported",
+                      test_update_arrayfilters_unsupported,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_more_than_5);
    TestSuite_AddLive (
       suite, "/BulkOperation/replace_one_ordered", test_replace_one_ordered);
    TestSuite_AddLive (suite,
