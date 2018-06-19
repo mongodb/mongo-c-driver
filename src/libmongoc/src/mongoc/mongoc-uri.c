@@ -1345,6 +1345,13 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
    }
 
    wtimeoutms = mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0);
+   if (wtimeoutms < 0) {
+      MONGOC_URI_ERROR (
+         error, "Unsupported wtimeoutMS value [w=%d]", wtimeoutms);
+      return false;
+   } else {
+      mongoc_write_concern_set_wtimeout (write_concern, wtimeoutms);
+   }
 
    if (bson_iter_init_find_case (&iter, &uri->options, MONGOC_URI_JOURNAL) &&
        BSON_ITER_HOLDS_BOOL (&iter)) {
@@ -1368,9 +1375,6 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
          default:
             if (value > 0) {
                mongoc_write_concern_set_w (write_concern, value);
-               if (value > 1) {
-                  mongoc_write_concern_set_wtimeout (write_concern, wtimeoutms);
-               }
                break;
             }
             MONGOC_URI_ERROR (error, "Unsupported w value [w=%d]", value);
@@ -1383,7 +1387,6 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
             mongoc_write_concern_set_wmajority (write_concern, wtimeoutms);
          } else {
             mongoc_write_concern_set_wtag (write_concern, str);
-            mongoc_write_concern_set_wtimeout (write_concern, wtimeoutms);
          }
       } else {
          BSON_ASSERT (false);
