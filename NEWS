@@ -1,7 +1,13 @@
-Next Release
-============
+mongo-c-driver 1.10.3
+=====================
 
-Fix a crash when parsing binary data from JSON if mongoc_init isn't called.
+It is my pleasure to announce the MongoDB C Driver 1.10.3. This release fixes
+a crash when parsing binary data from JSON if mongoc_init isn't called.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
 
 mongo-c-driver 1.10.2
 =====================
