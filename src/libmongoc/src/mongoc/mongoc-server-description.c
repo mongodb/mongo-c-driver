@@ -530,12 +530,10 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
       num_keys++;
       if (strcmp ("ok", bson_iter_key (&iter)) == 0) {
          if (!bson_iter_as_bool (&iter)) {
-            uint32_t unused;
-            const char *msg = NULL;
-            _mongoc_parse_error_reply (ismaster_response, false, &unused, &msg);
-            if (msg) {
-               bson_strncpy (sd->error.message, msg, sizeof (error->message));
-            }
+            /* it doesn't really matter what error API we use. the code and
+             * domain will be overwritten. */
+            (void) _mongoc_cmd_check_ok (
+               ismaster_response, MONGOC_ERROR_API_VERSION_2, &sd->error);
             /* ismaster response returned ok: 0. According to auth spec: "If the
              * isMaster of the MongoDB Handshake fails with an error, drivers
              * MUST treat this an an authentication error." */

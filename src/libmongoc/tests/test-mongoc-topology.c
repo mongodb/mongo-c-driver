@@ -1645,16 +1645,23 @@ _get_last_scan (mongoc_client_t *client)
    return last_scan;
 }
 
+typedef struct {
+   int64_t when_transitioned_to_unknown;
+   int64_t server_id;
+} request_scan_error_ctx_t;
+
 static void
 _server_changed (const mongoc_apm_server_changed_t *event)
 {
    const mongoc_server_description_t *sd;
-   int64_t *when_transitioned_to_unknown;
-   when_transitioned_to_unknown =
-      (int64_t *) mongoc_apm_server_changed_get_context (event);
+   request_scan_error_ctx_t *ctx;
+
+   ctx = (request_scan_error_ctx_t *) mongoc_apm_server_changed_get_context (
+      event);
    sd = mongoc_apm_server_changed_get_new_description (event);
    if (sd->type == MONGOC_SERVER_UNKNOWN) {
-      *when_transitioned_to_unknown = bson_get_monotonic_time ();
+      ctx->when_transitioned_to_unknown = bson_get_monotonic_time ();
+      ctx->server_id = sd->id;
    }
 }
 
@@ -1669,7 +1676,8 @@ static void
 _test_request_scan_on_error (bool pooled,
                              const char *err_response,
                              bool should_scan,
-                             bool should_mark_unknown)
+                             bool should_mark_unknown,
+                             const char *server_err)
 {
    mock_server_t *primary, *secondary;
    char *uri_str;
@@ -1684,7 +1692,7 @@ _test_request_scan_on_error (bool pooled,
    int64_t last_scan = 0;
    mongoc_read_prefs_t *read_prefs;
    mongoc_apm_callbacks_t *callbacks;
-   int64_t when_transitioned_to_unknown = 0;
+   request_scan_error_ctx_t ctx = {0};
 
    primary = mock_server_new ();
    secondary = mock_server_new ();
@@ -1729,11 +1737,9 @@ _test_request_scan_on_error (bool pooled,
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_server_changed_cb (callbacks, _server_changed);
    if (pooled) {
-      mongoc_client_pool_set_apm_callbacks (
-         client_pool, callbacks, &when_transitioned_to_unknown);
+      mongoc_client_pool_set_apm_callbacks (client_pool, callbacks, &ctx);
    } else {
-      mongoc_client_set_apm_callbacks (
-         client, callbacks, &when_transitioned_to_unknown);
+      mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
    }
    mongoc_apm_callbacks_destroy (callbacks);
    /* run a ping command on the primary. */
@@ -1750,13 +1756,22 @@ _test_request_scan_on_error (bool pooled,
    bson_destroy (&reply);
 
    if (should_mark_unknown) {
+      mongoc_server_description_t *sd;
       /* between sending the 'ping' command and returning, the server should
        * have been marked as unknown. */
-      ASSERT_CMPINT64 (last_scan, <=, when_transitioned_to_unknown);
+      ASSERT_CMPINT64 (last_scan, <=, ctx.when_transitioned_to_unknown);
       ASSERT_CMPINT64 (
-         when_transitioned_to_unknown, <=, bson_get_monotonic_time ());
+         ctx.when_transitioned_to_unknown, <=, bson_get_monotonic_time ());
+      sd = mongoc_client_get_server_description (client,
+                                                 (uint32_t) ctx.server_id);
+      /* check that the error on the server description matches the error
+       * message in the response. */
+      if (server_err) {
+         ASSERT_CMPSTR (server_err, sd->error.message);
+      }
+      mongoc_server_description_destroy (sd);
    } else {
-      ASSERT_CMPINT64 (when_transitioned_to_unknown, ==, (int64_t) 0);
+      ASSERT_CMPINT64 (ctx.when_transitioned_to_unknown, ==, (int64_t) 0);
    }
 
    if (pooled) {
@@ -1809,56 +1824,69 @@ _test_request_scan_on_error (bool pooled,
 static void
 test_request_scan_on_error ()
 {
-#define TEST_POOLED(msg, should_scan, should_mark_unknown) \
-   _test_request_scan_on_error (true, msg, should_scan, should_mark_unknown)
-#define TEST_SINGLE(msg, should_scan, should_mark_unknown) \
-   _test_request_scan_on_error (false, msg, should_scan, should_mark_unknown)
-#define TEST_BOTH(msg, should_scan, should_mark_unknown) \
-   TEST_POOLED (msg, should_scan, should_mark_unknown);  \
-   TEST_SINGLE (msg, should_scan, should_mark_unknown)
+#define TEST_POOLED(msg, should_scan, should_mark_unknown, server_err) \
+   _test_request_scan_on_error (                                       \
+      true, msg, should_scan, should_mark_unknown, server_err)
+#define TEST_SINGLE(msg, should_scan, should_mark_unknown, server_err) \
+   _test_request_scan_on_error (                                       \
+      false, msg, should_scan, should_mark_unknown, server_err)
+#define TEST_BOTH(msg, should_scan, should_mark_unknown, server_err) \
+   TEST_POOLED (msg, should_scan, should_mark_unknown, server_err);  \
+   TEST_SINGLE (msg, should_scan, should_mark_unknown, server_err)
 
    TEST_BOTH ("{'ok': 0, 'errmsg': 'not master'}",
               true /* should_scan */,
-              true /* should_mark_unknown */);
+              true /* should_mark_unknown */,
+              "not master");
    /* "node is recovering" behaves differently for single and pooled clients. */
    TEST_SINGLE ("{'ok': 0, 'errmsg': 'node is recovering'}",
                 false /* should_scan */,
-                true /* should_mark_unknown */);
+                true /* should_mark_unknown */,
+                "node is recovering");
    TEST_POOLED ("{'ok': 0, 'errmsg': 'node is recovering'}",
                 true /* should_scan */,
-                true /* should_mark_unknown */);
+                true /* should_mark_unknown */,
+                "node is recovering");
    TEST_BOTH ("{'ok': 0, 'errmsg': 'random error'}",
               false /* should_scan */,
-              false /* should_mark_unknown */);
+              false /* should_mark_unknown */,
+              "random error");
    /* check the error code for NotMaster, which should be considered a "not
     * master" error. */
    TEST_BOTH ("{'ok': 0, 'code': 10107 }",
               true /* should_scan */,
-              true /* should_mark_unknown */);
+              true /* should_mark_unknown */,
+              NULL /* server_err */);
    /* for an unknown code, the message should still be checked. */
    TEST_BOTH ("{'ok': 0, 'code': 12345, 'errmsg': 'not master'}",
               true /* should_scan */,
-              true /* should_mark_unknown */);
+              true /* should_mark_unknown */,
+              "not master");
    /* check the error code for InterruptedAtShutdown, which should be considered
     * a "node is recovering" error. */
    TEST_SINGLE ("{'ok': 0, 'code': 11600 }",
                 false /* should_scan */,
-                true /* should_mark_unknown */);
+                true /* should_mark_unknown */,
+                NULL /* server_err */);
    TEST_POOLED ("{'ok': 0, 'code': 11600 }",
                 true /* should_scan */,
-                true /* should_mark_unknown */);
+                true /* should_mark_unknown */,
+                NULL /* server_err */);
    /* with a "not master" error code but a "node is recovery" message, the error
     * code takes precedence */
    TEST_BOTH ("{'ok': 0, 'code': 10107, 'errmsg': 'node is recovering'}",
               true /* should_scan */,
-              true /* should_mark_unknown */);
+              true /* should_mark_unknown */,
+              "node is recovering");
    /* write concern errors are also checked. */
    TEST_BOTH ("{'ok': 1, 'writeConcernError': { 'errmsg': 'not master' }}",
               true, /* should_scan */
-              true /* should_mark_unknown */);
+              true /* should_mark_unknown */,
+              "not master");
    TEST_BOTH ("{'ok': 1, 'writeConcernError': { 'code': 10107 }}",
               true, /* should_scan */
-              true /* should_mark_unknown */);
+              true /* should_mark_unknown */,
+              NULL /* server_err */);
 
 #undef TEST_BOTH
 #undef TEST_POOLED

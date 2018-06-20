@@ -412,16 +412,29 @@ typedef enum {
 } reply_error_type_t;
 
 
+/*---------------------------------------------------------------------------
+ *
+ * _check_not_master_or_recovering_error --
+ *
+ *       Checks @reply for a "not master" or "node is recovering" error and
+ *       sets @error.
+ *
+ * Return:
+ *       A reply_error_type_t indicating if @reply contained a "not master"
+ *       or "node is recovering" error.
+ *
+ *--------------------------------------------------------------------------
+ */
 static reply_error_type_t
-_check_not_master_or_recovering_error (const bson_t *reply)
+_check_not_master_or_recovering_error (const mongoc_client_t *client,
+                                       const bson_t *reply,
+                                       bson_error_t *error)
 {
-   const char *msg = "";
-   uint32_t code;
-   if (!_mongoc_parse_error_reply (reply, true /* check_wce */, &code, &msg)) {
+   if (_mongoc_cmd_check_ok_no_wce (reply, client->error_api_version, error)) {
       return MONGOC_REPLY_ERR_TYPE_NONE;
    }
 
-   switch (code) {
+   switch (error->code) {
    case 11600: /* InterruptedAtShutdown */
    case 11602: /* InterruptedDueToReplStateChange */
    case 13436: /* NotMasterOrSecondary */
@@ -432,9 +445,9 @@ _check_not_master_or_recovering_error (const bson_t *reply)
    case 13435: /* NotMasterNoSlaveOk */
       return MONGOC_REPLY_ERR_TYPE_NOT_MASTER;
    default:
-      if (strstr (msg, "not master")) {
+      if (strstr (error->message, "not master")) {
          return MONGOC_REPLY_ERR_TYPE_NOT_MASTER;
-      } else if (strstr (msg, "node is recovering")) {
+      } else if (strstr (error->message, "node is recovering")) {
          return MONGOC_REPLY_ERR_TYPE_NODE_IS_RECOVERING;
       }
       return MONGOC_REPLY_ERR_TYPE_NONE;
@@ -445,19 +458,19 @@ _check_not_master_or_recovering_error (const bson_t *reply)
 static void
 handle_not_master_error (mongoc_cluster_t *cluster,
                          uint32_t server_id,
-                         const bson_error_t *error,
                          const bson_t *reply)
 {
    mongoc_topology_t *topology = cluster->client->topology;
+   bson_error_t error;
    reply_error_type_t error_type =
-      _check_not_master_or_recovering_error (reply);
+      _check_not_master_or_recovering_error (cluster->client, reply, &error);
 
    if (error_type != MONGOC_REPLY_ERR_TYPE_NONE) {
       /* Server Discovery and Monitoring Spec: "When the client sees a 'not
        * master' or 'node is recovering' error it MUST replace the server's
        * description with a default ServerDescription of type Unknown."
        */
-      mongoc_topology_invalidate_server (topology, server_id, error);
+      mongoc_topology_invalidate_server (topology, server_id, &error);
       if (topology->single_threaded) {
          /* SDAM Spec: "For single-threaded clients, in the case of a 'not
           * master' error, the client MUST check the server immediately... For a
@@ -572,7 +585,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       mongoc_apm_command_failed_cleanup (&failed_event);
    }
 
-   handle_not_master_error (cluster, server_id, error, reply);
+   handle_not_master_error (cluster, server_id, reply);
 
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
@@ -627,7 +640,7 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
       retval = mongoc_cluster_run_command_opquery (
          cluster, cmd, cmd->server_stream->stream, -1, reply, error);
    }
-   handle_not_master_error (cluster, server_stream->sd->id, error, reply);
+   handle_not_master_error (cluster, server_stream->sd->id, reply);
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
    }

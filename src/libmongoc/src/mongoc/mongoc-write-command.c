@@ -1442,13 +1442,13 @@ _mongoc_write_result_complete (
 bool
 _mongoc_write_is_retryable_error (const bson_t *reply)
 {
-   const char *msg = "";
-   uint32_t code;
-   if (!_mongoc_parse_error_reply (reply, true /* check_wce */, &code, &msg)) {
+   bson_error_t error;
+   if (_mongoc_cmd_check_ok_no_wce (
+          reply, MONGOC_ERROR_API_VERSION_2, &error)) {
       return false;
    }
 
-   switch (code) {
+   switch (error.code) {
    case 11600: /* InterruptedAtShutdown */
    case 11602: /* InterruptedDueToReplStateChange */
    case 10107: /* NotMaster */
@@ -1463,7 +1463,8 @@ _mongoc_write_is_retryable_error (const bson_t *reply)
    case 9001:  /* SocketException */
       return true;
    default:
-      if (strstr (msg, "not master") || strstr (msg, "node is recovering")) {
+      if (strstr (error.message, "not master") ||
+          strstr (error.message, "node is recovering")) {
          return true;
       }
       return false;

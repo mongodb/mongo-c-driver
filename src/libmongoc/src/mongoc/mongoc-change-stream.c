@@ -41,8 +41,7 @@
 static bool
 _is_resumable_error (const bson_t *reply)
 {
-   const char *msg = "";
-   uint32_t code;
+   bson_error_t error;
 
    /* Change Streams Spec resumable criteria: "any error encountered which is
     * not a server error (e.g. a timeout error or network error)" */
@@ -50,20 +49,21 @@ _is_resumable_error (const bson_t *reply)
       return true;
    }
 
-   if (!_mongoc_parse_error_reply (reply, false /* check_wce */, &code, &msg)) {
+   if (_mongoc_cmd_check_ok (reply, MONGOC_ERROR_API_VERSION_2, &error)) {
       return true;
    }
 
    /* Change Streams Spec resumable criteria: "a server error response with an
     * error message containing the substring 'not master' or 'node is
     * recovering' */
-   if (strstr (msg, "not master") || strstr (msg, "node is recovering")) {
+   if (strstr (error.message, "not master") ||
+       strstr (error.message, "node is recovering")) {
       return true;
    }
 
    /* Change Streams Spec resumable criteria: "any server error response from a
     * getMore command excluding those containing the following error codes" */
-   switch (code) {
+   switch (error.code) {
    case 11601: /* Interrupted */
    case 136:   /* CappedPositionLost */
    case 237:   /* CursorKilled */

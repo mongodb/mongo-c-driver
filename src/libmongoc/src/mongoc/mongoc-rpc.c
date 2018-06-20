@@ -1065,67 +1065,12 @@ _mongoc_rpc_prep_command (mongoc_rpc_t *rpc,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_cmd_check_ok --
- *
- *       Check if a server reply document is an error message.
- *       Optionally fill out a bson_error_t from the server error.
- *       Does *not* check for writeConcernError.
- *
- * Returns:
- *       false if @doc is an error message, true otherwise.
- *
- * Side effects:
- *       If @doc is an error reply and @error is not NULL, set its
- *       domain, code, and message.
- *
- *--------------------------------------------------------------------------
- */
-bool
-_mongoc_cmd_check_ok (const bson_t *doc,
-                      int32_t error_api_version,
-                      bson_error_t *error)
-{
-   mongoc_error_domain_t domain =
-      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER
-                                                      : MONGOC_ERROR_QUERY;
-   uint32_t code;
-   bson_iter_t iter;
-   const char *msg = "Unknown command error";
-
-   ENTRY;
-
-   BSON_ASSERT (doc);
-
-   if (bson_iter_init_find (&iter, doc, "ok") && bson_iter_as_bool (&iter)) {
-      /* no error */
-      RETURN (true);
-   }
-
-   if (!_mongoc_parse_error_reply (doc, false /* check_wce */, &code, &msg)) {
-      RETURN (true);
-   }
-
-   if (code == MONGOC_ERROR_PROTOCOL_ERROR || code == 13390) {
-      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
-   } else if (code == 0) {
-      code = MONGOC_ERROR_QUERY_FAILURE;
-   }
-
-   bson_set_error (error, domain, code, "%s", msg);
-
-   /* there was a command error */
-   RETURN (false);
-}
-
 /* returns true if an error was found. */
-bool
-_mongoc_parse_error_reply (const bson_t *doc,
-                           bool check_wce,
-                           uint32_t *code,
-                           const char **msg)
+static bool
+_parse_error_reply (const bson_t *doc,
+                    bool check_wce,
+                    uint32_t *code,
+                    const char **msg)
 {
    bson_iter_t iter;
    bool found_error = false;
@@ -1179,6 +1124,113 @@ _mongoc_parse_error_reply (const bson_t *doc,
 
    RETURN (found_error);
 }
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cmd_check_ok --
+ *
+ *       Check if a server reply document is an error message.
+ *       Optionally fill out a bson_error_t from the server error.
+ *       Does *not* check for writeConcernError.
+ *
+ * Returns:
+ *       false if @doc is an error message, true otherwise.
+ *
+ * Side effects:
+ *       If @doc is an error reply and @error is not NULL, set its
+ *       domain, code, and message.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+_mongoc_cmd_check_ok (const bson_t *doc,
+                      int32_t error_api_version,
+                      bson_error_t *error)
+{
+   mongoc_error_domain_t domain =
+      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER
+                                                      : MONGOC_ERROR_QUERY;
+   uint32_t code;
+   bson_iter_t iter;
+   const char *msg = "Unknown command error";
+
+   ENTRY;
+
+   BSON_ASSERT (doc);
+
+   if (bson_iter_init_find (&iter, doc, "ok") && bson_iter_as_bool (&iter)) {
+      /* no error */
+      RETURN (true);
+   }
+
+   if (!_parse_error_reply (doc, false /* check_wce */, &code, &msg)) {
+      RETURN (true);
+   }
+
+   if (code == MONGOC_ERROR_PROTOCOL_ERROR || code == 13390) {
+      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
+   } else if (code == 0) {
+      code = MONGOC_ERROR_QUERY_FAILURE;
+   }
+
+   bson_set_error (error, domain, code, "%s", msg);
+
+   /* there was a command error */
+   RETURN (false);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cmd_check_ok_no_wce --
+ *
+ *       Check if a server reply document is an error message.
+ *       Optionally fill out a bson_error_t from the server error.
+ *       If the response contains a writeConcernError, this is considered
+ *       an error and returns false.
+ *
+ * Returns:
+ *       false if @doc is an error message, true otherwise.
+ *
+ * Side effects:
+ *       If @doc is an error reply and @error is not NULL, set its
+ *       domain, code, and message.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+_mongoc_cmd_check_ok_no_wce (const bson_t *doc,
+                             int32_t error_api_version,
+                             bson_error_t *error)
+{
+   mongoc_error_domain_t domain =
+      error_api_version >= MONGOC_ERROR_API_VERSION_2 ? MONGOC_ERROR_SERVER
+                                                      : MONGOC_ERROR_QUERY;
+   uint32_t code;
+   const char *msg = "Unknown command error";
+
+   ENTRY;
+
+   BSON_ASSERT (doc);
+
+   if (!_parse_error_reply (doc, true /* check_wce */, &code, &msg)) {
+      RETURN (true);
+   }
+
+   if (code == MONGOC_ERROR_PROTOCOL_ERROR || code == 13390) {
+      code = MONGOC_ERROR_QUERY_COMMAND_NOT_FOUND;
+   } else if (code == 0) {
+      code = MONGOC_ERROR_QUERY_FAILURE;
+   }
+
+   bson_set_error (error, domain, code, "%s", msg);
+
+   /* there was a command error */
+   RETURN (false);
+}
+
 
 /* helper function to parse error reply document to an OP_QUERY */
 static void
