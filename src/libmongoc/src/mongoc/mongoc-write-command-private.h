@@ -92,6 +92,14 @@ typedef struct {
 } mongoc_write_result_t;
 
 
+typedef enum {
+   MONGOC_WRITE_ERR_NONE,
+   MONGOC_WRITE_ERR_OTHER,
+   MONGOC_WRITE_ERR_RETRY,
+   MONGOC_WRITE_ERR_WRITE_CONCERN,
+} mongoc_write_err_type_t;
+
+
 const char *
 _mongoc_command_type_to_field_name (int command_type);
 const char *
@@ -212,8 +220,8 @@ _mongoc_write_result_destroy (mongoc_write_result_t *result);
 void
 _append_array_from_command (mongoc_write_command_t *command, bson_t *bson);
 
-bool
-_mongoc_write_is_retryable_error (const bson_t *reply);
+mongoc_write_err_type_t
+_mongoc_write_error_get_type (const bson_t *reply);
 
 BSON_END_DECLS
 

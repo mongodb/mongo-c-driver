@@ -1555,8 +1555,9 @@ retry:
     * a new writable stream and retry. If server selection fails or the selected
     * server does not support retryable writes, fall through and allow the
     * original error to be reported. */
-   if (!ret && is_retryable && (error->domain == MONGOC_ERROR_STREAM ||
-                                _mongoc_write_is_retryable_error (reply))) {
+   if (!ret && is_retryable &&
+       (error->domain == MONGOC_ERROR_STREAM ||
+        _mongoc_write_error_get_type (reply) == MONGOC_WRITE_ERR_RETRY)) {
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */

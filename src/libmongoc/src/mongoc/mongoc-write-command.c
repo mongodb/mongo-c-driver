@@ -560,6 +560,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
 
       if (ship_it) {
          bool is_retryable = parts.is_retryable_write;
+         mongoc_write_err_type_t error_type;
 
          /* Seek past the document offset we have already sent */
          parts.assembled.payload = command->payload.data + payload_total_offset;
@@ -589,9 +590,9 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
           * select a new writable stream and retry. If server selection fails or
           * the selected server does not support retryable writes, fall through
           * and allow the original error to be reported. */
-         if (!ret && is_retryable &&
-             (error->domain == MONGOC_ERROR_STREAM ||
-              _mongoc_write_is_retryable_error (&reply))) {
+         error_type = _mongoc_write_error_get_type (&reply);
+         if (!ret && is_retryable && (error->domain == MONGOC_ERROR_STREAM ||
+                                      error_type == MONGOC_WRITE_ERR_RETRY)) {
             bson_error_t ignored_error;
 
             /* each write command may be retried at most once */
@@ -1430,13 +1431,14 @@ _mongoc_write_result_complete (
    RETURN (!result->failed && result->error.code == 0);
 }
 
-bool
-_mongoc_write_is_retryable_error (const bson_t *reply)
+
+mongoc_write_err_type_t
+_mongoc_write_error_get_type (const bson_t *reply)
 {
    bson_error_t error;
    if (_mongoc_cmd_check_ok_no_wce (
           reply, MONGOC_ERROR_API_VERSION_2, &error)) {
-      return false;
+      return MONGOC_WRITE_ERR_NONE;
    }
 
    switch (error.code) {
@@ -1447,17 +1449,18 @@ _mongoc_write_is_retryable_error (const bson_t *reply)
    case 13436: /* NotMasterOrSecondary */
    case 189:   /* PrimarySteppedDown */
    case 91:    /* ShutdownInProgress */
-   case 64:    /* WriteConcernFailed */
    case 7:     /* HostNotFound */
    case 6:     /* HostUnreachable */
    case 89:    /* NetworkTimeout */
    case 9001:  /* SocketException */
-      return true;
+      return MONGOC_WRITE_ERR_RETRY;
+   case 64: /* WriteConcernFailed */
+      return MONGOC_WRITE_ERR_WRITE_CONCERN;
    default:
       if (strstr (error.message, "not master") ||
           strstr (error.message, "node is recovering")) {
-         return true;
+         return MONGOC_WRITE_ERR_RETRY;
       }
-      return false;
+      return MONGOC_WRITE_ERR_OTHER;
    }
 }
