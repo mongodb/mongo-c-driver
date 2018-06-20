@@ -115,13 +115,7 @@ test_transactions_install (TestSuite *suite)
 
    ASSERT (realpath (JSON_DIR "/transactions", resolved));
    install_json_test_suite_with_check (
-      suite,
-      resolved,
-      test_transactions_cb,
-      test_framework_skip_if_no_crypto,
-      test_framework_skip_if_no_sessions,
-      test_framework_skip_if_not_replset,
-      test_framework_skip_if_max_wire_version_less_than_7);
+      suite, resolved, test_transactions_cb, test_framework_skip_if_no_txns);
 
    /* skip mongos for now - txn support coming in 4.1.0 */
    TestSuite_AddFull (suite,

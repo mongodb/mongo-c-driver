@@ -1942,6 +1942,21 @@ test_framework_skip_if_no_uds (void)
 }
 
 
+int
+test_framework_skip_if_no_txns (void)
+{
+   if (test_framework_skip_if_no_crypto () &&
+       test_framework_skip_if_no_sessions () &&
+       test_framework_skip_if_not_replset () &&
+       test_framework_skip_if_max_wire_version_less_than_7 ()) {
+      return 1;
+   }
+
+   /* transactions not supported, skip the test */
+   return 0;
+}
+
+
 bool
 test_framework_max_wire_version_at_least (int version)
 {

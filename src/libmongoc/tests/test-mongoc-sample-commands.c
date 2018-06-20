@@ -34,6 +34,7 @@
 
 
 typedef void (*sample_command_fn_t) (mongoc_database_t *db);
+typedef void (*sample_txn_command_fn_t) (mongoc_client_t *client);
 
 
 static void
@@ -2543,7 +2544,6 @@ test_sample_change_stream_command (sample_command_fn_t fn,
 }
 
 
-
 static void
 test_example_change_stream (mongoc_database_t *db)
 {
@@ -2981,6 +2981,149 @@ test_sample_indexes (mongoc_database_t *db)
 
 
 static void
+test_sample_txn_command (sample_txn_command_fn_t fn,
+                     int exampleno,
+                     mongoc_client_t *client)
+{
+   char *example_name;
+   mongoc_collection_t *tmp_collection;
+   bson_error_t error;
+   bool r;
+
+   if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
+   example_name = bson_strdup_printf ("example %d", exampleno);
+   capture_logs (true);
+
+   /* preliminary: create collections outside txn */
+   tmp_collection = mongoc_client_get_collection (client, "hr", "employees");
+   mongoc_collection_drop (tmp_collection, NULL);
+   r = mongoc_collection_insert_one (
+      tmp_collection,
+      tmp_bson ("{'employee': 3, 'status': 'Active'}"),
+      NULL,
+      NULL,
+      &error);
+   ASSERT_OR_PRINT (r, error);
+   mongoc_collection_destroy (tmp_collection);
+
+   tmp_collection = mongoc_client_get_collection (
+      client, "reporting", "events");
+   mongoc_collection_drop (tmp_collection, NULL);
+   r = mongoc_collection_insert_one (
+      tmp_collection,
+      tmp_bson ("{'employee': 3, 'status': {'new': 'Active', 'old': null}}"),
+      NULL,
+      NULL,
+      &error);
+   ASSERT_OR_PRINT (r, error);
+   mongoc_collection_destroy (tmp_collection);
+
+   fn (client);
+
+   ASSERT_NO_CAPTURED_LOGS (example_name);
+
+   bson_free (example_name);
+}
+
+
+static void
+test_example_txn_1 (mongoc_client_t *client)
+{
+   /* Start Transactions Intro Example 1 */
+   mongoc_collection_t *employees;
+   mongoc_collection_t *events;
+   mongoc_client_session_t *session;
+   mongoc_read_concern_t *rc;
+   mongoc_write_concern_t *wc;
+   mongoc_transaction_opt_t *txn_opts;
+   bson_t opts = BSON_INITIALIZER;
+   bson_t *filter;
+   bson_t *update;
+   bson_t *event;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   employees = mongoc_client_get_collection (client, "hr", "employees");
+   events = mongoc_client_get_collection (client, "reporting", "events");
+   session = mongoc_client_start_session (client, NULL, &error);
+   if (!session) {
+      MONGOC_ERROR ("%s", error.message);
+   }
+
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_SNAPSHOT);
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+   txn_opts = mongoc_transaction_opts_new ();
+   mongoc_transaction_opts_set_read_concern (txn_opts, rc);
+   mongoc_transaction_opts_set_write_concern (txn_opts, wc);
+
+   r = mongoc_client_session_start_transaction (session, txn_opts, &error);
+   if (!r) {
+      MONGOC_ERROR ("%s", error.message);
+   }
+
+   r = mongoc_client_session_append (session, &opts, &error);
+   if (!r) {
+      MONGOC_ERROR ("%s", error.message);
+   }
+
+   filter = BCON_NEW ("employee", BCON_INT32 (3));
+   update = BCON_NEW ("$set", "{", "status", "Inactive", "}");
+   r = mongoc_collection_update_one (
+      employees, filter, update, &opts, &reply, &error);
+
+   if (!r) {
+      MONGOC_ERROR ("%s", error.message);
+   }
+
+   bson_destroy (&reply);
+
+   event = BCON_NEW ("employee", BCON_INT32 (3));
+   BCON_APPEND (event, "status", "{", "new", "Inactive", "old", "Active", "}");
+
+   r = mongoc_collection_insert_one (events, event, &opts, &reply, &error);
+   if (!r) {
+      MONGOC_ERROR ("%s", error.message);
+   }
+
+   while (true) {
+      bson_destroy (&reply);
+
+      r = mongoc_client_session_commit_transaction (session, &reply, &error);
+      if (r) {
+         MONGOC_INFO ("Transaction committed.");
+         break;
+      } else if (
+            mongoc_error_has_label (&reply, "UnknownTransactionCommitResult")) {
+         MONGOC_INFO (
+            "UnknownTransactionCommitResult, retrying commit operation ...");
+      } else {
+         MONGOC_ERROR ("Error during commit: %s", error.message);
+         break;
+      }
+   }
+
+   mongoc_collection_destroy (employees);
+   mongoc_collection_destroy (events);
+   mongoc_client_session_destroy (session);
+   mongoc_read_concern_destroy (rc);
+   mongoc_write_concern_destroy (wc);
+   mongoc_transaction_opts_destroy (txn_opts);
+   bson_destroy (&opts);
+   bson_destroy (filter);
+   bson_destroy (update);
+   bson_destroy (event);
+   bson_destroy (&reply);
+   /* End Transactions Intro Example 1 */
+}
+
+
+static void
 test_sample_commands (void)
 {
    mongoc_client_t *client;
@@ -3051,6 +3194,7 @@ test_sample_commands (void)
    test_sample_aggregation (db);
    test_sample_indexes (db);
    test_sample_run_command (db);
+   test_sample_txn_command (test_example_txn_1, 1, client);
 
    mongoc_collection_drop (collection, NULL);
 
