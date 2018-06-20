@@ -123,6 +123,16 @@ test_command_error_v2 (void)
    _test_command_error (2);
 }
 
+static void
+test_has_label (void)
+{
+   bson_t *reply = tmp_bson ("{'errorLabels': ['foo', 'bar']}");
+   BSON_ASSERT (mongoc_error_has_label (reply, "foo"));
+   BSON_ASSERT (mongoc_error_has_label (reply, "bar"));
+   BSON_ASSERT (!mongoc_error_has_label (reply, "baz"));
+   BSON_ASSERT (!mongoc_error_has_label (tmp_bson ("{}"), "foo"));
+}
+
 
 void
 test_error_install (TestSuite *suite)
@@ -137,4 +147,5 @@ test_error_install (TestSuite *suite)
       suite, "/Error/command/v1", test_command_error_v1);
    TestSuite_AddMockServerTest (
       suite, "/Error/command/v2", test_command_error_v2);
+   TestSuite_Add (suite, "/Error/has_label", test_has_label);
 }

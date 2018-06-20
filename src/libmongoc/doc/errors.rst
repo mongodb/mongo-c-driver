@@ -82,6 +82,33 @@ See also: :doc:`Handling Errors in libbson <bson:errors>`.
 | ``MONGOC_ERROR_TRANSACTION``      | ``MONGOC_ERROR_TRANSACTION_INVALID``                                                                                            | You attempted to start a transaction when one is already in progress, or commit or abort when there is no transaction.                                                                                                                                                                                                                     |
 +-----------------------------------+---------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+.. _error_labels:
+
+Error Labels
+------------
+
+In some cases your application must make decisions based on what category of error the driver has returned, but these categories do not correspond perfectly to an error domain or code. In such cases, error *labels* provide a reliable way to determine how your application should respond to an error.
+
+Any C Driver function that has a :symbol:`bson:bson_t` out-parameter named ``reply`` may include error labels to the reply, in the form of a BSON field named "errorLabels" containing an array of strings:
+
+.. code-block:: none
+
+  { "errorLabels": [ "TransientTransactionError" ] }
+
+Use :symbol:`mongoc_error_has_label` to test if a reply contains a specific label. See :symbol:`mongoc_client_session_start_transaction` for example code that demonstrates the use of error labels in application logic.
+
+The following error labels are currently defined. Future versions of MongoDB may introduce new labels.
+
+TransientTransactionError
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Within a multi-document transaction, certain errors can leave the transaction in an unknown or aborted state. These include write conflicts, primary stepdowns, and network errors. In response, the application should abort the transaction and try the same sequence of operations again in a new transaction.
+
+UnknownTransactionCommitResult
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When :symbol:`mongoc_client_session_commit_transaction` encounters a network error or certain server errors, it is not known whether the transaction was committed. Applications should attempt to commit the transaction again until: the commit succeeds, the commit fails with an error *not* labeled "UnknownTransactionCommitResult", or the application chooses to give up.
+
 .. _errors_error_api_version:
 .. _error_api_version:
 
@@ -127,3 +154,13 @@ See Also
 
 `MongoDB Server Error Codes <https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err>`_
 
+.. only:: html
+
+  Functions
+  ---------
+
+  .. toctree::
+    :titlesonly:
+    :maxdepth: 1
+
+    mongoc_error_has_label

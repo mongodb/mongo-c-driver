@@ -418,37 +418,6 @@ mongoc_parse_port (uint16_t *port, const char *str)
 
 /* --------------------------------------------------------------------------
  *
- * _mongoc_bson_array_has_label --
- *
- *       Search for a string within an array of strings.
- *
- * Return:
- *       True if @label is an element in @bson.
- *
- * Side effects:
- *       Aborts if the array is invalid or contains non-string elements.
- *
- *--------------------------------------------------------------------------
- */
-
-bool
-_mongoc_bson_array_has_label (bson_t *bson, const char *label)
-{
-   bson_iter_t iter;
-
-   BSON_ASSERT (bson_iter_init (&iter, bson));
-   while (bson_iter_next (&iter)) {
-      if (!strcmp (bson_iter_utf8 (&iter, NULL), label)) {
-         return true;
-      }
-   }
-
-   return false;
-}
-
-
-/* --------------------------------------------------------------------------
- *
  * _mongoc_bson_array_add_label --
  *
  *       Append an error label like "TransientTransactionError" to a BSON
@@ -468,7 +437,6 @@ _mongoc_bson_array_add_label (bson_t *bson, const char *label)
    uint32_t i = 0;
    const char *key;
 
-   /* don't use _mongoc_bson_array_has_label: count keys & search in one loop */
    BSON_ASSERT (bson_iter_init (&iter, bson));
    while (bson_iter_next (&iter)) {
       if (!strcmp (bson_iter_utf8 (&iter, NULL), label)) {

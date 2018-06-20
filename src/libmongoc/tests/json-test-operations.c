@@ -396,7 +396,6 @@ check_error_labels_contain (const bson_t *operation, const bson_value_t *result)
    bson_iter_t expected_labels;
    bson_iter_t expected_label;
    const char *expected_label_str;
-   bson_t labels;
 
    if (!bson_has_field (operation, "result.errorLabelsContain")) {
       return;
@@ -410,14 +409,13 @@ check_error_labels_contain (const bson_t *operation, const bson_value_t *result)
    /* if the test has "errorLabelsContain" then result must be an error reply */
    ASSERT_CMPSTR (_mongoc_bson_type_to_str (result->value_type), "DOCUMENT");
    bson_init_from_value (&reply, result);
-   bson_lookup_doc (&reply, "errorLabels", &labels);
 
    while (bson_iter_next (&expected_label)) {
       expected_label_str = bson_iter_utf8 (&expected_label, NULL);
-      if (!_mongoc_bson_array_has_label (&labels, expected_label_str)) {
+      if (!mongoc_error_has_label (&reply, expected_label_str)) {
          test_error ("Expected label \"%s\" not found in %s",
                      expected_label_str,
-                     bson_as_json (&labels, NULL));
+                     bson_as_json (&reply, NULL));
       }
    }
 }
@@ -427,7 +425,6 @@ static void
 check_error_labels_omit (const bson_t *operation, const bson_value_t *result)
 {
    bson_t reply;
-   bson_t labels;
    bson_t omitted_labels;
    bson_iter_t omitted_label;
 
@@ -445,12 +442,11 @@ check_error_labels_omit (const bson_t *operation, const bson_value_t *result)
       return;
    }
 
-   bson_lookup_doc (&reply, "errorLabels", &labels);
    bson_lookup_doc (operation, "result.errorLabelsOmit", &omitted_labels);
    BSON_ASSERT (bson_iter_init (&omitted_label, &omitted_labels));
    while (bson_iter_next (&omitted_label)) {
-      if (_mongoc_bson_array_has_label (
-             &labels, bson_iter_utf8 (&omitted_label, NULL))) {
+      if (mongoc_error_has_label (&reply,
+                                  bson_iter_utf8 (&omitted_label, NULL))) {
          test_error ("Label \"%s\" should have been omitted %s",
                      bson_iter_utf8 (&omitted_label, NULL),
                      value_to_str (result));

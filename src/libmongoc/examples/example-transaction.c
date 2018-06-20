@@ -7,10 +7,6 @@
 #include <mongoc.h>
 
 
-/* defined below */
-static bool
-has_label (const bson_t *reply, const char *label);
-
 int
 main (int argc, char *argv[])
 {
@@ -123,9 +119,12 @@ retry_transaction:
       if (!r) {
          MONGOC_ERROR ("Insert failed: %s", error.message);
          mongoc_client_session_abort_transaction (session, NULL);
-         if (has_label (&reply, "TransientTransactionError")) {
-            /* network error, primary failover, or other temporary error.
-             * trying the entire transaction from the start may succeed */
+
+         /* a network error, primary failover, or other temporary error in a
+          * transaction includes {"errorLabels": ["TransientTransactionError"]},
+          * meaning that trying the entire transaction again may succeed
+          */
+         if (mongoc_error_has_label (&reply, "TransientTransactionError")) {
             goto retry_transaction;
          }
 
@@ -147,10 +146,11 @@ retry_transaction:
          break;
       } else {
          MONGOC_ERROR ("Warning: commit failed: %s", error.message);
-         if (has_label (&reply, "TransientTransactionError")) {
+         if (mongoc_error_has_label (&reply, "TransientTransactionError")) {
             mongoc_client_session_abort_transaction (session, NULL);
             goto retry_transaction;
-         } else if (has_label (&reply, "UnknownTransactionCommitResult")) {
+         } else if (mongoc_error_has_label (&reply,
+                                            "UnknownTransactionCommitResult")) {
             /* try again to commit */
             continue;
          }
@@ -178,31 +178,4 @@ done:
    mongoc_cleanup ();
 
    return exit_code;
-}
-
-
-/* An error reply from mongoc_client_session_commit_transaction can include:
- *
- * { "errorLabels" : ["TransientTxnError"] }
- *
- * Return true if the reply contains the given label.
- */
-static bool
-has_label (const bson_t *reply, const char *label)
-{
-   bson_iter_t iter;
-   bson_iter_t labels;
-
-   if (!bson_iter_init_find (&iter, reply, "errorLabels")) {
-      return false;
-   }
-
-   bson_iter_recurse (&iter, &labels);
-   while (bson_iter_next (&labels)) {
-      if (!strcmp (bson_iter_utf8 (&labels, NULL), label)) {
-         return true;
-      }
-   }
-
-   return false;
 }

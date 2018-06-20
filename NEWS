@@ -1,6 +1,9 @@
 Next Release
 ============
 
+  * New function mongoc_error_has_label to check for specific error labels such
+    as "TransientTransactionError" or "UnknownTransactionCommitResult" in
+    error replies.
   * All "destroy" functions such as bson_destroy or mongoc_collection_destroy
     now ignore a NULL argument.
   * Update functions include a new "upsertedCount" field in the reply document.
