@@ -35,6 +35,8 @@ Returns true if the transaction was started. Returns ``false`` and sets ``error`
 Example
 -------
 
+The following example demonstrates how to use :ref:`error labels <error_labels>` to reliably execute a multi-document transaction despite network errors and other transient failures.
+
 .. literalinclude:: ../examples/example-transaction.c
    :language: c
    :caption: example-transaction.c

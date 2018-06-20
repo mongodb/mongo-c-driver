@@ -124,9 +124,6 @@ mongoc_lowercase (const char *src, char *buf /* OUT */);
 bool
 mongoc_parse_port (uint16_t *port, const char *str);
 
-bool
-_mongoc_bson_array_has_label (bson_t *bson, const char *label);
-
 void
 _mongoc_bson_array_add_label (bson_t *bson, const char *label);
 

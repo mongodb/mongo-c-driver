@@ -174,6 +174,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-cursor-cmd.c
    mongoc-cursor-cmd-deprecated.c
    mongoc-database.c
+   mongoc-error.c
    mongoc-find-and-modify.c
    mongoc-host-list.c
    mongoc-init.c

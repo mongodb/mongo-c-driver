@@ -757,25 +757,19 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
    bson_t documents;
    bson_iter_t iter;
    uint32_t server_id;
+   bson_t *majority = tmp_bson ("{'writeConcern': {'w': 'majority'}}");
 
    /* clear data using a fresh client not configured with retryWrites etc. */
    client = test_framework_client_new ();
    db = mongoc_client_get_database (client, collection->db);
    tmp_collection = mongoc_database_get_collection (db, collection->collection);
    mongoc_collection_delete_many (
-      tmp_collection,
-      tmp_bson ("{}"),
-      tmp_bson ("{'writeConcern': {'w': 'majority'}}"),
-      NULL,
-      NULL);
+      tmp_collection, tmp_bson ("{}"), majority, NULL, NULL);
 
    mongoc_collection_destroy (tmp_collection);
    /* ignore failure if it already exists */
    tmp_collection = mongoc_database_create_collection (
-      db,
-      collection->collection,
-      tmp_bson ("{'writeConcern': {'w': 'majority'}}"),
-      &error);
+      db, collection->collection, majority, &error);
 
    if (tmp_collection) {
       mongoc_collection_destroy (tmp_collection);
@@ -790,7 +784,8 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
    }
 
    bson_iter_init (&iter, &documents);
-   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+   bulk =
+      mongoc_collection_create_bulk_operation_with_opts (collection, majority);
 
    while (bson_iter_next (&iter)) {
       bson_t document;

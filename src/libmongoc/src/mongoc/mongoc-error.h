@@ -23,6 +23,8 @@
 
 #include <bson.h>
 
+#include "mongoc-macros.h"
+
 #define MONGOC_ERROR_API_VERSION_LEGACY 1
 #define MONGOC_ERROR_API_VERSION_2 2
 
@@ -115,6 +117,8 @@ typedef enum {
    MONGOC_ERROR_TRANSACTION_INVALID_STATE,
 } mongoc_error_code_t;
 
+MONGOC_EXPORT (bool)
+mongoc_error_has_label (const bson_t *reply, const char *label);
 
 BSON_END_DECLS
 
