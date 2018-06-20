@@ -3,6 +3,7 @@ Next Release
 
   * All "destroy" functions such as bson_destroy or mongoc_collection_destroy
     now ignore a NULL argument.
+  * Update functions include a new "upsertedCount" field in the reply document.
   * Functions incorrectly marked with the "const" compiler attribute are now
     marked as "pure".
   * Fix a crash when parsing binary data from JSON if mongoc_init isn't called.
