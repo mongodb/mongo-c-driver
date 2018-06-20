@@ -4,6 +4,27 @@ Next Release
   * Functions incorrectly marked with the "const" compiler attribute now have
     the attribute removed or changed to "pure"
 
+
+libbson 1.10.3
+==============
+
+It is my pleasure to announce libbson 1.10.3. This release fixes a crash when
+parsing binary data from JSON if using libbson as a standalone library, without
+calling mongoc_init.
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
+libbson 1.10.2
+==============
+
+No change since 1.10.1; released to keep pace with libmongoc's version.
+
+-- A. Jesse Jiryu Davis
+
+
 libbson 1.10.1
 ==============
 

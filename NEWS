@@ -6,18 +6,14 @@ Next Release
   * Update functions include a new "upsertedCount" field in the reply document.
   * Functions incorrectly marked with the "const" compiler attribute are now
     marked as "pure".
-  * Fix a crash when parsing binary data from JSON if mongoc_init isn't called.
 
 
 mongo-c-driver 1.10.3
 =====================
 
-It is my pleasure to announce the MongoDB C Driver 1.10.3. This release fixes
-a crash when parsing binary data from JSON if mongoc_init isn't called.
+No change since 1.10.2; released to keep pace with libbson's version.
 
-Peace,
-
-    A. Jesse Jiryu Davis
+-- A. Jesse Jiryu Davis
 
 
 mongo-c-driver 1.10.2
