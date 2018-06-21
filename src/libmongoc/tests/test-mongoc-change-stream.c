@@ -1380,7 +1380,8 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_start_at_operation_time,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_7);
+                      test_framework_skip_if_not_rs_version_7,
+                      test_framework_skip_if_no_sessions);
    TestSuite_AddFull (suite,
                       "/change_stream/database",
                       test_change_stream_database_watch,

@@ -54,6 +54,7 @@
 #include "mongoc-read-concern-private.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-read-prefs-private.h"
+#include "mongoc-change-stream-private.h"
 #include "mongoc-client-session-private.h"
 #include "mongoc-cursor-private.h"
 
@@ -62,8 +63,6 @@
 #include "mongoc-ssl-private.h"
 #include "mongoc-cmd-private.h"
 #include "mongoc-opts-private.h"
-#include "mongoc-change-stream-private.h"
-
 #endif
 
 

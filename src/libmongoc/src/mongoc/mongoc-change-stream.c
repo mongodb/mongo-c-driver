@@ -43,7 +43,7 @@
 static bool
 _is_resumable_error (const bson_t *reply)
 {
-   bson_error_t error;
+   bson_error_t error = {0};
 
    /* Change Streams Spec resumable criteria: "any error encountered which is
     * not a server error (e.g. a timeout error or network error)" */
