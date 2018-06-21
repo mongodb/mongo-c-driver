@@ -55,6 +55,10 @@ test_transactions_supported (void *ctx)
    bson_error_t error;
    bool r;
 
+   if (test_framework_is_mongos ()) {
+      return;
+   }
+
    supported = test_framework_max_wire_version_at_least (7) &&
                test_framework_is_replset ();
    client = test_framework_client_new ();
@@ -119,11 +123,13 @@ test_transactions_install (TestSuite *suite)
       test_framework_skip_if_not_replset,
       test_framework_skip_if_max_wire_version_less_than_7);
 
+   /* skip mongos for now - txn support coming in 4.1.0 */
    TestSuite_AddFull (suite,
                       "/transactions/supported",
                       test_transactions_supported,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_sessions,
-                      test_framework_skip_if_no_crypto);
+                      test_framework_skip_if_no_crypto,
+                      test_framework_skip_if_mongos);
 }
