@@ -66,10 +66,10 @@ _is_resumable_error (const bson_t *reply)
    /* Change Streams Spec resumable criteria: "any server error response from a
     * getMore command excluding those containing the following error codes" */
    switch (error.code) {
-   case 11601: /* Interrupted */
-   case 136:   /* CappedPositionLost */
-   case 237:   /* CursorKilled */
-   case 0:     /* error code omitted */
+   case 11601:                      /* Interrupted */
+   case 136:                        /* CappedPositionLost */
+   case 237:                        /* CursorKilled */
+   case MONGOC_ERROR_QUERY_FAILURE: /* error code omitted */
       return false;
    default:
       return true;

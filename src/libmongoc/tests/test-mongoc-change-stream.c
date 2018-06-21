@@ -1301,6 +1301,23 @@ test_change_stream_client_watch (void *test_ctx)
    mongoc_client_destroy (client);
 }
 
+
+/* Wire version 7 doesn't imply change stream updates are available on the
+ * server. We must also check the version number. */
+static int
+_skip_if_no_change_stream_updates (void)
+{
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   if (test_framework_get_server_version () >=
+       test_framework_str_to_version ("4.0.0")) {
+      return 1;
+   }
+   return 0;
+}
+
+
 void
 test_change_stream_install (TestSuite *suite)
 {
@@ -1381,17 +1398,21 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_rs_version_7,
-                      test_framework_skip_if_no_sessions);
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_crypto,
+                      _skip_if_no_change_stream_updates);
    TestSuite_AddFull (suite,
                       "/change_stream/database",
                       test_change_stream_database_watch,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_7);
+                      test_framework_skip_if_not_rs_version_7,
+                      _skip_if_no_change_stream_updates);
    TestSuite_AddFull (suite,
                       "/change_stream/client",
                       test_change_stream_database_watch,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_7);
+                      test_framework_skip_if_not_rs_version_7,
+                      _skip_if_no_change_stream_updates);
 }
