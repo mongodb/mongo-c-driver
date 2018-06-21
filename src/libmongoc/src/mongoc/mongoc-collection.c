@@ -2077,10 +2077,7 @@ _mongoc_collection_update_or_replace (
    }
 
    if (!bson_empty0 (array_filters)) {
-      bson_append_array (extra,
-                         "arrayFilters",
-                         12,
-                         array_filters);
+      bson_append_array (extra, "arrayFilters", 12, array_filters);
    }
 
    _mongoc_write_result_init (&result);
@@ -2120,6 +2117,20 @@ _mongoc_collection_update_or_replace (
                          "Cannot use array filters with unacknowledged writes");
          GOTO (done);
       }
+   }
+
+   if (_mongoc_client_session_in_txn (update_opts->crud.client_session) &&
+       update_opts->crud.writeConcern) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Cannot set write concern after starting transaction");
+      GOTO (done);
+   }
+
+   if (!update_opts->crud.writeConcern) {
+      update_opts->crud.writeConcern = collection->write_concern;
+      update_opts->crud.write_concern_owned = false;
    }
 
    _mongoc_write_command_execute_idl (&command,
