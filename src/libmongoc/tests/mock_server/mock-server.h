@@ -211,6 +211,7 @@ mock_server_destroy (mock_server_t *server);
 
 void
 rs_response_to_ismaster (mock_server_t *server,
+                         int max_wire_version,
                          bool primary,
                          int has_tags,
                          ...);

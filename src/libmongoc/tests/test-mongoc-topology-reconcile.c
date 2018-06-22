@@ -110,9 +110,9 @@ _test_topology_reconcile_rs (bool pooled)
    mock_server_run (server1);
 
    /* secondary, no tags */
-   RS_RESPONSE_TO_ISMASTER (server0, false, false, server0, server1);
+   RS_RESPONSE_TO_ISMASTER (server0, 6, false, false, server0, server1);
    /* primary, no tags */
-   RS_RESPONSE_TO_ISMASTER (server1, true, false, server0, server1);
+   RS_RESPONSE_TO_ISMASTER (server1, 6, true, false, server0, server1);
 
    /* provide secondary in seed list */
    uri_str = bson_strdup_printf ("mongodb://%s/?replicaSet=rs",
@@ -151,7 +151,8 @@ _test_topology_reconcile_rs (bool pooled)
    /*
     * remove server1 from set. server0 is the primary, with tags.
     */
-   RS_RESPONSE_TO_ISMASTER (server0, true, true, server0); /* server1 absent */
+   RS_RESPONSE_TO_ISMASTER (
+      server0, 6, true, true, server0); /* server1 absent */
 
    BSON_ASSERT (selects_server (client, tag_read_prefs, server0));
    BSON_ASSERT (!client->topology->stale);
@@ -163,8 +164,8 @@ _test_topology_reconcile_rs (bool pooled)
    /*
     * server1 returns as a secondary. its scanner node is un-retired.
     */
-   RS_RESPONSE_TO_ISMASTER (server0, true, true, server0, server1);
-   RS_RESPONSE_TO_ISMASTER (server1, false, false, server0, server1);
+   RS_RESPONSE_TO_ISMASTER (server0, 6, true, true, server0, server1);
+   RS_RESPONSE_TO_ISMASTER (server1, 6, false, false, server0, server1);
 
    BSON_ASSERT (selects_server (client, secondary_read_prefs, server1));
 
@@ -475,8 +476,8 @@ _test_topology_reconcile_retire (bool pooled)
    mock_server_run (secondary);
    mock_server_run (primary);
 
-   RS_RESPONSE_TO_ISMASTER (primary, true, false, secondary, primary);
-   RS_RESPONSE_TO_ISMASTER (secondary, false, false, secondary, primary);
+   RS_RESPONSE_TO_ISMASTER (primary, 6, true, false, secondary, primary);
+   RS_RESPONSE_TO_ISMASTER (secondary, 6, false, false, secondary, primary);
 
    /* selection timeout must be > MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS,
     * otherwise we skip second scan in pooled mode and don't hit the assert */
@@ -505,7 +506,7 @@ _test_topology_reconcile_retire (bool pooled)
 
    /* remove secondary from primary's config */
    mongoc_mutex_lock (&topology->mutex);
-   RS_RESPONSE_TO_ISMASTER (primary, true, false, primary);
+   RS_RESPONSE_TO_ISMASTER (primary, 6, true, false, primary);
 
    /* step 2: cluster opens new stream to primary - force new stream in single
     * mode by disconnecting scanner nodes (also includes step 6) */
@@ -523,7 +524,7 @@ _test_topology_reconcile_retire (bool pooled)
    future = future_client_read_command_with_opts (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error);
    request = mock_server_receives_msg (
-      primary, MONGOC_QUERY_NONE, tmp_bson("{'ping': 1}"));
+      primary, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
@@ -620,8 +621,8 @@ _test_topology_reconcile_add (bool pooled)
    mock_server_run (primary);
 
    /* omit secondary from primary's ismaster, to start with */
-   RS_RESPONSE_TO_ISMASTER (primary, true, false, primary);
-   RS_RESPONSE_TO_ISMASTER (secondary, false, false, secondary, primary);
+   RS_RESPONSE_TO_ISMASTER (primary, 6, true, false, primary);
+   RS_RESPONSE_TO_ISMASTER (secondary, 6, false, false, secondary, primary);
 
    /* selection timeout must be > MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS,
     * otherwise we skip second scan in pooled mode and don't hit the assert */
@@ -647,7 +648,7 @@ _test_topology_reconcile_add (bool pooled)
    BSON_ASSERT (selects_server (client, primary_read_prefs, primary));
 
    /* add secondary to primary's config */
-   RS_RESPONSE_TO_ISMASTER (primary, true, false, primary, secondary);
+   RS_RESPONSE_TO_ISMASTER (primary, 6, true, false, primary, secondary);
 
    /* step 2: cluster opens new stream to primary - force new stream in single
     * mode by disconnecting primary scanner node */
@@ -662,7 +663,7 @@ _test_topology_reconcile_add (bool pooled)
    future = future_client_read_command_with_opts (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error);
    request = mock_server_receives_msg (
-      primary, MONGOC_QUERY_NONE, tmp_bson("{'ping': 1}"));
+      primary, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 

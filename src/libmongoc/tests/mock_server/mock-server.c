@@ -1938,12 +1938,14 @@ mock_server_set_bind_opts (mock_server_t *server, mock_server_bind_opts_t *opts)
 }
 
 void
-rs_response_to_ismaster (mock_server_t *server, bool primary, int has_tags, ...)
+rs_response_to_ismaster (
+   mock_server_t *server, int max_wire_version, bool primary, int has_tags, ...)
 {
    va_list ap;
    bson_string_t *hosts;
    bool first;
    mock_server_t *host;
+   const char *session_timeout;
    char *ismaster_response;
 
    hosts = bson_string_new ("");
@@ -1964,19 +1966,29 @@ rs_response_to_ismaster (mock_server_t *server, bool primary, int has_tags, ...)
 
    va_end (ap);
 
+   if (max_wire_version >= 6) {
+      session_timeout = ", 'logicalSessionTimeoutMinutes': 30";
+      mock_server_auto_endsessions (server);
+   } else {
+      session_timeout = "";
+   }
+
    ismaster_response = bson_strdup_printf ("{'ok': 1, "
                                            " 'setName': 'rs',"
                                            " 'ismaster': %s,"
                                            " 'secondary': %s,"
                                            " 'tags': {%s},"
                                            " 'minWireVersion': 3,"
-                                           " 'maxWireVersion': 6,"
+                                           " 'maxWireVersion': %d,"
                                            " 'hosts': [%s]"
+                                           " %s"
                                            "}",
                                            primary ? "true" : "false",
                                            primary ? "false" : "true",
                                            has_tags ? "'key': 'value'" : "",
-                                           hosts->str);
+                                           max_wire_version,
+                                           hosts->str,
+                                           session_timeout);
 
    mock_server_auto_ismaster (server, "%s", ismaster_response);
 

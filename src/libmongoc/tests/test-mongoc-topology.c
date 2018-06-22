@@ -1700,8 +1700,8 @@ _test_request_scan_on_error (bool pooled,
    mock_server_run (secondary);
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
 
-   RS_RESPONSE_TO_ISMASTER (primary, true, false, primary, secondary);
-   RS_RESPONSE_TO_ISMASTER (secondary, false, false, primary, secondary);
+   RS_RESPONSE_TO_ISMASTER (primary, 6, true, false, primary, secondary);
+   RS_RESPONSE_TO_ISMASTER (secondary, 6, false, false, primary, secondary);
 
    /* set a high heartbeatFrequency. Only the first and requested scans run. */
    uri_str = bson_strdup_printf (
