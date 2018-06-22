@@ -26,7 +26,7 @@ Parameters
 * ``key``: The key name.
 * ``key_length``: The length of ``key`` in bytes or -1 to use strlen().
 * ``subtype``: A bson_subtype_t indicating the binary subtype.
-* ``binary``: A buffer to embed as binary data.
+* ``binary``: A buffer to embed as binary data. Must not be ``NULL``.
 * ``length``: The length of ``buffer`` in bytes.
 
 Description

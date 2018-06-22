@@ -2286,6 +2286,26 @@ test_bson_regex_lengths (void)
 }
 
 void
+test_bson_empty_binary (void)
+{
+   uint8_t data = 0xAB;
+   bson_t test;
+   const bson_value_t* value;
+   bson_value_t copy;
+   bson_iter_t iter;
+
+   bson_init (&test);
+   bson_append_binary (&test, "test", 4, BSON_SUBTYPE_BINARY, &data, 0);
+   bson_iter_init_find (&iter, &test, "test");
+   value = bson_iter_value (&iter);
+   /* CDRIVER-2569, this would memcpy (0 bytes) to a NULL destination. */
+   bson_value_copy (value, &copy);
+
+   bson_value_destroy (&copy);
+   bson_destroy (&test);
+}
+
+void
 test_bson_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/bson/new", test_bson_new);
@@ -2372,4 +2392,5 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/binary_subtype_2", test_bson_subtype_2);
    TestSuite_Add (suite, "/bson/regex_length", test_bson_regex_lengths);
    TestSuite_Add (suite, "/util/next_power_of_two", test_next_power_of_two);
+   TestSuite_Add (suite, "/bson/empty_binary", test_bson_empty_binary);
 }
