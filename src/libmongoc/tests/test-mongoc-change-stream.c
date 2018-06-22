@@ -1039,7 +1039,9 @@ test_change_stream_live_read_prefs (void *test_ctx)
                                NULL /* session */);
 
    /* Change stream client will resume with another cursor. */
-   ASSERT (mongoc_change_stream_next (stream, &next_doc));
+   /* depending on the server version, this may or may not receive another
+    * document on resume */
+   (void) mongoc_change_stream_next (stream, &next_doc);
    ASSERT_OR_PRINT (
       !mongoc_change_stream_error_document (stream, &err, &next_doc), err);
 
@@ -1522,6 +1524,8 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_rs_version_7,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_crypto,
                       _skip_if_no_change_stream_updates);
    TestSuite_AddFull (suite,
                       "/change_stream/database",
