@@ -280,7 +280,7 @@ _make_cursor (mongoc_change_stream_t *stream)
     * command when it returns." */
    if (bson_empty (&stream->resume_token) &&
        bson_empty (&stream->operation_time) && max_wire_version >= 7 &&
-       bson_iter_init_find (&iter, &reply, "startAtOperationTime")) {
+       bson_iter_init_find (&iter, &reply, "operationTime")) {
       bson_append_value (&stream->operation_time,
                          "startAtOperationTime",
                          20,

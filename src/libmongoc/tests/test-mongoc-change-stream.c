@@ -1039,7 +1039,7 @@ test_change_stream_live_read_prefs (void *test_ctx)
                                NULL /* session */);
 
    /* Change stream client will resume with another cursor. */
-   ASSERT (!mongoc_change_stream_next (stream, &next_doc));
+   ASSERT (mongoc_change_stream_next (stream, &next_doc));
    ASSERT_OR_PRINT (
       !mongoc_change_stream_error_document (stream, &err, &next_doc), err);
 
@@ -1311,10 +1311,134 @@ _skip_if_no_change_stream_updates (void)
       return 0;
    }
    if (test_framework_get_server_version () >=
-       test_framework_str_to_version ("4.0.0")) {
+       test_framework_str_to_version ("3.8.0")) {
       return 1;
    }
    return 0;
+}
+
+
+static void
+_test_resume (const char *opts,
+              const char *expected_change_stream_opts,
+              const char *first_doc,
+              const char *expected_resume_change_stream_opts)
+{
+   mock_server_t *server;
+   request_t *request;
+   future_t *future;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   bson_error_t err;
+   char *msg;
+   const bson_t *doc = NULL;
+
+   server = mock_server_with_autoismaster (7);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   coll = mongoc_client_get_collection (client, "db", "coll");
+   future = future_collection_watch (coll, tmp_bson ("{}"), tmp_bson (opts));
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { %s "
+                "'fullDocument': 'default' } } ], 'cursor': {  } }",
+                expected_change_stream_opts));
+   msg = bson_strdup_printf ("{'cursor': {'id': 123, 'ns': "
+                             "'db.coll','firstBatch': [%s] }, 'operationTime': "
+                             "{ '$timestamp': {'t': 1, 'i': 2} }, 'ok': 1 }",
+                             first_doc);
+   mock_server_replies_simple (request, msg);
+   bson_free (msg);
+   stream = future_get_mongoc_change_stream_ptr (future);
+   BSON_ASSERT (stream);
+   future_destroy (future);
+   request_destroy (request);
+   /* if a first document was returned, the first call to next returns it. */
+   if (*first_doc) {
+      mongoc_change_stream_next (stream, &doc);
+      ASSERT_MATCH (doc, first_doc);
+   }
+   future = future_change_stream_next (stream, &doc);
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'getMore': {'$numberLong': '123'}, 'collection': 'coll' }"));
+   mock_server_hangs_up (request);
+   request_destroy (request);
+   /* since the server closed the connection, a resume is attempted. */
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { %s "
+                "'fullDocument': 'default' }} ], 'cursor': {  } }",
+                expected_resume_change_stream_opts));
+   mock_server_replies_simple (
+      request,
+      "{'cursor': {'id': 0,'ns': 'db.coll','firstBatch': []},'ok': 1 }");
+   request_destroy (request);
+
+   BSON_ASSERT (!future_get_bool (future));
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
+                    err);
+   BSON_ASSERT (doc == NULL);
+   future_destroy (future);
+
+   mongoc_change_stream_destroy (stream);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+/* test resume behavior before and after the first document is receieved. */
+static void
+test_resume_cases (void)
+{
+#define NO_OPT_RA "'resumeAfter': {'$exists': false}"
+#define NO_OPT_OP "'startAtOperationTime': {'$exists': false}"
+#define AGG_OP "'startAtOperationTime': {'$timestamp': {'t': 1, 'i': 2}}"
+#define DOC "{'_id': {'resume': 'example'}}"
+#define OPT_OP "'startAtOperationTime': {'$timestamp': {'t': 111, 'i': 222}}"
+#define DOC_RA "'resumeAfter': {'resume': 'example'}"
+#define OPT_RA "'resumeAfter': {'resume': 'after'}"
+
+   /* test features:
+    * - whether the change stream returns a document before resuming.
+    * - whether 'startAtOperationTime' is specified
+    * - whether 'resumeAfter' is specified
+    * total of 2 * 2 * 2 = 8 test cases. */
+
+   /* neither 'startAtOperationTime' nor 'resumeAfter' specified. */
+   /* - if no doc recv'ed use the operationTime returned by aggregate. */
+   _test_resume ("{}", NO_OPT_OP "," NO_OPT_RA ",", "", AGG_OP ",");
+   /* - if doc recv'ed use the doc's resume token. */
+   _test_resume ("{}", NO_OPT_OP "," NO_OPT_RA ",", DOC, DOC_RA ",");
+
+   /* 'startAtOperationTime' specified
+    * - if no doc recv'ed use the startAtOperationTime in the options. */
+   _test_resume ("{" OPT_OP "}", OPT_OP "," NO_OPT_RA ",", "", OPT_OP ",");
+   /* - if doc recv'ed use the docs resume token. */
+   _test_resume ("{" OPT_OP "}", OPT_OP "," NO_OPT_RA ",", DOC, DOC_RA ",");
+
+   /* 'resumeAfter' specified. */
+   /* - if no doc recv'ed use the resumeAfter in the options. */
+   _test_resume ("{" OPT_RA "}", NO_OPT_OP "," OPT_RA ",", "", OPT_RA ",");
+   /* - if doc recv'ed use the docs resume token. */
+   _test_resume ("{" OPT_RA "}", NO_OPT_OP "," OPT_RA ",", DOC, DOC_RA ",");
+
+   /* both 'resumeAfter' and 'startAtOperationTime' specified. They both
+    * should be passed (although the server currently returns an error). */
+   /* - if no doc recv'ed use both. */
+   _test_resume ("{" OPT_RA "," OPT_OP "}",
+                 OPT_RA "," OPT_OP ",",
+                 "",
+                 OPT_RA "," OPT_OP ",");
+   /* - if doc recv'ed use the docs resume token. */
+   _test_resume (
+      "{" OPT_RA "," OPT_OP "}", OPT_RA "," OPT_OP ",", DOC, DOC_RA ",");
 }
 
 
@@ -1398,8 +1522,6 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_rs_version_7,
-                      test_framework_skip_if_no_sessions,
-                      test_framework_skip_if_no_crypto,
                       _skip_if_no_change_stream_updates);
    TestSuite_AddFull (suite,
                       "/change_stream/database",
@@ -1410,9 +1532,11 @@ test_change_stream_install (TestSuite *suite)
                       _skip_if_no_change_stream_updates);
    TestSuite_AddFull (suite,
                       "/change_stream/client",
-                      test_change_stream_database_watch,
+                      test_change_stream_client_watch,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_rs_version_7,
                       _skip_if_no_change_stream_updates);
+   TestSuite_AddMockServerTest (
+      suite, "/change_stream/resume_with_first_doc", test_resume_cases);
 }
