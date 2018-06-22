@@ -238,13 +238,13 @@ _make_cursor (mongoc_change_stream_t *stream)
 
    /* even though serverId has already been set, still pass the read prefs.
     * they are necessary for OP_MSG if sending to a secondary. */
-   if (!mongoc_client_command_with_opts (stream->client,
-                                         stream->db,
-                                         &command,
-                                         stream->read_prefs,
-                                         &command_opts,
-                                         &reply,
-                                         &stream->err)) {
+   if (!mongoc_client_read_command_with_opts (stream->client,
+                                              stream->db,
+                                              &command,
+                                              stream->read_prefs,
+                                              &command_opts,
+                                              &reply,
+                                              &stream->err)) {
       bson_destroy (&stream->err_doc);
       bson_copy_to (&reply, &stream->err_doc);
       bson_destroy (&reply);
