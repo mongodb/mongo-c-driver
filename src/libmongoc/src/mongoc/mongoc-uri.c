@@ -1349,7 +1349,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
       MONGOC_URI_ERROR (
          error, "Unsupported wtimeoutMS value [w=%d]", wtimeoutms);
       return false;
-   } else {
+   } else if (wtimeoutms > 0) {
       mongoc_write_concern_set_wtimeout (write_concern, wtimeoutms);
    }
 
