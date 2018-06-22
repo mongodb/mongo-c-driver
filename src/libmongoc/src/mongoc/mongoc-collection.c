@@ -2058,7 +2058,6 @@ _mongoc_collection_update_or_replace (
    BSON_ASSERT (collection);
    BSON_ASSERT (selector);
    BSON_ASSERT (update);
-   BSON_ASSERT (bson_empty0 (reply));
 
    if (update_opts->upsert) {
       bson_append_bool (extra, "upsert", 6, true);
@@ -2139,6 +2138,7 @@ _mongoc_collection_update_or_replace (
                                       &update_opts->crud,
                                       &result);
 
+   _mongoc_bson_init_if_set (reply);
    reply_initialized = true;
 
    /* set fields described in CRUD spec for the UpdateResult */
@@ -2182,17 +2182,17 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
    BSON_ASSERT (collection);
    BSON_ASSERT (update);
 
-   _mongoc_bson_init_if_set (reply);
-
    if (!_mongoc_update_one_opts_parse (
           collection->client, opts, &update_one_opts, error)) {
       _mongoc_update_one_opts_cleanup (&update_one_opts);
+      _mongoc_bson_init_if_set (reply);
       return false;
    }
 
    if (!_mongoc_validate_update (
           update, update_one_opts.update.crud.validate, error)) {
       _mongoc_update_one_opts_cleanup (&update_one_opts);
+      _mongoc_bson_init_if_set (reply);
       return false;
    }
 
@@ -2227,17 +2227,17 @@ mongoc_collection_update_many (mongoc_collection_t *collection,
    BSON_ASSERT (collection);
    BSON_ASSERT (update);
 
-   _mongoc_bson_init_if_set (reply);
-
    if (!_mongoc_update_many_opts_parse (
           collection->client, opts, &update_many_opts, error)) {
       _mongoc_update_many_opts_cleanup (&update_many_opts);
+      _mongoc_bson_init_if_set (reply);
       return false;
    }
 
    if (!_mongoc_validate_update (
           update, update_many_opts.update.crud.validate, error)) {
       _mongoc_update_many_opts_cleanup (&update_many_opts);
+      _mongoc_bson_init_if_set (reply);
       return false;
    }
 
@@ -2274,17 +2274,17 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
    BSON_ASSERT (collection);
    BSON_ASSERT (replacement);
 
-   _mongoc_bson_init_if_set (reply);
-
    if (!_mongoc_replace_one_opts_parse (
           collection->client, opts, &replace_one_opts, error)) {
       _mongoc_replace_one_opts_cleanup (&replace_one_opts);
+      _mongoc_bson_init_if_set (reply);
       return false;
    }
 
    if (!_mongoc_validate_replace (
           replacement, replace_one_opts.update.crud.validate, error)) {
       _mongoc_replace_one_opts_cleanup (&replace_one_opts);
+      _mongoc_bson_init_if_set (reply);
       return false;
    }
 

@@ -765,8 +765,6 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
          RETURN (false);
       }
 
-      _mongoc_bson_init_if_set (reply);
-
       command =
          &_mongoc_array_index (&bulk->commands, mongoc_write_command_t, i);
 
@@ -793,6 +791,7 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
    }
 
 cleanup:
+   _mongoc_bson_init_if_set (reply);
    ret = MONGOC_WRITE_RESULT_COMPLETE (&bulk->result,
                                        bulk->client->error_api_version,
                                        bulk->write_concern,
