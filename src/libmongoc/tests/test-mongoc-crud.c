@@ -9,7 +9,7 @@ crud_test_operation_cb (json_test_ctx_t *ctx,
                         const bson_t *test,
                         const bson_t *operation)
 {
-   json_test_operation (ctx, test, operation, NULL);
+   json_test_operation (ctx, test, operation, ctx->collection, NULL);
 }
 
 static void

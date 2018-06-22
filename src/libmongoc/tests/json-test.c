@@ -673,6 +673,19 @@ check_test_version (const bson_t *test)
    char *padded;
    server_version_t test_version, server_version;
 
+   if (bson_has_field (test, "minServerVersion")) {
+      s = bson_lookup_utf8 (test, "minServerVersion");
+      test_version = test_framework_str_to_version (s);
+      server_version = test_framework_get_server_version ();
+      if (server_version < test_version) {
+         if (test_suite_debug_output ()) {
+            printf ("      SKIP, minServerVersion %s\n", s);
+            fflush (stdout);
+         }
+         return false;
+      }
+   }
+
    if (bson_has_field (test, "ignore_if_server_version_greater_than")) {
       s = bson_lookup_utf8 (test, "ignore_if_server_version_greater_than");
       /* s is like "3.0", don't skip if server is 3.0.x but skip 3.1+ */
@@ -708,39 +721,62 @@ check_test_version (const bson_t *test)
 }
 
 
-/* is this test allowed to run against the current test server? */
+/* is this test allowed to run against the current test topology? */
 static bool
 check_topology_type (const bson_t *test)
 {
    bson_iter_t iter;
    bson_iter_t child;
-   bool is_mongos;
    const char *s;
+   bool compatible;
+   bool is_mongos;
+   bool is_replset;
+   bool is_single;
+   bool match;
+   bool can_proceed;
 
-   /* so far this field can only contain an array like ["sharded"] */
-   if (bson_iter_init_find (&iter, test, "ignore_if_topology_type")) {
-      ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
-      ASSERT (bson_iter_recurse (&iter, &child));
+   /* "topology" is an array of compatible topologies.
+    * "ignore_if_topology_type" is an array of incompatible types.
+    * So far, the only valid values are "single", "sharded", and  "replicaset"
+    */
 
-      is_mongos = test_framework_is_mongos ();
+   if (bson_iter_init_find (&iter, test, "topology")) {
+      compatible = true;
+   } else if (bson_iter_init_find (&iter, test, "ignore_if_topology_type")) {
+      compatible = false;
+   } else {
+      return true;
+   }
 
-      while (bson_iter_next (&child)) {
-         if (BSON_ITER_HOLDS_UTF8 (&child)) {
-            s = bson_iter_utf8 (&child, NULL);
+   ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
+   ASSERT (bson_iter_recurse (&iter, &child));
 
-            /* skip test if topology type is sharded */
-            if (!strcmp (s, "sharded") && is_mongos) {
-               if (test_suite_debug_output ()) {
-                  printf ("      SKIP, ignore_if_topology_type %s\n", s);
-                  fflush (stdout);
-               }
-               return false;
-            }
+   is_mongos = test_framework_is_mongos ();
+   is_replset = test_framework_is_replset ();
+   is_single = !is_mongos && !is_replset;
+   match = false;
+
+   while (bson_iter_next (&child)) {
+      if (BSON_ITER_HOLDS_UTF8 (&child)) {
+         s = bson_iter_utf8 (&child, NULL);
+         if (!strcmp (s, "sharded") && is_mongos) {
+            match = true;
+         } else if (!strcmp (s, "replicaset") && is_replset) {
+            match = true;
+         } else if (!strcmp (s, "single") && is_single) {
+            match = true;
          }
       }
    }
 
-   return true;
+   can_proceed = (compatible == match);
+
+   if (!can_proceed && test_suite_debug_output ()) {
+      printf ("      SKIP, incompatible topology type\n");
+      fflush (stdout);
+   }
+
+   return can_proceed;
 }
 
 
@@ -777,6 +813,10 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
 
    mongoc_database_destroy (db);
    mongoc_client_destroy (client);
+
+   if (!bson_has_field (scenario, "data")) {
+      return;
+   }
 
    bson_lookup_doc (scenario, "data", &documents);
    if (!bson_count_keys (&documents)) {
@@ -879,14 +919,24 @@ execute_test (const json_test_config_t *config,
    set_apm_callbacks (
       collection->client, config->command_started_events_only, &ctx);
 
+   if (config->before_test_cb) {
+      config->before_test_cb (&ctx, test);
+   }
+
    json_test_operations (&ctx, test);
+
+   if (config->after_test_cb) {
+      config->after_test_cb (&ctx, test);
+   }
+
    json_test_ctx_end_sessions (&ctx);
 
    if (bson_has_field (test, "expectations")) {
       bson_t expectations;
 
       bson_lookup_doc (test, "expectations", &expectations);
-      check_json_apm_events (&ctx.events, &expectations);
+      check_json_apm_events (
+         &ctx.events, &expectations, config->command_monitoring_allow_subset);
       if (config->events_check_cb) {
          config->events_check_cb (&ctx.events);
       }

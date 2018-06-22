@@ -7,6 +7,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
+#include "json-test-operations.h"
 
 
 const char *
@@ -58,7 +59,7 @@ command_monitoring_test_run_operation (json_test_ctx_t *ctx,
                                        const bson_t *operation)
 {
    /* Command Monitoring tests don't use explicit session */
-   json_test_operation (ctx, test, operation, NULL);
+   json_test_operation (ctx, test, operation, ctx->collection, NULL);
 }
 
 

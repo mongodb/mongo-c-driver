@@ -91,6 +91,12 @@ typedef struct {
    char *errmsg;
    size_t errmsg_len;
    bool strict_numeric_types;
+   /* if retain_dots_in_keys is true, then don't consider a path with dots to
+    * indicate recursing into a sub document. */
+   bool retain_dots_in_keys;
+   /* if allow_placeholders is true, treats 42 and "42" as placeholders. I.e.
+    * comparing 42 to anything is ok. */
+   bool allow_placeholders;
    char path[1000];
 } match_ctx_t;
 
@@ -143,5 +149,8 @@ four_mb_string ();
 
 void
 assert_no_duplicate_keys (const bson_t *doc);
+
+void
+match_in_array (const bson_t *doc, const bson_t *array, match_ctx_t *ctx);
 
 #endif /* TEST_CONVENIENCES_H */

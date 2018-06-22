@@ -17,6 +17,8 @@
 
 #include <bson.h>
 
+#include "bson-types.h"
+
 #include "mongoc-array-private.h"
 /* For strcasecmp on Windows */
 #include "mongoc-util-private.h"
@@ -509,7 +511,8 @@ find (bson_value_t *value,
       const bson_t *doc,
       const char *key,
       bool is_command,
-      bool is_first);
+      bool is_first,
+      bool retain_dots_in_keys);
 
 
 /*--------------------------------------------------------------------------
@@ -690,6 +693,8 @@ derive (match_ctx_t *ctx, match_ctx_t *derived, const char *key)
    } else {
       bson_snprintf (derived->path, sizeof derived->path, "%s", key);
    }
+   derived->retain_dots_in_keys = ctx->retain_dots_in_keys;
+   derived->allow_placeholders = ctx->allow_placeholders;
 }
 
 
@@ -755,7 +760,8 @@ match_bson_with_ctx (const bson_t *doc,
    while (bson_iter_next (&pattern_iter)) {
       key = bson_iter_key (&pattern_iter);
       value = bson_iter_value (&pattern_iter);
-      found = find (&doc_value, doc, key, is_command, is_first);
+      found = find (
+         &doc_value, doc, key, is_command, is_first, ctx->retain_dots_in_keys);
 
       /* is value {"$exists": true} or {"$exists": false} ? */
       is_exists_operator = get_exists_operator (value, &exists);
@@ -819,14 +825,15 @@ find (bson_value_t *value,
       const bson_t *doc,
       const char *key,
       bool is_command,
-      bool is_first)
+      bool is_first,
+      bool retain_dots_in_keys)
 {
    bson_iter_t iter;
    bson_iter_t descendent;
 
    bson_iter_init (&iter, doc);
 
-   if (strchr (key, '.')) {
+   if (!retain_dots_in_keys && strchr (key, '.')) {
       if (!bson_iter_find_descendant (&iter, key, &descendent)) {
          return false;
       }
@@ -1033,6 +1040,22 @@ match_bson_value (const bson_value_t *doc,
    int64_t doc_int64;
    int64_t pattern_int64;
    bool ret;
+
+   if (ctx->allow_placeholders) {
+      /* The change streams spec tests use the value 42 as a placeholder. */
+      bool is_placeholder = false;
+      if (is_number_type (pattern->value_type) &&
+          bson_value_as_int64 (pattern) == 42) {
+         is_placeholder = true;
+      }
+      if (pattern->value_type == BSON_TYPE_UTF8 &&
+          !strcmp (pattern->value.v_utf8.str, "42")) {
+         is_placeholder = true;
+      }
+      if (is_placeholder) {
+         return true;
+      }
+   }
 
    if (is_number_type (pattern->value_type) && ctx &&
        !ctx->strict_numeric_types) {
@@ -1360,4 +1383,33 @@ assert_no_duplicate_keys (const bson_t *doc)
    }
 
    mongoc_set_destroy (keys);
+}
+
+
+void
+match_in_array (const bson_t *doc, const bson_t *array, match_ctx_t *ctx)
+{
+   bson_iter_t array_iter;
+   bool found = false;
+
+   bson_iter_init (&array_iter, array);
+
+   while (bson_iter_next (&array_iter)) {
+      bson_t array_elem;
+
+      ASSERT (BSON_ITER_HOLDS_DOCUMENT (&array_iter));
+      bson_iter_bson (&array_iter, &array_elem);
+
+      if (match_bson_with_ctx (&array_elem, doc, false, ctx)) {
+         found = true;
+      }
+
+      bson_destroy (&array_elem);
+   }
+   if (!found) {
+      test_error ("could not match: %s\n\n"
+                  "in array:\n%s\n\n",
+                  bson_as_canonical_extended_json (doc, NULL),
+                  bson_as_canonical_extended_json (array, NULL));
+   }
 }

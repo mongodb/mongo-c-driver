@@ -443,7 +443,8 @@ test_sdam_monitoring_cb (bson_t *test)
       while (bson_iter_next (&outcome_iter)) {
          if (strcmp ("events", bson_iter_key (&outcome_iter)) == 0) {
             bson_iter_bson (&outcome_iter, &events_expected);
-            check_json_apm_events (&context.events, &events_expected);
+            check_json_apm_events (
+               &context.events, &events_expected, false /* allow_subset */);
          } else {
             fprintf (stderr,
                      "ERROR: unparsed test field %s\n",
@@ -692,7 +693,8 @@ _test_heartbeat_events (bool pooled, bool succeeded)
          mock_server_get_host_and_port (server));
    }
 
-   check_json_apm_events (&context.events, tmp_bson (expected_json));
+   check_json_apm_events (
+      &context.events, tmp_bson (expected_json), false /* allow subset */);
 
    future_destroy (future);
    bson_free (expected_json);

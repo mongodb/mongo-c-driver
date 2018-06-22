@@ -32,6 +32,8 @@ set_apm_callbacks (mongoc_client_t *client,
                    void *ctx);
 
 void
-check_json_apm_events (const bson_t *events, const bson_t *expectations);
+check_json_apm_events (const bson_t *events,
+                       const bson_t *expectations,
+                       bool allow_subset);
 
 #endif

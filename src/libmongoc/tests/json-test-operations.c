@@ -1322,17 +1322,16 @@ void
 json_test_operation (json_test_ctx_t *ctx,
                      const bson_t *test,
                      const bson_t *operation,
+                     mongoc_collection_t *collection,
                      mongoc_client_session_t *session)
 {
    const char *op_name;
    mongoc_read_prefs_t *read_prefs = NULL;
    mongoc_write_concern_t *wc;
-   mongoc_collection_t *collection;
 
    op_name = bson_lookup_utf8 (operation, "name");
    /* databaseOptions don't yet exist in tests, therefore not implemented */
    BSON_ASSERT (!bson_has_field (operation, "databaseOptions"));
-   collection = mongoc_collection_copy (ctx->collection);
    if (bson_has_field (operation, "collectionOptions")) {
       bson_lookup_collection_opts (operation, "collectionOptions", collection);
    }
@@ -1391,7 +1390,6 @@ json_test_operation (json_test_ctx_t *ctx,
       test_error ("unrecognized operation name %s", op_name);
    }
 
-   mongoc_collection_destroy (collection);
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_write_concern_destroy (wc);
 }
@@ -1449,7 +1447,6 @@ json_test_operations (json_test_ctx_t *ctx, const bson_t *test)
       one_operation (ctx, test, &operation);
    } else {
       bson_lookup_doc (test, "operations", &operations);
-      ASSERT_CMPUINT32 (bson_count_keys (&operations), >, (uint32_t) 0);
       BSON_ASSERT (bson_iter_init (&iter, &operations));
       while (bson_iter_next (&iter)) {
          bson_iter_bson (&iter, &operation);

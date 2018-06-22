@@ -17,8 +17,11 @@ retryable_writes_test_run_operation (json_test_ctx_t *ctx,
 {
    bool *explicit_session = (bool *) ctx->config->ctx;
 
-   json_test_operation (
-      ctx, test, operation, *explicit_session ? ctx->sessions[0] : NULL);
+   json_test_operation (ctx,
+                        test,
+                        operation,
+                        ctx->collection,
+                        *explicit_session ? ctx->sessions[0] : NULL);
 }
 
 

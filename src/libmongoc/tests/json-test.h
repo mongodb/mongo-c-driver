@@ -33,12 +33,14 @@ typedef void (*test_hook) (bson_t *test);
 typedef struct _json_test_config_t {
    void *ctx;
    const bson_t *scenario;
+   json_test_cb_t before_test_cb, after_test_cb;
    json_test_operation_cb_t run_operation_cb;
    json_test_events_check_cb_t events_check_cb;
    bool command_started_events_only;
+   bool command_monitoring_allow_subset;
 } json_test_config_t;
 
-#define JSON_TEST_CONFIG_INIT {NULL, NULL, NULL, NULL, false};
+#define JSON_TEST_CONFIG_INIT {NULL, NULL, NULL, NULL, false}
 
 bson_t *
 get_bson_from_json_file (char *filename);

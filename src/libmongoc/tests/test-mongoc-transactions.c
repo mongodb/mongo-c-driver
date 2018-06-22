@@ -25,7 +25,7 @@ transactions_test_run_operation (json_test_ctx_t *ctx,
    /* expect some warnings from abortTransaction, but don't suppress others: we
     * want to know if any other tests log warnings */
    capture_logs (true);
-   json_test_operation (ctx, test, operation, session);
+   json_test_operation (ctx, test, operation, ctx->collection, session);
    assert_all_captured_logs_have_prefix ("Error in abortTransaction:");
    capture_logs (false);
 }
@@ -179,14 +179,14 @@ _test_transient_txn_err (bool hangup)
       }                                                                  \
    } while (0)
 
-#define TEST_CMD_ERR(_expr)                                                \
-   do {                                                                    \
-      r = (_expr);                                                         \
-      BSON_ASSERT (!r);                                                    \
-      ASSERT_TRANSIENT_LABEL (&reply, _expr);                              \
-      bson_destroy (&reply);                                               \
-      /* clean slate for next test */                                      \
-      memset (&reply, 0, sizeof (reply));                                  \
+#define TEST_CMD_ERR(_expr)                   \
+   do {                                       \
+      r = (_expr);                            \
+      BSON_ASSERT (!r);                       \
+      ASSERT_TRANSIENT_LABEL (&reply, _expr); \
+      bson_destroy (&reply);                  \
+      /* clean slate for next test */         \
+      memset (&reply, 0, sizeof (reply));     \
    } while (0)
 
 
@@ -199,16 +199,16 @@ _test_transient_txn_err (bool hangup)
       memset (&reply, 0, sizeof (reply));     \
    } while (0)
 
-#define TEST_CURSOR_ERR(_cursor_expr)                                         \
-   do {                                                                       \
-      cursor = (_cursor_expr);                                                \
-      r = mongoc_cursor_next (cursor, &doc_out);                              \
-      BSON_ASSERT (!r);                                                       \
-      r = !mongoc_cursor_error_document (cursor, &error, &error_doc);         \
-      BSON_ASSERT (!r);                                                       \
-      BSON_ASSERT (error_doc);                                                \
-      ASSERT_TRANSIENT_LABEL (error_doc, _cursor_expr);                       \
-      mongoc_cursor_destroy (cursor);                                         \
+#define TEST_CURSOR_ERR(_cursor_expr)                                 \
+   do {                                                               \
+      cursor = (_cursor_expr);                                        \
+      r = mongoc_cursor_next (cursor, &doc_out);                      \
+      BSON_ASSERT (!r);                                               \
+      r = !mongoc_cursor_error_document (cursor, &error, &error_doc); \
+      BSON_ASSERT (!r);                                               \
+      BSON_ASSERT (error_doc);                                        \
+      ASSERT_TRANSIENT_LABEL (error_doc, _cursor_expr);               \
+      mongoc_cursor_destroy (cursor);                                 \
    } while (0)
 
    b = tmp_bson ("{'x': 1}");
