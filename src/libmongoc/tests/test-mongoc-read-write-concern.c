@@ -208,6 +208,8 @@ test_rw_concern_document (bson_t *scenario)
 
       if (!valid) {
          BSON_ASSERT (rc == NULL || wc == NULL);
+         mongoc_write_concern_destroy (wc);
+         mongoc_read_concern_destroy (rc);
          continue;
       }
 
