@@ -1,8 +1,27 @@
-Next Release
-============
+libbson 1.11.0
+==============
 
-  * Functions incorrectly marked with the "const" compiler attribute now have
-    the attribute removed or changed to "pure"
+It is my pleasure to announce libbson 1.11.0. This version adds the following
+features and improvements:
+
+  * All "destroy" functions such as bson_destroy or bson_reader_destroy now
+    ignore a NULL argument.
+  * Replace MD5 with FNV-1a hash to generate ObjectIds (for FIPs compliance).
+
+Bug fixes:
+
+  * Functions incorrectly marked with the "const" compiler attribute are now
+    marked as "pure", fixes build error when link-time optimization is enabled.
+
+Thanks to everyone who contributed to the development of this release.
+
+  *  A. Jesse Jiryu Davis
+  *  Kevin Albertson
+  *  Roberto C. Sánchez
+
+Peace,
+
+    A. Jesse Jiryu Davis
 
 
 libbson 1.10.3

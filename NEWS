@@ -1,16 +1,53 @@
-Next Release
-============
+mongo-c-driver 1.11.0
+=====================
 
+It is my pleasure to announce the MongoDB C Driver 1.11.0. This release adds
+support for MongoDB 4.0 features. It includes the following additions and
+improvements:
+
+  * Multi-document transactions, see mongoc_client_session_start_transaction
   * New function mongoc_error_has_label to check for specific error labels such
     as "TransientTransactionError" or "UnknownTransactionCommitResult" in
     error replies.
-  * All "destroy" functions such as bson_destroy or mongoc_collection_destroy
-    now ignore a NULL argument.
+  * New functions to subscribe to changes on an entire client or database:
+    - mongoc_client_watch
+    - mongoc_database_watch
+  * New option for change streams, "startAtOperationTime".
+  * mongoc_collection_count_with_opts is deprecated for two new functions:
+    - mongoc_collection_count_documents
+    - mongoc_collection_estimated_document_count
+  * Support for SCRAM-SHA-256 authentication, including support for non-ASCII
+    passwords using libicu is an optional dependency.
+  * Faster mongoc_database_get_collection_names_with_opts fetches only names,
+    not the entire collection metadata.
+
+Additional changes not specific to MongoDB 4.0:
+
+  * All "destroy" functions such as mongoc_collection_destroy now ignore a NULL
+    argument.
   * The driver now returns an error if you attempt to use "arrayFilters" in an
     update with a MongoDB server older than 3.6.
   * Update functions include a new "upsertedCount" field in the reply document.
+  * Replace MD5 with FNV-1a hash to generate ObjectIds (for FIPs compliance).
+
+Bug fixes:
+
   * Functions incorrectly marked with the "const" compiler attribute are now
-    marked as "pure".
+    marked as "pure", fixes build error when link-time optimization is enabled.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Kevin Albertson
+  * Evgeni Dobranov
+  * Spencer McKenney
+  * Jeremy Mikola
+  * Roberto C. Sánchez
+  * Remi Collet
+
+Peace,
+
+    A. Jesse Jiryu Davis
 
 
 mongo-c-driver 1.10.3
