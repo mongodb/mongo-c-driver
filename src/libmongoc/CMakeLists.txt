@@ -796,6 +796,8 @@ endif ()
 # examples/
 mongoc_add_example (example-client TRUE ${PROJECT_SOURCE_DIR}/examples/example-client.c)
 mongoc_add_example (example-collection-watch TRUE ${PROJECT_SOURCE_DIR}/examples/example-collection-watch.c)
+mongoc_add_example (example-resume TRUE ${PROJECT_SOURCE_DIR}/examples/example-resume.c)
+mongoc_add_example (example-start-at-optime TRUE ${PROJECT_SOURCE_DIR}/examples/example-start-at-optime.c)
 mongoc_add_example (example-command-monitoring TRUE ${PROJECT_SOURCE_DIR}/examples/example-command-monitoring.c)
 mongoc_add_example (example-command-with-opts TRUE ${PROJECT_SOURCE_DIR}/examples/example-command-with-opts.c)
 mongoc_add_example (example-create-indexes TRUE ${PROJECT_SOURCE_DIR}/examples/example-create-indexes.c)
