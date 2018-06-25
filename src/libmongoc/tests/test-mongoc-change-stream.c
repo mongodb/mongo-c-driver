@@ -1319,6 +1319,27 @@ _skip_if_no_change_stream_updates (void)
    return 0;
 }
 
+/* Change streams were introduced in 3.6, with wire version 6.
+ * Change streams updates were completed in 3.8, but wire version 7 was added
+ * before change streams updates were completed. So between 3.6 and 3.8 change
+ * streams have partially completed updates.
+ */
+static int
+_skip_if_no_change_streams_or_unfinished_updates (void)
+{
+   server_version_t server_version;
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   server_version = test_framework_get_server_version ();
+   if ((server_version >= test_framework_str_to_version ("3.6.0") &&
+        server_version < test_framework_str_to_version ("3.7.0")) ||
+       server_version > test_framework_str_to_version ("3.8.0")) {
+      return 1;
+   }
+   return 0;
+}
+
 
 static void
 _test_resume (const char *opts,
@@ -1497,7 +1518,8 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_read_prefs,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      test_framework_skip_if_not_rs_version_6,
+                      _skip_if_no_change_streams_or_unfinished_updates);
 
    TestSuite_Add (suite,
                   "/change_stream/server_selection_fails",
