@@ -6,7 +6,7 @@ features and improvements:
 
   * All "destroy" functions such as bson_destroy or bson_reader_destroy now
     ignore a NULL argument.
-  * Replace MD5 with FNV-1a hash to generate ObjectIds (for FIPs compliance).
+  * Replace MD5 with FNV-1a hash to generate ObjectIds (for FIPS compliance).
 
 Bug fixes:
 

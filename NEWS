@@ -28,7 +28,7 @@ Additional changes not specific to MongoDB 4.0:
   * The driver now returns an error if you attempt to use "arrayFilters" in an
     update with a MongoDB server older than 3.6.
   * Update functions include a new "upsertedCount" field in the reply document.
-  * Replace MD5 with FNV-1a hash to generate ObjectIds (for FIPs compliance).
+  * Replace MD5 with FNV-1a hash to generate ObjectIds (for FIPS compliance).
 
 Bug fixes:
 
