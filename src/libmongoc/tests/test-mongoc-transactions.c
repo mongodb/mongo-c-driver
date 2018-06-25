@@ -117,6 +117,7 @@ hangup_except_ismaster (request_t *request, void *data)
    }
 
    mock_server_hangs_up (request);
+   request_destroy (request);
    return true;
 }
 
