@@ -29,7 +29,7 @@ for arg in "$@"; do
     echo "  current respository."
     echo ""
     echo "  This script must be called from the base directory of the repository, and"
-    echo "  requires utilites from these packages: dpkg-dev, mercurial-buildpackage"
+    echo "  requires utilites from these packages: dpkg-dev, git-buildpackage"
     echo ""
     exit
   fi
