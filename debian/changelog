@@ -1,3 +1,14 @@
+mongo-c-driver (1.11.0-1) unstable; urgency=low
+
+  * New upstream release
+  * Rename source package from libmongoc to mongo-c-driver, following upstream
+    repository/project merge
+  * Update to debhelper compatibility 11
+  * Drop +dfsg from version number since upstream tarball is now produced
+    without embedded code copies
+
+ -- A. Jesse Jiryu Davis <jesse@mongodb.com>  Sat, 23 Jun 2018 12:57:32 -0400
+
 libmongoc (1.9.5+dfsg-1) unstable; urgency=low
 
   * New upstream release
