@@ -27,6 +27,7 @@
 #include <mongoc.h>
 #include <mongoc-util-private.h>
 #include <mongoc-database-private.h>
+#include <mongoc-collection-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
@@ -2980,79 +2981,165 @@ test_sample_indexes (mongoc_database_t *db)
 }
 
 
+/* convenience function for testing the outcome of example code */
 static void
-test_sample_txn_command (sample_txn_command_fn_t fn,
-                     int exampleno,
-                     mongoc_client_t *client)
+find_and_match (mongoc_collection_t *collection,
+                const char *filter,
+                const char *pattern)
 {
-   char *example_name;
-   mongoc_collection_t *tmp_collection;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
    bson_error_t error;
-   bool r;
 
-   if (!test_framework_skip_if_no_txns ()) {
-      return;
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson (filter), NULL, NULL);
+
+   if (!mongoc_cursor_next (cursor, &doc)) {
+      if (mongoc_cursor_error (cursor, &error)) {
+         ASSERT_OR_PRINT (false, error);
+      }
+
+      test_error (
+         "No document in %s matching %s", collection->collection, filter);
    }
 
-   example_name = bson_strdup_printf ("example %d", exampleno);
-   capture_logs (true);
-
-   /* preliminary: create collections outside txn */
-   tmp_collection = mongoc_client_get_collection (client, "hr", "employees");
-   mongoc_collection_drop (tmp_collection, NULL);
-   r = mongoc_collection_insert_one (
-      tmp_collection,
-      tmp_bson ("{'employee': 3, 'status': 'Active'}"),
-      NULL,
-      NULL,
-      &error);
-   ASSERT_OR_PRINT (r, error);
-   mongoc_collection_destroy (tmp_collection);
-
-   tmp_collection = mongoc_client_get_collection (
-      client, "reporting", "events");
-   mongoc_collection_drop (tmp_collection, NULL);
-   r = mongoc_collection_insert_one (
-      tmp_collection,
-      tmp_bson ("{'employee': 3, 'status': {'new': 'Active', 'old': null}}"),
-      NULL,
-      NULL,
-      &error);
-   ASSERT_OR_PRINT (r, error);
-   mongoc_collection_destroy (tmp_collection);
-
-   fn (client);
-
-   ASSERT_NO_CAPTURED_LOGS (example_name);
-
-   bson_free (example_name);
+   ASSERT_MATCH (doc, pattern);
+   mongoc_cursor_destroy (cursor);
 }
 
 
+/* setup, preliminary to transactions example code */
 static void
-test_example_txn_1 (mongoc_client_t *client)
+insert_employee (mongoc_client_t *client, int employee)
 {
-   /* Start Transactions Intro Example 1 */
    mongoc_collection_t *employees;
    mongoc_collection_t *events;
-   mongoc_client_session_t *session;
-   mongoc_read_concern_t *rc;
-   mongoc_write_concern_t *wc;
-   mongoc_transaction_opt_t *txn_opts;
-   bson_t opts = BSON_INITIALIZER;
-   bson_t *filter;
-   bson_t *update;
-   bson_t *event;
-   bson_t reply;
    bson_error_t error;
    bool r;
 
    employees = mongoc_client_get_collection (client, "hr", "employees");
+   mongoc_collection_drop (employees, NULL);
+
+   r = mongoc_collection_insert_one (
+      employees,
+      tmp_bson ("{'employee': %d, 'status': 'Active'}", employee),
+      NULL,
+      NULL,
+      &error);
+   ASSERT_OR_PRINT (r, error);
+
    events = mongoc_client_get_collection (client, "reporting", "events");
-   session = mongoc_client_start_session (client, NULL, &error);
-   if (!session) {
-      MONGOC_ERROR ("%s", error.message);
+
+   mongoc_collection_drop (events, NULL);
+
+   r = mongoc_collection_insert_one (
+      events,
+      tmp_bson ("{'employee': %d, 'status': {'new': 'Active', 'old': null}}",
+                employee),
+      NULL,
+      NULL,
+      &error);
+   ASSERT_OR_PRINT (r, error);
+
+   mongoc_collection_destroy (employees);
+   mongoc_collection_destroy (events);
+}
+
+
+/* clang-format on */
+/* Start Transactions Retry Example 3 */
+/* takes a session, an out-param for server reply, and out-param for error. */
+typedef bool (*txn_func_t) (mongoc_client_session_t *,
+                            bson_t *,
+                            bson_error_t *);
+
+
+bool
+run_transaction_with_retry (txn_func_t txn_func,
+                            mongoc_client_session_t *cs,
+                            bson_error_t *error)
+{
+   bson_t reply;
+   bool r;
+
+   while (true) {
+      /* perform transaction */
+      r = txn_func (cs, &reply, error);
+      if (r) {
+         /* success */
+         bson_destroy (&reply);
+         return true;
+      }
+
+      MONGOC_WARNING ("Transaction aborted: %s", error->message);
+      if (mongoc_error_has_label (&reply, "TransientTransactionError")) {
+         /* on transient error, retry the whole transaction */
+         MONGOC_WARNING ("TransientTransactionError, retrying transaction...");
+         bson_destroy (&reply);
+      } else {
+         /* non-transient error */
+         break;
+      }
    }
+
+   bson_destroy (&reply);
+   return false;
+}
+
+
+bool
+commit_with_retry (mongoc_client_session_t *cs, bson_error_t *error)
+{
+   bson_t reply;
+   bool r;
+
+   while (true) {
+      /* commit uses write concern set at transaction start, see
+       * mongoc_transaction_opts_set_write_concern */
+      r = mongoc_client_session_commit_transaction (cs, &reply, error);
+      if (r) {
+         MONGOC_INFO ("Transaction committed");
+         break;
+      }
+
+      if (mongoc_error_has_label (&reply, "UnknownTransactionCommitResult")) {
+         MONGOC_WARNING ("UnknownTransactionCommitResult, retrying commit ...");
+         bson_destroy (&reply);
+      } else {
+         /* commit failed, cannot retry */
+         break;
+      }
+   }
+
+   bson_destroy (&reply);
+
+   return r;
+}
+
+
+/* updates two collections in a transaction and calls commit_with_retry */
+bool
+update_employee_info (mongoc_client_session_t *cs,
+                      bson_t *reply,
+                      bson_error_t *error)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *employees;
+   mongoc_collection_t *events;
+   mongoc_read_concern_t *rc;
+   mongoc_write_concern_t *wc;
+   mongoc_transaction_opt_t *txn_opts;
+   bson_t opts = BSON_INITIALIZER;
+   bson_t *filter = NULL;
+   bson_t *update = NULL;
+   bson_t *event = NULL;
+   bool r;
+
+   bson_init (reply);
+
+   client = mongoc_client_session_get_client (cs);
+   employees = mongoc_client_get_collection (client, "hr", "employees");
+   events = mongoc_client_get_collection (client, "reporting", "events");
 
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_SNAPSHOT);
@@ -3062,55 +3149,47 @@ test_example_txn_1 (mongoc_client_t *client)
    mongoc_transaction_opts_set_read_concern (txn_opts, rc);
    mongoc_transaction_opts_set_write_concern (txn_opts, wc);
 
-   r = mongoc_client_session_start_transaction (session, txn_opts, &error);
+   r = mongoc_client_session_start_transaction (cs, txn_opts, error);
    if (!r) {
-      MONGOC_ERROR ("%s", error.message);
+      goto done;
    }
 
-   r = mongoc_client_session_append (session, &opts, &error);
+   r = mongoc_client_session_append (cs, &opts, error);
    if (!r) {
-      MONGOC_ERROR ("%s", error.message);
+      goto done;
    }
 
    filter = BCON_NEW ("employee", BCON_INT32 (3));
    update = BCON_NEW ("$set", "{", "status", "Inactive", "}");
+   /* mongoc_collection_update_one will reinitialize reply */
+   bson_destroy (reply);
    r = mongoc_collection_update_one (
-      employees, filter, update, &opts, &reply, &error);
+      employees, filter, update, &opts, reply, error);
 
    if (!r) {
-      MONGOC_ERROR ("%s", error.message);
+      goto abort;
    }
-
-   bson_destroy (&reply);
 
    event = BCON_NEW ("employee", BCON_INT32 (3));
    BCON_APPEND (event, "status", "{", "new", "Inactive", "old", "Active", "}");
 
-   r = mongoc_collection_insert_one (events, event, &opts, &reply, &error);
+   bson_destroy (reply);
+   r = mongoc_collection_insert_one (events, event, &opts, reply, error);
    if (!r) {
-      MONGOC_ERROR ("%s", error.message);
+      goto abort;
    }
 
-   while (true) {
-      bson_destroy (&reply);
+   r = commit_with_retry (cs, error);
 
-      r = mongoc_client_session_commit_transaction (session, &reply, &error);
-      if (r) {
-         MONGOC_INFO ("Transaction committed.");
-         break;
-      } else if (
-            mongoc_error_has_label (&reply, "UnknownTransactionCommitResult")) {
-         MONGOC_INFO (
-            "UnknownTransactionCommitResult, retrying commit operation ...");
-      } else {
-         MONGOC_ERROR ("Error during commit: %s", error.message);
-         break;
-      }
+abort:
+   if (!r) {
+      MONGOC_ERROR ("Aborting due to error in transaction: %s", error->message);
+      mongoc_client_session_abort_transaction (cs, NULL);
    }
 
+done:
    mongoc_collection_destroy (employees);
    mongoc_collection_destroy (events);
-   mongoc_client_session_destroy (session);
    mongoc_read_concern_destroy (rc);
    mongoc_write_concern_destroy (wc);
    mongoc_transaction_opts_destroy (txn_opts);
@@ -3118,8 +3197,59 @@ test_example_txn_1 (mongoc_client_t *client)
    bson_destroy (filter);
    bson_destroy (update);
    bson_destroy (event);
-   bson_destroy (&reply);
-   /* End Transactions Intro Example 1 */
+
+   return r;
+}
+
+
+void
+example_func (mongoc_client_t *client)
+{
+   mongoc_client_session_t *cs;
+   bson_error_t error;
+   bool r;
+
+   cs = mongoc_client_start_session (client, NULL, &error);
+   if (!cs) {
+      MONGOC_ERROR ("Could not start session: %s", error.message);
+      return;
+   }
+
+   r = run_transaction_with_retry (update_employee_info, cs, &error);
+   if (!r) {
+      MONGOC_ERROR ("Could not update employee, permanent error: %s",
+                    error.message);
+   }
+
+   mongoc_client_session_destroy (cs);
+}
+/* End Transactions Retry Example 3 */
+/* clang-format off */
+
+static void
+test_sample_txn_commands (mongoc_client_t *client)
+{
+   mongoc_collection_t *employees;
+   mongoc_collection_t *events;
+
+   if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
+   /* preliminary: create collections outside txn */
+   insert_employee (client, 3);
+   employees = mongoc_client_get_collection (client, "hr", "employees");
+   events = mongoc_client_get_collection (client, "reporting", "events");
+
+   capture_logs (true);
+
+   /* test transactions retry example 3 */
+   example_func (client);
+   ASSERT_NO_CAPTURED_LOGS ("transactions retry example 3");
+   find_and_match (employees, "{'employee': 3}", "{'status': 'Inactive'}");
+
+   mongoc_collection_destroy (employees);
+   mongoc_collection_destroy (events);
 }
 
 
@@ -3194,7 +3324,7 @@ test_sample_commands (void)
    test_sample_aggregation (db);
    test_sample_indexes (db);
    test_sample_run_command (db);
-   test_sample_txn_command (test_example_txn_1, 1, client);
+   test_sample_txn_commands (client);
 
    mongoc_collection_drop (collection, NULL);
 
