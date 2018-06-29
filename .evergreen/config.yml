@@ -244,6 +244,36 @@ functions:
         content_type: text/html
         display_name: "Coverage Report"
 
+  "upload abi report" :
+    - command: shell.exec
+      params:
+        silent: true
+        working_dir: "mongoc"
+        script: |
+           export AWS_ACCESS_KEY_ID=${aws_key}
+           export AWS_SECRET_ACCESS_KEY=${aws_secret}
+           aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file:  mongoc/abi-compliance/compat_reports/libmongoc/X_to_Y/compat_report.html
+        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports/libmongoc/X_to_Y/compat_report.html
+        bucket: mciuploads
+        permissions: public-read
+        content_type: text/html
+        display_name: "ABI Report libmongoc"
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file:  mongoc/abi-compliance/compat_reports/libbson/X_to_Y/compat_report.html
+        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports/libbson/X_to_Y/compat_report.html
+        bucket: mciuploads
+        permissions: public-read
+        content_type: text/html
+        display_name: "ABI Report libbson"
+
   "upload scan artifacts" :
     - command: shell.exec
       type: test
@@ -616,7 +646,28 @@ tasks:
               export LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now"
               DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=OFF ZLIB=OFF sh .evergreen/compile.sh
         - func: "upload build"
+    
+    - name: abi-compliance-check
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              sh .evergreen/abi-compliance-check.sh
 
+        - func: "upload abi report"
+
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              if [ -e ./abi-compliance/abi-error.txt ]; then
+                exit 1
+              else
+                exit 0
+              fi
 
     - name: test-latest-server-hardened
       tags: ["hardened", "latest"]
@@ -7785,6 +7836,7 @@ buildvariants:
     - "debug-compile-valgrind"
     - "debug-compile-no-counters"
     - name: "link-with-cmake"
+    - name: "abi-compliance-check"
     - name: "link-with-cmake-ssl"
     - name: "link-with-cmake-snappy"
     - name: "link-with-cmake-mac"

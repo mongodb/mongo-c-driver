@@ -13,6 +13,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       ANALYZE                 Run the build through clangs scan-build
 #       COVERAGE                Produce code coverage reports
 #       RDTSCP                  Use Intel RDTSCP instruction
+#       SKIP_TESTS              Skips running the libmongoc tests after compiling
 # Options for CMake:
 #       LIBBSON                 Build against bundled or external libbson
 #       EXTRA_CONFIGURE_FLAGS   Extra configure flags to use
@@ -29,6 +30,7 @@ VALGRIND=${VALGRIND:-OFF}
 ANALYZE=${ANALYZE:-OFF}
 COVERAGE=${COVERAGE:-OFF}
 RDTSCP=${RDTSCP:-OFF}
+SKIP_TESTS=${SKIP_TESTS:-OFF}
 ENABLE_SHM_COUNTERS=${ENABLE_SHM_COUNTERS:-AUTO}
 
 # CMake options.
@@ -46,6 +48,7 @@ echo "VALGRIND: $VALGRIND"
 echo "CC: $CC"
 echo "ANALYZE: $ANALYZE"
 echo "COVERAGE: $COVERAGE"
+echo "SKIP_TESTS: $SKIP_TESTS"
 echo "ZLIB: $ZLIB"
 
 # Get the kernel name, lowercased
@@ -188,6 +191,12 @@ openssl md5 README.rst || true
 $SCAN_BUILD make -j8 all
 
 ulimit -c unlimited || true
+
+
+# We are done here if we don't want to run the tests.
+if [ "$SKIP_TESTS" = "ON" ]; then
+   exit 0
+fi
 
 # Write stderr to error.log and to console.
 # TODO: valgrind
