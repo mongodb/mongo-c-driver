@@ -744,6 +744,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, server_id, stream, error);
    if (!server_stream) {
+      bson_destroy (copied_command);
       RETURN (NULL);
    }
 
