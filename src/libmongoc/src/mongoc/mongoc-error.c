@@ -27,8 +27,8 @@ mongoc_error_has_label (const bson_t *reply, const char *label)
    BSON_ASSERT (reply);
    BSON_ASSERT (label);
 
-   if (bson_iter_init_find (&iter, reply, "errorLabels")) {
-      bson_iter_recurse (&iter, &error_labels);
+   if (bson_iter_init_find (&iter, reply, "errorLabels") &&
+       bson_iter_recurse (&iter, &error_labels)) {
       while (bson_iter_next (&error_labels)) {
          if (BSON_ITER_HOLDS_UTF8 (&error_labels) &&
              !strcmp (bson_iter_utf8 (&error_labels, NULL), label)) {
