@@ -629,8 +629,8 @@ _mongoc_handshake_parse_sasl_supported_mechs (
    memset (sasl_supported_mechs, 0, sizeof (*sasl_supported_mechs));
    if (bson_iter_init_find (&iter, ismaster, "saslSupportedMechs")) {
       bson_iter_t array_iter;
-      if (BSON_ITER_HOLDS_ARRAY (&iter)) {
-         bson_iter_recurse (&iter, &array_iter);
+      if (BSON_ITER_HOLDS_ARRAY (&iter) &&
+          bson_iter_recurse (&iter, &array_iter)) {
          while (bson_iter_next (&array_iter)) {
             if (BSON_ITER_HOLDS_UTF8 (&array_iter)) {
                const char *mechanism_name = bson_iter_utf8 (&array_iter, NULL);
