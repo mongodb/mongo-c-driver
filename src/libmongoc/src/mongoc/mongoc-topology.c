@@ -421,6 +421,19 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_scan_once --
+ *
+ *      Runs a single complete scan.
+ *
+ *      NOTE: this method expects @topology's mutex to be locked on entry.
+ *
+ *      NOTE: this method unlocks and re-locks @topology's mutex.
+ *
+ *--------------------------------------------------------------------------
+ */
 static void
 mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
 {
@@ -441,7 +454,6 @@ mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
 
    topology->last_scan = bson_get_monotonic_time ();
    topology->stale = false;
-   mongoc_mutex_unlock (&topology->mutex);
 }
 
 
@@ -463,7 +475,9 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
 
    _mongoc_handshake_freeze ();
 
+   mongoc_mutex_lock (&topology->mutex);
    mongoc_topology_scan_once (topology, true /* obey cooldown */);
+   mongoc_mutex_unlock (&topology->mutex);
    mongoc_topology_scanner_get_error (topology->scanner, error);
 }
 
@@ -1145,6 +1159,7 @@ _mongoc_topology_run_background (void *data)
 
       topology->scan_requested = false;
       mongoc_topology_scan_once (topology, false /* obey cooldown */);
+      mongoc_mutex_unlock (&topology->mutex);
 
       last_scan = bson_get_monotonic_time ();
    }
