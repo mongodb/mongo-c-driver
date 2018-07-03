@@ -104,7 +104,7 @@ _mongoc_cursor_impl_find_opquery_init (mongoc_cursor_t *cursor, bson_t *filter)
 {
    data_find_opquery_t *data = bson_malloc0 (sizeof (*data));
    _mongoc_cursor_response_legacy_init (&data->response_legacy);
-   bson_steal (&data->filter, filter);
+   BSON_ASSERT (bson_steal (&data->filter, filter));
    cursor->impl.prime = _prime;
    cursor->impl.pop_from_batch = _pop_from_batch;
    cursor->impl.get_next_batch = _get_next_batch;
