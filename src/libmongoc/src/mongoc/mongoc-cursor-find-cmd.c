@@ -96,7 +96,7 @@ void
 _mongoc_cursor_impl_find_cmd_init (mongoc_cursor_t *cursor, bson_t *filter)
 {
    data_find_cmd_t *data = bson_malloc0 (sizeof (*data));
-   bson_steal (&data->filter, filter);
+   BSON_ASSERT (bson_steal (&data->filter, filter));
    bson_init (&data->response.reply);
    cursor->impl.prime = _prime;
    cursor->impl.pop_from_batch = _pop_from_batch;
