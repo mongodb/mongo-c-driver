@@ -2709,7 +2709,7 @@ _bson_as_json_visit_binary (const bson_iter_t *iter,
 
    b64_len = (v_binary_len / 3 + 1) * 4 + 1;
    b64 = bson_malloc0 (b64_len);
-   bson_b64_ntop (v_binary, v_binary_len, b64, b64_len);
+   BSON_ASSERT (bson_b64_ntop (v_binary, v_binary_len, b64, b64_len) != -1);
 
    if (state->mode == BSON_JSON_MODE_CANONICAL ||
        state->mode == BSON_JSON_MODE_RELAXED) {
