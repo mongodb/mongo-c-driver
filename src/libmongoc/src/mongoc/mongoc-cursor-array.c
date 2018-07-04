@@ -54,7 +54,7 @@ _pop_from_batch (mongoc_cursor_t *cursor)
    data_array_t *data = (data_array_t *) cursor->impl.data;
    if (bson_iter_next (&data->iter)) {
       bson_iter_document (&data->iter, &document_len, &document);
-      bson_init_static (&data->bson, document, document_len);
+      BSON_ASSERT (bson_init_static (&data->bson, document, document_len));
       cursor->current = &data->bson;
       return IN_BATCH;
    }
