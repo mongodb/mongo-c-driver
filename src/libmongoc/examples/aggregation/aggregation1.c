@@ -59,7 +59,7 @@ main (int argc, char *argv[])
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    const char *uri_string =
-      "mongodb://localhost:27017?appname=aggregation-example";
+      "mongodb://localhost:27017/?appname=aggregation-example";
    mongoc_uri_t *uri;
    bson_error_t error;
 
