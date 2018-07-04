@@ -59,7 +59,7 @@ _mongoc_gridfs_file_list_new (mongoc_gridfs_t *gridfs,
    BSON_ASSERT (cursor);
    bson_destroy (&opts);
    if (limit) {
-      mongoc_cursor_set_limit (cursor, limit);
+      (void) mongoc_cursor_set_limit (cursor, limit);
    }
    bson_destroy (&unwrapped);
    if (error.domain) {
