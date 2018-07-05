@@ -34,7 +34,7 @@ convert_write_concern (const bson_t *wc_doc)
    const char *key;
 
    wc = mongoc_write_concern_new ();
-   bson_iter_init (&iter, wc_doc);
+   BSON_ASSERT (bson_iter_init (&iter, wc_doc));
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
@@ -84,7 +84,7 @@ convert_read_concern (const bson_t *rc_doc)
    const char *key;
 
    rc = mongoc_read_concern_new ();
-   bson_iter_init (&iter, rc_doc);
+   BSON_ASSERT (bson_iter_init (&iter, rc_doc));
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
