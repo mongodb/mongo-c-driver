@@ -157,7 +157,7 @@ mongoc_async_run (mongoc_async_t *async)
 
             if ((poller[i].revents & poller[i].events) ||
                 iter->state == MONGOC_ASYNC_CMD_ERROR_STATE) {
-               mongoc_async_cmd_run (iter);
+               (void) mongoc_async_cmd_run (iter);
                nactive--;
             }
 
