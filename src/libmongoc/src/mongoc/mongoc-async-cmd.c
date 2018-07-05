@@ -102,6 +102,8 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
    int64_t rtt_msec;
    _mongoc_async_cmd_phase_t phase_callback;
 
+   BSON_ASSERT (acmd);
+
    /* if we have successfully connected to the node, call the callback. */
    if (acmd->state == MONGOC_ASYNC_CMD_SEND) {
       acmd->cb (acmd, MONGOC_ASYNC_CMD_CONNECTED, NULL, 0);
