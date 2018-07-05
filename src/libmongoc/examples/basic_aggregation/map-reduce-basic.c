@@ -8,7 +8,6 @@ map_reduce_basic (mongoc_database_t *database)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
-   bool map_reduce_done = false;
    bool query_done = false;
 
    const char *out_collection_name = "outCollection";
@@ -31,7 +30,6 @@ map_reduce_basic (mongoc_database_t *database)
                        BCON_UTF8 (out_collection_name));
    res =
       mongoc_database_command_simple (database, command, NULL, &reply, &error);
-   map_reduce_done = true;
 
    if (!res) {
       fprintf (stderr, "MapReduce failed: %s\n", error.message);
@@ -66,10 +64,8 @@ cleanup:
       mongoc_collection_destroy (out_collection);
    }
 
-   if (map_reduce_done) {
-      bson_destroy (&reply);
-      bson_destroy (command);
-   }
+   bson_destroy (&reply);
+   bson_destroy (command);
 
    return res;
 }
