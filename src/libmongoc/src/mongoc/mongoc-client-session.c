@@ -167,6 +167,7 @@ txn_finish (mongoc_client_session_t *session,
     * error, or write concern failed / timeout." */
    if (intent == TXN_COMMIT && reply) {
       if (!r && (err_ptr->domain == MONGOC_ERROR_STREAM ||
+                 err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION ||
                  error_type == MONGOC_WRITE_ERR_RETRY ||
                  error_type == MONGOC_WRITE_ERR_WRITE_CONCERN)) {
          bson_copy_to_excluding_noinit (
@@ -720,13 +721,24 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
 
    BSON_ASSERT (session);
 
-   if (session->txn.state == MONGOC_TRANSACTION_STARTING ||
-       session->txn.state == MONGOC_TRANSACTION_IN_PROGRESS) {
+   /* use "switch" so that static checkers ensure we handle all states */
+   switch (session->txn.state) {
+   case MONGOC_TRANSACTION_STARTING:
+   case MONGOC_TRANSACTION_IN_PROGRESS:
       bson_set_error (error,
                       MONGOC_ERROR_TRANSACTION,
                       MONGOC_ERROR_TRANSACTION_INVALID_STATE,
                       "Transaction already in progress");
       RETURN (false);
+   case MONGOC_TRANSACTION_ENDING:
+      MONGOC_ERROR ("starting txn in invalid state MONGOC_TRANSACTION_ENDING");
+      abort ();
+   case MONGOC_TRANSACTION_COMMITTED:
+   case MONGOC_TRANSACTION_COMMITTED_EMPTY:
+   case MONGOC_TRANSACTION_ABORTED:
+   case MONGOC_TRANSACTION_NONE:
+   default:
+      break;
    }
 
    session->server_session->txn_number++;
@@ -790,9 +802,16 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
       break;
    case MONGOC_TRANSACTION_IN_PROGRESS:
    case MONGOC_TRANSACTION_COMMITTED:
+      /* in MONGOC_TRANSACTION_ENDING we add txnNumber and autocommit: false
+       * to the commitTransaction command, but if it fails with network error
+       * we add UnknownTransactionCommitResult not TransientTransactionError */
+      session->txn.state = MONGOC_TRANSACTION_ENDING;
       r = txn_finish (session, TXN_COMMIT, reply, error);
       session->txn.state = MONGOC_TRANSACTION_COMMITTED;
       break;
+   case MONGOC_TRANSACTION_ENDING:
+      MONGOC_ERROR ("commit called in invalid state MONGOC_TRANSACTION_ENDING");
+      abort ();
    case MONGOC_TRANSACTION_ABORTED:
    default:
       bson_set_error (
@@ -822,6 +841,7 @@ mongoc_client_session_abort_transaction (mongoc_client_session_t *session,
       session->txn.state = MONGOC_TRANSACTION_ABORTED;
       RETURN (true);
    case MONGOC_TRANSACTION_IN_PROGRESS:
+      session->txn.state = MONGOC_TRANSACTION_ENDING;
       /* Transactions Spec: ignore errors from abortTransaction command */
       txn_finish (session, TXN_ABORT, NULL, NULL);
       session->txn.state = MONGOC_TRANSACTION_ABORTED;
@@ -840,6 +860,9 @@ mongoc_client_session_abort_transaction (mongoc_client_session_t *session,
                       MONGOC_ERROR_TRANSACTION_INVALID_STATE,
                       "Cannot call abortTransaction twice");
       RETURN (false);
+   case MONGOC_TRANSACTION_ENDING:
+      MONGOC_ERROR ("abort called in invalid state MONGOC_TRANSACTION_ENDING");
+      abort ();
    case MONGOC_TRANSACTION_NONE:
    default:
       bson_set_error (error,
@@ -944,6 +967,7 @@ _mongoc_client_session_append_txn (mongoc_client_session_t *session,
       bson_append_bool (cmd, "startTransaction", 16, true);
    /* FALL THROUGH */
    case MONGOC_TRANSACTION_IN_PROGRESS:
+   case MONGOC_TRANSACTION_ENDING:
       bson_append_int64 (
          cmd, "txnNumber", 9, session->server_session->txn_number);
       bson_append_bool (cmd, "autocommit", 10, false);

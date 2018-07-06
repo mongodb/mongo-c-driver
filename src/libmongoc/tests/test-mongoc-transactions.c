@@ -286,6 +286,75 @@ test_network_error (void)
 }
 
 
+/* Transactions Spec: Drivers add the "UnknownTransactionCommitResult" to a
+ * server selection error from commitTransaction, even if this is the first
+ * attempt to send commitTransaction. It is true in this case that the driver
+ * knows the result: the transaction is definitely not committed. However, the
+ * "UnknownTransactionCommitResult" label properly communicates to the
+ * application that calling commitTransaction again may succeed.
+ */
+static void
+test_unknown_commit_result (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_client_session_t *session;
+   mongoc_collection_t *collection;
+   future_t *future;
+   request_t *request;
+   bson_t opts = BSON_INITIALIZER;
+   bson_error_t error;
+   bson_t reply;
+   bool r;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   rs_response_to_ismaster (
+      server, 7, true /* primary */, false /* tags */, server, NULL);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   /* allow fast reconnect */
+   client->topology->min_heartbeat_frequency_msec = 0;
+   session = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (session, error);
+   r = mongoc_client_session_start_transaction (session, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   r = mongoc_client_session_append (session, &opts, &error);
+   ASSERT_OR_PRINT (r, error);
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   future = future_collection_insert_one (
+      collection, tmp_bson ("{}"), &opts, NULL, &error);
+   request = mock_server_receives_msg (
+      server, 0, tmp_bson ("{'insert': 'collection'}"), tmp_bson ("{}"));
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* test server selection errors have UnknownTransactionCommitResult */
+   mock_server_destroy (server);
+   r = mongoc_client_session_commit_transaction (session, &reply, &error);
+   BSON_ASSERT (!r);
+
+   if (!mongoc_error_has_label (&reply, "UnknownTransactionCommitResult")) {
+      test_error ("Reply lacks UnknownTransactionCommitResult label: %s",
+                  bson_as_json (&reply, NULL));
+   }
+
+   if (mongoc_error_has_label (&reply, "TransientTransactionError")) {
+      test_error ("Reply shouldn't have TransientTransactionError label: %s",
+                  bson_as_json (&reply, NULL));
+   }
+
+   bson_destroy (&opts);
+   mongoc_collection_destroy (collection);
+
+   /* warning when trying to end the session */
+   capture_logs (true);
+   mongoc_client_session_destroy (session);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_transactions_install (TestSuite *suite)
 {
@@ -311,5 +380,9 @@ test_transactions_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/transactions/network_err",
                                 test_network_error,
+                                test_framework_skip_if_no_crypto);
+   TestSuite_AddMockServerTest (suite,
+                                "/transactions/unknown_commit_result",
+                                test_unknown_commit_result,
                                 test_framework_skip_if_no_crypto);
 }
