@@ -294,7 +294,8 @@
       int32_t __l;                                  \
       memcpy (&__l, rpc->_name, 4);                 \
       __l = BSON_UINT32_FROM_LE (__l);              \
-      bson_init_static (&b, rpc->_name, __l);       \
+      BSON_ASSERT (                                 \
+         bson_init_static (&b, rpc->_name, __l));   \
       s = bson_as_relaxed_extended_json (&b, NULL); \
       printf ("  " #_name " : %s\n", s);            \
       bson_free (s);                                \
@@ -339,8 +340,8 @@
                int32_t __l;                                                 \
                memcpy (&__l, rpc->_name[_i].payload.bson_document, 4);      \
                __l = BSON_UINT32_FROM_LE (__l);                             \
-               bson_init_static (                                           \
-                  &b, rpc->_name[_i].payload.bson_document, __l);           \
+               BSON_ASSERT (bson_init_static (                              \
+                  &b, rpc->_name[_i].payload.bson_document, __l));          \
                s = bson_as_relaxed_extended_json (&b, NULL);                \
                printf ("  Type %d: %s\n", rpc->_name[_i].payload_type, s);  \
                bson_free (s);                                               \
