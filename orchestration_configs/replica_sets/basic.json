@@ -6,7 +6,6 @@
         "ipv6": true,
         "bind_ip": "127.0.0.1,::1",
         "journal": true,
-        "noprealloc": true,
         "port": 27017,
         "setParameter" : { "enableTestCommands": 1 }
       },
@@ -22,7 +21,6 @@
         "ipv6": true,
         "bind_ip": "127.0.0.1,::1",
         "journal": true,
-        "noprealloc": true,
         "port": 27018,
         "setParameter" : { "enableTestCommands": 1 }
       },
@@ -38,7 +36,6 @@
         "ipv6": true,
         "bind_ip": "127.0.0.1,::1",
         "journal": true,
-        "noprealloc": true,
         "port": 27019,
         "setParameter" : { "enableTestCommands": 1 }
       },
