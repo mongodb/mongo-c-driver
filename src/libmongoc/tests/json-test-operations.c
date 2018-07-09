@@ -401,7 +401,7 @@ check_error_labels_contain (const bson_t *operation, const bson_value_t *result)
       return;
    }
 
-   bson_iter_init (&operation_iter, operation);
+   BSON_ASSERT (bson_iter_init (&operation_iter, operation));
    BSON_ASSERT (bson_iter_find_descendant (
       &operation_iter, "result.errorLabelsContain", &expected_labels));
    BSON_ASSERT (bson_iter_recurse (&expected_labels, &expected_label));
