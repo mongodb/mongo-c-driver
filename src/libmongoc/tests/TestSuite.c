@@ -137,7 +137,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
 #ifdef MONGOC_TRACE
          suite->flags |= TEST_TRACE;
 #else
-         test_error ("-t requires mongoc compiled with --enable-tracing.");
+         test_error ("-t requires mongoc compiled with -DENABLE_TRACING=ON.");
 #endif
       } else if (0 == strcmp ("-F", argv[i])) {
          if (argc - 1 == i) {

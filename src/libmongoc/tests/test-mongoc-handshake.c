@@ -678,7 +678,7 @@ test_handshake_platform_config ()
 #endif
 
 #ifdef MONGOC_TRACE
-   BSON_ASSERT (_get_bit (config_str, MONGOC_TRACE));
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_TRACE));
 #endif
    /* any excess bits should all be zero. */
    for (i = LAST_MONGOC_MD_FLAG; i < total_bits; i++) {

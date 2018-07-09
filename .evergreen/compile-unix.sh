@@ -8,6 +8,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       MARCH                   Machine Architecture. Defaults to lowercase uname -m
 #       RELEASE                 Use the fully qualified release archive
 #       DEBUG                   Use debug configure flags
+#       TRACING                 Use function tracing
 #       VALGRIND                Run the test suite through valgrind
 #       CC                      Which compiler to use
 #       ANALYZE                 Run the build through clangs scan-build
@@ -26,6 +27,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # Options for this script.
 RELEASE=${RELEASE:-OFF}
 DEBUG=${DEBUG:-OFF}
+TRACING=${TRACING:-OFF}
 VALGRIND=${VALGRIND:-OFF}
 ANALYZE=${ANALYZE:-OFF}
 COVERAGE=${COVERAGE:-OFF}
@@ -44,6 +46,7 @@ echo "CFLAGS: $CFLAGS"
 echo "MARCH: $MARCH"
 echo "RELEASE: $RELEASE"
 echo "DEBUG: $DEBUG"
+echo "TRACING: $TRACING"
 echo "VALGRIND: $VALGRIND"
 echo "CC: $CC"
 echo "ANALYZE: $ANALYZE"
@@ -68,6 +71,7 @@ DEBUG_AND_RELEASE_FLAGS="\
    -DENABLE_HTML_DOCS=OFF \
    -DENABLE_MAINTAINER_FLAGS=ON \
    -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
+   -DENABLE_TRACING=$TRACING \
    -DENABLE_RDTSCP=$RDTSCP \
    -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
    -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \

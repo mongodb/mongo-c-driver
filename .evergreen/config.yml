@@ -980,6 +980,19 @@ tasks:
                   exit 123
                fi
 
+    - name: compile-tracing
+      tags: ["compile", "tracing"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON TRACING=ON CC='${CC}' MARCH='${MARCH}'  sh .evergreen/compile.sh
+        - func: "upload build"
+
     - name: release-compile
       tags: ["release-compile"]
       depends_on:
@@ -1507,7 +1520,6 @@ tasks:
           vars:
             AUTH: "noauth"
             URI: "mongodb://localhost/?replicaSet=repl0&retryWrites=true"
-
 # }}}
 
 # Test Matrix {{{
@@ -7825,6 +7837,7 @@ buildvariants:
     - ".debug-compile !.sspi .nossl"
     - "debug-compile-valgrind"
     - "debug-compile-no-counters"
+    - "compile-tracing"
     - name: "link-with-cmake"
 #  Don't schedule the ABI checker until dependencies are installed, per CDRIVER-2726
 #   - name: "abi-compliance-check"
