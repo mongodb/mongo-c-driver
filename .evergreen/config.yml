@@ -302,6 +302,43 @@ functions:
         permissions: public-read
         content_type: ${content_type|text/plain}
         display_name: "orchestration.log"
+    # Gather and archive mongo coredumps.
+    - command: shell.exec
+      params:
+        working_dir: "mongoc"
+        script: |
+          # Find all core files from mongodb in orchestration and move to mongoc
+          DIR=MO
+          MDMP_DIR=$DIR
+          [ -d "/cygdrive/c/data/mo" ] && DIR="/cygdrive/c/data/mo"
+          [ -d "/cygdrive/c/mongodb" ] && MDMP_DIR="/cygdrive/c/mongodb"
+          core_files=$(/usr/bin/find -H $MO $MDMP_DIR \( -name "*.core" -o -name "*.mdmp" \) 2> /dev/null)
+          for core_file in $core_files
+          do
+            base_name=$(echo $core_file | sed "s/.*\///")
+            # Move file if it does not already exist
+            if [ ! -f $base_name ]; then
+              mv $core_file .
+            fi
+          done
+    - command: archive.targz_pack
+      params:
+        target: "mongo-coredumps.tgz"
+        source_dir: "mongoc"
+        include:
+          - "./**.core"
+          - "./**.mdmp" # Windows: minidumps
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: mongo-coredumps.tgz
+        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/coredumps/${task_id}-${execution}-coredumps.log
+        bucket: mciuploads
+        permissions: public-read
+        content_type: ${content_type|application/x-gzip}
+        display_name: Core Dumps - Execution ${execution}
+        optional: true
 
   "backtrace":
     - command: shell.exec
