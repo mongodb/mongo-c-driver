@@ -482,7 +482,7 @@ check_json_apm_events (const bson_t *events,
       }
    } else {
       bson_iter_t expectations_iter;
-      bson_iter_init (&expectations_iter, expectations);
+      BSON_ASSERT (bson_iter_init (&expectations_iter, expectations));
 
       while (bson_iter_next (&expectations_iter)) {
          bson_t expectation;
