@@ -1392,7 +1392,7 @@ match_in_array (const bson_t *doc, const bson_t *array, match_ctx_t *ctx)
    bson_iter_t array_iter;
    bool found = false;
 
-   bson_iter_init (&array_iter, array);
+   BSON_ASSERT (bson_iter_init (&array_iter, array));
 
    while (bson_iter_next (&array_iter)) {
       bson_t array_elem;
