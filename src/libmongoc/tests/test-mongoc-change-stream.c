@@ -1413,7 +1413,7 @@ change_stream_spec_after_test_cb (json_test_ctx_t *test_ctx, const bson_t *test)
          const bson_t *doc;
 
          bson_lookup_doc (test, "result.success", &expected_docs);
-         bson_iter_init (&expected_iter, &expected_docs);
+         BSON_ASSERT (bson_iter_init (&expected_iter, &expected_docs));
 
          /* iterate over the change stream, and verify that the document exists.
           */
