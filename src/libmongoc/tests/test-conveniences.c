@@ -1041,7 +1041,7 @@ match_bson_value (const bson_value_t *doc,
    int64_t pattern_int64;
    bool ret;
 
-   if (ctx->allow_placeholders) {
+   if (ctx && ctx->allow_placeholders) {
       /* The change streams spec tests use the value 42 as a placeholder. */
       bool is_placeholder = false;
       if (is_number_type (pattern->value_type) &&
