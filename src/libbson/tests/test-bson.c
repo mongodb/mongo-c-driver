@@ -2296,7 +2296,7 @@ test_bson_empty_binary (void)
 
    bson_init (&test);
    bson_append_binary (&test, "test", 4, BSON_SUBTYPE_BINARY, &data, 0);
-   bson_iter_init_find (&iter, &test, "test");
+   BSON_ASSERT (bson_iter_init_find (&iter, &test, "test"));
    value = bson_iter_value (&iter);
    /* CDRIVER-2569, this would memcpy (0 bytes) to a NULL destination. */
    bson_value_copy (value, &copy);
