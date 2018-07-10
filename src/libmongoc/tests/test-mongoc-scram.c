@@ -61,7 +61,7 @@ test_iteration_count (int count, bool should_succeed)
    /* set up the scram state to immediately test step 2. */
    _mongoc_scram_init (&scram, MONGOC_CRYPTO_ALGORITHM_SHA_1);
    _mongoc_scram_set_pass (&scram, "password");
-   memcpy (scram.encoded_nonce, client_nonce, sizeof (scram.encoded_nonce));
+   bson_strncpy (scram.encoded_nonce, client_nonce, sizeof (scram.encoded_nonce));
    scram.encoded_nonce_len = (int32_t) strlen (client_nonce);
    scram.auth_message = bson_malloc0 (4096);
    scram.auth_messagemax = 4096;
