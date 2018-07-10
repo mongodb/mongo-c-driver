@@ -177,7 +177,7 @@ bson_lookup_value (const bson_t *b, const char *key, bson_value_t *value)
    bson_iter_t iter;
    bson_iter_t descendent;
 
-   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_init (&iter, b));
    BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
    bson_value_copy (bson_iter_value (&descendent), value);
 }
@@ -304,7 +304,7 @@ bson_lookup_write_concern (const bson_t *b, const char *key)
    bson_iter_t w;
 
    bson_lookup_doc (b, key, &doc);
-   bson_iter_init (&iter, &doc);
+   BSON_ASSERT (bson_iter_init (&iter, &doc));
 
    /* current command monitoring tests always have "w" and no other fields */
    ASSERT_CMPUINT32 (bson_count_keys (&doc), ==, (uint32_t) 1);
