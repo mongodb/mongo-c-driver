@@ -112,7 +112,7 @@ convert_message_for_test (json_test_ctx_t *ctx,
       }
    }
 
-   bson_iter_init (&iter, src);
+   BSON_ASSERT (bson_iter_init (&iter, src));
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
