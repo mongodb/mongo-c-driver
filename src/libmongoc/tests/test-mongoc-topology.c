@@ -460,7 +460,7 @@ test_max_wire_version_race_condition (void *ctx)
    /* connect directly and add our user, test is only valid with auth */
    client = test_framework_client_new ();
    database = mongoc_client_get_database (client, "test");
-   mongoc_database_remove_user (database, "pink", &error);
+   (void) mongoc_database_remove_user (database, "pink", &error);
 
    r = mongoc_database_add_user (database,
                                  "pink",
