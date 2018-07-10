@@ -711,7 +711,8 @@ test_mongoc_handshake_race_condition (void)
       _reset_handshake ();
 
       for (j = 0; j < 4; ++j) {
-         mongoc_thread_create (&threads[j], &handshake_append_worker, NULL);
+         BSON_ASSERT (
+            !mongoc_thread_create (&threads[j], &handshake_append_worker, NULL));
       }
 
       for (j = 0; j < 4; ++j) {
