@@ -428,7 +428,7 @@ test_mongoc_client_authenticate (void *context)
    uri = gen_good_uri (username, "test");
 
    database = mongoc_client_get_database (admin_client, "test");
-   mongoc_database_remove_user (database, username, &error);
+   (void) mongoc_database_remove_user (database, username, &error);
    bson_init (&roles);
    BCON_APPEND (&roles, "0", "{", "role", "read", "db", "test", "}");
 
