@@ -431,7 +431,7 @@ test_mongoc_socket_poll_refusal (void *ctx)
    poller->stream = ssock;
 
    while (bson_get_monotonic_time () - start < 5000 * 1000) {
-      mongoc_stream_poll (poller, 1, 10 * 1000);
+      BSON_ASSERT (mongoc_stream_poll (poller, 1, 10 * 1000) > 0);
       if (poller->revents & POLLHUP) {
          break;
       }
