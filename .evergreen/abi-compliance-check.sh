@@ -2,9 +2,6 @@
 set -o xtrace   # Write all commands first to stderr
 set -o errexit
 
-# CDRIVER-2726: remove this command once this gets pre-installed
-sudo apt-get install -y abi-dumper abi-compliance-checker
-
 # create all needed directories
 mkdir abi-compliance
 mkdir abi-compliance/changes-install
@@ -32,12 +29,12 @@ make install
 cd abi-compliance
 
 # create the abi dumps for libmongoc
-abi-dumper ./changes-install/lib/libmongoc-1.0.so -o ./dumps/mongoc-changes.dump 
+abi-dumper ./changes-install/lib/libmongoc-1.0.so -o ./dumps/mongoc-changes.dump
 abi-dumper ./latest-release-install/lib/libmongoc-1.0.so -o ./dumps/mongoc-release.dump
 
 # create abi dumps for libbson
-abi-dumper ./changes-install/lib/libbson-1.0.so -o ./dumps/bson-changes.dump 
-abi-dumper ./latest-release-install/lib/libbson-1.0.so -o ./dumps/bson-release.dump 
+abi-dumper ./changes-install/lib/libbson-1.0.so -o ./dumps/bson-changes.dump
+abi-dumper ./latest-release-install/lib/libbson-1.0.so -o ./dumps/bson-release.dump
 
 # check libmongoc and libbson for compliance. Generates HTML Reports
 abi-compliance-checker -l libmongoc -old ./dumps/mongoc-release.dump -new ./dumps/mongoc-changes.dump || result=$?

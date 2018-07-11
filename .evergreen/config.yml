@@ -176,7 +176,6 @@ functions:
 
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           sudo apt-get install -y awscli
            aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
 
            sh ../../.evergreen/man-page-image-list.sh man-page-images > man-page-images/index.html
@@ -209,7 +208,6 @@ functions:
 
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           sudo apt-get install -y awscli
            aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
 
            sh ../../.evergreen/man-page-image-list.sh man-page-images > man-page-images/index.html
@@ -486,13 +484,6 @@ functions:
             chmod +x $i
           done
 
-  "install dependencies":
-    - command: shell.exec
-      params:
-        working_dir: "mongoc"
-        script: |
-              sudo apt-get install -y awscli || true
-
   "prepare kerberos" :
     - command: shell.exec
       params:
@@ -549,7 +540,6 @@ pre:
   - func: "fetch source"
   - func: "windows fix"
   - func: "make files executable"
-  - func: "install dependencies"
   - func: "prepare kerberos"
 
 post:
@@ -7836,7 +7826,8 @@ buildvariants:
     - "debug-compile-valgrind"
     - "debug-compile-no-counters"
     - name: "link-with-cmake"
-    - name: "abi-compliance-check"
+#  Don't schedule the ABI checker until dependencies are installed, per CDRIVER-2726
+#   - name: "abi-compliance-check"
     - name: "link-with-cmake-ssl"
     - name: "link-with-cmake-snappy"
     - name: "link-with-cmake-mac"
