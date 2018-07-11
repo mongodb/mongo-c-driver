@@ -133,7 +133,7 @@ mongoc_async_run (mongoc_async_t *async)
          _mongoc_usleep (poll_timeout_msec * 1000);
       }
 
-      if (nactive) {
+      if (nactive > 0) {
          for (i = 0; i < nstreams; i++) {
             mongoc_async_cmd_t *iter = acmds_polled[i];
             if (poller[i].revents & (POLLERR | POLLHUP)) {
