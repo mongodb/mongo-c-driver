@@ -888,6 +888,7 @@ execute_test (const json_test_config_t *config,
    json_test_ctx_t ctx;
    uint32_t server_id;
    bson_error_t error;
+   mongoc_collection_t *other_collection;
 
    if (test_suite_debug_output ()) {
       const char *description = bson_lookup_utf8 (test, "description");
@@ -943,7 +944,14 @@ execute_test (const json_test_config_t *config,
    }
 
    if (bson_has_field (test, "outcome.collection")) {
-      check_outcome_collection (collection, test);
+      if (bson_has_field (test, "outcome.collection.name")) {
+         other_collection = mongoc_database_get_collection (
+            db, bson_lookup_utf8 (test, "outcome.collection.name"));
+         check_outcome_collection (other_collection, test);
+         mongoc_collection_destroy (other_collection);
+      } else {
+         check_outcome_collection (collection, test);
+      }
    }
 
    mongoc_client_set_apm_callbacks (collection->client, NULL, NULL);
