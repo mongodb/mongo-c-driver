@@ -31,14 +31,14 @@
 BSON_BEGIN_DECLS
 
 
-typedef void *(*bson_realloc_func) (void *mem, size_t num_bytes, void *ctx);
+typedef void *(BSON_CALL *bson_realloc_func) (void *mem, size_t num_bytes, void *ctx);
 
 
 typedef struct _bson_mem_vtable_t {
-   void *(*malloc) (size_t num_bytes);
-   void *(*calloc) (size_t n_members, size_t num_bytes);
-   void *(*realloc) (void *mem, size_t num_bytes);
-   void (*free) (void *mem);
+   void *(BSON_CALL *malloc) (size_t num_bytes);
+   void *(BSON_CALL *calloc) (size_t n_members, size_t num_bytes);
+   void *(BSON_CALL *realloc) (void *mem, size_t num_bytes);
+   void (BSON_CALL *free) (void *mem);
    void *padding[4];
 } bson_mem_vtable_t;
 
