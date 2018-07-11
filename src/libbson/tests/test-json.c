@@ -1065,9 +1065,11 @@ test_bson_json_read_corrupt_document (void)
                             "\x00";                    /* terminator */
 
    bson_t bson;
-   bson_init_static (&bson, (uint8_t *) bad_doc, sizeof (bad_doc));
+   BSON_ASSERT (
+      bson_init_static (&bson, (uint8_t *) bad_doc, sizeof (bad_doc)));
    BSON_ASSERT (!bson_as_json (&bson, NULL));
-   bson_init_static (&bson, (uint8_t *) bad_array, sizeof (bad_array));
+   BSON_ASSERT (
+      bson_init_static (&bson, (uint8_t *) bad_array, sizeof (bad_array)));
    BSON_ASSERT (!bson_as_json (&bson, NULL));
 }
 
