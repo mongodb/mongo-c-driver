@@ -345,6 +345,7 @@ test_unknown_commit_result (void)
                   bson_as_json (&reply, NULL));
    }
 
+   bson_destroy (&reply);
    bson_destroy (&opts);
    mongoc_collection_destroy (collection);
 
