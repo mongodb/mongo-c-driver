@@ -596,8 +596,8 @@ test_topology_retired_fails_to_initiate (void)
    scanner = mongoc_topology_scanner_new (
       NULL, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
 
-   _mongoc_host_list_from_string (&host_list,
-                                  mock_server_get_host_and_port (server));
+   BSON_ASSERT (_mongoc_host_list_from_string (&host_list,
+                                  mock_server_get_host_and_port (server)));
 
    mongoc_topology_scanner_add (scanner, &host_list, 1);
    mongoc_topology_scanner_start (scanner, false);
