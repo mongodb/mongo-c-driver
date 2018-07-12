@@ -356,6 +356,49 @@ test_unknown_commit_result (void)
 }
 
 
+static void
+test_cursor_primary_read_pref (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_client_session_t *session;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_read_prefs_t *read_prefs;
+   const bson_t *doc;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_cursor_primary_read_pref");
+
+   session = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (session, error);
+
+   r = mongoc_client_session_start_transaction (session, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   r = mongoc_client_session_append (session, &opts, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), &opts, read_prefs);
+
+   bson_destroy (&opts);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_collection_destroy (collection);
+
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_session_destroy (session);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_transactions_install (TestSuite *suite)
 {
@@ -386,4 +429,10 @@ test_transactions_install (TestSuite *suite)
                                 "/transactions/unknown_commit_result",
                                 test_unknown_commit_result,
                                 test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/transactions/cursor_primary_read_pref",
+                      test_cursor_primary_read_pref,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_txns);
 }

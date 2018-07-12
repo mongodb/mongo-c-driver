@@ -301,15 +301,6 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          GOTO (finish);
       }
 
-      if (user_prefs) {
-         bson_set_error (
-            &cursor->error,
-            MONGOC_ERROR_CURSOR,
-            MONGOC_ERROR_CURSOR_INVALID_CURSOR,
-            "Cannot set read preferences after starting transaction");
-         GOTO (finish);
-      }
-
       cursor->read_prefs =
          mongoc_read_prefs_copy (cursor->client_session->txn.opts.read_prefs);
 
