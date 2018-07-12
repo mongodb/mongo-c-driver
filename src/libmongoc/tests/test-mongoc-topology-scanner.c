@@ -489,7 +489,7 @@ test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
       NULL, NULL, &_test_topology_scanner_dns_helper, testcase, TIMEOUT);
    host_str = bson_strdup_printf (
       "%s:%d", testcase->client_hostname, mock_server_get_port (server));
-   _mongoc_host_list_from_string (&host, host_str);
+   BSON_ASSERT (_mongoc_host_list_from_string (&host, host_str));
    /* we should only have one host. */
    BSON_ASSERT (!host.next);
    bson_free (host_str);
