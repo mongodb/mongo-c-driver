@@ -232,7 +232,7 @@ _testcase_setup (he_testcase_t *testcase)
       opts.ipv6_only = 0;
       ipv4_addr.sin_family = AF_INET;
       ipv4_addr.sin_port = htons (0);
-      inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr);
+      BSON_ASSERT (inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr));
       opts.bind_addr = &ipv4_addr;
    } else if (strcmp ("ipv6", server_type) == 0) {
       opts.bind_addr_len = sizeof (ipv6_addr);
@@ -240,7 +240,7 @@ _testcase_setup (he_testcase_t *testcase)
       opts.ipv6_only = 1;
       ipv6_addr.sin6_family = AF_INET6;
       ipv6_addr.sin6_port = htons (0);
-      inet_pton (AF_INET6, "::1", &ipv6_addr.sin6_addr);
+      BSON_ASSERT (inet_pton (AF_INET6, "::1", &ipv6_addr.sin6_addr));
       opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
    }
 
