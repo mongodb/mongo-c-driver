@@ -418,7 +418,7 @@ test_mongoc_socket_poll_refusal (void *ctx)
    /* create a new non-blocking socket. */
    sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
 
-   mongoc_socket_connect (
+   (void) mongoc_socket_connect (
       sock, (struct sockaddr *) &ipv4_addr, sizeof (ipv4_addr), 0);
 
    start = bson_get_monotonic_time ();
