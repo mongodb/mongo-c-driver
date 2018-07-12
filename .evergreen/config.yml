@@ -1299,7 +1299,7 @@ tasks:
             BUILD_NAME: "debug-compile-sspi-winssl"
         - func: "bootstrap mongo-orchestration"
           vars:
-            VERSION: "latest"
+            VERSION: "4.0"
             TOPOLOGY: "replica_set"
             SSL: "winssl"
             AUTH: "auth"
