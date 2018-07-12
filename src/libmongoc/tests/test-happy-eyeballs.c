@@ -195,7 +195,7 @@ _init_host (mongoc_host_list_t *host, uint16_t port, const char *type)
    }
 
    host_and_port = bson_strdup_printf ("%s:%hu", host_str, port);
-   _mongoc_host_list_from_string (host, host_and_port);
+   BSON_ASSERT (_mongoc_host_list_from_string (host, host_and_port));
    if (free_host_str) {
       bson_free (host_str);
    }
