@@ -412,7 +412,7 @@ test_mongoc_socket_poll_refusal (void *ctx)
 
    struct sockaddr_in ipv4_addr = {0};
    ipv4_addr.sin_family = AF_INET;
-   inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr);
+   BSON_ASSERT (inet_pton (AF_INET, "127.0.0.1", &ipv4_addr.sin_addr));
    ipv4_addr.sin_port = htons (12345);
 
    /* create a new non-blocking socket. */
