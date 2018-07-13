@@ -632,7 +632,7 @@ test_insert_many (void)
    collection = get_test_collection (client, "test_insert_many");
    ASSERT (collection);
 
-   mongoc_collection_drop (collection, &error);
+   (void) mongoc_collection_drop (collection, &error);
 
    context = bson_context_new (BSON_CONTEXT_NONE);
    ASSERT (context);
