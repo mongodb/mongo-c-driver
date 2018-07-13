@@ -1492,7 +1492,7 @@ test_framework_data_nodes_count (void)
       return test_framework_mongos_count ();
    }
 
-   bson_iter_recurse (&iter, &array);
+   BSON_ASSERT (bson_iter_recurse (&iter, &array));
    while (bson_iter_next (&array)) {
       ++count;
    }
