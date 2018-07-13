@@ -266,7 +266,10 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk, /* IN */
 
    BULK_EXIT_IF_PRIOR_ERROR;
 
-   mongoc_bulk_operation_remove_many_with_opts (bulk, selector, NULL, error);
+   if (!mongoc_bulk_operation_remove_many_with_opts (
+         bulk, selector, NULL, error)) {
+      MONGOC_WARNING ("%s", error->message);
+   }
 
    if (error->domain) {
       MONGOC_WARNING ("%s", error->message);
@@ -286,7 +289,10 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk, /* IN */
 
    BULK_EXIT_IF_PRIOR_ERROR;
 
-   mongoc_bulk_operation_remove_one_with_opts (bulk, selector, NULL, error);
+   if (!mongoc_bulk_operation_remove_one_with_opts (
+         bulk, selector, NULL, error)) {
+      MONGOC_WARNING ("%s", error->message);
+   }
 
    if (error->domain) {
       MONGOC_WARNING ("%s", error->message);
@@ -596,8 +602,10 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
    bson_init (&opts);
    BSON_APPEND_BOOL (&opts, "upsert", upsert);
 
-   mongoc_bulk_operation_update_one_with_opts (
-      bulk, selector, document, &opts, error);
+   if (!mongoc_bulk_operation_update_one_with_opts (
+         bulk, selector, document, &opts, error)) {
+      MONGOC_WARNING ("%s", error->message);
+   }
 
    bson_destroy (&opts);
 
