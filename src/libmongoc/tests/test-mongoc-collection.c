@@ -516,7 +516,7 @@ test_insert_null (void)
       mongoc_client_get_collection (client, "test", "test_null_insert");
    ASSERT (collection);
 
-   mongoc_collection_drop (collection, &error);
+   (void) mongoc_collection_drop (collection, &error);
 
    bson_init (&doc);
    bson_append_utf8 (&doc, "hello", 5, "wor\0ld", 6);
