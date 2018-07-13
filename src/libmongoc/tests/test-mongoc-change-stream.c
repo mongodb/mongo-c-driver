@@ -1242,6 +1242,91 @@ test_change_stream_start_at_operation_time (void *test_ctx)
    mongoc_client_destroy (client);
 }
 
+typedef struct {
+   bool has_initiated;
+   bool has_resumed;
+   bson_t agg_reply;
+} resume_at_optime_ctx_t;
+
+static void
+_resume_at_optime_started (const mongoc_apm_command_started_t *event)
+{
+   resume_at_optime_ctx_t *ctx;
+
+   ctx =
+      (resume_at_optime_ctx_t *) mongoc_apm_command_started_get_context (event);
+   if (0 != strcmp (mongoc_apm_command_started_get_command_name (event),
+                    "aggregate")) {
+      return;
+   }
+
+   if (!ctx->has_initiated) {
+      ctx->has_initiated = true;
+   } else {
+      bson_value_t replied_optime, sent_optime;
+      ctx->has_resumed = true;
+      /* it should re-use the same optime on resume. */
+      bson_lookup_value (&ctx->agg_reply, "operationTime", &replied_optime);
+      bson_lookup_value (mongoc_apm_command_started_get_command (event),
+                         "pipeline.0.$changeStream.startAtOperationTime",
+                         &sent_optime);
+      BSON_ASSERT (replied_optime.value_type == BSON_TYPE_TIMESTAMP);
+      BSON_ASSERT (match_bson_value (&sent_optime, &replied_optime, NULL));
+      bson_value_destroy (&sent_optime);
+      bson_value_destroy (&replied_optime);
+   }
+}
+
+static void
+_resume_at_optime_succeeded (const mongoc_apm_command_succeeded_t *event)
+{
+   resume_at_optime_ctx_t *ctx;
+
+   ctx = (resume_at_optime_ctx_t *) mongoc_apm_command_succeeded_get_context (
+      event);
+   if (!strcmp (mongoc_apm_command_succeeded_get_command_name (event),
+                "aggregate")) {
+      bson_copy_to (mongoc_apm_command_succeeded_get_reply (event),
+                    &ctx->agg_reply);
+   }
+}
+
+/* A simple test that passing 'startAtOperationTime' does not error. */
+static void
+test_change_stream_resume_at_optime (void *test_ctx)
+{
+   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   const bson_t *doc;
+   bson_error_t error;
+   mongoc_apm_callbacks_t *callbacks;
+   resume_at_optime_ctx_t ctx = {0};
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, _resume_at_optime_started);
+   mongoc_apm_set_command_succeeded_cb (callbacks, _resume_at_optime_succeeded);
+   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
+   coll = mongoc_client_get_collection (client, "db", "coll");
+   stream = mongoc_collection_watch (coll, tmp_bson ("{'pipeline': []}"), NULL);
+
+   /* set the cursor id to a wrong cursor id so the next getMore fails and
+    * causes a resume. */
+   stream->cursor->cursor_id = 12345;
+
+   (void) mongoc_change_stream_next (stream, &doc);
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL),
+                    error);
+   BSON_ASSERT (ctx.has_initiated);
+   BSON_ASSERT (ctx.has_resumed);
+
+   bson_destroy (&ctx.agg_reply);
+   mongoc_change_stream_destroy (stream);
+   mongoc_collection_destroy (coll);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_client_destroy (client);
+}
+
 /* A simple test of database watch. */
 void
 test_change_stream_database_watch (void *test_ctx)
@@ -1306,40 +1391,35 @@ test_change_stream_client_watch (void *test_ctx)
 }
 
 
-/* Wire version 7 doesn't imply change stream updates are available on the
- * server. We must also check the version number. */
 static int
-_skip_if_no_change_stream_updates (void)
+_skip_if_server_version_less_than (const char *version)
 {
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
    if (test_framework_get_server_version () >=
-       test_framework_str_to_version ("3.8.0")) {
+       test_framework_str_to_version (version)) {
       return 1;
    }
    return 0;
 }
 
-/* Change streams were introduced in 3.6, with wire version 6.
- * Change streams updates were completed in 3.8, but wire version 7 was added
- * before change streams updates were completed. So between 3.6 and 3.8 change
- * streams have partially completed updates.
- */
 static int
-_skip_if_no_change_streams_or_unfinished_updates (void)
+_skip_if_no_client_watch (void)
 {
-   server_version_t server_version;
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   server_version = test_framework_get_server_version ();
-   if ((server_version >= test_framework_str_to_version ("3.6.0") &&
-        server_version < test_framework_str_to_version ("3.7.0")) ||
-       server_version > test_framework_str_to_version ("3.8.0")) {
-      return 1;
-   }
-   return 0;
+   return _skip_if_server_version_less_than ("3.8.0");
+}
+
+static int
+_skip_if_no_db_watch (void)
+{
+   return _skip_if_server_version_less_than ("3.8.0");
+}
+
+static int
+_skip_if_no_start_at_optime (void)
+{
+   return _skip_if_server_version_less_than ("3.8.0");
 }
 
 typedef struct {
@@ -1648,8 +1728,7 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_read_prefs,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6,
-                      _skip_if_no_change_streams_or_unfinished_updates);
+                      test_framework_skip_if_not_rs_version_6);
 
    TestSuite_Add (suite,
                   "/change_stream/server_selection_fails",
@@ -1677,22 +1756,27 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_not_rs_version_7,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_no_sessions,
-                      _skip_if_no_change_stream_updates);
+                      _skip_if_no_start_at_optime);
+   TestSuite_AddFull (suite,
+                      "/change_stream/resume_at_optime",
+                      test_change_stream_resume_at_optime,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_rs_version_7,
+                      test_framework_skip_if_no_crypto,
+                      _skip_if_no_start_at_optime);
    TestSuite_AddFull (suite,
                       "/change_stream/database",
                       test_change_stream_database_watch,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_7,
-                      _skip_if_no_change_stream_updates);
+                      _skip_if_no_db_watch);
    TestSuite_AddFull (suite,
                       "/change_stream/client",
                       test_change_stream_client_watch,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_7,
-                      _skip_if_no_change_stream_updates);
+                      _skip_if_no_client_watch);
    TestSuite_AddMockServerTest (
       suite, "/change_stream/resume_with_first_doc", test_resume_cases);
 
