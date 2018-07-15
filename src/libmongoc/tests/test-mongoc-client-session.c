@@ -1978,7 +1978,9 @@ test_find_databases (session_test_t *test)
 
    cursor = mongoc_client_find_databases_with_opts (test->client, &test->opts);
 
-   mongoc_cursor_next (cursor, &doc);
+   while (mongoc_cursor_next (cursor, &doc)) {
+   }
+
    test->succeeded = !mongoc_cursor_error (cursor, &test->error);
    mongoc_cursor_destroy (cursor);
 }
@@ -1992,7 +1994,9 @@ test_find_collections (session_test_t *test)
 
    cursor = mongoc_database_find_collections_with_opts (test->db, &test->opts);
 
-   mongoc_cursor_next (cursor, &doc);
+   while (mongoc_cursor_next (cursor, &doc)) {
+   }
+
    test->succeeded = !mongoc_cursor_error (cursor, &test->error);
    mongoc_cursor_destroy (cursor);
 }
@@ -2055,7 +2059,9 @@ test_find_indexes (session_test_t *test)
    cursor =
       mongoc_collection_find_indexes_with_opts (test->collection, &test->opts);
 
-   mongoc_cursor_next (cursor, &doc);
+   while (mongoc_cursor_next (cursor, &doc)) {
+   }
+
    test->succeeded = !mongoc_cursor_error (cursor, &test->error);
    mongoc_cursor_destroy (cursor);
 }
