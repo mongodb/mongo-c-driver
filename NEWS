@@ -1,8 +1,15 @@
 Next Release
 ============
 
+Features:
+
   * New function mongoc_client_session_in_transaction to check if a multi-
     document transaction is started.
+
+Bug fixes:
+  * mongoc_collection_aggregate had not inherited its mongoc_collection_t's
+    read preference; only an explicitly provided read preference was used.
+
 
 mongo-c-driver 1.11.0
 =====================

@@ -385,7 +385,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
    bson_init (&cursor_opts);
    _mongoc_cursor_flags_to_opts (flags, &cursor_opts, &slave_ok);
    if (opts) {
-      bson_concat (&cursor_opts, opts);
+      bson_concat (&cursor_opts /* destination */, opts /* source */);
    }
 
    created_command = _make_agg_cmd (
@@ -394,7 +394,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
                                     collection->ns,
                                     created_command ? &command : NULL,
                                     &cursor_opts,
-                                    read_prefs,
+                                    COALESCE (read_prefs, collection->read_prefs),
                                     NULL /* read concern */);
    bson_destroy (&command);
    bson_destroy (&cursor_opts);
@@ -421,20 +421,10 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       GOTO (done);
    }
 
-   if (server_id) {
-      /* don't use mongoc_cursor_set_hint, don't want special slaveok logic */
-      cursor->server_id = server_id;
-   }
-
    /* server id isn't enough. ensure we're connected & know wire version */
    server_stream = _mongoc_cursor_fetch_stream (cursor);
    if (!server_stream) {
       GOTO (done);
-   }
-
-   if (!read_prefs && !server_id) {
-      mongoc_read_prefs_destroy (cursor->read_prefs);
-      cursor->read_prefs = mongoc_read_prefs_copy (collection->read_prefs);
    }
 
    if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
