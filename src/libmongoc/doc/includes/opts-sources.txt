@@ -8,4 +8,5 @@ Transaction        Transaction    Transaction
 |opts-source|
 ================== ============== ============== =========
 
+In a transaction, read concern and write concern are prohibited in ``opts`` and the read preference must be primary or NULL.
 :ref:`See the example for transactions <mongoc_client_session_start_transaction_example>` and for :ref:`the "distinct" command with opts <mongoc_client_read_command_with_opts_example>`.

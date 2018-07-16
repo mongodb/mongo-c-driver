@@ -1,4 +1,4 @@
-Use this function for commands that write such as "drop" or "createRole" (but not for "insert", "update", or "delete", see `Basic Write Operations`_). Write concern and collation can be overridden by various sources. The highest-priority sources for these options are listed first in the following table. The write concern is omitted for MongoDB before 3.4.
+Use this function for commands that write such as "drop" or "createRole" (but not for "insert", "update", or "delete", see `Basic Write Operations`_). Write concern and collation can be overridden by various sources. In a transaction, read concern and write concern are prohibited in ``opts``. The highest-priority sources for these options are listed first in the following table. The write concern is omitted for MongoDB before 3.4.
 
 ============== =========
 Write Concern  Collation

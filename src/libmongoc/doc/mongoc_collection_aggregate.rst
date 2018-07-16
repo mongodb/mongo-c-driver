@@ -42,7 +42,7 @@ Description
 
 This function shall execute an aggregation query on the underlying collection. For more information on building aggregation pipelines, see `the MongoDB Manual entry on the aggregate command <http://docs.mongodb.org/manual/reference/command/aggregate/>`_.
 
-Read preferences, read and write concern, and collation can be overridden by various sources. The highest-priority sources for these options are listed first in the following table. Write concern is applied from ``opts``, or if ``opts`` has no write concern and the aggregation pipeline includes "$out", the write concern is applied from ``collection``. The write concern is omitted for MongoDB before 3.4.
+Read preferences, read and write concern, and collation can be overridden by various sources. The highest-priority sources for these options are listed first in the following table. In a transaction, read concern and write concern are prohibited in ``opts`` and the read preference must be primary or NULL. Write concern is applied from ``opts``, or if ``opts`` has no write concern and the aggregation pipeline includes "$out", the write concern is applied from ``collection``. The write concern is omitted for MongoDB before 3.4.
 
 ================== ============== ============== =========
 Read Preferences   Read Concern   Write Concern  Collation

@@ -1,4 +1,4 @@
-Read preferences, read concern, and collation can be overridden by various sources. The highest-priority sources for these options are listed first in the following table. No write concern is applied.
+Read preferences, read concern, and collation can be overridden by various sources. In a transaction, read concern and write concern are prohibited in ``opts`` and the read preference must be primary or NULL. The highest-priority sources for these options are listed first in the following table. No write concern is applied.
 
 ================== ============== =========
 Read Preferences   Read Concern   Collation
