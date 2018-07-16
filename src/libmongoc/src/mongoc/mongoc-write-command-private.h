@@ -221,7 +221,9 @@ void
 _append_array_from_command (mongoc_write_command_t *command, bson_t *bson);
 
 mongoc_write_err_type_t
-_mongoc_write_error_get_type (const bson_t *reply);
+_mongoc_write_error_get_type (bool cmd_ret,
+                              const bson_error_t *cmd_err,
+                              const bson_t *reply);
 
 BSON_END_DECLS
 

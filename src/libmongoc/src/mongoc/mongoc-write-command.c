@@ -590,9 +590,8 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
           * select a new writable stream and retry. If server selection fails or
           * the selected server does not support retryable writes, fall through
           * and allow the original error to be reported. */
-         error_type = _mongoc_write_error_get_type (&reply);
-         if (!ret && is_retryable && (error->domain == MONGOC_ERROR_STREAM ||
-                                      error_type == MONGOC_WRITE_ERR_RETRY)) {
+         error_type = _mongoc_write_error_get_type (ret, error, &reply);
+         if (is_retryable && error_type == MONGOC_WRITE_ERR_RETRY) {
             bson_error_t ignored_error;
 
             /* each write command may be retried at most once */
@@ -1432,10 +1431,37 @@ _mongoc_write_result_complete (
 }
 
 
+/*--------------------------------------------------------------------------
+ *
+ * _mongoc_write_error_get_type --
+ *
+ *       Checks if the error or reply from a write command is considered
+ *       retryable according to the retryable writes spec. Checks both
+ *       for a client error (a network exception) and a server error in
+ *       the reply. @cmd_ret and @cmd_err come from the result of a
+ *       write_command function.
+ *
+ *
+ * Return:
+ *       A mongoc_write_error_type_t indicating the type of error (if any).
+ *
+ *--------------------------------------------------------------------------
+ */
 mongoc_write_err_type_t
-_mongoc_write_error_get_type (const bson_t *reply)
+_mongoc_write_error_get_type (bool cmd_ret,
+                              const bson_error_t *cmd_err,
+                              const bson_t *reply)
 {
    bson_error_t error;
+
+   /* check for a client error. */
+   if (!cmd_ret && cmd_err->domain == MONGOC_ERROR_STREAM) {
+      /* Retryable writes spec: "considered retryable if [...] any network
+       * exception (e.g. socket timeout or error) */
+      return MONGOC_WRITE_ERR_RETRY;
+   }
+
+   /* check for a server error. */
    if (_mongoc_cmd_check_ok_no_wce (
           reply, MONGOC_ERROR_API_VERSION_2, &error)) {
       return MONGOC_WRITE_ERR_NONE;

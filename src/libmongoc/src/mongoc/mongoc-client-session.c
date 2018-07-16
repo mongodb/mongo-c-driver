@@ -152,24 +152,22 @@ txn_finish (mongoc_client_session_t *session,
 
    /* Transactions Spec: "Drivers MUST retry the commitTransaction command once
     * after it fails with a retryable error", same for abort */
-   error_type = _mongoc_write_error_get_type (&reply_local);
-   if (!r && (err_ptr->domain == MONGOC_ERROR_STREAM ||
-              error_type == MONGOC_WRITE_ERR_RETRY)) {
+   error_type = _mongoc_write_error_get_type (r, err_ptr, &reply_local);
+   if (error_type == MONGOC_WRITE_ERR_RETRY) {
       bson_destroy (&reply_local);
       r = mongoc_client_write_command_with_opts (
          session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
 
-      error_type = _mongoc_write_error_get_type (&reply_local);
+      error_type = _mongoc_write_error_get_type (r, err_ptr, &reply_local);
    }
 
    /* Transactions Spec: "add the UnknownTransactionCommitResult error label
     * when commitTransaction fails with a network error, server selection
     * error, or write concern failed / timeout." */
    if (intent == TXN_COMMIT && reply) {
-      if (!r && (err_ptr->domain == MONGOC_ERROR_STREAM ||
-                 err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION ||
-                 error_type == MONGOC_WRITE_ERR_RETRY ||
-                 error_type == MONGOC_WRITE_ERR_WRITE_CONCERN)) {
+      if ((!r && err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION) ||
+          error_type == MONGOC_WRITE_ERR_RETRY ||
+          error_type == MONGOC_WRITE_ERR_WRITE_CONCERN) {
          bson_copy_to_excluding_noinit (
             &reply_local, reply, "errorLabels", NULL);
          copy_labels_plus_unknown_commit_result (&reply_local, reply);
