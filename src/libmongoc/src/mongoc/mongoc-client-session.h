@@ -118,6 +118,9 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
                                          bson_error_t *error);
 
 MONGOC_EXPORT (bool)
+mongoc_client_session_in_transaction (const mongoc_client_session_t *session);
+
+MONGOC_EXPORT (bool)
 mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
                                           bson_t *reply,
                                           bson_error_t *error);

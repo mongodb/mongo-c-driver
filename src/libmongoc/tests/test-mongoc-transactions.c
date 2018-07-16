@@ -108,6 +108,61 @@ test_transactions_supported (void *ctx)
 }
 
 
+static void
+test_in_transaction (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_client_session_t *session;
+   mongoc_database_t *db;
+   mongoc_collection_t *collection;
+   bson_t *majority = tmp_bson ("{'writeConcern': {'w': 'majority'}}");
+   bson_t opts = BSON_INITIALIZER;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   db = mongoc_client_get_database (client, "transaction-tests");
+   /* drop and create collection outside of transaction */
+   mongoc_database_write_command_with_opts (
+      db, tmp_bson ("{'drop': 'test'}"), majority, NULL, NULL);
+   collection =
+      mongoc_database_create_collection (db, "test", majority, &error);
+   ASSERT_OR_PRINT (collection, error);
+
+   session = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (session, error);
+   r = mongoc_client_session_append (session, &opts, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (!mongoc_client_session_in_transaction (session));
+
+   /* commit an empty transaction */
+   r = mongoc_client_session_start_transaction (session, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (mongoc_client_session_in_transaction (session));
+   r = mongoc_client_session_commit_transaction (session, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (!mongoc_client_session_in_transaction (session));
+
+   /* commit a transaction with an insert */
+   r = mongoc_client_session_start_transaction (session, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (mongoc_client_session_in_transaction (session));
+   r = mongoc_collection_insert_one (
+      collection, tmp_bson ("{}"), &opts, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   r = mongoc_client_session_commit_transaction (session, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (!mongoc_client_session_in_transaction (session));
+
+   bson_destroy (&opts);
+   mongoc_collection_destroy (collection);
+   mongoc_database_destroy (db);
+   mongoc_client_session_destroy (session);
+   mongoc_client_destroy (client);
+}
+
+
 static bool
 hangup_except_ismaster (request_t *request, void *data)
 {
@@ -417,6 +472,12 @@ test_transactions_install (TestSuite *suite)
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto,
                       test_framework_skip_if_mongos);
+   TestSuite_AddFull (suite,
+                      "/transactions/in_transaction",
+                      test_in_transaction,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_txns);
    TestSuite_AddMockServerTest (suite,
                                 "/transactions/server_selection_err",
                                 test_server_selection_error,

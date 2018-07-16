@@ -1,3 +1,9 @@
+Next Release
+============
+
+  * New function mongoc_client_session_in_transaction to check if a multi-
+    document transaction is started.
+
 mongo-c-driver 1.11.0
 =====================
 

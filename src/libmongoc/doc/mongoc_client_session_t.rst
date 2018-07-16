@@ -28,6 +28,7 @@ Example
     :maxdepth: 1
 
     mongoc_client_session_start_transaction
+    mongoc_client_session_in_transaction
     mongoc_client_session_commit_transaction
     mongoc_client_session_abort_transaction
     mongoc_client_session_advance_cluster_time

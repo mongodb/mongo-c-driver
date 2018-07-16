@@ -770,6 +770,18 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
 
 
 bool
+mongoc_client_session_in_transaction (const mongoc_client_session_t *session)
+{
+   ENTRY;
+
+   BSON_ASSERT (session);
+
+   /* call the internal function, which would allow a NULL session */
+   RETURN (_mongoc_client_session_in_txn (session));
+}
+
+
+bool
 mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
                                           bson_t *reply,
                                           bson_error_t *error)
@@ -901,8 +913,19 @@ _mongoc_client_session_in_txn (const mongoc_client_session_t *session)
       return false;
    }
 
-   return session->txn.state == MONGOC_TRANSACTION_STARTING ||
-          session->txn.state == MONGOC_TRANSACTION_IN_PROGRESS;
+   /* use "switch" so that static checkers ensure we handle all states */
+   switch (session->txn.state) {
+   case MONGOC_TRANSACTION_STARTING:
+   case MONGOC_TRANSACTION_IN_PROGRESS:
+      return true;
+   case MONGOC_TRANSACTION_NONE:
+   case MONGOC_TRANSACTION_ENDING:
+   case MONGOC_TRANSACTION_COMMITTED:
+   case MONGOC_TRANSACTION_COMMITTED_EMPTY:
+   case MONGOC_TRANSACTION_ABORTED:
+   default:
+      return false;
+   }
 }
 
 
@@ -1101,7 +1124,7 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
       EXIT;
    }
 
-   if (_mongoc_client_session_in_txn (session)) {
+   if (mongoc_client_session_in_transaction (session)) {
       mongoc_client_session_abort_transaction (session, NULL);
    }
 
