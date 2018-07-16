@@ -1951,6 +1951,135 @@ test_n_return_find_cmd_with_opts (void)
 }
 
 
+/* older mongod returns an empty final batch when limit is divisible by
+ * batchSize; mongos still behaves this way as of MongoDB 4.0 */
+static void
+test_empty_final_batch_live (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+   int i;
+   bool r;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   collection = get_test_collection (client, "test_empty_final_batch_live");
+
+   mongoc_collection_delete_many (
+      collection, tmp_bson ("{}"), NULL, NULL, NULL);
+   for (i = 0; i < 3; i++) {
+      r = mongoc_collection_insert_one (
+         collection, tmp_bson ("{}"), NULL, NULL, &error);
+
+      ASSERT_OR_PRINT (r, error);
+   }
+
+   cursor = mongoc_collection_find_with_opts (
+      collection,
+      tmp_bson ("{}"),
+      tmp_bson ("{'limit': 3, 'batchSize': 3}"),
+      NULL);
+
+   for (i = 0; i < 3; i++) {
+      ASSERT (mongoc_cursor_next (cursor, &doc));
+   }
+
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_empty_final_batch (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "coll");
+   cursor = mongoc_collection_find_with_opts (
+      collection,
+      tmp_bson ("{}"),
+      tmp_bson ("{'limit': 1, 'batchSize': 1}"),
+      NULL);
+
+   /*
+    * one document in first batch
+    */
+   future = future_cursor_next (cursor, &doc);
+   request =
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+
+   mock_server_replies_to_find (
+      request, MONGOC_QUERY_SLAVE_OK, 1234, 0, "db.coll", "{}", true);
+
+   ASSERT (future_get_bool (future));
+   future_destroy (future);
+   request_destroy (request);
+
+   /*
+    * empty batch with nonzero cursor id
+    */
+   future = future_cursor_next (cursor, &doc);
+   request =
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+
+   mock_server_replies_to_find (
+      request, MONGOC_QUERY_SLAVE_OK, 1234, 0, "db.coll", "" /* empty */, true);
+
+   ASSERT (!future_get_bool (future));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+   future_destroy (future);
+   request_destroy (request);
+
+   /*
+    * final batch, empty with zero cursor id
+    */
+   future = future_cursor_next (cursor, &doc);
+   request =
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+
+   ASSERT_CMPINT64 (
+      bson_lookup_int64 (request_get_doc (request, 0), "batchSize"),
+      ==,
+      (int64_t) 1);
+
+   mock_server_replies_to_find (request,
+                                MONGOC_QUERY_SLAVE_OK,
+                                0 /* cursor id */,
+                                0,
+                                "db.coll",
+                                "" /* empty */,
+                                true);
+
+   ASSERT (!future_get_bool (future));
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
 static void
 test_error_document_query (void)
 {
@@ -2187,6 +2316,10 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Cursor/n_return/find_cmd/with_opts",
                                 test_n_return_find_cmd_with_opts);
+   TestSuite_AddLive (
+      suite, "/Cursor/empty_final_batch_live", test_empty_final_batch_live);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/empty_final_batch", test_empty_final_batch);
    TestSuite_AddLive (
       suite, "/Cursor/error_document/query", test_error_document_query);
    TestSuite_AddLive (
