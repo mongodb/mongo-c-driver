@@ -7,7 +7,7 @@ Features:
     document transaction is started.
 
 Bug fixes:
-  * Fix a crash in sharded queries when cursor's limit is divisible by batchSize
+  * Fix occasional crash in sharded queries
   * mongoc_collection_aggregate had not inherited its mongoc_collection_t's
     read preference; only an explicitly provided read preference was used.
 

@@ -1951,8 +1951,8 @@ test_n_return_find_cmd_with_opts (void)
 }
 
 
-/* older mongod returns an empty final batch when limit is divisible by
- * batchSize; mongos still behaves this way as of MongoDB 4.0 */
+/* mongos can return empty final batch with limit and batchSize, which had
+ * caused an abort in the cursor */
 static void
 test_empty_final_batch_live (void)
 {
