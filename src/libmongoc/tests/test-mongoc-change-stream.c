@@ -1392,9 +1392,12 @@ test_change_stream_client_watch (void *test_ctx)
 
 
 static int
-_skip_if_server_version_less_than (const char *version)
+_skip_if_rs_version_less_than (const char *version)
 {
    if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+   if (!test_framework_skip_if_not_replset ()) {
       return 0;
    }
    if (test_framework_get_server_version () >=
@@ -1407,19 +1410,19 @@ _skip_if_server_version_less_than (const char *version)
 static int
 _skip_if_no_client_watch (void)
 {
-   return _skip_if_server_version_less_than ("3.8.0");
+   return _skip_if_rs_version_less_than ("3.8.0");
 }
 
 static int
 _skip_if_no_db_watch (void)
 {
-   return _skip_if_server_version_less_than ("3.8.0");
+   return _skip_if_rs_version_less_than ("3.8.0");
 }
 
 static int
 _skip_if_no_start_at_optime (void)
 {
-   return _skip_if_server_version_less_than ("3.8.0");
+   return _skip_if_rs_version_less_than ("3.8.0");
 }
 
 typedef struct {
