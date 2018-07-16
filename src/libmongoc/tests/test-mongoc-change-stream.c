@@ -1731,7 +1731,7 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_read_prefs,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      _skip_if_no_start_at_optime);
 
    TestSuite_Add (suite,
                   "/change_stream/server_selection_fails",
