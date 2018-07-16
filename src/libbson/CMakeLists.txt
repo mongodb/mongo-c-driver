@@ -179,6 +179,7 @@ set (SOURCES
    ${PROJECT_SOURCE_DIR}/src/bson/bson-writer.c
    ${PROJECT_SOURCE_DIR}/src/jsonsl/jsonsl.c
    ${PROJECT_SOURCE_DIR}/../../src/common/common-b64.c
+   ${PROJECT_SOURCE_DIR}/../../src/common/common-md5.c
 )
 
 set (HEADERS

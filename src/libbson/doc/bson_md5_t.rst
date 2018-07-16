@@ -5,6 +5,10 @@ bson_md5_t
 
 BSON MD5 Abstraction
 
+Deprecated
+----------
+All MD5 APIs are deprecated in libbson.
+
 Synopsis
 --------
 
