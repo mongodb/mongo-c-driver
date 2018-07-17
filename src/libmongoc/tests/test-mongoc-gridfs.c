@@ -1349,7 +1349,8 @@ test_find_one_empty (void)
    bson_error_t error = {1, 2, "hello"};
 
    client = test_framework_client_new ();
-   ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "list", &error), error);
+   gridfs = get_test_gridfs (client, "list", &error);
+   ASSERT_OR_PRINT (gridfs, error);
    ASSERT (!mongoc_gridfs_find_one (
       gridfs, tmp_bson ("{'x': 'doesntexist'}"), &error));
 
