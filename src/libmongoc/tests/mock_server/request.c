@@ -1133,8 +1133,7 @@ request_from_op_msg (request_t *request, const mongoc_rpc_t *rpc)
 
    if (request->docs.len) {
       doc = request_get_doc (request, 0);
-      bson_iter_init (&iter, doc);
-      if (bson_iter_next (&iter)) {
+      if (bson_iter_init (&iter, doc) && bson_iter_next (&iter)) {
          request->command_name = bson_strdup (bson_iter_key (&iter));
       }
    }
