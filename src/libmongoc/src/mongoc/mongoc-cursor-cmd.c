@@ -155,18 +155,15 @@ _mongoc_cursor_cmd_new (mongoc_client_t *client,
                         const char *db_and_coll,
                         const bson_t *cmd,
                         const bson_t *opts,
-                        const mongoc_read_prefs_t *read_prefs,
+                        const mongoc_read_prefs_t *user_prefs,
+                        const mongoc_read_prefs_t *default_prefs,
                         const mongoc_read_concern_t *read_concern)
 {
    mongoc_cursor_t *cursor;
    data_cmd_t *data = bson_malloc0 (sizeof (*data));
 
-   cursor = _mongoc_cursor_new_with_opts (client,
-                                          db_and_coll,
-                                          opts,
-                                          read_prefs /* user prefs */,
-                                          NULL /* default prefs */,
-                                          read_concern);
+   cursor = _mongoc_cursor_new_with_opts (
+      client, db_and_coll, opts, user_prefs, default_prefs, read_concern);
    _mongoc_cursor_response_legacy_init (&data->response_legacy);
    _mongoc_cursor_check_and_copy_to (cursor, "command", cmd, &data->cmd);
    bson_init (&data->response.reply);
@@ -187,7 +184,7 @@ _mongoc_cursor_cmd_new_from_reply (mongoc_client_t *client,
                                    bson_t *reply)
 {
    mongoc_cursor_t *cursor =
-      _mongoc_cursor_cmd_new (client, NULL, cmd, opts, NULL, NULL);
+      _mongoc_cursor_cmd_new (client, NULL, cmd, opts, NULL, NULL, NULL);
    data_cmd_t *data = (data_cmd_t *) cursor->impl.data;
 
    data->reading_from = CMD_RESPONSE;

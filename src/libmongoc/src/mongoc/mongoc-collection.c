@@ -394,8 +394,9 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
                                     collection->ns,
                                     created_command ? &command : NULL,
                                     &cursor_opts,
-                                    COALESCE (read_prefs, collection->read_prefs),
-                                    NULL /* read concern */);
+                                    read_prefs,
+                                    collection->read_prefs,
+                                    NULL);
    bson_destroy (&command);
    bson_destroy (&cursor_opts);
 
@@ -1593,12 +1594,8 @@ mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
 
    /* No read preference. Index Enumeration Spec: "run listIndexes on the
     * primary node in replicaSet mode". */
-   cursor = _mongoc_cursor_cmd_new (collection->client,
-                                    collection->ns,
-                                    &cmd,
-                                    opts,
-                                    NULL /* read prefs */,
-                                    NULL /* read concern */);
+   cursor = _mongoc_cursor_cmd_new (
+      collection->client, collection->ns, &cmd, opts, NULL, NULL, NULL);
 
    if (!mongoc_cursor_error (cursor, &error)) {
       _mongoc_cursor_prime (cursor);

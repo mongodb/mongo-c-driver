@@ -752,7 +752,7 @@ mongoc_database_find_collections_with_opts (mongoc_database_t *database,
    /* Enumerate Collections Spec: "run listCollections on the primary node in
     * replicaset mode" */
    cursor = _mongoc_cursor_cmd_new (
-      database->client, database->name, &cmd, opts, NULL, NULL);
+      database->client, database->name, &cmd, opts, NULL, NULL, NULL);
    if (cursor->error.domain == 0) {
       _mongoc_cursor_prime (cursor);
    }

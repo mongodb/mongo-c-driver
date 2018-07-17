@@ -278,7 +278,8 @@ _mongoc_cursor_cmd_new (mongoc_client_t *client,
                         const char *db_and_coll,
                         const bson_t *cmd,
                         const bson_t *opts,
-                        const mongoc_read_prefs_t *read_prefs,
+                        const mongoc_read_prefs_t *user_prefs,
+                        const mongoc_read_prefs_t *default_prefs,
                         const mongoc_read_concern_t *read_concern);
 
 mongoc_cursor_t *
