@@ -3057,7 +3057,7 @@ test_mongoc_handshake_pool (void)
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_appname (uri, BSON_FUNC);
+   ASSERT (mongoc_uri_set_appname (uri, BSON_FUNC));
 
    pool = mongoc_client_pool_new (uri);
 
