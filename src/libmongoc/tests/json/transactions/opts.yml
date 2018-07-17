@@ -66,6 +66,59 @@ tests:
             mode: Secondary
         result: *mustBePrimary
 
+  # Explicit read preference primary is allowed
+
+  - description: aggregate succeeds with explicit primary read preference
+
+    operations:
+      - *startTransaction
+      - name: aggregate
+        object: collection
+        arguments:
+          pipeline:
+            - $project: { _id: 1 }
+          batchSize: 3
+          session: session0
+          readPreference:
+            mode: Primary
+        result: []
+
+  - description: find succeeds with explicit primary read preference
+
+    operations:
+      - *startTransaction
+      - name: find
+        object: collection
+        arguments:
+          session: session0
+          readPreference:
+            mode: Primary
+        result: []
+
+  - description: distinct succeeds with explicit primary read preference
+
+    operations:
+      - *startTransaction
+      - name: distinct
+        object: collection
+        arguments:
+          session: session0
+          fieldName: _id
+        result: []
+
+  - description: countDocuments succeeds with explicit primary read preference
+
+    operations:
+      - *startTransaction
+      - name: countDocuments
+        object: collection
+        arguments:
+          session: session0
+          filter: {}
+          readPreference:
+            mode: Primary
+        result: 0
+
   # Test that explicit readConcern is prohibited in a transaction.
 
   - description: aggregate fails with explicit read concern
