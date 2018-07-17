@@ -984,10 +984,13 @@ _bson_json_read_string (bson_json_reader_t *reader, /* IN */
          }
       } break;
       case BSON_JSON_LF_DOUBLE: {
-         _bson_json_parse_double (reader,
-                                  (const char *) val,
-                                  vlen,
-                                  &bson->bson_type_data.v_double.value);
+         if (!_bson_json_parse_double (reader,
+                                       (const char *) val,
+                                       vlen,
+                                       &bson->bson_type_data.v_double.value)) {
+            /* the error is set, return and let the reader exit */
+            return;
+         }
       } break;
       case BSON_JSON_LF_DATE: {
          int64_t v64;
