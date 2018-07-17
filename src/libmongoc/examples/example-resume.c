@@ -1,3 +1,5 @@
+#include <mongoc.h>
+
 #ifndef _WIN32
 /* An example implementation of custom resume logic in a change stream.
 * example-resume starts a client-wide change stream and persists the resume
@@ -8,8 +10,6 @@
 * without missing any change events.
 */
 #include <unistd.h>
-
-#include <mongoc.h>
 
 static const char *RESUME_TOKEN_PATH = "resume-token.json";
 
@@ -159,5 +159,10 @@ cleanup:
    mongoc_client_destroy (client);
    mongoc_cleanup ();
    return exit_code;
+}
+#else
+int main() {
+   printf("example-resume is not implemented on Windows.\n");
+   return 1;
 }
 #endif
