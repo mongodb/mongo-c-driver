@@ -210,7 +210,7 @@ bson_lookup_doc_null_ok (const bson_t *b, const char *key, bson_t *doc)
    bson_iter_t iter;
    bson_iter_t descendent;
 
-   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_init (&iter, b));
    BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
    if (!BSON_ITER_HOLDS_NULL (&descendent)) {
       bson_iter_bson (&descendent, doc);
