@@ -1,15 +1,40 @@
-Next Release
-============
+mongo-c-driver 1.12.0
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.12.0.
 
 Features:
 
   * New function mongoc_client_session_in_transaction to check if a multi-
     document transaction is started.
+  * New examples for change streams and transactions, improved guide for
+    migrating from mongoc_collection_count to mongoc_collection_count_documents
 
 Bug fixes:
+
   * Fix occasional crash in sharded queries
+  * Retry all retryable write concern errors
+  * mongoc_client_session_commit_transaction sets the correct error label when
+    the primary is unavailable
+  * mongoc_collection_find_with_opts had prohibited read preference "primary"
+    in a transaction
   * mongoc_collection_aggregate had not inherited its mongoc_collection_t's
     read preference; only an explicitly provided read preference was used.
+  * Allow unencoded delimiters in username/password if unambiguous
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Roberto C. Sánchez
+  * A. Jesse Jiryu Davis
+  * Kevin Albertson
+  * Spencer McKenney
+  * Evgeni Dobranov
+  * Jeremy Mikola
+  * 平民·寻梦(Pingmin Fenlly Liu)
+
+Peace,
+
+    A. Jesse Jiryu Davis
 
 
 mongo-c-driver 1.11.0
