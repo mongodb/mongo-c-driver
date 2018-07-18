@@ -1037,6 +1037,8 @@ test_bson_json_read_corrupt_utf8 (void)
                           BSON_JSON_ERROR_READ_CORRUPT_JS,
                           "invalid bytes in UTF8 string");
 
+   memset (&error, 0, sizeof error);
+
    BSON_ASSERT (!bson_new_from_json ((uint8_t *) bad_value, -1, &error));
    ASSERT_ERROR_CONTAINS (error,
                           BSON_ERROR_JSON,
@@ -1148,6 +1150,8 @@ test_bson_json_read_legacy_regex (void)
                           BSON_JSON_ERROR_READ_INVALID_PARAM,
                           "Missing \"$options\" after \"$regex\"");
 
+   memset (&error, 0, sizeof error);
+
    r = bson_init_from_json (&b, "{\"a\": {\"$options\": \"ix\"}}", -1, &error);
    BSON_ASSERT (!r);
    ASSERT_ERROR_CONTAINS (error,
@@ -1229,6 +1233,8 @@ test_bson_json_read_binary (void)
                           BSON_ERROR_JSON,
                           BSON_JSON_ERROR_READ_INVALID_PARAM,
                           "Missing \"base64\" after \"subType\"");
+
+   memset (&error, 0, sizeof error);
 
    /* no subType */
    r = bson_init_from_json (
@@ -1514,6 +1520,8 @@ test_bson_json_number_long (void)
                           BSON_JSON_ERROR_READ_INVALID_PARAM,
                           "Number \"9223372036854775808\" is out of range");
 
+   memset (&error, 0, sizeof error);
+
    /* INT64_MIN - 1 */
    r = bson_init_from_json (
       &b, "{\"x\": {\"$numberLong\": \"-9223372036854775809\"}}", -1, &error);
@@ -1524,6 +1532,8 @@ test_bson_json_number_long (void)
                           BSON_JSON_ERROR_READ_INVALID_PARAM,
                           "Number \"-9223372036854775809\" is out of range");
 
+   memset (&error, 0, sizeof error);
+
    r = bson_init_from_json (
       &b, "{\"x\": {\"$numberLong\": \"10000000000000000000\"}}", -1, &error);
 
@@ -1532,6 +1542,8 @@ test_bson_json_number_long (void)
                           BSON_ERROR_JSON,
                           BSON_JSON_ERROR_READ_INVALID_PARAM,
                           "Number \"10000000000000000000\" is out of range");
+
+   memset (&error, 0, sizeof error);
 
    /* INT64_MIN - 2 */
    r = bson_init_from_json (&b, "{\"x\": -10000000000000000000}", -1, &error);
@@ -2035,6 +2047,8 @@ test_bson_json_int64 (void)
                           BSON_JSON_ERROR_READ_INVALID_PARAM,
                           "Number \"9223372036854775808\" is out of range");
 
+   memset (&error, 0, sizeof error);
+
    /* INT64_MIN - 1 */
    BSON_ASSERT (
       !bson_init_from_json (&b, "{ \"x\": -9223372036854775809 }", -1, &error));
@@ -2043,12 +2057,16 @@ test_bson_json_int64 (void)
                           BSON_JSON_ERROR_READ_INVALID_PARAM,
                           "Number \"-9223372036854775809\" is out of range");
 
+   memset (&error, 0, sizeof error);
+
    BSON_ASSERT (
       !bson_init_from_json (&b, "{ \"x\": 10000000000000000000 }", -1, &error));
    ASSERT_ERROR_CONTAINS (error,
                           BSON_ERROR_JSON,
                           BSON_JSON_ERROR_READ_INVALID_PARAM,
                           "Number \"10000000000000000000\" is out of range");
+
+   memset (&error, 0, sizeof error);
 
    /* INT64_MIN - 2 */
    BSON_ASSERT (!bson_init_from_json (
@@ -2134,6 +2152,7 @@ test_bson_json_double_overflow (void)
                              "out of range");
 
       bson_free (j);
+      memset (&error, 0, sizeof error);
 
       /* same test with canonical Extended JSON */
       j = bson_strdup_printf ("{ \"d\" : { \"$numberDouble\" : \"%s\" } }", *p);
@@ -2188,6 +2207,7 @@ test_bson_json_nan (void)
                              BSON_ERROR_JSON,
                              BSON_JSON_ERROR_READ_CORRUPT_JS,
                              "Got parse error at");
+      memset (&error, 0, sizeof error);
    }
 
    for (j = partial; *j; j++) {
@@ -2196,6 +2216,7 @@ test_bson_json_nan (void)
                              BSON_ERROR_JSON,
                              BSON_JSON_ERROR_READ_CORRUPT_JS,
                              "Incomplete JSON");
+      memset (&error, 0, sizeof error);
    }
 }
 
@@ -2253,6 +2274,7 @@ test_bson_json_infinity (void)
                              BSON_ERROR_JSON,
                              BSON_JSON_ERROR_READ_CORRUPT_JS,
                              "Got parse error at");
+      memset (&error, 0, sizeof error);
    }
 
    for (j = partial; *j; j++) {
@@ -2261,6 +2283,7 @@ test_bson_json_infinity (void)
                              BSON_ERROR_JSON,
                              BSON_JSON_ERROR_READ_CORRUPT_JS,
                              "Incomplete JSON");
+      memset (&error, 0, sizeof error);
    }
 }
 
@@ -2758,6 +2781,7 @@ test_bson_json_null_in_str (void)
       (const uint8_t *) bad_json, sizeof (bad_json) - 1, &err));
    ASSERT_ERROR_CONTAINS (
       err, BSON_ERROR_JSON, BSON_JSON_ERROR_READ_CORRUPT_JS, "Got parse error");
+   memset (&err, 0, sizeof err);
    ASSERT (!bson_new_from_json (
       (const uint8_t *) cdriver2305, sizeof (cdriver2305) - 1, &err));
    ASSERT_ERROR_CONTAINS (
