@@ -43,15 +43,18 @@ server_selection_error_dns (const char *uri_str,
 
    if (pooled && expect_success) {
       pool = mongoc_client_pool_new (uri);
+      test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
    } else if (pooled) {
       /* we expect selection to fail; let the test finish faster */
-      mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 2000);
+      mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
       pool = mongoc_client_pool_new (uri);
+      test_framework_set_pool_ssl_opts (pool);
       _mongoc_client_pool_set_stream_initiator (pool, cannot_resolve, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = mongoc_client_new_from_uri (uri);
+      test_framework_set_ssl_opts (client);
       if (!expect_success) {
          mongoc_client_set_stream_initiator (client, cannot_resolve, NULL);
       }
@@ -130,17 +133,20 @@ test_server_selection_error_dns_multi_fail_pooled (void *ctx)
 static void
 _test_server_selection_error_dns_multi_success (bool pooled)
 {
+   char *host;
    char *uri_str;
 
+   host = test_framework_get_host ();
    uri_str = bson_strdup_printf ("mongodb://example-localhost:27017,"
                                  "%s:%d,"
                                  "other-example-localhost:27017/",
-                                 test_framework_get_host (),
+                                 host,
                                  test_framework_get_port ());
 
    server_selection_error_dns (uri_str, "", true, pooled);
 
    bson_free (uri_str);
+   bson_free (host);
 }
 
 static void
@@ -226,7 +232,7 @@ _test_server_selection_uds_not_found (bool pooled)
    mongoc_client_t *client;
    bson_error_t error;
 
-   uri = mongoc_uri_new ("mongodb:///tmp/mongodb-so-close.sock");
+   uri = mongoc_uri_new ("mongodb://%2Ftmp%2Fmongodb-so-close.sock");
    ASSERT (uri);
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
 
