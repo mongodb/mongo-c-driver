@@ -46,14 +46,7 @@ BSON_BEGIN_DECLS
 #define bson_once pthread_once
 #define BSON_ONCE_FUN(n) void n (void)
 #define BSON_ONCE_RETURN return
-#ifdef BSON_PTHREAD_ONCE_INIT_NEEDS_BRACES
-#define BSON_ONCE_INIT  \
-   {                    \
-      PTHREAD_ONCE_INIT \
-   }
-#else
 #define BSON_ONCE_INIT PTHREAD_ONCE_INIT
-#endif
 #else
 #define bson_mutex_t CRITICAL_SECTION
 #define bson_mutex_init InitializeCriticalSection

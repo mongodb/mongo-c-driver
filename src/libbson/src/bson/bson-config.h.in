@@ -43,16 +43,6 @@
 
 
 /*
- * Define to 1 if your system requires {} around PTHREAD_ONCE_INIT.
- * This is typically just Solaris 8-10.
- */
-#define BSON_PTHREAD_ONCE_INIT_NEEDS_BRACES @BSON_PTHREAD_ONCE_INIT_NEEDS_BRACES@
-#if BSON_PTHREAD_ONCE_INIT_NEEDS_BRACES != 1
-# undef BSON_PTHREAD_ONCE_INIT_NEEDS_BRACES
-#endif
-
-
-/*
  * Define to 1 if you have clock_gettime() available.
  */
 #define BSON_HAVE_CLOCK_GETTIME @BSON_HAVE_CLOCK_GETTIME@
