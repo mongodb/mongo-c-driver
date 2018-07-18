@@ -1,3 +1,26 @@
+libbson 1.12.0
+==============
+
+It is my pleasure to announce libbson 1.12.0. This release deprecates all
+MD5-related public APIs; they will be removed in the next major release.
+
+Bug fixes:
+
+  * Properly handle zero-length BSON binary values
+  * Fix crash parsing Base64-encoded data in JSON when using libbson without
+    libmongoc
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Roberto C. Sánchez
+  * A. Jesse Jiryu Davis
+  * Kevin Albertson
+
+Peace,
+
+    A. Jesse Jiryu Davis
+
+
 libbson 1.11.0
 ==============
 
