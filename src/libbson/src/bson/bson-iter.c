@@ -293,10 +293,6 @@ bson_iter_find_w_len (bson_iter_t *iter, /* INOUT */
 {
    const char *ikey;
 
-   if (keylen == 0) {
-      return false;
-   }
-
    if (keylen < 0) {
       keylen = (int) strlen (key);
    }

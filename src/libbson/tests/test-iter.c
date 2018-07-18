@@ -392,6 +392,35 @@ test_bson_iter_init_find_w_len (void)
 
 
 static void
+test_bson_iter_empty_key (void)
+{
+   /* create a bson document empty keys. */
+   bson_t *bson = BCON_NEW (
+      "", "{", "x", BCON_INT32 (1), "", "{", "y", BCON_INT32 (2), "}", "}");
+   bson_iter_t iter;
+   bson_iter_t descendant;
+
+   BSON_ASSERT (bson_iter_init_find (&iter, bson, ""));
+   BSON_ASSERT (bson_iter_init_find_case (&iter, bson, ""));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   /* tests fixes applied in CDRIVER-2755. */
+   /* a find_w_len and length 0 should also find the key. */
+   BSON_ASSERT (bson_iter_init_find_w_len (&iter, bson, "", 0));
+   BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+   /* similarly, we should descend on an empty key. */
+   bson_iter_init (&iter, bson);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, ".x", &descendant));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&descendant));
+   ASSERT_CMPINT (bson_iter_int32 (&descendant), ==, 1);
+   bson_iter_init (&iter, bson);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, "..y", &descendant));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&descendant));
+   ASSERT_CMPINT (bson_iter_int32 (&descendant), ==, 2);
+   bson_destroy (bson);
+}
+
+
+static void
 test_bson_iter_as_double (void)
 {
    bson_iter_t iter;
@@ -682,4 +711,5 @@ test_iter_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/bson/iter/binary_deprecated", test_bson_iter_binary_deprecated);
    TestSuite_Add (suite, "/bson/iter/from_data", test_bson_iter_from_data);
+   TestSuite_Add (suite, "/bson/iter/empty_key", test_bson_iter_empty_key);
 }
