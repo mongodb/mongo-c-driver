@@ -1248,6 +1248,8 @@ typedef struct {
    bson_t agg_reply;
 } resume_at_optime_ctx_t;
 
+#define RESUME_AT_OPTIME_INITIALIZER { false, false, BSON_INITIALIZER}
+
 static void
 _resume_at_optime_started (const mongoc_apm_command_started_t *event)
 {
@@ -1286,6 +1288,7 @@ _resume_at_optime_succeeded (const mongoc_apm_command_succeeded_t *event)
       event);
    if (!strcmp (mongoc_apm_command_succeeded_get_command_name (event),
                 "aggregate")) {
+      bson_destroy (&ctx->agg_reply);
       bson_copy_to (mongoc_apm_command_succeeded_get_reply (event),
                     &ctx->agg_reply);
    }
@@ -1301,7 +1304,7 @@ test_change_stream_resume_at_optime (void *test_ctx)
    const bson_t *doc;
    bson_error_t error;
    mongoc_apm_callbacks_t *callbacks;
-   resume_at_optime_ctx_t ctx = {0};
+   resume_at_optime_ctx_t ctx = RESUME_AT_OPTIME_INITIALIZER;
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, _resume_at_optime_started);
