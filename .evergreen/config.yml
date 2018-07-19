@@ -542,6 +542,36 @@ functions:
           BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
           BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
           BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
+  "update codecov.io" : 
+  - command: shell.exec
+    params:
+      working_dir: "mongoc"
+      script: |
+        export CODECOV_TOKEN=${codecov_token}
+        curl -s https://codecov.io/bash | bash
+
+
+  "debug-compile-coverage-notest-nosasl-nossl" :
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: "mongoc"
+      script: |
+        set -o errexit
+        set -o xtrace
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_TESTS=ON sh .evergreen/compile.sh    
+
+  "debug-compile-coverage-notest-nosasl-openssl" :
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: "mongoc"
+      script: |
+        set -o errexit
+        set -o xtrace
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_TESTS=ON sh .evergreen/compile.sh
 
 pre:
   - func: "fetch source"
@@ -2226,6 +2256,575 @@ tasks:
             AUTH: "noauth"
             SSL: "ssl"
             URI: ""
+
+    - name: test-coverage-latest-server-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-4.0-server-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.6-server-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.6"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.4-server-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.2-server-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.2"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.0-server-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.0"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-latest-replica-set-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-4.0-replica-set-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.4-replica-set-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.2-replica-set-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.2"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.0-replica-set-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.0"
+            TOPOLOGY: "replica_set"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-latest-sharded-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-4.0-sharded-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.6-sharded-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.6"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.4-sharded-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.2-sharded-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.2"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.0-sharded-noauth-nosasl-nossl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-latest-server-auth-nosasl-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-4.0-server-auth-nosasl-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.6-server-auth-nosasl-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.6"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.4-server-auth-nosasl-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.2-server-auth-nosasl-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.2"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.0-server-auth-nosasl-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.0"
+            TOPOLOGY: "server"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-latest-sharded-auth-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-4.0-sharded-auth-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.6-sharded-auth-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.6"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.4-sharded-auth-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.2-sharded-auth-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.2"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-3.0-sharded-auth-openssl
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.0"
+            TOPOLOGY: "sharded_cluster"
+            AUTH: "auth"
+            SSL: "openssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "openssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-replica-set
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "ssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "ssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-mock-server
+      tags: ["test-coverage"]
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "run mock server tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "ssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-latest-server-dns
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "ssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "ssl"
+            DNS: on
+        - func: "update codecov.io"
 
     - name: test-3.0-server-noauth-nosasl-nossl
       tags: ["nossl", "nosasl", "noauth", "server", "3.0"]
@@ -8440,6 +9039,16 @@ buildvariants:
     - ".debug-compile !.sspi .nossl !.sasl"
     - ".debug-compile .special .valgrind .bson"
     - ".test-valgrind"
+
+- name: code-coverage-ubuntu
+  display_name: "Code Coverage Tests"
+  expansions:
+    CC: "gcc"
+  batchtime: 1440 # 1 day
+  run_on:
+    - ubuntu1404-build
+  tasks:
+    - ".test-coverage"
 
 - name: ios-102-debug
   display_name: "iOS 10.2 DEBUG"
