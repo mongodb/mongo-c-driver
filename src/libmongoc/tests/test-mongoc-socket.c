@@ -282,6 +282,7 @@ sendv_test_client (void *data_)
    bool done = false;
    char *buf = (char *) bson_malloc (gFourMB);
 
+   BSON_ASSERT (gFourMB > 0);
    memset (buf, 'a', (gFourMB) -1);
    buf[gFourMB - 1] = '\0';
 
