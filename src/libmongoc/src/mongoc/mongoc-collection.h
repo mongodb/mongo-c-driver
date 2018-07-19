@@ -220,7 +220,7 @@ mongoc_collection_update_many (mongoc_collection_t *collection,
                                const bson_t *opts,
                                bson_t *reply,
                                bson_error_t *error);
-bool
+MONGOC_EXPORT (bool)
 mongoc_collection_replace_one (mongoc_collection_t *collection,
                                const bson_t *selector,
                                const bson_t *replacement,
