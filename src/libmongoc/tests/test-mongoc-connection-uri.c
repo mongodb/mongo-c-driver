@@ -148,7 +148,7 @@ test_connection_uri_cb (bson_t *scenario)
 
    BSON_ASSERT (bson_iter_init_find (&iter, scenario, "tests"));
    BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (&iter));
-   bson_iter_recurse (&iter, &tests_iter);
+   ASSERT (bson_iter_recurse (&iter, &tests_iter));
 
    while (bson_iter_next (&tests_iter)) {
       bson_t test_case;
