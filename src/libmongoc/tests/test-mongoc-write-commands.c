@@ -273,10 +273,105 @@ test_bypass_validation (void *context)
    mongoc_client_destroy (client);
 }
 
+static void
+test_bypass_command_started (const mongoc_apm_command_started_t *event)
+{
+   ASSERT_HAS_NOT_FIELD (mongoc_apm_command_started_get_command (event),
+                         "bypassDocumentValidation");
+}
+
+static void
+test_bypass_not_sent ()
+{
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   mongoc_find_and_modify_opts_t *opts;
+   mongoc_client_t *client;
+   mongoc_database_t *database;
+   mongoc_apm_callbacks_t *callbacks;
+   bson_error_t error;
+   bson_t *doc;
+   const bson_t *agg_doc;
+   bson_t reply;
+   bson_t *update;
+   bson_t *query;
+   bson_t *pipeline;
+   bson_t *agg_opts;
+   mongoc_cursor_t *cursor;
+   char *collname;
+   char *dbname;
+
+   client = test_framework_client_new ();
+
+   /* set up command monitoring for started commands */
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, test_bypass_command_started);
+   mongoc_client_set_apm_callbacks (client, callbacks, NULL);
+   mongoc_apm_callbacks_destroy (callbacks);
+
+   dbname = "test";
+   collname = gen_collection_name ("bypass");
+   database = mongoc_client_get_database (client, dbname);
+   collection = mongoc_database_get_collection (database, collname);
+
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+
+   /* we explicitly set this to false to test that it isn't sent */
+   mongoc_bulk_operation_set_bypass_document_validation (bulk, false);
+
+   /* insert a doc */
+   doc = BCON_NEW ("x", BCON_INT32 (31));
+   mongoc_bulk_operation_insert (bulk, doc);
+   bson_destroy (doc);
+   mongoc_bulk_operation_execute (bulk, &reply, &error);
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+
+   opts = mongoc_find_and_modify_opts_new ();
+
+   /* we explicitly set this to false to test that it isn't sent */
+   mongoc_find_and_modify_opts_set_bypass_document_validation (opts, false);
+
+   /* find the doc we inserted earlier and modify it */
+   update = BCON_NEW ("$set", "{", "x", BCON_INT32 (32), "}");
+   mongoc_find_and_modify_opts_set_update (opts, update);
+   bson_destroy (update);
+   query = BCON_NEW ("x", BCON_INT32 (31));
+   mongoc_collection_find_and_modify_with_opts (
+      collection, query, opts, &reply, &error);
+   bson_destroy (&reply);
+   bson_destroy (query);
+   mongoc_find_and_modify_opts_destroy (opts);
+
+   /* we explicitly set this to false to test that it isn't sent */
+   agg_opts = BCON_NEW ("bypassDocumentValidation", BCON_BOOL (false));
+
+   /* aggregate match */
+   pipeline = BCON_NEW ("pipeline", "[", "]");
+   cursor = mongoc_collection_aggregate (
+      collection, MONGOC_QUERY_NONE, pipeline, agg_opts, NULL);
+   bson_destroy (pipeline);
+   bson_destroy (agg_opts);
+
+   /* iterate through aggregation results */
+   while (mongoc_cursor_next (cursor, &agg_doc)) {
+   }
+
+   mongoc_cursor_destroy (cursor);
+
+   /* cleanup */
+   bson_free (collname);
+   mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
+
 void
 test_write_command_install (TestSuite *suite)
 {
    TestSuite_AddLive (suite, "/WriteCommand/split_insert", test_split_insert);
+   TestSuite_AddLive (
+      suite, "/WriteCommand/bypass_not_sent", test_bypass_not_sent);
    TestSuite_AddLive (
       suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
    TestSuite_AddFull (suite,

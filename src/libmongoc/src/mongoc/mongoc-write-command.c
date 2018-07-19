@@ -342,11 +342,10 @@ _mongoc_write_command_init (bson_t *doc,
    BSON_APPEND_UTF8 (doc, gCommandNames[command->type], collection);
    BSON_APPEND_BOOL (doc, "ordered", command->flags.ordered);
 
-   if (command->flags.bypass_document_validation !=
-       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+   if (command->flags.bypass_document_validation) {
       BSON_APPEND_BOOL (doc,
                         "bypassDocumentValidation",
-                        !!command->flags.bypass_document_validation);
+                        command->flags.bypass_document_validation);
    }
 
    EXIT;
@@ -933,8 +932,7 @@ _mongoc_write_command_execute_idl (mongoc_write_command_t *command,
       }
    }
 
-   if (command->flags.bypass_document_validation !=
-       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+   if (command->flags.bypass_document_validation) {
       if (!mongoc_write_concern_is_acknowledged (crud->writeConcern)) {
          result->failed = true;
          bson_set_error (

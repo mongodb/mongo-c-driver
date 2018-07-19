@@ -25,9 +25,9 @@
 #include "mongoc-write-concern.h"
 
 /* ordered, bypass_document_validation, has_collation, multi */
-#define MONGOC_BULK_WRITE_FLAGS_INIT                     \
-   {                                                     \
-      true, MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT, 0 \
+#define MONGOC_BULK_WRITE_FLAGS_INIT \
+   {                                 \
+      true, false, 0                 \
    }
 
 BSON_BEGIN_DECLS

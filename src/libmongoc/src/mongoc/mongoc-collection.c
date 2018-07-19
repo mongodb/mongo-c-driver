@@ -2023,16 +2023,15 @@ mongoc_collection_update (mongoc_collection_t *collection,
 }
 
 static bool
-_mongoc_collection_update_or_replace (
-   mongoc_collection_t *collection,
-   const bson_t *selector,
-   const bson_t *update,
-   mongoc_update_opts_t *update_opts,
-   mongoc_write_bypass_document_validation_t bypass,
-   const bson_t *array_filters,
-   bson_t *extra,
-   bson_t *reply,
-   bson_error_t *error)
+_mongoc_collection_update_or_replace (mongoc_collection_t *collection,
+                                      const bson_t *selector,
+                                      const bson_t *update,
+                                      mongoc_update_opts_t *update_opts,
+                                      bool bypass,
+                                      const bson_t *array_filters,
+                                      bson_t *extra,
+                                      bson_t *reply,
+                                      bson_error_t *error)
 {
    mongoc_write_command_t command;
    mongoc_write_result_t result;
@@ -3235,11 +3234,10 @@ mongoc_collection_find_and_modify_with_opts (
       BSON_APPEND_BOOL (&command, "new", true);
    }
 
-   if (opts->bypass_document_validation !=
-       MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT) {
+   if (opts->bypass_document_validation) {
       BSON_APPEND_BOOL (&command,
                         "bypassDocumentValidation",
-                        !!opts->bypass_document_validation);
+                        opts->bypass_document_validation);
    }
 
    if (opts->max_time_ms > 0) {

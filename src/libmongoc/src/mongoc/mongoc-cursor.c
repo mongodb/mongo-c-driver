@@ -294,8 +294,19 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          (void) mongoc_cursor_set_hint (cursor, server_id);
       }
 
-      bson_copy_to_excluding_noinit (
-         opts, &cursor->opts, "serverId", "sessionId", NULL);
+      bson_copy_to_excluding_noinit (opts,
+                                     &cursor->opts,
+                                     "serverId",
+                                     "sessionId",
+                                     "bypassDocumentValidation",
+                                     NULL);
+
+
+      /* only include bypassDocumentValidation if it's true */
+      if (bson_iter_init_find (&iter, opts, "bypassDocumentValidation") &&
+          bson_iter_as_bool (&iter)) {
+         BSON_APPEND_BOOL (&cursor->opts, "bypassDocumentValidation", true);
+      }
    }
 
    if (_mongoc_client_session_in_txn (cursor->client_session)) {

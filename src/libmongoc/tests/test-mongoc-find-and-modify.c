@@ -112,8 +112,7 @@ test_find_and_modify_bypass (bool bypass)
          "{ 'findAndModify' : 'test_find_and_modify', "
          "'query' : { 'superduper' : 77889 },"
          "'update' : { '$set' : { 'superduper' : 1234 } },"
-         "'new' : true,"
-         "'bypassDocumentValidation' : false }");
+         "'new' : true }");
    }
 
    mock_server_replies_simple (request, "{ 'value' : null, 'ok' : 1 }");
