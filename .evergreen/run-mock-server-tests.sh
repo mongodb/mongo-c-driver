@@ -31,7 +31,7 @@ case "$OS" in
          . $DIR/valgrind.sh
          run_valgrind ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
       else
-         ./test-libmongoc --no-fork $TEST_ARGS
+         ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS
       fi
 
       ;;
