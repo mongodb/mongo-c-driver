@@ -118,7 +118,8 @@ test_value_decimal128 (void)
    BSON_ASSERT (bson_decimal128_from_string ("123.5", &dec));
    doc = BCON_NEW ("decimal128", BCON_DECIMAL128 (&dec));
    BSON_ASSERT (bson_iter_init (&iter, doc) && bson_iter_next (&iter));
-   BSON_ASSERT ((value = bson_iter_value (&iter)));
+   value = bson_iter_value (&iter);
+   BSON_ASSERT (value);
    bson_value_copy (value, &copy);
    BSON_ASSERT (bson_append_value (&other, bson_iter_key (&iter), -1, &copy));
 
