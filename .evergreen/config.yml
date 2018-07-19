@@ -8445,8 +8445,7 @@ buildvariants:
     - "debug-compile-no-counters"
     - "compile-tracing"
     - name: "link-with-cmake"
-#  Don't schedule the ABI checker until dependencies are installed, per CDRIVER-2726
-#   - name: "abi-compliance-check"
+    - name: "abi-compliance-check"
     - name: "link-with-cmake-ssl"
     - name: "link-with-cmake-snappy"
     - name: "link-with-cmake-mac"
