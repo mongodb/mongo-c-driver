@@ -1401,7 +1401,8 @@ test_bson_utf8_key (void)
    BSON_ASSERT (bson_iter_init (&iter, b));
    BSON_ASSERT (bson_iter_next (&iter));
    BSON_ASSERT (!strcmp (bson_iter_key (&iter), FIVE_EUROS));
-   BSON_ASSERT ((str = bson_iter_utf8 (&iter, &length)));
+   str = bson_iter_utf8 (&iter, &length);
+   BSON_ASSERT (str);
    BSON_ASSERT (length == 15); /* 5 3-byte sequences. */
    BSON_ASSERT (!strcmp (str, FIVE_EUROS));
    bson_destroy (b);
