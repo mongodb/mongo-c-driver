@@ -273,7 +273,7 @@ test_bson_oid_get_time_t (void)
    bson_oid_init (&oid, context);
    ASSERT_CMPUINT32 ((uint32_t) bson_oid_get_time_t (&oid), >=, start);
    ASSERT_CMPUINT32 (
-      (uint32_t) bson_oid_get_time_t (&oid), >=, (uint32_t) time (NULL));
+      (uint32_t) bson_oid_get_time_t (&oid), <=, (uint32_t) time (NULL));
 
    bson_context_destroy (context);
 }
