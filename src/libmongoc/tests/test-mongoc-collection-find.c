@@ -57,7 +57,7 @@ _insert_test_docs (mongoc_collection_t *collection, const bson_t *docs)
    bson_iter_init (&iter, docs);
    while (bson_iter_next (&iter)) {
       bson_iter_document (&iter, &len, &data);
-      bson_init_static (&doc, data, len);
+      BSON_ASSERT (bson_init_static (&doc, data, len));
       r = mongoc_collection_insert_one (collection, &doc, NULL, NULL, &error);
       ASSERT_OR_PRINT (r, error);
    }
