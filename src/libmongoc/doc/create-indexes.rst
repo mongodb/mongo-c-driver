@@ -4,7 +4,8 @@ Creating Indexes
 ================
 
 To create indexes on a MongoDB collection, execute the ``createIndexes`` command
-with :symbol:`mongoc_database_write_command_with_opts`. See `the MongoDB
+with a command function like :symbol:`mongoc_database_write_command_with_opts` or
+:symbol:`mongoc_collection_write_command_with_opts`. See `the MongoDB
 Manual entry for the createIndexes command
 <https://docs.mongodb.com/manual/reference/command/createIndexes/>`_ for details.
 
