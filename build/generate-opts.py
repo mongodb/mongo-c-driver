@@ -128,7 +128,7 @@ upsert_option = ('upsert', {
 })
 
 bypass_option = ('bypassDocumentValidation', {
-    'type': 'mongoc_write_bypass_document_validation_t',
+    'type': 'bool',
     'field': 'bypass',
     'help': 'Set to ``true`` to skip server-side schema validation of the provided BSON documents.'
 })

@@ -60,7 +60,7 @@ bool
 _mongoc_convert_mongoc_write_bypass_document_validation_t (
    mongoc_client_t *client,
    const bson_iter_t *iter,
-   mongoc_write_bypass_document_validation_t *bdv,
+   bool *bdv,
    bson_error_t *error);
 
 bool

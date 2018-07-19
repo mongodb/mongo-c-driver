@@ -39,16 +39,9 @@ struct _mongoc_crud_opts_t;
 #define MONGOC_WRITE_COMMAND_INSERT 1
 #define MONGOC_WRITE_COMMAND_UPDATE 2
 
-
-typedef enum {
-   MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE = 0,
-   MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE = 1 << 0,
-   MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT = 1 << 1,
-} mongoc_write_bypass_document_validation_t;
-
 struct _mongoc_bulk_write_flags_t {
    bool ordered;
-   mongoc_write_bypass_document_validation_t bypass_document_validation;
+   bool bypass_document_validation;
    bool has_collation;
    bool has_multi_write;
    bool has_array_filters;

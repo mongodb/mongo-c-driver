@@ -50,8 +50,7 @@ mongoc_bulk_operation_new (bool ordered)
    mongoc_bulk_operation_t *bulk;
 
    bulk = (mongoc_bulk_operation_t *) bson_malloc0 (sizeof *bulk);
-   bulk->flags.bypass_document_validation =
-      MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
+   bulk->flags.bypass_document_validation = false;
    bulk->flags.ordered = ordered;
    bulk->server_id = 0;
 
@@ -267,7 +266,7 @@ mongoc_bulk_operation_remove (mongoc_bulk_operation_t *bulk, /* IN */
    BULK_EXIT_IF_PRIOR_ERROR;
 
    if (!mongoc_bulk_operation_remove_many_with_opts (
-         bulk, selector, NULL, error)) {
+          bulk, selector, NULL, error)) {
       MONGOC_WARNING ("%s", error->message);
    }
 
@@ -290,7 +289,7 @@ mongoc_bulk_operation_remove_one (mongoc_bulk_operation_t *bulk, /* IN */
    BULK_EXIT_IF_PRIOR_ERROR;
 
    if (!mongoc_bulk_operation_remove_one_with_opts (
-         bulk, selector, NULL, error)) {
+          bulk, selector, NULL, error)) {
       MONGOC_WARNING ("%s", error->message);
    }
 
@@ -603,7 +602,7 @@ mongoc_bulk_operation_update_one (mongoc_bulk_operation_t *bulk,
    BSON_APPEND_BOOL (&opts, "upsert", upsert);
 
    if (!mongoc_bulk_operation_update_one_with_opts (
-         bulk, selector, document, &opts, error)) {
+          bulk, selector, document, &opts, error)) {
       MONGOC_WARNING ("%s", error->message);
    }
 
@@ -930,7 +929,5 @@ mongoc_bulk_operation_set_bypass_document_validation (
 {
    BSON_ASSERT (bulk);
 
-   bulk->flags.bypass_document_validation =
-      bypass ? MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE
-             : MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
+   bulk->flags.bypass_document_validation = bypass;
 }

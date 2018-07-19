@@ -37,7 +37,7 @@ mongoc_find_and_modify_opts_new (void)
 
    opts = (mongoc_find_and_modify_opts_t *) bson_malloc0 (sizeof *opts);
    bson_init (&opts->extra);
-   opts->bypass_document_validation = MONGOC_BYPASS_DOCUMENT_VALIDATION_DEFAULT;
+   opts->bypass_document_validation = false;
 
    return opts;
 }
@@ -155,9 +155,7 @@ mongoc_find_and_modify_opts_set_bypass_document_validation (
 {
    BSON_ASSERT (opts);
 
-   opts->bypass_document_validation =
-      bypass ? MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE
-             : MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
+   opts->bypass_document_validation = bypass;
    return true;
 }
 
@@ -167,8 +165,7 @@ mongoc_find_and_modify_opts_get_bypass_document_validation (
 {
    BSON_ASSERT (opts);
 
-   return opts->bypass_document_validation ==
-          MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE;
+   return opts->bypass_document_validation;
 }
 
 bool

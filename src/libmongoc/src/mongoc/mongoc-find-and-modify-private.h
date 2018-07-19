@@ -31,7 +31,7 @@ struct _mongoc_find_and_modify_opts_t {
    bson_t *update;
    bson_t *fields;
    mongoc_find_and_modify_flags_t flags;
-   mongoc_write_bypass_document_validation_t bypass_document_validation;
+   bool bypass_document_validation;
    uint32_t max_time_ms;
    bson_t extra;
 };

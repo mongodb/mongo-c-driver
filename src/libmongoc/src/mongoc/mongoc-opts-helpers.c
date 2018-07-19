@@ -209,25 +209,6 @@ _mongoc_convert_validate_flags (mongoc_client_t *client,
 }
 
 bool
-_mongoc_convert_mongoc_write_bypass_document_validation_t (
-   mongoc_client_t *client,
-   const bson_iter_t *iter,
-   mongoc_write_bypass_document_validation_t *bdv,
-   bson_error_t *error)
-{
-   if (BSON_ITER_HOLDS_BOOL (iter)) {
-      if (bson_iter_bool (iter) == true) {
-         *bdv = MONGOC_BYPASS_DOCUMENT_VALIDATION_TRUE;
-      } else {
-         *bdv = MONGOC_BYPASS_DOCUMENT_VALIDATION_FALSE;
-      }
-      return true;
-   }
-
-   CONVERSION_ERR ("Invalid field \"%s\" in opts", bson_iter_key (iter));
-}
-
-bool
 _mongoc_convert_write_concern (mongoc_client_t *client,
                                const bson_iter_t *iter,
                                mongoc_write_concern_t **wc,

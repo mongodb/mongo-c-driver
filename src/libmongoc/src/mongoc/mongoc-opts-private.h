@@ -24,21 +24,21 @@ typedef struct _mongoc_crud_opts_t {
 
 typedef struct _mongoc_update_opts_t {
    mongoc_crud_opts_t crud;
-   mongoc_write_bypass_document_validation_t bypass;
+   bool bypass;
    bson_t collation;
    bool upsert;
 } mongoc_update_opts_t;
 
 typedef struct _mongoc_insert_one_opts_t {
    mongoc_crud_opts_t crud;
-   mongoc_write_bypass_document_validation_t bypass;
+   bool bypass;
    bson_t extra;
 } mongoc_insert_one_opts_t;
 
 typedef struct _mongoc_insert_many_opts_t {
    mongoc_crud_opts_t crud;
    bool ordered;
-   mongoc_write_bypass_document_validation_t bypass;
+   bool bypass;
    bson_t extra;
 } mongoc_insert_many_opts_t;
 
@@ -81,13 +81,13 @@ typedef struct _mongoc_bulk_opts_t {
 
 typedef struct _mongoc_bulk_insert_opts_t {
    bson_validate_flags_t validate;
-   mongoc_write_bypass_document_validation_t bypass;
+   bool bypass;
    bson_t extra;
 } mongoc_bulk_insert_opts_t;
 
 typedef struct _mongoc_bulk_update_opts_t {
    bson_validate_flags_t validate;
-   mongoc_write_bypass_document_validation_t bypass;
+   bool bypass;
    bson_t collation;
    bool upsert;
    bool multi;
