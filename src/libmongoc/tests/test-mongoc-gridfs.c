@@ -699,7 +699,8 @@ _test_write (bool at_boundary)
    client = test_framework_client_new ();
    ASSERT (client);
 
-   ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "write", &error), error);
+   gridfs = get_test_gridfs (client, "write", &error);
+   ASSERT_OR_PRINT (gridfs, error);
 
    mongoc_gridfs_drop (gridfs, &error);
 
