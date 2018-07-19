@@ -162,7 +162,7 @@ test_connection_uri_cb (bson_t *scenario)
          ASSERT (bson_iter_recurse (&tests_iter, &test_case_iter));
          if (bson_iter_find (&test_case_iter, "description")) {
             const char *description = bson_iter_utf8 (&test_case_iter, NULL);
-            bson_iter_find_case (&test_case_iter, "uri");
+            ASSERT (bson_iter_find_case (&test_case_iter, "uri"));
 
             printf ("  - %s: '%s'\n",
                     description,
