@@ -800,6 +800,7 @@ make_string (size_t len)
 {
    char *s = (char *) bson_malloc (len);
 
+   BSON_ASSERT (len > 0);
    memset (s, 'a', len - 1);
    s[len - 1] = '\0';
 
