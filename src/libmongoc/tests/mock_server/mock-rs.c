@@ -40,6 +40,9 @@ struct _mock_rs_t {
    char *hosts_str;
    mongoc_uri_t *uri;
    sync_queue_t *q;
+
+   bson_t primary_tags;
+   bson_t **secondary_tags;
 };
 
 
@@ -106,10 +109,13 @@ make_uri (mongoc_array_t *servers)
 
 
 static char *
-ismaster_json (mock_rs_t *rs, mongoc_server_description_type_t type)
+ismaster_json (mock_rs_t *rs,
+               mongoc_server_description_type_t type,
+               const bson_t *tags)
 {
    char *server_type;
    char *mongos_36_fields = "";
+   char *tags_json;
    char *hosts_str;
    char *json;
 
@@ -135,15 +141,24 @@ ismaster_json (mock_rs_t *rs, mongoc_server_description_type_t type)
          "'logicalSessionTimeoutMinutes': 30, ";
    }
 
+   if (bson_empty0 (tags)) {
+      tags_json = bson_strdup ("{}");
+   } else {
+      tags_json = bson_as_json (tags, NULL);
+   }
+
    hosts_str = hosts (&rs->servers);
 
-   json = bson_strdup_printf ("{'ok': 1, %s %s 'maxWireVersion': %d, "
+   json = bson_strdup_printf ("{'ok': 1, %s %s 'tags': %s,"
+                              " 'maxWireVersion': %d, "
                               "'setName': 'rs', 'hosts': [%s]}",
                               server_type,
                               mongos_36_fields,
+                              tags_json,
                               rs->max_wire_version,
                               hosts_str);
 
+   bson_free (tags_json);
    bson_free (hosts_str);
 
    return json;
@@ -153,21 +168,22 @@ ismaster_json (mock_rs_t *rs, mongoc_server_description_type_t type)
 static char *
 primary_json (mock_rs_t *rs)
 {
-   return ismaster_json (rs, MONGOC_SERVER_RS_PRIMARY);
+   return ismaster_json (rs, MONGOC_SERVER_RS_PRIMARY, &rs->primary_tags);
 }
 
 
 static char *
-secondary_json (mock_rs_t *rs)
+secondary_json (mock_rs_t *rs, int server_number)
 {
-   return ismaster_json (rs, MONGOC_SERVER_RS_SECONDARY);
+   return ismaster_json (
+      rs, MONGOC_SERVER_RS_SECONDARY, rs->secondary_tags[server_number]);
 }
 
 
 static char *
 arbiter_json (mock_rs_t *rs)
 {
-   return ismaster_json (rs, MONGOC_SERVER_RS_ARBITER);
+   return ismaster_json (rs, MONGOC_SERVER_RS_ARBITER, NULL);
 }
 
 
@@ -193,6 +209,7 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
                            int n_secondaries,
                            int n_arbiters)
 {
+   int i;
    mock_rs_t *rs = (mock_rs_t *) bson_malloc0 (sizeof (mock_rs_t));
 
    rs->max_wire_version = max_wire_version;
@@ -201,8 +218,28 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
    rs->n_arbiters = n_arbiters;
    rs->request_timeout_msec = get_future_timeout_ms ();
    rs->q = q_new ();
+   bson_init (&rs->primary_tags);
+   rs->secondary_tags = bson_malloc (n_secondaries * sizeof (bson_t *));
+
+   for (i = 0; i < n_secondaries; i++) {
+      rs->secondary_tags[i] = bson_new ();
+   }
 
    return rs;
+}
+
+
+void
+mock_rs_tag_primary (mock_rs_t *rs, const bson_t *tags)
+{
+   bson_copy_to (tags, &rs->primary_tags);
+}
+
+
+void
+mock_rs_tag_secondary (mock_rs_t *rs, int server_number, const bson_t *tags)
+{
+   bson_copy_to (tags, rs->secondary_tags[server_number]);
 }
 
 
@@ -341,14 +378,12 @@ mock_rs_run (mock_rs_t *rs)
    }
 
    /* secondaries' ismaster response */
-   ismaster_reply = secondary_json (rs);
-
    for (i = 0; i < rs->n_secondaries; i++) {
+      ismaster_reply = secondary_json (rs, i);
       mock_server_auto_ismaster (get_server (&rs->secondaries, i),
                                  ismaster_reply);
+      bson_free (ismaster_reply);
    }
-
-   bson_free (ismaster_reply);
 
    /* arbiters' ismaster response */
    ismaster_reply = arbiter_json (rs);
@@ -890,8 +925,14 @@ mock_rs_stepdown (mock_rs_t *rs)
    char *json;
 
    BSON_ASSERT (rs->primary);
+   rs->n_secondaries++;
+   rs->secondary_tags =
+      bson_realloc (rs->secondary_tags, rs->n_secondaries * sizeof (bson_t *));
 
-   json = secondary_json (rs);
+   rs->secondary_tags[rs->n_secondaries - 1] = bson_copy (&rs->primary_tags);
+   bson_reinit (&rs->primary_tags);
+
+   json = secondary_json (rs, rs->n_secondaries - 1);
    mock_server_auto_ismaster (rs->primary, json);
    bson_free (json);
 
@@ -922,6 +963,11 @@ mock_rs_elect (mock_rs_t *rs, int id)
 
    rs->primary = get_server (&rs->secondaries, id);
 
+   /* as the secondary becomes primary, its tags come along */
+   bson_destroy (&rs->primary_tags);
+   bson_steal (&rs->primary_tags, rs->secondary_tags[id]);
+
+   /* primary_json() uses the current primary_tags */
    json = primary_json (rs);
    mock_server_auto_ismaster (rs->primary, json);
    bson_free (json);
@@ -930,9 +976,11 @@ mock_rs_elect (mock_rs_t *rs, int id)
 
    for (i = (size_t) id + 1; i < rs->secondaries.len; i++) {
       ptrs[i - 1] = ptrs[i];
+      rs->secondary_tags[i - 1] = rs->secondary_tags[i];
    }
 
    rs->secondaries.len--;
+   rs->n_secondaries--;
 }
 
 
@@ -968,5 +1016,11 @@ mock_rs_destroy (mock_rs_t *rs)
    mongoc_uri_destroy (rs->uri);
    q_destroy (rs->q);
 
+   bson_destroy (&rs->primary_tags);
+   for (i = 0; i < rs->n_secondaries; i++) {
+      bson_destroy (rs->secondary_tags[i]);
+   }
+
+   bson_free (rs->secondary_tags);
    bson_free (rs);
 }

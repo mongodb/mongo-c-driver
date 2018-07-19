@@ -64,6 +64,30 @@ background_mongoc_bulk_operation_execute (void *data)
 }
 
 static void *
+background_mongoc_database_read_write_command_with_opts (void *data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_bool_type;
+
+   future_value_set_bool (
+      &return_value,
+      mongoc_database_read_write_command_with_opts (
+         future_value_get_mongoc_database_ptr (future_get_param (future, 0)),
+         future_value_get_const_bson_ptr (future_get_param (future, 1)),
+         future_value_get_const_mongoc_read_prefs_ptr (future_get_param (future, 2)),
+         future_value_get_const_bson_ptr (future_get_param (future, 3)),
+         future_value_get_bson_ptr (future_get_param (future, 4)),
+         future_value_get_bson_error_ptr (future_get_param (future, 5))
+      ));
+
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
 background_mongoc_client_command_simple (void *data)
 {
    future_t *future = (future_t *) data;
@@ -416,6 +440,30 @@ background_mongoc_collection_stats (void *data)
 }
 
 static void *
+background_mongoc_collection_insert_many (void *data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_bool_type;
+
+   future_value_set_bool (
+      &return_value,
+      mongoc_collection_insert_many (
+         future_value_get_mongoc_collection_ptr (future_get_param (future, 0)),
+         future_value_get_const_bson_ptr_ptr (future_get_param (future, 1)),
+         future_value_get_size_t (future_get_param (future, 2)),
+         future_value_get_const_bson_ptr (future_get_param (future, 3)),
+         future_value_get_bson_ptr (future_get_param (future, 4)),
+         future_value_get_bson_error_ptr (future_get_param (future, 5))
+      ));
+
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
 background_mongoc_collection_insert_one (void *data)
 {
    future_t *future = (future_t *) data;
@@ -431,6 +479,30 @@ background_mongoc_collection_insert_one (void *data)
          future_value_get_const_bson_ptr (future_get_param (future, 2)),
          future_value_get_bson_ptr (future_get_param (future, 3)),
          future_value_get_bson_error_ptr (future_get_param (future, 4))
+      ));
+
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
+background_mongoc_collection_read_command_with_opts (void *data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_bool_type;
+
+   future_value_set_bool (
+      &return_value,
+      mongoc_collection_read_command_with_opts (
+         future_value_get_mongoc_collection_ptr (future_get_param (future, 0)),
+         future_value_get_const_bson_ptr (future_get_param (future, 1)),
+         future_value_get_const_mongoc_read_prefs_ptr (future_get_param (future, 2)),
+         future_value_get_const_bson_ptr (future_get_param (future, 3)),
+         future_value_get_bson_ptr (future_get_param (future, 4)),
+         future_value_get_bson_error_ptr (future_get_param (future, 5))
       ));
 
    future_resolve (future, return_value);
@@ -455,6 +527,29 @@ background_mongoc_collection_read_write_command_with_opts (void *data)
          future_value_get_const_bson_ptr (future_get_param (future, 3)),
          future_value_get_bson_ptr (future_get_param (future, 4)),
          future_value_get_bson_error_ptr (future_get_param (future, 5))
+      ));
+
+   future_resolve (future, return_value);
+
+   return NULL;
+}
+
+static void *
+background_mongoc_collection_write_command_with_opts (void *data)
+{
+   future_t *future = (future_t *) data;
+   future_value_t return_value;
+
+   return_value.type = future_value_bool_type;
+
+   future_value_set_bool (
+      &return_value,
+      mongoc_collection_write_command_with_opts (
+         future_value_get_mongoc_collection_ptr (future_get_param (future, 0)),
+         future_value_get_const_bson_ptr (future_get_param (future, 1)),
+         future_value_get_const_bson_ptr (future_get_param (future, 2)),
+         future_value_get_bson_ptr (future_get_param (future, 3)),
+         future_value_get_bson_error_ptr (future_get_param (future, 4))
       ));
 
    future_resolve (future, return_value);
@@ -1121,6 +1216,40 @@ future_bulk_operation_execute (
 }
 
 future_t *
+future_database_read_write_command_with_opts (
+   mongoc_database_ptr database,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error)
+{
+   future_t *future = future_new (future_value_bool_type,
+                                  6);
+   
+   future_value_set_mongoc_database_ptr (
+      future_get_param (future, 0), database);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 1), command);
+   
+   future_value_set_const_mongoc_read_prefs_ptr (
+      future_get_param (future, 2), read_prefs);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 3), opts);
+   
+   future_value_set_bson_ptr (
+      future_get_param (future, 4), reply);
+   
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 5), error);
+   
+   future_start (future, background_mongoc_database_read_write_command_with_opts);
+   return future;
+}
+
+future_t *
 future_client_command_simple (
    mongoc_client_ptr client,
    const_char_ptr db_name,
@@ -1611,6 +1740,40 @@ future_collection_stats (
 }
 
 future_t *
+future_collection_insert_many (
+   mongoc_collection_ptr collection,
+   const_bson_ptr_ptr documents,
+   size_t n_documents,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error)
+{
+   future_t *future = future_new (future_value_bool_type,
+                                  6);
+   
+   future_value_set_mongoc_collection_ptr (
+      future_get_param (future, 0), collection);
+   
+   future_value_set_const_bson_ptr_ptr (
+      future_get_param (future, 1), documents);
+   
+   future_value_set_size_t (
+      future_get_param (future, 2), n_documents);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 3), opts);
+   
+   future_value_set_bson_ptr (
+      future_get_param (future, 4), reply);
+   
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 5), error);
+   
+   future_start (future, background_mongoc_collection_insert_many);
+   return future;
+}
+
+future_t *
 future_collection_insert_one (
    mongoc_collection_ptr collection,
    const_bson_ptr document,
@@ -1637,6 +1800,40 @@ future_collection_insert_one (
       future_get_param (future, 4), error);
    
    future_start (future, background_mongoc_collection_insert_one);
+   return future;
+}
+
+future_t *
+future_collection_read_command_with_opts (
+   mongoc_collection_ptr collection,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error)
+{
+   future_t *future = future_new (future_value_bool_type,
+                                  6);
+   
+   future_value_set_mongoc_collection_ptr (
+      future_get_param (future, 0), collection);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 1), command);
+   
+   future_value_set_const_mongoc_read_prefs_ptr (
+      future_get_param (future, 2), read_prefs);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 3), opts);
+   
+   future_value_set_bson_ptr (
+      future_get_param (future, 4), reply);
+   
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 5), error);
+   
+   future_start (future, background_mongoc_collection_read_command_with_opts);
    return future;
 }
 
@@ -1671,6 +1868,36 @@ future_collection_read_write_command_with_opts (
       future_get_param (future, 5), error);
    
    future_start (future, background_mongoc_collection_read_write_command_with_opts);
+   return future;
+}
+
+future_t *
+future_collection_write_command_with_opts (
+   mongoc_collection_ptr collection,
+   const_bson_ptr command,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error)
+{
+   future_t *future = future_new (future_value_bool_type,
+                                  5);
+   
+   future_value_set_mongoc_collection_ptr (
+      future_get_param (future, 0), collection);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 1), command);
+   
+   future_value_set_const_bson_ptr (
+      future_get_param (future, 2), opts);
+   
+   future_value_set_bson_ptr (
+      future_get_param (future, 3), reply);
+   
+   future_value_set_bson_error_ptr (
+      future_get_param (future, 4), error);
+   
+   future_start (future, background_mongoc_collection_write_command_with_opts);
    return future;
 }
 

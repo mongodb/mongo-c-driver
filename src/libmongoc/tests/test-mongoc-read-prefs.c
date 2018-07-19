@@ -946,106 +946,6 @@ test_op_msg_direct_mongos ()
 }
 
 
-static void
-test_aggregate_inherits_read_prefs (void)
-{
-   mock_rs_t *rs;
-   mongoc_read_prefs_t *secondary;
-   int client_has_prefs, db_has_prefs, coll_has_prefs, func_has_prefs;
-   mongoc_client_t *client;
-   mongoc_database_t *db;
-   mongoc_collection_t *collection;
-   mongoc_read_prefs_t *func_prefs;
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
-   future_t *future;
-   request_t *request;
-   const char *prefstr;
-   bool expect_secondary;
-   bson_error_t error;
-
-   /* one primary, one secondary */
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_OP_MSG, true, 1, 0);
-   mock_rs_run (rs);
-
-   secondary = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-
-   for (client_has_prefs = 0; client_has_prefs < 2; client_has_prefs++) {
-      for (db_has_prefs = 0; db_has_prefs < 2; db_has_prefs++) {
-         for (coll_has_prefs = 0; coll_has_prefs < 2; coll_has_prefs++) {
-            for (func_has_prefs = 0; func_has_prefs < 2; func_has_prefs++) {
-               client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
-               if (client_has_prefs) {
-                  mongoc_client_set_read_prefs (client, secondary);
-               }
-
-               db = mongoc_client_get_database (client, "db");
-               if (db_has_prefs) {
-                  mongoc_database_set_read_prefs (db, secondary);
-               }
-
-               collection = mongoc_database_get_collection (db, "collection");
-               if (coll_has_prefs) {
-                  mongoc_collection_set_read_prefs (collection, secondary);
-               }
-
-               if (func_has_prefs) {
-                  func_prefs = secondary;
-               } else {
-                  func_prefs = NULL;
-               }
-
-               if (func_has_prefs || coll_has_prefs || db_has_prefs ||
-                   client_has_prefs) {
-                  prefstr = "'$readPreference': {'mode': 'secondary'}";
-                  expect_secondary = true;
-               } else {
-                  prefstr = "'$readPreference': {'$exists': false}";
-                  expect_secondary = false;
-               }
-
-               cursor = mongoc_collection_aggregate (collection,
-                                                     MONGOC_QUERY_NONE,
-                                                     tmp_bson ("{}"),
-                                                     NULL,
-                                                     func_prefs);
-
-               future = future_cursor_next (cursor, &doc);
-               request = mock_rs_receives_msg (
-                  rs, 0, tmp_bson ("{'aggregate': 'collection', %s}", prefstr));
-
-               if (expect_secondary) {
-                  BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
-               } else {
-                  BSON_ASSERT (mock_rs_request_is_to_primary (rs, request));
-               }
-
-               mock_server_replies_simple (request,
-                                           "{'ok': 1,"
-                                           " 'cursor': {"
-                                           "    'id': 0,"
-                                           "    'ns': 'db.collection',"
-                                           "    'firstBatch': []}}");
-
-               BSON_ASSERT (!future_get_bool (future));
-               ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-
-               future_destroy (future);
-               request_destroy (request);
-               mongoc_cursor_destroy (cursor);
-               mongoc_collection_destroy (collection);
-               mongoc_database_destroy (db);
-               mongoc_client_destroy (client);
-            }
-         }
-      }
-   }
-
-   mongoc_read_prefs_destroy (secondary);
-   mock_rs_destroy (rs);
-}
-
-
 void
 test_read_prefs_install (TestSuite *suite)
 {
@@ -1081,6 +981,4 @@ test_read_prefs_install (TestSuite *suite)
       suite, "/ReadPrefs/OP_MSG/secondary", test_op_msg_direct_secondary);
    TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/OP_MSG/mongos", test_op_msg_direct_mongos);
-   TestSuite_AddMockServerTest (
-      suite, "/ReadPrefs/OP_MSG/readPrefs", test_aggregate_inherits_read_prefs);
 }

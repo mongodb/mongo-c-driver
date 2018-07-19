@@ -32,6 +32,18 @@ future_bulk_operation_execute (
 
 
 future_t *
+future_database_read_write_command_with_opts (
+
+   mongoc_database_ptr database,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_client_command_simple (
 
    mongoc_client_ptr client,
@@ -207,10 +219,34 @@ future_collection_stats (
 
 
 future_t *
+future_collection_insert_many (
+
+   mongoc_collection_ptr collection,
+   const_bson_ptr_ptr documents,
+   size_t n_documents,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_collection_insert_one (
 
    mongoc_collection_ptr collection,
    const_bson_ptr document,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_collection_read_command_with_opts (
+
+   mongoc_collection_ptr collection,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
    const_bson_ptr opts,
    bson_ptr reply,
    bson_error_ptr error
@@ -223,6 +259,17 @@ future_collection_read_write_command_with_opts (
    mongoc_collection_ptr collection,
    const_bson_ptr command,
    const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_collection_write_command_with_opts (
+
+   mongoc_collection_ptr collection,
+   const_bson_ptr command,
    const_bson_ptr opts,
    bson_ptr reply,
    bson_error_ptr error
