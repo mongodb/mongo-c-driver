@@ -2172,7 +2172,7 @@ test_bson_visit_unsupported_type (void)
 
    BSON_ASSERT (bson_init_static (&b, (const uint8_t *) data, sizeof data - 1));
    BSON_ASSERT (bson_iter_init (&iter, &b));
-   bson_iter_visit_all (&iter, &visitor, (void *) &context);
+   BSON_ASSERT (!bson_iter_visit_all (&iter, &visitor, (void *) &context));
    BSON_ASSERT (!bson_iter_next (&iter));
    BSON_ASSERT (context.visited);
    BSON_ASSERT (!strcmp (context.key, "k"));
@@ -2194,7 +2194,7 @@ test_bson_visit_unsupported_type_bad_key (void)
 
    BSON_ASSERT (bson_init_static (&b, (const uint8_t *) data, sizeof data - 1));
    BSON_ASSERT (bson_iter_init (&iter, &b));
-   bson_iter_visit_all (&iter, &visitor, (void *) &context);
+   BSON_ASSERT (!bson_iter_visit_all (&iter, &visitor, (void *) &context));
    BSON_ASSERT (!bson_iter_next (&iter));
 
    /* unsupported type error wasn't reported, because the bson is corrupt */
@@ -2216,7 +2216,7 @@ test_bson_visit_unsupported_type_empty_key (void)
 
    BSON_ASSERT (bson_init_static (&b, (const uint8_t *) data, sizeof data - 1));
    BSON_ASSERT (bson_iter_init (&iter, &b));
-   bson_iter_visit_all (&iter, &visitor, (void *) &context);
+   BSON_ASSERT (!bson_iter_visit_all (&iter, &visitor, (void *) &context));
    BSON_ASSERT (!bson_iter_next (&iter));
    BSON_ASSERT (context.visited);
    BSON_ASSERT (!strcmp (context.key, ""));
