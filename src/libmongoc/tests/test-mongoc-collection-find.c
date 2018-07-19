@@ -288,7 +288,7 @@ _reply_to_op_query (request_t *request, test_collection_find_t *test_data)
    for (i = 0; i < test_data->n_results; i++) {
       bson_iter_next (&iter);
       bson_iter_document (&iter, &len, &data);
-      bson_init_static (&docs[i], data, len);
+      BSON_ASSERT (bson_init_static (&docs[i], data, len));
    }
 
    mock_server_reply_multi (request,
