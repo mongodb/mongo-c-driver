@@ -573,8 +573,10 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
       BSON_APPEND_BOOL (&opts, "upsert", upsert);
    }
 
-   mongoc_bulk_operation_update_many_with_opts (
-      bulk, selector, document, &opts, error);
+   if (!mongoc_bulk_operation_update_many_with_opts (
+         bulk, selector, document, &opts, error)) {
+      MONGOC_WARNING ("%s", error->message);
+   }
 
    bson_destroy (&opts);
 
