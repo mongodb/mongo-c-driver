@@ -201,7 +201,7 @@ _mongoc_convert_validate_flags (mongoc_client_t *client,
       }
    }
    CONVERSION_ERR ("Invalid type for option \"%s\": \"%s\"."
-                   " \"%s\" must be a a boolean or a bitwise-OR of"
+                   " \"%s\" must be a boolean or a bitwise-OR of"
                    " bson_validate_flags_t values.",
                    bson_iter_key (iter),
                    _mongoc_bson_type_to_str (bson_iter_type (iter)),

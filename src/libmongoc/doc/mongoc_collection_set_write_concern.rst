@@ -24,5 +24,5 @@ Description
 
 Sets the write concern to use for operations on ``collection``.
 
-The default write concern is MONGOC_WRITE_CONCERN_W_DEFAULT: the driver blocks awaiting basic acknowledgment of write operations from MongoDB. This is the correct write concern for the great majority of applications.
+The default write concern is MONGOC_WRITE_CONCERN_W_DEFAULT: the driver blocks awaiting basic acknowledgement of write operations from MongoDB. This is the correct write concern for the great majority of applications.
 

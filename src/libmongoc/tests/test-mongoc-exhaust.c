@@ -208,7 +208,7 @@ test_exhaust_cursor (bool pooled)
     * 1. check that we can create a new cursor, as long as we don't read from it
     * 2. fully exhaust the exhaust cursor
     * 3. make sure that we don't disconnect at destroy
-    * 4. make sure we can read the cursor we made during the exhuast
+    * 4. make sure we can read the cursor we made during the exhaust
     */
    {
       cursor2 = mongoc_collection_find (

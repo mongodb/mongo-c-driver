@@ -26,7 +26,7 @@ for arg in "$@"; do
     echo "Usage: ./debian/build_snapshot.sh"
     echo ""
     echo "  This script is used to build a .deb package directly from a snapshot of the"
-    echo "  current respository."
+    echo "  current repository."
     echo ""
     echo "  This script must be called from the base directory of the repository, and"
     echo "  requires utilites from these packages: dpkg-dev, git-buildpackage"

@@ -873,7 +873,7 @@ bson_append_binary (bson_t *bson,           /* IN */
  *       a boolean indicated by @value.
  *
  * Returns:
- *       true if succesful; otherwise false.
+ *       true if successful; otherwise false.
  *
  * Side effects:
  *       None.

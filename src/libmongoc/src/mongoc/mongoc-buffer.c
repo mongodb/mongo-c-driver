@@ -230,7 +230,7 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
  * _mongoc_buffer_fill:
  * @buffer: A mongoc_buffer_t.
  * @stream: A stream to read from.
- * @min_bytes: The minumum number of bytes to read.
+ * @min_bytes: The minimum number of bytes to read.
  * @error: A location for a bson_error_t or NULL.
  *
  * Attempts to fill the entire buffer, or at least @min_bytes.

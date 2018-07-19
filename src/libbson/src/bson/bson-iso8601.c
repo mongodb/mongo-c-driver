@@ -244,7 +244,7 @@ _bson_iso8601_date_parse (const char *str,
          }
 
          /* we inflect the meaning of a 'positive' timezone.  Those are hours
-          * we have to substract, and vice versa */
+          * we have to subtract, and vice versa */
          tz_adjustment =
             (tz_ptr[0] == '-' ? 1 : -1) * ((tz_min * 60) + (tz_hour * 60 * 60));
 

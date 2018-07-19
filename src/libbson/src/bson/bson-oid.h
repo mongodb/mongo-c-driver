@@ -146,8 +146,8 @@ bson_oid_copy_unsafe (const bson_oid_t *src, bson_oid_t *dst)
  * @hex: A character to parse to its integer value.
  *
  * This function contains a jump table to return the integer value for a
- * character containing a hexidecimal value (0-9, a-f, A-F). If the character
- * is not a hexidecimal character then zero is returned.
+ * character containing a hexadecimal value (0-9, a-f, A-F). If the character
+ * is not a hexadecimal character then zero is returned.
  *
  * Returns: An integer between 0 and 15.
  */
@@ -202,9 +202,9 @@ bson_oid_parse_hex_char (char hex)
 /**
  * bson_oid_init_from_string_unsafe:
  * @oid: A bson_oid_t to store the result.
- * @str: A 24-character hexidecimal encoded string.
+ * @str: A 24-character hexadecimal encoded string.
  *
- * Parses a string containing 24 hexidecimal encoded bytes into a bson_oid_t.
+ * Parses a string containing 24 hexadecimal encoded bytes into a bson_oid_t.
  * This function is meant to be as fast as possible and inlined into your
  * code. For that purpose, the function does not perform any sort of bounds
  * checking and it is the callers responsibility to ensure they are passing

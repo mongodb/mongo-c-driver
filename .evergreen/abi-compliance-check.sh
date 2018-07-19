@@ -17,7 +17,7 @@ make install
 # checkout the newest release
 newest=`cat VERSION_RELEASED`
 
-# CDRIVER-2731: Update this line in verison 1.11.1 
+# CDRIVER-2731: Update this line in version 1.11.1
 git checkout tags/$newest -f -- src
 
 # build the newest release

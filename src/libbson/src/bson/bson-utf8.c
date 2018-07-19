@@ -173,7 +173,7 @@ bson_utf8_validate (const char *utf8, /* IN */
       }
 
       /*
-       * Code point wont fit in utf-16, not allowed.
+       * Code point won't fit in utf-16, not allowed.
        */
       if (c > 0x0010FFFF) {
          return false;

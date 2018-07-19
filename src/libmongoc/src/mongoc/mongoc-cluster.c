@@ -758,7 +758,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
              !bson_iter_as_bool (&iter)) {
             /* ismaster response returned ok: 0. According to auth spec: "If the
              * isMaster of the MongoDB Handshake fails with an error, drivers
-             * MUST treat this an an authentication error." */
+             * MUST treat this an authentication error." */
             error->domain = MONGOC_ERROR_CLIENT;
             error->code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
          }
