@@ -102,8 +102,8 @@ When ``crl_file`` is provided, the driver will import the revocation list to the
 
 .. _Secure Transport:
 
-Native TLS Support on Mac OS X / Darwin (Secure Transport)
-----------------------------------------------------------
+Native TLS Support on macOS / Darwin (Secure Transport)
+-------------------------------------------------------
 
 The MongoDB C Driver supports the Darwin (OS X, macOS, iOS, etc.) native TLS library (Secure Transport), and its native crypto library (Common Crypto, or CC).
 

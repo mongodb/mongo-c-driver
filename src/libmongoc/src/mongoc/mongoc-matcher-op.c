@@ -622,7 +622,7 @@ _mongoc_matcher_op_gt_match (mongoc_matcher_op_compare_t *compare, /* IN */
  *       Perform a match of {"path": {"$gte": value}}.
  *
  * Returns:
- *       true if the the spec matches, otherwise false.
+ *       true if the spec matches, otherwise false.
  *
  * Side effects:
  *       None.

@@ -170,7 +170,7 @@ mongoc_write_concern_get_w (const mongoc_write_concern_t *write_concern)
  * Sets the number of nodes that must acknowledge the write request before
  * acknowledging the write request to the client.
  *
- * You may specifiy @w as MONGOC_WRITE_CONCERN_W_MAJORITY to request that
+ * You may specify @w as MONGOC_WRITE_CONCERN_W_MAJORITY to request that
  * a "majority" of nodes acknowledge the request.
  */
 void

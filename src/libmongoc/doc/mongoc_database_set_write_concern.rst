@@ -14,7 +14,7 @@ Synopsis
 
 This function sets the write concern to use on operations performed with ``database``. Collections created with :symbol:`mongoc_database_get_collection()` after this call will inherit this write concern.
 
-The default write concern is MONGOC_WRITE_CONCERN_W_DEFAULT: the driver blocks awaiting basic acknowledgment of write operations from MongoDB. This is the correct write concern for the great majority of applications.
+The default write concern is MONGOC_WRITE_CONCERN_W_DEFAULT: the driver blocks awaiting basic acknowledgement of write operations from MongoDB. This is the correct write concern for the great majority of applications.
 
 Parameters
 ----------

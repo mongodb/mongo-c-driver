@@ -191,7 +191,7 @@ _mongoc_sspi_auth_sspi_client_init (WCHAR *service,
       authIdentity.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
    }
 
-   /* Note that the first paramater, pszPrincipal, appears to be
+   /* Note that the first parameter, pszPrincipal, appears to be
     * completely ignored in the Kerberos SSP. For more details see
     * https://github.com/mongodb-labs/winkerberos/issues/11.
     * */

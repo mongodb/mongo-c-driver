@@ -5,7 +5,7 @@
 * token in a file "resume-token.json". On restart, if "resume-token.json"
 * exists, the change stream starts watching after the persisted resume token.
 *
-* This behavior allows to user to exit example-resume, and restart it later
+* This behavior allows a user to exit example-resume, and restart it later
 * without missing any change events.
 */
 #include <unistd.h>

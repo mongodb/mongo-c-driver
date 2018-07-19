@@ -182,7 +182,7 @@ bson_oid_init (bson_oid_t *oid,         /* OUT */
  * bson_oid_init_from_data --
  *
  *       Initializes an @oid from @data. @data MUST be a buffer of at least
- *       12 bytes. This method is analagous to memcpy()'ing data into @oid.
+ *       12 bytes. This method is analogous to memcpy()'ing data into @oid.
  *
  * Returns:
  *       None.

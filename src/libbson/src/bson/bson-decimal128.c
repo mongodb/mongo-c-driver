@@ -205,7 +205,7 @@ bson_decimal128_to_string (const bson_decimal128_t *dec, /* IN  */
       is_zero = true;
    } else if (significand128.parts[0] >= (1 << 17)) {
       /* The significand is non-canonical or zero.
-       * In order to preserve compatability with the densely packed decimal
+       * In order to preserve compatibility with the densely packed decimal
        * format, the maximum value for the significand of decimal128 is
        * 1e34 - 1.  If the value is greater than 1e34 - 1, the IEEE 754
        * standard dictates that the significand is interpreted as zero.
