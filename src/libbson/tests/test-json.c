@@ -2701,6 +2701,12 @@ test_bson_array_as_json (void)
    BSON_ASSERT (len == 5);
    bson_free (str);
 
+   /* test corrupted bson */
+   BSON_APPEND_UTF8 (&d, "1", "\x80");  /* bad UTF-8 */
+   str = bson_array_as_json (&d, &len);
+   BSON_ASSERT (!str);
+   BSON_ASSERT (!len);
+
    bson_destroy (&d);
 }
 

@@ -3229,7 +3229,6 @@ bson_array_as_json (const bson_t *bson, size_t *length)
    state.depth = 0;
    state.err_offset = &err_offset;
    state.mode = BSON_JSON_MODE_LEGACY;
-   bson_iter_visit_all (&iter, &bson_as_json_visitors, &state);
 
    if (bson_iter_visit_all (&iter, &bson_as_json_visitors, &state) ||
        err_offset != -1) {
