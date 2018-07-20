@@ -28,5 +28,5 @@ A convenience function to iterate all remaining fields of ``iter`` using the cal
 Returns
 -------
 
-true if visitation was pre-maturely stopped by a callback function. Otherwise false.
+true if visitation was prematurely stopped by a callback function. Otherwise false.
 
