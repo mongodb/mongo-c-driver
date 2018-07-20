@@ -261,22 +261,12 @@ functions:
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
-        local_file:  mongoc/abi-compliance/compat_reports/libmongoc/X_to_Y/compat_report.html
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports/libmongoc/X_to_Y/compat_report.html
+        local_files_include_filter:  mongoc/abi-compliance/compat_reports/**/*.html
+        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html
         bucket: mciuploads
         permissions: public-read
         content_type: text/html
-        display_name: "ABI Report libmongoc"
-    - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file:  mongoc/abi-compliance/compat_reports/libbson/X_to_Y/compat_report.html
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports/libbson/X_to_Y/compat_report.html
-        bucket: mciuploads
-        permissions: public-read
-        content_type: text/html
-        display_name: "ABI Report libbson"
+        display_name: "ABI Report:"
 
   "upload scan artifacts" :
     - command: shell.exec
