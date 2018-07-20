@@ -290,6 +290,7 @@ test_bypass_not_sent ()
    mongoc_database_t *database;
    mongoc_apm_callbacks_t *callbacks;
    bson_error_t error;
+   bool r;
    bson_t *doc;
    const bson_t *agg_doc;
    bson_t reply;
@@ -323,8 +324,9 @@ test_bypass_not_sent ()
    doc = BCON_NEW ("x", BCON_INT32 (31));
    mongoc_bulk_operation_insert (bulk, doc);
    bson_destroy (doc);
-   mongoc_bulk_operation_execute (bulk, &reply, &error);
+   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
    bson_destroy (&reply);
+   ASSERT_OR_PRINT (r, error);
    mongoc_bulk_operation_destroy (bulk);
 
    opts = mongoc_find_and_modify_opts_new ();
@@ -337,9 +339,10 @@ test_bypass_not_sent ()
    mongoc_find_and_modify_opts_set_update (opts, update);
    bson_destroy (update);
    query = BCON_NEW ("x", BCON_INT32 (31));
-   mongoc_collection_find_and_modify_with_opts (
+   r = mongoc_collection_find_and_modify_with_opts (
       collection, query, opts, &reply, &error);
    bson_destroy (&reply);
+   ASSERT_OR_PRINT (r, error);
    bson_destroy (query);
    mongoc_find_and_modify_opts_destroy (opts);
 
