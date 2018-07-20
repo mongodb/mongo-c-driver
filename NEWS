@@ -729,7 +729,7 @@ New features and bug fixes:
     * mongoc_server_description_ismaster
     * mongoc_server_description_round_trip_time
     * mongoc_server_description_type
-  * Exported symbols are no longer declared in seperate export files.
+  * Exported symbols are no longer declared in separate export files.
     This could break ABI with applications using clang, which previously
     exported symbols from the internal private ABI.
   * mongoc no longer crashes when multi roundtrip bulk operation fails.
@@ -819,7 +819,7 @@ It is my pleasure to announce the release of mongo-c-driver 1.4.0.
 TLS
 ---
 
-The driver can now use the native TLS and crypto functions included in Mac OS X
+The driver can now use the native TLS and crypto functions included in macOS
 and Windows. OpenSSL is no longer required for TLS or authentication on Mac or
 Windows. By default, OpenSSL is used if available, the default will switch in
 version 2.0 to prefer native TLS.
@@ -992,8 +992,8 @@ Notable Bug Fixes
     properly parsed from the URI, see the "Authentication" doc for details.
   * Comprehensive compatibility with various C standards and compilers.
 
-Acknowledgments
----------------
+Acknowledgements
+----------------
 
 Thanks to everyone who contributed to the development of this release.
 
@@ -1120,7 +1120,7 @@ mongo-c-driver 1.3.0
 
 It is my pleasure to announce to you the release of the MongoDB C Driver 1.3.0.
 
-Changes since the the release candidate 1.3.0-rc0:
+Changes since the release candidate 1.3.0-rc0:
 
   * Fix a cursor bug introduced on big-endian platforms in 1.3.0-beta0.
   * Improve documentation for mongoc_host_list_t.

@@ -22,7 +22,7 @@ Description
 
 The :symbol:`bson_array_as_json()` function shall encode ``bson`` as a UTF-8
 string using libbson's legacy JSON format, except the outermost element is
-encoded as JSON array, rather then JSON document.
+encoded as JSON array, rather than JSON document.
 The caller is responsible for freeing the resulting UTF-8 encoded string by
 calling :symbol:`bson_free()` with the result.
 

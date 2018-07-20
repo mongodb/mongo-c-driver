@@ -72,7 +72,7 @@ mongoc_stream_close (mongoc_stream_t *stream)
  * for @stream.
  * This handler is called upon stream failure, such as network errors, invalid
  * replies
- * or replicaset reconfigures deleteing the stream
+ * or replicaset reconfigures deleting the stream
  */
 void
 mongoc_stream_failed (mongoc_stream_t *stream)
@@ -207,7 +207,7 @@ mongoc_stream_write (mongoc_stream_t *stream,
  * @stream: A mongoc_stream_t.
  * @iov: An array of iovec containing the location and sizes to read.
  * @iovcnt: the number of elements in @iov.
- * @min_bytes: the minumum number of bytes to return, or -1.
+ * @min_bytes: the minimum number of bytes to return, or -1.
  *
  * Reads into the various buffers pointed to by @iov and associated
  * buffer lengths.

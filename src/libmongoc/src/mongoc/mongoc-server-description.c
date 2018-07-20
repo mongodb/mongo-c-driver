@@ -536,7 +536,7 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
                ismaster_response, MONGOC_ERROR_API_VERSION_2, &sd->error);
             /* ismaster response returned ok: 0. According to auth spec: "If the
              * isMaster of the MongoDB Handshake fails with an error, drivers
-             * MUST treat this an an authentication error." */
+             * MUST treat this an authentication error." */
             sd->error.domain = MONGOC_ERROR_CLIENT;
             sd->error.code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
             goto failure;
@@ -842,7 +842,7 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
  * mongoc_server_description_filter_tags --
  *
  * Given a set of server descriptions, set to NULL any that don't
- * match the the read preference's tag sets.
+ * match the read preference's tag sets.
  *
  * https://github.com/mongodb/specifications/blob/master/source/server-selection/server-selection.rst#tag-set
  *

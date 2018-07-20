@@ -179,8 +179,8 @@ To build only the libbson documentation:
 
 The ``-DENABLE_MAN_PAGES=ON`` and ``-DENABLE_HTML_DOCS=ON`` can also be added as options to a normal build from a release tarball or from git so that the documentation is built at the same time as other components.
 
-Building on Mac OS X
---------------------
+Building on macOS
+-----------------
 
 Install the XCode Command Line Tools::
 
@@ -206,7 +206,7 @@ Build and install the driver:
   $ cd cmake-build
   $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..
 
-All of the same variations described above (e.g., building only libbson, building documentation, etc.) are available when building on Mac OS X.
+All of the same variations described above (e.g., building only libbson, building documentation, etc.) are available when building on macOS.
 
 .. _build-on-windows:
 

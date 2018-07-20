@@ -100,7 +100,7 @@ test_topology_client_pool_creation (void)
    BSON_ASSERT (topology_a);
    BSON_ASSERT (topology_a == topology_b);
 
-   /* ensure that that topology is running in a background thread */
+   /* ensure that this topology is running in a background thread */
    BSON_ASSERT (!topology_a->single_threaded);
    BSON_ASSERT (topology_a->scanner_state != MONGOC_TOPOLOGY_SCANNER_OFF);
 

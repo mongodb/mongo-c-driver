@@ -936,7 +936,7 @@ bson_append_oid (bson_t *bson,
  *   's' for dotall mode ('.' matches everything)
  *   'u' to make \w and \W match unicode.
  *
- * For more information on what comprimises a BSON regex, see bsonspec.org.
+ * For more information on what compromises a BSON regex, see bsonspec.org.
  *
  * Returns: true if successful; false if append would overflow max size.
  */
@@ -969,7 +969,7 @@ bson_append_regex (bson_t *bson,
  *   's' for dotall mode ('.' matches everything)
  *   'u' to make \w and \W match unicode.
  *
- * For more information on what comprimises a BSON regex, see bsonspec.org.
+ * For more information on what compromises a BSON regex, see bsonspec.org.
  *
  * Returns: true if successful; false if append would overflow max size.
  */
@@ -1069,7 +1069,7 @@ bson_append_timeval (bson_t *bson,
  *
  * Appends a new field to @bson of type BSON_TYPE_DATE_TIME.
  *
- * Returns: true if sucessful; otherwise false.
+ * Returns: true if successful; otherwise false.
  */
 BSON_EXPORT (bool)
 bson_append_date_time (bson_t *bson,
