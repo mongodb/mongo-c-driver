@@ -3428,7 +3428,7 @@ _bson_iter_validate_document (const bson_iter_t *iter,
       state->phase = BSON_VALIDATE_PHASE_LF_REF_KEY;
    }
 
-   bson_iter_visit_all (&child, &bson_validate_funcs, state);
+   (void) bson_iter_visit_all (&child, &bson_validate_funcs, state);
 
    if (state->phase == BSON_VALIDATE_PHASE_LF_ID_KEY ||
        state->phase == BSON_VALIDATE_PHASE_LF_REF_UTF8 ||
