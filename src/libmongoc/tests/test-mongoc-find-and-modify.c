@@ -510,7 +510,7 @@ test_find_and_modify_collation (int wire)
                          BCON_UTF8 ("lower"),
                          "}");
    opts = mongoc_find_and_modify_opts_new ();
-   mongoc_find_and_modify_opts_append (opts, collation);
+   BSON_ASSERT (mongoc_find_and_modify_opts_append (opts, collation));
 
    if (wire >= WIRE_VERSION_COLLATION) {
       future = future_collection_find_and_modify_with_opts (
