@@ -1,0 +1,14 @@
+    - name: test-asan-memcheck-mock-server
+      tags: ["test-asan"]
+      depends_on:
+        - name: "debug-compile-asan-clang-memcheck"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-asan-clang-memcheck"
+        - func: "run mock server tests"
+          vars:
+            ASAN: "on"
+            AUTH: "noauth"
+            SSL: "ssl"
+            URI: ""

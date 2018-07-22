@@ -1,0 +1,174 @@
+    # Run special auth tests against our enterprise MongoDB instance.
+    - name: authentication-tests-openssl-nosasl
+      tags: ["authentication-tests", "nosasl", "ssl", "openssl"]
+      depends_on:
+        - name: "debug-compile-nosasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-openssl"
+        - func: "run auth tests"
+
+    - name: authentication-tests-openssl
+      tags: ["authentication-tests", "sasl", "ssl", "openssl"]
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "run auth tests"
+
+    - name: authentication-tests-darwinssl
+      tags: ["authentication-tests", "sasl", "ssl", "darwinssl"]
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
+        - func: "run auth tests"
+
+    - name: authentication-tests-winssl
+      tags: ["authentication-tests", "sspi", "ssl", "winssl"]
+      depends_on:
+        - name: "debug-compile-sspi-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sspi-winssl"
+        - func: "run auth tests"
+
+    # Catch leaks or double-frees of bson_t structs in auth code.
+    - name: authentication-tests-memcheck
+      tags: ["authentication-tests", "sasl", "ssl", "openssl", "memcheck"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+        - func: "run auth tests"
+
+    - name: build-and-run-authentication-tests-openssl-0.9.8
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-0.9.8zh
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+          vars:
+            obsolete_tls: true
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.0
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.0t
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+          vars:
+            obsolete_tls: true
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.1
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.1u
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              export CFLAGS=-Wno-redundant-decls # OpenSSL 1.0.1 warning
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.1-fips
+      commands:
+        - func: "install ssl"
+          vars:
+             SSL: openssl-1.0.1u-fips
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              export CFLAGS=-Wno-redundant-decls # OpenSSL 1.0.1 warning
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL OPENSSL_FIPS=1 sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.0.2
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.2l
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-openssl-1.1.0
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.1.0f
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
+
+    - name: build-and-run-authentication-tests-libressl-2.5
+      commands:
+        - func: "install ssl"
+          vars:
+             SSL: libressl-2.5.2
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+          vars:
+            require_tls12: true
+        - func: "upload build"

@@ -1,0 +1,14 @@
+    - name: test-valgrind-memcheck-mock-server
+      tags: ["test-valgrind"]
+      depends_on:
+        - name: "debug-compile-valgrind-memcheck"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-valgrind-memcheck"
+        - func: "run mock server tests"
+          vars:
+            VALGRIND: "on"
+            AUTH: "noauth"
+            SSL: "ssl"
+            URI: ""

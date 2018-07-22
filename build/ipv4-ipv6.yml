@@ -1,0 +1,85 @@
+    - name: test-latest-server-ipv6-client-ipv6-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "off"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: "mongodb://[::1]/"
+
+    - name: test-latest-server-ipv6-client-ipv4-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "off"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: "mongodb://127.0.0.1/"
+
+    - name: test-latest-server-ipv4-client-localhost-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+            URI: "mongodb://localhost/"
+
+    - name: test-latest-server-ipv4-client-ipv4-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+            URI: "mongodb://127.0.0.1/"

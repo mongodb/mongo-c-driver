@@ -1,0 +1,26 @@
+    - name: compile-libmongocapi
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o verbose
+              . ./.evergreen/find-cmake.sh
+              ${setup_android_toolchain|}
+              export ${libmongocapi_compile_env|}
+              mkdir cmake-build-libmongocapi
+              $CMAKE \
+                -DCMAKE_INSTALL_PREFIX=cmake-build-libmongocapi \
+                -DENABLE_SNAPPY=OFF \
+                -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
+                -DENABLE_ZLIB=OFF -DENABLE_SSL=OFF \
+                -DENABLE_SASL=OFF \
+                -DENABLE_TESTS=OFF \
+                -DENABLE_SRV=OFF \
+                -DENABLE_EXAMPLES=OFF \
+                -DENABLE_STATIC=OFF \
+                -DENABLE_SHM_COUNTERS=OFF \
+                ${libmongocapi_cmake_flags}
+              make install VERBOSE=1

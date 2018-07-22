@@ -1,0 +1,28 @@
+    - name: test-coverage-mock-server
+      tags: ["test-coverage"]
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "run mock server tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "ssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-latest-server-dns
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "ssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "ssl"
+            DNS: on
+        - func: "update codecov.io"
