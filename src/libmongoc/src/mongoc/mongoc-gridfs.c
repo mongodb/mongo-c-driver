@@ -311,10 +311,15 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t *gridfs,
 
       if (r > 0) {
          iov.iov_len = r;
-         mongoc_gridfs_file_writev (file, &iov, 1, timeout);
+         if (mongoc_gridfs_file_writev (file, &iov, 1, timeout) < 0) {
+            MONGOC_ERROR ("%s", file->error.message);
+            mongoc_gridfs_file_destroy (file);
+            RETURN (NULL);
+         }
       } else if (r == 0) {
          break;
       } else {
+         MONGOC_ERROR ("Error reading from GridFS file source stream");
          mongoc_gridfs_file_destroy (file);
          RETURN (NULL);
       }
@@ -323,6 +328,8 @@ mongoc_gridfs_create_file_from_stream (mongoc_gridfs_t *gridfs,
    mongoc_stream_failed (stream);
 
    if (-1 == mongoc_gridfs_file_seek (file, 0, SEEK_SET)) {
+      MONGOC_ERROR ("%s", file->error.message);
+      mongoc_gridfs_file_destroy (file);
       RETURN (NULL);
    }
 

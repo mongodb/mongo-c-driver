@@ -1364,6 +1364,59 @@ test_find_one_empty (void)
    mongoc_client_destroy (client);
 }
 
+
+static bool
+responder (request_t *request, void *data)
+{
+   if (!strcasecmp (request->command_name, "createIndexes")) {
+      mock_server_replies_ok_and_destroys (request);
+      return true;
+   }
+
+   return false;
+}
+
+
+static void
+test_write_failure (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_gridfs_t *gridfs;
+   mongoc_stream_t *stream;
+   mongoc_gridfs_file_opt_t opt = {0};
+   mongoc_gridfs_file_t *file;
+   bson_error_t error;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   mock_server_autoresponds (server, responder, NULL, NULL);
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 100);
+   client = mongoc_client_new_from_uri (uri);
+   gridfs = mongoc_client_get_gridfs (client, "db", "fs", &error);
+   ASSERT_OR_PRINT (gridfs, error);
+   stream =
+      mongoc_stream_file_new_for_path (BINARY_DIR "/gridfs.dat", O_RDONLY, 0);
+
+   /* times out writing first chunk */
+   opt.chunk_size = 1;
+   capture_logs (true);
+   file = mongoc_gridfs_create_file_from_stream (gridfs, stream, &opt);
+   BSON_ASSERT (!file);
+   ASSERT_CAPTURED_LOG ("mongoc_gridfs_create_file_from_stream",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Failed to send \"update\" command");
+
+   mongoc_stream_destroy (stream);
+   mongoc_gridfs_destroy (gridfs);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+
 void
 test_gridfs_install (TestSuite *suite)
 {
@@ -1403,4 +1456,6 @@ test_gridfs_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/GridFS/file_set_id", test_set_id);
    TestSuite_AddMockServerTest (
       suite, "/GridFS/inherit_client_config", test_inherit_client_config);
+   TestSuite_AddMockServerTest (
+      suite, "/GridFS/write_failure", test_write_failure);
 }

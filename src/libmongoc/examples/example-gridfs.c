@@ -132,7 +132,12 @@ main (int argc, char *argv[])
          return EXIT_FAILURE;
       }
 
-      mongoc_gridfs_file_save (file);
+      if (!mongoc_gridfs_file_save (file)) {
+         mongoc_gridfs_file_error (file, &error);
+         fprintf (stderr, "Could not save: %s\n", error.message);
+         return EXIT_FAILURE;
+      }
+
       mongoc_gridfs_file_destroy (file);
    } else {
       fprintf (stderr, "Unknown command");
