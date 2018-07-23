@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "TestSuite.h"
+#include "test-conveniences.h"
 
 static ssize_t
 test_bson_json_read_cb_helper (void *string, uint8_t *buf, size_t len)
@@ -905,106 +906,20 @@ _test_bson_json_read_compare (const char *json, int size, ...)
 static void
 test_bson_json_read (void)
 {
-   const char *json = "{ \n\
-      \"foo\" : \"bar\", \n\
-      \"bar\" : 12341, \n\
-      \"baz\" : 123.456, \n\
-      \"map\" : { \"a\" : 1 }, \n\
-      \"array\" : [ 1, 2, 3, 4 ], \n\
-      \"null\" : null, \n\
-      \"boolean\" : true, \n\
-      \"oid\" : { \n\
-        \"$oid\" : \"000000000000000000000000\" \n\
-      }, \n\
-      \"binary\" : { \n\
-        \"$type\" : \"00\", \n\
-        \"$binary\" : \"ZGVhZGJlZWY=\" \n\
-      }, \n\
-      \"regex\" : { \n\
-        \"$regularExpression\" : { \n\
-          \"pattern\": \"foo|bar\", \"options\" : \"ism\" \n\
-        } \n\
-      }, \n\
-      \"date\" : { \n\
-        \"$date\" : \"1970-01-01T00:00:10Z\" \n\
-      }, \n\
-      \"ref\" : { \n\
-        \"$ref\" : \"foo\", \n\
-        \"$id\" : {\"$oid\": \"000000000000000000000000\"} \n\
-      }, \n\
-      \"undefined\" : { \n\
-        \"$undefined\" : true \n\
-      }, \n\
-      \"minkey\" : { \n\
-        \"$minKey\" : 1 \n\
-      }, \n\
-      \"maxkey\" : { \n\
-        \"$maxKey\" : 1 \n\
-      }, \n\
-      \"timestamp\" : { \n\
-        \"$timestamp\" : { \n\
-           \"t\" : 100, \n\
-           \"i\" : 1000 \n\
-        } \n\
-      } \n\
-   } { \"after\": \"b\" } { \"twice\" : true }";
+   char *json = bson_strdup_printf (
+      "%s { \"after\": \"b\" } { \"twice\" : true }", json_with_all_types ());
 
    bson_oid_t oid;
    bson_t *first, *second, *third;
 
    bson_oid_init_from_string (&oid, "000000000000000000000000");
 
-   first =
-      BCON_NEW ("foo",
-                "bar",
-                "bar",
-                BCON_INT32 (12341),
-                "baz",
-                BCON_DOUBLE (123.456),
-                "map",
-                "{",
-                "a",
-                BCON_INT32 (1),
-                "}",
-                "array",
-                "[",
-                BCON_INT32 (1),
-                BCON_INT32 (2),
-                BCON_INT32 (3),
-                BCON_INT32 (4),
-                "]",
-                "null",
-                BCON_NULL,
-                "boolean",
-                BCON_BOOL (true),
-                "oid",
-                BCON_OID (&oid),
-                "binary",
-                BCON_BIN (BSON_SUBTYPE_BINARY, (const uint8_t *) "deadbeef", 8),
-                "regex",
-                BCON_REGEX ("foo|bar", "ism"),
-                "date",
-                BCON_DATE_TIME (10000),
-                "ref",
-                "{",
-                "$ref",
-                BCON_UTF8 ("foo"),
-                "$id",
-                BCON_OID (&oid),
-                "}",
-                "undefined",
-                BCON_UNDEFINED,
-                "minkey",
-                BCON_MINKEY,
-                "maxkey",
-                BCON_MAXKEY,
-                "timestamp",
-                BCON_TIMESTAMP (100, 1000));
-
+   first = bson_copy (bson_with_all_types ());
    second = BCON_NEW ("after", "b");
    third = BCON_NEW ("twice", BCON_BOOL (true));
 
    _test_bson_json_read_compare (json, 5, first, second, third, NULL);
+   bson_free (json);
 }
 
 static void

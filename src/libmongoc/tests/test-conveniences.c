@@ -1413,3 +1413,128 @@ match_in_array (const bson_t *doc, const bson_t *array, match_ctx_t *ctx)
                   bson_as_canonical_extended_json (array, NULL));
    }
 }
+
+bson_t *
+bson_with_all_types ()
+{
+   bson_t *bson = tmp_bson ("{}");
+   bson_oid_t oid;
+   bson_decimal128_t dec;
+
+   BSON_ASSERT (bson_decimal128_from_string ("1.23456789", &dec));
+   bson_oid_init_from_string (&oid, "000000000000000000000000");
+   BSON_ASSERT (BSON_APPEND_DOUBLE (bson, "double", 1.0));
+   BSON_ASSERT (BSON_APPEND_UTF8 (bson, "string", "string_example"));
+   BSON_ASSERT (
+      BSON_APPEND_DOCUMENT (bson, "document", tmp_bson ("{'x': 'y'}")));
+   BSON_ASSERT (BSON_APPEND_ARRAY (bson, "document", tmp_bson ("{'0': 'x'}")));
+   BSON_ASSERT (BSON_APPEND_BINARY (
+      bson, "binary", BSON_SUBTYPE_BINARY, (uint8_t *) "data", 4));
+   BSON_ASSERT (BSON_APPEND_UNDEFINED (bson, "undefined"));
+   BSON_ASSERT (BSON_APPEND_OID (bson, "oid", &oid));
+   BSON_ASSERT (BSON_APPEND_BOOL (bson, "bool", true));
+   BSON_ASSERT (BSON_APPEND_DATE_TIME (bson, "datetime", 123));
+   BSON_ASSERT (BSON_APPEND_NULL (bson, "null"));
+   BSON_ASSERT (BSON_APPEND_REGEX (bson, "regex", "a+", NULL));
+   BSON_ASSERT (BSON_APPEND_DBPOINTER (bson, "dbpointer", "collection", &oid));
+   BSON_ASSERT (BSON_APPEND_CODE (bson, "code", "var x = 1;"));
+   BSON_ASSERT (BSON_APPEND_SYMBOL (bson, "symbol", "symbol_example"));
+   BSON_ASSERT (BSON_APPEND_CODE (bson, "code", "var x = 1;"));
+   BSON_ASSERT (BSON_APPEND_CODE_WITH_SCOPE (
+      bson, "code_w_scope", "var x = 1;", tmp_bson ("{}")));
+   BSON_ASSERT (BSON_APPEND_INT32 (bson, "int32", 1));
+   BSON_ASSERT (BSON_APPEND_TIMESTAMP (bson, "timestamp", 2, 3));
+   BSON_ASSERT (BSON_APPEND_INT64 (bson, "int64", 4));
+   BSON_ASSERT (BSON_APPEND_DECIMAL128 (bson, "decimal128", &dec));
+   BSON_ASSERT (BSON_APPEND_MINKEY (bson, "minkey"));
+   BSON_ASSERT (BSON_APPEND_MAXKEY (bson, "maxkey"));
+   /* and an empty key, as it so often is an edge case. */
+   BSON_ASSERT (BSON_APPEND_INT32 (bson, "", -1));
+   return bson;
+}
+
+const char *
+json_with_all_types ()
+{
+   const char *json = "{\n"
+                      "    \"double\": {\n"
+                      "        \"$numberDouble\": \"1.0\"\n"
+                      "    },\n"
+                      "    \"string\": \"string_example\",\n"
+                      "    \"document\": {\n"
+                      "        \"x\": \"y\"\n"
+                      "    },\n"
+                      "    \"document\": [\"x\"],\n"
+                      "    \"binary\": {\n"
+                      "        \"$binary\": {\n"
+                      "            \"base64\": \"ZGF0YQ==\",\n"
+                      "            \"subType\": \"00\"\n"
+                      "        }\n"
+                      "    },\n"
+                      "    \"undefined\": {\n"
+                      "        \"$undefined\": true\n"
+                      "    },\n"
+                      "    \"oid\": {\n"
+                      "        \"$oid\": \"000000000000000000000000\"\n"
+                      "    },\n"
+                      "    \"bool\": true,\n"
+                      "    \"datetime\": {\n"
+                      "        \"$date\": {\n"
+                      "            \"$numberLong\": \"123\"\n"
+                      "        }\n"
+                      "    },\n"
+                      "    \"null\": null,\n"
+                      "    \"regex\": {\n"
+                      "        \"$regularExpression\": {\n"
+                      "            \"pattern\": \"a+\",\n"
+                      "            \"options\": \"\"\n"
+                      "        }\n"
+                      "    },\n"
+                      "    \"dbpointer\": {\n"
+                      "        \"$dbPointer\": {\n"
+                      "            \"$ref\": \"collection\",\n"
+                      "            \"$id\": {\n"
+                      "                \"$oid\": \"000000000000000000000000\"\n"
+                      "            }\n"
+                      "        }\n"
+                      "    },\n"
+                      "    \"code\": {\n"
+                      "        \"$code\": \"var x = 1;\"\n"
+                      "    },\n"
+                      "    \"symbol\": {\n"
+                      "        \"$symbol\": \"symbol_example\"\n"
+                      "    },\n"
+                      "    \"code\": {\n"
+                      "        \"$code\": \"var x = 1;\"\n"
+                      "    },\n"
+                      "    \"code_w_scope\": {\n"
+                      "        \"$code\": \"var x = 1;\",\n"
+                      "        \"$scope\": {}\n"
+                      "    },\n"
+                      "    \"int32\": {\n"
+                      "        \"$numberInt\": \"1\"\n"
+                      "    },\n"
+                      "    \"timestamp\": {\n"
+                      "        \"$timestamp\": {\n"
+                      "            \"t\": 2,\n"
+                      "            \"i\": 3\n"
+                      "        }\n"
+                      "    },\n"
+                      "    \"int64\": {\n"
+                      "        \"$numberLong\": \"4\"\n"
+                      "    },\n"
+                      "    \"decimal128\": {\n"
+                      "        \"$numberDecimal\": \"1.23456789\"\n"
+                      "    },\n"
+                      "    \"minkey\": {\n"
+                      "        \"$minKey\": 1\n"
+                      "    },\n"
+                      "    \"maxkey\": {\n"
+                      "        \"$maxKey\": 1\n"
+                      "    },\n"
+                      "    \"\": {\n"
+                      "        \"$numberInt\": \"-1\"\n"
+                      "    }\n"
+                      "}";
+   return json;
+}

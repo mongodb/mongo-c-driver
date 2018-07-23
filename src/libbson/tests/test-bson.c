@@ -24,6 +24,7 @@
 #include <time.h>
 
 #include "TestSuite.h"
+#include "test-conveniences.h"
 
 /* CDRIVER-2460 ensure the unused old BSON_ASSERT_STATIC macro still compiles */
 BSON_STATIC_ASSERT (1 == 1);
@@ -2291,7 +2292,7 @@ test_bson_empty_binary (void)
 {
    uint8_t data = 0xAB;
    bson_t test;
-   const bson_value_t* value;
+   const bson_value_t *value;
    bson_value_t copy;
    bson_iter_t iter;
 
@@ -2304,6 +2305,24 @@ test_bson_empty_binary (void)
 
    bson_value_destroy (&copy);
    bson_destroy (&test);
+}
+
+void
+test_bson_iter_key_len (void)
+{
+   bson_t *bson = bson_with_all_types ();
+   bson_iter_t iter;
+
+   bson_iter_init (&iter, bson);
+   while (bson_iter_next (&iter)) {
+      ASSERT_WITH_MSG (strlen (bson_iter_key (&iter)) ==
+                          bson_iter_key_len (&iter),
+                       "iter_key_len differs from real key length. got %d but "
+                       "expected %d for key %s\n",
+                       bson_iter_key_len (&iter),
+                       (int) strlen (bson_iter_key (&iter)),
+                       bson_iter_key (&iter));
+   }
 }
 
 void
@@ -2394,4 +2413,5 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/regex_length", test_bson_regex_lengths);
    TestSuite_Add (suite, "/util/next_power_of_two", test_next_power_of_two);
    TestSuite_Add (suite, "/bson/empty_binary", test_bson_empty_binary);
+   TestSuite_Add (suite, "/bson/iter/key_len", test_bson_iter_key_len);
 }

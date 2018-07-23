@@ -536,7 +536,7 @@ _bson_iter_next_internal (bson_iter_t *iter,   /* INOUT */
    iter->d4 = 0;
 
    /* iterate from start to end of NULL-terminated key string */
-   for (o = iter->off + 1; o < len; o++) {
+   for (o = iter->key; o < len; o++) {
       if (!data[o]) {
          iter->d1 = ++o;
          goto fill_data_fields;
@@ -790,7 +790,6 @@ fill_data_fields:
    case BSON_TYPE_MINKEY:
    case BSON_TYPE_NULL:
    case BSON_TYPE_UNDEFINED:
-      iter->d1 = -1;
       iter->next_off = o;
       break;
    default:
@@ -2456,4 +2455,18 @@ bson_iter_value (bson_iter_t *iter) /* IN */
    }
 
    return value;
+}
+
+BSON_EXPORT (int)
+bson_iter_key_len (const bson_iter_t *iter)
+{
+   /*
+    * f i e l d n a m e \0 _
+    * ^                    ^
+    * |                    |
+    * iter->key            iter->d1
+    *
+    */
+   BSON_ASSERT (iter->d1 > iter->key);
+   return iter->d1 - iter->key - 1;
 }

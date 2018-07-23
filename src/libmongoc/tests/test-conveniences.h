@@ -29,6 +29,17 @@ tmp_bson (const char *json, ...);
 void
 bson_iter_bson (const bson_iter_t *iter, bson_t *bson);
 
+/* create a bson_t containing all types of values, and an empty key. The
+ * returned bson_t does not need to be freed. This corresponds to the same
+ * document in json_with_all_types. */
+bson_t *
+bson_with_all_types ();
+
+/* returns a json string with all types of values, and an empty key. This
+ * corresponds to the same document in bson_with_all_types. */
+const char *
+json_with_all_types ();
+
 
 #ifndef PATH_MAX
 #define PATH_MAX 1024
