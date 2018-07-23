@@ -3178,6 +3178,7 @@ mongoc_collection_find_and_modify_with_opts (
 
    BSON_ASSERT (collection);
    BSON_ASSERT (query);
+   BSON_ASSERT (opts);
 
    reply_ptr = reply ? reply : &reply_local;
    cluster = &collection->client->cluster;
