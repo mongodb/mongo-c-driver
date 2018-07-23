@@ -106,11 +106,13 @@ The :symbol:`bson_t` *MUST* be valid for the lifetime of the iter and it is an e
     bson_iter_init_find_case
     bson_iter_init_find_w_len
     bson_iter_init_from_data
+    bson_iter_init_from_data_at_offset
     bson_iter_int32
     bson_iter_int64
     bson_iter_key
     bson_iter_key_len
     bson_iter_next
+    bson_iter_offset
     bson_iter_oid
     bson_iter_overwrite_bool
     bson_iter_overwrite_decimal128

@@ -1,3 +1,11 @@
+Next Release
+============
+
+Features:
+
+  * New functions to save and restore progress of a bson_iter_t:
+    bson_iter_key_len, bson_iter_offset, and bson_iter_init_from_data_at_offset
+
 libbson 1.12.0
 ==============
 
