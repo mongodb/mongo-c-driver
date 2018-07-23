@@ -20,6 +20,10 @@ Parameters
 * ``client``: A :symbol:`mongoc_client_t`.
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
 
+.. |opts-source| replace:: ``client``
+
+.. include:: includes/generic-opts.txt
+
 Errors
 ------
 

@@ -22,6 +22,12 @@ Parameters
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
+.. |opts-source| replace:: ``database``
+
+.. include:: includes/generic-opts.txt
+
+For a list of all options, see `the MongoDB Manual entry on the listCollections command <http://docs.mongodb.org/manual/reference/command/listCollections/>`_.
+
 Errors
 ------
 

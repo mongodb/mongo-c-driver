@@ -20,6 +20,10 @@ Parameters
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``opts``: A :symbol:`bson:bson_t` containing additional options.
 
+.. |opts-source| replace:: ``collection``
+
+.. include:: includes/generic-opts.txt
+
 Errors
 ------
 

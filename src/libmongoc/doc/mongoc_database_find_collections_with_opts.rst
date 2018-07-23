@@ -20,7 +20,13 @@ Parameters
 ----------
 
 * ``database``: A :symbol:`mongoc_database_t`.
-* ``opts``: Optional :symbol:`bson:bson_t` which may contain a subdocument named "filter", and may contain additional options.
+* ``opts``: A :symbol:`bson:bson_t` containing additional options.
+
+.. |opts-source| replace:: ``database``
+
+.. include:: includes/generic-opts.txt
+
+For a list of all options, see `the MongoDB Manual entry on the listCollections command <http://docs.mongodb.org/manual/reference/command/listCollections/>`_.
 
 Errors
 ------
