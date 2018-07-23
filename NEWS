@@ -1,6 +1,11 @@
 Next Release
 ============
 
+Features:
+
+  * Report a new error code, MONGOC_ERROR_GRIDFS_CORRUPT, when a chunk larger
+    than chunkSize is detected. Before, the driver had crashed with an assert.
+
 Bug fixes:
 
   * mongoc_gridfs_create_file_from_stream ignored errors while writing chunks

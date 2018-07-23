@@ -879,6 +879,15 @@ _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file)
       RETURN (0);
    }
 
+   if (len > file->chunk_size) {
+      bson_set_error (&file->error,
+                      MONGOC_ERROR_GRIDFS,
+                      MONGOC_ERROR_GRIDFS_CORRUPT,
+                      "corrupt chunk number %" PRId32 ": bad size",
+                      file->n);
+      RETURN (0);
+   }
+
    file->page = _mongoc_gridfs_file_page_new (data, len, file->chunk_size);
 
    /* seek in the page towards wherever we're supposed to be */

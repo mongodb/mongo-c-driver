@@ -2,6 +2,7 @@
 #define MONGOC_INSIDE
 #include <mongoc-gridfs-file-private.h>
 #include <mongoc-client-private.h>
+#include <mongoc-gridfs-private.h>
 
 #undef MONGOC_INSIDE
 
@@ -1160,6 +1161,63 @@ test_missing_chunk (void *ctx)
    mongoc_client_destroy (client);
 }
 
+
+static void
+test_oversize (void)
+{
+   mongoc_client_t *client;
+   mongoc_gridfs_t *gridfs;
+   mongoc_gridfs_file_t *file;
+   ssize_t r;
+   mongoc_iovec_t iov;
+   char buf[2];
+   bson_error_t error;
+   bool ret;
+
+   client = test_framework_client_new ();
+
+   gridfs = get_test_gridfs (client, "test_oversize", &error);
+   ASSERT_OR_PRINT (gridfs, error);
+
+   /* 2-byte chunk, 'aa', but chunkSize and file size are 1 byte */
+   ret = mongoc_collection_insert_one (
+      gridfs->chunks,
+      tmp_bson ("{'files_id': 1, 'n': 0,"
+                " 'data': {'$binary': {'subType': '0', 'base64': 'YWE='}}}"),
+      NULL,
+      NULL,
+      &error);
+
+   ASSERT_OR_PRINT (ret, error);
+   ret = mongoc_collection_insert_one (
+      gridfs->files,
+      tmp_bson ("{'_id': 1, 'length': 1, 'chunkSize': 1,"
+                " 'filename': 'filename'}"),
+      NULL,
+      NULL,
+      &error);
+
+   ASSERT_OR_PRINT (ret, error);
+   file = mongoc_gridfs_find_one_by_filename (gridfs, "filename", &error);
+   ASSERT_OR_PRINT (file, error);
+
+   /* read the file */
+   iov.iov_base = &buf;
+   iov.iov_len = 1;
+   r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
+   ASSERT_CMPSSIZE_T (r, ==, (ssize_t) -1);
+   BSON_ASSERT (mongoc_gridfs_file_error (file, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_GRIDFS,
+                          MONGOC_ERROR_GRIDFS_CORRUPT,
+                          "corrupt chunk number 0: bad size");
+
+   mongoc_gridfs_file_destroy (file);
+   ASSERT_OR_PRINT (mongoc_gridfs_drop (gridfs, &error), error);
+   mongoc_gridfs_destroy (gridfs);
+   mongoc_client_destroy (client);
+}
+
 static void
 test_missing_file (void)
 {
@@ -1452,6 +1510,7 @@ test_gridfs_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
+   TestSuite_AddLive (suite, "/GridFS/oversize_chunk", test_oversize);
    TestSuite_AddLive (suite, "/GridFS/missing_file", test_missing_file);
    TestSuite_AddLive (suite, "/GridFS/file_set_id", test_set_id);
    TestSuite_AddMockServerTest (
