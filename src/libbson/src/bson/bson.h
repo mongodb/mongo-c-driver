@@ -936,7 +936,7 @@ bson_append_oid (bson_t *bson,
  *   's' for dotall mode ('.' matches everything)
  *   'u' to make \w and \W match unicode.
  *
- * For more information on what compromises a BSON regex, see bsonspec.org.
+ * For more detailed information about BSON regex elements, see bsonspec.org.
  *
  * Returns: true if successful; false if append would overflow max size.
  */
@@ -969,7 +969,7 @@ bson_append_regex (bson_t *bson,
  *   's' for dotall mode ('.' matches everything)
  *   'u' to make \w and \W match unicode.
  *
- * For more information on what compromises a BSON regex, see bsonspec.org.
+ * For more detailed information about BSON regex elements, see bsonspec.org.
  *
  * Returns: true if successful; false if append would overflow max size.
  */
