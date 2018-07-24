@@ -25,6 +25,8 @@ Parameters
 * ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the insert result, or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
+.. |opts-source| replace:: ``collection``
+
 .. include:: includes/insert-many-opts.txt
 
 Description

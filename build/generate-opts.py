@@ -98,7 +98,7 @@ session_option = ('sessionId', {
     'type': 'mongoc_client_session_t *',
     'convert': '_mongoc_convert_session_id',
     'field': 'client_session',
-    'help': 'Construct a :symbol:`mongoc_client_session_t` with :symbol:`mongoc_client_start_session` and use :symbol:`mongoc_client_session_append` to add the session to ``opts``. See the example code for :symbol:`mongoc_client_session_t`.'
+    'help': 'First, construct a :symbol:`mongoc_client_session_t` with :symbol:`mongoc_client_start_session`. You can begin a transaction with :symbol:`mongoc_client_session_start_transaction`, optionally with a :symbol:`mongoc_transaction_opt_t` that overrides the options inherited from |opts-source|, and use :symbol:`mongoc_client_session_append` to add the session to ``opts``. See the example code for :symbol:`mongoc_client_session_t`.'
 })
 
 ordered_option = ('ordered', {

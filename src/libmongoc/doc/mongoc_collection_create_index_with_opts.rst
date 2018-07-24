@@ -30,6 +30,8 @@ Parameters
 * ``reply``: An optional location for a :symbol:`bson:bson_t` which will store the server's reply.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
+.. |opts-source| replace:: ``collection``
+
 .. include:: includes/create-index-opts.txt
 
 Description
