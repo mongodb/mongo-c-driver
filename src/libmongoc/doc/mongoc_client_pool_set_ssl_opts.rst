@@ -24,6 +24,10 @@ it points to (``pem_file``, ``pem_pwd``, ``ca_file``, ``ca_dir``, and
 ``crl_file``) so they don't have to remain valid after the call to
 ``mongoc_client_pool_set_ssl_opts``.
 
+A call to ``mongoc_client_pool_set_ssl_opts`` overrides all SSL options set
+through the connection string with which the ``mongoc_client_pool_t`` was
+constructed.
+
 Parameters
 ----------
 

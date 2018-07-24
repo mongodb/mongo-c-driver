@@ -21,6 +21,9 @@ it points to (``pem_file``, ``pem_pwd``, ``ca_file``, ``ca_dir``, and
 ``crl_file``) so they don't have to remain valid after the call to
 ``mongoc_client_set_ssl_opts``.
 
+A call to ``mongoc_client_set_ssl_opts`` overrides all SSL options set through
+the connection string with which the ``mongoc_client_t`` was constructed.
+
 It is a programming error to call this function on a client from a
 :symbol:`mongoc_client_pool_t`. Instead, call
 :symbol:`mongoc_client_pool_set_ssl_opts` on the pool before popping any
