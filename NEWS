@@ -10,7 +10,12 @@ Bug fixes:
 
   * mongoc_gridfs_create_file_from_stream ignored errors while writing chunks
     to the server
-
+  * The following functions should not have taken a "bypassDocumentValidation"
+    option in bson_t *opts, the option is now prohibited:
+    - mongoc_bulk_operation_insert_with_opts
+    - mongoc_bulk_operation_update_one_with_opts
+    - mongoc_bulk_operation_update_many_with_opts
+    - mongoc_bulk_operation_replace_one_with_opts
 
 mongo-c-driver 1.12.0
 =====================

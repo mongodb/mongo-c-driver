@@ -81,13 +81,11 @@ typedef struct _mongoc_bulk_opts_t {
 
 typedef struct _mongoc_bulk_insert_opts_t {
    bson_validate_flags_t validate;
-   bool bypass;
    bson_t extra;
 } mongoc_bulk_insert_opts_t;
 
 typedef struct _mongoc_bulk_update_opts_t {
    bson_validate_flags_t validate;
-   bool bypass;
    bson_t collation;
    bool upsert;
    bool multi;

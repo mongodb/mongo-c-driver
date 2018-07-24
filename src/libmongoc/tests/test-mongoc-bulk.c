@@ -4503,6 +4503,52 @@ test_bulk_no_client (void)
    bson_destroy (&reply);
 }
 
+
+static void
+test_bulk_bypass_document_validation (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t error;
+   uint32_t i;
+   bool r;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "bypass_validation");
+
+   /* bypassDocumentValidation can't be passed in opts */
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson ("{'bypassDocumentValidation': true}"));
+
+   i = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_CMPUINT32 (i, ==, (uint32_t) 0);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid option 'bypassDocumentValidation'");
+
+   mongoc_bulk_operation_destroy (bulk);
+
+   /* not allowed in insert opts either */
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+   r = mongoc_bulk_operation_insert_with_opts (
+      bulk,
+      tmp_bson ("{}"),
+      tmp_bson ("{'bypassDocumentValidation': true}"),
+      &error);
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid option 'bypassDocumentValidation'");
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_bulk_install (TestSuite *suite)
 {
@@ -4803,4 +4849,6 @@ test_bulk_install (TestSuite *suite)
                   test_bulk_update_one_error_message);
    TestSuite_Add (suite, "/BulkOperation/opts/parse", test_bulk_opts_parse);
    TestSuite_Add (suite, "/BulkOperation/no_client", test_bulk_no_client);
+   TestSuite_AddLive (
+      suite, "/BulkOperation/bypass", test_bulk_bypass_document_validation);
 }

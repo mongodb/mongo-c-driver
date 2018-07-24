@@ -196,12 +196,10 @@ opts_structs = OrderedDict([
 
     ('mongoc_bulk_insert_opts_t', Struct([
         validate_option,
-        bypass_option,
     ], validate='_mongoc_default_insert_vflags', allow_extra=False)),
 
     ('mongoc_bulk_update_opts_t', Shared([
         validate_option,
-        bypass_option,
         collation_option,
         ('upsert', {
             'type': 'bool',

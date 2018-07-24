@@ -858,7 +858,6 @@ _mongoc_bulk_insert_opts_parse (
    bson_iter_t iter;
 
    mongoc_bulk_insert_opts->validate = _mongoc_default_insert_vflags;
-   mongoc_bulk_insert_opts->bypass = false;
    bson_init (&mongoc_bulk_insert_opts->extra);
 
    if (!opts) {
@@ -879,15 +878,6 @@ _mongoc_bulk_insert_opts_parse (
                client,
                &iter,
                &mongoc_bulk_insert_opts->validate,
-               error)) {
-            return false;
-         }
-      }
-      else if (!strcmp (bson_iter_key (&iter), "bypassDocumentValidation")) {
-         if (!_mongoc_convert_bool (
-               client,
-               &iter,
-               &mongoc_bulk_insert_opts->bypass,
                error)) {
             return false;
          }
@@ -921,7 +911,6 @@ _mongoc_bulk_update_one_opts_parse (
    bson_iter_t iter;
 
    mongoc_bulk_update_one_opts->update.validate = _mongoc_default_update_vflags;
-   mongoc_bulk_update_one_opts->update.bypass = false;
    bson_init (&mongoc_bulk_update_one_opts->update.collation);
    mongoc_bulk_update_one_opts->update.upsert = false;
    mongoc_bulk_update_one_opts->update.multi = false;
@@ -946,15 +935,6 @@ _mongoc_bulk_update_one_opts_parse (
                client,
                &iter,
                &mongoc_bulk_update_one_opts->update.validate,
-               error)) {
-            return false;
-         }
-      }
-      else if (!strcmp (bson_iter_key (&iter), "bypassDocumentValidation")) {
-         if (!_mongoc_convert_bool (
-               client,
-               &iter,
-               &mongoc_bulk_update_one_opts->update.bypass,
                error)) {
             return false;
          }
@@ -1026,7 +1006,6 @@ _mongoc_bulk_update_many_opts_parse (
    bson_iter_t iter;
 
    mongoc_bulk_update_many_opts->update.validate = _mongoc_default_update_vflags;
-   mongoc_bulk_update_many_opts->update.bypass = false;
    bson_init (&mongoc_bulk_update_many_opts->update.collation);
    mongoc_bulk_update_many_opts->update.upsert = false;
    mongoc_bulk_update_many_opts->update.multi = true;
@@ -1051,15 +1030,6 @@ _mongoc_bulk_update_many_opts_parse (
                client,
                &iter,
                &mongoc_bulk_update_many_opts->update.validate,
-               error)) {
-            return false;
-         }
-      }
-      else if (!strcmp (bson_iter_key (&iter), "bypassDocumentValidation")) {
-         if (!_mongoc_convert_bool (
-               client,
-               &iter,
-               &mongoc_bulk_update_many_opts->update.bypass,
                error)) {
             return false;
          }
@@ -1131,7 +1101,6 @@ _mongoc_bulk_replace_one_opts_parse (
    bson_iter_t iter;
 
    mongoc_bulk_replace_one_opts->update.validate = _mongoc_default_replace_vflags;
-   mongoc_bulk_replace_one_opts->update.bypass = false;
    bson_init (&mongoc_bulk_replace_one_opts->update.collation);
    mongoc_bulk_replace_one_opts->update.upsert = false;
    mongoc_bulk_replace_one_opts->update.multi = false;
@@ -1155,15 +1124,6 @@ _mongoc_bulk_replace_one_opts_parse (
                client,
                &iter,
                &mongoc_bulk_replace_one_opts->update.validate,
-               error)) {
-            return false;
-         }
-      }
-      else if (!strcmp (bson_iter_key (&iter), "bypassDocumentValidation")) {
-         if (!_mongoc_convert_bool (
-               client,
-               &iter,
-               &mongoc_bulk_replace_one_opts->update.bypass,
                error)) {
             return false;
          }
