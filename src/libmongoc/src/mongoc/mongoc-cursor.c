@@ -1612,7 +1612,7 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
    int collection_len;
    int64_t batch_size;
    bool await_data;
-   int32_t max_await_time_ms;
+   int64_t max_await_time_ms;
 
    ENTRY;
 
@@ -1642,12 +1642,11 @@ _mongoc_cursor_prepare_getmore_command (mongoc_cursor_t *cursor,
    await_data = _mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_TAILABLE) &&
                 _mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_AWAIT_DATA);
 
-
    if (await_data) {
-      max_await_time_ms =
-         (int32_t) mongoc_cursor_get_max_await_time_ms (cursor);
+      max_await_time_ms = _mongoc_cursor_get_opt_int64 (
+         cursor, MONGOC_CURSOR_MAX_AWAIT_TIME_MS, 0);
       if (max_await_time_ms) {
-         bson_append_int32 (command,
+         bson_append_int64 (command,
                             MONGOC_CURSOR_MAX_TIME_MS,
                             MONGOC_CURSOR_MAX_TIME_MS_LEN,
                             max_await_time_ms);

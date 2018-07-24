@@ -27,6 +27,8 @@ The ``max_await_time_ms`` cannot be changed after the first call to :symbol:`mon
 
 This is not applicable to all cursors. Calling :symbol:`mongoc_cursor_set_batch_size` on a cursor returned by :symbol:`mongoc_client_find_databases_with_opts`, :symbol:`mongoc_database_find_collections_with_opts`, or :symbol:`mongoc_collection_find_indexes_with_opts` will not change the results.
 
+Note: although ``max_await_time_ms`` is a uint32_t, it is possible to set it as a uint64_t through the options arguments in some cursor returning functions like :symbol:`mongoc_collection_find_with_opts()`.
+
 See Also
 --------
 

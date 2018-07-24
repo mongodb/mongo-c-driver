@@ -1138,6 +1138,74 @@ test_cursor_new_tailable_await (void)
 
 
 static void
+test_cursor_int64_t_maxtimems (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_error_t error;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+   bson_t *max_await_time_ms;
+   uint64_t ms_int64 = UINT32_MAX + (uint64_t) 1;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   max_await_time_ms = tmp_bson (NULL);
+   bson_append_bool (max_await_time_ms, "tailable", 8, true);
+   bson_append_bool (max_await_time_ms, "awaitData", 9, true);
+   bson_append_int64 (max_await_time_ms,
+                      MONGOC_CURSOR_MAX_AWAIT_TIME_MS,
+                      MONGOC_CURSOR_MAX_AWAIT_TIME_MS_LEN,
+                      ms_int64);
+
+   cursor = mongoc_cursor_new_from_command_reply_with_opts (
+      client,
+      bson_copy (tmp_bson ("{'ok': 1,"
+                           " 'cursor': {"
+                           "    'id': {'$numberLong': '123'},"
+                           "    'ns': 'db.collection',"
+                           "    'firstBatch': []"
+                           " }"
+                           "}")),
+      max_await_time_ms);
+
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_SLAVE_OK,
+      "{'getMore': {'$numberLong': '123'},"
+      " 'collection': 'collection',"
+      " 'maxTimeMS': {'$numberLong': '%" PRIu64 "'}"
+      "}",
+      ms_int64);
+   mock_server_replies_to_find (request,
+                                MONGOC_QUERY_SLAVE_OK,
+                                0 /* cursor id */,
+                                1 /* number returned */,
+                                "db.collection",
+                                "{'_id': 1}",
+                                true);
+
+   BSON_ASSERT (future_get_bool (future));
+   ASSERT_MATCH (doc, "{'_id': 1}");
+
+   future_destroy (future);
+   request_destroy (request);
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
 test_cursor_new_ignores_fields (void)
 {
    mock_server_t *server;
@@ -2286,6 +2354,8 @@ test_cursor_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
    TestSuite_AddMockServerTest (
       suite, "/Cursor/new_tailable_await", test_cursor_new_tailable_await);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/int64_t_maxtimems", test_cursor_int64_t_maxtimems);
    TestSuite_AddMockServerTest (
       suite, "/Cursor/new_ignores_fields", test_cursor_new_ignores_fields);
    TestSuite_AddLive (
