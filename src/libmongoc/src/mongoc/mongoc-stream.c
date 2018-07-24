@@ -176,7 +176,7 @@ mongoc_stream_writev (mongoc_stream_t *stream,
  * Simplified access to mongoc_stream_writev(). Creates a single iovec
  * with the buffer provided.
  *
- * Returns: -1 on failure, otherwise the number of bytes write.
+ * Returns: -1 on failure, otherwise the number of bytes written.
  */
 ssize_t
 mongoc_stream_write (mongoc_stream_t *stream,

@@ -27,7 +27,7 @@ The :symbol:`mongoc_stream_write()` function shall perform a write to a :symbol:
 Returns
 -------
 
-The :symbol:`mongoc_stream_write` function returns the number of bytes write on success. It returns ``>= 0`` and ``< min_bytes`` when end-of-file is encountered and ``-1`` on failure. ``errno`` is set upon failure.
+The :symbol:`mongoc_stream_write` function returns the number of bytes written on success. It returns ``>= 0`` and ``< min_bytes`` when end-of-file is encountered and ``-1`` on failure. ``errno`` is set upon failure.
 
 See Also
 --------
