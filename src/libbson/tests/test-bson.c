@@ -2352,9 +2352,8 @@ test_bson_iter_init_from_data_at_offset (void)
          for (i = 0; i < 2; i++) {
             fprintf (stderr, "iter %d: ", i);
             fprintf (stderr,
-                     "raw=%d, len=%d, off=%d, type=%d, key=%d, d1=%d, d2=%d, "
+                     "len=%d, off=%d, type=%d, key=%d, d1=%d, d2=%d, "
                      "d3=%d, d4=%d, next_off=%d, err_off=%d\n",
-                     (int) iters[i]->raw,
                      iters[i]->len,
                      iters[i]->off,
                      iters[i]->type,
