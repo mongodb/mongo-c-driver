@@ -435,7 +435,7 @@ _skip_if_no_sha256 ()
 #define ROMAN_NUMERAL_NINE "\xE2\x85\xA8"
 #define ROMAN_NUMERAL_FOUR "\xE2\x85\xA3"
 
-static bool
+static int
 skip_if_no_icu (void)
 {
 #ifdef MONGOC_ENABLE_ICU
@@ -445,7 +445,7 @@ skip_if_no_icu (void)
 #endif
 }
 
-static bool
+static int
 skip_if_icu (void)
 {
    return !skip_if_no_icu ();

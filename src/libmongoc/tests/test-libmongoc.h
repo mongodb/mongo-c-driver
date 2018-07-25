@@ -185,16 +185,16 @@ test_framework_get_server_version (void);
 server_version_t
 test_framework_str_to_version (const char *version_str);
 
-bool
+int
 test_framework_skip_if_no_dual_ip_hostname (void);
 
 char *
 test_framework_get_compressors (void);
 
-bool
+int
 test_framework_skip_if_no_compressors (void);
 
-bool
+int
 test_framework_skip_if_compressors (void);
 
 void

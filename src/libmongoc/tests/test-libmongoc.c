@@ -2202,7 +2202,7 @@ WIRE_VERSION_CHECKS (5)
 WIRE_VERSION_CHECKS (6)
 WIRE_VERSION_CHECKS (7)
 
-bool
+int
 test_framework_skip_if_no_dual_ip_hostname (void)
 {
    struct addrinfo hints = {0}, *res = NULL, *iter;
@@ -2238,7 +2238,7 @@ test_framework_skip_if_no_dual_ip_hostname (void)
    return res_count > 1;
 }
 
-bool
+int
 test_framework_skip_if_no_compressors (void)
 {
    char *compressors = test_framework_get_compressors ();
@@ -2247,7 +2247,7 @@ test_framework_skip_if_no_compressors (void)
    return ret;
 }
 
-bool
+int
 test_framework_skip_if_compressors (void)
 {
    return !test_framework_skip_if_no_compressors ();
