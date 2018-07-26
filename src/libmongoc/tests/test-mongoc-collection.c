@@ -949,7 +949,8 @@ test_save (void)
    collection = get_test_collection (client, "test_save");
    ASSERT (collection);
 
-   mongoc_collection_drop (collection, &error);
+   /* don't care if ns not found. */
+   (void) mongoc_collection_drop (collection, &error);
 
    context = bson_context_new (BSON_CONTEXT_NONE);
    ASSERT (context);
