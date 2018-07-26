@@ -85,7 +85,8 @@ test_exhaust_cursor (bool pooled)
    collection = get_test_collection (client, "test_exhaust_cursor");
    BSON_ASSERT (collection);
 
-   mongoc_collection_drop (collection, &error);
+   /* don't care if ns not found. */
+   (void) mongoc_collection_drop (collection, &error);
 
    wr = mongoc_write_concern_new ();
    mongoc_write_concern_set_journal (wr, true);
