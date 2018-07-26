@@ -165,3 +165,57 @@ Example
      printf ("Found %d fields.\n", count);
   }
 
+The example below demonstrates how to set your own callbacks to provide information about the location of corrupt or unsupported BSON document entries.
+
+Example
+-------
+
+.. code-block:: c
+
+  #include <bson.h>
+  #include <stdio.h>
+
+  typedef struct {
+     ssize_t *err_offset;
+  } my_state_t;
+
+  static void
+  my_visit_corrupt (const bson_iter_t *iter, void *data)
+  {
+     *(((my_state_t *) data)->err_offset) = iter->off;
+  }
+
+  static void
+  my_visit_unsupported_type (const bson_iter_t *iter,
+                             const char *key,
+                             uint32_t type_code,
+                             void *data)
+  {
+     *(((my_state_t *) data)->err_offset) = iter->off;
+  }
+
+  static void
+  find_error_location (bson_t *doc)
+  {
+     bson_visitor_t visitors = {0};
+     bson_iter_t iter;
+     my_state_t state;
+     ssize_t err_offset = -1;
+
+     visitors.visit_corrupt = my_visit_corrupt;
+     visitors.visit_unsupported_type = my_visit_unsupported_type;
+     /* provide additional visitors as needed based on your requirements */
+     state.err_offset = &err_offset;
+
+     if (!bson_iter_init (&iter, doc)) {
+        printf ("Could not initialize iterator!");
+        exit (1);
+     }
+
+     if (bson_iter_visit_all (&iter, &visitors, &state) ||
+         err_offset != -1) {
+        printf ("Found error at offset %d.\n", err_offset);
+     } else {
+        printf ("BSON document had no errors.\n");
+     }
+  }

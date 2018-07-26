@@ -28,5 +28,7 @@ A convenience function to iterate all remaining fields of ``iter`` using the cal
 Returns
 -------
 
-true if visitation was prematurely stopped by a callback function. Otherwise false.
+Returns true if visitation was prematurely stopped by a callback function. Returns false either because all elements were visited *or* due to corrupt BSON.
+
+See :symbol:`bson_visitor_t` for examples of how to set your own callbacks to provide information about the location of corrupt or unsupported BSON document entries.
 

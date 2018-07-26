@@ -1889,40 +1889,6 @@ bson_iter_array (const bson_iter_t *iter, /* IN */
 #define VISIT_MINKEY VISIT_FIELD (minkey)
 
 
-/**
- * bson_iter_visit_all:
- * @iter: A #bson_iter_t.
- * @visitor: A #bson_visitor_t containing the visitors.
- * @data: User data for @visitor data parameters.
- *
- *
- * Returns: true if the visitor was pre-maturely ended; otherwise false.
- */
-/*
- *--------------------------------------------------------------------------
- *
- * bson_iter_visit_all --
- *
- *       Visits all fields forward from the current position of @iter. For
- *       each field found a function in @visitor will be called. Typically
- *       you will use this immediately after initializing a bson_iter_t.
- *
- *          bson_iter_init (&iter, b);
- *          bson_iter_visit_all (&iter, my_visitor, NULL);
- *
- *       @iter will no longer be valid after this function has executed and
- *       will need to be reinitialized if intending to reuse.
- *
- * Returns:
- *       true if successfully visited all fields or callback requested
- *       early termination, otherwise false.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
 bool
 bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
                      const bson_visitor_t *visitor, /* IN */
