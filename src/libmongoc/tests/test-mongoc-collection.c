@@ -451,7 +451,8 @@ test_insert (void)
    collection = get_test_collection (client, "test_insert");
    ASSERT (collection);
 
-   mongoc_collection_drop (collection, &error);
+   /* don't care if ns not found. */
+   (void) mongoc_collection_drop (collection, &error);
 
    context = bson_context_new (BSON_CONTEXT_NONE);
    ASSERT (context);
