@@ -121,7 +121,6 @@ functions:
         silent: true
         working_dir: "mongoc/src/libbson"
         script: |
-           . ../../.evergreen/check-awscli.sh
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
            aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
@@ -140,7 +139,6 @@ functions:
         silent: true
         working_dir: "mongoc/src/libmongoc"
         script: |
-           . ../../.evergreen/check-awscli.sh
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
            aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
@@ -176,7 +174,6 @@ functions:
            mkdir -p man-page-images
            mv doc/man/*.png man-page-images
 
-           . ./../../.evergreen/check-awscli.sh
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
            aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
@@ -209,7 +206,6 @@ functions:
            mkdir -p man-page-images
            mv doc/man/*.png man-page-images
 
-           . ./../../.evergreen/check-awscli.sh
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
            aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
@@ -232,7 +228,6 @@ functions:
         silent: true
         working_dir: "mongoc"
         script: |
-           . ./.evergreen/check-awscli.sh
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
            aws s3 cp coverage s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/coverage/ --recursive --acl public-read --region us-east-1
@@ -253,7 +248,6 @@ functions:
         silent: true
         working_dir: "mongoc"
         script: |
-           . ./.evergreen/check-awscli.sh
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
            aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
@@ -284,7 +278,6 @@ functions:
         silent: true
         working_dir: "mongoc"
         script: |
-           . ./.evergreen/check-awscli.sh
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
            aws s3 cp scan s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/scan/ --recursive --acl public-read --region us-east-1
