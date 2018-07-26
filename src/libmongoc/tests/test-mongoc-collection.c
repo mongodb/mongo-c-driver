@@ -2163,7 +2163,8 @@ _test_count_read_concern_live (bool supports_read_concern)
    collection = mongoc_client_get_collection (client, "test", "test");
    ASSERT (collection);
 
-   mongoc_collection_drop (collection, &error);
+   /* don't care if ns not found. */
+   (void) mongoc_collection_drop (collection, &error);
 
    bson_init (&b);
    count = mongoc_collection_count (
