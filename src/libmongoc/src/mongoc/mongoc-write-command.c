@@ -1219,7 +1219,7 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
       /* writeConcernError is a subdocument in the server response
        * append it to the result->writeConcernErrors array */
       bson_iter_document (&iter, &len, &data);
-      bson_init_static (&write_concern_error, data, len);
+      BSON_ASSERT (bson_init_static (&write_concern_error, data, len));
 
       bson_uint32_to_string (
          result->n_writeConcernErrors, &key, str, sizeof str);
