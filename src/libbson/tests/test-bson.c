@@ -2333,7 +2333,7 @@ test_bson_iter_init_from_data_at_offset (void)
    /* zero out iter, since bson_iter_init doesn't zero out iter->value. */
    bson_iter_t iter = {0};
 
-   bson_iter_init (&iter, bson);
+   BSON_ASSERT (bson_iter_init (&iter, bson));
    ASSERT_CMPINT (bson_iter_offset (&iter), ==, 0);
    while (bson_iter_next (&iter)) {
       const uint8_t *data = bson_get_data (bson);
