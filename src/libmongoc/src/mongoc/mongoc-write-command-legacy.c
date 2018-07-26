@@ -412,7 +412,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
       if (bson_iter_init (&subiter, bson) && bson_iter_find (&subiter, "u") &&
           BSON_ITER_HOLDS_DOCUMENT (&subiter)) {
          bson_iter_document (&subiter, &len, &data);
-         bson_init_static (&doc, data, len);
+         BSON_ASSERT (bson_init_static (&doc, data, len));
 
          if (bson_iter_init (&subsubiter, &doc) &&
              bson_iter_next (&subsubiter) &&
