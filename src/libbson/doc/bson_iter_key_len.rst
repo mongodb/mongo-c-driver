@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  int
+  uint32_t
   bson_iter_key_len (const bson_iter_t *iter);
 
 Parameters

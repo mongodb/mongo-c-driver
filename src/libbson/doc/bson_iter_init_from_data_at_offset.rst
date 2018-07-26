@@ -14,7 +14,7 @@ Synopsis
                                        const uint8_t *data,
                                        size_t length,
                                        uint32_t offset,
-                                       int keylen);
+                                       uint32_t keylen);
 
 Parameters
 ----------

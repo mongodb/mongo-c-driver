@@ -228,7 +228,7 @@ bson_iter_init_from_data_at_offset (bson_iter_t *iter,
                                     const uint8_t *data,
                                     size_t length,
                                     uint32_t offset,
-                                    int keylen);
+                                    uint32_t keylen);
 
 BSON_EXPORT (int32_t)
 bson_iter_int32 (const bson_iter_t *iter);
@@ -348,7 +348,7 @@ bson_iter_decimal128_unsafe (const bson_iter_t *iter, bson_decimal128_t *dec)
 BSON_EXPORT (const char *)
 bson_iter_key (const bson_iter_t *iter);
 
-BSON_EXPORT (int)
+BSON_EXPORT (uint32_t)
 bson_iter_key_len (const bson_iter_t *iter);
 
 

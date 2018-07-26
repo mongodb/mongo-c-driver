@@ -488,7 +488,7 @@ bson_iter_type (const bson_iter_t *iter) /* IN */
  *
  *       Internal function to advance @iter to the next field and retrieve
  *       the key and BSON type before error-checking. @next_keylen is
- *       the key length of the next field being iterated or -1 if this is
+ *       the key length of the next field being iterated or 0 if this is
  *       not known.
  *
  * Return:
@@ -507,11 +507,11 @@ bson_iter_type (const bson_iter_t *iter) /* IN */
  */
 
 static bool
-_bson_iter_next_internal (bson_iter_t *iter,   /* INOUT */
-                          int next_keylen,     /* IN */
-                          const char **key,    /* OUT */
-                          uint32_t *bson_type, /* OUT */
-                          bool *unsupported)   /* OUT */
+_bson_iter_next_internal (bson_iter_t *iter,    /* INOUT */
+                          uint32_t next_keylen, /* IN */
+                          const char **key,     /* OUT */
+                          uint32_t *bson_type,  /* OUT */
+                          bool *unsupported)    /* OUT */
 {
    const uint8_t *data;
    uint32_t o;
@@ -538,7 +538,7 @@ _bson_iter_next_internal (bson_iter_t *iter,   /* INOUT */
    iter->d3 = 0;
    iter->d4 = 0;
 
-   if (next_keylen == -1) {
+   if (next_keylen == 0) {
       /* iterate from start to end of NULL-terminated key string */
       for (o = iter->key; o < len; o++) {
          if (!data[o]) {
@@ -860,7 +860,7 @@ bson_iter_next (bson_iter_t *iter) /* INOUT */
    const char *key;
    bool unsupported;
 
-   return _bson_iter_next_internal (iter, -1, &key, &bson_type, &unsupported);
+   return _bson_iter_next_internal (iter, 0, &key, &bson_type, &unsupported);
 }
 
 
@@ -1935,7 +1935,7 @@ bson_iter_visit_all (bson_iter_t *iter,             /* INOUT */
    BSON_ASSERT (iter);
    BSON_ASSERT (visitor);
 
-   while (_bson_iter_next_internal (iter, -1, &key, &bson_type, &unsupported)) {
+   while (_bson_iter_next_internal (iter, 0, &key, &bson_type, &unsupported)) {
       if (*key && !bson_utf8_validate (key, strlen (key), false)) {
          iter->err_off = iter->off;
          break;
@@ -2466,7 +2466,7 @@ bson_iter_value (bson_iter_t *iter) /* IN */
    return value;
 }
 
-int
+uint32_t
 bson_iter_key_len (const bson_iter_t *iter)
 {
    /*
@@ -2485,7 +2485,7 @@ bson_iter_init_from_data_at_offset (bson_iter_t *iter,
                                     const uint8_t *data,
                                     size_t length,
                                     uint32_t offset,
-                                    int keylen)
+                                    uint32_t keylen)
 {
    const char *key;
    uint32_t bson_type;
