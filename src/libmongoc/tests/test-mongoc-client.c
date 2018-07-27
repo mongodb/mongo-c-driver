@@ -1,14 +1,14 @@
 #include <fcntl.h>
 #include <mongoc.h>
-#include <mongoc-host-list-private.h>
-#include <mongoc-write-concern-private.h>
-#include <mongoc-read-concern-private.h>
 
 #include "mongoc-client-private.h"
 #include "mongoc-cursor-private.h"
-#include "mongoc-util-private.h"
-
+#include "mongoc-database-private.h"
 #include "mongoc-handshake-private.h"
+#include "mongoc-host-list-private.h"
+#include "mongoc-read-concern-private.h"
+#include "mongoc-util-private.h"
+#include "mongoc-write-concern-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -3392,6 +3392,42 @@ test_set_ssl_opts (void)
 }
 #endif
 
+static void
+test_get_database (void)
+{
+   mongoc_client_t *client;
+   mongoc_database_t *database;
+   mongoc_write_concern_t *wc;
+   mongoc_read_concern_t *rc;
+   mongoc_read_prefs_t *read_prefs;
+
+   client = mongoc_client_new (NULL);
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 2);
+   mongoc_client_set_write_concern (client, wc);
+
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, "majority");
+   mongoc_client_set_read_concern (client, rc);
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_client_set_read_prefs (client, read_prefs);
+
+   database = mongoc_client_get_database (client, "test");
+
+   ASSERT_CMPINT32 (database->write_concern->w, ==, 2);
+   ASSERT_CMPSTR (database->read_concern->level, "majority");
+   ASSERT_CMPINT (database->read_prefs->mode, ==, MONGOC_READ_SECONDARY);
+
+   mongoc_database_destroy (database);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_read_concern_destroy (rc);
+   mongoc_write_concern_destroy (wc);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -3643,4 +3679,5 @@ test_client_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
+   TestSuite_Add (suite, "/Client/get_database", test_get_database);
 }
