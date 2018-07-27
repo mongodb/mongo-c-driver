@@ -236,6 +236,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    mongoc_cursor_t *cursor;
    mongoc_topology_description_type_t td_type;
    uint32_t server_id;
+   mongoc_read_concern_t *read_concern_local = NULL;
    bson_error_t validate_err;
    const char *dollar_field;
    bson_iter_t iter;
@@ -279,6 +280,18 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
          }
 
          cursor->explicit_session = true;
+      }
+
+      if (bson_iter_init_find (&iter, opts, "readConcern")) {
+         read_concern_local =
+            _mongoc_read_concern_new_from_iter (&iter, &cursor->error);
+
+         if (!read_concern_local) {
+            /* invalid read concern */
+            GOTO (finish);
+         }
+
+         read_concern = read_concern_local;
       }
 
       /* true if there's a valid serverId or no serverId, false on err */
@@ -367,6 +380,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    (void) _mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error);
 
 finish:
+   mongoc_read_concern_destroy (read_concern_local);
    mongoc_counter_cursors_active_inc ();
 
    RETURN (cursor);

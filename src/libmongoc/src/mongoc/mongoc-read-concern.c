@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc-error.h"
 #include "mongoc-log.h"
 #include "mongoc-read-concern.h"
 #include "mongoc-read-concern-private.h"
@@ -176,6 +177,50 @@ _mongoc_read_concern_get_bson (mongoc_read_concern_t *read_concern)
 
    return &read_concern->compiled;
 }
+
+
+/**
+ * _mongoc_read_concern_new_from_iter:
+ *
+ * Create a new mongoc_read_concern_t from an iterator positioned on
+ * a "readConcern" document.
+ *
+ * Returns: A newly allocated mongoc_read_concern_t. This should be freed
+ *    with mongoc_read_concern_destroy().
+ */
+mongoc_read_concern_t *
+_mongoc_read_concern_new_from_iter (const bson_iter_t *iter,
+                                    bson_error_t *error)
+{
+   bson_iter_t inner;
+   mongoc_read_concern_t *read_concern;
+
+   BSON_ASSERT (iter);
+
+   read_concern = mongoc_read_concern_new ();
+   if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
+      goto fail;
+   }
+
+   BSON_ASSERT (bson_iter_recurse (iter, &inner));
+   if (!bson_iter_find (&inner, "level") || !BSON_ITER_HOLDS_UTF8 (&inner)) {
+      goto fail;
+   }
+
+   mongoc_read_concern_set_level (read_concern, bson_iter_utf8 (&inner, NULL));
+
+   return read_concern;
+
+fail:
+   bson_set_error (error,
+                   MONGOC_ERROR_COMMAND,
+                   MONGOC_ERROR_COMMAND_INVALID_ARG,
+                   "Invalid readConcern");
+
+   mongoc_read_concern_destroy (read_concern);
+   return NULL;
+}
+
 
 /**
  * mongoc_read_concern_freeze:
