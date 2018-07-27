@@ -1763,7 +1763,7 @@ _bson_json_read_start_array (bson_json_reader_t *reader) /* IN */
       return;
    }
 
-   if (bson->n < 0) {
+   if (bson->n == -1) {
       STACK_PUSH_ARRAY (_noop ());
    } else {
       _bson_json_read_fixup_key (bson);
