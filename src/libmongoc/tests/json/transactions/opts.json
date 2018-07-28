@@ -255,6 +255,33 @@
       ]
     },
     {
+      "description": "find fails with collection read concern and explicit read concern",
+      "operations": [
+        {
+          "name": "startTransaction",
+          "object": "session0"
+        },
+        {
+          "name": "find",
+          "collectionOptions": {
+            "readConcern": {
+              "level": "foo"
+            }
+          },
+          "object": "collection",
+          "arguments": {
+            "session": "session0",
+            "readConcern": {
+              "level": "majority"
+            }
+          },
+          "result": {
+            "errorContains": "cannot set read concern after starting transaction"
+          }
+        }
+      ]
+    },
+    {
       "description": "runCommand fails with explicit read concern",
       "operations": [
         {

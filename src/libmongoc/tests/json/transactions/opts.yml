@@ -149,6 +149,21 @@ tests:
             level: majority
         result: *cannotSetReadConcern
 
+  - description: find fails with collection read concern and explicit read concern
+
+    operations:
+      - *startTransaction
+      - name: find
+        collectionOptions:
+          readConcern:
+            level: foo
+        object: collection
+        arguments:
+          session: session0
+          readConcern:
+            level: majority
+        result: *cannotSetReadConcern
+
   - description: runCommand fails with explicit read concern
 
     operations:
