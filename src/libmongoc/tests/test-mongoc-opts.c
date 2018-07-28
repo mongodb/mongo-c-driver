@@ -110,6 +110,8 @@ func_ctx_cleanup (func_ctx_t *ctx)
       case OPT_READ_PREFS:                                 \
          mongoc_##_type##_set_read_prefs (obj, prefs);     \
          break;                                            \
+      default:                                        \
+         abort ();                                         \
       }                                                    \
                                                            \
       SET_OPT_CLEANUP;                                     \
