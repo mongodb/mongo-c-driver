@@ -67,7 +67,7 @@ func_ctx_init (func_ctx_t *ctx,
    ctx->opts = opts;
    ctx->cursor = NULL;
    ctx->doc = NULL;
-   memset (&ctx->error, sizeof (ctx->error), 0);
+   memset (&ctx->error, 0, sizeof (ctx->error));
 }
 
 
