@@ -967,7 +967,7 @@ mock_rs_elect (mock_rs_t *rs, int id)
 
    /* as the secondary becomes primary, its tags come along */
    bson_destroy (&rs->primary_tags);
-   bson_steal (&rs->primary_tags, rs->secondary_tags[id]);
+   BSON_ASSERT (bson_steal (&rs->primary_tags, rs->secondary_tags[id]));
 
    /* primary_json() uses the current primary_tags */
    json = primary_json (rs);
