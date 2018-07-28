@@ -232,6 +232,7 @@ mock_rs_with_autoismaster (int32_t max_wire_version,
 void
 mock_rs_tag_primary (mock_rs_t *rs, const bson_t *tags)
 {
+   bson_destroy (&rs->primary_tags);
    bson_copy_to (tags, &rs->primary_tags);
 }
 
@@ -239,7 +240,8 @@ mock_rs_tag_primary (mock_rs_t *rs, const bson_t *tags)
 void
 mock_rs_tag_secondary (mock_rs_t *rs, int server_number, const bson_t *tags)
 {
-   bson_copy_to (tags, rs->secondary_tags[server_number]);
+   bson_destroy (rs->secondary_tags[server_number]);
+   rs->secondary_tags[server_number] = bson_copy (tags);
 }
 
 
