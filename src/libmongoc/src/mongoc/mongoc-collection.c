@@ -364,7 +364,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
 {
    mongoc_server_stream_t *server_stream = NULL;
    bool has_out_key = false;
-   bool has_read_concern;
    bool has_write_concern;
    bson_iter_t kiter;
    bson_iter_t ar;
@@ -396,7 +395,8 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
                                     &cursor_opts,
                                     read_prefs,
                                     collection->read_prefs,
-                                    NULL);
+                                    collection->read_concern);
+
    bson_destroy (&command);
    bson_destroy (&cursor_opts);
 
@@ -461,13 +461,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       mongoc_write_concern_destroy (cursor->write_concern);
       cursor->write_concern = mongoc_write_concern_copy (
          mongoc_collection_get_write_concern (collection));
-   }
-
-   has_read_concern = bson_has_field (&cursor->opts, "readConcern");
-   if (!has_read_concern) {
-      mongoc_read_concern_destroy (cursor->read_concern);
-      cursor->read_concern = mongoc_read_concern_copy (
-         mongoc_collection_get_read_concern (collection));
    }
 
 done:
