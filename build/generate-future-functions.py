@@ -34,10 +34,10 @@ from os.path import basename, dirname, join as joinpath, normpath
 
 from jinja2 import Environment, FileSystemLoader  # Please "pip install jinja2".
 
-
 this_dir = dirname(__file__)
 template_dir = joinpath(this_dir, 'future_function_templates')
-mock_server_dir = normpath(joinpath(this_dir, '../src/libmongoc/tests/mock_server'))
+mock_server_dir = normpath(
+    joinpath(this_dir, '../src/libmongoc/tests/mock_server'))
 
 # Add additional types here. Use typedefs for derived types so they can
 # be named with one symbol.
@@ -93,7 +93,8 @@ typedef_list = [
     typedef("mongoc_remove_flags_t", None),
 
     # Const libmongoc.
-    typedef("const_mongoc_find_and_modify_opts_ptr", "const mongoc_find_and_modify_opts_t *"),
+    typedef("const_mongoc_find_and_modify_opts_ptr",
+            "const mongoc_find_and_modify_opts_t *"),
     typedef("const_mongoc_iovec_ptr", "const mongoc_iovec_t *"),
     typedef("const_mongoc_read_prefs_ptr", "const mongoc_read_prefs_t *"),
     typedef("const_mongoc_write_concern_ptr", "const mongoc_write_concern_t *"),
@@ -419,8 +420,8 @@ future_functions = [
     future_function("mongoc_change_stream_ptr",
                     "mongoc_collection_watch",
                     [param("mongoc_collection_ptr", "coll"),
-                    param("const_bson_ptr", "pipeline"),
-                    param("const_bson_ptr", "opts")]),
+                     param("const_bson_ptr", "pipeline"),
+                     param("const_bson_ptr", "opts")]),
 
     future_function("bool",
                     "mongoc_change_stream_next",
@@ -500,14 +501,12 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 ]
 
-
 for fn in future_functions:
     if fn.ret_type not in type_list_with_void:
         raise Exception('bad type "%s"\n\nin %s' % (fn.ret_type, fn))
     for p in fn.params:
         if p.type_name not in type_list:
             raise Exception('bad type "%s"\n\nin %s' % (p.type_name, fn))
-
 
 header_comment = """/**************************************************
  *
@@ -531,14 +530,12 @@ def future_function_name(fn):
 env = Environment(loader=FileSystemLoader(template_dir))
 env.filters['future_function_name'] = future_function_name
 
-
 files = ["future.h",
          "future.c",
          "future-value.h",
          "future-value.c",
          "future-functions.h",
          "future-functions.c"]
-
 
 for file_name in files:
     print(file_name)
