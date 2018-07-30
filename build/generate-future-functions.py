@@ -217,14 +217,14 @@ future_functions = [
                     [param("mongoc_collection_ptr", "collection"),
                      param("const_bson_ptr", "keys"),
                      param("const_mongoc_index_opt_t", "opt"),
-                     param("bson_ptr", "opts"),
+                     param("const_bson_ptr", "opts"),
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
                     "mongoc_collection_drop_with_opts",
                     [param("mongoc_collection_ptr", "collection"),
-                     param("bson_ptr", "opts"),
+                     param("const_bson_ptr", "opts"),
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",

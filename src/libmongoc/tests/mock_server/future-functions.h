@@ -158,7 +158,7 @@ future_collection_create_index_with_opts (
    mongoc_collection_ptr collection,
    const_bson_ptr keys,
    const_mongoc_index_opt_t opt,
-   bson_ptr opts,
+   const_bson_ptr opts,
    bson_ptr reply,
    bson_error_ptr error
 );
@@ -168,7 +168,7 @@ future_t *
 future_collection_drop_with_opts (
 
    mongoc_collection_ptr collection,
-   bson_ptr opts,
+   const_bson_ptr opts,
    bson_error_ptr error
 );
 

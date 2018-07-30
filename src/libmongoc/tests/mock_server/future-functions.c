@@ -315,7 +315,7 @@ background_mongoc_collection_create_index_with_opts (void *data)
          future_value_get_mongoc_collection_ptr (future_get_param (future, 0)),
          future_value_get_const_bson_ptr (future_get_param (future, 1)),
          future_value_get_const_mongoc_index_opt_t (future_get_param (future, 2)),
-         future_value_get_bson_ptr (future_get_param (future, 3)),
+         future_value_get_const_bson_ptr (future_get_param (future, 3)),
          future_value_get_bson_ptr (future_get_param (future, 4)),
          future_value_get_bson_error_ptr (future_get_param (future, 5))
       ));
@@ -337,7 +337,7 @@ background_mongoc_collection_drop_with_opts (void *data)
       &return_value,
       mongoc_collection_drop_with_opts (
          future_value_get_mongoc_collection_ptr (future_get_param (future, 0)),
-         future_value_get_bson_ptr (future_get_param (future, 1)),
+         future_value_get_const_bson_ptr (future_get_param (future, 1)),
          future_value_get_bson_error_ptr (future_get_param (future, 2))
       ));
 
@@ -1564,7 +1564,7 @@ future_collection_create_index_with_opts (
    mongoc_collection_ptr collection,
    const_bson_ptr keys,
    const_mongoc_index_opt_t opt,
-   bson_ptr opts,
+   const_bson_ptr opts,
    bson_ptr reply,
    bson_error_ptr error)
 {
@@ -1580,7 +1580,7 @@ future_collection_create_index_with_opts (
    future_value_set_const_mongoc_index_opt_t (
       future_get_param (future, 2), opt);
    
-   future_value_set_bson_ptr (
+   future_value_set_const_bson_ptr (
       future_get_param (future, 3), opts);
    
    future_value_set_bson_ptr (
@@ -1596,7 +1596,7 @@ future_collection_create_index_with_opts (
 future_t *
 future_collection_drop_with_opts (
    mongoc_collection_ptr collection,
-   bson_ptr opts,
+   const_bson_ptr opts,
    bson_error_ptr error)
 {
    future_t *future = future_new (future_value_bool_type,
@@ -1605,7 +1605,7 @@ future_collection_drop_with_opts (
    future_value_set_mongoc_collection_ptr (
       future_get_param (future, 0), collection);
    
-   future_value_set_bson_ptr (
+   future_value_set_const_bson_ptr (
       future_get_param (future, 1), opts);
    
    future_value_set_bson_error_ptr (
