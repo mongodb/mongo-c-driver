@@ -122,10 +122,27 @@ future_functions = [
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
+                    "mongoc_database_read_command_with_opts",
+                    [param("mongoc_database_ptr", "database"),
+                     param("const_bson_ptr", "command"),
+                     param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
                     "mongoc_database_read_write_command_with_opts",
                     [param("mongoc_database_ptr", "database"),
                      param("const_bson_ptr", "command"),
                      param("const_mongoc_read_prefs_ptr", "read_prefs"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_database_write_command_with_opts",
+                    [param("mongoc_database_ptr", "database"),
+                     param("const_bson_ptr", "command"),
                      param("const_bson_ptr", "opts"),
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
@@ -183,6 +200,12 @@ future_functions = [
                     [param("mongoc_client_ptr", "client"),
                      param("int64_t", "cursor_id")]),
 
+    future_function("mongoc_change_stream_ptr",
+                    "mongoc_client_watch",
+                    [param("mongoc_client_ptr", "client"),
+                     param("const_bson_ptr", "pipeline"),
+                     param("const_bson_ptr", "opts")]),
+
     future_function("mongoc_cursor_ptr",
                     "mongoc_collection_aggregate",
                     [param("mongoc_collection_ptr", "collection"),
@@ -219,6 +242,13 @@ future_functions = [
                      param("const_mongoc_index_opt_t", "opt"),
                      param("const_bson_ptr", "opts"),
                      param("bson_ptr", "reply"),
+                     param("bson_error_ptr", "error")]),
+
+    future_function("bool",
+                    "mongoc_collection_drop_index_with_opts",
+                    [param("mongoc_collection_ptr", "collection"),
+                     param("const_char_ptr", "index_name"),
+                     param("const_bson_ptr", "opts"),
                      param("bson_error_ptr", "error")]),
 
     future_function("bool",
@@ -358,11 +388,23 @@ future_functions = [
                      param("bson_ptr", "reply"),
                      param("bson_error_ptr", "error")]),
 
+    future_function("bool",
+                    "mongoc_database_drop_with_opts",
+                    [param("mongoc_database_ptr", "database"),
+                     param("const_bson_ptr", "opts"),
+                     param("bson_error_ptr", "error")]),
+
     future_function("char_ptr_ptr",
                     "mongoc_database_get_collection_names_with_opts",
                     [param("mongoc_database_ptr", "database"),
                      param("const_bson_ptr", "opts"),
                      param("bson_error_ptr", "error")]),
+
+    future_function("mongoc_change_stream_ptr",
+                    "mongoc_database_watch",
+                    [param("mongoc_database_ptr", "database"),
+                     param("const_bson_ptr", "pipeline"),
+                     param("const_bson_ptr", "opts")]),
 
     future_function("ssize_t",
                     "mongoc_gridfs_file_readv",

@@ -32,11 +32,34 @@ future_bulk_operation_execute (
 
 
 future_t *
+future_database_read_command_with_opts (
+
+   mongoc_database_ptr database,
+   const_bson_ptr command,
+   const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_database_read_write_command_with_opts (
 
    mongoc_database_ptr database,
    const_bson_ptr command,
    const_mongoc_read_prefs_ptr read_prefs,
+   const_bson_ptr opts,
+   bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_database_write_command_with_opts (
+
+   mongoc_database_ptr database,
+   const_bson_ptr command,
    const_bson_ptr opts,
    bson_ptr reply,
    bson_error_ptr error
@@ -115,6 +138,15 @@ future_client_kill_cursor (
 
 
 future_t *
+future_client_watch (
+
+   mongoc_client_ptr client,
+   const_bson_ptr pipeline,
+   const_bson_ptr opts
+);
+
+
+future_t *
 future_collection_aggregate (
 
    mongoc_collection_ptr collection,
@@ -160,6 +192,16 @@ future_collection_create_index_with_opts (
    const_mongoc_index_opt_t opt,
    const_bson_ptr opts,
    bson_ptr reply,
+   bson_error_ptr error
+);
+
+
+future_t *
+future_collection_drop_index_with_opts (
+
+   mongoc_collection_ptr collection,
+   const_char_ptr index_name,
+   const_bson_ptr opts,
    bson_error_ptr error
 );
 
@@ -359,11 +401,29 @@ future_database_command_simple (
 
 
 future_t *
+future_database_drop_with_opts (
+
+   mongoc_database_ptr database,
+   const_bson_ptr opts,
+   bson_error_ptr error
+);
+
+
+future_t *
 future_database_get_collection_names_with_opts (
 
    mongoc_database_ptr database,
    const_bson_ptr opts,
    bson_error_ptr error
+);
+
+
+future_t *
+future_database_watch (
+
+   mongoc_database_ptr database,
+   const_bson_ptr pipeline,
+   const_bson_ptr opts
 );
 
 

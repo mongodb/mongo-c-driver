@@ -1,4 +1,7 @@
 #include <mongoc.h>
+#include <mongoc-find-and-modify-private.h>
+#include <mock_server/future.h>
+#include <mock_server/future-value.h>
 
 #include "TestSuite.h"
 #include "mock_server/future.h"
@@ -7,6 +10,24 @@
 #include "mock_server/mock-rs.h"
 #include "test-conveniences.h"
 
+
+/*
+ * Test that all "with_opts" functions that accept readConcern, writeConcern,
+ * and/or readPreference properly implement inheritance. For each of these
+ * options, test that the function inherits the option from its source object
+ * (e.g., mongoc_collection_watch inherits readConcern from the collection),
+ * that the function uses the option from "opts" if present, and that "opts"
+ * overrides the option from the source object.
+ *
+ * listDatabases, listCollections, and listIndexes don't use any of these
+ * options, so don't test their helpers:
+ *
+ *   mongoc_client_find_databases_with_opts
+ *   mongoc_client_get_database_names_with_opts
+ *   mongoc_database_find_collections_with_opts
+ *   mongoc_database_get_collection_names_with_opts
+ *   mongoc_collection_find_indexes_with_opts
+ */
 
 /* kinds of options */
 typedef enum {
@@ -34,20 +55,21 @@ typedef struct {
    const bson_t *opts;
    /* find, aggregate, etc. store the cursor here while running */
    mongoc_cursor_t *cursor;
-   /* find, etc. store the cursor result here, insert_many stages input here */
-   const bson_t *doc;
    bson_error_t error;
+   /* allow func_with_opts_t functions to store data and destroy it later */
+   void *data;
+   void (*destructor) (void *data);
 } func_ctx_t;
 
 
-typedef future_t *(func_with_opts_t) (func_ctx_t *ctx, const char **cmd_name);
+typedef future_t *(func_with_opts_t) (func_ctx_t *ctx, bson_t *cmd);
 
 
 typedef struct {
-   opt_type_t opt_type;
    opt_source_t opt_source;
    func_with_opts_t *func_with_opts;
    const char *func_name;
+   opt_type_t opt_type;
    int n_sections;
 } opt_inheritance_test_t;
 
@@ -66,8 +88,9 @@ func_ctx_init (func_ctx_t *ctx,
    ctx->prefs = prefs;
    ctx->opts = opts;
    ctx->cursor = NULL;
-   ctx->doc = NULL;
    memset (&ctx->error, 0, sizeof (ctx->error));
+   ctx->data = NULL;
+   ctx->destructor = NULL;
 }
 
 
@@ -75,6 +98,9 @@ static void
 func_ctx_cleanup (func_ctx_t *ctx)
 {
    mongoc_cursor_destroy (ctx->cursor);
+   if (ctx->destructor) {
+      ctx->destructor (ctx->data);
+   }
 }
 
 
@@ -110,7 +136,7 @@ func_ctx_cleanup (func_ctx_t *ctx)
       case OPT_READ_PREFS:                                 \
          mongoc_##_type##_set_read_prefs (obj, prefs);     \
          break;                                            \
-      default:                                        \
+      default:                                             \
          abort ();                                         \
       }                                                    \
                                                            \
@@ -147,25 +173,45 @@ set_func_opt (bson_t *opts,
 }
 
 
-/* return the JSON fragment we expect to be included in a command due to an
- * inherited option. e.g., when "count" inherits readConcern from the DB, it
- * should include readConcern: {level: 'database'} in the command body. */
-static char *
-opt_json (const char *option_source, opt_type_t opt_type)
+/* add BSON we expect to be included in a command due to an inherited option.
+ * e.g., when "count" inherits readConcern from the DB, it should include
+ * readConcern: {level: 'database'} in the command body. */
+void
+add_expected_opt (opt_source_t opt_source, opt_type_t opt_type, bson_t *cmd)
 {
+   const char *source_name;
+   bson_t *opt;
+
+   if (opt_source & OPT_SOURCE_FUNC) {
+      source_name = "function";
+   } else if (opt_source & OPT_SOURCE_COLL) {
+      source_name = "collection";
+   } else if (opt_source & OPT_SOURCE_DB) {
+      source_name = "database";
+   } else if (opt_source & OPT_SOURCE_CLIENT) {
+      source_name = "client";
+   } else {
+      MONGOC_ERROR ("opt_json called with OPT_SOURCE_NONE");
+      abort ();
+   }
+
    switch (opt_type) {
    case OPT_READ_CONCERN:
-      return bson_strdup_printf ("'readConcern': {'level': '%s'}",
-                                 option_source);
+      opt = tmp_bson ("{'readConcern': {'level': '%s'}}", source_name);
+      break;
    case OPT_WRITE_CONCERN:
-      return bson_strdup_printf ("'writeConcern': {'w': '%s'}", option_source);
+      opt = tmp_bson ("{'writeConcern': {'w': '%s'}}", source_name);
+      break;
    case OPT_READ_PREFS:
-      return bson_strdup_printf (
-         "'$readPreference': {'mode': 'secondary', 'tags': [{'%s': 'yes'}]}",
-         option_source);
+      opt = tmp_bson (
+         "{'$readPreference': {'mode': 'secondary', 'tags': [{'%s': 'yes'}]}}",
+         source_name);
+      break;
    default:
       abort ();
    }
+
+   bson_concat (cmd, opt);
 }
 
 
@@ -185,176 +231,51 @@ opt_type_name (opt_type_t opt_type)
 }
 
 
-/* func_with_opts_t implementations */
-static future_t *
-insert_one (func_ctx_t *ctx, const char **cmd_name)
+static void
+cleanup_future (future_t *future)
 {
-   *cmd_name = "insert";
-   BSON_ASSERT (!ctx->prefs);
-   return future_collection_insert_one (
-      ctx->collection, tmp_bson ("{}"), ctx->opts, NULL, &ctx->error);
+   future_value_t v;
+
+   BSON_ASSERT (future_wait (future));
+
+   v = future->return_value;
+   if (v.type == future_value_mongoc_change_stream_ptr_type) {
+      mongoc_change_stream_destroy (v.value.mongoc_change_stream_ptr_value);
+   } else if (v.type == future_value_char_ptr_ptr_type) {
+      bson_strfreev (v.value.char_ptr_ptr_value);
+   }
+
+   future_destroy (future);
+}
+
+
+/**********************************************************************
+ *
+ * func_with_opts_t implementations for client
+ *
+ **********************************************************************/
+
+static future_t *
+client_read_cmd (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_INT32 (cmd, "foo", 1);
+   return future_client_read_command_with_opts (ctx->client,
+                                                "db",
+                                                tmp_bson ("{'foo': 1}"),
+                                                ctx->prefs,
+                                                ctx->opts,
+                                                NULL,
+                                                &ctx->error);
 }
 
 
 static future_t *
-insert_many (func_ctx_t *ctx, const char **cmd_name)
+client_write_cmd (func_ctx_t *ctx, bson_t *cmd)
 {
-   *cmd_name = "insert";
-
-   BSON_ASSERT (!ctx->prefs);
-
-   /* the "array" of input documents must be a valid pointer, stage it here */
-   ctx->doc = tmp_bson ("{}");
-   return future_collection_insert_many (
-      ctx->collection, &ctx->doc, 1, ctx->opts, NULL, &ctx->error);
-}
-
-
-static future_t *
-update_one (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "update";
-   BSON_ASSERT (!ctx->prefs);
-   return future_collection_update_one (ctx->collection,
-                                        tmp_bson ("{}"),
-                                        tmp_bson ("{}"),
-                                        ctx->opts,
-                                        NULL,
-                                        &ctx->error);
-}
-
-
-static future_t *
-update_many (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "update";
-   BSON_ASSERT (!ctx->prefs);
-   return future_collection_update_many (ctx->collection,
-                                         tmp_bson ("{}"),
-                                         tmp_bson ("{}"),
-                                         ctx->opts,
-                                         NULL,
-                                         &ctx->error);
-}
-
-
-static future_t *
-replace_one (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "update";
-   BSON_ASSERT (!ctx->prefs);
-   return future_collection_replace_one (ctx->collection,
-                                         tmp_bson ("{}"),
-                                         tmp_bson ("{}"),
-                                         ctx->opts,
-                                         NULL,
-                                         &ctx->error);
-}
-
-
-static future_t *
-delete_one (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "delete";
-   BSON_ASSERT (!ctx->prefs);
-   return future_collection_delete_one (
-      ctx->collection, tmp_bson ("{}"), ctx->opts, NULL, &ctx->error);
-}
-
-
-static future_t *
-delete_many (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "delete";
-   BSON_ASSERT (!ctx->prefs);
-   return future_collection_delete_many (
-      ctx->collection, tmp_bson ("{}"), ctx->opts, NULL, &ctx->error);
-}
-
-
-static future_t *
-find (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "find";
-   ctx->cursor = mongoc_collection_find_with_opts (
-      ctx->collection, tmp_bson ("{}"), ctx->opts, ctx->prefs);
-
-   return future_cursor_next (ctx->cursor, &ctx->doc);
-}
-
-
-static future_t *
-count (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "count";
-   return future_collection_count_with_opts (ctx->collection,
-                                             MONGOC_QUERY_NONE,
-                                             NULL,
-                                             0,
-                                             0,
-                                             ctx->opts,
-                                             ctx->prefs,
-                                             &ctx->error);
-}
-
-
-static future_t *
-estimated_document_count (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "count";
-   return future_collection_estimated_document_count (
-      ctx->collection, ctx->opts, ctx->prefs, NULL, &ctx->error);
-}
-
-
-static future_t *
-count_documents (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "aggregate";
-   return future_collection_count_documents (ctx->collection,
-                                             tmp_bson ("{}"),
-                                             ctx->opts,
-                                             ctx->prefs,
-                                             NULL,
-                                             &ctx->error);
-}
-
-
-static future_t *
-aggregate (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "aggregate";
-   ctx->cursor =
-      mongoc_collection_aggregate (ctx->collection,
-                                   MONGOC_QUERY_NONE,
-                                   tmp_bson ("{'pipeline': [{'$out': 'foo'}]}"),
-                                   ctx->opts,
-                                   ctx->prefs);
-
-   return future_cursor_next (ctx->cursor, &ctx->doc);
-}
-
-
-static future_t *
-collection_read_cmd (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "foo";
-   return future_collection_read_command_with_opts (
-      ctx->collection,
-      tmp_bson ("{'foo': 'collection'}"),
-      ctx->prefs,
-      ctx->opts,
-      NULL,
-      &ctx->error);
-}
-
-
-static future_t *
-collection_write_cmd (func_ctx_t *ctx, const char **cmd_name)
-{
-   *cmd_name = "foo";
-   return future_collection_write_command_with_opts (
-      ctx->collection,
+   BSON_APPEND_UTF8 (cmd, "foo", "collection");
+   return future_client_write_command_with_opts (
+      ctx->client,
+      "db",
       tmp_bson ("{'foo': 'collection'}"),
       ctx->opts,
       NULL,
@@ -363,9 +284,9 @@ collection_write_cmd (func_ctx_t *ctx, const char **cmd_name)
 
 
 static future_t *
-client_read_write_cmd (func_ctx_t *ctx, const char **cmd_name)
+client_read_write_cmd (func_ctx_t *ctx, bson_t *cmd)
 {
-   *cmd_name = "foo";
+   BSON_APPEND_UTF8 (cmd, "foo", "collection");
    return future_client_read_write_command_with_opts (
       ctx->client,
       "db",
@@ -378,11 +299,108 @@ client_read_write_cmd (func_ctx_t *ctx, const char **cmd_name)
 
 
 static future_t *
-db_read_write_cmd (func_ctx_t *ctx, const char **cmd_name)
+client_watch (func_ctx_t *ctx, bson_t *cmd)
 {
-   *cmd_name = "foo";
+   BSON_APPEND_INT32 (cmd, "aggregate", 1);
+   return future_client_watch (ctx->client, tmp_bson ("{}"), ctx->opts);
+}
+
+
+/**********************************************************************
+ *
+ * func_with_opts_t implementations for database
+ *
+ **********************************************************************/
+
+static future_t *
+db_drop (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_INT32 (cmd, "dropDatabase", 1);
+   return future_database_drop_with_opts (ctx->db, ctx->opts, &ctx->error);
+}
+
+
+static future_t *
+db_read_cmd (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "foo", "db");
+   return future_database_read_command_with_opts (ctx->db,
+                                                  tmp_bson ("{'foo': 'db'}"),
+                                                  ctx->prefs,
+                                                  ctx->opts,
+                                                  NULL,
+                                                  &ctx->error);
+}
+
+
+static future_t *
+db_write_cmd (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "foo", "db");
+   return future_database_write_command_with_opts (
+      ctx->db, tmp_bson ("{'foo': 'db'}"), ctx->opts, NULL, &ctx->error);
+}
+
+
+static future_t *
+db_read_write_cmd (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "foo", "db");
    return future_database_read_write_command_with_opts (
       ctx->db,
+      tmp_bson ("{'foo': 'db'}"),
+      ctx->prefs,
+      ctx->opts,
+      NULL,
+      &ctx->error);
+}
+
+
+static future_t *
+db_watch (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_INT32 (cmd, "aggregate", 1);
+   return future_database_watch (ctx->db, tmp_bson ("{}"), ctx->opts);
+}
+
+
+/**********************************************************************
+ *
+ * func_with_opts_t implementations for collection
+ *
+ **********************************************************************/
+
+static future_t *
+aggregate (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "aggregate", "collection");
+   ctx->cursor =
+      mongoc_collection_aggregate (ctx->collection,
+                                   MONGOC_QUERY_NONE,
+                                   tmp_bson ("{'pipeline': [{'$out': 'foo'}]}"),
+                                   ctx->opts,
+                                   ctx->prefs);
+
+   /* use ctx->data as the bson_t** out-param to mongoc_cursor_next () */
+   return future_cursor_next (ctx->cursor, (const bson_t **) &ctx->data);
+}
+
+
+static future_t *
+collection_drop (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "drop", "collection");
+   return future_collection_drop_with_opts (
+      ctx->collection, ctx->opts, &ctx->error);
+}
+
+
+static future_t *
+collection_read_cmd (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "foo", "collection");
+   return future_collection_read_command_with_opts (
+      ctx->collection,
       tmp_bson ("{'foo': 'collection'}"),
       ctx->prefs,
       ctx->opts,
@@ -392,16 +410,223 @@ db_read_write_cmd (func_ctx_t *ctx, const char **cmd_name)
 
 
 static future_t *
-collection_read_write_cmd (func_ctx_t *ctx, const char **cmd_name)
+collection_read_write_cmd (func_ctx_t *ctx, bson_t *cmd)
 {
-   *cmd_name = "foo";
+   BSON_APPEND_UTF8 (cmd, "foo", "collection");
    return future_collection_read_write_command_with_opts (
       ctx->collection,
       tmp_bson ("{'foo': 'collection'}"),
-      ctx->prefs,
+      NULL,
       ctx->opts,
       NULL,
       &ctx->error);
+}
+
+
+static future_t *
+collection_write_cmd (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "foo", "collection");
+   return future_collection_write_command_with_opts (
+      ctx->collection,
+      tmp_bson ("{'foo': 'collection'}"),
+      ctx->opts,
+      NULL,
+      &ctx->error);
+}
+
+
+static future_t *
+collection_watch (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "aggregate", "collection");
+   return future_collection_watch (ctx->collection, tmp_bson ("{}"), ctx->opts);
+}
+
+
+static future_t *
+count (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "count", "collection");
+   return future_collection_count_with_opts (ctx->collection,
+                                             MONGOC_QUERY_NONE,
+                                             NULL,
+                                             0,
+                                             0,
+                                             ctx->opts,
+                                             ctx->prefs,
+                                             &ctx->error);
+}
+
+
+static future_t *
+count_documents (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "aggregate", "collection");
+   return future_collection_count_documents (ctx->collection,
+                                             tmp_bson ("{}"),
+                                             ctx->opts,
+                                             ctx->prefs,
+                                             NULL,
+                                             &ctx->error);
+}
+
+
+static future_t *
+create_index (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "createIndexes", "collection");
+   return future_collection_create_index_with_opts (
+      ctx->collection, tmp_bson ("{}"), NULL, ctx->opts, NULL, &ctx->error);
+}
+
+
+static future_t *
+drop_index (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "dropIndexes", "collection");
+   return future_collection_drop_index_with_opts (
+      ctx->collection, "index name", ctx->opts, &ctx->error);
+}
+
+
+static future_t *
+estimated_document_count (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "count", "collection");
+   return future_collection_estimated_document_count (
+      ctx->collection, ctx->opts, ctx->prefs, NULL, &ctx->error);
+}
+
+
+static future_t *
+find (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "find", "collection");
+   ctx->cursor = mongoc_collection_find_with_opts (
+      ctx->collection, tmp_bson ("{}"), ctx->opts, ctx->prefs);
+
+   /* use ctx->data as the bson_t** out-param to mongoc_cursor_next () */
+   return future_cursor_next (ctx->cursor, (const bson_t **) &ctx->data);
+}
+
+
+static void
+find_and_modify_cleanup (void *data)
+{
+   mongoc_find_and_modify_opts_destroy ((mongoc_find_and_modify_opts_t *) data);
+}
+
+
+static future_t *
+find_and_modify (func_ctx_t *ctx, bson_t *cmd)
+{
+   mongoc_find_and_modify_opts_t *fam;
+
+   BSON_APPEND_UTF8 (cmd, "findAndModify", "collection");
+   fam = mongoc_find_and_modify_opts_new ();
+   bson_concat (&fam->extra, ctx->opts);
+
+   /* destroy the mongoc_find_and_modify_opts_t later */
+   ctx->data = fam;
+   ctx->destructor = find_and_modify_cleanup;
+
+   return future_collection_find_and_modify_with_opts (
+      ctx->collection, tmp_bson ("{}"), fam, NULL, &ctx->error);
+}
+
+
+/**********************************************************************
+ *
+ * func_with_opts_t implementations for collection write helpers
+ *
+ **********************************************************************/
+
+static future_t *
+delete_many (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "delete", "collection");
+   BSON_ASSERT (!ctx->prefs);
+   return future_collection_delete_many (
+      ctx->collection, tmp_bson ("{}"), ctx->opts, NULL, &ctx->error);
+}
+
+
+static future_t *
+delete_one (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "delete", "collection");
+   BSON_ASSERT (!ctx->prefs);
+   return future_collection_delete_one (
+      ctx->collection, tmp_bson ("{}"), ctx->opts, NULL, &ctx->error);
+}
+
+
+static future_t *
+insert_many (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "insert", "collection");
+   BSON_ASSERT (!ctx->prefs);
+   /* the "array" of input documents must be a valid pointer, stage it here */
+   ctx->data = tmp_bson ("{}");
+   return future_collection_insert_many (ctx->collection,
+                                         (const bson_t **) &ctx->data,
+                                         1,
+                                         ctx->opts,
+                                         NULL,
+                                         &ctx->error);
+}
+
+
+static future_t *
+insert_one (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "insert", "collection");
+   BSON_ASSERT (!ctx->prefs);
+   return future_collection_insert_one (
+      ctx->collection, tmp_bson ("{}"), ctx->opts, NULL, &ctx->error);
+}
+
+
+static future_t *
+replace_one (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "update", "collection");
+   BSON_ASSERT (!ctx->prefs);
+   return future_collection_replace_one (ctx->collection,
+                                         tmp_bson ("{}"),
+                                         tmp_bson ("{}"),
+                                         ctx->opts,
+                                         NULL,
+                                         &ctx->error);
+}
+
+
+static future_t *
+update_many (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "update", "collection");
+   BSON_ASSERT (!ctx->prefs);
+   return future_collection_update_many (ctx->collection,
+                                         tmp_bson ("{}"),
+                                         tmp_bson ("{}"),
+                                         ctx->opts,
+                                         NULL,
+                                         &ctx->error);
+}
+
+
+static future_t *
+update_one (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "update", "collection");
+   BSON_ASSERT (!ctx->prefs);
+   return future_collection_update_one (ctx->collection,
+                                        tmp_bson ("{}"),
+                                        tmp_bson ("{}"),
+                                        ctx->opts,
+                                        NULL,
+                                        &ctx->error);
 }
 
 
@@ -422,7 +647,6 @@ test_func_inherits_opts (void *ctx)
    size_t i;
    func_ctx_t func_ctx;
    mock_rs_t *rs;
-   const char *option_source;
    mongoc_client_t *client;
    mongoc_database_t *db;
    mongoc_collection_t *collection;
@@ -430,8 +654,7 @@ test_func_inherits_opts (void *ctx)
    mongoc_read_prefs_t *func_prefs = NULL;
    future_t *future;
    request_t *request;
-   const char *cmd_name;
-   bson_t *cmd;
+   bson_t cmd = BSON_INITIALIZER;
    bool expect_secondary;
    bson_error_t error;
 
@@ -451,54 +674,46 @@ test_func_inherits_opts (void *ctx)
    /* iterate over all combinations of options sources: e.g., an option set on
     * collection and not function, on function not collection, both, neither */
    for (i = 0; i < sizeof (source_matrix) / (sizeof (opt_source_t)); i++) {
-      option_source = NULL;
       expect_secondary = false;
       func_prefs = NULL;
+      bson_reinit (&cmd);
       bson_reinit (&opts);
 
       client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
       if (source_matrix[i] & OPT_SOURCE_CLIENT) {
          set_client_opt (client, test->opt_type);
-         option_source = "client";
       }
 
-      db = mongoc_client_get_database (client, "db");
+      db = mongoc_client_get_database (client, "database");
       if (source_matrix[i] & OPT_SOURCE_DB) {
          set_database_opt (db, test->opt_type);
-         option_source = "database";
       }
 
       collection = mongoc_database_get_collection (db, "collection");
       if (source_matrix[i] & OPT_SOURCE_COLL) {
          set_collection_opt (collection, test->opt_type);
-         option_source = "collection";
       }
 
       if (source_matrix[i] & OPT_SOURCE_FUNC) {
          set_func_opt (&opts, &func_prefs, test->opt_type);
-         option_source = "function";
       }
 
       func_ctx_init (&func_ctx, client, db, collection, func_prefs, &opts);
-      future = test->func_with_opts (&func_ctx, &cmd_name);
+      /* func_with_opts creates expected "cmd", like {insert: 'collection'} */
+      future = test->func_with_opts (&func_ctx, &cmd);
 
       if (source_matrix[i] != OPT_SOURCE_NONE) {
-         char *tmp_json = opt_json (option_source, test->opt_type);
-         cmd = tmp_bson ("{'%s': 'collection', %s}", cmd_name, tmp_json);
-         bson_free (tmp_json);
-
+         add_expected_opt (source_matrix[i], test->opt_type, &cmd);
          if (test->opt_type == OPT_READ_PREFS) {
             expect_secondary = true;
          }
-      } else {
-         cmd = tmp_bson ("{'%s': 'collection'}", cmd_name);
       }
 
       /* write commands send two OP_MSG sections */
       if (test->n_sections == 2) {
-         request = mock_rs_receives_msg (rs, 0, cmd, tmp_bson ("{}"));
+         request = mock_rs_receives_msg (rs, 0, &cmd, tmp_bson ("{}"));
       } else {
-         request = mock_rs_receives_msg (rs, 0, cmd);
+         request = mock_rs_receives_msg (rs, 0, &cmd);
       }
 
       if (expect_secondary) {
@@ -516,14 +731,14 @@ test_func_inherits_opts (void *ctx)
                                      "    'firstBatch': []}}");
 
          BSON_ASSERT (!future_get_bool (future));
+         future_destroy (future);
          ASSERT_OR_PRINT (!mongoc_cursor_error (func_ctx.cursor, &error),
                           error);
       } else {
          mock_server_replies_simple (request, "{'ok': 1}");
-         future_wait (future);
+         cleanup_future (future);
       }
 
-      future_destroy (future);
       request_destroy (request);
       mongoc_read_prefs_destroy (func_prefs);
       func_ctx_cleanup (&func_ctx);
@@ -532,62 +747,85 @@ test_func_inherits_opts (void *ctx)
       mongoc_client_destroy (client);
    }
 
+   bson_destroy (&cmd);
    bson_destroy (&opts);
    mock_rs_destroy (rs);
 }
 
 
 /* commands that send one OP_MSG section */
-#define OPT_TEST(_opt_type, _opt_source, _func)                   \
+#define OPT_TEST(_opt_source, _func, _opt_type)                   \
    {                                                              \
-      OPT_##_opt_type, OPT_SOURCE_##_opt_source, _func, #_func, 1 \
+      OPT_SOURCE_##_opt_source, _func, #_func, OPT_##_opt_type, 1 \
    }
 
 /* commands that send two OP_MSG sections */
-#define OPT_WRITE_TEST(_opt_type, _opt_source, _func)             \
+#define OPT_WRITE_TEST(_opt_source, _func, _opt_type)             \
    {                                                              \
-      OPT_##_opt_type, OPT_SOURCE_##_opt_source, _func, #_func, 2 \
+      OPT_SOURCE_##_opt_source, _func, #_func, OPT_##_opt_type, 2 \
    }
 
 
 static opt_inheritance_test_t gInheritanceTests[] = {
-   OPT_TEST (READ_CONCERN, COLL, find),
-   OPT_TEST (READ_PREFS, COLL, find),
-
-   OPT_TEST (READ_CONCERN, COLL, count),
-   OPT_TEST (READ_PREFS, COLL, count),
-
-   OPT_TEST (READ_CONCERN, COLL, estimated_document_count),
-   OPT_TEST (READ_PREFS, COLL, estimated_document_count),
-
-   OPT_TEST (READ_CONCERN, COLL, count_documents),
-   OPT_TEST (READ_PREFS, COLL, count_documents),
-
-   OPT_TEST (READ_CONCERN, COLL, aggregate),
-   OPT_TEST (WRITE_CONCERN, COLL, aggregate),
-   OPT_TEST (READ_PREFS, COLL, aggregate),
-
-   OPT_TEST (READ_CONCERN, COLL, collection_read_cmd),
-   OPT_TEST (READ_PREFS, COLL, collection_read_cmd),
-   OPT_TEST (WRITE_CONCERN, COLL, collection_write_cmd),
-
+   /*
+    * client functions
+    */
+   OPT_TEST (CLIENT, client_read_cmd, READ_CONCERN),
+   OPT_TEST (CLIENT, client_read_cmd, READ_PREFS),
    /* read_write_command functions deliberately ignore read prefs */
-   OPT_TEST (READ_CONCERN, CLIENT, client_read_write_cmd),
-   OPT_TEST (WRITE_CONCERN, CLIENT, client_read_write_cmd),
+   OPT_TEST (CLIENT, client_read_write_cmd, READ_CONCERN),
+   OPT_TEST (CLIENT, client_read_write_cmd, WRITE_CONCERN),
+   /* watch helpers don't take explicit readPref */
+   OPT_TEST (CLIENT, client_watch, READ_CONCERN),
+   OPT_TEST (CLIENT, client_write_cmd, WRITE_CONCERN),
 
-   OPT_TEST (READ_CONCERN, DB, db_read_write_cmd),
-   OPT_TEST (WRITE_CONCERN, DB, db_read_write_cmd),
+   /*
+    * database functions
+    */
+   OPT_TEST (DB, db_drop, WRITE_CONCERN),
+   OPT_TEST (DB, db_read_cmd, READ_CONCERN),
+   OPT_TEST (DB, db_read_cmd, READ_PREFS),
+   OPT_TEST (DB, db_read_write_cmd, READ_CONCERN),
+   OPT_TEST (DB, db_read_write_cmd, WRITE_CONCERN),
+   OPT_TEST (DB, db_watch, READ_CONCERN),
+   OPT_TEST (DB, db_write_cmd, WRITE_CONCERN),
 
-   OPT_TEST (READ_CONCERN, COLL, collection_read_write_cmd),
-   OPT_TEST (WRITE_CONCERN, COLL, collection_read_write_cmd),
+   /*
+    * collection functions
+    */
+   OPT_TEST (COLL, aggregate, READ_CONCERN),
+   OPT_TEST (COLL, aggregate, READ_PREFS),
+   OPT_TEST (COLL, aggregate, WRITE_CONCERN),
+   OPT_TEST (COLL, collection_drop, WRITE_CONCERN),
+   OPT_TEST (COLL, collection_read_cmd, READ_CONCERN),
+   OPT_TEST (COLL, collection_read_cmd, READ_PREFS),
+   OPT_TEST (COLL, collection_read_write_cmd, READ_CONCERN),
+   OPT_TEST (COLL, collection_read_write_cmd, WRITE_CONCERN),
+   OPT_TEST (COLL, collection_watch, READ_CONCERN),
+   OPT_TEST (COLL, collection_write_cmd, WRITE_CONCERN),
+   OPT_TEST (COLL, count, READ_CONCERN),
+   OPT_TEST (COLL, count, READ_PREFS),
+   OPT_TEST (COLL, count_documents, READ_CONCERN),
+   OPT_TEST (COLL, count_documents, READ_PREFS),
+   OPT_TEST (COLL, create_index, WRITE_CONCERN),
+   OPT_TEST (COLL, drop_index, WRITE_CONCERN),
+   OPT_TEST (COLL, estimated_document_count, READ_CONCERN),
+   OPT_TEST (COLL, estimated_document_count, READ_PREFS),
+   OPT_TEST (COLL, find, READ_CONCERN),
+   OPT_TEST (COLL, find, READ_PREFS),
+   /* find_and_modify deliberately ignores collection read concern */
+   OPT_TEST (COLL, find_and_modify, WRITE_CONCERN),
 
-   OPT_WRITE_TEST (WRITE_CONCERN, COLL, insert_one),
-   OPT_WRITE_TEST (WRITE_CONCERN, COLL, insert_many),
-   OPT_WRITE_TEST (WRITE_CONCERN, COLL, update_one),
-   OPT_WRITE_TEST (WRITE_CONCERN, COLL, update_many),
-   OPT_WRITE_TEST (WRITE_CONCERN, COLL, replace_one),
-   OPT_WRITE_TEST (WRITE_CONCERN, COLL, delete_one),
-   OPT_WRITE_TEST (WRITE_CONCERN, COLL, delete_many),
+   /*
+    * collection write functions
+    */
+   OPT_WRITE_TEST (COLL, delete_many, WRITE_CONCERN),
+   OPT_WRITE_TEST (COLL, delete_one, WRITE_CONCERN),
+   OPT_WRITE_TEST (COLL, insert_many, WRITE_CONCERN),
+   OPT_WRITE_TEST (COLL, insert_one, WRITE_CONCERN),
+   OPT_WRITE_TEST (COLL, replace_one, WRITE_CONCERN),
+   OPT_WRITE_TEST (COLL, update_many, WRITE_CONCERN),
+   OPT_WRITE_TEST (COLL, update_one, WRITE_CONCERN),
 };
 
 
