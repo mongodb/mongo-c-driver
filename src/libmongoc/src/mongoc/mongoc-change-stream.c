@@ -231,8 +231,7 @@ _make_cursor (mongoc_change_stream_t *stream)
       goto cleanup;
    }
 
-
-   if (stream->read_concern) {
+   if (stream->read_concern && !bson_has_field (&command_opts, "readConcern")) {
       mongoc_read_concern_append (stream->read_concern, &command_opts);
    }
 
