@@ -733,8 +733,6 @@ New features and bug fixes:
     preference if no read preference is provided
   * mongoc_collection_create_index and mongoc_collection_drop_index now apply
     the collection's write concern.
-  * mongoc_collection_create_index_with_opts now applies the collection's
-    write concern if none is specified in "opts"
   * connectTimeoutMS timer now begins after DNS resolution, and resets
     for each interface attempted (e.g., if the driver first tries IPv6,
     then IPv4).

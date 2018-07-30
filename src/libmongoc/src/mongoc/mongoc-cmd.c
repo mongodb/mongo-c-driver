@@ -255,6 +255,10 @@ mongoc_cmd_parts_set_write_concern (mongoc_cmd_parts_t *parts,
 
    ENTRY;
 
+   if (!wc) {
+      RETURN (true);
+   }
+
    command_name = _mongoc_get_command_name (parts->body);
 
    if (!command_name) {
@@ -268,7 +272,7 @@ mongoc_cmd_parts_set_write_concern (mongoc_cmd_parts_t *parts,
       (is_fam && max_wire_version >= WIRE_VERSION_FAM_WRITE_CONCERN) ||
       (!is_fam && max_wire_version >= WIRE_VERSION_CMD_WRITE_CONCERN);
 
-   if (wc && wc_allowed) {
+   if (wc_allowed) {
       parts->assembled.is_acknowledged =
          mongoc_write_concern_is_acknowledged (wc);
       bson_destroy (&parts->write_concern_document);

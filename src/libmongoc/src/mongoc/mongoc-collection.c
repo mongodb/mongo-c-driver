@@ -1373,6 +1373,11 @@ mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
       GOTO (done);
    }
 
+   if (!parsed.writeConcern) {
+      parsed.writeConcern = collection->write_concern;
+      parsed.write_concern_owned = false;
+   }
+
    /*
     * Generate the key name if it was not provided.
     */
