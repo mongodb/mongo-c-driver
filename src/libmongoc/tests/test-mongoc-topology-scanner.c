@@ -687,6 +687,7 @@ _test_topology_scanner_does_not_renegotiate (bool pooled)
    }
 
    mongoc_uri_destroy (uri);
+   mongoc_apm_callbacks_destroy (callbacks);
 }
 
 static void
