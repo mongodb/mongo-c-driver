@@ -47,7 +47,17 @@ typedef enum {
 } opt_source_t;
 
 
+/* for mongoc_bulk_operation_t tests */
+typedef bool (*bulk_op_t) (mongoc_bulk_operation_t *bulk,
+                           bson_error_t *error,
+                           bson_t *cmd /* OUT */);
+
+
+struct _opt_inheritance_test_t;
+
+
 typedef struct {
+   struct _opt_inheritance_test_t *test;
    mongoc_client_t *client;
    mongoc_database_t *db;
    mongoc_collection_t *collection;
@@ -65,23 +75,27 @@ typedef struct {
 typedef future_t *(func_with_opts_t) (func_ctx_t *ctx, bson_t *cmd);
 
 
-typedef struct {
+typedef struct _opt_inheritance_test_t {
    opt_source_t opt_source;
    func_with_opts_t *func_with_opts;
    const char *func_name;
    opt_type_t opt_type;
    int n_sections;
+   /* for mongoc_bulk_operation_t tests */
+   bulk_op_t bulk_op;
 } opt_inheritance_test_t;
 
 
 static void
 func_ctx_init (func_ctx_t *ctx,
+               opt_inheritance_test_t *test,
                mongoc_client_t *client,
                mongoc_database_t *db,
                mongoc_collection_t *collection,
                const mongoc_read_prefs_t *prefs,
                const bson_t *opts)
 {
+   ctx->test = test;
    ctx->client = client;
    ctx->db = db;
    ctx->collection = collection;
@@ -630,6 +644,103 @@ update_one (func_ctx_t *ctx, bson_t *cmd)
 }
 
 
+/**********************************************************************
+ *
+ * mongoc_bulk_operation_t test functions
+ *
+ **********************************************************************/
+
+static void
+bulk_operation_cleanup (void *data)
+{
+   mongoc_bulk_operation_destroy ((mongoc_bulk_operation_t *) data);
+}
+
+
+static future_t *
+bulk_exec (func_ctx_t *ctx, bson_t *cmd)
+{
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t error;
+   bool r;
+
+   bulk = mongoc_collection_create_bulk_operation_with_opts (ctx->collection,
+                                                             ctx->opts);
+
+   ctx->data = bulk;
+   ctx->destructor = bulk_operation_cleanup;
+
+   r = ctx->test->bulk_op (bulk, &error, cmd);
+   ASSERT_OR_PRINT (r, error);
+
+   return future_bulk_operation_execute (bulk, NULL /* reply */, &ctx->error);
+}
+
+
+
+static bool
+bulk_insert (mongoc_bulk_operation_t *bulk, bson_error_t *error, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "insert", "collection");
+   return mongoc_bulk_operation_insert_with_opts (
+      bulk, tmp_bson ("{}"), NULL, error);
+}
+
+
+static bool
+bulk_remove_many (mongoc_bulk_operation_t *bulk,
+                  bson_error_t *error,
+                  bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "delete", "collection");
+   return mongoc_bulk_operation_remove_many_with_opts (
+      bulk, tmp_bson ("{}"), NULL, error);
+}
+
+
+static bool
+bulk_remove_one (mongoc_bulk_operation_t *bulk,
+                 bson_error_t *error,
+                 bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "delete", "collection");
+   return mongoc_bulk_operation_remove_one_with_opts (
+      bulk, tmp_bson ("{}"), NULL, error);
+}
+
+static bool
+bulk_replace_one (mongoc_bulk_operation_t *bulk,
+                  bson_error_t *error,
+                  bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "update", "collection");
+   return mongoc_bulk_operation_replace_one_with_opts (
+      bulk, tmp_bson ("{}"), tmp_bson ("{}"), NULL, error);
+}
+
+
+static bool
+bulk_update_many (mongoc_bulk_operation_t *bulk,
+                  bson_error_t *error,
+                  bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "update", "collection");
+   return mongoc_bulk_operation_update_many_with_opts (
+      bulk, tmp_bson ("{}"), tmp_bson ("{}"), NULL, error);
+}
+
+
+static bool
+bulk_update_one (mongoc_bulk_operation_t *bulk,
+                 bson_error_t *error,
+                 bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "update", "collection");
+   return mongoc_bulk_operation_update_one_with_opts (
+      bulk, tmp_bson ("{}"), tmp_bson ("{}"), NULL, error);
+}
+
+
 static void
 test_func_inherits_opts (void *ctx)
 {
@@ -698,7 +809,9 @@ test_func_inherits_opts (void *ctx)
          set_func_opt (&opts, &func_prefs, test->opt_type);
       }
 
-      func_ctx_init (&func_ctx, client, db, collection, func_prefs, &opts);
+      func_ctx_init (
+         &func_ctx, test, client, db, collection, func_prefs, &opts);
+
       /* func_with_opts creates expected "cmd", like {insert: 'collection'} */
       future = test->func_with_opts (&func_ctx, &cmd);
 
@@ -759,10 +872,18 @@ test_func_inherits_opts (void *ctx)
       OPT_SOURCE_##_opt_source, _func, #_func, OPT_##_opt_type, 1 \
    }
 
-/* commands that send two OP_MSG sections */
-#define OPT_WRITE_TEST(_opt_source, _func, _opt_type)             \
-   {                                                              \
-      OPT_SOURCE_##_opt_source, _func, #_func, OPT_##_opt_type, 2 \
+
+/* write commands commands that send two OP_MSG sections */
+#define OPT_WRITE_TEST(_func)                              \
+   {                                                       \
+      OPT_SOURCE_COLL, _func, #_func, OPT_WRITE_CONCERN, 2 \
+   }
+
+
+/* mongoc_bulk_operation_t functions */
+#define OPT_BULK_TEST(_bulk_op)                                             \
+   {                                                                        \
+      OPT_SOURCE_COLL, bulk_exec, #_bulk_op, OPT_WRITE_CONCERN, 2, _bulk_op \
    }
 
 
@@ -819,13 +940,23 @@ static opt_inheritance_test_t gInheritanceTests[] = {
    /*
     * collection write functions
     */
-   OPT_WRITE_TEST (COLL, delete_many, WRITE_CONCERN),
-   OPT_WRITE_TEST (COLL, delete_one, WRITE_CONCERN),
-   OPT_WRITE_TEST (COLL, insert_many, WRITE_CONCERN),
-   OPT_WRITE_TEST (COLL, insert_one, WRITE_CONCERN),
-   OPT_WRITE_TEST (COLL, replace_one, WRITE_CONCERN),
-   OPT_WRITE_TEST (COLL, update_many, WRITE_CONCERN),
-   OPT_WRITE_TEST (COLL, update_one, WRITE_CONCERN),
+   OPT_WRITE_TEST (delete_many),
+   OPT_WRITE_TEST (delete_one),
+   OPT_WRITE_TEST (insert_many),
+   OPT_WRITE_TEST (insert_one),
+   OPT_WRITE_TEST (replace_one),
+   OPT_WRITE_TEST (update_many),
+   OPT_WRITE_TEST (update_one),
+
+   /*
+    * bulk operations
+    */
+   OPT_BULK_TEST (bulk_insert),
+   OPT_BULK_TEST (bulk_remove_many),
+   OPT_BULK_TEST (bulk_remove_one),
+   OPT_BULK_TEST (bulk_replace_one),
+   OPT_BULK_TEST (bulk_update_many),
+   OPT_BULK_TEST (bulk_update_one),
 };
 
 
