@@ -556,9 +556,19 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
          cluster, cmd, server_stream->stream, compressor_id, reply, error);
    }
    if (retval && callbacks->succeeded) {
+      bson_t fake_reply = BSON_INITIALIZER;
+      /*
+       * Unacknowledged writes must provide a CommandSucceededEvent with an
+       * {ok: 1} reply.
+       * https://github.com/mongodb/specifications/blob/master/source/command-monitoring/command-monitoring.rst#unacknowledged-acknowledged-writes
+       */
+      if (!cmd->is_acknowledged) {
+         bson_append_int32 (&fake_reply, "ok", 2, 1);
+      }
       mongoc_apm_command_succeeded_init (&succeeded_event,
                                          bson_get_monotonic_time () - started,
-                                         reply,
+                                         cmd->is_acknowledged ? reply
+                                                              : &fake_reply,
                                          cmd->command_name,
                                          request_id,
                                          cmd->operation_id,
@@ -568,6 +578,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
 
       callbacks->succeeded (&succeeded_event);
       mongoc_apm_command_succeeded_cleanup (&succeeded_event);
+      bson_destroy (&fake_reply);
    }
    if (!retval && callbacks->failed) {
       mongoc_apm_command_failed_init (&failed_event,

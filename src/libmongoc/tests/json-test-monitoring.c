@@ -98,11 +98,6 @@ convert_message_for_test (json_test_ctx_t *ctx,
    char *child_path;
    bson_t lsid;
 
-   if (bson_empty (src) && !ctx->acknowledged) {
-      /* spec tests say unacknowledged writes reply "ok": 1, but we don't */
-      BSON_APPEND_DOUBLE (dst, "ok", 1.0);
-      return;
-   }
 
    if (!path && !bson_empty (src)) {
       const char *cmd_name = _mongoc_get_command_name (src);
