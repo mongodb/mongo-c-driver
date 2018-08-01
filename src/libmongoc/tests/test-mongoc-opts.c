@@ -401,6 +401,21 @@ aggregate (func_ctx_t *ctx, bson_t *cmd)
 
 
 static future_t *
+aggregate_raw_pipeline (func_ctx_t *ctx, bson_t *cmd)
+{
+   BSON_APPEND_UTF8 (cmd, "aggregate", "collection");
+   ctx->cursor = mongoc_collection_aggregate (ctx->collection,
+                                              MONGOC_QUERY_NONE,
+                                              tmp_bson ("[{'$out': 'foo'}]"),
+                                              ctx->opts,
+                                              ctx->prefs);
+
+   /* use ctx->data as the bson_t** out-param to mongoc_cursor_next () */
+   return future_cursor_next (ctx->cursor, (const bson_t **) &ctx->data);
+}
+
+
+static future_t *
 collection_drop (func_ctx_t *ctx, bson_t *cmd)
 {
    BSON_APPEND_UTF8 (cmd, "drop", "collection");
@@ -677,7 +692,6 @@ bulk_exec (func_ctx_t *ctx, bson_t *cmd)
 }
 
 
-
 static bool
 bulk_insert (mongoc_bulk_operation_t *bulk, bson_error_t *error, bson_t *cmd)
 {
@@ -917,6 +931,9 @@ static opt_inheritance_test_t gInheritanceTests[] = {
    OPT_TEST (COLL, aggregate, READ_CONCERN),
    OPT_TEST (COLL, aggregate, READ_PREFS),
    OPT_TEST (COLL, aggregate, WRITE_CONCERN),
+   OPT_TEST (COLL, aggregate_raw_pipeline, READ_CONCERN),
+   OPT_TEST (COLL, aggregate_raw_pipeline, READ_PREFS),
+   OPT_TEST (COLL, aggregate_raw_pipeline, WRITE_CONCERN),
    OPT_TEST (COLL, collection_drop, WRITE_CONCERN),
    OPT_TEST (COLL, collection_read_cmd, READ_CONCERN),
    OPT_TEST (COLL, collection_read_cmd, READ_PREFS),

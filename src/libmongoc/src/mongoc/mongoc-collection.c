@@ -317,6 +317,23 @@ _make_agg_cmd (const char *coll,
    return true;
 }
 
+
+static bool
+_has_out_key (bson_iter_t *iter)
+{
+   bson_iter_t stage;
+
+   while (bson_iter_next (iter)) {
+      if (BSON_ITER_HOLDS_DOCUMENT (iter) && bson_iter_recurse (iter, &stage)) {
+         if (bson_iter_find (&stage, "$out")) {
+            return true;
+         }
+      }
+   }
+
+   return false;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -363,9 +380,8 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
    mongoc_server_stream_t *server_stream = NULL;
-   bool has_out_key = false;
+   bool has_out_key;
    bool has_write_concern;
-   bson_iter_t kiter;
    bson_iter_t ar;
    mongoc_cursor_t *cursor;
    uint32_t server_id;
@@ -432,14 +448,13 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       GOTO (done);
    }
 
+   /* pipeline could be like {pipeline: [{$out: 'test'}]} or [{$out: 'test'}] */
    if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
        BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &ar)) {
-      while (bson_iter_next (&ar)) {
-         if (BSON_ITER_HOLDS_DOCUMENT (&ar) &&
-             bson_iter_recurse (&ar, &kiter)) {
-            has_out_key |= bson_iter_find (&kiter, "$out");
-         }
-      }
+      has_out_key = _has_out_key (&ar);
+   } else {
+      bson_iter_init (&iter, pipeline);
+      has_out_key = _has_out_key (&iter);
    }
 
    has_write_concern = bson_has_field (&cursor->opts, "writeConcern");
