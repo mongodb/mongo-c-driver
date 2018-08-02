@@ -2651,7 +2651,6 @@ test_aggregate_bypass (void *context)
    r = mongoc_cursor_next (cursor, &doc);
    ASSERT (!r);
    ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_STARTSWITH (error.message, "insert for $out failed");
    mongoc_cursor_destroy (cursor);
 
    options = tmp_bson ("{'bypassDocumentValidation': true}");
