@@ -23,7 +23,6 @@ Written for Python 2.6+, requires Jinja 2 for templating.
 """
 
 from collections import namedtuple, OrderedDict
-from csv import DictReader
 from itertools import product
 from os.path import dirname, join as joinpath, normpath
 
@@ -34,14 +33,14 @@ evergreen_dir = normpath(joinpath(this_dir, '../.evergreen'))
 
 integration_task_axes = OrderedDict([
     ('valgrind', ['valgrind', False]),
+    ('asan', ['asan', False]),
+    ('memcheck', ['memcheck', False]),
+    ('coverage', ['coverage', False]),
     ('version', ['latest', '4.0', '3.6', '3.4', '3.2', '3.0']),
     ('topology', ['server', 'replica_set', 'sharded']),
     ('auth', [True, False]),
     ('sasl', ['sasl', 'sspi', False]),
     ('ssl', ['openssl', 'darwinssl', 'winssl', False]),
-    ('memcheck', ['memcheck', False]),
-    ('coverage', ['coverage', False]),
-    ('asan', ['asan', False]),
 ])
 
 
@@ -64,12 +63,17 @@ class IntegrationTask(namedtuple('Task', tuple(integration_task_axes))):
 
         return value
 
-    # TODO: use this as "name", not the handwritten name.
     @property
-    def _name(self):
+    def name(self):
+        def name_part(axis_name):
+            part = self.display(axis_name)
+            if part == 'replica_set':
+                return 'replica-set'
+            return part
+
         return 'test-' + '-'.join(
-            self.display(axis_name) for axis_name in integration_task_axes
-            if getattr(axis_name))
+            name_part(axis_name) for axis_name in integration_task_axes
+            if getattr(self, axis_name) or axis_name in ('auth', 'sasl', 'ssl'))
 
 
 def matrix(cell_class, axes):
@@ -175,41 +179,12 @@ def allow_integration_test_task(task):
 
 
 def make_integration_test_tasks():
-    tasks_set = set()
+    tasks_list = []
     for task in matrix(IntegrationTask, integration_task_axes):
         try:
             allow_integration_test_task(task)
         except Prohibited:
             continue
-
-        tasks_set.add(task)
-
-    # TODO: temporary to enforce same order and names as handwritten YAML during
-    # migration from handwritten to fully generated config; remove.
-    tasks_list = []
-    csv_path = joinpath(this_dir, 'integration-test-tasks.csv')
-    reader = DictReader(open(csv_path))
-    for row in reader:
-        # Convert 'TRUE/FALSE' CSV values to True/False, omit 'name' column.
-        def convert(v):
-            if v == 'TRUE':
-                return True
-            if v == 'FALSE':
-                return False
-            return v
-
-        converted = dict([(axis, convert(value))
-                          for axis, value in row.items()
-                          if axis != 'name'])
-
-        task = IntegrationTask(**converted)
-
-        if task not in tasks_set:
-            # Bug in this script.
-            print('Line %d matches no matrix cell' % (reader.line_num,))
-            raise KeyError(task)
-
-        task.name = row['name']
 
         if task.valgrind:
             task.tags.append('test-valgrind')
@@ -249,19 +224,6 @@ def make_integration_test_tasks():
                 task.display('sasl'), task.display('ssl')))
 
         tasks_list.append(task)
-
-        # Check off tasks as find them in the CSV, so we know at the end that
-        # this script produced the same set as the handwritten YML.
-        tasks_set.remove(task)
-
-    if tasks_set:
-        print('allow_integration_test_task should prohibit %d tasks:' % (
-            len(tasks_set,)))
-
-        for task in tasks_set:
-            print(task)
-
-        assert False
 
     return tasks_list
 

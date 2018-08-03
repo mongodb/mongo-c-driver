@@ -1629,32 +1629,30 @@ tasks:
   {% if task.coverage %}
         - func: "update codecov.io"
   {% endif %}
-  {# TODO: for now, insert special tasks where they appeared in handwritten #}
-  {# config, move them to the end later #}
-  {% if task.name == 'test-valgrind-memcheck-replica-set' %}
-
-    {% include 'test-valgrind-memcheck-mock-server.yml' %}
-
-  {% elif task.name == 'test-coverage-replica-set' %}
-
-    {% include 'test-coverage.yml' %}
-
-  {% elif task.name == 'test-latest-server-auth-sspi-winssl' %}
-
-    {% include 'authentication-tests.yml' %}
-
-
-
-    {% include 'libmongocapi.yml' %}
-
-
-
-    {% include 'ipv4-ipv6.yml' %}
-
-  {% endif %}
 
 
 {% endfor %}
+
+{% include 'test-valgrind-memcheck-mock-server.yml' %}
+
+
+
+{% include 'test-coverage.yml' %}
+
+
+
+{% include 'authentication-tests.yml' %}
+
+
+
+{% include 'libmongocapi.yml' %}
+
+
+
+{% include 'ipv4-ipv6.yml' %}
+
+
+
 {% include 'asan-mockserver.yml' %}
 
 
