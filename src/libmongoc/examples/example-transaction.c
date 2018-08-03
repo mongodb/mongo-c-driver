@@ -147,7 +147,6 @@ retry_transaction:
       } else {
          MONGOC_ERROR ("Warning: commit failed: %s", error.message);
          if (mongoc_error_has_label (&reply, "TransientTransactionError")) {
-            mongoc_client_session_abort_transaction (session, NULL);
             goto retry_transaction;
          } else if (mongoc_error_has_label (&reply,
                                             "UnknownTransactionCommitResult")) {
