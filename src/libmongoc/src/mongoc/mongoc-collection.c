@@ -453,7 +453,13 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
        BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &ar)) {
       has_out_key = _has_out_key (&ar);
    } else {
-      bson_iter_init (&iter, pipeline);
+      if (!bson_iter_init (&iter, pipeline)) {
+         bson_set_error (&cursor->error,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "Pipeline is invalid BSON");
+         GOTO (done);
+      }
       has_out_key = _has_out_key (&iter);
    }
 
