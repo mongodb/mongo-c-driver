@@ -7,59 +7,50 @@
     {
       "id": "sh01",
       "shardParams": {
-        "members": [
-          {
-            "procParams": {
-              "shardsvr": true,
-              "port": 27217
-            }
-          },
-          {
-            "procParams": {
-              "shardsvr": true,
-              "port": 27218
-            }
+        "members": [{
+          "procParams": {
+            "ipv6": true,
+            "bind_ip": "127.0.0.1,::1",
+            "shardsvr": true,
+            "setParameter" : { "enableTestCommands": 1 },
+            "port": 27217
           }
-        ]
+        }]
       }
     },
     {
       "id": "sh02",
       "shardParams": {
-        "members": [
-          {
-            "procParams": {
-              "shardsvr": true,
-              "port": 27219
-            }
-          },
-          {
-            "procParams": {
-              "shardsvr": true,
-              "port": 27220
-            }
+        "members": [{
+          "procParams": {
+            "ipv6": true,
+            "bind_ip": "127.0.0.1,::1",
+            "shardsvr": true,
+            "setParameter" : { "enableTestCommands": 1 },
+            "port": 27218
           }
-        ]
+        }]
       }
     }
   ],
   "routers": [
     {
-      "port": 27017,
       "ipv6": true,
-      "bind_ip": "127.0.0.1,::1"
+      "bind_ip": "127.0.0.1,::1",
+      "setParameter" : { "enableTestCommands": 1 },
+      "port": 27017
     },
     {
-      "port": 27018,
       "ipv6": true,
-      "bind_ip": "127.0.0.1,::1"
+      "bind_ip": "127.0.0.1,::1",
+      "setParameter" : { "enableTestCommands": 1 },
+      "port": 27018
     }
   ],
   "sslParams": {
-      "sslMode": "requireSSL",
-      "sslPEMKeyFile": "/tmp/orchestration-home/server.pem",
-      "sslCAFile": "/tmp/orchestration-home/ca.pem",
-      "sslAllowInvalidCertificates": true,
-      "sslWeakCertificateValidation" : true
+    "sslOnNormalPorts": true,
+    "sslPEMKeyFile": "/tmp/orchestration-home/server.pem",
+    "sslCAFile": "/tmp/orchestration-home/ca.pem",
+    "sslWeakCertificateValidation" : true
   }
 }

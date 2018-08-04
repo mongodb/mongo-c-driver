@@ -233,7 +233,7 @@ test_aggregate_inherit_collection (void)
 }
 
 static void
-test_read_prefs_is_valid (void)
+test_read_prefs_is_valid (void *ctx)
 {
    mongoc_collection_t *collection;
    mongoc_database_t *database;
@@ -4426,7 +4426,7 @@ test_getmore_read_concern_live (void *ctx)
 }
 
 static void
-test_aggregate_secondary (void)
+test_aggregate_secondary (void *ctx)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -5739,8 +5739,12 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_5);
-   TestSuite_AddLive (
-      suite, "/Collection/read_prefs_is_valid", test_read_prefs_is_valid);
+   TestSuite_AddFull (suite,
+                      "/Collection/read_prefs_is_valid",
+                      test_read_prefs_is_valid,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_mongos);
    TestSuite_AddLive (suite, "/Collection/insert_many", test_insert_many);
    TestSuite_AddLive (
       suite, "/Collection/insert_bulk_empty", test_insert_bulk_empty);
@@ -5819,8 +5823,12 @@ test_collection_install (TestSuite *suite)
                                 test_aggregate_inherit_collection);
    TestSuite_AddLive (
       suite, "/Collection/aggregate/large", test_aggregate_large);
-   TestSuite_AddLive (
-      suite, "/Collection/aggregate/secondary", test_aggregate_secondary);
+   TestSuite_AddFull (suite,
+                      "/Collection/aggregate/secondary",
+                      test_aggregate_secondary,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_mongos);
    TestSuite_AddMockServerTest (suite,
                                 "/Collection/aggregate/secondary/sharded",
                                 test_aggregate_secondary_sharded);
