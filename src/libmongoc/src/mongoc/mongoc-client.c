@@ -228,19 +228,25 @@ _mongoc_get_rr_dnsapi (const char *service,
    i = 0;
 
    do {
-      if (i > 0 && rr_type == MONGOC_RR_TXT) {
-         /* Initial DNS Seedlist Discovery Spec: a client "MUST raise an error
-          * when multiple TXT records are encountered". */
-         callback_success = false;
-         DNS_ERROR ("Multiple TXT records for \"%s\"", service);
+      /* DnsQuery can return additional records not of the requested type */
+      if ((rr_type == MONGOC_RR_TXT && pdns->wType == DNS_TYPE_TEXT) ||
+          (rr_type == MONGOC_RR_SRV && pdns->wType == DNS_TYPE_SRV)) {
+         if (i > 0 && rr_type == MONGOC_RR_TXT) {
+            /* Initial DNS Seedlist Discovery Spec: a client "MUST raise an
+            error when multiple TXT records are encountered". */
+            callback_success = false;
+            DNS_ERROR ("Multiple TXT records for \"%s\"", service);
+         }
+
+         if (!callback (service, pdns, uri, error)) {
+            callback_success = false;
+            GOTO (done);
+         }
+
+         i++;
       }
 
-      if (!callback (service, pdns, uri, error)) {
-         callback_success = false;
-         GOTO (done);
-      }
       pdns = pdns->pNext;
-      i++;
    } while (pdns);
 
 done:
