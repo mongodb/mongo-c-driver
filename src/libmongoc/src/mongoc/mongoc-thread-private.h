@@ -23,13 +23,27 @@
 
 #include <bson.h>
 
+#include "common-thread-private.h"
 #include "mongoc-config.h"
 #include "mongoc-log.h"
 
+/* rename symbols from common-thread-private.h */
+#define MONGOC_ONCE_FUN BSON_ONCE_FUN
+#define MONGOC_ONCE_INIT BSON_ONCE_INIT
+#define MONGOC_ONCE_RETURN BSON_ONCE_RETURN
+#define mongoc_mutex_destroy bson_mutex_destroy
+#define mongoc_mutex_init bson_mutex_init
+#define mongoc_mutex_lock bson_mutex_lock
+#define mongoc_mutex_t bson_mutex_t
+#define mongoc_mutex_unlock bson_mutex_unlock
+#define mongoc_once bson_once
+#define mongoc_once_t bson_once_t
+#define mongoc_thread_create bson_thread_create
+#define mongoc_thread_join bson_thread_join
+#define mongoc_thread_t bson_thread_t
 
-#if !defined(_WIN32)
+#if defined(BSON_OS_UNIX)
 #include <pthread.h>
-#define MONGOC_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 #define mongoc_cond_t pthread_cond_t
 #define mongoc_cond_broadcast pthread_cond_broadcast
 #define mongoc_cond_init(_n) pthread_cond_init ((_n), NULL)
@@ -54,50 +68,7 @@ mongoc_cond_timedwait (pthread_cond_t *cond,
    return pthread_cond_timedwait (cond, mutex, &to);
 }
 #define mongoc_cond_destroy pthread_cond_destroy
-#define mongoc_mutex_t pthread_mutex_t
-#define mongoc_mutex_init(_n) pthread_mutex_init ((_n), NULL)
-#define mongoc_mutex_lock pthread_mutex_lock
-#define mongoc_mutex_unlock pthread_mutex_unlock
-#define mongoc_mutex_destroy pthread_mutex_destroy
-#define mongoc_thread_t pthread_t
-#define mongoc_thread_create(_t, _f, _d) pthread_create ((_t), NULL, (_f), (_d))
-#define mongoc_thread_join(_n) pthread_join ((_n), NULL)
-#define mongoc_once_t pthread_once_t
-#define mongoc_once pthread_once
-#define MONGOC_ONCE_FUN(n) void n (void)
-#define MONGOC_ONCE_RETURN return
-#ifdef _PTHREAD_ONCE_INIT_NEEDS_BRACES
-#define MONGOC_ONCE_INIT \
-   {                     \
-      PTHREAD_ONCE_INIT  \
-   }
 #else
-#define MONGOC_ONCE_INIT PTHREAD_ONCE_INIT
-#endif
-#else
-#define mongoc_thread_t HANDLE
-static BSON_INLINE int
-mongoc_thread_create (mongoc_thread_t *thread, void *(*cb) (void *), void *arg)
-{
-   *thread = CreateThread (NULL, 0, (LPTHREAD_START_ROUTINE) cb, arg, 0, NULL);
-   return 0;
-}
-static BSON_INLINE DWORD
-mongoc_thread_join (mongoc_thread_t thread)
-{
-   DWORD ret = WaitForSingleObject (thread, INFINITE);
-   if (!CloseHandle (thread)) {
-      MONGOC_ERROR ("Couldn't close thread handle, error 0x%.8X",
-                    GetLastError ());
-   }
-
-   return ret;
-}
-#define mongoc_mutex_t CRITICAL_SECTION
-#define mongoc_mutex_init InitializeCriticalSection
-#define mongoc_mutex_lock EnterCriticalSection
-#define mongoc_mutex_unlock LeaveCriticalSection
-#define mongoc_mutex_destroy DeleteCriticalSection
 #define mongoc_cond_t CONDITION_VARIABLE
 #define mongoc_cond_init InitializeConditionVariable
 #define mongoc_cond_wait(_c, _m) mongoc_cond_timedwait ((_c), (_m), INFINITE)
@@ -127,12 +98,6 @@ mongoc_cond_destroy (mongoc_cond_t *_ignored)
 {
    return 0;
 }
-#define mongoc_once_t INIT_ONCE
-#define MONGOC_ONCE_INIT INIT_ONCE_STATIC_INIT
-#define mongoc_once(o, c) InitOnceExecuteOnce (o, c, NULL, NULL)
-#define MONGOC_ONCE_FUN(n) \
-   BOOL CALLBACK n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c)
-#define MONGOC_ONCE_RETURN return true
 #endif
 
 

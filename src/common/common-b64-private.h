@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef BSON_B64_PRIVATE_H
-#define BSON_B64_PRIVATE_H
+#ifndef COMMON_B64_PRIVATE_H
+#define COMMON_B64_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION) && !defined(BSON_COMPILATION) && \
    !defined(BSON_INSIDE)
@@ -33,4 +33,4 @@ bson_b64_ntop (uint8_t const *src,
 int
 bson_b64_pton (char const *src, uint8_t *target, size_t targsize);
 
-#endif /* BSON_B64_PRIVATE_H */
+#endif /* COMMON_B64_PRIVATE_H */

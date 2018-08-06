@@ -28,7 +28,7 @@
 #include "bson-context-private.h"
 #include "bson-fnv-private.h"
 #include "bson-memory.h"
-#include "bson-thread-private.h"
+#include "common-thread-private.h"
 
 #ifdef BSON_HAVE_SYSCALL_TID
 #include <sys/syscall.h>

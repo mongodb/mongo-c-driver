@@ -26,7 +26,6 @@ set (src_libbson_src_bson_DIST_hs
    bson-iso8601-private.h
    bson-context-private.h
    bson-fnv-private.h
-   bson-thread-private.h
    bson-timegm-private.h
 )
 extra_dist_generated (

@@ -259,9 +259,7 @@ static const uint8_t mongoc_b64rmap_end = 0xfd;
 static const uint8_t mongoc_b64rmap_space = 0xfe;
 static const uint8_t mongoc_b64rmap_invalid = 0xff;
 
-/* initializing the reverse map isn't thread safe, do it in pthread_once. here
- * in a common source file we don't have access to bson or mongoc defines like
- * BSON_ONCE_FUN. */
+/* initializing the reverse map isn't thread safe, do it in pthread_once */
 #if defined(BSON_OS_UNIX)
 #include <pthread.h>
 #define mongoc_common_once_t pthread_once_t

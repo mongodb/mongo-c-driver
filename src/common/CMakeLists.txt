@@ -1,6 +1,7 @@
 set (src_common_DIST_noinst_hs
    common-b64-private.h
    common-md5-private.h
+   common-thread-private.h
 )
 
 set (src_common_DIST_cs
