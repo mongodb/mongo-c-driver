@@ -46,9 +46,9 @@ struct _mock_server_t {
    mongoc_socket_t *sock;
    char *uri_str;
    mongoc_uri_t *uri;
-   mongoc_thread_t main_thread;
+   bson_thread_t main_thread;
    mongoc_cond_t cond;
-   mongoc_mutex_t mutex;
+   bson_mutex_t mutex;
    int32_t last_response_id;
    mongoc_array_t worker_threads;
    sync_queue_t *q;
@@ -129,9 +129,9 @@ mock_server_new ()
    server->request_timeout_msec = get_future_timeout_ms ();
    _mongoc_array_init (&server->autoresponders,
                        sizeof (autoresponder_handle_t));
-   _mongoc_array_init (&server->worker_threads, sizeof (mongoc_thread_t));
+   _mongoc_array_init (&server->worker_threads, sizeof (bson_thread_t));
    mongoc_cond_init (&server->cond);
-   mongoc_mutex_init (&server->mutex);
+   bson_mutex_init (&server->mutex);
    server->q = q_new ();
    server->start_time = bson_get_monotonic_time ();
 
@@ -287,10 +287,10 @@ mock_server_down (void)
 void
 mock_server_set_ssl_opts (mock_server_t *server, mongoc_ssl_opt_t *opts)
 {
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    server->ssl = true;
    memcpy (&server->ssl_opts, opts, sizeof *opts);
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 }
 
 #endif
@@ -371,7 +371,7 @@ mock_server_run (mock_server_t *server)
       return 0;
    }
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
 
    server->sock = ssock;
    server->port = bound_port;
@@ -382,12 +382,12 @@ mock_server_run (mock_server_t *server)
       bound_port);
    server->uri = mongoc_uri_new (server->uri_str);
 
-   mongoc_thread_create (&server->main_thread, main_thread, (void *) server);
+   bson_thread_create (&server->main_thread, main_thread, (void *) server);
    while (!server->running) {
       mongoc_cond_wait (&server->cond, &server->mutex);
    }
 
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    test_suite_mock_server_log ("listening on port %hu", bound_port);
 
@@ -428,11 +428,11 @@ mock_server_autoresponds (mock_server_t *server,
    autoresponder_handle_t handle = {responder, data, destructor};
    int id;
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    id = handle.id = server->last_autoresponder_id++;
    /* TODO: peek and see if a matching request is enqueued */
    _mongoc_array_append_val (&server->autoresponders, handle);
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    return id;
 }
@@ -460,7 +460,7 @@ mock_server_remove_autoresponder (mock_server_t *server, int id)
    size_t i;
    autoresponder_handle_t *handles;
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    handles = (autoresponder_handle_t *) server->autoresponders.data;
    for (i = 0; i < server->autoresponders.len; i++) {
       if (handles[i].id == id) {
@@ -476,7 +476,7 @@ mock_server_remove_autoresponder (mock_server_t *server, int id)
       }
    }
 
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 }
 
 
@@ -613,9 +613,9 @@ mock_server_get_uri (mock_server_t *server)
 {
    mongoc_uri_t *uri;
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    uri = server->uri;
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    return uri;
 }
@@ -684,9 +684,9 @@ mock_server_get_request_timeout_msec (mock_server_t *server)
 {
    int64_t request_timeout_msec;
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    request_timeout_msec = server->request_timeout_msec;
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    return request_timeout_msec;
 }
@@ -705,9 +705,9 @@ void
 mock_server_set_request_timeout_msec (mock_server_t *server,
                                       int64_t request_timeout_msec)
 {
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    server->request_timeout_msec = request_timeout_msec;
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 }
 
 
@@ -725,9 +725,9 @@ mock_server_get_rand_delay (mock_server_t *server)
 {
    bool rand_delay;
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    rand_delay = server->rand_delay;
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    return rand_delay;
 }
@@ -744,9 +744,9 @@ mock_server_get_rand_delay (mock_server_t *server)
 void
 mock_server_set_rand_delay (mock_server_t *server, bool rand_delay)
 {
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    server->rand_delay = rand_delay;
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 }
 
 
@@ -764,9 +764,9 @@ mock_server_get_uptime_sec (mock_server_t *server)
 {
    double uptime;
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    uptime = (bson_get_monotonic_time () - server->start_time) / 1e6;
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    return uptime;
 }
@@ -777,9 +777,9 @@ mock_server_get_queue (mock_server_t *server)
 {
    sync_queue_t *q;
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    q = server->q;
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    return q;
 }
@@ -1444,33 +1444,33 @@ mock_server_destroy (mock_server_t *server)
    int64_t deadline = bson_get_monotonic_time () + 10 * 1000 * 1000;
    request_t *request;
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    if (server->running) {
       server->stopped = true;
    }
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    while (bson_get_monotonic_time () <= deadline) {
       /* wait 10 seconds */
-      mongoc_mutex_lock (&server->mutex);
+      bson_mutex_lock (&server->mutex);
       if (!server->running) {
-         mongoc_mutex_unlock (&server->mutex);
+         bson_mutex_unlock (&server->mutex);
          break;
       }
 
-      mongoc_mutex_unlock (&server->mutex);
+      bson_mutex_unlock (&server->mutex);
       _mongoc_usleep (1000);
    }
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    if (server->running) {
       fprintf (stderr, "server still running after timeout\n");
       fflush (stderr);
       abort ();
    }
 
-   mongoc_mutex_unlock (&server->mutex);
-   mongoc_thread_join (server->main_thread);
+   bson_mutex_unlock (&server->mutex);
+   bson_thread_join (server->main_thread);
 
    _mongoc_array_destroy (&server->worker_threads);
 
@@ -1484,7 +1484,7 @@ mock_server_destroy (mock_server_t *server)
    _mongoc_array_destroy (&server->autoresponders);
 
    mongoc_cond_destroy (&server->cond);
-   mongoc_mutex_destroy (&server->mutex);
+   bson_mutex_destroy (&server->mutex);
    mongoc_socket_destroy (server->sock);
    bson_free (server->uri_str);
    mongoc_uri_destroy (server->uri);
@@ -1523,9 +1523,9 @@ _mock_server_stopping (mock_server_t *server)
 {
    bool stopped;
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    stopped = server->stopped;
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    return stopped;
 }
@@ -1546,14 +1546,14 @@ main_thread (void *data)
    uint16_t port;
    mongoc_stream_t *client_stream;
    worker_closure_t *closure;
-   mongoc_thread_t thread;
+   bson_thread_t thread;
    mongoc_array_t worker_threads;
    size_t i;
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    server->running = true;
    mongoc_cond_signal (&server->cond);
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    for (;;) {
       client_sock = mongoc_socket_accept_ex (
@@ -1574,7 +1574,7 @@ main_thread (void *data)
          client_stream = mongoc_stream_socket_new (client_sock);
 
 #ifdef MONGOC_ENABLE_SSL
-         mongoc_mutex_lock (&server->mutex);
+         bson_mutex_lock (&server->mutex);
          if (server->ssl) {
             mongoc_stream_t *tls_stream;
             server->ssl_opts.weak_cert_validation = 1;
@@ -1582,42 +1582,42 @@ main_thread (void *data)
                client_stream, NULL, &server->ssl_opts, 0);
             if (!tls_stream) {
                mongoc_stream_destroy (client_stream);
-               mongoc_mutex_unlock (&server->mutex);
+               bson_mutex_unlock (&server->mutex);
                perror ("Failed to attach tls stream");
                break;
             }
             client_stream = tls_stream;
          }
-         mongoc_mutex_unlock (&server->mutex);
+         bson_mutex_unlock (&server->mutex);
 #endif
          closure = (worker_closure_t *) bson_malloc (sizeof *closure);
          closure->server = server;
          closure->client_stream = client_stream;
          closure->port = port;
 
-         mongoc_mutex_lock (&server->mutex);
-         mongoc_thread_create (&thread, worker_thread, closure);
+         bson_mutex_lock (&server->mutex);
+         bson_thread_create (&thread, worker_thread, closure);
          _mongoc_array_append_val (&server->worker_threads, thread);
-         mongoc_mutex_unlock (&server->mutex);
+         bson_mutex_unlock (&server->mutex);
       }
    }
 
    /* copy list of worker threads and join them all */
-   _mongoc_array_init (&worker_threads, sizeof (mongoc_thread_t));
-   mongoc_mutex_lock (&server->mutex);
+   _mongoc_array_init (&worker_threads, sizeof (bson_thread_t));
+   bson_mutex_lock (&server->mutex);
    _mongoc_array_copy (&worker_threads, &server->worker_threads);
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    for (i = 0; i < worker_threads.len; i++) {
-      mongoc_thread_join (
-         _mongoc_array_index (&worker_threads, mongoc_thread_t, i));
+      bson_thread_join (
+         _mongoc_array_index (&worker_threads, bson_thread_t, i));
    }
 
    _mongoc_array_destroy (&worker_threads);
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    server->running = false;
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    return NULL;
 }
@@ -1666,9 +1666,9 @@ worker_thread (void *data)
    replies = q_new ();
 
 #ifdef MONGOC_ENABLE_SSL
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
    ssl = server->ssl;
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
 
    if (ssl) {
       if (!mongoc_stream_tls_handshake_block (
@@ -1716,9 +1716,9 @@ again:
       memmove (buffer.data, buffer.data + msg_len, buffer.len - msg_len);
       buffer.len -= msg_len;
 
-      mongoc_mutex_lock (&server->mutex);
+      bson_mutex_lock (&server->mutex);
       _mongoc_array_copy (&autoresponders, &server->autoresponders);
-      mongoc_mutex_unlock (&server->mutex);
+      bson_mutex_unlock (&server->mutex);
 
       test_suite_mock_server_log ("%5.2f  %hu -> %hu %s",
                                   mock_server_get_uptime_sec (server),
@@ -1875,7 +1875,7 @@ _mock_server_reply_with_stream (mock_server_t *server,
 
    _mongoc_array_init (&ar, sizeof (mongoc_iovec_t));
 
-   mongoc_mutex_lock (&server->mutex);
+   bson_mutex_lock (&server->mutex);
 
    if (!(reply->request_opcode == MONGOC_OPCODE_QUERY &&
          reply->query_flags & MONGOC_QUERY_EXHAUST)) {
@@ -1883,7 +1883,7 @@ _mock_server_reply_with_stream (mock_server_t *server,
    }
 
    r.header.request_id = server->last_response_id;
-   mongoc_mutex_unlock (&server->mutex);
+   bson_mutex_unlock (&server->mutex);
    r.header.msg_len = 0;
    r.header.response_to = reply->response_to;
 

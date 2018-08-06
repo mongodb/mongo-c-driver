@@ -1925,7 +1925,7 @@ _mongoc_cluster_create_server_stream (mongoc_topology_t *topology,
 
    /* can't just use mongoc_topology_server_by_id(), since we must hold the
     * lock while copying topology->description.logical_time below */
-   mongoc_mutex_lock (&topology->mutex);
+   bson_mutex_lock (&topology->mutex);
 
    sd = mongoc_server_description_new_copy (
       mongoc_topology_description_server_by_id (
@@ -1936,7 +1936,7 @@ _mongoc_cluster_create_server_stream (mongoc_topology_t *topology,
          mongoc_server_stream_new (&topology->description, sd, stream);
    }
 
-   mongoc_mutex_unlock (&topology->mutex);
+   bson_mutex_unlock (&topology->mutex);
 
    return server_stream;
 }

@@ -41,7 +41,7 @@
 #endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-static mongoc_mutex_t *gMongocOpenSslThreadLocks;
+static bson_mutex_t *gMongocOpenSslThreadLocks;
 
 static void
 _mongoc_openssl_thread_startup (void);
@@ -626,9 +626,9 @@ _mongoc_openssl_thread_locking_callback (int mode,
                                          int line)
 {
    if (mode & CRYPTO_LOCK) {
-      mongoc_mutex_lock (&gMongocOpenSslThreadLocks[type]);
+      bson_mutex_lock (&gMongocOpenSslThreadLocks[type]);
    } else {
-      mongoc_mutex_unlock (&gMongocOpenSslThreadLocks[type]);
+      bson_mutex_unlock (&gMongocOpenSslThreadLocks[type]);
    }
 }
 
@@ -637,11 +637,11 @@ _mongoc_openssl_thread_startup (void)
 {
    int i;
 
-   gMongocOpenSslThreadLocks = (mongoc_mutex_t *) OPENSSL_malloc (
-      CRYPTO_num_locks () * sizeof (mongoc_mutex_t));
+   gMongocOpenSslThreadLocks = (bson_mutex_t *) OPENSSL_malloc (
+      CRYPTO_num_locks () * sizeof (bson_mutex_t));
 
    for (i = 0; i < CRYPTO_num_locks (); i++) {
-      mongoc_mutex_init (&gMongocOpenSslThreadLocks[i]);
+      bson_mutex_init (&gMongocOpenSslThreadLocks[i]);
    }
 
    if (!CRYPTO_get_locking_callback ()) {
@@ -665,7 +665,7 @@ _mongoc_openssl_thread_cleanup (void)
    }
 
    for (i = 0; i < CRYPTO_num_locks (); i++) {
-      mongoc_mutex_destroy (&gMongocOpenSslThreadLocks[i]);
+      bson_mutex_destroy (&gMongocOpenSslThreadLocks[i]);
    }
    OPENSSL_free (gMongocOpenSslThreadLocks);
 }

@@ -72,7 +72,7 @@ _assert_options_match (const bson_t *test, mongoc_client_t *client)
 
 
 typedef struct {
-   mongoc_mutex_t mutex;
+   bson_mutex_t mutex;
    mongoc_host_list_t *hosts;
 } context_t;
 
@@ -91,14 +91,14 @@ topology_changed (const mongoc_apm_topology_changed_t *event)
    td = mongoc_apm_topology_changed_get_new_description (event);
    sds = mongoc_topology_description_get_servers (td, &n);
 
-   mongoc_mutex_lock (&ctx->mutex);
+   bson_mutex_lock (&ctx->mutex);
    _mongoc_host_list_destroy_all (ctx->hosts);
    ctx->hosts = NULL;
    for (i = 0; i < n; i++) {
       ctx->hosts = _mongoc_host_list_push (
          sds[i]->host.host, sds[i]->host.port, AF_UNSPEC, ctx->hosts);
    }
-   mongoc_mutex_unlock (&ctx->mutex);
+   bson_mutex_unlock (&ctx->mutex);
 
    mongoc_server_descriptions_destroy_all (sds, n);
 }
@@ -147,7 +147,7 @@ _host_list_matches (const bson_t *test, context_t *ctx)
    BSON_ASSERT (bson_iter_init_find (&iter, test, "hosts"));
    BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
 
-   mongoc_mutex_lock (&ctx->mutex);
+   bson_mutex_lock (&ctx->mutex);
    BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
    while (bson_iter_next (&hosts)) {
       host_and_port = bson_iter_utf8 (&hosts, NULL);
@@ -159,7 +159,7 @@ _host_list_matches (const bson_t *test, context_t *ctx)
 
    _mongoc_host_list_destroy_all (ctx->hosts);
    ctx->hosts = NULL;
-   mongoc_mutex_unlock (&ctx->mutex);
+   bson_mutex_unlock (&ctx->mutex);
 
    return ret;
 }
@@ -187,7 +187,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       abort ();
    }
 
-   mongoc_mutex_init (&ctx.mutex);
+   bson_mutex_init (&ctx.mutex);
    ctx.hosts = NULL;
    expect_ssl = strstr (bson_lookup_utf8 (test, "uri"), "ssl=false") == NULL;
    expect_error = _mongoc_lookup_bool (test, "error", false /* default */);
@@ -317,7 +317,8 @@ test_all_spec_tests (TestSuite *suite)
 {
    char resolved[PATH_MAX];
 
-   test_framework_resolve_path (JSON_DIR "/initial_dns_seedlist_discovery", resolved);
+   test_framework_resolve_path (JSON_DIR "/initial_dns_seedlist_discovery",
+                                resolved);
    install_json_test_suite_with_check (suite,
                                        resolved,
                                        test_dns,

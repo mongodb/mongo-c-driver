@@ -46,7 +46,7 @@ static mongoc_handshake_t gMongocHandshake;
 /*
  * Used for thread-safety in mongoc_handshake_data_append
  */
-static mongoc_mutex_t gHandshakeLock;
+static bson_mutex_t gHandshakeLock;
 
 static void
 _set_bit (uint8_t *bf, uint32_t byte_count, uint32_t bit)
@@ -417,7 +417,7 @@ _mongoc_handshake_init (void)
    _set_platform_string (_mongoc_handshake_get ());
 
    _mongoc_handshake_get ()->frozen = false;
-   mongoc_mutex_init (&gHandshakeLock);
+   bson_mutex_init (&gHandshakeLock);
 }
 
 void
@@ -427,7 +427,7 @@ _mongoc_handshake_cleanup (void)
    _free_driver_info (_mongoc_handshake_get ());
    _free_platform_string (_mongoc_handshake_get ());
 
-   mongoc_mutex_destroy (&gHandshakeLock);
+   bson_mutex_destroy (&gHandshakeLock);
 }
 
 static void
@@ -570,10 +570,10 @@ mongoc_handshake_data_append (const char *driver_name,
                               const char *driver_version,
                               const char *platform)
 {
-   mongoc_mutex_lock (&gHandshakeLock);
+   bson_mutex_lock (&gHandshakeLock);
 
    if (_mongoc_handshake_get ()->frozen) {
-      mongoc_mutex_unlock (&gHandshakeLock);
+      bson_mutex_unlock (&gHandshakeLock);
       return false;
    }
 
@@ -591,7 +591,7 @@ mongoc_handshake_data_append (const char *driver_name,
       &_mongoc_handshake_get ()->platform, platform, HANDSHAKE_MAX_SIZE);
 
    _mongoc_handshake_freeze ();
-   mongoc_mutex_unlock (&gHandshakeLock);
+   bson_mutex_unlock (&gHandshakeLock);
    return true;
 }
 

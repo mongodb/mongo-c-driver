@@ -23,7 +23,7 @@ get_node (mongoc_topology_t *topology, const char *host_and_port)
    mongoc_topology_scanner_node_t *node;
    mongoc_topology_scanner_node_t *sought = NULL;
 
-   mongoc_mutex_lock (&topology->mutex);
+   bson_mutex_lock (&topology->mutex);
 
    ts = topology->scanner;
 
@@ -35,7 +35,7 @@ get_node (mongoc_topology_t *topology, const char *host_and_port)
       }
    }
 
-   mongoc_mutex_unlock (&topology->mutex);
+   bson_mutex_unlock (&topology->mutex);
 
    return sought;
 }
@@ -49,7 +49,7 @@ has_server_description (mongoc_topology_t *topology, const char *host_and_port)
    int i;
    mongoc_server_description_t *sd;
 
-   mongoc_mutex_lock (&topology->mutex);
+   bson_mutex_lock (&topology->mutex);
    for (i = 0; i < (int) topology->description.servers->items_len; i++) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (servers, i);
       if (!strcmp (sd->host.host_and_port, host_and_port)) {
@@ -58,7 +58,7 @@ has_server_description (mongoc_topology_t *topology, const char *host_and_port)
       }
    }
 
-   mongoc_mutex_unlock (&topology->mutex);
+   bson_mutex_unlock (&topology->mutex);
 
    return found;
 }
@@ -328,7 +328,7 @@ test_topology_reconcile_sharded_pooled (void)
 
 
 typedef struct {
-   mongoc_mutex_t mutex;
+   bson_mutex_t mutex;
    size_t servers;
 } reconcile_test_data_t;
 
@@ -338,9 +338,9 @@ server_opening (const mongoc_apm_server_opening_t *event)
 {
    reconcile_test_data_t *data = (reconcile_test_data_t *) event->context;
 
-   mongoc_mutex_lock (&data->mutex);
+   bson_mutex_lock (&data->mutex);
    data->servers++;
-   mongoc_mutex_unlock (&data->mutex);
+   bson_mutex_unlock (&data->mutex);
 }
 
 
@@ -362,7 +362,7 @@ test_topology_reconcile_from_handshake (void *ctx)
    mongoc_topology_scanner_node_t *node;
    mongoc_async_cmd_t *cmd;
 
-   mongoc_mutex_init (&data.mutex);
+   bson_mutex_init (&data.mutex);
    data.servers = 0;
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -421,9 +421,9 @@ test_topology_reconcile_from_handshake (void *ctx)
       client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
-   mongoc_mutex_lock (&data.mutex);
+   bson_mutex_lock (&data.mutex);
    ASSERT_CMPSIZE_T (data.servers, ==, test_framework_replset_member_count ());
-   mongoc_mutex_unlock (&data.mutex);
+   bson_mutex_unlock (&data.mutex);
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
@@ -505,7 +505,7 @@ _test_topology_reconcile_retire (bool pooled)
    BSON_ASSERT (selects_server (client, secondary_read_prefs, secondary));
 
    /* remove secondary from primary's config */
-   mongoc_mutex_lock (&topology->mutex);
+   bson_mutex_lock (&topology->mutex);
    RS_RESPONSE_TO_ISMASTER (primary, 6, true, false, primary);
 
    /* step 2: cluster opens new stream to primary - force new stream in single
@@ -517,7 +517,7 @@ _test_topology_reconcile_retire (bool pooled)
       mongoc_stream_destroy (node->stream);
       node->stream = NULL;
    }
-   mongoc_mutex_unlock (&topology->mutex);
+   bson_mutex_unlock (&topology->mutex);
 
    /* step 3: run "ping" on primary, triggering a connection and handshake, thus
     * step 4 & 5: the primary tells the scanner to retire the secondary node */

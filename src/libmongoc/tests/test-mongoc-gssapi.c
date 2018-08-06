@@ -50,7 +50,7 @@ _getenv (const char *name)
 struct closure_t {
    mongoc_client_pool_t *pool;
    int finished;
-   mongoc_mutex_t mutex;
+   bson_mutex_t mutex;
 };
 
 
@@ -86,9 +86,9 @@ gssapi_kerberos_worker (void *data)
 
    bson_destroy (&query);
 
-   mongoc_mutex_lock (&closure->mutex);
+   bson_mutex_lock (&closure->mutex);
    closure->finished++;
-   mongoc_mutex_unlock (&closure->mutex);
+   bson_mutex_unlock (&closure->mutex);
 
    return NULL;
 }
@@ -103,7 +103,7 @@ main (void)
    mongoc_uri_t *uri;
    struct closure_t closure = {0};
    int i;
-   mongoc_thread_t threads[NTHREADS];
+   bson_thread_t threads[NTHREADS];
 
    mongoc_init ();
 
@@ -115,7 +115,7 @@ main (void)
       return 1;
    }
 
-   mongoc_mutex_init (&closure.mutex);
+   bson_mutex_init (&closure.mutex);
 
    uri_str = bson_strdup_printf (
       "mongodb://%s@%s/?authMechanism=GSSAPI&connectTimeoutMS=30000",
@@ -126,20 +126,20 @@ main (void)
    closure.pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < NTHREADS; i++) {
-      mongoc_thread_create (
+      bson_thread_create (
          &threads[i], gssapi_kerberos_worker, (void *) &closure);
    }
 
    for (i = 0; i < NTHREADS; i++) {
-      mongoc_thread_join (threads[i]);
+      bson_thread_join (threads[i]);
    }
 
-   mongoc_mutex_lock (&closure.mutex);
+   bson_mutex_lock (&closure.mutex);
    BSON_ASSERT (NTHREADS == closure.finished);
-   mongoc_mutex_unlock (&closure.mutex);
+   bson_mutex_unlock (&closure.mutex);
 
    mongoc_client_pool_destroy (closure.pool);
-   mongoc_mutex_destroy (&closure.mutex);
+   bson_mutex_destroy (&closure.mutex);
    mongoc_uri_destroy (uri);
    bson_free (uri_str);
    bson_free (host);

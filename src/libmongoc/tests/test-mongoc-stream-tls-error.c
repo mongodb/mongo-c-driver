@@ -14,7 +14,7 @@
 #define TIMEOUT 10000 /* milliseconds */
 
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
-   !defined(MONGOC_ENABLE_SSL_LIBRESSL) && \
+   !defined(MONGOC_ENABLE_SSL_LIBRESSL) &&        \
    !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
 /** run as a child thread by test_mongoc_tls_hangup
  *
@@ -64,10 +64,10 @@ ssl_error_server (void *ptr)
    r = mongoc_socket_listen (listen_sock, 10);
    BSON_ASSERT (r == 0);
 
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    data->server_port = ntohs (server_addr.sin_port);
    mongoc_cond_signal (&data->cond);
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    conn_sock = mongoc_socket_accept (listen_sock, -1);
    BSON_ASSERT (conn_sock);
@@ -136,11 +136,11 @@ ssl_hangup_client (void *ptr)
    conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
    BSON_ASSERT (conn_sock);
 
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    while (!data->server_port) {
       mongoc_cond_wait (&data->cond, &data->cond_mutex);
    }
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    server_addr.sin_family = AF_INET;
    server_addr.sin_port = htons (data->server_port);
@@ -188,7 +188,7 @@ test_mongoc_tls_hangup (void)
    ssl_test_result_t sr;
    ssl_test_result_t cr;
    ssl_test_data_t data = {0};
-   mongoc_thread_t threads[2];
+   bson_thread_t threads[2];
    int i, r;
 
    sopt.pem_file = CERT_SERVER;
@@ -202,21 +202,21 @@ test_mongoc_tls_hangup (void)
    data.client_result = &cr;
    data.host = "localhost";
 
-   mongoc_mutex_init (&data.cond_mutex);
+   bson_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
 
-   r = mongoc_thread_create (threads, &ssl_error_server, &data);
+   r = bson_thread_create (threads, &ssl_error_server, &data);
    BSON_ASSERT (r == 0);
 
-   r = mongoc_thread_create (threads + 1, &ssl_hangup_client, &data);
+   r = bson_thread_create (threads + 1, &ssl_hangup_client, &data);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
-      r = mongoc_thread_join (threads[i]);
+      r = bson_thread_join (threads[i]);
       BSON_ASSERT (r == 0);
    }
 
-   mongoc_mutex_destroy (&data.cond_mutex);
+   bson_mutex_destroy (&data.cond_mutex);
    mongoc_cond_destroy (&data.cond);
 
    ASSERT (cr.result == SSL_TEST_SUCCESS);
@@ -248,11 +248,11 @@ handshake_stall_client (void *ptr)
 
    int64_t start_time;
 
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    while (!data->server_port) {
       mongoc_cond_wait (&data->cond, &data->cond_mutex);
    }
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    /* Note: do not use localhost here. If localhost has both A and AAAA records,
     * an attempt to connect to IPv6 occurs first. Most platforms refuse the IPv6
@@ -309,7 +309,7 @@ test_mongoc_tls_handshake_stall (void)
    ssl_test_result_t sr;
    ssl_test_result_t cr;
    ssl_test_data_t data = {0};
-   mongoc_thread_t threads[2];
+   bson_thread_t threads[2];
    int i, r;
 
    sopt.ca_file = CERT_CA;
@@ -326,21 +326,21 @@ test_mongoc_tls_handshake_stall (void)
    data.client_result = &cr;
    data.host = "localhost";
 
-   mongoc_mutex_init (&data.cond_mutex);
+   bson_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
 
-   r = mongoc_thread_create (threads, &ssl_error_server, &data);
+   r = bson_thread_create (threads, &ssl_error_server, &data);
    BSON_ASSERT (r == 0);
 
-   r = mongoc_thread_create (threads + 1, &handshake_stall_client, &data);
+   r = bson_thread_create (threads + 1, &handshake_stall_client, &data);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
-      r = mongoc_thread_join (threads[i]);
+      r = bson_thread_join (threads[i]);
       BSON_ASSERT (r == 0);
    }
 
-   mongoc_mutex_destroy (&data.cond_mutex);
+   bson_mutex_destroy (&data.cond_mutex);
    mongoc_cond_destroy (&data.cond);
 
    ASSERT (cr.result == SSL_TEST_SUCCESS);

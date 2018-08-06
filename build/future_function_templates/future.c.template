@@ -41,7 +41,7 @@ future_new (future_value_type_t return_type, int argc)
    future->argc = argc;
    future->argv = (future_value_t *)bson_malloc0 ((size_t) argc * sizeof(future_value_t));
    mongoc_cond_init (&future->cond);
-   mongoc_mutex_init (&future->mutex);
+   bson_mutex_init (&future->mutex);
 
    return future;
 }
@@ -56,9 +56,9 @@ void
 future_start (future_t *future,
               void *(*start_routine)(void *))
 {
-   int r = mongoc_thread_create (&future->thread,
-                                 start_routine,
-                                 (void *) future);
+   int r = bson_thread_create (&future->thread,
+                               start_routine,
+                               (void *) future);
 
    BSON_ASSERT (!r);
 }
@@ -67,13 +67,13 @@ future_start (future_t *future,
 void
 future_resolve (future_t *future, future_value_t return_value)
 {
-   mongoc_mutex_lock (&future->mutex);
+   bson_mutex_lock (&future->mutex);
    BSON_ASSERT (!future->resolved);
    BSON_ASSERT (future->return_value.type == return_value.type);
    future->return_value = return_value;
    future->resolved = true;
    mongoc_cond_signal (&future->cond);
-   mongoc_mutex_unlock (&future->mutex);
+   bson_mutex_unlock (&future->mutex);
 }
 
 
@@ -84,20 +84,20 @@ future_wait_max (future_t *future, int64_t timeout_ms)
    int64_t deadline = bson_get_monotonic_time () + timeout_ms * 1000;
    bool resolved;
 
-   mongoc_mutex_lock (&future->mutex);
+   bson_mutex_lock (&future->mutex);
    while (!future->resolved && remaining_usec > 0) {
       mongoc_cond_timedwait (&future->cond, &future->mutex,
                              remaining_usec / 1000);
       remaining_usec = deadline - bson_get_monotonic_time ();
    }
    resolved = future->resolved;
-   mongoc_mutex_unlock (&future->mutex);
+   bson_mutex_unlock (&future->mutex);
 
    if (resolved) {
       future->awaited = true;
 
       /* free memory */
-      mongoc_thread_join (future->thread);
+      bson_thread_join (future->thread);
    }
 
    return resolved;
@@ -117,7 +117,7 @@ future_destroy (future_t *future)
    BSON_ASSERT (future->awaited);
    bson_free (future->argv);
    mongoc_cond_destroy (&future->cond);
-   mongoc_mutex_destroy (&future->mutex);
+   bson_mutex_destroy (&future->mutex);
    bson_free (future);
 }
 

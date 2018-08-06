@@ -69,10 +69,10 @@ ssl_test_server (void *ptr)
    r = mongoc_socket_listen (listen_sock, 10);
    BSON_ASSERT (r == 0);
 
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    data->server_port = ntohs (server_addr.sin_port);
    mongoc_cond_signal (&data->cond);
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    conn_sock = mongoc_socket_accept (listen_sock, -1);
    BSON_ASSERT (conn_sock);
@@ -188,11 +188,11 @@ ssl_test_client (void *ptr)
    conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
    BSON_ASSERT (conn_sock);
 
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    while (!data->server_port) {
       mongoc_cond_wait (&data->cond, &data->cond_mutex);
    }
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    server_addr.sin_family = AF_INET;
    server_addr.sin_port = htons (data->server_port);
@@ -297,7 +297,7 @@ ssl_test (mongoc_ssl_opt_t *client,
           ssl_test_result_t *server_result)
 {
    ssl_test_data_t data = {0};
-   mongoc_thread_t threads[2];
+   bson_thread_t threads[2];
    int i, r;
 
    data.server = server;
@@ -306,20 +306,20 @@ ssl_test (mongoc_ssl_opt_t *client,
    data.server_result = server_result;
    data.host = host;
 
-   mongoc_mutex_init (&data.cond_mutex);
+   bson_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
 
-   r = mongoc_thread_create (threads, &ssl_test_server, &data);
+   r = bson_thread_create (threads, &ssl_test_server, &data);
    BSON_ASSERT (r == 0);
 
-   r = mongoc_thread_create (threads + 1, &ssl_test_client, &data);
+   r = bson_thread_create (threads + 1, &ssl_test_client, &data);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
-      r = mongoc_thread_join (threads[i]);
+      r = bson_thread_join (threads[i]);
       BSON_ASSERT (r == 0);
    }
 
-   mongoc_mutex_destroy (&data.cond_mutex);
+   bson_mutex_destroy (&data.cond_mutex);
    mongoc_cond_destroy (&data.cond);
 }

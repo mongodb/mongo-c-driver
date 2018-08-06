@@ -42,8 +42,8 @@
 #include "TestSuite.h"
 
 
-static mongoc_once_t once = MONGOC_ONCE_INIT;
-static mongoc_mutex_t gTestMutex;
+static bson_once_t once = BSON_ONCE_INIT;
+static bson_mutex_t gTestMutex;
 static TestSuite *gTestSuite;
 
 
@@ -104,11 +104,11 @@ TestSuite_SeedRand (TestSuite *suite, /* IN */
 }
 
 
-static MONGOC_ONCE_FUN (_test_suite_ensure_mutex_once)
+static BSON_ONCE_FUN (_test_suite_ensure_mutex_once)
 {
-   mongoc_mutex_init (&gTestMutex);
+   bson_mutex_init (&gTestMutex);
 
-   MONGOC_ONCE_RETURN;
+   BSON_ONCE_RETURN;
 }
 
 
@@ -206,10 +206,10 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
       suite->flags &= ~(TEST_DEBUGOUTPUT);
    }
 
-   mongoc_once (&once, &_test_suite_ensure_mutex_once);
-   mongoc_mutex_lock (&gTestMutex);
+   bson_once (&once, &_test_suite_ensure_mutex_once);
+   bson_mutex_lock (&gTestMutex);
    gTestSuite = suite;
-   mongoc_mutex_unlock (&gTestMutex);
+   bson_mutex_unlock (&gTestMutex);
 }
 
 
@@ -975,9 +975,9 @@ TestSuite_Destroy (TestSuite *suite)
    Test *test;
    Test *tmp;
 
-   mongoc_mutex_lock (&gTestMutex);
+   bson_mutex_lock (&gTestMutex);
    gTestSuite = NULL;
-   mongoc_mutex_unlock (&gTestMutex);
+   bson_mutex_unlock (&gTestMutex);
 
    for (test = suite->tests; test; test = tmp) {
       tmp = test->next;
@@ -1008,9 +1008,9 @@ test_suite_debug_output (void)
 {
    int ret;
 
-   mongoc_mutex_lock (&gTestMutex);
+   bson_mutex_lock (&gTestMutex);
    ret = gTestSuite->flags & TEST_DEBUGOUTPUT;
-   mongoc_mutex_unlock (&gTestMutex);
+   bson_mutex_unlock (&gTestMutex);
 
    return ret;
 }
@@ -1021,9 +1021,9 @@ test_suite_valgrind (void)
 {
    int ret;
 
-   mongoc_mutex_lock (&gTestMutex);
+   bson_mutex_lock (&gTestMutex);
    ret = gTestSuite->flags & TEST_VALGRIND;
-   mongoc_mutex_unlock (&gTestMutex);
+   bson_mutex_unlock (&gTestMutex);
 
    return ret;
 }
@@ -1036,7 +1036,7 @@ test_suite_mock_server_log (const char *msg, ...)
    va_list ap;
    char *formatted_msg;
 
-   mongoc_mutex_lock (&gTestMutex);
+   bson_mutex_lock (&gTestMutex);
 
    if (gTestSuite->mock_server_log || gTestSuite->mock_server_log_buf) {
       va_start (ap, msg);
@@ -1054,5 +1054,5 @@ test_suite_mock_server_log (const char *msg, ...)
       bson_free (formatted_msg);
    }
 
-   mongoc_mutex_unlock (&gTestMutex);
+   bson_mutex_unlock (&gTestMutex);
 }

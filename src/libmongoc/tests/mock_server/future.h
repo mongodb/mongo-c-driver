@@ -23,8 +23,8 @@ typedef struct
    int              argc;
    future_value_t  *argv;
    mongoc_cond_t    cond;
-   mongoc_mutex_t   mutex;
-   mongoc_thread_t  thread;
+   bson_mutex_t     mutex;
+   bson_thread_t    thread;
 } future_t;
 
 future_t *future_new (future_value_type_t return_type, int argc);

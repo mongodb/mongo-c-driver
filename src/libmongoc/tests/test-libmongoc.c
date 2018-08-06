@@ -158,7 +158,8 @@ extern void
 test_server_selection_install (TestSuite *suite);
 extern void
 test_session_install (TestSuite *suite);
-extern void test_server_selection_errors_install (TestSuite *suite);
+extern void
+test_server_selection_errors_install (TestSuite *suite);
 extern void
 test_set_install (TestSuite *suite);
 extern void
@@ -215,7 +216,7 @@ typedef struct {
    char *msg;
 } log_entry_t;
 
-static mongoc_mutex_t captured_logs_mutex;
+static bson_mutex_t captured_logs_mutex;
 static mongoc_array_t captured_logs;
 static bool capturing_logs;
 #ifdef MONGOC_ENABLE_SSL
@@ -258,14 +259,14 @@ clear_captured_logs (void)
    size_t i;
    log_entry_t *log_entry;
 
-   mongoc_mutex_lock (&captured_logs_mutex);
+   bson_mutex_lock (&captured_logs_mutex);
    for (i = 0; i < captured_logs.len; i++) {
       log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
       log_entry_destroy (log_entry);
    }
 
    captured_logs.len = 0;
-   mongoc_mutex_unlock (&captured_logs_mutex);
+   bson_mutex_unlock (&captured_logs_mutex);
 }
 
 
@@ -275,17 +276,17 @@ has_captured_log (mongoc_log_level_t level, const char *msg)
    size_t i;
    log_entry_t *log_entry;
 
-   mongoc_mutex_lock (&captured_logs_mutex);
+   bson_mutex_lock (&captured_logs_mutex);
 
    for (i = 0; i < captured_logs.len; i++) {
       log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
       if (level == log_entry->level && strstr (log_entry->msg, msg)) {
-         mongoc_mutex_unlock (&captured_logs_mutex);
+         bson_mutex_unlock (&captured_logs_mutex);
          return true;
       }
    }
 
-   mongoc_mutex_unlock (&captured_logs_mutex);
+   bson_mutex_unlock (&captured_logs_mutex);
 
    return false;
 }
@@ -296,9 +297,9 @@ has_captured_logs (void)
 {
    bool ret;
 
-   mongoc_mutex_lock (&captured_logs_mutex);
+   bson_mutex_lock (&captured_logs_mutex);
    ret = 0 != captured_logs.len;
-   mongoc_mutex_unlock (&captured_logs_mutex);
+   bson_mutex_unlock (&captured_logs_mutex);
 
    return ret;
 }
@@ -310,14 +311,14 @@ assert_all_captured_logs_have_prefix (const char *prefix)
    size_t i;
    log_entry_t *log_entry;
 
-   mongoc_mutex_lock (&captured_logs_mutex);
+   bson_mutex_lock (&captured_logs_mutex);
 
    for (i = 0; i < captured_logs.len; i++) {
       log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
       ASSERT_STARTSWITH (log_entry->msg, prefix);
    }
 
-   mongoc_mutex_unlock (&captured_logs_mutex);
+   bson_mutex_unlock (&captured_logs_mutex);
 }
 
 
@@ -327,7 +328,7 @@ print_captured_logs (const char *prefix)
    size_t i;
    log_entry_t *log_entry;
 
-   mongoc_mutex_lock (&captured_logs_mutex);
+   bson_mutex_lock (&captured_logs_mutex);
    for (i = 0; i < captured_logs.len; i++) {
       log_entry = _mongoc_array_index (&captured_logs, log_entry_t *, i);
       if (prefix) {
@@ -343,7 +344,7 @@ print_captured_logs (const char *prefix)
                   log_entry->msg);
       }
    }
-   mongoc_mutex_unlock (&captured_logs_mutex);
+   bson_mutex_unlock (&captured_logs_mutex);
 }
 
 
@@ -370,9 +371,9 @@ log_handler (mongoc_log_level_t log_level,
    if (log_level < MONGOC_LOG_LEVEL_INFO) {
       if (capturing_logs) {
          log_entry = log_entry_create (log_level, message);
-         mongoc_mutex_lock (&captured_logs_mutex);
+         bson_mutex_lock (&captured_logs_mutex);
          _mongoc_array_append_val (&captured_logs, log_entry);
-         mongoc_mutex_unlock (&captured_logs_mutex);
+         bson_mutex_unlock (&captured_logs_mutex);
          return;
       }
 
@@ -2281,7 +2282,7 @@ main (int argc, char *argv[])
                   (unsigned) time (NULL),
                   (unsigned) gettestpid ());
 
-   mongoc_mutex_init (&captured_logs_mutex);
+   bson_mutex_init (&captured_logs_mutex);
    _mongoc_array_init (&captured_logs, sizeof (log_entry_t *));
    mongoc_log_set_handler (log_handler, (void *) &suite);
 

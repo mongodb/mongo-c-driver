@@ -2474,7 +2474,7 @@ done:
 
 
 typedef struct {
-   mongoc_mutex_t lock;
+   bson_mutex_t lock;
    mongoc_collection_t *collection;
    bool done;
 } change_stream_ctx_t;
@@ -2489,17 +2489,17 @@ insert_docs (void *p)
    bool r;
 
    while (true) {
-      mongoc_mutex_lock (&ctx->lock);
+      bson_mutex_lock (&ctx->lock);
       r = mongoc_collection_insert (
          ctx->collection, MONGOC_INSERT_NONE, &doc, NULL, &error);
       ASSERT_OR_PRINT (r, error);
       if (ctx->done) {
          bson_destroy (&doc);
-         mongoc_mutex_unlock (&ctx->lock);
+         bson_mutex_unlock (&ctx->lock);
          return 0;
       }
 
-      mongoc_mutex_unlock (&ctx->lock);
+      bson_mutex_unlock (&ctx->lock);
       _mongoc_usleep (100 * 1000);  /* 100 ms */
    }
    bson_destroy (&doc);
@@ -2512,7 +2512,7 @@ test_sample_change_stream_command (sample_command_fn_t fn,
 {
    mongoc_client_t *client;
    change_stream_ctx_t ctx;
-   mongoc_thread_t thread;
+   bson_thread_t thread;
    int r;
 
    /* change streams require a replica set running MongoDB 3.6+ */
@@ -2522,22 +2522,22 @@ test_sample_change_stream_command (sample_command_fn_t fn,
       /* separate client for the background thread */
       client = test_framework_client_new ();
 
-      mongoc_mutex_init (&ctx.lock);
+      bson_mutex_init (&ctx.lock);
       ctx.collection = mongoc_client_get_collection (
          client, db->name, "inventory");
       ctx.done = false;
 
-      r = mongoc_thread_create (&thread, insert_docs, (void *) &ctx);
+      r = bson_thread_create (&thread, insert_docs, (void *) &ctx);
       ASSERT_OR_PRINT_ERRNO (r == 0, r);
 
       capture_logs (true);
       fn (db);
       ASSERT_NO_CAPTURED_LOGS ("change stream examples");
 
-      mongoc_mutex_lock (&ctx.lock);
+      bson_mutex_lock (&ctx.lock);
       ctx.done = true;
-      mongoc_mutex_unlock (&ctx.lock);
-      mongoc_thread_join (thread);
+      bson_mutex_unlock (&ctx.lock);
+      bson_thread_join (thread);
 
       mongoc_collection_destroy (ctx.collection);
       mongoc_client_destroy (client);

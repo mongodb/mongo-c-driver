@@ -30,7 +30,7 @@ typedef struct ssl_test_data {
    const char *host;
    unsigned short server_port;
    mongoc_cond_t cond;
-   mongoc_mutex_t cond_mutex;
+   bson_mutex_t cond_mutex;
    ssl_test_result_t *client_result;
    ssl_test_result_t *server_result;
 } ssl_test_data_t;

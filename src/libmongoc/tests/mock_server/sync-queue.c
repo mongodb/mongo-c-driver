@@ -23,7 +23,7 @@
 struct _sync_queue_t {
    mongoc_array_t array;
    mongoc_cond_t cond;
-   mongoc_mutex_t mutex;
+   bson_mutex_t mutex;
 };
 
 
@@ -34,7 +34,7 @@ q_new ()
 
    _mongoc_array_init (&q->array, sizeof (void *));
    mongoc_cond_init (&q->cond);
-   mongoc_mutex_init (&q->mutex);
+   bson_mutex_init (&q->mutex);
 
    return q;
 }
@@ -42,10 +42,10 @@ q_new ()
 void
 q_put (sync_queue_t *q, void *item)
 {
-   mongoc_mutex_lock (&q->mutex);
+   bson_mutex_lock (&q->mutex);
    _mongoc_array_append_val (&q->array, item);
    mongoc_cond_signal (&q->cond);
-   mongoc_mutex_unlock (&q->mutex);
+   bson_mutex_unlock (&q->mutex);
 }
 
 
@@ -79,7 +79,7 @@ q_get (sync_queue_t *q, int64_t timeout_msec)
    int64_t remaining_usec = timeout_msec * 1000;
    int64_t deadline = bson_get_monotonic_time () + timeout_msec * 1000;
 
-   mongoc_mutex_lock (&q->mutex);
+   bson_mutex_lock (&q->mutex);
    if (timeout_msec) {
       while (!q->array.len && remaining_usec > 0) {
          mongoc_cond_timedwait (&q->cond, &q->mutex, remaining_usec / 1000);
@@ -93,7 +93,7 @@ q_get (sync_queue_t *q, int64_t timeout_msec)
    }
 
    item = _get (q);
-   mongoc_mutex_unlock (&q->mutex);
+   bson_mutex_unlock (&q->mutex);
 
    return item;
 }
@@ -104,9 +104,9 @@ q_get_nowait (sync_queue_t *q)
 {
    void *item;
 
-   mongoc_mutex_lock (&q->mutex);
+   bson_mutex_lock (&q->mutex);
    item = _get (q);
-   mongoc_mutex_unlock (&q->mutex);
+   bson_mutex_unlock (&q->mutex);
 
    return item;
 }
@@ -117,6 +117,6 @@ q_destroy (sync_queue_t *q)
 {
    _mongoc_array_destroy (&q->array);
    mongoc_cond_destroy (&q->cond);
-   mongoc_mutex_destroy (&q->mutex);
+   bson_mutex_destroy (&q->mutex);
    bson_free (q);
 }

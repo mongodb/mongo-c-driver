@@ -21,7 +21,7 @@ static size_t gFourMB = 1024 * 1024 * 4;
 typedef struct {
    unsigned short server_port;
    mongoc_cond_t cond;
-   mongoc_mutex_t cond_mutex;
+   bson_mutex_t cond_mutex;
    bool closed_socket;
    int amount;
    int32_t server_sleep_ms;
@@ -63,10 +63,10 @@ socket_test_server (void *data_)
    r = mongoc_socket_listen (listen_sock, 10);
    BSON_ASSERT (r == 0);
 
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    data->server_port = ntohs (server_addr.sin_port);
    mongoc_cond_signal (&data->cond);
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    conn_sock = mongoc_socket_accept (listen_sock, -1);
    BSON_ASSERT (conn_sock);
@@ -90,10 +90,10 @@ socket_test_server (void *data_)
 
    mongoc_stream_destroy (stream);
 
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    data->closed_socket = true;
    mongoc_cond_signal (&data->cond);
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    mongoc_socket_destroy (listen_sock);
 
@@ -120,11 +120,11 @@ socket_test_client (void *data_)
    conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
    BSON_ASSERT (conn_sock);
 
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    while (!data->server_port) {
       mongoc_cond_wait (&data->cond, &data->cond_mutex);
    }
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    server_addr.sin_family = AF_INET;
    server_addr.sin_port = htons (data->server_port);
@@ -152,11 +152,11 @@ socket_test_client (void *data_)
       BSON_ASSERT (r == 5);
       BSON_ASSERT (strcmp (buf, "pong") == 0);
 
-      mongoc_mutex_lock (&data->cond_mutex);
+      bson_mutex_lock (&data->cond_mutex);
       while (!data->closed_socket) {
          mongoc_cond_wait (&data->cond, &data->cond_mutex);
       }
-      mongoc_mutex_unlock (&data->cond_mutex);
+      bson_mutex_unlock (&data->cond_mutex);
 
       /* wait up to a second for the client to detect server's shutdown */
       start = bson_get_monotonic_time ();
@@ -213,10 +213,10 @@ sendv_test_server (void *data_)
    r = mongoc_socket_listen (listen_sock, 10);
    BSON_ASSERT (r == 0);
 
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    data->server_port = ntohs (server_addr.sin_port);
    mongoc_cond_signal (&data->cond);
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    conn_sock = mongoc_socket_accept (listen_sock, -1);
    BSON_ASSERT (conn_sock);
@@ -225,13 +225,13 @@ sendv_test_server (void *data_)
    BSON_ASSERT (stream);
 
    /* Wait until the client has pushed so much data he can't write more */
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    while (!data->amount) {
       mongoc_cond_wait (&data->cond, &data->cond_mutex);
    }
    amount = data->amount;
    data->amount = 0;
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    /* Start reading everything off the socket to unblock the client */
    do {
@@ -242,7 +242,7 @@ sendv_test_server (void *data_)
    } while (amount > 0);
 
    /* Allow the client to finish all its writes */
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    while (!data->amount) {
       mongoc_cond_wait (&data->cond, &data->cond_mutex);
    }
@@ -250,7 +250,7 @@ sendv_test_server (void *data_)
     * original blocker */
    amount += data->amount;
    data->amount = 0;
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    do {
       r = mongoc_stream_readv (stream, &iov, 1, amount, WAIT);
@@ -292,11 +292,11 @@ sendv_test_client (void *data_)
    conn_sock = mongoc_socket_new (AF_INET, SOCK_STREAM, 0);
    BSON_ASSERT (conn_sock);
 
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    while (!data->server_port) {
       mongoc_cond_wait (&data->cond, &data->cond_mutex);
    }
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    server_addr.sin_family = AF_INET;
    server_addr.sin_port = htons (data->server_port);
@@ -315,20 +315,20 @@ sendv_test_client (void *data_)
       }
       if (r != gFourMB) {
          if (!done) {
-            mongoc_mutex_lock (&data->cond_mutex);
+            bson_mutex_lock (&data->cond_mutex);
             data->amount = amount;
             amount = 0;
             mongoc_cond_signal (&data->cond);
-            mongoc_mutex_unlock (&data->cond_mutex);
+            bson_mutex_unlock (&data->cond_mutex);
             done = true;
          }
       }
    }
    BSON_ASSERT (true == done);
-   mongoc_mutex_lock (&data->cond_mutex);
+   bson_mutex_lock (&data->cond_mutex);
    data->amount = amount;
    mongoc_cond_signal (&data->cond);
-   mongoc_mutex_unlock (&data->cond_mutex);
+   bson_mutex_unlock (&data->cond_mutex);
 
    mongoc_stream_destroy (stream);
    bson_free (buf);
@@ -341,25 +341,25 @@ static void
 _test_mongoc_socket_check_closed (int32_t server_sleep_ms)
 {
    socket_test_data_t data = {0};
-   mongoc_thread_t threads[2];
+   bson_thread_t threads[2];
    int i, r;
 
-   mongoc_mutex_init (&data.cond_mutex);
+   bson_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
    data.server_sleep_ms = server_sleep_ms;
 
-   r = mongoc_thread_create (threads, &socket_test_server, &data);
+   r = bson_thread_create (threads, &socket_test_server, &data);
    BSON_ASSERT (r == 0);
 
-   r = mongoc_thread_create (threads + 1, &socket_test_client, &data);
+   r = bson_thread_create (threads + 1, &socket_test_client, &data);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
-      r = mongoc_thread_join (threads[i]);
+      r = bson_thread_join (threads[i]);
       BSON_ASSERT (r == 0);
    }
 
-   mongoc_mutex_destroy (&data.cond_mutex);
+   bson_mutex_destroy (&data.cond_mutex);
    mongoc_cond_destroy (&data.cond);
 }
 
@@ -382,24 +382,24 @@ static void
 test_mongoc_socket_sendv (void *ctx)
 {
    socket_test_data_t data = {0};
-   mongoc_thread_t threads[2];
+   bson_thread_t threads[2];
    int i, r;
 
-   mongoc_mutex_init (&data.cond_mutex);
+   bson_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
 
-   r = mongoc_thread_create (threads, &sendv_test_server, &data);
+   r = bson_thread_create (threads, &sendv_test_server, &data);
    BSON_ASSERT (r == 0);
 
-   r = mongoc_thread_create (threads + 1, &sendv_test_client, &data);
+   r = bson_thread_create (threads + 1, &sendv_test_client, &data);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
-      r = mongoc_thread_join (threads[i]);
+      r = bson_thread_join (threads[i]);
       BSON_ASSERT (r == 0);
    }
 
-   mongoc_mutex_destroy (&data.cond_mutex);
+   bson_mutex_destroy (&data.cond_mutex);
    mongoc_cond_destroy (&data.cond);
 }
 

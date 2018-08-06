@@ -31,7 +31,7 @@
 #endif
 
 struct _mongoc_client_pool_t {
-   mongoc_mutex_t mutex;
+   bson_mutex_t mutex;
    mongoc_cond_t cond;
    mongoc_queue_t queue;
    mongoc_topology_t *topology;
@@ -58,7 +58,7 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool,
 {
    BSON_ASSERT (pool);
 
-   mongoc_mutex_lock (&pool->mutex);
+   bson_mutex_lock (&pool->mutex);
 
    _mongoc_ssl_opts_cleanup (&pool->ssl_opts);
 
@@ -73,7 +73,7 @@ mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool,
    mongoc_topology_scanner_set_ssl_opts (pool->topology->scanner,
                                          &pool->ssl_opts);
 
-   mongoc_mutex_unlock (&pool->mutex);
+   bson_mutex_unlock (&pool->mutex);
 }
 #endif
 
@@ -101,7 +101,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 #endif
 
    pool = (mongoc_client_pool_t *) bson_malloc0 (sizeof *pool);
-   mongoc_mutex_init (&pool->mutex);
+   bson_mutex_init (&pool->mutex);
    _mongoc_queue_init (&pool->queue);
    pool->uri = mongoc_uri_copy (uri);
    pool->min_pool_size = 0;
@@ -178,7 +178,7 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
    mongoc_topology_destroy (pool->topology);
 
    mongoc_uri_destroy (pool->uri);
-   mongoc_mutex_destroy (&pool->mutex);
+   bson_mutex_destroy (&pool->mutex);
    mongoc_cond_destroy (&pool->cond);
 
 #ifdef MONGOC_ENABLE_SSL
@@ -217,7 +217,7 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 
    BSON_ASSERT (pool);
 
-   mongoc_mutex_lock (&pool->mutex);
+   bson_mutex_lock (&pool->mutex);
 
 again:
    if (!(client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
@@ -246,7 +246,7 @@ again:
    }
 
    _start_scanner_if_needed (pool);
-   mongoc_mutex_unlock (&pool->mutex);
+   bson_mutex_unlock (&pool->mutex);
 
    RETURN (client);
 }
@@ -261,7 +261,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 
    BSON_ASSERT (pool);
 
-   mongoc_mutex_lock (&pool->mutex);
+   bson_mutex_lock (&pool->mutex);
 
    if (!(client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
@@ -278,7 +278,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
    if (client) {
       _start_scanner_if_needed (pool);
    }
-   mongoc_mutex_unlock (&pool->mutex);
+   bson_mutex_unlock (&pool->mutex);
 
    RETURN (client);
 }
@@ -292,7 +292,7 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client)
    BSON_ASSERT (pool);
    BSON_ASSERT (client);
 
-   mongoc_mutex_lock (&pool->mutex);
+   bson_mutex_lock (&pool->mutex);
    _mongoc_queue_push_head (&pool->queue, client);
 
    if (pool->min_pool_size &&
@@ -306,7 +306,7 @@ mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client)
    }
 
    mongoc_cond_signal (&pool->cond);
-   mongoc_mutex_unlock (&pool->mutex);
+   bson_mutex_unlock (&pool->mutex);
 
    EXIT;
 }
@@ -329,9 +329,9 @@ mongoc_client_pool_get_size (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   mongoc_mutex_lock (&pool->mutex);
+   bson_mutex_lock (&pool->mutex);
    size = pool->size;
-   mongoc_mutex_unlock (&pool->mutex);
+   bson_mutex_unlock (&pool->mutex);
 
    RETURN (size);
 }
@@ -344,9 +344,9 @@ mongoc_client_pool_num_pushed (mongoc_client_pool_t *pool)
 
    ENTRY;
 
-   mongoc_mutex_lock (&pool->mutex);
+   bson_mutex_lock (&pool->mutex);
    num_pushed = pool->queue.length;
-   mongoc_mutex_unlock (&pool->mutex);
+   bson_mutex_unlock (&pool->mutex);
 
    RETURN (num_pushed);
 }
@@ -364,9 +364,9 @@ mongoc_client_pool_max_size (mongoc_client_pool_t *pool, uint32_t max_pool_size)
 {
    ENTRY;
 
-   mongoc_mutex_lock (&pool->mutex);
+   bson_mutex_lock (&pool->mutex);
    pool->max_pool_size = max_pool_size;
-   mongoc_mutex_unlock (&pool->mutex);
+   bson_mutex_unlock (&pool->mutex);
 
    EXIT;
 }
@@ -380,9 +380,9 @@ mongoc_client_pool_min_size (mongoc_client_pool_t *pool, uint32_t min_pool_size)
       "mongoc_client_pool_min_size is deprecated; its behavior does not match"
       " its name, and its actual behavior will likely hurt performance.");
 
-   mongoc_mutex_lock (&pool->mutex);
+   bson_mutex_lock (&pool->mutex);
    pool->min_pool_size = min_pool_size;
-   mongoc_mutex_unlock (&pool->mutex);
+   bson_mutex_unlock (&pool->mutex);
 
    EXIT;
 }
@@ -401,7 +401,7 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
       return false;
    }
 
-   mongoc_mutex_lock (&topology->mutex);
+   bson_mutex_lock (&topology->mutex);
 
    if (callbacks) {
       memcpy (&topology->description.apm_callbacks,
@@ -415,7 +415,7 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
    pool->apm_context = context;
    pool->apm_callbacks_set = true;
 
-   mongoc_mutex_unlock (&topology->mutex);
+   bson_mutex_unlock (&topology->mutex);
 
    return true;
 }
@@ -445,9 +445,9 @@ mongoc_client_pool_set_appname (mongoc_client_pool_t *pool, const char *appname)
 {
    bool ret;
 
-   mongoc_mutex_lock (&pool->mutex);
+   bson_mutex_lock (&pool->mutex);
    ret = _mongoc_topology_set_appname (pool->topology, appname);
-   mongoc_mutex_unlock (&pool->mutex);
+   bson_mutex_unlock (&pool->mutex);
 
    return ret;
 }

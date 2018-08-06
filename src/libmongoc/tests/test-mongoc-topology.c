@@ -348,7 +348,7 @@ _test_topology_invalidate_server (bool pooled)
       client->topology->scanner, &fake_host_list, fake_id);
    BSON_ASSERT (!mongoc_cluster_stream_for_server (
       &client->cluster, fake_id, true, NULL, NULL, &error));
-   mongoc_mutex_lock (&client->topology->mutex);
+   bson_mutex_lock (&client->topology->mutex);
    sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, fake_id);
    if (!pooled && test_framework_is_replset ()) {
       BSON_ASSERT (!sd);
@@ -363,7 +363,7 @@ _test_topology_invalidate_server (bool pooled)
       BSON_ASSERT (bson_empty (&sd->arbiters));
       BSON_ASSERT (bson_empty (&sd->compressors));
    }
-   mongoc_mutex_unlock (&client->topology->mutex);
+   bson_mutex_unlock (&client->topology->mutex);
 
    mongoc_server_stream_cleanup (server_stream);
    mongoc_uri_destroy (uri);
@@ -419,7 +419,7 @@ test_invalid_cluster_node (void *ctx)
    BSON_ASSERT (cluster_node);
    BSON_ASSERT (cluster_node->stream);
 
-   mongoc_mutex_lock (&client->topology->mutex);
+   bson_mutex_lock (&client->topology->mutex);
    scanner_node =
       mongoc_topology_scanner_get_node (client->topology->scanner, id);
    BSON_ASSERT (scanner_node);
@@ -430,7 +430,7 @@ test_invalid_cluster_node (void *ctx)
    scanner_node_ts = scanner_node->timestamp = bson_get_monotonic_time ();
    ASSERT_CMPINT64 (cluster_node->timestamp, <, scanner_node_ts);
    _mongoc_usleep (1000 * 1000);
-   mongoc_mutex_unlock (&client->topology->mutex);
+   bson_mutex_unlock (&client->topology->mutex);
 
    /* cluster discards node and creates new one */
    server_stream = mongoc_cluster_stream_for_server (
@@ -1600,9 +1600,9 @@ test_cluster_time_updated_during_handshake ()
    mongoc_server_description_destroy (sd);
 
    /* check the cluster time stored on the topology description. */
-   mongoc_mutex_lock (&client->topology->mutex);
+   bson_mutex_lock (&client->topology->mutex);
    ASSERT_MATCH (&client->topology->description.cluster_time, cluster_time);
-   mongoc_mutex_unlock (&client->topology->mutex);
+   bson_mutex_unlock (&client->topology->mutex);
    bson_free (cluster_time);
    cluster_time = cluster_time_fmt (2);
 
@@ -1623,9 +1623,9 @@ test_cluster_time_updated_during_handshake ()
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
-   mongoc_mutex_lock (&client->topology->mutex);
+   bson_mutex_lock (&client->topology->mutex);
    ASSERT_MATCH (&client->topology->description.cluster_time, cluster_time);
-   mongoc_mutex_unlock (&client->topology->mutex);
+   bson_mutex_unlock (&client->topology->mutex);
    bson_free (cluster_time);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
@@ -1639,9 +1639,9 @@ _get_last_scan (mongoc_client_t *client)
 {
    int64_t last_scan;
    mongoc_topology_t *topology = client->topology;
-   mongoc_mutex_lock (&topology->mutex);
+   bson_mutex_lock (&topology->mutex);
    last_scan = topology->last_scan;
-   mongoc_mutex_unlock (&topology->mutex);
+   bson_mutex_unlock (&topology->mutex);
    return last_scan;
 }
 

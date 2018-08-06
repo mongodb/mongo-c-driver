@@ -705,18 +705,18 @@ static void
 test_mongoc_handshake_race_condition (void)
 {
    unsigned i, j;
-   mongoc_thread_t threads[4];
+   bson_thread_t threads[4];
 
    for (i = 0; i < 1000; ++i) {
       _reset_handshake ();
 
       for (j = 0; j < 4; ++j) {
          BSON_ASSERT (
-            !mongoc_thread_create (&threads[j], &handshake_append_worker, NULL));
+            !bson_thread_create (&threads[j], &handshake_append_worker, NULL));
       }
 
       for (j = 0; j < 4; ++j) {
-         mongoc_thread_join (threads[j]);
+         bson_thread_join (threads[j]);
       }
    }
 

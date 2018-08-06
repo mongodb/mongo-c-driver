@@ -52,10 +52,10 @@ typedef struct _mongoc_topology_t {
    /* defaults to 500ms, configurable by tests */
    int64_t min_heartbeat_frequency_msec;
 
-   mongoc_mutex_t mutex;
+   bson_mutex_t mutex;
    mongoc_cond_t cond_client;
    mongoc_cond_t cond_server;
-   mongoc_thread_t thread;
+   bson_thread_t thread;
 
    mongoc_topology_scanner_state_t scanner_state;
    bool scan_requested;
