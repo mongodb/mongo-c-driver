@@ -1335,19 +1335,19 @@ check_cluster_time (session_test_t *test)
 typedef void (*session_test_fn_t) (session_test_t *);
 
 
+/*
+ * the following tests check session logic for a variety of operations. most of
+ * the asserts are in the APM started/succeeded/failed callbacks above
+ */
+
+/* use the same client for the session and the operation, expect success */
 static void
-lsid_test (session_test_fn_t test_fn)
+_test_explicit_session_lsid (session_test_fn_t test_fn)
 {
    session_test_t *test;
    bson_error_t error;
    int64_t start;
-   bson_t cluster_time;
-   bool r;
 
-   /*
-    * use the same client for the session and the operation, expect success
-    *
-    */
    test = session_test_new (CORRECT_CLIENT, NOT_CAUSAL);
    ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, ==, (int64_t) -1);
    ASSERT_OR_PRINT (
@@ -1360,50 +1360,18 @@ lsid_test (session_test_fn_t test_fn)
    check_success (test);
    check_cluster_time (test);
    ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, >=, start);
-
-   /*
-    * disable monitoring, advance server's time with a write, set session's
-    * cluster time, enable monitoring, ensure new cluster time is sent
-    */
-   mongoc_client_set_apm_callbacks (test->session_client, NULL, NULL);
-   r = mongoc_collection_insert_one (
-      test->session_collection, tmp_bson ("{}"), NULL, NULL, &error);
-   ASSERT_OR_PRINT (r, error);
-   mongoc_collection_drop_with_opts (test->session_collection, NULL, NULL);
-   bson_copy_to (&test->client->topology->description.cluster_time,
-                 &cluster_time);
-   BSON_ASSERT (_mongoc_cluster_time_greater (
-      &cluster_time, mongoc_client_session_get_cluster_time (test->cs)));
-
-   capture_logs (true);
-   mongoc_client_session_advance_cluster_time (test->cs, &cluster_time);
-   ASSERT_NO_CAPTURED_LOGS ("_mongoc_cluster_time_greater");
-   capture_logs (false);
-   /* successfully set, not yet sent to server */
-   match_bson (
-      &cluster_time, mongoc_client_session_get_cluster_time (test->cs), false);
-
-   set_session_test_callbacks (test);
-   test->n_started = 0;
-   test->n_succeeded = 0;
-   start = bson_get_monotonic_time ();
-   test_fn (test);
-   check_success (test);
-   if (_mongoc_cluster_time_greater (&cluster_time, &test->sent_cluster_time)) {
-      fprintf (stderr,
-               "mongoc_client_session_advance_cluster_time didn't advance"
-               " the cluster time sent with command\n");
-      abort ();
-   }
-
-   check_cluster_time (test);
-   ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, >=, start);
    session_test_destroy (test);
+}
 
-   /*
-    * use a session from the wrong client, expect failure. this is the
-    * "session argument is for right client" test from Driver Sessions Spec
-    */
+
+/* use a session from the wrong client, expect failure. this is the
+ * "session argument is for right client" test from Driver Sessions Spec */
+static void
+_test_session_from_wrong_client (session_test_fn_t test_fn)
+{
+   session_test_t *test;
+   bson_error_t error;
+
    test = session_test_new (INCORRECT_CLIENT, NOT_CAUSAL);
    ASSERT_OR_PRINT (
       mongoc_client_session_append (test->cs, &test->opts, &error), error);
@@ -1412,10 +1380,16 @@ lsid_test (session_test_fn_t test_fn)
    check_success (test);
    mongoc_collection_drop_with_opts (test->session_collection, NULL, NULL);
    session_test_destroy (test);
+}
 
-   /*
-    * implicit session - all commands should use an internally-acquired lsid
-    */
+
+/* implicit session - all commands should use an internally-acquired lsid */
+static void
+_test_implicit_session_lsid (session_test_fn_t test_fn)
+{
+   session_test_t *test;
+   int64_t start;
+
    test = session_test_new (CORRECT_CLIENT, NOT_CAUSAL);
    test->expect_explicit_lsid = false;
    start = bson_get_monotonic_time ();
@@ -1426,7 +1400,6 @@ lsid_test (session_test_fn_t test_fn)
    ASSERT_CMPINT64 (
       test->client->topology->session_pool->last_used_usec, >=, start);
    session_test_destroy (test);
-   bson_destroy (&cluster_time);
 }
 
 
@@ -1474,7 +1447,7 @@ parse_reply_time (const bson_t *reply, op_time_t *op_time)
 
 
 static void
-causal_test (session_test_fn_t test_fn, bool allow_read_concern)
+_test_causal_consistency (session_test_fn_t test_fn, bool allow_read_concern)
 {
    session_test_t *test;
    op_time_t session_time, read_concern_time, reply_time;
@@ -1537,8 +1510,10 @@ causal_test (session_test_fn_t test_fn, bool allow_read_concern)
 static void
 _run_session_test (session_test_fn_t test_fn, bool allow_read_concern)
 {
-   lsid_test (test_fn);
-   causal_test (test_fn, allow_read_concern);
+   _test_explicit_session_lsid (test_fn);
+   _test_session_from_wrong_client (test_fn);
+   _test_implicit_session_lsid (test_fn);
+   _test_causal_consistency (test_fn, allow_read_concern);
 }
 
 
@@ -1554,6 +1529,16 @@ static void
 run_session_test_no_rc (void *ctx)
 {
    _run_session_test ((session_test_fn_t) ctx, false);
+}
+
+
+/* skip _test_session_from_wrong_client, which would abort with bulk op */
+static void
+run_session_test_bulk_operation (void *ctx)
+{
+   _test_explicit_session_lsid ((session_test_fn_t) ctx);
+   _test_implicit_session_lsid ((session_test_fn_t) ctx);
+   _test_causal_consistency ((session_test_fn_t) ctx, false /* read concern */);
 }
 
 
@@ -2015,16 +2000,33 @@ test_collection_names (session_test_t *test)
 
 
 static void
-test_bulk (session_test_t *test)
+test_find_indexes (session_test_t *test)
 {
-   mongoc_bulk_operation_t *bulk;
-   uint32_t i;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
 
-   bulk = mongoc_collection_create_bulk_operation_with_opts (test->collection,
-                                                             &test->opts);
+   /* ensure the collection exists so the listIndexes command succeeds */
+   insert_10_docs (test);
+
+   cursor =
+      mongoc_collection_find_indexes_with_opts (test->collection, &test->opts);
+
+   while (mongoc_cursor_next (cursor, &doc)) {
+   }
+
+   test->succeeded = !mongoc_cursor_error (cursor, &test->error);
+   mongoc_cursor_destroy (cursor);
+}
+
+
+static void
+_test_bulk (session_test_t *test, mongoc_bulk_operation_t *bulk)
+{
+   uint32_t i;
 
    test->succeeded = mongoc_bulk_operation_insert_with_opts (
       bulk, tmp_bson ("{}"), NULL, &test->error);
+
    check_sessions_from_same_client_enforced (test);
 
    test->succeeded = mongoc_bulk_operation_update_one_with_opts (
@@ -2047,23 +2049,79 @@ test_bulk (session_test_t *test)
 }
 
 
+
+/* test the standard mongoc_collection_create_bulk_operation_with_opts */
 static void
-test_find_indexes (session_test_t *test)
+test_bulk (session_test_t *test)
 {
-   mongoc_cursor_t *cursor;
-   const bson_t *doc;
+   mongoc_bulk_operation_t *bulk;
 
-   /* ensure the collection exists so the listIndexes command succeeds */
-   insert_10_docs (test);
+   bulk = mongoc_collection_create_bulk_operation_with_opts (test->collection,
+                                                             &test->opts);
 
-   cursor =
-      mongoc_collection_find_indexes_with_opts (test->collection, &test->opts);
+   _test_bulk (test, bulk);
+}
 
-   while (mongoc_cursor_next (cursor, &doc)) {
+
+/* instead of the standard mongoc_collection_create_bulk_operation_with_opts,
+ * test a quirky way of setting the client session on an existing bulk */
+static void
+test_bulk_set_session (session_test_t *test)
+{
+   mongoc_bulk_operation_t *bulk;
+   bson_iter_t iter;
+   mongoc_client_session_t *cs;
+   bson_error_t error;
+   bool r;
+
+   bulk = mongoc_bulk_operation_new (true /* ordered */);
+   mongoc_bulk_operation_set_client (bulk, test->client);
+   mongoc_bulk_operation_set_database (bulk,
+                                       mongoc_database_get_name (test->db));
+
+   mongoc_bulk_operation_set_collection (
+      bulk, mongoc_collection_get_name (test->collection));
+
+   if (bson_iter_init_find (&iter, &test->opts, "sessionId")) {
+      r = _mongoc_client_session_from_iter (
+         test->session_client, &iter, &cs, &error);
+
+      ASSERT_OR_PRINT (r, error);
+      mongoc_bulk_operation_set_client_session (bulk, cs);
    }
 
-   test->succeeded = !mongoc_cursor_error (cursor, &test->error);
-   mongoc_cursor_destroy (cursor);
+   _test_bulk (test, bulk);
+}
+
+
+/* like test_bulk_set_session, but set session first, then client */
+static void
+test_bulk_set_client (session_test_t *test)
+{
+   mongoc_bulk_operation_t *bulk;
+   bson_iter_t iter;
+   mongoc_client_session_t *cs;
+   bson_error_t error;
+   bool r;
+
+   bulk = mongoc_bulk_operation_new (true /* ordered */);
+
+   if (bson_iter_init_find (&iter, &test->opts, "sessionId")) {
+      r = _mongoc_client_session_from_iter (
+         test->session_client, &iter, &cs, &error);
+
+      ASSERT_OR_PRINT (r, error);
+      mongoc_bulk_operation_set_client_session (bulk, cs);
+   }
+
+   mongoc_bulk_operation_set_client (bulk, test->client);
+   mongoc_bulk_operation_set_database (bulk,
+                                       mongoc_database_get_name (test->db));
+
+   mongoc_bulk_operation_set_collection (
+      bulk, mongoc_collection_get_name (test->collection));
+
+   _test_bulk (test, bulk);
 }
 
 
@@ -2582,6 +2640,20 @@ test_session_install (TestSuite *suite)
       suite, "/Session/collection_names", test_collection_names, true);
    add_session_test (suite, "/Session/bulk", test_bulk, false);
    add_session_test (suite, "/Session/find_indexes", test_find_indexes, true);
+   TestSuite_AddFull (suite,                                          
+                      "/Session/bulk_set_session",
+                      run_session_test_bulk_operation,
+                      NULL,                                            
+                      test_bulk_set_session,
+                      test_framework_skip_if_no_cluster_time,          
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/Session/bulk_set_client",
+                      run_session_test_bulk_operation,
+                      NULL,
+                      test_bulk_set_client,
+                      test_framework_skip_if_no_cluster_time,
+                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/Session/cursor_implicit_session",
                       test_cursor_implicit_session,
