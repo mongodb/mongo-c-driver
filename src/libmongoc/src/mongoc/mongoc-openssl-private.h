@@ -18,15 +18,15 @@
 #define MONGOC_OPENSSL_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#include "mongoc-ssl.h"
+#include "mongoc/mongoc-ssl.h"
 
 
 BSON_BEGIN_DECLS

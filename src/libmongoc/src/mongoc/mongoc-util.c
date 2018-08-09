@@ -21,10 +21,10 @@
 #include <string.h>
 
 #include "common-md5-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-client.h"
-#include "mongoc-client-session-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-client.h"
+#include "mongoc/mongoc-client-session-private.h"
+#include "mongoc/mongoc-trace-private.h"
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |

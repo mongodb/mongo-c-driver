@@ -18,13 +18,13 @@
 #define MONGOC_CLIENT_SESSION_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
-#include "mongoc-macros.h"
+#include <bson/bson.h>
+#include "mongoc/mongoc-macros.h"
 /* mongoc_client_session_t and mongoc_session_opt_t are typedef'ed here */
-#include "mongoc-client.h"
+#include "mongoc/mongoc-client.h"
 
 BSON_BEGIN_DECLS
 

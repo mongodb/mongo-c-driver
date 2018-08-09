@@ -1,10 +1,10 @@
 #include <fcntl.h>
-#include <mongoc.h>
-#include <mongoc-util-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-util-private.h>
 
-#include "mongoc-socket-private.h"
-#include "mongoc-thread-private.h"
-#include "mongoc-errno-private.h"
+#include "mongoc/mongoc-socket-private.h"
+#include "mongoc/mongoc-thread-private.h"
+#include "mongoc/mongoc-errno-private.h"
 #include "TestSuite.h"
 
 #include "test-libmongoc.h"

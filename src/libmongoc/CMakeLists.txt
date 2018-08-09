@@ -372,8 +372,8 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-version.h"
 )
 
-include_directories ("${PROJECT_BINARY_DIR}/src/mongoc")
-include_directories ("${PROJECT_SOURCE_DIR}/src/mongoc")
+include_directories ("${PROJECT_BINARY_DIR}/src")
+include_directories ("${PROJECT_SOURCE_DIR}/src")
 include_directories ("${PROJECT_SOURCE_DIR}/../../src/common")
 
 set (SOURCES ${SOURCES}
@@ -500,6 +500,10 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ssl.h
 )
 
+set (HEADERS_FORWARDING
+   ${PROJECT_SOURCE_DIR}/src/mongoc/forwarding/mongoc.h
+)
+
 if (NOT ENABLE_SSL STREQUAL OFF)
    set (SOURCES ${SOURCES}
       ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypto.c
@@ -596,7 +600,7 @@ if (WIN32)
    set (LIBRARIES ${LIBRARIES} ws2_32)
 endif ()
 
-add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS})
+add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared ${LIBRARIES} ${BSON_LIBRARIES})
 target_include_directories (mongoc_shared BEFORE PUBLIC ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
@@ -606,7 +610,7 @@ set_target_properties (mongoc_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "mongoc-${MONGOC_API_VERSION}" PREFIX "lib")
 
 if (MONGOC_ENABLE_STATIC)
-   add_library (mongoc_static STATIC ${SOURCES} ${HEADERS})
+   add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    target_link_libraries (mongoc_static ${LIBRARIES} ${BSON_STATIC_LIBRARIES})
    target_include_directories (mongoc_static BEFORE PUBLIC ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
    target_compile_definitions (mongoc_static PUBLIC MONGOC_COMPILATION MONGOC_STATIC ${BSON_STATIC_DEFINITIONS})
@@ -868,6 +872,11 @@ set (MONGOC_HEADER_INSTALL_DIR
 
 install (
    FILES ${HEADERS}
+   DESTINATION "${MONGOC_HEADER_INSTALL_DIR}/mongoc"
+)
+
+install (
+   FILES ${HEADERS_FORWARDING}
    DESTINATION "${MONGOC_HEADER_INSTALL_DIR}"
 )
 

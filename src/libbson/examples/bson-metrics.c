@@ -19,7 +19,7 @@
  * and print metrics to STDOUT.
  */
 
-#include <bson.h>
+#include <bson/bson.h>
 #include <stdio.h>
 #include <math.h>
 

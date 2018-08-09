@@ -15,17 +15,17 @@
  */
 
 
-#include "bson.h"
+#include "bson/bson.h"
 
-#include "mongoc-collection-private.h"
-#include "mongoc-config.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-server-description-private.h"
-#include "mongoc-topology-description-private.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-util-private.h"
+#include "mongoc/mongoc-collection-private.h"
+#include "mongoc/mongoc-config.h"
+#include "mongoc/mongoc-cursor-private.h"
+#include "mongoc/mongoc-host-list-private.h"
+#include "mongoc/mongoc-server-description-private.h"
+#include "mongoc/mongoc-topology-description-private.h"
+#include "mongoc/mongoc-topology-private.h"
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-util-private.h"
 
 #include "json-test-operations.h"
 #include "json-test.h"

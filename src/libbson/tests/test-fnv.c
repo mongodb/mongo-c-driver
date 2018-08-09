@@ -14,7 +14,7 @@
  *      http://www.isthe.com/chongo/
  */
 
-#include "bson-fnv-private.h"
+#include "bson/bson-fnv-private.h"
 #include "TestSuite.h"
 
 /* REPEAT500 - repeat a string 500 times */

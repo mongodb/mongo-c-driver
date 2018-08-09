@@ -1,4 +1,4 @@
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL

@@ -1,9 +1,9 @@
-#include <mongoc.h>
-#include <mongoc-bulk-operation-private.h>
-#include <mongoc-client-private.h>
-#include <mongoc-cursor-private.h>
-#include <mongoc-collection-private.h>
-#include <mongoc-util-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-bulk-operation-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #include "TestSuite.h"
 

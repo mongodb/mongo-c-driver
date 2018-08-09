@@ -18,8 +18,8 @@
 #ifndef DEBUG_STREAM_H
 #define DEBUG_STREAM_H
 
-#include <mongoc.h>
-#include <mongoc-client-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-private.h>
 
 #include "test-libmongoc.h"
 

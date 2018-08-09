@@ -18,28 +18,28 @@
 #define MONGOC_CLIENT_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-macros.h"
-#include "mongoc-apm.h"
-#include "mongoc-collection.h"
-#include "mongoc-config.h"
-#include "mongoc-cursor.h"
-#include "mongoc-database.h"
-#include "mongoc-gridfs.h"
-#include "mongoc-index.h"
-#include "mongoc-read-prefs.h"
+#include "mongoc/mongoc-macros.h"
+#include "mongoc/mongoc-apm.h"
+#include "mongoc/mongoc-collection.h"
+#include "mongoc/mongoc-config.h"
+#include "mongoc/mongoc-cursor.h"
+#include "mongoc/mongoc-database.h"
+#include "mongoc/mongoc-gridfs.h"
+#include "mongoc/mongoc-index.h"
+#include "mongoc/mongoc-read-prefs.h"
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl.h"
+#include "mongoc/mongoc-ssl.h"
 #endif
-#include "mongoc-stream.h"
-#include "mongoc-uri.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-read-concern.h"
-#include "mongoc-server-description.h"
+#include "mongoc/mongoc-stream.h"
+#include "mongoc/mongoc-uri.h"
+#include "mongoc/mongoc-write-concern.h"
+#include "mongoc/mongoc-read-concern.h"
+#include "mongoc/mongoc-server-description.h"
 
 BSON_BEGIN_DECLS
 

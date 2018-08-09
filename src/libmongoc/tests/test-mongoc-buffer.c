@@ -1,6 +1,6 @@
 #include <fcntl.h>
-#include <mongoc.h>
-#include <mongoc-buffer-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-buffer-private.h>
 
 #include "TestSuite.h"
 

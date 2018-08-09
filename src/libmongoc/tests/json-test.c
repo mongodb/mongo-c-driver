@@ -15,9 +15,9 @@
  */
 
 
-#include <mongoc.h>
-#include "mongoc-collection-private.h"
-#include "mongoc-util-private.h"
+#include <mongoc/mongoc.h>
+#include "mongoc/mongoc-collection-private.h"
+#include "mongoc/mongoc-util-private.h"
 
 #include "json-test.h"
 #include "json-test-operations.h"

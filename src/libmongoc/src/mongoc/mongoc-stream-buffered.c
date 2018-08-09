@@ -17,12 +17,12 @@
 
 #include <errno.h>
 
-#include "mongoc-buffer-private.h"
-#include "mongoc-counters-private.h"
-#include "mongoc-log.h"
-#include "mongoc-stream-buffered.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc-buffer-private.h"
+#include "mongoc/mongoc-counters-private.h"
+#include "mongoc/mongoc-log.h"
+#include "mongoc/mongoc-stream-buffered.h"
+#include "mongoc/mongoc-stream-private.h"
+#include "mongoc/mongoc-trace-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN

@@ -18,10 +18,10 @@
 #define MONGOC_URI_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include "mongoc-uri.h"
+#include "mongoc/mongoc-uri.h"
 
 
 BSON_BEGIN_DECLS

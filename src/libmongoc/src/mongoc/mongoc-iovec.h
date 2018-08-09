@@ -19,7 +19,7 @@
 #define MONGOC_IOVEC_H
 
 
-#include <bson.h>
+#include <bson/bson.h>
 
 #ifdef _WIN32
 #include <stddef.h>

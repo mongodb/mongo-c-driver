@@ -17,11 +17,11 @@
 #ifndef TEST_CONVENIENCES_H
 #define TEST_CONVENIENCES_H
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc.h"
-#include "mongoc-read-prefs-private.h"
-#include "mongoc-client-private.h"
+#include "mongoc/mongoc.h"
+#include "mongoc/mongoc-read-prefs-private.h"
+#include "mongoc/mongoc-client-private.h"
 
 bson_t *
 tmp_bson (const char *json, ...);

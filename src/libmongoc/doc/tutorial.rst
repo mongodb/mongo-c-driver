@@ -147,7 +147,7 @@ Use the following code:
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
 
   int
   main (int   argc,
@@ -245,7 +245,7 @@ Using BCON
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
 
   int
   main (int   argc,
@@ -304,7 +304,7 @@ For *single* documents, BSON can be created from JSON strings via :doc:`bson_new
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
 
   int
   main (int   argc,
@@ -347,7 +347,7 @@ When finished, ensure that allocated structures are freed by using their respect
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <mongoc.h>
   #include <stdio.h>
 
@@ -430,7 +430,7 @@ This first example uses an empty query specifier to find all documents in the da
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <mongoc.h>
   #include <stdio.h>
 
@@ -487,7 +487,7 @@ To look for a specific document, add a specifier to ``query``. This example adds
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <mongoc.h>
   #include <stdio.h>
 
@@ -548,7 +548,7 @@ Using the "mydb" database, the following example inserts an example document int
 .. code-block:: c
 
   #include <bcon.h>
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <mongoc.h>
   #include <stdio.h>
 
@@ -644,7 +644,7 @@ The following code inserts a sample document into the database "mydb" and collec
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <mongoc.h>
   #include <stdio.h>
 
@@ -724,7 +724,7 @@ Counting the number of documents in a MongoDB collection is similar to performin
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <mongoc.h>
   #include <stdio.h>
 
@@ -789,7 +789,7 @@ This example executes the `collStats <http://docs.mongodb.org/manual/reference/c
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <bcon.h>
   #include <mongoc.h>
   #include <stdio.h>

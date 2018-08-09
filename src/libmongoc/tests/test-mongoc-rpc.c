@@ -1,13 +1,13 @@
 #include <fcntl.h>
-#include <mongoc.h>
-#include <mongoc-array-private.h>
-#include <mongoc-rpc-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-array-private.h>
+#include <mongoc/mongoc-rpc-private.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "TestSuite.h"
-#include "mongoc-cluster-private.h"
+#include "mongoc/mongoc-cluster-private.h"
 
 
 static uint8_t *

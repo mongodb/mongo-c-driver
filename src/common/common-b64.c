@@ -40,7 +40,7 @@
  * IF IBM IS APPRISED OF THE POSSIBILITY OF SUCH DAMAGES.
  */
 
-#include "bson.h"
+#include "bson/bson.h"
 #include "common-b64-private.h"
 
 #define Assert(Cond) \

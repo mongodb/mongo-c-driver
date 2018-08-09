@@ -19,8 +19,8 @@
 
 #include "TestSuite.h"
 
-#include <bson.h>
-#include <mongoc.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
 
 #include "json-test-operations.h"
 

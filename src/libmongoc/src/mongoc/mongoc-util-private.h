@@ -18,11 +18,11 @@
 #define MONGOC_UTIL_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
-#include "mongoc.h"
+#include <bson/bson.h>
+#include "mongoc/mongoc.h"
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>

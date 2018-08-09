@@ -1,6 +1,6 @@
-#include <mongoc.h>
-#include "mongoc-cursor-private.h"
-#include "mongoc-client-private.h"
+#include <mongoc/mongoc.h>
+#include "mongoc/mongoc-cursor-private.h"
+#include "mongoc/mongoc-client-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"

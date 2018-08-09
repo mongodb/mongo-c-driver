@@ -1,6 +1,6 @@
 
-#include <bcon.h>
-#include <mongoc.h>
+#include <bson/bcon.h>
+#include <mongoc/mongoc.h>
 
 /* EXAMPLE_FAM_BYPASS_BEGIN */
 void

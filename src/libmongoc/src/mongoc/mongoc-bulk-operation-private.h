@@ -18,12 +18,12 @@
 #define MONGOC_BULK_OPERATION_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include "mongoc-array-private.h"
-#include "mongoc-client.h"
-#include "mongoc-write-command-private.h"
+#include "mongoc/mongoc-array-private.h"
+#include "mongoc/mongoc-client.h"
+#include "mongoc/mongoc-write-command-private.h"
 
 
 BSON_BEGIN_DECLS

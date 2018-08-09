@@ -1,11 +1,11 @@
-#include <mongoc.h>
-#include <mongoc-stream-private.h>
-#include <mongoc-socket-private.h>
-#include <mongoc-host-list-private.h>
-#include <utlist.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-stream-private.h>
+#include <mongoc/mongoc-socket-private.h>
+#include <mongoc/mongoc-host-list-private.h>
+#include <mongoc/utlist.h>
 
-#include "mongoc-util-private.h"
-#include "mongoc-client-private.h"
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-client-private.h"
 
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"

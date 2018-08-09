@@ -22,18 +22,18 @@
 #include <time.h>
 #include <errno.h>
 
-#include "mongoc-cursor.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-collection.h"
-#include "mongoc-gridfs.h"
-#include "mongoc-gridfs-private.h"
-#include "mongoc-gridfs-file.h"
-#include "mongoc-gridfs-file-private.h"
-#include "mongoc-gridfs-file-page.h"
-#include "mongoc-gridfs-file-page-private.h"
-#include "mongoc-iovec.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-error.h"
+#include "mongoc/mongoc-cursor.h"
+#include "mongoc/mongoc-cursor-private.h"
+#include "mongoc/mongoc-collection.h"
+#include "mongoc/mongoc-gridfs.h"
+#include "mongoc/mongoc-gridfs-private.h"
+#include "mongoc/mongoc-gridfs-file.h"
+#include "mongoc/mongoc-gridfs-file-private.h"
+#include "mongoc/mongoc-gridfs-file-page.h"
+#include "mongoc/mongoc-gridfs-file-page-private.h"
+#include "mongoc/mongoc-iovec.h"
+#include "mongoc/mongoc-trace-private.h"
+#include "mongoc/mongoc-error.h"
 
 static bool
 _mongoc_gridfs_file_refresh_page (mongoc_gridfs_file_t *file);

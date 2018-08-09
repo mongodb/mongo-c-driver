@@ -26,15 +26,15 @@
 #define MONGOC_CMD_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-server-stream-private.h"
-#include "mongoc-read-prefs.h"
-#include "mongoc.h"
-#include "mongoc-opts-private.h"
+#include "mongoc/mongoc-server-stream-private.h"
+#include "mongoc/mongoc-read-prefs.h"
+#include "mongoc/mongoc.h"
+#include "mongoc/mongoc-opts-private.h"
 
 BSON_BEGIN_DECLS
 

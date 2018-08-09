@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "mongoc-array-private.h"
-#include "mongoc-thread-private.h"
+#include "mongoc/mongoc-array-private.h"
+#include "mongoc/mongoc-thread-private.h"
 #include "future.h"
 #include "../test-libmongoc.h"
 

@@ -1,4 +1,4 @@
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 
 #include "TestSuite.h"
 

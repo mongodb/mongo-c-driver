@@ -18,26 +18,26 @@
 #define MONGOC_CLIENT_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-apm-private.h"
-#include "mongoc-buffer-private.h"
-#include "mongoc-client.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-config.h"
-#include "mongoc-host-list.h"
-#include "mongoc-read-prefs.h"
-#include "mongoc-rpc-private.h"
-#include "mongoc-opcode.h"
+#include "mongoc/mongoc-apm-private.h"
+#include "mongoc/mongoc-buffer-private.h"
+#include "mongoc/mongoc-client.h"
+#include "mongoc/mongoc-cluster-private.h"
+#include "mongoc/mongoc-config.h"
+#include "mongoc/mongoc-host-list.h"
+#include "mongoc/mongoc-read-prefs.h"
+#include "mongoc/mongoc-rpc-private.h"
+#include "mongoc/mongoc-opcode.h"
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl.h"
+#include "mongoc/mongoc-ssl.h"
 #endif
-#include "mongoc-stream.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-write-concern.h"
+#include "mongoc/mongoc-stream.h"
+#include "mongoc/mongoc-topology-private.h"
+#include "mongoc/mongoc-write-concern.h"
 
 BSON_BEGIN_DECLS
 

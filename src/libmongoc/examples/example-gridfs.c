@@ -1,5 +1,5 @@
 #include <assert.h>
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>

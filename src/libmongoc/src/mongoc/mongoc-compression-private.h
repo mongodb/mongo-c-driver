@@ -19,9 +19,9 @@
 #define MONGOC_COMPRESSION_PRIVATE_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
-#include <bson.h>
+#include <bson/bson.h>
 
 
 /* Compressor IDs */

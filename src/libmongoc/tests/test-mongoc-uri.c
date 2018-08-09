@@ -1,10 +1,10 @@
-#include <mongoc.h>
-#include <mongoc-util-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-util-private.h>
 
-#include "mongoc-client-private.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-uri-private.h"
-#include "mongoc-host-list-private.h"
+#include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-topology-private.h"
+#include "mongoc/mongoc-uri-private.h"
+#include "mongoc/mongoc-host-list-private.h"
 
 #include "TestSuite.h"
 

@@ -1,7 +1,7 @@
 /* required on old Windows for rand_s to be defined */
 #define _CRT_RAND_S
 
-#include <bson.h>
+#include <bson/bson.h>
 #include <math.h>
 
 #include "TestSuite.h"

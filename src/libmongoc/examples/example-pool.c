@@ -3,7 +3,7 @@
 
 /* ./example-pool [CONNECTION_STRING] */
 
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 #include <pthread.h>
 #include <stdio.h>
 

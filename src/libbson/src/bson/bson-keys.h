@@ -19,8 +19,8 @@
 #define BSON_KEYS_H
 
 
-#include "bson-macros.h"
-#include "bson-types.h"
+#include "bson/bson-macros.h"
+#include "bson/bson-types.h"
 
 
 BSON_BEGIN_DECLS

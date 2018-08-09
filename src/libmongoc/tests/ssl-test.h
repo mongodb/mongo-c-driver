@@ -1,6 +1,6 @@
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 
-#include <mongoc-thread-private.h>
+#include <mongoc/mongoc-thread-private.h>
 
 typedef enum ssl_test_behavior {
    SSL_TEST_BEHAVIOR_NORMAL,

@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-#include <bson.h>
-#include <bson-string.h>
+#include <bson/bson.h>
+#include <bson/bson-string.h>
 
-#include "mongoc-config.h"
-#include "mongoc-error.h"
-#include "mongoc-trace-private.h"
-#include "mongoc-topology-scanner-private.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-stream-socket.h"
+#include "mongoc/mongoc-config.h"
+#include "mongoc/mongoc-error.h"
+#include "mongoc/mongoc-trace-private.h"
+#include "mongoc/mongoc-topology-scanner-private.h"
+#include "mongoc/mongoc-stream-private.h"
+#include "mongoc/mongoc-stream-socket.h"
 
-#include "mongoc-handshake.h"
-#include "mongoc-handshake-private.h"
+#include "mongoc/mongoc-handshake.h"
+#include "mongoc/mongoc-handshake-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-stream-tls.h"
+#include "mongoc/mongoc-stream-tls.h"
 #endif
 
-#include "mongoc-counters-private.h"
-#include "utlist.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-uri-private.h"
+#include "mongoc/mongoc-counters-private.h"
+#include "mongoc/utlist.h"
+#include "mongoc/mongoc-topology-private.h"
+#include "mongoc/mongoc-host-list-private.h"
+#include "mongoc/mongoc-uri-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "topology_scanner"

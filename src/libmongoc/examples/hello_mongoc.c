@@ -15,7 +15,7 @@
  */
 
 /* -- sphinx-include-start -- */
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 
 int
 main (int argc, char *argv[])

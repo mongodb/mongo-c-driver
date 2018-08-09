@@ -15,8 +15,8 @@
  */
 
 
-#include <bcon.h>
-#include <bson.h>
+#include <bson/bcon.h>
+#include <bson/bson.h>
 
 #include "TestSuite.h"
 

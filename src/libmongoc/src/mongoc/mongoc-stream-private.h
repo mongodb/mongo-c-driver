@@ -18,11 +18,11 @@
 #define MONGOC_STREAM_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include "mongoc-iovec.h"
-#include "mongoc-stream.h"
+#include "mongoc/mongoc-iovec.h"
+#include "mongoc/mongoc-stream.h"
 
 
 BSON_BEGIN_DECLS

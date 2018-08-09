@@ -18,11 +18,11 @@
 #define MONGOC_ASYNC_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
-#include "mongoc-stream.h"
+#include <bson/bson.h>
+#include "mongoc/mongoc-stream.h"
 
 BSON_BEGIN_DECLS
 

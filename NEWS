@@ -5,6 +5,10 @@ Features:
 
   * Report a new error code, MONGOC_ERROR_GRIDFS_CORRUPT, when a chunk larger
     than chunkSize is detected. Before, the driver had crashed with an assert.
+  * Restructure of install directory. All mongoc headers are under mongoc/
+    and all bson headers are under bson/. The preferred way of including the
+    headers are mongoc/mongoc.h and bson/bson.h respectively.
+    Forwarding headers in the root are provided for backwards compatibility.
 
 Bug fixes:
 

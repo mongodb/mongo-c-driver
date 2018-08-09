@@ -1,5 +1,5 @@
-#include <mongoc.h>
-#include <mongoc-queue-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-queue-private.h>
 
 #include "TestSuite.h"
 

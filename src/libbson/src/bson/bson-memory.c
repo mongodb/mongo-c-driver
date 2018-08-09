@@ -20,9 +20,9 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "bson-atomic.h"
-#include "bson-config.h"
-#include "bson-memory.h"
+#include "bson/bson-atomic.h"
+#include "bson/bson-config.h"
+#include "bson/bson-memory.h"
 
 
 static bson_mem_vtable_t gMemVtable = {

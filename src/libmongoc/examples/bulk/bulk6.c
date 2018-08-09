@@ -1,5 +1,5 @@
-#include <bcon.h>
-#include <mongoc.h>
+#include <bson/bcon.h>
+#include <mongoc/mongoc.h>
 #include <stdio.h>
 
 static void

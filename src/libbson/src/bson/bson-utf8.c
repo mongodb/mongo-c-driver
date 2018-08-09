@@ -17,9 +17,9 @@
 
 #include <string.h>
 
-#include "bson-memory.h"
-#include "bson-string.h"
-#include "bson-utf8.h"
+#include "bson/bson-memory.h"
+#include "bson/bson-string.h"
+#include "bson/bson-utf8.h"
 
 
 /*

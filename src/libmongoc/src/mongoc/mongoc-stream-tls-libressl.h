@@ -18,14 +18,14 @@
 #define MONGOC_STREAM_TLS_LIBRESSL_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
 #ifdef MONGOC_ENABLE_SSL_LIBRESSL
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-macros.h"
+#include "mongoc/mongoc-macros.h"
 
 BSON_BEGIN_DECLS
 

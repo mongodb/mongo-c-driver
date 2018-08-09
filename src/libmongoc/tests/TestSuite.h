@@ -19,12 +19,12 @@
 #define TEST_SUITE_H
 
 
-#include <bson.h>
+#include <bson/bson.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 
-#include "mongoc-util-private.h"
+#include "mongoc/mongoc-util-private.h"
 
 
 #ifdef __cplusplus

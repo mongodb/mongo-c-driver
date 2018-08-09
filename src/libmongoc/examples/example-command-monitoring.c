@@ -3,7 +3,7 @@
 
 /* ./example-command-monitoring [CONNECTION_STRING] */
 
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 #include <stdio.h>
 
 

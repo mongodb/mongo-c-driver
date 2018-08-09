@@ -18,21 +18,21 @@
 #define MONGOC_COLLECTION_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-change-stream.h"
-#include "mongoc-macros.h"
-#include "mongoc-bulk-operation.h"
-#include "mongoc-flags.h"
-#include "mongoc-cursor.h"
-#include "mongoc-index.h"
-#include "mongoc-read-prefs.h"
-#include "mongoc-read-concern.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-find-and-modify.h"
+#include "mongoc/mongoc-change-stream.h"
+#include "mongoc/mongoc-macros.h"
+#include "mongoc/mongoc-bulk-operation.h"
+#include "mongoc/mongoc-flags.h"
+#include "mongoc/mongoc-cursor.h"
+#include "mongoc/mongoc-index.h"
+#include "mongoc/mongoc-read-prefs.h"
+#include "mongoc/mongoc-read-concern.h"
+#include "mongoc/mongoc-write-concern.h"
+#include "mongoc/mongoc-find-and-modify.h"
 
 BSON_BEGIN_DECLS
 

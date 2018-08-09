@@ -10,9 +10,9 @@
 ** and struct tm by A. Jesse Jiryu Davis for MongoDB, Inc.
 */
 
-#include "bson-compat.h"
-#include "bson-macros.h"
-#include "bson-timegm-private.h"
+#include "bson/bson-compat.h"
+#include "bson/bson-macros.h"
+#include "bson/bson-timegm-private.h"
 
 #include "errno.h"
 #include "string.h"

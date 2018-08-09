@@ -1,11 +1,11 @@
-#include <bcon.h>
-#include <mongoc.h>
-#include <mongoc-client-private.h>
-#include <mongoc-cursor-private.h>
-#include <mongoc-collection-private.h>
-#include <mongoc-write-concern-private.h>
-#include <mongoc-read-concern-private.h>
-#include <mongoc-util-private.h>
+#include <bson/bcon.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-cursor-private.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-write-concern-private.h>
+#include <mongoc/mongoc-read-concern-private.h>
+#include <mongoc/mongoc-util-private.h>
 
 #include "TestSuite.h"
 

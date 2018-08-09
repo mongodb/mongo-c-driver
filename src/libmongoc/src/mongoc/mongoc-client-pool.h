@@ -18,19 +18,19 @@
 #define MONGOC_CLIENT_POOL_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-macros.h"
-#include "mongoc-apm.h"
-#include "mongoc-client.h"
-#include "mongoc-config.h"
+#include "mongoc/mongoc-macros.h"
+#include "mongoc/mongoc-apm.h"
+#include "mongoc/mongoc-client.h"
+#include "mongoc/mongoc-config.h"
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl.h"
+#include "mongoc/mongoc-ssl.h"
 #endif
-#include "mongoc-uri.h"
+#include "mongoc/mongoc-uri.h"
 
 
 BSON_BEGIN_DECLS

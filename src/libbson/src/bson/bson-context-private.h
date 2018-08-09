@@ -19,7 +19,7 @@
 #define BSON_CONTEXT_PRIVATE_H
 
 
-#include "bson-context.h"
+#include "bson/bson-context.h"
 #include "common-thread-private.h"
 
 

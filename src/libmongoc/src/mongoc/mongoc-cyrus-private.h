@@ -18,13 +18,13 @@
 #define MONGOC_CYRUS_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include "mongoc-uri.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-sasl-private.h"
-#include <bson.h>
+#include "mongoc/mongoc-uri.h"
+#include "mongoc/mongoc-cluster-private.h"
+#include "mongoc/mongoc-sasl-private.h"
+#include <bson/bson.h>
 #include <sasl/sasl.h>
 #include <sasl/saslutil.h>
 

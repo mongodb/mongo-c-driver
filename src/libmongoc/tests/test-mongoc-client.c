@@ -1,14 +1,14 @@
 #include <fcntl.h>
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 
-#include "mongoc-client-private.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-database-private.h"
-#include "mongoc-handshake-private.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-read-concern-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-write-concern-private.h"
+#include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-cursor-private.h"
+#include "mongoc/mongoc-database-private.h"
+#include "mongoc/mongoc-handshake-private.h"
+#include "mongoc/mongoc-host-list-private.h"
+#include "mongoc/mongoc-read-concern-private.h"
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-write-concern-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"

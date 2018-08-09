@@ -17,10 +17,10 @@
 #ifndef MONGOC_CHANGE_STREAM_PRIVATE_H
 #define MONGOC_CHANGE_STREAM_PRIVATE_H
 
-#include "mongoc-change-stream.h"
-#include "mongoc-client-session.h"
-#include "mongoc-collection.h"
-#include "mongoc-cursor.h"
+#include "mongoc/mongoc-change-stream.h"
+#include "mongoc/mongoc-client-session.h"
+#include "mongoc/mongoc-collection.h"
+#include "mongoc/mongoc-cursor.h"
 
 typedef enum {
    MONGOC_CHANGE_STREAM_COLLECTION,

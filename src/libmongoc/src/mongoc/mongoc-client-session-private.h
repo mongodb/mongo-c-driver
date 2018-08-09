@@ -18,11 +18,11 @@
 #define MONGOC_CLIENT_SESSION_PRIVATE_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
-#include "mongoc-client-session.h"
+#include <bson/bson.h>
+#include "mongoc/mongoc-client-session.h"
 
 /* error labels: see Transactions Spec */
 #define TRANSIENT_TXN_ERR "TransientTransactionError"

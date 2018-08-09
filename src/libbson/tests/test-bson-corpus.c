@@ -1,4 +1,4 @@
-#include <bson.h>
+#include <bson/bson.h>
 #include "TestSuite.h"
 #include "json-test.h"
 #include "corpus-test.h"

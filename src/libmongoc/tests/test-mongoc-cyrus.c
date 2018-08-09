@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <mongoc.h>
-#include <mongoc-cyrus-private.h>
-#include <mongoc-client-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-cyrus-private.h>
+#include <mongoc/mongoc-client-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"

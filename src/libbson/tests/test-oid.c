@@ -15,7 +15,7 @@
  */
 
 
-#include <bson.h>
+#include <bson/bson.h>
 #define BSON_INSIDE
 #include "common-thread-private.h"
 #undef BSON_INSIDE

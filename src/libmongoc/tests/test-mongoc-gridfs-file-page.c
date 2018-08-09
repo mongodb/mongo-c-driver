@@ -1,5 +1,5 @@
-#include <mongoc.h>
-#include <mongoc-gridfs-file-page-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-gridfs-file-page-private.h>
 
 #include "TestSuite.h"
 

@@ -62,6 +62,7 @@ set (src_libmongoc_src_mongoc_DIST_hs
    mongoc-version.h.in
    mongoc-write-concern.h
    utlist.h
+   forwarding/mongoc.h
 )
 extra_dist_generated (
    mongoc-version.h

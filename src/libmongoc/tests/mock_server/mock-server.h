@@ -17,12 +17,12 @@
 #ifndef MOCK_SERVER_H
 #define MOCK_SERVER_H
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-uri.h"
+#include "mongoc/mongoc-uri.h"
 
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl.h"
+#include "mongoc/mongoc-ssl.h"
 #endif
 
 #include "request.h"

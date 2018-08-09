@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "mongoc-util-private.h"
-#include "mongoc-apm-private.h"
-#include "mongoc-cmd-private.h"
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-apm-private.h"
+#include "mongoc/mongoc-cmd-private.h"
 
 /*
  * An Application Performance Management (APM) implementation, complying with

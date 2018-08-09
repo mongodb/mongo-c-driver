@@ -1,4 +1,4 @@
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 #include <stdio.h>
 
 static void

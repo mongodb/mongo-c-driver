@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <mongoc-util-private.h>
-#include "mongoc-counters-private.h"
+#include <mongoc/mongoc-util-private.h>
+#include "mongoc/mongoc-counters-private.h"
 #include "mock_server/mock-server.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
@@ -38,7 +38,7 @@
       }                                                         \
       return _sum;                                              \
    }
-#include "mongoc-counters.defs"
+#include "mongoc/mongoc-counters.defs"
 #undef COUNTER
 
 #define RESET(id) prev_##id = count_##id ();
@@ -56,7 +56,7 @@ static void
 reset_all_counters ()
 {
 #define COUNTER(id, category, name, description) RESET (id);
-#include "mongoc-counters.defs"
+#include "mongoc/mongoc-counters.defs"
 #undef COUNTER
 }
 

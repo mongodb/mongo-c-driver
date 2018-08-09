@@ -1,5 +1,5 @@
-#include <mongoc.h>
-#include <mongoc-uri-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-uri-private.h>
 
 #include "TestSuite.h"
 #include "mock_server/future.h"

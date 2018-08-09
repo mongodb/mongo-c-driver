@@ -18,12 +18,12 @@
 #define MONGOC_CLUSTER_SASL_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include "mongoc-config.h"
-#include "mongoc-cluster-private.h"
-#include <bson.h>
+#include "mongoc/mongoc-config.h"
+#include "mongoc/mongoc-cluster-private.h"
+#include <bson/bson.h>
 
 bool
 _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,

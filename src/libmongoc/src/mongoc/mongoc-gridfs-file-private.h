@@ -18,15 +18,15 @@
 #define MONGOC_GRIDFS_FILE_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-gridfs.h"
-#include "mongoc-gridfs-file.h"
-#include "mongoc-gridfs-file-page.h"
-#include "mongoc-cursor.h"
+#include "mongoc/mongoc-gridfs.h"
+#include "mongoc/mongoc-gridfs-file.h"
+#include "mongoc/mongoc-gridfs-file-page.h"
+#include "mongoc/mongoc-cursor.h"
 
 
 BSON_BEGIN_DECLS

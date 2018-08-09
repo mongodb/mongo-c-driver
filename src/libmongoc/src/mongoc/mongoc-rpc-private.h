@@ -18,17 +18,17 @@
 #define MONGOC_RPC_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 #include <stddef.h>
 
-#include "mongoc-array-private.h"
-#include "mongoc-cmd-private.h"
-#include "mongoc-iovec.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-flags.h"
+#include "mongoc/mongoc-array-private.h"
+#include "mongoc/mongoc-cmd-private.h"
+#include "mongoc/mongoc-iovec.h"
+#include "mongoc/mongoc-write-concern.h"
+#include "mongoc/mongoc-flags.h"
 /* forward declaration */
 struct _mongoc_cluster_t;
 

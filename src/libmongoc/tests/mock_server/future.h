@@ -1,10 +1,10 @@
 #ifndef FUTURE_H
 #define FUTURE_H
 
-#include <bson.h>
+#include <bson/bson.h>
 
 #include "future-value.h"
-#include "mongoc-thread-private.h"
+#include "mongoc/mongoc-thread-private.h"
 
 /**************************************************
  *

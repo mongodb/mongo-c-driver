@@ -1,7 +1,7 @@
 
 #include <fcntl.h>
-#include <mongoc.h>
-#include <mongoc-stream-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-stream-private.h>
 #include <stdlib.h>
 
 #include "TestSuite.h"

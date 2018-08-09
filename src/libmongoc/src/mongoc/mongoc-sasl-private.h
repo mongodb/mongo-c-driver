@@ -18,14 +18,14 @@
 #define MONGOC_SASL_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
-#include "mongoc-uri.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-stream.h"
-#include "mongoc-stream-socket.h"
+#include <bson/bson.h>
+#include "mongoc/mongoc-uri.h"
+#include "mongoc/mongoc-stream-private.h"
+#include "mongoc/mongoc-stream.h"
+#include "mongoc/mongoc-stream-socket.h"
 
 BSON_BEGIN_DECLS
 
