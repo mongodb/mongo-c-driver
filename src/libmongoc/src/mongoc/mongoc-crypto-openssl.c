@@ -38,7 +38,7 @@ mongoc_crypto_openssl_hmac_sha1 (mongoc_crypto_t *crypto,
    HMAC (EVP_sha1 (), key, key_len, data, data_len, hmac_out, NULL);
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
 EVP_MD_CTX *
 EVP_MD_CTX_new (void)
 {
