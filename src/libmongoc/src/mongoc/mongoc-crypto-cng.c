@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include "mongoc/mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_CRYPTO_CNG
-#include "mongoc-crypto-private.h"
-#include "mongoc-crypto-cng-private.h"
-#include "mongoc-log.h"
-#include "mongoc-thread-private.h"
+#include "mongoc/mongoc-crypto-private.h"
+#include "mongoc/mongoc-crypto-cng-private.h"
+#include "mongoc/mongoc-log.h"
+#include "mongoc/mongoc-thread-private.h"
 
 #include <windows.h>
 #include <stdio.h>

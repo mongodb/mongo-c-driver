@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <bson.h>
-#include <bcon.h>
+#include <bson/bson.h>
+#include <bson/bcon.h>
 
 #define QUERY(...) ELE_QUERY, __VA_ARGS__, NULL
 #define SORT(...) ELE_SORT, __VA_ARGS__, NULL

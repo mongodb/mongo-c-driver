@@ -17,12 +17,12 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 
-#include <bson.h>
-#include <mongoc-buffer-private.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc-buffer-private.h>
 
-#include "mongoc.h"
+#include "mongoc/mongoc.h"
 
-#include "mongoc-rpc-private.h"
+#include "mongoc/mongoc-rpc-private.h"
 #include "sync-queue.h"
 
 struct _mock_server_t; /* forward declaration */

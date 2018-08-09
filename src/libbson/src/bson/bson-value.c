@@ -15,10 +15,10 @@
  */
 
 
-#include "bson-memory.h"
-#include "bson-string.h"
-#include "bson-value.h"
-#include "bson-oid.h"
+#include "bson/bson-memory.h"
+#include "bson/bson-string.h"
+#include "bson/bson-value.h"
+#include "bson/bson-oid.h"
 
 
 void

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include "mongoc/mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SASL_GSSAPI
-#include "mongoc-gssapi-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc-gssapi-private.h"
+#include "mongoc/mongoc-trace-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "GSSAPI"

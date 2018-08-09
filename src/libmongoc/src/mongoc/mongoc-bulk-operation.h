@@ -19,10 +19,10 @@
 #define MONGOC_BULK_OPERATION_H
 
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-macros.h"
-#include "mongoc-write-concern.h"
+#include "mongoc/mongoc-macros.h"
+#include "mongoc/mongoc-write-concern.h"
 
 /* ordered, bypass_document_validation, has_collation, multi */
 #define MONGOC_BULK_WRITE_FLAGS_INIT \

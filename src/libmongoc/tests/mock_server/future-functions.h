@@ -3,7 +3,7 @@
 
 #include "future-value.h"
 #include "future.h"
-#include "mongoc-bulk-operation.h"
+#include "mongoc/mongoc-bulk-operation.h"
 
 /**************************************************
  *

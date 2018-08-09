@@ -1,5 +1,5 @@
-#include <bson.h>
-#include <mongoc.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
 #include <stdio.h>
 #include <stdlib.h>
 

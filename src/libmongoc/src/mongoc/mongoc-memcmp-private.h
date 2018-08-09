@@ -18,12 +18,12 @@
 #define MONGOC_MEMCMP_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-config.h"
+#include "mongoc/mongoc-config.h"
 
 /* WARNING: mongoc_memcmp() must be used to verify if two secret keys
  * are equal, in constant time.

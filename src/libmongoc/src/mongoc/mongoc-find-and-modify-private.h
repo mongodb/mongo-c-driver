@@ -18,11 +18,11 @@
 #define MONGOC_FIND_AND_MODIFY_PRIVATE_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
-#include "mongoc-write-command-private.h"
+#include <bson/bson.h>
+#include "mongoc/mongoc-write-command-private.h"
 
 BSON_BEGIN_DECLS
 

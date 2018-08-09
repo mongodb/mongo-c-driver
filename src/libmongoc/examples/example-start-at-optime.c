@@ -1,5 +1,5 @@
 /* An example of starting a change stream with startAtOperationTime. */
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 
 int
 main ()

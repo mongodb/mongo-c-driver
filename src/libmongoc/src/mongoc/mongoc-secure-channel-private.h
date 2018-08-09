@@ -18,14 +18,14 @@
 #define MONGOC_SECURE_CHANNEL_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-ssl.h"
-#include "mongoc-stream-tls.h"
-#include "mongoc-stream-tls-secure-channel-private.h"
+#include "mongoc/mongoc-ssl.h"
+#include "mongoc/mongoc-stream-tls.h"
+#include "mongoc/mongoc-stream-tls-secure-channel-private.h"
 
 #define SECURITY_WIN32
 #include <security.h>

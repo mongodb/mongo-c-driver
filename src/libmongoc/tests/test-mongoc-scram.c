@@ -1,10 +1,10 @@
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 #include <mock_server/mock-server.h>
 #include <mock_server/future.h>
 #include <mock_server/future-functions.h>
 
-#include "mongoc-crypto-private.h"
-#include "mongoc-scram-private.h"
+#include "mongoc/mongoc-crypto-private.h"
+#include "mongoc/mongoc-scram-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"

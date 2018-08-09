@@ -1,8 +1,8 @@
-#include <mongoc-util-private.h>
-#include <mongoc.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc.h>
 
-#include "mongoc-client-private.h"
-#include "mongoc-uri-private.h"
+#include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-uri-private.h"
 
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"

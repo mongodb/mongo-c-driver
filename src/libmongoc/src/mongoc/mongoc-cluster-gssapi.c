@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include "mongoc/mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SASL_GSSAPI
 
-#include "mongoc-cluster-gssapi-private.h"
-#include "mongoc-cluster-sasl-private.h"
-#include "mongoc-gssapi-private.h"
-#include "mongoc-error.h"
-#include "mongoc-util-private.h"
+#include "mongoc/mongoc-cluster-gssapi-private.h"
+#include "mongoc/mongoc-cluster-sasl-private.h"
+#include "mongoc/mongoc-gssapi-private.h"
+#include "mongoc/mongoc-error.h"
+#include "mongoc/mongoc-util-private.h"
 
 
 /*

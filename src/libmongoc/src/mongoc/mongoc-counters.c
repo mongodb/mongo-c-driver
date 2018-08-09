@@ -15,7 +15,7 @@
  */
 
 
-#include <bson.h>
+#include <bson/bson.h>
 
 #include <fcntl.h>
 #include <stdlib.h>
@@ -30,8 +30,8 @@
 #include <windows.h>
 #endif
 
-#include "mongoc-counters-private.h"
-#include "mongoc-log.h"
+#include "mongoc/mongoc-counters-private.h"
+#include "mongoc/mongoc-log.h"
 
 
 #pragma pack(1)

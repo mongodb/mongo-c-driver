@@ -15,10 +15,10 @@
  */
 
 
-#include <bson.h>
-#include <bcon.h>
+#include <bson/bson.h>
+#include <bson/bcon.h>
 #define BSON_INSIDE
-#include <bson-private.h>
+#include <bson/bson-private.h>
 #undef BSON_INSIDE
 #include <fcntl.h>
 #include <time.h>

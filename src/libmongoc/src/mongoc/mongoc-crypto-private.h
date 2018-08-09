@@ -16,11 +16,11 @@
 
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include "mongoc-config.h"
-#include <bson.h>
+#include "mongoc/mongoc-config.h"
+#include <bson/bson.h>
 
 #ifdef MONGOC_ENABLE_CRYPTO
 

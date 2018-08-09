@@ -15,7 +15,7 @@
  */
 
 
-#include <bson.h>
+#include <bson/bson.h>
 #include <fcntl.h>
 
 #include "TestSuite.h"

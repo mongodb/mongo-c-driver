@@ -18,16 +18,16 @@
 #define MONGOC_WRITE_COMMAND_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-client.h"
-#include "mongoc-error.h"
-#include "mongoc-write-concern.h"
-#include "mongoc-server-stream-private.h"
-#include "mongoc-buffer-private.h"
+#include "mongoc/mongoc-client.h"
+#include "mongoc/mongoc-error.h"
+#include "mongoc/mongoc-write-concern.h"
+#include "mongoc/mongoc-server-stream-private.h"
+#include "mongoc/mongoc-buffer-private.h"
 
 
 BSON_BEGIN_DECLS

@@ -1,6 +1,6 @@
 #include "TestSuite.h"
 
-#include <bcon.h>
+#include <bson/bcon.h>
 
 static void
 test_utf8 (void)

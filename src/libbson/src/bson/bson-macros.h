@@ -20,7 +20,7 @@
 
 
 #if !defined(BSON_INSIDE) && !defined(BSON_COMPILATION)
-#error "Only <bson.h> can be included directly."
+#error "Only <bson/bson.h> can be included directly."
 #endif
 
 
@@ -30,7 +30,7 @@
 #include <algorithm>
 #endif
 
-#include "bson-config.h"
+#include "bson/bson-config.h"
 
 
 #if BSON_OS == 1

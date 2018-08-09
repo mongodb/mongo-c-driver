@@ -20,11 +20,11 @@
 
 
 #if !defined(BSON_INSIDE) && !defined(BSON_COMPILATION)
-#error "Only <bson.h> can be included directly."
+#error "Only <bson/bson.h> can be included directly."
 #endif
 
 
-#include "bson.h"
+#include "bson/bson.h"
 
 
 BSON_BEGIN_DECLS

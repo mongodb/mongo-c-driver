@@ -1,8 +1,8 @@
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 #define MONGOC_INSIDE
-#include <mongoc-gridfs-file-private.h>
-#include <mongoc-client-private.h>
-#include <mongoc-gridfs-private.h>
+#include <mongoc/mongoc-gridfs-file-private.h>
+#include <mongoc/mongoc-client-private.h>
+#include <mongoc/mongoc-gridfs-private.h>
 
 #undef MONGOC_INSIDE
 

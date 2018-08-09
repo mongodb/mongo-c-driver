@@ -149,8 +149,8 @@ if (NOT BSON_LIBRARIES)
    # Defined in src/libbson/CMakeLists.txt
    set (BSON_STATIC_LIBRARIES bson_static)
    set (BSON_LIBRARIES bson_shared)
-   set (BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src/bson" "${PROJECT_BINARY_DIR}/src/libbson/src/bson")
-   set (BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src/bson" "${PROJECT_BINARY_DIR}/src/libbson/src/bson")
+   set (BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
+   set (BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
    set (BSON_STATIC_DEFINITIONS "BSON_STATIC")
 endif ()
 

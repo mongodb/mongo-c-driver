@@ -1,13 +1,13 @@
 #ifndef FUTURE_VALUE_H
 #define FUTURE_VALUE_H
 
-#include <bson.h>
-#include <mongoc.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
 
 
-#include "mongoc-server-description.h"
-#include "mongoc-cluster-private.h"
-#include "mongoc-topology-private.h"
+#include "mongoc/mongoc-server-description.h"
+#include "mongoc/mongoc-cluster-private.h"
+#include "mongoc/mongoc-topology-private.h"
 
 
 /**************************************************

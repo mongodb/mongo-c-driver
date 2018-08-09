@@ -18,11 +18,11 @@
 #define MONGOC_READ_CONCERN_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
-#include "mongoc-read-concern.h"
+#include <bson/bson.h>
+#include "mongoc/mongoc-read-concern.h"
 
 
 BSON_BEGIN_DECLS

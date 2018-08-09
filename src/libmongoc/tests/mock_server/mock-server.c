@@ -15,14 +15,14 @@
  */
 
 
-#include "mongoc-client-private.h"
-#include "mongoc.h"
+#include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc.h"
 
-#include "mongoc-buffer-private.h"
-#include "mongoc-socket-private.h"
-#include "mongoc-thread-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc-buffer-private.h"
+#include "mongoc/mongoc-socket-private.h"
+#include "mongoc/mongoc-thread-private.h"
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-trace-private.h"
 #include "sync-queue.h"
 #include "mock-server.h"
 #include "../test-conveniences.h"

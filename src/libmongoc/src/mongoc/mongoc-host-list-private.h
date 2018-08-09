@@ -18,10 +18,10 @@
 #define MONGOC_HOST_LIST_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include "mongoc-host-list.h"
+#include "mongoc/mongoc-host-list.h"
 
 
 BSON_BEGIN_DECLS

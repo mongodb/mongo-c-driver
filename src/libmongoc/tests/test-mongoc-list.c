@@ -1,5 +1,5 @@
-#include <mongoc.h>
-#include <mongoc-list-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-list-private.h>
 
 #include "TestSuite.h"
 

@@ -19,7 +19,7 @@
  *          http://www.isthe.com/chongo/tech/comp/fnv/index.html#xor-fold
  */
 
-#include "bson-fnv-private.h"
+#include "bson/bson-fnv-private.h"
 
 /*
  * 32 bit FNV-1a non-zero initial basis

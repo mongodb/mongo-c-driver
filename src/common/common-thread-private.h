@@ -19,12 +19,12 @@
 
 #if !defined(MONGOC_COMPILATION) && !defined(BSON_COMPILATION) && \
    !defined(BSON_INSIDE)
-#error "Only <mongoc.h> or <bson.h> can be included directly."
+#error "Only <mongoc/mongoc.h> or <bson/bson.h> can be included directly."
 #endif
 
-#include "bson-compat.h"
-#include "bson-config.h"
-#include "bson-macros.h"
+#include "bson/bson-compat.h"
+#include "bson/bson-config.h"
+#include "bson/bson-macros.h"
 
 BSON_BEGIN_DECLS
 

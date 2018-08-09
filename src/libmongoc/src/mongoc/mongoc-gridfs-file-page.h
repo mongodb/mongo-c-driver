@@ -18,14 +18,14 @@
 #define MONGOC_GRIDFS_FILE_PAGE_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-stream.h"
-#include "mongoc-gridfs-file.h"
-#include "mongoc-gridfs-file-list.h"
+#include "mongoc/mongoc-stream.h"
+#include "mongoc/mongoc-gridfs-file.h"
+#include "mongoc/mongoc-gridfs-file-list.h"
 
 
 BSON_BEGIN_DECLS

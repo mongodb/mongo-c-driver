@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "mongoc-memcmp-private.h"
+#include "mongoc/mongoc-memcmp-private.h"
 
 int
 mongoc_memcmp (const void *const b1, const void *const b2, size_t len)

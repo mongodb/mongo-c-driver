@@ -24,10 +24,10 @@
  */
 
 /* clang-format off */
-#include <mongoc.h>
-#include <mongoc-util-private.h>
-#include <mongoc-database-private.h>
-#include <mongoc-collection-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-database-private.h>
+#include <mongoc/mongoc-collection-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"

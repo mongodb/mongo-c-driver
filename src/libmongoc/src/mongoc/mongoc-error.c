@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-error.h"
+#include "mongoc/mongoc-error.h"
 
 bool
 mongoc_error_has_label (const bson_t *reply, const char *label)

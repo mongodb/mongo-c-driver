@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 
-#include "mongoc-log-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc-log-private.h"
+#include "mongoc/mongoc-trace-private.h"
 #include "TestSuite.h"
 
 

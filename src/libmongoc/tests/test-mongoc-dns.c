@@ -1,8 +1,8 @@
-#include <mongoc-util-private.h>
-#include <mongoc-client-pool-private.h>
-#include "mongoc.h"
-#include "mongoc-host-list-private.h"
-#include "mongoc-thread-private.h"
+#include <mongoc/mongoc-util-private.h>
+#include <mongoc/mongoc-client-pool-private.h>
+#include "mongoc/mongoc.h"
+#include "mongoc/mongoc-host-list-private.h"
+#include "mongoc/mongoc-thread-private.h"
 
 #include "json-test.h"
 #include "test-libmongoc.h"

@@ -1,4 +1,4 @@
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 
 /* An example implementation of custom resume logic in a change stream.
 * example-resume starts a client-wide change stream and persists the resume

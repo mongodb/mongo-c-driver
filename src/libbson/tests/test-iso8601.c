@@ -1,6 +1,6 @@
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "bson-iso8601-private.h"
+#include "bson/bson-iso8601-private.h"
 #include "TestSuite.h"
 
 #define IS_TIME_T_SMALL (sizeof (time_t) == sizeof (int32_t))

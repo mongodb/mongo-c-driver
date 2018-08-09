@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include <mongoc.h>
-#include "mongoc-client-private.h"
+#include <mongoc/mongoc.h>
+#include "mongoc/mongoc-client-private.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
-#include "mongoc-change-stream-private.h"
-#include "mongoc-cursor-private.h"
+#include "mongoc/mongoc-change-stream-private.h"
+#include "mongoc/mongoc-cursor-private.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"

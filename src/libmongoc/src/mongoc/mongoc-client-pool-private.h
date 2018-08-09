@@ -18,14 +18,14 @@
 #define MONGOC_CLIENT_POOL_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-client-pool.h"
-#include "mongoc-topology-description.h"
-#include "mongoc-topology-private.h"
+#include "mongoc/mongoc-client-pool.h"
+#include "mongoc/mongoc-topology-description.h"
+#include "mongoc/mongoc-topology-private.h"
 
 BSON_BEGIN_DECLS
 

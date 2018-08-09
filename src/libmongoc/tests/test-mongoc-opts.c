@@ -1,5 +1,5 @@
-#include <mongoc.h>
-#include <mongoc-find-and-modify-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-find-and-modify-private.h>
 #include <mock_server/future.h>
 #include <mock_server/future-value.h>
 

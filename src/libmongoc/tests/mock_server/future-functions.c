@@ -21,7 +21,7 @@
  * controlling the server from the main thread.
  */
 
-#include "mongoc-topology-private.h"
+#include "mongoc/mongoc-topology-private.h"
 
 #include "future-functions.h"
 

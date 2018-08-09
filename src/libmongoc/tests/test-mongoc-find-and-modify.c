@@ -1,8 +1,8 @@
-#include <bcon.h>
-#include <mongoc.h>
-#include <mongoc-collection-private.h>
-#include <mongoc-find-and-modify-private.h>
-#include <mongoc-client-private.h>
+#include <bson/bcon.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-collection-private.h>
+#include <mongoc/mongoc-find-and-modify-private.h>
+#include <mongoc/mongoc-client-private.h>
 
 #include "TestSuite.h"
 

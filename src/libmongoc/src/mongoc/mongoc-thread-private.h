@@ -18,14 +18,14 @@
 #define MONGOC_THREAD_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
 #include "common-thread-private.h"
-#include "mongoc-config.h"
-#include "mongoc-log.h"
+#include "mongoc/mongoc-config.h"
+#include "mongoc/mongoc-log.h"
 
 #if defined(BSON_OS_UNIX)
 #define mongoc_cond_t pthread_cond_t

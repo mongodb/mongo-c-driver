@@ -15,19 +15,19 @@
  */
 
 
-#include "mongoc.h"
-#include "mongoc-apm-private.h"
-#include "mongoc-counters-private.h"
-#include "mongoc-client-pool-private.h"
-#include "mongoc-client-pool.h"
-#include "mongoc-client-private.h"
-#include "mongoc-queue-private.h"
-#include "mongoc-thread-private.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc.h"
+#include "mongoc/mongoc-apm-private.h"
+#include "mongoc/mongoc-counters-private.h"
+#include "mongoc/mongoc-client-pool-private.h"
+#include "mongoc/mongoc-client-pool.h"
+#include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-queue-private.h"
+#include "mongoc/mongoc-thread-private.h"
+#include "mongoc/mongoc-topology-private.h"
+#include "mongoc/mongoc-trace-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc-ssl-private.h"
+#include "mongoc/mongoc-ssl-private.h"
 #endif
 
 struct _mongoc_client_pool_t {

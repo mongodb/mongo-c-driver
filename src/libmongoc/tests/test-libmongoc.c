@@ -15,16 +15,16 @@
  */
 
 
-#include <bson.h>
-#include <mongoc.h>
-#include <mongoc-host-list-private.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-host-list-private.h>
 
-#include "mongoc-server-description.h"
-#include "mongoc-server-description-private.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-uri-private.h"
-#include "mongoc-util-private.h"
+#include "mongoc/mongoc-server-description.h"
+#include "mongoc/mongoc-server-description-private.h"
+#include "mongoc/mongoc-topology-private.h"
+#include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-uri-private.h"
+#include "mongoc/mongoc-util-private.h"
 
 #include "TestSuite.h"
 #include "test-conveniences.h"

@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-#include "mongoc-config.h"
+#include "mongoc/mongoc-config.h"
 
-#include "mongoc-handshake.h"
-#include "mongoc-handshake-private.h"
+#include "mongoc/mongoc-handshake.h"
+#include "mongoc/mongoc-handshake-private.h"
 
-#include "mongoc-error.h"
-#include "mongoc-log.h"
-#include "mongoc-topology-private.h"
-#include "mongoc-topology-description-apm-private.h"
-#include "mongoc-client-private.h"
-#include "mongoc-uri-private.h"
-#include "mongoc-util-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc-error.h"
+#include "mongoc/mongoc-log.h"
+#include "mongoc/mongoc-topology-private.h"
+#include "mongoc/mongoc-topology-description-apm-private.h"
+#include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-uri-private.h"
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-trace-private.h"
 
-#include "utlist.h"
+#include "mongoc/utlist.h"
 
 static void
 _mongoc_topology_background_thread_stop (mongoc_topology_t *topology);

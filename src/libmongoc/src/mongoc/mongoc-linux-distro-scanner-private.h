@@ -18,7 +18,7 @@
 #ifndef MONGOC_LINUX_DISTRO_SCANNER_PRIVATE_H
 #define MONGOC_LINUX_DISTRO_SCANNER_PRIVATE_H
 
-#include "mongoc-handshake-os-private.h"
+#include "mongoc/mongoc-handshake-os-private.h"
 
 #ifdef MONGOC_OS_IS_LINUX
 

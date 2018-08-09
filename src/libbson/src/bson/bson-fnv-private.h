@@ -17,7 +17,7 @@
 #ifndef MONGO_C_DRIVER_BSON_FNV_PRIVATE_H
 #define MONGO_C_DRIVER_BSON_FNV_PRIVATE_H
 
-#include "bson.h"
+#include "bson/bson.h"
 
 uint32_t
 _mongoc_fnv_24a_str (char *str);

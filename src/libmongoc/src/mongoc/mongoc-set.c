@@ -15,9 +15,9 @@
  */
 
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-set-private.h"
+#include "mongoc/mongoc-set-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "set"

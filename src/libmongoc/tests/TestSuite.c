@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include <bson.h>
-#include <mongoc.h>
+#include <bson/bson.h>
+#include <mongoc/mongoc.h>
 
 #include <fcntl.h>
 #include <stdarg.h>
 
-#include "mongoc-thread-private.h"
+#include "mongoc/mongoc-thread-private.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mongoc-util-private.h>
+#include <mongoc/mongoc-util-private.h>
 #if !defined(_WIN32)
 #include <sys/types.h>
 #include <inttypes.h>

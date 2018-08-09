@@ -4,7 +4,7 @@
 /* ./example-transaction [CONNECTION_STRING] */
 
 #include <stdio.h>
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 
 
 int

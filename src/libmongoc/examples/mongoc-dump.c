@@ -15,9 +15,9 @@
  */
 
 
-#include <bson.h>
+#include <bson/bson.h>
 #include <fcntl.h>
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 
 
 static bool

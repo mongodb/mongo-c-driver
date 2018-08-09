@@ -18,12 +18,12 @@
 #define MONGOC_ERRORS_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#include <bson/bson.h>
 
-#include "mongoc-macros.h"
+#include "mongoc/mongoc-macros.h"
 
 #define MONGOC_ERROR_API_VERSION_LEGACY 1
 #define MONGOC_ERROR_API_VERSION_2 2

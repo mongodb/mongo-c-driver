@@ -18,10 +18,10 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "gridfs_file_page"
 
-#include "mongoc-gridfs-file-page.h"
-#include "mongoc-gridfs-file-page-private.h"
+#include "mongoc/mongoc-gridfs-file-page.h"
+#include "mongoc/mongoc-gridfs-file-page-private.h"
 
-#include "mongoc-trace-private.h"
+#include "mongoc/mongoc-trace-private.h"
 
 
 /** create a new page from a buffer

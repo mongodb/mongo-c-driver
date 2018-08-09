@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <bson.h>
+#include <bson/bson.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

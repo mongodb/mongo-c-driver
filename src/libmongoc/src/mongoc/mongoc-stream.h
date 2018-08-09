@@ -18,12 +18,12 @@
 #define MONGOC_STREAM_H
 
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include "mongoc-macros.h"
-#include "mongoc-iovec.h"
-#include "mongoc-socket.h"
+#include "mongoc/mongoc-macros.h"
+#include "mongoc/mongoc-iovec.h"
+#include "mongoc/mongoc-socket.h"
 
 
 BSON_BEGIN_DECLS

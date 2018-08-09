@@ -19,12 +19,12 @@
 #define MONGOC_WRITE_COMMAND_LEGACY_PRIVATE_H
 
 #if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
+#error "Only <mongoc/mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
-#include "mongoc-client-private.h"
-#include "mongoc-write-command-private.h"
+#include <bson/bson.h>
+#include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-write-command-private.h"
 
 BSON_BEGIN_DECLS
 

@@ -1,14 +1,14 @@
-#include <mongoc.h>
-#include <mongoc-client-private.h>
+#include <mongoc/mongoc.h>
+#include <mongoc/mongoc-client-private.h>
 
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 #include "mock_server/mock-rs.h"
 #include "mock_server/future-functions.h"
-#include "mongoc-cursor-private.h"
-#include "mongoc-collection-private.h"
-#include "mongoc-read-concern-private.h"
-#include "mongoc-write-concern-private.h"
+#include "mongoc/mongoc-cursor-private.h"
+#include "mongoc/mongoc-collection-private.h"
+#include "mongoc/mongoc-read-concern-private.h"
+#include "mongoc/mongoc-write-concern-private.h"
 #include "test-conveniences.h"
 
 #define CURSOR_COMMON_SETUP                                         \

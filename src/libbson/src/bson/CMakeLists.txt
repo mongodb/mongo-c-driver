@@ -27,6 +27,7 @@ set (src_libbson_src_bson_DIST_hs
    bson-context-private.h
    bson-fnv-private.h
    bson-timegm-private.h
+   forwarding/bson.h
 )
 extra_dist_generated (
    bson-version.h

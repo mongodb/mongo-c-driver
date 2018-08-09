@@ -136,8 +136,7 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/bson/bson-version.h"
 )
 
-include_directories ("${PROJECT_BINARY_DIR}/src/bson")
-include_directories ("${PROJECT_SOURCE_DIR}/src/bson")
+include_directories ("${PROJECT_BINARY_DIR}/src")
 include_directories ("${PROJECT_SOURCE_DIR}/src")
 include_directories ("${PROJECT_SOURCE_DIR}/../../src/common")
 
@@ -207,7 +206,11 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/bson/bson-writer.h
 )
 
-add_library (bson_shared SHARED ${SOURCES} ${HEADERS})
+set (HEADERS_FORWARDING
+   ${PROJECT_SOURCE_DIR}/src/bson/forwarding/bson.h
+)
+
+add_library (bson_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set (CMAKE_CXX_VISIBILITY_PRESET hidden)
 set_target_properties (bson_shared PROPERTIES COMPILE_DEFINITIONS "BSON_COMPILATION;JSONSL_PARSE_NAN")
 set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
@@ -239,7 +242,7 @@ if (WIN32)
 endif ()
 
 if (ENABLE_STATIC MATCHES "ON|AUTO")
-   add_library (bson_static STATIC ${SOURCES} ${HEADERS})
+   add_library (bson_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    set_target_properties (bson_static PROPERTIES COMPILE_DEFINITIONS "BSON_COMPILATION;BSON_STATIC;JSONSL_PARSE_NAN")
    set_target_properties (bson_static PROPERTIES VERSION 0.0.0)
    set_target_properties (bson_static PROPERTIES OUTPUT_NAME "bson-static-${BSON_API_VERSION}")
@@ -299,7 +302,11 @@ if (ENABLE_STATIC MATCHES "ON|AUTO")
 endif ()
 install (
    FILES ${HEADERS}
-   DESTINATION ${BSON_HEADER_INSTALL_DIR}
+   DESTINATION "${BSON_HEADER_INSTALL_DIR}/bson"
+)
+install (
+   FILES ${HEADERS_FORWARDING}
+   DESTINATION "${BSON_HEADER_INSTALL_DIR}"
 )
 
 set (LIBBSON_LIBRARIES "")
