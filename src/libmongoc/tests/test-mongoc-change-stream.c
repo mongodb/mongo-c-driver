@@ -1248,7 +1248,10 @@ typedef struct {
    bson_t agg_reply;
 } resume_at_optime_ctx_t;
 
-#define RESUME_AT_OPTIME_INITIALIZER { false, false, BSON_INITIALIZER}
+#define RESUME_AT_OPTIME_INITIALIZER \
+   {                                 \
+      false, false, BSON_INITIALIZER \
+   }
 
 static void
 _resume_at_optime_started (const mongoc_apm_command_started_t *event)
@@ -1681,6 +1684,28 @@ test_resume_cases (void)
 
 
 void
+test_error_null_doc (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_change_stream_t *stream;
+   bson_error_t err;
+   const bson_t *error_doc =
+      tmp_bson ("{}"); /* assign to a non-zero address. */
+
+   client = test_framework_client_new ();
+   stream = mongoc_client_watch (client, tmp_bson ("{}"), NULL);
+   /* error_doc starts as non-NULL. */
+   BSON_ASSERT (error_doc);
+   BSON_ASSERT (
+      !mongoc_change_stream_error_document (stream, &err, &error_doc));
+   /* error_doc is set to NULL no error occurred. */
+   BSON_ASSERT (!error_doc);
+   mongoc_change_stream_destroy (stream);
+   mongoc_client_destroy (client);
+}
+
+
+void
 test_change_stream_install (TestSuite *suite)
 {
    char resolved[PATH_MAX];
@@ -1785,6 +1810,12 @@ test_change_stream_install (TestSuite *suite)
                       _skip_if_no_client_watch);
    TestSuite_AddMockServerTest (
       suite, "/change_stream/resume_with_first_doc", test_resume_cases);
+   TestSuite_AddFull (suite,
+                      "/change_stream/error_null_doc",
+                      test_error_null_doc,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_rs_version_6);
 
    test_framework_resolve_path (JSON_DIR "/change_streams", resolved);
    install_json_test_suite (suite, resolved, &test_change_stream_spec_cb);

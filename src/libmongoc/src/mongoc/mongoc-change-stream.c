@@ -561,6 +561,10 @@ mongoc_change_stream_error_document (const mongoc_change_stream_t *stream,
       }
       return true;
    }
+
+   if (bson) {
+      *bson = NULL;
+   }
    return false;
 }
 
