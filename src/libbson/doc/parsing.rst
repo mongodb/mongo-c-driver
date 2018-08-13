@@ -66,7 +66,7 @@ Libbson provides convenient sub-iterators to dive down into a sub-document or su
 .. code-block:: c
 
   bson_iter_t iter;
-  bson_iter_t *child;
+  bson_iter_t child;
   char *json;
 
   if (bson_iter_init_find (&iter, doc, "foo") &&
