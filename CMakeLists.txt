@@ -48,6 +48,7 @@ option (ENABLE_RDTSCP
    "Fast performance counters on Intel using the RDTSCP instruction"
    OFF
 )
+option (ENABLE_APPLE_FRAMEWORK "Build libraries as frameworks on darwin platforms" OFF) 
 set (ENABLE_ICU AUTO CACHE STRING "Enable ICU support, necessary to use non-ASCII usernames or passwords, default AUTO.")
 
 project (mongo-c-driver C)
@@ -140,19 +141,8 @@ set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
 
 include (MakeDistFiles)
 
-if (NOT BSON_LIBRARIES)
-   message ("  -- Using bundled libbson")
-   if (ENABLE_STATIC MATCHES "ON|AUTO")
-      set (MONGOC_ENABLE_STATIC ON)
-   endif ()
-   add_subdirectory (src/libbson)
-   # Defined in src/libbson/CMakeLists.txt
-   set (BSON_STATIC_LIBRARIES bson_static)
-   set (BSON_LIBRARIES bson_shared)
-   set (BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
-   set (BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
-   set (BSON_STATIC_DEFINITIONS "BSON_STATIC")
-endif ()
+# Ensure the default behavior: don't ignore RPATH settings.
+set (CMAKE_SKIP_BUILD_RPATH OFF)
 
 # Ensure the default behavior: don't use the final install destination as the
 # temporary RPATH for executables (ensure we can run tests and programs from
@@ -169,6 +159,20 @@ set (CMAKE_MACOSX_RPATH ON)
 # Enable a CMake 3.0+ policy that sets CMAKE_MACOSX_RPATH by default, and
 # silence a CMake 3.11 warning that the old behavior is deprecated.
 cmake_policy (SET CMP0042 NEW)
+
+if (NOT BSON_LIBRARIES)
+   message ("  -- Using bundled libbson")
+   if (ENABLE_STATIC MATCHES "ON|AUTO")
+      set (MONGOC_ENABLE_STATIC ON)
+   endif ()
+   add_subdirectory (src/libbson)
+   # Defined in src/libbson/CMakeLists.txt
+   set (BSON_STATIC_LIBRARIES bson_static)
+   set (BSON_LIBRARIES bson_shared)
+   set (BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
+   set (BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
+   set (BSON_STATIC_DEFINITIONS "BSON_STATIC")
+endif ()
 
 if (MSVC)
    add_definitions (-D_CRT_SECURE_NO_WARNINGS)
