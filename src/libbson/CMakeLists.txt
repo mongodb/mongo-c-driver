@@ -136,6 +136,13 @@ configure_file (
    "${PROJECT_BINARY_DIR}/src/bson/bson-version.h"
 )
 
+if (ENABLE_APPLE_FRAMEWORK)
+   configure_file (
+      "${PROJECT_SOURCE_DIR}/src/bson/modules/module.modulemap.in"
+      "${PROJECT_BINARY_DIR}/src/bson/modules/module.modulemap"
+   )
+endif ()
+
 include_directories ("${PROJECT_BINARY_DIR}/src")
 include_directories ("${PROJECT_SOURCE_DIR}/src")
 include_directories ("${PROJECT_SOURCE_DIR}/../../src/common")
@@ -216,6 +223,17 @@ set_target_properties (bson_shared PROPERTIES COMPILE_DEFINITIONS "BSON_COMPILAT
 set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "bson-${BSON_API_VERSION}" PREFIX "lib")
 
+if (ENABLE_APPLE_FRAMEWORK)
+   set_target_properties(bson_shared PROPERTIES 
+      FRAMEWORK TRUE 
+      MACOSX_FRAMEWORK_BUNDLE_VERSION ${MONGOC_VERSION} 
+      MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${MONGOC_VERSION}
+      MACOSX_FRAMEWORK_IDENTIFIER org.mongodb.bson
+      OUTPUT_NAME "bson"
+      PUBLIC_HEADER "${HEADERS}" 
+   )
+endif ()
+
 if (RT_LIBRARY)
    target_link_libraries (bson_shared ${RT_LIBRARY})
 endif ()
@@ -291,6 +309,7 @@ install (
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+   FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR} 
 )
 if (ENABLE_STATIC MATCHES "ON|AUTO")
    install (
@@ -298,6 +317,7 @@ if (ENABLE_STATIC MATCHES "ON|AUTO")
       LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
       ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR} 
    )
 endif ()
 install (
@@ -308,6 +328,13 @@ install (
    FILES ${HEADERS_FORWARDING}
    DESTINATION "${BSON_HEADER_INSTALL_DIR}"
 )
+
+if (ENABLE_APPLE_FRAMEWORK)
+   install (
+      FILES "${PROJECT_BINARY_DIR}/src/bson/modules/module.modulemap"
+      DESTINATION "${CMAKE_INSTALL_BINDIR}/bson.framework/Modules/"
+   )
+endif ()
 
 set (LIBBSON_LIBRARIES "")
 foreach (_lib ${CMAKE_C_IMPLICIT_LINK_LIBRARIES} ${BSON_LIBRARIES})
