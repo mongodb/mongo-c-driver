@@ -1815,7 +1815,7 @@ test_change_stream_install (TestSuite *suite)
                       test_error_null_doc,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      _skip_if_no_client_watch);
 
    test_framework_resolve_path (JSON_DIR "/change_streams", resolved);
    install_json_test_suite (suite, resolved, &test_change_stream_spec_cb);
