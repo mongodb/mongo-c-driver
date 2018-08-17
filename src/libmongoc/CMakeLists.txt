@@ -727,6 +727,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-exhaust.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-find-and-modify.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs-bucket.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-handshake.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c

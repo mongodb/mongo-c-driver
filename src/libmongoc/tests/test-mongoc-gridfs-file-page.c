@@ -214,12 +214,12 @@ test_memset0 (void)
 void
 test_gridfs_file_page_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/GridFS/File/Page/create", test_create);
-   TestSuite_Add (suite, "/GridFS/File/Page/get_data", test_get_data);
-   TestSuite_Add (suite, "/GridFS/File/Page/get_len", test_get_len);
-   TestSuite_Add (suite, "/GridFS/File/Page/is_dirty", test_is_dirty);
-   TestSuite_Add (suite, "/GridFS/File/Page/read", test_read);
-   TestSuite_Add (suite, "/GridFS/File/Page/seek", test_seek);
-   TestSuite_Add (suite, "/GridFS/File/Page/write", test_write);
-   TestSuite_Add (suite, "/GridFS/File/Page/memset0", test_memset0);
+   TestSuite_Add (suite, "/gridfs_old/File/Page/create", test_create);
+   TestSuite_Add (suite, "/gridfs_old/File/Page/get_data", test_get_data);
+   TestSuite_Add (suite, "/gridfs_old/File/Page/get_len", test_get_len);
+   TestSuite_Add (suite, "/gridfs_old/File/Page/is_dirty", test_is_dirty);
+   TestSuite_Add (suite, "/gridfs_old/File/Page/read", test_read);
+   TestSuite_Add (suite, "/gridfs_old/File/Page/seek", test_seek);
+   TestSuite_Add (suite, "/gridfs_old/File/Page/write", test_write);
+   TestSuite_Add (suite, "/gridfs_old/File/Page/memset0", test_memset0);
 }
