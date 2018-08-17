@@ -414,6 +414,8 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs-bucket.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs-bucket-file.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs-file.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.c
@@ -445,6 +447,8 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-file.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-download.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-upload.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
@@ -476,6 +480,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-flags.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs-bucket.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs-file.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-page.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs-file-list.h
@@ -828,6 +833,7 @@ mongoc_add_example (example-command-monitoring TRUE ${PROJECT_SOURCE_DIR}/exampl
 mongoc_add_example (example-command-with-opts TRUE ${PROJECT_SOURCE_DIR}/examples/example-command-with-opts.c)
 mongoc_add_example (example-create-indexes TRUE ${PROJECT_SOURCE_DIR}/examples/example-create-indexes.c)
 mongoc_add_example (example-gridfs TRUE ${PROJECT_SOURCE_DIR}/examples/example-gridfs.c)
+mongoc_add_example (example-gridfs-bucket TRUE ${PROJECT_SOURCE_DIR}/examples/example-gridfs-bucket.c)
 if (NOT WIN32 AND ENABLE_EXAMPLES)
    mongoc_add_example (example-pool TRUE ${PROJECT_SOURCE_DIR}/examples/example-pool.c)
    target_link_libraries (example-pool Threads::Threads)

@@ -36,6 +36,7 @@
 #include "mongoc/mongoc-error.h"
 #include "mongoc/mongoc-flags.h"
 #include "mongoc/mongoc-gridfs.h"
+#include "mongoc/mongoc-gridfs-bucket.h"
 #include "mongoc/mongoc-gridfs-file.h"
 #include "mongoc/mongoc-gridfs-file-list.h"
 #include "mongoc/mongoc-gridfs-file-page.h"
