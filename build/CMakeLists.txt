@@ -4,6 +4,8 @@ add_subdirectory (sphinx)
 set_local_dist (build_DIST_local
    CMakeLists.txt
    maintainer-flags.txt
+   generate-uninstall.cmd
+   generate-uninstall.sh
 )
 
 set (build_DIST

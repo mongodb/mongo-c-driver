@@ -144,6 +144,26 @@ A build configuration description similar to the one above will be displayed, th
   $ make
   $ sudo make install
 
+There are two ways to uninstall the components that have been installed.  The first is to invoke the uninstall program directly.  On Linux/Unix:
+
+.. code-block:: none
+
+  $ sudo /usr/local/share/mongo-c-driver/uninstall.sh
+
+On Windows:
+
+.. code-block:: none
+
+  C:\Users\user> C:\mongo-c-driver\share\mongo-c-driver\uninstall.bat
+
+The second way to uninstall is from within the build directory, assuming that it is in the exact same state as when the install command was invoked:
+
+.. code-block:: none
+
+  $ sudo make uninstall
+
+The second approach simply invokes the uninstall program referenced in the first approach.
+
 Building from git
 ^^^^^^^^^^^^^^^^^
 

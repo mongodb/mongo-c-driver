@@ -1591,6 +1591,36 @@ tasks:
             bucket: mciuploads
             permissions: public-read
             content_type: ${content_type|application/x-gzip}
+
+    - name: install-uninstall-check-mingw
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o xtrace
+              set -o errexit
+              BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-mingw.cmd
+              cmd.exe /c .\\.evergreen\\install-uninstall-check-mingw.cmd
+
+    - name: install-uninstall-check
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o xtrace
+              set -o errexit
+              BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
+              sh ./.evergreen/install-uninstall-check.sh
 # }}}
 
 # Test Matrix {{{
@@ -8934,6 +8964,10 @@ buildvariants:
       distros:
       - windows-64-vs2013-compile
     - "check-public-headers"
+    - name: "install-uninstall-check"
+    - name: "install-uninstall-check-mingw"
+      distros:
+      - windows-64-vs2015-compile
 
 - name: clang34ubuntu
   display_name: "clang 3.4 (Ubuntu 14.04)"

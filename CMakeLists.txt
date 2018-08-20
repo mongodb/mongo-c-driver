@@ -259,6 +259,8 @@ if (ENABLE_MONGOC)
       THIRD_PARTY_NOTICES
       VERSION_CURRENT
       VERSION_RELEASED
+      # This sub-directory is added later, so manually include here
+      generate_uninstall/CMakeLists.txt
    )
 
    set_local_dist (top_DIST ${top_DIST_local})
@@ -322,3 +324,20 @@ if (ENABLE_MONGOC)
    endif ()
 
 endif ()
+
+if (WIN32)
+   set (UNINSTALL_PROG "uninstall.cmd")
+else ()
+   set (UNINSTALL_PROG "uninstall.sh")
+endif ()
+set (UNINSTALL_PROG_DIR "${CMAKE_INSTALL_FULL_DATADIR}/mongo-c-driver")
+
+# Create uninstall program and associated uninstall target
+#
+# This needs to be last (after all other add_subdirectory calls) to ensure that
+# the generated uninstall program is complete and correct
+add_subdirectory (generate_uninstall)
+
+add_custom_target (uninstall
+   COMMAND "${UNINSTALL_PROG_DIR}/${UNINSTALL_PROG}"
+)
