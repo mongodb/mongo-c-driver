@@ -52,9 +52,9 @@ test_session_no_crypto (void *ctx)
 }
 
 
-#define ASSERT_SESSIONS_MATCH(_lsid_a, _lsid_b) \
-   do {                                         \
-      match_bson ((_lsid_a), (_lsid_b), false); \
+#define ASSERT_SESSIONS_MATCH(_lsid_a, _lsid_b)               \
+   do {                                                       \
+      BSON_ASSERT (match_bson ((_lsid_a), (_lsid_b), false)); \
    } while (0)
 
 
