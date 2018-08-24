@@ -167,64 +167,31 @@ functions:
         silent: true
         working_dir: "mongoc"
         script: |
-           . venv/bin/activate
-           cd src/libbson
+           # Get "aha", the ANSI HTML Adapter.
+           git clone --depth 1 https://github.com/theZiz/aha.git aha-repo
+           cd aha-repo
+           make
+           cd ..
+           mv aha-repo/aha .
 
-           # "man" with redirection writes plain ASCII, use lower-level groff to
-           # force formatted output. -t lays out tables, -T utf8 sets the output
-           # type, -man loads the manpage TROFF macros.
-           for doc in doc/man/*.3; do
-             echo $doc
-             fullpath=`pwd`/$doc
-             groff -man -t -T utf8 $fullpath | term2image -o $fullpath.png
-           done
-
-           mkdir -p man-page-images
-           mv doc/man/*.png man-page-images
-
-           export AWS_ACCESS_KEY_ID=${aws_key}
-           export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-
-           sh ../../.evergreen/man-page-image-list.sh man-page-images > man-page-images/index.html
+           sh .evergreen/man-pages-to-html.sh libbson src/libbson/doc/man > bson-man-pages.html
+           sh .evergreen/man-pages-to-html.sh libmongoc src/libmongoc/doc/man > mongoc-man-pages.html
     - command: s3.put
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
-        local_file:  mongoc/src/libbson/man-page-images/index.html
-        remote_file: ${project}/man-page-images/libbson/${CURRENT_VERSION}/index.html
+        local_file:  mongoc/bson-man-pages.html
+        remote_file: ${project}/man-pages/libbson/${CURRENT_VERSION}/index.html
         bucket: mciuploads
         permissions: public-read
         content_type: text/html
         display_name: "libbson man pages"
-    - command: shell.exec
-      params:
-        silent: true
-        working_dir: "mongoc"
-        script: |
-           . venv/bin/activate
-           cd src/libmongoc
-
-           for doc in doc/man/*.3; do
-             echo $doc
-             fullpath=`pwd`/$doc
-             groff -man -t -T utf8 $fullpath | term2image -o $fullpath.png
-           done
-
-           mkdir -p man-page-images
-           mv doc/man/*.png man-page-images
-
-           export AWS_ACCESS_KEY_ID=${aws_key}
-           export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           aws s3 cp man-page-images s3://mciuploads/${project}/man-page-images/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-
-           sh ../../.evergreen/man-page-image-list.sh man-page-images > man-page-images/index.html
     - command: s3.put
       params:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
-        local_file:  mongoc/src/libmongoc/man-page-images/index.html
-        remote_file: ${project}/man-page-images/libmongoc/${CURRENT_VERSION}/index.html
+        local_file:  mongoc/mongoc-man-pages.html
+        remote_file: ${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html
         bucket: mciuploads
         permissions: public-read
         content_type: text/html
@@ -625,11 +592,10 @@ tasks:
             working_dir: "mongoc"
             script: |
               # Need modern Sphinx for :caption: in literal includes.
-              # Install term2image for man page rendering.
               python -m virtualenv venv
               cd venv
               . bin/activate
-              ./bin/pip install sphinx git+https://github.com/ajdavis/term2image.git
+              ./bin/pip install sphinx
               cd ..
 
         - command: shell.exec
