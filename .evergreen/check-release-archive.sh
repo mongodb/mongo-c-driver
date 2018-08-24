@@ -49,6 +49,8 @@ if tar --wildcards -tzf $tarfile 'mongo-c-driver-*/doc/man/index.3' > /dev/null 
    exit 1
 fi
 
+set +o xtrace
+
 echo "Checking that all C files are included in tarball"
 # Check that all C files were included.
 TAR_CFILES=`tar --wildcards -tf mongo-c-driver-*.tar.gz 'mongo-c-driver-*/src/libmongoc/src/mongoc/*.c' | cut -d / -f 4 | sort`
@@ -59,3 +61,4 @@ if [ "$TAR_CFILES" != "$SRC_CFILES" ]; then
    echo $SRC_CFILES | diff -y - tar_cfiles.txt
 fi
 
+set -o xtrace
