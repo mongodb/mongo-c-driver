@@ -131,11 +131,11 @@ If ``cmake`` concludes with anything different, then there is likely an error or
 
 mongo-c-driver contains a copy of libbson, in case your system does not already have libbson installed. The build will detect if libbson is not installed and use the bundled libbson.
 
-Additionally, it is possible to build only libbson by setting the ``-DENABLE_BSON=ONLY`` option:
+Additionally, it is possible to build only libbson by setting the ``-DENABLE_MONGOC=OFF`` option:
 
 .. parsed-literal::
 
-  $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_BSON=ONLY ..
+  $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_MONGOC=OFF ..
 
 A build configuration description similar to the one above will be displayed, though with fewer entries. Once the configuration is complete, the selected items can be built and installed with these commands:
 
