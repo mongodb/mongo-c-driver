@@ -154,59 +154,15 @@ if (NOT BSON_LIBRARIES)
    set (BSON_STATIC_DEFINITIONS "BSON_STATIC")
 endif ()
 
-# This allows skipping all the non-bson components
-if (ENABLE_MONGOC STREQUAL OFF)
-   return ()
-endif ()
-
-if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC)
-   message (FATAL_ERROR "ENABLE_TESTS requires ENABLE_STATIC")
-endif ()
-
-if (NOT ENABLE_SSL MATCHES "DARWIN|WINDOWS|OPENSSL|LIBRESSL|AUTO|OFF")
-   message (FATAL_ERROR
-            "ENABLE_SSL option must be DARWIN, WINDOWS, OPENSSL, LIBRESSL, AUTO, or OFF")
-endif ()
-
-set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
-
-set (ZLIB_SOURCES
-   ${SOURCE_DIR}/src/zlib-1.2.11/adler32.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/crc32.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/deflate.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/infback.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/inffast.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/inflate.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/inftrees.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/trees.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/zutil.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/compress.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/uncompr.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/gzclose.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/gzlib.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
-   ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
-)
-
-set (MONGOC_ENABLE_ICU 0)
-
-set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
-
-include (CPack)
-
-# Ensure the default behavior: don't ignore RPATH settings.
-set (CMAKE_SKIP_BUILD_RPATH OFF)
-
 # Ensure the default behavior: don't use the final install destination as the
 # temporary RPATH for executables (ensure we can run tests and programs from
 # the build directory).
-
 set (CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
+
 # Include any custom library paths in the final RPATH.
-
 set (CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
-# Install libs with names like @rpath/libmongoc-1.0.0.dylib, not bare names.
 
+# Install libs with names like @rpath/libmongoc-1.0.0.dylib, not bare names.
 set (CMAKE_MACOSX_RPATH ON)
 
 # https://cmake.org/cmake/help/v3.11/policy/CMP0042.html
@@ -221,107 +177,148 @@ endif ()
 add_definitions (-D_GNU_SOURCE)
 add_definitions (-D_BSD_SOURCE)
 add_definitions (-D_DEFAULT_SOURCE)
-if (APPLE)
-   # Until CDRIVER-520.
-   add_definitions (-Wno-deprecated-declarations)
-endif ()
 
-if (ENABLE_MONGOC STREQUAL ON)
-   add_subdirectory (src/libmongoc)
-endif ()
+if (ENABLE_MONGOC)
 
-if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
-   find_package (Sphinx REQUIRED)
-   add_custom_target (doc
-      ALL
-      DEPENDS
-      $<$<STREQUAL:"${ENABLE_BSON}","ON">:bson-doc>
-      $<$<STREQUAL:"${ENABLE_MONGOC}","ON">:mongoc-doc>
+   if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC)
+      message (FATAL_ERROR "ENABLE_TESTS requires ENABLE_STATIC")
+   endif ()
+
+   if (NOT ENABLE_SSL MATCHES "DARWIN|WINDOWS|OPENSSL|LIBRESSL|AUTO|OFF")
+      message (FATAL_ERROR
+               "ENABLE_SSL option must be DARWIN, WINDOWS, OPENSSL, LIBRESSL, AUTO, or OFF")
+   endif ()
+
+   set (SOURCE_DIR "${PROJECT_SOURCE_DIR}/")
+
+   set (ZLIB_SOURCES
+      ${SOURCE_DIR}/src/zlib-1.2.11/adler32.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/crc32.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/deflate.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/infback.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inffast.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inflate.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/inftrees.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/trees.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/zutil.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/compress.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/uncompr.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzclose.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzlib.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
+      ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
    )
-endif ()
 
-# Implement 'dist' and 'distcheck' targets
-#
-# CMake does not implement anything like 'dist' and 'distcheck' from autotools.
-# This implementation is based on the one in GnuCash.
+   set (MONGOC_ENABLE_ICU 0)
 
-add_subdirectory (build)
-# sub-directory 'doc' was already included above
-add_subdirectory (orchestration_configs)
-add_subdirectory (src)
-# 'src/libbson' was already included, so 'src' will not include it directly
-# 'src/libmongoc' was already included, so 'src' will not include it directly
+   set (CPACK_RESOURCE_FILE_LICENSE "${SOURCE_DIR}/COPYING")
 
-set (PACKAGE_PREFIX "mongo-c-driver-${MONGOC_VERSION}")
-set (DIST_FILE "${PACKAGE_PREFIX}.tar.gz")
+   include (CPack)
 
-set (top_DIST_local
-   CMakeLists.txt
-   CONTRIBUTING.md
-   COPYING
-   NEWS
-   README.rst
-   THIRD_PARTY_NOTICES
-   VERSION_CURRENT
-   VERSION_RELEASED
-)
+   # Ensure the default behavior: don't ignore RPATH settings.
+   set (CMAKE_SKIP_BUILD_RPATH OFF)
 
-set_local_dist (top_DIST ${top_DIST_local})
+   if (APPLE)
+      # Until CDRIVER-520.
+      add_definitions (-Wno-deprecated-declarations)
+   endif ()
 
-set (ALL_DIST
-   ${top_DIST}
-   ${build_DIST}
-   ${orchestration_configs_DIST}
-   ${src_DIST}
-   ${src_libbson_DIST}
-   ${src_libmongoc_DIST}
-)
+   add_subdirectory (src/libmongoc)
 
-# Write a dist manifest
-string (REPLACE ";" "\n" ALL_DIST_LINES "${ALL_DIST}")
-file (WRITE ${CMAKE_BINARY_DIR}/dist_manifest.txt ${ALL_DIST_LINES})
+   if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
+      find_package (Sphinx REQUIRED)
+      add_custom_target (doc
+         ALL
+         DEPENDS
+         $<$<STREQUAL:"${ENABLE_BSON}","ON">:bson-doc>
+         $<$<STREQUAL:"${ENABLE_MONGOC}","ON">:mongoc-doc>
+      )
+   endif ()
 
-# This is the command that produces the distribution tarball
-add_custom_command (OUTPUT ${DIST_FILE}
-   COMMAND ${CMAKE_COMMAND}
-      -D CMAKE_MODULE_PATH=${PROJECT_SOURCE_DIR}/build/cmake/make_dist
-      -D PACKAGE_PREFIX=${PACKAGE_PREFIX}
-      -D MONGOC_SOURCE_DIR=${CMAKE_SOURCE_DIR}
-      -D BUILD_SOURCE_DIR=${BUILD_SOURCE_DIR}
-      -D SHELL=${SHELL}
-      "-Ddist_generated=\"${dist_generated}\""
-      -P ${PROJECT_SOURCE_DIR}/build/cmake/make_dist/MakeDist.cmake
+   # Implement 'dist' and 'distcheck' targets
+   #
+   # CMake does not implement anything like 'dist' and 'distcheck' from autotools.
+   # This implementation is based on the one in GnuCash.
 
-   DEPENDS
-      ${ALL_DIST} ${dist_generated_depends}
-)
+   add_subdirectory (build)
+   # sub-directory 'doc' was already included above
+   add_subdirectory (orchestration_configs)
+   add_subdirectory (src)
+   # 'src/libbson' was already included, so 'src' will not include it directly
+   # 'src/libmongoc' was already included, so 'src' will not include it directly
 
-if (ENABLE_BSON MATCHES "ON|AUTO" AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
-   # Since our 'dist' implementation does not add top-level targets for every
-   # file to be included, we declare a dependency on the 'mongo-doc' target so
-   # that documentation is built before the distribution tarball is generated.
-   add_custom_target (dist DEPENDS doc ${DIST_FILE})
+   set (PACKAGE_PREFIX "mongo-c-driver-${MONGOC_VERSION}")
+   set (DIST_FILE "${PACKAGE_PREFIX}.tar.gz")
 
-   add_custom_target (distcheck DEPENDS dist
+   set (top_DIST_local
+      CMakeLists.txt
+      CONTRIBUTING.md
+      COPYING
+      NEWS
+      README.rst
+      THIRD_PARTY_NOTICES
+      VERSION_CURRENT
+      VERSION_RELEASED
+   )
+
+   set_local_dist (top_DIST ${top_DIST_local})
+
+   set (ALL_DIST
+      ${top_DIST}
+      ${build_DIST}
+      ${orchestration_configs_DIST}
+      ${src_DIST}
+      ${src_libbson_DIST}
+      ${src_libmongoc_DIST}
+   )
+
+   # Write a dist manifest
+   string (REPLACE ";" "\n" ALL_DIST_LINES "${ALL_DIST}")
+   file (WRITE ${CMAKE_BINARY_DIR}/dist_manifest.txt ${ALL_DIST_LINES})
+
+   # This is the command that produces the distribution tarball
+   add_custom_command (OUTPUT ${DIST_FILE}
       COMMAND ${CMAKE_COMMAND}
          -D CMAKE_MODULE_PATH=${PROJECT_SOURCE_DIR}/build/cmake/make_dist
-         -D CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
          -D PACKAGE_PREFIX=${PACKAGE_PREFIX}
-         -D CMAKE_C_FLAGS=${CMAKE_C_FLAGS}
-         -D CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
-         -P ${PROJECT_SOURCE_DIR}/build/cmake/make_dist/MakeDistCheck.cmake
-   )
-else ()
-   string (CONCAT DISTERRMSG
-      "The dist and distcheck targets disabled. Set ENABLE_BSON=ON, "
-      "ENABLE_MAN_PAGES=ON, and ENABLE_HTML_DOCS=ON to enable."
+         -D MONGOC_SOURCE_DIR=${CMAKE_SOURCE_DIR}
+         -D BUILD_SOURCE_DIR=${BUILD_SOURCE_DIR}
+         -D SHELL=${SHELL}
+         "-Ddist_generated=\"${dist_generated}\""
+         -P ${PROJECT_SOURCE_DIR}/build/cmake/make_dist/MakeDist.cmake
+
+      DEPENDS
+         ${ALL_DIST} ${dist_generated_depends}
    )
 
-   add_custom_target (dist
-      COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
-   )
+   if (ENABLE_BSON MATCHES "ON|AUTO" AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
+      # Since our 'dist' implementation does not add top-level targets for every
+      # file to be included, we declare a dependency on the 'mongo-doc' target so
+      # that documentation is built before the distribution tarball is generated.
+      add_custom_target (dist DEPENDS doc ${DIST_FILE})
 
-   add_custom_target (distcheck
-      COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
-   )
+      add_custom_target (distcheck DEPENDS dist
+         COMMAND ${CMAKE_COMMAND}
+            -D CMAKE_MODULE_PATH=${PROJECT_SOURCE_DIR}/build/cmake/make_dist
+            -D CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+            -D PACKAGE_PREFIX=${PACKAGE_PREFIX}
+            -D CMAKE_C_FLAGS=${CMAKE_C_FLAGS}
+            -D CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+            -P ${PROJECT_SOURCE_DIR}/build/cmake/make_dist/MakeDistCheck.cmake
+      )
+   else ()
+      string (CONCAT DISTERRMSG
+         "The dist and distcheck targets disabled. Set ENABLE_BSON=ON, "
+         "ENABLE_MAN_PAGES=ON, and ENABLE_HTML_DOCS=ON to enable."
+      )
+
+      add_custom_target (dist
+         COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
+      )
+
+      add_custom_target (distcheck
+         COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
+      )
+   endif ()
+
 endif ()
