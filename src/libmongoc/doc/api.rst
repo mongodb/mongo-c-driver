@@ -22,6 +22,7 @@ API Reference
    mongoc_gridfs_file_list_t
    mongoc_gridfs_file_opt_t
    mongoc_gridfs_file_t
+   mongoc_gridfs_bucket_t
    mongoc_gridfs_t
    mongoc_host_list_t
    mongoc_index_opt_geo_t
