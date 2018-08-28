@@ -1,13 +1,13 @@
-#include <mongoc.h>
-#include <bson.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <mongoc/mongoc.h>
 
 int
 main (int argc, char *argv[])
 {
    const char *uri_string =
-      "mongodb://127.0.0.1:27017/?appname=new-gridfs-example";
+      "mongodb://localhost:27017/?appname=new-gridfs-example";
    mongoc_client_t *client;
    mongoc_database_t *db;
    mongoc_stream_t *file_stream;
@@ -43,7 +43,7 @@ main (int argc, char *argv[])
    mongoc_stream_close (file_stream);
    mongoc_stream_destroy (file_stream);
 
-   /* 3. Download the file in gridFS to a local file. */
+   /* 3. Download the file in GridFS to a local file. */
    file_stream = mongoc_stream_file_new_for_path (argv[2], O_CREAT | O_RDWR, 0);
    if (!file_stream) {
       perror ("Error opening file stream");
@@ -56,8 +56,10 @@ main (int argc, char *argv[])
       printf ("Error downloading file to stream: %s\n", error.message);
       return EXIT_FAILURE;
    }
+   mongoc_stream_close (file_stream);
+   mongoc_stream_destroy (file_stream);
 
-   /* 4. List what files are available in gridFS. */
+   /* 4. List what files are available in GridFS. */
    bson_init (&filter);
    cursor = mongoc_gridfs_bucket_find (bucket, &filter, NULL);
 
@@ -74,7 +76,7 @@ main (int argc, char *argv[])
       return EXIT_FAILURE;
    }
 
-   /* Done! Now let's cleanup. */
+   /* 6. Cleanup. */
    mongoc_stream_close (file_stream);
    mongoc_stream_destroy (file_stream);
    mongoc_cursor_destroy (cursor);

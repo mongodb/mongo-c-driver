@@ -22,7 +22,7 @@ Parameters
 
 ``opts`` may be ``NULL`` or a document consisting of any of the following:
 
-* ``bucketName`` A ``utf8`` string used as the prefix to the GridFS "chunks" and "files" collections. Defaults to "fs".
+* ``bucketName`` A ``utf8`` string used as the prefix to the GridFS "chunks" and "files" collections. Defaults to "fs". The bucket name, together with the database and suffix collections must not exceed 120 characters. See the manual for `the max namespace length <https://docs.mongodb.com/manual/reference/limits/#Namespace-Length>`_.
 * ``chunkSizeBytes`` An ``int32`` representing the chunk size. Defaults to 255KB.
 * ``writeConcern`` A serialized :symbol:`mongoc_write_concern_t` appended with :symbol:`mongoc_write_concern_append`. Defaults to the write concern of ``db``.
 * ``readConcern`` A serialized :symbol:`mongoc_read_concern_t` appended with :symbol:`mongoc_read_concern_append`. Defaults to the read concern of ``db``.

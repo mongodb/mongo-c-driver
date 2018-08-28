@@ -27,6 +27,9 @@ Description
 
 Reads from the GridFS file and writes to the ``destination`` stream.
 
+Writes the full contents of the file to the ``destination`` stream.
+The ``destination`` stream is not closed after calling :symbol:`mongoc_gridfs_bucket_download_to_stream()`; call :symbol:`mongoc_stream_close()` after.
+
 See Also
 --------
 :symbol:`mongoc_stream_file_new` and :symbol:`mongoc_stream_file_new_for_path`, which can be used to create a destination stream from a file.

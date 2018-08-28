@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-#include <bson.h>
-#include <bson-types.h>
-#include "mongoc.h"
+#include "mongoc/mongoc.h"
 #include "mongoc-gridfs-bucket-file-private.h"
 #include "mongoc-gridfs-bucket-private.h"
 #include "mongoc-trace-private.h"
@@ -30,23 +28,30 @@ _mongoc_min (const size_t a, const size_t b)
    return a < b ? a : b;
 }
 
-/*
- * Creates an index in the given collection if it doesn't already exist.
+/*--------------------------------------------------------------------------
  *
- * Returns true if the index was already present or was successfully created.
- * Returns false if an error occurred while trying to create the index.
+ * _mongoc_create_index_if_not_present --
+ *
+ *       Creates an index in the given collection if it doesn't exist.
+ *
+ * Return:
+ *       True if the index was already present or was successfully created.
+ *       False if an error occurred while trying to create the index.
+ *
+ *--------------------------------------------------------------------------
  */
 static bool
 _mongoc_create_index_if_not_present (mongoc_collection_t *col,
                                      const bson_t *index,
-                                     bool unique)
+                                     bool unique,
+                                     bson_error_t *error)
 {
    mongoc_cursor_t *cursor;
    bool index_exists;
    bool r;
    const bson_t *doc;
    bson_iter_t iter;
-   bson_t *inner_doc;
+   bson_t inner_doc;
    char *index_name;
    bson_t index_command;
    uint32_t data_len;
@@ -65,95 +70,117 @@ _mongoc_create_index_if_not_present (mongoc_collection_t *col,
          continue;
       }
       bson_iter_document (&iter, &data_len, &data);
-      inner_doc = bson_new_from_data (data, data_len);
-      if (bson_compare (inner_doc, index) == 0) {
+      bson_init_static (&inner_doc, data, data_len);
+      if (bson_compare (&inner_doc, index) == 0) {
          index_exists = true;
       }
-      bson_destroy (inner_doc);
+      bson_destroy (&inner_doc);
    }
 
    mongoc_cursor_destroy (cursor);
 
-   if (!index_exists) {
-      index_name = mongoc_collection_keys_to_index_string (index);
-      bson_init (&index_command);
-      BCON_APPEND (&index_command,
-                   "createIndexes",
-                   BCON_UTF8 (mongoc_collection_get_name (col)),
-                   "indexes",
-                   "[",
-                   "{",
-                   "key",
-                   BCON_DOCUMENT (index),
-                   "name",
-                   BCON_UTF8 (index_name),
-                   "unique",
-                   BCON_BOOL (unique),
-                   "}",
-                   "]");
-
-      r = mongoc_collection_write_command_with_opts (
-         col, &index_command, NULL, NULL, NULL);
-      bson_destroy (&index_command);
-      bson_free (index_name);
-      if (!r) {
-         return false;
-      }
+   if (index_exists) {
+      return true;
    }
+
+   index_name = mongoc_collection_keys_to_index_string (index);
+   bson_init (&index_command);
+   BCON_APPEND (&index_command,
+                "createIndexes",
+                BCON_UTF8 (mongoc_collection_get_name (col)),
+                "indexes",
+                "[",
+                "{",
+                "key",
+                BCON_DOCUMENT (index),
+                "name",
+                BCON_UTF8 (index_name),
+                "unique",
+                BCON_BOOL (unique),
+                "}",
+                "]");
+
+   r = mongoc_collection_write_command_with_opts (
+      col, &index_command, NULL, NULL, error);
+   bson_destroy (&index_command);
+   bson_free (index_name);
+   if (!r) {
+      return false;
+   }
+
 
    return true;
 }
 
-/*
- * Creates the indexes needed for gridFS
+/*--------------------------------------------------------------------------
  *
- * Returns true if creating the indexes was successful, otherwise returns false.
+ * _mongoc_gridfs_bucket_create_indexes --
+ *
+ *       Creates the indexes needed for GridFS on the 'files' and 'chunks'
+ *       collections.
+ *
+ * Return:
+ *       True if creating the indexes was successful, otherwise returns
+ *       false.
+ *
+ *--------------------------------------------------------------------------
  */
 static bool
-_mongoc_gridfs_bucket_set_indexes (mongoc_gridfs_bucket_t *bucket)
+_mongoc_gridfs_bucket_create_indexes (mongoc_gridfs_bucket_t *bucket,
+                                      bson_error_t *error)
 {
    mongoc_read_prefs_t *prefs;
    bson_t filter;
+   bson_t opts;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
-   bson_t *files_index;
-   bson_t *chunks_index;
+   bson_t files_index;
+   bson_t chunks_index;
    bool r;
 
-   bson_init (&filter);
-
    /* Check to see if there already exists a document in the files collection */
+   bson_init (&filter);
+   bson_append_int32 (&filter, "_id", 3, 1);
+   bson_init (&opts);
+   bson_append_bool (&opts, "singleBatch", 11, true);
+   bson_append_int32 (&opts, "limit", 5, 1);
    prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
    cursor =
-      mongoc_collection_find_with_opts (bucket->files, &filter, NULL, prefs);
+      mongoc_collection_find_with_opts (bucket->files, &filter, &opts, prefs);
    bson_destroy (&filter);
+   bson_destroy (&opts);
 
    r = mongoc_cursor_next (cursor, &doc);
 
    mongoc_read_prefs_destroy (prefs);
+   if (r) {
+      /* Files exist */
+      mongoc_cursor_destroy (cursor);
+      return true;
+   } else if (mongoc_cursor_error (cursor, error)) {
+      mongoc_cursor_destroy (cursor);
+      return false;
+   }
    mongoc_cursor_destroy (cursor);
 
-   if (r) {
-      /* We are done here if files already exist */
-      return true;
-   }
-
    /* Create files index */
-   files_index = bson_new ();
-   BSON_APPEND_INT32 (files_index, "filename", 1);
-   BSON_APPEND_INT32 (files_index, "uploadDate", 1);
-   r = _mongoc_create_index_if_not_present (bucket->files, files_index, false);
-   bson_destroy (files_index);
+   bson_init (&files_index);
+   BSON_APPEND_INT32 (&files_index, "filename", 1);
+   BSON_APPEND_INT32 (&files_index, "uploadDate", 1);
+   r = _mongoc_create_index_if_not_present (
+      bucket->files, &files_index, false, error);
+   bson_destroy (&files_index);
    if (!r) {
       return false;
    }
 
    /* Create unique chunks index */
-   chunks_index = bson_new ();
-   BSON_APPEND_INT32 (chunks_index, "files_id", 1);
-   BSON_APPEND_INT32 (chunks_index, "n", 1);
-   r = _mongoc_create_index_if_not_present (bucket->chunks, chunks_index, true);
-   bson_destroy (chunks_index);
+   bson_init (&chunks_index);
+   BSON_APPEND_INT32 (&chunks_index, "files_id", 1);
+   BSON_APPEND_INT32 (&chunks_index, "n", 1);
+   r = _mongoc_create_index_if_not_present (
+      bucket->chunks, &chunks_index, true, error);
+   bson_destroy (&chunks_index);
    if (!r) {
       return false;
    }
@@ -161,11 +188,17 @@ _mongoc_gridfs_bucket_set_indexes (mongoc_gridfs_bucket_t *bucket)
    return true;
 }
 
-/*
- * Writes a chunk from the buffer into the chunks collection.
+/*--------------------------------------------------------------------------
  *
- * Returns true if the chunk was successfully written. Otherwise, it returns
- * false and sets an error on the bucket.
+ * _mongoc_gridfs_bucket_write_chunk --
+ *
+ *       Writes a chunk from the buffer into the chunks collection.
+ *
+ * Return:
+ *       Returns true if the chunk was successfully written. Otherwise,
+ *       returns false and sets an error on the bucket file.
+ *
+ *--------------------------------------------------------------------------
  */
 static bool
 _mongoc_gridfs_bucket_write_chunk (mongoc_gridfs_bucket_file_t *file)
@@ -201,8 +234,13 @@ _mongoc_gridfs_bucket_write_chunk (mongoc_gridfs_bucket_file_t *file)
    return true;
 }
 
-/*
- * Initializes the cursor at file->cursor for the given file.
+/*--------------------------------------------------------------------------
+ *
+ * _mongoc_gridfs_bucket_init_cursor --
+ *
+ *       Initializes the cursor at file->cursor for the given file.
+ *
+ *--------------------------------------------------------------------------
  */
 static void
 _mongoc_gridfs_bucket_init_cursor (mongoc_gridfs_bucket_file_t *file)
@@ -229,11 +267,17 @@ _mongoc_gridfs_bucket_init_cursor (mongoc_gridfs_bucket_file_t *file)
    bson_destroy (&sort);
 }
 
-/*
- * Reads a chunk from the server and places it into the file's buffer
+/*--------------------------------------------------------------------------
  *
- * Returns true if the buffer has been filled with any available data.
- * Otherwise, returns false and sets the error on the bucket
+ * _mongoc_gridfs_bucket_read_chunk --
+ *
+ *       Reads a chunk from the server and places it into the file's buffer
+ *
+ * Return:
+ *       True if the buffer has been filled with any available data.
+ *       Otherwise, false and sets the error on the bucket file.
+ *
+ *--------------------------------------------------------------------------
  */
 static bool
 _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
@@ -245,7 +289,7 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
    const uint8_t *data;
    uint32_t data_len;
    int64_t total_chunks;
-   int64_t last_chunk_size;
+   int64_t expected_size;
 
    BSON_ASSERT (file);
 
@@ -283,7 +327,8 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
       bson_set_error (&file->err,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
-                      "Missing a chunk.");
+                      "Missing chunk %d.",
+                      file->curr_chunk);
       return false;
    }
 
@@ -292,7 +337,8 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
       bson_set_error (&file->err,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CORRUPT,
-                      "Chunk missing a required field.");
+                      "Chunk %d missing a required field 'n'.",
+                      file->curr_chunk);
       return false;
    }
 
@@ -302,7 +348,8 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
       bson_set_error (&file->err,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CHUNK_MISSING,
-                      "Missing a chunk.");
+                      "Missing chunk %d.",
+                      file->curr_chunk);
       return false;
    }
 
@@ -311,7 +358,8 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
       bson_set_error (&file->err,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_CORRUPT,
-                      "Chunk missing a required field.");
+                      "Chunk %d missing a required field 'data'.",
+                      file->curr_chunk);
       return false;
    }
 
@@ -319,22 +367,21 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
 
    /* Assert that the data is the correct length */
    if (file->curr_chunk != total_chunks - 1) {
-      if (data_len != file->chunk_size) {
-         bson_set_error (&file->err,
-                         MONGOC_ERROR_GRIDFS,
-                         MONGOC_ERROR_GRIDFS_CORRUPT,
-                         "Chunk is the wrong size");
-         return false;
-      }
+      expected_size = file->chunk_size;
    } else {
-      last_chunk_size = file->length - ((total_chunks - 1) * file->chunk_size);
-      if (data_len != last_chunk_size) {
-         bson_set_error (&file->err,
-                         MONGOC_ERROR_GRIDFS,
-                         MONGOC_ERROR_GRIDFS_CORRUPT,
-                         "Chunk is the wrong size");
-         return false;
-      }
+      expected_size = file->length - ((total_chunks - 1) * file->chunk_size);
+   }
+
+   if (data_len != expected_size) {
+      bson_set_error (&file->err,
+                      MONGOC_ERROR_GRIDFS,
+                      MONGOC_ERROR_GRIDFS_CORRUPT,
+                      "Chunk %d expected to have size %" PRId64
+                      " but is size %d.",
+                      file->curr_chunk,
+                      expected_size,
+                      data_len);
+      return false;
    }
 
    memcpy (file->buffer, data, data_len);
@@ -348,8 +395,7 @@ _mongoc_gridfs_bucket_read_chunk (mongoc_gridfs_bucket_file_t *file)
 ssize_t
 _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
                                    const mongoc_iovec_t *iov,
-                                   size_t iovcnt,
-                                   uint32_t timeout_msec)
+                                   size_t iovcnt)
 {
    uint32_t total;
    size_t bytes_available;
@@ -373,17 +419,14 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
       bson_set_error (&file->err,
                       MONGOC_ERROR_GRIDFS,
                       MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR,
-                      "Trying to write on a closed stream.");
+                      "Cannot write after saving/aborting on a GridFS file.");
       return -1;
    }
 
    if (!file->bucket->indexed) {
-      r = _mongoc_gridfs_bucket_set_indexes (file->bucket);
+      r = _mongoc_gridfs_bucket_create_indexes (file->bucket, &file->err);
       if (!r) {
-         bson_set_error (&file->err,
-                         MONGOC_ERROR_GRIDFS,
-                         MONGOC_ERROR_GRIDFS_PROTOCOL_ERROR,
-                         "Creating required indexes failed.");
+         /* Error is set on file. */
          return -1;
       } else {
          file->bucket->indexed = true;
@@ -416,9 +459,7 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
 ssize_t
 _mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file,
                                   mongoc_iovec_t *iov,
-                                  size_t iovcnt,
-                                  size_t min_bytes,
-                                  uint32_t timeout_msec)
+                                  size_t iovcnt)
 {
    uint32_t total;
    size_t bytes_available;
@@ -475,11 +516,19 @@ _mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file,
 }
 
 
-/*
- * Saves the file to the files collection in gridFS. This locks the file into
- * gridFS, and no more chunks are allowed to be written.
+/*--------------------------------------------------------------------------
+ *
+ * _mongoc_gridfs_bucket_file_save --
+ *
+ *       Saves the file to the files collection in gridFS. This locks the
+ *       file into GridFS, and no more chunks are allowed to be written.
+ *
+ * Return:
+ *       True if saved or no-op. False otherwise, and sets the file error.
+ *
+ *--------------------------------------------------------------------------
  */
-int
+bool
 _mongoc_gridfs_bucket_file_save (mongoc_gridfs_bucket_file_t *file)
 {
    bson_t new_doc;
@@ -489,14 +538,14 @@ _mongoc_gridfs_bucket_file_save (mongoc_gridfs_bucket_file_t *file)
    BSON_ASSERT (file);
 
    if (file->saved) {
-      /* This file has already been saved! */
-      return 0;
+      /* Already saved, or aborted. */
+      return true;
    }
 
    if (file->err.code) {
-      return -1;
+      return false;
    }
-   
+
    length = file->curr_chunk * file->chunk_size;
 
    if (file->in_buffer != 0) {
@@ -520,13 +569,12 @@ _mongoc_gridfs_bucket_file_save (mongoc_gridfs_bucket_file_t *file)
       file->bucket->files, &new_doc, NULL, NULL, &file->err);
    bson_destroy (&new_doc);
    file->saved = r;
-   return 1;
+   return (file->err.code) ? false : true;
 }
 
 void
 _mongoc_gridfs_bucket_file_destroy (mongoc_gridfs_bucket_file_t *file)
 {
-   /* Do cleanup! */
    if (file) {
       bson_value_destroy (file->file_id);
       bson_free (file->file_id);

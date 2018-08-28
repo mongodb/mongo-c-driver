@@ -1,4 +1,4 @@
-#include <mongoc.h>
+#include "mongoc/mongoc.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -8,7 +8,7 @@
 #include "json-test.h"
 
 void
-test_create_bucket ()
+test_create_bucket (void)
 {
    /* Tests creating a bucket with all opts set */
    mongoc_gridfs_bucket_t *gridfs;
@@ -64,7 +64,7 @@ test_create_bucket ()
 }
 
 void
-test_upload_and_download ()
+test_upload_and_download (void)
 {
    mongoc_gridfs_bucket_t *gridfs;
    mongoc_stream_t *upload_stream;
@@ -790,6 +790,100 @@ test_all_spec_tests (TestSuite *suite)
    install_json_test_suite (suite, resolved, &test_gridfs_cb);
 }
 
+static void
+test_upload_error (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   mongoc_database_t *db;
+   mongoc_gridfs_bucket_t *gridfs;
+   mongoc_stream_t *source;
+   bson_error_t error = {0};
+   bool r;
+
+   client = test_framework_client_new ();
+   db = mongoc_client_get_database (client, "test");
+   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL);
+   source = mongoc_stream_file_new_for_path (
+      BSON_BINARY_DIR "/test1.bson", O_RDONLY, 0);
+   BSON_ASSERT (source);
+   r = mongoc_gridfs_bucket_upload_from_stream (
+      gridfs, "test1", source, NULL /* opts */, NULL /* file id */, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   /* create a read-only user */
+   (void) mongoc_database_remove_user (db, "fake_user", NULL);
+   r = mongoc_database_add_user (
+      db, "fake_user", "password", tmp_bson ("{'0': 'read'}"), NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   mongoc_stream_close (source);
+   mongoc_stream_destroy (source);
+   mongoc_gridfs_bucket_destroy (gridfs);
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+
+   /* initialize gridfs with a root user. */
+   uri = test_framework_get_uri ();
+   mongoc_uri_set_username (uri, "fake_user");
+   mongoc_uri_set_password (uri, "password");
+   client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
+   mongoc_uri_destroy (uri);
+
+   source = mongoc_stream_file_new_for_path (
+      BSON_BINARY_DIR "/test1.bson", O_RDONLY, 0);
+   BSON_ASSERT (source);
+   db = mongoc_client_get_database (client, "test");
+   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL);
+   mongoc_gridfs_bucket_upload_from_stream (
+      gridfs, "test1", source, NULL /* opts */, NULL /* file id */, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "Authentication Failed");
+
+   mongoc_stream_close (source);
+   mongoc_stream_destroy (source);
+   mongoc_gridfs_bucket_destroy (gridfs);
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_find_w_session (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_database_t *db;
+   mongoc_gridfs_bucket_t *gridfs;
+   mongoc_cursor_t *cursor;
+   bson_error_t error = {0};
+   bson_t opts;
+   mongoc_client_session_t *session;
+   bool r;
+
+   client = test_framework_client_new ();
+   db = mongoc_client_get_database (client, "test");
+   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL);
+   session = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (session, error);
+   bson_init (&opts);
+   r = mongoc_client_session_append (session, &opts, &error);
+   ASSERT_OR_PRINT (r, error);
+   cursor = mongoc_gridfs_bucket_find (gridfs, tmp_bson ("{}"), &opts);
+   BSON_ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Cannot pass sessionId as an option");
+   bson_destroy (&opts);
+   mongoc_cursor_destroy (cursor);
+   mongoc_gridfs_bucket_destroy (gridfs);
+   mongoc_client_session_destroy (session);
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+}
+
 void
 test_gridfs_bucket_install (TestSuite *suite)
 {
@@ -797,4 +891,17 @@ test_gridfs_bucket_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/gridfs/create_bucket", test_create_bucket);
    TestSuite_AddLive (
       suite, "/gridfs/upload_and_download", test_upload_and_download);
+   TestSuite_AddFull (suite,
+                      "/gridfs/upload_error",
+                      test_upload_error,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth);
+   TestSuite_AddFull (suite,
+                      "/gridfs/find_w_session",
+                      test_find_w_session,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_crypto);
 }

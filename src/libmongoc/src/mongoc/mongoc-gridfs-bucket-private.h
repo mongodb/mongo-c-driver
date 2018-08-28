@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef MONGOC_GRIDFS_BUCKET_PRIVATE_H
-#define MONGOC_GRIDFS_BUCKET_PRIVATE_H
-
 #if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
-#include "mongoc-collection.h"
+#ifndef MONGOC_GRIDFS_BUCKET_PRIVATE_H
+#define MONGOC_GRIDFS_BUCKET_PRIVATE_H
+
+#include "mongoc/mongoc-collection.h"
 
 BSON_BEGIN_DECLS
 

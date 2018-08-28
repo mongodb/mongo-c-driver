@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef MONGOC_GRIDFS_BUCKET_H
-#define MONGOC_GRIDFS_BUCKET_H
-
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
+#ifndef MONGOC_GRIDFS_BUCKET_H
+#define MONGOC_GRIDFS_BUCKET_H
 
-#include "mongoc-database.h"
-#include "mongoc-stream.h"
+#include "bson/bson.h"
+#include "mongoc/mongoc-collection.h"
+#include "mongoc/mongoc-database.h"
+#include "mongoc/mongoc-stream.h"
 
 BSON_BEGIN_DECLS
 
@@ -54,7 +53,7 @@ mongoc_gridfs_bucket_upload_from_stream (mongoc_gridfs_bucket_t *bucket,
                                          const char *filename,
                                          mongoc_stream_t *source,
                                          const bson_t *opts,
-                                         bson_value_t *file_id /* OUT */,
+                                         bson_value_t *file_id,
                                          bson_error_t *error);
 
 MONGOC_EXPORT (bool)

@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-#ifndef MONGOC_GRIDFS_BUCKET_FILE_PRIVATE_H
-#define MONGOC_GRIDFS_BUCKET_FILE_PRIVATE_H
-
 #if !defined(MONGOC_COMPILATION)
 #error "Only <mongoc.h> can be included directly."
 #endif
 
-#include <bson.h>
-#include "mongoc-collection.h"
-#include "mongoc-stream.h"
-#include "mongoc-gridfs-bucket.h"
+#ifndef MONGOC_GRIDFS_BUCKET_FILE_PRIVATE_H
+#define MONGOC_GRIDFS_BUCKET_FILE_PRIVATE_H
+
+#include "bson/bson.h"
+#include "mongoc/mongoc-collection.h"
+#include "mongoc/mongoc-stream.h"
+#include "mongoc/mongoc-gridfs-bucket.h"
 
 BSON_BEGIN_DECLS
 
-struct _mongoc_gridfs_bucket_file_t {
-   /* Corresponding bucket */
+typedef struct {
+   /* corresponding bucket */
    mongoc_gridfs_bucket_t *bucket;
 
    /* file data */
@@ -55,24 +53,19 @@ struct _mongoc_gridfs_bucket_file_t {
 
    /* Error */
    bson_error_t err;
-};
-
-typedef struct _mongoc_gridfs_bucket_file_t mongoc_gridfs_bucket_file_t;
+} mongoc_gridfs_bucket_file_t;
 
 ssize_t
 _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
                                    const mongoc_iovec_t *iov,
-                                   size_t iovcnt,
-                                   uint32_t timeout_msec);
+                                   size_t iovcnt);
 
 ssize_t
 _mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file,
                                   mongoc_iovec_t *iov,
-                                  size_t iovcnt,
-                                  size_t min_bytes,
-                                  uint32_t timeout_msec);
+                                  size_t iovcnt);
 
-int
+bool
 _mongoc_gridfs_bucket_file_save (mongoc_gridfs_bucket_file_t *file);
 
 void

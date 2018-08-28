@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-
-#include "mongoc-trace-private.h"
-#include "mongoc-counters-private.h"
-#include "mongoc-stream-private.h"
-#include "mongoc-gridfs-bucket-file-private.h"
-#include "mongoc-stream-gridfs-upload-private.h"
+#include "mongoc/mongoc-counters-private.h"
+#include "mongoc/mongoc-gridfs-bucket-file-private.h"
+#include "mongoc/mongoc-trace-private.h"
+#include "mongoc/mongoc-stream-gridfs-upload-private.h"
+#include "mongoc/mongoc-stream-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "stream-gridfs-upload"
@@ -68,7 +67,7 @@ _mongoc_upload_stream_gridfs_close (mongoc_stream_t *stream)
 
    ret = _mongoc_gridfs_bucket_file_save (gridfs->file);
 
-   RETURN (ret);
+   RETURN (ret ? 0 : 1);
 }
 
 static ssize_t
@@ -87,8 +86,8 @@ _mongoc_upload_stream_gridfs_writev (mongoc_stream_t *stream,
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
 
-   /* timeout_msec is unused by mongoc_gridfs_bucket_file_writev */
-   ret = _mongoc_gridfs_bucket_file_writev (gridfs->file, iov, iovcnt, 0);
+   (void) timeout_msec; /* unused. */
+   ret = _mongoc_gridfs_bucket_file_writev (gridfs->file, iov, iovcnt);
 
    if (!ret) {
       RETURN (ret);
