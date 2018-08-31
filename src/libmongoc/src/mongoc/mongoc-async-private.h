@@ -45,7 +45,7 @@ typedef enum {
 typedef void (*mongoc_async_cmd_cb_t) (struct _mongoc_async_cmd *acmd,
                                        mongoc_async_cmd_result_t result,
                                        const bson_t *bson,
-                                       int64_t rtt_msec);
+                                       int64_t duration_usec);
 
 typedef mongoc_stream_t *(*mongoc_async_cmd_initiate_t) (
    struct _mongoc_async_cmd *);

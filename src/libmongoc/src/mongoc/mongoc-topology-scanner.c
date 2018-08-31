@@ -50,18 +50,18 @@ _async_connected (mongoc_async_cmd_t *acmd);
 static void
 _async_success (mongoc_async_cmd_t *acmd,
                 const bson_t *ismaster_response,
-                int64_t rtt_msec);
+                int64_t duration_usec);
 
 static void
 _async_error_or_timeout (mongoc_async_cmd_t *acmd,
-                         int64_t rtt_msec,
+                         int64_t duration_usec,
                          const char *default_err_msg);
 
 static void
 _async_handler (mongoc_async_cmd_t *acmd,
                 mongoc_async_cmd_result_t async_status,
                 const bson_t *ismaster_response,
-                int64_t rtt_msec);
+                int64_t duration_usec);
 
 static void
 _mongoc_topology_scanner_monitor_heartbeat_started (
@@ -71,13 +71,15 @@ static void
 _mongoc_topology_scanner_monitor_heartbeat_succeeded (
    const mongoc_topology_scanner_t *ts,
    const mongoc_host_list_t *host,
-   const bson_t *reply);
+   const bson_t *reply,
+   int64_t duration_usec);
 
 static void
 _mongoc_topology_scanner_monitor_heartbeat_failed (
    const mongoc_topology_scanner_t *ts,
    const mongoc_host_list_t *host,
-   const bson_error_t *error);
+   const bson_error_t *error,
+   int64_t duration_usec);
 
 
 /* reset "retired" nodes that failed or were removed in the previous scan */
@@ -433,7 +435,7 @@ _async_connected (mongoc_async_cmd_t *acmd)
 static void
 _async_success (mongoc_async_cmd_t *acmd,
                 const bson_t *ismaster_response,
-                int64_t rtt_msec)
+                int64_t duration_usec)
 {
    void *data = acmd->data;
    mongoc_topology_scanner_node_t *node =
@@ -452,7 +454,7 @@ _async_success (mongoc_async_cmd_t *acmd,
    node->last_failed = -1;
 
    _mongoc_topology_scanner_monitor_heartbeat_succeeded (
-      ts, &node->host, ismaster_response);
+      ts, &node->host, ismaster_response, duration_usec);
 
    /* set our successful stream. */
    BSON_ASSERT (!node->stream);
@@ -464,12 +466,17 @@ _async_success (mongoc_async_cmd_t *acmd,
          ismaster_response, &node->sasl_supported_mechs);
    }
 
-   ts->cb (node->id, ismaster_response, rtt_msec, ts->cb_data, &acmd->error);
+   /* mongoc_topology_scanner_cb_t takes rtt_msec, not usec */
+   ts->cb (node->id,
+           ismaster_response,
+           duration_usec / 1000,
+           ts->cb_data,
+           &acmd->error);
 }
 
 static void
 _async_error_or_timeout (mongoc_async_cmd_t *acmd,
-                         int64_t rtt_msec,
+                         int64_t duration_usec,
                          const char *default_err_msg)
 {
    void *data = acmd->data;
@@ -516,10 +523,11 @@ _async_error_or_timeout (mongoc_async_cmd_t *acmd,
                       node->host.host_and_port);
 
       _mongoc_topology_scanner_monitor_heartbeat_failed (
-         ts, &node->host, &node->last_error);
+         ts, &node->host, &node->last_error, duration_usec);
 
-      /* call the topology scanner callback. cannot connect to this node. */
-      ts->cb (node->id, NULL, rtt_msec, ts->cb_data, error);
+      /* call the topology scanner callback. cannot connect to this node.
+       * callback takes rtt_msec, not usec. */
+      ts->cb (node->id, NULL, duration_usec / 1000, ts->cb_data, error);
    } else {
       /* there are still more commands left for this node or it succeeded
        * with another stream. skip the topology scanner callback. */
@@ -540,7 +548,7 @@ static void
 _async_handler (mongoc_async_cmd_t *acmd,
                 mongoc_async_cmd_result_t async_status,
                 const bson_t *ismaster_response,
-                int64_t rtt_msec)
+                int64_t duration_usec)
 {
    BSON_ASSERT (acmd->data);
 
@@ -549,13 +557,13 @@ _async_handler (mongoc_async_cmd_t *acmd,
       _async_connected (acmd);
       return;
    case MONGOC_ASYNC_CMD_SUCCESS:
-      _async_success (acmd, ismaster_response, rtt_msec);
+      _async_success (acmd, ismaster_response, duration_usec);
       return;
    case MONGOC_ASYNC_CMD_TIMEOUT:
-      _async_error_or_timeout (acmd, rtt_msec, "connection timeout");
+      _async_error_or_timeout (acmd, duration_usec, "connection timeout");
       return;
    case MONGOC_ASYNC_CMD_ERROR:
-      _async_error_or_timeout (acmd, rtt_msec, "connection error");
+      _async_error_or_timeout (acmd, duration_usec, "connection error");
       return;
    case MONGOC_ASYNC_CMD_IN_PROGRESS:
    default:
@@ -773,8 +781,10 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 {
    bool success = false;
    mongoc_stream_t *stream;
+   int64_t start;
 
    _mongoc_topology_scanner_monitor_heartbeat_started (node->ts, &node->host);
+   start = bson_get_monotonic_time ();
 
    /* if there is already a working stream, push it back to be re-scanned. */
    if (node->stream) {
@@ -803,7 +813,10 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 
    if (!success) {
       _mongoc_topology_scanner_monitor_heartbeat_failed (
-         node->ts, &node->host, error);
+         node->ts,
+         &node->host,
+         error,
+         (bson_get_monotonic_time () - start) / 1000);
 
       node->ts->setup_err_cb (node->id, node->ts->cb_data, error);
       return;
@@ -1053,13 +1066,15 @@ static void
 _mongoc_topology_scanner_monitor_heartbeat_succeeded (
    const mongoc_topology_scanner_t *ts,
    const mongoc_host_list_t *host,
-   const bson_t *reply)
+   const bson_t *reply,
+   int64_t duration_usec)
 {
    if (ts->apm_callbacks.server_heartbeat_succeeded) {
       mongoc_apm_server_heartbeat_succeeded_t event;
       event.host = host;
       event.context = ts->apm_context;
       event.reply = reply;
+      event.duration_usec = duration_usec;
       ts->apm_callbacks.server_heartbeat_succeeded (&event);
    }
 }
@@ -1069,13 +1084,15 @@ static void
 _mongoc_topology_scanner_monitor_heartbeat_failed (
    const mongoc_topology_scanner_t *ts,
    const mongoc_host_list_t *host,
-   const bson_error_t *error)
+   const bson_error_t *error,
+   int64_t duration_usec)
 {
    if (ts->apm_callbacks.server_heartbeat_failed) {
       mongoc_apm_server_heartbeat_failed_t event;
       event.host = host;
       event.context = ts->apm_context;
       event.error = error;
+      event.duration_usec = duration_usec;
       ts->apm_callbacks.server_heartbeat_failed (&event);
    }
 }

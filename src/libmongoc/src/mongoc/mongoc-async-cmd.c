@@ -99,7 +99,7 @@ bool
 mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
 {
    mongoc_async_cmd_result_t result;
-   int64_t rtt_msec;
+   int64_t duration_usec;
    _mongoc_async_cmd_phase_t phase_callback;
 
    BSON_ASSERT (acmd);
@@ -120,13 +120,13 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
       return true;
    }
 
-   rtt_msec = (bson_get_monotonic_time () - acmd->cmd_started) / 1000;
+   duration_usec = bson_get_monotonic_time () - acmd->cmd_started;
 
    if (result == MONGOC_ASYNC_CMD_SUCCESS) {
-      acmd->cb (acmd, result, &acmd->reply, rtt_msec);
+      acmd->cb (acmd, result, &acmd->reply, duration_usec);
    } else {
       /* we're in ERROR, TIMEOUT, or CANCELED */
-      acmd->cb (acmd, result, NULL, rtt_msec);
+      acmd->cb (acmd, result, NULL, duration_usec);
    }
 
    mongoc_async_cmd_destroy (acmd);

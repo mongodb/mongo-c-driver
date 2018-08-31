@@ -18,6 +18,8 @@
 typedef struct {
    bson_t events;
    uint32_t n_events;
+   mongoc_array_t heartbeat_succeeded_durations;
+   mongoc_array_t heartbeat_failed_durations;
    bson_oid_t topology_id;
 } context_t;
 
@@ -26,6 +28,9 @@ context_init (context_t *context)
 {
    bson_init (&context->events);
    context->n_events = 0;
+   _mongoc_array_init (&context->heartbeat_succeeded_durations,
+                       sizeof (int64_t));
+   _mongoc_array_init (&context->heartbeat_failed_durations, sizeof (int64_t));
    bson_oid_init_from_string (&context->topology_id,
                               "000000000000000000000000");
 }
@@ -48,6 +53,8 @@ static void
 context_destroy (context_t *context)
 {
    bson_destroy (&context->events);
+   _mongoc_array_destroy (&context->heartbeat_succeeded_durations);
+   _mongoc_array_destroy (&context->heartbeat_failed_durations);
 }
 
 static void
@@ -288,6 +295,7 @@ server_heartbeat_succeeded (
 {
    context_t *ctx;
    const mongoc_host_list_t *host;
+   int64_t duration;
 
    ctx =
       (context_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
@@ -298,6 +306,9 @@ server_heartbeat_succeeded (
                              "host",
                              BCON_UTF8 (host->host_and_port),
                              "}"));
+
+   duration = mongoc_apm_server_heartbeat_succeeded_get_duration (event);
+   _mongoc_array_append_val (&ctx->heartbeat_succeeded_durations, duration);
 }
 
 static void
@@ -305,6 +316,7 @@ server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
 {
    context_t *ctx;
    const mongoc_host_list_t *host;
+   int64_t duration;
 
    ctx = (context_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
    host = mongoc_apm_server_heartbeat_failed_get_host (event);
@@ -314,6 +326,9 @@ server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
                              "host",
                              BCON_UTF8 (host->host_and_port),
                              "}"));
+
+   duration = mongoc_apm_server_heartbeat_failed_get_duration (event);
+   _mongoc_array_append_val (&ctx->heartbeat_failed_durations, duration);
 }
 
 static mongoc_apm_callbacks_t *
@@ -587,6 +602,7 @@ test_topology_events_disabled (void)
 
    context_destroy (&context);
 }
+
 static bool
 responder (request_t *request, void *data)
 {
@@ -607,10 +623,14 @@ _test_heartbeat_events (bool pooled, bool succeeded)
    mongoc_uri_t *uri;
    mongoc_client_t *client;
    mongoc_client_pool_t *pool = NULL;
+   int64_t start;
+   int64_t duration;
    future_t *future;
    request_t *request;
    char *expected_json;
    bson_error_t error;
+   mongoc_array_t *durations;
+   size_t i;
 
    context_init (&context);
 
@@ -629,6 +649,8 @@ _test_heartbeat_events (bool pooled, bool succeeded)
       client = mongoc_client_new_from_uri (uri);
       client_set_heartbeat_event_callbacks (client, &context);
    }
+
+   start = bson_get_monotonic_time ();
 
    /* trigger "ismaster" handshake */
    future = future_client_command_simple (
@@ -671,6 +693,8 @@ _test_heartbeat_events (bool pooled, bool succeeded)
       ASSERT (!future_get_bool (future));
    }
 
+   duration = bson_get_monotonic_time () - start;
+
    if (pooled) {
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);
@@ -680,17 +704,26 @@ _test_heartbeat_events (bool pooled, bool succeeded)
 
    /* even if pooled, only topology scanner sends events, so we get one pair */
    if (succeeded) {
+      durations = &context.heartbeat_succeeded_durations;
       expected_json = bson_strdup_printf (
          "{'0': {'heartbeat_started_event': {'host': '%s'}},"
          " '1': {'heartbeat_succeeded_event': {'host': '%s'}}}",
          mock_server_get_host_and_port (server),
          mock_server_get_host_and_port (server));
    } else {
+      durations = &context.heartbeat_failed_durations;
       expected_json = bson_strdup_printf (
          "{'0': {'heartbeat_started_event': {'host': '%s'}},"
          " '1': {'heartbeat_failed_event': {'host': '%s'}}}",
          mock_server_get_host_and_port (server),
          mock_server_get_host_and_port (server));
+   }
+
+   ASSERT_CMPSIZE_T (durations->len, >, (size_t) 0);
+   for (i = 0; i < durations->len; i++) {
+      int64_t d = _mongoc_array_index (durations, int64_t, i);
+      ASSERT_CMPINT64 (d, >=, (int64_t) 0);
+      ASSERT_CMPINT64 (d, <=, duration);
    }
 
    check_json_apm_events (
@@ -715,7 +748,6 @@ test_heartbeat_events_pooled_succeeded (void)
    _test_heartbeat_events (true, true);
 }
 
-
 static void
 test_heartbeat_events_single_failed (void)
 {
@@ -728,6 +760,77 @@ test_heartbeat_events_pooled_failed (void)
    _test_heartbeat_events (true, false);
 }
 
+static void
+_test_heartbeat_fails_dns (bool pooled)
+{
+   context_t context;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool = NULL;
+   int64_t start;
+   int64_t duration;
+   bool r;
+   bson_error_t error;
+   mongoc_array_t *durations;
+   size_t i;
+
+   context_init (&context);
+   uri = mongoc_uri_new (
+      "mongodb://doesntexist.foobar/?serverSelectionTimeoutMS=1000");
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      pool_set_heartbeat_event_callbacks (pool, &context);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      client_set_heartbeat_event_callbacks (client, &context);
+   }
+
+   start = bson_get_monotonic_time ();
+
+   /* trigger "ismaster" handshake */
+   r = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
+
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "Failed to resolve");
+
+   duration = bson_get_monotonic_time () - start;
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   durations = &context.heartbeat_failed_durations;
+
+   ASSERT_CMPSIZE_T (durations->len, >, (size_t) 0);
+   for (i = 0; i < durations->len; i++) {
+      int64_t d = _mongoc_array_index (durations, int64_t, i);
+      ASSERT_CMPINT64 (d, >=, (int64_t) 0);
+      ASSERT_CMPINT64 (d, <=, duration);
+   }
+
+   mongoc_uri_destroy (uri);
+   context_destroy (&context);
+}
+
+static void
+test_heartbeat_fails_dns_single (void *ctx)
+{
+   _test_heartbeat_fails_dns (false);
+}
+
+static void
+test_heartbeat_fails_dns_pooled (void *ctx)
+{
+   _test_heartbeat_fails_dns (true);
+}
 
 void
 test_sdam_monitoring_install (TestSuite *suite)
@@ -761,4 +864,18 @@ test_sdam_monitoring_install (TestSuite *suite)
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/failed",
       test_heartbeat_events_pooled_failed);
+   TestSuite_AddFull (
+      suite,
+      "/server_discovery_and_monitoring/monitoring/heartbeat/single/dns",
+      test_heartbeat_fails_dns_single,
+      NULL,
+      NULL,
+      test_framework_skip_if_offline);
+   TestSuite_AddFull (
+      suite,
+      "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/dns",
+      test_heartbeat_fails_dns_pooled,
+      NULL,
+      NULL,
+      test_framework_skip_if_offline);
 }

@@ -787,6 +787,7 @@ static void
 cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 {
    cmd_test_t *test;
+   int64_t duration;
 
    if (!strcmp (mongoc_apm_command_succeeded_get_command_name (event),
                 "endSessions")) {
@@ -797,6 +798,10 @@ cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
    test->succeeded_calls++;
    ASSERT_CMPSTR (test->cmd_name,
                   mongoc_apm_command_succeeded_get_command_name (event));
+
+   duration = mongoc_apm_command_succeeded_get_duration (event);
+   ASSERT_CMPINT64 (duration, >=, (int64_t) 0);
+   ASSERT_CMPINT64 (duration, <=, (int64_t) 10000000); /* ten seconds */
 }
 
 
@@ -804,11 +809,16 @@ static void
 cmd_failed_cb (const mongoc_apm_command_failed_t *event)
 {
    cmd_test_t *test;
+   int64_t duration;
 
    test = (cmd_test_t *) mongoc_apm_command_failed_get_context (event);
    test->failed_calls++;
    ASSERT_CMPSTR (test->cmd_name,
                   mongoc_apm_command_failed_get_command_name (event));
+
+   duration = mongoc_apm_command_failed_get_duration (event);
+   ASSERT_CMPINT64 (duration, >=, (int64_t) 0);
+   ASSERT_CMPINT64 (duration, <=, (int64_t) 10000000); /* ten seconds */
 }
 
 

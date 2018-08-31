@@ -56,7 +56,7 @@ static void
 test_ismaster_helper (mongoc_async_cmd_t *acmd,
                       mongoc_async_cmd_result_t result,
                       const bson_t *bson,
-                      int64_t rtt_msec)
+                      int64_t duration_usec)
 {
    struct result *r = (struct result *) acmd->data;
    bson_iter_t iter;
@@ -220,7 +220,7 @@ static void
 test_large_ismaster_helper (mongoc_async_cmd_t *acmd,
                             mongoc_async_cmd_result_t result,
                             const bson_t *bson,
-                            int64_t rtt_msec)
+                            int64_t duration_usec)
 {
    bson_iter_t iter;
    bson_error_t *error = &acmd->error;
@@ -307,7 +307,7 @@ static void
 test_ismaster_delay_callback (mongoc_async_cmd_t *acmd,
                               mongoc_async_cmd_result_t result,
                               const bson_t *bson,
-                              int64_t rtt_msec)
+                              int64_t duration_usec)
 {
    ((stream_with_result_t *) acmd->data)->finished = true;
 }
