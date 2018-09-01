@@ -262,7 +262,7 @@ bson_zero_free (void *mem,   /* IN */
  *
  * bson_mem_set_vtable --
  *
- *       This function will change our allocationt vtable.
+ *       This function will change our allocation vtable.
  *
  *       It is imperative that this is called at the beginning of the
  *       process before any memory has been allocated by the default
