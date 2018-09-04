@@ -33,11 +33,11 @@ Include and link libmongoc in your C program
 Include mongoc.h
 ^^^^^^^^^^^^^^^^
 
-All libmongoc's functions and types are available in one header file. Simply include ``mongoc.h``:
+All libmongoc's functions and types are available in one header file. Simply include ``mongoc/mongoc.h``:
 
 .. code-block:: c
 
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
 CMake
 '''''
@@ -348,7 +348,7 @@ When finished, ensure that allocated structures are freed by using their respect
 .. code-block:: c
 
   #include <bson/bson.h>
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
   #include <stdio.h>
 
   int
@@ -431,7 +431,7 @@ This first example uses an empty query specifier to find all documents in the da
 .. code-block:: c
 
   #include <bson/bson.h>
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
   #include <stdio.h>
 
   int
@@ -488,7 +488,7 @@ To look for a specific document, add a specifier to ``query``. This example adds
 .. code-block:: c
 
   #include <bson/bson.h>
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
   #include <stdio.h>
 
   int
@@ -547,9 +547,8 @@ Using the "mydb" database, the following example inserts an example document int
 
 .. code-block:: c
 
-  #include <bcon.h>
   #include <bson/bson.h>
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
   #include <stdio.h>
 
   int
@@ -645,7 +644,7 @@ The following code inserts a sample document into the database "mydb" and collec
 .. code-block:: c
 
   #include <bson/bson.h>
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
   #include <stdio.h>
 
   int
@@ -725,7 +724,7 @@ Counting the number of documents in a MongoDB collection is similar to performin
 .. code-block:: c
 
   #include <bson/bson.h>
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
   #include <stdio.h>
 
   int
@@ -790,8 +789,7 @@ This example executes the `collStats <http://docs.mongodb.org/manual/reference/c
 .. code-block:: c
 
   #include <bson/bson.h>
-  #include <bcon.h>
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
   #include <stdio.h>
 
   int

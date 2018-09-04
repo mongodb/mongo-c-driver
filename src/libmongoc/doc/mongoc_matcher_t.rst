@@ -46,9 +46,8 @@ Example
 .. code-block:: c
   :caption: Filter a sequence of BSON documents from STDIN based on a query
 
-  #include <bcon.h>
   #include <bson/bson.h>
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
   #include <stdio.h>
 
   int
