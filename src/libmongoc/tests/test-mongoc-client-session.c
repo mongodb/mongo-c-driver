@@ -1355,9 +1355,9 @@ _test_explicit_session_lsid (session_test_fn_t test_fn)
 
    start = bson_get_monotonic_time ();
    test_fn (test);
+   check_success (test);
    ASSERT_CMPINT (test->n_started, >, 0);
    ASSERT_CMPINT (test->n_succeeded, >, 0);
-   check_success (test);
    check_cluster_time (test);
    ASSERT_CMPINT64 (test->cs->server_session->last_used_usec, >=, start);
    session_test_destroy (test);
@@ -1881,6 +1881,7 @@ test_watch (session_test_t *test)
 {
    mongoc_change_stream_t *change_stream;
 
+   insert_10_docs (test);
    change_stream =
       mongoc_collection_watch (test->collection, tmp_bson ("{}"), &test->opts);
 
