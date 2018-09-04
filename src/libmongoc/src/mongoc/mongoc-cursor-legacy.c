@@ -51,7 +51,6 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor,
       RETURN (true);
    }
 
-   bson_init (&doc);
    _mongoc_cursor_prepare_getmore_command (cursor, &doc);
 
    bson_strncpy (db, cursor->ns, cursor->dblen + 1);
