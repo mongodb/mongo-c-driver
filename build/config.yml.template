@@ -975,7 +975,7 @@ tasks:
             working_dir: "mongoc"
             script: |
               export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-              PATH=/usr/lib/llvm-3.4/bin:$PATH DEBUG=on CC='clang' CXX='clang++' MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=address -g -fno-omit-frame-pointer' CXXFLAGS="$CFLAGS" SNAPPY=OFF SSL=OPENSSL SASL=OFF sh .evergreen/compile.sh
+              PATH=/usr/lib/llvm-3.4/bin:$PATH DEBUG=on CC='clang' CXX='clang++' MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=address -g -fno-omit-frame-pointer -DBSON_MEMCHECK' CXXFLAGS="$CFLAGS" SNAPPY=OFF SSL=OPENSSL SASL=OFF sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-sanitizer-undefined
@@ -1676,8 +1676,7 @@ tasks:
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "{{ task.version }}"
-  {# TODO: use task's topology as TOPOLOGY value unchanged #}
-            TOPOLOGY: "{{ 'sharded_cluster' if task.topology == 'sharded' else task.topology }}"
+            TOPOLOGY: "{{ task.topology }}"
             AUTH: "{{ 'auth' if task.auth else 'noauth' }}"
             SSL: "{{ task.display('ssl') }}"
         - func: "run tests"
@@ -1943,8 +1942,8 @@ buildvariants:
     - ".3.4 .openssl !.nosasl .server"
     - ".3.2 .openssl !.nosasl .server"
     - ".3.0 .openssl !.nosasl !.auth"
-    - ".latest .openssl .nosasl .replica-set"
-    - ".latest .openssl !.nosasl .replica-set"
+    - ".latest .openssl .nosasl .replica_set"
+    - ".latest .openssl !.nosasl .replica_set"
 
 - name: gcc48rhel
   display_name: "GCC 4.8 (RHEL 7.0)"

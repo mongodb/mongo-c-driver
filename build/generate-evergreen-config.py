@@ -34,10 +34,9 @@ evergreen_dir = normpath(joinpath(this_dir, '../.evergreen'))
 integration_task_axes = OrderedDict([
     ('valgrind', ['valgrind', False]),
     ('asan', ['asan', False]),
-    ('memcheck', ['memcheck', False]),
     ('coverage', ['coverage', False]),
     ('version', ['latest', '4.0', '3.6', '3.4', '3.2', '3.0']),
-    ('topology', ['server', 'replica_set', 'sharded']),
+    ('topology', ['server', 'replica_set', 'sharded_cluster']),
     ('auth', [True, False]),
     ('sasl', ['sasl', 'sspi', False]),
     ('ssl', ['openssl', 'darwinssl', 'winssl', False]),
@@ -69,6 +68,8 @@ class IntegrationTask(namedtuple('Task', tuple(integration_task_axes))):
             part = self.display(axis_name)
             if part == 'replica_set':
                 return 'replica-set'
+            elif part == 'sharded_cluster':
+                return 'sharded'
             return part
 
         return 'test-' + '-'.join(
@@ -100,24 +101,11 @@ def allow_integration_test_task(task):
         prohibit(task.sasl)
         require(task.ssl in ('openssl', False))
         prohibit(task.coverage)
-        if not task.auth:
-            prohibit(task.sasl)
+        # Valgrind only with auth+SSL or no auth + no SSL.
+        if task.auth:
+            require(task.ssl == 'openssl')
+        else:
             prohibit(task.ssl)
-
-        if task.memcheck:
-            require(task.version == 'latest')
-            require(task.auth)
-            prohibit(task.topology == 'sharded')
-
-        if task.topology == 'replica_set':
-            if task.auth:
-                require(task.version == 'latest')
-                require(task.memcheck)
-            else:
-                prohibit(task.version == '3.6')
-
-    if task.version == '3.6':
-        prohibit(task.coverage and task.topology == 'replica_set')
 
     if task.auth:
         require(task.ssl)
@@ -132,50 +120,23 @@ def allow_integration_test_task(task):
     if not task.ssl:
         prohibit(task.sasl)
 
-    if task.memcheck:
-        require(task.valgrind or task.asan)
-
     if task.coverage:
         prohibit(task.sasl)
 
         if task.auth:
             require(task.ssl == 'openssl')
-
-        if task.auth and task.topology == 'replica_set':
-            require(task.version == 'latest')
-
-        if not task.auth:
+        else:
             prohibit(task.ssl)
-
-        prohibit(task.topology == 'server'
-                 and task.version == 'latest'
-                 and task.ssl == 'winssl'
-                 and not task.auth)
 
     if task.asan:
         prohibit(task.sasl)
         prohibit(task.coverage)
 
-        # Address sanitizer only with auth+SSL or no auth.
+        # Address sanitizer only with auth+SSL or no auth + no SSL.
         if task.auth:
             require(task.ssl == 'openssl')
         else:
             prohibit(task.ssl)
-
-        # Run two tasks with ASAN and memcheck.
-        if task.memcheck:
-            require(task.topology in ('server', 'replica_set'))
-            require(task.version == 'latest')
-            require(task.auth)
-
-        # TODO: delete these arbitrary rules.
-        prohibit(task.topology == 'replica_set'
-                 and task.auth
-                 and not task.memcheck)
-
-        prohibit(task.topology == 'replica_set'
-                 and task.version == '3.6'
-                 and not task.auth)
 
 
 def make_integration_test_tasks():
@@ -196,29 +157,17 @@ def make_integration_test_tasks():
             task.tags.append('test-asan')
             task.options['exec_timeout_secs'] = 3600
         else:
+            task.tags.append(task.topology)
+            task.tags.append(task.version)
             task.tags.extend([task.display('ssl'),
                               task.display('sasl'),
                               task.display('auth')])
 
-            # TODO: use topology as tag unchanged.
-            task.tags.append({'server': 'server',
-                              'replica_set': 'replica-set',
-                              'sharded': 'sharded-cluster',
-                              }[task.topology])
-
-            task.tags.append(task.version)
-
         # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
-        if task.valgrind and task.memcheck:
+        if task.valgrind:
             task.depends_on.append('debug-compile-valgrind-memcheck')
         elif task.asan:
-            if task.memcheck:
-                task.depends_on.append('debug-compile-asan-clang-memcheck')
-            elif task.ssl == 'openssl':
-                task.depends_on.append(
-                    'debug-compile-asan-clang-nosasl-openssl')
-            else:
-                task.depends_on.append('debug-compile-asan-clang-nosasl-nossl')
+            task.depends_on.append('debug-compile-asan-clang-nosasl-nossl')
         elif not task.coverage:
             task.depends_on.append('debug-compile-%s-%s' % (
                 task.display('sasl'), task.display('ssl')))

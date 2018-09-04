@@ -3543,6 +3543,7 @@ test_bulk_max_msg_size (void)
    msg[str_size] = '\0';
    if (!test_framework_max_wire_version_at_least (WIRE_VERSION_OP_MSG)) {
       bson_free (msg);
+      bson_destroy (&opts);
       return;
    }
 
@@ -3670,6 +3671,7 @@ test_bulk_max_batch_size (void)
    stats_t stats = {0};
 
    if (!test_framework_max_wire_version_at_least (WIRE_VERSION_OP_MSG)) {
+      bson_destroy (&opts);
       return;
    }
 
