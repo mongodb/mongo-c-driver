@@ -15,7 +15,7 @@ Connecting to a `replica set <http://docs.mongodb.org/manual/replication/>`_ is 
 .. code-block:: c
 
   #include <bson/bson.h>
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
   int
   main (int argc, char *argv[])
@@ -58,7 +58,7 @@ If more than one hostname is specified, a seed list will be created to attempt f
 .. code-block:: c
 
   #include <bson/bson.h>
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
   int
   main (int argc, char *argv[])
