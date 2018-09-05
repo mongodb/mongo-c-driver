@@ -115,10 +115,13 @@ The :symbol:`bson_t` *MUST* be valid for the lifetime of the iter and it is an e
     bson_iter_offset
     bson_iter_oid
     bson_iter_overwrite_bool
+    bson_iter_overwrite_date_time
     bson_iter_overwrite_decimal128
     bson_iter_overwrite_double
     bson_iter_overwrite_int32
     bson_iter_overwrite_int64
+    bson_iter_overwrite_oid
+    bson_iter_overwrite_timestamp
     bson_iter_recurse
     bson_iter_regex
     bson_iter_symbol

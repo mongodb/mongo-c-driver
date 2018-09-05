@@ -550,6 +550,60 @@ test_bson_iter_overwrite_bool (void)
 
 
 static void
+test_bson_iter_overwrite_oid (void)
+{
+   bson_oid_t oid;
+   bson_iter_t iter;
+   bson_t b;
+
+   bson_oid_init_from_string (&oid, "000000000000000000001234");
+   bson_init (&b);
+   BSON_ASSERT (BSON_APPEND_OID (&b, "key", &oid));
+   BSON_ASSERT (bson_iter_init_find (&iter, &b, "key"));
+   bson_oid_init_from_string (&oid, "000000000000000000004321");
+   bson_iter_overwrite_oid (&iter, &oid);
+   BSON_ASSERT (bson_iter_init_find (&iter, &b, "key"));
+   ASSERT_CMPOID (bson_iter_oid (&iter), &oid);
+   bson_destroy (&b);
+}
+
+
+static void
+test_bson_iter_overwrite_timestamp (void)
+{
+   bson_iter_t iter;
+   bson_t b;
+   uint32_t t, i;
+
+   bson_init (&b);
+   BSON_ASSERT (BSON_APPEND_TIMESTAMP (&b, "key", 1, 2));
+   BSON_ASSERT (bson_iter_init_find (&iter, &b, "key"));
+   bson_iter_overwrite_timestamp (&iter, 3, 4);
+   BSON_ASSERT (bson_iter_init_find (&iter, &b, "key"));
+   bson_iter_timestamp (&iter, &t, &i);
+   ASSERT_CMPUINT32 (t, ==, 3);
+   ASSERT_CMPUINT32 (i, ==, 4);
+   bson_destroy (&b);
+}
+
+
+static void
+test_bson_iter_overwrite_date_time (void)
+{
+   bson_iter_t iter;
+   bson_t b;
+
+   bson_init (&b);
+   BSON_ASSERT (BSON_APPEND_DATE_TIME (&b, "key", 1234567890));
+   BSON_ASSERT (bson_iter_init_find (&iter, &b, "key"));
+   bson_iter_overwrite_date_time (&iter, -1234567890);
+   BSON_ASSERT (bson_iter_init_find (&iter, &b, "key"));
+   ASSERT_CMPINT64 (bson_iter_date_time (&iter), ==, -1234567890);
+   bson_destroy (&b);
+}
+
+
+static void
 test_bson_iter_recurse (void)
 {
    bson_iter_t iter;
@@ -699,6 +753,14 @@ test_iter_install (TestSuite *suite)
                   test_bson_iter_overwrite_double);
    TestSuite_Add (
       suite, "/bson/iter/test_overwrite_bool", test_bson_iter_overwrite_bool);
+   TestSuite_Add (
+      suite, "/bson/iter/test_overwrite_oid", test_bson_iter_overwrite_oid);
+   TestSuite_Add (suite,
+                  "/bson/iter/test_overwrite_timestamp",
+                  test_bson_iter_overwrite_timestamp);
+   TestSuite_Add (suite,
+                  "/bson/iter/test_overwrite_date_time",
+                  test_bson_iter_overwrite_date_time);
    TestSuite_Add (suite,
                   "/bson/iter/test_bson_iter_overwrite_decimal128",
                   test_bson_iter_overwrite_decimal128);

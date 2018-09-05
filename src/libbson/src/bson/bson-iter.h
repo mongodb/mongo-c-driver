@@ -521,6 +521,20 @@ BSON_EXPORT (void)
 bson_iter_overwrite_bool (bson_iter_t *iter, bool value);
 
 
+BSON_EXPORT (void)
+bson_iter_overwrite_oid (bson_iter_t *iter, const bson_oid_t *value);
+
+
+BSON_EXPORT (void)
+bson_iter_overwrite_timestamp (bson_iter_t *iter,
+                               uint32_t timestamp,
+                               uint32_t increment);
+
+
+BSON_EXPORT (void)
+bson_iter_overwrite_date_time (bson_iter_t *iter, int64_t value);
+
+
 BSON_EXPORT (bool)
 bson_iter_visit_all (bson_iter_t *iter,
                      const bson_visitor_t *visitor,

@@ -18,7 +18,7 @@
 #include "bson/bson-iter.h"
 #include "bson/bson-config.h"
 #include "bson/bson-decimal128.h"
-
+#include "bson-types.h"
 
 #define ITER_TYPE(i) ((bson_type_t) * ((i)->raw + (i)->type))
 
@@ -2181,6 +2181,46 @@ bson_iter_overwrite_bool (bson_iter_t *iter, /* IN */
 
    if (ITER_TYPE (iter) == BSON_TYPE_BOOL) {
       memcpy ((void *) (iter->raw + iter->d1), &value, 1);
+   }
+}
+
+
+void
+bson_iter_overwrite_oid (bson_iter_t *iter, const bson_oid_t *value)
+{
+   BSON_ASSERT (iter);
+
+   if (ITER_TYPE (iter) == BSON_TYPE_OID) {
+      memcpy (
+         (void *) (iter->raw + iter->d1), value->bytes, sizeof (value->bytes));
+   }
+}
+
+
+void
+bson_iter_overwrite_timestamp (bson_iter_t *iter,
+                               uint32_t timestamp,
+                               uint32_t increment)
+{
+   uint64_t value;
+   BSON_ASSERT (iter);
+
+   if (ITER_TYPE (iter) == BSON_TYPE_TIMESTAMP) {
+      value = ((((uint64_t) timestamp) << 32U) | ((uint64_t) increment));
+      value = BSON_UINT64_TO_LE (value);
+      memcpy ((void *) (iter->raw + iter->d1), &value, sizeof (value));
+   }
+}
+
+
+void
+bson_iter_overwrite_date_time (bson_iter_t *iter, int64_t value)
+{
+   BSON_ASSERT (iter);
+
+   if (ITER_TYPE (iter) == BSON_TYPE_DATE_TIME) {
+      value = BSON_UINT64_TO_LE (value);
+      memcpy ((void *) (iter->raw + iter->d1), &value, sizeof (value));
    }
 }
 
