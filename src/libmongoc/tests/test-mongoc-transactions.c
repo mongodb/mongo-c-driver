@@ -454,6 +454,86 @@ test_cursor_primary_read_pref (void *ctx)
 }
 
 
+/* test the fix to CDRIVER-2815. */
+void
+test_inherit_from_client (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_client_session_t *session;
+   bson_error_t error;
+   mongoc_uri_t *uri;
+   mongoc_read_concern_t *rc;
+   const mongoc_read_concern_t *returned_rc;
+   mongoc_read_prefs_t *rp;
+   const mongoc_read_prefs_t *returned_rp;
+   mongoc_write_concern_t *wc;
+   const mongoc_write_concern_t *returned_wc;
+   mongoc_session_opt_t *sopt;
+   const mongoc_session_opt_t *returned_sopt;
+   mongoc_transaction_opt_t *topt;
+   const mongoc_transaction_opt_t *returned_topt;
+
+   uri = test_framework_get_uri ();
+
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_uri_set_read_concern (uri, rc);
+
+   rp = mongoc_read_prefs_new (MONGOC_READ_NEAREST);
+   mongoc_uri_set_read_prefs_t (uri, rp);
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   mongoc_uri_set_write_concern (uri, wc);
+
+   client = mongoc_client_new_from_uri (uri);
+
+   sopt = mongoc_session_opts_new ();
+   topt = mongoc_transaction_opts_new ();
+
+   mongoc_transaction_opts_set_read_concern (topt, rc);
+   mongoc_transaction_opts_set_read_prefs (topt, rp);
+   mongoc_transaction_opts_set_write_concern (topt, wc);
+
+   mongoc_session_opts_set_default_transaction_opts (sopt, topt);
+
+   session = mongoc_client_start_session (client, sopt, &error);
+   ASSERT_OR_PRINT (session, error);
+
+   /* test that unacknowledged write concern is actually used, since it should
+    * result in an error. */
+   ASSERT (!mongoc_client_session_start_transaction (session, NULL, &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_TRANSACTION,
+      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+      "Transactions do not support unacknowledged write concern");
+
+   returned_sopt = mongoc_client_session_get_opts (session);
+   returned_topt =
+      mongoc_session_opts_get_default_transaction_opts (returned_sopt);
+   returned_rc = mongoc_transaction_opts_get_read_concern (returned_topt);
+   returned_rp = mongoc_transaction_opts_get_read_prefs (returned_topt);
+   returned_wc = mongoc_transaction_opts_get_write_concern (returned_topt);
+
+   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (returned_rc),
+                        mongoc_read_concern_get_level (rc)) == 0);
+   BSON_ASSERT (mongoc_write_concern_get_w (returned_wc) ==
+                mongoc_write_concern_get_w (wc));
+   BSON_ASSERT (mongoc_read_prefs_get_mode (returned_rp) ==
+                mongoc_read_prefs_get_mode (rp));
+
+   mongoc_read_concern_destroy (rc);
+   mongoc_read_prefs_destroy (rp);
+   mongoc_write_concern_destroy (wc);
+   mongoc_transaction_opts_destroy (topt);
+   mongoc_session_opts_destroy (sopt);
+   mongoc_client_session_destroy (session);
+   mongoc_uri_destroy (uri);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_transactions_install (TestSuite *suite)
 {
@@ -493,6 +573,12 @@ test_transactions_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/transactions/cursor_primary_read_pref",
                       test_cursor_primary_read_pref,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_txns);
+   TestSuite_AddFull (suite,
+                      "/transactions/inherit_from_client",
+                      test_inherit_from_client,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_txns);

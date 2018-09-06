@@ -601,7 +601,7 @@ _mongoc_client_session_new (mongoc_client_t *client,
                  client->read_prefs);
 
    if (opts) {
-      _mongoc_session_opts_copy (opts, &session->opts);
+      session->opts.flags = opts->flags;
       txn_opts_set (&session->opts.default_txn_opts,
                     opts->default_txn_opts.read_concern,
                     opts->default_txn_opts.write_concern,
