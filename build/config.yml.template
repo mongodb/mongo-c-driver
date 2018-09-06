@@ -2261,7 +2261,7 @@ buildvariants:
     - "test-dns-openssl"
 
 - name: zseries-rhel72
-  display_name: "*zSeries (s390x) (RHEL 7.2)"
+  display_name: "*zSeries"
   expansions:
     CC: "gcc"
   batchtime: 1440 # 1 day
@@ -2276,50 +2276,7 @@ buildvariants:
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
     - ".latest .nossl"
-      # TODO CDRIVER-2686: test MongoDB 4 once it's built for zseries
-    - ".3.6 .openssl !.nosasl .server"
-      # RHEL7.2 s390x is only supported by MongoDB 3.4+
-
-- name: zseries-ubuntu1604
-  display_name: "zSeries (s390x) (Ubuntu 16.04)"
-  expansions:
-    CC: "gcc"
-  batchtime: 1440 # 1 day
-  run_on:
-  - ubuntu1604-zseries-large
-  tasks:
-    - "debug-compile-coverage"
-    - "release-compile"
-    - "debug-compile"
-    - ".debug-compile !.sspi .openssl"
-    - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests .openssl"
-    - ".latest .openssl !.nosasl .server"
-    - ".latest .nossl"
-      # TODO CDRIVER-2686: test MongoDB 4 once it's built for zseries
-    - ".3.6 .openssl !.nosasl .server"
-      # Ubuntu16.04 s390x is only supported by MongoDB 3.4+
-    - "test-dns-openssl"
-
-- name: zseries-suse12
-  display_name: "zSeries (s390x) SUSE12"
-  expansions:
-    CC: "gcc"
-  batchtime: 1440 # 1 day
-  run_on:
-  - suse12-zseries-test
-  tasks:
-    - ".compression !.snappy"
-    - "release-compile"
-    - "debug-compile"
-    - ".debug-compile !.sspi .openssl"
-    - ".debug-compile !.sspi .nossl"
-    - ".authentication-tests .openssl"
-    - ".latest .openssl !.nosasl .server"
-    - ".latest .nossl"
-      # TODO CDRIVER-2686: test MongoDB 4 once it's built for zseries
-    - ".3.6 .openssl !.nosasl .server"
-      # SUSE12 s390x is only supported by MongoDB 3.4+
+    - ".4.0 .openssl !.nosasl .server"
 
 - name: valgrind-ubuntu
   display_name: "Valgrind Tests (Ubuntu 14.04)"
