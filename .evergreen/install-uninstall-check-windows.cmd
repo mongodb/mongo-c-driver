@@ -1,3 +1,7 @@
+REM Supported/used environment variables:
+REM    CC             Compiler, "mingw" or "Visual Studio 14 2015 Win64".
+REM    BSON_ONLY      Whether to build only the BSON library.
+
 rem Ensure Cygwin executables like sh.exe are not in PATH
 rem set PATH=C:\Windows\system32;C:\Windows
 
@@ -7,7 +11,6 @@ echo
 set TAR=C:\cygwin\bin\tar
 set CMAKE=C:\cmake\bin\cmake
 set CMAKE_MAKE_PROGRAM=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\mingw32-make.exe
-set CC=C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin\gcc.exe
 rem Ensure Cygwin executables like sh.exe are not in PATH
 set PATH=C:\cygwin\bin;C:\Windows\system32;C:\Windows;C:\mingw-w64\x86_64-4.9.1-posix-seh-rt_v3-rev1\mingw64\bin;C:\mongoc;src\libbson;src\libmongoc
 
@@ -30,6 +33,9 @@ set PATH=%PATH%;%INSTALL_DIR%\bin
 
 cd %BUILD_DIR%
 %TAR% xf ..\..\mongoc.tar.gz -C . --strip-components=1
+if errorlevel 1 (
+   exit /B 1
+)
 
 if "%BSON_ONLY%"=="1" (
   set BSON_ONLY_OPTION=-DENABLE_MONGOC=OFF
@@ -37,16 +43,27 @@ if "%BSON_ONLY%"=="1" (
   set BSON_ONLY_OPTION=-DENABLE_MONGOC=ON
 )
 
-rem Build libmongoc, with flags that the downstream R driver mongolite uses
-%CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-std=c99 -pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %BSON_ONLY_OPTION% .
-%CMAKE_MAKE_PROGRAM%
-if errorlevel 1 (
-   exit /B 1
-)
-
-%CMAKE_MAKE_PROGRAM% install
-if errorlevel 1 (
-   exit /B 1
+echo.%CC%| findstr /I "gcc">Nul && (
+  rem Build libmongoc, with flags that the downstream R driver mongolite uses
+  %CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-std=c99 -pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %BSON_ONLY_OPTION% .
+  %CMAKE_MAKE_PROGRAM%
+  if errorlevel 1 (
+     exit /B 1
+  )
+  %CMAKE_MAKE_PROGRAM% install
+  if errorlevel 1 (
+     exit /B 1
+  )
+) || (
+  %CMAKE% -G "%CC%" "-DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%" "-DCMAKE_BUILD_TYPE=Debug" %BSON_ONLY_OPTION% .
+  MSBuild.exe /m ALL_BUILD.vcxproj
+  if errorlevel 1 (
+     exit /B 1
+  )
+  MSBuild.exe /m INSTALL.vcxproj
+  if errorlevel 1 (
+     exit /B 1
+  )
 )
 
 echo > %INSTALL_DIR%\lib\canary.txt

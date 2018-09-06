@@ -1607,8 +1607,25 @@ tasks:
             script: |
               set -o xtrace
               set -o errexit
-              BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-mingw.cmd
-              cmd.exe /c .\\.evergreen\\install-uninstall-check-mingw.cmd
+              export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
+              BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+              cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+
+    - name: install-uninstall-check-msvc
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o xtrace
+              set -o errexit
+              export CC="Visual Studio 14 2015 Win64"
+              BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+              cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
 
     - name: install-uninstall-check
       depends_on:
@@ -1754,6 +1771,9 @@ buildvariants:
     - "check-public-headers"
     - name: "install-uninstall-check"
     - name: "install-uninstall-check-mingw"
+      distros:
+      - windows-64-vs2015-compile
+    - name: "install-uninstall-check-msvc"
       distros:
       - windows-64-vs2015-compile
 
