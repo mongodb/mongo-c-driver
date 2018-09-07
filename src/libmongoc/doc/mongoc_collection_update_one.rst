@@ -36,6 +36,8 @@ This function updates at most one document in ``collection`` that matches ``sele
 
 To update multiple documents see :symbol:`mongoc_collection_update_many`.
 
+If you pass a non-NULL ``reply``, it is filled out with fields  ``matchedCount``, ``modifiedCount``, and optionally ``upsertedId`` if applicable. If there is a server error then ``reply`` contains either a "writeErrors" array with one subdocument or a "writeConcernErrors" array. The reply must be freed with :symbol:`bson:bson_destroy`.
+
 See Also
 --------
 
@@ -56,8 +58,6 @@ Returns
 Returns ``true`` if successful. Returns ``false`` and sets ``error`` if there are invalid arguments or a server or network error.
 
 A write concern timeout or write concern error is considered a failure.
-
-If provided, ``reply`` will be initialized and populated with the fields ``matchedCount``, ``modifiedCount``, and optionally ``upsertedId`` if applicable. The reply must be freed with :symbol:`bson:bson_destroy`.
 
 Example
 -------
