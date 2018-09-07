@@ -76,6 +76,7 @@ topology_changed (const mongoc_apm_topology_changed_t *event)
    mongoc_server_description_t **new_sds;
    size_t n_new_sds;
    size_t i;
+   mongoc_read_prefs_t *prefs;
 
    context = (stats_t *) mongoc_apm_topology_changed_get_context (event);
    context->topology_changed_events++;
@@ -107,6 +108,24 @@ topology_changed (const mongoc_apm_topology_changed_t *event)
       }
    }
 
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
+   /* it is safe, and unfortunately necessary, to cast away const here */
+   if (mongoc_topology_description_has_readable_server (
+          (mongoc_topology_description_t *) new_td, prefs)) {
+      printf ("  secondary AVAILABLE\n");
+   } else {
+      printf ("  secondary UNAVAILABLE\n");
+   }
+
+   if (mongoc_topology_description_has_writable_server (
+          (mongoc_topology_description_t *) new_td)) {
+      printf ("  primary AVAILABLE\n");
+   } else {
+      printf ("  primary UNAVAILABLE\n");
+   }
+
+   mongoc_read_prefs_destroy (prefs);
    mongoc_server_descriptions_destroy_all (prev_sds, n_prev_sds);
    mongoc_server_descriptions_destroy_all (new_sds, n_new_sds);
 }

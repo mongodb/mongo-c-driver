@@ -84,6 +84,8 @@ This example program prints something like:
 
   topology opening
   topology changed: Unknown -> ReplicaSetNoPrimary
+    secondary UNAVAILABLE
+    primary UNAVAILABLE
   server opening: localhost:27017
   server opening: localhost:27018
   localhost:27017 heartbeat started
@@ -94,6 +96,8 @@ This example program prints something like:
   topology changed: ReplicaSetNoPrimary -> ReplicaSetWithPrimary
     new servers:
         RSPrimary localhost:27017
+    secondary UNAVAILABLE
+    primary AVAILABLE
   localhost:27019 heartbeat started
   localhost:27018 heartbeat succeeded: { ... reply ... }
   server changed: localhost:27018 Unknown -> RSSecondary
@@ -103,6 +107,8 @@ This example program prints something like:
     new servers:
         RSPrimary localhost:27017
         RSSecondary localhost:27018
+    secondary AVAILABLE
+    primary AVAILABLE
   localhost:27019 heartbeat succeeded: { ... reply ... }
   server changed: localhost:27019 Unknown -> RSSecondary
   topology changed: ReplicaSetWithPrimary -> ReplicaSetWithPrimary
@@ -113,6 +119,8 @@ This example program prints something like:
         RSPrimary localhost:27017
         RSSecondary localhost:27018
         RSSecondary localhost:27019
+    secondary AVAILABLE
+    primary AVAILABLE
   topology closed
 
   Events:
@@ -126,7 +134,7 @@ This example program prints something like:
      heartbeat succeeded: 3
      heartbeat failed: 0
 
-The driver discovers the third member, "localhost:27019", and adds it to the topology.
+The driver connects to the mongods on ports 27017 and 27018, which were specified in the URI, and determines which is primary. It also discovers the third member, "localhost:27019", and adds it to the topology.
 
 .. only:: html
 

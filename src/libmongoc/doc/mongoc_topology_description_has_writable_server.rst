@@ -14,6 +14,10 @@ Synopsis
 
 Determines if the topology has a writable server available, such as a primary, mongos, or standalone. This function uses the driver's current knowledge of the state of the MongoDB server or servers it is connected to; it does no I/O and it does not block.
 
+.. |td-func| replace:: ``mongoc_topology_description_has_writable_server``
+
+.. include:: includes/cast-away-td-const.txt
+
 Parameters
 ----------
 
