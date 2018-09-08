@@ -1604,8 +1604,9 @@ tasks:
             script: |
               set -o xtrace
               set -o errexit
-              CC=mingw BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
-              CC=mingw cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+              export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
+              BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+              cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
 
     - name: install-uninstall-check-msvc
       depends_on:
@@ -1619,8 +1620,9 @@ tasks:
             script: |
               set -o xtrace
               set -o errexit
-              CC="Visual Studio 14 2015 Win64" BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
-              CC="Visual Studio 14 2015 Win64" cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+              export CC="Visual Studio 14 2015 Win64"
+              BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+              cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
 
     - name: install-uninstall-check
       depends_on:
@@ -9485,7 +9487,7 @@ buildvariants:
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"
     - ".latest .openssl !.nosasl .server"
-    - ".latest .nossl .server"
+    - ".latest .nossl"
     - ".4.0 .openssl !.nosasl .server"
 
 - name: valgrind-ubuntu
