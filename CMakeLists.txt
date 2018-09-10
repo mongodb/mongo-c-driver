@@ -53,6 +53,13 @@ set (ENABLE_ICU AUTO CACHE STRING "Enable ICU support, necessary to use non-ASCI
 
 project (mongo-c-driver C)
 
+if (NOT CMAKE_BUILD_TYPE)
+   set (CMAKE_BUILD_TYPE "RelWithDebInfo")
+   message (
+      STATUS "No CMAKE_BUILD_TYPE selected, defaulting to ${CMAKE_BUILD_TYPE}"
+   )
+endif ()
+
 set (CMAKE_MODULE_PATH
    ${CMAKE_MODULE_PATH}
    ${PROJECT_SOURCE_DIR}/build/cmake

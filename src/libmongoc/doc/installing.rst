@@ -235,7 +235,7 @@ Building on Windows with Visual Studio
 
 Building on Windows requires Windows Vista or newer and Visual Studio 2010 or newer. Additionally, ``cmake`` is required to generate Visual Studio project files.
 
-Let's start by generating Visual Studio project files. The following assumes we are compiling for 64-bit Windows using Visual Studio 2015 Express, which can be freely downloaded from Microsoft. We will be utilizing ``cmake``'s out-of-source build feature to keep build artifacts separate from source files. The default build type is ``Debug``, so a release build is specified as you see below.
+Let's start by generating Visual Studio project files. The following assumes we are compiling for 64-bit Windows using Visual Studio 2015 Express, which can be freely downloaded from Microsoft. We will be utilizing ``cmake``'s out-of-source build feature to keep build artifacts separate from source files.
 
 .. parsed-literal::
 
@@ -249,13 +249,13 @@ Let's start by generating Visual Studio project files. The following assumes we 
 
 (Run ``cmake -LH ..`` for a list of other options.)
 
-Now that we have project files generated, we can either open the project in Visual Studio or compile from the command line. Let's build using the command line program ``msbuild.exe``
+Now that we have project files generated, we can either open the project in Visual Studio or compile from the command line. Let's build using the command line program ``msbuild.exe``:
 
 .. code-block:: none
 
-  msbuild.exe ALL_BUILD.vcxproj
+  msbuild.exe /p:Configuration=RelWithDebInfo ALL_BUILD.vcxproj
 
-Now that libmongoc and libbson are compiled, let's install them using msbuild. It will be installed to the path specified by ``CMAKE_INSTALL_PREFIX``.
+Visual Studio's default build type is ``Debug``, but we recommend a release build with debug info for production use. Now that libmongoc and libbson are compiled, let's install them using msbuild. It will be installed to the path specified by ``CMAKE_INSTALL_PREFIX``.
 
 .. code-block:: none
 

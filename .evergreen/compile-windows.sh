@@ -112,15 +112,14 @@ case "$CC" in
 esac
 
 if [ "$RELEASE" ]; then
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_BUILD_TYPE=Release"
-   BUILD_FLAGS="$BUILD_FLAGS /p:Configuration=Release"
-   TEST_PATH="./src/libmongoc/Release/test-libmongoc.exe"
-   export PATH=$PATH:`pwd`/tests:`pwd`/Release:`pwd`/src/libbson/Release:`pwd`/src/libmongoc/Release
+   BUILD_FLAGS="$BUILD_FLAGS /p:Configuration=RelWithDebInfo"
+   TEST_PATH="./src/libmongoc/RelWithDebInfo/test-libmongoc.exe"
+   export PATH=$PATH:`pwd`/src/libbson/RelWithDebInfo:`pwd`/src/libmongoc/RelWithDebInfo
 else
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_BUILD_TYPE=Debug"
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS"
    BUILD_FLAGS="$BUILD_FLAGS /p:Configuration=Debug"
    TEST_PATH="./src/libmongoc/Debug/test-libmongoc.exe"
-   export PATH=$PATH:`pwd`/tests:`pwd`/Debug:`pwd`/src/libbson/Debug:`pwd`/src/libmongoc/Debug
+   export PATH=$PATH:`pwd`/src/libbson/Debug:`pwd`/src/libmongoc/Debug
 fi
 
 "$CMAKE" -G "$CC" "-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/lib/cmake" $CONFIGURE_FLAGS
