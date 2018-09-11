@@ -22,32 +22,30 @@ file is more legible than Evergreen's matrix syntax or a handwritten file.
 Written for Python 2.6+, requires Jinja 2 for templating.
 """
 
-from collections import namedtuple, OrderedDict
+import sys
+from collections import namedtuple, OrderedDict as OD
 from itertools import product
 from os.path import dirname, join as joinpath, normpath
 
-from jinja2 import Environment, FileSystemLoader  # pip install jinja2.
+try:
+    import yaml
+    import yamlordereddictloader
+    from jinja2 import Environment, FileSystemLoader
+except ImportError:
+    sys.stderr.write("try 'pip install -r build/requirements.txt'")
+    raise
 
 this_dir = dirname(__file__)
 evergreen_dir = normpath(joinpath(this_dir, '../.evergreen'))
 
-integration_task_axes = OrderedDict([
-    ('valgrind', ['valgrind', False]),
-    ('asan', ['asan', False]),
-    ('coverage', ['coverage', False]),
-    ('version', ['latest', '4.0', '3.6', '3.4', '3.2', '3.0']),
-    ('topology', ['server', 'replica_set', 'sharded_cluster']),
-    ('auth', [True, False]),
-    ('sasl', ['sasl', 'sspi', False]),
-    ('ssl', ['openssl', 'darwinssl', 'winssl', False]),
-])
 
+class Task(object):
+    name_prefix = 'test'
 
-class IntegrationTask(namedtuple('Task', tuple(integration_task_axes))):
     def __new__(cls, *args, **kwargs):
-        self = super(IntegrationTask, cls).__new__(cls, *args, **kwargs)
+        self = super(Task, cls).__new__(cls, *args, **kwargs)
         self.tags = []
-        self.options = OrderedDict()
+        self.options = OD()
         self.depends_on = []
         return self
 
@@ -62,6 +60,42 @@ class IntegrationTask(namedtuple('Task', tuple(integration_task_axes))):
 
         return value
 
+    def on_off(self, axis_name):
+        return 'on' if getattr(self, axis_name) else 'off'
+
+    def as_dict(self):
+        task = OD([('name', self.name), ('tags', self.tags)])
+        task.update(self.options)
+        if self.depends_on:
+            task['depends_on'] = OD([
+                ('name', name) for name in self.depends_on
+            ])
+
+        task['commands'] = commands = []
+        if self.depends_on:
+            commands.append(OD([
+                ('func', 'fetch build'),
+                ('vars', {'BUILD_NAME': self.depends_on[0]}),
+            ]))
+        return task
+
+    def to_yaml(self):
+        return yaml.dump(self.as_dict(), Dumper=yamlordereddictloader.Dumper)
+
+
+integration_task_axes = OD([
+    ('valgrind', ['valgrind', False]),
+    ('asan', ['asan', False]),
+    ('coverage', ['coverage', False]),
+    ('version', ['latest', '4.0', '3.6', '3.4', '3.2', '3.0']),
+    ('topology', ['server', 'replica_set', 'sharded_cluster']),
+    ('auth', [True, False]),
+    ('sasl', ['sasl', 'sspi', False]),
+    ('ssl', ['openssl', 'darwinssl', 'winssl', False]),
+])
+
+
+class IntegrationTask(Task, namedtuple('Task', tuple(integration_task_axes))):
     @property
     def name(self):
         def name_part(axis_name):
@@ -72,9 +106,68 @@ class IntegrationTask(namedtuple('Task', tuple(integration_task_axes))):
                 return 'sharded'
             return part
 
-        return 'test-' + '-'.join(
+        return self.name_prefix + '-' + '-'.join(
             name_part(axis_name) for axis_name in integration_task_axes
             if getattr(self, axis_name) or axis_name in ('auth', 'sasl', 'ssl'))
+
+    def as_dict(self):
+        task = super(IntegrationTask, self).as_dict()
+        commands = task['commands']
+        if self.coverage:
+            commands.append(OD([
+                ('func', 'debug-compile-coverage-notest-%s-%s' % (
+                    self.display('sasl'), self.display('ssl')
+                )),
+            ]))
+        commands.append(OD([
+            ('func', 'bootstrap mongo-orchestration'),
+            ('vars', OD([
+                ('VERSION', self.version),
+                ('TOPOLOGY', self.topology),
+                ('AUTH', 'auth' if self.auth else 'noauth'),
+                ('SSL', self.display('ssl')),
+            ])),
+        ]))
+        commands.append(OD([
+            ('func', 'run tests'),
+            ('vars', OD([
+                ('VALGRIND', self.on_off('valgrind')),
+                ('ASAN', self.on_off('asan')),
+                ('AUTH', self.display('auth')),
+                ('SSL', self.display('ssl')),
+            ])),
+        ]))
+        if self.coverage:
+            commands.append(OD([
+                ('func', 'update codecov.io'),
+            ]))
+
+        return task
+
+
+auth_task_axes = OD([
+    ('sasl', ['sasl', 'sspi', False]),
+    ('ssl', ['openssl', 'darwinssl', 'winssl']),
+])
+
+
+class AuthTask(Task, namedtuple('Task', tuple(auth_task_axes))):
+    name_prefix = 'authentication-tests'
+
+    @property
+    def name(self):
+        rv = self.name_prefix + '-' + self.display('ssl')
+        if self.sasl:
+            return rv
+        else:
+            return rv + '-nosasl'
+
+    def as_dict(self):
+        task = super(AuthTask, self).as_dict()
+        task['commands'].append(OD([
+            ('func', 'run auth tests'),
+        ]))
+        return task
 
 
 def matrix(cell_class, axes):
@@ -93,6 +186,13 @@ def require(rule):
 def prohibit(rule):
     if rule:
         raise Prohibited()
+
+
+def both_or_neither(rule0, rule1):
+    if rule0:
+        require(rule1)
+    else:
+        prohibit(rule1)
 
 
 def allow_integration_test_task(task):
@@ -172,6 +272,32 @@ def make_integration_test_tasks():
         elif not task.coverage:
             task.depends_on.append('debug-compile-%s-%s' % (
                 task.display('sasl'), task.display('ssl')))
+
+        tasks_list.append(task)
+
+    return tasks_list
+
+
+def allow_auth_test_task(task):
+    both_or_neither(task.ssl == 'winssl', task.sasl == 'sspi')
+    if not task.sasl:
+        require(task.ssl == 'openssl')
+
+
+def make_auth_test_tasks():
+    tasks_list = []
+    for task in matrix(AuthTask, auth_task_axes):
+        try:
+            allow_auth_test_task(task)
+        except Prohibited:
+            continue
+
+        task.tags.extend(['authentication-tests',
+                         task.display('ssl'),
+                         task.display('sasl')])
+
+        task.depends_on.append('debug-compile-%s-%s' % (
+            task.display('sasl'), task.display('ssl')))
 
         tasks_list.append(task)
 

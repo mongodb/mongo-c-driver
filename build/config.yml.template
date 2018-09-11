@@ -508,7 +508,6 @@ functions:
         export CODECOV_TOKEN=${codecov_token}
         curl -s https://codecov.io/bash | bash
 
-
   "debug-compile-coverage-notest-nosasl-nossl" :
   - command: shell.exec
     type: test
@@ -610,7 +609,6 @@ tasks:
               export MONGOC_TEST_SKIP_SLOW=on
               sh .evergreen/check-release-archive.sh
 
-
         - func: "upload docs"
         - func: "upload man pages"
         - func: "upload release"
@@ -671,7 +669,6 @@ tasks:
           vars:
             AUTH: "noauth"
             SSL: "nossl"
-
 
     - name: debug-compile-compression-zlib
       tags: ["zlib", "compression"]
@@ -1666,72 +1663,319 @@ tasks:
 
 # Test Matrix {{ '{{{' }}
 {% for task in make_integration_test_tasks() %}
-    - name: {{ task.name }}
-      tags: {{ task.tags|tag_list }}
-  {% for name, value in task.options.items() %}
-      {{ name }}: {{ value }}
-  {% endfor %}
-  {% if task.depends_on %}
-      depends_on:
-    {% for name in task.depends_on %}
-        - name: "{{ name }}"
-    {% endfor %}
-  {% endif %}
-      commands:
-  {% if task.depends_on %}
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "{{ task.depends_on[0] }}"
-  {% endif %}
-  {% if task.coverage %}
-        - func: "debug-compile-coverage-notest-{{ task.display('sasl') }}-{{ task.display('ssl') }}"
-  {% endif %}
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "{{ task.version }}"
-            TOPOLOGY: "{{ task.topology }}"
-            AUTH: "{{ 'auth' if task.auth else 'noauth' }}"
-            SSL: "{{ task.display('ssl') }}"
-        - func: "run tests"
-          vars:
-  {% if task.valgrind %}
-            VALGRIND: "on"
-  {% endif %}
-  {% if task.asan %}
-            ASAN: "on"
-  {% endif %}
-            AUTH: "{{ 'auth' if task.auth else 'noauth' }}"
-            SSL: "{{ task.display('ssl') }}"
-            URI: ""
-  {% if task.coverage %}
-        - func: "update codecov.io"
-  {% endif %}
-
-
+    - {{ task.to_yaml() | indent(6) }}
 {% endfor %}
 
-{% include 'test-valgrind-memcheck-mock-server.yml' %}
+    - name: test-valgrind-memcheck-mock-server
+      tags: ["test-valgrind"]
+      depends_on:
+        - name: "debug-compile-valgrind-memcheck"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-valgrind-memcheck"
+        - func: "run mock server tests"
+          vars:
+            VALGRIND: "on"
+            AUTH: "noauth"
+            SSL: "ssl"
+            URI: ""
 
+    - name: test-coverage-mock-server
+      tags: ["test-coverage"]
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "run mock server tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "ssl"
+            URI: ""
+        - func: "update codecov.io"
 
+    - name: test-coverage-latest-server-dns
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "ssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "ssl"
+            DNS: on
+        - func: "update codecov.io"
 
-{% include 'test-coverage.yml' %}
+    # Run special auth tests against our enterprise MongoDB instance.
+{% for task in make_auth_test_tasks() %}
+    - {{ task.to_yaml() | indent(6) }}
+{% endfor %}
 
+    # Catch leaks or double-frees of bson_t structs in auth code.
+    - name: authentication-tests-memcheck
+      tags: ["authentication-tests", "sasl", "ssl", "openssl", "memcheck"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+        - func: "run auth tests"
 
+    - name: build-and-run-authentication-tests-openssl-0.9.8
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-0.9.8zh
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+          vars:
+            obsolete_tls: true
+        - func: "upload build"
 
-{% include 'authentication-tests.yml' %}
+    - name: build-and-run-authentication-tests-openssl-1.0.0
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.0t
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+          vars:
+            obsolete_tls: true
+        - func: "upload build"
 
+    - name: build-and-run-authentication-tests-openssl-1.0.1
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.1u
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              export CFLAGS=-Wno-redundant-decls # OpenSSL 1.0.1 warning
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
 
+    - name: build-and-run-authentication-tests-openssl-1.0.1-fips
+      commands:
+        - func: "install ssl"
+          vars:
+             SSL: openssl-1.0.1u-fips
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              export CFLAGS=-Wno-redundant-decls # OpenSSL 1.0.1 warning
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL OPENSSL_FIPS=1 sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
 
-{% include 'libmongocapi.yml' %}
+    - name: build-and-run-authentication-tests-openssl-1.0.2
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.0.2l
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
 
+    - name: build-and-run-authentication-tests-openssl-1.1.0
+      commands:
+        - func: "install ssl"
+          vars:
+            SSL: openssl-1.1.0f
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+        - func: "upload build"
 
+    - name: build-and-run-authentication-tests-libressl-2.5
+      commands:
+        - func: "install ssl"
+          vars:
+             SSL: libressl-2.5.2
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL sh .evergreen/compile.sh
+        - func: "run auth tests"
+          vars:
+            require_tls12: true
+        - func: "upload build"
 
-{% include 'ipv4-ipv6.yml' %}
+    - name: compile-libmongocapi
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o verbose
+              . ./.evergreen/find-cmake.sh
+              ${setup_android_toolchain|}
+              export ${libmongocapi_compile_env|}
+              mkdir cmake-build-libmongocapi
+              $CMAKE \
+                -DCMAKE_INSTALL_PREFIX=cmake-build-libmongocapi \
+                -DENABLE_SNAPPY=OFF \
+                -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
+                -DENABLE_ZLIB=OFF -DENABLE_SSL=OFF \
+                -DENABLE_SASL=OFF \
+                -DENABLE_TESTS=OFF \
+                -DENABLE_SRV=OFF \
+                -DENABLE_EXAMPLES=OFF \
+                -DENABLE_STATIC=OFF \
+                -DENABLE_SHM_COUNTERS=OFF \
+                ${libmongocapi_cmake_flags}
+              make install VERBOSE=1
 
+    - name: test-latest-server-ipv6-client-ipv6-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "off"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: "mongodb://[::1]/"
 
+    - name: test-latest-server-ipv6-client-ipv4-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "off"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            URI: "mongodb://127.0.0.1/"
 
-{% include 'asan-mockserver.yml' %}
+    - name: test-latest-server-ipv4-client-localhost-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+            URI: "mongodb://localhost/"
 
+    - name: test-latest-server-ipv4-client-ipv4-noauth-nosasl-nossl
+      tags: ["nossl", "nosasl", "noauth", "server", "latest", "ipv4-ipv6", "latest"]
+      depends_on:
+        - name: "debug-compile-nosasl-nossl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-nosasl-nossl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            IPV4_ONLY: "on"
+            URI: "mongodb://127.0.0.1/"
+
+    - name: test-asan-memcheck-mock-server
+      tags: ["test-asan"]
+      depends_on:
+        - name: "debug-compile-asan-clang-memcheck"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-asan-clang-memcheck"
+        - func: "run mock server tests"
+          vars:
+            ASAN: "on"
+            AUTH: "noauth"
+            SSL: "ssl"
+            URI: ""
 
 # {{ '}}}' }}
 
