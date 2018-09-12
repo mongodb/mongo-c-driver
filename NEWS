@@ -9,6 +9,8 @@ Features:
     and all bson headers are under bson/. The preferred way of including the
     headers are mongoc/mongoc.h and bson/bson.h respectively.
     Forwarding headers in the root are provided for backwards compatibility.
+  * mongoc_bulk_operation_t functions to update, replace, or remove documents
+    now accept any option passed in "opts", not only the recognized options.
   * Additional functions bson_iter_overwrite_date_time, bson_iter_overwrite_oid,
     and bson_iter_overwrite_timestamp. All fixed-length BSON values can now be
     updated in place.
