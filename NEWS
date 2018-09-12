@@ -12,6 +12,7 @@ Features:
   * Additional functions bson_iter_overwrite_date_time, bson_iter_overwrite_oid,
     and bson_iter_overwrite_timestamp. All fixed-length BSON values can now be
     updated in place.
+  * The default CMake build type had been unspecified, now it is RelWithDebInfo.
 
 Bug fixes:
 
