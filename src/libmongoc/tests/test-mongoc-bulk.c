@@ -234,7 +234,6 @@ _test_opt (const char *opts_json, const char *msg)
 static void
 test_opts (void)
 {
-   _test_opt ("{'foo': 1}", "Invalid option 'foo'");
    _test_opt ("{'writeConcern': 1}", "Invalid writeConcern");
    _test_opt ("{'writeConcern': {'w': 0, 'j': 1}}", "Invalid writeConcern");
    _test_opt ("{'sessionId': 'hi'}", "Invalid sessionId");
@@ -4451,19 +4450,14 @@ test_bulk_opts_parse (void)
                           MONGOC_ERROR_COMMAND_INVALID_ARG, \
                           "Invalid " _msg)
 
-   RM_ERR ("option 'foo'", remove_one, tmp_bson ("{'foo': 1}"));
-   RM_ERR ("option 'foo'", remove_many, tmp_bson ("{'foo': 1}"));
    RM_ERR ("\"limit\" in opts: 2", remove_one, tmp_bson ("{'limit': 2}"));
    RM_ERR ("\"limit\" in opts: 2", remove_many, tmp_bson ("{'limit': 2}"));
    RM_ERR ("\"limit\" in opts: 0", remove_one, tmp_bson ("{'limit': 0}"));
    RM_ERR ("\"limit\" in opts: 1", remove_many, tmp_bson ("{'limit': 1}"));
 
-   UPDATE_ERR ("option 'foo'", one, tmp_bson ("{'foo': 1}"));
-   UPDATE_ERR ("option 'foo'", many, tmp_bson ("{'foo': 1}"));
    UPDATE_ERR ("\"multi\" in opts: true", one, tmp_bson ("{'multi': true}"));
    UPDATE_ERR ("\"multi\" in opts: false", many, tmp_bson ("{'multi': false}"));
 
-   REPLACE_ERR ("option 'foo'", tmp_bson ("{'foo': 1}"));
    REPLACE_ERR ("\"multi\": true in opts", tmp_bson ("{'multi': true}"));
 
 #define NO_ERR(_fn, ...)                                                   \
@@ -4477,6 +4471,11 @@ test_bulk_opts_parse (void)
    NO_ERR (update_one, q, u, tmp_bson ("{'multi': false}"));
    NO_ERR (update_many, q, u, tmp_bson ("{'multi': true}"));
    NO_ERR (replace_one, q, repl, tmp_bson ("{'multi': false}"));
+   NO_ERR (remove_one, q, tmp_bson ("{'foo': 1}"));
+   NO_ERR (remove_many, q, tmp_bson ("{'foo': 1}"));
+   NO_ERR (update_one, q, u, tmp_bson ("{'foo': 1}"));
+   NO_ERR (update_many, q, u, tmp_bson ("{'foo': 1}"));
+   NO_ERR (replace_one, q, repl, tmp_bson ("{'foo': 1}"));
 
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);
@@ -4519,31 +4518,23 @@ test_bulk_bypass_document_validation (void)
    client = test_framework_client_new ();
    collection = get_test_collection (client, "bypass_validation");
 
-   /* bypassDocumentValidation can't be passed in opts */
+   /* bypassDocumentValidation can be passed in opts, but is ignored */
    bulk = mongoc_collection_create_bulk_operation_with_opts (
       collection, tmp_bson ("{'bypassDocumentValidation': true}"));
 
    i = mongoc_bulk_operation_execute (bulk, NULL, &error);
    ASSERT_CMPUINT32 (i, ==, (uint32_t) 0);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid option 'bypassDocumentValidation'");
 
    mongoc_bulk_operation_destroy (bulk);
 
-   /* not allowed in insert opts either */
+   /* same for insert opts */
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    r = mongoc_bulk_operation_insert_with_opts (
       bulk,
       tmp_bson ("{}"),
       tmp_bson ("{'bypassDocumentValidation': true}"),
       &error);
-   BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "Invalid option 'bypassDocumentValidation'");
+   BSON_ASSERT (r);
 
    mongoc_bulk_operation_destroy (bulk);
    mongoc_collection_destroy (collection);

@@ -192,11 +192,11 @@ opts_structs = OrderedDict([
         write_concern_option,
         ordered_option,
         session_option,
-    ], allow_extra=False, ordered='true')),
+    ], ordered='true')),
 
     ('mongoc_bulk_insert_opts_t', Struct([
         validate_option,
-    ], validate='_mongoc_default_insert_vflags', allow_extra=False)),
+    ], validate='_mongoc_default_insert_vflags')),
 
     ('mongoc_bulk_update_opts_t', Shared([
         validate_option,
@@ -214,8 +214,7 @@ opts_structs = OrderedDict([
             array_filters_option,
         ],
         multi='false',
-        validate='_mongoc_default_update_vflags',
-        allow_extra=False)),
+        validate='_mongoc_default_update_vflags')),
 
     ('mongoc_bulk_update_many_opts_t', Struct(
         [
@@ -223,14 +222,12 @@ opts_structs = OrderedDict([
             array_filters_option,
         ],
         multi='true',
-        validate='_mongoc_default_update_vflags',
-        allow_extra=False)),
+        validate='_mongoc_default_update_vflags')),
 
     ('mongoc_bulk_replace_one_opts_t', Struct(
         [('update', {'type': 'mongoc_bulk_update_opts_t'})],
         multi='false',
-        validate='_mongoc_default_replace_vflags',
-        allow_extra=False)),
+        validate='_mongoc_default_replace_vflags')),
 
     ('mongoc_bulk_remove_opts_t', Shared([
         collation_option,
@@ -239,11 +236,11 @@ opts_structs = OrderedDict([
 
     ('mongoc_bulk_remove_one_opts_t', Struct([
         ('remove', {'type': 'mongoc_bulk_remove_opts_t'}),
-    ], limit=1, allow_extra=False)),
+    ], limit=1)),
 
     ('mongoc_bulk_remove_many_opts_t', Struct([
         ('remove', {'type': 'mongoc_bulk_remove_opts_t'}),
-    ], limit=0, allow_extra=False)),
+    ], limit=0)),
 
     ('mongoc_create_index_opts_t', Struct([
         write_concern_option,
