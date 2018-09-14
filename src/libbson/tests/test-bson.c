@@ -1249,6 +1249,11 @@ test_bson_validate (void)
                   12,
                   BSON_VALIDATE_NONE,
                   "corrupt BSON");
+   VALIDATE_TEST ("test59.bson",
+                  BSON_VALIDATE_NONE,
+                  9,
+                  BSON_VALIDATE_NONE,
+                  "corrupt BSON");
 
    /* DBRef validation */
    b = BCON_NEW ("my_dbref",
