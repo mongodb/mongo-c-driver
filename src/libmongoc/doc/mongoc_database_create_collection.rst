@@ -19,7 +19,7 @@ Parameters
 
 * ``database``: A :symbol:`mongoc_database_t`.
 * ``name``: The name of the new collection.
-* ``opts``: An optional :symbol:`bson:bson_t` for opts to the ``createDatabase`` command.
+* ``opts``: An optional :symbol:`bson:bson_t` for opts to the ``create`` command.
 * ``error``: A location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
 Description
