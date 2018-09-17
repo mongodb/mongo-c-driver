@@ -22,6 +22,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       SNAPPY                  Build against bundled or external Snappy, or none
 #       SSL                     Build against OpenSSL or native or none
 #       SASL                    Build against SASL or not
+#       SRV                     Whether to enable SRV: ON or OFF
 #       ENABLE_SHM_COUNTERS     Build with SHM counters
 
 # Options for this script.
@@ -114,6 +115,10 @@ if [ "$RELEASE" = "ON" ]; then
    mkdir build-dir
    $TAR xf ../mongoc.tar.gz -C build-dir --strip-components=1
    cd build-dir
+fi
+
+if [ "$SRV" = "OFF" ]; then
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SRV=OFF"
 fi
 
 # UndefinedBehaviorSanitizer configuration

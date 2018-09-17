@@ -7,6 +7,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       CC            Which compiler to use
 #       SSL           OPENSSL, WINDOWS, or OFF
 #       SASL          AUTO, SSPI, CYRUS, or OFF
+#       SRV           Whether to enable SRV: ON or OFF
 #       RELEASE       Enable release-build MSVC flags (default: debug flags)
 
 
@@ -77,6 +78,10 @@ case "$ZLIB" in
       CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZLIB=OFF"
       ;;
 esac
+
+if [ "$SRV" = "OFF" ]; then
+   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SRV=OFF"
+fi
 
 export CONFIGURE_FLAGS
 export INSTALL_DIR

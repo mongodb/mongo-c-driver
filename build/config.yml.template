@@ -1517,6 +1517,19 @@ tasks:
               DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=WINDOWS sh .evergreen/compile.sh
         - func: "upload build"
 
+    - name: debug-compile-nosrv
+      tags: ["debug-compile"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SRV=OFF sh .evergreen/compile.sh
+        - func: "upload build"
+
     # Verify that retryWrites=true is ignored with standalone
     - name: retry-true-latest-server
       depends_on:
@@ -2012,6 +2025,7 @@ buildvariants:
     - ".compression"
     - "debug-compile-sanitizer-address-gcc"
     - "debug-compile-coverage"
+    - "debug-compile-nosrv"
     - "release-compile"
     - "debug-compile"
     - "debug-compile-no-align"
@@ -2040,6 +2054,7 @@ buildvariants:
     - "debug-compile"
     - "debug-compile-rdtscp"
     - "debug-compile-no-align"
+    - "debug-compile-nosrv"
     - ".debug-compile .darwinssl"
     - ".debug-compile !.sspi .nossl"
     - ".debug-compile .clang"
@@ -2067,6 +2082,7 @@ buildvariants:
     - "release-compile"
     - "debug-compile"
     - "debug-compile-no-align"
+    - "debug-compile-nosrv"
     - ".debug-compile .winssl"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
