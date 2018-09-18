@@ -627,7 +627,8 @@ heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
 
    mongoc_apm_server_heartbeat_failed_get_error (event, &error);
 
-   MONGOC_ERROR ("heartbeat failed: %s\n", error.message);
+   fprintf (stderr, "heartbeat failed: %s\n", error.message);
+   fflush (stderr);
 
    *failed = true;
 }
@@ -648,8 +649,7 @@ _test_topology_scanner_does_not_renegotiate (bool pooled)
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
    /* faster pool shutdown to make the test quick */
-   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 100);
-
+   mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 1000);
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_server_heartbeat_failed_cb (callbacks, heartbeat_failed);
