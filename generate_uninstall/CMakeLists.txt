@@ -1,6 +1,7 @@
 # Fabricate our own copy of the install manifest, since the installation has not
 # generated the final version yet at this point
-install (CODE "file (MAKE_DIRECTORY \"${UNINSTALL_PROG_DIR}\")")
+
+set (UNINSTALL_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
 if (WIN32)
    string (REPLACE "/" "\\\\" CMAKE_INSTALL_PREFIX_WIN32
@@ -23,13 +24,8 @@ if (WIN32)
          OUTPUT_FILE
             \"${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}\"
       )
-      execute_process (
-         COMMAND
-            ${CMAKE_COMMAND} -E copy
-            \"${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}\"
-            \"${UNINSTALL_PROG_DIR}/${UNINSTALL_PROG}\"
-      )
    ")
+   install (FILES "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}" DESTINATION "${UNINSTALL_PROG_DIR}" PERMISSIONS ${UNINSTALL_PERMISSIONS})
 else ()
    install (CODE "
       string(REPLACE \";\" \"\\n\" MONGOC_INSTALL_MANIFEST_CONTENT
@@ -45,14 +41,10 @@ else ()
          OUTPUT_FILE
             \"${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}\"
       )
-      execute_process (
-         COMMAND
-            chmod a+x \"${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}\"
-         COMMAND
-            cp
-            \"${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}\"
-            \"${UNINSTALL_PROG_DIR}/${UNINSTALL_PROG}\"
-      )
    ")
+   install (FILES "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}" DESTINATION "${UNINSTALL_PROG_DIR}" PERMISSIONS ${UNINSTALL_PERMISSIONS})
 endif ()
 
+add_custom_target (uninstall
+   COMMAND "${CMAKE_CURRENT_BINARY_DIR}/${UNINSTALL_PROG}"
+)

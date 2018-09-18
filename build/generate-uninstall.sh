@@ -51,6 +51,15 @@ if [ "${prefix}" = "${prefix%/}" ]; then
    prefix="${prefix}/"
 fi
 
+# If a DESTDIR is specified, ensure it ends with a trailing slash.
+if [ "${DESTDIR}" ]; then
+   if [ "${DESTDIR}" = "${DESTDIR%/}" ]; then
+      # Trailing slash was omitted, so add it here
+      DESTDIR="${DESTDIR}/"
+   fi
+fi
+
+
 printf "#!/bin/sh\n"
 printf "# Mongo C Driver uninstall program, generated with CMake"
 printf "\n"
@@ -69,7 +78,7 @@ printf "# See the License for the specific language governing permissions and\n"
 printf "# limitations under the License.\n"
 printf "\n"
 printf "save_pwd=\$(pwd)\n"
-printf "cd %s\n" "${prefix}"
+printf "cd %s\n" "${DESTDIR}${prefix}"
 printf "\n"
 
 dirs=
@@ -96,8 +105,8 @@ echo "${dirs}" | sort -ru | while IFS= read -r dir; do
 done
 
 printf "cd ..\n"
-printf "printf \"Removing top-level installation directory: \\\"%s\\\"\"\n" "${prefix}"
-printf "(rmdir \"%s\" 2>/dev/null && printf \"\\\n\") || printf \" ... not removed (probably not empty)\\\n\"\n" "${prefix}"
+printf "printf \"Removing top-level installation directory: \\\"%s\\\"\"\n" "${DESTDIR}${prefix}"
+printf "(rmdir \"%s\" 2>/dev/null && printf \"\\\n\") || printf \" ... not removed (probably not empty)\\\n\"\n" "${DESTDIR}${prefix}"
 printf "\n"
 printf "# Return to the directory from which the program was called\n"
 printf "cd \${save_pwd}\n"

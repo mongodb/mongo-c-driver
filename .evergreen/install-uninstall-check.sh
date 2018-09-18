@@ -19,10 +19,16 @@ fi
 
 if [ "$BSON_ONLY" ]; then
   BUILD_DIR=$(pwd)/build-dir-bson
-  INSTALL_DIR=$(pwd)/install-dir-bson
+  INSTALL_PREFIX=$(pwd)/install-dir-bson
 else
   BUILD_DIR=$(pwd)/build-dir-mongoc
-  INSTALL_DIR=$(pwd)/install-dir-mongoc
+  INSTALL_PREFIX=$(pwd)/install-dir-mongoc
+fi
+
+if [ "$DESTDIR" ]; then
+   INSTALL_DIR="${DESTDIR}/${INSTALL_PREFIX}"
+else
+   INSTALL_DIR=$INSTALL_PREFIX
 fi
 
 rm -rf $BUILD_DIR
@@ -41,9 +47,13 @@ else
 fi
 
 
-$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $BSON_ONLY_OPTION .
+$CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $BSON_ONLY_OPTION .
 make
-make install
+if [ "$DESTDIR" ]; then
+   make DESTDIR=$DESTDIR install
+else
+   make install
+fi
 touch $INSTALL_DIR/lib/canary.txt
 
 ls -l $INSTALL_DIR/share/mongo-c-driver
