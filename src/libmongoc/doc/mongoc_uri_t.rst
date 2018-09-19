@@ -40,7 +40,7 @@ Format
 
 .. note::
 
-  Option names are case-insensitive
+  Option names are case-insensitive. Do not repeat the same option (e.g. "mongodb://localhost/db?opt=value1&OPT=value2") since this may have unexpected results.
 
 The MongoDB C Driver exposes constants for each supported connection option. These constants make it easier to discover connection options, but their string values can be used as well.
 

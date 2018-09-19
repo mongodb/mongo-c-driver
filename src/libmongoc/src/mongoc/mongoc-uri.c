@@ -918,6 +918,9 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
          goto UNSUPPORTED_VALUE;
       }
    } else if (!strcmp (lkey, MONGOC_URI_COMPRESSORS)) {
+      if (!bson_empty (mongoc_uri_get_compressors (uri))) {
+         HANDLE_DUPE ();
+      }
       if (!mongoc_uri_set_compressors (uri, value)) {
          goto UNSUPPORTED_VALUE;
       }

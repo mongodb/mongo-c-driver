@@ -1928,6 +1928,277 @@ test_mongoc_uri_utf8 (void)
 }
 
 
+/* test behavior on duplicate values for an options. */
+static void
+test_mongoc_uri_duplicates (void)
+{
+   mongoc_uri_t *uri = NULL;
+   bson_error_t err;
+   const char *str;
+   const mongoc_write_concern_t *wc;
+   const mongoc_read_concern_t *rc;
+   const bson_t *bson;
+   const mongoc_read_prefs_t *rp;
+   bson_iter_t iter = {0};
+
+#define RECREATE_URI(opts)                                                     \
+   mongoc_uri_destroy (uri);                                                   \
+   uri = mongoc_uri_new_with_error ("mongodb://user:pwd@localhost/test?" opts, \
+                                    &err);                                     \
+   ASSERT_OR_PRINT (uri, err);
+
+#define ASSERT_LOG_DUPE(opt)                                              \
+   ASSERT_CAPTURED_LOG ("option: " opt,                                   \
+                        MONGOC_LOG_LEVEL_WARNING,                         \
+                        "Overwriting previously provided value for '" opt \
+                        "'");
+
+/* iterate iter to key, and check that no other occurrences exist. */
+#define BSON_ITER_UNIQUE(key)                                             \
+   do {                                                                   \
+      bson_iter_t tmp;                                                    \
+      BSON_ASSERT (bson_iter_init_find (&iter, bson, key));               \
+      tmp = iter;                                                         \
+      while (bson_iter_next (&tmp)) {                                     \
+         if (strcmp (bson_iter_key (&tmp), key) == 0) {                   \
+            ASSERT_WITH_MSG (false, "bson has duplicate keys for: " key); \
+         }                                                                \
+      }                                                                   \
+   } while (0);
+
+   capture_logs (true);
+
+   /* test all URI options, in the order they are defined in mongoc-uri.h. */
+   RECREATE_URI (MONGOC_URI_APPNAME "=a&" MONGOC_URI_APPNAME "=b");
+   ASSERT_LOG_DUPE (MONGOC_URI_APPNAME);
+   str = mongoc_uri_get_appname (uri);
+   BSON_ASSERT (strcmp (str, "b") == 0);
+
+   RECREATE_URI (MONGOC_URI_AUTHMECHANISM "=a&" MONGOC_URI_AUTHMECHANISM "=b");
+   ASSERT_LOG_DUPE (MONGOC_URI_AUTHMECHANISM);
+   bson = mongoc_uri_get_credentials (uri);
+   BSON_ITER_UNIQUE (MONGOC_URI_AUTHMECHANISM);
+   BSON_ASSERT (strcmp (bson_iter_utf8 (&iter, NULL), "b") == 0);
+
+   RECREATE_URI (MONGOC_URI_AUTHMECHANISMPROPERTIES
+                 "=a:x&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=b:y");
+   ASSERT_LOG_DUPE (MONGOC_URI_AUTHMECHANISMPROPERTIES);
+   bson = mongoc_uri_get_credentials (uri);
+   BSON_ASSERT (
+      bson_compare (
+         bson, tmp_bson ("{'authmechanismproperties': {'b': 'y' }}")) == 0);
+
+   RECREATE_URI (MONGOC_URI_AUTHSOURCE "=a&" MONGOC_URI_AUTHSOURCE "=b");
+   ASSERT_LOG_DUPE (MONGOC_URI_AUTHSOURCE);
+   str = mongoc_uri_get_auth_source (uri);
+   BSON_ASSERT (strcmp (str, "b") == 0);
+
+   RECREATE_URI (MONGOC_URI_CANONICALIZEHOSTNAME
+                 "=false&" MONGOC_URI_CANONICALIZEHOSTNAME "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_CANONICALIZEHOSTNAME);
+   BSON_ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_CANONICALIZEHOSTNAME, false));
+
+   RECREATE_URI (MONGOC_URI_CONNECTTIMEOUTMS "=1&" MONGOC_URI_CONNECTTIMEOUTMS
+                                             "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_CONNECTTIMEOUTMS);
+   BSON_ASSERT (mongoc_uri_get_option_as_int32 (
+                   uri, MONGOC_URI_CONNECTTIMEOUTMS, 0) == 2);
+
+#if defined(MONGOC_ENABLE_COMPRESSION_SNAPPY) && \
+   defined(MONGOC_ENABLE_COMPRESSION_ZLIB)
+   RECREATE_URI (MONGOC_URI_COMPRESSORS "=snappy&" MONGOC_URI_COMPRESSORS
+                                        "=zlib");
+   ASSERT_LOG_DUPE (MONGOC_URI_COMPRESSORS);
+   bson = mongoc_uri_get_compressors (uri);
+   BSON_ASSERT (bson_compare (bson, tmp_bson ("{'zlib': 'yes'}")) == 0);
+#endif
+
+   /* exception: GSSAPISERVICENAME does not overwrite. */
+   RECREATE_URI (MONGOC_URI_GSSAPISERVICENAME "=a&" MONGOC_URI_GSSAPISERVICENAME
+                                              "=b");
+   ASSERT_CAPTURED_LOG ("option: " MONGOC_URI_GSSAPISERVICENAME,
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "authMechanismProperties SERVICE_NAME already set, "
+                        "ignoring 'gssapiservicename'");
+   bson = mongoc_uri_get_credentials (uri);
+   BSON_ASSERT (
+      bson_compare (
+         bson,
+         tmp_bson ("{'authmechanismproperties': {'SERVICE_NAME': 'a' }}")) ==
+      0);
+
+   RECREATE_URI (MONGOC_URI_HEARTBEATFREQUENCYMS
+                 "=500&" MONGOC_URI_HEARTBEATFREQUENCYMS "=501");
+   ASSERT_LOG_DUPE (MONGOC_URI_HEARTBEATFREQUENCYMS);
+   BSON_ASSERT (mongoc_uri_get_option_as_int32 (
+                   uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 0) == 501);
+
+   RECREATE_URI (MONGOC_URI_JOURNAL "=false&" MONGOC_URI_JOURNAL "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_JOURNAL);
+   BSON_ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_JOURNAL, false));
+
+   RECREATE_URI (MONGOC_URI_LOCALTHRESHOLDMS "=1&" MONGOC_URI_LOCALTHRESHOLDMS
+                                             "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_LOCALTHRESHOLDMS);
+   BSON_ASSERT (mongoc_uri_get_option_as_int32 (
+                   uri, MONGOC_URI_LOCALTHRESHOLDMS, 0) == 2);
+
+   RECREATE_URI (MONGOC_URI_MAXIDLETIMEMS "=1&" MONGOC_URI_MAXIDLETIMEMS "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_MAXIDLETIMEMS);
+   BSON_ASSERT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MAXIDLETIMEMS, 0) == 2);
+
+   RECREATE_URI (MONGOC_URI_MAXPOOLSIZE "=1&" MONGOC_URI_MAXPOOLSIZE "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_MAXPOOLSIZE);
+   BSON_ASSERT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MAXPOOLSIZE, 0) == 2);
+
+   RECREATE_URI (MONGOC_URI_READPREFERENCE
+                 "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS
+                 "=1&" MONGOC_URI_MAXSTALENESSSECONDS "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_MAXSTALENESSSECONDS);
+   BSON_ASSERT (mongoc_uri_get_option_as_int32 (
+                   uri, MONGOC_URI_MAXSTALENESSSECONDS, 0) == 2);
+
+   RECREATE_URI (MONGOC_URI_MINPOOLSIZE "=1&" MONGOC_URI_MINPOOLSIZE "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_MINPOOLSIZE);
+   BSON_ASSERT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MINPOOLSIZE, 0) == 2);
+
+   RECREATE_URI (MONGOC_URI_READCONCERNLEVEL
+                 "=local&" MONGOC_URI_READCONCERNLEVEL "=majority");
+   ASSERT_LOG_DUPE (MONGOC_URI_READCONCERNLEVEL);
+   rc = mongoc_uri_get_read_concern (uri);
+   BSON_ASSERT (strcmp (mongoc_read_concern_get_level (rc), "majority") == 0);
+
+   RECREATE_URI (MONGOC_URI_READPREFERENCE
+                 "=secondary&" MONGOC_URI_READPREFERENCE "=primary");
+   ASSERT_LOG_DUPE (MONGOC_URI_READPREFERENCE);
+   rp = mongoc_uri_get_read_prefs_t (uri);
+   BSON_ASSERT (mongoc_read_prefs_get_mode (rp) == MONGOC_READ_PRIMARY);
+
+   /* exception: read preference tags get appended. */
+   RECREATE_URI (MONGOC_URI_READPREFERENCE
+                 "=secondary&" MONGOC_URI_READPREFERENCETAGS
+                 "=a:x&" MONGOC_URI_READPREFERENCETAGS "=b:y");
+   bson = mongoc_uri_get_read_prefs (uri);
+   BSON_ASSERT (bson_compare (
+                   bson, tmp_bson ("{'0': {'a': 'x'}, '1': {'b': 'y'}}")) == 0);
+
+   RECREATE_URI (MONGOC_URI_REPLICASET "=a&" MONGOC_URI_REPLICASET "=b");
+   ASSERT_LOG_DUPE (MONGOC_URI_REPLICASET);
+   str = mongoc_uri_get_replica_set (uri);
+   BSON_ASSERT (strcmp (str, "b") == 0);
+
+   RECREATE_URI (MONGOC_URI_RETRYWRITES "=false&" MONGOC_URI_RETRYWRITES
+                                        "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_RETRYWRITES);
+   BSON_ASSERT (
+      mongoc_uri_get_option_as_bool (uri, MONGOC_URI_RETRYWRITES, false));
+
+   RECREATE_URI (MONGOC_URI_SAFE "=false&" MONGOC_URI_SAFE "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_SAFE);
+   BSON_ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SAFE, false));
+
+   RECREATE_URI (MONGOC_URI_SERVERSELECTIONTIMEOUTMS
+                 "=1&" MONGOC_URI_SERVERSELECTIONTIMEOUTMS "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_SERVERSELECTIONTIMEOUTMS);
+   BSON_ASSERT (mongoc_uri_get_option_as_int32 (
+                   uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 0) == 2);
+
+   RECREATE_URI (MONGOC_URI_SERVERSELECTIONTRYONCE
+                 "=false&" MONGOC_URI_SERVERSELECTIONTRYONCE "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_SERVERSELECTIONTRYONCE);
+   BSON_ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false));
+
+   RECREATE_URI (MONGOC_URI_SLAVEOK "=false&" MONGOC_URI_SLAVEOK "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_SLAVEOK);
+   BSON_ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SLAVEOK, false));
+
+   RECREATE_URI (MONGOC_URI_SOCKETCHECKINTERVALMS
+                 "=1&" MONGOC_URI_SOCKETCHECKINTERVALMS "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_SOCKETCHECKINTERVALMS);
+   BSON_ASSERT (mongoc_uri_get_option_as_int32 (
+                   uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 0) == 2);
+
+   RECREATE_URI (MONGOC_URI_SOCKETTIMEOUTMS "=1&" MONGOC_URI_SOCKETTIMEOUTMS
+                                            "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_SOCKETTIMEOUTMS);
+   BSON_ASSERT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 0) == 2);
+
+   RECREATE_URI (MONGOC_URI_SSL "=false&" MONGOC_URI_SSL "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_SSL);
+   BSON_ASSERT (mongoc_uri_get_ssl (uri));
+
+   RECREATE_URI (MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE
+                 "=a&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE "=b");
+   ASSERT_LOG_DUPE (MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE);
+   str = mongoc_uri_get_option_as_utf8 (
+      uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "");
+   BSON_ASSERT (strcmp (str, "b") == 0);
+
+   RECREATE_URI (MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD
+                 "=a&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD "=b");
+   ASSERT_LOG_DUPE (MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD);
+   str = mongoc_uri_get_option_as_utf8 (
+      uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "");
+   BSON_ASSERT (strcmp (str, "b") == 0);
+
+   RECREATE_URI (MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE
+                 "=a&" MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE "=b");
+   ASSERT_LOG_DUPE (MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE);
+   str = mongoc_uri_get_option_as_utf8 (
+      uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "");
+   BSON_ASSERT (strcmp (str, "b") == 0);
+
+   RECREATE_URI (MONGOC_URI_SSLALLOWINVALIDCERTIFICATES
+                 "=false&" MONGOC_URI_SSLALLOWINVALIDCERTIFICATES "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_SSLALLOWINVALIDCERTIFICATES);
+   BSON_ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+
+   RECREATE_URI (MONGOC_URI_W "=1&" MONGOC_URI_W "=0");
+   ASSERT_LOG_DUPE (MONGOC_URI_W);
+   wc = mongoc_uri_get_write_concern (uri);
+   BSON_ASSERT (mongoc_write_concern_get_w (wc) == 0);
+
+   /* exception: a string write concern takes precedence over an int */
+   RECREATE_URI (MONGOC_URI_W "=majority&" MONGOC_URI_W "=0");
+   ASSERT_LOG_DUPE (MONGOC_URI_W);
+   wc = mongoc_uri_get_write_concern (uri);
+   BSON_ASSERT (mongoc_write_concern_get_w (wc) ==
+                MONGOC_WRITE_CONCERN_W_MAJORITY);
+
+   RECREATE_URI (MONGOC_URI_WAITQUEUEMULTIPLE "=1&" MONGOC_URI_WAITQUEUEMULTIPLE
+                                              "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_WAITQUEUEMULTIPLE);
+   BSON_ASSERT (mongoc_uri_get_option_as_int32 (
+                   uri, MONGOC_URI_WAITQUEUEMULTIPLE, 0) == 2);
+
+   RECREATE_URI (MONGOC_URI_WAITQUEUETIMEOUTMS
+                 "=1&" MONGOC_URI_WAITQUEUETIMEOUTMS "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_WAITQUEUETIMEOUTMS);
+   BSON_ASSERT (mongoc_uri_get_option_as_int32 (
+                   uri, MONGOC_URI_WAITQUEUETIMEOUTMS, 0) == 2);
+
+   RECREATE_URI (MONGOC_URI_WTIMEOUTMS "=1&" MONGOC_URI_WTIMEOUTMS "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_WTIMEOUTMS);
+   BSON_ASSERT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0) == 2);
+
+   RECREATE_URI (MONGOC_URI_ZLIBCOMPRESSIONLEVEL
+                 "=1&" MONGOC_URI_ZLIBCOMPRESSIONLEVEL "=2");
+   ASSERT_LOG_DUPE (MONGOC_URI_ZLIBCOMPRESSIONLEVEL);
+   BSON_ASSERT (mongoc_uri_get_option_as_int32 (
+                   uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0) == 2);
+
+   mongoc_uri_destroy (uri);
+}
+
+
 void
 test_uri_install (TestSuite *suite)
 {
@@ -1955,4 +2226,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/srv", test_mongoc_uri_srv);
    TestSuite_Add (suite, "/Uri/dns_options", test_mongoc_uri_dns_options);
    TestSuite_Add (suite, "/Uri/utf8", test_mongoc_uri_utf8);
+   TestSuite_Add (suite, "/Uri/duplicates", test_mongoc_uri_duplicates);
 }
