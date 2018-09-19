@@ -9,6 +9,10 @@
  * See included LICENSE file for license details.
  */
 
+#if !defined(BSON_INSIDE) && !defined(BSON_COMPILATION)
+#error "Only <bson/bson.h> can be included directly."
+#endif
+
 #ifndef JSONSL_H_
 #define JSONSL_H_
 

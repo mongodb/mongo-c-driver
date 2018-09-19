@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc/mongoc.h> can be included directly."
+#endif
+
 #ifndef MONGOC_TOPOLOGY_DESCRIPTION_APM_PRIVATE_H
 #define MONGOC_TOPOLOGY_DESCRIPTION_APM_PRIVATE_H
 
@@ -29,8 +33,7 @@ https://github.com/mongodb/specifications/blob/master/source/server-discovery-an
 
 void
 _mongoc_topology_description_monitor_server_opening (
-   const mongoc_topology_description_t *td,
-   mongoc_server_description_t *sd);
+   const mongoc_topology_description_t *td, mongoc_server_description_t *sd);
 
 void
 _mongoc_topology_description_monitor_server_changed (

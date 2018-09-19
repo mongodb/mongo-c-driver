@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_STREAM_TLS_H
-#define MONGOC_STREAM_TLS_H
-
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
 #error "Only <mongoc/mongoc.h> can be included directly."
 #endif
+
+#ifndef MONGOC_STREAM_TLS_H
+#define MONGOC_STREAM_TLS_H
 
 #include <bson/bson.h>
 

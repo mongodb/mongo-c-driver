@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc/mongoc.h> can be included directly."
+#endif
+
 
 /*
  * Internal struct to represent a command we will send to the server - command
@@ -24,10 +28,6 @@
 
 #ifndef MONGOC_CMD_PRIVATE_H
 #define MONGOC_CMD_PRIVATE_H
-
-#if !defined(MONGOC_COMPILATION)
-#error "Only <mongoc/mongoc.h> can be included directly."
-#endif
 
 #include <bson/bson.h>
 

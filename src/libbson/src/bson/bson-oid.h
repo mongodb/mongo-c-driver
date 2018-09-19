@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-
-#ifndef BSON_OID_H
-#define BSON_OID_H
-
-
 #if !defined(BSON_INSIDE) && !defined(BSON_COMPILATION)
 #error "Only <bson/bson.h> can be included directly."
 #endif
+
+
+#ifndef BSON_OID_H
+#define BSON_OID_H
 
 
 #include <time.h>

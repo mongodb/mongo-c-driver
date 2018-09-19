@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-#ifndef COMMON_THREAD_PRIVATE_H
-#define COMMON_THREAD_PRIVATE_H
-
-#if !defined(MONGOC_COMPILATION) && !defined(BSON_COMPILATION) && \
-   !defined(BSON_INSIDE)
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION) && \
+   !defined(BSON_COMPILATION) && !defined(BSON_INSIDE)
 #error "Only <mongoc/mongoc.h> or <bson/bson.h> can be included directly."
 #endif
 
+#ifndef COMMON_THREAD_PRIVATE_H
+#define COMMON_THREAD_PRIVATE_H
+
+#define BSON_INSIDE
 #include "bson/bson-compat.h"
 #include "bson/bson-config.h"
 #include "bson/bson-macros.h"
+#undef BSON_INSIDE
 
 BSON_BEGIN_DECLS
 

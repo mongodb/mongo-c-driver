@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_STREAM_TLS_LIBRESSL_H
-#define MONGOC_STREAM_TLS_LIBRESSL_H
-
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
 #error "Only <mongoc/mongoc.h> can be included directly."
 #endif
+
+#ifndef MONGOC_STREAM_TLS_LIBRESSL_H
+#define MONGOC_STREAM_TLS_LIBRESSL_H
 
 #ifdef MONGOC_ENABLE_SSL_LIBRESSL
 

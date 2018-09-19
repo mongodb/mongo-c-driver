@@ -15,7 +15,6 @@
  */
 
 #include <bson/bson.h>
-#include <bson/bcon.h>
 
 #define QUERY(...) ELE_QUERY, __VA_ARGS__, NULL
 #define SORT(...) ELE_SORT, __VA_ARGS__, NULL

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_UTIL_PRIVATE_H
-#define MONGOC_UTIL_PRIVATE_H
-
-#if !defined(MONGOC_COMPILATION)
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
 #error "Only <mongoc/mongoc.h> can be included directly."
 #endif
+
+#ifndef MONGOC_UTIL_PRIVATE_H
+#define MONGOC_UTIL_PRIVATE_H
 
 #include <bson/bson.h>
 #include "mongoc/mongoc.h"
@@ -50,8 +50,7 @@
 #endif
 
 #ifndef _WIN32
-#define MONGOC_PRINTF_FORMAT(a, b) \
-   __attribute__ ((format (__printf__, a, b)))
+#define MONGOC_PRINTF_FORMAT(a, b) __attribute__ ((format (__printf__, a, b)))
 #else
 #define MONGOC_PRINTF_FORMAT(a, b) /* no-op */
 #endif

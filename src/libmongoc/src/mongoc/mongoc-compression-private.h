@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc/mongoc.h> can be included directly."
+#endif
+
 
 #ifndef MONGOC_COMPRESSION_PRIVATE_H
 #define MONGOC_COMPRESSION_PRIVATE_H
 
-#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc/mongoc.h> can be included directly."
-#endif
-#include <bson/bson.h>
-
+#include "bson/bson.h"
 
 /* Compressor IDs */
 #define MONGOC_COMPRESSOR_NOOP_ID 0

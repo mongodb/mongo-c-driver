@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_READ_PREFS_H
-#define MONGOC_READ_PREFS_H
-
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
 #error "Only <mongoc/mongoc.h> can be included directly."
 #endif
+
+#ifndef MONGOC_READ_PREFS_H
+#define MONGOC_READ_PREFS_H
 
 #include <bson/bson.h>
 

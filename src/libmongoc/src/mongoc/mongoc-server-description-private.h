@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
+#error "Only <mongoc/mongoc.h> can be included directly."
+#endif
+
 #ifndef MONGOC_SERVER_DESCRIPTION_PRIVATE_H
 #define MONGOC_SERVER_DESCRIPTION_PRIVATE_H
 

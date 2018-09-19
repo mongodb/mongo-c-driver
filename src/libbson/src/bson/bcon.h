@@ -3,6 +3,10 @@
  * @brief BCON (BSON C Object Notation) Declarations
  */
 
+#if !defined(BSON_INSIDE) && !defined(BSON_COMPILATION)
+#error "Only <bson/bson.h> can be included directly."
+#endif
+
 /*    Copyright 2009-2013 MongoDB, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");

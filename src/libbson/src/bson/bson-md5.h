@@ -53,14 +53,13 @@
  * specified in libbson.
  */
 
-
-#ifndef BSON_MD5_H
-#define BSON_MD5_H
-
-
 #if !defined(BSON_INSIDE) && !defined(BSON_COMPILATION)
 #error "Only <bson/bson.h> can be included directly."
 #endif
+
+
+#ifndef BSON_MD5_H
+#define BSON_MD5_H
 
 
 #include "bson/bson-endian.h"

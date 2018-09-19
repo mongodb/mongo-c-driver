@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_CYRUS_PRIVATE_H
-#define MONGOC_CYRUS_PRIVATE_H
-
-#if !defined(MONGOC_COMPILATION)
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
 #error "Only <mongoc/mongoc.h> can be included directly."
 #endif
+
+#ifndef MONGOC_CYRUS_PRIVATE_H
+#define MONGOC_CYRUS_PRIVATE_H
 
 #include "mongoc/mongoc-uri.h"
 #include "mongoc/mongoc-cluster-private.h"

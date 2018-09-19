@@ -28,7 +28,9 @@
 #include <netinet/tcp.h>
 #include <arpa/nameser.h>
 #include <resolv.h>
+#define BSON_INSIDE
 #include <bson/bson-string.h>
+#undef BSON_INSIDE
 
 #endif
 #endif

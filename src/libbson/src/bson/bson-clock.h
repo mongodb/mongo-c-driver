@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-
-#ifndef BSON_CLOCK_H
-#define BSON_CLOCK_H
-
-
 #if !defined(BSON_INSIDE) && !defined(BSON_COMPILATION)
 #error "Only <bson/bson.h> can be included directly."
 #endif
+
+
+#ifndef BSON_CLOCK_H
+#define BSON_CLOCK_H
 
 
 #include "bson/bson-compat.h"

@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef COMMON_MD5_PRIVATE_H
-#define COMMON_MD5_PRIVATE_H
-
-
-#if !defined(MONGOC_COMPILATION) && !defined(BSON_COMPILATION) && \
-   !defined(BSON_INSIDE)
+#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION) && \
+   !defined(BSON_COMPILATION) && !defined(BSON_INSIDE)
 #error "Only <mongoc/mongoc.h> or <bson/bson.h> can be included directly."
 #endif
+
+#ifndef COMMON_MD5_PRIVATE_H
+#define COMMON_MD5_PRIVATE_H
 
 #include "bson/bson.h"
 

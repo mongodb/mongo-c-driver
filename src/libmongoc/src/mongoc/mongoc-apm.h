@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_APM_H
-#define MONGOC_APM_H
-
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
 #error "Only <mongoc/mongoc.h> can be included directly."
 #endif
+
+#ifndef MONGOC_APM_H
+#define MONGOC_APM_H
 
 #include <bson/bson.h>
 
@@ -145,8 +145,7 @@ MONGOC_EXPORT (void)
 mongoc_apm_command_failed_get_error (const mongoc_apm_command_failed_t *event,
                                      bson_error_t *error);
 MONGOC_EXPORT (const bson_t *)
-mongoc_apm_command_failed_get_reply (
-   const mongoc_apm_command_failed_t *event);
+mongoc_apm_command_failed_get_reply (const mongoc_apm_command_failed_t *event);
 MONGOC_EXPORT (int64_t)
 mongoc_apm_command_failed_get_request_id (
    const mongoc_apm_command_failed_t *event);

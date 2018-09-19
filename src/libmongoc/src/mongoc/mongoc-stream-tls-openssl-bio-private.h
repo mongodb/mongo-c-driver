@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef MONGOC_STREAM_TLS_OPENSSL_BIO_PRIVATE_H
-#define MONGOC_STREAM_TLS_OPENSSL_BIO_PRIVATE_H
-
 #if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
 #error "Only <mongoc/mongoc.h> can be included directly."
 #endif
+
+#ifndef MONGOC_STREAM_TLS_OPENSSL_BIO_PRIVATE_H
+#define MONGOC_STREAM_TLS_OPENSSL_BIO_PRIVATE_H
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 #include <bson/bson.h>
