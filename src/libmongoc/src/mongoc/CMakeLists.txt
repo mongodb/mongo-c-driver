@@ -249,6 +249,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
 
 set_dist_list (src_libmongoc_src_mongoc_DIST
    CMakeLists.txt
+   modules/module.modulemap.in
    ${src_libmongoc_src_mongoc_DIST_cs}
    ${src_libmongoc_src_mongoc_DIST_hs}
    ${src_libmongoc_src_mongoc_DIST_noinst_hs}
