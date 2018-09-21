@@ -1317,15 +1317,14 @@ char *
 test_framework_get_uri_str ()
 {
    char *uri_str_no_auth;
-   char *uri_str_auth;
    char *uri_str;
 
+   /* no_auth also contains compressors. */
+
    uri_str_no_auth = test_framework_get_uri_str_no_auth (NULL);
-   uri_str_auth = test_framework_add_user_password_from_env (uri_str_no_auth);
-   uri_str = test_framework_add_compressors_from_env (uri_str_auth);
+   uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
 
    bson_free (uri_str_no_auth);
-   bson_free (uri_str_auth);
 
    return uri_str;
 }
