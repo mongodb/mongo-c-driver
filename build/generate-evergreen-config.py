@@ -265,7 +265,7 @@ def make_integration_test_tasks():
 
         # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
         if task.valgrind:
-            task.depends_on.append('debug-compile-valgrind-memcheck')
+            task.depends_on.append('debug-compile-valgrind')
         elif task.asan:
             task.depends_on.append('debug-compile-asan-clang-nosasl-%s' % (
                 task.display('ssl'),))

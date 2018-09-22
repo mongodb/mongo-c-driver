@@ -877,19 +877,6 @@ tasks:
         - func: "upload build"
 
     - name: debug-compile-valgrind
-      tags: ["debug-compile", "special", "valgrind"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-valgrind-memcheck
       tags: ["debug-compile", "special", "valgrind", "bson"]
       commands:
         - command: shell.exec
@@ -1681,11 +1668,11 @@ tasks:
     - name: test-valgrind-memcheck-mock-server
       tags: ["test-valgrind"]
       depends_on:
-        - name: "debug-compile-valgrind-memcheck"
+        - name: "debug-compile-valgrind"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-valgrind-memcheck"
+            BUILD_NAME: "debug-compile-valgrind"
         - func: "run mock server tests"
           vars:
             VALGRIND: "on"
