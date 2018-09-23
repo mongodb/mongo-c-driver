@@ -663,25 +663,6 @@ tasks:
                 exit 0
               fi
 
-    - name: test-latest-server-hardened
-      tags: ["hardened", "latest"]
-      depends_on:
-        - name: "hardened-compile"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "hardened-compile"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-
     - name: debug-compile-compression-zlib
       tags: ["zlib", "compression"]
       commands:
@@ -734,69 +715,6 @@ tasks:
               export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
               DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=OFF ZLIB=BUNDLED  sh .evergreen/compile.sh
         - func: "upload build"
-
-    - name: test-latest-server-compression-zlib
-      tags: ["zlib", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression-zlib"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression-zlib"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "zlib"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: zlib
-
-    - name: test-latest-server-compression-snappy
-      tags: ["snappy", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression-snappy"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression-snappy"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "snappy"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: snappy
-
-    - name: test-latest-server-compression
-      tags: ["zlib", "snappy", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "snappy-zlib"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: zlib,snappy
 
     - name: debug-compile
       tags: ["debug-compile"]
@@ -1035,6 +953,174 @@ tasks:
               RELEASE=ON CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         - func: "upload build"
 
+    - name: debug-compile-nosasl-nossl
+      tags: ["debug-compile", "nosasl", "nossl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-openssl
+      tags: ["debug-compile", "nosasl", "openssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-darwinssl
+      tags: ["debug-compile", "nosasl", "darwinssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=DARWIN sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-winssl
+      tags: ["debug-compile", "nosasl", "winssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=WINDOWS sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sasl-nossl
+      tags: ["debug-compile", "sasl", "nossl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OFF sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sasl-openssl
+      tags: ["debug-compile", "sasl", "openssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sasl-darwinssl
+      tags: ["debug-compile", "sasl", "darwinssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=DARWIN sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sasl-winssl
+      tags: ["debug-compile", "sasl", "winssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=WINDOWS sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sspi-nossl
+      tags: ["debug-compile", "sspi", "nossl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=OFF sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sspi-openssl
+      tags: ["debug-compile", "sspi", "openssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-rdtscp
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}'  sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sspi-winssl
+      tags: ["debug-compile", "sspi", "winssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=WINDOWS sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosrv
+      tags: ["debug-compile"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SRV=OFF sh .evergreen/compile.sh
+        - func: "upload build"
+
     - name: link-with-cmake
       depends_on:
         - name: "make-release-archive"
@@ -1244,6 +1330,112 @@ tasks:
               # pkg-config.exe.
               LINK_STATIC= cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
 
+    - name: debian-package-build
+      commands:
+        - command: shell.exec
+          params:
+            script: |
+              set -o xtrace
+              set -o errexit
+              if [ "${is_patch}" = "true" ]; then
+                cd mongoc
+                git diff HEAD -- . ':!debian' > ../upstream.patch
+                git diff HEAD -- debian > ../debian.patch
+                git clean -fdx
+                git reset --hard HEAD
+                if [ -s ../upstream.patch ]; then
+                  [ -d debian/patches ] || mkdir debian/patches
+                  mv ../upstream.patch debian/patches/
+                  echo upstream.patch >> debian/patches/series
+                  git add debian/patches/*
+                  git commit -m 'Evergreen patch build - upstream changes'
+                  git log -n1 -p
+                fi
+                if [ -s ../debian.patch ]; then
+                  git apply --index ../debian.patch
+                  git commit -m 'Evergreen patch build - Debian packaging changes'
+                  git log -n1 -p
+                fi
+                cd ..
+              fi
+              git clone https://salsa.debian.org/installer-team/debootstrap.git debootstrap.git
+              mkdir unstable-chroot
+              export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
+              sudo -E ./debootstrap.git/debootstrap --include=build-essential,git-buildpackage,fakeroot,debhelper,cmake,libssl-dev,pkg-config,python3-sphinx,zlib1g-dev,libicu-dev,libsasl2-dev,libsnappy-dev unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
+              cp -a mongoc ./unstable-chroot/tmp/
+              sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
+                cd /tmp/mongoc && \
+                git clean -fdx && \
+                git reset --hard HEAD && \
+                LANG=C /bin/bash ./debian/build_snapshot.sh && \
+                dpkg -i ../*.deb && \
+                gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0 )"
+              [ -e ./unstable-chroot/tmp/mongoc/example-client ] || (echo "Example was not built!" ; exit 1)
+              (cd ./unstable-chroot/tmp/ ; tar zcvf ../../deb.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
+        - command: s3.put
+          params:
+            aws_key: ${aws_key}
+            aws_secret: ${aws_secret}
+            local_file: deb.tar.gz
+            remote_file: mongo-c-driver/${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz
+            bucket: mciuploads
+            permissions: public-read
+            content_type: ${content_type|application/x-gzip}
+
+    - name: install-uninstall-check-mingw
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o xtrace
+              set -o errexit
+              export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
+              BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+              cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+
+    - name: install-uninstall-check-msvc
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o xtrace
+              set -o errexit
+              export CC="Visual Studio 14 2015 Win64"
+              BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+              cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+
+    - name: install-uninstall-check
+      depends_on:
+        - name: "make-release-archive"
+          variant: releng
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o xtrace
+              set -o errexit
+              DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
+              BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
+              sh ./.evergreen/install-uninstall-check.sh
+# {{ '}}}' }}
+
+# Test Matrix {{ '{{{' }}
+{% for task in make_integration_test_tasks() %}
+    - {{ task.to_yaml() | indent(6) }}
+{% endfor %}
+
     - name: test-dns-openssl
       depends_on:
         - name: "debug-compile-sasl-openssl"
@@ -1358,173 +1550,68 @@ tasks:
             AUTH: "auth"
             SSL: "darwinssl"
 
-    - name: debug-compile-nosasl-nossl
-      tags: ["debug-compile", "nosasl", "nossl"]
+    - name: test-latest-server-compression-zlib
+      tags: ["zlib", "compression", "latest"]
+      depends_on:
+        - name: "debug-compile-compression-zlib"
       commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF sh .evergreen/compile.sh
-        - func: "upload build"
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-compression-zlib"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            ORCHESTRATION_FILE: "zlib"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: zlib
 
-    - name: debug-compile-nosasl-openssl
-      tags: ["debug-compile", "nosasl", "openssl"]
+    - name: test-latest-server-compression-snappy
+      tags: ["snappy", "compression", "latest"]
+      depends_on:
+        - name: "debug-compile-compression-snappy"
       commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
-        - func: "upload build"
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-compression-snappy"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            ORCHESTRATION_FILE: "snappy"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: snappy
 
-    - name: debug-compile-nosasl-darwinssl
-      tags: ["debug-compile", "nosasl", "darwinssl"]
+    - name: test-latest-server-compression
+      tags: ["zlib", "snappy", "compression", "latest"]
+      depends_on:
+        - name: "debug-compile-compression"
       commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=DARWIN sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-winssl
-      tags: ["debug-compile", "nosasl", "winssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=WINDOWS sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sasl-nossl
-      tags: ["debug-compile", "sasl", "nossl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sasl-openssl
-      tags: ["debug-compile", "sasl", "openssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sasl-darwinssl
-      tags: ["debug-compile", "sasl", "darwinssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=DARWIN sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sasl-winssl
-      tags: ["debug-compile", "sasl", "winssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=WINDOWS sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sspi-nossl
-      tags: ["debug-compile", "sspi", "nossl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sspi-openssl
-      tags: ["debug-compile", "sspi", "openssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=OPENSSL sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-rdtscp
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}'  sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sspi-winssl
-      tags: ["debug-compile", "sspi", "winssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=WINDOWS sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosrv
-      tags: ["debug-compile"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SRV=OFF sh .evergreen/compile.sh
-        - func: "upload build"
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-compression"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            ORCHESTRATION_FILE: "snappy-zlib"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: zlib,snappy
 
     # Verify that retryWrites=true is ignored with standalone
     - name: retry-true-latest-server
@@ -1560,111 +1647,24 @@ tasks:
             AUTH: "noauth"
             URI: "mongodb://localhost/?replicaSet=repl0&retryWrites=true"
 
-    - name: debian-package-build
-      commands:
-        - command: shell.exec
-          params:
-            script: |
-              set -o xtrace
-              set -o errexit
-              if [ "${is_patch}" = "true" ]; then
-                cd mongoc
-                git diff HEAD -- . ':!debian' > ../upstream.patch
-                git diff HEAD -- debian > ../debian.patch
-                git clean -fdx
-                git reset --hard HEAD
-                if [ -s ../upstream.patch ]; then
-                  [ -d debian/patches ] || mkdir debian/patches
-                  mv ../upstream.patch debian/patches/
-                  echo upstream.patch >> debian/patches/series
-                  git add debian/patches/*
-                  git commit -m 'Evergreen patch build - upstream changes'
-                  git log -n1 -p
-                fi
-                if [ -s ../debian.patch ]; then
-                  git apply --index ../debian.patch
-                  git commit -m 'Evergreen patch build - Debian packaging changes'
-                  git log -n1 -p
-                fi
-                cd ..
-              fi
-              git clone https://salsa.debian.org/installer-team/debootstrap.git debootstrap.git
-              mkdir unstable-chroot
-              export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
-              sudo -E ./debootstrap.git/debootstrap --include=build-essential,git-buildpackage,fakeroot,debhelper,cmake,libssl-dev,pkg-config,python3-sphinx,zlib1g-dev,libicu-dev,libsasl2-dev,libsnappy-dev unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
-              cp -a mongoc ./unstable-chroot/tmp/
-              sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
-                cd /tmp/mongoc && \
-                git clean -fdx && \
-                git reset --hard HEAD && \
-                LANG=C /bin/bash ./debian/build_snapshot.sh && \
-                dpkg -i ../*.deb && \
-                gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0 )"
-              [ -e ./unstable-chroot/tmp/mongoc/example-client ] || (echo "Example was not built!" ; exit 1)
-              (cd ./unstable-chroot/tmp/ ; tar zcvf ../../deb.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
-        - command: s3.put
-          params:
-            aws_key: ${aws_key}
-            aws_secret: ${aws_secret}
-            local_file: deb.tar.gz
-            remote_file: mongo-c-driver/${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz
-            bucket: mciuploads
-            permissions: public-read
-            content_type: ${content_type|application/x-gzip}
-
-    - name: install-uninstall-check-mingw
+    - name: test-latest-server-hardened
+      tags: ["hardened", "latest"]
       depends_on:
-        - name: "make-release-archive"
-          variant: releng
+        - name: "hardened-compile"
       commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o xtrace
-              set -o errexit
-              export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
-              BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
-              cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
-
-    - name: install-uninstall-check-msvc
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o xtrace
-              set -o errexit
-              export CC="Visual Studio 14 2015 Win64"
-              BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
-              cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
-
-    - name: install-uninstall-check
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o xtrace
-              set -o errexit
-              DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
-              BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
-              sh ./.evergreen/install-uninstall-check.sh
-# {{ '}}}' }}
-
-# Test Matrix {{ '{{{' }}
-{% for task in make_integration_test_tasks() %}
-    - {{ task.to_yaml() | indent(6) }}
-{% endfor %}
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "hardened-compile"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
 
     - name: test-valgrind-memcheck-mock-server
       tags: ["test-valgrind"]

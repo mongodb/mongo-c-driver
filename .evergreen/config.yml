@@ -660,25 +660,6 @@ tasks:
                 exit 0
               fi
 
-    - name: test-latest-server-hardened
-      tags: ["hardened", "latest"]
-      depends_on:
-        - name: "hardened-compile"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "hardened-compile"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-
     - name: debug-compile-compression-zlib
       tags: ["zlib", "compression"]
       commands:
@@ -731,69 +712,6 @@ tasks:
               export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
               DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=OFF ZLIB=BUNDLED  sh .evergreen/compile.sh
         - func: "upload build"
-
-    - name: test-latest-server-compression-zlib
-      tags: ["zlib", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression-zlib"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression-zlib"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "zlib"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: zlib
-
-    - name: test-latest-server-compression-snappy
-      tags: ["snappy", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression-snappy"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression-snappy"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "snappy"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: snappy
-
-    - name: test-latest-server-compression
-      tags: ["zlib", "snappy", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "snappy-zlib"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: zlib,snappy
 
     - name: debug-compile
       tags: ["debug-compile"]
@@ -874,19 +792,6 @@ tasks:
         - func: "upload build"
 
     - name: debug-compile-valgrind
-      tags: ["debug-compile", "special", "valgrind"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-valgrind-memcheck
       tags: ["debug-compile", "special", "valgrind", "bson"]
       commands:
         - command: shell.exec
@@ -1043,6 +948,174 @@ tasks:
               set -o errexit
               set -o xtrace
               RELEASE=ON CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-nossl
+      tags: ["debug-compile", "nosasl", "nossl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-openssl
+      tags: ["debug-compile", "nosasl", "openssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-darwinssl
+      tags: ["debug-compile", "nosasl", "darwinssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=DARWIN sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosasl-winssl
+      tags: ["debug-compile", "nosasl", "winssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=WINDOWS sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sasl-nossl
+      tags: ["debug-compile", "sasl", "nossl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OFF sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sasl-openssl
+      tags: ["debug-compile", "sasl", "openssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sasl-darwinssl
+      tags: ["debug-compile", "sasl", "darwinssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=DARWIN sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sasl-winssl
+      tags: ["debug-compile", "sasl", "winssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=WINDOWS sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sspi-nossl
+      tags: ["debug-compile", "sspi", "nossl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=OFF sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sspi-openssl
+      tags: ["debug-compile", "sspi", "openssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=OPENSSL sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-rdtscp
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}'  sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-sspi-winssl
+      tags: ["debug-compile", "sspi", "winssl"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=WINDOWS sh .evergreen/compile.sh
+        - func: "upload build"
+
+    - name: debug-compile-nosrv
+      tags: ["debug-compile"]
+      commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              set -o errexit
+              set -o xtrace
+              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SRV=OFF sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: link-with-cmake
@@ -1253,322 +1326,6 @@ tasks:
               # dynamically or statically to it, using variables from
               # pkg-config.exe.
               LINK_STATIC= cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
-
-    - name: test-dns-openssl
-      depends_on:
-        - name: "debug-compile-sasl-openssl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            SSL: "ssl"
-        - func: "run tests"
-          vars:
-            DNS: on
-            SSL: "ssl"
-
-    - name: test-dns-winssl
-      depends_on:
-        - name: "debug-compile-sspi-winssl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sspi-winssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            SSL: "winssl"
-        - func: "run tests"
-          vars:
-            DNS: on
-            SSL: "winssl"
-
-    - name: test-dns-darwinssl
-      depends_on:
-        - name: "debug-compile-sasl-darwinssl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-darwinssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            SSL: "darwinssl"
-        - func: "run tests"
-          vars:
-            DNS: on
-            SSL: "darwinssl"
-
-    - name: test-dns-auth-openssl
-      depends_on:
-        - name: "debug-compile-sasl-openssl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            SSL: "ssl"
-            AUTH: "auth"
-            AUTHSOURCE: "thisDB"
-            ORCHESTRATION_FILE: "auth-thisdb-ssl"
-        - func: "run tests"
-          vars:
-            DNS: "dns-auth"
-            AUTH: "auth"
-            SSL: "ssl"
-
-    - name: test-dns-auth-winssl
-      depends_on:
-        - name: "debug-compile-sspi-winssl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sspi-winssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-            TOPOLOGY: "replica_set"
-            SSL: "winssl"
-            AUTH: "auth"
-            AUTHSOURCE: "thisDB"
-            ORCHESTRATION_FILE: "auth-thisdb-ssl"
-        - func: "run tests"
-          vars:
-            DNS: "dns-auth"
-            AUTH: "auth"
-            SSL: "winssl"
-
-    - name: test-dns-auth-darwinssl
-      depends_on:
-        - name: "debug-compile-sasl-darwinssl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-darwinssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            SSL: "darwinssl"
-            AUTH: "auth"
-            AUTHSOURCE: "thisDB"
-            ORCHESTRATION_FILE: "auth-thisdb-ssl"
-        - func: "run tests"
-          vars:
-            DNS: "dns-auth"
-            AUTH: "auth"
-            SSL: "darwinssl"
-
-    - name: debug-compile-nosasl-nossl
-      tags: ["debug-compile", "nosasl", "nossl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-openssl
-      tags: ["debug-compile", "nosasl", "openssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-darwinssl
-      tags: ["debug-compile", "nosasl", "darwinssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=DARWIN sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-winssl
-      tags: ["debug-compile", "nosasl", "winssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=WINDOWS sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sasl-nossl
-      tags: ["debug-compile", "sasl", "nossl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sasl-openssl
-      tags: ["debug-compile", "sasl", "openssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sasl-darwinssl
-      tags: ["debug-compile", "sasl", "darwinssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=DARWIN sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sasl-winssl
-      tags: ["debug-compile", "sasl", "winssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=WINDOWS sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sspi-nossl
-      tags: ["debug-compile", "sspi", "nossl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sspi-openssl
-      tags: ["debug-compile", "sspi", "openssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=OPENSSL sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-rdtscp
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}'  sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sspi-winssl
-      tags: ["debug-compile", "sspi", "winssl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=SSPI SSL=WINDOWS sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosrv
-      tags: ["debug-compile"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SRV=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    # Verify that retryWrites=true is ignored with standalone
-    - name: retry-true-latest-server
-      depends_on:
-        - name: "debug-compile-sasl-openssl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            URI: "mongodb://localhost/?retryWrites=true"
-
-    # Verify that retryWrites=true is ignored with old server
-    - name: retry-true-3.4-replica-set
-      depends_on:
-        - name: "debug-compile-sasl-openssl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.4"
-            TOPOLOGY: "replica_set"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            URI: "mongodb://localhost/?replicaSet=repl0&retryWrites=true"
 
     - name: debian-package-build
       commands:
@@ -1787,10 +1544,10 @@ tasks:
     - name: test-valgrind-3.2-server-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.2', TOPOLOGY: server, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -1933,10 +1690,10 @@ tasks:
     - name: test-valgrind-3.2-replica-set-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.2', TOPOLOGY: replica_set, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -1967,10 +1724,10 @@ tasks:
     - name: test-valgrind-3.2-server-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.2', TOPOLOGY: server, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -2136,10 +1893,10 @@ tasks:
     - name: test-valgrind-latest-server-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: latest, TOPOLOGY: server, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -2225,10 +1982,10 @@ tasks:
     - name: test-valgrind-3.6-server-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.6', TOPOLOGY: server, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -2248,10 +2005,10 @@ tasks:
     - name: test-valgrind-3.0-server-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.0', TOPOLOGY: server, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -2426,10 +2183,10 @@ tasks:
     - name: test-valgrind-latest-replica-set-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: latest, TOPOLOGY: replica_set, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -2449,10 +2206,10 @@ tasks:
     - name: test-valgrind-latest-sharded-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: latest, TOPOLOGY: sharded_cluster, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -2674,10 +2431,10 @@ tasks:
     - name: test-valgrind-3.4-server-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.4', TOPOLOGY: server, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -2776,10 +2533,10 @@ tasks:
     - name: test-valgrind-latest-sharded-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: latest, TOPOLOGY: sharded_cluster, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -2800,10 +2557,10 @@ tasks:
     - name: test-valgrind-3.6-server-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.6', TOPOLOGY: server, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -2958,10 +2715,10 @@ tasks:
     - name: test-valgrind-3.4-replica-set-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.4', TOPOLOGY: replica_set, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -3015,10 +2772,10 @@ tasks:
     - name: test-valgrind-3.6-sharded-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.6', TOPOLOGY: sharded_cluster, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -3108,10 +2865,10 @@ tasks:
     - name: test-valgrind-4.0-replica-set-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '4.0', TOPOLOGY: replica_set, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -3263,10 +3020,10 @@ tasks:
     - name: test-valgrind-4.0-server-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '4.0', TOPOLOGY: server, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -3397,10 +3154,10 @@ tasks:
     - name: test-valgrind-4.0-replica-set-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '4.0', TOPOLOGY: replica_set, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -3663,10 +3420,10 @@ tasks:
     - name: test-valgrind-3.6-sharded-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.6', TOPOLOGY: sharded_cluster, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -3708,10 +3465,10 @@ tasks:
     - name: test-valgrind-3.0-server-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.0', TOPOLOGY: server, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -3787,10 +3544,10 @@ tasks:
     - name: test-valgrind-3.4-server-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.4', TOPOLOGY: server, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -3866,10 +3623,10 @@ tasks:
     - name: test-valgrind-3.6-replica-set-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.6', TOPOLOGY: replica_set, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -3955,10 +3712,10 @@ tasks:
     - name: test-valgrind-latest-server-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: latest, TOPOLOGY: server, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -4023,10 +3780,10 @@ tasks:
     - name: test-valgrind-4.0-server-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '4.0', TOPOLOGY: server, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -4090,10 +3847,10 @@ tasks:
     - name: test-valgrind-3.0-replica-set-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.0', TOPOLOGY: replica_set, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -4369,10 +4126,10 @@ tasks:
     - name: test-valgrind-3.2-sharded-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.2', TOPOLOGY: sharded_cluster, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -4392,10 +4149,10 @@ tasks:
     - name: test-valgrind-3.4-replica-set-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.4', TOPOLOGY: replica_set, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -4415,10 +4172,10 @@ tasks:
     - name: test-valgrind-4.0-sharded-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '4.0', TOPOLOGY: sharded_cluster, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -4427,10 +4184,10 @@ tasks:
     - name: test-valgrind-3.4-sharded-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.4', TOPOLOGY: sharded_cluster, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -4681,10 +4438,10 @@ tasks:
     - name: test-valgrind-3.2-sharded-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.2', TOPOLOGY: sharded_cluster, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -4826,10 +4583,10 @@ tasks:
     - name: test-valgrind-3.0-sharded-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.0', TOPOLOGY: sharded_cluster, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -4838,10 +4595,10 @@ tasks:
     - name: test-valgrind-3.0-replica-set-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.0', TOPOLOGY: replica_set, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -4872,10 +4629,10 @@ tasks:
     - name: test-valgrind-3.6-replica-set-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.6', TOPOLOGY: replica_set, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -5116,10 +4873,10 @@ tasks:
     - name: test-valgrind-3.4-sharded-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.4', TOPOLOGY: sharded_cluster, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -5205,10 +4962,10 @@ tasks:
     - name: test-valgrind-latest-replica-set-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: latest, TOPOLOGY: replica_set, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -5239,10 +4996,10 @@ tasks:
     - name: test-valgrind-3.0-sharded-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.0', TOPOLOGY: sharded_cluster, AUTH: auth, SSL: openssl}
       - func: run tests
@@ -5340,10 +5097,10 @@ tasks:
     - name: test-valgrind-3.2-replica-set-noauth-nosasl-nossl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '3.2', TOPOLOGY: replica_set, AUTH: noauth, SSL: nossl}
       - func: run tests
@@ -5508,24 +5265,254 @@ tasks:
     - name: test-valgrind-4.0-sharded-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
-      depends_on: {name: debug-compile-valgrind-memcheck}
+      depends_on: {name: debug-compile-valgrind}
       commands:
       - func: fetch build
-        vars: {BUILD_NAME: debug-compile-valgrind-memcheck}
+        vars: {BUILD_NAME: debug-compile-valgrind}
       - func: bootstrap mongo-orchestration
         vars: {VERSION: '4.0', TOPOLOGY: sharded_cluster, AUTH: auth, SSL: openssl}
       - func: run tests
         vars: {VALGRIND: 'on', ASAN: 'off', AUTH: auth, SSL: openssl}
 
 
-    - name: test-valgrind-memcheck-mock-server
-      tags: ["test-valgrind"]
+    - name: test-dns-openssl
       depends_on:
-        - name: "debug-compile-valgrind-memcheck"
+        - name: "debug-compile-sasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-valgrind-memcheck"
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            SSL: "ssl"
+        - func: "run tests"
+          vars:
+            DNS: on
+            SSL: "ssl"
+
+    - name: test-dns-winssl
+      depends_on:
+        - name: "debug-compile-sspi-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sspi-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            SSL: "winssl"
+        - func: "run tests"
+          vars:
+            DNS: on
+            SSL: "winssl"
+
+    - name: test-dns-darwinssl
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            SSL: "darwinssl"
+        - func: "run tests"
+          vars:
+            DNS: on
+            SSL: "darwinssl"
+
+    - name: test-dns-auth-openssl
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            SSL: "ssl"
+            AUTH: "auth"
+            AUTHSOURCE: "thisDB"
+            ORCHESTRATION_FILE: "auth-thisdb-ssl"
+        - func: "run tests"
+          vars:
+            DNS: "dns-auth"
+            AUTH: "auth"
+            SSL: "ssl"
+
+    - name: test-dns-auth-winssl
+      depends_on:
+        - name: "debug-compile-sspi-winssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sspi-winssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "4.0"
+            TOPOLOGY: "replica_set"
+            SSL: "winssl"
+            AUTH: "auth"
+            AUTHSOURCE: "thisDB"
+            ORCHESTRATION_FILE: "auth-thisdb-ssl"
+        - func: "run tests"
+          vars:
+            DNS: "dns-auth"
+            AUTH: "auth"
+            SSL: "winssl"
+
+    - name: test-dns-auth-darwinssl
+      depends_on:
+        - name: "debug-compile-sasl-darwinssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-darwinssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            SSL: "darwinssl"
+            AUTH: "auth"
+            AUTHSOURCE: "thisDB"
+            ORCHESTRATION_FILE: "auth-thisdb-ssl"
+        - func: "run tests"
+          vars:
+            DNS: "dns-auth"
+            AUTH: "auth"
+            SSL: "darwinssl"
+
+    - name: test-latest-server-compression-zlib
+      tags: ["zlib", "compression", "latest"]
+      depends_on:
+        - name: "debug-compile-compression-zlib"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-compression-zlib"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            ORCHESTRATION_FILE: "zlib"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: zlib
+
+    - name: test-latest-server-compression-snappy
+      tags: ["snappy", "compression", "latest"]
+      depends_on:
+        - name: "debug-compile-compression-snappy"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-compression-snappy"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            ORCHESTRATION_FILE: "snappy"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: snappy
+
+    - name: test-latest-server-compression
+      tags: ["zlib", "snappy", "compression", "latest"]
+      depends_on:
+        - name: "debug-compile-compression"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-compression"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+            ORCHESTRATION_FILE: "snappy-zlib"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+            COMPRESSORS: zlib,snappy
+
+    # Verify that retryWrites=true is ignored with standalone
+    - name: retry-true-latest-server
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            URI: "mongodb://localhost/?retryWrites=true"
+
+    # Verify that retryWrites=true is ignored with old server
+    - name: retry-true-3.4-replica-set
+      depends_on:
+        - name: "debug-compile-sasl-openssl"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-sasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "3.4"
+            TOPOLOGY: "replica_set"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            URI: "mongodb://localhost/?replicaSet=repl0&retryWrites=true"
+
+    - name: test-latest-server-hardened
+      tags: ["hardened", "latest"]
+      depends_on:
+        - name: "hardened-compile"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "hardened-compile"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "server"
+            AUTH: "noauth"
+            SSL: "nossl"
+        - func: "run tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "nossl"
+
+    - name: test-valgrind-memcheck-mock-server
+      tags: ["test-valgrind"]
+      depends_on:
+        - name: "debug-compile-valgrind"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-valgrind"
         - func: "run mock server tests"
           vars:
             VALGRIND: "on"
