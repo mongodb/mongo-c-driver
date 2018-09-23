@@ -321,7 +321,7 @@ if (ENABLE_MONGOC)
       )
    else ()
       string (CONCAT DISTERRMSG
-         "The dist and distcheck targets disabled. Set ENABLE_BSON=ON, "
+         "The dist and distcheck targets are disabled. Set ENABLE_BSON=ON, "
          "ENABLE_MAN_PAGES=ON, and ENABLE_HTML_DOCS=ON to enable."
       )
 
