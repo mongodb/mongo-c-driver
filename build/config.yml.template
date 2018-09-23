@@ -1656,6 +1656,7 @@ tasks:
             script: |
               set -o xtrace
               set -o errexit
+              DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
               BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
               sh ./.evergreen/install-uninstall-check.sh
 # {{ '}}}' }}
