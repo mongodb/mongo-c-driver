@@ -174,6 +174,8 @@ Clone the repository and build the current master or a particular release tag:
   $ git clone https://github.com/mongodb/mongo-c-driver.git
   $ cd mongo-c-driver
   $ git checkout x.y.z  # To build a particular release
+  $ python build/calc_release_version.py > VERSION_CURRENT
+  $ python build/calc_release_version.py -p > VERSION_RELEASED
   $ mkdir cmake-build
   $ cd cmake-build
   $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..

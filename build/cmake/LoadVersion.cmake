@@ -1,10 +1,11 @@
 function (LoadVersion FILEPATH PREFIX)
     # E.g., "MONGOC_VERSION".
     string (REPLACE ";" "" VERSION_NAME ${PREFIX} _VERSION)
+    string (REPLACE ";" "" DIST_VERSION_NAME ${PREFIX} _DIST_VERSION)
 
     file (STRINGS ${FILEPATH} VERSION_CONTENTS)
 
-    # A list of version components separated by dots and dashes: "1.3.0-dev"
+    # A list of version components separated by dots and dashes: "1.3.0-[prerelease-marker]"
     string (REGEX MATCHALL "[^.-]+" VERSION ${VERSION_CONTENTS})
 
     list (GET VERSION 0 MAJOR_VERSION)
@@ -20,16 +21,25 @@ function (LoadVersion FILEPATH PREFIX)
     set (${MICRO_VERSION_NAME} ${MICRO_VERSION} PARENT_SCOPE)
 
     string (REPLACE ";" "" PRERELEASE_VERSION_NAME ${PREFIX} _PRERELEASE_VERSION)
+    string (REPLACE ";" "" PRERELEASE_DIST_VERSION_NAME ${PREFIX} _PRERELEASE_DIST_VERSION)
     list (LENGTH VERSION VERSION_LENGTH)
     if (VERSION_LENGTH GREATER 3)
         list (GET VERSION 3 PRERELEASE_VERSION)
-        set (${PRERELEASE_VERSION_NAME} ${PRERELEASE_VERSION} PARENT_SCOPE)
+        set (${PRERELEASE_VERSION_DIST_NAME} ${PRERELEASE_VERSION} PARENT_SCOPE)
+        set (${PRERELEASE_VERSION_NAME} "pre" PARENT_SCOPE)
         set (${VERSION_NAME}
+            "${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}-pre"
+            PARENT_SCOPE)
+        set (${DIST_VERSION_NAME}
             "${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}-${PRERELEASE_VERSION}"
             PARENT_SCOPE)
     else ()
+        set (${PRERELEASE_VERSION_DIST_NAME} "" PARENT_SCOPE)
         set (${PRERELEASE_VERSION_NAME} "" PARENT_SCOPE)
         set (${VERSION_NAME}
+            "${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}"
+            PARENT_SCOPE)
+        set (${DIST_VERSION_NAME}
             "${MAJOR_VERSION}.${MINOR_VERSION}.${MICRO_VERSION}"
             PARENT_SCOPE)
     endif ()

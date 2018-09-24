@@ -17,6 +17,8 @@ sphinx-build --version
 DIR=$(dirname $0)
 . $DIR/find-cmake.sh
 
+python build/calc_release_version.py > VERSION_CURRENT
+python build/calc_release_version.py -p > VERSION_RELEASED
 $CMAKE -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED -DENABLE_BSON=ON .
 make DISTCHECK_BUILD_OPTS="-j 8" distcheck
 

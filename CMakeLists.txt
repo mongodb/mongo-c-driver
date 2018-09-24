@@ -71,8 +71,38 @@ include (GNUInstallDirs)
 
 # Set MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION, etc.
 include (LoadVersion)
-LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
-LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_RELEASED MONGOC_RELEASED)
+if (NOT EXISTS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT)
+   message (WARNING
+      "${PROJECT_SOURCE_DIR}/VERSION_CURRENT not found; using version 0.0.0.\
+ See the \\\"Building from git\\\" section of the installation guide for details."
+   )
+   set (MONGOC_MAJOR_VERSION "0")
+   set (MONGOC_MINOR_VERSION "0")
+   set (MONGOC_MICRO_VERSION "0")
+   set (MONGOC_PRERELEASE_VERSION "")
+   set (MONGOC_PRERELEASE_DIST_VERSION "")
+   set (MONGOC_VERSION "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}")
+   set (MONGOC_DIST_VERSION "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}")
+else ()
+   LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
+endif ()
+if (NOT EXISTS ${PROJECT_SOURCE_DIR}/VERSION_RELEASED)
+   message (WARNING
+      "${PROJECT_SOURCE_DIR}/VERSION_RELEASED not found; using version 0.0.0.\
+ See the \\\"Building from git\\\" section of the installation guide for details."
+   )
+   set (MONGOC_RELEASED_MAJOR_VERSION "0")
+   set (MONGOC_RELEASED_MINOR_VERSION "0")
+   set (MONGOC_RELEASED_MICRO_VERSION "0")
+   set (MONGOC_RELEASED_VERSION "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}")
+else ()
+   LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_RELEASED MONGOC_RELEASED)
+endif ()
+if (EXISTS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT AND EXISTS ${PROJECT_SOURCE_DIR}/VERSION_RELEASED)
+   set (DIST_VERSION_SET 1)
+else ()
+   set (DIST_VERSION_SET 0)
+endif ()
 
 include (MaintainerFlags)
 
@@ -237,13 +267,25 @@ if (ENABLE_MONGOC)
    add_subdirectory (src/libmongoc)
 
    if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
-      find_package (Sphinx REQUIRED)
-      add_custom_target (doc
-         ALL
-         DEPENDS
-         $<$<STREQUAL:"${ENABLE_BSON}","ON">:bson-doc>
-         $<$<STREQUAL:"${ENABLE_MONGOC}","ON">:mongoc-doc>
-      )
+      if (DIST_VERSION_SET)
+         find_package (Sphinx REQUIRED)
+         add_custom_target (doc
+            ALL
+            DEPENDS
+               $<$<STREQUAL:"${ENABLE_BSON}","ON">:bson-doc>
+               $<$<STREQUAL:"${ENABLE_MONGOC}","ON">:mongoc-doc>
+         )
+      else ()
+         string (CONCAT DISTERRMSG
+            "The doc target is disabled. Generate VERSION_CURRENT and "
+            "VERSION_RELEASED before invoking CMake to enable. Details are "
+            "in the \\\"Building from git\\\" section of the installation guide."
+         )
+
+         add_custom_target (doc
+            COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
+         )
+      endif ()
    endif ()
 
    # Implement 'dist' and 'distcheck' targets
@@ -258,7 +300,7 @@ if (ENABLE_MONGOC)
    # 'src/libbson' was already included, so 'src' will not include it directly
    # 'src/libmongoc' was already included, so 'src' will not include it directly
 
-   set (PACKAGE_PREFIX "mongo-c-driver-${MONGOC_VERSION}")
+   set (PACKAGE_PREFIX "mongo-c-driver-${MONGOC_DIST_VERSION}")
    set (DIST_FILE "${PACKAGE_PREFIX}.tar.gz")
 
    set (top_DIST_local
@@ -304,7 +346,7 @@ if (ENABLE_MONGOC)
          ${ALL_DIST} ${dist_generated_depends}
    )
 
-   if (ENABLE_BSON MATCHES "ON|AUTO" AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
+   if (DIST_VERSION_SET AND ENABLE_BSON MATCHES "ON|AUTO" AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
       # Since our 'dist' implementation does not add top-level targets for every
       # file to be included, we declare a dependency on the 'mongo-doc' target so
       # that documentation is built before the distribution tarball is generated.
@@ -322,7 +364,8 @@ if (ENABLE_MONGOC)
    else ()
       string (CONCAT DISTERRMSG
          "The dist and distcheck targets are disabled. Set ENABLE_BSON=ON, "
-         "ENABLE_MAN_PAGES=ON, and ENABLE_HTML_DOCS=ON to enable."
+         "ENABLE_MAN_PAGES=ON, ENABLE_HTML_DOCS=ON, and generate VERSION_CURRENT "
+         "and VERSION_RELEASED to enable."
       )
 
       add_custom_target (dist

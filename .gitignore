@@ -18,6 +18,8 @@ CTestTestfile.cmake
 dist_manifest.txt
 Makefile
 test-results.json
+VERSION_CURRENT
+VERSION_RELEASED
 
 # Windows things
 *.sdf

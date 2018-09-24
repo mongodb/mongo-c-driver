@@ -591,7 +591,7 @@ tasks:
               python -m virtualenv venv
               cd venv
               . bin/activate
-              ./bin/pip install sphinx
+              ./bin/pip install sphinx GitPython
               cd ..
 
         - command: shell.exec
@@ -628,6 +628,18 @@ tasks:
 
     - name: abi-compliance-check
       commands:
+        - command: shell.exec
+          type: test
+          params:
+            working_dir: "mongoc"
+            script: |
+              # Need Git module for calculating release version
+              python -m virtualenv venv
+              cd venv
+              . bin/activate
+              ./bin/pip install GitPython
+              cd ..
+
         - command: shell.exec
           type: test
           params:
