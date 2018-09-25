@@ -16,6 +16,10 @@ Parameters
 
 * ``flags``: A :symbol:`bson_context_flags_t <bson_context_t>`.
 
+``flags`` can be one of the following:
+* ``BSON_CONTEXT_NONE`` meaning creating ObjectIDs with this context is not a thread-safe operation.
+* ``BSON_CONTEXT_THREAD_SAFE`` meaning creating ObjectIDs with this context is a thread-safe operation.
+
 Description
 -----------
 

@@ -28,18 +28,17 @@ BSON_BEGIN_DECLS
 
 struct _bson_context_t {
    /* flags are defined in bson_context_flags_t */
-   int flags : 7;
-   bool pidbe_once : 1;
-   uint8_t pidbe[2];
-   uint8_t fnv[3];
+   int flags;
    int32_t seq32;
    int64_t seq64;
+   uint8_t rand[5];
 
-   void (*oid_get_host) (bson_context_t *context, bson_oid_t *oid);
-   void (*oid_get_pid) (bson_context_t *context, bson_oid_t *oid);
-   void (*oid_get_seq32) (bson_context_t *context, bson_oid_t *oid);
-   void (*oid_get_seq64) (bson_context_t *context, bson_oid_t *oid);
+   void (*oid_set_seq32) (bson_context_t *context, bson_oid_t *oid);
+   void (*oid_set_seq64) (bson_context_t *context, bson_oid_t *oid);
 };
+
+void
+_bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid);
 
 
 BSON_END_DECLS

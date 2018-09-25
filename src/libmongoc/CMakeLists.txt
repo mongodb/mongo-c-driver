@@ -699,7 +699,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-endian.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-clock.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-decimal128.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-fnv.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-iso8601.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-iter.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-json.c

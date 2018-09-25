@@ -23,9 +23,8 @@ The :symbol:`bson_oid_t` structure contains the 12-byte ObjectId notation define
 
 ObjectId is a 12-byte BSON type, constructed using:
 
-* a 4-byte value representing the seconds since the Unix epoch (in Big Endian)
-* a 3-byte machine identifier
-* a 2-byte process id (Big Endian), and
+* a 4-byte value representing the seconds since the Unix epoch (in Big Endian).
+* a 5-byte random value.
 * a 3-byte counter (Big Endian), starting with a random value.
 
 String Conversion
@@ -74,7 +73,7 @@ Example
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <stdio.h>
 
   int

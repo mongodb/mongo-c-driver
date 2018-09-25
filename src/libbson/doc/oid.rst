@@ -5,14 +5,13 @@ ObjectIDs
 
 Libbson provides a simple way to generate ObjectIDs. It can be used in a single-threaded or multi-threaded manner depending on your requirements.
 
-The :symbol:`bson_oid_t` structure represents an ``ObjectID`` in MongoDB. It is a 96-bit identifier that includes various information about the system generating the OID.
+The :symbol:`bson_oid_t` structure represents an ``ObjectID`` in MongoDB. It is a 96-bit identifier.
 
 Composition
 -----------
 
 * 4 bytes : The UNIX timestamp in big-endian format.
-* 3 bytes : A hash of the hostname.
-* 2 bytes : The ``pid_t`` of the current process. Alternatively the task-id if configured.
+* 5 bytes : A random number.
 * 3 bytes : A 24-bit monotonic counter incrementing from ``rand()`` in big-endian.
 
 Sorting ObjectIDs
@@ -46,8 +45,6 @@ You can also parse a string containing a :symbol:`bson_oid_t`. The input string 
   bson_oid_t oid;
 
   bson_oid_init_from_string (&oid, "123456789012345678901234");
-
-If you need to parse may :symbol:`bson_oid_t` in a tight loop and can guarantee the data is safe, you might consider using the inline variant. It will be inlined into your code and reduce the need for a foreign function call.
 
 .. code-block:: c
 

@@ -20,7 +20,7 @@ Parameters
 Description
 -----------
 
-The :symbol:`bson_oid_compare()` function shall return a qsort() style value of a lexicographical sort of _oid1_ and _oid2_.
+The :symbol:`bson_oid_compare()` function shall return a qsort() style value of a lexicographical sort of ``oid1`` and ``oid2``.
 
 Returns
 -------
