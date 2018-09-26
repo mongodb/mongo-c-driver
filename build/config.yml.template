@@ -663,266 +663,9 @@ tasks:
                 exit 0
               fi
 
-    - name: debug-compile-compression-zlib
-      tags: ["zlib", "compression"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=OFF ZLIB=BUNDLED sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-compression-snappy
-      tags: ["snappy", "compression"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=ON ZLIB=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-compression
-      tags: ["zlib", "snappy", "compression"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=ON ZLIB=BUNDLED sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-no-align
-      tags: ["debug-compile"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=OFF ZLIB=BUNDLED  sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile
-      tags: ["debug-compile"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-lto
-      tags: ["debug-compile-lto"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' CFLAGS='-flto' sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-lto-thin
-      tags: ["debug-compile-lto-thin"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' CFLAGS='-flto=thin' sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-c11
-      tags: ["debug-compile", "special", "c11", "stdflags"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c11 -D_XOPEN_SOURCE=600' sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-c99
-      tags: ["debug-compile", "special", "c99", "stdflags"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c99 -D_XOPEN_SOURCE=600' sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-c89
-      tags: ["debug-compile", "special", "c89", "stdflags"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' CFLAGS='-std=c89 -D_POSIX_C_SOURCE=200112L -pedantic' sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-valgrind
-      tags: ["debug-compile", "special", "valgrind", "bson"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-coverage
-      tags: ["debug-compile", "special", "coverage"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' COVERAGE=ON sh .evergreen/compile.sh
-        - func: "upload coverage"
-        - func: "upload build"
-
-    - name: debug-compile-no-counters
-      tags: ["debug-compile", "no-counters"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' ENABLE_SHM_COUNTERS=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sanitizer-address-clang
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=on CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=address' CXXFLAGS="$CFLAGS" SNAPPY=OFF sh .evergreen/compile.sh
-
-    - name: debug-compile-sanitizer-address-gcc
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-              # include -pthread in CFLAGS on gcc to address the issue explained here:
-              # https://groups.google.com/forum/#!topic/address-sanitizer/JxnwgrWOLuc
-              DEBUG=ON MARCH='${MARCH}' DEBUG=on CHECK_LOG=ON CFLAGS='-fsanitize=address -pthread' CXXFLAGS="$CFLAGS" SNAPPY=OFF sh .evergreen/compile.sh
-
-    - name: debug-compile-asan-clang-nosasl-nossl
-      tags: ["debug-compile", "asan", "special"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-              PATH=/usr/lib/llvm-3.4/bin:$PATH DEBUG=on CC='clang' CXX='clang++' MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=address -g -fno-omit-frame-pointer' CXXFLAGS="$CFLAGS" SNAPPY=OFF SSL=OFF SASL=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-asan-clang-nosasl-openssl
-      tags: ["debug-compile", "asan", "special"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-              PATH=/usr/lib/llvm-3.4/bin:$PATH DEBUG=on CC='clang' CXX='clang++' MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=address -g -fno-omit-frame-pointer' CXXFLAGS="$CFLAGS" SNAPPY=OFF SSL=OPENSSL SASL=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-asan-clang-memcheck
-      tags: ["debug-compile", "asan", "special"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-              PATH=/usr/lib/llvm-3.4/bin:$PATH DEBUG=on CC='clang' CXX='clang++' MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=address -g -fno-omit-frame-pointer -DBSON_MEMCHECK' CXXFLAGS="$CFLAGS" SNAPPY=OFF SSL=OPENSSL SASL=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-sanitizer-undefined
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
-              PATH=/usr/lib/llvm-3.8/bin:$PATH DEBUG=ON CC='clang-3.8' CXX='clang++-3.8' MARCH='${MARCH}' CHECK_LOG=ON CFLAGS='-fsanitize=undefined' CXXFLAGS="$CFLAGS" SNAPPY=OFF sh .evergreen/compile.sh
-
-    - name: debug-compile-scan-build
-      tags: ["debug-compile", "special", "scan-build", "clang"]
-      commands:
-        - command: shell.exec
-          params:
-            continue_on_err: true
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC=clang ANALYZE=ON MARCH='${MARCH}' sh .evergreen/compile.sh
-        - func: "upload scan artifacts"
-        - func: "upload build"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-               if find scan -name \*.html | grep -q html; then
-                  exit 123
-               fi
+{% for task in compile_tasks %}
+    - {{ task.to_yaml() | indent(6) }}
+{% endfor %}
 
     - name: compile-tracing
       tags: ["compile", "tracing"]
@@ -951,19 +694,6 @@ tasks:
               set -o errexit
               set -o xtrace
               RELEASE=ON CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: debug-compile-nosasl-nossl
-      tags: ["debug-compile", "nosasl", "nossl"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF sh .evergreen/compile.sh
         - func: "upload build"
 
     - name: debug-compile-nosasl-openssl
@@ -1965,11 +1695,11 @@ tasks:
     - name: test-asan-memcheck-mock-server
       tags: ["test-asan"]
       depends_on:
-        - name: "debug-compile-asan-clang-memcheck"
+        - name: "debug-compile-asan-clang"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-memcheck"
+            BUILD_NAME: "debug-compile-asan-clang"
         - func: "run mock server tests"
           vars:
             ASAN: "on"
@@ -1988,7 +1718,7 @@ buildvariants:
   tasks:
     - name: "make-release-archive"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - ".debug-compile .stdflags"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
@@ -2050,7 +1780,7 @@ buildvariants:
   tasks:
     - "debug-compile-scan-build"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-rdtscp"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
@@ -2070,7 +1800,7 @@ buildvariants:
   - debian81-test
   tasks:
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
@@ -2101,7 +1831,7 @@ buildvariants:
     - archlinux-test
   tasks:
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
@@ -2123,7 +1853,7 @@ buildvariants:
   tasks:
     - "debug-compile-scan-build"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-no-align"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .nossl .nosasl"
@@ -2142,10 +1872,10 @@ buildvariants:
   tasks:
     - ".compression"
     - "debug-compile-scan-build"
-    - "debug-compile-sanitizer-address-clang"
-    - "debug-compile-sanitizer-undefined"
+    - "debug-compile-asan-clang"
+    - "debug-compile-ubsan"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-no-align"
     - ".debug-compile .stdflags !.c89"
     - ".debug-compile !.sspi .openssl"
@@ -2166,7 +1896,7 @@ buildvariants:
     - ubuntu1204-test
   tasks:
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-rdtscp"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
@@ -2187,7 +1917,7 @@ buildvariants:
     - ubuntu1404-build
   tasks:
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"
@@ -2212,7 +1942,7 @@ buildvariants:
     - ".hardened"
     - ".compression !.snappy"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"
@@ -2232,7 +1962,7 @@ buildvariants:
   - debian81-test
   tasks:
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"
@@ -2251,7 +1981,7 @@ buildvariants:
   tasks:
     - "debug-compile-coverage"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-no-align"
     - ".debug-compile !.sspi .nossl .nosasl"
     - ".latest .nossl .nosasl"
@@ -2267,11 +1997,11 @@ buildvariants:
   - ubuntu1604-test
   tasks:
     - ".compression"
-    - "debug-compile-sanitizer-address-gcc"
+    - "debug-compile-asan-gcc"
     - "debug-compile-coverage"
     - "debug-compile-nosrv"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-no-align"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
@@ -2295,7 +2025,7 @@ buildvariants:
     - ".compression !.snappy"
     - "debug-compile-coverage"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-rdtscp"
     - "debug-compile-no-align"
     - "debug-compile-nosrv"
@@ -2324,7 +2054,7 @@ buildvariants:
   tasks:
     - ".compression !.snappy"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-no-align"
     - "debug-compile-nosrv"
     - ".debug-compile .winssl"
@@ -2353,7 +2083,7 @@ buildvariants:
   tasks:
     - ".compression !.snappy"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-no-align"
       # No 32bit OpenSSL builds
     - ".debug-compile .sspi !.openssl"
@@ -2374,7 +2104,7 @@ buildvariants:
   tasks:
     - ".compression !.snappy"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - ".debug-compile .winssl"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
@@ -2395,7 +2125,7 @@ buildvariants:
     - windows-64-vs2013-compile
   tasks:
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-rdtscp"
     - ".debug-compile .sspi !.openssl"
     - ".debug-compile .winssl .nosasl"
@@ -2415,7 +2145,7 @@ buildvariants:
   tasks:
     - ".compression !.snappy"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-rdtscp"
     - ".debug-compile .winssl"
     - ".debug-compile !.sspi .openssl"
@@ -2437,7 +2167,7 @@ buildvariants:
     - windows-64-vs2010-compile
   tasks:
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - ".debug-compile .winssl .sspi"
     - ".debug-compile .winssl .nosasl"
     - ".debug-compile !.sspi .nossl .nosasl"
@@ -2455,7 +2185,7 @@ buildvariants:
   run_on:
   - windows-64-vs2013-compile
   tasks:
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-no-align"
     - ".debug-compile .nossl .nosasl"
     - ".debug-compile .winssl .sspi"
@@ -2472,7 +2202,7 @@ buildvariants:
   tasks:
     - ".compression !.snappy"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-no-align"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
@@ -2494,7 +2224,7 @@ buildvariants:
     - "debug-compile-scan-build"
     - "debug-compile-coverage"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"
@@ -2517,7 +2247,7 @@ buildvariants:
     - "debug-compile-coverage"
     - "debug-compile-no-align"
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
     - ".authentication-tests .openssl"
@@ -2536,7 +2266,7 @@ buildvariants:
   - rhel72-zseries-test
   tasks:
     - "release-compile"
-    - "debug-compile"
+    - "debug-compile-nosasl-nossl"
     - "debug-compile-no-align"
     - ".debug-compile !.sspi .openssl"
     - ".debug-compile !.sspi .nossl"
@@ -2555,7 +2285,7 @@ buildvariants:
   tasks:
     - ".debug-compile !.sspi .openssl !.sasl"
     - ".debug-compile !.sspi .nossl !.sasl"
-    - ".debug-compile .special .valgrind .bson"
+    - ".debug-compile .special .valgrind"
     - ".test-valgrind"
 
 - name: asan-ubuntu
@@ -2566,7 +2296,7 @@ buildvariants:
   run_on:
     - ubuntu1404-test
   tasks:
-    - ".debug-compile .asan"
+    - ".debug-compile .asan-clang"
     - ".test-asan"
 
 - name: code-coverage-ubuntu
