@@ -1,10 +1,34 @@
-Next Release
-============
+libbson 1.13.0
+==============
+
+It is my pleasure to announce libbson 1.13.0.
 
 Features:
 
   * New functions to save and restore progress of a bson_iter_t:
     bson_iter_key_len, bson_iter_offset, and bson_iter_init_from_data_at_offset
+  * Additional functions bson_iter_overwrite_date_time, bson_iter_overwrite_oid,
+    and bson_iter_overwrite_timestamp. All fixed-length BSON values can now be
+    updated in place.
+
+Bug fixes:
+
+  * Fix crash when iterating corrupt BSON.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Roberto C. Sánchez
+  * Kevin Albertson
+  * Henrik Edin
+  * Gustaf Neumann
+  * Scott Gayou
+  * Spencer McKenney
+
+Peace,
+
+    Kevin Albertson
+
 
 libbson 1.12.0
 ==============
