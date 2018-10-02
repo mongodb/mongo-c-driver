@@ -210,6 +210,7 @@ test_bson_oid_init_sequence (void)
    bson_oid_t oid2;
    int i;
 
+BEGIN_IGNORE_DEPRECATIONS
    context = bson_context_new (BSON_CONTEXT_NONE);
    bson_oid_init_sequence (&oid, context);
    for (i = 0; i < 10000; i++) {
@@ -219,6 +220,7 @@ test_bson_oid_init_sequence (void)
       bson_oid_copy (&oid2, &oid);
    }
    bson_context_destroy (context);
+END_IGNORE_DEPRECATIONS
 }
 
 
@@ -230,6 +232,7 @@ test_bson_oid_init_sequence_thread_safe (void)
    bson_oid_t oid2;
    int i;
 
+BEGIN_IGNORE_DEPRECATIONS
    context = bson_context_new (BSON_CONTEXT_THREAD_SAFE);
    bson_oid_init_sequence (&oid, context);
    for (i = 0; i < 10000; i++) {
@@ -239,6 +242,7 @@ test_bson_oid_init_sequence_thread_safe (void)
       bson_oid_copy (&oid2, &oid);
    }
    bson_context_destroy (context);
+END_IGNORE_DEPRECATIONS
 }
 
 
@@ -251,6 +255,7 @@ test_bson_oid_init_sequence_with_tid (void)
    bson_oid_t oid2;
    int i;
 
+BEGIN_IGNORE_DEPRECATIONS
    context = bson_context_new (BSON_CONTEXT_USE_TASK_ID);
    bson_oid_init_sequence (&oid, context);
    for (i = 0; i < 10000; i++) {
@@ -260,6 +265,7 @@ test_bson_oid_init_sequence_with_tid (void)
       bson_oid_copy (&oid2, &oid);
    }
    bson_context_destroy (context);
+END_IGNORE_DEPRECATIONS
 }
 #endif
 
