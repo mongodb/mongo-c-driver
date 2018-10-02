@@ -36,6 +36,7 @@
 #include "mongoc/mongoc-util-private.h"
 #include "mongoc/mongoc-write-command-private.h"
 #include "mongoc/mongoc-opts-private.h"
+#include "mongoc-write-command-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
@@ -2046,6 +2047,7 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
                                       const bson_t *selector,
                                       const bson_t *update,
                                       mongoc_update_opts_t *update_opts,
+                                      bool multi,
                                       bool bypass,
                                       const bson_t *array_filters,
                                       bson_t *extra,
@@ -2076,6 +2078,10 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
       bson_append_array (extra, "arrayFilters", 12, array_filters);
    }
 
+   if (multi) {
+      bson_append_bool (extra, "multi", 5, true);
+   }
+
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_update_idl (
       &command,
@@ -2084,6 +2090,7 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
       extra,
       ++collection->client->cluster.operation_id);
 
+   command.flags.has_multi_write = multi;
    command.flags.bypass_document_validation = bypass;
    if (!bson_empty (&update_opts->collation)) {
       command.flags.has_collation = true;
@@ -2205,6 +2212,7 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
                                                selector,
                                                update,
                                                &update_one_opts.update,
+                                               false /* multi */,
                                                update_one_opts.update.bypass,
                                                &update_one_opts.arrayFilters,
                                                &update_one_opts.extra,
@@ -2246,12 +2254,11 @@ mongoc_collection_update_many (mongoc_collection_t *collection,
       return false;
    }
 
-   bson_append_bool (&update_many_opts.extra, "multi", 5, true);
-
    ret = _mongoc_collection_update_or_replace (collection,
                                                selector,
                                                update,
                                                &update_many_opts.update,
+                                               true /* multi */,
                                                update_many_opts.update.bypass,
                                                &update_many_opts.arrayFilters,
                                                &update_many_opts.extra,
@@ -2297,6 +2304,7 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
                                                selector,
                                                replacement,
                                                &replace_one_opts.update,
+                                               false /* multi */,
                                                replace_one_opts.update.bypass,
                                                NULL,
                                                &replace_one_opts.extra,
@@ -2482,6 +2490,7 @@ mongoc_collection_delete (mongoc_collection_t *collection,
 
 static bool
 _mongoc_delete_one_or_many (mongoc_collection_t *collection,
+                            bool multi,
                             const bson_t *selector,
                             mongoc_crud_opts_t *crud,
                             const bson_t *cmd_opts,
@@ -2501,6 +2510,7 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
    BSON_ASSERT (bson_empty0 (reply));
 
    _mongoc_write_result_init (&result);
+   bson_append_int32 (opts, "limit", 5, multi ? 0 : 1);
 
    if (!bson_empty (collation)) {
       bson_append_document (opts, "collation", 9, collation);
@@ -2513,6 +2523,7 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
       opts,
       ++collection->client->cluster.operation_id);
 
+   command.flags.has_multi_write = multi;
    if (!bson_empty (collation)) {
       command.flags.has_collation = true;
    }
@@ -2554,13 +2565,13 @@ mongoc_collection_delete_one (mongoc_collection_t *collection,
    BSON_ASSERT (selector);
 
    _mongoc_bson_init_if_set (reply);
-   bson_append_int32 (&limit, "limit", 5, 1);
    if (!_mongoc_delete_one_opts_parse (
           collection->client, opts, &delete_one_opts, error)) {
       GOTO (done);
    }
 
    ret = _mongoc_delete_one_or_many (collection,
+                                     false /* multi */,
                                      selector,
                                      &delete_one_opts.crud,
                                      &delete_one_opts.extra,
@@ -2598,8 +2609,8 @@ mongoc_collection_delete_many (mongoc_collection_t *collection,
       GOTO (done);
    }
 
-   bson_append_int32 (&limit, "limit", 5, 0);
    ret = _mongoc_delete_one_or_many (collection,
+                                     true /* multi */,
                                      selector,
                                      &delete_many_opts.crud,
                                      &delete_many_opts.extra,
