@@ -451,6 +451,8 @@ test_mongoc_uri_authmechanismproperties (void)
    bson_t props;
    const bson_t *options;
 
+   capture_logs (true);
+
    uri = mongoc_uri_new ("mongodb://user@localhost/?" MONGOC_URI_AUTHMECHANISM
                          "=SCRAM-SHA1"
                          "&" MONGOC_URI_AUTHMECHANISMPROPERTIES "=a:one,b:two");
@@ -467,6 +469,10 @@ test_mongoc_uri_authmechanismproperties (void)
       uri, MONGOC_URI_AUTHMECHANISM, "SCRAM-SHA1"));
 
    ASSERT (!mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_AUTHMECHANISM, 1));
+   ASSERT_CAPTURED_LOG ("setting authmechanism=1",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported value for \"authmechanism\": 1,"
+                        " \"authmechanism\" is not an int32 option");
 
    ASSERT (!mongoc_uri_set_option_as_utf8 (
       uri, MONGOC_URI_AUTHMECHANISMPROPERTIES, "a:three"));
@@ -675,6 +681,15 @@ test_mongoc_uri_functions (void)
                   "/tmp/MongoDB-27017.sock");
 
    mongoc_uri_destroy (uri);
+
+   capture_logs (true);
+   uri = mongoc_uri_new ("mongodb://host/?foobar=1");
+   ASSERT (uri);
+   ASSERT_CAPTURED_LOG ("setting URI option foobar=1",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Unsupported URI option \"foobar\"");
+
+   mongoc_uri_destroy (uri);
 }
 
 static void
@@ -785,6 +800,24 @@ test_mongoc_uri_new_with_error (void)
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "Unsupported w value [w=-5]");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/db?heartbeatfrequencyms=10", &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Invalid \"heartbeatfrequencyms\" of 10: must be at least 500");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/db?zlibcompressionlevel=10", &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Invalid \"zlibcompressionlevel\" of 10: must be between -1 and 9");
 }
 
 

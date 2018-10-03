@@ -64,10 +64,16 @@ struct _mongoc_uri_t {
 static const char *escape_instructions = "Percent-encode username and password"
                                          " according to RFC 3986";
 
-bool
+static bool
 _mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
                                  const char *option,
                                  int32_t value);
+
+static bool
+_mongoc_uri_set_option_as_int32_with_error (mongoc_uri_t *uri,
+                                            const char *option,
+                                            int32_t value,
+                                            bson_error_t *error);
 
 static bool
 ends_with (const char *str, const char *suffix);
@@ -827,7 +833,8 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
          goto UNSUPPORTED_VALUE;
       }
 
-      if (!mongoc_uri_set_option_as_int32 (uri, lkey, v_int)) {
+      if (!_mongoc_uri_set_option_as_int32_with_error (
+             uri, lkey, v_int, error)) {
          goto CLEANUP;
       }
    } else if (!strcmp (lkey, MONGOC_URI_W)) {
@@ -2084,33 +2091,98 @@ mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
                                 const char *option,
                                 int32_t value)
 {
-   BSON_ASSERT (option);
+   bson_error_t error;
+   bool r;
 
    if (!mongoc_uri_option_is_int32 (option)) {
+      MONGOC_WARNING (
+         "Unsupported value for \"%s\": %d, \"%s\" is not an int32 option",
+         option,
+         value,
+         option);
       return false;
    }
+
+   r = _mongoc_uri_set_option_as_int32_with_error (uri, option, value, &error);
+   if (!r) {
+      MONGOC_WARNING ("%s", error.message);
+   }
+
+   return r;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_uri_set_option_as_int32_with_error --
+ *
+ *       Same as mongoc_uri_set_option_as_int32, with error reporting.
+ *
+ * Precondition:
+ *       mongoc_uri_option_is_int32(option) must be true.
+ *
+ * Returns:
+ *       true on successfully setting the option, false on failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+_mongoc_uri_set_option_as_int32_with_error (mongoc_uri_t *uri,
+                                            const char *option,
+                                            int32_t value,
+                                            bson_error_t *error)
+{
+   const bson_t *options;
+   bson_iter_t iter;
 
    /* Server Discovery and Monitoring Spec: "the driver MUST NOT permit users
     * to configure it less than minHeartbeatFrequencyMS (500ms)." */
    if (!bson_strcasecmp (option, MONGOC_URI_HEARTBEATFREQUENCYMS) &&
        value < MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS) {
-      MONGOC_WARNING ("Invalid \"%s\" of %d: must be at least %d",
-                      option,
-                      value,
-                      MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
+      MONGOC_URI_ERROR (error,
+                        "Invalid \"%s\" of %d: must be at least %d",
+                        option,
+                        value,
+                        MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS);
       return false;
    }
 
    /* zlib levels are from -1 (default) through 9 (best compression) */
    if (!bson_strcasecmp (option, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) &&
        (value < -1 || value > 9)) {
-      MONGOC_WARNING (
-         "Invalid \"%s\" of %d: must be between -1 and 9", option, value);
+      MONGOC_URI_ERROR (error,
+                        "Invalid \"%s\" of %d: must be between -1 and 9",
+                        option,
+                        value);
       return false;
    }
 
-   return _mongoc_uri_set_option_as_int32 (uri, option, value);
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, option)) {
+      if (BSON_ITER_HOLDS_INT32 (&iter)) {
+         bson_iter_overwrite_int32 (&iter, value);
+         return true;
+      } else {
+         MONGOC_URI_ERROR (error,
+                           "Cannot set URI option \"%s\" to %d, it already has "
+                           "a non-integer value",
+                           option,
+                           value);
+         return false;
+      }
+   }
+
+   if (!bson_append_int32 (&uri->options, option, -1, value)) {
+      MONGOC_URI_ERROR (
+         error, "Failed to set URI option \"%s\" to %d", option, value);
+
+      return false;
+   }
+
+   return true;
 }
+
 
 /*
  *--------------------------------------------------------------------------
@@ -2126,7 +2198,7 @@ mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
  *--------------------------------------------------------------------------
  */
 
-bool
+static bool
 _mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
                                  const char *option,
                                  int32_t value)
