@@ -279,9 +279,7 @@ convert_spec_result (const char *op_name,
 
 
 static bool
-get_successful_result (const bson_t *test,
-                       const bson_t *operation,
-                       bson_value_t *value)
+get_result (const bson_t *test, const bson_t *operation, bson_value_t *value)
 {
    const char *op_name;
    bson_value_t pre_conversion;
@@ -365,11 +363,11 @@ check_error_code_name (const bson_t *operation, const bson_error_t *error)
 {
    const char *code_name;
 
-   if (!bson_has_field (operation, "result.errorCodeName")) {
+   if (!bson_has_field (operation, "errorCodeName")) {
       return;
    }
 
-   code_name = bson_lookup_utf8 (operation, "result.errorCodeName");
+   code_name = bson_lookup_utf8 (operation, "errorCodeName");
    ASSERT_CMPUINT32 (error->code, ==, error_code_from_name (code_name));
 }
 
@@ -379,11 +377,11 @@ check_error_contains (const bson_t *operation, const bson_error_t *error)
 {
    const char *msg;
 
-   if (!bson_has_field (operation, "result.errorContains")) {
+   if (!bson_has_field (operation, "errorContains")) {
       return;
    }
 
-   msg = bson_lookup_utf8 (operation, "result.errorContains");
+   msg = bson_lookup_utf8 (operation, "errorContains");
    ASSERT_CONTAINS (error->message, msg);
 }
 
@@ -397,13 +395,13 @@ check_error_labels_contain (const bson_t *operation, const bson_value_t *result)
    bson_iter_t expected_label;
    const char *expected_label_str;
 
-   if (!bson_has_field (operation, "result.errorLabelsContain")) {
+   if (!bson_has_field (operation, "errorLabelsContain")) {
       return;
    }
 
    BSON_ASSERT (bson_iter_init (&operation_iter, operation));
    BSON_ASSERT (bson_iter_find_descendant (
-      &operation_iter, "result.errorLabelsContain", &expected_labels));
+      &operation_iter, "errorLabelsContain", &expected_labels));
    BSON_ASSERT (bson_iter_recurse (&expected_labels, &expected_label));
 
    /* if the test has "errorLabelsContain" then result must be an error reply */
@@ -428,7 +426,7 @@ check_error_labels_omit (const bson_t *operation, const bson_value_t *result)
    bson_t omitted_labels;
    bson_iter_t omitted_label;
 
-   if (!bson_has_field (operation, "result.errorLabelsOmit")) {
+   if (!bson_has_field (operation, "errorLabelsOmit")) {
       return;
    }
 
@@ -442,7 +440,7 @@ check_error_labels_omit (const bson_t *operation, const bson_value_t *result)
       return;
    }
 
-   bson_lookup_doc (operation, "result.errorLabelsOmit", &omitted_labels);
+   bson_lookup_doc (operation, "errorLabelsOmit", &omitted_labels);
    BSON_ASSERT (bson_iter_init (&omitted_label, &omitted_labels));
    while (bson_iter_next (&omitted_label)) {
       if (mongoc_error_has_label (&reply,
@@ -492,7 +490,8 @@ check_result (const bson_t *test,
               const bson_value_t *result,
               const bson_error_t *error)
 {
-   bson_value_t expected_result;
+   bson_t expected_doc;
+   bson_value_t expected_value;
    char errmsg[1000];
    match_ctx_t ctx = {0};
 
@@ -513,53 +512,52 @@ check_result (const bson_t *test,
          error);
    }
 
-   /* if there's no "result", e.g. in the command monitoring tests, we don't
-    * know if the command is expected to succeed or fail */
-   if (!bson_has_field (operation, "result")) {
+   if (!get_result (test, operation, &expected_value)) {
+      /* if there's no "result", e.g. in the command monitoring tests,
+       * we don't know if the command is expected to succeed or fail */
       return;
    }
 
-   if (!bson_has_field (operation, "result.errorCodeName") &&
-       !bson_has_field (operation, "result.errorContains") &&
-       !bson_has_field (operation, "result.errorLabelsContain") &&
-       !bson_has_field (operation, "result.errorLabelsOmit")) {
-      /* expect the operation has succeeded */
-      check_success_expected (operation, succeeded, true, error);
-      if (!get_successful_result (test, operation, &expected_result)) {
-         /* some tests don't verify the return value */
+   if (expected_value.value_type == BSON_TYPE_DOCUMENT) {
+      bson_init_from_value (&expected_doc, &expected_value);
+      if (bson_has_field (&expected_doc, "errorCodeName") ||
+          bson_has_field (&expected_doc, "errorContains") ||
+          bson_has_field (&expected_doc, "errorLabelsContain") ||
+          bson_has_field (&expected_doc, "errorLabelsOmit")) {
+         /* Expect the operation has failed. Transactions tests specify errors
+          * per-operation, with one or more details:
+          *    operations:
+          *      - name: insertOne
+          *        arguments: ...
+          *        result:
+          *          errorCodeName: WriteConflict
+          *          errorContains: "message substring"
+          *          errorLabelsContain: ["TransientTransactionError"]
+          *          errorLabelsOmit: ["UnknownTransactionCommitResult"]
+          */
+
+         check_success_expected (&expected_doc, succeeded, false, error);
+         check_error_code_name (&expected_doc, error);
+         check_error_contains (&expected_doc, error);
+         check_error_labels_contain (&expected_doc, result);
+         check_error_labels_omit (&expected_doc, result);
          return;
       }
-
-      BSON_ASSERT (result);
-      if (!match_bson_value (result, &expected_result, &ctx)) {
-         test_error ("Error in \"%s\" test %s\n"
-                     "Expected:\n%s\nActual:\n%s",
-                     bson_lookup_utf8 (test, "description"),
-                     ctx.errmsg,
-                     value_to_str (&expected_result),
-                     value_to_str (result));
-      }
-
-      bson_value_destroy (&expected_result);
-      return;
    }
 
-   /* transactions tests specify errors per-operation, with one or more details:
-    *    operations:
-    *      - name: insertOne
-    *        arguments: ...
-    *        result:
-    *          errorCodeName: WriteConflict
-    *          errorContains: "message substring"
-    *          errorLabelsContain: ["TransientTransactionError"]
-    *          errorLabelsOmit: ["UnknownTransactionCommitResult"]
-    */
+   check_success_expected (operation, succeeded, true, error);
 
-   check_success_expected (operation, succeeded, false, error);
-   check_error_code_name (operation, error);
-   check_error_contains (operation, error);
-   check_error_labels_contain (operation, result);
-   check_error_labels_omit (operation, result);
+   BSON_ASSERT (result);
+   if (!match_bson_value (result, &expected_value, &ctx)) {
+      test_error ("Error in \"%s\" test %s\n"
+                  "Expected:\n%s\nActual:\n%s",
+                  bson_lookup_utf8 (test, "description"),
+                  ctx.errmsg,
+                  value_to_str (&expected_value),
+                  value_to_str (result));
+   }
+
+   bson_value_destroy (&expected_value);
 }
 
 
@@ -762,19 +760,19 @@ single_write (mongoc_collection_t *collection,
    if (!strcmp (name, "deleteMany")) {
       bson_t filter;
       bson_lookup_doc (&args, "filter", &filter);
-      COPY_EXCEPT (&args, &opts, "filter");
+      COPY_EXCEPT ("filter");
       r = mongoc_collection_delete_many (
          collection, &filter, &opts, &reply, &error);
    } else if (!strcmp (name, "deleteOne")) {
       bson_t filter;
       bson_lookup_doc (&args, "filter", &filter);
-      COPY_EXCEPT (&args, &opts, "filter");
+      COPY_EXCEPT ("filter");
       r = mongoc_collection_delete_one (
          collection, &filter, &opts, &reply, &error);
    } else if (!strcmp (name, "insertOne")) {
       bson_t document;
       bson_lookup_doc (&args, "document", &document);
-      COPY_EXCEPT (&args, &opts, "document");
+      COPY_EXCEPT ("document");
       r = mongoc_collection_insert_one (
          collection, &document, &opts, &reply, &error);
    } else if (!strcmp (name, "replaceOne")) {
@@ -782,7 +780,7 @@ single_write (mongoc_collection_t *collection,
       bson_t replacement;
       bson_lookup_doc (&args, "filter", &filter);
       bson_lookup_doc (&args, "replacement", &replacement);
-      COPY_EXCEPT (&args, &opts, "filter", "replacement");
+      COPY_EXCEPT ("filter", "replacement");
       r = mongoc_collection_replace_one (
          collection, &filter, &replacement, &opts, &reply, &error);
    } else if (!strcmp (name, "updateMany")) {
@@ -790,7 +788,7 @@ single_write (mongoc_collection_t *collection,
       bson_t update;
       bson_lookup_doc (&args, "filter", &filter);
       bson_lookup_doc (&args, "update", &update);
-      COPY_EXCEPT (&args, &opts, "filter", "update");
+      COPY_EXCEPT ("filter", "update");
       r = mongoc_collection_update_many (
          collection, &filter, &update, &opts, &reply, &error);
    } else if (!strcmp (name, "updateOne")) {
@@ -798,7 +796,7 @@ single_write (mongoc_collection_t *collection,
       bson_t update;
       bson_lookup_doc (&args, "filter", &filter);
       bson_lookup_doc (&args, "update", &update);
-      COPY_EXCEPT (&args, &opts, "filter", "update");
+      COPY_EXCEPT ("filter", "update");
       r = mongoc_collection_update_one (
          collection, &filter, &update, &opts, &reply, &error);
    } else {
@@ -988,7 +986,7 @@ insert_many (mongoc_collection_t *collection,
       "ordered",
       _mongoc_lookup_bool (&args, "options.ordered", true /* default */));
 
-   COPY_EXCEPT (&args, &opts, "documents", "options");
+   COPY_EXCEPT ("documents", "options");
 
    r = mongoc_collection_insert_many (
       collection, (const bson_t **) doc_ptrs, n, &opts, &reply, &error);
@@ -1082,15 +1080,25 @@ distinct (mongoc_collection_t *collection,
           mongoc_client_session_t *session,
           const mongoc_read_prefs_t *read_prefs)
 {
+   bson_t args;
    bson_t opts = BSON_INITIALIZER;
    const char *field_name;
+   bson_t query;
    bson_t reply;
    bson_value_t value = {0};
    bson_error_t error;
    bool r;
 
    append_session (session, &opts);
-   field_name = bson_lookup_utf8 (operation, "arguments.fieldName");
+   bson_lookup_doc (operation, "arguments", &args);
+   field_name = bson_lookup_utf8 (&args, "fieldName");
+   if (bson_has_field (&args, "filter")) {
+      bson_lookup_doc (&args, "filter", &query);
+      BSON_APPEND_DOCUMENT (&opts, "query", &query);
+   }
+
+   COPY_EXCEPT ("fieldName", "filter");
+
    r = mongoc_collection_read_command_with_opts (
       collection,
       tmp_bson (
@@ -1212,6 +1220,26 @@ find (mongoc_collection_t *collection,
 }
 
 
+static bool
+_is_aggregate_out (const bson_t *pipeline)
+{
+   bson_iter_t iter;
+   bson_iter_t stage;
+
+   ASSERT (bson_iter_init (&iter, pipeline));
+   while (bson_iter_next (&iter)) {
+      if (BSON_ITER_HOLDS_DOCUMENT (&iter) &&
+          bson_iter_recurse (&iter, &stage)) {
+         if (bson_iter_find (&stage, "$out")) {
+            return true;
+         }
+      }
+   }
+
+   return false;
+}
+
+
 static void
 aggregate (mongoc_collection_t *collection,
            const bson_t *test,
@@ -1232,7 +1260,28 @@ aggregate (mongoc_collection_t *collection,
    cursor = mongoc_collection_aggregate (
       collection, MONGOC_QUERY_NONE, &pipeline, &opts, read_prefs);
 
-   check_cursor (cursor, test, operation);
+   /* Driver CRUD API Spec: "$out is a special pipeline stage that causes no
+    * results to be returned from the server. As such, the iterable here would
+    * never contain documents. Drivers MAY setup a cursor to be executed upon
+    * iteration against the $out collection such that if a user were to iterate
+    * a pipeline including $out, results would be returned."
+    *
+    * The C Driver chooses the first option, and returns an empty cursor.
+    */
+   if (_is_aggregate_out (&pipeline)) {
+      const bson_t *doc;
+      bson_error_t error;
+      bson_value_t value;
+
+      ASSERT (!mongoc_cursor_next (cursor, &doc));
+      if (mongoc_cursor_error_document (cursor, &error, &doc)) {
+         value_init_from_doc (&value, doc);
+         check_result (test, operation, false, &value, &error);
+      }
+   } else {
+      check_cursor (cursor, test, operation);
+   }
+
    mongoc_cursor_destroy (cursor);
    bson_destroy (&opts);
 }
@@ -1264,7 +1313,7 @@ command (mongoc_database_t *db,
     */
    bson_lookup_doc (operation, "arguments", &args);
    bson_lookup_doc (&args, "command", &cmd);
-   COPY_EXCEPT (&args, &opts, "command");
+   COPY_EXCEPT ("command");
    append_session (session, &opts);
 
    r = mongoc_database_command_with_opts (
