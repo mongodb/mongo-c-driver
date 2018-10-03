@@ -79,6 +79,11 @@ mongoc_read_prefs_t *
 bson_lookup_read_prefs (const bson_t *b, const char *key);
 
 void
+bson_lookup_database_opts (const bson_t *b,
+                           const char *key,
+                           mongoc_database_t *database);
+
+void
 bson_lookup_collection_opts (const bson_t *b,
                              const char *key,
                              mongoc_collection_t *collection);

@@ -5,7 +5,11 @@ Bug fixes:
 
   * mongoc_collection_update_many and mongoc_collection_delete_many would fail
     with the URI option retryWrites=true.
+  * In a transaction, the driver now properly ignores the readConcern configured
+    on a client, database, or collection: only the mongoc_transaction_opt_t's
+    readConcern is used.
   * Remove timestamp from uninstall scripts to permit reproducible build.
+
 
 mongo-c-driver 1.13.0
 =====================

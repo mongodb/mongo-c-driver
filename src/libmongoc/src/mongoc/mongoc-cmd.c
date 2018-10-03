@@ -211,6 +211,14 @@ mongoc_cmd_parts_set_read_concern (mongoc_cmd_parts_t *parts,
 
    ENTRY;
 
+   /* In a txn, set read concern in mongoc_cmd_parts_assemble, not here. *
+    * Transactions Spec: "The readConcern MUST NOT be inherited from the
+    * collection, database, or client associated with the driver method that
+    * invokes the first command." */
+   if (_mongoc_client_session_in_txn (parts->assembled.session)) {
+      RETURN (true);
+   }
+
    command_name = _mongoc_get_command_name (parts->body);
 
    if (!command_name) {

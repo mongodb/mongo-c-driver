@@ -362,6 +362,46 @@ bson_lookup_read_prefs (const bson_t *b, const char *key)
 
 /*--------------------------------------------------------------------------
  *
+ * bson_lookup_database_opts --
+ *
+ *       Interpret a subdocument as database options.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+bson_lookup_database_opts (const bson_t *b,
+                           const char *key,
+                           mongoc_database_t *database)
+{
+   bson_t doc;
+   mongoc_read_concern_t *rc;
+   mongoc_write_concern_t *wc;
+   mongoc_read_prefs_t *prefs;
+
+   bson_lookup_doc (b, key, &doc);
+
+   if (bson_has_field (&doc, "readConcern")) {
+      rc = bson_lookup_read_concern (&doc, "readConcern");
+      mongoc_database_set_read_concern (database, rc);
+      mongoc_read_concern_destroy (rc);
+   }
+
+   if (bson_has_field (&doc, "writeConcern")) {
+      wc = bson_lookup_write_concern (&doc, "writeConcern");
+      mongoc_database_set_write_concern (database, wc);
+      mongoc_write_concern_destroy (wc);
+   }
+
+   if (bson_has_field (&doc, "readPreference")) {
+      prefs = bson_lookup_read_prefs (&doc, "readPreference");
+      mongoc_database_set_read_prefs (database, prefs);
+      mongoc_read_prefs_destroy (prefs);
+   }
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * bson_lookup_collection_opts --
  *
  *       Interpret a subdocument as collection options.

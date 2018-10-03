@@ -1404,12 +1404,17 @@ json_test_operation (json_test_ctx_t *ctx,
    const char *op_name;
    mongoc_read_prefs_t *read_prefs = NULL;
    mongoc_write_concern_t *wc;
+   mongoc_database_t *db = mongoc_database_copy (ctx->db);
+   mongoc_collection_t *c = mongoc_collection_copy (collection);
 
    op_name = bson_lookup_utf8 (operation, "name");
-   /* databaseOptions don't yet exist in tests, therefore not implemented */
-   BSON_ASSERT (!bson_has_field (operation, "databaseOptions"));
+
+   if (bson_has_field (operation, "databaseOptions")) {
+      bson_lookup_database_opts (operation, "databaseOptions", db);
+   }
+
    if (bson_has_field (operation, "collectionOptions")) {
-      bson_lookup_collection_opts (operation, "collectionOptions", collection);
+      bson_lookup_collection_opts (operation, "collectionOptions", c);
    }
 
    if (bson_has_field (operation, "read_preference")) {
@@ -1428,34 +1433,34 @@ json_test_operation (json_test_ctx_t *ctx,
    }
 
    if (!strcmp (op_name, "bulkWrite")) {
-      bulk_write (collection, test, operation, session, wc);
+      bulk_write (c, test, operation, session, wc);
    } else if (!strcmp (op_name, "deleteOne") ||
               !strcmp (op_name, "deleteMany") ||
               !strcmp (op_name, "insertOne") ||
               !strcmp (op_name, "replaceOne") ||
               !strcmp (op_name, "updateOne") ||
               !strcmp (op_name, "updateMany")) {
-      single_write (collection, test, operation, session, wc);
+      single_write (c, test, operation, session, wc);
    } else if (!strcmp (op_name, "findOneAndDelete") ||
               !strcmp (op_name, "findOneAndReplace") ||
               !strcmp (op_name, "findOneAndUpdate")) {
-      find_and_modify (collection, test, operation, session, wc);
+      find_and_modify (c, test, operation, session, wc);
    } else if (!strcmp (op_name, "insertMany")) {
-      insert_many (collection, test, operation, session, wc);
+      insert_many (c, test, operation, session, wc);
    } else if (!strcmp (op_name, "count")) {
-      count (collection, test, operation, session, read_prefs);
+      count (c, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "estimatedDocumentCount")) {
-      count (collection, test, operation, session, read_prefs);
+      count (c, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "countDocuments")) {
-      count (collection, test, operation, session, read_prefs);
+      count (c, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "distinct")) {
-      distinct (collection, test, operation, session, read_prefs);
+      distinct (c, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "find")) {
-      find (collection, test, operation, session, read_prefs);
+      find (c, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "aggregate")) {
-      aggregate (collection, test, operation, session, read_prefs);
+      aggregate (c, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "runCommand")) {
-      command (ctx->db, test, operation, session, read_prefs);
+      command (db, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "startTransaction")) {
       start_transaction (ctx, test, operation);
    } else if (!strcmp (op_name, "commitTransaction")) {
@@ -1468,6 +1473,8 @@ json_test_operation (json_test_ctx_t *ctx,
 
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_write_concern_destroy (wc);
+   mongoc_collection_destroy (c);
+   mongoc_database_destroy (db);
 }
 
 
