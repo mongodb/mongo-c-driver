@@ -771,7 +771,13 @@ match_bson_with_ctx (const bson_t *doc,
 
       derive (ctx, &derived, key);
 
-      if (is_exists_operator) {
+      if (value->value_type == BSON_TYPE_NULL && found) {
+         /* pattern has "key": null, and "key" is in doc */
+         if (doc_value.value_type != BSON_TYPE_NULL) {
+            match_err (&derived, "%s should be null or absent", key);
+            goto fail;
+         }
+      } else if (is_exists_operator) {
          if (exists != found) {
             match_err (&derived, "%s found", found ? "" : "not");
             goto fail;
