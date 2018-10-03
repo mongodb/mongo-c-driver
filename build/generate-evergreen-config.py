@@ -244,8 +244,8 @@ compile_tasks = [
                 tags=['debug-compile', 'asan-clang'],
                 compression='zlib',
                 CC='clang-3.8',
-                CFLAGS='-fsanitize=address-fsanitize=address'
-                       ' -fno-omit-frame-pointer -DBSON_MEMCHECK',
+                CFLAGS='-fsanitize=address -fno-omit-frame-pointer'
+                       ' -DBSON_MEMCHECK',
                 CHECK_LOG='ON',
                 EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF",
                 PATH='/usr/lib/llvm-3.8/bin:$PATH',
