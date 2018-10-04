@@ -81,6 +81,7 @@ class Task(object):
         self.tags = set()
         self.options = OD()
         self.depends_on = kwargs.pop('depends_on', None)
+        self.commands = kwargs.pop('extra_commands', None)
 
     name_prefix = 'test'
 
@@ -126,24 +127,36 @@ class Task(object):
         return 'on' if getattr(self, axis_name) == value else 'off'
 
     def to_dict(self):
-        task = OD([('name', self.name),
-                   ('tags', self.tags)])
+        task = OD([('name', self.name)])
+        if self.tags:
+            task['tags'] = self.tags
         task.update(self.options)
         if self.depends_on:
             task['depends_on'] = self.depends_on
-        task['commands'] = []
+        task['commands'] = self.commands or []
         return task
 
     def to_yaml(self):
         return yaml.dump(self.to_dict(), Dumper=Dumper)
 
 
-class CompileTask(Task):
-    def __init__(self, compile_task_name, tags=None, config='debug',
+class NamedTask(Task):
+    def __init__(self, task_name, extra_commands=None, **kwargs):
+        super(NamedTask, self).__init__(extra_commands=extra_commands, **kwargs)
+        self._task_name = task_name
+
+    @property
+    def name(self):
+        return self._task_name
+
+
+class CompileTask(NamedTask):
+    def __init__(self, task_name, tags=None, config='debug',
                  compression='default', continue_on_err=False,
                  extra_commands=None, depends_on=None, **kwargs):
-        super(CompileTask, self).__init__(depends_on=depends_on, **kwargs)
-        self._compile_task_name = compile_task_name
+        super(CompileTask, self).__init__(task_name=task_name,
+                                          depends_on=depends_on,
+                                          **kwargs)
         if tags:
             self.add_tags(*tags)
 
@@ -164,10 +177,6 @@ class CompileTask(Task):
                 'BUNDLED' if compression in ('all', 'zlib') else 'OFF')
 
         self.continue_on_err = continue_on_err
-
-    @property
-    def name(self):
-        return self._compile_task_name
 
     def to_dict(self):
         task = super(CompileTask, self).to_dict()
@@ -192,6 +201,26 @@ class SpecialTask(CompileTask):
     def __init__(self, *args, **kwargs):
         super(SpecialTask, self).__init__(*args, **kwargs)
         self.add_tags('special')
+
+
+class LinkTask(NamedTask):
+    def __init__(self, task_name, extra_commands, orchestration=True, **kwargs):
+        if orchestration:
+            vars = OD([('VERSION', 'latest')])
+            if orchestration == 'ssl':
+                vars['SSL'] = 1
+            bootstrap_commands = [
+                OD([('func', 'bootstrap mongo-orchestration'),
+                    ('vars', vars)])]
+        else:
+            bootstrap_commands = []
+
+        super(LinkTask, self).__init__(
+            task_name=task_name,
+            depends_on=OD([('name', 'make-release-archive'),
+                           ('variant', 'releng')]),
+            extra_commands=bootstrap_commands + extra_commands,
+            **kwargs)
 
 
 compile_tasks = [
@@ -331,6 +360,57 @@ compile_tasks = [
     CompileTask('debug-compile-nosrv',
                 tags=['debug-compile'],
                 SRV='OFF'),
+    LinkTask('link-with-cmake',
+             extra_commands=[
+                 OD([('func', 'link sample program'),
+                     ('vars', OD([('BUILD_SAMPLE_WITH_CMAKE', 1)]))])]),
+    LinkTask('link-with-cmake-ssl',
+             extra_commands=[
+                 OD([('func', 'link sample program'),
+                     ('vars', OD([('BUILD_SAMPLE_WITH_CMAKE', 1),
+                                  ('ENABLE_SSL', 1)]))])]),
+    LinkTask('link-with-cmake-snappy',
+             extra_commands=[
+                 OD([('func', 'link sample program'),
+                     ('vars', OD([('BUILD_SAMPLE_WITH_CMAKE', 1),
+                                  ('ENABLE_SNAPPY', 1)]))])]),
+    LinkTask('link-with-cmake-mac',
+             extra_commands=[
+                 OD([('func', 'link sample program'),
+                     ('vars', OD([('BUILD_SAMPLE_WITH_CMAKE', 1)]))])]),
+    LinkTask('link-with-cmake-windows',
+             extra_commands=[
+                 OD([('func', 'link sample program MSVC')])]),
+    LinkTask('link-with-cmake-windows-ssl',
+             extra_commands=[
+                 OD([('func', 'link sample program MSVC'),
+                     ('vars', OD([('ENABLE_SSL', 1)]))])],
+             orchestration='ssl'),
+    LinkTask('link-with-cmake-windows-snappy',
+             extra_commands=[
+                 OD([('func', 'link sample program MSVC'),
+                     ('vars', OD([('ENABLE_SNAPPY', 1)]))])]),
+    LinkTask('link-with-cmake-mingw',
+             extra_commands=[OD([('func', 'link sample program mingw')])]),
+    LinkTask('link-with-pkg-config',
+             extra_commands=[OD([('func', 'link sample program')])]),
+    LinkTask('link-with-pkg-config-mac',
+             extra_commands=[OD([('func', 'link sample program')])]),
+    LinkTask('link-with-pkg-config-ssl',
+             extra_commands=[OD([('func', 'link sample program'),
+                                 ('vars', OD([('ENABLE_SSL', 1)]))])]),
+    LinkTask('link-with-bson',
+             extra_commands=[OD([('func', 'link sample program bson')])],
+             orchestration=False),
+    LinkTask('link-with-bson-mac',
+             extra_commands=[OD([('func', 'link sample program bson')])],
+             orchestration=False),
+    LinkTask('link-with-bson-windows',
+             extra_commands=[OD([('func', 'link sample program MSVC bson')])],
+             orchestration=False),
+    LinkTask('link-with-bson-mingw',
+             extra_commands=[OD([('func', 'link sample program mingw bson')])],
+             orchestration=False),
 ]
 
 integration_task_axes = OD([

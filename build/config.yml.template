@@ -500,6 +500,59 @@ functions:
           BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
           BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
           BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
+
+  "link sample program MSVC" :
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          # Build libmongoc with CMake and compile a program that links
+          # dynamically or statically to it, using variables from CMake's
+          # find_package command.
+          export ENABLE_SSL=${ENABLE_SSL}
+          export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+          LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+          LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
+
+  "link sample program mingw" :
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          # Build libmongoc with CMake and compile a program that links
+          # dynamically to it, using variables from pkg-config.exe.
+          cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
+
+  "link sample program MSVC bson" :
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          # Build libmongoc with CMake and compile a program that links
+          # dynamically or statically to it, using variables from CMake's
+          # find_package command.
+          export ENABLE_SSL=${ENABLE_SSL}
+          export ENABLE_SNAPPY=${ENABLE_SNAPPY}
+          LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
+          LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
+
+  "link sample program mingw bson" :
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          # Build libmongoc with CMake and compile a program that links
+          # dynamically to it, using variables from pkg-config.exe.
+          cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
+
   "update codecov.io" :
   - command: shell.exec
     params:
@@ -666,215 +719,6 @@ tasks:
 {% for task in compile_tasks %}
     - {{ task.to_yaml() | indent(6) }}
 {% endfor %}
-
-    - name: link-with-cmake
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-        - func: "link sample program"
-          vars:
-            BUILD_SAMPLE_WITH_CMAKE: "1"
-
-    - name: link-with-cmake-ssl
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-        - func: "link sample program"
-          vars:
-            BUILD_SAMPLE_WITH_CMAKE: "1"
-            ENABLE_SSL: "1"
-
-    - name: link-with-cmake-snappy
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-        - func: "link sample program"
-          vars:
-            BUILD_SAMPLE_WITH_CMAKE: "1"
-            ENABLE_SNAPPY: "1"
-
-    - name: link-with-cmake-mac
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-        - func: "link sample program"
-          vars:
-            BUILD_SAMPLE_WITH_CMAKE: "1"
-
-    - name: link-with-cmake-windows
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              # Build libmongoc with CMake and compile a program that links
-              # dynamically or statically to it, using variables from CMake's
-              # find_package command.
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
-
-    - name: link-with-cmake-windows-ssl
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-            SSL: "winssl"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              # Build libmongoc with CMake and compile a program that links
-              # dynamically or statically to it, using variables from CMake's
-              # find_package command.
-              export ENABLE_SSL=1
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
-
-    - name: link-with-cmake-windows-snappy
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              # Build libmongoc with CMake and compile a program that links
-              # dynamically or statically to it, using variables from CMake's
-              # find_package command.
-              export ENABLE_SNAPPY=1
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
-
-    - name: link-with-cmake-mingw
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              # Build libmongoc with CMake (not Autotools) and compile a program
-              # that links dynamically or statically to it, using variables from
-              # pkg-config.exe.
-              cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
-
-    - name: link-with-pkg-config
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-        - func: "link sample program"
-
-    - name: link-with-pkg-config-mac
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-        - func: "link sample program"
-
-    - name: link-with-pkg-config-ssl
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-        - func: "link sample program"
-          vars:
-            ENABLE_SSL: "1"
-
-    - name: link-with-bson
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "link sample program bson"
-
-    - name: link-with-bson-mac
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - func: "link sample program bson"
-
-    - name: link-with-bson-windows
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              # Build libbson with CMake and compile a program that links
-              # dynamically or statically to it, using variables from CMake's
-              # find_package command.
-              LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
-              LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
-
-    - name: link-with-bson-mingw
-      depends_on:
-        - name: "make-release-archive"
-          variant: releng
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              # Build libbson with CMake and compile a program that links
-              # dynamically or statically to it, using variables from
-              # pkg-config.exe.
-              LINK_STATIC= cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
 
     - name: debian-package-build
       commands:
