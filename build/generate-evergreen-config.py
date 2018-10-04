@@ -29,6 +29,12 @@ from os.path import dirname, join as joinpath, normpath
 from textwrap import dedent
 
 try:
+    # Python 3 abstract base classes.
+    import collections.abc as abc
+except ImportError:
+    import collections as abc
+
+try:
     import yaml
     import yamlordereddictloader
     from jinja2 import Environment, FileSystemLoader
@@ -74,7 +80,7 @@ class Task(object):
         super(Task, self).__init__()
         self.tags = set()
         self.options = OD()
-        self.depends_on = []
+        self.depends_on = kwargs.pop('depends_on', None)
 
     name_prefix = 'test'
 
@@ -87,6 +93,17 @@ class Task(object):
 
     def has_tags(self, *args):
         return bool(self.tags.intersection(args))
+
+    def add_dependency(self, dependency):
+        if not isinstance(dependency, abc.Mapping):
+            dependency = OD([('name', dependency)])
+
+        if self.depends_on is None:
+            self.depends_on = dependency
+        elif isinstance(self.depends_on, abc.Mapping):
+            self.depends_on = [self.depends_on, dependency]
+        else:
+            self.depends_on.append(dependency)
 
     def display(self, axis_name):
         value = getattr(self, axis_name)
@@ -109,19 +126,12 @@ class Task(object):
         return 'on' if getattr(self, axis_name) == value else 'off'
 
     def to_dict(self):
-        task = OD([('name', self.name), ('tags', self.tags)])
+        task = OD([('name', self.name),
+                   ('tags', self.tags)])
         task.update(self.options)
         if self.depends_on:
-            task['depends_on'] = OD([
-                ('name', name) for name in self.depends_on
-            ])
-
-        task['commands'] = commands = []
-        if self.depends_on:
-            commands.append(OD([
-                ('func', 'fetch build'),
-                ('vars', {'BUILD_NAME': self.depends_on[0]}),
-            ]))
+            task['depends_on'] = self.depends_on
+        task['commands'] = []
         return task
 
     def to_yaml(self):
@@ -131,8 +141,8 @@ class Task(object):
 class CompileTask(Task):
     def __init__(self, compile_task_name, tags=None, config='debug',
                  compression='default', continue_on_err=False,
-                 extra_commands=None, **kwargs):
-        super(CompileTask, self).__init__()
+                 extra_commands=None, depends_on=None, **kwargs):
+        super(CompileTask, self).__init__(depends_on=depends_on, **kwargs)
         self._compile_task_name = compile_task_name
         if tags:
             self.add_tags(*tags)
@@ -273,6 +283,54 @@ compile_tasks = [
              if find scan -name \*.html | grep -q html; then
                exit 123
              fi'''))]))])]),
+    CompileTask('compile-tracing',
+                TRACING='ON'),
+    CompileTask('release-compile',
+                config='release',
+                depends_on=[OD([('name', 'make-release-archive'),
+                                ('variant', 'releng')])]),
+    CompileTask('debug-compile-nosasl-openssl',
+                tags=['debug-compile', 'nosasl', 'openssl'],
+                SSL='OPENSSL'),
+    CompileTask('debug-compile-nosasl-darwinssl',
+                tags=['debug-compile', 'nosasl', 'darwinssl'],
+                SSL='DARWIN'),
+    CompileTask('debug-compile-nosasl-winssl',
+                tags=['debug-compile', 'nosasl', 'winssl'],
+                SSL='WINDOWS'),
+    CompileTask('debug-compile-sasl-nossl',
+                tags=['debug-compile', 'sasl', 'nossl'],
+                SASL='AUTO',
+                SSL='OFF'),
+    CompileTask('debug-compile-sasl-openssl',
+                tags=['debug-compile', 'sasl', 'openssl'],
+                SASL='AUTO',
+                SSL='OPENSSL'),
+    CompileTask('debug-compile-sasl-darwinssl',
+                tags=['debug-compile', 'sasl', 'darwinssl'],
+                SASL='AUTO',
+                SSL='DARWIN'),
+    CompileTask('debug-compile-sasl-winssl',
+                tags=['debug-compile', 'sasl', 'winssl'],
+                SASL='AUTO',
+                SSL='WINDOWS'),
+    CompileTask('debug-compile-sspi-nossl',
+                tags=['debug-compile', 'sspi', 'nossl'],
+                SASL='SSPI',
+                SSL='OFF'),
+    CompileTask('debug-compile-sspi-openssl',
+                tags=['debug-compile', 'sspi', 'openssl'],
+                SASL='SSPI',
+                SSL='OPENSSL'),
+    CompileTask('debug-compile-rdtscp',
+                ENABLE_RDTSCP='ON'),
+    CompileTask('debug-compile-sspi-winssl',
+                tags=['debug-compile', 'sspi', 'winssl'],
+                SASL='SSPI',
+                SSL='WINDOWS'),
+    CompileTask('debug-compile-nosrv',
+                tags=['debug-compile'],
+                SRV='OFF'),
 ]
 
 integration_task_axes = OD([
@@ -305,6 +363,11 @@ class IntegrationTask(Task, namedtuple('Task', tuple(integration_task_axes))):
     def to_dict(self):
         task = super(IntegrationTask, self).to_dict()
         commands = task['commands']
+        if self.depends_on:
+            commands.append(OD([
+                ('func', 'fetch build'),
+                ('vars', {'BUILD_NAME': self.depends_on['name']}),
+            ]))
         if self.coverage:
             commands.append(OD([
                 ('func', 'debug-compile-coverage-notest-%s-%s' % (
@@ -356,6 +419,10 @@ class AuthTask(Task, namedtuple('Task', tuple(auth_task_axes))):
 
     def to_dict(self):
         task = super(AuthTask, self).to_dict()
+        task['commands'].append(OD([
+            ('func', 'fetch build'),
+            ('vars', {'BUILD_NAME': self.depends_on['name']}),
+        ]))
         task['commands'].append(OD([
             ('func', 'run auth tests'),
         ]))
@@ -458,15 +525,15 @@ def make_integration_test_tasks():
         # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
         # Coverage tasks use a build function instead of depending on a task.
         if task.valgrind:
-            task.depends_on.append('debug-compile-valgrind')
+            task.add_dependency('debug-compile-valgrind')
         elif task.asan and task.ssl:
-            task.depends_on.append('debug-compile-asan-clang-%s' % (
+            task.add_dependency('debug-compile-asan-clang-%s' % (
                 task.display('ssl'),))
         elif task.asan:
             assert not task.sasl
-            task.depends_on.append('debug-compile-asan-clang')
+            task.add_dependency('debug-compile-asan-clang')
         elif not task.coverage:
-            task.depends_on.append('debug-compile-%s-%s' % (
+            task.add_dependency('debug-compile-%s-%s' % (
                 task.display('sasl'), task.display('ssl')))
 
         tasks_list.append(task)
@@ -492,7 +559,7 @@ def make_auth_test_tasks():
                           task.display('ssl'),
                           task.display('sasl')])
 
-        task.depends_on.append('debug-compile-%s-%s' % (
+        task.add_dependency('debug-compile-%s-%s' % (
             task.display('sasl'), task.display('ssl')))
 
         tasks_list.append(task)
