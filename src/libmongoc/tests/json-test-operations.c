@@ -225,6 +225,10 @@ convert_bulk_write_result (const bson_t *doc, bson_t *r)
 
             bson_append_array_end (r, &upserted);
          }
+      } else if (BSON_ITER_IS_KEY (&iter, "insertedIds")) {
+         /* tests expect insertedIds, but they're optional and we omit them */
+      } else {
+         BSON_APPEND_VALUE (r, bson_iter_key (&iter), bson_iter_value (&iter));
       }
    }
 }
@@ -498,20 +502,6 @@ check_result (const bson_t *test,
    ctx.errmsg = errmsg;
    ctx.errmsg_len = sizeof errmsg;
 
-   /* retryable writes tests specify error: false at the end of the whole test:
-    *   operation:
-    *     name: insertOne
-    *   outcome:
-    *     error: true
-    */
-   if (bson_has_field (test, "outcome.result.error")) {
-      check_success_expected (
-         operation,
-         succeeded,
-         _mongoc_lookup_bool (test, "outcome.result.error", false),
-         error);
-   }
-
    if (!get_result (test, operation, &expected_value)) {
       /* if there's no "result", e.g. in the command monitoring tests,
        * we don't know if the command is expected to succeed or fail */
@@ -545,7 +535,16 @@ check_result (const bson_t *test,
       }
    }
 
-   check_success_expected (operation, succeeded, true, error);
+   /* retryable writes tests specify error: false at the end of the whole test:
+    *   operation:
+    *     name: insertOne
+    *   outcome:
+    *     error: true
+    */
+   check_success_expected (operation,
+                           succeeded,
+                           !_mongoc_lookup_bool (test, "outcome.error", false),
+                           error);
 
    BSON_ASSERT (result);
    if (!match_bson_value (result, &expected_value, &ctx)) {
