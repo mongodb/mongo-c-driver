@@ -9,6 +9,8 @@ Bug fixes:
     on a client, database, or collection: only the mongoc_transaction_opt_t's
     readConcern is used.
   * Remove timestamp from uninstall scripts to permit reproducible build.
+  * Setting mongoc_ssl_opt_t.pem_file or ca_file to a bad file path caused a
+    hang with Darwin SSL.
 
 
 mongo-c-driver 1.13.0

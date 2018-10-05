@@ -10,6 +10,7 @@
 #include "ssl-test.h"
 #include "test-conveniences.h"
 #include "TestSuite.h"
+#include "test-libmongoc.h"
 
 #define TIMEOUT 10000 /* milliseconds */
 
@@ -350,6 +351,41 @@ test_mongoc_tls_handshake_stall (void)
 #endif /* !MONGOC_ENABLE_SSL_SECURE_TRANSPORT */
 #endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
 
+/* TLS stream should be NULL and base stream should still be valid, and error
+ * messages should be consistent across TLS libs. Until CDRIVER-2844, just
+ * assert message includes the filename, and handle NULL or non-NULL return. */
+#define TLS_LOAD_ERR(_field)                                                  \
+   do {                                                                       \
+      (_field) = "badfile";                                                   \
+      capture_logs (true);                                                    \
+      base = mongoc_stream_socket_new (                                       \
+         mongoc_socket_new (AF_INET, SOCK_STREAM, 0));                        \
+      tls_stream = mongoc_stream_tls_new_with_hostname (base, NULL, &opt, 0); \
+                                                                              \
+      ASSERT_CAPTURED_LOG (                                                   \
+         "bad TLS config file", MONGOC_LOG_LEVEL_ERROR, "badfile");           \
+                                                                              \
+      if (tls_stream) {                                                       \
+         mongoc_stream_destroy (tls_stream);                                  \
+      } else {                                                                \
+         mongoc_stream_destroy (base);                                        \
+      }                                                                       \
+                                                                              \
+      opt.pem_file = opt.ca_file = opt.ca_dir = opt.crl_file = NULL;          \
+   } while (0)
+
+static void
+test_mongoc_tls_load_files (void)
+{
+   mongoc_ssl_opt_t opt = {0};
+   mongoc_stream_t *base;
+   mongoc_stream_t *tls_stream = NULL;
+
+   TLS_LOAD_ERR (opt.pem_file);
+   TLS_LOAD_ERR (opt.ca_file);
+}
+
+
 void
 test_stream_tls_error_install (TestSuite *suite)
 {
@@ -365,4 +401,5 @@ test_stream_tls_error_install (TestSuite *suite)
       suite, "/TLS/handshake_stall", test_mongoc_tls_handshake_stall);
 #endif
 #endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
+   TestSuite_Add (suite, "/TLS/load_files", test_mongoc_tls_load_files);
 }

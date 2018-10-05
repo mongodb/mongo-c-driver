@@ -317,7 +317,7 @@ mongoc_secure_channel_setup_ca (
 
    file = fopen (opt->ca_file, "rb");
    if (!file) {
-      MONGOC_WARNING ("Couldn't open file '%s'", opt->ca_file);
+      MONGOC_ERROR ("Couldn't open file '%s'", opt->ca_file);
       return false;
    }
 

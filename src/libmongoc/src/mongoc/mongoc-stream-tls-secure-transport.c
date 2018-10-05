@@ -473,15 +473,14 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
    if (opt->ca_dir) {
       MONGOC_ERROR ("Setting mongoc_ssl_opt_t.ca_dir has no effect when built "
                     "against Secure Transport");
-      RETURN (false);
+      RETURN (NULL);
    }
    if (opt->crl_file) {
       MONGOC_ERROR (
          "Setting mongoc_ssl_opt_t.crl_file has no effect when built "
          "against Secure Transport");
-      RETURN (false);
+      RETURN (NULL);
    }
-
 
    secure_transport = (mongoc_stream_tls_secure_transport_t *) bson_malloc0 (
       sizeof *secure_transport);
@@ -503,7 +502,6 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
    tls->handshake = mongoc_stream_tls_secure_transport_handshake;
    tls->ctx = (void *) secure_transport;
    tls->timeout_msec = -1;
-   tls->base_stream = base_stream;
 
    secure_transport->ssl_ctx_ref =
       SSLCreateContext (kCFAllocatorDefault,
@@ -515,8 +513,20 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
                   mongoc_secure_transport_write);
    SSLSetProtocolVersionMin (secure_transport->ssl_ctx_ref, kTLSProtocol1);
 
-   mongoc_secure_transport_setup_certificate (secure_transport, opt);
-   mongoc_secure_transport_setup_ca (secure_transport, opt);
+   if (opt->pem_file &&
+       !mongoc_secure_transport_setup_certificate (secure_transport, opt)) {
+      mongoc_stream_destroy ((mongoc_stream_t *) tls);
+      RETURN (NULL);
+   }
+
+   if (opt->ca_file &&
+       !mongoc_secure_transport_setup_ca (secure_transport, opt)) {
+      mongoc_stream_destroy ((mongoc_stream_t *) tls);
+      RETURN (NULL);
+   }
+
+   /* don't link base_stream to tls until we're sure we won't destroy tls */
+   tls->base_stream = base_stream;
 
    if (client) {
       SSLSetSessionOption (secure_transport->ssl_ctx_ref,

@@ -201,6 +201,16 @@ _mongoc_secure_transport_RFC2253_from_cert (SecCertificateRef cert)
    return bson_string_free (retval, false);
 }
 
+
+static void
+safe_release (CFTypeRef ref)
+{
+   if (ref) {
+      CFRelease (ref);
+   }
+}
+
+
 bool
 _mongoc_secure_transport_import_pem (const char *filename,
                                      const char *passphrase,
@@ -208,14 +218,14 @@ _mongoc_secure_transport_import_pem (const char *filename,
                                      SecExternalItemType *type)
 {
    SecExternalFormat format = kSecFormatPEMSequence;
-   SecItemImportExportKeyParameters params;
-   SecTransformRef sec_transform;
-   CFReadStreamRef read_stream;
-   CFDataRef dataref;
-   CFErrorRef error;
-   CFURLRef url;
+   SecItemImportExportKeyParameters params = {0};
+   SecTransformRef sec_transform = NULL;
+   CFReadStreamRef read_stream = NULL;
+   CFDataRef dataref = NULL;
+   CFErrorRef error = NULL;
+   CFURLRef url = NULL;
    OSStatus res;
-
+   bool r = false;
 
    if (!filename) {
       TRACE ("%s", "No certificate provided");
@@ -239,9 +249,14 @@ _mongoc_secure_transport_import_pem (const char *filename,
    url = CFURLCreateFromFileSystemRepresentation (
       kCFAllocatorDefault, (const UInt8 *) filename, strlen (filename), false);
    read_stream = CFReadStreamCreateWithFile (kCFAllocatorDefault, url);
+   if (!CFReadStreamOpen (read_stream)) {
+      MONGOC_ERROR ("Cannot find certificate in '%s', error reading file",
+                    filename);
+      goto done;
+   }
+
    sec_transform = SecTransformCreateReadTransformWithReadStream (read_stream);
    dataref = SecTransformExecute (sec_transform, &error);
-
 
    if (error) {
       CFStringRef str = CFErrorCopyDescription (error);
@@ -249,33 +264,29 @@ _mongoc_secure_transport_import_pem (const char *filename,
          "Failed importing PEM '%s': %s",
          filename,
          CFStringGetCStringPtr (str, CFStringGetFastestEncoding (str)));
-      CFRelease (str);
-      CFRelease (sec_transform);
-      CFRelease (read_stream);
-      CFRelease (url);
 
-      if (passphrase) {
-         CFRelease (params.passphrase);
-      }
-      return false;
+      CFRelease (str);
+      goto done;
    }
 
    res = SecItemImport (
       dataref, CFSTR (".pem"), &format, type, 0, &params, NULL, items);
-   CFRelease (dataref);
-   CFRelease (sec_transform);
-   CFRelease (read_stream);
-   CFRelease (url);
 
-   if (passphrase) {
-      CFRelease (params.passphrase);
-   }
    if (res) {
       MONGOC_ERROR ("Failed importing PEM '%s' (code: %d)", filename, res);
-      return false;
+      goto done;
    }
 
-   return true;
+   r = true;
+
+done:
+   safe_release (dataref);
+   safe_release (sec_transform);
+   safe_release (read_stream);
+   safe_release (url);
+   safe_release (params.passphrase);
+
+   return r;
 }
 
 char *
@@ -338,7 +349,7 @@ mongoc_secure_transport_setup_certificate (
    success = _mongoc_secure_transport_import_pem (
       opt->pem_file, opt->pem_pwd, &items, &type);
    if (!success) {
-      MONGOC_ERROR ("Can't find certificate in: '%s'", opt->pem_file);
+      /* caller will log an error */
       return false;
    }
 
@@ -392,48 +403,51 @@ mongoc_secure_transport_setup_ca (
    mongoc_stream_tls_secure_transport_t *secure_transport,
    mongoc_ssl_opt_t *opt)
 {
-   if (opt->ca_file) {
-      CFArrayRef items;
-      SecExternalItemType type = kSecItemTypeCertificate;
-      bool success = _mongoc_secure_transport_import_pem (
-         opt->ca_file, NULL, &items, &type);
+   CFArrayRef items;
+   SecExternalItemType type = kSecItemTypeCertificate;
+   bool success;
 
-      if (!success) {
-         MONGOC_ERROR ("Can't find certificate in \"%s\"", opt->ca_file);
-         return false;
-      }
-
-      if (type == kSecItemTypeAggregate) {
-         CFMutableArrayRef anchors = CFArrayCreateMutable (
-            kCFAllocatorDefault, 0, &kCFTypeArrayCallBacks);
-
-         for (CFIndex i = 0; i < CFArrayGetCount (items); ++i) {
-            CFTypeID item_id = CFGetTypeID (CFArrayGetValueAtIndex (items, i));
-
-            if (item_id == SecCertificateGetTypeID ()) {
-               CFArrayAppendValue (anchors, CFArrayGetValueAtIndex (items, i));
-            }
-         }
-         secure_transport->anchors = anchors;
-         CFRelease (items);
-      } else if (type == kSecItemTypeCertificate) {
-         secure_transport->anchors = items;
-      } else {
-         CFRelease (items);
-      }
-
-      /* This should be SSLSetCertificateAuthorities But the /TLS/ tests fail
-       * when it is */
-      success = !SSLSetTrustedRoots (
-         secure_transport->ssl_ctx_ref, secure_transport->anchors, true);
-      TRACE ("Setting certificate authority %s (%s)",
-             success ? "succeeded" : "failed",
-             opt->ca_file);
-      return true;
+   if (!opt->ca_file) {
+      TRACE ("%s", "No CA provided, using defaults");
+      return false;
    }
 
-   TRACE ("%s", "No CA provided, using defaults");
-   return false;
+   success =
+      _mongoc_secure_transport_import_pem (opt->ca_file, NULL, &items, &type);
+
+   if (!success) {
+      MONGOC_ERROR ("Cannot load Certificate Authorities from file \'%s\'",
+                    opt->ca_file);
+      return false;
+   }
+
+   if (type == kSecItemTypeAggregate) {
+      CFMutableArrayRef anchors =
+         CFArrayCreateMutable (kCFAllocatorDefault, 0, &kCFTypeArrayCallBacks);
+
+      for (CFIndex i = 0; i < CFArrayGetCount (items); ++i) {
+         CFTypeID item_id = CFGetTypeID (CFArrayGetValueAtIndex (items, i));
+
+         if (item_id == SecCertificateGetTypeID ()) {
+            CFArrayAppendValue (anchors, CFArrayGetValueAtIndex (items, i));
+         }
+      }
+      secure_transport->anchors = anchors;
+      CFRelease (items);
+   } else if (type == kSecItemTypeCertificate) {
+      secure_transport->anchors = items;
+   } else {
+      CFRelease (items);
+   }
+
+   /* This should be SSLSetCertificateAuthorities But the /TLS/ tests fail
+    * when it is */
+   success = !SSLSetTrustedRoots (
+      secure_transport->ssl_ctx_ref, secure_transport->anchors, true);
+   TRACE ("Setting certificate authority %s (%s)",
+          success ? "succeeded" : "failed",
+          opt->ca_file);
+   return true;
 }
 
 OSStatus
