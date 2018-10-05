@@ -22,6 +22,7 @@ set (src_libbson_src_bson_DIST_hs
    bson-value.h
    bson-version-functions.h
    bson-writer.h
+   bson-prelude.h
    bson-private.h
    bson-iso8601-private.h
    bson-context-private.h

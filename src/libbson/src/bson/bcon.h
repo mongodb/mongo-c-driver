@@ -3,9 +3,7 @@
  * @brief BCON (BSON C Object Notation) Declarations
  */
 
-#if !defined(BSON_INSIDE) && !defined(BSON_COMPILATION)
-#error "Only <bson/bson.h> can be included directly."
-#endif
+#include "bson/bson-prelude.h"
 
 /*    Copyright 2009-2013 MongoDB, Inc.
  *

@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#if !defined(MONGOC_INSIDE) && !defined(MONGOC_COMPILATION)
-#error "Only <mongoc.h> can be included directly."
-#endif
+
+#include "mongoc/mongoc-prelude.h"
 
 #ifndef MONGOC_GRIDFS_BUCKET_H
 #define MONGOC_GRIDFS_BUCKET_H

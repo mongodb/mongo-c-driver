@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -o xtrace   # Write all commands first to stderr
 set -o errexit
 
@@ -32,9 +32,23 @@ make install
 
 cd abi-compliance
 
-# create the xml files for the old version and the new version
-echo "<version>$newest</version><headers>$(pwd)/latest-release-install/include</headers><libs>$(pwd)/latest-release-install/lib</libs>" > old.xml
-echo "<version>$current</version><headers>$(pwd)/changes-install/include</headers><libs>$(pwd)/changes-install/lib</libs>" > new.xml
+old_xml="<version>$newest</version>\n"
+old_xml="${old_xml}<headers>\n"
+old_xml="${old_xml}$(pwd)/latest-release-install/include/libmongoc-1.0/mongoc/mongoc.h\n"
+old_xml="${old_xml}$(pwd)/latest-release-install/include/libbson-1.0/bson/bson.h\n"
+old_xml="${old_xml}</headers>\n"
+old_xml="${old_xml}<libs>$(pwd)/latest-release-install/lib</libs>"
+
+printf $old_xml > old.xml
+
+new_xml="<version>$current</version>\n"
+new_xml="${new_xml}<headers>\n"
+new_xml="${new_xml}$(pwd)/changes-install/include/libmongoc-1.0/mongoc/mongoc.h\n"
+new_xml="${new_xml}$(pwd)/changes-install/include/libbson-1.0/bson/bson.h\n"
+new_xml="${new_xml}</headers>\n"
+new_xml="${new_xml}<libs>$(pwd)/changes-install/lib</libs>"
+
+printf $new_xml > new.xml
 
 # check for abi compliance. Generates HTML Reports
 abi-compliance-checker -lib mongo-c-driver -old old.xml -new new.xml || result=$?

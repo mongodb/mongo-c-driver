@@ -227,6 +227,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/bson/bson-md5.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-memory.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-oid.h
+   ${PROJECT_SOURCE_DIR}/src/bson/bson-prelude.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-reader.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-string.h
    ${PROJECT_SOURCE_DIR}/src/bson/bson-types.h
