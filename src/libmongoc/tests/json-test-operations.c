@@ -531,6 +531,7 @@ check_result (const bson_t *test,
          check_error_contains (&expected_doc, error);
          check_error_labels_contain (&expected_doc, result);
          check_error_labels_omit (&expected_doc, result);
+         bson_value_destroy (&expected_value);
          return;
       }
    }
