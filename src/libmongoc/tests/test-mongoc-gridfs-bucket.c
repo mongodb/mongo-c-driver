@@ -841,7 +841,7 @@ test_upload_error (void *ctx)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
                           MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "Authentication Failed");
+                          "");
 
    mongoc_stream_close (source);
    mongoc_stream_destroy (source);
