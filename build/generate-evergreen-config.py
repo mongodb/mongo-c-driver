@@ -587,20 +587,20 @@ def make_integration_test_tasks():
             continue
 
         if task.valgrind:
-            task.tags.add('test-valgrind')
+            task.add_tags('test-valgrind')
             task.options['exec_timeout_secs'] = 7200
         elif task.coverage:
-            task.tags.add('test-coverage')
+            task.add_tags('test-coverage')
             task.options['exec_timeout_secs'] = 3600
         elif task.asan:
-            task.tags.add('test-asan')
+            task.add_tags('test-asan')
             task.options['exec_timeout_secs'] = 3600
         else:
-            task.tags.add(task.topology)
-            task.tags.add(task.version)
-            task.tags.update([task.display('ssl'),
-                              task.display('sasl'),
-                              task.display('auth')])
+            task.add_tags(task.topology,
+                          task.version,
+                          task.display('ssl'),
+                          task.display('sasl'),
+                          task.display('auth'))
 
         # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
         # Coverage tasks use a build function instead of depending on a task.
@@ -635,9 +635,9 @@ def make_auth_test_tasks():
         except Prohibited:
             continue
 
-        task.tags.update(['authentication-tests',
-                          task.display('ssl'),
-                          task.display('sasl')])
+        task.add_tags('authentication-tests',
+                      task.display('ssl'),
+                      task.display('sasl'))
 
         task.add_dependency('debug-compile-%s-%s' % (
             task.display('sasl'), task.display('ssl')))
