@@ -52,7 +52,7 @@ if [ "${prefix}" = "${prefix%/}" ]; then
 fi
 
 printf "#!/bin/sh\n"
-printf "# Mongo C Driver uninstall program, generated on %s\n" "$(date)"
+printf "# Mongo C Driver uninstall program, generated with CMake
 printf "\n"
 printf "# Copyright 2018-present MongoDB, Inc.\n"
 printf "#\n"
