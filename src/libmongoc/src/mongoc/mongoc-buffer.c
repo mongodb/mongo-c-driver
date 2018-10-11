@@ -333,15 +333,9 @@ _mongoc_buffer_try_append_from_stream (mongoc_buffer_t *buffer,
    BSON_ASSERT ((buffer->datalen + size) < INT_MAX);
 
    if (!SPACE_FOR (buffer, size)) {
-      if (buffer->len) {
-         memmove (&buffer->data[0], buffer->data, buffer->len);
-      }
-
-      if (!SPACE_FOR (buffer, size)) {
-         buffer->datalen = bson_next_power_of_two (size + buffer->len);
-         buffer->data = (uint8_t *) buffer->realloc_func (
-            buffer->data, buffer->datalen, NULL);
-      }
+      buffer->datalen = bson_next_power_of_two (size + buffer->len);
+      buffer->data =
+         (uint8_t *) buffer->realloc_func (buffer->data, buffer->datalen, NULL);
    }
 
    buf = &buffer->data[buffer->len];
