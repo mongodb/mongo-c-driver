@@ -412,6 +412,17 @@ mongoc_stream_timed_out (mongoc_stream_t *stream)
 }
 
 bool
+mongoc_stream_should_retry (mongoc_stream_t *stream)
+{
+   ENTRY;
+
+   BSON_ASSERT (stream);
+
+   /* for e.g. a file stream there is no should_retry function */
+   RETURN (stream->should_retry && stream->should_retry (stream));
+}
+
+bool
 _mongoc_stream_writev_full (mongoc_stream_t *stream,
                             mongoc_iovec_t *iov,
                             size_t iovcnt,

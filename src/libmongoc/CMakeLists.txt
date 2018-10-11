@@ -156,7 +156,7 @@ if (OPENSSL_FOUND)
    endif ()
    include (CheckLibraryExists)
    # Check for newer OpenSSL string function.
-   check_library_exists (ssl
+   check_library_exists ("${OPENSSL_CRYPTO_LIBRARY}"
       ASN1_STRING_get0_data "openssl/asn1.h" HAVE_ASN1_STRING_GET0_DATA
    )
    if (HAVE_ASN1_STRING_GET0_DATA)

@@ -68,7 +68,7 @@ if [ "$CC" = "mingw" ]; then
 fi
 
 DIR=$(dirname $0)
-. $DIR/set-path.sh
+. $DIR/add-build-dirs-to-paths.sh
 . $DIR/valgrind.sh
 
 case "$OS" in

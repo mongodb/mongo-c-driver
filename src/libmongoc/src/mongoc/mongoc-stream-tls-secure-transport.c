@@ -457,6 +457,16 @@ _mongoc_stream_tls_secure_channel_timed_out (mongoc_stream_t *stream)
    RETURN (mongoc_stream_timed_out (tls->base_stream));
 }
 
+static bool
+_mongoc_stream_tls_secure_channel_should_retry (mongoc_stream_t *stream)
+{
+   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
+
+   ENTRY;
+
+   RETURN (mongoc_stream_should_retry (tls->base_stream));
+}
+
 mongoc_stream_t *
 mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
                                         const char *host,
@@ -498,6 +508,7 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
       _mongoc_stream_tls_secure_transport_get_base_stream;
    tls->parent.check_closed = _mongoc_stream_tls_secure_transport_check_closed;
    tls->parent.timed_out = _mongoc_stream_tls_secure_channel_timed_out;
+   tls->parent.should_retry = _mongoc_stream_tls_secure_channel_should_retry;
    memcpy (&tls->ssl_opts, opt, sizeof tls->ssl_opts);
    tls->handshake = mongoc_stream_tls_secure_transport_handshake;
    tls->ctx = (void *) secure_transport;

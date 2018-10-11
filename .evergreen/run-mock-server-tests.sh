@@ -21,7 +21,7 @@ export MONGOC_TEST_SKIP_LIVE="on"
 export MONGOC_TEST_SKIP_SLOW="on"
 
 DIR=$(dirname $0)
-. $DIR/set-path.sh
+. $DIR/add-build-dirs-to-paths.sh
 
 case "$OS" in
    cygwin*)

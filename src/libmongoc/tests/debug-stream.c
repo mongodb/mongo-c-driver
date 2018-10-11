@@ -122,7 +122,14 @@ _mongoc_stream_debug_check_closed (mongoc_stream_t *stream)
 static bool
 _mongoc_stream_debug_timed_out (mongoc_stream_t *stream)
 {
-   return mongoc_stream_timed_out (
+   return mongoc_stream_timed_out (((mongoc_stream_debug_t *) stream)->wrapped);
+}
+
+
+static bool
+_mongoc_stream_debug_should_retry (mongoc_stream_t *stream)
+{
+   return mongoc_stream_should_retry (
       ((mongoc_stream_debug_t *) stream)->wrapped);
 }
 
@@ -163,6 +170,7 @@ debug_stream_new (mongoc_stream_t *stream, debug_stream_stats_t *stats)
    debug_stream->vtable.setsockopt = _mongoc_stream_debug_setsockopt;
    debug_stream->vtable.check_closed = _mongoc_stream_debug_check_closed;
    debug_stream->vtable.timed_out = _mongoc_stream_debug_timed_out;
+   debug_stream->vtable.should_retry = _mongoc_stream_debug_should_retry;
    debug_stream->vtable.get_base_stream = _mongoc_stream_debug_get_base_stream;
 
    debug_stream->wrapped = stream;

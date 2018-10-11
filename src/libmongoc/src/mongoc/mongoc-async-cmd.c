@@ -330,6 +330,10 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
       bson_free (iovec);
    }
 
+   if (bytes <= 0 && mongoc_stream_should_retry (acmd->stream)) {
+      return MONGOC_ASYNC_CMD_IN_PROGRESS;
+   }
+
    if (bytes < 0) {
       bson_set_error (&acmd->error,
                       MONGOC_ERROR_STREAM,
@@ -360,6 +364,10 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
       &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0);
    uint32_t msg_len;
 
+   if (bytes <= 0 && mongoc_stream_should_retry (acmd->stream)) {
+      return MONGOC_ASYNC_CMD_IN_PROGRESS;
+   }
+
    if (bytes < 0) {
       bson_set_error (&acmd->error,
                       MONGOC_ERROR_STREAM,
@@ -376,13 +384,14 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
       return MONGOC_ASYNC_CMD_ERROR;
    }
 
-   acmd->bytes_to_read -= bytes;
+   acmd->bytes_to_read = (size_t) (acmd->bytes_to_read - bytes);
 
    if (!acmd->bytes_to_read) {
       memcpy (&msg_len, acmd->buffer.data, 4);
       msg_len = BSON_UINT32_FROM_LE (msg_len);
 
-      if ((msg_len < 16) || (msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE)) {
+      if (msg_len < 16 || msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE ||
+          msg_len < acmd->buffer.len) {
          bson_set_error (&acmd->error,
                          MONGOC_ERROR_PROTOCOL,
                          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
@@ -390,7 +399,7 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
          return MONGOC_ASYNC_CMD_ERROR;
       }
 
-      acmd->bytes_to_read = msg_len - 4;
+      acmd->bytes_to_read = msg_len - acmd->buffer.len;
       acmd->state = MONGOC_ASYNC_CMD_RECV_RPC;
 
       return _mongoc_async_cmd_phase_recv_rpc (acmd);
@@ -404,6 +413,10 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
 {
    ssize_t bytes = _mongoc_buffer_try_append_from_stream (
       &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0);
+
+   if (bytes <= 0 && mongoc_stream_should_retry (acmd->stream)) {
+      return MONGOC_ASYNC_CMD_IN_PROGRESS;
+   }
 
    if (bytes < 0) {
       bson_set_error (&acmd->error,
@@ -421,7 +434,7 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
       return MONGOC_ASYNC_CMD_ERROR;
    }
 
-   acmd->bytes_to_read -= bytes;
+   acmd->bytes_to_read = (size_t) (acmd->bytes_to_read - bytes);
 
    if (!acmd->bytes_to_read) {
       if (!_mongoc_rpc_scatter (

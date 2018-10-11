@@ -35,7 +35,7 @@ else
 fi
 
 DIR=$(dirname $0)
-. $DIR/set-path.sh
+. $DIR/add-build-dirs-to-paths.sh
 
 case "$OS" in
    cygwin*)

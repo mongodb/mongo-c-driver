@@ -19,6 +19,16 @@ set_path ()
          export LD_LIBRARY_PATH=".:install-dir/lib:src/libbson:src/libmongoc:$EXTRA_LIB_PATH:$LD_LIBRARY_PATH"
          ;;
    esac
+
+   case "$OS" in
+      cygwin*)
+         ;;
+
+      *)
+         export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
+         export PATH=$INSTALL_DIR/bin:$PATH
+         ;;
+   esac
 }
 
 set_path

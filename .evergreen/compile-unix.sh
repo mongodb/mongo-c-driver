@@ -90,9 +90,16 @@ fi
 DEBUG_FLAGS="${DEBUG_AND_RELEASE_FLAGS} -DCMAKE_BUILD_TYPE=Debug"
 RELEASE_FLAGS="${DEBUG_AND_RELEASE_FLAGS} -DCMAKE_BUILD_TYPE=RelWithDebInfo"
 
-DIR=$(dirname $0)
+# Where are we, without relying on realpath or readlink?
+if [ "$(dirname $0)" == "." ]; then
+   DIR="$(pwd)"
+elif [ $(dirname $0) == ".." ]; then
+   DIR="$(dirname "$(pwd)")"
+else
+   DIR="$(cd "$(dirname "$0")"; pwd)"
+fi
+
 . $DIR/find-cmake.sh
-. $DIR/set-path.sh
 
 # --strip-components is an GNU tar extension. Check if the platform
 # has GNU tar installed as `gtar`, otherwise we assume to be on
@@ -192,13 +199,14 @@ else
    $CMAKE $CONFIGURE_FLAGS
 fi
 
-openssl version
+$SCAN_BUILD make -j8 all
+
+. $DIR/add-build-dirs-to-paths.sh
 if [ -n "$SSL_VERSION" ]; then
    openssl version | grep -q $SSL_VERSION
 fi
 # This should fail when using fips capable OpenSSL when fips mode is enabled
 openssl md5 README.rst || true
-$SCAN_BUILD make -j8 all
 
 ulimit -c unlimited || true
 

@@ -1,6 +1,10 @@
 Next Release
 ============
 
+Features:
+  * Support for OpenSSL 1.1.1 and its implementation of TLS v1.3.
+  * New function mongoc_stream_should_retry.
+
 Bug fixes:
 
   * mongoc_collection_update_many and mongoc_collection_delete_many would fail

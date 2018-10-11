@@ -61,7 +61,8 @@ struct _mongoc_stream_t {
                     int32_t timeout);
    void (*failed) (mongoc_stream_t *stream);
    bool (*timed_out) (mongoc_stream_t *stream);
-   void *padding[4];
+   bool (*should_retry) (mongoc_stream_t *stream);
+   void *padding[3];
 };
 
 
@@ -109,6 +110,8 @@ MONGOC_EXPORT (bool)
 mongoc_stream_check_closed (mongoc_stream_t *stream);
 MONGOC_EXPORT (bool)
 mongoc_stream_timed_out (mongoc_stream_t *stream);
+MONGOC_EXPORT (bool)
+mongoc_stream_should_retry (mongoc_stream_t *stream);
 MONGOC_EXPORT (ssize_t)
 mongoc_stream_poll (mongoc_stream_poll_t *streams,
                     size_t nstreams,
