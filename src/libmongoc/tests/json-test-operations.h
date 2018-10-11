@@ -24,7 +24,6 @@ typedef struct {
    uint32_t n_events;
    bson_t events;
    mongoc_uri_t *test_framework_uri;
-   int64_t cursor_id;
    mongoc_client_session_t *sessions[2];
    bson_t lsids[2];
    bool acknowledged;

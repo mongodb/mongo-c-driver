@@ -210,6 +210,8 @@ extern void
 test_counters_install (TestSuite *suite);
 extern void
 test_crud_install (TestSuite *suite);
+extern void
+test_apm_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2348,6 +2350,7 @@ main (int argc, char *argv[])
    test_happy_eyeballs_install (&suite);
    test_counters_install (&suite);
    test_crud_install (&suite);
+   test_apm_install (&suite);
 
    ret = TestSuite_Run (&suite);
 

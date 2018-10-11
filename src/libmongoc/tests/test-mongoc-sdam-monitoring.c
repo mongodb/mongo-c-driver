@@ -24,6 +24,42 @@ typedef struct {
 } context_t;
 
 static void
+check_json_sdam_events (const bson_t *events, const bson_t *expectations)
+{
+   uint32_t expected_keys;
+   uint32_t actual_keys;
+   match_ctx_t match_ctx = {0};
+   char errmsg[1000] = {0};
+
+   match_ctx.errmsg = errmsg;
+   match_ctx.errmsg_len = sizeof errmsg;
+
+   expected_keys = bson_count_keys (expectations);
+   actual_keys = bson_count_keys (events);
+
+   if (expected_keys != actual_keys) {
+      test_error ("SDAM test failed expectations:\n\n"
+                  "%s\n\n"
+                  "events:\n%s\n\n"
+                  "expected %" PRIu32 " events, got %" PRIu32,
+                  bson_as_canonical_extended_json (expectations, NULL),
+                  bson_as_canonical_extended_json (events, NULL),
+                  expected_keys,
+                  actual_keys);
+   }
+
+   if (!match_bson_with_ctx (events, expectations, &match_ctx)) {
+      test_error ("SDAM test failed expectations:\n\n"
+                  "%s\n\n"
+                  "events:\n%s\n\n%s",
+                  bson_as_canonical_extended_json (expectations, NULL),
+                  bson_as_canonical_extended_json (events, NULL),
+                  match_ctx.errmsg);
+   }
+}
+
+
+static void
 context_init (context_t *context)
 {
    bson_init (&context->events);
@@ -458,8 +494,7 @@ test_sdam_monitoring_cb (bson_t *test)
       while (bson_iter_next (&outcome_iter)) {
          if (strcmp ("events", bson_iter_key (&outcome_iter)) == 0) {
             bson_iter_bson (&outcome_iter, &events_expected);
-            check_json_apm_events (
-               &context.events, &events_expected, false /* allow_subset */);
+            check_json_sdam_events (&context.events, &events_expected);
          } else {
             fprintf (stderr,
                      "ERROR: unparsed test field %s\n",
@@ -726,8 +761,7 @@ _test_heartbeat_events (bool pooled, bool succeeded)
       ASSERT_CMPINT64 (d, <=, duration);
    }
 
-   check_json_apm_events (
-      &context.events, tmp_bson (expected_json), false /* allow subset */);
+   check_json_sdam_events (&context.events, tmp_bson (expected_json));
 
    future_destroy (future);
    bson_free (expected_json);

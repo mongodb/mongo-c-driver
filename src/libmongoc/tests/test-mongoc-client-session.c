@@ -58,14 +58,14 @@ test_session_no_crypto (void *ctx)
    } while (0)
 
 
-#define ASSERT_SESSIONS_DIFFER(_lsid_a, _lsid_b)                               \
-   do {                                                                        \
-      /* need a match context when checking that lsids DON'T match */          \
-      char errmsg[1000];                                                       \
-      match_ctx_t _ctx = {0};                                                  \
-      _ctx.errmsg = errmsg;                                                    \
-      _ctx.errmsg_len = sizeof (errmsg);                                       \
-      BSON_ASSERT (!match_bson_with_ctx ((_lsid_a), (_lsid_b), false, &_ctx)); \
+#define ASSERT_SESSIONS_DIFFER(_lsid_a, _lsid_b)                        \
+   do {                                                                 \
+      /* need a match context when checking that lsids DON'T match */   \
+      char errmsg[1000];                                                \
+      match_ctx_t _ctx = {0};                                           \
+      _ctx.errmsg = errmsg;                                             \
+      _ctx.errmsg_len = sizeof (errmsg);                                \
+      BSON_ASSERT (!match_bson_with_ctx ((_lsid_a), (_lsid_b), &_ctx)); \
    } while (0)
 
 
@@ -675,9 +675,9 @@ _test_end_sessions (bool pooled)
    while (bson_iter_next (&iter)) {
       BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
       bson_iter_bson (&iter, &ended_lsid);
-      if (match_bson_with_ctx (&ended_lsid, &lsid1, false, &ctx)) {
+      if (match_bson_with_ctx (&ended_lsid, &lsid1, &ctx)) {
          lsid1_ended = true;
-      } else if (match_bson_with_ctx (&ended_lsid, &lsid2, false, &ctx)) {
+      } else if (match_bson_with_ctx (&ended_lsid, &lsid2, &ctx)) {
          lsid2_ended = true;
       }
    }
@@ -956,14 +956,14 @@ started (const mongoc_apm_command_started_t *event)
       client_session_lsid = &test->cs->server_session->lsid;
 
       if (test->expect_explicit_lsid) {
-         if (!match_bson_with_ctx (&lsid, client_session_lsid, false, &ctx)) {
+         if (!match_bson_with_ctx (&lsid, client_session_lsid, &ctx)) {
             fprintf (stderr,
                      "command %s should have used client session's lsid\n",
                      cmd_name);
             abort ();
          }
       } else {
-         if (match_bson_with_ctx (&lsid, client_session_lsid, false, &ctx)) {
+         if (match_bson_with_ctx (&lsid, client_session_lsid, &ctx)) {
             fprintf (stderr,
                      "command %s should not have used client session's lsid\n",
                      cmd_name);
@@ -975,7 +975,7 @@ started (const mongoc_apm_command_started_t *event)
          bson_destroy (&test->sent_lsid);
          bson_copy_to (&lsid, &test->sent_lsid);
       } else {
-         if (!match_bson_with_ctx (&lsid, &test->sent_lsid, false, &ctx)) {
+         if (!match_bson_with_ctx (&lsid, &test->sent_lsid, &ctx)) {
             fprintf (stderr,
                      "command %s used different lsid than previous command\n",
                      cmd_name);
@@ -1152,7 +1152,7 @@ check_session_returned (session_test_t *test, const bson_t *lsid)
    found = false;
    CDL_FOREACH (test->session_client->topology->session_pool, ss)
    {
-      if (match_bson_with_ctx (&ss->lsid, lsid, false, &ctx)) {
+      if (match_bson_with_ctx (&ss->lsid, lsid, &ctx)) {
          found = true;
          break;
       }
@@ -2641,12 +2641,12 @@ test_session_install (TestSuite *suite)
       suite, "/Session/collection_names", test_collection_names, true);
    add_session_test (suite, "/Session/bulk", test_bulk, false);
    add_session_test (suite, "/Session/find_indexes", test_find_indexes, true);
-   TestSuite_AddFull (suite,                                          
+   TestSuite_AddFull (suite,
                       "/Session/bulk_set_session",
                       run_session_test_bulk_operation,
-                      NULL,                                            
+                      NULL,
                       test_bulk_set_session,
-                      test_framework_skip_if_no_cluster_time,          
+                      test_framework_skip_if_no_cluster_time,
                       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/Session/bulk_set_client",

@@ -103,7 +103,20 @@ bson_init_from_value (bson_t *b, const bson_value_t *v);
 char *
 single_quotes_to_double (const char *str);
 
-typedef struct {
+/* match_action_t determines if default check for a field is overridden. */
+typedef enum {
+   MATCH_ACTION_SKIP,    /* do not use the default check. */
+   MATCH_ACTION_ABORT,   /* an error occurred, stop checking. */
+   MATCH_ACTION_CONTINUE /* use the default check. */
+} match_action_t;
+
+struct _match_ctx_t;
+/* doc_iter may be null if the pattern field is not found. */
+typedef match_action_t (*match_visitor_fn) (struct _match_ctx_t *ctx,
+                                            bson_iter_t *pattern_iter,
+                                            bson_iter_t *doc_iter);
+
+typedef struct _match_ctx_t {
    char *errmsg;
    size_t errmsg_len;
    bool strict_numeric_types;
@@ -113,7 +126,14 @@ typedef struct {
    /* if allow_placeholders is true, treats 42 and "42" as placeholders. I.e.
     * comparing 42 to anything is ok. */
    bool allow_placeholders;
+   /* path is the dot separated breadcrumb trail of keys. */
    char path[1000];
+   /* if visitor_fn is not NULL, this is called on for every key in the pattern.
+    * The returned match_action_t can override the default match behavior. */
+   match_visitor_fn visitor_fn;
+   void *visitor_ctx;
+   /* if is_command is true, then compare the first key case insensitively. */
+   bool is_command;
 } match_ctx_t;
 
 bool
@@ -130,7 +150,6 @@ match_bson_value (const bson_value_t *doc,
 bool
 match_bson_with_ctx (const bson_t *doc,
                      const bson_t *pattern,
-                     bool is_command,
                      match_ctx_t *ctx);
 
 bool
@@ -168,5 +187,8 @@ assert_no_duplicate_keys (const bson_t *doc);
 
 void
 match_in_array (const bson_t *doc, const bson_t *array, match_ctx_t *ctx);
+
+void
+match_err (match_ctx_t *ctx, const char *fmt, ...);
 
 #endif /* TEST_CONVENIENCES_H */

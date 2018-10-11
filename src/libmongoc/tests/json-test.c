@@ -917,8 +917,7 @@ execute_test (const json_test_config_t *config,
    }
 
    json_test_ctx_init (&ctx, test, client, db, collection, config);
-   set_apm_callbacks (
-      collection->client, config->command_started_events_only, &ctx);
+   set_apm_callbacks (&ctx, collection->client);
 
    if (config->before_test_cb) {
       config->before_test_cb (&ctx, test);
@@ -936,8 +935,7 @@ execute_test (const json_test_config_t *config,
       bson_t expectations;
 
       bson_lookup_doc (test, "expectations", &expectations);
-      check_json_apm_events (
-         &ctx.events, &expectations, config->command_monitoring_allow_subset);
+      check_json_apm_events (&ctx, &expectations);
       if (config->events_check_cb) {
          config->events_check_cb (&ctx.events);
       }
@@ -1058,7 +1056,7 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
  * run_json_general_test --
  *
  *      Run a JSON test scenario from the CRUD, Command Monitoring,
- *      Retryable Writes, or Transactions Spec.
+ *      Retryable Writes, Change Stream, or Transactions Spec.
  *
  *      Call json_test_config_cleanup on @config after the last call
  *      to run_json_general_test.

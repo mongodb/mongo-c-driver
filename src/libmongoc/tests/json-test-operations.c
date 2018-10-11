@@ -70,7 +70,6 @@ json_test_ctx_init (json_test_ctx_t *ctx,
    ctx->n_events = 0;
    bson_init (&ctx->events);
    ctx->test_framework_uri = test_framework_get_uri ();
-   ctx->cursor_id = 0;
    ctx->acknowledged = true;
    ctx->verbose = test_framework_getenv_bool ("MONGOC_TEST_MONITORING_VERBOSE");
    bson_init (&ctx->lsids[0]);

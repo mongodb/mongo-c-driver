@@ -22,18 +22,15 @@
 #include <bson/bson.h>
 #include <mongoc/mongoc.h>
 
+#include "test-conveniences.h"
 #include "json-test-operations.h"
 
 typedef void (*json_test_events_check_cb_t) (const bson_t *events);
 
 void
-set_apm_callbacks (mongoc_client_t *client,
-                   bool command_started_events_only,
-                   void *ctx);
+set_apm_callbacks (json_test_ctx_t *ctx, mongoc_client_t *client);
 
 void
-check_json_apm_events (const bson_t *events,
-                       const bson_t *expectations,
-                       bool allow_subset);
+check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations);
 
 #endif
