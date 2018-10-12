@@ -21,7 +21,7 @@ install_openssl () {
    SSL_VERSION=${SSL##openssl-}
    tmp=$(echo $SSL_VERSION | tr . _)
    curl -L --retry 5 -o ssl.tar.gz https://github.com/openssl/openssl/archive/OpenSSL_${tmp}.tar.gz
-   tar zxvf ssl.tar.gz
+   tar zxf ssl.tar.gz
    cd openssl-OpenSSL_$tmp
    ./config --prefix=$INSTALL_DIR $SSL_EXTRA_FLAGS shared -fPIC
    cpus=$(grep -c '^processor' /proc/cpuinfo)
@@ -37,7 +37,7 @@ install_openssl () {
 
 install_libressl () {
    curl --retry 5 -o ssl.tar.gz https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/$SSL.tar.gz
-   tar zxvf ssl.tar.gz
+   tar zxf ssl.tar.gz
    cd $SSL
    ./configure --prefix=$INSTALL_DIR
    cpus=$(grep -c '^processor' /proc/cpuinfo)
