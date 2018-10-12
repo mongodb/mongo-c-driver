@@ -84,6 +84,27 @@ functions:
         permissions: public-read
         content_type: ${content_type|application/x-gzip}
 
+  "release archive":
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+
+          # Need modern Sphinx for :caption: in literal includes.
+          python -m virtualenv venv
+          cd venv
+          . bin/activate
+          ./bin/pip install sphinx GitPython
+          cd ..
+
+          set -o xtrace
+          export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
+          export MONGOC_TEST_SKIP_LIVE=on
+          export MONGOC_TEST_SKIP_SLOW=on
+          sh .evergreen/check-release-archive.sh
+
   "install ssl":
     - command: shell.exec
       params:
@@ -217,15 +238,33 @@ functions:
         content_type: text/html
         display_name: "Coverage Report"
 
-  "upload abi report" :
+  "abi report" :
     - command: shell.exec
       params:
         silent: true
         working_dir: "mongoc"
         script: |
+           set -o errexit
+
+           # Need Git module for calculating release version
+           python -m virtualenv venv
+           cd venv
+           . bin/activate
+           ./bin/pip install GitPython
+           cd ..
+
+           sh .evergreen/abi-compliance-check.sh
+
            export AWS_ACCESS_KEY_ID=${aws_key}
            export AWS_SECRET_ACCESS_KEY=${aws_secret}
            aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
+
+           if [ -e ./abi-compliance/abi-error.txt ]; then
+             exit 1
+           else
+             exit 0
+           fi
+
     - command: s3.put
       params:
         aws_key: ${aws_key}
@@ -598,14 +637,6 @@ post:
 
 tasks:
 
-    - name: check-public-headers
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: sh ./.evergreen/check-public-headers.sh
-
     - name: getdata
       commands:
         - command: shell.exec
@@ -634,87 +665,6 @@ tasks:
                scan-build --version || true
                genhtml --version || true
                valgrind --version
-
-# Compile Matrix {{ '{{{' }}
-    - name: make-release-archive
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              # Need modern Sphinx for :caption: in literal includes.
-              python -m virtualenv venv
-              cd venv
-              . bin/activate
-              ./bin/pip install sphinx GitPython
-              cd ..
-
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
-              export MONGOC_TEST_SKIP_LIVE=on
-              export MONGOC_TEST_SKIP_SLOW=on
-              sh .evergreen/check-release-archive.sh
-
-        - func: "upload docs"
-        - func: "upload man pages"
-        - func: "upload release"
-        - func: "upload build"
-
-    - name: hardened-compile
-      tags: ["hardened"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              export CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O"
-              export LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now"
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SNAPPY=OFF ZLIB=OFF sh .evergreen/compile.sh
-        - func: "upload build"
-
-    - name: abi-compliance-check
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              # Need Git module for calculating release version
-              python -m virtualenv venv
-              cd venv
-              . bin/activate
-              ./bin/pip install GitPython
-              cd ..
-
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              sh .evergreen/abi-compliance-check.sh
-
-        - func: "upload abi report"
-
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              if [ -e ./abi-compliance/abi-error.txt ]; then
-                exit 1
-              else
-                exit 0
-              fi
 
 {% for task in compile_tasks %}
     - {{ task.to_yaml() | indent(6) }}
@@ -819,7 +769,6 @@ tasks:
               DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
               BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
               sh ./.evergreen/install-uninstall-check.sh
-# {{ '}}}' }}
 
 # Test Matrix {{ '{{{' }}
 {% for task in make_integration_test_tasks() %}

@@ -27,6 +27,7 @@ from collections import namedtuple, OrderedDict as OD
 from itertools import product
 from os.path import dirname, join as joinpath, normpath
 from textwrap import dedent
+from types import NoneType
 
 try:
     # Python 3 abstract base classes.
@@ -75,13 +76,30 @@ class Dumper(yamlordereddictloader.Dumper):
         return super(Dumper, self).represent_list(sorted(data))
 
 
+def func(func_name, **kwargs):
+    od = OD([('func', func_name)])
+    if kwargs:
+        od['vars'] = OD(sorted(kwargs.items()))
+
+    return od
+
+
+def shell_exec(script):
+    return OD([
+        ('command', 'shell.exec'),
+        ('type', 'test'),
+        ('params', OD([('working_dir', 'mongoc'), ('script', dedent(script))])),
+    ])
+
+
 class Task(object):
     def __init__(self, *args, **kwargs):
         super(Task, self).__init__()
         self.tags = set()
         self.options = OD()
         self.depends_on = kwargs.pop('depends_on', None)
-        self.commands = kwargs.pop('extra_commands', None)
+        self.commands = kwargs.pop('commands', None)
+        assert (isinstance(self.commands, (abc.Sequence, NoneType)))
 
     name_prefix = 'test'
 
@@ -141,13 +159,19 @@ class Task(object):
 
 
 class NamedTask(Task):
-    def __init__(self, task_name, extra_commands=None, **kwargs):
-        super(NamedTask, self).__init__(extra_commands=extra_commands, **kwargs)
+    def __init__(self, task_name, commands=None, **kwargs):
+        super(NamedTask, self).__init__(commands=commands, **kwargs)
         self._task_name = task_name
 
     @property
     def name(self):
         return self._task_name
+
+
+class FuncTask(NamedTask):
+    def __init__(self, task_name, *args, **kwargs):
+        commands = [func(func_name) for func_name in args]
+        super(FuncTask, self).__init__(task_name, commands=commands, **kwargs)
 
 
 class CompileTask(NamedTask):
@@ -186,13 +210,8 @@ class CompileTask(NamedTask):
             script += 'export %s="%s"\n' % (opt, value)
 
         script += "CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh"
-        task['commands'].append(OD([
-            ('command', 'shell.exec'),
-            ('type', 'test'),
-            ('params', OD([('working_dir', 'mongoc'), ('script', script)])),
-        ]))
-
-        task['commands'].append(OD([('func', 'upload build')]))
+        task['commands'].append(shell_exec(script))
+        task['commands'].append(func('upload build'))
         task['commands'].extend(self.extra_commands)
         return task
 
@@ -209,9 +228,7 @@ class LinkTask(NamedTask):
             vars = OD([('VERSION', 'latest')])
             if orchestration == 'ssl':
                 vars['SSL'] = 1
-            bootstrap_commands = [
-                OD([('func', 'bootstrap mongo-orchestration'),
-                    ('vars', vars)])]
+            bootstrap_commands = [func('bootstrap mongo-orchestration', **vars)]
         else:
             bootstrap_commands = []
 
@@ -219,11 +236,22 @@ class LinkTask(NamedTask):
             task_name=task_name,
             depends_on=OD([('name', 'make-release-archive'),
                            ('variant', 'releng')]),
-            extra_commands=bootstrap_commands + extra_commands,
+            commands=bootstrap_commands + extra_commands,
             **kwargs)
 
 
 compile_tasks = [
+    NamedTask('check-public-headers',
+              commands=[shell_exec('sh ./.evergreen/check-public-headers.sh')]),
+    FuncTask('make-release-archive',
+             'release archive', 'upload docs', 'upload man pages',
+             'upload release', 'upload build'),
+    CompileTask('hardened-compile',
+                tags=['hardened'],
+                compression=None,
+                CFLAGS='-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O',
+                LDFLAGS='-pie -Wl,-z,relro -Wl,-z,now'),
+    FuncTask('abi-compliance-check', 'abi report'),
     CompileTask('debug-compile-compression-zlib',
                 tags=['zlib', 'compression'],
                 compression='zlib'),
@@ -259,7 +287,7 @@ compile_tasks = [
     SpecialTask('debug-compile-coverage',
                 tags=['debug-compile', 'coverage'],
                 COVERAGE='ON',
-                extra_commands=[OD([('func', 'upload coverage')])]),
+                extra_commands=[func('upload coverage')]),
     CompileTask('debug-compile-no-counters',
                 tags=['debug-compile', 'no-counters'],
                 ENABLE_SHM_COUNTERS='OFF'),
@@ -303,15 +331,11 @@ compile_tasks = [
                 ANALYZE='ON',
                 CC='clang',
                 extra_commands=[
-                    OD([('func', 'upload scan artifacts')]),
-                    OD([('command', 'shell.exec'),
-                        ('type', 'test'),
-                        ('params', OD([
-                            ('working_dir', 'mongoc'),
-                            ('script', dedent('''\
-             if find scan -name \*.html | grep -q html; then
-               exit 123
-             fi'''))]))])]),
+                    func('upload scan artifacts'),
+                    shell_exec('''\
+                        if find scan -name \*.html | grep -q html; then
+                          exit 123
+                        fi''')]),
     CompileTask('compile-tracing',
                 TRACING='ON'),
     CompileTask('release-compile',
@@ -362,54 +386,47 @@ compile_tasks = [
                 SRV='OFF'),
     LinkTask('link-with-cmake',
              extra_commands=[
-                 OD([('func', 'link sample program'),
-                     ('vars', OD([('BUILD_SAMPLE_WITH_CMAKE', 1)]))])]),
+                 func('link sample program', BUILD_SAMPLE_WITH_CMAKE=1)]),
     LinkTask('link-with-cmake-ssl',
              extra_commands=[
-                 OD([('func', 'link sample program'),
-                     ('vars', OD([('BUILD_SAMPLE_WITH_CMAKE', 1),
-                                  ('ENABLE_SSL', 1)]))])]),
+                 func('link sample program',
+                      BUILD_SAMPLE_WITH_CMAKE=1,
+                      ENABLE_SSL=1)]),
     LinkTask('link-with-cmake-snappy',
              extra_commands=[
-                 OD([('func', 'link sample program'),
-                     ('vars', OD([('BUILD_SAMPLE_WITH_CMAKE', 1),
-                                  ('ENABLE_SNAPPY', 1)]))])]),
+                 func('link sample program',
+                      BUILD_SAMPLE_WITH_CMAKE=1,
+                      ENABLE_SNAPPY=1)]),
     LinkTask('link-with-cmake-mac',
              extra_commands=[
-                 OD([('func', 'link sample program'),
-                     ('vars', OD([('BUILD_SAMPLE_WITH_CMAKE', 1)]))])]),
+                 func('link sample program', BUILD_SAMPLE_WITH_CMAKE=1)]),
     LinkTask('link-with-cmake-windows',
-             extra_commands=[
-                 OD([('func', 'link sample program MSVC')])]),
+             extra_commands=[func('link sample program MSVC')]),
     LinkTask('link-with-cmake-windows-ssl',
-             extra_commands=[
-                 OD([('func', 'link sample program MSVC'),
-                     ('vars', OD([('ENABLE_SSL', 1)]))])],
+             extra_commands=[func('link sample program MSVC', ENABLE_SSL=1)],
              orchestration='ssl'),
     LinkTask('link-with-cmake-windows-snappy',
              extra_commands=[
-                 OD([('func', 'link sample program MSVC'),
-                     ('vars', OD([('ENABLE_SNAPPY', 1)]))])]),
+                 func('link sample program MSVC', ENABLE_SNAPPY=1)]),
     LinkTask('link-with-cmake-mingw',
-             extra_commands=[OD([('func', 'link sample program mingw')])]),
+             extra_commands=[func('link sample program mingw')]),
     LinkTask('link-with-pkg-config',
-             extra_commands=[OD([('func', 'link sample program')])]),
+             extra_commands=[func('link sample program')]),
     LinkTask('link-with-pkg-config-mac',
-             extra_commands=[OD([('func', 'link sample program')])]),
+             extra_commands=[func('link sample program')]),
     LinkTask('link-with-pkg-config-ssl',
-             extra_commands=[OD([('func', 'link sample program'),
-                                 ('vars', OD([('ENABLE_SSL', 1)]))])]),
+             extra_commands=[func('link sample program', ENABLE_SSL=1)]),
     LinkTask('link-with-bson',
-             extra_commands=[OD([('func', 'link sample program bson')])],
+             extra_commands=[func('link sample program bson')],
              orchestration=False),
     LinkTask('link-with-bson-mac',
-             extra_commands=[OD([('func', 'link sample program bson')])],
+             extra_commands=[func('link sample program bson')],
              orchestration=False),
     LinkTask('link-with-bson-windows',
-             extra_commands=[OD([('func', 'link sample program MSVC bson')])],
+             extra_commands=[func('link sample program MSVC bson')],
              orchestration=False),
     LinkTask('link-with-bson-mingw',
-             extra_commands=[OD([('func', 'link sample program mingw bson')])],
+             extra_commands=[func('link sample program mingw bson')],
              orchestration=False),
 ]
 
@@ -444,38 +461,24 @@ class IntegrationTask(Task, namedtuple('Task', tuple(integration_task_axes))):
         task = super(IntegrationTask, self).to_dict()
         commands = task['commands']
         if self.depends_on:
-            commands.append(OD([
-                ('func', 'fetch build'),
-                ('vars', {'BUILD_NAME': self.depends_on['name']}),
-            ]))
+            commands.append(
+                func('fetch build', BUILD_NAME=self.depends_on['name']))
         if self.coverage:
-            commands.append(OD([
-                ('func', 'debug-compile-coverage-notest-%s-%s' % (
-                    self.display('sasl'), self.display('ssl')
-                )),
-            ]))
-        commands.append(OD([
-            ('func', 'bootstrap mongo-orchestration'),
-            ('vars', OD([
-                ('VERSION', self.version),
-                ('TOPOLOGY', self.topology),
-                ('AUTH', 'auth' if self.auth else 'noauth'),
-                ('SSL', self.display('ssl')),
-            ])),
-        ]))
-        commands.append(OD([
-            ('func', 'run tests'),
-            ('vars', OD([
-                ('VALGRIND', self.on_off('valgrind')),
-                ('ASAN', self.on_off('asan')),
-                ('AUTH', self.display('auth')),
-                ('SSL', self.display('ssl')),
-            ])),
-        ]))
+            commands.append(func('debug-compile-coverage-notest-%s-%s' % (
+                self.display('sasl'), self.display('ssl')
+            )))
+        commands.append(func('bootstrap mongo-orchestration',
+                             VERSION=self.version,
+                             TOPOLOGY=self.topology,
+                             AUTH='auth' if self.auth else 'noauth',
+                             SSL=self.display('ssl')))
+        commands.append(func('run tests',
+                             VALGRIND=self.on_off('valgrind'),
+                             ASAN=self.on_off('asan'),
+                             AUTH=self.display('auth'),
+                             SSL=self.display('ssl')))
         if self.coverage:
-            commands.append(OD([
-                ('func', 'update codecov.io'),
-            ]))
+            commands.append(func('update codecov.io'))
 
         return task
 
@@ -499,13 +502,9 @@ class AuthTask(Task, namedtuple('Task', tuple(auth_task_axes))):
 
     def to_dict(self):
         task = super(AuthTask, self).to_dict()
-        task['commands'].append(OD([
-            ('func', 'fetch build'),
-            ('vars', {'BUILD_NAME': self.depends_on['name']}),
-        ]))
-        task['commands'].append(OD([
-            ('func', 'run auth tests'),
-        ]))
+        task['commands'].append(func('fetch build',
+                                     BUILD_NAME=self.depends_on['name']))
+        task['commands'].append(func('run auth tests'))
         return task
 
 
