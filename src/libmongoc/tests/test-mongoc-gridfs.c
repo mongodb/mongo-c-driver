@@ -1202,7 +1202,7 @@ test_oversize (void)
    ASSERT_OR_PRINT (file, error);
 
    /* read the file */
-   iov.iov_base = &buf;
+   iov.iov_base = (void *) &buf;
    iov.iov_len = 1;
    r = mongoc_gridfs_file_readv (file, &iov, 1, sizeof (buf), 0);
    ASSERT_CMPSSIZE_T (r, ==, (ssize_t) -1);
