@@ -92,6 +92,24 @@ def shell_exec(script):
     ])
 
 
+def s3_put(local_file, remote_file, content_type, display_name=None):
+    od = OD([
+        ('command', 's3.put'),
+        ('params', OD([
+            ('aws_key', '${aws_key}'),
+            ('aws_secret', '${aws_secret}'),
+            ('local_file', local_file),
+            ('remote_file', '${project}/' + remote_file),
+            ('bucket', 'mciuploads'),
+            ('permissions', 'public-read'),
+            ('content_type', content_type)]))])
+
+    if display_name is not None:
+        od['params']['display_name'] = display_name
+
+    return od
+
+
 class Task(object):
     def __init__(self, *args, **kwargs):
         super(Task, self).__init__()
@@ -428,6 +446,13 @@ compile_tasks = [
     LinkTask('link-with-bson-mingw',
              extra_commands=[func('link sample program mingw bson')],
              orchestration=False),
+    NamedTask('debian-package-build',
+              commands=[
+                  shell_exec('export IS_PATCH="${is_patch}"\n'
+                             'sh .evergreen/debian_package_build.sh'),
+                  s3_put('deb.tar.gz',
+                         '${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
+                         '${content_type|application/x-gzip}')]),
 ]
 
 integration_task_axes = OD([
