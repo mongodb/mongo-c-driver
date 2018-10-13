@@ -84,11 +84,16 @@ def func(func_name, **kwargs):
     return od
 
 
+def strip_lines(s):
+    return '\n'.join(line for line in s.split('\n') if line.strip())
+
+
 def shell_exec(script):
     return OD([
         ('command', 'shell.exec'),
         ('type', 'test'),
-        ('params', OD([('working_dir', 'mongoc'), ('script', dedent(script))])),
+        ('params', OD([('working_dir', 'mongoc'),
+                       ('script', dedent(strip_lines(script)))])),
     ])
 
 
@@ -350,7 +355,7 @@ compile_tasks = [
                 CC='clang',
                 extra_commands=[
                     func('upload scan artifacts'),
-                    shell_exec('''\
+                    shell_exec('''
                         if find scan -name \*.html | grep -q html; then
                           exit 123
                         fi''')]),
@@ -453,6 +458,33 @@ compile_tasks = [
                   s3_put('deb.tar.gz',
                          '${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
                          '${content_type|application/x-gzip}')]),
+    NamedTask('install-uninstall-check-mingw',
+              depends_on=OD([('name', 'make-release-archive'),
+                             ('variant', 'releng')]),
+              commands=[shell_exec(r'''
+                  set -o xtrace
+                  set -o errexit
+                  export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
+                  BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+                  cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd''')]),
+    NamedTask('install-uninstall-check-msvc',
+              depends_on=OD([('name', 'make-release-archive'),
+                             ('variant', 'releng')]),
+              commands=[shell_exec(r'''
+                  set -o xtrace
+                  set -o errexit
+                  export CC="Visual Studio 14 2015 Win64"
+                  BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
+                  cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd''')]),
+    NamedTask('install-uninstall-check',
+              depends_on=OD([('name', 'make-release-archive'),
+                             ('variant', 'releng')]),
+              commands=[shell_exec(r'''
+                  set -o xtrace
+                  set -o errexit
+                  DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
+                  BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
+                  sh ./.evergreen/install-uninstall-check.sh''')]),
 ]
 
 integration_task_axes = OD([
