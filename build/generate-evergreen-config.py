@@ -566,7 +566,8 @@ class AuthTask(Task, namedtuple('Task', tuple(auth_task_axes))):
 
 
 def matrix(cell_class, axes):
-    return set(cell_class(*cell) for cell in product(*axes.values()))
+    for cell in product(*axes.values()):
+        yield cell_class(*cell)
 
 
 class Prohibited(Exception):
@@ -635,7 +636,6 @@ def allow_integration_test_task(task):
 
 
 def make_integration_test_tasks():
-    tasks_list = []
     for task in matrix(IntegrationTask, integration_task_axes):
         try:
             allow_integration_test_task(task)
@@ -672,9 +672,7 @@ def make_integration_test_tasks():
             task.add_dependency('debug-compile-%s-%s' % (
                 task.display('sasl'), task.display('ssl')))
 
-        tasks_list.append(task)
-
-    return tasks_list
+        yield task
 
 
 def allow_auth_test_task(task):
@@ -684,7 +682,6 @@ def allow_auth_test_task(task):
 
 
 def make_auth_test_tasks():
-    tasks_list = []
     for task in matrix(AuthTask, auth_task_axes):
         try:
             allow_auth_test_task(task)
@@ -698,9 +695,7 @@ def make_auth_test_tasks():
         task.add_dependency('debug-compile-%s-%s' % (
             task.display('sasl'), task.display('ssl')))
 
-        tasks_list.append(task)
-
-    return tasks_list
+        yield task
 
 
 env = Environment(loader=FileSystemLoader(this_dir),
