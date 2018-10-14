@@ -671,7 +671,7 @@ tasks:
 {% endfor %}
 
 # Test Matrix {{ '{{{' }}
-{% for task in make_integration_test_tasks() %}
+{% for task in integration_test_tasks %}
     - {{ task.to_yaml() | indent(6) }}
 {% endfor %}
 
@@ -950,7 +950,7 @@ tasks:
         - func: "update codecov.io"
 
     # Run special auth tests against our enterprise MongoDB instance.
-{% for task in make_auth_test_tasks() %}
+{% for task in AuthTask.matrix() %}
     - {{ task.to_yaml() | indent(6) }}
 {% endfor %}
 

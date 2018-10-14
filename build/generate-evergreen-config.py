@@ -23,7 +23,7 @@ Written for Python 2.6+, requires Jinja 2 for templating.
 """
 
 import sys
-from collections import namedtuple, OrderedDict as OD
+from collections import OrderedDict as OD
 from itertools import product
 from os.path import dirname, join as joinpath, normpath
 from textwrap import dedent
@@ -487,19 +487,99 @@ compile_tasks = [
                   sh ./.evergreen/install-uninstall-check.sh''')]),
 ]
 
-integration_task_axes = OD([
-    ('valgrind', ['valgrind', False]),
-    ('asan', ['asan', False]),
-    ('coverage', ['coverage', False]),
-    ('version', ['latest', '4.0', '3.6', '3.4', '3.2', '3.0']),
-    ('topology', ['server', 'replica_set', 'sharded_cluster']),
-    ('auth', [True, False]),
-    ('sasl', ['sasl', 'sspi', False]),
-    ('ssl', ['openssl', 'darwinssl', 'winssl', False]),
-])
+
+class Prohibited(Exception):
+    pass
 
 
-class IntegrationTask(Task, namedtuple('Task', tuple(integration_task_axes))):
+def require(rule):
+    if not rule:
+        raise Prohibited()
+
+
+def prohibit(rule):
+    if rule:
+        raise Prohibited()
+
+
+def both_or_neither(rule0, rule1):
+    if rule0:
+        require(rule1)
+    else:
+        prohibit(rule1)
+
+
+class MatrixTask(Task):
+    axes = OD()
+
+    def __init__(self, *args, **kwargs):
+        axis_values = dict([(axis_name, kwargs.pop(axis_name))
+                            for axis_name in self.axes])
+
+        super(MatrixTask, self).__init__(*args, **kwargs)
+        self.__dict__.update(axis_values)
+
+    @classmethod
+    def matrix(cls):
+        for cell in product(*cls.axes.values()):
+            axis_values = dict(zip(cls.axes, cell))
+            task = cls(**axis_values)
+            if task.allowed:
+                yield task
+            
+    @property
+    def allowed(self):
+        try:
+            self._check_allowed()
+            return True
+        except Prohibited:
+            return False
+        
+    def _check_allowed(self):
+        pass
+
+
+class IntegrationTask(MatrixTask):
+    axes = OD([('valgrind', ['valgrind', False]),
+               ('asan', ['asan', False]),
+               ('coverage', ['coverage', False]),
+               ('version', ['latest', '4.0', '3.6', '3.4', '3.2', '3.0']),
+               ('topology', ['server', 'replica_set', 'sharded_cluster']),
+               ('auth', [True, False]),
+               ('sasl', ['sasl', 'sspi', False]),
+               ('ssl', ['openssl', 'darwinssl', 'winssl', False])])
+    
+    def __init__(self, *args, **kwargs):
+        super(IntegrationTask, self).__init__(*args, **kwargs)
+        if self.valgrind:
+            self.add_tags('test-valgrind')
+            self.options['exec_timeout_secs'] = 7200
+        elif self.coverage:
+            self.add_tags('test-coverage')
+            self.options['exec_timeout_secs'] = 3600
+        elif self.asan:
+            self.add_tags('test-asan')
+            self.options['exec_timeout_secs'] = 3600
+        else:
+            self.add_tags(self.topology,
+                          self.version,
+                          self.display('ssl'),
+                          self.display('sasl'),
+                          self.display('auth'))
+
+        # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
+        # Coverage tasks use a build function instead of depending on a task.
+        if self.valgrind:
+            self.add_dependency('debug-compile-valgrind')
+        elif self.asan and self.ssl:
+            self.add_dependency('debug-compile-asan-clang-%s' % (
+                self.display('ssl'),))
+        elif self.asan:
+            self.add_dependency('debug-compile-asan-clang')
+        elif not self.coverage:
+            self.add_dependency('debug-compile-%s-%s' % (
+                self.display('sasl'), self.display('ssl')))
+
     @property
     def name(self):
         def name_part(axis_name):
@@ -511,7 +591,7 @@ class IntegrationTask(Task, namedtuple('Task', tuple(integration_task_axes))):
             return part
 
         return self.name_prefix + '-' + '-'.join(
-            name_part(axis_name) for axis_name in integration_task_axes
+            name_part(axis_name) for axis_name in self.axes
             if getattr(self, axis_name) or axis_name in ('auth', 'sasl', 'ssl'))
 
     def to_dict(self):
@@ -539,15 +619,74 @@ class IntegrationTask(Task, namedtuple('Task', tuple(integration_task_axes))):
 
         return task
 
+    def _check_allowed(self):
+        if self.valgrind:
+            prohibit(self.asan)
+            prohibit(self.sasl)
+            require(self.ssl in ('openssl', False))
+            prohibit(self.coverage)
+            # Valgrind only with auth+SSL or no auth + no SSL.
+            if self.auth:
+                require(self.ssl == 'openssl')
+            else:
+                prohibit(self.ssl)
+        
+        if self.auth:
+            require(self.ssl)
+        
+        if self.sasl == 'sspi':
+            # Only one self.
+            require(self.topology == 'server')
+            require(self.version == 'latest')
+            require(self.ssl == 'winssl')
+            require(self.auth)
+        
+        if not self.ssl:
+            prohibit(self.sasl)
+        
+        if self.coverage:
+            prohibit(self.sasl)
+        
+            if self.auth:
+                require(self.ssl == 'openssl')
+            else:
+                prohibit(self.ssl)
+        
+        if self.asan:
+            prohibit(self.sasl)
+            prohibit(self.coverage)
+        
+            # Address sanitizer only with auth+SSL or no auth + no SSL.
+            if self.auth:
+                require(self.ssl == 'openssl')
+            else:
+                prohibit(self.ssl)
 
-auth_task_axes = OD([
-    ('sasl', ['sasl', 'sspi', False]),
-    ('ssl', ['openssl', 'darwinssl', 'winssl']),
-])
+
+integration_test_tasks = IntegrationTask.matrix()
 
 
-class AuthTask(Task, namedtuple('Task', tuple(auth_task_axes))):
+class AuthTask(MatrixTask):
+    axes = OD([('sasl', ['sasl', 'sspi', False]),
+               ('ssl', ['openssl', 'darwinssl', 'winssl'])])
+
     name_prefix = 'authentication-tests'
+
+    def __init__(self, *args, **kwargs):
+        super(AuthTask, self).__init__(*args, **kwargs)
+        self.add_tags('authentication-tests',
+                      self.display('ssl'),
+                      self.display('sasl'))
+
+        self.add_dependency('debug-compile-%s-%s' % (
+            self.display('sasl'), self.display('ssl')))
+
+        if not self.commands:
+            self.commands = []
+
+        self.commands.extend([
+            func('fetch build', BUILD_NAME=self.depends_on['name']),
+            func('run auth tests')])
 
     @property
     def name(self):
@@ -557,145 +696,10 @@ class AuthTask(Task, namedtuple('Task', tuple(auth_task_axes))):
         else:
             return rv + '-nosasl'
 
-    def to_dict(self):
-        task = super(AuthTask, self).to_dict()
-        task['commands'].append(func('fetch build',
-                                     BUILD_NAME=self.depends_on['name']))
-        task['commands'].append(func('run auth tests'))
-        return task
-
-
-def matrix(cell_class, axes):
-    for cell in product(*axes.values()):
-        yield cell_class(*cell)
-
-
-class Prohibited(Exception):
-    pass
-
-
-def require(rule):
-    if not rule:
-        raise Prohibited()
-
-
-def prohibit(rule):
-    if rule:
-        raise Prohibited()
-
-
-def both_or_neither(rule0, rule1):
-    if rule0:
-        require(rule1)
-    else:
-        prohibit(rule1)
-
-
-def allow_integration_test_task(task):
-    if task.valgrind:
-        prohibit(task.asan)
-        prohibit(task.sasl)
-        require(task.ssl in ('openssl', False))
-        prohibit(task.coverage)
-        # Valgrind only with auth+SSL or no auth + no SSL.
-        if task.auth:
-            require(task.ssl == 'openssl')
-        else:
-            prohibit(task.ssl)
-
-    if task.auth:
-        require(task.ssl)
-
-    if task.sasl == 'sspi':
-        # Only one task.
-        require(task.topology == 'server')
-        require(task.version == 'latest')
-        require(task.ssl == 'winssl')
-        require(task.auth)
-
-    if not task.ssl:
-        prohibit(task.sasl)
-
-    if task.coverage:
-        prohibit(task.sasl)
-
-        if task.auth:
-            require(task.ssl == 'openssl')
-        else:
-            prohibit(task.ssl)
-
-    if task.asan:
-        prohibit(task.sasl)
-        prohibit(task.coverage)
-
-        # Address sanitizer only with auth+SSL or no auth + no SSL.
-        if task.auth:
-            require(task.ssl == 'openssl')
-        else:
-            prohibit(task.ssl)
-
-
-def make_integration_test_tasks():
-    for task in matrix(IntegrationTask, integration_task_axes):
-        try:
-            allow_integration_test_task(task)
-        except Prohibited:
-            continue
-
-        if task.valgrind:
-            task.add_tags('test-valgrind')
-            task.options['exec_timeout_secs'] = 7200
-        elif task.coverage:
-            task.add_tags('test-coverage')
-            task.options['exec_timeout_secs'] = 3600
-        elif task.asan:
-            task.add_tags('test-asan')
-            task.options['exec_timeout_secs'] = 3600
-        else:
-            task.add_tags(task.topology,
-                          task.version,
-                          task.display('ssl'),
-                          task.display('sasl'),
-                          task.display('auth'))
-
-        # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
-        # Coverage tasks use a build function instead of depending on a task.
-        if task.valgrind:
-            task.add_dependency('debug-compile-valgrind')
-        elif task.asan and task.ssl:
-            task.add_dependency('debug-compile-asan-clang-%s' % (
-                task.display('ssl'),))
-        elif task.asan:
-            assert not task.sasl
-            task.add_dependency('debug-compile-asan-clang')
-        elif not task.coverage:
-            task.add_dependency('debug-compile-%s-%s' % (
-                task.display('sasl'), task.display('ssl')))
-
-        yield task
-
-
-def allow_auth_test_task(task):
-    both_or_neither(task.ssl == 'winssl', task.sasl == 'sspi')
-    if not task.sasl:
-        require(task.ssl == 'openssl')
-
-
-def make_auth_test_tasks():
-    for task in matrix(AuthTask, auth_task_axes):
-        try:
-            allow_auth_test_task(task)
-        except Prohibited:
-            continue
-
-        task.add_tags('authentication-tests',
-                      task.display('ssl'),
-                      task.display('sasl'))
-
-        task.add_dependency('debug-compile-%s-%s' % (
-            task.display('sasl'), task.display('ssl')))
-
-        yield task
+    def _check_allowed(self):
+        both_or_neither(self.ssl == 'winssl', self.sasl == 'sspi')
+        if not self.sasl:
+            require(self.ssl == 'openssl')
 
 
 env = Environment(loader=FileSystemLoader(this_dir),
