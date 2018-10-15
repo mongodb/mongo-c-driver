@@ -139,12 +139,18 @@ class Task(object):
         super(Task, self).__init__()
         self.tags = set()
         self.options = OD()
-        self.depends_on = kwargs.pop('depends_on', None)
+        self.depends_on = None
         self.commands = kwargs.pop('commands', None)
-        assert (isinstance(self.commands, (abc.Sequence, NoneType)))
+        assert isinstance(self.commands, (abc.Sequence, NoneType))
         tags = kwargs.pop('tags', None)
         if tags:
             self.add_tags(*tags)
+        depends_on = kwargs.pop('depends_on', None)
+        if depends_on:
+            self.add_dependency(depends_on)
+
+        if 'exec_timeout_secs' in kwargs:
+            self.options['exec_timeout_secs'] = kwargs.pop('exec_timeout_secs')
 
     name_prefix = 'test'
 
@@ -383,8 +389,8 @@ all_tasks = [
                 TRACING='ON'),
     CompileTask('release-compile',
                 config='release',
-                depends_on=[OD([('name', 'make-release-archive'),
-                                ('variant', 'releng')])]),
+                depends_on=OD([('name', 'make-release-archive'),
+                               ('variant', 'releng')])),
     CompileTask('debug-compile-nosasl-openssl',
                 tags=['debug-compile', 'nosasl', 'openssl'],
                 SSL='OPENSSL'),
@@ -846,6 +852,43 @@ class AuthTask(MatrixTask):
 
 
 all_tasks = chain(all_tasks, AuthTask.matrix())
+
+
+class PostCompileTask(NamedTask):
+    def __init__(self, *args, **kwargs):
+        super(PostCompileTask, self).__init__(*args, **kwargs)
+        self.commands.insert(
+            0, func('fetch build', BUILD_NAME=self.depends_on['name']))
+
+
+all_tasks = chain(all_tasks, [
+    PostCompileTask(
+        'test-valgrind-memcheck-mock-server',
+        tags=['test-valgrind'],
+        depends_on='debug-compile-valgrind',
+        commands=[func('run mock server tests', VALGRIND='on', SSL='ssl')]),
+    PostCompileTask(
+        'test-asan-memcheck-mock-server',
+        tags=['test-asan'],
+        depends_on='debug-compile-asan-clang',
+        commands=[func('run mock server tests', ASAN='on', SSL='ssl')]),
+    # Compile with a function, not a task: gcov files depend on the absolute
+    # path of the executable, so we can't compile as a separate task.
+    NamedTask(
+        'test-coverage-mock-server',
+        tags=['test-coverage'],
+        commands=[func('debug-compile-coverage-notest-nosasl-openssl'),
+                  func('run mock server tests', SSL='ssl'),
+                  func('update codecov.io')]),
+    NamedTask(
+        'test-coverage-latest-server-dns',
+        tags=['test-coverage'],
+        exec_timeout_secs=3600,
+        commands=[func('debug-compile-coverage-notest-nosasl-openssl'),
+                  bootstrap(TOPOLOGY='replica_set', AUTH='auth', SSL='ssl'),
+                  run_tests(AUTH='auth', SSL='ssl', DNS='on'),
+                  func('update codecov.io')]),
+])
 
 env = Environment(loader=FileSystemLoader(this_dir),
                   trim_blocks=True,

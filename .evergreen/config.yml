@@ -1023,8 +1023,7 @@ tasks:
       - {func: upload build}
 
     - name: release-compile
-      depends_on:
-      - {name: make-release-archive, variant: releng}
+      depends_on: {name: make-release-archive, variant: releng}
       commands:
       - command: shell.exec
         type: test
@@ -5325,7 +5324,7 @@ tasks:
         vars: {AUTH: noauth, COMPRESSORS: 'snappy,zlib', SSL: nossl}
 
     - name: retry-true-latest-server
-      depends_on: debug-compile-sasl-openssl
+      depends_on: {name: debug-compile-sasl-openssl}
       commands:
       - func: fetch build
         vars: {BUILD_NAME: debug-compile-sasl-openssl}
@@ -5335,7 +5334,7 @@ tasks:
         vars: {URI: 'mongodb://localhost/?retryWrites=true'}
 
     - name: retry-true-3.4-replica-set
-      depends_on: debug-compile-sasl-openssl
+      depends_on: {name: debug-compile-sasl-openssl}
       commands:
       - func: fetch build
         vars: {BUILD_NAME: debug-compile-sasl-openssl}
@@ -5345,7 +5344,7 @@ tasks:
 
     - name: test-latest-server-hardened
       tags: [hardened, latest]
-      depends_on: hardened-compile
+      depends_on: {name: hardened-compile}
       commands:
       - func: fetch build
         vars: {BUILD_NAME: hardened-compile}
@@ -5385,65 +5384,43 @@ tasks:
         vars: {BUILD_NAME: debug-compile-nosasl-openssl}
       - {func: run auth tests}
 
-
     - name: test-valgrind-memcheck-mock-server
-      tags: ["test-valgrind"]
-      depends_on:
-        - name: "debug-compile-valgrind"
+      tags: [test-valgrind]
+      depends_on: {name: debug-compile-valgrind}
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-valgrind"
-        - func: "run mock server tests"
-          vars:
-            VALGRIND: "on"
-            AUTH: "noauth"
-            SSL: "ssl"
-            URI: ""
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-valgrind}
+      - func: run mock server tests
+        vars: {SSL: ssl, VALGRIND: 'on'}
 
     - name: test-asan-memcheck-mock-server
-      tags: ["test-asan"]
-      depends_on:
-        - name: "debug-compile-asan-clang"
+      tags: [test-asan]
+      depends_on: {name: debug-compile-asan-clang}
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-asan-clang"
-        - func: "run mock server tests"
-          vars:
-            ASAN: "on"
-            AUTH: "noauth"
-            SSL: "ssl"
-            URI: ""
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-asan-clang}
+      - func: run mock server tests
+        vars: {ASAN: 'on', SSL: ssl}
 
     - name: test-coverage-mock-server
-      tags: ["test-coverage"]
+      tags: [test-coverage]
       commands:
-        - func: "debug-compile-coverage-notest-nosasl-openssl"
-        - func: "run mock server tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "ssl"
-            URI: ""
-        - func: "update codecov.io"
+      - {func: debug-compile-coverage-notest-nosasl-openssl}
+      - func: run mock server tests
+        vars: {SSL: ssl}
+      - {func: update codecov.io}
 
     - name: test-coverage-latest-server-dns
-      tags: ["test-coverage"]
+      tags: [test-coverage]
       exec_timeout_secs: 3600
       commands:
-        - func: "debug-compile-coverage-notest-nosasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            AUTH: "auth"
-            SSL: "ssl"
-        - func: "run tests"
-          vars:
-            AUTH: "auth"
-            SSL: "ssl"
-            DNS: on
-        - func: "update codecov.io"
+      - {func: debug-compile-coverage-notest-nosasl-openssl}
+      - func: bootstrap mongo-orchestration
+        vars: {AUTH: auth, SSL: ssl, TOPOLOGY: replica_set, VERSION: latest}
+      - func: run tests
+        vars: {AUTH: auth, DNS: 'on', SSL: ssl}
+      - {func: update codecov.io}
+
 
     # Catch leaks or double-frees of bson_t structs in auth code.
     - name: authentication-tests-memcheck
