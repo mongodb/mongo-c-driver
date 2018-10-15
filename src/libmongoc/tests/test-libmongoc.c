@@ -939,43 +939,6 @@ test_framework_has_compressors ()
    return retval;
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * test_framework_add_compressors_from_env --
- *
- *       Add supported compressors to the URI
- *
- * Returns:
- *       A string you must bson_free.
- *
- *--------------------------------------------------------------------------
- */
-char *
-test_framework_add_compressors_from_env (const char *uri_str)
-{
-   char *compressors;
-
-   compressors = test_framework_get_compressors ();
-   if (compressors) {
-      char *retval = NULL;
-
-      if (!strstr ("?", uri_str)) {
-         retval = bson_strdup_printf (
-            "%s&%s=%s", uri_str, MONGOC_URI_COMPRESSORS, compressors);
-      } else {
-         retval = bson_strdup_printf (
-            "%s/?%s=%s", uri_str, MONGOC_URI_COMPRESSORS, compressors);
-      }
-      bson_free (compressors);
-      return retval;
-   }
-
-   return bson_strdup (uri_str);
-}
-
-
 /*
  *--------------------------------------------------------------------------
  *

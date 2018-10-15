@@ -513,11 +513,13 @@ class MatrixTask(Task):
     axes = OD()
 
     def __init__(self, *args, **kwargs):
-        axis_values = dict([(axis_name, kwargs.pop(axis_name))
-                            for axis_name in self.axes])
+        axis_dict = OD()
+        for name, values in self.axes.items():
+            # First value for each axis is the default value.
+            axis_dict[name] = kwargs.pop(name, values[0])
 
         super(MatrixTask, self).__init__(*args, **kwargs)
-        self.__dict__.update(axis_values)
+        self.__dict__.update(axis_dict)
 
     @classmethod
     def matrix(cls):
@@ -664,6 +666,59 @@ class IntegrationTask(MatrixTask):
 
 
 integration_test_tasks = IntegrationTask.matrix()
+
+
+class CompressionTask(MatrixTask):
+    axes = OD([('compression', ['zlib', 'snappy', 'compression'])])
+    name_prefix = 'test-latest-server'
+
+    def __init__(self, *args, **kwargs):
+        super(CompressionTask, self).__init__(*args, **kwargs)
+        self.add_dependency('debug-compile-' + self._compressor_suffix())
+        self.add_tags('compression', 'latest')
+        self.add_tags(*self._compressor_list())
+
+    @property
+    def name(self):
+        return self.name_prefix + '-' + self._compressor_suffix()
+
+    def to_dict(self):
+        task = super(CompressionTask, self).to_dict()
+        commands = task['commands']
+        commands.append(func('fetch build', BUILD_NAME=self.depends_on['name']))
+        if self.compression == 'compression':
+            orchestration_file = 'snappy-zlib'
+        else:
+            orchestration_file = self.compression
+
+        commands.append(func('bootstrap mongo-orchestration',
+                             VERSION='latest',
+                             TOPOLOGY='server',
+                             AUTH='noauth',
+                             SSL='nossl',
+                             ORCHESTRATION_FILE=orchestration_file))
+        commands.append(func('run tests',
+                             AUTH='noauth',
+                             SSL='nossl',
+                             COMPRESSORS=','.join(self._compressor_list())))
+
+        return task
+
+    def _compressor_suffix(self):
+        if self.compression == 'zlib':
+            return 'compression-zlib'
+        elif self.compression == 'snappy':
+            return 'compression-snappy'
+        else:
+            return 'compression'
+
+    def _compressor_list(self):
+        if self.compression == 'zlib':
+            return ['zlib']
+        elif self.compression == 'snappy':
+            return ['snappy']
+        else:
+            return ['snappy', 'zlib']
 
 
 class DNSTask(MatrixTask):

@@ -5296,67 +5296,39 @@ tasks:
 
 
     - name: test-latest-server-compression-zlib
-      tags: ["zlib", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression-zlib"
+      tags: [compression, latest, zlib]
+      depends_on: {name: debug-compile-compression-zlib}
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression-zlib"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "zlib"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: zlib
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-compression-zlib}
+      - func: bootstrap mongo-orchestration
+        vars: {AUTH: noauth, ORCHESTRATION_FILE: zlib, SSL: nossl, TOPOLOGY: server, VERSION: latest}
+      - func: run tests
+        vars: {AUTH: noauth, COMPRESSORS: zlib, SSL: nossl}
 
     - name: test-latest-server-compression-snappy
-      tags: ["snappy", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression-snappy"
+      tags: [compression, latest, snappy]
+      depends_on: {name: debug-compile-compression-snappy}
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression-snappy"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "snappy"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: snappy
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-compression-snappy}
+      - func: bootstrap mongo-orchestration
+        vars: {AUTH: noauth, ORCHESTRATION_FILE: snappy, SSL: nossl, TOPOLOGY: server, VERSION: latest}
+      - func: run tests
+        vars: {AUTH: noauth, COMPRESSORS: snappy, SSL: nossl}
 
     - name: test-latest-server-compression
-      tags: ["zlib", "snappy", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression"
+      tags: [compression, latest, snappy, zlib]
+      depends_on: {name: debug-compile-compression}
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "snappy-zlib"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: zlib,snappy
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-compression}
+      - func: bootstrap mongo-orchestration
+        vars: {AUTH: noauth, ORCHESTRATION_FILE: snappy-zlib, SSL: nossl, TOPOLOGY: server,
+          VERSION: latest}
+      - func: run tests
+        vars: {AUTH: noauth, COMPRESSORS: 'snappy,zlib', SSL: nossl}
+
 
     # Verify that retryWrites=true is ignored with standalone
     - name: retry-true-latest-server

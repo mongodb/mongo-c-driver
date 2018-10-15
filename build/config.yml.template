@@ -679,68 +679,9 @@ tasks:
     - {{ task.to_yaml() | indent(6) }}
 {% endfor %}
 
-    - name: test-latest-server-compression-zlib
-      tags: ["zlib", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression-zlib"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression-zlib"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "zlib"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: zlib
-
-    - name: test-latest-server-compression-snappy
-      tags: ["snappy", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression-snappy"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression-snappy"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "snappy"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: snappy
-
-    - name: test-latest-server-compression
-      tags: ["zlib", "snappy", "compression", "latest"]
-      depends_on:
-        - name: "debug-compile-compression"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-compression"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-            ORCHESTRATION_FILE: "snappy-zlib"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
-            COMPRESSORS: zlib,snappy
+{% for task in CompressionTask.matrix() %}
+    - {{ task.to_yaml() | indent(6) }}
+{% endfor %}
 
     # Verify that retryWrites=true is ignored with standalone
     - name: retry-true-latest-server
