@@ -666,6 +666,48 @@ class IntegrationTask(MatrixTask):
 integration_test_tasks = IntegrationTask.matrix()
 
 
+class DNSTask(MatrixTask):
+    axes = OD([('auth', [False, True]),
+               ('ssl', ['openssl', 'winssl', 'darwinssl'])])
+
+    name_prefix = 'test-dns'
+
+    def __init__(self, *args, **kwargs):
+        super(DNSTask, self).__init__(*args, **kwargs)
+        sasl = 'sspi' if self.ssl == 'winssl' else 'sasl'
+        self.add_dependency('debug-compile-%s-%s' % (sasl, self.display('ssl')))
+
+    @property
+    def name(self):
+        return self.name_prefix + '-' + '-'.join(
+            self.display(axis_name) for axis_name in self.axes
+            if getattr(self, axis_name))
+
+    def to_dict(self):
+        task = super(MatrixTask, self).to_dict()
+        commands = task['commands']
+        commands.append(
+            func('fetch build', BUILD_NAME=self.depends_on['name']))
+
+        orchestration = func('bootstrap mongo-orchestration',
+                             VERSION='latest',
+                             TOPOLOGY='replica_set',
+                             AUTH='auth' if self.auth else 'noauth',
+                             SSL='ssl')
+
+        if self.auth:
+            orchestration['vars']['AUTHSOURCE'] = 'thisDB'
+            orchestration['vars']['ORCHESTRATION_FILE'] = 'auth-thisdb-ssl'
+
+        commands.append(orchestration)
+        commands.append(func('run tests',
+                             SSL='ssl',
+                             AUTH=self.display('auth'),
+                             DNS='dns-auth' if self.auth else 'on'))
+
+        return task
+
+
 class AuthTask(MatrixTask):
     axes = OD([('sasl', ['sasl', 'sspi', False]),
                ('ssl', ['openssl', 'darwinssl', 'winssl'])])

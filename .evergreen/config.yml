@@ -5232,118 +5232,68 @@ tasks:
 
 
     - name: test-dns-openssl
-      depends_on:
-        - name: "debug-compile-sasl-openssl"
+      depends_on: {name: debug-compile-sasl-openssl}
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            SSL: "ssl"
-        - func: "run tests"
-          vars:
-            DNS: on
-            SSL: "ssl"
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-sasl-openssl}
+      - func: bootstrap mongo-orchestration
+        vars: {AUTH: noauth, SSL: ssl, TOPOLOGY: replica_set, VERSION: latest}
+      - func: run tests
+        vars: {AUTH: noauth, DNS: 'on', SSL: ssl}
 
     - name: test-dns-winssl
-      depends_on:
-        - name: "debug-compile-sspi-winssl"
+      depends_on: {name: debug-compile-sspi-winssl}
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sspi-winssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            SSL: "winssl"
-        - func: "run tests"
-          vars:
-            DNS: on
-            SSL: "winssl"
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-sspi-winssl}
+      - func: bootstrap mongo-orchestration
+        vars: {AUTH: noauth, SSL: ssl, TOPOLOGY: replica_set, VERSION: latest}
+      - func: run tests
+        vars: {AUTH: noauth, DNS: 'on', SSL: ssl}
 
     - name: test-dns-darwinssl
-      depends_on:
-        - name: "debug-compile-sasl-darwinssl"
+      depends_on: {name: debug-compile-sasl-darwinssl}
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-darwinssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            SSL: "darwinssl"
-        - func: "run tests"
-          vars:
-            DNS: on
-            SSL: "darwinssl"
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-sasl-darwinssl}
+      - func: bootstrap mongo-orchestration
+        vars: {AUTH: noauth, SSL: ssl, TOPOLOGY: replica_set, VERSION: latest}
+      - func: run tests
+        vars: {AUTH: noauth, DNS: 'on', SSL: ssl}
 
     - name: test-dns-auth-openssl
-      depends_on:
-        - name: "debug-compile-sasl-openssl"
+      depends_on: {name: debug-compile-sasl-openssl}
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            SSL: "ssl"
-            AUTH: "auth"
-            AUTHSOURCE: "thisDB"
-            ORCHESTRATION_FILE: "auth-thisdb-ssl"
-        - func: "run tests"
-          vars:
-            DNS: "dns-auth"
-            AUTH: "auth"
-            SSL: "ssl"
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-sasl-openssl}
+      - func: bootstrap mongo-orchestration
+        vars: {AUTH: auth, SSL: ssl, TOPOLOGY: replica_set, VERSION: latest, AUTHSOURCE: thisDB,
+          ORCHESTRATION_FILE: auth-thisdb-ssl}
+      - func: run tests
+        vars: {AUTH: auth, DNS: dns-auth, SSL: ssl}
 
     - name: test-dns-auth-winssl
-      depends_on:
-        - name: "debug-compile-sspi-winssl"
+      depends_on: {name: debug-compile-sspi-winssl}
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sspi-winssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "4.0"
-            TOPOLOGY: "replica_set"
-            SSL: "winssl"
-            AUTH: "auth"
-            AUTHSOURCE: "thisDB"
-            ORCHESTRATION_FILE: "auth-thisdb-ssl"
-        - func: "run tests"
-          vars:
-            DNS: "dns-auth"
-            AUTH: "auth"
-            SSL: "winssl"
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-sspi-winssl}
+      - func: bootstrap mongo-orchestration
+        vars: {AUTH: auth, SSL: ssl, TOPOLOGY: replica_set, VERSION: latest, AUTHSOURCE: thisDB,
+          ORCHESTRATION_FILE: auth-thisdb-ssl}
+      - func: run tests
+        vars: {AUTH: auth, DNS: dns-auth, SSL: ssl}
 
     - name: test-dns-auth-darwinssl
-      depends_on:
-        - name: "debug-compile-sasl-darwinssl"
+      depends_on: {name: debug-compile-sasl-darwinssl}
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-darwinssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            SSL: "darwinssl"
-            AUTH: "auth"
-            AUTHSOURCE: "thisDB"
-            ORCHESTRATION_FILE: "auth-thisdb-ssl"
-        - func: "run tests"
-          vars:
-            DNS: "dns-auth"
-            AUTH: "auth"
-            SSL: "darwinssl"
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-sasl-darwinssl}
+      - func: bootstrap mongo-orchestration
+        vars: {AUTH: auth, SSL: ssl, TOPOLOGY: replica_set, VERSION: latest, AUTHSOURCE: thisDB,
+          ORCHESTRATION_FILE: auth-thisdb-ssl}
+      - func: run tests
+        vars: {AUTH: auth, DNS: dns-auth, SSL: ssl}
+
 
     - name: test-latest-server-compression-zlib
       tags: ["zlib", "compression", "latest"]
