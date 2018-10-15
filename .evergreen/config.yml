@@ -1383,8 +1383,6 @@ tasks:
             BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
             sh ./.evergreen/install-uninstall-check.sh
 
-
-# Test Matrix {{{
     - name: test-valgrind-latest-server-auth-nosasl-openssl
       tags: [test-valgrind]
       exec_timeout_secs: 7200
@@ -5230,7 +5228,6 @@ tasks:
       - func: run tests
         vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
 
-
     - name: test-dns-openssl
       depends_on: {name: debug-compile-sasl-openssl}
       commands:
@@ -5294,7 +5291,6 @@ tasks:
       - func: run tests
         vars: {AUTH: auth, DNS: dns-auth, SSL: ssl}
 
-
     - name: test-latest-server-compression-zlib
       tags: [compression, latest, zlib]
       depends_on: {name: debug-compile-compression-zlib}
@@ -5302,7 +5298,7 @@ tasks:
       - func: fetch build
         vars: {BUILD_NAME: debug-compile-compression-zlib}
       - func: bootstrap mongo-orchestration
-        vars: {AUTH: noauth, ORCHESTRATION_FILE: zlib, SSL: nossl, TOPOLOGY: server, VERSION: latest}
+        vars: {AUTH: noauth, ORCHESTRATION_FILE: zlib, SSL: nossl, VERSION: latest}
       - func: run tests
         vars: {AUTH: noauth, COMPRESSORS: zlib, SSL: nossl}
 
@@ -5313,7 +5309,7 @@ tasks:
       - func: fetch build
         vars: {BUILD_NAME: debug-compile-compression-snappy}
       - func: bootstrap mongo-orchestration
-        vars: {AUTH: noauth, ORCHESTRATION_FILE: snappy, SSL: nossl, TOPOLOGY: server, VERSION: latest}
+        vars: {AUTH: noauth, ORCHESTRATION_FILE: snappy, SSL: nossl, VERSION: latest}
       - func: run tests
         vars: {AUTH: noauth, COMPRESSORS: snappy, SSL: nossl}
 
@@ -5324,110 +5320,39 @@ tasks:
       - func: fetch build
         vars: {BUILD_NAME: debug-compile-compression}
       - func: bootstrap mongo-orchestration
-        vars: {AUTH: noauth, ORCHESTRATION_FILE: snappy-zlib, SSL: nossl, TOPOLOGY: server,
-          VERSION: latest}
+        vars: {AUTH: noauth, ORCHESTRATION_FILE: snappy-zlib, SSL: nossl, VERSION: latest}
       - func: run tests
         vars: {AUTH: noauth, COMPRESSORS: 'snappy,zlib', SSL: nossl}
 
-
-    # Verify that retryWrites=true is ignored with standalone
     - name: retry-true-latest-server
-      depends_on:
-        - name: "debug-compile-sasl-openssl"
+      depends_on: debug-compile-sasl-openssl
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            URI: "mongodb://localhost/?retryWrites=true"
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-sasl-openssl}
+      - func: bootstrap mongo-orchestration
+        vars: {TOPOLOGY: server, VERSION: latest}
+      - func: run tests
+        vars: {URI: 'mongodb://localhost/?retryWrites=true'}
 
-    # Verify that retryWrites=true is ignored with old server
     - name: retry-true-3.4-replica-set
-      depends_on:
-        - name: "debug-compile-sasl-openssl"
+      depends_on: debug-compile-sasl-openssl
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.4"
-            TOPOLOGY: "replica_set"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            URI: "mongodb://localhost/?replicaSet=repl0&retryWrites=true"
+      - func: fetch build
+        vars: {BUILD_NAME: debug-compile-sasl-openssl}
+      - func: bootstrap mongo-orchestration
+        vars: {TOPOLOGY: replica_set, VERSION: '3.4'}
+      - {func: run tests}
 
     - name: test-latest-server-hardened
-      tags: ["hardened", "latest"]
-      depends_on:
-        - name: "hardened-compile"
+      tags: [hardened, latest]
+      depends_on: hardened-compile
       commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "hardened-compile"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
+      - func: fetch build
+        vars: {BUILD_NAME: hardened-compile}
+      - func: bootstrap mongo-orchestration
+        vars: {TOPOLOGY: server, VERSION: latest}
+      - {func: run tests}
 
-    - name: test-valgrind-memcheck-mock-server
-      tags: ["test-valgrind"]
-      depends_on:
-        - name: "debug-compile-valgrind"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-valgrind"
-        - func: "run mock server tests"
-          vars:
-            VALGRIND: "on"
-            AUTH: "noauth"
-            SSL: "ssl"
-            URI: ""
-
-    - name: test-coverage-mock-server
-      tags: ["test-coverage"]
-      commands:
-        - func: "debug-compile-coverage-notest-nosasl-openssl"
-        - func: "run mock server tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "ssl"
-            URI: ""
-        - func: "update codecov.io"
-
-    - name: test-coverage-latest-server-dns
-      tags: ["test-coverage"]
-      exec_timeout_secs: 3600
-      commands:
-        - func: "debug-compile-coverage-notest-nosasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "replica_set"
-            AUTH: "auth"
-            SSL: "ssl"
-        - func: "run tests"
-          vars:
-            AUTH: "auth"
-            SSL: "ssl"
-            DNS: on
-        - func: "update codecov.io"
-
-    # Run special auth tests against our enterprise MongoDB instance.
     - name: authentication-tests-openssl
       tags: [authentication-tests, openssl, sasl]
       depends_on: {name: debug-compile-sasl-openssl}
@@ -5460,6 +5385,65 @@ tasks:
         vars: {BUILD_NAME: debug-compile-nosasl-openssl}
       - {func: run auth tests}
 
+
+    - name: test-valgrind-memcheck-mock-server
+      tags: ["test-valgrind"]
+      depends_on:
+        - name: "debug-compile-valgrind"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-valgrind"
+        - func: "run mock server tests"
+          vars:
+            VALGRIND: "on"
+            AUTH: "noauth"
+            SSL: "ssl"
+            URI: ""
+
+    - name: test-asan-memcheck-mock-server
+      tags: ["test-asan"]
+      depends_on:
+        - name: "debug-compile-asan-clang"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-asan-clang"
+        - func: "run mock server tests"
+          vars:
+            ASAN: "on"
+            AUTH: "noauth"
+            SSL: "ssl"
+            URI: ""
+
+    - name: test-coverage-mock-server
+      tags: ["test-coverage"]
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "run mock server tests"
+          vars:
+            AUTH: "noauth"
+            SSL: "ssl"
+            URI: ""
+        - func: "update codecov.io"
+
+    - name: test-coverage-latest-server-dns
+      tags: ["test-coverage"]
+      exec_timeout_secs: 3600
+      commands:
+        - func: "debug-compile-coverage-notest-nosasl-openssl"
+        - func: "bootstrap mongo-orchestration"
+          vars:
+            VERSION: "latest"
+            TOPOLOGY: "replica_set"
+            AUTH: "auth"
+            SSL: "ssl"
+        - func: "run tests"
+          vars:
+            AUTH: "auth"
+            SSL: "ssl"
+            DNS: on
+        - func: "update codecov.io"
 
     # Catch leaks or double-frees of bson_t structs in auth code.
     - name: authentication-tests-memcheck
@@ -5707,23 +5691,6 @@ tasks:
             SSL: "nossl"
             IPV4_ONLY: "on"
             URI: "mongodb://127.0.0.1/"
-
-    - name: test-asan-memcheck-mock-server
-      tags: ["test-asan"]
-      depends_on:
-        - name: "debug-compile-asan-clang"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-asan-clang"
-        - func: "run mock server tests"
-          vars:
-            ASAN: "on"
-            AUTH: "noauth"
-            SSL: "ssl"
-            URI: ""
-
-# }}}
 
 buildvariants:
 

@@ -666,75 +666,9 @@ tasks:
                genhtml --version || true
                valgrind --version
 
-{% for task in compile_tasks %}
+{% for task in all_tasks %}
     - {{ task.to_yaml() | indent(6) }}
 {% endfor %}
-
-# Test Matrix {{ '{{{' }}
-{% for task in integration_test_tasks %}
-    - {{ task.to_yaml() | indent(6) }}
-{% endfor %}
-
-{% for task in DNSTask.matrix() %}
-    - {{ task.to_yaml() | indent(6) }}
-{% endfor %}
-
-{% for task in CompressionTask.matrix() %}
-    - {{ task.to_yaml() | indent(6) }}
-{% endfor %}
-
-    # Verify that retryWrites=true is ignored with standalone
-    - name: retry-true-latest-server
-      depends_on:
-        - name: "debug-compile-sasl-openssl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            URI: "mongodb://localhost/?retryWrites=true"
-
-    # Verify that retryWrites=true is ignored with old server
-    - name: retry-true-3.4-replica-set
-      depends_on:
-        - name: "debug-compile-sasl-openssl"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-sasl-openssl"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "3.4"
-            TOPOLOGY: "replica_set"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            URI: "mongodb://localhost/?replicaSet=repl0&retryWrites=true"
-
-    - name: test-latest-server-hardened
-      tags: ["hardened", "latest"]
-      depends_on:
-        - name: "hardened-compile"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "hardened-compile"
-        - func: "bootstrap mongo-orchestration"
-          vars:
-            VERSION: "latest"
-            TOPOLOGY: "server"
-            AUTH: "noauth"
-            SSL: "nossl"
-        - func: "run tests"
-          vars:
-            AUTH: "noauth"
-            SSL: "nossl"
 
     - name: test-valgrind-memcheck-mock-server
       tags: ["test-valgrind"]
@@ -747,6 +681,21 @@ tasks:
         - func: "run mock server tests"
           vars:
             VALGRIND: "on"
+            AUTH: "noauth"
+            SSL: "ssl"
+            URI: ""
+
+    - name: test-asan-memcheck-mock-server
+      tags: ["test-asan"]
+      depends_on:
+        - name: "debug-compile-asan-clang"
+      commands:
+        - func: "fetch build"
+          vars:
+            BUILD_NAME: "debug-compile-asan-clang"
+        - func: "run mock server tests"
+          vars:
+            ASAN: "on"
             AUTH: "noauth"
             SSL: "ssl"
             URI: ""
@@ -779,11 +728,6 @@ tasks:
             SSL: "ssl"
             DNS: on
         - func: "update codecov.io"
-
-    # Run special auth tests against our enterprise MongoDB instance.
-{% for task in AuthTask.matrix() %}
-    - {{ task.to_yaml() | indent(6) }}
-{% endfor %}
 
     # Catch leaks or double-frees of bson_t structs in auth code.
     - name: authentication-tests-memcheck
@@ -1031,23 +975,6 @@ tasks:
             SSL: "nossl"
             IPV4_ONLY: "on"
             URI: "mongodb://127.0.0.1/"
-
-    - name: test-asan-memcheck-mock-server
-      tags: ["test-asan"]
-      depends_on:
-        - name: "debug-compile-asan-clang"
-      commands:
-        - func: "fetch build"
-          vars:
-            BUILD_NAME: "debug-compile-asan-clang"
-        - func: "run mock server tests"
-          vars:
-            ASAN: "on"
-            AUTH: "noauth"
-            SSL: "ssl"
-            URI: ""
-
-# {{ '}}}' }}
 
 buildvariants:
 

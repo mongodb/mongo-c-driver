@@ -24,7 +24,7 @@ Written for Python 2.6+, requires Jinja 2 for templating.
 
 import sys
 from collections import OrderedDict as OD
-from itertools import product
+from itertools import chain, product
 from os.path import dirname, join as joinpath, normpath
 from textwrap import dedent
 from types import NoneType
@@ -84,6 +84,25 @@ def func(func_name, **kwargs):
     return od
 
 
+def bootstrap(VERSION='latest', TOPOLOGY=None, **kwargs):
+    if TOPOLOGY:
+        return func('bootstrap mongo-orchestration',
+                    VERSION=VERSION,
+                    TOPOLOGY=TOPOLOGY,
+                    **kwargs)
+
+    return func('bootstrap mongo-orchestration',
+                VERSION=VERSION,
+                **kwargs)
+
+
+def run_tests(URI=None, **kwargs):
+    if URI:
+        return func('run tests', URI=URI, **kwargs)
+
+    return func('run tests', **kwargs)
+
+
 def strip_lines(s):
     return '\n'.join(line for line in s.split('\n') if line.strip())
 
@@ -123,6 +142,9 @@ class Task(object):
         self.depends_on = kwargs.pop('depends_on', None)
         self.commands = kwargs.pop('commands', None)
         assert (isinstance(self.commands, (abc.Sequence, NoneType)))
+        tags = kwargs.pop('tags', None)
+        if tags:
+            self.add_tags(*tags)
 
     name_prefix = 'test'
 
@@ -203,9 +225,8 @@ class CompileTask(NamedTask):
                  extra_commands=None, depends_on=None, **kwargs):
         super(CompileTask, self).__init__(task_name=task_name,
                                           depends_on=depends_on,
+                                          tags=tags,
                                           **kwargs)
-        if tags:
-            self.add_tags(*tags)
 
         self.extra_commands = extra_commands or []
 
@@ -247,11 +268,10 @@ class SpecialTask(CompileTask):
 
 class LinkTask(NamedTask):
     def __init__(self, task_name, extra_commands, orchestration=True, **kwargs):
-        if orchestration:
-            vars = OD([('VERSION', 'latest')])
-            if orchestration == 'ssl':
-                vars['SSL'] = 1
-            bootstrap_commands = [func('bootstrap mongo-orchestration', **vars)]
+        if orchestration == 'ssl':
+            bootstrap_commands = [bootstrap(SSL=1)]
+        elif orchestration:
+            bootstrap_commands = [bootstrap()]
         else:
             bootstrap_commands = []
 
@@ -263,7 +283,7 @@ class LinkTask(NamedTask):
             **kwargs)
 
 
-compile_tasks = [
+all_tasks = [
     NamedTask('check-public-headers',
               commands=[shell_exec('sh ./.evergreen/check-public-headers.sh')]),
     FuncTask('make-release-archive',
@@ -528,7 +548,7 @@ class MatrixTask(Task):
             task = cls(**axis_values)
             if task.allowed:
                 yield task
-            
+
     @property
     def allowed(self):
         try:
@@ -536,7 +556,7 @@ class MatrixTask(Task):
             return True
         except Prohibited:
             return False
-        
+
     def _check_allowed(self):
         pass
 
@@ -550,7 +570,7 @@ class IntegrationTask(MatrixTask):
                ('auth', [True, False]),
                ('sasl', ['sasl', 'sspi', False]),
                ('ssl', ['openssl', 'darwinssl', 'winssl', False])])
-    
+
     def __init__(self, *args, **kwargs):
         super(IntegrationTask, self).__init__(*args, **kwargs)
         if self.valgrind:
@@ -606,16 +626,14 @@ class IntegrationTask(MatrixTask):
             commands.append(func('debug-compile-coverage-notest-%s-%s' % (
                 self.display('sasl'), self.display('ssl')
             )))
-        commands.append(func('bootstrap mongo-orchestration',
-                             VERSION=self.version,
-                             TOPOLOGY=self.topology,
-                             AUTH='auth' if self.auth else 'noauth',
-                             SSL=self.display('ssl')))
-        commands.append(func('run tests',
-                             VALGRIND=self.on_off('valgrind'),
-                             ASAN=self.on_off('asan'),
-                             AUTH=self.display('auth'),
-                             SSL=self.display('ssl')))
+        commands.append(bootstrap(VERSION=self.version,
+                                  TOPOLOGY=self.topology,
+                                  AUTH='auth' if self.auth else 'noauth',
+                                  SSL=self.display('ssl')))
+        commands.append(run_tests(VALGRIND=self.on_off('valgrind'),
+                                  ASAN=self.on_off('asan'),
+                                  AUTH=self.display('auth'),
+                                  SSL=self.display('ssl')))
         if self.coverage:
             commands.append(func('update codecov.io'))
 
@@ -632,32 +650,32 @@ class IntegrationTask(MatrixTask):
                 require(self.ssl == 'openssl')
             else:
                 prohibit(self.ssl)
-        
+
         if self.auth:
             require(self.ssl)
-        
+
         if self.sasl == 'sspi':
             # Only one self.
             require(self.topology == 'server')
             require(self.version == 'latest')
             require(self.ssl == 'winssl')
             require(self.auth)
-        
+
         if not self.ssl:
             prohibit(self.sasl)
-        
+
         if self.coverage:
             prohibit(self.sasl)
-        
+
             if self.auth:
                 require(self.ssl == 'openssl')
             else:
                 prohibit(self.ssl)
-        
+
         if self.asan:
             prohibit(self.sasl)
             prohibit(self.coverage)
-        
+
             # Address sanitizer only with auth+SSL or no auth + no SSL.
             if self.auth:
                 require(self.ssl == 'openssl')
@@ -665,60 +683,7 @@ class IntegrationTask(MatrixTask):
                 prohibit(self.ssl)
 
 
-integration_test_tasks = IntegrationTask.matrix()
-
-
-class CompressionTask(MatrixTask):
-    axes = OD([('compression', ['zlib', 'snappy', 'compression'])])
-    name_prefix = 'test-latest-server'
-
-    def __init__(self, *args, **kwargs):
-        super(CompressionTask, self).__init__(*args, **kwargs)
-        self.add_dependency('debug-compile-' + self._compressor_suffix())
-        self.add_tags('compression', 'latest')
-        self.add_tags(*self._compressor_list())
-
-    @property
-    def name(self):
-        return self.name_prefix + '-' + self._compressor_suffix()
-
-    def to_dict(self):
-        task = super(CompressionTask, self).to_dict()
-        commands = task['commands']
-        commands.append(func('fetch build', BUILD_NAME=self.depends_on['name']))
-        if self.compression == 'compression':
-            orchestration_file = 'snappy-zlib'
-        else:
-            orchestration_file = self.compression
-
-        commands.append(func('bootstrap mongo-orchestration',
-                             VERSION='latest',
-                             TOPOLOGY='server',
-                             AUTH='noauth',
-                             SSL='nossl',
-                             ORCHESTRATION_FILE=orchestration_file))
-        commands.append(func('run tests',
-                             AUTH='noauth',
-                             SSL='nossl',
-                             COMPRESSORS=','.join(self._compressor_list())))
-
-        return task
-
-    def _compressor_suffix(self):
-        if self.compression == 'zlib':
-            return 'compression-zlib'
-        elif self.compression == 'snappy':
-            return 'compression-snappy'
-        else:
-            return 'compression'
-
-    def _compressor_list(self):
-        if self.compression == 'zlib':
-            return ['zlib']
-        elif self.compression == 'snappy':
-            return ['snappy']
-        else:
-            return ['snappy', 'zlib']
+all_tasks = chain(all_tasks, IntegrationTask.matrix())
 
 
 class DNSTask(MatrixTask):
@@ -744,23 +709,104 @@ class DNSTask(MatrixTask):
         commands.append(
             func('fetch build', BUILD_NAME=self.depends_on['name']))
 
-        orchestration = func('bootstrap mongo-orchestration',
-                             VERSION='latest',
-                             TOPOLOGY='replica_set',
-                             AUTH='auth' if self.auth else 'noauth',
-                             SSL='ssl')
+        orchestration = bootstrap(TOPOLOGY='replica_set',
+                                  AUTH='auth' if self.auth else 'noauth',
+                                  SSL='ssl')
 
         if self.auth:
             orchestration['vars']['AUTHSOURCE'] = 'thisDB'
             orchestration['vars']['ORCHESTRATION_FILE'] = 'auth-thisdb-ssl'
 
         commands.append(orchestration)
-        commands.append(func('run tests',
-                             SSL='ssl',
-                             AUTH=self.display('auth'),
-                             DNS='dns-auth' if self.auth else 'on'))
+        commands.append(run_tests(SSL='ssl',
+                                  AUTH=self.display('auth'),
+                                  DNS='dns-auth' if self.auth else 'on'))
 
         return task
+
+
+all_tasks = chain(all_tasks, DNSTask.matrix())
+
+
+class CompressionTask(MatrixTask):
+    axes = OD([('compression', ['zlib', 'snappy', 'compression'])])
+    name_prefix = 'test-latest-server'
+
+    def __init__(self, *args, **kwargs):
+        super(CompressionTask, self).__init__(*args, **kwargs)
+        self.add_dependency('debug-compile-' + self._compressor_suffix())
+        self.add_tags('compression', 'latest')
+        self.add_tags(*self._compressor_list())
+
+    @property
+    def name(self):
+        return self.name_prefix + '-' + self._compressor_suffix()
+
+    def to_dict(self):
+        task = super(CompressionTask, self).to_dict()
+        commands = task['commands']
+        commands.append(func('fetch build', BUILD_NAME=self.depends_on['name']))
+        if self.compression == 'compression':
+            orchestration_file = 'snappy-zlib'
+        else:
+            orchestration_file = self.compression
+
+        commands.append(bootstrap(
+            AUTH='noauth',
+            SSL='nossl',
+            ORCHESTRATION_FILE=orchestration_file))
+        commands.append(run_tests(
+            AUTH='noauth',
+            SSL='nossl',
+            COMPRESSORS=','.join(self._compressor_list())))
+
+        return task
+
+    def _compressor_suffix(self):
+        if self.compression == 'zlib':
+            return 'compression-zlib'
+        elif self.compression == 'snappy':
+            return 'compression-snappy'
+        else:
+            return 'compression'
+
+    def _compressor_list(self):
+        if self.compression == 'zlib':
+            return ['zlib']
+        elif self.compression == 'snappy':
+            return ['snappy']
+        else:
+            return ['snappy', 'zlib']
+
+
+all_tasks = chain(all_tasks, CompressionTask.matrix())
+
+
+class SpecialIntegrationTask(NamedTask):
+    def __init__(self, task_name, depends_on='debug-compile-sasl-openssl',
+                 extra_commands=None, uri=None,
+                 tags=None, version='latest', topology='server'):
+        commands = [func('fetch build', BUILD_NAME=depends_on),
+                    bootstrap(VERSION=version, TOPOLOGY=topology),
+                    run_tests(uri)] + (extra_commands or [])
+        super(SpecialIntegrationTask, self).__init__(task_name,
+                                                     commands=commands,
+                                                     depends_on=depends_on,
+                                                     tags=tags)
+
+
+all_tasks = chain(all_tasks, [
+    # Verify that retryWrites=true is ignored with standalone.
+    SpecialIntegrationTask('retry-true-latest-server',
+                           uri='mongodb://localhost/?retryWrites=true'),
+    # Verify that retryWrites=true is ignored with old server.
+    SpecialIntegrationTask('retry-true-3.4-replica-set',
+                           version='3.4',
+                           topology='replica_set'),
+    SpecialIntegrationTask('test-latest-server-hardened',
+                           'hardened-compile',
+                           tags=['hardened', 'latest']),
+])
 
 
 class AuthTask(MatrixTask):
@@ -798,6 +844,8 @@ class AuthTask(MatrixTask):
         if not self.sasl:
             require(self.ssl == 'openssl')
 
+
+all_tasks = chain(all_tasks, AuthTask.matrix())
 
 env = Environment(loader=FileSystemLoader(this_dir),
                   trim_blocks=True,
