@@ -902,6 +902,53 @@ all_tasks = chain(all_tasks, [
             func('run auth tests', valgrind='true')]),
 ])
 
+
+class SSLTask(Task):
+    def __init__(self, version, patch, cflags=None, fips=False, **kwargs):
+        full_version = version + patch + ('-fips' if fips else '')
+        script = 'set -o errexit\nset -o xtrace\n'
+        if cflags:
+            script += 'export CFLAGS=%s\n' % (cflags,)
+
+        script += "DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF"
+        if 'libressl' in version:
+            script += " SSL=LIBRESSL"
+        else:
+            script += " SSL=OPENSSL"
+
+        if fips:
+            script += " OPENSSL_FIPS=1"
+
+        script += " sh .evergreen/compile.sh"
+
+        super(SSLTask, self).__init__(commands=[
+            func('install ssl', SSL=full_version),
+            shell_exec(script),
+            func('run auth tests', **kwargs),
+            func('upload build')])
+
+        self.version = version
+        self.fips = fips
+
+    @property
+    def name(self):
+        s = 'build-and-run-authentication-tests-' + self.version
+        if self.fips:
+            return s + '-fips'
+
+        return s
+
+
+all_tasks = chain(all_tasks, [
+    SSLTask('openssl-0.9.8', 'zh', obsolete_tls=True),
+    SSLTask('openssl-1.0.0', 't', obsolete_tls=True),
+    SSLTask('openssl-1.0.1', 'u', cflags='-Wno-redundant-decls'),
+    SSLTask('openssl-1.0.1', 'u', cflags='-Wno-redundant-decls', fips=True),
+    SSLTask('openssl-1.0.2', 'l'),
+    SSLTask('openssl-1.1.0', 'f'),
+    SSLTask('libressl-2.5', '.2', require_tls12=True),
+])
+
 env = Environment(loader=FileSystemLoader(this_dir),
                   trim_blocks=True,
                   lstrip_blocks=True,
