@@ -888,6 +888,18 @@ all_tasks = chain(all_tasks, [
                   bootstrap(TOPOLOGY='replica_set', AUTH='auth', SSL='ssl'),
                   run_tests(AUTH='auth', SSL='ssl', DNS='on'),
                   func('update codecov.io')]),
+    NamedTask(
+        'authentication-tests-memcheck',
+        tags=['authentication-tests', 'sasl', 'ssl', 'openssl', 'memcheck'],
+        exec_timeout_seconds=3600,
+        commands=[
+            shell_exec("""
+                set -o errexit
+                set -o xtrace
+                VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO \
+                  SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+                """),
+            func('run auth tests', valgrind='true')]),
 ])
 
 env = Environment(loader=FileSystemLoader(this_dir),

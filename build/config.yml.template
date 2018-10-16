@@ -449,6 +449,7 @@ functions:
           export ATLAS_TLS12='${atlas_tls12}'
           export REQUIRE_TLS12='${require_tls12}'
           export OBSOLETE_TLS='${obsolete_tls}'
+          export VALGRIND='${valgrind}'
           sh .evergreen/run-auth-tests.sh
 
   "run mock server tests":
@@ -669,20 +670,6 @@ tasks:
 {% for task in all_tasks %}
     - {{ task.to_yaml() | indent(6) }}
 {% endfor %}
-
-    # Catch leaks or double-frees of bson_t structs in auth code.
-    - name: authentication-tests-memcheck
-      tags: ["authentication-tests", "sasl", "ssl", "openssl", "memcheck"]
-      commands:
-        - command: shell.exec
-          type: test
-          params:
-            working_dir: "mongoc"
-            script: |
-              set -o errexit
-              set -o xtrace
-              DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
-        - func: "run auth tests"
 
     - name: build-and-run-authentication-tests-openssl-0.9.8
       commands:
