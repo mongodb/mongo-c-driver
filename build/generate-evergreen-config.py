@@ -140,7 +140,7 @@ class Task(object):
         self.tags = set()
         self.options = OD()
         self.depends_on = None
-        self.commands = kwargs.pop('commands', None)
+        self.commands = kwargs.pop('commands', None) or []
         assert isinstance(self.commands, (abc.Sequence, NoneType))
         tags = kwargs.pop('tags', None)
         if tags:
@@ -192,7 +192,7 @@ class Task(object):
             axis_name, = args
             return 'on' if getattr(self, axis_name) else 'off'
 
-        (axis_name, value), = kwargs
+        (axis_name, value), = kwargs.items()
         return 'on' if getattr(self, axis_name) == value else 'off'
 
     def to_dict(self):
@@ -202,7 +202,7 @@ class Task(object):
         task.update(self.options)
         if self.depends_on:
             task['depends_on'] = self.depends_on
-        task['commands'] = self.commands or []
+        task['commands'] = self.commands
         return task
 
     def to_yaml(self):
@@ -824,9 +824,6 @@ class AuthTask(MatrixTask):
         self.add_dependency('debug-compile-%s-%s' % (
             self.display('sasl'), self.display('ssl')))
 
-        if not self.commands:
-            self.commands = []
-
         self.commands.extend([
             func('fetch build', BUILD_NAME=self.depends_on['name']),
             func('run auth tests')])
@@ -959,6 +956,46 @@ all_tasks = chain(all_tasks, [
                     ${libmongocapi_cmake_flags}
                   make install VERBOSE=1''')]),
 ])
+
+
+class IPTask(MatrixTask):
+    axes = OD([('client', ['ipv6', 'ipv4', 'localhost']),
+               ('server', ['ipv6', 'ipv4'])])
+
+    name_prefix = 'test-latest'
+
+    def __init__(self, *args, **kwargs):
+        super(IPTask, self).__init__(*args, **kwargs)
+        self.add_tags('nossl', 'nosasl', 'server', 'ipv4-ipv6', 'latest')
+        self.add_dependency('debug-compile-nosasl-nossl')
+        self.commands.extend([
+            func('fetch build', BUILD_NAME=self.depends_on['name']),
+            bootstrap(IPV4_ONLY=self.on_off(server='ipv4')),
+            run_tests(IPV4_ONLY=self.on_off(server='ipv4'),
+                      URI={'ipv6': 'mongodb://[::1]/',
+                           'ipv4': 'mongodb://127.0.0.1/',
+                           'localhost': 'mongodb://localhost/'}[self.client])])
+
+    def display(self, axis_name):
+        return axis_name + '-' + getattr(self, axis_name)
+
+    @property
+    def name(self):
+        return '-'.join([
+            self.name_prefix, self.display('server'), self.display('client'),
+            'noauth', 'nosasl', 'nossl'])
+
+    def _check_allowed(self):
+        # This would fail by design.
+        if self.server == 'ipv4':
+            prohibit(self.client == 'ipv6')
+
+        # Default configuration is tested in other variants.
+        if self.server == 'ipv6':
+            prohibit(self.client == 'localhost')
+
+
+all_tasks = chain(all_tasks, IPTask.matrix())
 
 env = Environment(loader=FileSystemLoader(this_dir),
                   trim_blocks=True,
