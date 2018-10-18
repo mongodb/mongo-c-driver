@@ -108,12 +108,12 @@ def strip_lines(s):
 
 
 def shell_exec(script):
+    dedented = 'set -o errexit\nset -o xtrace\n' + dedent(strip_lines(script))
     return OD([
         ('command', 'shell.exec'),
         ('type', 'test'),
         ('params', OD([('working_dir', 'mongoc'),
-                       ('script', dedent(strip_lines(script)))])),
-    ])
+                       ('script', dedented)]))])
 
 
 def s3_put(local_file, remote_file, content_type, display_name=None):
@@ -255,7 +255,7 @@ class CompileTask(NamedTask):
     def to_dict(self):
         task = super(CompileTask, self).to_dict()
 
-        script = "set -o errexit\nset -o xtrace\n"
+        script = ''
         for opt, value in sorted(self.compile_sh_opt.items()):
             script += 'export %s="%s"\n' % (opt, value)
 
@@ -488,8 +488,6 @@ all_tasks = [
               depends_on=OD([('name', 'make-release-archive'),
                              ('variant', 'releng')]),
               commands=[shell_exec(r'''
-                  set -o xtrace
-                  set -o errexit
                   export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
                   BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
                   cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd''')]),
@@ -497,8 +495,6 @@ all_tasks = [
               depends_on=OD([('name', 'make-release-archive'),
                              ('variant', 'releng')]),
               commands=[shell_exec(r'''
-                  set -o xtrace
-                  set -o errexit
                   export CC="Visual Studio 14 2015 Win64"
                   BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
                   cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd''')]),
@@ -506,8 +502,6 @@ all_tasks = [
               depends_on=OD([('name', 'make-release-archive'),
                              ('variant', 'releng')]),
               commands=[shell_exec(r'''
-                  set -o xtrace
-                  set -o errexit
                   DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
                   BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
                   sh ./.evergreen/install-uninstall-check.sh''')]),
@@ -894,8 +888,6 @@ all_tasks = chain(all_tasks, [
         exec_timeout_seconds=3600,
         commands=[
             shell_exec("""
-                set -o errexit
-                set -o xtrace
                 VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO \
                   SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
                 """),
@@ -906,7 +898,7 @@ all_tasks = chain(all_tasks, [
 class SSLTask(Task):
     def __init__(self, version, patch, cflags=None, fips=False, **kwargs):
         full_version = version + patch + ('-fips' if fips else '')
-        script = 'set -o errexit\nset -o xtrace\n'
+        script = ''
         if cflags:
             script += 'export CFLAGS=%s\n' % (cflags,)
 

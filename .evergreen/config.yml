@@ -668,7 +668,12 @@ tasks:
       commands:
       - command: shell.exec
         type: test
-        params: {working_dir: mongoc, script: sh ./.evergreen/check-public-headers.sh}
+        params:
+          working_dir: mongoc
+          script: |-
+            set -o errexit
+            set -o xtrace
+            sh ./.evergreen/check-public-headers.sh
 
     - name: make-release-archive
       commands:
@@ -1005,6 +1010,8 @@ tasks:
         params:
           working_dir: mongoc
           script: |-
+            set -o errexit
+            set -o xtrace
             if find scan -name \*.html | grep -q html; then
               exit 123
             fi
@@ -1334,6 +1341,8 @@ tasks:
         params:
           working_dir: mongoc
           script: |-
+            set -o errexit
+            set -o xtrace
             export IS_PATCH="${is_patch}"
             sh .evergreen/debian_package_build.sh
       - command: s3.put
@@ -1349,8 +1358,8 @@ tasks:
         params:
           working_dir: mongoc
           script: |-
-            set -o xtrace
             set -o errexit
+            set -o xtrace
             export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
             BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
             cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
@@ -1363,8 +1372,8 @@ tasks:
         params:
           working_dir: mongoc
           script: |-
-            set -o xtrace
             set -o errexit
+            set -o xtrace
             export CC="Visual Studio 14 2015 Win64"
             BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
             cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
@@ -1377,8 +1386,8 @@ tasks:
         params:
           working_dir: mongoc
           script: |-
-            set -o xtrace
             set -o errexit
+            set -o xtrace
             DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
             BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
             sh ./.evergreen/install-uninstall-check.sh
