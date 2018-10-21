@@ -43,7 +43,12 @@ You can modify how the validation occurs through the use of the ``flags`` parame
 * ``BSON_VALIDATE_DOT_KEYS`` Prohibit keys that contain ``.`` anywhere in the string.
 * ``BSON_VALIDATE_EMPTY_KEYS`` Prohibit zero-length keys.
 
-See also :symbol:`bson_validate()`.
+See Also
+--------
+
+:symbol:`bson_validate()`.
+
+:symbol:`bson_visitor_t` can be used for custom validation, :ref:`example_custom_validation`.
 
 Returns
 -------

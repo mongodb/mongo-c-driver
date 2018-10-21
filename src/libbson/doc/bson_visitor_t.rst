@@ -129,12 +129,12 @@ If the optional callback ``visit_unsupported_type`` is set, it is called instead
     :titlesonly:
     :maxdepth: 1
 
-Example
--------
+Basic Example
+-------------
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <stdio.h>
 
   static bool
@@ -167,12 +167,12 @@ Example
 
 The example below demonstrates how to set your own callbacks to provide information about the location of corrupt or unsupported BSON document entries.
 
-Example
--------
+Example Corruption Check
+------------------------
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <stdio.h>
 
   typedef struct {
@@ -219,3 +219,14 @@ Example
         printf ("BSON document had no errors.\n");
      }
   }
+
+The example below demonstrates how to use a visitor to validate a BSON document's maximum depth.
+
+.. _example_custom_validation:
+
+Example Custom Validation
+-------------------------
+
+.. literalinclude:: ../examples/bson-check-depth.c
+   :caption: bson-check-depth.c
+   :start-after: -- sphinx-include-start --
