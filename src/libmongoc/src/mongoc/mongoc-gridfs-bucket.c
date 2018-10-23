@@ -377,9 +377,15 @@ mongoc_gridfs_bucket_open_download_stream (mongoc_gridfs_bucket_t *bucket,
       return NULL;
    }
 
-   file = (mongoc_gridfs_bucket_file_t *) bson_malloc0 (sizeof *file);
+   if (!bson_iter_init (&iter, &file_doc)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "File document malformed");
+      return NULL;
+   }
 
-   bson_iter_init (&iter, &file_doc);
+   file = (mongoc_gridfs_bucket_file_t *) bson_malloc0 (sizeof *file);
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
