@@ -546,7 +546,7 @@ _mongoc_gridfs_bucket_file_save (mongoc_gridfs_bucket_file_t *file)
       return false;
    }
 
-   length = file->curr_chunk * file->chunk_size;
+   length = ((int64_t) file->curr_chunk) * file->chunk_size;
 
    if (file->in_buffer != 0) {
       length += file->in_buffer;
