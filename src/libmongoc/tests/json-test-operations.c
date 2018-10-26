@@ -535,7 +535,8 @@ check_result (const bson_t *test,
       }
    }
 
-   /* retryable writes tests specify error: false at the end of the whole test:
+   /* retryable writes tests and CRUD tests specify error: <bool> at the end of
+    * the whole test:
     *   operation:
     *     name: insertOne
     *   outcome:
@@ -578,6 +579,12 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk,
       bson_lookup_value (&args, "arrayFilters", &array_filters);
       BSON_APPEND_VALUE (&opts, "arrayFilters", &array_filters);
       bson_value_destroy (&array_filters);
+   }
+
+   if (bson_has_field (&args, "collation")) {
+      bson_t collation;
+      bson_lookup_doc (&args, "collation", &collation);
+      BSON_APPEND_DOCUMENT (&opts, "collation", &collation);
    }
 
    if (!strcmp (name, "deleteMany")) {
@@ -989,6 +996,21 @@ insert_many (mongoc_collection_t *collection,
 
    r = mongoc_collection_insert_many (
       collection, (const bson_t **) doc_ptrs, n, &opts, &reply, &error);
+
+   /* CRUD tests may specify a write result even if an error is expected.
+    * From the CRUD spec test readme:
+    * "drivers may choose to check the result object if their BulkWriteException
+    * (or equivalent) provides access to a write result object"
+    * The C driver does not return a full write result for an "InsertMany" on
+    * error, but instead just the insertedCount.
+    */
+   if (!r) {
+      BSON_APPEND_INT64 (&reply, "deletedCount", 0);
+      BSON_APPEND_INT64 (&reply, "matchedCount", 0);
+      BSON_APPEND_INT64 (&reply, "modifiedCount", 0);
+      BSON_APPEND_INT64 (&reply, "upsertedCount", 0);
+      BSON_APPEND_DOCUMENT (&reply, "upsertedIds", tmp_bson ("{}"));
+   }
 
    value_init_from_doc (&value, &reply);
    check_result (test, operation, r, &value, &error);
