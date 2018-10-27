@@ -739,6 +739,7 @@ derive (match_ctx_t *ctx, match_ctx_t *derived, const char *key)
    derived->allow_placeholders = ctx->allow_placeholders;
    derived->visitor_ctx = ctx->visitor_ctx;
    derived->visitor_fn = ctx->visitor_fn;
+   derived->is_command = false;
 }
 
 
