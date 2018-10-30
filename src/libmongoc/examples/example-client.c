@@ -22,7 +22,6 @@ main (int argc, char *argv[])
    mongoc_uri_t *uri;
 
    mongoc_init ();
-
    if (argc > 1) {
       uri_string = argv[1];
    }

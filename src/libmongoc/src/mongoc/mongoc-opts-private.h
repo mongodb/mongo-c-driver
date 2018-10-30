@@ -140,6 +140,21 @@ typedef struct _mongoc_read_write_opts_t {
    bson_t extra;
 } mongoc_read_write_opts_t;
 
+typedef struct _mongoc_gridfs_bucket_opts_t {
+   const char *bucketName;
+   int32_t chunkSizeBytes;
+   mongoc_write_concern_t *writeConcern;
+   bool write_concern_owned;
+   mongoc_read_concern_t *readConcern;
+   bson_t extra;
+} mongoc_gridfs_bucket_opts_t;
+
+typedef struct _mongoc_gridfs_bucket_upload_opts_t {
+   int32_t chunkSizeBytes;
+   bson_t metadata;
+   bson_t extra;
+} mongoc_gridfs_bucket_upload_opts_t;
+
 bool
 _mongoc_insert_one_opts_parse (
    mongoc_client_t *client,
@@ -299,5 +314,25 @@ _mongoc_read_write_opts_parse (
 
 void
 _mongoc_read_write_opts_cleanup (mongoc_read_write_opts_t *mongoc_read_write_opts);
+
+bool
+_mongoc_gridfs_bucket_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_gridfs_bucket_opts_t *mongoc_gridfs_bucket_opts,
+   bson_error_t *error);
+
+void
+_mongoc_gridfs_bucket_opts_cleanup (mongoc_gridfs_bucket_opts_t *mongoc_gridfs_bucket_opts);
+
+bool
+_mongoc_gridfs_bucket_upload_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_gridfs_bucket_upload_opts_t *mongoc_gridfs_bucket_upload_opts,
+   bson_error_t *error);
+
+void
+_mongoc_gridfs_bucket_upload_opts_cleanup (mongoc_gridfs_bucket_upload_opts_t *mongoc_gridfs_bucket_upload_opts);
 
 #endif /* MONGOC_OPTS_H */

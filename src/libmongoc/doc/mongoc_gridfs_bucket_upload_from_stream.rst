@@ -26,10 +26,7 @@ Parameters
 * ``file_id``: A :symbol:`bson_value_t` to receive the generated id of the file or ``NULL``.
 * ``error``: A :symbol:`bson_error_t` to receive any error or ``NULL``.
 
-``opts`` may be ``NULL`` or a document consisting of any of the following:
-
-* ``chunkSizeBytes``: An ``int32`` chunk size to use for this file. Overrides the ``chunkSizeBytes`` set on ``bucket``.
-* ``metadata``: A :symbol:`bson_t` representing metadata to include with the file.
+.. include:: includes/gridfs-bucket-upload-opts.txt
 
 Description
 -----------

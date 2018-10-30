@@ -76,10 +76,16 @@ class Shared(Struct):
         self.is_shared = True
         self.generate_rst = False
 
+read_concern_help = 'Construct a :symbol:`mongoc_read_concern_t` and use :symbol:`mongoc_read_concern_append` to add the read concern to ``opts``. See the example code for :symbol:`mongoc_client_read_command_with_opts`. Read concern requires MongoDB 3.2 or later, otherwise an error is returned.'
+read_concern_document_option = ('readConcern', {
+    'type': 'document',
+    'help': read_concern_help
+})
 
 read_concern_option = ('readConcern', {
-    'type': 'document',
-    'help': 'Construct a :symbol:`mongoc_read_concern_t` and use :symbol:`mongoc_read_concern_append` to add the read concern to ``opts``. See the example code for :symbol:`mongoc_client_read_command_with_opts`. Read concern requires MongoDB 3.2 or later, otherwise an error is returned.'
+    'type': 'mongoc_read_concern_t *',
+    'help': read_concern_help,
+    'convert': '_mongoc_convert_read_concern'
 })
 
 write_concern_option = [
@@ -251,7 +257,7 @@ opts_structs = OrderedDict([
     ], opts_name='command_opts')),
 
     ('mongoc_read_write_opts_t', Struct([
-        read_concern_option,
+        read_concern_document_option,
         write_concern_option,
         session_option,
         collation_option,
@@ -260,7 +266,7 @@ opts_structs = OrderedDict([
 
     # Only for documentation - we use mongoc_read_write_opts_t for real parsing.
     ('mongoc_read_opts_t', Struct([
-        read_concern_option,
+        read_concern_document_option,
         session_option,
         collation_option,
         server_option,
@@ -272,6 +278,18 @@ opts_structs = OrderedDict([
         collation_option,
         server_option,
     ], generate_code=False)),
+
+    ('mongoc_gridfs_bucket_opts_t', Struct([
+        ('bucketName', {'type': 'utf8', 'help': 'A UTF-8 string used as the prefix to the GridFS "chunks" and "files" collections. Defaults to "fs". The bucket name, together with the database and suffix collections must not exceed 120 characters. See the manual for `the max namespace length <https://docs.mongodb.com/manual/reference/limits/#Namespace-Length>`_.'}),
+        ('chunkSizeBytes', {'type': 'int32_t', 'convert': '_mongoc_convert_int32_positive', 'help': 'An ``int32`` representing the chunk size. Defaults to 255KB.'}),
+        write_concern_option,
+        read_concern_option
+    ], bucketName="fs", chunkSizeBytes=(255 * 1024))),
+
+    ('mongoc_gridfs_bucket_upload_opts_t', Struct([
+        ('chunkSizeBytes', {'type': 'int32_t', 'convert': '_mongoc_convert_int32_positive', 'help': 'An ``int32`` chunk size to use for this file. Overrides the ``chunkSizeBytes`` set on ``bucket``.'}),
+        ('metadata', {'type': 'document', 'help': 'A :symbol:`bson_t` representing metadata to include with the file.'})
+    ]))
 ])
 
 header_comment = """/**************************************************

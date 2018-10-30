@@ -11,7 +11,8 @@ Synopsis
   mongoc_gridfs_bucket_t *
   mongoc_gridfs_bucket_new (mongoc_database_t *db,
                             const bson_t *opts,
-                            const mongoc_read_prefs_t *read_prefs);
+                            const mongoc_read_prefs_t *read_prefs,
+                            bson_error_t* error);
 
 Parameters
 ----------
@@ -19,13 +20,9 @@ Parameters
 * ``db``: A :symbol:`mongoc_database_t`.
 * ``opts``: A :symbol:`bson_t` or ``NULL``
 * ``read_prefs``: A :symbol:`mongoc_read_prefs_t` used for read operations or ``NULL`` to inherit read preferences from ``db``.
+* ``error``: A :symbol:`bson_error_t` or ``NULL``.
 
-``opts`` may be ``NULL`` or a document consisting of any of the following:
-
-* ``bucketName`` A ``utf8`` string used as the prefix to the GridFS "chunks" and "files" collections. Defaults to "fs". The bucket name, together with the database and suffix collections must not exceed 120 characters. See the manual for `the max namespace length <https://docs.mongodb.com/manual/reference/limits/#Namespace-Length>`_.
-* ``chunkSizeBytes`` An ``int32`` representing the chunk size. Defaults to 255KB.
-* ``writeConcern`` A serialized :symbol:`mongoc_write_concern_t` appended with :symbol:`mongoc_write_concern_append`. Defaults to the write concern of ``db``.
-* ``readConcern`` A serialized :symbol:`mongoc_read_concern_t` appended with :symbol:`mongoc_read_concern_append`. Defaults to the read concern of ``db``.
+.. include:: includes/gridfs-bucket-opts.txt
 
 Description
 -----------
@@ -35,4 +32,4 @@ Creates a new :symbol:`mongoc_gridfs_bucket_t`. Use this handle to perform GridF
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_gridfs_bucket_t` that should be freed with :symbol:`mongoc_gridfs_bucket_destroy()`.
+A newly allocated :symbol:`mongoc_gridfs_bucket_t` that should be freed with :symbol:`mongoc_gridfs_bucket_destroy()` or ``NULL`` on failure.

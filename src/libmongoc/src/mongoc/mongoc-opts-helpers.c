@@ -2,7 +2,7 @@
 #include "mongoc/mongoc-client-session-private.h"
 #include "mongoc/mongoc-write-concern-private.h"
 #include "mongoc/mongoc-util-private.h"
-
+#include "mongoc/mongoc-read-concern-private.h"
 
 #define BSON_ERR(...)                                                       \
    do {                                                                     \
@@ -131,6 +131,30 @@ _mongoc_convert_int32_t (mongoc_client_t *client,
 }
 
 bool
+_mongoc_convert_int32_positive (mongoc_client_t *client,
+                                const bson_iter_t *iter,
+                                int32_t *num,
+                                bson_error_t *error)
+{
+   int32_t i;
+
+   if (!_mongoc_convert_int32_t (client, iter, &i, error)) {
+      return false;
+   }
+
+   if (i <= 0) {
+      CONVERSION_ERR (
+         "Invalid field \"%s\" in opts, should be greater than 0, not %d",
+         bson_iter_key (iter),
+         i);
+   }
+
+   *num = i;
+
+   return true;
+}
+
+bool
 _mongoc_convert_bool (mongoc_client_t *client,
                       const bson_iter_t *iter,
                       bool *flag,
@@ -243,5 +267,18 @@ _mongoc_convert_server_id (mongoc_client_t *client,
    }
 
    *server_id = (uint32_t) tmp;
+   return true;
+}
+
+bool
+_mongoc_convert_read_concern (mongoc_client_t *client,
+                              const bson_iter_t *iter,
+                              mongoc_read_concern_t **rc,
+                              bson_error_t *error)
+{
+   *rc = _mongoc_read_concern_new_from_iter (iter, error);
+   if (!*rc) {
+      return false;
+   }
    return true;
 }

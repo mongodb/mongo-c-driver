@@ -1,11 +1,12 @@
-#include "mongoc/mongoc.h"
-#include "test-libmongoc.h"
-#include "TestSuite.h"
-#include "test-conveniences.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
+#include "mongoc/mongoc.h"
+#include "mongoc/mongoc-gridfs-bucket-private.h"
 #include "json-test.h"
+#include "TestSuite.h"
+#include "test-conveniences.h"
+#include "test-libmongoc.h"
 
 void
 test_create_bucket (void)
@@ -50,7 +51,7 @@ test_create_bucket (void)
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   gridfs = mongoc_gridfs_bucket_new (db, opts, read_prefs);
+   gridfs = mongoc_gridfs_bucket_new (db, opts, read_prefs, NULL);
 
    ASSERT (gridfs);
 
@@ -95,7 +96,7 @@ test_upload_and_download (void)
    opts = bson_new ();
    BSON_APPEND_INT32 (opts, "chunkSizeBytes", 10);
 
-   gridfs = mongoc_gridfs_bucket_new (db, opts, NULL);
+   gridfs = mongoc_gridfs_bucket_new (db, opts, NULL, NULL);
 
    upload_stream = mongoc_gridfs_bucket_open_upload_stream (
       gridfs, "my-file", NULL, &file_id, NULL);
@@ -747,7 +748,7 @@ test_gridfs_cb (bson_t *scenario)
    dbname = gen_collection_name ("test");
    client = test_framework_client_new ();
    db = mongoc_client_get_database (client, dbname);
-   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL);
+   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
 
    /* Insert the data */
    if (bson_iter_init_find (&iter, scenario, "data")) {
@@ -803,7 +804,7 @@ test_upload_error (void *ctx)
 
    client = test_framework_client_new ();
    db = mongoc_client_get_database (client, "test");
-   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL);
+   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
    source = mongoc_stream_file_new_for_path (
       BSON_BINARY_DIR "/test1.bson", O_RDONLY, 0);
    BSON_ASSERT (source);
@@ -835,13 +836,11 @@ test_upload_error (void *ctx)
       BSON_BINARY_DIR "/test1.bson", O_RDONLY, 0);
    BSON_ASSERT (source);
    db = mongoc_client_get_database (client, "test");
-   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL);
+   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
    mongoc_gridfs_bucket_upload_from_stream (
       gridfs, "test1", source, NULL /* opts */, NULL /* file id */, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "");
 
    mongoc_stream_close (source);
    mongoc_stream_destroy (source);
@@ -864,7 +863,7 @@ test_find_w_session (void *ctx)
 
    client = test_framework_client_new ();
    db = mongoc_client_get_database (client, "test");
-   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL);
+   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session, error);
    bson_init (&opts);
@@ -880,6 +879,112 @@ test_find_w_session (void *ctx)
    mongoc_cursor_destroy (cursor);
    mongoc_gridfs_bucket_destroy (gridfs);
    mongoc_client_session_destroy (session);
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+}
+
+void
+test_gridfs_bucket_opts (void)
+{
+   mongoc_client_t *client;
+   mongoc_database_t *db;
+   mongoc_gridfs_bucket_t *gridfs;
+   bson_error_t error;
+   mongoc_read_concern_t *rc;
+   mongoc_write_concern_t *wc;
+   bson_t *opts;
+   char *bucket_name;
+
+   client = test_framework_client_new ();
+   db = mongoc_client_get_database (client, "test");
+
+   /* check defaults. */
+   gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, &error);
+   ASSERT_OR_PRINT (gridfs, error);
+   ASSERT_CMPSTR (gridfs->bucket_name, "fs");
+   ASSERT_CMPINT32 (gridfs->chunk_size, ==, 255 * 1024);
+   BSON_ASSERT (!mongoc_read_concern_get_level (
+      mongoc_collection_get_read_concern (gridfs->chunks)));
+   BSON_ASSERT (!mongoc_read_concern_get_level (
+      mongoc_collection_get_read_concern (gridfs->files)));
+   ASSERT_CMPINT (mongoc_write_concern_get_w (
+                     mongoc_collection_get_write_concern (gridfs->chunks)),
+                  ==,
+                  MONGOC_WRITE_CONCERN_W_DEFAULT);
+   ASSERT_CMPINT (mongoc_write_concern_get_w (
+                     mongoc_collection_get_write_concern (gridfs->files)),
+                  ==,
+                  MONGOC_WRITE_CONCERN_W_DEFAULT);
+   mongoc_gridfs_bucket_destroy (gridfs);
+
+   /* check out-of-range chunk sizes */
+   gridfs = mongoc_gridfs_bucket_new (
+      db, tmp_bson ("{'chunkSizeBytes': -1}"), NULL, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "should be greater than 0");
+   mongoc_gridfs_bucket_destroy (gridfs);
+
+   gridfs = mongoc_gridfs_bucket_new (
+      db, tmp_bson ("{'chunkSizeBytes': 2147483648}"), NULL, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "out of range");
+   mongoc_gridfs_bucket_destroy (gridfs);
+
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_AVAILABLE);
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+
+   opts = BCON_NEW ("bucketName", "abc", "chunkSizeBytes", BCON_INT32 (123));
+   BSON_ASSERT (mongoc_read_concern_append (rc, opts));
+   BSON_ASSERT (mongoc_write_concern_append (wc, opts));
+   gridfs = mongoc_gridfs_bucket_new (db, opts, NULL, &error);
+   ASSERT_OR_PRINT (gridfs, error);
+   ASSERT_CMPSTR (gridfs->bucket_name, "abc");
+   ASSERT_CMPINT32 (gridfs->chunk_size, ==, 123);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (
+                     mongoc_collection_get_read_concern (gridfs->chunks)),
+                  MONGOC_READ_CONCERN_LEVEL_AVAILABLE);
+   ASSERT_CMPSTR (mongoc_read_concern_get_level (
+                     mongoc_collection_get_read_concern (gridfs->files)),
+                  MONGOC_READ_CONCERN_LEVEL_AVAILABLE);
+   ASSERT_CMPINT (mongoc_write_concern_get_w (
+                     mongoc_collection_get_write_concern (gridfs->chunks)),
+                  ==,
+                  MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+   ASSERT_CMPINT (mongoc_write_concern_get_w (
+                     mongoc_collection_get_write_concern (gridfs->files)),
+                  ==,
+                  MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+   mongoc_read_concern_destroy (rc);
+   mongoc_write_concern_destroy (wc);
+   bson_destroy (opts);
+   mongoc_gridfs_bucket_destroy (gridfs);
+
+   /* check validation of long bucket names */
+   bucket_name = bson_malloc0 (128);
+   memset (bucket_name, 'a', 128 - strlen ("chunks"));
+   opts = BCON_NEW ("bucketName", bucket_name);
+   gridfs = mongoc_gridfs_bucket_new (db, opts, NULL, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "must have fewer");
+   bson_destroy (opts);
+   mongoc_gridfs_bucket_destroy (gridfs);
+
+   /* one character shorter should be okay though. */
+   *(bucket_name + ((int) (128 - strlen ("chunks") - 1))) = '\0';
+   opts = BCON_NEW ("bucketName", bucket_name);
+   gridfs = mongoc_gridfs_bucket_new (db, opts, NULL, &error);
+   ASSERT_OR_PRINT (gridfs, error);
+   bson_destroy (opts);
+   mongoc_gridfs_bucket_destroy (gridfs);
+
    mongoc_database_destroy (db);
    mongoc_client_destroy (client);
 }
@@ -904,4 +1009,5 @@ test_gridfs_bucket_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto);
+   TestSuite_AddLive (suite, "/gridfs/options", test_gridfs_bucket_opts);
 }

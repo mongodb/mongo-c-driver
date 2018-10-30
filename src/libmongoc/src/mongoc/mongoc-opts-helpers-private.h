@@ -33,6 +33,12 @@ _mongoc_convert_int32_t (mongoc_client_t *client,
                          bson_error_t *error);
 
 bool
+_mongoc_convert_int32_positive (mongoc_client_t *client,
+                                const bson_iter_t *iter,
+                                int32_t *num,
+                                bson_error_t *error);
+
+bool
 _mongoc_convert_bool (mongoc_client_t *client,
                       const bson_iter_t *iter,
                       bool *flag,
@@ -74,5 +80,11 @@ _mongoc_convert_server_id (mongoc_client_t *client,
                            const bson_iter_t *iter,
                            uint32_t *server_id,
                            bson_error_t *error);
+
+bool
+_mongoc_convert_read_concern (mongoc_client_t *client,
+                              const bson_iter_t *iter,
+                              mongoc_read_concern_t **rc,
+                              bson_error_t *error);
 
 #endif

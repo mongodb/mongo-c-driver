@@ -31,7 +31,8 @@ typedef struct _mongoc_gridfs_bucket_t mongoc_gridfs_bucket_t;
 MONGOC_EXPORT (mongoc_gridfs_bucket_t *)
 mongoc_gridfs_bucket_new (mongoc_database_t *db,
                           const bson_t *opts,
-                          const mongoc_read_prefs_t *read_prefs);
+                          const mongoc_read_prefs_t *read_prefs,
+                          bson_error_t *error);
 
 MONGOC_EXPORT (mongoc_stream_t *)
 mongoc_gridfs_bucket_open_upload_stream (mongoc_gridfs_bucket_t *bucket,

@@ -29,7 +29,11 @@ main (int argc, char *argv[])
    /* 1. Make a bucket. */
    client = mongoc_client_new (uri_string);
    db = mongoc_client_get_database (client, "test");
-   bucket = mongoc_gridfs_bucket_new (db, NULL, NULL);
+   bucket = mongoc_gridfs_bucket_new (db, NULL, NULL, &error);
+   if (!bucket) {
+      printf ("Error creating gridfs bucket: %s\n", error.message);
+      return EXIT_FAILURE;
+   }
 
    /* 2. Insert a file.  */
    file_stream = mongoc_stream_file_new_for_path (argv[1], O_RDONLY, 0);

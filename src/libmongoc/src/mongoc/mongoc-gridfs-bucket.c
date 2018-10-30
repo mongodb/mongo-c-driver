@@ -17,13 +17,15 @@
 #include "bson/bson.h"
 #include "mongoc/mongoc.h"
 #include "mongoc/mongoc-cursor-private.h"
+#include "mongoc/mongoc-database-private.h"
 #include "mongoc/mongoc-gridfs-bucket-private.h"
 #include "mongoc/mongoc-gridfs-bucket-file-private.h"
-#include "mongoc/mongoc-stream-gridfs-upload-private.h"
-#include "mongoc/mongoc-write-concern-private.h"
-#include "mongoc/mongoc-stream-gridfs-download-private.h"
-#include "mongoc/mongoc-stream-private.h"
+#include "mongoc/mongoc-opts-private.h"
 #include "mongoc/mongoc-read-concern-private.h"
+#include "mongoc/mongoc-stream-gridfs-download-private.h"
+#include "mongoc/mongoc-stream-gridfs-upload-private.h"
+#include "mongoc/mongoc-stream-private.h"
+#include "mongoc/mongoc-write-concern-private.h"
 
 /*--------------------------------------------------------------------------
  *
@@ -81,75 +83,52 @@ _mongoc_gridfs_find_file_with_id (mongoc_gridfs_bucket_t *bucket,
 mongoc_gridfs_bucket_t *
 mongoc_gridfs_bucket_new (mongoc_database_t *db,
                           const bson_t *opts,
-                          const mongoc_read_prefs_t *read_prefs)
+                          const mongoc_read_prefs_t *read_prefs,
+                          bson_error_t *error)
 {
    mongoc_gridfs_bucket_t *bucket;
-   bson_iter_t iter;
-   const char *key;
-   const char *bucket_name;
-   uint32_t bucket_name_len;
-   mongoc_write_concern_t *write_concern;
-   mongoc_read_concern_t *read_concern;
-   int32_t chunk_size;
    char buf[128];
+   mongoc_gridfs_bucket_opts_t gridfs_opts;
 
    BSON_ASSERT (db);
 
-   /* Defaults */
-   write_concern = NULL;
-   read_concern = NULL;
-   chunk_size = 255 * 1024;
-   bucket_name = "fs";
-   bucket_name_len = 2;
-
-   /* Parse the opts */
-   if (opts) {
-      BSON_ASSERT (bson_iter_init (&iter, opts));
-      while (bson_iter_next (&iter)) {
-         key = bson_iter_key (&iter);
-         if (strcmp (key, "bucketName") == 0) {
-            bucket_name = bson_iter_utf8 (&iter, &bucket_name_len);
-         } else if (strcmp (key, "chunkSizeBytes") == 0) {
-            int64_t chunk_size_int64 = bson_iter_as_int64 (&iter);
-            if (chunk_size_int64 > INT32_MAX || chunk_size_int64 < INT32_MIN) {
-               MONGOC_WARNING ("Chunk size %" PRId64 " exceeds int32 bounds",
-                               chunk_size_int64);
-            } else {
-               chunk_size = (int32_t) (chunk_size_int64);
-            }
-         } else if (strcmp (key, "writeConcern") == 0) {
-            write_concern =
-               _mongoc_write_concern_new_from_iter (&iter, NULL /* error */);
-            BSON_ASSERT (write_concern);
-         } else if (strcmp (key, "readConcern") == 0) {
-            read_concern =
-               _mongoc_read_concern_new_from_iter (&iter, NULL /* error */);
-            BSON_ASSERT (read_concern);
-         }
-      }
+   if (!_mongoc_gridfs_bucket_opts_parse (
+          db->client, opts, &gridfs_opts, error)) {
+      _mongoc_gridfs_bucket_opts_cleanup (&gridfs_opts);
+      return NULL;
    }
 
    /* Initialize the bucket fields */
-   BSON_ASSERT (bucket_name_len + sizeof (".chunks") < sizeof (buf));
+   if (strlen (gridfs_opts.bucketName) + strlen (".chunks") + 1 >
+       sizeof (buf)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "bucketName \"%s\" must have fewer than %zu characters",
+                      gridfs_opts.bucketName,
+                      sizeof (buf) - (strlen (".chunks") + 1));
+   }
 
    bucket = (mongoc_gridfs_bucket_t *) bson_malloc0 (sizeof *bucket);
 
-   bson_snprintf (buf, sizeof (buf), "%s.chunks", bucket_name);
+   bson_snprintf (buf, sizeof (buf), "%s.chunks", gridfs_opts.bucketName);
    bucket->chunks = mongoc_database_get_collection (db, buf);
 
-   bson_snprintf (buf, sizeof (buf), "%s.files", bucket_name);
+   bson_snprintf (buf, sizeof (buf), "%s.files", gridfs_opts.bucketName);
    bucket->files = mongoc_database_get_collection (db, buf);
 
-   if (write_concern) {
-      mongoc_collection_set_write_concern (bucket->chunks, write_concern);
-      mongoc_collection_set_write_concern (bucket->files, write_concern);
-      mongoc_write_concern_destroy (write_concern);
+   if (gridfs_opts.writeConcern) {
+      mongoc_collection_set_write_concern (bucket->chunks,
+                                           gridfs_opts.writeConcern);
+      mongoc_collection_set_write_concern (bucket->files,
+                                           gridfs_opts.writeConcern);
    }
 
-   if (read_concern) {
-      mongoc_collection_set_read_concern (bucket->chunks, read_concern);
-      mongoc_collection_set_read_concern (bucket->files, read_concern);
-      mongoc_read_concern_destroy (read_concern);
+   if (gridfs_opts.readConcern) {
+      mongoc_collection_set_read_concern (bucket->chunks,
+                                          gridfs_opts.readConcern);
+      mongoc_collection_set_read_concern (bucket->files,
+                                          gridfs_opts.readConcern);
    }
 
    if (read_prefs) {
@@ -157,8 +136,10 @@ mongoc_gridfs_bucket_new (mongoc_database_t *db,
       mongoc_collection_set_read_prefs (bucket->files, read_prefs);
    }
 
-   bucket->chunk_size = chunk_size;
-   bucket->bucket_name = bson_strdup (bucket_name);
+   bucket->chunk_size = gridfs_opts.chunkSizeBytes;
+   bucket->bucket_name = bson_strdup (gridfs_opts.bucketName);
+
+   _mongoc_gridfs_bucket_opts_cleanup (&gridfs_opts);
 
    return bucket;
 }
@@ -172,49 +153,22 @@ mongoc_gridfs_bucket_open_upload_stream_with_id (mongoc_gridfs_bucket_t *bucket,
                                                  bson_error_t *error)
 {
    mongoc_gridfs_bucket_file_t *file;
-   bson_iter_t iter;
-   const char *key;
-   bson_t *metadata;
-   int32_t chunk_size;
    size_t len;
-   uint32_t data_len;
-   const uint8_t *data;
-   bool r;
+   mongoc_gridfs_bucket_upload_opts_t gridfs_opts;
 
    BSON_ASSERT (bucket);
    BSON_ASSERT (file_id);
    BSON_ASSERT (filename);
 
-   /* Defaults */
-   chunk_size = bucket->chunk_size;
-   metadata = NULL;
+   if (!_mongoc_gridfs_bucket_upload_opts_parse (
+          NULL /* not needed. */, opts, &gridfs_opts, error)) {
+      _mongoc_gridfs_bucket_upload_opts_cleanup (&gridfs_opts);
+      return NULL;
+   }
 
-   /* Parse the opts */
-   if (opts) {
-      r = bson_iter_init (&iter, opts);
-      if (!r) {
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Error parsing opts.");
-         return NULL;
-      }
-
-      while (bson_iter_next (&iter)) {
-         key = bson_iter_key (&iter);
-         if (strcmp (key, "chunkSizeBytes") == 0) {
-            int64_t chunk_size_int64 = bson_iter_as_int64 (&iter);
-            if (chunk_size_int64 > INT32_MAX || chunk_size_int64 < INT32_MIN) {
-               MONGOC_WARNING ("Chunk size % " PRId64 " exceeds int32 bounds",
-                               chunk_size_int64);
-            } else {
-               chunk_size = (int32_t) (chunk_size_int64);
-            }
-         } else if (strcmp (key, "metadata") == 0) {
-            bson_iter_document (&iter, &data_len, &data);
-            metadata = bson_new_from_data (data, data_len);
-         }
-      }
+   /* default to bucket's chunk size. */
+   if (!gridfs_opts.chunkSizeBytes) {
+      gridfs_opts.chunkSizeBytes = bucket->chunk_size;
    }
 
    /* Initialize the file's fields */
@@ -229,11 +183,12 @@ mongoc_gridfs_bucket_open_upload_stream_with_id (mongoc_gridfs_bucket_t *bucket,
    bson_value_copy (file_id, file->file_id);
 
    file->bucket = bucket;
-   file->chunk_size = chunk_size;
-   file->metadata = metadata;
-   file->buffer = bson_malloc ((size_t) chunk_size);
+   file->chunk_size = gridfs_opts.chunkSizeBytes;
+   file->metadata = bson_copy (&gridfs_opts.metadata);
+   file->buffer = bson_malloc ((size_t) gridfs_opts.chunkSizeBytes);
    file->in_buffer = 0;
 
+   _mongoc_gridfs_bucket_upload_opts_cleanup (&gridfs_opts);
    return _mongoc_upload_stream_gridfs_new (file);
 }
 

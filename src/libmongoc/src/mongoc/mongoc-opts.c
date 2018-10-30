@@ -1482,3 +1482,167 @@ _mongoc_read_write_opts_cleanup (mongoc_read_write_opts_t *mongoc_read_write_opt
    bson_destroy (&mongoc_read_write_opts->collation);
    bson_destroy (&mongoc_read_write_opts->extra);
 }
+
+bool
+_mongoc_gridfs_bucket_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_gridfs_bucket_opts_t *mongoc_gridfs_bucket_opts,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
+
+   mongoc_gridfs_bucket_opts->bucketName = "fs";
+   mongoc_gridfs_bucket_opts->chunkSizeBytes = 261120;
+   mongoc_gridfs_bucket_opts->writeConcern = NULL;
+   mongoc_gridfs_bucket_opts->write_concern_owned = false;
+   mongoc_gridfs_bucket_opts->readConcern = NULL;
+   bson_init (&mongoc_gridfs_bucket_opts->extra);
+
+   if (!opts) {
+      return true;
+   }
+
+   if (!bson_iter_init (&iter, opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Invalid 'opts' parameter.");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "bucketName")) {
+         if (!_mongoc_convert_utf8 (
+               client,
+               &iter,
+               &mongoc_gridfs_bucket_opts->bucketName,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "chunkSizeBytes")) {
+         if (!_mongoc_convert_int32_positive (
+               client,
+               &iter,
+               &mongoc_gridfs_bucket_opts->chunkSizeBytes,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+         if (!_mongoc_convert_write_concern (
+               client,
+               &iter,
+               &mongoc_gridfs_bucket_opts->writeConcern,
+               error)) {
+            return false;
+         }
+
+         mongoc_gridfs_bucket_opts->write_concern_owned = true;
+      }
+      else if (!strcmp (bson_iter_key (&iter), "readConcern")) {
+         if (!_mongoc_convert_read_concern (
+               client,
+               &iter,
+               &mongoc_gridfs_bucket_opts->readConcern,
+               error)) {
+            return false;
+         }
+      }
+      else {
+         /* unrecognized values are copied to "extra" */
+         if (!BSON_APPEND_VALUE (
+               &mongoc_gridfs_bucket_opts->extra,
+               bson_iter_key (&iter),
+               bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+void
+_mongoc_gridfs_bucket_opts_cleanup (mongoc_gridfs_bucket_opts_t *mongoc_gridfs_bucket_opts)
+{
+   if (mongoc_gridfs_bucket_opts->write_concern_owned) {
+      mongoc_write_concern_destroy (mongoc_gridfs_bucket_opts->writeConcern);
+   }
+   mongoc_read_concern_destroy (mongoc_gridfs_bucket_opts->readConcern);
+   bson_destroy (&mongoc_gridfs_bucket_opts->extra);
+}
+
+bool
+_mongoc_gridfs_bucket_upload_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_gridfs_bucket_upload_opts_t *mongoc_gridfs_bucket_upload_opts,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
+
+   mongoc_gridfs_bucket_upload_opts->chunkSizeBytes = 0;
+   bson_init (&mongoc_gridfs_bucket_upload_opts->metadata);
+   bson_init (&mongoc_gridfs_bucket_upload_opts->extra);
+
+   if (!opts) {
+      return true;
+   }
+
+   if (!bson_iter_init (&iter, opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Invalid 'opts' parameter.");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "chunkSizeBytes")) {
+         if (!_mongoc_convert_int32_t (
+               client,
+               &iter,
+               &mongoc_gridfs_bucket_upload_opts->chunkSizeBytes,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "metadata")) {
+         if (!_mongoc_convert_document (
+               client,
+               &iter,
+               &mongoc_gridfs_bucket_upload_opts->metadata,
+               error)) {
+            return false;
+         }
+      }
+      else {
+         /* unrecognized values are copied to "extra" */
+         if (!BSON_APPEND_VALUE (
+               &mongoc_gridfs_bucket_upload_opts->extra,
+               bson_iter_key (&iter),
+               bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+void
+_mongoc_gridfs_bucket_upload_opts_cleanup (mongoc_gridfs_bucket_upload_opts_t *mongoc_gridfs_bucket_upload_opts)
+{
+   bson_destroy (&mongoc_gridfs_bucket_upload_opts->metadata);
+   bson_destroy (&mongoc_gridfs_bucket_upload_opts->extra);
+}

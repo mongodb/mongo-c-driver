@@ -1,8 +1,8 @@
-#include "mongoc-opts-helpers-private.h"
-#include "mongoc-opts-private.h"
-#include "mongoc-error.h"
-#include "mongoc-util-private.h"
-#include "mongoc-client-private.h"
+#include "mongoc/mongoc-opts-helpers-private.h"
+#include "mongoc/mongoc-opts-private.h"
+#include "mongoc/mongoc-error.h"
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-client-private.h"
 
 {{ header_comment }}
 {% for struct_type, description in opts_structs.items() %}
@@ -33,6 +33,8 @@ _{{ struct_name }}_parse (
    memset (&{{ struct_name }}->{{ path }}, 0, sizeof (bson_value_t));
 {% elif info['type'] in ('document', 'array') %}
    bson_init (&{{ struct_name }}->{{ path }});
+{% elif info['type'] == 'utf8' %}
+   {{ struct_name }}->{{ path }} = "{{ description.default(opt_name, "")}}";
 {% else %}
    {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 'NULL') }};
 {% endif %}
@@ -126,6 +128,8 @@ _{{ struct_name }}_cleanup ({{ struct_type }} *{{ struct_name }})
    bson_value_destroy (&{{ struct_name }}->{{ path }});
 {% elif info['type'] in ('document', 'array') %}
    bson_destroy (&{{ struct_name }}->{{ path }});
+{% elif info['type'] == 'mongoc_read_concern_t *' %}
+   mongoc_read_concern_destroy ({{ struct_name }}->{{ path }});
 {% endif %}
 {% endfor %}
    bson_destroy (&{{struct_name }}->extra);
