@@ -492,17 +492,6 @@ functions:
         silent: true
         working_dir: "mongoc"
         script: |
-           # TODO BUILD-2557
-           if test -w /etc/hosts; then
-              SUDO=""
-           else
-              SUDO="sudo"
-           fi
-           if command -v host 2>/dev/null; then
-              echo "`host ldaptest.10gen.cc | awk '/has address/ { print $4 ; exit }'` ldaptest.10gen.cc" | $SUDO tee -a /etc/hosts
-           else
-              echo "`getent hosts ldaptest.10gen.cc | awk '{ print $1; exit }'` ldaptest.10gen.cc" | $SUDO tee -a /etc/hosts
-           fi
            if test "${keytab|}"; then
               echo "${keytab}" > /tmp/drivers.keytab.base64
               base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
