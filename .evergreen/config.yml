@@ -20,265 +20,211 @@ timeout:
            ls -la
 
 functions:
-  "fetch source":
+
+    fetch source:
     - command: git.get_project
-      params:
-        directory: mongoc
+      params: {directory: mongoc}
     - command: git.apply_patch
-      params:
-        directory: "mongoc"
+      params: {directory: mongoc}
     - command: shell.exec
       params:
-        working_dir: "mongoc"
-        script: |
-           if [ "${is_patch}" = "true" ]; then
-              VERSION=$(git describe --abbrev=7)-patch-${version_id}
-           else
-              VERSION=latest
-           fi
-           echo "CURRENT_VERSION: $VERSION" > expansion.yml
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          set -o xtrace
+          if [ "${is_patch}" = "true" ]; then
+             VERSION=$(git describe --abbrev=7)-patch-${version_id}
+          else
+             VERSION=latest
+          fi
+          echo "CURRENT_VERSION: $VERSION" > expansion.yml
     - command: expansions.update
-      params:
-        file: mongoc/expansion.yml
+      params: {file: mongoc/expansion.yml}
     - command: shell.exec
       params:
         continue_on_err: true
-        # Must be http as RHEL55 has https issues
-        script: |
+        script: |-
+          set -o errexit
           set -o xtrace
           rm -f *.tar.gz
-          curl --retry 5 http://s3.amazonaws.com/mciuploads/mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz -sS --max-time 120
+          curl --retry 5 http://s3.amazonaws.com/mciuploads/${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz -sS --max-time 120
 
-  "upload release":
+    upload release:
     - command: shell.exec
       params:
-        script: |
-           [ -f mongoc/mongo*gz ] && mv mongoc/mongo*gz mongoc.tar.gz
+        script: |-
+          set -o xtrace
+          [ -f mongoc/mongo*gz ] && mv mongoc/mongo*gz mongoc.tar.gz
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: mongoc.tar.gz
-        remote_file: mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz
-        bucket: mciuploads
-        permissions: public-read
-        content_type: ${content_type|application/x-gzip}
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: 'mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz',
+        bucket: mciuploads, permissions: public-read, local_file: mongoc.tar.gz, content_type: '${content_type|application/x-gzip}'}
 
-  "upload build":
+    upload build:
     - command: archive.targz_pack
       params:
-        target: "${build_id}.tar.gz"
-        source_dir: "mongoc"
-        include:
-          - "./**"
+        target: ${build_id}.tar.gz
+        source_dir: mongoc
+        include: [./**]
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: ${build_id}.tar.gz
-        remote_file: mongo-c-driver/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz
-        bucket: mciuploads
-        permissions: public-read
-        content_type: ${content_type|application/x-gzip}
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${build_variant}/${revision}/${task_name}/${build_id}.tar.gz',
+        bucket: mciuploads, permissions: public-read, local_file: '${build_id}.tar.gz',
+        content_type: '${content_type|application/x-gzip}'}
 
-  "release archive":
+    release archive:
     - command: shell.exec
       type: test
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
-
           # Need modern Sphinx for :caption: in literal includes.
           python -m virtualenv venv
           cd venv
           . bin/activate
           ./bin/pip install sphinx GitPython
           cd ..
-
           set -o xtrace
           export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
           export MONGOC_TEST_SKIP_LIVE=on
           export MONGOC_TEST_SKIP_SLOW=on
           sh .evergreen/check-release-archive.sh
 
-  "install ssl":
+    install ssl:
     - command: shell.exec
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
           set -o xtrace
           SSL=${SSL} sh .evergreen/install-ssl.sh
 
-  "fetch build":
+    fetch build:
     - command: shell.exec
       params:
         continue_on_err: true
-        script: "set -o xtrace && rm -rf mongoc"
+        script: |-
+          set -o errexit
+          set -o xtrace
+          rm -rf mongoc
     - command: s3.get
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        remote_file: mongo-c-driver/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz
-        bucket: mciuploads
-        local_file: build.tar.gz
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${build_variant}/${revision}/${BUILD_NAME}/${build_id}.tar.gz',
+        bucket: mciuploads, local_file: build.tar.gz}
     - command: shell.exec
       params:
         continue_on_err: true
-        # EVG-1105: Use s3.get extract_to: mongoc/
-        script: |
-           set -o xtrace   # Write all commands first to stderr
-           set -o errexit  # Exit the script with error if any of the commands fail
+        script: |-
+          set -o errexit
+          set -o xtrace
+          mkdir mongoc
+          if command -v gtar 2>/dev/null; then
+             TAR=gtar
+          else
+             TAR=tar
+          fi
+          $TAR xf build.tar.gz -C mongoc/
 
-           mkdir mongoc
-
-           if command -v gtar 2>/dev/null; then
-              TAR=gtar
-           else
-              TAR=tar
-           fi
-
-           $TAR xf build.tar.gz -C mongoc/
-
-  "upload docs" :
+    upload docs:
     - command: shell.exec
       params:
         silent: true
-        working_dir: "mongoc/src/libbson"
-        script: |
-           export AWS_ACCESS_KEY_ID=${aws_key}
-           export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
+        working_dir: mongoc/src/libbson
+        script: |-
+          set -o errexit
+          export AWS_ACCESS_KEY_ID=${aws_key}
+          export AWS_SECRET_ACCESS_KEY=${aws_secret}
+          aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file:  mongoc/src/libbson/doc/html/index.html
-        remote_file: ${project}/docs/libbson/${CURRENT_VERSION}/index.html
-        bucket: mciuploads
-        permissions: public-read
-        content_type: text/html
-        display_name: "libbson docs"
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/docs/libbson/${CURRENT_VERSION}/index.html',
+        bucket: mciuploads, permissions: public-read, local_file: mongoc/src/libbson/doc/html/index.html,
+        content_type: text/html, display_name: libbson docs}
     - command: shell.exec
       params:
         silent: true
-        working_dir: "mongoc/src/libmongoc"
-        script: |
-           export AWS_ACCESS_KEY_ID=${aws_key}
-           export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
+        working_dir: mongoc/src/libmongoc
+        script: |-
+          set -o errexit
+          export AWS_ACCESS_KEY_ID=${aws_key}
+          export AWS_SECRET_ACCESS_KEY=${aws_secret}
+          aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file:  mongoc/src/libmongoc/doc/html/index.html
-        remote_file: ${project}/docs/libmongoc/${CURRENT_VERSION}/index.html
-        bucket: mciuploads
-        permissions: public-read
-        content_type: text/html
-        display_name: "libmongoc docs"
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/docs/libmongoc/${CURRENT_VERSION}/index.html',
+        bucket: mciuploads, permissions: public-read, local_file: mongoc/src/libmongoc/doc/html/index.html,
+        content_type: text/html, display_name: libmongoc docs}
 
-  "upload man pages" :
+    upload man pages:
     - command: shell.exec
       params:
         silent: true
-        working_dir: "mongoc"
-        script: |
-           # Get "aha", the ANSI HTML Adapter.
-           git clone --depth 1 https://github.com/theZiz/aha.git aha-repo
-           cd aha-repo
-           make
-           cd ..
-           mv aha-repo/aha .
-
-           sh .evergreen/man-pages-to-html.sh libbson src/libbson/doc/man > bson-man-pages.html
-           sh .evergreen/man-pages-to-html.sh libmongoc src/libmongoc/doc/man > mongoc-man-pages.html
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          # Get "aha", the ANSI HTML Adapter.
+          git clone --depth 1 https://github.com/theZiz/aha.git aha-repo
+          cd aha-repo
+          make
+          cd ..
+          mv aha-repo/aha .
+          sh .evergreen/man-pages-to-html.sh libbson src/libbson/doc/man > bson-man-pages.html
+          sh .evergreen/man-pages-to-html.sh libmongoc src/libmongoc/doc/man > mongoc-man-pages.html
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file:  mongoc/bson-man-pages.html
-        remote_file: ${project}/man-pages/libbson/${CURRENT_VERSION}/index.html
-        bucket: mciuploads
-        permissions: public-read
-        content_type: text/html
-        display_name: "libbson man pages"
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/man-pages/libbson/${CURRENT_VERSION}/index.html',
+        bucket: mciuploads, permissions: public-read, local_file: mongoc/bson-man-pages.html,
+        content_type: text/html, display_name: libbson man pages}
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file:  mongoc/mongoc-man-pages.html
-        remote_file: ${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html
-        bucket: mciuploads
-        permissions: public-read
-        content_type: text/html
-        display_name: "libmongoc man pages"
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/man-pages/libmongoc/${CURRENT_VERSION}/index.html',
+        bucket: mciuploads, permissions: public-read, local_file: mongoc/mongoc-man-pages.html,
+        content_type: text/html, display_name: libmongoc man pages}
 
-  "upload coverage" :
+    upload coverage:
     - command: shell.exec
       params:
         silent: true
-        working_dir: "mongoc"
-        script: |
-           export AWS_ACCESS_KEY_ID=${aws_key}
-           export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           aws s3 cp coverage s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/coverage/ --recursive --acl public-read --region us-east-1
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          export AWS_ACCESS_KEY_ID=${aws_key}
+          export AWS_SECRET_ACCESS_KEY=${aws_secret}
+          aws s3 cp coverage s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/coverage/ --recursive --acl public-read --region us-east-1
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file:  mongoc/coverage/index.html
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/coverage/index.html
-        bucket: mciuploads
-        permissions: public-read
-        content_type: text/html
-        display_name: "Coverage Report"
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${build_variant}/${revision}/${version_id}/${build_id}/coverage/index.html',
+        bucket: mciuploads, permissions: public-read, local_file: mongoc/coverage/index.html,
+        content_type: text/html, display_name: Coverage Report}
 
-  "abi report" :
+    abi report:
     - command: shell.exec
       params:
         silent: true
-        working_dir: "mongoc"
-        script: |
-           set -o errexit
-
-           # Need Git module for calculating release version
-           python -m virtualenv venv
-           cd venv
-           . bin/activate
-           ./bin/pip install GitPython
-           cd ..
-
-           sh .evergreen/abi-compliance-check.sh
-
-           export AWS_ACCESS_KEY_ID=${aws_key}
-           export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
-
-           if [ -e ./abi-compliance/abi-error.txt ]; then
-             exit 1
-           else
-             exit 0
-           fi
-
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          # Need Git module for calculating release version
+          python -m virtualenv venv
+          cd venv
+          . bin/activate
+          ./bin/pip install GitPython
+          cd ..
+          sh .evergreen/abi-compliance-check.sh
+          export AWS_ACCESS_KEY_ID=${aws_key}
+          export AWS_SECRET_ACCESS_KEY=${aws_secret}
+          aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
+          if [ -e ./abi-compliance/abi-error.txt ]; then
+            exit 1
+          else
+            exit 0
+          fi
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_files_include_filter:  mongoc/abi-compliance/compat_reports/**/*.html
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html
-        bucket: mciuploads
-        permissions: public-read
-        content_type: text/html
-        display_name: "ABI Report:"
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html',
+        bucket: mciuploads, permissions: public-read, display_name: 'ABI Report:', content_type: text/html,
+        local_files_include_filter: mongoc/abi-compliance/compat_reports/**/*.html}
 
-  "upload scan artifacts" :
+    upload scan artifacts:
     - command: shell.exec
       type: test
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          set -o xtrace
           if find scan -name \*.html | grep -q html; then
             (cd scan && find . -name index.html -exec echo "<li><a href='{}'>{}</a></li>" \;) >> scan.html
           else
@@ -287,55 +233,41 @@ functions:
     - command: shell.exec
       params:
         silent: true
-        working_dir: "mongoc"
-        script: |
-           export AWS_ACCESS_KEY_ID=${aws_key}
-           export AWS_SECRET_ACCESS_KEY=${aws_secret}
-           aws s3 cp scan s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/scan/ --recursive --acl public-read --region us-east-1
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          export AWS_ACCESS_KEY_ID=${aws_key}
+          export AWS_SECRET_ACCESS_KEY=${aws_secret}
+          aws s3 cp scan s3://mciuploads/${project}/${build_variant}/${revision}/${version_id}/${build_id}/scan/ --recursive --acl public-read --region us-east-1
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file:  mongoc/scan.html
-        remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/scan/index.html
-        bucket: mciuploads
-        permissions: public-read
-        content_type: text/html
-        display_name: "Scan Build Report"
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${build_variant}/${revision}/${version_id}/${build_id}/scan/index.html',
+        bucket: mciuploads, permissions: public-read, local_file: mongoc/scan.html, content_type: text/html,
+        display_name: Scan Build Report}
 
-  "upload mo artifacts":
+    upload mo artifacts:
     - command: shell.exec
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          set -o xtrace
           DIR=MO
           [ -d "/cygdrive/c/data/mo" ] && DIR="/cygdrive/c/data/mo"
           [ -d $DIR ] && find $DIR -name \*.log | xargs tar czf mongodb-logs.tar.gz
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: mongoc/mongodb-logs.tar.gz
-        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-mongodb-logs.tar.gz
-        bucket: mciuploads
-        permissions: public-read
-        content_type: ${content_type|application/x-gzip}
-        display_name: "mongodb-logs.tar.gz"
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-mongodb-logs.tar.gz',
+        bucket: mciuploads, permissions: public-read, local_file: mongoc/mongodb-logs.tar.gz,
+        content_type: '${content_type|application/x-gzip}', display_name: mongodb-logs.tar.gz}
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: mongoc/MO/server.log
-        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-orchestration.log
-        bucket: mciuploads
-        permissions: public-read
-        content_type: ${content_type|text/plain}
-        display_name: "orchestration.log"
-    # Gather and archive mongo coredumps.
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${build_variant}/${revision}/${version_id}/${build_id}/logs/${task_id}-${execution}-orchestration.log',
+        bucket: mciuploads, permissions: public-read, local_file: mongoc/MO/server.log,
+        content_type: '${content_type|text/plain}', display_name: orchestration.log}
     - command: shell.exec
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          set -o xtrace
           # Find all core files from mongodb in orchestration and move to mongoc
           DIR=MO
           MDMP_DIR=$DIR
@@ -352,87 +284,92 @@ functions:
           done
     - command: archive.targz_pack
       params:
-        target: "mongo-coredumps.tgz"
-        source_dir: "mongoc"
-        include:
-          - "./**.core"
-          - "./**.mdmp" # Windows: minidumps
+        target: mongo-coredumps.tgz
+        source_dir: mongoc
+        include: [./**.core, ./**.mdmp]
     - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: mongo-coredumps.tgz
-        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/coredumps/${task_id}-${execution}-coredumps.log
-        bucket: mciuploads
-        permissions: public-read
-        content_type: ${content_type|application/x-gzip}
-        display_name: Core Dumps - Execution ${execution}
-        optional: true
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${build_variant}/${revision}/${version_id}/${build_id}/coredumps/${task_id}-${execution}-coredumps.log',
+        bucket: mciuploads, permissions: public-read, local_file: mongo-coredumps.tgz,
+        content_type: '${content_type|application/x-gzip}', display_name: 'Core Dumps
+          - Execution ${execution}', optional: 'True'}
 
-  "backtrace":
+    backtrace:
     - command: shell.exec
       params:
-        working_dir: "mongoc"
-        script: |
-          ./.evergreen/debug-core-evergreen.sh
-
-  "upload working dir":
-    - command: archive.targz_pack
-      params:
-        target: "working-dir.tar.gz"
-        source_dir: "mongoc"
-        include:
-          - "./**"
-    - command: s3.put
-      params:
-        aws_key: ${aws_key}
-        aws_secret: ${aws_secret}
-        local_file: working-dir.tar.gz
-        remote_file: mongo-c-driver/${build_variant}/${revision}/${version_id}/${build_id}/artifacts/${task_id}-${execution}-working-dir.tar.gz
-        bucket: mciuploads
-        permissions: public-read
-        content_type: ${content_type|application/x-gzip}
-        display_name: "working-dir.tar.gz"
-
-  "upload test results":
-    - command: attach.results
-      params:
-        file_location: "mongoc/test-results.json"
-
-  "bootstrap mongo-orchestration":
-    - command: shell.exec
-      params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
           set -o xtrace
-          MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} AUTHSOURCE=${AUTHSOURCE} SSL=${SSL} ORCHESTRATION_FILE=${ORCHESTRATION_FILE} sh .evergreen/integration-tests.sh
+          ./.evergreen/debug-core-evergreen.sh
 
-  "run tests":
+    upload working dir:
+    - command: archive.targz_pack
+      params:
+        target: working-dir.tar.gz
+        source_dir: mongoc
+        include: [./**]
+    - command: s3.put
+      params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${build_variant}/${revision}/${version_id}/${build_id}/artifacts/${task_id}-${execution}-working-dir.tar.gz',
+        bucket: mciuploads, permissions: public-read, local_file: working-dir.tar.gz,
+        content_type: '${content_type|application/x-gzip}', display_name: working-dir.tar.gz}
+
+    upload test results:
+    - command: attach.results
+      params: {file_location: mongoc/test-results.json}
+
+    bootstrap mongo-orchestration:
+    - command: shell.exec
+      params:
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          set -o xtrace
+          export MONGODB_VERSION=${VERSION}
+          export TOPOLOGY=${TOPOLOGY}
+          export IPV4_ONLY=${IPV4_ONLY}
+          export AUTH=${AUTH}
+          export AUTHSOURCE=${AUTHSOURCE}
+          export SSL=${SSL}
+          export ORCHESTRATION_FILE=${ORCHESTRATION_FILE}
+          sh .evergreen/integration-tests.sh
+
+    run tests:
     - command: shell.exec
       type: test
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
-          COMPRESSORS="${COMPRESSORS}" CC="${CC}" AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} MONGOC_TEST_URI=${URI} DNS=${DNS} sh .evergreen/run-tests.sh
+          set -o xtrace
+          export COMPRESSORS='${COMPRESSORS}'
+          export CC='${CC}'
+          export AUTH=${AUTH}
+          export SSL=${SSL}
+          export URI=${URI}
+          export IPV4_ONLY=${IPV4_ONLY}
+          export VALGRIND=${VALGRIND}
+          export MONGOC_TEST_URI=${URI}
+          export DNS=${DNS}
+          sh .evergreen/run-tests.sh
 
-  "run tests bson":
+    run tests bson:
     - command: shell.exec
       type: test
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
+          set -o xtrace
           CC="${CC}" sh .evergreen/run-tests-bson.sh
 
-  "run auth tests":
+    run auth tests:
     - command: shell.exec
       type: test
       params:
         silent: true
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
+          set -o errexit
           export AUTH_HOST='${auth_host}'
           export AUTH_PLAIN='${auth_plain}'
           export AUTH_MONGODBCR='${auth_mongodbcr}'
@@ -449,62 +386,68 @@ functions:
           export VALGRIND='${valgrind}'
           sh .evergreen/run-auth-tests.sh
 
-  "run mock server tests":
+    run mock server tests:
     - command: shell.exec
       type: test
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
+          set -o xtrace
           CC="${CC}" VALGRIND=${VALGRIND} sh .evergreen/run-mock-server-tests.sh
 
-  "cleanup":
+    cleanup:
     - command: shell.exec
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
+          set -o xtrace
           cd MO
           mongo-orchestration stop
 
-  "windows fix":
+    windows fix:
     - command: shell.exec
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
+          set -o errexit
           for i in $(find .evergreen -name \*.sh); do
             cat $i | tr -d '\r' > $i.new
             mv $i.new $i
           done
 
-  "make files executable":
+    make files executable:
     - command: shell.exec
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
+          set -o errexit
           for i in $(find .evergreen -name \*.sh); do
             chmod +x $i
           done
 
-  "prepare kerberos" :
+    prepare kerberos:
     - command: shell.exec
       params:
         silent: true
-        working_dir: "mongoc"
-        script: |
-           if test "${keytab|}"; then
-              echo "${keytab}" > /tmp/drivers.keytab.base64
-              base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
-              cat .evergreen/kerberos.realm | $SUDO tee -a /etc/krb5.conf
-           fi
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          if test "${keytab|}"; then
+             echo "${keytab}" > /tmp/drivers.keytab.base64
+             base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
+             cat .evergreen/kerberos.realm | $SUDO tee -a /etc/krb5.conf
+          fi
 
-  "link sample program" :
+    link sample program:
     - command: shell.exec
       type: test
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
+          set -o xtrace
           # Compile a program that links dynamically or statically to libmongoc,
           # using variables from pkg-config or CMake's find_package command.
           export BUILD_SAMPLE_WITH_CMAKE=${BUILD_SAMPLE_WITH_CMAKE}
@@ -513,13 +456,14 @@ functions:
           LINK_STATIC=  sh .evergreen/link-sample-program.sh
           LINK_STATIC=1 sh .evergreen/link-sample-program.sh
 
-  "link sample program bson" :
+    link sample program bson:
     - command: shell.exec
       type: test
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
+          set -o xtrace
           # Compile a program that links dynamically or statically to libbson,
           # using variables from pkg-config or from CMake's find_package command.
           BUILD_SAMPLE_WITH_CMAKE=  LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
@@ -527,13 +471,14 @@ functions:
           BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
           BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
 
-  "link sample program MSVC" :
+    link sample program MSVC:
     - command: shell.exec
       type: test
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
+          set -o xtrace
           # Build libmongoc with CMake and compile a program that links
           # dynamically or statically to it, using variables from CMake's
           # find_package command.
@@ -542,24 +487,26 @@ functions:
           LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
           LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
 
-  "link sample program mingw" :
+    link sample program mingw:
     - command: shell.exec
       type: test
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
+          set -o xtrace
           # Build libmongoc with CMake and compile a program that links
           # dynamically to it, using variables from pkg-config.exe.
           cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
 
-  "link sample program MSVC bson" :
+    link sample program MSVC bson:
     - command: shell.exec
       type: test
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
+          set -o xtrace
           # Build libmongoc with CMake and compile a program that links
           # dynamically or statically to it, using variables from CMake's
           # find_package command.
@@ -568,46 +515,49 @@ functions:
           LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
           LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
 
-  "link sample program mingw bson" :
+    link sample program mingw bson:
     - command: shell.exec
       type: test
       params:
-        working_dir: "mongoc"
-        script: |
+        working_dir: mongoc
+        script: |-
           set -o errexit
+          set -o xtrace
           # Build libmongoc with CMake and compile a program that links
           # dynamically to it, using variables from pkg-config.exe.
           cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
 
-  "update codecov.io" :
-  - command: shell.exec
-    params:
-      working_dir: "mongoc"
-      script: |
-        export CODECOV_TOKEN=${codecov_token}
-        curl -s https://codecov.io/bash | bash
+    update codecov.io:
+    - command: shell.exec
+      params:
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          export CODECOV_TOKEN=${codecov_token}
+          curl -s https://codecov.io/bash | bash
 
-  "debug-compile-coverage-notest-nosasl-nossl" :
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: "mongoc"
-      script: |
-        set -o errexit
-        set -o xtrace
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_TESTS=ON sh .evergreen/compile.sh
+    debug-compile-coverage-notest-nosasl-nossl:
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          set -o xtrace
+          export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
+          DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_TESTS=ON sh .evergreen/compile.sh
 
-  "debug-compile-coverage-notest-nosasl-openssl" :
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: "mongoc"
-      script: |
-        set -o errexit
-        set -o xtrace
-        export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_TESTS=ON sh .evergreen/compile.sh
+    debug-compile-coverage-notest-nosasl-openssl:
+    - command: shell.exec
+      type: test
+      params:
+        working_dir: mongoc
+        script: |-
+          set -o errexit
+          set -o xtrace
+          export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
+          DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_TESTS=ON sh .evergreen/compile.sh
+
 
 pre:
   - func: "fetch source"
@@ -1306,9 +1256,8 @@ tasks:
             export IS_PATCH="${is_patch}"
             sh .evergreen/debian_package_build.sh
       - command: s3.put
-        params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', local_file: deb.tar.gz,
-          remote_file: '${project}/${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
-          bucket: mciuploads, permissions: public-read, content_type: '${content_type|application/x-gzip}'}
+        params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
+          bucket: mciuploads, permissions: public-read, local_file: deb.tar.gz, content_type: '${content_type|application/x-gzip}'}
 
     - name: install-uninstall-check-mingw
       depends_on: {name: make-release-archive, variant: releng}

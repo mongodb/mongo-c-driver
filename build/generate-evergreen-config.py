@@ -40,6 +40,7 @@ except ImportError:
     raise
 
 
+from evergreen_config_lib.functions import all_functions
 from evergreen_config_lib.tasks import all_tasks
 from evergreen_config_lib.variants import all_variants
 
@@ -58,5 +59,7 @@ env.filters['tag_list'] = lambda value: (
 print('.evergreen/config.yml')
 f = open(joinpath(evergreen_dir, 'config.yml'), 'w+')
 t = env.get_template('config.yml.template')
-f.write(t.render(all_tasks=all_tasks, all_variants=all_variants))
+f.write(t.render(all_functions=all_functions,
+                 all_tasks=all_tasks,
+                 all_variants=all_variants))
 f.write('\n')

@@ -15,7 +15,6 @@
 import sys
 from collections import OrderedDict as OD
 from itertools import chain, product
-from textwrap import dedent
 from types import NoneType
 
 try:
@@ -33,64 +32,11 @@ except ImportError:
     raise
 
 from evergreen_config_lib import ConfigObject
-
-
-def func(func_name, **kwargs):
-    od = OD([('func', func_name)])
-    if kwargs:
-        od['vars'] = OD(sorted(kwargs.items()))
-
-    return od
-
-
-def bootstrap(VERSION='latest', TOPOLOGY=None, **kwargs):
-    if TOPOLOGY:
-        return func('bootstrap mongo-orchestration',
-                    VERSION=VERSION,
-                    TOPOLOGY=TOPOLOGY,
-                    **kwargs)
-
-    return func('bootstrap mongo-orchestration',
-                VERSION=VERSION,
-                **kwargs)
-
-
-def run_tests(URI=None, **kwargs):
-    if URI:
-        return func('run tests', URI=URI, **kwargs)
-
-    return func('run tests', **kwargs)
-
-
-def strip_lines(s):
-    return '\n'.join(line for line in s.split('\n') if line.strip())
-
-
-def shell_exec(script):
-    dedented = 'set -o errexit\nset -o xtrace\n' + dedent(strip_lines(script))
-    return OD([
-        ('command', 'shell.exec'),
-        ('type', 'test'),
-        ('params', OD([('working_dir', 'mongoc'),
-                       ('script', dedented)]))])
-
-
-def s3_put(local_file, remote_file, content_type, display_name=None):
-    od = OD([
-        ('command', 's3.put'),
-        ('params', OD([
-            ('aws_key', '${aws_key}'),
-            ('aws_secret', '${aws_secret}'),
-            ('local_file', local_file),
-            ('remote_file', '${project}/' + remote_file),
-            ('bucket', 'mciuploads'),
-            ('permissions', 'public-read'),
-            ('content_type', content_type)]))])
-
-    if display_name is not None:
-        od['params']['display_name'] = display_name
-
-    return od
+from evergreen_config_lib.functions import (bootstrap,
+                                            func,
+                                            run_tests,
+                                            s3_put,
+                                            shell_exec)
 
 
 class Task(ConfigObject):
@@ -433,9 +379,9 @@ all_tasks = [
               commands=[
                   shell_exec('export IS_PATCH="${is_patch}"\n'
                              'sh .evergreen/debian_package_build.sh'),
-                  s3_put('deb.tar.gz',
-                         '${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
-                         '${content_type|application/x-gzip}')]),
+                  s3_put(local_file='deb.tar.gz',
+                         remote_file='${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
+                         content_type='${content_type|application/x-gzip}')]),
     NamedTask('install-uninstall-check-mingw',
               depends_on=OD([('name', 'make-release-archive'),
                              ('variant', 'releng')]),
