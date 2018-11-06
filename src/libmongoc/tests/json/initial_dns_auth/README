@@ -1,0 +1,7 @@
+This test substitutes for the spec test here:
+
+https://github.com/mongodb/specifications/blob/master/source/initial-dns-seedlist-discovery/tests/uri-with-auth.json
+
+Since our Mongo Orchestration configurations set username and password to
+"bob:pwd123", it's easier to test with that username and password than the
+"auser:apass" user in the official spec test. See CDRIVER-2868.
