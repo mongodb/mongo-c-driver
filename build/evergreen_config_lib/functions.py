@@ -144,7 +144,7 @@ all_functions = [
             ]))]),
         shell_exec(r'''
         rm -f *.tar.gz
-        curl --retry 5 http://s3.amazonaws.com/mciuploads/${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz -sS --max-time 120
+        curl --retry 5 https://s3.amazonaws.com/mciuploads/${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz -sS --max-time 120
         ''', test=False, continue_on_err=True, working_dir=None),
     ),
     Function(
