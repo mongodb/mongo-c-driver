@@ -26,12 +26,6 @@ import sys
 from os.path import dirname, join as joinpath, normpath
 
 try:
-    # Python 3 abstract base classes.
-    import collections.abc as abc
-except ImportError:
-    import collections as abc
-
-try:
     import yaml
     import yamlordereddictloader
     from jinja2 import Environment, FileSystemLoader
