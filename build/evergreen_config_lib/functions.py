@@ -104,14 +104,9 @@ def targz_pack(target, source_dir, *include):
 
 
 class Function(ConfigObject):
-    def __init__(self, name, *commands):
+    def __init__(self, *commands):
         super(Function, self).__init__()
-        self._function_name = name
         self.commands = commands
-
-    @property
-    def name(self):
-        return self._function_name
 
     def to_dict(self):
         return list(self.commands)
@@ -119,9 +114,8 @@ class Function(ConfigObject):
 
 build_path = '${build_variant}/${revision}/${version_id}/${build_id}'
 
-all_functions = [
-    Function(
-        'fetch source',
+all_functions = OD([
+    ('fetch source', Function(
         OD([('command', 'git.get_project'),
             ('params', OD([
                 ('directory', 'mongoc'),
@@ -146,9 +140,8 @@ all_functions = [
         rm -f *.tar.gz
         curl --retry 5 https://s3.amazonaws.com/mciuploads/${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz -sS --max-time 120
         ''', test=False, continue_on_err=True, working_dir=None),
-    ),
-    Function(
-        'upload release',
+    )),
+    ('upload release', Function(
         shell_exec(
             r'[ -f mongoc/mongo*gz ] && mv mongoc/mongo*gz mongoc.tar.gz',
             errexit=False, test=False, working_dir=None),
@@ -158,18 +151,16 @@ all_functions = [
             aws_secret='${aws_secret}', local_file='mongoc.tar.gz',
             bucket='mciuploads', permissions='public-read',
             content_type='${content_type|application/x-gzip}'),
-    ),
-    Function(
-        'upload build',
+    )),
+    ('upload build', Function(
         targz_pack('${build_id}.tar.gz', 'mongoc', './**'),
         s3_put('${build_variant}/${revision}/${task_name}/${build_id}.tar.gz',
                aws_key='${aws_key}', aws_secret='${aws_secret}',
                local_file='${build_id}.tar.gz', bucket='mciuploads',
                permissions='public-read',
                content_type='${content_type|application/x-gzip}'),
-    ),
-    Function(
-        'release archive',
+    )),
+    ('release archive', Function(
         shell_exec(r'''
         # Need modern Sphinx for :caption: in literal includes.
         python -m virtualenv venv
@@ -184,13 +175,11 @@ all_functions = [
         export MONGOC_TEST_SKIP_SLOW=on
         sh .evergreen/check-release-archive.sh
         ''', xtrace=False),
-    ),
-    Function(
-        'install ssl',
+    )),
+    ('install ssl', Function(
         shell_exec(r'SSL=${SSL} sh .evergreen/install-ssl.sh', test=False),
-    ),
-    Function(
-        'fetch build',
+    )),
+    ('fetch build', Function(
         shell_exec(r'rm -rf mongoc', test=False, continue_on_err=True,
                    working_dir=None),
         OD([('command', 's3.get'),
@@ -213,9 +202,8 @@ all_functions = [
         
         $TAR xf build.tar.gz -C mongoc/
         ''', test=False, continue_on_err=True, working_dir=None),
-    ),
-    Function(
-        'upload docs',
+    )),
+    ('upload docs', Function(
         shell_exec(r'''
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
@@ -238,9 +226,8 @@ all_functions = [
                local_file='mongoc/src/libmongoc/doc/html/index.html',
                bucket='mciuploads', permissions='public-read',
                content_type='text/html', display_name='libmongoc docs'),
-    ),
-    Function(
-        'upload man pages',
+    )),
+    ('upload man pages', Function(
         shell_exec(r'''
         # Get "aha", the ANSI HTML Adapter.
         git clone --depth 1 https://github.com/theZiz/aha.git aha-repo
@@ -262,9 +249,8 @@ all_functions = [
                local_file='mongoc/mongoc-man-pages.html', bucket='mciuploads',
                permissions='public-read', content_type='text/html',
                display_name='libmongoc man pages'),
-    ),
-    Function(
-        'upload coverage',
+    )),
+    ('upload coverage', Function(
         shell_exec(r'''
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
@@ -275,9 +261,8 @@ all_functions = [
                local_file='mongoc/coverage/index.html', bucket='mciuploads',
                permissions='public-read', content_type='text/html',
                display_name='Coverage Report'),
-    ),
-    Function(
-        'abi report',
+    )),
+    ('abi report', Function(
         shell_exec(r'''
         # Need Git module for calculating release version
         python -m virtualenv venv
@@ -303,9 +288,8 @@ all_functions = [
                local_files_include_filter='mongoc/abi-compliance/compat_reports/**/*.html',
                bucket='mciuploads', permissions='public-read',
                content_type='text/html', display_name='ABI Report:'),
-    ),
-    Function(
-        'upload scan artifacts',
+    )),
+    ('upload scan artifacts', Function(
         shell_exec(r'''
         if find scan -name \*.html | grep -q html; then
           (cd scan && find . -name index.html -exec echo "<li><a href='{}'>{}</a></li>" \;) >> scan.html
@@ -322,9 +306,8 @@ all_functions = [
                aws_secret='${aws_secret}', local_file='mongoc/scan.html',
                bucket='mciuploads', permissions='public-read',
                content_type='text/html', display_name='Scan Build Report'),
-    ),
-    Function(
-        'upload mo artifacts',
+    )),
+    ('upload mo artifacts', Function(
         shell_exec(r'''
         DIR=MO
         [ -d "/cygdrive/c/data/mo" ] && DIR="/cygdrive/c/data/mo"
@@ -366,13 +349,11 @@ all_functions = [
                content_type='${content_type|application/x-gzip}',
                display_name='Core Dumps - Execution ${execution}',
                optional='True'),
-    ),
-    Function(
-        'backtrace',
+    )),
+    ('backtrace', Function(
         shell_exec(r'./.evergreen/debug-core-evergreen.sh', test=False),
-    ),
-    Function(
-        'upload working dir',
+    )),
+    ('upload working dir', Function(
         targz_pack('working-dir.tar.gz', 'mongoc', './**'),
         s3_put(
             build_path + '/artifacts/${task_id}-${execution}-working-dir.tar.gz',
@@ -381,16 +362,14 @@ all_functions = [
             permissions='public-read',
             content_type='${content_type|application/x-gzip}',
             display_name='working-dir.tar.gz'),
-    ),
-    Function(
-        'upload test results',
+    )),
+    ('upload test results', Function(
         OD([('command', 'attach.results'),
             ('params', OD([
                 ('file_location', 'mongoc/test-results.json'),
             ]))]),
-    ),
-    Function(
-        'bootstrap mongo-orchestration',
+    )),
+    ('bootstrap mongo-orchestration', Function(
         shell_exec(r'''
         export MONGODB_VERSION=${VERSION}
         export TOPOLOGY=${TOPOLOGY}
@@ -401,9 +380,8 @@ all_functions = [
         export ORCHESTRATION_FILE=${ORCHESTRATION_FILE}
         sh .evergreen/integration-tests.sh
         ''', test=False),
-    ),
-    Function(
-        'run tests',
+    )),
+    ('run tests', Function(
         shell_exec(r'''
         export COMPRESSORS='${COMPRESSORS}'
         export CC='${CC}'
@@ -416,13 +394,11 @@ all_functions = [
         export DNS=${DNS}
         sh .evergreen/run-tests.sh
         '''),
-    ),
-    Function(
-        'run tests bson',
+    )),
+    ('run tests bson', Function(
         shell_exec(r'CC="${CC}" sh .evergreen/run-tests-bson.sh'),
-    ),
-    Function(
-        'run auth tests',
+    )),
+    ('run auth tests', Function(
         shell_exec(r'''
         export AUTH_HOST='${auth_host}'
         export AUTH_PLAIN='${auth_plain}'
@@ -440,38 +416,33 @@ all_functions = [
         export VALGRIND='${valgrind}'
         sh .evergreen/run-auth-tests.sh
         ''', silent=True, xtrace=False),
-    ),
-    Function(
-        'run mock server tests',
+    )),
+    ('run mock server tests', Function(
         shell_exec(
             r'CC="${CC}" VALGRIND=${VALGRIND} sh .evergreen/run-mock-server-tests.sh'),
-    ),
-    Function(
-        'cleanup',
+    )),
+    ('cleanup', Function(
         shell_exec(r'''
         cd MO
         mongo-orchestration stop
         ''', test=False),
-    ),
-    Function(
-        'windows fix',
+    )),
+    ('windows fix', Function(
         shell_exec(r'''
         for i in $(find .evergreen -name \*.sh); do
           cat $i | tr -d '\r' > $i.new
           mv $i.new $i
         done
         ''', test=False, xtrace=False),
-    ),
-    Function(
-        'make files executable',
+    )),
+    ('make files executable', Function(
         shell_exec(r'''
         for i in $(find .evergreen -name \*.sh); do
           chmod +x $i
         done
         ''', test=False, xtrace=False),
-    ),
-    Function(
-        'prepare kerberos',
+    )),
+    ('prepare kerberos', Function(
         shell_exec(r'''
         if test "${keytab|}"; then
            echo "${keytab}" > /tmp/drivers.keytab.base64
@@ -479,9 +450,8 @@ all_functions = [
            cat .evergreen/kerberos.realm | $SUDO tee -a /etc/krb5.conf
         fi
         ''', test=False, silent=True, xtrace=False),
-    ),
-    Function(
-        'link sample program',
+    )),
+    ('link sample program', Function(
         shell_exec(r'''
         # Compile a program that links dynamically or statically to libmongoc,
         # using variables from pkg-config or CMake's find_package command.
@@ -491,9 +461,8 @@ all_functions = [
         LINK_STATIC=  sh .evergreen/link-sample-program.sh
         LINK_STATIC=1 sh .evergreen/link-sample-program.sh
         '''),
-    ),
-    Function(
-        'link sample program bson',
+    )),
+    ('link sample program bson', Function(
         shell_exec(r'''
         # Compile a program that links dynamically or statically to libbson,
         # using variables from pkg-config or from CMake's find_package command.
@@ -502,9 +471,8 @@ all_functions = [
         BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
         BUILD_SAMPLE_WITH_CMAKE=1 LINK_STATIC=1 sh .evergreen/link-sample-program-bson.sh
         '''),
-    ),
-    Function(
-        'link sample program MSVC',
+    )),
+    ('link sample program MSVC', Function(
         shell_exec(r'''
         # Build libmongoc with CMake and compile a program that links
         # dynamically or statically to it, using variables from CMake's
@@ -514,17 +482,15 @@ all_functions = [
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
         LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc.cmd
         '''),
-    ),
-    Function(
-        'link sample program mingw',
+    )),
+    ('link sample program mingw', Function(
         shell_exec(r'''
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
         cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
         '''),
-    ),
-    Function(
-        'link sample program MSVC bson',
+    )),
+    ('link sample program MSVC bson', Function(
         shell_exec(r'''
         # Build libmongoc with CMake and compile a program that links
         # dynamically or statically to it, using variables from CMake's
@@ -534,34 +500,30 @@ all_functions = [
         LINK_STATIC=  cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
         LINK_STATIC=1 cmd.exe /c .\\.evergreen\\link-sample-program-msvc-bson.cmd
         '''),
-    ),
-    Function(
-        'link sample program mingw bson',
+    )),
+    ('link sample program mingw bson', Function(
         shell_exec(r'''
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
         cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
         '''),
-    ),
-    Function(
-        'update codecov.io',
+    )),
+    ('update codecov.io', Function(
         shell_exec(r'''
         export CODECOV_TOKEN=${codecov_token}
         curl -s https://codecov.io/bash | bash
         ''', test=False, xtrace=False),
-    ),
-    Function(
-        'debug-compile-coverage-notest-nosasl-nossl',
+    )),
+    ('debug-compile-coverage-notest-nosasl-nossl', Function(
         shell_exec(r'''
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_TESTS=ON sh .evergreen/compile.sh
         '''),
-    ),
-    Function(
-        'debug-compile-coverage-notest-nosasl-openssl',
+    )),
+    ('debug-compile-coverage-notest-nosasl-openssl', Function(
         shell_exec(r'''
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_TESTS=ON sh .evergreen/compile.sh
         '''),
-    ),
-]
+    )),
+])

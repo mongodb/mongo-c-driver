@@ -564,4 +564,5 @@ all_variants = [
             'ubuntu1604-build',
             ['compile-libmongocapi'],
             android('x86_64'),
-            batchtime=1440), ]
+            batchtime=1440),
+]

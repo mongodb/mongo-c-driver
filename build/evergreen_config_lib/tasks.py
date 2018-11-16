@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 from collections import OrderedDict as OD
 from itertools import chain, product
 from types import NoneType
@@ -22,14 +21,6 @@ try:
     import collections.abc as abc
 except ImportError:
     import collections as abc
-
-try:
-    import yaml
-    import yamlordereddictloader
-    from jinja2 import Environment, FileSystemLoader
-except ImportError:
-    sys.stderr.write("try 'pip install -r build/requirements.txt'")
-    raise
 
 from evergreen_config_lib import ConfigObject
 from evergreen_config_lib.functions import (bootstrap,
@@ -894,3 +885,4 @@ class IPTask(MatrixTask):
 
 
 all_tasks = chain(all_tasks, IPTask.matrix())
+all_tasks = list(all_tasks)
