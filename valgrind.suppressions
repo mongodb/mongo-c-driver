@@ -53,3 +53,11 @@
    ...
    fun:_mongoc_do_init
 }
+{
+   ignore_sasl_load_plugin_leak
+   Memcheck:Leak
+   ...
+   fun:_sasl_load_plugins
+   ...
+   fun:_mongoc_do_init
+}

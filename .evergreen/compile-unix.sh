@@ -91,9 +91,9 @@ DEBUG_FLAGS="${DEBUG_AND_RELEASE_FLAGS} -DCMAKE_BUILD_TYPE=Debug"
 RELEASE_FLAGS="${DEBUG_AND_RELEASE_FLAGS} -DCMAKE_BUILD_TYPE=RelWithDebInfo"
 
 # Where are we, without relying on realpath or readlink?
-if [ "$(dirname $0)" == "." ]; then
+if [ "$(dirname $0)" = "." ]; then
    DIR="$(pwd)"
-elif [ $(dirname $0) == ".." ]; then
+elif [ "$(dirname $0)" = ".." ]; then
    DIR="$(dirname "$(pwd)")"
 else
    DIR="$(cd "$(dirname "$0")"; pwd)"
@@ -216,15 +216,27 @@ if [ "$SKIP_TESTS" = "ON" ]; then
    exit 0
 fi
 
-# Write stderr to error.log and to console.
-# TODO: valgrind
+if [ "$VALGRIND" = "ON" ]; then
+   # Defines "run_valgrind" shell function.
+   . $DIR/valgrind.sh
+else
+   # Define a no-op function.
+   run_valgrind ()
+   {
+      $@
+   }
+fi
+
+# Write stderr to error.log and to console. Turn off tracing to avoid spurious
+# log messages that CHECK_LOG considers failures.
 mkfifo pipe || true
 if [ -e pipe ]; then
+   set +o xtrace
    tee error.log < pipe &
-   ./src/libmongoc/test-libmongoc -d -F test-results.json 2>pipe
+   run_valgrind ./src/libmongoc/test-libmongoc -d -F test-results.json 2>pipe
    rm pipe
 else
-   ./src/libmongoc/test-libmongoc -d -F test-results.json
+   run_valgrind ./src/libmongoc/test-libmongoc -d -F test-results.json
 fi
 
 # Check if the error.log exists, and is more than 0 byte
