@@ -51,7 +51,7 @@
 /**
  * MONGOC_PRERELEASE_VERSION:
  *
- * MONGOC prerelease version component (e.g. rc0 if %MONGOC_VERSION is 1.2.3-rc0)
+ * MONGOC prerelease version component (e.g. pre if %MONGOC_VERSION is 1.2.3-pre)
  */
 #define MONGOC_PRERELEASE_VERSION (@MONGOC_PRERELEASE_VERSION@)
 

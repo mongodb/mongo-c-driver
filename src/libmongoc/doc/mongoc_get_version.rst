@@ -14,5 +14,5 @@ Synopsis
 Returns
 -------
 
-A string representation of libmongoc's version, formatted something like "1.2.3" or "1.2.3-dev".
+A string representation of libmongoc's version, formatted something like "1.2.3" or "1.2.3-pre".
 
