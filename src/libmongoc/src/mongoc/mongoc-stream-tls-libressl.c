@@ -277,7 +277,7 @@ _mongoc_stream_tls_libressl_writev (mongoc_stream_t *stream,
       mongoc_counter_streams_egress_add (ret);
    }
 
-   TRACE ("Returning %zu", ret);
+   TRACE ("Returning %d", (int) ret);
    RETURN (ret);
 }
 

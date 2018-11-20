@@ -49,7 +49,7 @@ all_functions = OD([
     )),
     ('upload release', Function(
         shell_exec(
-            r'[ -f mongoc/mongo*gz ] && mv mongoc/mongo*gz mongoc.tar.gz',
+            r'[ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz mongoc.tar.gz',
             errexit=False, test=False),
         s3_put(
             'mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz',
@@ -113,22 +113,22 @@ all_functions = OD([
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
         aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-        ''', test=False, silent=True, working_dir='mongoc/src/libbson',
+        ''', test=False, silent=True, working_dir='mongoc/cmake_build/src/libbson',
                    xtrace=False),
         s3_put('docs/libbson/${CURRENT_VERSION}/index.html',
                aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/src/libbson/doc/html/index.html',
+               local_file='mongoc/cmake_build/src/libbson/doc/html/index.html',
                bucket='mciuploads', permissions='public-read',
                content_type='text/html', display_name='libbson docs'),
         shell_exec(r'''
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
         aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-        ''', test=False, silent=True, working_dir='mongoc/src/libmongoc',
+        ''', test=False, silent=True, working_dir='mongoc/cmake_build/src/libmongoc',
                    xtrace=False),
         s3_put('docs/libmongoc/${CURRENT_VERSION}/index.html',
                aws_key='${aws_key}', aws_secret='${aws_secret}',
-               local_file='mongoc/src/libmongoc/doc/html/index.html',
+               local_file='mongoc/cmake_build/src/libmongoc/doc/html/index.html',
                bucket='mciuploads', permissions='public-read',
                content_type='text/html', display_name='libmongoc docs'),
     )),
@@ -141,8 +141,8 @@ all_functions = OD([
         cd ..
         mv aha-repo/aha .
         
-        sh .evergreen/man-pages-to-html.sh libbson src/libbson/doc/man > bson-man-pages.html
-        sh .evergreen/man-pages-to-html.sh libmongoc src/libmongoc/doc/man > mongoc-man-pages.html
+        sh .evergreen/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
+        sh .evergreen/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
         ''', test=False, silent=True, xtrace=False),
         s3_put('man-pages/libbson/${CURRENT_VERSION}/index.html',
                aws_key='${aws_key}', aws_secret='${aws_secret}',

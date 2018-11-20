@@ -19,7 +19,12 @@ DIR=$(dirname $0)
 
 python build/calc_release_version.py > VERSION_CURRENT
 python build/calc_release_version.py -p > VERSION_RELEASED
-$CMAKE -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED -DENABLE_BSON=ON .
+
+# Make the dist tarball outside of source directory to avoid interfering with
+# file checks.
+mkdir cmake_build
+cd cmake_build
+$CMAKE -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED -DENABLE_BSON=ON ../
 make DISTCHECK_BUILD_OPTS="-j 8" distcheck
 
 # Check that docs were included, but sphinx temp files weren't.
@@ -51,16 +56,7 @@ if tar --wildcards -tzf $tarfile 'mongo-c-driver-*/doc/man/index.3' > /dev/null 
    exit 1
 fi
 
-set +o xtrace
+# Back to the repo source directory.
+cd ..
 
-echo "Checking that all C files are included in tarball"
-# Check that all C files were included.
-TAR_CFILES=`tar --wildcards -tf mongo-c-driver-*.tar.gz 'mongo-c-driver-*/src/libmongoc/src/mongoc/*.c' | cut -d / -f 4 | sort`
-SRC_CFILES=`echo src/libmongoc/src/mongoc/*.c | xargs -n 1 | cut -d / -f 3 | sort`
-if [ "$TAR_CFILES" != "$SRC_CFILES" ]; then
-   echo "Not all C files are in the release archive"
-   echo $TAR_CFILES > tar_cfiles.txt
-   echo $SRC_CFILES | diff -y - tar_cfiles.txt
-fi
-
-set -o xtrace
+python .evergreen/check-files.py ./src/ cmake_build/mongo-c-driver-*/src

@@ -44,7 +44,7 @@ functions:
     params:
       script: |-
         set -o xtrace
-        [ -f mongoc/mongo*gz ] && mv mongoc/mongo*gz mongoc.tar.gz
+        [ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz mongoc.tar.gz
   - command: s3.put
     params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: 'mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz',
       bucket: mciuploads, permissions: public-read, local_file: mongoc.tar.gz, content_type: '${content_type|application/x-gzip}'}
@@ -112,7 +112,7 @@ functions:
   - command: shell.exec
     params:
       silent: true
-      working_dir: mongoc/src/libbson
+      working_dir: mongoc/cmake_build/src/libbson
       script: |-
         set -o errexit
         export AWS_ACCESS_KEY_ID=${aws_key}
@@ -120,12 +120,12 @@ functions:
         aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
   - command: s3.put
     params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/docs/libbson/${CURRENT_VERSION}/index.html',
-      bucket: mciuploads, permissions: public-read, local_file: mongoc/src/libbson/doc/html/index.html,
+      bucket: mciuploads, permissions: public-read, local_file: mongoc/cmake_build/src/libbson/doc/html/index.html,
       content_type: text/html, display_name: libbson docs}
   - command: shell.exec
     params:
       silent: true
-      working_dir: mongoc/src/libmongoc
+      working_dir: mongoc/cmake_build/src/libmongoc
       script: |-
         set -o errexit
         export AWS_ACCESS_KEY_ID=${aws_key}
@@ -133,7 +133,7 @@ functions:
         aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
   - command: s3.put
     params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/docs/libmongoc/${CURRENT_VERSION}/index.html',
-      bucket: mciuploads, permissions: public-read, local_file: mongoc/src/libmongoc/doc/html/index.html,
+      bucket: mciuploads, permissions: public-read, local_file: mongoc/cmake_build/src/libmongoc/doc/html/index.html,
       content_type: text/html, display_name: libmongoc docs}
   upload man pages:
   - command: shell.exec
@@ -148,8 +148,8 @@ functions:
         make
         cd ..
         mv aha-repo/aha .
-        sh .evergreen/man-pages-to-html.sh libbson src/libbson/doc/man > bson-man-pages.html
-        sh .evergreen/man-pages-to-html.sh libmongoc src/libmongoc/doc/man > mongoc-man-pages.html
+        sh .evergreen/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
+        sh .evergreen/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
   - command: s3.put
     params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/man-pages/libbson/${CURRENT_VERSION}/index.html',
       bucket: mciuploads, permissions: public-read, local_file: mongoc/bson-man-pages.html,
@@ -954,6 +954,21 @@ tasks:
         export DEBUG="ON"
         export SASL="AUTO"
         export SSL="OPENSSL"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - {func: upload build}
+- name: debug-compile-gssapi-darwinssl
+  tags: [darwinssl, debug-compile, sasl]
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export DEBUG="ON"
+        export SASL="GSSAPI"
+        export SSL="DARWIN"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - {func: upload build}
 - name: debug-compile-sasl-darwinssl

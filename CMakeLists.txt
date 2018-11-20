@@ -18,10 +18,14 @@ set (ENABLE_SSL AUTO CACHE STRING
    case-sensitive. The default is \"AUTO\". Note\ that SCRAM-SHA-1 is
    required for authenticating to MongoDB 3.0 and later.")
 
+set_property(CACHE ENABLE_SSL PROPERTY STRINGS "DARWIN;WINDOWS;OPENSSL;LIBRESSL;AUTO;OFF")
+
 set (ENABLE_SASL AUTO CACHE STRING
    "Enable SASL authentication (Kerberos). Options are \"CYRUS\" to use Cyrus
    SASL, \"SSPI\" to use Windows Native SSPI, \"GSSAPI\" to use macOS Native GSS,
    \"AUTO\",\ or \"OFF\". These options are case-sensitive.")
+
+set_property(CACHE ENABLE_SASL PROPERTY STRINGS "CYRUS|SSPI|GSSAPI|AUTO|OFF")
 
 set (ENABLE_STATIC AUTO CACHE STRING "Build static libmongoc. Set to ON/AUTO/OFF, default AUTO.")
 option (ENABLE_TESTS "Build MongoDB C Driver tests." ON)

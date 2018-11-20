@@ -541,10 +541,8 @@ test_mongoc_client_authenticate_cached (bool pooled)
                            "Failed authentication");
    }
    ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_CLIENT, MONGOC_ERROR_CLIENT_AUTHENTICATE, "");
    ASSERT (!r);
    mongoc_cursor_destroy (cursor);
 
@@ -2424,10 +2422,9 @@ test_mongoc_client_descriptions (void)
    do {
       _mongoc_usleep (1000);
       if (bson_get_monotonic_time () - start > 1000 * 1000) {
-         test_error (
-            "still have %zu descriptions, not expected %zu, after 1 sec",
-            n,
-            expected_n);
+         test_error ("still have %d descriptions, not expected %d, after 1 sec",
+                     (int) n,
+                     (int) expected_n);
          abort ();
       }
 

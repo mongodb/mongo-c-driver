@@ -560,9 +560,9 @@ request_matches_msg (const request_t *request,
 
       if (i > request->docs.len) {
          fprintf (stderr,
-                  "Expected at least %d documents in request, got %zu\n",
+                  "Expected at least %d documents in request, got %d\n",
                   i,
-                  request->docs.len);
+                  (int) request->docs.len);
          return false;
       }
 
@@ -574,9 +574,9 @@ request_matches_msg (const request_t *request,
 
    if (n_docs < request->docs.len) {
       fprintf (stderr,
-               "Expected %zu documents in request, got %zu\n",
-               n_docs,
-               request->docs.len);
+               "Expected %d documents in request, got %d\n",
+               (int) n_docs,
+               (int) request->docs.len);
       return false;
    }
 

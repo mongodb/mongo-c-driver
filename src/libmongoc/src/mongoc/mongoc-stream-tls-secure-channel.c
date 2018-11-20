@@ -456,7 +456,7 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
       mongoc_counter_streams_egress_add (ret);
    }
 
-   TRACE ("Returning %zu", ret);
+   TRACE ("Returning %d", (int) ret);
    RETURN (ret);
 }
 
@@ -474,10 +474,10 @@ _mongoc_stream_tls_secure_channel_debuf (
 
    secure_channel->decdata_offset -= s;
 
-   TRACE ("decrypted data returned %zu", s);
-   TRACE ("decrypted data buffer: offset %zu length %zu",
-          secure_channel->decdata_offset,
-          secure_channel->decdata_length);
+   TRACE ("decrypted data returned %d", (int) s);
+   TRACE ("decrypted data buffer: offset %d length %d",
+          (int) secure_channel->decdata_offset,
+          (int) secure_channel->decdata_length);
 
    return (ssize_t) s;
 }
@@ -496,9 +496,9 @@ _mongoc_stream_tls_secure_channel_decrypt (
    SecBufferDesc inbuf_desc;
    SECURITY_STATUS sspi_status = SEC_E_OK;
 
-   TRACE ("encrypted data buffer: offset %zu length %zu",
-          secure_channel->encdata_offset,
-          secure_channel->encdata_length);
+   TRACE ("encrypted data buffer: offset %d length %d",
+          (int) secure_channel->encdata_offset,
+          (int) secure_channel->encdata_length);
 
    /* decrypt loop */
    while (secure_channel->encdata_offset > 0 && sspi_status == SEC_E_OK) {
@@ -553,10 +553,10 @@ _mongoc_stream_tls_secure_channel_decrypt (
                secure_channel->decdata_offset += size;
             }
 
-            TRACE ("decrypted data added: %zu", size);
-            TRACE ("decrypted data cached: offset %zu length %zu",
-                   secure_channel->decdata_offset,
-                   secure_channel->decdata_length);
+            TRACE ("decrypted data added: %d", (int) size);
+            TRACE ("decrypted data cached: offset %d length %d",
+                   (int) secure_channel->decdata_offset,
+                   (int) secure_channel->decdata_length);
          }
 
          /* check for remaining encrypted data */
@@ -577,9 +577,9 @@ _mongoc_stream_tls_secure_channel_decrypt (
                secure_channel->encdata_offset = inbuf[3].cbBuffer;
             }
 
-            TRACE ("encrypted data cached: offset %zu length %zu",
-                   secure_channel->encdata_offset,
-                   secure_channel->encdata_length);
+            TRACE ("encrypted data cached: offset %d length %d",
+                   (int) secure_channel->encdata_offset,
+                   (int) secure_channel->encdata_length);
          } else {
             /* reset encrypted buffer offset, because there is no data remaining
              */
@@ -609,13 +609,13 @@ _mongoc_stream_tls_secure_channel_decrypt (
       }
    }
 
-   TRACE ("encrypted data buffer: offset %zu length %zu",
-          secure_channel->encdata_offset,
-          secure_channel->encdata_length);
+   TRACE ("encrypted data buffer: offset %d length %d",
+          (int) secure_channel->encdata_offset,
+          (int) secure_channel->encdata_length);
 
-   TRACE ("decrypted data buffer: offset %zu length %zu",
-          secure_channel->decdata_offset,
-          secure_channel->decdata_length);
+   TRACE ("decrypted data buffer: offset %d length %d",
+          (int) secure_channel->decdata_offset,
+          (int) secure_channel->decdata_length);
 }
 
 
@@ -630,7 +630,7 @@ _mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
    ssize_t size = 0;
    ssize_t nread;
 
-   TRACE ("client wants to read %zu bytes", len);
+   TRACE ("client wants to read %d bytes", (int) len);
    BSON_ASSERT (len > 0);
 
    /*
