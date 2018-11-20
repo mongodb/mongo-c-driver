@@ -10,15 +10,6 @@
 stepback: true
 command_type: system
 exec_timeout_secs: 2400
-timeout:
-- command: shell.exec
-  type: test
-  params:
-    working_dir: mongoc
-    script: |-
-      set -o errexit
-      set -o xtrace
-      ls -la
 functions:
   fetch source:
   - command: git.get_project

@@ -49,7 +49,6 @@ config = OD([
     ('command_type', 'system'),
     # 40 minute max except valgrind tasks, which get 2 hours.
     ('exec_timeout_secs', 2400),
-    ('timeout', [shell_exec('ls -la')]),
     ('functions', all_functions),
     ('pre', [
         OD([('func', 'fetch source')]),
