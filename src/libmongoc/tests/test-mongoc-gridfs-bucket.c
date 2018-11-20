@@ -985,6 +985,7 @@ test_gridfs_bucket_opts (void)
    bson_destroy (opts);
    mongoc_gridfs_bucket_destroy (gridfs);
 
+   bson_free (bucket_name);
    mongoc_database_destroy (db);
    mongoc_client_destroy (client);
 }

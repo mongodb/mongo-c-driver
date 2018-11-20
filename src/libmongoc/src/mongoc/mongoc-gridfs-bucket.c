@@ -104,9 +104,9 @@ mongoc_gridfs_bucket_new (mongoc_database_t *db,
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "bucketName \"%s\" must have fewer than %zu characters",
+                      "bucketName \"%s\" must have fewer than %d characters",
                       gridfs_opts.bucketName,
-                      sizeof (buf) - (strlen (".chunks") + 1));
+                      (int) (sizeof (buf) - (strlen (".chunks") + 1)));
    }
 
    bucket = (mongoc_gridfs_bucket_t *) bson_malloc0 (sizeof *bucket);
