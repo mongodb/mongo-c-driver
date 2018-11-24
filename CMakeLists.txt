@@ -50,6 +50,7 @@ option (ENABLE_RDTSCP
 )
 option (ENABLE_APPLE_FRAMEWORK "Build libraries as frameworks on darwin platforms" OFF) 
 set (ENABLE_ICU AUTO CACHE STRING "Enable ICU support, necessary to use non-ASCII usernames or passwords, default AUTO.")
+option (ENABLE_UNINSTALL "Enable creation of uninstall script and associate uninstall build target." ON)
 
 project (mongo-c-driver C)
 
@@ -336,15 +337,25 @@ if (ENABLE_MONGOC)
 
 endif ()
 
-if (WIN32)
-   set (UNINSTALL_PROG "uninstall.cmd")
-else ()
-   set (UNINSTALL_PROG "uninstall.sh")
-endif ()
-set (UNINSTALL_PROG_DIR "${CMAKE_INSTALL_DATADIR}/mongo-c-driver")
+if (ENABLE_UNINSTALL)
+   if (WIN32)
+      if (ENABLE_MONGOC)
+         set (UNINSTALL_PROG "uninstall.cmd")
+      else ()
+         set (UNINSTALL_PROG "uninstall-bson.cmd")
+      endif ()
+   else ()
+      if (ENABLE_MONGOC)
+         set (UNINSTALL_PROG "uninstall.sh")
+      else ()
+         set (UNINSTALL_PROG "uninstall-bson.sh")
+      endif ()
+   endif ()
+   set (UNINSTALL_PROG_DIR "${CMAKE_INSTALL_DATADIR}/mongo-c-driver")
 
-# Create uninstall program and associated uninstall target
-#
-# This needs to be last (after all other add_subdirectory calls) to ensure that
-# the generated uninstall program is complete and correct
-add_subdirectory (generate_uninstall)
+   # Create uninstall program and associated uninstall target
+   #
+   # This needs to be last (after all other add_subdirectory calls) to ensure that
+   # the generated uninstall program is complete and correct
+   add_subdirectory (generate_uninstall)
+endif ()
