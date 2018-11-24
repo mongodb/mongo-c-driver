@@ -54,6 +54,15 @@ echo.%CC%| findstr /I "gcc">Nul && (
   if errorlevel 1 (
      exit /B 1
   )
+
+  echo > %INSTALL_DIR%\lib\canary.txt
+
+  dir %INSTALL_DIR%\share\mongo-c-driver
+
+  %CMAKE_MAKE_PROGRAM% uninstall
+  if errorlevel 1 (
+     exit /B 1
+  )
 ) || (
   %CMAKE% -G "%CC%" "-DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%" "-DCMAKE_BUILD_TYPE=Debug" %BSON_ONLY_OPTION% .
   MSBuild.exe /m ALL_BUILD.vcxproj
@@ -64,15 +73,15 @@ echo.%CC%| findstr /I "gcc">Nul && (
   if errorlevel 1 (
      exit /B 1
   )
-)
 
-echo > %INSTALL_DIR%\lib\canary.txt
+  echo > %INSTALL_DIR%\lib\canary.txt
 
-dir %INSTALL_DIR%\share\mongo-c-driver
+  dir %INSTALL_DIR%\share\mongo-c-driver
 
-call %INSTALL_DIR%\share\mongo-c-driver\uninstall.cmd
-if errorlevel 1 (
-   exit /B 1
+  MSBuild.exe /m generate_uninstall\uninstall.vcxproj
+  if errorlevel 1 (
+     exit /B 1
+  )
 )
 
 if exist %INSTALL_DIR%\lib\pkgconfig\libbson-1.0.pc (
@@ -162,6 +171,24 @@ if "%BSON_ONLY%" NEQ "1" (
    ) else (
      echo $INSTALL_DIR\include\libmongoc-1.0 check ok
    )
+)
+if exist %INSTALL_DIR%\share\mongo-c-driver\uninstall-bson.cmd (
+   echo uninstall-bson.cmd found!
+   exit /B 1
+) else (
+   echo uninstall-bson.cmd check ok
+)
+if exist %INSTALL_DIR%\share\mongo-c-driver\uninstall.cmd (
+   echo uninstall.cmd found!
+   exit /B 1
+) else (
+   echo uninstall.cmd check ok
+)
+if exist %INSTALL_DIR%\share\mongo-c-driver\uninstall-bson.sh (
+   echo uninstall-bson.sh found!
+   exit /B 1
+) else (
+   echo uninstall-bson.sh check ok
 )
 if exist %INSTALL_DIR%\share\mongo-c-driver\uninstall.sh (
    echo uninstall.sh found!

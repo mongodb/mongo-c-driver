@@ -58,7 +58,7 @@ touch $INSTALL_DIR/lib/canary.txt
 
 ls -l $INSTALL_DIR/share/mongo-c-driver
 
-$INSTALL_DIR/share/mongo-c-driver/uninstall.sh
+make uninstall
 
 set +o xtrace
 
@@ -149,6 +149,12 @@ if [ -z "$BSON_ONLY" ]; then
   else
     echo "$INSTALL_DIR/include/libmongoc-1.0 check ok"
   fi
+fi
+if test -f $INSTALL_DIR/share/mongo-c-driver/uninstall-bson.sh; then
+  echo "uninstall-bson.sh found!"
+  exit 1
+else
+  echo "uninstall-bson.sh check ok"
 fi
 if test -f $INSTALL_DIR/share/mongo-c-driver/uninstall.sh; then
   echo "uninstall.sh found!"

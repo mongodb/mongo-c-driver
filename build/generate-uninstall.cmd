@@ -84,8 +84,13 @@ for /f "usebackq delims=" %%a in ("%manifest%") do (
    echo.del !suffix! ^|^| echo ... not removed
 )
 
-echo.echo Removing file share\mongo-c-driver\uninstall.cmd
-echo.del share\mongo-c-driver\uninstall.cmd ^|^| echo ... not removed
+if "%ENABLE_MONGOC%"=="ON" (
+   echo.echo Removing file share\mongo-c-driver\uninstall.cmd
+   echo.del share\mongo-c-driver\uninstall.cmd ^|^| echo ... not removed
+) else (
+   echo.echo Removing file share\mongo-c-driver\uninstall-bson.cmd
+   echo.del share\mongo-c-driver\uninstall-bson.cmd ^|^| echo ... not removed
+)
 call :save_dirs "share\mongo-c-driver"
 
 for /f "tokens=2 delims=[]" %%a in ('set dirs[') do (

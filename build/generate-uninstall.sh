@@ -93,8 +93,13 @@ while IFS= read -r line || [ -n "${line}" ]; do
    printf "(rm -f \"%s\" && printf \"\\\n\") || printf \" ... not removed\\\n\"\n" "${suffix}"
 done < "${manifest}"
 
-printf "printf \"Removing file \\\"share/mongo-c-driver/uninstall.sh\\\"\"\n"
-printf "(rm -f \"share/mongo-c-driver/uninstall.sh\" && printf \"\\\n\") || printf \" ... not removed\\\n\"\n"
+if [ "${ENABLE_MONGOC}" = "ON" ]; then
+   printf "printf \"Removing file \\\"share/mongo-c-driver/uninstall.sh\\\"\"\n"
+   printf "(rm -f \"share/mongo-c-driver/uninstall.sh\" && printf \"\\\n\") || printf \" ... not removed\\\n\"\n"
+else
+   printf "printf \"Removing file \\\"share/mongo-c-driver/uninstall-bson.sh\\\"\"\n"
+   printf "(rm -f \"share/mongo-c-driver/uninstall-bson.sh\" && printf \"\\\n\") || printf \" ... not removed\\\n\"\n"
+fi
 dirs="${dirs}share/mongo-c-driver\nshare\n"
 
 echo "${dirs}" | sort -ru | while IFS= read -r dir; do
