@@ -2,6 +2,7 @@ mongo-c-driver (1.13.0-1) unstable; urgency=medium
 
   * New upstream release (Closes: #913963)
   * Update maintainer to team address
+  * Update to Standards-Version 4.2.1 (no changes)
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Sat, 24 Nov 2018 15:01:25 -0500
 
