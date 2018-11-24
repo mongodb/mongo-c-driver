@@ -1,6 +1,10 @@
 Source: mongo-c-driver
 Priority: optional
-Maintainer: A. Jesse Jiryu Davis <jesse@mongodb.com>
+Maintainer: Mongo C Driver Team <mongo-c-driver-debian@googlegroups.com>
+Uploaders: A. Jesse Jiryu Davis <jesse@mongodb.com>,
+           Kevin Albertson <kevin.albertson@mongodb.com>,
+           Samantha Ritter <samantha.ritter@mongodb.com>,
+           Roberto C. Sanchez <roberto@connexer.com>
 Build-Depends: debhelper (>= 11),
                cmake,
                libssl-dev,
