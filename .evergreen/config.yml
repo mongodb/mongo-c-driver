@@ -1160,6 +1160,19 @@ tasks:
   - command: s3.put
     params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
       bucket: mciuploads, permissions: public-read, local_file: deb.tar.gz, content_type: '${content_type|application/x-gzip}'}
+- name: rpm-package-build
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      script: |-
+        set -o errexit
+        set -o xtrace
+        sh .evergreen/build_snapshot_rpm.sh
+  - command: s3.put
+    params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz',
+      bucket: mciuploads, permissions: public-read, local_file: rpm.tar.gz, content_type: '${content_type|application/x-gzip}'}
 - name: install-uninstall-check-mingw
   depends_on: {name: make-release-archive, variant: releng}
   commands:
@@ -5072,6 +5085,8 @@ buildvariants:
   - debug-compile-no-counters
   - compile-tracing
   - debian-package-build
+  - name: rpm-package-build
+    distros: [rhel70]
   - link-with-cmake
   - abi-compliance-check
   - link-with-cmake-ssl

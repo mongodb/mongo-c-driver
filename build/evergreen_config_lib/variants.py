@@ -97,6 +97,8 @@ all_variants = [
              'debug-compile-no-counters',
              'compile-tracing',
              'debian-package-build',
+             OD([('name', 'rpm-package-build'),
+                 ('distros', ['rhel70'])]),
              'link-with-cmake',
              'abi-compliance-check',
              'link-with-cmake-ssl',

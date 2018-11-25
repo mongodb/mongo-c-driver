@@ -81,18 +81,18 @@ fi
 
 build_dir=$(basename $(pwd))
 
-sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --clean
-sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --init
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --clean
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --init
 mock_root=$(sudo mock -r ${config} --bootstrap-chroot --old-chroot --print-root-path)
-sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --install rpmdevtools git rpm-build cmake python GitPython python2-sphinx
-sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --install rpmdevtools git rpm-build cmake python GitPython python2-sphinx
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
 if [ ! -f VERSION_CURRENT ]; then
-  sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
+  sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
     set -o xtrace ;
     python build/calc_release_version.py | sed -E 's/([^-]+).*/\1/' > VERSION_CURRENT ;
     python build/calc_release_version.py -p > VERSION_RELEASED
     )"
-  sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --copyout "/tmp/${build_dir}/VERSION_CURRENT" "/tmp/${build_dir}/VERSION_RELEASED" .
+  sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyout "/tmp/${build_dir}/VERSION_CURRENT" "/tmp/${build_dir}/VERSION_RELEASED" .
 fi
 
 bare_upstream_version=$(sed -E 's/([^-]+).*/\1/' VERSION_CURRENT)
@@ -107,12 +107,12 @@ current_package_version=$(rpmspec --srpm -q --qf "%{version}-%{release}" ${spec_
 
 if [ -n "${current_package_version##*${git_rev}*}" ]; then
   echo "Making RPM changelog entry"
-  sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- rpmdev-bumpspec --comment="Built from Git Snapshot." --userstring="Test User <test@example.com>" --new="${snapshot_version}%{?dist}" ${spec_file}
+  sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- rpmdev-bumpspec --comment="Built from Git Snapshot." --userstring="Test User <test@example.com>" --new="${snapshot_version}%{?dist}" ${spec_file}
 fi
 
-sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --copyout "/tmp/${build_dir}/${spec_file}" ..
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyout "/tmp/${build_dir}/${spec_file}" ..
 
-sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
   set -o xtrace ;
   [ -d cmake-build ] || mkdir cmake-build ;
   cd cmake-build ;
@@ -120,7 +120,8 @@ sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${b
   make -j 8 dist
   )"
 
-sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --copyout "/tmp/${build_dir}/cmake-build/${package}*.tar.gz" cmake-build
+[ -d cmake-build ] || mkdir cmake-build
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyout "/tmp/${build_dir}/cmake-build/${package}*.tar.gz" cmake-build
 
 [ -d ~/rpmbuild/SOURCES ] || mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 mv cmake-build/${package}*.tar.gz ~/rpmbuild/SOURCES/
@@ -129,10 +130,10 @@ echo "Building source RPM ..."
 rpmbuild -bs ${spec_file}
 echo "Building binary RPMs ..."
 mock_result=$(readlink -f ../mock-result)
-sudo mock --verbose --resultdir="${mock_result}" --bootstrap-chroot --old-chroot -r ${config} --no-clean --no-cleanup-after --rebuild ~/rpmbuild/SRPMS/${package}-${snapshot_version}*.src.rpm
-sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --copyin "${mock_result}" /tmp
+sudo mock --resultdir="${mock_result}" --bootstrap-chroot --old-chroot -r ${config} --no-clean --no-cleanup-after --rebuild ~/rpmbuild/SRPMS/${package}-${snapshot_version}*.src.rpm
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyin "${mock_result}" /tmp
 
-sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
   set -o xtrace &&
   rpm -Uvh ../mock-result/*.rpm &&
   gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0
@@ -140,10 +141,10 @@ sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${b
 
 if [ ! -e "${mock_root}/tmp/${build_dir}/example-client" ]; then
   echo "Example was not built!"
-  sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --clean
+  sudo mock -r ${config} --bootstrap-chroot --old-chroot --clean
   exit 1
 fi
 
-sudo mock --verbose -r ${config} --bootstrap-chroot --old-chroot --clean
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --clean
 (cd "${mock_result}" ; tar zcvf ../rpm.tar.gz *.rpm)
 

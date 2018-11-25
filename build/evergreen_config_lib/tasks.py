@@ -373,6 +373,12 @@ all_tasks = [
                   s3_put(local_file='deb.tar.gz',
                          remote_file='${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
                          content_type='${content_type|application/x-gzip}')]),
+    NamedTask('rpm-package-build',
+              commands=[
+                  shell_exec('sh .evergreen/build_snapshot_rpm.sh'),
+                  s3_put(local_file='rpm.tar.gz',
+                         remote_file='${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz',
+                         content_type='${content_type|application/x-gzip}')]),
     NamedTask('install-uninstall-check-mingw',
               depends_on=OD([('name', 'make-release-archive'),
                              ('variant', 'releng')]),
