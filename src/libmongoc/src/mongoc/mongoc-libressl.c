@@ -47,6 +47,7 @@ mongoc_libressl_setup_certificate (mongoc_stream_tls_libressl_t *libressl,
 
    file = tls_load_file (opt->pem_file, &file_len, (char *) opt->pem_pwd);
    if (!file) {
+      MONGOC_ERROR ("Cannot load private key: '%s'", opt->pem_file);
       return false;
    }
 
