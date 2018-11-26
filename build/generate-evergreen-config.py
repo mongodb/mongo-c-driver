@@ -25,7 +25,7 @@ Written for Python 2.6+, requires PyYAML and yamlordereddictloader.
 from os.path import dirname, join as joinpath, normpath
 
 from evergreen_config_lib import OD, yaml_dump
-from evergreen_config_lib.functions import all_functions, shell_exec
+from evergreen_config_lib.functions import all_functions
 from evergreen_config_lib.tasks import all_tasks
 from evergreen_config_lib.variants import all_variants
 
