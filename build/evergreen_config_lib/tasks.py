@@ -13,8 +13,7 @@
 # limitations under the License.
 
 from collections import OrderedDict as OD
-from itertools import chain, product
-from types import NoneType
+from itertools import chain
 
 try:
     # Python 3 abstract base classes.
@@ -22,96 +21,11 @@ try:
 except ImportError:
     import collections as abc
 
-from evergreen_config_lib import ConfigObject
-from evergreen_config_lib.functions import (bootstrap,
-                                            func,
-                                            run_tests,
-                                            s3_put,
-                                            shell_exec)
-
-
-class Task(ConfigObject):
-    def __init__(self, *args, **kwargs):
-        super(Task, self).__init__(*args, **kwargs)
-        self.tags = set()
-        self.options = OD()
-        self.depends_on = None
-        self.commands = kwargs.pop('commands', None) or []
-        assert isinstance(self.commands, (abc.Sequence, NoneType))
-        tags = kwargs.pop('tags', None)
-        if tags:
-            self.add_tags(*tags)
-        depends_on = kwargs.pop('depends_on', None)
-        if depends_on:
-            self.add_dependency(depends_on)
-
-        if 'exec_timeout_secs' in kwargs:
-            self.options['exec_timeout_secs'] = kwargs.pop('exec_timeout_secs')
-
-    name_prefix = 'test'
-
-    def add_tags(self, *args):
-        self.tags.update(args)
-
-    def has_tags(self, *args):
-        return bool(self.tags.intersection(args))
-
-    def add_dependency(self, dependency):
-        if not isinstance(dependency, abc.Mapping):
-            dependency = OD([('name', dependency)])
-
-        if self.depends_on is None:
-            self.depends_on = dependency
-        elif isinstance(self.depends_on, abc.Mapping):
-            self.depends_on = [self.depends_on, dependency]
-        else:
-            self.depends_on.append(dependency)
-
-    def display(self, axis_name):
-        value = getattr(self, axis_name)
-        # E.g., if self.auth is False, return 'noauth'.
-        if value is False:
-            return 'no' + axis_name
-
-        if value is True:
-            return axis_name
-
-        return value
-
-    def on_off(self, *args, **kwargs):
-        assert not (args and kwargs)
-        if args:
-            axis_name, = args
-            return 'on' if getattr(self, axis_name) else 'off'
-
-        (axis_name, value), = kwargs.items()
-        return 'on' if getattr(self, axis_name) == value else 'off'
-
-    def to_dict(self):
-        task = super(Task, self).to_dict()
-        if self.tags:
-            task['tags'] = self.tags
-        task.update(self.options)
-        if self.depends_on:
-            task['depends_on'] = self.depends_on
-        task['commands'] = self.commands
-        return task
-
-
-class NamedTask(Task):
-    def __init__(self, task_name, commands=None, **kwargs):
-        super(NamedTask, self).__init__(commands=commands, **kwargs)
-        self._task_name = task_name
-
-    @property
-    def name(self):
-        return self._task_name
-
-
-class FuncTask(NamedTask):
-    def __init__(self, task_name, *args, **kwargs):
-        commands = [func(func_name) for func_name in args]
-        super(FuncTask, self).__init__(task_name, commands=commands, **kwargs)
+from evergreen_config_generator.functions import (
+    bootstrap, func, run_tests, s3_put)
+from evergreen_config_generator.tasks import (
+    both_or_neither, FuncTask, MatrixTask, NamedTask, prohibit, require, Task)
+from evergreen_config_lib import shell_mongoc
 
 
 class CompileTask(NamedTask):
@@ -149,7 +63,7 @@ class CompileTask(NamedTask):
             script += 'export %s="%s"\n' % (opt, value)
 
         script += "CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh"
-        task['commands'].append(shell_exec(script))
+        task['commands'].append(shell_mongoc(script))
         task['commands'].append(func('upload build'))
         task['commands'].extend(self.extra_commands)
         return task
@@ -180,7 +94,7 @@ class LinkTask(NamedTask):
 
 all_tasks = [
     NamedTask('check-public-headers',
-              commands=[shell_exec('sh ./.evergreen/check-public-headers.sh')]),
+              commands=[shell_mongoc('sh ./.evergreen/check-public-headers.sh')]),
     FuncTask('make-release-archive',
              'release archive', 'upload docs', 'upload man pages',
              'upload release', 'upload build'),
@@ -270,7 +184,7 @@ all_tasks = [
                 CC='clang',
                 extra_commands=[
                     func('upload scan artifacts'),
-                    shell_exec('''
+                    shell_mongoc('''
                         if find scan -name \*.html | grep -q html; then
                           exit 123
                         fi''')]),
@@ -368,92 +282,39 @@ all_tasks = [
              orchestration=False),
     NamedTask('debian-package-build',
               commands=[
-                  shell_exec('export IS_PATCH="${is_patch}"\n'
+                  shell_mongoc('export IS_PATCH="${is_patch}"\n'
                              'sh .evergreen/debian_package_build.sh'),
                   s3_put(local_file='deb.tar.gz',
                          remote_file='${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
                          content_type='${content_type|application/x-gzip}')]),
     NamedTask('rpm-package-build',
               commands=[
-                  shell_exec('sh .evergreen/build_snapshot_rpm.sh'),
+                  shell_mongoc('sh .evergreen/build_snapshot_rpm.sh'),
                   s3_put(local_file='rpm.tar.gz',
                          remote_file='${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz',
                          content_type='${content_type|application/x-gzip}')]),
     NamedTask('install-uninstall-check-mingw',
               depends_on=OD([('name', 'make-release-archive'),
                              ('variant', 'releng')]),
-              commands=[shell_exec(r'''
+              commands=[shell_mongoc(r'''
                   export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
                   BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
                   cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd''')]),
     NamedTask('install-uninstall-check-msvc',
               depends_on=OD([('name', 'make-release-archive'),
                              ('variant', 'releng')]),
-              commands=[shell_exec(r'''
+              commands=[shell_mongoc(r'''
                   export CC="Visual Studio 14 2015 Win64"
                   BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
                   cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd''')]),
     NamedTask('install-uninstall-check',
               depends_on=OD([('name', 'make-release-archive'),
                              ('variant', 'releng')]),
-              commands=[shell_exec(r'''
+              commands=[shell_mongoc(r'''
                   DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
                   BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
                   sh ./.evergreen/install-uninstall-check.sh''')]),
 ]
-
-
-class Prohibited(Exception):
-    pass
-
-
-def require(rule):
-    if not rule:
-        raise Prohibited()
-
-
-def prohibit(rule):
-    if rule:
-        raise Prohibited()
-
-
-def both_or_neither(rule0, rule1):
-    if rule0:
-        require(rule1)
-    else:
-        prohibit(rule1)
-
-
-class MatrixTask(Task):
-    axes = OD()
-
-    def __init__(self, *args, **kwargs):
-        axis_dict = OD()
-        for name, values in self.axes.items():
-            # First value for each axis is the default value.
-            axis_dict[name] = kwargs.pop(name, values[0])
-
-        super(MatrixTask, self).__init__(*args, **kwargs)
-        self.__dict__.update(axis_dict)
-
-    @classmethod
-    def matrix(cls):
-        for cell in product(*cls.axes.values()):
-            axis_values = dict(zip(cls.axes, cell))
-            task = cls(**axis_values)
-            if task.allowed:
-                yield task
-
-    @property
-    def allowed(self):
-        try:
-            self._check_allowed()
-            return True
-        except Prohibited:
-            return False
-
-    def _check_allowed(self):
-        pass
 
 
 class IntegrationTask(MatrixTask):
@@ -779,7 +640,7 @@ all_tasks = chain(all_tasks, [
         tags=['authentication-tests', 'valgrind'],
         exec_timeout_seconds=3600,
         commands=[
-            shell_exec("""
+            shell_mongoc("""
                 VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO \
                   SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
                 """),
@@ -807,7 +668,7 @@ class SSLTask(Task):
 
         super(SSLTask, self).__init__(commands=[
             func('install ssl', SSL=full_version),
-            shell_exec(script),
+            shell_mongoc(script),
             func('run auth tests', **kwargs),
             func('upload build')])
 
@@ -832,7 +693,7 @@ all_tasks = chain(all_tasks, [
     SSLTask('openssl-1.1.0', 'f'),
     SSLTask('libressl-2.5', '.2', require_tls12=True),
     NamedTask('compile-libmongocapi',
-              commands=[shell_exec(r'''
+              commands=[shell_mongoc(r'''
                   . ./.evergreen/find-cmake.sh
                   ${setup_android_toolchain|}
                   export ${libmongocapi_compile_env|}

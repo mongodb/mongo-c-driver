@@ -12,30 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from evergreen_config_lib import ConfigObject, OD
+from collections import OrderedDict as OD
 
-
-class Variant(ConfigObject):
-    def __init__(self, name, display_name, run_on, tasks, expansions=None,
-                 batchtime=None):
-        super(Variant, self).__init__()
-        self._variant_name = name
-        self.display_name = display_name
-        self.run_on = run_on
-        self.tasks = tasks
-        self.expansions = expansions
-        self.batchtime = batchtime
-
-    @property
-    def name(self):
-        return self._variant_name
-
-    def to_dict(self):
-        v = super(Variant, self).to_dict()
-        for i in 'display_name', 'expansions', 'run_on', 'tasks', 'batchtime':
-            if getattr(self, i):
-                v[i] = getattr(self, i)
-        return v
+from evergreen_config_generator.variants import Variant
 
 
 mobile_flags = (
