@@ -776,7 +776,7 @@ all_tasks = chain(all_tasks, [
                   func('update codecov.io')]),
     NamedTask(
         'authentication-tests-memcheck',
-        tags=['authentication-tests', 'sasl', 'ssl', 'openssl', 'memcheck'],
+        tags=['authentication-tests', 'valgrind'],
         exec_timeout_seconds=3600,
         commands=[
             shell_exec("""
