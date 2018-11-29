@@ -5,7 +5,7 @@ mongoc_transaction_opt_t
 
 .. code-block:: c
 
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
   typedef struct _mongoc_transaction_opt_t mongoc_transaction_opt_t;
 

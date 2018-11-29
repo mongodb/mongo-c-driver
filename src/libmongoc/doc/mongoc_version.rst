@@ -13,7 +13,7 @@ This may be useful if you only want to enable a feature on a certain version of 
 
 .. parsed-literal::
 
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
   #define MONGOC_MAJOR_VERSION (|release_major|)
   #define MONGOC_MINOR_VERSION (|release_minor|)

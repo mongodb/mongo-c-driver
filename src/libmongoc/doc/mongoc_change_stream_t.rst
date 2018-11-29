@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-   #include <mongoc.h>
+   #include <mongoc/mongoc.h>
 
    typedef struct _mongoc_change_stream_t mongoc_change_stream_t;
 

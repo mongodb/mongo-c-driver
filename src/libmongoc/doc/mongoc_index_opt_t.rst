@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
   typedef struct {
      bool is_initialized;

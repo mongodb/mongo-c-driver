@@ -13,7 +13,7 @@ Reading from a BSON Stream
 .. code-block:: c
 
   #include <stdio.h>
-  #include <bson.h>
+  #include <bson/bson.h>
 
   int
   main (int argc, char *argv[])
@@ -59,7 +59,7 @@ This could also be useful if you want to write to a network packet while seriali
 .. code-block:: c
 
   #include <stdio.h>
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <assert.h>
 
   int

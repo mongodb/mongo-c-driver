@@ -39,7 +39,7 @@ Use ``bson_reserve_buffer`` to write a function that takes a :symbol:`bson_t` po
 .. code-block:: c
 
   #include <stdio.h>
-  #include <bson.h>
+  #include <bson/bson.h>
 
   bool
   read_into (bson_t *bson, FILE *fp)

@@ -11,7 +11,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
   #ifdef _WIN32
   typedef struct {

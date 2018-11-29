@@ -59,7 +59,7 @@ Examples
 
 .. code-block:: c
 
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
   int
   main (int argc, char *argv[])

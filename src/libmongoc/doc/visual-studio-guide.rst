@@ -42,11 +42,11 @@ Adding these libraries as dependencies provides linker symbols to build your app
 .. image::
   static/msvc-set-path.png
 
-Finally, include "mongoc.h" in your project's "stdafx.h":
+Finally, include "mongoc/mongoc.h" in your project's "stdafx.h":
 
 .. code-block:: c
 
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
 Static linking
 --------------
@@ -67,13 +67,13 @@ Following the instructions above, you have dynamically linked your application t
 
 (To explain the purpose of each library: ``bson-static-1.0.lib`` and ``mongoc-static-1.0.lib`` are static archives of the driver code. The socket library ``ws2_32`` is required by libbson, which uses the socket routine ``gethostname`` to help guarantee ObjectId uniqueness. The ``BCrypt`` library is used by libmongoc for SSL connections to MongoDB, and ``Secur32`` and ``Crypt32`` are required for enterprise authentication methods like Kerberos.)
 
-Finally, define two preprocessor symbols before including ``mongoc.h`` in your ``stdafx.h``:
+Finally, define two preprocessor symbols before including ``mongoc/mongoc.h`` in your ``stdafx.h``:
 
 .. code-block:: c
 
   #define BSON_STATIC
   #define MONGOC_STATIC
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
 Making these changes to your project is only required for static linking; for most people, the dynamic-linking instructions above are preferred.
 

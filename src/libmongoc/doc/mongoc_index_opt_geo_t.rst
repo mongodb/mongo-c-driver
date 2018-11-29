@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
   typedef struct {
      uint8_t twod_sphere_version;

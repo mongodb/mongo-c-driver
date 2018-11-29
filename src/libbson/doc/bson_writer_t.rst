@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
 
   typedef struct _bson_writer_t bson_writer_t;
 
@@ -49,7 +49,7 @@ Example
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
 
   int
   main (int argc, char *argv[])

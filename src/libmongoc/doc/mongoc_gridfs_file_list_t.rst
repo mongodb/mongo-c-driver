@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
   typedef struct _mongoc_gridfs_file_list_t mongoc_gridfs_file_list_t;
 
