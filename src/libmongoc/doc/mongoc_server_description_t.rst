@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
   typedef struct _mongoc_server_description_t mongoc_server_description_t
 
 ``mongoc_server_description_t`` holds information about a mongod or mongos the driver is connected to.

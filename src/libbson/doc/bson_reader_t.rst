@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
 
   typedef struct _bson_reader_t bson_reader_t;
 
@@ -83,7 +83,7 @@ Example
    */
 
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <stdio.h>
 
 

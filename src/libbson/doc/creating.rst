@@ -12,7 +12,7 @@ BSON documents are created using the :symbol:`bson_t` structure. This structure 
 
   BSON documents can live on the stack or the heap based on the performance needs or preference of the consumer.
 
-Let's start by creating a new BSON document on the stack. Whenever using libbson, make sure you ``#include <bson.h>``.
+Let's start by creating a new BSON document on the stack. Whenever using libbson, make sure you ``#include <bson/bson.h>``.
 
 .. code-block:: c
 

@@ -68,8 +68,8 @@ Example
 
 .. code-block:: c
 
-  #include <bcon.h>
-  #include <mongoc.h>
+  #include <bson/bson.h>
+  #include <mongoc/mongoc.h>
 
   static mongoc_cursor_t *
   pipeline_query (mongoc_collection_t *collection)

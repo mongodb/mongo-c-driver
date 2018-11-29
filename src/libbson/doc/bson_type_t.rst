@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
 
   typedef enum {
      BSON_TYPE_EOD = 0x00,

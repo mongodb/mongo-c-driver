@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
 
   #define BSON_ITER_HOLDS_DOUBLE(iter) /* ... */
 

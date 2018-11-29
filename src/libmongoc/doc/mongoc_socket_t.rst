@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <mongoc.h>
+  #include <mongoc/mongoc.h>
 
   typedef struct _mongoc_socket_t mongoc_socket_t
 
