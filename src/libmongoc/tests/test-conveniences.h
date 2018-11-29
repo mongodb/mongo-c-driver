@@ -117,8 +117,7 @@ typedef match_action_t (*match_visitor_fn) (struct _match_ctx_t *ctx,
                                             bson_iter_t *doc_iter);
 
 typedef struct _match_ctx_t {
-   char *errmsg;
-   size_t errmsg_len;
+   char errmsg[1000];
    bool strict_numeric_types;
    /* if retain_dots_in_keys is true, then don't consider a path with dots to
     * indicate recursing into a sub document. */
@@ -135,6 +134,9 @@ typedef struct _match_ctx_t {
    /* if is_command is true, then compare the first key case insensitively. */
    bool is_command;
 } match_ctx_t;
+
+void
+assert_match_bson (const bson_t *doc, const bson_t *pattern, bool is_command);
 
 bool
 match_bson (const bson_t *doc, const bson_t *pattern, bool is_command);

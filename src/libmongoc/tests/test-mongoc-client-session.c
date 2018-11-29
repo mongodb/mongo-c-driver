@@ -52,20 +52,15 @@ test_session_no_crypto (void *ctx)
 }
 
 
-#define ASSERT_SESSIONS_MATCH(_lsid_a, _lsid_b)               \
-   do {                                                       \
-      BSON_ASSERT (match_bson ((_lsid_a), (_lsid_b), false)); \
+#define ASSERT_SESSIONS_MATCH(_lsid_a, _lsid_b)        \
+   do {                                                \
+      assert_match_bson ((_lsid_a), (_lsid_b), false); \
    } while (0)
 
 
-#define ASSERT_SESSIONS_DIFFER(_lsid_a, _lsid_b)                        \
-   do {                                                                 \
-      /* need a match context when checking that lsids DON'T match */   \
-      char errmsg[1000];                                                \
-      match_ctx_t _ctx = {0};                                           \
-      _ctx.errmsg = errmsg;                                             \
-      _ctx.errmsg_len = sizeof (errmsg);                                \
-      BSON_ASSERT (!match_bson_with_ctx ((_lsid_a), (_lsid_b), &_ctx)); \
+#define ASSERT_SESSIONS_DIFFER(_lsid_a, _lsid_b)               \
+   do {                                                        \
+      BSON_ASSERT (!match_bson ((_lsid_a), (_lsid_b), false)); \
    } while (0)
 
 
@@ -625,7 +620,6 @@ _test_end_sessions (bool pooled)
    bson_t ended_lsids;
    bson_iter_t iter;
    bson_t ended_lsid;
-   char errmsg[1000];
    match_ctx_t ctx = {0};
    bool r;
 
@@ -667,9 +661,6 @@ _test_end_sessions (bool pooled)
    ASSERT_CMPINT (test.succeeded_calls, ==, 1);
 
    endsessions_test_get_ended_lsids (&test, 0, &ended_lsids);
-
-   ctx.errmsg = errmsg;
-   ctx.errmsg_len = sizeof errmsg;
 
    BSON_ASSERT (bson_iter_init (&iter, &ended_lsids));
    while (bson_iter_next (&iter)) {
@@ -781,11 +772,11 @@ _test_advance_cluster_time (mongoc_client_session_t *cs,
    mongoc_client_session_advance_cluster_time (cs, new_cluster_time);
 
    if (should_advance) {
-      BSON_ASSERT (match_bson (
-         mongoc_client_session_get_cluster_time (cs), new_cluster_time, false));
+      assert_match_bson (
+         mongoc_client_session_get_cluster_time (cs), new_cluster_time, false);
    } else {
-      BSON_ASSERT (match_bson (
-         mongoc_client_session_get_cluster_time (cs), old_cluster_time, false));
+      assert_match_bson (
+         mongoc_client_session_get_cluster_time (cs), old_cluster_time, false);
    }
 
    bson_destroy (old_cluster_time);
@@ -922,8 +913,7 @@ typedef struct {
 static void
 started (const mongoc_apm_command_started_t *event)
 {
-   char errmsg[1000];
-   match_ctx_t ctx = {errmsg, sizeof (errmsg), false /* strict numbers */};
+   match_ctx_t ctx = {0};
    bson_iter_t iter;
    bool has_cluster_time;
    bson_t cluster_time;
@@ -933,6 +923,8 @@ started (const mongoc_apm_command_started_t *event)
    const char *cmd_name = mongoc_apm_command_started_get_command_name (event);
    session_test_t *test =
       (session_test_t *) mongoc_apm_command_started_get_context (event);
+
+   ctx.strict_numeric_types = false;
 
    if (test->verbose) {
       char *s = bson_as_json (cmd, NULL);
@@ -1144,10 +1136,11 @@ session_test_new (session_test_correct_t correct_client,
 static void
 check_session_returned (session_test_t *test, const bson_t *lsid)
 {
-   char errmsg[1000];
-   match_ctx_t ctx = {errmsg, sizeof (errmsg), false /* strict numbers */};
+   match_ctx_t ctx = {0};
    mongoc_server_session_t *ss;
    bool found;
+
+   ctx.strict_numeric_types = false;
 
    found = false;
    CDL_FOREACH (test->session_client->topology->session_pool, ss)
@@ -2048,7 +2041,6 @@ _test_bulk (session_test_t *test, mongoc_bulk_operation_t *bulk)
 
    mongoc_bulk_operation_destroy (bulk);
 }
-
 
 
 /* test the standard mongoc_collection_create_bulk_operation_with_opts */

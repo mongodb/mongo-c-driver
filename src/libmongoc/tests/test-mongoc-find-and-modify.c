@@ -326,16 +326,16 @@ test_find_and_modify (void)
    opts = mongoc_find_and_modify_opts_new ();
    mongoc_find_and_modify_opts_set_update (opts, update);
    mongoc_find_and_modify_opts_get_update (opts, &tmp);
-   BSON_ASSERT (match_bson (&tmp, update, false));
+   assert_match_bson (&tmp, update, false);
    bson_destroy (&tmp);
    mongoc_find_and_modify_opts_set_fields (opts,
                                            tmp_bson ("{'superduper': 1}"));
    mongoc_find_and_modify_opts_get_fields (opts, &tmp);
-   BSON_ASSERT (match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false));
+   assert_match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false);
    bson_destroy (&tmp);
    mongoc_find_and_modify_opts_set_sort (opts, tmp_bson ("{'superduper': 1}"));
    mongoc_find_and_modify_opts_get_sort (opts, &tmp);
-   BSON_ASSERT (match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false));
+   assert_match_bson (&tmp, tmp_bson ("{'superduper': 1}"), false);
    bson_destroy (&tmp);
    mongoc_find_and_modify_opts_set_flags (opts,
                                           MONGOC_FIND_AND_MODIFY_RETURN_NEW);
@@ -397,7 +397,7 @@ test_find_and_modify_opts (void)
    BSON_ASSERT (
       mongoc_find_and_modify_opts_append (opts, tmp_bson ("{'foo': 1}")));
    mongoc_find_and_modify_opts_get_extra (opts, &extra);
-   BSON_ASSERT (match_bson (&extra, tmp_bson ("{'foo': 1}"), false));
+   assert_match_bson (&extra, tmp_bson ("{'foo': 1}"), false);
    bson_destroy (&extra);
 
    future = future_collection_find_and_modify_with_opts (

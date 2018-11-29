@@ -1519,14 +1519,11 @@ change_stream_spec_after_test_cb (json_test_ctx_t *test_ctx, const bson_t *test)
             bson_t expected_doc;
             match_ctx_t match_ctx = {0};
 
-            match_ctx.errmsg = bson_malloc0 (120);
-            match_ctx.errmsg_len = 120;
             match_ctx.allow_placeholders = true;
             match_ctx.retain_dots_in_keys = true;
             match_ctx.strict_numeric_types = false;
             bson_iter_bson (&expected_iter, &expected_doc);
             match_in_array (&expected_doc, &all_changes, &match_ctx);
-            bson_free (match_ctx.errmsg);
          }
          bson_destroy (&all_changes);
       }

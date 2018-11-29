@@ -569,7 +569,7 @@ request_matches_msg (const request_t *request,
       doc = request_get_doc (request, i);
       /* pass is_command=true for first doc, including "find" command */
       is_command_doc = (i == 0);
-      BSON_ASSERT (match_bson (doc, pattern, is_command_doc));
+      assert_match_bson (doc, pattern, is_command_doc);
    }
 
    if (n_docs < request->docs.len) {

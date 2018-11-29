@@ -29,10 +29,6 @@ check_json_sdam_events (const bson_t *events, const bson_t *expectations)
    uint32_t expected_keys;
    uint32_t actual_keys;
    match_ctx_t match_ctx = {0};
-   char errmsg[1000] = {0};
-
-   match_ctx.errmsg = errmsg;
-   match_ctx.errmsg_len = sizeof errmsg;
 
    expected_keys = bson_count_keys (expectations);
    actual_keys = bson_count_keys (events);

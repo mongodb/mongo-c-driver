@@ -599,7 +599,7 @@ single_quotes_to_double (const char *str)
  *       True or false.
  *
  * Side effects:
- *       Logs if no match.
+ *       Logs if no match. Aborts if json is malformed.
  *
  *--------------------------------------------------------------------------
  */
@@ -619,7 +619,6 @@ match_json (const bson_t *doc,
    char *double_quoted;
    bson_error_t error;
    bson_t *pattern;
-   char errmsg[1000];
    match_ctx_t ctx = {0};
    bool matches;
 
@@ -636,8 +635,6 @@ match_json (const bson_t *doc,
       abort ();
    }
 
-   ctx.errmsg = errmsg;
-   ctx.errmsg_len = sizeof errmsg;
    ctx.is_command = is_command;
    matches = match_bson_with_ctx (doc, pattern, &ctx);
 
@@ -688,7 +685,37 @@ match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
 
    ctx.strict_numeric_types = true;
    ctx.is_command = is_command;
+
    return match_bson_with_ctx (doc, pattern, &ctx);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * assert_match_bson --
+ *
+ *       Test helper that wraps match_bson. Fails the test if there
+ *       is no found match.
+ *
+ * Returns:
+ *       Nothing.
+ *
+ * Side effects:
+ *       abort()s if there is no match.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+assert_match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
+{
+   match_ctx_t ctx = {0};
+
+   ctx.strict_numeric_types = true;
+   ctx.is_command = is_command;
+
+   if (!match_bson_with_ctx (doc, pattern, &ctx)) {
+      test_error ("%s", ctx.errmsg);
+   }
 }
 
 
@@ -705,12 +732,8 @@ match_err (match_ctx_t *ctx, const char *fmt, ...)
    formatted = bson_strdupv_printf (fmt, args);
    va_end (args);
 
-   if (ctx->errmsg) {
-      bson_snprintf (
-         ctx->errmsg, ctx->errmsg_len, "%s: %s", ctx->path, formatted);
-   } else {
-      test_error ("%s: %s", ctx->path, formatted);
-   }
+   bson_snprintf (
+      ctx->errmsg, sizeof ctx->errmsg, "%s: %s", ctx->path, formatted);
 
    bson_free (formatted);
 }
@@ -726,8 +749,6 @@ derive (match_ctx_t *ctx, match_ctx_t *derived, const char *key)
    BSON_ASSERT (key);
 
    derived->strict_numeric_types = ctx->strict_numeric_types;
-   derived->errmsg = ctx->errmsg; /* location to write err msg if any */
-   derived->errmsg_len = ctx->errmsg_len;
 
    if (strlen (ctx->path) > 0) {
       bson_snprintf (
@@ -740,6 +761,7 @@ derive (match_ctx_t *ctx, match_ctx_t *derived, const char *key)
    derived->visitor_ctx = ctx->visitor_ctx;
    derived->visitor_fn = ctx->visitor_fn;
    derived->is_command = false;
+   derived->errmsg[0] = 0;
 }
 
 
@@ -869,6 +891,10 @@ match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
 fail:
    if (found) {
       bson_value_destroy (&doc_value);
+   }
+
+   if (strlen (derived.errmsg) > 0) {
+      strcpy (ctx->errmsg, derived.errmsg);
    }
 
    return false;

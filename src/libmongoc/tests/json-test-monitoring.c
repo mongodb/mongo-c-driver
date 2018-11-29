@@ -221,14 +221,7 @@ set_apm_callbacks (json_test_ctx_t *ctx, mongoc_client_t *client)
 static bool
 lsids_match (const bson_t *a, const bson_t *b)
 {
-   /* need a match context in case lsids DON'T match, since match_bson() without
-    * context aborts on mismatch */
-   char errmsg[1000];
-   match_ctx_t ctx = {0};
-   ctx.errmsg = errmsg;
-   ctx.errmsg_len = sizeof (errmsg);
-
-   return match_bson_with_ctx (a, b, &ctx);
+   return match_bson (a, b, false);
 }
 
 
@@ -397,7 +390,6 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
    match_ctx_t match_ctx = {0};
    apm_match_visitor_ctx_t apm_match_visitor_ctx = {0};
    int i;
-   char errmsg[1000] = {0};
 
    for (i = 0; i < 2; i++) {
       bson_copy_to (&ctx->lsids[i], &apm_match_visitor_ctx.lsids[i]);
@@ -407,8 +399,6 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
     * Ignore this and other insignificant type differences. */
    match_ctx.strict_numeric_types = false;
    match_ctx.retain_dots_in_keys = true;
-   match_ctx.errmsg = errmsg;
-   match_ctx.errmsg_len = sizeof errmsg;
    match_ctx.allow_placeholders = true;
    match_ctx.visitor_fn = apm_match_visitor;
    match_ctx.visitor_ctx = (void *) &apm_match_visitor_ctx;
@@ -463,7 +453,6 @@ void
 test_apm_matching (void)
 {
    apm_match_visitor_ctx_t match_visitor_ctx = {0};
-   char errmsg[1000] = {0};
    match_ctx_t match_ctx = {0};
 
    const char *e1 = "{"
@@ -480,8 +469,6 @@ test_apm_matching (void)
                     "  }"
                     "}";
 
-   match_ctx.errmsg = errmsg;
-   match_ctx.errmsg_len = sizeof errmsg;
    match_ctx.visitor_fn = apm_match_visitor;
    match_ctx.visitor_ctx = (void *) &match_visitor_ctx;
 

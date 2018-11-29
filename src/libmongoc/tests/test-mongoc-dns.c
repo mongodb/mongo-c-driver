@@ -11,7 +11,6 @@
 static void
 _assert_options_match (const bson_t *test, mongoc_client_t *client)
 {
-   char errmsg[1000];
    match_ctx_t ctx = {0};
    bson_iter_t iter;
    bson_t opts_from_test;
@@ -22,9 +21,6 @@ _assert_options_match (const bson_t *test, mongoc_client_t *client)
    bson_iter_t uri_opts_iter;
    const char *opt_name;
    const bson_value_t *test_value, *uri_value;
-
-   ctx.errmsg = errmsg;
-   ctx.errmsg_len = sizeof errmsg;
 
    if (!bson_iter_init_find (&iter, test, "options")) {
       /* no URI options specified in the test */
