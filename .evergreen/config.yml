@@ -956,21 +956,6 @@ tasks:
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - {func: upload build}
-- name: debug-compile-gssapi-darwinssl
-  tags: [darwinssl, debug-compile, sasl]
-  commands:
-  - command: shell.exec
-    type: test
-    params:
-      working_dir: mongoc
-      script: |-
-        set -o errexit
-        set -o xtrace
-        export DEBUG="ON"
-        export SASL="GSSAPI"
-        export SSL="DARWIN"
-        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
-  - {func: upload build}
 - name: debug-compile-sasl-darwinssl
   tags: [darwinssl, debug-compile, sasl]
   commands:

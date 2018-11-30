@@ -211,10 +211,6 @@ all_tasks = [
                 tags=['debug-compile', 'sasl', 'openssl'],
                 SASL='AUTO',
                 SSL='OPENSSL'),
-    CompileTask('debug-compile-gssapi-darwinssl',
-                tags=['debug-compile', 'sasl', 'darwinssl'],
-                SASL='GSSAPI',
-                SSL='DARWIN'),
     CompileTask('debug-compile-sasl-darwinssl',
                 tags=['debug-compile', 'sasl', 'darwinssl'],
                 SASL='AUTO',
@@ -570,7 +566,7 @@ all_tasks = chain(all_tasks, [
 
 
 class AuthTask(MatrixTask):
-    axes = OD([('sasl', ['sasl', 'sspi', 'gssapi', False]),
+    axes = OD([('sasl', ['sasl', 'sspi', False]),
                ('ssl', ['openssl', 'darwinssl', 'winssl'])])
 
     name_prefix = 'authentication-tests'
@@ -598,8 +594,6 @@ class AuthTask(MatrixTask):
 
     def _check_allowed(self):
         both_or_neither(self.ssl == 'winssl', self.sasl == 'sspi')
-        if self.sasl == 'gssapi':
-            require(self.ssl == 'darwin')
         if not self.sasl:
             require(self.ssl == 'openssl')
 
