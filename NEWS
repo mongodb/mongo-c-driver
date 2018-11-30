@@ -15,8 +15,14 @@ Bug fixes:
   * Remove timestamp from uninstall scripts to permit reproducible build.
   * Setting mongoc_ssl_opt_t.pem_file or ca_file to a bad file path caused a
     hang with Darwin SSL.
-  * The default value for ENABLE_SASL (AUTO) now defaults to using SSPI on
-    Windows. Before it would prefer CYRUS if available.
+
+mongo-c-driver 1.13.1
+=====================
+
+Bug fixes:
+
+  * Add missing header files to the release tarball to fix compilation when
+    configuring with ENABLE_SASL=GSSAPI.
 
 
 mongo-c-driver 1.13.0
