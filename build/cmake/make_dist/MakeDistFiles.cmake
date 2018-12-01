@@ -1,5 +1,5 @@
 
-if (${CMAKE_VERSION} VERSION_LESS 3.3)
+if (${CMAKE_VERSION} VERSION_LESS 3.5)
    include (CMakeParseArguments)
 endif ()
 
