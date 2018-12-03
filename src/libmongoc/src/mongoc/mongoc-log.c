@@ -19,6 +19,8 @@
 #include <sys/syscall.h>
 #elif defined(_WIN32)
 #include <process.h>
+#elif defined(__FreeBSD__)
+#include <sys/thr.h>
 #else
 #include <unistd.h>
 #endif
@@ -171,6 +173,12 @@ mongoc_log_default_handler (mongoc_log_level_t log_level,
    pid = syscall (SYS_gettid);
 #elif defined(_WIN32)
    pid = (int) _getpid ();
+#elif defined(__FreeBSD__)
+   long tid;
+   thr_self (&tid);
+   pid = (int) tid;
+#elif defined(__OpenBSD__)
+   pid = (int) getthrid ();
 #else
    pid = (int) getpid ();
 #endif
