@@ -248,6 +248,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    cursor = (mongoc_cursor_t *) bson_malloc0 (sizeof *cursor);
    cursor->client = client;
    cursor->state = UNPRIMED;
+   cursor->client_generation = client->generation;
 
    bson_init (&cursor->opts);
    bson_init (&cursor->error_doc);
@@ -596,23 +597,26 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       cursor->impl.destroy (&cursor->impl);
    }
 
-   if (cursor->in_exhaust) {
-      cursor->client->in_exhaust = false;
-      if (cursor->state != DONE) {
-         /* The only way to stop an exhaust cursor is to kill the connection */
-         mongoc_cluster_disconnect_node (
-            &cursor->client->cluster, cursor->server_id, false, NULL);
-      }
-   } else if (cursor->cursor_id) {
-      bson_strncpy (db, cursor->ns, cursor->dblen + 1);
+   if (cursor->client_generation == cursor->client->generation) {
+      if (cursor->in_exhaust) {
+         cursor->client->in_exhaust = false;
+         if (cursor->state != DONE) {
+            /* The only way to stop an exhaust cursor is to kill the connection
+             */
+            mongoc_cluster_disconnect_node (
+               &cursor->client->cluster, cursor->server_id, false, NULL);
+         }
+      } else if (cursor->cursor_id) {
+         bson_strncpy (db, cursor->ns, cursor->dblen + 1);
 
-      _mongoc_client_kill_cursor (cursor->client,
-                                  cursor->server_id,
-                                  cursor->cursor_id,
-                                  cursor->operation_id,
-                                  db,
-                                  cursor->ns + cursor->dblen + 1,
-                                  cursor->client_session);
+         _mongoc_client_kill_cursor (cursor->client,
+                                     cursor->server_id,
+                                     cursor->cursor_id,
+                                     cursor->operation_id,
+                                     db,
+                                     cursor->ns + cursor->dblen + 1,
+                                     cursor->client_session);
+      }
    }
 
    if (cursor->client_session && !cursor->explicit_session) {
@@ -1163,6 +1167,14 @@ mongoc_cursor_next (mongoc_cursor_t *cursor, const bson_t **bson)
    BSON_ASSERT (bson);
 
    TRACE ("cursor_id(%" PRId64 ")", cursor->cursor_id);
+
+   if (cursor->client_generation != cursor->client->generation) {
+      bson_set_error (&cursor->error,
+                      MONGOC_ERROR_CURSOR,
+                      MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                      "Cannot advance cursor after client reset");
+      RETURN (false);
+   }
 
    if (bson) {
       *bson = NULL;

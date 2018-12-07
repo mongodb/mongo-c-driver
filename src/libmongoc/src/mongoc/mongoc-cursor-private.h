@@ -117,6 +117,7 @@ typedef struct _mongoc_cursor_response_t {
 
 struct _mongoc_cursor_t {
    mongoc_client_t *client;
+   uint32_t client_generation;
 
    uint32_t server_id;
    bool slave_ok;

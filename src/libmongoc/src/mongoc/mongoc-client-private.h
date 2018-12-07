@@ -93,8 +93,9 @@ struct _mongoc_client_t {
    /* mongoc_client_session_t's in use, to look up lsids and clusterTimes */
    mongoc_set_t *client_sessions;
    unsigned int csid_rand_seed;
-};
 
+   uint32_t generation;
+};
 
 /* Defines whether _mongoc_client_command_with_opts() is acting as a read
  * command helper for a command like "distinct", or a write command helper for
@@ -186,6 +187,5 @@ _mongoc_client_push_server_session (mongoc_client_t *client,
 void
 _mongoc_client_end_sessions (mongoc_client_t *client);
 BSON_END_DECLS
-
 
 #endif /* MONGOC_CLIENT_PRIVATE_H */

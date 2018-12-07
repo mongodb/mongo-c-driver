@@ -394,8 +394,6 @@ mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
 void
 mongoc_topology_destroy (mongoc_topology_t *topology)
 {
-   mongoc_server_session_t *ss, *tmp1, *tmp2;
-
    if (!topology) {
       return;
    }
@@ -407,17 +405,44 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    mongoc_topology_description_destroy (&topology->description);
    mongoc_topology_scanner_destroy (topology->scanner);
 
-   /* free sessions if we failed to run _mongoc_topology_end_sessions */
-   CDL_FOREACH_SAFE (topology->session_pool, ss, tmp1, tmp2)
-   {
-      _mongoc_server_session_destroy (ss);
-   }
+   /* If we are single-threaded, the client will try to call
+      _mongoc_topology_end_sessions_cmd when it dies. This removes
+      sessions from the pool as it calls endSessions on them. In
+      case this does not succeed, we clear the pool again here. */
+   _mongoc_topology_clear_session_pool (topology);
 
    mongoc_cond_destroy (&topology->cond_client);
    mongoc_cond_destroy (&topology->cond_server);
    bson_mutex_destroy (&topology->mutex);
 
    bson_free (topology);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_topology_clear_session_pool --
+ *
+ *       Clears the pool of server sessions without sending endSessions.
+ *
+ * Returns:
+ *       Nothing.
+ *
+ * Side effects:
+ *       Server session pool will be emptied.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+void
+_mongoc_topology_clear_session_pool (mongoc_topology_t *topology)
+{
+   mongoc_server_session_t *ss, *tmp1, *tmp2;
+
+   CDL_FOREACH_SAFE (topology->session_pool, ss, tmp1, tmp2)
+   {
+      _mongoc_server_session_destroy (ss);
+   }
 }
 
 
@@ -1427,7 +1452,7 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_topology_end_sessions --
+ * _mongoc_topology_end_sessions_cmd --
  *
  *       Internal function. End up to 10,000 server sessions. @cmd is an
  *       uninitialized document. Sessions are destroyed as their ids are

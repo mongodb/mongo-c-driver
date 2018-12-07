@@ -258,6 +258,8 @@ MONGOC_EXPORT (mongoc_change_stream_t *)
 mongoc_client_watch (mongoc_client_t *client,
                      const bson_t *pipeline,
                      const bson_t *opts);
+MONGOC_EXPORT (void)
+mongoc_client_reset (mongoc_client_t *client);
 BSON_END_DECLS
 
 

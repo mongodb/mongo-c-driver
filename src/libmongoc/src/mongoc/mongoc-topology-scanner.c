@@ -329,6 +329,20 @@ mongoc_topology_scanner_scan (mongoc_topology_scanner_t *ts, uint32_t id)
 }
 
 void
+mongoc_topology_scanner_disconnect (mongoc_topology_scanner_t *scanner)
+{
+   mongoc_topology_scanner_node_t *node;
+
+   BSON_ASSERT (scanner);
+   node = scanner->nodes;
+
+   while (node) {
+      mongoc_topology_scanner_node_disconnect (node, false);
+      node = node->next;
+   }
+}
+
+void
 mongoc_topology_scanner_node_retire (mongoc_topology_scanner_node_t *node)
 {
    /* cancel any pending commands. */

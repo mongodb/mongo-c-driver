@@ -3,10 +3,12 @@
 
 #include "mongoc/mongoc-client-private.h"
 #include "mongoc/mongoc-cursor-private.h"
+#include "mongoc/mongoc-cluster-private.h"
 #include "mongoc/mongoc-database-private.h"
 #include "mongoc/mongoc-handshake-private.h"
 #include "mongoc/mongoc-host-list-private.h"
 #include "mongoc/mongoc-read-concern-private.h"
+#include "mongoc/mongoc-set-private.h"
 #include "mongoc/mongoc-util-private.h"
 #include "mongoc/mongoc-write-concern-private.h"
 
@@ -3390,6 +3392,217 @@ test_set_ssl_opts (void)
 #endif
 
 static void
+test_client_reset_sessions (void)
+{
+   bson_error_t error;
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_client_session_t *session;
+   mongoc_client_session_t *session_lookup;
+   future_t *future;
+   request_t *request;
+   bson_t opts = BSON_INITIALIZER;
+   uint32_t csid;
+   bson_t lsid;
+   bool res;
+
+   server = mock_mongos_new (WIRE_VERSION_OP_MSG);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   ASSERT (client->generation == 0);
+
+   /* Ensure that resetting client removes existing sessions from its set */
+   session = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (session, error);
+   ASSERT (session->client_generation == client->generation);
+   csid = session->client_session_id;
+
+   mongoc_client_reset (client);
+   ASSERT (client->generation == 1);
+
+   ASSERT (
+      !_mongoc_client_lookup_session (client, csid, &session_lookup, &error));
+
+   /* Ensure that resetting did not send endSessions. To do this, we wait for
+      a ping, so if we receive endSessions instead we will fail. */
+   future = future_client_command_with_opts (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error);
+
+   request = mock_server_receives_msg (
+      server, 0, tmp_bson ("{'ping': 1, 'lsid': {'$exists': true}}"));
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   ASSERT (future_get_bool (future));
+
+   future_destroy (future);
+
+   /* Ensure that a session left over from before the reset call cannot
+      be used for any operations. */
+   bson_copy_to (mongoc_client_session_get_lsid (session), &lsid);
+   res = (mongoc_client_session_append (session, &opts, &error));
+   ASSERT_OR_PRINT (res, error);
+   future = future_client_command_with_opts (
+      client, "admin", tmp_bson ("{'ping': 1}"), NULL, &opts, NULL, &error);
+
+   ASSERT (!future_get_bool (future));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid sessionId");
+
+   /* Add an autoresponder for endSessions to unblock the test. */
+   mock_server_auto_endsessions (server);
+
+   bson_destroy (&lsid);
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_client_session_destroy (session);
+   mongoc_client_session_destroy (session_lookup);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+static void
+test_client_reset_cursors (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   mongoc_database_t *database;
+   mongoc_collection_t *coll;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   const bson_t *doc;
+   bool res;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_KILLCURSORS_CMD);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   /* Ensure that cursors with an old client generation don't send killCursors.
+      This test should timeout and fail if the client does send killCursors. */
+
+   coll = mongoc_client_get_collection (client, "test", "test");
+   cursor = mongoc_collection_find (
+      coll, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson (NULL), NULL, NULL);
+
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SLAVE_OK, "{'find': 'test'}");
+
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': 4,"
+                               "    'ns': 'test.test',"
+                               "    'firstBatch': [{}]}}");
+
+   BSON_ASSERT (future_get_bool (future));
+   ASSERT (cursor->cursor_id);
+
+   mongoc_client_reset (client);
+
+   /* Attempt to call next() on the cursor after a reset--should fail without
+      sending any requests to the server. */
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+   ASSERT (mongoc_cursor_error (cursor, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CURSOR,
+                          MONGOC_ERROR_CURSOR_INVALID_CURSOR,
+                          "Cannot advance cursor after client reset");
+
+   mongoc_cursor_destroy (cursor);
+
+   request_destroy (request);
+   future_destroy (future);
+
+   /* Expect a ping here, and send one after destroying cursor. If a killCursors
+      command intervened, this test will fail. */
+   database = mongoc_client_get_database (client, "admin");
+   future = future_database_command_simple (
+      database, tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   ASSERT (future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_client_destroy (client);
+   mongoc_collection_destroy (coll);
+   mongoc_database_destroy (database);
+   mock_server_destroy (server);
+}
+
+static bool
+mongoc_topology_scanner_is_disconnected (mongoc_topology_scanner_t *scanner)
+{
+   mongoc_topology_scanner_node_t *node;
+
+   BSON_ASSERT (scanner);
+   node = scanner->nodes;
+
+   while (node) {
+      if (node->stream) {
+         return false;
+      }
+
+      node = node->next;
+   }
+
+   return true;
+}
+
+static void
+test_client_reset_connections (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_database_t *database;
+   mongoc_uri_t *uri;
+   future_t *future;
+   request_t *request;
+   int autoresponder_id;
+
+   server = mock_server_new ();
+   autoresponder_id = mock_server_auto_ismaster (server, "{ 'isMaster': 1.0 }");
+   mock_server_run (server);
+
+   /* After calling reset, check that connections have been closed. Set
+      heartbeat frequency high, so a background scan won't interfere. */
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
+   client = mongoc_client_new_from_uri (uri);
+
+   database = mongoc_client_get_database (client, "admin");
+   future = future_database_command_simple (
+      database, tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
+
+   request = mock_server_receives_command (
+      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   ASSERT (future_get_bool (future));
+
+   mock_server_remove_autoresponder (server, autoresponder_id);
+   mongoc_client_reset (client);
+
+   ASSERT (mongoc_topology_scanner_is_disconnected (client->topology->scanner));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_uri_destroy (uri);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
 test_get_database (void)
 {
    mongoc_client_t *client;
@@ -3631,6 +3844,17 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
 #endif
+
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/client_reset/sessions",
+                                test_client_reset_sessions,
+                                test_framework_skip_if_no_sessions,
+                                test_framework_skip_if_no_crypto);
+
+   TestSuite_AddMockServerTest (
+      suite, "/Client/client_reset/cursors", test_client_reset_cursors);
+   TestSuite_AddMockServerTest (
+      suite, "/Client/client_reset/connections", test_client_reset_connections);
 
    TestSuite_AddLive (suite,
                       "/Client/get_description/single",

@@ -591,6 +591,7 @@ _mongoc_client_session_new (mongoc_client_t *client,
 
    session = bson_malloc0 (sizeof (mongoc_client_session_t));
    session->client = client;
+   session->client_generation = client->generation;
    session->server_session = server_session;
    session->client_session_id = client_session_id;
    bson_init (&session->cluster_time);
@@ -1124,16 +1125,22 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
       EXIT;
    }
 
-   if (mongoc_client_session_in_transaction (session)) {
-      mongoc_client_session_abort_transaction (session, NULL);
+   if (session->client_generation == session->client->generation) {
+      if (mongoc_client_session_in_transaction (session)) {
+         mongoc_client_session_abort_transaction (session, NULL);
+      }
+
+      _mongoc_client_unregister_session (session->client, session);
+      _mongoc_client_push_server_session (session->client,
+                                          session->server_session);
+   } else {
+      /* If the client has been reset, destroy the server session instead of
+    pushing it back into the topology's pool. */
+      _mongoc_server_session_destroy (session->server_session);
    }
 
    txn_opts_cleanup (&session->opts.default_txn_opts);
    txn_opts_cleanup (&session->txn.opts);
-
-   _mongoc_client_unregister_session (session->client, session);
-   _mongoc_client_push_server_session (session->client,
-                                       session->server_session);
 
    bson_destroy (&session->cluster_time);
    bson_free (session);

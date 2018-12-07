@@ -73,6 +73,7 @@ struct _mongoc_client_session_t {
    bson_t cluster_time;
    uint32_t operation_timestamp;
    uint32_t operation_increment;
+   uint32_t client_generation;
 };
 
 bool

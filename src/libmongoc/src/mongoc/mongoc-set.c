@@ -152,8 +152,36 @@ mongoc_set_destroy (mongoc_set_t *set)
    bson_free (set);
 }
 
+
+typedef struct {
+   mongoc_set_for_each_cb_t cb;
+   void *ctx;
+} _mongoc_set_for_each_helper_t;
+
+
+static bool
+_mongoc_set_for_each_helper (uint32_t id, void *item, void *ctx)
+{
+   _mongoc_set_for_each_helper_t *helper =
+      (_mongoc_set_for_each_helper_t *) ctx;
+   return helper->cb (item, helper->ctx);
+}
+
+
 void
 mongoc_set_for_each (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
+{
+   _mongoc_set_for_each_helper_t helper;
+   helper.cb = cb;
+   helper.ctx = ctx;
+
+   mongoc_set_for_each_with_id (set, _mongoc_set_for_each_helper, &helper);
+}
+
+void
+mongoc_set_for_each_with_id (mongoc_set_t *set,
+                             mongoc_set_for_each_with_id_cb_t cb,
+                             void *ctx)
 {
    size_t i;
    mongoc_set_item_t *old_set;
@@ -170,7 +198,7 @@ mongoc_set_for_each (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
    memcpy (old_set, set->items, sizeof (*old_set) * items_len);
 
    for (i = 0; i < items_len; i++) {
-      if (!cb (old_set[i].item, ctx)) {
+      if (!cb (i, old_set[i].item, ctx)) {
          break;
       }
    }

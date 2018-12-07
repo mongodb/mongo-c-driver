@@ -132,6 +132,9 @@ void
 mongoc_topology_scanner_scan (mongoc_topology_scanner_t *ts, uint32_t id);
 
 void
+mongoc_topology_scanner_disconnect (mongoc_topology_scanner_t *scanner);
+
+void
 mongoc_topology_scanner_node_retire (mongoc_topology_scanner_node_t *node);
 
 void
