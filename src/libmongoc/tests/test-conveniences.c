@@ -714,7 +714,10 @@ assert_match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
    ctx.is_command = is_command;
 
    if (!match_bson_with_ctx (doc, pattern, &ctx)) {
-      test_error ("%s", ctx.errmsg);
+      test_error ("Expected: %s\n, Got: %s\n, %s\n",
+                  bson_as_canonical_extended_json (pattern, NULL),
+                  bson_as_canonical_extended_json (doc, NULL),
+                  ctx.errmsg);
    }
 }
 

@@ -5,6 +5,7 @@
 
 #include "mongoc/mongoc-client-session.h"
 #include "mongoc/mongoc-bulk-operation-private.h"
+#include "mongoc/mongoc-opts-helpers-private.h"
 
 {{ header_comment }}
 
@@ -16,6 +17,8 @@ typedef struct _{{ struct_type }} {
 {% set the_type = 'const char *' %}
 {% elif info['type'] in ('document', 'array') %}
 {% set the_type = 'bson_t' %}
+{% elif info['type'] == 'timestamp' %}
+{% set the_type = 'mongoc_timestamp_t' %}
 {% else %}
 {% set the_type = info['type'] %}
 {% endif %}

@@ -1304,6 +1304,105 @@ _mongoc_bulk_remove_many_opts_cleanup (mongoc_bulk_remove_many_opts_t *mongoc_bu
 }
 
 bool
+_mongoc_change_stream_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_change_stream_opts_t *mongoc_change_stream_opts,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
+
+   mongoc_change_stream_opts->batchSize = 0;
+   bson_init (&mongoc_change_stream_opts->resumeAfter);
+   memset (&mongoc_change_stream_opts->startAtOperationTime, 0, sizeof (mongoc_timestamp_t));
+   mongoc_change_stream_opts->maxAwaitTimeMS = 0;
+   mongoc_change_stream_opts->fullDocument = "default";
+   bson_init (&mongoc_change_stream_opts->extra);
+
+   if (!opts) {
+      return true;
+   }
+
+   if (!bson_iter_init (&iter, opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Invalid 'opts' parameter.");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "batchSize")) {
+         if (!_mongoc_convert_int32_t (
+               client,
+               &iter,
+               &mongoc_change_stream_opts->batchSize,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "resumeAfter")) {
+         if (!_mongoc_convert_document (
+               client,
+               &iter,
+               &mongoc_change_stream_opts->resumeAfter,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "startAtOperationTime")) {
+         if (!_mongoc_convert_timestamp (
+               client,
+               &iter,
+               &mongoc_change_stream_opts->startAtOperationTime,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "maxAwaitTimeMS")) {
+         if (!_mongoc_convert_int64_positive (
+               client,
+               &iter,
+               &mongoc_change_stream_opts->maxAwaitTimeMS,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "fullDocument")) {
+         if (!_mongoc_convert_utf8 (
+               client,
+               &iter,
+               &mongoc_change_stream_opts->fullDocument,
+               error)) {
+            return false;
+         }
+      }
+      else {
+         /* unrecognized values are copied to "extra" */
+         if (!BSON_APPEND_VALUE (
+               &mongoc_change_stream_opts->extra,
+               bson_iter_key (&iter),
+               bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+void
+_mongoc_change_stream_opts_cleanup (mongoc_change_stream_opts_t *mongoc_change_stream_opts)
+{
+   bson_destroy (&mongoc_change_stream_opts->resumeAfter);
+   bson_destroy (&mongoc_change_stream_opts->extra);
+}
+
+bool
 _mongoc_create_index_opts_parse (
    mongoc_client_t *client,
    const bson_t *opts,
@@ -1605,7 +1704,7 @@ _mongoc_gridfs_bucket_upload_opts_parse (
 
    while (bson_iter_next (&iter)) {
       if (!strcmp (bson_iter_key (&iter), "chunkSizeBytes")) {
-         if (!_mongoc_convert_int32_t (
+         if (!_mongoc_convert_int32_positive (
                client,
                &iter,
                &mongoc_gridfs_bucket_upload_opts->chunkSizeBytes,

@@ -23,6 +23,42 @@
 
 
 bool
+_mongoc_timestamp_empty (mongoc_timestamp_t *timestamp)
+{
+   return (timestamp->timestamp == 0 && timestamp->increment == 0);
+}
+
+void
+_mongoc_timestamp_set (mongoc_timestamp_t *dst, mongoc_timestamp_t *src)
+{
+   dst->timestamp = src->timestamp;
+   dst->increment = src->increment;
+}
+
+void
+_mongoc_timestamp_set_from_bson (mongoc_timestamp_t *timestamp,
+                                 bson_iter_t *iter)
+{
+   bson_iter_timestamp (iter, &(timestamp->timestamp), &(timestamp->increment));
+}
+
+void
+_mongoc_timestamp_append (mongoc_timestamp_t *timestamp,
+                          bson_t *bson,
+                          char *key)
+{
+   bson_append_timestamp (
+      bson, key, strlen (key), timestamp->timestamp, timestamp->increment);
+}
+
+void
+_mongoc_timestamp_clear (mongoc_timestamp_t *timestamp)
+{
+   timestamp->timestamp = 0;
+   timestamp->increment = 0;
+}
+
+bool
 _mongoc_convert_document (mongoc_client_t *client,
                           const bson_iter_t *iter,
                           bson_t *doc,
@@ -178,6 +214,16 @@ _mongoc_convert_bson_value_t (mongoc_client_t *client,
                               bson_error_t *error)
 {
    bson_value_copy (bson_iter_value ((bson_iter_t *) iter), value);
+   return true;
+}
+
+bool
+_mongoc_convert_timestamp (mongoc_client_t *client,
+                           const bson_iter_t *iter,
+                           mongoc_timestamp_t *timestamp,
+                           bson_error_t *error)
+{
+   bson_iter_timestamp (iter, &timestamp->timestamp, &timestamp->increment);
    return true;
 }
 

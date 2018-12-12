@@ -5,6 +5,7 @@
 
 #include "mongoc/mongoc-client-session.h"
 #include "mongoc/mongoc-bulk-operation-private.h"
+#include "mongoc/mongoc-opts-helpers-private.h"
 
 /**************************************************
  *
@@ -122,6 +123,15 @@ typedef struct _mongoc_bulk_remove_many_opts_t {
    mongoc_bulk_remove_opts_t remove;
    bson_t extra;
 } mongoc_bulk_remove_many_opts_t;
+
+typedef struct _mongoc_change_stream_opts_t {
+   int32_t batchSize;
+   bson_t resumeAfter;
+   mongoc_timestamp_t startAtOperationTime;
+   int64_t maxAwaitTimeMS;
+   const char *fullDocument;
+   bson_t extra;
+} mongoc_change_stream_opts_t;
 
 typedef struct _mongoc_create_index_opts_t {
    mongoc_write_concern_t *writeConcern;
@@ -294,6 +304,16 @@ _mongoc_bulk_remove_many_opts_parse (
 
 void
 _mongoc_bulk_remove_many_opts_cleanup (mongoc_bulk_remove_many_opts_t *mongoc_bulk_remove_many_opts);
+
+bool
+_mongoc_change_stream_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_change_stream_opts_t *mongoc_change_stream_opts,
+   bson_error_t *error);
+
+void
+_mongoc_change_stream_opts_cleanup (mongoc_change_stream_opts_t *mongoc_change_stream_opts);
 
 bool
 _mongoc_create_index_opts_parse (

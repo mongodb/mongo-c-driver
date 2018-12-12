@@ -23,6 +23,8 @@
 #include "mongoc/mongoc-client-session.h"
 #include "mongoc/mongoc-collection.h"
 #include "mongoc/mongoc-cursor.h"
+#include "mongoc/mongoc-opts-private.h"
+#include "mongoc/mongoc-opts-helpers-private.h"
 
 typedef enum {
    MONGOC_CHANGE_STREAM_COLLECTION,
@@ -31,11 +33,11 @@ typedef enum {
 } mongoc_change_stream_type_t;
 
 struct _mongoc_change_stream_t {
+   mongoc_change_stream_opts_t opts;
+   mongoc_timestamp_t operation_time;
    bson_t pipeline_to_append;
-   bson_t full_document;
-   bson_t opts;
-   bson_t resume_token;   /* empty, or has resumeAfter: doc */
-   bson_t operation_time; /* empty, or has startAtOperationTime: ts */
+   bson_t resume_token; /* empty, or has resumeAfter: doc */
+   bson_t *full_document;
 
    bson_error_t err;
    bson_t err_doc;

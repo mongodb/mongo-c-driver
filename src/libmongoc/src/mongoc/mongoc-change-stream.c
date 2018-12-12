@@ -29,15 +29,6 @@
                    MONGOC_ERROR_BSON,   \
                    "Could not set " _str);
 
-
-#define SET_BSON_OR_ERR(_dst, _str)                                   \
-   do {                                                               \
-      if (!BSON_APPEND_VALUE (_dst, _str, bson_iter_value (&iter))) { \
-         CHANGE_STREAM_ERR (_str);                                    \
-      }                                                               \
-   } while (0);
-
-
 /* the caller knows either a client or server error has occurred.
  * `reply` contains the server reply or an empty document. */
 static bool
@@ -107,7 +98,7 @@ _make_command (mongoc_change_stream_t *stream, bson_t *command)
    bson_append_document_begin (&pipeline, "0", 1, &change_stream_stage);
    bson_append_document_begin (
       &change_stream_stage, "$changeStream", 13, &change_stream_doc);
-   bson_concat (&change_stream_doc, &stream->full_document);
+   bson_concat (&change_stream_doc, stream->full_document);
    if (!bson_empty (&stream->resume_token)) {
       bson_concat (&change_stream_doc, &stream->resume_token);
    }
@@ -115,8 +106,9 @@ _make_command (mongoc_change_stream_t *stream, bson_t *command)
     * exclusive; if both startAtOperationTime and resumeAfter are set, the
     * server will return an error. Drivers MUST NOT throw a custom error, and
     * MUST defer to the server error." */
-   if (!bson_empty (&stream->operation_time)) {
-      bson_concat (&change_stream_doc, &stream->operation_time);
+   if (!_mongoc_timestamp_empty (&stream->operation_time)) {
+      _mongoc_timestamp_append (
+         &stream->operation_time, &change_stream_doc, "startAtOperationTime");
    }
 
    if (stream->change_stream_type == MONGOC_CHANGE_STREAM_CLIENT) {
@@ -184,7 +176,7 @@ _make_cursor (mongoc_change_stream_t *stream)
    BSON_ASSERT (stream);
    BSON_ASSERT (!stream->cursor);
    _make_command (stream, &command);
-   bson_copy_to (&stream->opts, &command_opts);
+   bson_copy_to (&(stream->opts.extra), &command_opts);
    sd = mongoc_client_select_server (
       stream->client, false /* for_writes */, stream->read_prefs, &stream->err);
    if (!sd) {
@@ -266,7 +258,7 @@ _make_cursor (mongoc_change_stream_t *stream)
    }
 
    if (stream->batch_size > 0) {
-      bson_append_int64 (&getmore_opts,
+      bson_append_int32 (&getmore_opts,
                          MONGOC_CURSOR_BATCH_SIZE,
                          MONGOC_CURSOR_BATCH_SIZE_LEN,
                          stream->batch_size);
@@ -278,12 +270,10 @@ _make_cursor (mongoc_change_stream_t *stream)
     * ChangeStream MUST save the operationTime from the initial aggregate
     * command when it returns." */
    if (bson_empty (&stream->resume_token) &&
-       bson_empty (&stream->operation_time) && max_wire_version >= 7 &&
+       _mongoc_timestamp_empty (&stream->operation_time) &&
+       max_wire_version >= 7 &&
        bson_iter_init_find (&iter, &reply, "operationTime")) {
-      bson_append_value (&stream->operation_time,
-                         "startAtOperationTime",
-                         20,
-                         bson_iter_value (&iter));
+      _mongoc_timestamp_set_from_bson (&stream->operation_time, &iter);
    }
    /* steals reply. */
    stream->cursor = mongoc_cursor_new_from_command_reply_with_opts (
@@ -311,71 +301,31 @@ _change_stream_init (mongoc_change_stream_t *stream,
                      const bson_t *pipeline,
                      const bson_t *opts)
 {
-   bool full_doc_set = false;
-
    BSON_ASSERT (pipeline);
 
    stream->max_await_time_ms = -1;
    stream->batch_size = -1;
    bson_init (&stream->pipeline_to_append);
-   bson_init (&stream->full_document);
-   bson_init (&stream->opts);
    bson_init (&stream->resume_token);
-   bson_init (&stream->operation_time);
    bson_init (&stream->err_doc);
 
-   /*
-    * The passed options may consist of:
-    * fullDocument: 'default'|'updateLookup', passed to $changeStream stage
-    * resumeAfter: optional<Doc>, passed to $changeStream stage
-    * maxAwaitTimeMS: Optional<Int64>, set on the cursor
-    * batchSize: Optional<Int32>, passed as agg option, {cursor: { batchSize: }}
-    * standard command options like "sessionId", "maxTimeMS", or "collation"
-    */
-   if (opts) {
-      bson_iter_t iter;
-
-      if (bson_iter_init_find (&iter, opts, "fullDocument")) {
-         SET_BSON_OR_ERR (&stream->full_document, "fullDocument");
-         full_doc_set = true;
-      }
-
-      if (bson_iter_init_find (&iter, opts, "resumeAfter")) {
-         SET_BSON_OR_ERR (&stream->resume_token, "resumeAfter");
-      }
-
-      if (bson_iter_init_find (&iter, opts, "startAtOperationTime")) {
-         SET_BSON_OR_ERR (&stream->operation_time, "startAtOperationTime");
-      }
-
-      if (bson_iter_init_find (&iter, opts, "batchSize")) {
-         if (BSON_ITER_HOLDS_INT32 (&iter)) {
-            stream->batch_size = bson_iter_int32 (&iter);
-         }
-      }
-
-      if (bson_iter_init_find (&iter, opts, "maxAwaitTimeMS") &&
-          BSON_ITER_HOLDS_INT (&iter)) {
-         stream->max_await_time_ms = bson_iter_as_int64 (&iter);
-      }
-
-      /* save the other opts for mongoc_collection_read_command_with_opts. */
-      bson_copy_to_excluding_noinit (opts,
-                                     &stream->opts,
-                                     "startAtOperationTime",
-                                     "fullDocument",
-                                     "resumeAfter",
-                                     "batchSize",
-                                     "maxAwaitTimeMS",
-                                     NULL);
+   if (!_mongoc_change_stream_opts_parse (
+          stream->client, opts, &stream->opts, &stream->err)) {
+      return;
    }
 
-   if (!full_doc_set) {
-      if (!BSON_APPEND_UTF8 (
-             &stream->full_document, "fullDocument", "default")) {
-         CHANGE_STREAM_ERR ("fullDocument");
-      }
+   stream->full_document = BCON_NEW ("fullDocument", stream->opts.fullDocument);
+
+   if (!bson_empty (&(stream->opts.resumeAfter))) {
+      bson_append_document (
+         &stream->resume_token, "resumeAfter", 11, &(stream->opts.resumeAfter));
    }
+
+   _mongoc_timestamp_set (&stream->operation_time,
+                          &(stream->opts.startAtOperationTime));
+
+   stream->batch_size = stream->opts.batchSize;
+   stream->max_await_time_ms = stream->opts.maxAwaitTimeMS;
 
    /* Accept two forms of user pipeline:
     * 1. A document like: { "pipeline": [...] }
@@ -387,7 +337,11 @@ _change_stream_init (mongoc_change_stream_t *stream,
       bson_iter_t iter;
       if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
           BSON_ITER_HOLDS_ARRAY (&iter)) {
-         SET_BSON_OR_ERR (&stream->pipeline_to_append, "pipeline");
+         if (!BSON_APPEND_VALUE (&stream->pipeline_to_append,
+                                 "pipeline",
+                                 bson_iter_value (&iter))) {
+            CHANGE_STREAM_ERR ("pipeline");
+         }
       } else {
          if (!BSON_APPEND_ARRAY (
                 &stream->pipeline_to_append, "pipeline", pipeline)) {
@@ -527,7 +481,7 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
    BSON_APPEND_VALUE (
       &stream->resume_token, "resumeAfter", bson_iter_value (&iter));
    /* clear out the operation time, since we no longer need it to resume. */
-   bson_reinit (&stream->operation_time);
+   _mongoc_timestamp_clear (&stream->operation_time);
    ret = true;
 
 end:
@@ -576,11 +530,10 @@ mongoc_change_stream_destroy (mongoc_change_stream_t *stream)
    }
 
    bson_destroy (&stream->pipeline_to_append);
-   bson_destroy (&stream->full_document);
-   bson_destroy (&stream->opts);
    bson_destroy (&stream->resume_token);
-   bson_destroy (&stream->operation_time);
+   bson_destroy (stream->full_document);
    bson_destroy (&stream->err_doc);
+   _mongoc_change_stream_opts_cleanup (&stream->opts);
    mongoc_cursor_destroy (stream->cursor);
    mongoc_client_session_destroy (stream->implicit_session);
    mongoc_read_prefs_destroy (stream->read_prefs);
