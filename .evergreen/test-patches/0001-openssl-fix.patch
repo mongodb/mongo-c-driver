@@ -1,0 +1,503 @@
+commit 133c6400d658c204237152f63a482f5d1b40fd48
+Author: A. Jesse Jiryu Davis <jesse@mongodb.com>
+Date:   Wed Oct 10 21:56:41 2018 -0400
+
+    CDRIVER-2846 OpenSSL 1.1.1 compatibility (TEMP)
+    
+    OpenSSL 1.1.1 supports TLSv1.3, and the docs say "TLSv1.3 sends more
+    non-application data records after the handshake is finished." When the async
+    loop detects a socket is readable, the available data might be non-application
+    data and BIO_read returns 0. Update the async code to keep trying to read in
+    this scenario.
+    
+    Also fix the CMake config check for ASN1_STRING_get0_data, and avoid
+    deprecation warnings with OpenSSL 1.1.0+ from the old ASN1_STRING_data.
+    
+    Finally, if we test build an old OpenSSL locally on a system where 1.1.1 is the
+    default, we must keep the old OpenSSL out of CMake's own LD path or it will
+    fail to start.
+
+diff --git a/.evergreen/set-path.sh b/.evergreen/add-build-dirs-to-paths.sh
+similarity index 77%
+rename from .evergreen/set-path.sh
+rename to .evergreen/add-build-dirs-to-paths.sh
+index bd8267d37..aadc9f643 100644
+--- a/.evergreen/set-path.sh
++++ b/.evergreen/add-build-dirs-to-paths.sh
+@@ -19,6 +19,16 @@ set_path ()
+          export LD_LIBRARY_PATH=".:install-dir/lib:src/libbson:src/libmongoc:$EXTRA_LIB_PATH:$LD_LIBRARY_PATH"
+          ;;
+    esac
++
++   case "$OS" in
++      cygwin*)
++         ;;
++
++      *)
++         export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig:$PKG_CONFIG_PATH
++         export PATH=$INSTALL_DIR/bin:$PATH
++         ;;
++   esac
+ }
+ 
+ set_path
+diff --git a/.evergreen/compile-unix.sh b/.evergreen/compile-unix.sh
+index 7f2d51103..dc2266a49 100755
+--- a/.evergreen/compile-unix.sh
++++ b/.evergreen/compile-unix.sh
+@@ -89,9 +89,16 @@ fi
+ DEBUG_FLAGS="${DEBUG_AND_RELEASE_FLAGS} -DCMAKE_BUILD_TYPE=Debug"
+ RELEASE_FLAGS="${DEBUG_AND_RELEASE_FLAGS} -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+ 
+-DIR=$(dirname $0)
++# Where are we, without relying on realpath or readlink?
++if [ "$(dirname $0)" == "." ]; then
++   DIR="$(pwd)"
++elif [ $(dirname $0) == ".." ]; then
++   DIR="$(dirname "$(pwd)")"
++else
++   DIR="$(cd "$(dirname "$0")"; pwd)"
++fi
++
+ . $DIR/find-cmake.sh
+-. $DIR/set-path.sh
+ 
+ # --strip-components is an GNU tar extension. Check if the platform
+ # has GNU tar installed as `gtar`, otherwise we assume to be on
+@@ -187,13 +194,14 @@ else
+    $CMAKE $CONFIGURE_FLAGS
+ fi
+ 
+-openssl version
++$SCAN_BUILD make -j8 all
++
++. $DIR/add-build-dirs-to-paths.sh
+ if [ -n "$SSL_VERSION" ]; then
+    openssl version | grep -q $SSL_VERSION
+ fi
+ # This should fail when using fips capable OpenSSL when fips mode is enabled
+ openssl md5 README.rst || true
+-$SCAN_BUILD make -j8 all
+ 
+ ulimit -c unlimited || true
+ 
+diff --git a/.evergreen/run-auth-tests.sh b/.evergreen/run-auth-tests.sh
+index 1cadc9012..3dfd7595b 100644
+--- a/.evergreen/run-auth-tests.sh
++++ b/.evergreen/run-auth-tests.sh
+@@ -34,7 +34,7 @@ else
+ fi
+ 
+ DIR=$(dirname $0)
+-. $DIR/set-path.sh
++. $DIR/add-build-dirs-to-paths.sh
+ 
+ case "$OS" in
+    cygwin*)
+diff --git a/.evergreen/run-mock-server-tests.sh b/.evergreen/run-mock-server-tests.sh
+index ed0f84e80..163de4df8 100755
+--- a/.evergreen/run-mock-server-tests.sh
++++ b/.evergreen/run-mock-server-tests.sh
+@@ -21,7 +21,7 @@ export MONGOC_TEST_SKIP_LIVE="on"
+ export MONGOC_TEST_SKIP_SLOW="on"
+ 
+ DIR=$(dirname $0)
+-. $DIR/set-path.sh
++. $DIR/add-build-dirs-to-paths.sh
+ 
+ case "$OS" in
+    cygwin*)
+diff --git a/.evergreen/run-tests.sh b/.evergreen/run-tests.sh
+index 04cbbf039..af0f0e67e 100755
+--- a/.evergreen/run-tests.sh
++++ b/.evergreen/run-tests.sh
+@@ -68,7 +68,7 @@ if [ "$CC" = "mingw" ]; then
+ fi
+ 
+ DIR=$(dirname $0)
+-. $DIR/set-path.sh
++. $DIR/add-build-dirs-to-paths.sh
+ . $DIR/valgrind.sh
+ 
+ case "$OS" in
+diff --git a/src/libmongoc/CMakeLists.txt b/src/libmongoc/CMakeLists.txt
+index 400dce8ed..dc606a654 100644
+--- a/src/libmongoc/CMakeLists.txt
++++ b/src/libmongoc/CMakeLists.txt
+@@ -156,7 +156,7 @@ if (OPENSSL_FOUND)
+    endif ()
+    include (CheckLibraryExists)
+    # Check for newer OpenSSL string function.
+-   check_library_exists (ssl
++   check_library_exists ("${OPENSSL_CRYPTO_LIBRARY}"
+       ASN1_STRING_get0_data "openssl/asn1.h" HAVE_ASN1_STRING_GET0_DATA
+    )
+    if (HAVE_ASN1_STRING_GET0_DATA)
+diff --git a/src/libmongoc/doc/mongoc_stream_should_retry.rst b/src/libmongoc/doc/mongoc_stream_should_retry.rst
+new file mode 100644
+index 000000000..3571e3359
+--- /dev/null
++++ b/src/libmongoc/doc/mongoc_stream_should_retry.rst
+@@ -0,0 +1,22 @@
++:man_page: mongoc_stream_should_retry
++
++mongoc_stream_should_retry()
++============================
++
++Synopsis
++--------
++
++.. code-block:: c
++
++  bool
++  mongoc_stream_should_retry (mongoc_stream_t *stream);
++
++Parameters
++----------
++
++* ``stream``: A :symbol:`mongoc_stream_t`.
++
++Returns
++-------
++
++True if the stream is open and has encountered a retryable network error such as EAGAIN or if a TLS exchange is in progress and needs more data.
+diff --git a/src/libmongoc/doc/mongoc_stream_t.rst b/src/libmongoc/doc/mongoc_stream_t.rst
+index 0b7c71dcf..851cb399f 100644
+--- a/src/libmongoc/doc/mongoc_stream_t.rst
++++ b/src/libmongoc/doc/mongoc_stream_t.rst
+@@ -37,6 +37,7 @@ There are a number of built in stream types that come with mongoc. The default c
+     mongoc_stream_read
+     mongoc_stream_readv
+     mongoc_stream_setsockopt
++    mongoc_stream_should_retry
+     mongoc_stream_timed_out
+     mongoc_stream_uncork
+     mongoc_stream_write
+diff --git a/src/libmongoc/src/mongoc/mongoc-async-cmd.c b/src/libmongoc/src/mongoc/mongoc-async-cmd.c
+index 9df5a7c9f..cfbe38aa7 100644
+--- a/src/libmongoc/src/mongoc/mongoc-async-cmd.c
++++ b/src/libmongoc/src/mongoc/mongoc-async-cmd.c
+@@ -330,6 +330,10 @@ _mongoc_async_cmd_phase_send (mongoc_async_cmd_t *acmd)
+       bson_free (iovec);
+    }
+ 
++   if (bytes <= 0 && mongoc_stream_should_retry (acmd->stream)) {
++      return MONGOC_ASYNC_CMD_IN_PROGRESS;
++   }
++
+    if (bytes < 0) {
+       bson_set_error (&acmd->error,
+                       MONGOC_ERROR_STREAM,
+@@ -360,6 +364,10 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
+       &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0);
+    uint32_t msg_len;
+ 
++   if (bytes <= 0 && mongoc_stream_should_retry (acmd->stream)) {
++      return MONGOC_ASYNC_CMD_IN_PROGRESS;
++   }
++
+    if (bytes < 0) {
+       bson_set_error (&acmd->error,
+                       MONGOC_ERROR_STREAM,
+@@ -376,13 +384,14 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
+       return MONGOC_ASYNC_CMD_ERROR;
+    }
+ 
+-   acmd->bytes_to_read -= bytes;
++   acmd->bytes_to_read = (size_t) (acmd->bytes_to_read - bytes);
+ 
+    if (!acmd->bytes_to_read) {
+       memcpy (&msg_len, acmd->buffer.data, 4);
+       msg_len = BSON_UINT32_FROM_LE (msg_len);
+ 
+-      if ((msg_len < 16) || (msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE)) {
++      if (msg_len < 16 || msg_len > MONGOC_DEFAULT_MAX_MSG_SIZE ||
++          msg_len < acmd->buffer.len) {
+          bson_set_error (&acmd->error,
+                          MONGOC_ERROR_PROTOCOL,
+                          MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+@@ -390,7 +399,7 @@ _mongoc_async_cmd_phase_recv_len (mongoc_async_cmd_t *acmd)
+          return MONGOC_ASYNC_CMD_ERROR;
+       }
+ 
+-      acmd->bytes_to_read = msg_len - 4;
++      acmd->bytes_to_read = msg_len - acmd->buffer.len;
+       acmd->state = MONGOC_ASYNC_CMD_RECV_RPC;
+ 
+       return _mongoc_async_cmd_phase_recv_rpc (acmd);
+@@ -405,6 +414,10 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
+    ssize_t bytes = _mongoc_buffer_try_append_from_stream (
+       &acmd->buffer, acmd->stream, acmd->bytes_to_read, 0);
+ 
++   if (bytes <= 0 && mongoc_stream_should_retry (acmd->stream)) {
++      return MONGOC_ASYNC_CMD_IN_PROGRESS;
++   }
++
+    if (bytes < 0) {
+       bson_set_error (&acmd->error,
+                       MONGOC_ERROR_STREAM,
+@@ -421,7 +434,7 @@ _mongoc_async_cmd_phase_recv_rpc (mongoc_async_cmd_t *acmd)
+       return MONGOC_ASYNC_CMD_ERROR;
+    }
+ 
+-   acmd->bytes_to_read -= bytes;
++   acmd->bytes_to_read = (size_t) (acmd->bytes_to_read - bytes);
+ 
+    if (!acmd->bytes_to_read) {
+       if (!_mongoc_rpc_scatter (
+diff --git a/src/libmongoc/src/mongoc/mongoc-stream-buffered.c b/src/libmongoc/src/mongoc/mongoc-stream-buffered.c
+index 98fc8ba3f..23bcf9e6a 100644
+--- a/src/libmongoc/src/mongoc/mongoc-stream-buffered.c
++++ b/src/libmongoc/src/mongoc/mongoc-stream-buffered.c
+@@ -286,6 +286,15 @@ _mongoc_stream_buffered_timed_out (mongoc_stream_t *stream) /* IN */
+ }
+ 
+ 
++static bool
++_mongoc_stream_buffered_should_retry (mongoc_stream_t *stream) /* IN */
++{
++   mongoc_stream_buffered_t *buffered = (mongoc_stream_buffered_t *) stream;
++   BSON_ASSERT (stream);
++   return mongoc_stream_should_retry (buffered->base_stream);
++}
++
++
+ /*
+  *--------------------------------------------------------------------------
+  *
+@@ -328,6 +337,7 @@ mongoc_stream_buffered_new (mongoc_stream_t *base_stream, /* IN */
+    stream->stream.get_base_stream = _mongoc_stream_buffered_get_base_stream;
+    stream->stream.check_closed = _mongoc_stream_buffered_check_closed;
+    stream->stream.timed_out = _mongoc_stream_buffered_timed_out;
++   stream->stream.should_retry = _mongoc_stream_buffered_should_retry;
+ 
+    stream->base_stream = base_stream;
+ 
+diff --git a/src/libmongoc/src/mongoc/mongoc-stream-socket.c b/src/libmongoc/src/mongoc/mongoc-stream-socket.c
+index 269e1fd4d..f88b8d0bf 100644
+--- a/src/libmongoc/src/mongoc/mongoc-stream-socket.c
++++ b/src/libmongoc/src/mongoc/mongoc-stream-socket.c
+@@ -294,6 +294,20 @@ _mongoc_stream_socket_timed_out (mongoc_stream_t *stream) /* IN */
+ }
+ 
+ 
++static bool
++_mongoc_stream_socket_should_retry (mongoc_stream_t *stream) /* IN */
++{
++   mongoc_stream_socket_t *ss = (mongoc_stream_socket_t *) stream;
++
++   ENTRY;
++
++   BSON_ASSERT (ss);
++   BSON_ASSERT (ss->sock);
++
++   RETURN (MONGOC_ERRNO_IS_AGAIN (ss->sock->errno_));
++}
++
++
+ /*
+  *--------------------------------------------------------------------------
+  *
+@@ -329,6 +343,7 @@ mongoc_stream_socket_new (mongoc_socket_t *sock) /* IN */
+    stream->vtable.setsockopt = _mongoc_stream_socket_setsockopt;
+    stream->vtable.check_closed = _mongoc_stream_socket_check_closed;
+    stream->vtable.timed_out = _mongoc_stream_socket_timed_out;
++   stream->vtable.should_retry = _mongoc_stream_socket_should_retry;
+    stream->vtable.poll = _mongoc_stream_socket_poll;
+    stream->sock = sock;
+ 
+diff --git a/src/libmongoc/src/mongoc/mongoc-stream-tls-libressl.c b/src/libmongoc/src/mongoc/mongoc-stream-tls-libressl.c
+index a1eb770f2..d98b76cb8 100644
+--- a/src/libmongoc/src/mongoc/mongoc-stream-tls-libressl.c
++++ b/src/libmongoc/src/mongoc/mongoc-stream-tls-libressl.c
+@@ -451,6 +451,16 @@ _mongoc_stream_tls_libressl_timed_out (mongoc_stream_t *stream)
+    RETURN (mongoc_stream_timed_out (tls->base_stream));
+ }
+ 
++static bool
++_mongoc_stream_tls_libressl_should_retry (mongoc_stream_t *stream)
++{
++   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
++
++   ENTRY;
++
++   RETURN (mongoc_stream_should_retry (tls->base_stream));
++}
++
+ mongoc_stream_t *
+ mongoc_stream_tls_libressl_new (mongoc_stream_t *base_stream,
+                                 const char *host,
+@@ -485,6 +495,7 @@ mongoc_stream_tls_libressl_new (mongoc_stream_t *base_stream,
+    tls->parent.get_base_stream = _mongoc_stream_tls_libressl_get_base_stream;
+    tls->parent.check_closed = _mongoc_stream_tls_libressl_check_closed;
+    tls->parent.timed_out = _mongoc_stream_tls_libressl_timed_out;
++   tls->parent.should_retry = _mongoc_stream_tls_libressl_should_retry;
+    memcpy (&tls->ssl_opts, opt, sizeof tls->ssl_opts);
+    tls->handshake = mongoc_stream_tls_libressl_handshake;
+    tls->ctx = (void *) libressl;
+diff --git a/src/libmongoc/src/mongoc/mongoc-stream-tls-openssl.c b/src/libmongoc/src/mongoc/mongoc-stream-tls-openssl.c
+index 64666e1df..5839068a9 100644
+--- a/src/libmongoc/src/mongoc/mongoc-stream-tls-openssl.c
++++ b/src/libmongoc/src/mongoc/mongoc-stream-tls-openssl.c
+@@ -627,6 +627,22 @@ _mongoc_stream_tls_openssl_timed_out (mongoc_stream_t *stream)
+    RETURN (mongoc_stream_timed_out (tls->base_stream));
+ }
+ 
++static bool
++_mongoc_stream_tls_openssl_should_retry (mongoc_stream_t *stream)
++{
++   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
++   mongoc_stream_tls_openssl_t *openssl =
++      (mongoc_stream_tls_openssl_t *) tls->ctx;
++
++   ENTRY;
++
++   if (BIO_should_retry (openssl->bio)) {
++      RETURN (true);
++   }
++
++   RETURN (mongoc_stream_should_retry (tls->base_stream));
++}
++
+ /*
+  *--------------------------------------------------------------------------
+  *
+@@ -747,6 +763,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
+    tls->parent.get_base_stream = _mongoc_stream_tls_openssl_get_base_stream;
+    tls->parent.check_closed = _mongoc_stream_tls_openssl_check_closed;
+    tls->parent.timed_out = _mongoc_stream_tls_openssl_timed_out;
++   tls->parent.should_retry = _mongoc_stream_tls_openssl_should_retry;
+    memcpy (&tls->ssl_opts, opt, sizeof tls->ssl_opts);
+    tls->handshake = mongoc_stream_tls_openssl_handshake;
+    tls->ctx = (void *) openssl;
+diff --git a/src/libmongoc/src/mongoc/mongoc-stream-tls-secure-channel.c b/src/libmongoc/src/mongoc/mongoc-stream-tls-secure-channel.c
+index de17d04c4..6349cd1ef 100644
+--- a/src/libmongoc/src/mongoc/mongoc-stream-tls-secure-channel.c
++++ b/src/libmongoc/src/mongoc/mongoc-stream-tls-secure-channel.c
+@@ -903,6 +903,16 @@ _mongoc_stream_tls_secure_channel_timed_out (mongoc_stream_t *stream)
+    RETURN (mongoc_stream_timed_out (tls->base_stream));
+ }
+ 
++static bool
++_mongoc_stream_tls_secure_channel_should_retry (mongoc_stream_t *stream)
++{
++   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
++
++   ENTRY;
++
++   RETURN (mongoc_stream_should_retry (tls->base_stream));
++}
++
+ mongoc_stream_t *
+ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
+                                       const char *host,
+@@ -942,6 +952,7 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
+       _mongoc_stream_tls_secure_channel_get_base_stream;
+    tls->parent.check_closed = _mongoc_stream_tls_secure_channel_check_closed;
+    tls->parent.timed_out = _mongoc_stream_tls_secure_channel_timed_out;
++   tls->parent.should_retry = _mongoc_stream_tls_secure_channel_should_retry;
+    memcpy (&tls->ssl_opts, opt, sizeof tls->ssl_opts);
+    tls->handshake = mongoc_stream_tls_secure_channel_handshake;
+    tls->ctx = (void *) secure_channel;
+diff --git a/src/libmongoc/src/mongoc/mongoc-stream-tls-secure-transport.c b/src/libmongoc/src/mongoc/mongoc-stream-tls-secure-transport.c
+index 8694134f9..375f4bd6a 100644
+--- a/src/libmongoc/src/mongoc/mongoc-stream-tls-secure-transport.c
++++ b/src/libmongoc/src/mongoc/mongoc-stream-tls-secure-transport.c
+@@ -457,6 +457,16 @@ _mongoc_stream_tls_secure_channel_timed_out (mongoc_stream_t *stream)
+    RETURN (mongoc_stream_timed_out (tls->base_stream));
+ }
+ 
++static bool
++_mongoc_stream_tls_secure_channel_should_retry (mongoc_stream_t *stream)
++{
++   mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
++
++   ENTRY;
++
++   RETURN (mongoc_stream_should_retry (tls->base_stream));
++}
++
+ mongoc_stream_t *
+ mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
+                                         const char *host,
+@@ -499,6 +509,7 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
+       _mongoc_stream_tls_secure_transport_get_base_stream;
+    tls->parent.check_closed = _mongoc_stream_tls_secure_transport_check_closed;
+    tls->parent.timed_out = _mongoc_stream_tls_secure_channel_timed_out;
++   tls->parent.should_retry = _mongoc_stream_tls_secure_channel_should_retry;
+    memcpy (&tls->ssl_opts, opt, sizeof tls->ssl_opts);
+    tls->handshake = mongoc_stream_tls_secure_transport_handshake;
+    tls->ctx = (void *) secure_transport;
+diff --git a/src/libmongoc/src/mongoc/mongoc-stream.c b/src/libmongoc/src/mongoc/mongoc-stream.c
+index fb00b1505..10fc78311 100644
+--- a/src/libmongoc/src/mongoc/mongoc-stream.c
++++ b/src/libmongoc/src/mongoc/mongoc-stream.c
+@@ -411,6 +411,17 @@ mongoc_stream_timed_out (mongoc_stream_t *stream)
+    RETURN (stream->timed_out && stream->timed_out (stream));
+ }
+ 
++bool
++mongoc_stream_should_retry (mongoc_stream_t *stream)
++{
++   ENTRY;
++
++   BSON_ASSERT (stream);
++
++   /* for e.g. a file stream there is no should_retry function */
++   RETURN (stream->should_retry && stream->should_retry (stream));
++}
++
+ bool
+ _mongoc_stream_writev_full (mongoc_stream_t *stream,
+                             mongoc_iovec_t *iov,
+diff --git a/src/libmongoc/src/mongoc/mongoc-stream.h b/src/libmongoc/src/mongoc/mongoc-stream.h
+index e254ae17d..0f0924a26 100644
+--- a/src/libmongoc/src/mongoc/mongoc-stream.h
++++ b/src/libmongoc/src/mongoc/mongoc-stream.h
+@@ -63,7 +63,8 @@ struct _mongoc_stream_t {
+                     int32_t timeout);
+    void (*failed) (mongoc_stream_t *stream);
+    bool (*timed_out) (mongoc_stream_t *stream);
+-   void *padding[4];
++   bool (*should_retry) (mongoc_stream_t *stream);
++   void *padding[3];
+ };
+ 
+ 
+@@ -111,6 +112,8 @@ MONGOC_EXPORT (bool)
+ mongoc_stream_check_closed (mongoc_stream_t *stream);
+ MONGOC_EXPORT (bool)
+ mongoc_stream_timed_out (mongoc_stream_t *stream);
++MONGOC_EXPORT (bool)
++mongoc_stream_should_retry (mongoc_stream_t *stream);
+ MONGOC_EXPORT (ssize_t)
+ mongoc_stream_poll (mongoc_stream_poll_t *streams,
+                     size_t nstreams,
+diff --git a/src/libmongoc/tests/debug-stream.c b/src/libmongoc/tests/debug-stream.c
+index 599c7d4fd..5c0a394f4 100644
+--- a/src/libmongoc/tests/debug-stream.c
++++ b/src/libmongoc/tests/debug-stream.c
+@@ -122,7 +122,14 @@ _mongoc_stream_debug_check_closed (mongoc_stream_t *stream)
+ static bool
+ _mongoc_stream_debug_timed_out (mongoc_stream_t *stream)
+ {
+-   return mongoc_stream_timed_out (
++   return mongoc_stream_timed_out (((mongoc_stream_debug_t *) stream)->wrapped);
++}
++
++
++static bool
++_mongoc_stream_debug_should_retry (mongoc_stream_t *stream)
++{
++   return mongoc_stream_should_retry (
+       ((mongoc_stream_debug_t *) stream)->wrapped);
+ }
+ 
+@@ -163,6 +170,7 @@ debug_stream_new (mongoc_stream_t *stream, debug_stream_stats_t *stats)
+    debug_stream->vtable.setsockopt = _mongoc_stream_debug_setsockopt;
+    debug_stream->vtable.check_closed = _mongoc_stream_debug_check_closed;
+    debug_stream->vtable.timed_out = _mongoc_stream_debug_timed_out;
++   debug_stream->vtable.should_retry = _mongoc_stream_debug_should_retry;
+    debug_stream->vtable.get_base_stream = _mongoc_stream_debug_get_base_stream;
+ 
+    debug_stream->wrapped = stream;

@@ -24,9 +24,16 @@ functions:
     - command: git.get_project
       params:
         directory: mongoc
-    - command: git.apply_patch
+    - command: shell.exec
       params:
-        directory: "mongoc"
+      directory: "mongoc"
+      working_dir: "mongoc"
+      script: |
+        set -o errexit
+        for i in ./.evergreen/test-patches/* ; do
+          echo "Applying patch: $i"
+          git apply $i
+        done
     - command: shell.exec
       params:
         working_dir: "mongoc"
@@ -367,7 +374,7 @@ functions:
         script: |
           set -o errexit
           set -o xtrace
-          MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} AUTHSOURCE=${AUTHSOURCE} SSL=${SSL} ORCHESTRATION_FILE=${ORCHESTRATION_FILE} sh .evergreen/integration-tests.sh
+          LATEST_SUPPORTED_MONGODB_VERSION=${latest_supported_mongodb_version} MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} AUTHSOURCE=${AUTHSOURCE} SSL=${SSL} ORCHESTRATION_FILE=${ORCHESTRATION_FILE} sh .evergreen/integration-tests.sh
 
   "run tests":
     - command: shell.exec
@@ -2463,11 +2470,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.6"
@@ -3374,11 +3381,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.0"
@@ -3418,11 +3425,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "4.0"
@@ -3634,11 +3641,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.4"
@@ -3678,11 +3685,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.6"
@@ -3911,11 +3918,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "latest"
@@ -3934,11 +3941,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.2"
@@ -4062,11 +4069,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "4.0"
@@ -4150,11 +4157,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.4"
@@ -4217,11 +4224,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.2"
@@ -4261,11 +4268,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.4"
@@ -5099,11 +5106,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.0"
@@ -6308,11 +6315,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "latest"
@@ -6579,11 +6586,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.2"
@@ -7587,11 +7594,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.6"
@@ -8076,11 +8083,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "4.0"
@@ -8523,11 +8530,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "3.0"
@@ -8882,11 +8889,11 @@ tasks:
       tags: ["test-asan"]
       exec_timeout_secs: 3600
       depends_on:
-        - name: "debug-compile-asan-clang-nosasl-nossl"
+        - name: "debug-compile-asan-clang-nosasl-openssl"
       commands:
         - func: "fetch build"
           vars:
-            BUILD_NAME: "debug-compile-asan-clang-nosasl-nossl"
+            BUILD_NAME: "debug-compile-asan-clang-nosasl-openssl"
         - func: "bootstrap mongo-orchestration"
           vars:
             VERSION: "latest"

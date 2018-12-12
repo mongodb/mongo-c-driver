@@ -6,6 +6,21 @@ DIR=$(dirname $0)
 # Functions to fetch MongoDB binaries
 . $DIR/download-mongodb.sh
 
+if [ "$MONGODB_VERSION" = "latest" -a -n "$LATEST_SUPPORTED_MONGODB_VERSION" ]; then
+   OVERRIDE="$LATEST_SUPPORTED_MONGODB_VERSION"
+   if which lsb_release > /dev/null; then
+      if [ "$(lsb_release -r -s)" = "12.04" -a "$(lsb_release -i -s)" = "Ubuntu" ]; then
+         # Do nothing. Ubuntu 12.04 does not have MongoDB post 3.6.
+         echo "Ubuntu 12.04 detected. 'latest' server is still supported";
+         OVERRIDE=""
+      fi
+   fi
+   if [ -n "$OVERRIDE" ]; then
+      echo "Warning - overriding version 'latest' with latest supported for release: $OVERRIDE"
+      MONGODB_VERSION="$OVERRIDE"
+   fi
+fi
+
 get_distro
 get_mongodb_download_url_for "$DISTRO" "$MONGODB_VERSION"
 download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT"
