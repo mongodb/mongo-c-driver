@@ -325,7 +325,7 @@ _bson_iso8601_date_format (int64_t msec_since_epoch, bson_string_t *str)
 #endif
 
    if (msecs_part) {
-      bson_string_append_printf (str, "%s.%3" PRId64 "Z", buf, msecs_part);
+      bson_string_append_printf (str, "%s.%03" PRId64 "Z", buf, msecs_part);
    } else {
       bson_string_append (str, buf);
       bson_string_append_c (str, 'Z');
