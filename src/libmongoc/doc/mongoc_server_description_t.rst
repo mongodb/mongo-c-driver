@@ -35,6 +35,7 @@ Clean up with :symbol:`mongoc_server_description_destroy()`.
     mongoc_server_description_host
     mongoc_server_description_id
     mongoc_server_description_ismaster
+    mongoc_server_description_last_update_time
     mongoc_server_description_new_copy
     mongoc_server_description_round_trip_time
     mongoc_server_description_type

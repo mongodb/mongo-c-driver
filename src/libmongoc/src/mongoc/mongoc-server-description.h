@@ -43,6 +43,10 @@ MONGOC_EXPORT (mongoc_host_list_t *)
 mongoc_server_description_host (const mongoc_server_description_t *description);
 
 MONGOC_EXPORT (int64_t)
+mongoc_server_description_last_update_time (
+   const mongoc_server_description_t *description);
+
+MONGOC_EXPORT (int64_t)
 mongoc_server_description_round_trip_time (
    const mongoc_server_description_t *description);
 

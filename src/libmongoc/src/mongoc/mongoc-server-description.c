@@ -294,6 +294,13 @@ mongoc_server_description_host (const mongoc_server_description_t *description)
    return &((mongoc_server_description_t *) description)->host;
 }
 
+int64_t
+mongoc_server_description_last_update_time (
+   const mongoc_server_description_t *description)
+{
+   return description->last_update_time_usec;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
