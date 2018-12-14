@@ -2246,11 +2246,11 @@ should_ignore (const char *first_exclude, va_list args, const char *name)
 }
 
 
-static void
-_bson_copy_to_excluding_va (const bson_t *src,
-                            bson_t *dst,
-                            const char *first_exclude,
-                            va_list args)
+void
+bson_copy_to_excluding_noinit_va (const bson_t *src,
+                                  bson_t *dst,
+                                  const char *first_exclude,
+                                  va_list args)
 {
    bson_iter_t iter;
 
@@ -2286,7 +2286,7 @@ bson_copy_to_excluding (const bson_t *src,
    bson_init (dst);
 
    va_start (args, first_exclude);
-   _bson_copy_to_excluding_va (src, dst, first_exclude, args);
+   bson_copy_to_excluding_noinit_va (src, dst, first_exclude, args);
    va_end (args);
 }
 
@@ -2303,7 +2303,7 @@ bson_copy_to_excluding_noinit (const bson_t *src,
    BSON_ASSERT (first_exclude);
 
    va_start (args, first_exclude);
-   _bson_copy_to_excluding_va (src, dst, first_exclude, args);
+   bson_copy_to_excluding_noinit_va (src, dst, first_exclude, args);
    va_end (args);
 }
 

@@ -354,6 +354,12 @@ bson_copy_to_excluding_noinit (const bson_t *src,
                                const char *first_exclude,
                                ...) BSON_GNUC_NULL_TERMINATED;
 
+BSON_EXPORT (void)
+bson_copy_to_excluding_noinit_va (const bson_t *src,
+                                  bson_t *dst,
+                                  const char *first_exclude,
+                                  va_list args);
+
 /**
  * bson_destroy:
  * @bson: A bson_t.
@@ -974,8 +980,11 @@ bson_append_regex (bson_t *bson,
  * Returns: true if successful; false if append would overflow max size.
  */
 BSON_EXPORT (bool)
-bson_append_regex_w_len (bson_t *bson, const char *key, int key_length,
-                         const char *regex, int regex_length,
+bson_append_regex_w_len (bson_t *bson,
+                         const char *key,
+                         int key_length,
+                         const char *regex,
+                         int regex_length,
                          const char *options);
 
 
