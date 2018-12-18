@@ -11,7 +11,7 @@
 static void
 _assert_options_match (const bson_t *test, mongoc_client_t *client)
 {
-   match_ctx_t ctx = {0};
+   match_ctx_t ctx = {{0}};
    bson_iter_t iter;
    bson_t opts_from_test;
    const bson_t *opts_from_uri;

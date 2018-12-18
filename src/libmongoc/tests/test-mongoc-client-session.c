@@ -620,7 +620,7 @@ _test_end_sessions (bool pooled)
    bson_t ended_lsids;
    bson_iter_t iter;
    bson_t ended_lsid;
-   match_ctx_t ctx = {0};
+   match_ctx_t ctx = {{0}};
    bool r;
 
    endsessions_test_init (&test, pooled);
@@ -913,7 +913,7 @@ typedef struct {
 static void
 started (const mongoc_apm_command_started_t *event)
 {
-   match_ctx_t ctx = {0};
+   match_ctx_t ctx = {{0}};
    bson_iter_t iter;
    bool has_cluster_time;
    bson_t cluster_time;
@@ -1136,7 +1136,7 @@ session_test_new (session_test_correct_t correct_client,
 static void
 check_session_returned (session_test_t *test, const bson_t *lsid)
 {
-   match_ctx_t ctx = {0};
+   match_ctx_t ctx = {{0}};
    mongoc_server_session_t *ss;
    bool found;
 

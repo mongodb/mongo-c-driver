@@ -387,7 +387,7 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
    bson_iter_t expectations_iter;
    bson_iter_t events_iter;
    bool allow_subset;
-   match_ctx_t match_ctx = {0};
+   match_ctx_t match_ctx = {{0}};
    apm_match_visitor_ctx_t apm_match_visitor_ctx = {0};
    int i;
 
@@ -453,7 +453,7 @@ void
 test_apm_matching (void)
 {
    apm_match_visitor_ctx_t match_visitor_ctx = {0};
-   match_ctx_t match_ctx = {0};
+   match_ctx_t match_ctx = {{0}};
 
    const char *e1 = "{"
                     "  'command_succeeded_event': {"

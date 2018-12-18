@@ -1517,7 +1517,7 @@ change_stream_spec_after_test_cb (json_test_ctx_t *test_ctx, const bson_t *test)
           * our captured changes. */
          while (bson_iter_next (&expected_iter)) {
             bson_t expected_doc;
-            match_ctx_t match_ctx = {0};
+            match_ctx_t match_ctx = {{0}};
 
             match_ctx.allow_placeholders = true;
             match_ctx.retain_dots_in_keys = true;

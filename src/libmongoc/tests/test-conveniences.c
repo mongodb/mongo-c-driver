@@ -619,7 +619,7 @@ match_json (const bson_t *doc,
    char *double_quoted;
    bson_error_t error;
    bson_t *pattern;
-   match_ctx_t ctx = {0};
+   match_ctx_t ctx = {{0}};
    bool matches;
 
    va_start (args, json_pattern);
@@ -681,7 +681,7 @@ match_json (const bson_t *doc,
 bool
 match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
 {
-   match_ctx_t ctx = {0};
+   match_ctx_t ctx = {{0}};
 
    ctx.strict_numeric_types = true;
    ctx.is_command = is_command;
@@ -708,7 +708,7 @@ match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
 void
 assert_match_bson (const bson_t *doc, const bson_t *pattern, bool is_command)
 {
-   match_ctx_t ctx = {0};
+   match_ctx_t ctx = {{0}};
 
    ctx.strict_numeric_types = true;
    ctx.is_command = is_command;

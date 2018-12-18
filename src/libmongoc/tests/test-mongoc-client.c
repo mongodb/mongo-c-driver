@@ -3475,7 +3475,6 @@ test_client_reset_cursors (void)
    request_t *request;
    bson_error_t error;
    const bson_t *doc;
-   bool res;
 
    server = mock_server_with_autoismaster (WIRE_VERSION_KILLCURSORS_CMD);
    mock_server_run (server);

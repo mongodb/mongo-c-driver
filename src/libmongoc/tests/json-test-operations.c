@@ -495,7 +495,7 @@ check_result (const bson_t *test,
 {
    bson_t expected_doc;
    bson_value_t expected_value;
-   match_ctx_t ctx = {0};
+   match_ctx_t ctx = {{0}};
 
    if (!get_result (test, operation, &expected_value)) {
       /* if there's no "result", e.g. in the command monitoring tests,
