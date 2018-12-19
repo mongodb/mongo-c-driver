@@ -4,6 +4,6 @@ RPC(
   INT32_FIELD(request_id)
   INT32_FIELD(response_to)
   INT32_FIELD(opcode)
-  UINT32_FIELD(flags)
+  ENUM_FIELD(flags)
   SECTION_ARRAY_FIELD(sections)
 )
