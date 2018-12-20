@@ -46,6 +46,28 @@ The basics are, in vim:
 
 For all the gory details, see [.clang-format](.clang-format)
 
+### Commit Style
+Commit messages follow this pattern:
+
+```
+CDRIVER-#### lowercase commit message
+```
+
+There's no colon after the ticket number, and no period at the end of the
+subject line. If there's no related Jira ticket, then the message is simply all
+lowercase:
+
+```
+typos in NEWS
+```
+
+We follow [the widely adopted "50/72"
+rule](https://medium.com/@preslavrachev/what-s-with-the-50-72-rule-8a906f61f09c):
+the subject line is ideally only 50 characters, but definitely only 72
+characters. This requires some thoughtful writing but it's worthwhile when
+you're scrolling through commits. The message body can be as large as you want,
+wrapped at 72 columns.
+
 ### Adding a new error code or domain                                              
                                                                                    
 When adding a new error code or domain, you must do the following. This is most
