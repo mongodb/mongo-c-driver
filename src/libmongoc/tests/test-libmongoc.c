@@ -823,7 +823,7 @@ test_framework_get_user_password (char **user, char **password)
 #ifndef MONGOC_ENABLE_CRYPTO
    if (*user && *password) {
       fprintf (stderr,
-               "You need to configure with --enable-ssl"
+               "You need to configure with ENABLE_SSL"
                " when providing user+password (for SCRAM-SHA-1)\n");
       abort ();
    }
