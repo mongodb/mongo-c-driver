@@ -54,7 +54,6 @@ typedef struct _mongoc_rpc_section_t {
 #define ENUM_FIELD(_name) uint32_t _name;
 #define INT32_FIELD(_name) int32_t _name;
 #define UINT8_FIELD(_name) uint8_t _name;
-#define UINT32_FIELD(_name) uint32_t _name;
 #define INT64_FIELD(_name) int64_t _name;
 #define INT64_ARRAY_FIELD(_len, _name) \
    int32_t _len;                       \
@@ -119,7 +118,6 @@ BSON_STATIC_ASSERT2 (sizeof_reply_header,
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
-#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD

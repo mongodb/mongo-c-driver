@@ -510,6 +510,58 @@ test_write_concern_prohibited (void)
    _test_write_concern_wire_version (false);
 }
 
+/* Test that CDRIVER-2902 has been fixed.
+ * The bug was that we did not correctly swab for the flagBits in OP_MSG. */
+static void
+test_write_concern_unacknowledged (void)
+{
+   mongoc_client_t *client;
+   mongoc_write_concern_t *wc;
+   mongoc_collection_t *coll;
+   bson_error_t error;
+   bool r;
+   bson_t reply;
+   bson_t opts;
+   const bson_t **docs;
+
+   client = test_framework_client_new ();
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   /* w:0 in OP_MSG is indicated by setting the moreToCome flag in OP_MSG. That
+    * tells the recipient not to send a response. */
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+   bson_init (&opts);
+   mongoc_write_concern_append (wc, &opts);
+
+   /* In this insert_one with w:0, we write an OP_MSG on the socket, but don't
+    * read a reply. Before CDRIVER-2902 was fixed, since we forget to set
+    * moreToCome, the server still sends a reply. */
+   r = mongoc_collection_insert_one (
+      coll, tmp_bson ("{}"), &opts, &reply, &error);
+   ASSERT_OR_PRINT (r, error);
+   ASSERT (bson_empty (&reply));
+   bson_destroy (&reply);
+   bson_destroy (&opts);
+
+   docs = bson_malloc0 (sizeof (bson_t *) * 2);
+   docs[0] = tmp_bson ("{}");
+   docs[1] = tmp_bson ("{}");
+
+   /* In the next insert_many, before CDRIVER-2902 was fixed, we would read that
+    * old reply. */
+   r = mongoc_collection_insert_many (coll, docs, 2, NULL, &reply, &error);
+   bson_free (docs);
+   ASSERT_OR_PRINT (r, error);
+
+   /* The replies are distinguished by the insertedCount. */
+   ASSERT_MATCH (&reply, "{'insertedCount': 2}");
+
+   bson_destroy (&reply);
+   mongoc_collection_destroy (coll);
+   mongoc_write_concern_destroy (wc);
+   mongoc_client_destroy (client);
+}
 
 void
 test_write_concern_install (TestSuite *suite)
@@ -536,4 +588,6 @@ test_write_concern_install (TestSuite *suite)
       suite, "/WriteConcern/allowed", test_write_concern_allowed);
    TestSuite_AddMockServerTest (
       suite, "/WriteConcern/prohibited", test_write_concern_prohibited);
+   TestSuite_AddLive (
+      suite, "/WriteConcern/unacknowledged", test_write_concern_unacknowledged);
 }

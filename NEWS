@@ -7,6 +7,9 @@ Features:
 
 Bug fixes:
 
+  * OP_MSG with unacknowledged writes (write concern of w:0) would serialize
+    incorrectly on big-endian platforms, causing writes to use the default
+    write concern of w:1.
   * mongoc_collection_update_many and mongoc_collection_delete_many would fail
     with the URI option retryWrites=true.
   * In a transaction, the driver now properly ignores the readConcern configured

@@ -42,11 +42,6 @@
    iov.iov_len = 1;                          \
    header->msg_len += (int32_t) iov.iov_len; \
    _mongoc_array_append_val (array, iov);
-#define UINT32_FIELD(_name)                   \
-   iov.iov_base = (void *) &rpc->_name;       \
-   iov.iov_len = 4;                           \
-   header->msg_len += (uint32_t) iov.iov_len; \
-   _mongoc_array_append_val (array, iov);
 #define INT32_FIELD(_name)                   \
    iov.iov_base = (void *) &rpc->_name;      \
    iov.iov_len = 4;                          \
@@ -171,7 +166,6 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
-#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -193,7 +187,6 @@
       _code                                                                 \
    }
 #define UINT8_FIELD(_name)
-#define UINT32_FIELD(_name)
 #define INT32_FIELD(_name) rpc->_name = BSON_UINT32_FROM_LE (rpc->_name);
 #define ENUM_FIELD INT32_FIELD
 #define INT64_FIELD(_name) rpc->_name = BSON_UINT64_FROM_LE (rpc->_name);
@@ -259,7 +252,6 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
-#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -281,25 +273,23 @@
       _code                                                             \
    }
 #define UINT8_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
-#define UINT32_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
 #define INT32_FIELD(_name) printf ("  " #_name " : %d\n", rpc->_name);
 #define ENUM_FIELD(_name) printf ("  " #_name " : %u\n", rpc->_name);
 #define INT64_FIELD(_name) \
    printf ("  " #_name " : %" PRIi64 "\n", (int64_t) rpc->_name);
 #define CSTRING_FIELD(_name) printf ("  " #_name " : %s\n", rpc->_name);
-#define BSON_FIELD(_name)                           \
-   do {                                             \
-      bson_t b;                                     \
-      char *s;                                      \
-      int32_t __l;                                  \
-      memcpy (&__l, rpc->_name, 4);                 \
-      __l = BSON_UINT32_FROM_LE (__l);              \
-      BSON_ASSERT (                                 \
-         bson_init_static (&b, rpc->_name, __l));   \
-      s = bson_as_relaxed_extended_json (&b, NULL); \
-      printf ("  " #_name " : %s\n", s);            \
-      bson_free (s);                                \
-      bson_destroy (&b);                            \
+#define BSON_FIELD(_name)                                   \
+   do {                                                     \
+      bson_t b;                                             \
+      char *s;                                              \
+      int32_t __l;                                          \
+      memcpy (&__l, rpc->_name, 4);                         \
+      __l = BSON_UINT32_FROM_LE (__l);                      \
+      BSON_ASSERT (bson_init_static (&b, rpc->_name, __l)); \
+      s = bson_as_relaxed_extended_json (&b, NULL);         \
+      printf ("  " #_name " : %s\n", s);                    \
+      bson_free (s);                                        \
+      bson_destroy (&b);                                    \
    } while (0);
 #define BSON_ARRAY_FIELD(_name)                                       \
    do {                                                               \
@@ -406,7 +396,6 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
-#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
@@ -435,13 +424,6 @@
    memcpy (&rpc->_name, buf, 1); \
    buflen -= 1;                  \
    buf += 1;
-#define UINT32_FIELD(_name)      \
-   if (buflen < 4) {             \
-      return false;              \
-   }                             \
-   memcpy (&rpc->_name, buf, 4); \
-   buflen -= 4;                  \
-   buf += 4;
 #define INT32_FIELD(_name)       \
    if (buflen < 4) {             \
       return false;              \
@@ -567,7 +549,6 @@
 #undef RPC
 #undef ENUM_FIELD
 #undef UINT8_FIELD
-#undef UINT32_FIELD
 #undef INT32_FIELD
 #undef INT64_FIELD
 #undef INT64_ARRAY_FIELD
