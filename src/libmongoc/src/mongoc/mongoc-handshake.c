@@ -150,6 +150,7 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_COMPRESSION_ZLIB);
 #endif
 
+/* CDRIVER-2654 removes this cmake option. */
 #ifdef MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_SASL_GSSAPI);
 #endif

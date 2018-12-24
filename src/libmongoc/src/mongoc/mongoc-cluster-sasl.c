@@ -34,9 +34,6 @@
 #ifdef MONGOC_ENABLE_SASL_SSPI
 #include "mongoc/mongoc-cluster-sspi-private.h"
 #endif
-#ifdef MONGOC_ENABLE_SASL_GSSAPI
-#include "mongoc/mongoc-cluster-gssapi-private.h"
-#endif
 
 void
 _mongoc_cluster_build_sasl_start (bson_t *cmd,
@@ -107,7 +104,5 @@ _mongoc_cluster_auth_node_sasl (mongoc_cluster_t *cluster,
    return _mongoc_cluster_auth_node_cyrus (cluster, stream, sd, error);
 #elif defined(MONGOC_ENABLE_SASL_SSPI)
    return _mongoc_cluster_auth_node_sspi (cluster, stream, sd, error);
-#elif defined(MONGOC_ENABLE_SASL_GSSAPI)
-   return _mongoc_cluster_auth_node_gssapi (cluster, stream, sd, error);
 #endif
 }

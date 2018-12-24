@@ -22,10 +22,9 @@ set_property(CACHE ENABLE_SSL PROPERTY STRINGS "DARWIN;WINDOWS;OPENSSL;LIBRESSL;
 
 set (ENABLE_SASL AUTO CACHE STRING
    "Enable SASL authentication (Kerberos). Options are \"CYRUS\" to use Cyrus
-   SASL, \"SSPI\" to use Windows Native SSPI, \"GSSAPI\" to use macOS Native GSS,
-   \"AUTO\",\ or \"OFF\". These options are case-sensitive.")
+   SASL, \"SSPI\" to use Windows Native SSPI, \"AUTO\",\ or \"OFF\". These options are case-sensitive.")
 
-set_property(CACHE ENABLE_SASL PROPERTY STRINGS "CYRUS|SSPI|GSSAPI|AUTO|OFF")
+set_property(CACHE ENABLE_SASL PROPERTY STRINGS "CYRUS|SSPI|AUTO|OFF")
 
 set (ENABLE_STATIC AUTO CACHE STRING "Build static libmongoc. Set to ON/AUTO/OFF, default AUTO.")
 option (ENABLE_TESTS "Build MongoDB C Driver tests." ON)
