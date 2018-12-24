@@ -203,17 +203,18 @@ set (MONGOC_ENABLE_SASL_SSPI 0)
 set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
 
 if (NOT ENABLE_SASL STREQUAL OFF)
-   if (ENABLE_SASL MATCHES "AUTO|CYRUS")
-      # Sets SASL_LIBRARIES.
-      include (FindSASL2)
-   endif ()
-
-   if (SASL_FOUND)
-      set (MONGOC_ENABLE_SASL 1)
-      set (MONGOC_ENABLE_SASL_CYRUS 1)
-   elseif ( (ENABLE_SASL MATCHES "SSPI|AUTO") AND WIN32)
+   if ( (ENABLE_SASL MATCHES "SSPI|AUTO") AND WIN32)
       set (MONGOC_ENABLE_SASL 1)
       set (MONGOC_ENABLE_SASL_SSPI 1)
+   elseif (ENABLE_SASL MATCHES "AUTO|CYRUS")
+      # Sets SASL_LIBRARIES.
+      include (FindSASL2)
+      if (SASL_FOUND)
+         set (MONGOC_ENABLE_SASL 1)
+         set (MONGOC_ENABLE_SASL_CYRUS 1)
+      elseif (ENABLE_SASL STREQUAL "CYRUS")
+          message (FATAL_ERROR "ENABLE_SASL=CYRUS could not be satisfied")
+      endif()
    endif ()
 endif ()
 

@@ -17,6 +17,7 @@ Bug fixes:
     hang with Darwin SSL.
   * Fix the ENABLE_SASL cmake option:
     * Remove unnecessary GSSAPI value. It was equivalent to specifying ENABLE_SASL=CYRUS.
+    * ENABLE_SASL=AUTO now correctly chooses SSPI on Windows instead of CYRUS.
 
 mongo-c-driver 1.13.1
 =====================
