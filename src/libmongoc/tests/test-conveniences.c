@@ -301,13 +301,14 @@ bson_lookup_write_concern (const bson_t *b, const char *key)
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
    bson_t doc;
    bson_iter_t iter;
-   bson_iter_t w;
+   bson_iter_t w, j, wtimeout;
 
    bson_lookup_doc (b, key, &doc);
    BSON_ASSERT (bson_iter_init (&iter, &doc));
 
-   /* current command monitoring tests always have "w" and no other fields */
-   ASSERT_CMPUINT32 (bson_count_keys (&doc), ==, (uint32_t) 1);
+   /* current command monitoring tests always have "w" but may also have
+    * "wtimeout" and "j" fields. */
+   ASSERT_CMPUINT32 (bson_count_keys (&doc), >=, (uint32_t) 1);
    BSON_ASSERT (bson_iter_find_descendant (&iter, "w", &w));
 
    if (BSON_ITER_HOLDS_NUMBER (&w)) {
@@ -316,6 +317,20 @@ bson_lookup_write_concern (const bson_t *b, const char *key)
       mongoc_write_concern_set_wmajority (wc, 0);
    } else {
       mongoc_write_concern_set_wtag (wc, bson_iter_utf8 (&w, NULL));
+   }
+
+   BSON_ASSERT (bson_iter_init (&iter, &doc));
+
+   if (bson_iter_find_descendant (&iter, "wtimeout", &wtimeout)) {
+      BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&wtimeout));
+      mongoc_write_concern_set_wtimeout (wc, bson_iter_int32 (&wtimeout));
+   }
+
+   BSON_ASSERT (bson_iter_init (&iter, &doc));
+
+   if (bson_iter_find_descendant (&iter, "j", &j)) {
+      BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&j));
+      mongoc_write_concern_set_journal (wc, bson_iter_bool (&j));
    }
 
    return wc;
