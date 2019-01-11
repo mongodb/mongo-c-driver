@@ -26,6 +26,8 @@
 #define TRANSIENT_TXN_ERR "TransientTransactionError"
 #define UNKNOWN_COMMIT_RESULT "UnknownTransactionCommitResult"
 
+#define MONGOC_DEFAULT_WTIMEOUT_FOR_COMMIT_RETRY 10000
+
 struct _mongoc_transaction_opt_t {
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;
