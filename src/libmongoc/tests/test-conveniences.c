@@ -222,6 +222,28 @@ bson_lookup_doc_null_ok (const bson_t *b, const char *key, bson_t *doc)
 
 /*--------------------------------------------------------------------------
  *
+ * bson_lookup_bool --
+ *
+ *       Return a bool by key, or BSON_ASSERT and abort.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+bson_lookup_bool (const bson_t *b, const char *key)
+{
+   bson_iter_t iter;
+   bson_iter_t descendent;
+
+   bson_iter_init (&iter, b);
+   BSON_ASSERT (bson_iter_find_descendant (&iter, key, &descendent));
+   BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&descendent));
+
+   return bson_iter_bool (&descendent);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * bson_lookup_int32 --
  *
  *       Return an int32_t by key, or BSON_ASSERT and abort.
@@ -306,8 +328,9 @@ bson_lookup_write_concern (const bson_t *b, const char *key)
    bson_lookup_doc (b, key, &doc);
    BSON_ASSERT (bson_iter_init (&iter, &doc));
 
-   /* current command monitoring tests always have "w" and no other fields */
-   ASSERT_CMPUINT32 (bson_count_keys (&doc), ==, (uint32_t) 1);
+   /* current command monitoring tests always have "w" but may also have
+    * "wtimeout" and "j" fields. */
+   ASSERT_CMPUINT32 (bson_count_keys (&doc), >=, (uint32_t) 1);
    BSON_ASSERT (bson_iter_find_descendant (&iter, "w", &w));
 
    if (BSON_ITER_HOLDS_NUMBER (&w)) {
@@ -316,6 +339,14 @@ bson_lookup_write_concern (const bson_t *b, const char *key)
       mongoc_write_concern_set_wmajority (wc, 0);
    } else {
       mongoc_write_concern_set_wtag (wc, bson_iter_utf8 (&w, NULL));
+   }
+
+   if (bson_has_field (&doc, "wtimeout")) {
+      mongoc_write_concern_set_wtimeout (wc, bson_lookup_int32 (&doc, "wtimeout"));
+   }
+
+   if (bson_has_field (&doc, "j")) {
+      mongoc_write_concern_set_journal (wc, bson_lookup_bool (&doc, "j"));
    }
 
    return wc;

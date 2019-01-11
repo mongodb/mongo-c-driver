@@ -72,12 +72,6 @@ txn_opts_copy (const mongoc_transaction_opt_t *src,
 }
 
 
-typedef enum {
-   TXN_COMMIT,
-   TXN_ABORT,
-} mongoc_txn_intent_t;
-
-
 static void
 copy_labels_plus_unknown_commit_result (const bson_t *src, bson_t *dst)
 {
@@ -110,12 +104,8 @@ copy_labels_plus_unknown_commit_result (const bson_t *src, bson_t *dst)
 
 
 static bool
-txn_finish (mongoc_client_session_t *session,
-            mongoc_txn_intent_t intent,
-            bson_t *reply,
-            bson_error_t *error)
+txn_abort (mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
 {
-   const char *cmd_name;
    bson_t cmd = BSON_INITIALIZER;
    bson_t opts = BSON_INITIALIZER;
    bson_error_t err_local;
@@ -125,8 +115,6 @@ txn_finish (mongoc_client_session_t *session,
    bool r = false;
 
    _mongoc_bson_init_if_set (reply);
-
-   cmd_name = (intent == TXN_COMMIT ? "commitTransaction" : "abortTransaction");
 
    if (!mongoc_client_session_append (session, &opts, err_ptr)) {
       GOTO (done);
@@ -143,7 +131,7 @@ txn_finish (mongoc_client_session_t *session,
       }
    }
 
-   BSON_APPEND_INT32 (&cmd, cmd_name, 1);
+   BSON_APPEND_INT32 (&cmd, "abortTransaction", 1);
 
    /* will be reinitialized by mongoc_client_write_command_with_opts */
    bson_destroy (&reply_local);
@@ -157,14 +145,114 @@ txn_finish (mongoc_client_session_t *session,
       bson_destroy (&reply_local);
       r = mongoc_client_write_command_with_opts (
          session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
+   }
 
-      error_type = _mongoc_write_error_get_type (r, err_ptr, &reply_local);
+   if (!r) {
+      /* we won't return an error from abortTransaction, so warn */
+      MONGOC_WARNING ("Error in abortTransaction: %s", err_ptr->message);
+   }
+
+done:
+   bson_destroy (&reply_local);
+   bson_destroy (&cmd);
+   bson_destroy (&opts);
+
+   return r;
+}
+
+
+static mongoc_write_concern_t *
+create_commit_retry_wc (const mongoc_write_concern_t *existing_wc)
+{
+   mongoc_write_concern_t *wc;
+   int32_t wtimeout;
+
+   wc = existing_wc ? mongoc_write_concern_copy (existing_wc)
+                    : mongoc_write_concern_new ();
+
+   wtimeout = mongoc_write_concern_get_wtimeout (wc);
+
+   /* Transactions spec: "If the modified write concern does not include a
+    * wtimeout value, drivers MUST also apply wtimeout: 10000 to the write
+    * concern in order to avoid waiting forever if the majority write concern
+    * cannot be satisfied." */
+   if (wtimeout <= 0) {
+      wtimeout = MONGOC_DEFAULT_WTIMEOUT_FOR_COMMIT_RETRY;
+   }
+
+   /* Transactions spec: "If the transaction is using a write concern that is
+    * not the server default, any other write concern options MUST be left as-is
+    * when applying w:majority. */
+   mongoc_write_concern_set_wmajority (wc, wtimeout);
+
+   return wc;
+}
+
+
+static bool
+txn_commit (mongoc_client_session_t *session,
+            bool explicitly_retrying,
+            bson_t *reply,
+            bson_error_t *error)
+{
+   bson_t cmd = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
+   bson_error_t err_local;
+   bson_error_t *err_ptr = error ? error : &err_local;
+   bson_t reply_local = BSON_INITIALIZER;
+   mongoc_write_err_type_t error_type;
+   bool r = false;
+   bool retrying_after_error = false;
+   mongoc_write_concern_t *retry_wc = NULL;
+
+   _mongoc_bson_init_if_set (reply);
+
+   BSON_APPEND_INT32 (&cmd, "commitTransaction", 1);
+
+retry:
+   if (!mongoc_client_session_append (session, &opts, err_ptr)) {
+      GOTO (done);
+   }
+
+   /* Transactions Spec: "When commitTransaction is retried, either by the
+    * driver's internal retry-once logic or explicitly by the user calling
+    * commitTransaction again, drivers MUST apply w:majority to the write
+    * concern of the commitTransaction command." */
+   if (!retry_wc && (retrying_after_error || explicitly_retrying)) {
+      retry_wc = create_commit_retry_wc (session->txn.opts.write_concern
+                                            ? session->txn.opts.write_concern
+                                            : session->client->write_concern);
+   }
+
+   if (retry_wc || session->txn.opts.write_concern) {
+      if (!mongoc_write_concern_append (
+             retry_wc ? retry_wc : session->txn.opts.write_concern, &opts)) {
+         bson_set_error (err_ptr,
+                         MONGOC_ERROR_TRANSACTION,
+                         MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                         "Invalid transaction write concern");
+         GOTO (done);
+      }
+   }
+
+   /* will be reinitialized by mongoc_client_write_command_with_opts */
+   bson_destroy (&reply_local);
+   r = mongoc_client_write_command_with_opts (
+      session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
+
+   /* Transactions Spec: "Drivers MUST retry the commitTransaction command once
+    * after it fails with a retryable error", same for abort */
+   error_type = _mongoc_write_error_get_type (r, err_ptr, &reply_local);
+   if (!retrying_after_error && error_type == MONGOC_WRITE_ERR_RETRY) {
+      retrying_after_error = true; /* retry after error only once */
+      bson_reinit (&opts);
+      GOTO (retry);
    }
 
    /* Transactions Spec: "add the UnknownTransactionCommitResult error label
     * when commitTransaction fails with a network error, server selection
     * error, or write concern failed / timeout." */
-   if (intent == TXN_COMMIT && reply) {
+   if (reply) {
       if ((!r && err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION) ||
           error_type == MONGOC_WRITE_ERR_RETRY ||
           error_type == MONGOC_WRITE_ERR_WRITE_CONCERN) {
@@ -177,16 +265,17 @@ txn_finish (mongoc_client_session_t *session,
          bson_steal (reply, &reply_local);
          bson_init (&reply_local);
       }
-
-   } else if (intent == TXN_ABORT && !r) {
-      /* we won't return an error from abortTransaction, so warn */
-      MONGOC_WARNING ("Error in %s: %s", cmd_name, err_ptr->message);
    }
 
 done:
    bson_destroy (&reply_local);
    bson_destroy (&cmd);
    bson_destroy (&opts);
+
+   if (retry_wc) {
+      mongoc_write_concern_destroy (retry_wc);
+   }
+
    return r;
 }
 
@@ -811,15 +900,18 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
       _mongoc_bson_init_if_set (reply);
       r = true;
       break;
-   case MONGOC_TRANSACTION_IN_PROGRESS:
    case MONGOC_TRANSACTION_COMMITTED:
+   case MONGOC_TRANSACTION_IN_PROGRESS: {
+      bool explicitly_retrying =
+         (session->txn.state == MONGOC_TRANSACTION_COMMITTED);
       /* in MONGOC_TRANSACTION_ENDING we add txnNumber and autocommit: false
        * to the commitTransaction command, but if it fails with network error
        * we add UnknownTransactionCommitResult not TransientTransactionError */
       session->txn.state = MONGOC_TRANSACTION_ENDING;
-      r = txn_finish (session, TXN_COMMIT, reply, error);
+      r = txn_commit (session, explicitly_retrying, reply, error);
       session->txn.state = MONGOC_TRANSACTION_COMMITTED;
       break;
+   }
    case MONGOC_TRANSACTION_ENDING:
       MONGOC_ERROR ("commit called in invalid state MONGOC_TRANSACTION_ENDING");
       abort ();
@@ -854,7 +946,7 @@ mongoc_client_session_abort_transaction (mongoc_client_session_t *session,
    case MONGOC_TRANSACTION_IN_PROGRESS:
       session->txn.state = MONGOC_TRANSACTION_ENDING;
       /* Transactions Spec: ignore errors from abortTransaction command */
-      txn_finish (session, TXN_ABORT, NULL, NULL);
+      txn_abort (session, NULL, NULL);
       session->txn.state = MONGOC_TRANSACTION_ABORTED;
       RETURN (true);
    case MONGOC_TRANSACTION_COMMITTED:
