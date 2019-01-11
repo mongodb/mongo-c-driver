@@ -79,6 +79,51 @@ test_topology_client_creation (void)
 }
 
 static void
+assert_topology_state (mongoc_topology_t *topology,
+                       mongoc_topology_scanner_state_t state)
+{
+   ASSERT (topology);
+
+   bson_mutex_lock (&topology->mutex);
+   ASSERT (topology->scanner_state == state);
+   bson_mutex_unlock (&topology->mutex);
+}
+
+static void
+test_topology_thread_start_stop (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_topology_t *topology;
+
+   pool = test_framework_client_pool_new ();
+   topology = _mongoc_client_pool_get_topology (pool);
+
+   /* Test starting up the scanner */
+   ASSERT (_mongoc_topology_start_background_scanner (topology));
+   assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_BG_RUNNING);
+
+   /* Test that starting the topology while it is already
+      running is ok to do. */
+   ASSERT (_mongoc_topology_start_background_scanner (topology));
+   assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_BG_RUNNING);
+
+   /* Test that we can stop the topology */
+   _mongoc_topology_background_thread_stop (topology);
+   assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_OFF);
+
+   /* Test that stopping the topology when it is already
+      stopped is ok to do. */
+   _mongoc_topology_background_thread_stop (topology);
+   assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_OFF);
+
+   /* Test that we can start the topology again after stopping it */
+   ASSERT (_mongoc_topology_start_background_scanner (topology));
+   assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_BG_RUNNING);
+
+   mongoc_client_pool_destroy (pool);
+}
+
+static void
 test_topology_client_pool_creation (void)
 {
    mongoc_client_pool_t *pool;
@@ -1902,6 +1947,8 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Topology/client_pool_creation",
                       test_topology_client_pool_creation);
+   TestSuite_AddLive (
+      suite, "/Topology/start_stop", test_topology_thread_start_stop);
    TestSuite_AddFull (suite,
                       "/Topology/server_selection_try_once_option",
                       test_server_selection_try_once_option,

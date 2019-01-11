@@ -61,7 +61,6 @@ typedef struct _mongoc_topology_t {
 
    mongoc_topology_scanner_state_t scanner_state;
    bool scan_requested;
-   bool shutdown_requested;
    bool single_threaded;
    bool stale;
 
@@ -130,6 +129,9 @@ _mongoc_topology_get_type (mongoc_topology_t *topology);
 
 bool
 _mongoc_topology_start_background_scanner (mongoc_topology_t *topology);
+
+void
+_mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
 
 bool
 _mongoc_topology_set_appname (mongoc_topology_t *topology, const char *appname);

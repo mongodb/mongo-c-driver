@@ -30,9 +30,6 @@
 
 #include "mongoc/utlist.h"
 
-static void
-_mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
-
 static bool
 _mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd,
                                       mongoc_topology_t *topology)
@@ -1120,7 +1117,7 @@ _mongoc_topology_run_background (void *data)
    topology = (mongoc_topology_t *) data;
    heartbeat_msec = topology->description.heartbeat_msec;
 
-   /* we exit this loop when shutdown_requested, or on error */
+   /* we exit this loop when shutting down, or on error */
    for (;;) {
       /* unlocked after starting a scan or after breaking out of the loop */
       bson_mutex_lock (&topology->mutex);
@@ -1131,7 +1128,7 @@ _mongoc_topology_run_background (void *data)
 
       /* we exit this loop on error, or when we should scan immediately */
       for (;;) {
-         if (topology->shutdown_requested) {
+         if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
             bson_mutex_unlock (&topology->mutex);
             goto DONE;
          }
@@ -1219,23 +1216,30 @@ _mongoc_topology_start_background_scanner (mongoc_topology_t *topology)
    }
 
    bson_mutex_lock (&topology->mutex);
-   if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF) {
-      topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_BG_RUNNING;
 
-      _mongoc_handshake_freeze ();
-      _mongoc_topology_description_monitor_opening (&topology->description);
+   if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
+      bson_mutex_unlock (&topology->mutex);
+      return true;
+   }
 
-      r = bson_thread_create (
-         &topology->thread, _mongoc_topology_run_background, topology);
+   BSON_ASSERT (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF);
 
-      if (r != 0) {
-         MONGOC_ERROR ("could not start topology scanner thread: %s",
-                       strerror (r));
-         abort ();
-      }
+   topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_BG_RUNNING;
+
+   _mongoc_handshake_freeze ();
+   _mongoc_topology_description_monitor_opening (&topology->description);
+
+   r = bson_thread_create (
+      &topology->thread, _mongoc_topology_run_background, topology);
+
+   if (r != 0) {
+      MONGOC_ERROR ("could not start topology scanner thread: %s",
+                    strerror (r));
+      abort ();
    }
 
    bson_mutex_unlock (&topology->mutex);
+
    return true;
 }
 
@@ -1252,7 +1256,7 @@ _mongoc_topology_start_background_scanner (mongoc_topology_t *topology)
  *--------------------------------------------------------------------------
  */
 
-static void
+void
 _mongoc_topology_background_thread_stop (mongoc_topology_t *topology)
 {
    bool join_thread = false;
@@ -1262,19 +1266,16 @@ _mongoc_topology_background_thread_stop (mongoc_topology_t *topology)
    }
 
    bson_mutex_lock (&topology->mutex);
+
+   BSON_ASSERT (topology->scanner_state !=
+                MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN);
+
    if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       /* if the background thread is running, request a shutdown and signal the
        * thread */
-      topology->shutdown_requested = true;
-      mongoc_cond_signal (&topology->cond_server);
       topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN;
+      mongoc_cond_signal (&topology->cond_server);
       join_thread = true;
-   } else if (topology->scanner_state ==
-              MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
-      /* if we're mid shutdown, wait until it shuts down */
-      while (topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_OFF) {
-         mongoc_cond_wait (&topology->cond_client, &topology->mutex);
-      }
    } else {
       /* nothing to do if it's already off */
    }
@@ -1285,6 +1286,11 @@ _mongoc_topology_background_thread_stop (mongoc_topology_t *topology)
       /* if we're joining the thread, wait for it to come back and broadcast
        * all listeners */
       bson_thread_join (topology->thread);
+
+      bson_mutex_lock (&topology->mutex);
+      topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_OFF;
+      bson_mutex_unlock (&topology->mutex);
+
       mongoc_cond_broadcast (&topology->cond_client);
    }
 }
