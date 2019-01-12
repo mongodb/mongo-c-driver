@@ -12,6 +12,16 @@ Synopsis
 
   #include <bson/bson.h>
 
+  typedef enum {
+    BSON_CONTEXT_NONE = 0,
+    BSON_CONTEXT_THREAD_SAFE = (1 << 0),
+    BSON_CONTEXT_DISABLE_HOST_CACHE = (1 << 1),
+    BSON_CONTEXT_DISABLE_PID_CACHE = (1 << 2),
+  #ifdef BSON_HAVE_SYSCALL_TID
+    BSON_CONTEXT_USE_TASK_ID = (1 << 3),
+  #endif
+  } bson_context_flags_t;
+
   typedef struct _bson_context_t bson_context_t;
 
   bson_context_t *
@@ -25,8 +35,9 @@ Description
 -----------
 
 The :symbol:`bson_context_t` structure is context for generation of BSON Object
-IDs. This context allows overriding whether generating ObjectIDs is thread safe
-by passing ``BSON_CONTEXT_THREAD_SAFE`` or ``BSON_CONTEXT_NONE`` as ``flags``.
+IDs. This context allows overriding behavior of generating ObjectIDs. The flags
+``BSON_CONTEXT_NONE``, ``BSON_CONTEXT_THREAD_SAFE``, and ``BSON_CONTEXT_DISABLE_HOST_CACHE``
+are the only ones used. The others have no effect.
 
 .. only:: html
 

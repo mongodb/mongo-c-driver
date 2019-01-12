@@ -170,6 +170,10 @@ _bson_context_set_oid_seq64_threadsafe (bson_context_t *context, /* IN */
    memcpy (&oid->bytes[4], &seq, sizeof (seq));
 }
 
+
+static void
+_bson_context_init_random (bson_context_t *context, bool init_sequence);
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -191,6 +195,15 @@ _bson_context_set_oid_rand (bson_context_t *context, bson_oid_t *oid)
    BSON_ASSERT (context);
    BSON_ASSERT (oid);
 
+   if (context->flags & BSON_CONTEXT_DISABLE_PID_CACHE) {
+      uint16_t pid = _bson_getpid ();
+
+      if (pid != context->pid) {
+         context->pid = pid;
+         /* randomize the random bytes, not the sequence. */
+         _bson_context_init_random (context, false);
+      }
+   }
    memcpy (&oid->bytes[4], &context->rand, sizeof (context->rand));
 }
 
@@ -225,48 +238,103 @@ _get_rand (unsigned int *pseed)
 }
 
 
+/*
+ * --------------------------------------------------------------------------
+ *
+ * _bson_context_get_hostname
+ *
+ *       Gets the hostname of the machine, logs a warning on failure. "out"
+ *       must be an array of HOST_NAME_MAX bytes.
+ *
+ * --------------------------------------------------------------------------
+ */
 static void
-_bson_context_init (bson_context_t *context,    /* IN */
-                    bson_context_flags_t flags) /* IN */
+_bson_context_get_hostname (char *out)
 {
-   struct timeval tv;
-   unsigned int seed[3];
-   unsigned int real_seed;
-   int64_t rand_bytes;
+   if (gethostname (out, HOST_NAME_MAX) != 0) {
+      if (errno == ENAMETOOLONG) {
+         fprintf (stderr,
+                  "hostname exceeds %d characters, truncating.",
+                  HOST_NAME_MAX);
+      } else {
+         fprintf (stderr, "unable to get hostname: %d", errno);
+      }
+   }
+   out[HOST_NAME_MAX - 1] = '\0';
+}
 
+
+static void
+_bson_context_init_random (bson_context_t *context, bool init_sequence)
+{
+   int64_t rand_bytes;
+   struct timeval tv;
+   unsigned int seed = 0;
+   char hostname[HOST_NAME_MAX];
+   char *ptr;
+   int hostname_chars_left;
+   int ret;
+
+   /*
+    * The seed consists of the following xor'd together:
+    * - current time in seconds
+    * - current time in milliseconds
+    * - current pid
+    * - current hostname
+    */
+   bson_gettimeofday (&tv);
+   seed ^= (unsigned int) tv.tv_sec;
+   seed ^= (unsigned int) tv.tv_usec;
+   seed ^= (unsigned int) context->pid;
+
+   context->gethostname (hostname);
+   hostname_chars_left = strlen (hostname);
+   ptr = hostname;
+   while (hostname_chars_left) {
+      uint32_t hostname_chunk = 0;
+      uint32_t to_copy = hostname_chars_left > 4 ? 4 : hostname_chars_left;
+
+      memcpy (&hostname_chunk, ptr, to_copy);
+      seed ^= (unsigned int) hostname_chunk;
+      hostname_chars_left -= to_copy;
+      ptr += to_copy;
+   }
+
+#ifndef BSON_HAVE_RAND_R
+   srand (seed);
+#endif
+
+   /* Generate a seed for the random starting position of our increment
+    * bytes and the five byte random number. */
+   if (init_sequence) {
+      /* We mask off the last nibble so that the last digit of the OID will
+       * start at zero. Just to be nice. */
+      context->seq32 = _get_rand (&seed) & 0x007FFFF0;
+   }
+
+   rand_bytes = _get_rand (&seed);
+   rand_bytes <<= 32;
+   rand_bytes |= _get_rand (&seed);
+
+   /* Copy five random bytes, endianness does not matter. */
+   memcpy (&context->rand, (char *) &rand_bytes, sizeof (context->rand));
+}
+
+static void
+_bson_context_init (bson_context_t *context, bson_context_flags_t flags)
+{
    context->flags = (int) flags;
    context->oid_set_seq32 = _bson_context_set_oid_seq32;
    context->oid_set_seq64 = _bson_context_set_oid_seq64;
-
-   /*
-    * Generate a seed for our the random starting position of our increment
-    * bytes. We mask off the last nibble so that the last digit of the OID will
-    * start at zero. Just to be nice.
-    *
-    * The seed itself is made up of the current time in seconds, milliseconds,
-    * and pid xored together. I welcome better solutions if at all necessary.
-    */
-   bson_gettimeofday (&tv);
-   seed[0] = (unsigned int) tv.tv_sec;
-   seed[1] = (unsigned int) tv.tv_usec;
-   seed[2] = _bson_getpid ();
-   real_seed = seed[0] ^ seed[1] ^ seed[2];
-
-#ifndef BSON_HAVE_RAND_R
-   srand (real_seed);
-#endif
-
-   context->seq32 = _get_rand (&real_seed) & 0x007FFFF0;
-   rand_bytes = _get_rand (&real_seed);
-   rand_bytes <<= 32;
-   rand_bytes |= _get_rand (&real_seed);
-   /* Copy five random bytes, endianness does not matter. */
-   memcpy (&context->rand, (char *) &rand_bytes, sizeof (context->rand));
+   context->gethostname = _bson_context_get_hostname;
 
    if ((flags & BSON_CONTEXT_THREAD_SAFE)) {
       context->oid_set_seq32 = _bson_context_set_oid_seq32_threadsafe;
       context->oid_set_seq64 = _bson_context_set_oid_seq64_threadsafe;
    }
+
+   context->pid = _bson_getpid ();
+   _bson_context_init_random (context, true);
 }
 
 

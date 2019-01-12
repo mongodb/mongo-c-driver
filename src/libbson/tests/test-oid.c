@@ -210,7 +210,7 @@ test_bson_oid_init_sequence (void)
    bson_oid_t oid2;
    int i;
 
-BEGIN_IGNORE_DEPRECATIONS
+   BEGIN_IGNORE_DEPRECATIONS
    context = bson_context_new (BSON_CONTEXT_NONE);
    bson_oid_init_sequence (&oid, context);
    for (i = 0; i < 10000; i++) {
@@ -220,7 +220,7 @@ BEGIN_IGNORE_DEPRECATIONS
       bson_oid_copy (&oid2, &oid);
    }
    bson_context_destroy (context);
-END_IGNORE_DEPRECATIONS
+   END_IGNORE_DEPRECATIONS
 }
 
 
@@ -232,7 +232,7 @@ test_bson_oid_init_sequence_thread_safe (void)
    bson_oid_t oid2;
    int i;
 
-BEGIN_IGNORE_DEPRECATIONS
+   BEGIN_IGNORE_DEPRECATIONS
    context = bson_context_new (BSON_CONTEXT_THREAD_SAFE);
    bson_oid_init_sequence (&oid, context);
    for (i = 0; i < 10000; i++) {
@@ -242,7 +242,7 @@ BEGIN_IGNORE_DEPRECATIONS
       bson_oid_copy (&oid2, &oid);
    }
    bson_context_destroy (context);
-END_IGNORE_DEPRECATIONS
+   END_IGNORE_DEPRECATIONS
 }
 
 
@@ -255,7 +255,7 @@ test_bson_oid_init_sequence_with_tid (void)
    bson_oid_t oid2;
    int i;
 
-BEGIN_IGNORE_DEPRECATIONS
+   BEGIN_IGNORE_DEPRECATIONS
    context = bson_context_new (BSON_CONTEXT_USE_TASK_ID);
    bson_oid_init_sequence (&oid, context);
    for (i = 0; i < 10000; i++) {
@@ -265,7 +265,7 @@ BEGIN_IGNORE_DEPRECATIONS
       bson_oid_copy (&oid2, &oid);
    }
    bson_context_destroy (context);
-END_IGNORE_DEPRECATIONS
+   END_IGNORE_DEPRECATIONS
 }
 #endif
 
@@ -393,6 +393,166 @@ test_bson_oid_counter_overflow (void)
 }
 
 
+typedef struct {
+   uint32_t timestamp; /* timestamp */
+   uint64_t rand;      /* only really 5 bytes */
+   uint32_t counter;   /* only really 3 bytes */
+} _parsed_oid_t;
+
+
+/* parse an oid into parts usable for comparison. */
+static void
+_parse_oid (bson_oid_t *oid, _parsed_oid_t *out)
+{
+   memset (out, 0, sizeof (_parsed_oid_t));
+   memcpy (&out->timestamp, oid->bytes, 4);
+   out->timestamp = BSON_UINT32_FROM_BE (out->timestamp);
+   /* rand_bytes is 5 bytes starting at index 4. Read all of it into an 8 byte
+    * uint64_t
+    * and chop off the extra 3 bytes. */
+   memcpy (&out->rand, oid->bytes + 1, 8);
+   out->rand = BSON_UINT64_FROM_BE (out->rand) & 0x000000FFFFFFFFFF;
+
+   /* counter is 3 bytes. Read four bytes and chop off extra 1. */
+   memcpy (&out->counter, oid->bytes + 8, 4);
+   out->counter = BSON_UINT32_FROM_BE (out->counter) & 0x00FFFFFF;
+}
+
+
+#ifndef _WIN32
+#include <sys/wait.h>
+
+
+/* Only test where fork() is available. Does not exercise platform specific
+ * code. */
+static void
+test_bson_oid_after_fork (void)
+{
+   bson_context_t *ctx;
+   bson_oid_t parent_oid, self_check;
+   _parsed_oid_t parent_parsed, self_check_parsed;
+   pid_t pid;
+   int child_exit_status;
+
+   /* a self check of the parsing utility. */
+   bson_oid_init_from_string (&self_check, "AAAAAAAABBBBBBBBBBCCCCCC");
+   _parse_oid (&self_check, &self_check_parsed);
+   ASSERT_CMPUINT32 (self_check_parsed.timestamp, ==, 0xAAAAAAAA);
+   ASSERT_CMPUINT64 (self_check_parsed.rand, ==, 0x000000BBBBBBBBBB);
+   ASSERT_CMPUINT32 (self_check_parsed.counter, ==, 0x00CCCCCC);
+
+   bson_oid_init (&parent_oid, bson_context_get_default ());
+   _parse_oid (&parent_oid, &parent_parsed);
+   pid = fork ();
+   if (pid == 0) {
+      bson_oid_t child_oid, child_2_oid;
+      _parsed_oid_t child_parsed, child_2_parsed;
+
+      bson_oid_init (&child_oid, bson_context_get_default ());
+      _parse_oid (&child_oid, &child_parsed);
+      ASSERT_CMPUINT64 (child_parsed.rand, !=, parent_parsed.rand);
+      ASSERT_CMPUINT32 (child_parsed.counter, ==, parent_parsed.counter + 1);
+      BSON_ASSERT (0 != bson_oid_compare (&parent_oid, &child_oid));
+
+      /* but a different OID gets the same random bytes. */
+      bson_oid_init (&child_2_oid, bson_context_get_default ());
+      _parse_oid (&child_2_oid, &child_2_parsed);
+      ASSERT_CMPUINT64 (child_2_parsed.rand, !=, parent_parsed.rand);
+      ASSERT_CMPUINT64 (child_2_parsed.rand, ==, child_parsed.rand);
+      ASSERT_CMPUINT32 (child_2_parsed.counter, ==, child_parsed.counter + 1);
+      BSON_ASSERT (0 != bson_oid_compare (&child_oid, &child_2_oid));
+
+      exit (0);
+   } else {
+      bson_oid_t parent_2_oid;
+      _parsed_oid_t parent_2_parsed;
+
+      wait (&child_exit_status);
+      BSON_ASSERT (child_exit_status == 0);
+
+      /* but initializing another OID in the parent does *not* change random
+       * bytes. */
+      bson_oid_init (&parent_2_oid, bson_context_get_default ());
+      _parse_oid (&parent_2_oid, &parent_2_parsed);
+      ASSERT_CMPUINT64 (parent_2_parsed.rand, ==, parent_parsed.rand);
+      ASSERT_CMPUINT32 (parent_2_parsed.counter, ==, parent_parsed.counter + 1);
+   }
+
+   /* now test with PID caching enabled. */
+   ctx = bson_context_new (BSON_CONTEXT_NONE);
+   bson_oid_init (&parent_oid, ctx);
+   _parse_oid (&parent_oid, &parent_parsed);
+   pid = fork ();
+   if (pid == 0) {
+      bson_oid_t child_oid;
+      _parsed_oid_t child_parsed;
+
+      bson_oid_init (&child_oid, ctx);
+      _parse_oid (&child_oid, &child_parsed);
+
+      /* since PID is cached, random value does not get regenerated. */
+      ASSERT_CMPUINT64 (child_parsed.rand, ==, parent_parsed.rand);
+      ASSERT_CMPUINT32 (child_parsed.counter, ==, parent_parsed.counter + 1);
+      BSON_ASSERT (0 != bson_oid_compare (&parent_oid, &child_oid));
+      exit (0);
+   } else {
+      bson_oid_t parent_2_oid;
+      _parsed_oid_t parent_2_parsed;
+
+      wait (&child_exit_status);
+      BSON_ASSERT (child_exit_status == 0);
+
+      /* but initializing another OID in the parent does *not* change random
+       * bytes. */
+      bson_oid_init (&parent_2_oid, ctx);
+      _parse_oid (&parent_2_oid, &parent_2_parsed);
+      ASSERT_CMPUINT64 (parent_2_parsed.rand, ==, parent_parsed.rand);
+      ASSERT_CMPUINT32 (parent_2_parsed.counter, ==, parent_parsed.counter + 1);
+   }
+   bson_context_destroy (ctx);
+}
+#endif
+
+
+static char *mock_hostname;
+
+
+static void
+_mock_hostname (char *out)
+{
+   bson_strncpy (out, mock_hostname, 255);
+}
+
+
+static void
+test_bson_hostnames (void)
+{
+   bson_context_t *ctx;
+   bson_oid_t oid;
+   char *hostname_tests[] = {
+      "",
+      "h",
+      "host"
+      "host1",
+      "host12",
+      "host123",
+      "test_the_maximum_length_string.............................."
+      "............................................................"
+      "............................................................"
+      "............................................................"
+      "............."};
+   int i;
+
+   for (i = 0; i < sizeof (hostname_tests) / sizeof (char *); i++) {
+      mock_hostname = hostname_tests[i];
+      ctx = bson_context_new (BSON_CONTEXT_NONE);
+      ctx->gethostname = _mock_hostname;
+      bson_oid_init (&oid, ctx);
+      bson_context_destroy (ctx);
+   }
+}
+
+
 void
 test_oid_install (TestSuite *suite)
 {
@@ -417,4 +577,8 @@ test_oid_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/oid/get_time_t", test_bson_oid_get_time_t);
    TestSuite_Add (
       suite, "/bson/oid/counter_overflow", test_bson_oid_counter_overflow);
+#ifndef _WIN32
+   TestSuite_Add (suite, "/bson/oid/after_fork", test_bson_oid_after_fork);
+#endif
+   TestSuite_Add (suite, "/bson/oid/hostnames", test_bson_hostnames);
 }
