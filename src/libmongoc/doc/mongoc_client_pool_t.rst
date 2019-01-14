@@ -12,7 +12,7 @@ Synopsis
 
   typedef struct _mongoc_client_pool_t mongoc_client_pool_t
 
-``mongoc_client_pool_t`` is the basis for multi-threading in the MongoDB C driver. Since :symbol:`mongoc_client_t` structures are not thread-safe, this structure is used to retrieve a new :symbol:`mongoc_client_t` for a given thread. This structure *is thread-safe*.
+``mongoc_client_pool_t`` is the basis for multi-threading in the MongoDB C driver. Since :symbol:`mongoc_client_t` structures are not thread-safe, this structure is used to retrieve a new :symbol:`mongoc_client_t` for a given thread. This structure *is thread-safe*, except for its destructor method, :symbol:`mongoc_client_pool_destroy`, which *is not thread-safe* and must only be called from one thread.
 
 Example
 -------
