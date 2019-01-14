@@ -26,7 +26,6 @@ functions:
         directory: mongoc
     - command: shell.exec
       params:
-      directory: "mongoc"
       working_dir: "mongoc"
       script: |
         set -o errexit
@@ -1586,7 +1585,8 @@ tasks:
               git clone https://salsa.debian.org/installer-team/debootstrap.git debootstrap.git
               mkdir unstable-chroot
               export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
-              sudo -E ./debootstrap.git/debootstrap --include=build-essential,git-buildpackage,fakeroot,debhelper,cmake,libssl-dev,pkg-config,python3-sphinx,zlib1g-dev,libicu-dev,libsasl2-dev,libsnappy-dev unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
+              # perl-openssl-defaults is explicitly listed to work around https://bugs.debian.org/907015
+              sudo -E ./debootstrap.git/debootstrap --include=build-essential,git-buildpackage,perl-openssl-defaults,fakeroot,debhelper,cmake,libssl-dev,pkg-config,python3-sphinx,zlib1g-dev,libicu-dev,libsasl2-dev,libsnappy-dev unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
               cp -a mongoc ./unstable-chroot/tmp/
               sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
                 cd /tmp/mongoc && \
