@@ -273,7 +273,6 @@ _bson_context_init_random (bson_context_t *context, bool init_sequence)
    char hostname[HOST_NAME_MAX];
    char *ptr;
    int hostname_chars_left;
-   int ret;
 
    /*
     * The seed consists of the following xor'd together:
