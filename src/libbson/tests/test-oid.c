@@ -432,7 +432,7 @@ test_bson_oid_after_fork (void)
    bson_oid_t parent_oid, self_check;
    _parsed_oid_t parent_parsed, self_check_parsed;
    pid_t pid;
-   int child_exit_status;
+   int child_exit_status = 0;
 
    /* a self check of the parsing utility. */
    bson_oid_init_from_string (&self_check, "AAAAAAAABBBBBBBBBBCCCCCC");
