@@ -30,7 +30,7 @@ from git import Git, Repo # pip install GitPython
 
 DEBUG = len(sys.argv) > 1 and '-d' in sys.argv
 if DEBUG:
-    print 'Debugging output enabled.'
+    print('Debugging output enabled.')
 
 # This option indicates we are to determine the previous release version
 PREVIOUS = len(sys.argv) > 1 and '-p' in sys.argv
@@ -60,13 +60,13 @@ def check_head_tag(repo):
             new_version_loose = LooseVersion(release_tag_match.group('ver'))
             if new_version_loose > version_loose:
                 if DEBUG:
-                    print 'HEAD release tag: ' + release_tag_match.group('ver')
+                    print('HEAD release tag: ' + release_tag_match.group('ver'))
                 version_loose = new_version_loose
                 found_tag = True
 
     if found_tag:
         if DEBUG:
-            print 'Calculated version: ' + str(version_loose)
+            print('Calculated version: ' + str(version_loose))
         return str(version_loose)
 
     return None
@@ -100,7 +100,7 @@ def main():
             + '+git' + repo.head.commit.hexsha[:10]
 
     if DEBUG:
-        print 'Calculating release version for branch: ' + repo.active_branch.name
+        print('Calculating release version for branch: ' + repo.active_branch.name)
     if repo.active_branch.name == 'master':
         version_new = {}
         # Use refs (not branches) to get local branches plus remote branches
@@ -119,8 +119,8 @@ def main():
                 if new_version_loose > version_loose:
                     version_loose = new_version_loose
                     if DEBUG:
-                        print 'Found new best version "' + str(version_loose) \
-                                + '" on branch "' + ref.name + '"'
+                        print('Found new best version "' + str(version_loose) \
+                                + '" on branch "' + ref.name + '"')
 
     else:
         gexc = Git('.')
@@ -143,8 +143,8 @@ def main():
                 if new_version_loose > version_loose:
                     version_loose = new_version_loose
                     if DEBUG:
-                        print 'Found new best version "' + str(version_loose) \
-                                + '" from tag "' + release_tag_match.group('ver') + '"'
+                        print('Found new best version "' + str(version_loose) \
+                                + '" from tag "' + release_tag_match.group('ver') + '"')
 
     return str(version_loose)
 
@@ -154,7 +154,7 @@ def previous(rel_ver):
     tag that is strictly a lower version than the given release version.
     """
     if DEBUG:
-        print 'Calculating previous release version (option -p was specified).'
+        print('Calculating previous release version (option -p was specified).')
     version_loose = LooseVersion('0.0.0')
     rel_ver_loose = LooseVersion(rel_ver)
     gexc = Git('.')
@@ -174,8 +174,8 @@ def previous(rel_ver):
             if new_version_loose < rel_ver_loose:
                 version_loose = new_version_loose
                 if DEBUG:
-                    print 'Found new best version "' + str(version_loose) \
-                            + '" from tag "' + tag + '"'
+                    print('Found new best version "' + str(version_loose) \
+                            + '" from tag "' + tag + '"')
                 return str(version_loose)
 
     return str(version_loose)
@@ -183,5 +183,5 @@ def previous(rel_ver):
 RELEASE_VER = previous(main()) if PREVIOUS else main()
 
 if DEBUG:
-    print 'Final calculated release version:',
-print RELEASE_VER
+    print('Final calculated release version:', end=' ')
+print(RELEASE_VER)
