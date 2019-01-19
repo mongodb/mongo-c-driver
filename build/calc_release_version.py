@@ -183,5 +183,5 @@ def previous(rel_ver):
 RELEASE_VER = previous(main()) if PREVIOUS else main()
 
 if DEBUG:
-    print('Final calculated release version:', end=' ')
+    print('Final calculated release version:')
 print(RELEASE_VER)
