@@ -1,6 +1,7 @@
-============
-Next Release
-============
+mongo-c-driver 1.13.1
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.13.1.
 
 Bug fixes:
 
@@ -9,6 +10,20 @@ Bug fixes:
   * Remove timestamp from uninstall scripts to permit reproducible build.
   * Add missing header files to the release tarball to fix compilation when
     configuring with ENABLE_SASL=GSSAPI.
+  * Separate libmongoc and libbson uninstall scripts so they do not overwrite
+    each other.
+  * Fix running make install with DESTDIR.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * A. Jesse Jiryu Davis
+  * Henrik Edin
+
+Peace,
+
+    Kevin Albertson
+
 
 mongo-c-driver 1.13.0
 =====================

@@ -1,3 +1,23 @@
+libbson 1.13.1
+==============
+
+It is my pleasure to announce libbson 1.13.1.
+
+Bug fixes:
+
+  * Separate libmongoc and libbson uninstall scripts so they do not overwrite
+    each other.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Henrik Edin
+
+Peace,
+
+    Kevin Albertson
+
+
 libbson 1.13.0
 ==============
 
