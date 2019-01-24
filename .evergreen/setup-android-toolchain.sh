@@ -22,7 +22,7 @@ API_VERSION=24
     SDK_PACKAGE=sdk-tools-linux-3859397.zip
     curl -O https://dl.google.com/android/repository/$SDK_PACKAGE
     unzip $SDK_PACKAGE
-    echo y | ./tools/bin/sdkmanager "platforms;android-24" "emulator" "ndk-bundle" "platform-tools" "build-tools;23.0.3" "system-images;android-24;google_apis;$_SystemImageArch"
+    yes | ./tools/bin/sdkmanager "platforms;android-24" "emulator" "ndk-bundle" "platform-tools" "build-tools;23.0.3" "system-images;android-24;google_apis;$_SystemImageArch"
 )
 
 python $SDK_ROOT/ndk-bundle/build/tools/make_standalone_toolchain.py --arch $_ToolchainArch --api $API_VERSION  --stl=libc++ --force  --install-dir $TOOLCHAIN
