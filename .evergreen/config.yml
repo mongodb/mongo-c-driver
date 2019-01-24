@@ -9249,7 +9249,6 @@ buildvariants:
     - "debug-compile-valgrind"
     - "debug-compile-no-counters"
     - "compile-tracing"
-    - "debian-package-build"
     - name: "link-with-cmake"
     - name: "abi-compliance-check"
     - name: "link-with-cmake-ssl"
