@@ -26,13 +26,13 @@ functions:
         directory: mongoc
     - command: shell.exec
       params:
-      working_dir: "mongoc"
-      script: |
-        set -o errexit
-        for i in ./.evergreen/test-patches/* ; do
-          echo "Applying patch: $i"
-          git apply $i
-        done
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          for i in ./.evergreen/test-patches/* ; do
+            echo "Applying patch: $i"
+            git apply $i
+          done
     - command: shell.exec
       params:
         working_dir: "mongoc"
