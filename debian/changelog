@@ -1,3 +1,11 @@
+mongo-c-driver (1.13.1-1) unstable; urgency=medium
+
+  * New upstream release
+  * Update to Standards-Version 4.3.0 (no changes)
+  * debian/patches/uninstall_destdir.patch: drop, included upstream
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Thu, 24 Jan 2019 20:44:39 -0500
+
 mongo-c-driver (1.13.0-1) unstable; urgency=medium
 
   * New upstream release (Closes: #913963)
