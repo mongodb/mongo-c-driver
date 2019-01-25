@@ -208,6 +208,26 @@ _start_scanner_if_needed (mongoc_client_pool_t *pool)
    }
 }
 
+static void
+_initialize_new_client (mongoc_client_pool_t *pool, mongoc_client_t *client)
+{
+   /* for tests */
+   mongoc_client_set_stream_initiator (
+      client,
+      pool->topology->scanner->initiator,
+      pool->topology->scanner->initiator_context);
+
+   client->error_api_version = pool->error_api_version;
+   _mongoc_client_set_apm_callbacks_private (
+      client, &pool->apm_callbacks, pool->apm_context);
+
+#ifdef MONGOC_ENABLE_SSL
+   if (pool->ssl_opts_set) {
+      mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
+   }
+#endif
+}
+
 mongoc_client_t *
 mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 {
@@ -223,21 +243,7 @@ again:
    if (!(client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = _mongoc_client_new_from_uri (pool->topology);
-
-         /* for tests */
-         mongoc_client_set_stream_initiator (
-            client,
-            pool->topology->scanner->initiator,
-            pool->topology->scanner->initiator_context);
-
-         client->error_api_version = pool->error_api_version;
-         _mongoc_client_set_apm_callbacks_private (
-            client, &pool->apm_callbacks, pool->apm_context);
-#ifdef MONGOC_ENABLE_SSL
-         if (pool->ssl_opts_set) {
-            mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
-         }
-#endif
+         _initialize_new_client (pool, client);
          pool->size++;
       } else {
          mongoc_cond_wait (&pool->cond, &pool->mutex);
@@ -266,11 +272,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
    if (!(client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
          client = _mongoc_client_new_from_uri (pool->topology);
-#ifdef MONGOC_ENABLE_SSL
-         if (pool->ssl_opts_set) {
-            mongoc_client_set_ssl_opts (client, &pool->ssl_opts);
-         }
-#endif
+         _initialize_new_client (pool, client);
          pool->size++;
       }
    }

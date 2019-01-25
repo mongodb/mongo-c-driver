@@ -333,7 +333,7 @@ test_set_callbacks_cb (const mongoc_apm_command_started_t *event)
 
 
 static void
-_test_set_callbacks (bool pooled)
+_test_set_callbacks (bool pooled, bool try_pop)
 {
    mongoc_client_t *client;
    mongoc_client_pool_t *pool = NULL;
@@ -348,7 +348,11 @@ _test_set_callbacks (bool pooled)
       pool = test_framework_client_pool_new ();
       ASSERT (mongoc_client_pool_set_apm_callbacks (
          pool, callbacks, (void *) &n_calls));
-      client = mongoc_client_pool_pop (pool);
+      if (try_pop) {
+         client = mongoc_client_pool_try_pop (pool);
+      } else {
+         client = mongoc_client_pool_pop (pool);
+      }
    } else {
       client = test_framework_client_new ();
       ASSERT (mongoc_client_set_apm_callbacks (
@@ -395,14 +399,20 @@ _test_set_callbacks (bool pooled)
 static void
 test_set_callbacks_single (void)
 {
-   _test_set_callbacks (false);
+   _test_set_callbacks (false, false);
 }
 
 
 static void
 test_set_callbacks_pooled (void)
 {
-   _test_set_callbacks (true);
+   _test_set_callbacks (true, false);
+}
+
+static void
+test_set_callbacks_pooled_try_pop (void)
+{
+   _test_set_callbacks (true, true);
 }
 
 
@@ -1182,6 +1192,9 @@ test_command_monitoring_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/command_monitoring/set_callbacks/pooled",
                       test_set_callbacks_pooled);
+   TestSuite_AddLive (suite,
+                      "/command_monitoring/set_callbacks/pooled_try_pop",
+                      test_set_callbacks_pooled_try_pop);
    /* require aggregation cursor */
    TestSuite_AddLive (
       suite, "/command_monitoring/set_callbacks/change", test_change_callbacks);
