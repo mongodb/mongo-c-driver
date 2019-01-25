@@ -28,7 +28,7 @@ Examples
 
 .. code-block:: c
 
-   #include <mongoc.h>
+   #include <mongoc/mongoc.h>
 
    static void
    run_query_with_read_prefs_tags (mongoc_collection_t *collection)

@@ -167,7 +167,10 @@ def make_integration_test_tasks():
         if task.valgrind:
             task.depends_on.append('debug-compile-valgrind-memcheck')
         elif task.asan:
-            task.depends_on.append('debug-compile-asan-clang-nosasl-nossl')
+            if task.ssl:
+                task.depends_on.append('debug-compile-asan-clang-nosasl-openssl')
+            else:
+                task.depends_on.append('debug-compile-asan-clang-nosasl-nossl')
         elif not task.coverage:
             task.depends_on.append('debug-compile-%s-%s' % (
                 task.display('sasl'), task.display('ssl')))

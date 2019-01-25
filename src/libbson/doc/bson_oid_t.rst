@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
 
   typedef struct {
      uint8_t bytes[12];

@@ -71,7 +71,7 @@ echo "Upstream snapshot version: ${snapshot_version}"
 
 if [ "$(dpkg-parsechangelog | sed -E -n 's/^Version: +(.*)/\1/p')" != "${snapshot_version}" ]; then
   echo "Making Debian changelog entry"
-  dch --release-heuristic log -v "${snapshot_version}" -D UNRELEASED "Built from Git snapshot."
+  dch --force-bad-version --release-heuristic log -v "${snapshot_version}" -D UNRELEASED "Built from Git snapshot."
 fi
 
 echo "Calling git-buildpackage ..."

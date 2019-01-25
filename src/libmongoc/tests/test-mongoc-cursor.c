@@ -32,6 +32,8 @@
 
 typedef mongoc_cursor_t *(*make_cursor_fn) (mongoc_collection_t *);
 
+static mongoc_cursor_t *
+_make_array_cursor (mongoc_collection_t *coll);
 
 /* test that the host a cursor returns belongs to a server it connected to. */
 static void
@@ -290,18 +292,29 @@ _test_common_opts (void *ctx)
    /* check that we get what we set. */
    BSON_ASSERT (mongoc_cursor_set_hint (cursor, sd->id));
    ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), ==, sd->id);
-   mongoc_cursor_set_batch_size (cursor, 1);
-   ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 1);
-   BSON_ASSERT (mongoc_cursor_set_limit (cursor, 2));
-   ASSERT_CMPINT ((int) mongoc_cursor_get_limit (cursor), ==, 2);
+
+   /* listDatabases prohibits limit and batchSize */
+   if ((make_cursor_fn) ctx != _make_array_cursor) {
+      mongoc_cursor_set_batch_size (cursor, 1);
+      ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 1);
+      BSON_ASSERT (mongoc_cursor_set_limit (cursor, 2));
+      ASSERT_CMPINT ((int) mongoc_cursor_get_limit (cursor), ==, 2);
+   }
+
    mongoc_cursor_set_max_await_time_ms (cursor, 3);
    ASSERT_CMPINT (mongoc_cursor_get_max_await_time_ms (cursor), ==, 3);
    /* prime the cursor. */
    BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
    /* options should be unchanged. */
    ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), ==, sd->id);
-   ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 1);
-   ASSERT_CMPINT ((int) mongoc_cursor_get_limit (cursor), ==, 2);
+   if ((make_cursor_fn) ctx != _make_array_cursor) {
+      ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 1);
+      ASSERT_CMPINT ((int) mongoc_cursor_get_limit (cursor), ==, 2);
+      /* limit cannot be set again. */
+      BSON_ASSERT (!mongoc_cursor_set_limit (cursor, 5));
+      ASSERT_CMPINT ((int) mongoc_cursor_get_limit (cursor), ==, 2);
+   }
+
    ASSERT_CMPINT (mongoc_cursor_get_max_await_time_ms (cursor), ==, 3);
    /* trying to set hint again logs an error. */
    capture_logs (true);
@@ -311,9 +324,6 @@ _test_common_opts (void *ctx)
    /* batch size can be set again without issue. */
    mongoc_cursor_set_batch_size (cursor, 4);
    ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 4);
-   /* limit cannot be set. */
-   BSON_ASSERT (!mongoc_cursor_set_limit (cursor, 5));
-   ASSERT_CMPINT ((int) mongoc_cursor_get_limit (cursor), ==, 2);
    /* max await time ms cannot be set (but fails quietly). */
    mongoc_cursor_set_max_await_time_ms (cursor, 6);
    ASSERT_CMPINT (mongoc_cursor_get_max_await_time_ms (cursor), ==, 3);

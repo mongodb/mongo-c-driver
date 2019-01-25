@@ -62,6 +62,7 @@ set_dist_list (src_libbson_src_bson_DIST
    CMakeLists.txt
    bson-config.h.in
    bson-version.h.in
+   modules/module.modulemap.in
    ${src_libbson_src_bson_DIST_hs}
    ${src_libbson_src_bson_DIST_cs}
 )

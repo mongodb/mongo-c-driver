@@ -79,6 +79,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-client-pool-private.h
    mongoc-client-private.h
    mongoc-cluster-cyrus-private.h
+   mongoc-cluster-gssapi-private.h
    mongoc-cluster-private.h
    mongoc-cluster-sasl-private.h
    mongoc-cluster-sspi-private.h
@@ -101,6 +102,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-gridfs-file-page-private.h
    mongoc-gridfs-file-private.h
    mongoc-gridfs-private.h
+   mongoc-gssapi-private.h
    mongoc-handshake-compiler-private.h
    mongoc-handshake-os-private.h
    mongoc-handshake-private.h
@@ -249,6 +251,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
 
 set_dist_list (src_libmongoc_src_mongoc_DIST
    CMakeLists.txt
+   modules/module.modulemap.in
    ${src_libmongoc_src_mongoc_DIST_cs}
    ${src_libmongoc_src_mongoc_DIST_hs}
    ${src_libmongoc_src_mongoc_DIST_noinst_hs}

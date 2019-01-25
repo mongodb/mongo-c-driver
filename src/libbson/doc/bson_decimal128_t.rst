@@ -10,7 +10,7 @@ Synopsis
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
 
   #define BSON_DECIMAL128_STRING 43
   #define BSON_DECIMAL128_INF "Infinity"
@@ -50,7 +50,7 @@ Example
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <stdio.h>
 
   int

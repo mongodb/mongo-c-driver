@@ -73,8 +73,8 @@ Examples
 .. code-block:: c
   :caption: Basic Counting
 
-  #include <mongoc.h>
-  #include <bcon.h>
+  #include <bson/bson.h>
+  #include <mongoc/mongoc.h>
   #include <stdio.h>
 
   static void
@@ -102,8 +102,8 @@ Examples
 .. code-block:: c
   :caption: Counting with Collation
 
-  #include <mongoc.h>
-  #include <bcon.h>
+  #include <bson/bson.h>
+  #include <mongoc/mongoc.h>
   #include <stdio.h>
 
   static void

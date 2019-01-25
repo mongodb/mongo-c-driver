@@ -57,7 +57,8 @@ Example
 .. code-block:: c
   :caption: Print All Documents in a Collection
 
-  #include <mongoc.h>
+  #include <bson/bson.h>
+  #include <mongoc/mongoc.h>
   #include <stdio.h>
 
   static void

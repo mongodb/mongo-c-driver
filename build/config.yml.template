@@ -27,9 +27,15 @@ functions:
     - command: git.get_project
       params:
         directory: mongoc
-    - command: git.apply_patch
+    - command: shell.exec
       params:
-        directory: "mongoc"
+        working_dir: "mongoc"
+        script: |
+          set -o errexit
+          for i in ./.evergreen/test-patches/* ; do
+            echo "Applying patch: $i"
+            git apply $i
+          done
     - command: shell.exec
       params:
         working_dir: "mongoc"
@@ -370,7 +376,7 @@ functions:
         script: |
           set -o errexit
           set -o xtrace
-          MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} AUTHSOURCE=${AUTHSOURCE} SSL=${SSL} ORCHESTRATION_FILE=${ORCHESTRATION_FILE} sh .evergreen/integration-tests.sh
+          LATEST_SUPPORTED_MONGODB_VERSION=${latest_supported_mongodb_version} MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} AUTHSOURCE=${AUTHSOURCE} SSL=${SSL} ORCHESTRATION_FILE=${ORCHESTRATION_FILE} sh .evergreen/integration-tests.sh
 
   "run tests":
     - command: shell.exec
@@ -1551,58 +1557,6 @@ tasks:
             AUTH: "noauth"
             URI: "mongodb://localhost/?replicaSet=repl0&retryWrites=true"
 
-    - name: debian-package-build
-      commands:
-        - command: shell.exec
-          params:
-            script: |
-              set -o xtrace
-              set -o errexit
-              if [ "${is_patch}" = "true" ]; then
-                cd mongoc
-                git diff HEAD -- . ':!debian' > ../upstream.patch
-                git diff HEAD -- debian > ../debian.patch
-                git clean -fdx
-                git reset --hard HEAD
-                if [ -s ../upstream.patch ]; then
-                  [ -d debian/patches ] || mkdir debian/patches
-                  mv ../upstream.patch debian/patches/
-                  echo upstream.patch >> debian/patches/series
-                  git add debian/patches/*
-                  git commit -m 'Evergreen patch build - upstream changes'
-                  git log -n1 -p
-                fi
-                if [ -s ../debian.patch ]; then
-                  git apply --index ../debian.patch
-                  git commit -m 'Evergreen patch build - Debian packaging changes'
-                  git log -n1 -p
-                fi
-                cd ..
-              fi
-              git clone https://salsa.debian.org/installer-team/debootstrap.git debootstrap.git
-              mkdir unstable-chroot
-              export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
-              sudo -E ./debootstrap.git/debootstrap --include=build-essential,git-buildpackage,fakeroot,debhelper,cmake,libssl-dev,pkg-config,python3-sphinx,zlib1g-dev,libicu-dev,libsasl2-dev,libsnappy-dev unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
-              cp -a mongoc ./unstable-chroot/tmp/
-              sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
-                cd /tmp/mongoc && \
-                git clean -fdx && \
-                git reset --hard HEAD && \
-                LANG=C /bin/bash ./debian/build_snapshot.sh && \
-                dpkg -i ../*.deb && \
-                gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0 )"
-              [ -e ./unstable-chroot/tmp/mongoc/example-client ] || (echo "Example was not built!" ; exit 1)
-              (cd ./unstable-chroot/tmp/ ; tar zcvf ../../deb.tar.gz *.dsc *.orig.tar.gz *.debian.tar.xz *.build *.deb)
-        - command: s3.put
-          params:
-            aws_key: ${aws_key}
-            aws_secret: ${aws_secret}
-            local_file: deb.tar.gz
-            remote_file: mongo-c-driver/${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz
-            bucket: mciuploads
-            permissions: public-read
-            content_type: ${content_type|application/x-gzip}
-
     - name: install-uninstall-check-mingw
       depends_on:
         - name: "make-release-archive"
@@ -1647,6 +1601,7 @@ tasks:
             script: |
               set -o xtrace
               set -o errexit
+              DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
               BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
               sh ./.evergreen/install-uninstall-check.sh
 # {{ '}}}' }}
@@ -1738,7 +1693,6 @@ buildvariants:
     - "debug-compile-valgrind"
     - "debug-compile-no-counters"
     - "compile-tracing"
-    - "debian-package-build"
     - name: "link-with-cmake"
     - name: "abi-compliance-check"
     - name: "link-with-cmake-ssl"

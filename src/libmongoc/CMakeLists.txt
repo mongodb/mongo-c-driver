@@ -203,6 +203,12 @@ set (MONGOC_ENABLE_SASL_GSSAPI 0)
 set (MONGOC_ENABLE_SASL_SSPI 0)
 set (MONGOC_HAVE_SASL_CLIENT_DONE 0)
 
+# After CDRIVER-2654, the GSSAPI option will be entirely removed.
+if (ENABLE_SASL STREQUAL "GSSAPI")
+   message (WARNING "ENABLE_SASL=GSSAPI is not supported. Using CYRUS instead.")
+   set (ENABLE_SASL "CYRUS")
+endif()
+
 if (NOT ENABLE_SASL STREQUAL OFF)
    if (ENABLE_SASL MATCHES "AUTO|CYRUS")
       # Sets SASL_LIBRARIES.

@@ -98,7 +98,7 @@ Libbson provides :symbol:`bson_json_reader_t` to allow for parsing a sequence of
    */
 
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <stdlib.h>
   #include <stdio.h>
 
@@ -193,7 +193,7 @@ The following example reads BSON documents from ``stdin`` and prints them to ``s
    */
 
 
-  #include <bson.h>
+  #include <bson/bson.h>
   #include <stdio.h>
 
 

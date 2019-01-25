@@ -54,7 +54,7 @@ Example
 
 .. code-block:: c
 
-  #include <bson.h>
+  #include <bson/bson.h>
 
   int
   main (int argc, char *argv[])
