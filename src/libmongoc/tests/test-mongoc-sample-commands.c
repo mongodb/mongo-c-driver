@@ -2636,6 +2636,180 @@ test_example_change_stream (mongoc_database_t *db)
 
 
 static void
+test_sample_causal_consistency (mongoc_client_t *client)
+{
+   mongoc_session_opt_t *session_opts = NULL;
+   mongoc_client_session_t *session1 = NULL;
+   mongoc_client_session_t *session2 = NULL;
+   mongoc_read_prefs_t *read_prefs = NULL;
+   const bson_t *cluster_time = NULL;
+   mongoc_write_concern_t *wc = NULL;
+   mongoc_read_concern_t *rc = NULL;
+   mongoc_collection_t *coll = NULL;
+   mongoc_cursor_t *cursor = NULL;
+   const bson_t *result = NULL;
+   bson_t *update_opts = NULL;
+   bson_t *insert_opts = NULL;
+   bson_t *find_query = NULL;
+   bson_t *find_opts = NULL;
+   bson_t *insert = NULL;
+   bson_t *update = NULL;
+   bson_t *query = NULL;
+   bson_t *doc = NULL;
+   char *json = NULL;
+   uint32_t timestamp;
+   uint32_t increment;
+   bson_error_t error;
+   bool res;
+
+   if (!test_framework_skip_if_no_txns ()) {
+      return;
+   }
+
+   /* Seed the 'db.items' collection with a document. */
+   coll = mongoc_client_get_collection (client, "db", "items");
+   mongoc_collection_drop (coll, &error);
+
+   doc = BCON_NEW ("sku", "111", "name", "Peanuts",
+		   "start", BCON_DATE_TIME (bson_get_monotonic_time ()));
+
+   res = mongoc_collection_insert_one (coll, doc, NULL, NULL, &error);
+   if (!res) {
+      fprintf (stderr, "insert failed: %s\n", error.message);
+      goto cleanup;
+   }
+
+   /* Example 1:
+    * ----------
+    * Use a causally-consistent session to run some operations. */
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_wmajority (wc, 1000);
+   mongoc_collection_set_write_concern (coll, wc);
+
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_collection_set_read_concern (coll, rc);
+
+   session_opts = mongoc_session_opts_new ();
+   mongoc_session_opts_set_causal_consistency (session_opts, true);
+
+   session1 = mongoc_client_start_session (client, session_opts, &error);
+   if (!session1) {
+      fprintf (stderr, "couldn't start session: %s\n", error.message);
+      goto cleanup;
+   }
+
+   /* Run an update_one with our causally-consistent session */
+   update_opts = bson_new ();
+   res = mongoc_client_session_append (session1, update_opts, &error);
+   if (!res) {
+      fprintf (stderr, "couldn't add session to opts: %s\n", error.message);
+      goto cleanup;
+   }
+
+   query = BCON_NEW ("sku", "111");
+   update = BCON_NEW ("$set", "{", "end",
+		      BCON_DATE_TIME (bson_get_monotonic_time ()), "}");
+   res = mongoc_collection_update_one (coll,
+				       query,
+				       update,
+				       update_opts,
+				       NULL, /* reply */
+				       &error);
+
+   if (!res) {
+      fprintf (stderr, "update failed: %s\n", error.message);
+      goto cleanup;
+   }
+
+   /* Run an insert with our causally-consistent session */
+   insert_opts = bson_new ();
+   res = mongoc_client_session_append (session1, insert_opts, &error);
+   if (!res) {
+      fprintf (stderr, "couldn't add session to opts: %s\n", error.message);
+      goto cleanup;
+   }
+
+   insert = BCON_NEW ("sku", "nuts-111", "name", "Pecans",
+		      "start", BCON_DATE_TIME (bson_get_monotonic_time ()));
+   res = mongoc_collection_insert_one (coll, insert, insert_opts, NULL, &error);
+   if (!res) {
+      fprintf (stderr, "insert failed: %s\n", error.message);
+      goto cleanup;
+   }
+
+   /* Example 2:
+    * ----------
+    * Make a new session, session2, and make it causally-consistent
+    * with session1, so that session2 will read session1's writes. */
+
+   session2 = mongoc_client_start_session (client, session_opts, &error);
+   if (!session2) {
+      fprintf (stderr, "couldn't start session: %s\n", error.message);
+      goto cleanup;
+   }
+
+   /* Set the cluster time for session2 to session1's cluster time */
+   cluster_time = mongoc_client_session_get_cluster_time (session1);
+   mongoc_client_session_advance_cluster_time (session2, cluster_time);
+
+   /* Set the operation time for session2 to session2's operation time */
+   mongoc_client_session_get_operation_time (session1, &timestamp, &increment);
+   mongoc_client_session_advance_operation_time (session2,
+						 timestamp,
+						 increment);
+
+   /* Run a find on session2, which should now find all writes done
+    * inside of session1 */
+   find_opts = bson_new ();
+   res = mongoc_client_session_append (session2, find_opts, &error);
+   if (!res) {
+      fprintf (stderr, "couldn't add session to opts: %s\n", error.message);
+      goto cleanup;
+   }
+
+   find_query = BCON_NEW ("end", BCON_NULL);
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   cursor = mongoc_collection_find_with_opts (coll,
+					      query,
+					      find_opts,
+					      read_prefs);
+
+   while (mongoc_cursor_next (cursor, &result)) {
+      json = bson_as_json (result, NULL);
+      fprintf (stdout, "Document: %s\n", json);
+      bson_free (json);
+   }
+
+   if (mongoc_cursor_error (cursor, &error)) {
+      fprintf (stderr, "cursor failure: %s\n", error.message);
+      goto cleanup;
+   }
+
+ cleanup:
+
+   bson_destroy (doc);
+   bson_destroy (query);
+   bson_destroy (insert);
+   bson_destroy (update);
+   bson_destroy (find_query);
+   bson_destroy (update_opts);
+   bson_destroy (find_opts);
+   bson_destroy (insert_opts);
+
+   mongoc_read_concern_destroy (rc);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_write_concern_destroy (wc);
+   mongoc_collection_destroy (coll);
+   mongoc_cursor_destroy (cursor);
+   mongoc_session_opts_destroy (session_opts);
+   mongoc_client_session_destroy (session1);
+   mongoc_client_session_destroy (session2);
+}
+
+
+static void
 test_sample_aggregation (mongoc_database_t *db)
 {
    /* Start Aggregation Example 1 */
@@ -3319,6 +3493,7 @@ test_sample_commands (void)
    test_sample_command (test_example_58, 58, db, collection, false);
    test_sample_command (test_example_56, 56, db, collection, true);
    test_sample_change_stream_command (test_example_change_stream, db);
+   test_sample_causal_consistency (client);
    test_sample_aggregation (db);
    test_sample_indexes (db);
    test_sample_run_command (db);
