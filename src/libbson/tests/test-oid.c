@@ -26,6 +26,8 @@
 #include <strings.h>
 #endif
 
+#include <limits.h>
+
 #include "TestSuite.h"
 
 #define N_THREADS 4
@@ -524,24 +526,30 @@ _mock_hostname (char *out)
 }
 
 
+#ifndef HOST_NAME_MAX
+#define HOST_NAME_MAX 256
+#endif
+
+
 static void
 test_bson_hostnames (void)
 {
    bson_context_t *ctx;
    bson_oid_t oid;
-   char *hostname_tests[] = {
-      "",
-      "h",
-      "host"
-      "host1",
-      "host12",
-      "host123",
-      "test_the_maximum_length_string.............................."
-      "............................................................"
-      "............................................................"
-      "............................................................"
-      "............."};
+   char *hostname_tests[] = {"",
+                             "h",
+                             "host"
+                             "host1",
+                             "host12",
+                             "host123",
+                             "placeholder"};
    int i;
+   char max_len_host[HOST_NAME_MAX] = {0};
+
+   for (i = 0; i < HOST_NAME_MAX - 1; i++) {
+      max_len_host[i] = "a";
+   }
+   hostname_tests[sizeof(hostname_tests) - 1] = max_len_host;
 
    for (i = 0; i < sizeof (hostname_tests) / sizeof (char *); i++) {
       mock_hostname = hostname_tests[i];
