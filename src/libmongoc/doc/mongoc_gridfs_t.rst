@@ -3,6 +3,10 @@
 mongoc_gridfs_t
 ===============
 
+.. warning::
+
+  This GridFS implementation does not conform to the `MongoDB GridFS specification <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_. For a spec compliant implementation, use :symbol:`mongoc_gridfs_bucket_t`.
+
 Synopsis
 --------
 
@@ -41,6 +45,12 @@ Example
 .. literalinclude:: ../examples/example-gridfs.c
    :language: c
    :caption: example-gridfs.c
+
+See also
+--------
+
+- The `MongoDB GridFS specification <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_.
+- The spec-compliant :symbol:`mongoc_gridfs_bucket_t`.
 
 .. only:: html
 

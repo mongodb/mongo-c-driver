@@ -9,6 +9,7 @@ API Reference
    logging
    errors
    lifecycle
+   gridfs
    mongoc_bulk_operation_t
    mongoc_change_stream_t
    mongoc_client_pool_t

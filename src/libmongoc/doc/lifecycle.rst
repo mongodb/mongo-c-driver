@@ -26,6 +26,13 @@ You can create a :symbol:`mongoc_gridfs_t` from a :symbol:`mongoc_client_t`, cre
 
 Each of these objects depends on the object it was created from. Always destroy GridFS objects in the reverse of the order they were created. The sole exception is that a :symbol:`mongoc_gridfs_file_t` need not be destroyed before the :symbol:`mongoc_gridfs_file_list_t` it was created from.
 
+GridFS bucket objects
+---------------------
+
+Create :symbol:`mongoc_gridfs_bucket_t` with a :symbol:`mongoc_database_t` derived from a :symbol:`mongoc_client_t`. The :symbol:`mongoc_database_t` is independent from the :symbol:`mongoc_gridfs_bucket_t`. But the :symbol:`mongoc_client_t` must outlive the :symbol:`mongoc_gridfs_bucket_t`.
+
+A :symbol:`mongoc_stream_t` may be created from the :symbol:`mongoc_gridfs_bucket_t`. The :symbol:`mongoc_gridfs_bucket_t` must outlive the :symbol:`mongoc_stream_t`.
+
 Sessions
 --------
 

@@ -15,12 +15,18 @@ Synopsis
 Description
 -----------
 
-``mongoc_gridfs_bucket_t`` provides a MongoDB GridFS implementation, superseding :symbol:`mongoc_gridfs_t`. See the `GridFS MongoDB documentation <https://docs.mongodb.com/manual/core/gridfs/>`_.
+``mongoc_gridfs_bucket_t`` provides a spec-compliant MongoDB GridFS implementation, superseding :symbol:`mongoc_gridfs_t`. See the `GridFS MongoDB documentation <https://docs.mongodb.com/manual/core/gridfs/>`_.
 
 Thread Safety
 -------------
 
-``mongoc_gridfs_bucket_t`` is NOT thread-safe and should only be used in the same thread as the owning :symbol:`mongoc_client_t`.
+:symbol:`mongoc_gridfs_bucket_t` is NOT thread-safe and should only be used in the same thread as the owning :symbol:`mongoc_client_t`.
+
+Lifecycle
+---------
+
+It is an error to free a :symbol:`mongoc_gridfs_bucket_t` before freeing all derived instances of :symbol:`mongoc_stream_t`. The owning :symbol:`mongoc_client_t` must outlive the :symbol:`mongoc_gridfs_bucket_t`.
+
 
 Example
 -------
@@ -29,6 +35,11 @@ Example
    :language: c
    :caption: example-gridfs-bucket.c
 
+See also
+--------
+
+- The `MongoDB GridFS specification <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_.
+- The non spec-compliant :symbol:`mongoc_gridfs_t`.
 
 .. only:: html
 
