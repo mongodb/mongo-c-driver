@@ -30,6 +30,11 @@ override_dh_auto_configure:
 	-DENABLE_TESTS=OFF \
 	-DENABLE_ZLIB=SYSTEM
 
+override_dh_auto_install:
+	dh_auto_install
+	find $(CURDIR)/debian/tmp/usr/include -type f -name "*.h" -print0 | \
+		xargs -0r sed -i -e 's@\([" ]\)[^ ]*-f\(file\|debug\)-prefix-map=[^ ]*\([" ]\)@\1\3@g'
+
 #override_dh_install:
 #	dh_install -a -X.la -Xmongoc-stat -Xdoc/mongo-c-driver -Xdoc/libbson -Xman/man3 -X-priv.so -X-priv.pc --fail-missing
 

@@ -1,3 +1,10 @@
+mongo-c-driver (1.13.1-2) UNRELEASED; urgency=medium
+
+  * Make build reproducible; thanks to Chris Lamb for the patch
+    (Closes: #920411)
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Mon, 28 Jan 2019 17:13:31 -0500
+
 mongo-c-driver (1.13.1-1) unstable; urgency=medium
 
   * New upstream release
