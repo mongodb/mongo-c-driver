@@ -639,18 +639,21 @@ match_json (const bson_t *doc,
    matches = match_bson_with_ctx (doc, pattern, &ctx);
 
    if (!matches) {
+      char *as_string =
+         doc ? bson_as_canonical_extended_json (doc, NULL) : NULL;
       fprintf (stderr,
                "ASSERT_MATCH failed with document:\n\n"
                "%s\n"
                "pattern:\n%s\n"
                "%s\n"
                "%s:%d %s()\n",
-               doc ? bson_as_canonical_extended_json (doc, NULL) : "{}",
+               as_string ? as_string : "{}",
                double_quoted,
                ctx.errmsg,
                filename,
                lineno,
                funcname);
+      bson_free (as_string);
    }
 
    bson_destroy (pattern);
