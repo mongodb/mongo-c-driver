@@ -547,7 +547,7 @@ test_bson_hostnames (void)
    char max_len_host[HOST_NAME_MAX] = {0};
 
    for (i = 0; i < HOST_NAME_MAX - 1; i++) {
-      max_len_host[i] = "a";
+      max_len_host[i] = 'a';
    }
    hostname_tests[sizeof(hostname_tests) - 1] = max_len_host;
 
