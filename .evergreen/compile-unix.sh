@@ -191,12 +191,12 @@ pkg-config --modversion libssl || true
 if [ "$ANALYZE" = "ON" ]; then
    # Clang static analyzer, available on Ubuntu 16.04 images.
    # https://clang-analyzer.llvm.org/scan-build.html
-   scan-build $CMAKE $CONFIGURE_FLAGS
+   scan-build $CMAKE $CONFIGURE_FLAGS .
 
    # Put clang static analyzer results in scan/ and fail build if warnings found.
    SCAN_BUILD="scan-build -o scan --status-bugs"
 else
-   $CMAKE $CONFIGURE_FLAGS
+   $CMAKE $CONFIGURE_FLAGS .
 fi
 
 $SCAN_BUILD make -j8 all
