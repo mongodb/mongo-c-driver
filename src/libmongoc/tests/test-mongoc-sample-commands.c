@@ -2679,9 +2679,9 @@ test_sample_causal_consistency (mongoc_client_t *client)
       goto cleanup;
    }
 
-   /* Example 1:
-    * ----------
-    * Use a causally-consistent session to run some operations. */
+   /* Start Causal Consistency Example 1 */
+
+   /* Use a causally-consistent session to run some operations. */
 
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_wmajority (wc, 1000);
@@ -2700,7 +2700,7 @@ test_sample_causal_consistency (mongoc_client_t *client)
       goto cleanup;
    }
 
-   /* Run an update_one with our causally-consistent session */
+   /* Run an update_one with our causally-consistent session. */
    update_opts = bson_new ();
    res = mongoc_client_session_append (session1, update_opts, &error);
    if (!res) {
@@ -2739,11 +2739,12 @@ test_sample_causal_consistency (mongoc_client_t *client)
       goto cleanup;
    }
 
-   /* Example 2:
-    * ----------
-    * Make a new session, session2, and make it causally-consistent
-    * with session1, so that session2 will read session1's writes. */
+   /* End Causal Consistency Example 1 */
 
+   /* Start Causal Consistency Example 2 */
+
+   /* Make a new session, session2, and make it causally-consistent
+    * with session1, so that session2 will read session1's writes. */
    session2 = mongoc_client_start_session (client, session_opts, &error);
    if (!session2) {
       fprintf (stderr, "couldn't start session: %s\n", error.message);
@@ -2786,6 +2787,8 @@ test_sample_causal_consistency (mongoc_client_t *client)
       fprintf (stderr, "cursor failure: %s\n", error.message);
       goto cleanup;
    }
+
+   /* End Causal Consistency Example 2 */
 
  cleanup:
 
