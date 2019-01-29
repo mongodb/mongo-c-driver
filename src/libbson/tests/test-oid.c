@@ -549,7 +549,8 @@ test_bson_hostnames (void)
    for (i = 0; i < HOST_NAME_MAX - 1; i++) {
       max_len_host[i] = 'a';
    }
-   hostname_tests[sizeof(hostname_tests) - 1] = max_len_host;
+   hostname_tests[(sizeof (hostname_tests) / sizeof (char *)) - 1] =
+      max_len_host;
 
    for (i = 0; i < sizeof (hostname_tests) / sizeof (char *); i++) {
       mock_hostname = hostname_tests[i];
