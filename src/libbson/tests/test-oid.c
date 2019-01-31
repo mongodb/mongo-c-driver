@@ -538,7 +538,7 @@ test_bson_hostnames (void)
    bson_oid_t oid;
    char *hostname_tests[] = {"",
                              "h",
-                             "host"
+                             "host",
                              "host1",
                              "host12",
                              "host123",
