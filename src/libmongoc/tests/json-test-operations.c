@@ -1021,6 +1021,56 @@ insert_many (mongoc_collection_t *collection,
 
 
 static void
+rename_op (mongoc_collection_t *collection,
+           const bson_t *test,
+           const bson_t *operation,
+           mongoc_client_session_t *session,
+           mongoc_write_concern_t *wc)
+{
+   bson_t args;
+   bson_t result;
+   const char *db;
+   const char *to;
+   bson_error_t error;
+   bool res;
+
+   bson_lookup_doc (operation, "arguments", &args);
+   db = bson_lookup_utf8 (operation, "database");
+   to = bson_lookup_utf8 (&args, "to");
+
+   res = mongoc_collection_rename (collection, db, to, true, &error);
+
+   /* This operation is only run by change stream tests, which use
+      it to trigger further events and check all results elsewhere. */
+   ASSERT_OR_PRINT (res, error);
+
+   bson_destroy (&args);
+   bson_destroy (&result);
+}
+
+
+static void
+drop (mongoc_collection_t *collection,
+      const bson_t *test,
+      const bson_t *operation,
+      mongoc_client_session_t *session,
+      mongoc_write_concern_t *wc)
+{
+   bson_t result;
+   bson_error_t error;
+   bool res;
+
+   res = mongoc_collection_drop (collection, &error);
+
+   /* This operation is only run by change stream tests, which use
+      it to trigger further events and check all results elsewhere. */
+   ASSERT_OR_PRINT (res, error);
+
+   bson_destroy (&result);
+}
+
+
+static void
 count (mongoc_collection_t *collection,
        const bson_t *test,
        const bson_t *operation,
@@ -1464,6 +1514,10 @@ json_test_operation (json_test_ctx_t *ctx,
       find_and_modify (c, test, operation, session, wc);
    } else if (!strcmp (op_name, "insertMany")) {
       insert_many (c, test, operation, session, wc);
+   } else if (!strcmp (op_name, "rename")) {
+      rename_op (c, test, operation, session, wc);
+   } else if (!strcmp (op_name, "drop")) {
+      drop (c, test, operation, session, wc);
    } else if (!strcmp (op_name, "count")) {
       count (c, test, operation, session, read_prefs);
    } else if (!strcmp (op_name, "estimatedDocumentCount")) {
