@@ -530,10 +530,14 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
 
    ASSERT (!mongoc_change_stream_next (stream, &next_doc));
    ASSERT (mongoc_change_stream_error_document (stream, &err, NULL));
-   ASSERT_ERROR_CONTAINS (err,
-                          MONGOC_ERROR_CURSOR,
-                          MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
-                          "Cannot provide resume functionality");
+
+   /* Newer server versions emit different errors. */
+   if (!test_framework_max_wire_version_at_least (8)) {
+      ASSERT_ERROR_CONTAINS (err,
+                             MONGOC_ERROR_CURSOR,
+                             MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
+                             "Cannot provide resume functionality");
+   }
 
    bson_destroy (&opts);
    mongoc_write_concern_destroy (wc);
