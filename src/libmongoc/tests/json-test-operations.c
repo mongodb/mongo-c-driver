@@ -1028,7 +1028,6 @@ rename_op (mongoc_collection_t *collection,
            mongoc_write_concern_t *wc)
 {
    bson_t args;
-   bson_t result;
    const char *db;
    const char *to;
    bson_error_t error;
@@ -1045,7 +1044,6 @@ rename_op (mongoc_collection_t *collection,
    ASSERT_OR_PRINT (res, error);
 
    bson_destroy (&args);
-   bson_destroy (&result);
 }
 
 
@@ -1056,7 +1054,6 @@ drop (mongoc_collection_t *collection,
       mongoc_client_session_t *session,
       mongoc_write_concern_t *wc)
 {
-   bson_t result;
    bson_error_t error;
    bool res;
 
@@ -1065,8 +1062,6 @@ drop (mongoc_collection_t *collection,
    /* This operation is only run by change stream tests, which use
       it to trigger further events and check all results elsewhere. */
    ASSERT_OR_PRINT (res, error);
-
-   bson_destroy (&result);
 }
 
 
