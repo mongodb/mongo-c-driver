@@ -55,7 +55,7 @@ get_mongodb_download_url_for ()
    # https://evergreen.mongodb.com/version/5797f0493ff12235e5001f05
    case "$_DISTRO" in
       darwin*)
-         MONGODB_LATEST="http://downloads.10gen.com/osx/mongodb-osx-x86_64-enterprise-latest.tgz"
+         MONGODB_LATEST="http://downloads.10gen.com/osx/mongodb-macos-x86_64-enterprise-latest.tgz"
          MONGODB_40="http://downloads.10gen.com/osx/mongodb-osx-x86_64-enterprise-${VERSION_40}.tgz"
          MONGODB_36="http://downloads.10gen.com/osx/mongodb-osx-x86_64-enterprise-${VERSION_36}.tgz"
          MONGODB_34="http://downloads.10gen.com/osx/mongodb-osx-x86_64-enterprise-${VERSION_34}.tgz"
@@ -163,7 +163,7 @@ get_mongodb_download_url_for ()
       ;;
       windows64*)
          EXTRACT="/cygdrive/c/Progra~2/7-Zip/7z.exe x"
-         MONGODB_LATEST="https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-latest.zip"
+         MONGODB_LATEST="https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2012plus-latest.zip"
          MONGODB_40="https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-${VERSION_40}.zip"
          MONGODB_36="https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-${VERSION_36}.zip"
          MONGODB_34="https://fastdl.mongodb.org/win32/mongodb-win32-x86_64-2008plus-${VERSION_34}.zip"
