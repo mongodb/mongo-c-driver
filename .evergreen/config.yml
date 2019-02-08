@@ -373,7 +373,7 @@ functions:
         script: |
           set -o errexit
           set -o xtrace
-          LATEST_SUPPORTED_MONGODB_VERSION=${latest_supported_mongodb_version} MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} AUTHSOURCE=${AUTHSOURCE} SSL=${SSL} ORCHESTRATION_FILE=${ORCHESTRATION_FILE} sh .evergreen/integration-tests.sh
+          MONGODB_VERSION=${VERSION} TOPOLOGY=${TOPOLOGY} IPV4_ONLY=${IPV4_ONLY} AUTH=${AUTH} AUTHSOURCE=${AUTHSOURCE} SSL=${SSL} ORCHESTRATION_FILE=${ORCHESTRATION_FILE} sh .evergreen/integration-tests.sh
 
   "run tests":
     - command: shell.exec
