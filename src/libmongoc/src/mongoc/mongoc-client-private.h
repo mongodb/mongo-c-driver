@@ -43,7 +43,7 @@ BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
 #define WIRE_VERSION_MIN 3
-#define WIRE_VERSION_MAX 6
+#define WIRE_VERSION_MAX 7
 
 /* first version that supported "find" and "getMore" commands */
 #define WIRE_VERSION_FIND_CMD 4
