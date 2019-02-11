@@ -380,7 +380,7 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
    _mongoc_write_command_init_insert (
       &command,
       document,
-      opts,
+      &insert_opts.extra,
       bulk->flags,
       bulk->operation_id,
       !mongoc_write_concern_is_acknowledged (bulk->write_concern));
@@ -574,7 +574,7 @@ mongoc_bulk_operation_update (mongoc_bulk_operation_t *bulk,
    }
 
    if (!mongoc_bulk_operation_update_many_with_opts (
-         bulk, selector, document, &opts, error)) {
+          bulk, selector, document, &opts, error)) {
       MONGOC_WARNING ("%s", error->message);
    }
 

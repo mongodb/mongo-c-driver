@@ -3780,8 +3780,63 @@ _test_insert_validate (insert_fn_t insert_fn)
                            tmp_bson ("{'validate': 0}"),
                            &error));
 
+   BSON_ASSERT (insert_fn (collection,
+                           tmp_bson ("{'a': 1}"),
+                           tmp_bson ("{'validate': 31}"),
+                           &error));
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
+}
+
+static void
+test_insert_bulk_validate (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   const bson_t *docs[] = {tmp_bson ("{'a': 1}"), tmp_bson ("{'$': 2}")};
+
+   BEGIN_IGNORE_DEPRECATIONS
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   collection = get_test_collection (client, "test_insert_validate");
+
+   /* Invalid documents, validation. */
+   BSON_ASSERT (!mongoc_collection_insert_bulk (collection,
+                                                MONGOC_INSERT_NONE,
+                                                docs,
+                                                2,
+                                                NULL /* write concern */,
+                                                &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "invalid document");
+
+   /* Invalid documents, no validation. */
+   BSON_ASSERT (!mongoc_collection_insert_bulk (
+      collection,
+      (mongoc_insert_flags_t) MONGOC_INSERT_NO_VALIDATE,
+      docs,
+      2,
+      NULL /* write concern */,
+      &error));
+   ASSERT_CMPUINT32 (error.domain, ==, (uint32_t) MONGOC_ERROR_SERVER);
+
+   /* Valid document, validation. */
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_bulk (collection,
+                                     MONGOC_INSERT_NONE,
+                                     docs,
+                                     1 /* don't include invalid second doc. */,
+                                     NULL /* write concern */,
+                                     &error),
+      error);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   END_IGNORE_DEPRECATIONS
 }
 
 
@@ -5341,7 +5396,7 @@ _test_update_validate (update_fn_t update_fn)
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    bson_t *selector;
-   bson_t *update;
+   bson_t *invalid_update, *valid_update;
    const char *msg;
    bson_error_t error;
    bool r;
@@ -5353,21 +5408,26 @@ _test_update_validate (update_fn_t update_fn)
 
    if (update_fn == mongoc_collection_replace_one) {
       /* prohibited for replace */
-      update = tmp_bson ("{'$set': {'x': 1}}");
+      invalid_update = tmp_bson ("{'$set': {'x': 1}}");
+      /* permitted for replace */
+      valid_update = tmp_bson ("{'x': 1}");
       msg = "invalid argument for replace";
    } else {
       /* prohibited for update */
-      update = tmp_bson ("{'x': 1}");
+      invalid_update = tmp_bson ("{'x': 1}");
+      /* permitted for update */
+      valid_update = tmp_bson ("{'$set': {'x': 1}}");
       msg = "only works with $ operators";
    }
 
-   BSON_ASSERT (!update_fn (collection, selector, update, NULL, NULL, &error));
+   BSON_ASSERT (
+      !update_fn (collection, selector, invalid_update, NULL, NULL, &error));
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, msg);
 
    r = update_fn (collection,
                   selector,
-                  update,
+                  invalid_update,
                   tmp_bson ("{'validate': false}"),
                   NULL,
                   &error);
@@ -5379,7 +5439,7 @@ _test_update_validate (update_fn_t update_fn)
 
    BSON_ASSERT (!update_fn (collection,
                             selector,
-                            update,
+                            invalid_update,
                             tmp_bson ("{'validate': 'foo'}"),
                             NULL,
                             &error));
@@ -5391,12 +5451,22 @@ _test_update_validate (update_fn_t update_fn)
    /* Set all validation flags */
    BSON_ASSERT (!update_fn (collection,
                             selector,
-                            update,
+                            invalid_update,
                             tmp_bson ("{'validate': 31}"),
                             NULL,
                             &error));
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, msg);
+
+   /* Check that validation passes for a valid update. */
+   ASSERT_OR_PRINT (
+      update_fn (collection,
+                 selector,
+                 valid_update,
+                 tmp_bson ("{'validate': %d}", BSON_VALIDATE_UTF8),
+                 NULL,
+                 &error),
+      error);
 
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
@@ -5942,4 +6012,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Collection/estimated_document_count_live",
                       test_estimated_document_count_live);
+   TestSuite_AddLive (
+      suite, "/Collection/insert_bulk_validate", test_insert_bulk_validate);
 }

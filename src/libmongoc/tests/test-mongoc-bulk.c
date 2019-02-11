@@ -847,37 +847,60 @@ test_update_with_opts_validate (void)
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
+   update_with_opts_fn fns[] = {
+      mongoc_bulk_operation_update_one_with_opts,
+      mongoc_bulk_operation_update_many_with_opts,
+   };
+   int i;
 
    client = test_framework_client_new ();
    collection = get_test_collection (client, "test_update_with_opts_validate");
-   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
-   BSON_ASSERT (!mongoc_bulk_operation_update_one_with_opts (
-      bulk, tmp_bson ("{}"), tmp_bson ("{'a.a': 1}"), NULL, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "update only works with $ operators");
+   for (i = 0; i < 2; i++) {
+      update_with_opts_fn update_function;
 
-   BSON_ASSERT (mongoc_bulk_operation_update_one_with_opts (
-      bulk,
-      tmp_bson ("{}"),
-      tmp_bson ("{'a.a': 1}"),
-      tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
-      &error));
-   BSON_ASSERT (!mongoc_bulk_operation_update_one_with_opts (
-      bulk,
-      tmp_bson ("{}"),
-      tmp_bson ("{'a.a': 1}"),
-      tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
-      &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "invalid argument for update: keys cannot contain \".\": \"a.a\"");
+      update_function = fns[i];
+      bulk =
+         mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+      BSON_ASSERT (!update_function (
+         bulk, tmp_bson ("{}"), tmp_bson ("{'a.a': 1}"), NULL, &error));
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "update only works with $ operators");
 
-   mongoc_bulk_operation_destroy (bulk);
+      BSON_ASSERT (update_function (bulk,
+                              tmp_bson ("{}"),
+                              tmp_bson ("{'a.a': 1}"),
+                              tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
+                              &error));
+      BSON_ASSERT (
+         !update_function (bulk,
+                     tmp_bson ("{}"),
+                     tmp_bson ("{'a.a': 1}"),
+                     tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
+                     &error));
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_COMMAND_INVALID_ARG,
+         "invalid argument for update: keys cannot contain \".\": \"a.a\"");
+      mongoc_bulk_operation_destroy (bulk);
+
+      /* Test a valid update_one with explicit validation on the server. */
+      bulk =
+         mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+      BSON_ASSERT (
+         update_function (bulk,
+                    tmp_bson ("{}"),
+                    tmp_bson ("{'$set': {'a': 1}}"),
+                    tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
+                    &error));
+      ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error),
+                       error);
+      mongoc_bulk_operation_destroy (bulk);
+   }
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -1206,6 +1229,18 @@ test_replace_one_with_opts_validate (void)
       "invalid argument for replace: keys cannot contain \".\": \"a.a\"");
 
    mongoc_bulk_operation_destroy (bulk);
+
+   /* Test a valid replace_one with explicit validation on the server. */
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+   BSON_ASSERT (mongoc_bulk_operation_replace_one_with_opts (
+      bulk,
+      tmp_bson ("{}"),
+      tmp_bson ("{'a': 1}"),
+      tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
+      &error));
+   ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error), error);
+   mongoc_bulk_operation_destroy (bulk);
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -1987,6 +2022,17 @@ test_insert_with_opts_validate (void)
       "invalid document for insert: keys cannot contain \".\": \"a.a\"");
 
    mongoc_bulk_operation_destroy (bulk);
+
+   /* Test a valid insert with explicit validation on the server. */
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+   BSON_ASSERT (mongoc_bulk_operation_insert_with_opts (
+      bulk,
+      tmp_bson ("{'a': 1}"),
+      tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
+      &error));
+   ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error), error);
+   mongoc_bulk_operation_destroy (bulk);
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
