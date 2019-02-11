@@ -3229,6 +3229,7 @@ typedef bool (*txn_func_t) (mongoc_client_session_t *,
                             bson_error_t *);
 
 
+/* runs transactions with retry logic */
 bool
 run_transaction_with_retry (txn_func_t txn_func,
                             mongoc_client_session_t *cs,
@@ -3262,6 +3263,7 @@ run_transaction_with_retry (txn_func_t txn_func,
 }
 
 
+/* commit transactions with retry logic */
 bool
 commit_with_retry (mongoc_client_session_t *cs, bson_error_t *error)
 {
