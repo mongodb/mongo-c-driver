@@ -5,7 +5,7 @@ Common Tasks
 
 Drivers for some other languages provide helper functions to perform certain common tasks. In the C Driver we must explicitly build commands to send to the server.
 
-This snippet contains example code for the ``explain``, ``copydb`` and ``cloneCollection`` commands.
+This snippet contains example code for the ``explain`` and ``copydb`` commands.
 
 Setup
 -----
@@ -38,19 +38,6 @@ Here's how to use the ``copydb`` command to copy a database from another instanc
    :language: c
    :caption: copydb.c
 
-.. _mongoc-common-task-examples_clone_collection:
-
-"cloneCollection" Command
--------------------------
-
-This example requires two instances of mongo to be running.
-
-Here's an example of the ``cloneCollection`` command to clone a collection from another instance of MongoDB:
-
-.. literalinclude:: ../examples/common_operations/clone-collection.c
-   :language: c
-   :caption: clone-collection.c
-
 Running the Examples
 --------------------
 
@@ -66,7 +53,8 @@ First launch two separate instances of mongod (must be done from separate shells
 
 .. code-block:: none
 
-  $ mkdir /tmp/db2$ mongod --dbpath /tmp/db2 --port 27018 # second instance
+  $ mkdir /tmp/db2
+  $ mongod --dbpath /tmp/db2 --port 27018 # second instance
 
 Now compile and run the example program:
 
@@ -133,7 +121,5 @@ Now compile and run the example program:
      }
   }
   copydb
-  { "ok" : 1 }
-  clone collection
   { "ok" : 1 }
 

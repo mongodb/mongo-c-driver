@@ -24,7 +24,6 @@ const char *COLLECTION_NAME = "things";
 #include "../doc-common-insert.c"
 #include "explain.c"
 #include "copydb.c"
-#include "clone-collection.c"
 
 
 int
@@ -101,12 +100,6 @@ main (int argc, char *argv[])
    if (other_host_and_port) {
       printf ("copydb\n");
       if (!copydb (client, other_host_and_port)) {
-         res = EXIT_FAILURE;
-         goto cleanup;
-      }
-
-      printf ("clone collection\n");
-      if (!clone_collection (database, other_host_and_port)) {
          res = EXIT_FAILURE;
          goto cleanup;
       }
