@@ -15,10 +15,10 @@ This may be useful if you only want to enable a feature on a certain version of 
 
   #include <mongoc/mongoc.h>
 
-  #define MONGOC_MAJOR_VERSION (|release_major|)
-  #define MONGOC_MINOR_VERSION (|release_minor|)
-  #define MONGOC_MICRO_VERSION (|release_patch|)
-  #define MONGOC_VERSION_S     "|release|"
+  #define MONGOC_MAJOR_VERSION (x)
+  #define MONGOC_MINOR_VERSION (y)
+  #define MONGOC_MICRO_VERSION (z)
+  #define MONGOC_VERSION_S     "x.y.z"
   #define MONGOC_VERSION_HEX   ((1 << 24) | (0 << 16) | (0 << 8) | 0)
   #define MONGOC_CHECK_VERSION(major, minor, micro)
 

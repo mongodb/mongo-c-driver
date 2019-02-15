@@ -106,15 +106,15 @@ Building from a release tarball
 
 Unless you intend to contribute to mongo-c-driver and/or libbson, you will want to build from a release tarball.
 
-The most recent release of libmongoc and libbson, both of which are included in mongo-c-driver, is |release| and can be :release:`downloaded here <>`. The instructions in this document utilize ``cmake``'s out-of-source build feature to keep build artifacts separate from source files.
+The most recent release of libmongoc and libbson, both of which are included in mongo-c-driver, can be downloaded here <https://github.com/mongodb/mongo-c-driver/releases/latest>. The instructions in this document utilize ``cmake``'s out-of-source build feature to keep build artifacts separate from source files.
 
 The following snippet will download and extract the driver, and configure it:
 
 .. parsed-literal::
 
-  $ wget |release_download|
-  $ tar xzf mongo-c-driver-|release|.tar.gz
-  $ cd mongo-c-driver-|release|
+  $ wget https://github.com/mongodb/mongo-c-driver/releases/download/x.y.z/mongo-c-driver-x.y.z.tar.gz
+  $ tar xzf mongo-c-driver-x.y.z.tar.gz
+  $ cd mongo-c-driver-x.y.z
   $ mkdir cmake-build
   $ cd cmake-build
   $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..
@@ -125,7 +125,7 @@ If ``cmake`` completed successfully, you will see a considerable amount of outpu
 
 .. parsed-literal::
 
-  -- Build files have been written to: /home/user/mongo-c-driver-|release|/cmake-build
+  -- Build files have been written to: /home/user/mongo-c-driver-x.y.z/cmake-build
 
 If ``cmake`` concludes with anything different, then there is likely an error or some other problem with the build. Review the output to identify and correct the problem.
 
@@ -175,7 +175,6 @@ Clone the repository and build the current master or a particular release tag:
   $ cd mongo-c-driver
   $ git checkout x.y.z  # To build a particular release
   $ python build/calc_release_version.py > VERSION_CURRENT
-  $ python build/calc_release_version.py -p > VERSION_RELEASED
   $ mkdir cmake-build
   $ cd cmake-build
   $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..
@@ -216,9 +215,9 @@ Download the latest release tarball:
 
 .. parsed-literal::
 
-  $ curl -LO |release_download|
-  $ tar xzf mongo-c-driver-|release|.tar.gz
-  $ cd mongo-c-driver-|release|
+  $ curl -LO https://github.com/mongodb/mongo-c-driver/releases/download/x.y.z/mongo-c-driver-x.y.z.tar.gz
+  $ tar xzf mongo-c-driver-x.y.z.tar.gz
+  $ cd mongo-c-driver-x.y.z
 
 Build and install the driver:
 
@@ -241,7 +240,7 @@ Let's start by generating Visual Studio project files. The following assumes we 
 
 .. parsed-literal::
 
-  cd mongo-c-driver-|release|
+  cd mongo-c-driver-x.y.z
   mkdir cmake-build
   cd cmake-build
   cmake -G "Visual Studio 14 2015 Win64" \\

@@ -73,40 +73,51 @@ set (CMAKE_MODULE_PATH
 include (InstallRequiredSystemLibraries)
 include (GNUInstallDirs)
 
+set (BUILD_VERSION "0.0.0" CACHE STRING "Library version (for both libbson and libmongoc)")
+
+include (ParseVersion)
+
 # Set MONGOC_MAJOR_VERSION, MONGOC_MINOR_VERSION, etc.
+if (BUILD_VERSION STREQUAL "0.0.0")
+   if (EXISTS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT)
+      file (STRINGS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT BUILD_VERSION)
+      message ("file VERSION_CURRENT contained BUILD_VERSION ${BUILD_VERSION}")
+   else ()
+      find_package (PythonInterp)
+      if (PYTHONINTERP_FOUND)
+         execute_process (
+            COMMAND ${PYTHON_EXECUTABLE} build/calc_release_version.py
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            OUTPUT_VARIABLE CALC_RELEASE_VERSION
+            RESULT_VARIABLE CALC_RELEASE_VERSION_RESULT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+         )
+         if (NOT CALC_RELEASE_VERSION_RESULT STREQUAL 0)
+            # If python failed above, stderr would tell the user about it
+            message (WARNING
+               "BUILD_VERSION not specified and could not be calculated\
+ (script invocation failed); setting library version to 0.0.0"
+            )
+         else ()
+            set (BUILD_VERSION ${CALC_RELEASE_VERSION})
+            message ("calculated BUILD_VERSION ${BUILD_VERSION}")
+         endif ()
+      else ()
+         message (WARNING
+            "BUILD_VERSION not specified and could not be calculated\
+ (Python was not found on the system); setting library version to 0.0.0"
+         )
+      endif ()
+      message ("storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
+      file (WRITE ${PROJECT_SOURCE_DIR}/VERSION_CURRENT ${BUILD_VERSION})
+   endif ()
+else ()
+   message ("storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
+   file (WRITE ${PROJECT_SOURCE_DIR}/VERSION_CURRENT ${BUILD_VERSION})
+endif ()
+
 include (LoadVersion)
-if (NOT EXISTS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT)
-   message (WARNING
-      "${PROJECT_SOURCE_DIR}/VERSION_CURRENT not found; using version 0.0.0.\
- See the \\\"Building from git\\\" section of the installation guide for details."
-   )
-   set (MONGOC_MAJOR_VERSION "0")
-   set (MONGOC_MINOR_VERSION "0")
-   set (MONGOC_MICRO_VERSION "0")
-   set (MONGOC_PRERELEASE_VERSION "")
-   set (MONGOC_PRERELEASE_DIST_VERSION "")
-   set (MONGOC_VERSION "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}")
-   set (MONGOC_DIST_VERSION "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}")
-else ()
-   LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
-endif ()
-if (NOT EXISTS ${PROJECT_SOURCE_DIR}/VERSION_RELEASED)
-   message (WARNING
-      "${PROJECT_SOURCE_DIR}/VERSION_RELEASED not found; using version 0.0.0.\
- See the \\\"Building from git\\\" section of the installation guide for details."
-   )
-   set (MONGOC_RELEASED_MAJOR_VERSION "0")
-   set (MONGOC_RELEASED_MINOR_VERSION "0")
-   set (MONGOC_RELEASED_MICRO_VERSION "0")
-   set (MONGOC_RELEASED_VERSION "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}")
-else ()
-   LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_RELEASED MONGOC_RELEASED)
-endif ()
-if (EXISTS ${PROJECT_SOURCE_DIR}/VERSION_CURRENT AND EXISTS ${PROJECT_SOURCE_DIR}/VERSION_RELEASED)
-   set (DIST_VERSION_SET 1)
-else ()
-   set (DIST_VERSION_SET 0)
-endif ()
+LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
 
 include (MaintainerFlags)
 
@@ -271,25 +282,13 @@ if (ENABLE_MONGOC)
    add_subdirectory (src/libmongoc)
 
    if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
-      if (DIST_VERSION_SET)
-         find_package (Sphinx REQUIRED)
-         add_custom_target (doc
-            ALL
-            DEPENDS
-               $<$<STREQUAL:"${ENABLE_BSON}","ON">:bson-doc>
-               $<$<STREQUAL:"${ENABLE_MONGOC}","ON">:mongoc-doc>
-         )
-      else ()
-         string (CONCAT DISTERRMSG
-            "The doc target is disabled. Generate VERSION_CURRENT and "
-            "VERSION_RELEASED before invoking CMake to enable. Details are "
-            "in the \\\"Building from git\\\" section of the installation guide."
-         )
-
-         add_custom_target (doc
-            COMMAND ${CMAKE_COMMAND} -E echo "${DISTERRMSG}"
-         )
-      endif ()
+      find_package (Sphinx REQUIRED)
+      add_custom_target (doc
+         ALL
+         DEPENDS
+            $<$<STREQUAL:"${ENABLE_BSON}","ON">:bson-doc>
+            $<$<STREQUAL:"${ENABLE_MONGOC}","ON">:mongoc-doc>
+      )
    endif ()
 
    # Implement 'dist' and 'distcheck' targets
@@ -315,7 +314,6 @@ if (ENABLE_MONGOC)
       README.rst
       THIRD_PARTY_NOTICES
       VERSION_CURRENT
-      VERSION_RELEASED
       # This sub-directory is added later, so manually include here
       generate_uninstall/CMakeLists.txt
    )
@@ -350,7 +348,7 @@ if (ENABLE_MONGOC)
          ${ALL_DIST} ${dist_generated_depends}
    )
 
-   if (DIST_VERSION_SET AND ENABLE_BSON MATCHES "ON|AUTO" AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
+   if (ENABLE_BSON MATCHES "ON|AUTO" AND ENABLE_MAN_PAGES STREQUAL ON AND ENABLE_HTML_DOCS STREQUAL ON)
       # Since our 'dist' implementation does not add top-level targets for every
       # file to be included, we declare a dependency on the 'mongo-doc' target so
       # that documentation is built before the distribution tarball is generated.
@@ -369,7 +367,7 @@ if (ENABLE_MONGOC)
       string (CONCAT DISTERRMSG
          "The dist and distcheck targets are disabled. Set ENABLE_BSON=ON, "
          "ENABLE_MAN_PAGES=ON, ENABLE_HTML_DOCS=ON, and generate VERSION_CURRENT "
-         "and VERSION_RELEASED to enable."
+         "to enable."
       )
 
       add_custom_target (dist

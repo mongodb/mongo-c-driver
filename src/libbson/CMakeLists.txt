@@ -20,37 +20,9 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build/cmake)
 # Set BSON_MAJOR_VERSION, BSON_MINOR_VERSION, etc.
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../build/cmake)
 include (LoadVersion)
-if (NOT EXISTS ${PROJECT_SOURCE_DIR}/../../VERSION_CURRENT)
-   message (WARNING
-      "${PROJECT_SOURCE_DIR}/../../VERSION_CURRENT not found; using version 0.0.0.\
- See the \\\"Building from git\\\" section of the installation guide for details."
-   )
-   set (BSON_MAJOR_VERSION "0")
-   set (BSON_MINOR_VERSION "0")
-   set (BSON_MICRO_VERSION "0")
-   set (BSON_PRERELEASE_VERSION "")
-   set (BSON_VERSION "${BSON_MAJOR_VERSION}.${BSON_MINOR_VERSION}.${BSON_MICRO_VERSION}")
-else ()
-   LoadVersion (${PROJECT_SOURCE_DIR}/../../VERSION_CURRENT BSON)
-endif ()
-if (NOT EXISTS ${PROJECT_SOURCE_DIR}/../../VERSION_RELEASED)
-   message (WARNING
-      "${PROJECT_SOURCE_DIR}/../../VERSION_RELEASED not found; using version 0.0.0.\
- See the \\\"Building from git\\\" section of the installation guide for details."
-   )
-   set (BSON_RELEASED_MAJOR_VERSION "0")
-   set (BSON_RELEASED_MINOR_VERSION "0")
-   set (BSON_RELEASED_MICRO_VERSION "0")
-   set (BSON_RELEASED_PRERELEASE_VERSION "")
-   set (BSON_RELEASED_VERSION "${BSON_MAJOR_VERSION}.${BSON_MINOR_VERSION}.${BSON_MICRO_VERSION}")
-else ()
-   LoadVersion (${PROJECT_SOURCE_DIR}/../../VERSION_RELEASED BSON_RELEASED)
-endif ()
+LoadVersion (${PROJECT_SOURCE_DIR}/../../VERSION_CURRENT BSON)
 
 message ("libbson version (from VERSION_CURRENT file): ${BSON_VERSION}")
-if (NOT ${BSON_VERSION} STREQUAL ${BSON_RELEASED_VERSION})
-   message ("libbson previous release (from VERSION_RELEASED file): ${BSON_RELEASED_VERSION}")
-endif ()
 
 set (BSON_API_VERSION 1.0)
 

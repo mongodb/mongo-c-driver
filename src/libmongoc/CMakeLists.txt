@@ -7,9 +7,6 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../build/cm
 include (InstallRequiredSystemLibraries)
 
 message ("libmongoc version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
-if (NOT ${MONGOC_VERSION} STREQUAL ${MONGOC_RELEASED_VERSION})
-   message ("libmongoc previous release (from VERSION_RELEASED file): ${MONGOC_RELEASED_VERSION}")
-endif ()
 
 # Defaults.
 set (MONGOC_ENABLE_SSL 0)
