@@ -555,7 +555,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
          if (!suite->silent) {
             bson_string_append_printf (
                buf,
-               "    { \"status\": \"SKIP\", \"test_file\": \"%s\" }%s",
+               "    { \"status\": \"skip\", \"test_file\": \"%s\" }%s",
                test->name,
                ((*count) == 1) ? "" : ",");
             test_msg ("%s", buf->str);
@@ -606,7 +606,7 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
                               "\"start\": %u.%06u, "
                               "\"end\": %u.%06u, "
                               "\"elapsed\": %u.%06u ",
-                              (status == 0) ? "PASS" : "FAIL",
+                              (status == 0) ? "pass" : "fail",
                               name,
                               test->seed,
                               (unsigned) t1 / (1000 * 1000),
