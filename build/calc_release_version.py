@@ -126,8 +126,7 @@ def main():
         gexc = Git('.')
         tags = gexc.execute(['git', 'tag',
                              '--merged', 'HEAD',
-                             '--list', '1.*',
-                             '--sort', 'version:refname'])
+                             '--list', '1.*'])
         if len(tags) > 0:
             release_tag_match = RELEASE_TAG_RE.match(tags.splitlines()[-1])
             if release_tag_match:
@@ -159,8 +158,7 @@ def previous(rel_ver):
     rel_ver_loose = LooseVersion(rel_ver)
     gexc = Git('.')
     tags = gexc.execute(['git', 'tag',
-                         '--list', '1.*',
-                         '--sort', '-version:refname'])
+                         '--list', '1.*'])
     for tag in tags.splitlines():
         previous_tag_match = PREVIOUS_TAG_RE.match(tag)
         if previous_tag_match:
@@ -171,12 +169,11 @@ def previous(rel_ver):
             new_version_loose = LooseVersion(str(version_new['major']) + '.' +
                                              str(version_new['minor']) + '.' +
                                              str(version_new['patch']))
-            if new_version_loose < rel_ver_loose:
+            if new_version_loose < rel_ver_loose and new_version_loose > version_loose:
                 version_loose = new_version_loose
                 if DEBUG:
                     print('Found new best version "' + str(version_loose) \
                             + '" from tag "' + tag + '"')
-                return str(version_loose)
 
     return str(version_loose)
 
