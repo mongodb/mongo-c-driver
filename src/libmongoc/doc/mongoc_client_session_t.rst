@@ -33,6 +33,7 @@ Example
     mongoc_client_session_abort_transaction
     mongoc_client_session_advance_cluster_time
     mongoc_client_session_advance_operation_time
+    mongoc_client_session_with_transaction
     mongoc_client_session_append
     mongoc_client_session_get_client
     mongoc_client_session_get_cluster_time
