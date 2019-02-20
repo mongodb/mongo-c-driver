@@ -76,6 +76,10 @@ struct _mongoc_client_session_t {
    uint32_t operation_timestamp;
    uint32_t operation_increment;
    uint32_t client_generation;
+
+   /* For testing only */
+   int64_t with_txn_timeout_ms;
+   const char *fail_commit_label;
 };
 
 bool

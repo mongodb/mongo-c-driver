@@ -26,6 +26,13 @@
 
 BSON_BEGIN_DECLS
 
+typedef bool (*mongoc_client_session_with_transaction_cb_t) (
+   mongoc_client_session_t *session,
+   void *ctx,
+   bson_t **reply,
+   bson_error_t *error);
+
+
 /* these options types are named "opt_t" but their functions are named with
  * "opts", for consistency with the older mongoc_ssl_opt_t */
 MONGOC_EXPORT (mongoc_transaction_opt_t *)
@@ -109,6 +116,14 @@ MONGOC_EXPORT (void)
 mongoc_client_session_advance_operation_time (mongoc_client_session_t *session,
                                               uint32_t timestamp,
                                               uint32_t increment);
+
+MONGOC_EXPORT (bool)
+mongoc_client_session_with_transaction (
+   mongoc_client_session_t *session,
+   mongoc_client_session_with_transaction_cb_t cb,
+   const mongoc_transaction_opt_t *opts,
+   void *ctx,
+   bson_error_t *error);
 
 MONGOC_EXPORT (bool)
 mongoc_client_session_start_transaction (mongoc_client_session_t *session,
