@@ -46,6 +46,7 @@ sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
   git add --force VERSION_CURRENT VERSION_RELEASED && \
   git commit VERSION_CURRENT VERSION_RELEASED -m 'Set current/released versions' && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
+  debc ../*.changes && \
   dpkg -i ../*.deb && \
   gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0 )"
 
