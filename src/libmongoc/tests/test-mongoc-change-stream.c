@@ -1439,17 +1439,23 @@ typedef struct {
    mongoc_change_stream_t *change_stream;
 } change_stream_spec_ctx_t;
 
-static void
+static bool
 change_stream_spec_operation_cb (json_test_ctx_t *ctx,
                                  const bson_t *test,
                                  const bson_t *operation)
 {
+   bson_t reply;
+   bool res;
+
    mongoc_collection_t *coll =
       mongoc_client_get_collection (ctx->client,
                                     bson_lookup_utf8 (operation, "database"),
                                     bson_lookup_utf8 (operation, "collection"));
-   json_test_operation (ctx, test, operation, coll, NULL);
+   res = json_test_operation (ctx, test, operation, coll, NULL, &reply);
    mongoc_collection_destroy (coll);
+   bson_destroy (&reply);
+
+   return res;
 }
 
 static void

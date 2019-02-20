@@ -258,7 +258,8 @@ apm_match_visitor (match_ctx_t *ctx,
    } while (0)
 #define IS_COMMAND(cmd) (ends_with (ctx->path, "command") && !strcmp (key, cmd))
 
-   if (ends_with (ctx->path, "command") && !visitor_ctx->command_name) {
+   if (ends_with (ctx->path, "command") && !visitor_ctx->command_name &&
+       doc_iter) {
       visitor_ctx->command_name = bson_strdup (bson_iter_key (doc_iter));
    }
 
@@ -417,7 +418,12 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
          bson_t event;
          bool matched;
 
-         bson_iter_next (&events_iter);
+         if (!bson_iter_next (&events_iter)) {
+            test_error ("could not match APM event in empty array\n"
+                        "\texpected: %s\n\n",
+                        bson_as_canonical_extended_json (&expectation, NULL));
+         }
+
          bson_iter_bson (&events_iter, &event);
 
          matched = match_bson_with_ctx (&event, &expectation, &match_ctx);
@@ -433,8 +439,8 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
                         "\texpected: %s\n\n"
                         "\tactual  : %s\n\n"
                         "\terror   : %s\n\n",
-                        bson_as_canonical_extended_json (&event, NULL),
                         bson_as_canonical_extended_json (&expectation, NULL),
+                        bson_as_canonical_extended_json (&event, NULL),
                         match_ctx.errmsg);
          }
       }

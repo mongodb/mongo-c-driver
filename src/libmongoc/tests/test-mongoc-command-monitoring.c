@@ -53,13 +53,21 @@ check_operation_ids (const bson_t *events)
 }
 
 
-static void
+static bool
 command_monitoring_test_run_operation (json_test_ctx_t *ctx,
                                        const bson_t *test,
                                        const bson_t *operation)
 {
+   bson_t reply;
+   bool res;
+
    /* Command Monitoring tests don't use explicit session */
-   json_test_operation (ctx, test, operation, ctx->collection, NULL);
+   res =
+      json_test_operation (ctx, test, operation, ctx->collection, NULL, &reply);
+
+   bson_destroy (&reply);
+
+   return res;
 }
 
 

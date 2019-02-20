@@ -51,18 +51,19 @@ json_test_ctx_end_sessions (json_test_ctx_t *ctx);
 void
 json_test_ctx_cleanup (json_test_ctx_t *ctx);
 
-typedef void (*json_test_operation_cb_t) (json_test_ctx_t *ctx,
+typedef bool (*json_test_operation_cb_t) (json_test_ctx_t *ctx,
                                           const bson_t *test,
                                           const bson_t *operation);
 
 typedef void (*json_test_cb_t) (json_test_ctx_t *ctx, const bson_t *test);
 
-void
+bool
 json_test_operation (json_test_ctx_t *ctx,
                      const bson_t *test,
                      const bson_t *operation,
                      mongoc_collection_t *collection,
-                     mongoc_client_session_t *session);
+                     mongoc_client_session_t *session,
+                     bson_t *reply);
 
 void
 json_test_operations (json_test_ctx_t *ctx, const bson_t *test);

@@ -773,6 +773,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-version.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-usleep.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-util.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-with-transaction.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-concern.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c

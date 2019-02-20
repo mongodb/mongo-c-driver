@@ -10,18 +10,25 @@
 #include "json-test-operations.h"
 
 
-static void
+static bool
 retryable_writes_test_run_operation (json_test_ctx_t *ctx,
                                      const bson_t *test,
                                      const bson_t *operation)
 {
    bool *explicit_session = (bool *) ctx->config->ctx;
+   bson_t reply;
+   bool res;
 
-   json_test_operation (ctx,
-                        test,
-                        operation,
-                        ctx->collection,
-                        *explicit_session ? ctx->sessions[0] : NULL);
+   res = json_test_operation (ctx,
+                              test,
+                              operation,
+                              ctx->collection,
+                              *explicit_session ? ctx->sessions[0] : NULL,
+                              &reply);
+
+   bson_destroy (&reply);
+
+   return res;
 }
 
 

@@ -851,12 +851,22 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
 {
    bson_t data;
    bson_iter_t iter;
+   mongoc_read_concern_t *rc;
    mongoc_cursor_t *cursor;
    bson_t query = BSON_INITIALIZER;
    mongoc_read_prefs_t *prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_lookup_doc (test, "outcome.collection.data", &data);
    ASSERT (bson_iter_init (&iter, &data));
+
+   rc = mongoc_read_concern_new ();
+
+   /* If the collection has had its read_concern set by a test,
+      make sure it's set to LOCAL for this check. */
+   if (mongoc_read_concern_get_level (collection->read_concern)) {
+      mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
+      mongoc_collection_set_read_concern (collection, rc);
+   }
 
    cursor = mongoc_collection_find_with_opts (collection, &query, NULL, prefs);
 
@@ -874,6 +884,7 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
    bson_destroy (&data);
    mongoc_read_prefs_destroy (prefs);
    bson_destroy (&query);
+   mongoc_read_concern_destroy (rc);
    mongoc_cursor_destroy (cursor);
 }
 
@@ -1111,6 +1122,14 @@ run_json_general_test (const json_test_config_t *config)
          fprintf (
             stderr, "  - %s SKIPPED by MONGOC_JSON_SUBTEST\n", description);
          bson_free (selected_test);
+         continue;
+      }
+
+      if (bson_has_field (&test, "skipReason")) {
+         fprintf (stderr,
+                  " - %s SKIPPED, reason: %s\n",
+                  description,
+                  bson_lookup_utf8 (&test, "skipReason"));
          continue;
       }
 

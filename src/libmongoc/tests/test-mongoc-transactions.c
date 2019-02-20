@@ -10,12 +10,14 @@
 #include "json-test-operations.h"
 
 
-static void
+static bool
 transactions_test_run_operation (json_test_ctx_t *ctx,
                                  const bson_t *test,
                                  const bson_t *operation)
 {
    mongoc_client_session_t *session = NULL;
+   bson_t reply;
+   bool res;
 
    if (bson_has_field (operation, "arguments.session")) {
       session = session_from_name (
@@ -25,9 +27,14 @@ transactions_test_run_operation (json_test_ctx_t *ctx,
    /* expect some warnings from abortTransaction, but don't suppress others: we
     * want to know if any other tests log warnings */
    capture_logs (true);
-   json_test_operation (ctx, test, operation, ctx->collection, session);
+   res = json_test_operation (
+      ctx, test, operation, ctx->collection, session, &reply);
    assert_all_captured_logs_have_prefix ("Error in abortTransaction:");
    capture_logs (false);
+
+   bson_destroy (&reply);
+
+   return res;
 }
 
 
