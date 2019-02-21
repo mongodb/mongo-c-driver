@@ -855,12 +855,6 @@ match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
       return true;
    }
 
-   if (bson_empty0 (doc)) {
-      /* non-empty pattern can't match doc */
-      match_err (ctx, "doc empty");
-      return false;
-   }
-
    BSON_ASSERT (bson_iter_init (&pattern_iter, pattern));
 
    while (bson_iter_next (&pattern_iter)) {

@@ -277,48 +277,6 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
                                    collection->write_concern));
 }
 
-
-static bool
-_make_agg_cmd (const char *coll,
-               const bson_t *pipeline,
-               const bson_t *opts,
-               bson_t *command,
-               bson_error_t *err)
-{
-   bson_iter_t iter;
-   int32_t batch_size = 0;
-   bson_t child;
-
-   bson_init (command);
-   BSON_APPEND_UTF8 (command, "aggregate", coll);
-   /*
-    * The following will allow @pipeline to be either an array of
-    * items for the pipeline, or {"pipeline": [...]}.
-    */
-   if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
-       BSON_ITER_HOLDS_ARRAY (&iter)) {
-      if (!bson_append_iter (command, "pipeline", 8, &iter)) {
-         bson_set_error (err,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Failed to append \"pipeline\" to create command.");
-         return false;
-      }
-   } else {
-      BSON_APPEND_ARRAY (command, "pipeline", pipeline);
-   }
-
-   bson_append_document_begin (command, "cursor", 6, &child);
-   if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
-       BSON_ITER_HOLDS_NUMBER (&iter)) {
-      batch_size = (int32_t) bson_iter_as_int64 (&iter);
-      BSON_APPEND_INT32 (&child, "batchSize", batch_size);
-   }
-   bson_append_document_end (command, &child);
-   return true;
-}
-
-
 static bool
 _has_out_key (bson_iter_t *iter)
 {
@@ -333,6 +291,56 @@ _has_out_key (bson_iter_t *iter)
    }
 
    return false;
+}
+
+static bool
+_make_agg_cmd (const char *coll,
+               const bson_t *pipeline,
+               const bson_t *opts,
+               bson_t *command,
+               bson_error_t *err)
+{
+   bson_iter_t iter;
+   int32_t batch_size = 0;
+   bson_t child;
+   bool has_out_key;
+   bson_iter_t has_out_key_iter;
+
+   bson_init (command);
+   BSON_APPEND_UTF8 (command, "aggregate", coll);
+   /*
+    * The following will allow @pipeline to be either an array of
+    * items for the pipeline, or {"pipeline": [...]}.
+    */
+   if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
+       BSON_ITER_HOLDS_ARRAY (&iter)) {
+      bson_iter_recurse (&iter, &has_out_key_iter);
+      if (!bson_append_iter (command, "pipeline", 8, &iter)) {
+         bson_set_error (err,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Failed to append \"pipeline\" to create command.");
+         return false;
+      }
+   } else {
+      BSON_APPEND_ARRAY (command, "pipeline", pipeline);
+      bson_iter_init (&has_out_key_iter, pipeline);
+   }
+
+   has_out_key = _has_out_key (&has_out_key_iter);
+   bson_append_document_begin (command, "cursor", 6, &child);
+   if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
+       BSON_ITER_HOLDS_NUMBER (&iter)) {
+      batch_size = (int32_t) bson_iter_as_int64 (&iter);
+
+      /* Ignore batchSize=0 for aggregates with $out */
+      if (!(has_out_key && batch_size == 0)) {
+         BSON_APPEND_INT32 (&child, "batchSize", batch_size);
+      }
+   }
+
+   bson_append_document_end (command, &child);
+   return true;
 }
 
 /*
