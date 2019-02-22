@@ -1,13 +1,34 @@
-Next
-====
+libbson 1.14.0
+==============
+
+It is my pleasure to announce libbson 1.14.0.
 
 Features:
 
   * ObjectIDs are generated in compliance with the driver ObjectID spec.
+  * Add a bson_copy_to_excluding_noinit variant taking a va_list.
+  * Add example of validating BSON nesting depth with bson_visitor_t.
 
 Bug fixes:
 
-  *
+  * Relaxed JSON pads datetime milliseconds with spaces instead of zeroes.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Roberto C. Sánchez
+  * A. Jesse Jiryu Davis
+  * Henrik Edin
+  * Jeroen
+  * Gustaf Neumann
+  * Scott Gayou
+  * Spencer McKenney
+  * Samantha Ritter
+
+Peace,
+
+    Samantha Ritter
 
 
 libbson 1.13.1
