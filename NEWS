@@ -2,8 +2,23 @@ Next Release
 ============
 
 Features:
+  *
+
+Bug fixes:
+  *
+
+mongo-c-driver 1.14.0
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.14.0.
+
+
+Features:
+
   * Support for OpenSSL 1.1.1 and its implementation of TLS v1.3.
   * New function mongoc_stream_should_retry.
+  * New accessor mongoc_server_description_last_update_time.
+  * New method mongoc_client_reset to be called after forking.
 
 Bug fixes:
 
@@ -21,6 +36,34 @@ Bug fixes:
   * Fix the ENABLE_SASL cmake option:
     * Remove unnecessary GSSAPI value. It was equivalent to specifying ENABLE_SASL=CYRUS.
     * ENABLE_SASL=AUTO now correctly chooses SSPI on Windows instead of CYRUS.
+  * The client pool failed to set proper apm callbacks for clients created
+    via try_pop().
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * A. Jesse Jiryu Davis
+  * Roberto C. Sánchez
+  * Kevin Albertson
+  * Samantha Ritter
+  * Spencer McKenney
+  * Henrik Edin
+  * Jeremy Mikola
+  * Evgeni Dobranov
+  * Derick Rethans
+  * 平民·寻梦(Pingmin Fenlly Liu)
+  * David Carlier
+  * Gustaf Neumann
+  * Jeroen
+  * Jeroen Ooms
+  * Kaitlin Mahar
+  * Tomas Mozes
+  * Clyde Bazile
+
+Peace,
+
+    Samantha Ritter
+
 
 mongo-c-driver 1.13.1
 =====================
