@@ -128,7 +128,9 @@ def main():
                              '--merged', 'HEAD',
                              '--list', '1.*'])
         if len(tags) > 0:
-            release_tag_match = RELEASE_TAG_RE.match(tags.splitlines()[-1])
+            sorted_tags = tags.splitlines()
+            sorted_tags.sort(key=LooseVersion)
+            release_tag_match = RELEASE_TAG_RE.match(sorted_tags[-1])
             if release_tag_match:
                 version_new = {}
                 version_new['major'] = int(release_tag_match.group('vermaj'))
