@@ -334,7 +334,7 @@ if (ENABLE_APPLE_FRAMEWORK)
 endif ()
 
 set (LIBBSON_LIBRARIES "")
-foreach (_lib ${CMAKE_C_IMPLICIT_LINK_LIBRARIES} ${BSON_LIBRARIES})
+foreach (_lib ${BSON_LIBRARIES})
    if (_lib MATCHES ".*/.*" OR _lib MATCHES "^-")
       set (LIBBSON_LIBRARIES "${LIBBSON_LIBRARIES} ${_lib}")
    else ()
