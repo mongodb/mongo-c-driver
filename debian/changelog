@@ -3,6 +3,7 @@ mongo-c-driver (1.14.0-1) unstable; urgency=medium
   * New upstream release
   * Make build reproducible; thanks to Chris Lamb for the patch
     (Closes: #920411)
+  * Drop implicit libraries from pkg-config script
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 22 Feb 2019 22:37:09 -0500
 
