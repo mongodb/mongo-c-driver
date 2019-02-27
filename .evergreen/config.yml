@@ -1213,6 +1213,19 @@ tasks:
         DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
         BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
         sh ./.evergreen/install-uninstall-check.sh
+- name: debug-compile-with-warnings
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-Werror -Wno-cast-align"
+        export DEBUG="ON"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - {func: upload build}
 - name: test-valgrind-latest-server-auth-nosasl-openssl
   tags: [test-valgrind]
   exec_timeout_secs: 7200
@@ -5120,6 +5133,7 @@ buildvariants:
     distros: [windows-64-vs2015-compile]
   - name: install-uninstall-check-msvc
     distros: [windows-64-vs2015-compile]
+  - debug-compile-with-warnings
 - name: clang34ubuntu
   display_name: clang 3.4 (Ubuntu 14.04)
   expansions: {CC: clang}

@@ -314,6 +314,7 @@ all_tasks = [
                   DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
                   BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
                   sh ./.evergreen/install-uninstall-check.sh''')]),
+    CompileTask('debug-compile-with-warnings', CFLAGS='-Werror -Wno-cast-align'),
 ]
 
 
