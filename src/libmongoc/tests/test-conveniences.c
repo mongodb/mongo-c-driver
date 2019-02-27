@@ -834,24 +834,6 @@ derive (match_ctx_t *ctx, match_ctx_t *derived, const char *key)
  *--------------------------------------------------------------------------
  */
 
-static char *
-value_to_str (const bson_value_t *value)
-{
-   bson_t doc;
-
-   if (value->value_type == BSON_TYPE_DOCUMENT ||
-       value->value_type == BSON_TYPE_ARRAY) {
-      bson_init_from_value (&doc, value);
-      return bson_as_json (&doc, NULL);
-   } else if (value->value_type == BSON_TYPE_UTF8) {
-      return value->value.v_utf8.str;
-   } else if (value->value_type == BSON_TYPE_BOOL) {
-      return value->value.v_bool ? "true" : "false";
-   } else {
-      return bson_strdup_printf ("%" PRId64, bson_value_as_int64 (value));
-   }
-}
-
 bool
 match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
 {
