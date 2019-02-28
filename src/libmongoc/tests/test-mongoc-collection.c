@@ -233,6 +233,109 @@ test_aggregate_inherit_collection (void)
 }
 
 static void
+test_aggregate_with_batch_size ()
+{
+   mock_server_t *mock_server;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_cursor_t *cursor;
+   future_t *future;
+   request_t *request;
+   const bson_t *doc;
+   bson_t *pipeline_with_dollar_out;
+   bson_t *pipeline_without_dollar_out;
+   bson_t *batch_size_zero;
+   bson_t *batch_size_one;
+
+   mock_server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server_run (mock_server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   pipeline_with_dollar_out =
+      tmp_bson ("{ 'pipeline': [ { '$out' : 'coll2' } ] }");
+   pipeline_without_dollar_out = tmp_bson ("{ 'pipeline': [ ] }");
+
+   batch_size_one = tmp_bson (" { 'batchSize': 1 } ");
+   batch_size_zero = tmp_bson (" { 'batchSize': 0 } ");
+
+   /* Case 1:
+      Test that with $out and batchSize > 0, we use the batchSize */
+   cursor = mongoc_collection_aggregate (
+      coll, MONGOC_QUERY_NONE, pipeline_with_dollar_out, batch_size_one, NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_msg (
+      mock_server, 0, tmp_bson ("{ 'cursor' : { 'batchSize' : 1 } }"));
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   request_destroy (request);
+   future_wait (future);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+
+   /* Case 2:
+      Test that with $out and batchSize == 0, we don't use the batchSize */
+   cursor = mongoc_collection_aggregate (coll,
+                                         MONGOC_QUERY_NONE,
+                                         pipeline_with_dollar_out,
+                                         batch_size_zero,
+                                         NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_msg (
+      mock_server,
+      0,
+      tmp_bson ("{ 'cursor' : { 'batchSize' : { '$exists': false } } }"));
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   request_destroy (request);
+   future_wait (future);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+
+   /* Case 3:
+      Test that without $out and batchSize > 0, we use the batchSize */
+   cursor = mongoc_collection_aggregate (coll,
+                                         MONGOC_QUERY_NONE,
+                                         pipeline_without_dollar_out,
+                                         batch_size_one,
+                                         NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_msg (
+      mock_server, 0, tmp_bson ("{ 'cursor' : { 'batchSize' : 1 } }"));
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   request_destroy (request);
+   future_wait (future);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+
+   /* Case 4:
+      Test that without $out and batchSize == 0, we use the batchSize */
+   cursor = mongoc_collection_aggregate (coll,
+                                         MONGOC_QUERY_NONE,
+                                         pipeline_without_dollar_out,
+                                         batch_size_zero,
+                                         NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_msg (
+      mock_server, 0, tmp_bson ("{ 'cursor' : { 'batchSize' : 0 } }"));
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   future_wait (future);
+   future_destroy (future);
+   mongoc_collection_destroy (coll);
+   request_destroy (request);
+   mock_server_destroy (mock_server);
+   mongoc_cursor_destroy (cursor);
+   mongoc_client_destroy (client);
+}
+
+static void
 test_read_prefs_is_valid (void *ctx)
 {
    mongoc_collection_t *collection;
@@ -6014,4 +6117,7 @@ test_collection_install (TestSuite *suite)
                       test_estimated_document_count_live);
    TestSuite_AddLive (
       suite, "/Collection/insert_bulk_validate", test_insert_bulk_validate);
+   TestSuite_AddMockServerTest (suite,
+                                "/Collection/aggregate/with/batch/size",
+                                test_aggregate_with_batch_size);
 }
