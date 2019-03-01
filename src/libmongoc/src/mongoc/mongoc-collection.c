@@ -447,12 +447,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
       GOTO (done);
    }
 
-   /* server id isn't enough. ensure we're connected & know wire version */
-   server_stream = _mongoc_cursor_fetch_stream (cursor);
-   if (!server_stream) {
-      GOTO (done);
-   }
-
    if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
       GOTO (done);
    }
@@ -470,6 +464,19 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
          GOTO (done);
       }
       has_out_key = _has_out_key (&iter);
+   }
+
+   if (has_out_key && cursor->read_prefs->mode != MONGOC_READ_PRIMARY) {
+      mongoc_read_prefs_destroy (cursor->read_prefs);
+      cursor->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+      MONGOC_WARNING (
+         "$out stage specified. Overriding read preference to primary.");
+   }
+
+   /* server id isn't enough. ensure we're connected & know wire version */
+   server_stream = _mongoc_cursor_fetch_stream (cursor);
+   if (!server_stream) {
+      GOTO (done);
    }
 
    has_write_concern = bson_has_field (&cursor->opts, "writeConcern");

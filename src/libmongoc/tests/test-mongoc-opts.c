@@ -9,6 +9,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/mock-rs.h"
 #include "test-conveniences.h"
+#include "test-libmongoc.h"
 
 
 /*
@@ -826,13 +827,21 @@ test_func_inherits_opts (void *ctx)
       func_ctx_init (
          &func_ctx, test, client, db, collection, func_prefs, &opts);
 
+      /* A warning is thrown if an aggregate command with $out attempts to write
+       * to a secondary */
+      capture_logs (true);
       /* func_with_opts creates expected "cmd", like {insert: 'collection'} */
       future = test->func_with_opts (&func_ctx, &cmd);
+      capture_logs (false);
 
       if (source_matrix[i] != OPT_SOURCE_NONE) {
-         add_expected_opt (source_matrix[i], test->opt_type, &cmd);
-         if (test->opt_type == OPT_READ_PREFS) {
-            expect_secondary = true;
+         if (strstr (test->func_name, "aggregate")) {
+            if (test->opt_type != OPT_READ_PREFS) {
+               add_expected_opt (source_matrix[i], test->opt_type, &cmd);
+            }
+         } else {
+            add_expected_opt (source_matrix[i], test->opt_type, &cmd);
+            expect_secondary = test->opt_type == OPT_READ_PREFS;
          }
       }
 
