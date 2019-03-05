@@ -415,7 +415,7 @@ _mongoc_bulk_operation_update_append (
 
    has_array_filters = !bson_empty0 (array_filters);
    if (has_array_filters) {
-      bson_append_document (&opts, "arrayFilters", 12, array_filters);
+      bson_append_array (&opts, "arrayFilters", 12, array_filters);
    }
 
    has_collation = !bson_empty (&update_opts->collation);
