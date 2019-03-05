@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "mongoc/mongoc-prelude.h"
+
 #ifndef MONGOC_STREAM_GRIDFS_UPLOAD_PRIVATE_H
 #define MONGOC_STREAM_GRIDFS_UPLOAD_PRIVATE_H
 
