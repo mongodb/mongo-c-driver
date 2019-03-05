@@ -1,3 +1,5 @@
+#include "mongoc/mongoc-prelude.h"
+
 #ifndef MONGOC_OPTS_H
 #define MONGOC_OPTS_H
 
