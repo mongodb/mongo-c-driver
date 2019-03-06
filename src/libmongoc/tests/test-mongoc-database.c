@@ -14,6 +14,163 @@
 
 
 static void
+test_aggregate_inherit_database (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   mongoc_database_t *database;
+   const bson_t *doc;
+   request_t *request;
+   future_t *future;
+   bson_t *pipeline;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_read_concern_t *rc2;
+   mongoc_read_concern_t *rc;
+   mongoc_write_concern_t *wc2;
+   mongoc_write_concern_t *wc;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   database = mongoc_client_get_database (client, "admin");
+
+   pipeline = BCON_NEW ("pipeline",
+                        "[",
+                        "{",
+                        "$currentOp",
+                        "{",
+                        "}",
+                        "}",
+                        "{",
+                        "$out",
+                        BCON_UTF8 ("ops"),
+                        "}",
+                        "]");
+
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);
+   mongoc_read_concern_append (rc, &opts);
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 2);
+   mongoc_write_concern_append (wc, &opts);
+
+   /* Uses the opts */
+   cursor = mongoc_database_aggregate (database, pipeline, &opts, NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate' : 1,"
+                "  'pipeline' : [ { '$currentOp': { } }, { '$out' : 'ops' } ],"
+                "  'cursor' : { },"
+                "  '$db' : 'admin',"
+                "  '$readPreference' : { 'mode': 'primaryPreferred' },"
+                "  'readConcern' : { 'level' : 'majority' },"
+                "  'writeConcern' : { 'w' : 2 } }"));
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   ASSERT (!future_get_bool (future));
+
+   /* Set database level defaults */
+   wc2 = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc2, 3);
+   mongoc_database_set_write_concern (database, wc2);
+   rc2 = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc2, MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   mongoc_database_set_read_concern (database, rc2);
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+
+   /* Inherits from database */
+   cursor = mongoc_database_aggregate (database, pipeline, NULL, NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate' : 1,"
+                "  'pipeline' : [ { '$currentOp': { } }, { '$out' : 'ops' } ],"
+                "  'cursor' : { },"
+                "  '$db' : 'admin',"
+                "  '$readPreference' : { 'mode': 'primaryPreferred' },"
+                "  'readConcern' : { 'level' : 'local' },"
+                "  'writeConcern' : { 'w' : 3 } }"));
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   ASSERT (!future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+
+   /* Uses the opts, not default database level */
+   cursor = mongoc_database_aggregate (database, pipeline, &opts, NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate' : 1,"
+                "  'pipeline' : [ { '$currentOp': { } }, { '$out' : 'ops' } ],"
+                "  'cursor' : { },"
+                "  '$db' : 'admin',"
+                "  '$readPreference' : { 'mode': 'primaryPreferred' },"
+                "  'readConcern' : { 'level' : 'majority' },"
+                "  'writeConcern' : { 'w' : 2 } }"));
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   ASSERT (!future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+
+   /* Doesn't inherit write concern when not using $out  */
+   bson_destroy (pipeline);
+   pipeline = BCON_NEW ("pipeline", "[", "{", "$currentOp", "{", "}", "}", "]");
+
+   cursor = mongoc_database_aggregate (database, pipeline, NULL, NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate' : 1,"
+                "  'pipeline' : [ { '$currentOp': { } } ],"
+                "  'cursor' : { },"
+                "  '$db' : 'admin',"
+                "  '$readPreference' : { 'mode': 'primaryPreferred' },"
+                "  'readConcern' : { 'level' : 'local' },"
+                "  'writeConcern' : { '$exists' : false } }"));
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+   ASSERT (!future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+
+   bson_destroy (&opts);
+   bson_destroy (pipeline);
+   mongoc_read_concern_destroy (rc);
+   mongoc_read_concern_destroy (rc2);
+   mongoc_write_concern_destroy (wc);
+   mongoc_write_concern_destroy (wc2);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+static void
 test_create_with_write_concern (void *ctx)
 {
    mongoc_database_t *database;
@@ -995,6 +1152,9 @@ test_get_default_database (void)
 void
 test_database_install (TestSuite *suite)
 {
+   TestSuite_AddMockServerTest (suite,
+                                "/Database/aggregate/inherit/database",
+                                test_aggregate_inherit_database);
    TestSuite_AddFull (suite,
                       "/Database/create_with_write_concern",
                       test_create_with_write_concern,

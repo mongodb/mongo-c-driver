@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 
+#include "mongoc/mongoc-aggregate-private.h"
 #include "mongoc/mongoc-bulk-operation.h"
 #include "mongoc/mongoc-bulk-operation-private.h"
 #include "mongoc/mongoc-change-stream-private.h"
@@ -277,109 +278,6 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
                                    collection->write_concern));
 }
 
-static bool
-_has_out_key (bson_iter_t *iter)
-{
-   bson_iter_t stage;
-
-   while (bson_iter_next (iter)) {
-      if (BSON_ITER_HOLDS_DOCUMENT (iter) && bson_iter_recurse (iter, &stage)) {
-         if (bson_iter_find (&stage, "$out")) {
-            return true;
-         }
-      }
-   }
-
-   return false;
-}
-
-static bool
-_make_agg_cmd (const char *coll,
-               const bson_t *pipeline,
-               const bson_t *opts,
-               bson_t *command,
-               bson_error_t *err)
-{
-   bson_iter_t iter;
-   int32_t batch_size = 0;
-   bson_t child;
-   bool has_out_key;
-   bson_iter_t has_out_key_iter;
-
-   bson_init (command);
-   BSON_APPEND_UTF8 (command, "aggregate", coll);
-   /*
-    * The following will allow @pipeline to be either an array of
-    * items for the pipeline, or {"pipeline": [...]}.
-    */
-   if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
-       BSON_ITER_HOLDS_ARRAY (&iter)) {
-      bson_iter_recurse (&iter, &has_out_key_iter);
-      if (!bson_append_iter (command, "pipeline", 8, &iter)) {
-         bson_set_error (err,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Failed to append \"pipeline\" to create command.");
-         return false;
-      }
-   } else {
-      BSON_APPEND_ARRAY (command, "pipeline", pipeline);
-      bson_iter_init (&has_out_key_iter, pipeline);
-   }
-
-   has_out_key = _has_out_key (&has_out_key_iter);
-   bson_append_document_begin (command, "cursor", 6, &child);
-   if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
-       BSON_ITER_HOLDS_NUMBER (&iter)) {
-      batch_size = (int32_t) bson_iter_as_int64 (&iter);
-
-      /* Ignore batchSize=0 for aggregates with $out */
-      if (!(has_out_key && batch_size == 0)) {
-         BSON_APPEND_INT32 (&child, "batchSize", batch_size);
-      }
-   }
-
-   bson_append_document_end (command, &child);
-   return true;
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_collection_aggregate --
- *
- *       Send an "aggregate" command to the MongoDB server.
- *
- *       This function will always return a new mongoc_cursor_t that should
- *       be freed with mongoc_cursor_destroy().
- *
- *       The cursor may fail once iterated upon, so check
- *       mongoc_cursor_error() if mongoc_cursor_next() returns false.
- *
- *       See http://docs.mongodb.org/manual/aggregation/ for more
- *       information on how to build aggregation pipelines.
- *
- * Parameters:
- *       @flags: bitwise or of mongoc_query_flags_t or 0.
- *       @pipeline: A bson_t containing the pipeline request. @pipeline
- *                  will be sent as an array type in the request.
- *       @options:  A bson_t containing aggregation options, such as
- *                  bypassDocumentValidation (used with $out pipeline),
- *                  maxTimeMS (declaring maximum server execution time) and
- *                  explain (return information on the processing of the
- *                  pipeline).
- *       @read_prefs: Optional read preferences for the command.
- *
- * Returns:
- *       A newly allocated mongoc_cursor_t that should be freed with
- *       mongoc_cursor_destroy().
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
 
 mongoc_cursor_t *
 mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
@@ -388,124 +286,15 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
                              const bson_t *opts,                    /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
-   mongoc_server_stream_t *server_stream = NULL;
-   bool has_out_key;
-   bool has_write_concern;
-   bson_iter_t ar;
-   mongoc_cursor_t *cursor;
-   uint32_t server_id;
-   bson_iter_t iter;
-   bson_t command;
-   bson_t cursor_opts;
-   bool slave_ok;
-   bool created_command;
-   bson_error_t create_cmd_err = {0};
-
-   ENTRY;
-
-   BSON_ASSERT (collection);
-   BSON_ASSERT (pipeline);
-
-   bson_init (&cursor_opts);
-   _mongoc_cursor_flags_to_opts (flags, &cursor_opts, &slave_ok);
-   if (opts) {
-      bson_concat (&cursor_opts /* destination */, opts /* source */);
-   }
-
-   created_command = _make_agg_cmd (
-      collection->collection, pipeline, opts, &command, &create_cmd_err);
-   cursor = _mongoc_cursor_cmd_new (collection->client,
-                                    collection->ns,
-                                    created_command ? &command : NULL,
-                                    &cursor_opts,
-                                    read_prefs,
-                                    collection->read_prefs,
-                                    collection->read_concern);
-
-   bson_destroy (&command);
-   bson_destroy (&cursor_opts);
-
-   if (!created_command) {
-      /* copy error back to cursor. */
-      memcpy (&cursor->error, &create_cmd_err, sizeof (bson_error_t));
-      GOTO (done);
-   }
-
-   /* Get serverId from opts; if invalid set cursor err. _mongoc_cursor_cmd_new
-    * has already done this, but we want a COMMAND error, not CURSOR, since that
-    * has been the contract since serverId was first implemented. */
-   if (!_mongoc_get_server_id_from_opts (opts,
-                                         MONGOC_ERROR_COMMAND,
-                                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                         &server_id,
-                                         &cursor->error)) {
-      GOTO (done);
-   }
-
-   if (mongoc_cursor_error (cursor, NULL)) {
-      /* something else is wrong with opts */
-      GOTO (done);
-   }
-
-   if (!_mongoc_read_prefs_validate (cursor->read_prefs, &cursor->error)) {
-      GOTO (done);
-   }
-
-   /* pipeline could be like {pipeline: [{$out: 'test'}]} or [{$out: 'test'}] */
-   if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
-       BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &ar)) {
-      has_out_key = _has_out_key (&ar);
-   } else {
-      if (!bson_iter_init (&iter, pipeline)) {
-         bson_set_error (&cursor->error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "Pipeline is invalid BSON");
-         GOTO (done);
-      }
-      has_out_key = _has_out_key (&iter);
-   }
-
-   if (has_out_key && cursor->read_prefs->mode != MONGOC_READ_PRIMARY) {
-      mongoc_read_prefs_destroy (cursor->read_prefs);
-      cursor->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-      MONGOC_WARNING (
-         "$out stage specified. Overriding read preference to primary.");
-   }
-
-   /* server id isn't enough. ensure we're connected & know wire version */
-   server_stream = _mongoc_cursor_fetch_stream (cursor);
-   if (!server_stream) {
-      GOTO (done);
-   }
-
-   has_write_concern = bson_has_field (&cursor->opts, "writeConcern");
-   if (has_write_concern &&
-       server_stream->sd->max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                      "\"aggregate\" with \"$out\" does not support "
-                      "writeConcern with wire version %d, wire version %d is "
-                      "required",
-                      server_stream->sd->max_wire_version,
-                      WIRE_VERSION_CMD_WRITE_CONCERN);
-      GOTO (done);
-   }
-
-   /* Only inherit WriteConcern when for aggregate with $out */
-   if (!bson_has_field (&cursor->opts, "writeConcern") && has_out_key) {
-      mongoc_write_concern_destroy (cursor->write_concern);
-      cursor->write_concern = mongoc_write_concern_copy (
-         mongoc_collection_get_write_concern (collection));
-   }
-
-done:
-   mongoc_server_stream_cleanup (server_stream); /* null ok */
-
-   /* we always return the cursor, even if it fails; users can detect the
-    * failure on performing a cursor operation. see CDRIVER-880. */
-   RETURN (cursor);
+   return _mongoc_aggregate (collection->client,
+                             collection->ns,
+                             flags,
+                             pipeline,
+                             opts,
+                             read_prefs,
+                             collection->read_prefs,
+                             collection->read_concern,
+                             collection->write_concern);
 }
 
 

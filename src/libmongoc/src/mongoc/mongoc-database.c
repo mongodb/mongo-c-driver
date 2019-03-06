@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc/mongoc-aggregate-private.h"
 #include "mongoc/mongoc-client-private.h"
 #include "mongoc/mongoc-collection.h"
 #include "mongoc/mongoc-collection-private.h"
@@ -126,6 +127,25 @@ mongoc_database_destroy (mongoc_database_t *database)
 
    EXIT;
 }
+
+
+mongoc_cursor_t *
+mongoc_database_aggregate (mongoc_database_t *db,                 /* IN */
+                           const bson_t *pipeline,                /* IN */
+                           const bson_t *opts,                    /* IN */
+                           const mongoc_read_prefs_t *read_prefs) /* IN */
+{
+   return _mongoc_aggregate (db->client,
+                             db->name,
+                             MONGOC_QUERY_NONE,
+                             pipeline,
+                             opts,
+                             read_prefs,
+                             db->read_prefs,
+                             db->read_concern,
+                             db->write_concern);
+}
+
 
 /*
  *--------------------------------------------------------------------------

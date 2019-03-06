@@ -381,6 +381,7 @@ include_directories ("${PROJECT_SOURCE_DIR}/src")
 include_directories ("${PROJECT_SOURCE_DIR}/../../src/common")
 
 set (SOURCES ${SOURCES}
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-async.c
