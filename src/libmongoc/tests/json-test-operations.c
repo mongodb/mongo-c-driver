@@ -37,9 +37,9 @@
 mongoc_client_session_t *
 session_from_name (json_test_ctx_t *ctx, const char *session_name)
 {
-   if (!session_name) {
-      return NULL;
-   } else if (!strcmp (session_name, "session0")) {
+   BSON_ASSERT (session_name);
+
+   if (!strcmp (session_name, "session0")) {
       return ctx->sessions[0];
    } else if (!strcmp (session_name, "session1")) {
       return ctx->sessions[1];
@@ -547,6 +547,11 @@ check_result (const bson_t *test,
                            error);
 
    BSON_ASSERT (result);
+
+   /* Database-level aggregate tests use $currentOp, which may return a command
+    * document containing dots in keys. Retain these as we do for APM checks. */
+   ctx.retain_dots_in_keys = true;
+
    if (!match_bson_value (result, &expected_value, &ctx)) {
       test_error ("Error in \"%s\" test %s\n"
                   "Expected:\n%s\nActual:\n%s",
@@ -1375,6 +1380,61 @@ aggregate (mongoc_collection_t *collection,
       if (mongoc_cursor_error_document (cursor, &error, &doc)) {
          value_init_from_doc (&value, doc);
          check_result (test, operation, false, &value, &error);
+         bson_value_destroy (&value);
+      }
+   } else {
+      check_cursor (cursor, test, operation);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (&opts);
+
+   return true;
+}
+
+
+static bool
+db_aggregate (mongoc_database_t *db,
+              const bson_t *test,
+              const bson_t *operation,
+              mongoc_client_session_t *session,
+              const mongoc_read_prefs_t *read_prefs,
+              bson_t *reply)
+{
+   bson_t args;
+   bson_t pipeline;
+   bson_t opts = BSON_INITIALIZER;
+   mongoc_cursor_t *cursor;
+
+   /* We don't use reply, but we need to initialize it for the test runner */
+   bson_init (reply);
+
+   bson_lookup_doc (operation, "arguments", &args);
+   bson_lookup_doc (&args, "pipeline", &pipeline);
+   append_session (session, &opts);
+   COPY_EXCEPT ("pipeline");
+
+   cursor = mongoc_database_aggregate (
+      db, &pipeline, &opts, read_prefs);
+
+   /* Driver CRUD API Spec: "$out is a special pipeline stage that causes no
+    * results to be returned from the server. As such, the iterable here would
+    * never contain documents. Drivers MAY setup a cursor to be executed upon
+    * iteration against the $out collection such that if a user were to iterate
+    * a pipeline including $out, results would be returned."
+    *
+    * The C Driver chooses the first option, and returns an empty cursor.
+    */
+   if (_is_aggregate_out (&pipeline)) {
+      const bson_t *doc;
+      bson_error_t error;
+      bson_value_t value;
+
+      ASSERT (!mongoc_cursor_next (cursor, &doc));
+      if (mongoc_cursor_error_document (cursor, &error, &doc)) {
+         value_init_from_doc (&value, doc);
+         check_result (test, operation, false, &value, &error);
+         bson_value_destroy (&value);
       }
    } else {
       check_cursor (cursor, test, operation);
@@ -1430,20 +1490,17 @@ command (mongoc_database_t *db,
 
 
 static bool
-start_transaction (json_test_ctx_t *ctx,
+start_transaction (mongoc_client_session_t *session,
                    const bson_t *test,
                    const bson_t *operation,
                    bson_t *reply)
 {
-   mongoc_client_session_t *session;
    mongoc_transaction_opt_t *opts = NULL;
    bson_error_t error;
    bool r;
 
    /* We don't use reply, but we need to initialize it for the test runner */
    bson_init (reply);
-
-   session = session_from_name (ctx, bson_lookup_utf8 (operation, "object"));
 
    if (bson_has_field (operation, "arguments.options")) {
       opts = bson_lookup_txn_opts (operation, "arguments.options");
@@ -1461,17 +1518,15 @@ start_transaction (json_test_ctx_t *ctx,
 
 
 static bool
-commit_transaction (json_test_ctx_t *ctx,
+commit_transaction (mongoc_client_session_t *session,
                     const bson_t *test,
                     const bson_t *operation,
                     bson_t *reply)
 {
-   mongoc_client_session_t *session;
    bson_value_t value;
    bson_error_t error;
    bool r;
 
-   session = session_from_name (ctx, bson_lookup_utf8 (operation, "object"));
    r = mongoc_client_session_commit_transaction (session, reply, &error);
    value_init_from_doc (&value, reply);
    check_result (test, operation, r, &value, &error);
@@ -1482,17 +1537,15 @@ commit_transaction (json_test_ctx_t *ctx,
 
 
 static bool
-abort_transaction (json_test_ctx_t *ctx,
+abort_transaction (mongoc_client_session_t *session,
                    const bson_t *test,
                    const bson_t *operation,
                    bson_t *reply)
 {
-   mongoc_client_session_t *session;
    bson_value_t value;
    bson_error_t error;
    bool r;
 
-   session = session_from_name (ctx, bson_lookup_utf8 (operation, "object"));
    r = mongoc_client_session_abort_transaction (session, &error);
    /* fake a reply for the test framework's sake */
    bson_init (reply);
@@ -1513,6 +1566,7 @@ json_test_operation (json_test_ctx_t *ctx,
                      bson_t *reply)
 {
    const char *op_name;
+   const char *obj_name = "collection";
    mongoc_read_prefs_t *read_prefs = NULL;
    mongoc_write_concern_t *wc;
    mongoc_database_t *db = mongoc_database_copy (ctx->db);
@@ -1520,6 +1574,10 @@ json_test_operation (json_test_ctx_t *ctx,
    bool res = false;
 
    op_name = bson_lookup_utf8 (operation, "name");
+
+   if (bson_has_field (operation, "object")) {
+      obj_name = bson_lookup_utf8 (operation, "object");
+   }
 
    if (bson_has_field (operation, "databaseOptions")) {
       bson_lookup_database_opts (operation, "databaseOptions", db);
@@ -1544,47 +1602,64 @@ json_test_operation (json_test_ctx_t *ctx,
       wc = mongoc_write_concern_new ();
    }
 
-   if (!strcmp (op_name, "bulkWrite")) {
-      res = bulk_write (c, test, operation, session, wc, reply);
-   } else if (!strcmp (op_name, "deleteOne") ||
-              !strcmp (op_name, "deleteMany") ||
-              !strcmp (op_name, "insertOne") ||
-              !strcmp (op_name, "replaceOne") ||
-              !strcmp (op_name, "updateOne") ||
-              !strcmp (op_name, "updateMany")) {
-      res = single_write (c, test, operation, session, wc, reply);
-   } else if (!strcmp (op_name, "findOneAndDelete") ||
-              !strcmp (op_name, "findOneAndReplace") ||
-              !strcmp (op_name, "findOneAndUpdate")) {
-      res = find_and_modify (c, test, operation, session, wc, reply);
-   } else if (!strcmp (op_name, "insertMany")) {
-      res = insert_many (c, test, operation, session, wc, reply);
-   } else if (!strcmp (op_name, "rename")) {
-      res = rename_op (c, test, operation, session, wc, reply);
-   } else if (!strcmp (op_name, "drop")) {
-      res = drop (c, test, operation, session, wc, reply);
-   } else if (!strcmp (op_name, "count")) {
-      res = count (c, test, operation, session, read_prefs, reply);
-   } else if (!strcmp (op_name, "estimatedDocumentCount")) {
-      res = count (c, test, operation, session, read_prefs, reply);
-   } else if (!strcmp (op_name, "countDocuments")) {
-      res = count (c, test, operation, session, read_prefs, reply);
-   } else if (!strcmp (op_name, "distinct")) {
-      res = distinct (c, test, operation, session, read_prefs, reply);
-   } else if (!strcmp (op_name, "find")) {
-      res = find (c, test, operation, session, read_prefs, reply);
-   } else if (!strcmp (op_name, "aggregate")) {
-      res = aggregate (c, test, operation, session, read_prefs, reply);
-   } else if (!strcmp (op_name, "runCommand")) {
-      res = command (db, test, operation, session, read_prefs, reply);
-   } else if (!strcmp (op_name, "startTransaction")) {
-      res = start_transaction (ctx, test, operation, reply);
-   } else if (!strcmp (op_name, "commitTransaction")) {
-      res = commit_transaction (ctx, test, operation, reply);
-   } else if (!strcmp (op_name, "abortTransaction")) {
-      res = abort_transaction (ctx, test, operation, reply);
+   if (!strcmp (obj_name, "collection")) {
+      if (!strcmp (op_name, "bulkWrite")) {
+         res = bulk_write (c, test, operation, session, wc, reply);
+      } else if (!strcmp (op_name, "deleteOne") ||
+                 !strcmp (op_name, "deleteMany") ||
+                 !strcmp (op_name, "insertOne") ||
+                 !strcmp (op_name, "replaceOne") ||
+                 !strcmp (op_name, "updateOne") ||
+                 !strcmp (op_name, "updateMany")) {
+         res = single_write (c, test, operation, session, wc, reply);
+      } else if (!strcmp (op_name, "findOneAndDelete") ||
+                 !strcmp (op_name, "findOneAndReplace") ||
+                 !strcmp (op_name, "findOneAndUpdate")) {
+         res = find_and_modify (c, test, operation, session, wc, reply);
+      } else if (!strcmp (op_name, "insertMany")) {
+         res = insert_many (c, test, operation, session, wc, reply);
+      } else if (!strcmp (op_name, "rename")) {
+         res = rename_op (c, test, operation, session, wc, reply);
+      } else if (!strcmp (op_name, "drop")) {
+         res = drop (c, test, operation, session, wc, reply);
+      } else if (!strcmp (op_name, "count")) {
+         res = count (c, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "estimatedDocumentCount")) {
+         res = count (c, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "countDocuments")) {
+         res = count (c, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "distinct")) {
+         res = distinct (c, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "find")) {
+         res = find (c, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "aggregate")) {
+         res = aggregate (c, test, operation, session, read_prefs, reply);
+      } else {
+         test_error ("unrecognized collection operation name %s", op_name);
+      }
+   } else if (!strcmp (obj_name, "database")) {
+      if (!strcmp (op_name, "aggregate")) {
+         res = db_aggregate (db, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "runCommand")) {
+         res = command (db, test, operation, session, read_prefs, reply);
+      } else {
+         test_error ("unrecognized database operation name %s", op_name);
+      }
+   } else if (!strncmp (obj_name, "session", 7)) {
+      mongoc_client_session_t *named_session =
+         session_from_name (ctx, obj_name);
+
+      if (!strcmp (op_name, "startTransaction")) {
+         res = start_transaction (named_session, test, operation, reply);
+      } else if (!strcmp (op_name, "commitTransaction")) {
+         res = commit_transaction (named_session, test, operation, reply);
+      } else if (!strcmp (op_name, "abortTransaction")) {
+         res = abort_transaction (named_session, test, operation, reply);
+      } else {
+         test_error ("unrecognized session operation name %s", op_name);
+      }
    } else {
-      test_error ("unrecognized operation name %s", op_name);
+      test_error ("unrecognized object name %s", obj_name);
    }
 
    mongoc_read_prefs_destroy (read_prefs);
