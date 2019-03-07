@@ -93,8 +93,8 @@ class LinkTask(NamedTask):
 
 
 all_tasks = [
-    NamedTask('check-public-headers',
-              commands=[shell_mongoc('sh ./.evergreen/check-public-headers.sh')]),
+    NamedTask('check-headers',
+              commands=[shell_mongoc('sh ./.evergreen/check-public-decls.sh'), shell_mongoc('python ./.evergreen/check-preludes.py .')]),
     FuncTask('make-release-archive',
              'release archive', 'upload docs', 'upload man pages',
              'upload release', 'upload build'),

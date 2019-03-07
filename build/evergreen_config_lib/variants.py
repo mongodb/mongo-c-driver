@@ -102,7 +102,7 @@ all_variants = [
              OD([('name', 'link-with-bson-mac'), ('distros', ['macos-1012'])]),
              OD([('name', 'link-with-bson-mingw'),
                  ('distros', ['windows-64-vs2013-compile'])]),
-             'check-public-headers',
+             'check-headers',
              'install-uninstall-check',
              OD([('name', 'install-uninstall-check-mingw'),
                  ('distros', ['windows-64-vs2015-compile'])]),

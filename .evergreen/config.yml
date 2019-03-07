@@ -528,7 +528,7 @@ post:
 - {func: upload test results}
 - {func: cleanup}
 tasks:
-- name: check-public-headers
+- name: check-headers
   commands:
   - command: shell.exec
     type: test
@@ -537,7 +537,15 @@ tasks:
       script: |-
         set -o errexit
         set -o xtrace
-        sh ./.evergreen/check-public-headers.sh
+        sh ./.evergreen/check-public-decls.sh
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      script: |-
+        set -o errexit
+        set -o xtrace
+        python ./.evergreen/check-preludes.py .
 - name: make-release-archive
   commands:
   - {func: release archive}
@@ -5127,7 +5135,7 @@ buildvariants:
     distros: [macos-1012]
   - name: link-with-bson-mingw
     distros: [windows-64-vs2013-compile]
-  - check-public-headers
+  - check-headers
   - install-uninstall-check
   - name: install-uninstall-check-mingw
     distros: [windows-64-vs2015-compile]
