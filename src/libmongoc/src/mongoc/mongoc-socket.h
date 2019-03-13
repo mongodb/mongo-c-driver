@@ -38,6 +38,10 @@
 #include <sys/un.h>
 #endif
 
+#if defined(_AIX) && !defined(HAVE_SA_SS_FAMILY)
+# define ss_family __ss_family
+#endif
+
 #include "mongoc/mongoc-iovec.h"
 
 
