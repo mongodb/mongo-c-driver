@@ -26,7 +26,15 @@ Parameters
 
 Returns
 -------
-A boolean indicating whether or not there was another document in the stream.
+
+This function returns true if a valid bson document was read from the stream.
+Otherwise, false if there was an error or no document was available.
+
+Errors can be determined with the :symbol:`mongoc_change_stream_error_document`
+function.
+
+Lifecycle
+---------
 
 Similar to :symbol:`mongoc_cursor_next` the lifetime of ``bson`` is until the
 next call to :symbol:`mongoc_change_stream_next`, so it needs to be copied to
