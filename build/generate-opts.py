@@ -253,8 +253,9 @@ opts_structs = OrderedDict([
 
     ('mongoc_change_stream_opts_t', Struct([
         ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_change_stream_next`'}),
-        ('resumeAfter', {'type': 'document', 'help': 'A ``Document`` representing the logical starting point of the change stream. The ``_id`` field  of any change received from a change stream can be used here'}),
-        ('startAtOperationTime', {'type': 'timestamp', 'help': 'A ``Timestamp``. The change stream only provides changes that occurred at or after the specified timestamp. Any command run against the server will return an operation time that can be used here.'}),
+        ('resumeAfter', {'type': 'document', 'help': 'A ``Document`` representing the logical starting point of the change stream. The ``_id`` field  of any change received from a change stream can be used here. This option is mutually exclusive with ``startAfter`` and ``startAtOperationTime``.'}),
+        ('startAfter', {'type': 'document', 'help': 'A ``Document`` representing the logical starting point of the change stream. Unlike ``resumeAfter``, this can resume notifications after an "invalidate" event. The ``_id`` field  of any change received from a change stream can be used here.  This option is mutually exclusive with ``resumeAfter`` and ``startAtOperationTime``.'}),
+        ('startAtOperationTime', {'type': 'timestamp', 'help': 'A ``Timestamp``. The change stream only provides changes that occurred at or after the specified timestamp. Any command run against the server will return an operation time that can be used here. This option is mutually exclusive with ``resumeAfter`` and ``startAfter``.'}),
         ('maxAwaitTimeMS', {'type': 'int64_t', 'convert': '_mongoc_convert_int64_positive', 'help': 'An ``int64`` representing the maximum amount of time a call to :symbol:`mongoc_change_stream_next` will block waiting for data'}),
         ('fullDocument', {'type': 'utf8', 'help': 'A UTF-8 string. Set this option to "updateLookup" to direct the change stream cursor to lookup the most current majority-committed version of the document associated to an update change stream event.'}),
     ], fullDocument="default")),

@@ -36,7 +36,7 @@ struct _mongoc_change_stream_t {
    mongoc_change_stream_opts_t opts;
    mongoc_timestamp_t operation_time;
    bson_t pipeline_to_append;
-   bson_t resume_token; /* empty, or has resumeAfter: doc */
+   bson_t doc_resume_token; /* cached from document _id field, or empty */
    bson_t *full_document;
 
    bson_error_t err;
@@ -54,6 +54,10 @@ struct _mongoc_change_stream_t {
 
    int64_t max_await_time_ms;
    int32_t batch_size;
+
+   /* Track whether the change stream has resumed after an error, as this
+    * determines how we construct an initial or resuming aggregate command. */
+   bool resumed;
 
    mongoc_client_session_t *implicit_session;
 };

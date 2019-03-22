@@ -76,7 +76,9 @@ _is_resumable_error (const bson_t *reply)
  *     cursor: { batchSize: x } }
  */
 static void
-_make_command (mongoc_change_stream_t *stream, bson_t *command)
+_make_command (mongoc_change_stream_t *stream,
+               bson_t *command,
+               int32_t max_wire_version)
 {
    bson_iter_t iter;
    bson_t change_stream_stage; /* { $changeStream: <change_stream_doc> } */
@@ -84,7 +86,6 @@ _make_command (mongoc_change_stream_t *stream, bson_t *command)
    bson_t pipeline;
    bson_t cursor_doc;
 
-   bson_init (command);
    if (stream->change_stream_type == MONGOC_CHANGE_STREAM_COLLECTION) {
       bson_append_utf8 (
          command, "aggregate", 9, stream->coll, (int) strlen (stream->coll));
@@ -99,16 +100,44 @@ _make_command (mongoc_change_stream_t *stream, bson_t *command)
    bson_append_document_begin (
       &change_stream_stage, "$changeStream", 13, &change_stream_doc);
    bson_concat (&change_stream_doc, stream->full_document);
-   if (!bson_empty (&stream->resume_token)) {
-      bson_concat (&change_stream_doc, &stream->resume_token);
-   }
-   /* Change streams spec: "startAtOperationTime and resumeAfter are mutually
-    * exclusive; if both startAtOperationTime and resumeAfter are set, the
-    * server will return an error. Drivers MUST NOT throw a custom error, and
-    * MUST defer to the server error." */
-   if (!_mongoc_timestamp_empty (&stream->operation_time)) {
-      _mongoc_timestamp_append (
-         &stream->operation_time, &change_stream_doc, "startAtOperationTime");
+
+   if (stream->resumed) {
+      /* Change stream spec: Resume Process */
+      if (!bson_empty (&stream->doc_resume_token)) {
+         BSON_APPEND_DOCUMENT (
+            &change_stream_doc, "resumeAfter", &stream->doc_resume_token);
+      } else if (!bson_empty (&stream->opts.startAfter)) {
+         BSON_APPEND_DOCUMENT (
+            &change_stream_doc, "resumeAfter", &stream->opts.startAfter);
+      } else if (!bson_empty (&stream->opts.resumeAfter)) {
+         BSON_APPEND_DOCUMENT (
+            &change_stream_doc, "resumeAfter", &stream->opts.resumeAfter);
+      } else if (!_mongoc_timestamp_empty (&stream->operation_time) &&
+                 max_wire_version >= 7) {
+         _mongoc_timestamp_append (&stream->operation_time,
+                                   &change_stream_doc,
+                                   "startAtOperationTime");
+      }
+   } else {
+      /* Change streams spec: "startAtOperationTime, resumeAfter, and startAfter
+       * are all mutually exclusive; if any two are set, the server will return
+       * an error. Drivers MUST NOT throw a custom error, and MUST defer to the
+       * server error." */
+      if (!bson_empty (&stream->opts.resumeAfter)) {
+         BSON_APPEND_DOCUMENT (
+            &change_stream_doc, "resumeAfter", &stream->opts.resumeAfter);
+      }
+
+      if (!bson_empty (&stream->opts.startAfter)) {
+         BSON_APPEND_DOCUMENT (
+            &change_stream_doc, "startAfter", &stream->opts.startAfter);
+      }
+
+      if (!_mongoc_timestamp_empty (&stream->operation_time)) {
+         _mongoc_timestamp_append (&stream->operation_time,
+                                   &change_stream_doc,
+                                   "startAtOperationTime");
+      }
    }
 
    if (stream->change_stream_type == MONGOC_CHANGE_STREAM_CLIENT) {
@@ -175,7 +204,7 @@ _make_cursor (mongoc_change_stream_t *stream)
 
    BSON_ASSERT (stream);
    BSON_ASSERT (!stream->cursor);
-   _make_command (stream, &command);
+   bson_init (&command);
    bson_copy_to (&(stream->opts.extra), &command_opts);
    sd = mongoc_client_select_server (
       stream->client, false /* for_writes */, stream->read_prefs, &stream->err);
@@ -227,6 +256,8 @@ _make_cursor (mongoc_change_stream_t *stream)
       mongoc_read_concern_append (stream->read_concern, &command_opts);
    }
 
+   _make_command (stream, &command, max_wire_version);
+
    /* even though serverId has already been set, still pass the read prefs.
     * they are necessary for OP_MSG if sending to a secondary. */
    if (!mongoc_client_read_command_with_opts (stream->client,
@@ -264,14 +295,11 @@ _make_cursor (mongoc_change_stream_t *stream)
                          stream->batch_size);
    }
 
-   /* Change streams spec: "If neither startAtOperationTime nor resumeAfter are
-    * specified, and the max wire version is >= 7, and the initial aggregate
-    * command does not return a resumeToken (indicating no results), the
-    * ChangeStream MUST save the operationTime from the initial aggregate
-    * command when it returns." */
-   if (bson_empty (&stream->resume_token) &&
+   /* Change stream spec: startAtOperationTime */
+   if (bson_empty (&stream->opts.resumeAfter) &&
+       bson_empty (&stream->opts.startAfter) &&
        _mongoc_timestamp_empty (&stream->operation_time) &&
-       max_wire_version >= 7 &&
+       max_wire_version >= 7 && bson_empty (&stream->doc_resume_token) &&
        bson_iter_init_find (&iter, &reply, "operationTime")) {
       _mongoc_timestamp_set_from_bson (&stream->operation_time, &iter);
    }
@@ -306,7 +334,7 @@ _change_stream_init (mongoc_change_stream_t *stream,
    stream->max_await_time_ms = -1;
    stream->batch_size = -1;
    bson_init (&stream->pipeline_to_append);
-   bson_init (&stream->resume_token);
+   bson_init (&stream->doc_resume_token);
    bson_init (&stream->err_doc);
 
    if (!_mongoc_change_stream_opts_parse (
@@ -316,13 +344,8 @@ _change_stream_init (mongoc_change_stream_t *stream,
 
    stream->full_document = BCON_NEW ("fullDocument", stream->opts.fullDocument);
 
-   if (!bson_empty (&(stream->opts.resumeAfter))) {
-      bson_append_document (
-         &stream->resume_token, "resumeAfter", 11, &(stream->opts.resumeAfter));
-   }
-
    _mongoc_timestamp_set (&stream->operation_time,
-                          &(stream->opts.startAtOperationTime));
+                          &stream->opts.startAtOperationTime);
 
    stream->batch_size = stream->opts.batchSize;
    stream->max_await_time_ms = stream->opts.maxAwaitTimeMS;
@@ -419,6 +442,9 @@ bool
 mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
 {
    bson_iter_t iter;
+   bson_t doc_resume_token;
+   uint32_t len;
+   const uint8_t *data;
    bool ret = false;
 
    BSON_ASSERT (stream);
@@ -444,6 +470,7 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
          /* recreate the cursor. */
          mongoc_cursor_destroy (stream->cursor);
          stream->cursor = NULL;
+         stream->resumed = true;
          if (!_make_cursor (stream)) {
             goto end;
          }
@@ -477,9 +504,15 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
    }
 
    /* copy the resume token. */
-   bson_reinit (&stream->resume_token);
-   BSON_APPEND_VALUE (
-      &stream->resume_token, "resumeAfter", bson_iter_value (&iter));
+   bson_reinit (&stream->doc_resume_token);
+
+   if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      bson_iter_document (&iter, &len, &data);
+      BSON_ASSERT (bson_init_static (&doc_resume_token, data, len));
+      bson_destroy (&stream->doc_resume_token);
+      bson_copy_to (&doc_resume_token, &stream->doc_resume_token);
+   }
+
    /* clear out the operation time, since we no longer need it to resume. */
    _mongoc_timestamp_clear (&stream->operation_time);
    ret = true;
@@ -530,7 +563,7 @@ mongoc_change_stream_destroy (mongoc_change_stream_t *stream)
    }
 
    bson_destroy (&stream->pipeline_to_append);
-   bson_destroy (&stream->resume_token);
+   bson_destroy (&stream->doc_resume_token);
    bson_destroy (stream->full_document);
    bson_destroy (&stream->err_doc);
    _mongoc_change_stream_opts_cleanup (&stream->opts);

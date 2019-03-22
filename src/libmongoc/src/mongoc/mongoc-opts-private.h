@@ -129,6 +129,7 @@ typedef struct _mongoc_bulk_remove_many_opts_t {
 typedef struct _mongoc_change_stream_opts_t {
    int32_t batchSize;
    bson_t resumeAfter;
+   bson_t startAfter;
    mongoc_timestamp_t startAtOperationTime;
    int64_t maxAwaitTimeMS;
    const char *fullDocument;

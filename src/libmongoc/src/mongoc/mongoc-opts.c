@@ -1314,6 +1314,7 @@ _mongoc_change_stream_opts_parse (
 
    mongoc_change_stream_opts->batchSize = 0;
    bson_init (&mongoc_change_stream_opts->resumeAfter);
+   bson_init (&mongoc_change_stream_opts->startAfter);
    memset (&mongoc_change_stream_opts->startAtOperationTime, 0, sizeof (mongoc_timestamp_t));
    mongoc_change_stream_opts->maxAwaitTimeMS = 0;
    mongoc_change_stream_opts->fullDocument = "default";
@@ -1346,6 +1347,15 @@ _mongoc_change_stream_opts_parse (
                client,
                &iter,
                &mongoc_change_stream_opts->resumeAfter,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "startAfter")) {
+         if (!_mongoc_convert_document (
+               client,
+               &iter,
+               &mongoc_change_stream_opts->startAfter,
                error)) {
             return false;
          }
@@ -1399,6 +1409,7 @@ void
 _mongoc_change_stream_opts_cleanup (mongoc_change_stream_opts_t *mongoc_change_stream_opts)
 {
    bson_destroy (&mongoc_change_stream_opts->resumeAfter);
+   bson_destroy (&mongoc_change_stream_opts->startAfter);
    bson_destroy (&mongoc_change_stream_opts->extra);
 }
 

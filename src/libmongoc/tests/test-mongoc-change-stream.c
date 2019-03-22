@@ -266,7 +266,7 @@ test_resume_token_command_start (const mongoc_apm_command_started_t *event)
             ctx->expected_resume_token_bson, NULL);
          char *pattern =
             bson_strdup_printf ("{'aggregate': 'coll_resume', 'pipeline': "
-                                "[{'$changeStream': %s }]}",
+                                "[{'$changeStream': { 'resumeAfter': %s }}]}",
                                 rt_pattern);
          ASSERT_MATCH (cmd, pattern);
          bson_free (pattern);
@@ -338,14 +338,14 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    /* The resume token should be updated to the most recently iterated doc */
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
    ASSERT (next_doc);
-   ASSERT (!bson_empty (&stream->resume_token));
-   bson_copy_to (&stream->resume_token, &doc0_rt);
+   ASSERT (!bson_empty (&stream->doc_resume_token));
+   bson_copy_to (&stream->doc_resume_token, &doc0_rt);
 
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
    ASSERT (next_doc);
-   ASSERT (!bson_empty (&stream->resume_token));
-   ASSERT (bson_compare (&stream->resume_token, &doc0_rt) != 0);
-   bson_copy_to (&stream->resume_token, &doc1_rt);
+   ASSERT (!bson_empty (&stream->doc_resume_token));
+   ASSERT (bson_compare (&stream->doc_resume_token, &doc0_rt) != 0);
+   bson_copy_to (&stream->doc_resume_token, &doc1_rt);
 
    _mongoc_client_kill_cursor (client,
                                stream->cursor->server_id,
@@ -362,10 +362,10 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
 
    ASSERT (next_doc);
-   ASSERT (!bson_empty (&stream->resume_token));
-   ASSERT (bson_compare (&stream->resume_token, &doc0_rt) != 0);
-   ASSERT (bson_compare (&stream->resume_token, &doc1_rt) != 0);
-   bson_copy_to (&stream->resume_token, &doc2_rt);
+   ASSERT (!bson_empty (&stream->doc_resume_token));
+   ASSERT (bson_compare (&stream->doc_resume_token, &doc0_rt) != 0);
+   ASSERT (bson_compare (&stream->doc_resume_token, &doc1_rt) != 0);
+   bson_copy_to (&stream->doc_resume_token, &doc2_rt);
 
    /* There are no docs left. But the next call should still keep the same
     * resume token */
@@ -373,8 +373,8 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL),
                     error);
    ASSERT (!next_doc);
-   ASSERT (!bson_empty (&stream->resume_token));
-   ASSERT (bson_compare (&stream->resume_token, &doc2_rt) == 0);
+   ASSERT (!bson_empty (&stream->doc_resume_token));
+   ASSERT (bson_compare (&stream->doc_resume_token, &doc2_rt) == 0);
 
    bson_destroy (&doc0_rt);
    bson_destroy (&doc1_rt);
@@ -600,7 +600,8 @@ _test_getmore_error (const char *server_reply,
                                   "{'cursor':"
                                   "  {'id': 124,"
                                   "   'ns': 'db.coll',"
-                                  "   'firstBatch': [{'_id': 1}]},"
+                                  "   'firstBatch':"
+                                  "    [{'_id': {'resume': 'doc'}}]},"
                                   "'ok': 1}");
       request_destroy (request);
       BSON_ASSERT (future_get_bool (future));
@@ -845,6 +846,8 @@ test_change_stream_options (void)
    /*
     * fullDocument: 'default'|'updateLookup', passed to $changeStream stage
     * resumeAfter: optional<Doc>, passed to $changeStream stage
+    * startAfter: optional<Doc>, passed to $changeStream stage
+    * startAtOperationTime: optional<Timestamp>, passed to $changeStream stage
     * maxAwaitTimeMS: Optional<Int64>, passed to cursor
     * batchSize: Optional<Int32>, passed as agg option, {cursor: { batchSize: }}
     * collation: Optional<Document>, passed as agg option
@@ -855,24 +858,30 @@ test_change_stream_options (void)
       coll,
       tmp_bson ("{}"),
       tmp_bson ("{ 'fullDocument': 'updateLookup', "
-                "'resumeAfter': {'_id': 0 }, "
+                "'resumeAfter': {'resume': 'after'}, "
+                "'startAfter': {'start': 'after'}, "
+                "'startAtOperationTime': { '$timestamp': { 't': 1, 'i': 1 }}, "
                 "'maxAwaitTimeMS': 5000, 'batchSize': "
                 "5, 'collation': { 'locale': 'en' }}"));
 
-   request = mock_server_receives_command (server,
-                                           "db",
-                                           MONGOC_QUERY_SLAVE_OK,
-                                           "{"
-                                           "'aggregate': 'coll',"
-                                           "'pipeline': "
-                                           "   ["
-                                           "      { '$changeStream':{ "
-                                           "'fullDocument': 'updateLookup', "
-                                           "'resumeAfter': {'_id': 0 } } }"
-                                           "   ],"
-                                           "'cursor': { 'batchSize': 5 },"
-                                           "'collation': { 'locale': 'en' }"
-                                           "}");
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_SLAVE_OK,
+      "{"
+      "'aggregate': 'coll',"
+      "'pipeline': "
+      "   ["
+      "      { '$changeStream': {"
+      "'fullDocument': 'updateLookup', "
+      "'resumeAfter': {'resume': 'after'}, "
+      "'startAfter': {'start': 'after'}, "
+      "'startAtOperationTime': { '$timestamp': { 't': 1, 'i': 1 }}"
+      "      } }"
+      "   ],"
+      "'cursor': { 'batchSize': 5 },"
+      "'collation': { 'locale': 'en' }"
+      "}");
 
    mock_server_replies_simple (
       request,
@@ -1646,47 +1655,83 @@ static void
 test_resume_cases (void)
 {
 #define NO_OPT_RA "'resumeAfter': {'$exists': false}"
+#define NO_OPT_SA "'startAfter': {'$exists': false}"
 #define NO_OPT_OP "'startAtOperationTime': {'$exists': false}"
 #define AGG_OP "'startAtOperationTime': {'$timestamp': {'t': 1, 'i': 2}}"
-#define DOC "{'_id': {'resume': 'example'}}"
+#define DOC "{'_id': {'resume': 'doc'}}"
 #define OPT_OP "'startAtOperationTime': {'$timestamp': {'t': 111, 'i': 222}}"
-#define DOC_RA "'resumeAfter': {'resume': 'example'}"
-#define OPT_RA "'resumeAfter': {'resume': 'after'}"
+#define DOC_RA "'resumeAfter': {'resume': 'doc'}"
+#define OPT_RA "'resumeAfter': {'resume': 'opt'}"
+#define OPT_SA "'startAfter': {'resume': 'opt'}"
 
    /* test features:
     * - whether the change stream returns a document before resuming.
     * - whether 'startAtOperationTime' is specified
     * - whether 'resumeAfter' is specified
-    * total of 2 * 2 * 2 = 8 test cases. */
+    * - whether 'startAfterAfter' is specified */
 
-   /* neither 'startAtOperationTime' nor 'resumeAfter' specified. */
+   /* neither 'startAtOperationTime' nor 'resumeAfter' nor 'startAfter'
+    * specified. */
    /* - if no doc recv'ed use the operationTime returned by aggregate. */
-   _test_resume ("{}", NO_OPT_OP "," NO_OPT_RA ",", "", AGG_OP ",");
+   _test_resume ("{}",
+                 NO_OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
+                 "",
+                 AGG_OP "," NO_OPT_RA "," NO_OPT_SA ",");
    /* - if doc recv'ed use the doc's resume token. */
-   _test_resume ("{}", NO_OPT_OP "," NO_OPT_RA ",", DOC, DOC_RA ",");
+   _test_resume ("{}",
+                 NO_OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
+                 DOC,
+                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",");
 
    /* 'startAtOperationTime' specified
-    * - if no doc recv'ed use the startAtOperationTime in the options. */
-   _test_resume ("{" OPT_OP "}", OPT_OP "," NO_OPT_RA ",", "", OPT_OP ",");
-   /* - if doc recv'ed use the docs resume token. */
-   _test_resume ("{" OPT_OP "}", OPT_OP "," NO_OPT_RA ",", DOC, DOC_RA ",");
+    * - if no doc recv'ed use the startAtOperationTime option. */
+   _test_resume ("{" OPT_OP "}",
+                 OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
+                 "",
+                 OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",");
+   /* - if doc recv'ed use the doc's resume token. */
+   _test_resume ("{" OPT_OP "}",
+                 OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
+                 DOC,
+                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",");
 
    /* 'resumeAfter' specified. */
-   /* - if no doc recv'ed use the resumeAfter in the options. */
-   _test_resume ("{" OPT_RA "}", NO_OPT_OP "," OPT_RA ",", "", OPT_RA ",");
-   /* - if doc recv'ed use the docs resume token. */
-   _test_resume ("{" OPT_RA "}", NO_OPT_OP "," OPT_RA ",", DOC, DOC_RA ",");
-
-   /* both 'resumeAfter' and 'startAtOperationTime' specified. They both
-    * should be passed (although the server currently returns an error). */
-   /* - if no doc recv'ed use both. */
-   _test_resume ("{" OPT_RA "," OPT_OP "}",
-                 OPT_RA "," OPT_OP ",",
+   /* - if no doc recv'ed use the resumeAfter option. */
+   _test_resume ("{" OPT_RA "}",
+                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  "",
-                 OPT_RA "," OPT_OP ",");
-   /* - if doc recv'ed use the docs resume token. */
-   _test_resume (
-      "{" OPT_RA "," OPT_OP "}", OPT_RA "," OPT_OP ",", DOC, DOC_RA ",");
+                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",");
+   /* - if doc recv'ed use the doc's resume token. */
+   _test_resume ("{" OPT_RA "}",
+                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 DOC,
+                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",");
+
+   /* 'startAfter' specified. */
+   /* - if no doc recv'ed use the startAfter option for the original aggregate
+    *   but resumeAfter with the same value when resuming. */
+   _test_resume ("{" OPT_SA "}",
+                 OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
+                 "",
+                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",");
+   /* - if doc recv'ed use the doc's resume token. */
+   _test_resume ("{" OPT_SA "}",
+                 OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
+                 DOC,
+                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",");
+
+   /* 'resumeAfter', 'startAfter', and 'startAtOperationTime' are all specified.
+    * All should be passed (although the server currently returns an error). */
+   /* - if no doc recv'ed use the resumeAfter option. */
+   _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
+                 OPT_RA "," OPT_SA "," OPT_OP ",",
+                 "",
+                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",");
+   /* - if doc recv'ed use the doc's resume token. */
+   _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
+                 OPT_RA "," OPT_SA "," OPT_OP ",",
+                 DOC,
+                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",");
 }
 
 
