@@ -5,7 +5,9 @@ Features:
   * New option for change streams, "startAfter".
 
 Bug fixes:
-  *
+  * mongoc_change_stream_next now reports an error if the resume token (_id) is
+    not a document. Previously, an error was only reported if the field was
+    missing.
 
 mongo-c-driver 1.14.0
 =====================

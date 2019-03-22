@@ -494,7 +494,8 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
 
    /* we have received documents, either from the first call to next or after a
     * resume. */
-   if (!bson_iter_init_find (&iter, *bson, "_id")) {
+   if (!bson_iter_init_find (&iter, *bson, "_id") ||
+       !BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       bson_set_error (&stream->err,
                       MONGOC_ERROR_CURSOR,
                       MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
@@ -504,14 +505,10 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
    }
 
    /* copy the resume token. */
-   bson_reinit (&stream->doc_resume_token);
-
-   if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      bson_iter_document (&iter, &len, &data);
-      BSON_ASSERT (bson_init_static (&doc_resume_token, data, len));
-      bson_destroy (&stream->doc_resume_token);
-      bson_copy_to (&doc_resume_token, &stream->doc_resume_token);
-   }
+   bson_iter_document (&iter, &len, &data);
+   BSON_ASSERT (bson_init_static (&doc_resume_token, data, len));
+   bson_destroy (&stream->doc_resume_token);
+   bson_copy_to (&doc_resume_token, &stream->doc_resume_token);
 
    /* clear out the operation time, since we no longer need it to resume. */
    _mongoc_timestamp_clear (&stream->operation_time);

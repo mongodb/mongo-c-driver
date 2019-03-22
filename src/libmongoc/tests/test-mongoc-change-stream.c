@@ -496,7 +496,7 @@ test_change_stream_live_batch_size (void *test_ctx)
  * resume token." In the C driver case, return an error.
  */
 static void
-test_change_stream_live_missing_resume_token (void *test_ctx)
+_test_resume_token_error (const char *id_projection)
 {
    mongoc_client_t *client;
    mongoc_collection_t *coll;
@@ -516,7 +516,9 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
       err);
 
    stream = mongoc_collection_watch (
-      coll, tmp_bson ("{'pipeline': [{'$project': {'_id': 0 }}]}"), NULL);
+      coll,
+      tmp_bson ("{'pipeline': [{'$project': {'_id': %s }}]}", id_projection),
+      NULL);
 
    ASSERT (stream);
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
@@ -544,6 +546,22 @@ test_change_stream_live_missing_resume_token (void *test_ctx)
    mongoc_change_stream_destroy (stream);
    mongoc_client_destroy (client);
    mongoc_collection_destroy (coll);
+}
+
+static void
+test_change_stream_live_missing_resume_token (void *test_ctx)
+{
+   _test_resume_token_error ("0");
+}
+
+static void
+test_change_stream_live_invalid_resume_token (void *test_ctx)
+{
+   /* test a few non-document BSON types */
+   _test_resume_token_error ("{'$literal': 1}");
+   _test_resume_token_error ("{'$literal': true}");
+   _test_resume_token_error ("{'$literal': 'foo'}");
+   _test_resume_token_error ("{'$literal': []}");
 }
 
 static void
@@ -1788,6 +1806,13 @@ test_change_stream_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/change_stream/live/missing_resume_token",
                       test_change_stream_live_missing_resume_token,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_rs_version_6);
+
+   TestSuite_AddFull (suite,
+                      "/change_stream/live/invalid_resume_token",
+                      test_change_stream_live_invalid_resume_token,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_rs_version_6);
