@@ -435,6 +435,14 @@ test_retry_no_crypto (void *ctx)
    mongoc_client_t *client;
 
    capture_logs (true);
+
+   client = mongoc_client_new ("mongodb://localhost/?retryWrites=false");
+   BSON_ASSERT (client);
+
+   ASSERT_NO_CAPTURED_LOGS ("retryWrites=false");
+
+   mongoc_client_destroy (client);
+
    client = mongoc_client_new ("mongodb://localhost/?retryWrites=true");
    BSON_ASSERT (client);
 
