@@ -869,17 +869,18 @@ test_update_with_opts_validate (void)
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
                              "update only works with $ operators");
 
-      BSON_ASSERT (update_function (bulk,
-                              tmp_bson ("{}"),
-                              tmp_bson ("{'a.a': 1}"),
-                              tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
-                              &error));
       BSON_ASSERT (
-         !update_function (bulk,
-                     tmp_bson ("{}"),
-                     tmp_bson ("{'a.a': 1}"),
-                     tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
-                     &error));
+         update_function (bulk,
+                          tmp_bson ("{}"),
+                          tmp_bson ("{'a.a': 1}"),
+                          tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
+                          &error));
+      BSON_ASSERT (!update_function (
+         bulk,
+         tmp_bson ("{}"),
+         tmp_bson ("{'a.a': 1}"),
+         tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
+         &error));
       ASSERT_ERROR_CONTAINS (
          error,
          MONGOC_ERROR_COMMAND,
@@ -892,10 +893,10 @@ test_update_with_opts_validate (void)
          mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
       BSON_ASSERT (
          update_function (bulk,
-                    tmp_bson ("{}"),
-                    tmp_bson ("{'$set': {'a': 1}}"),
-                    tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
-                    &error));
+                          tmp_bson ("{}"),
+                          tmp_bson ("{'$set': {'a': 1}}"),
+                          tmp_bson ("{'validate': %d}", BSON_VALIDATE_DOT_KEYS),
+                          &error));
       ASSERT_OR_PRINT (mongoc_bulk_operation_execute (bulk, NULL, &error),
                        error);
       mongoc_bulk_operation_destroy (bulk);
@@ -3615,6 +3616,13 @@ test_bulk_max_msg_size (void)
       /* sessions are supported */
       filler_string -=
          mongoc_client_session_get_lsid (cs)->len + strlen ("lsid") + 2;
+
+      /* TODO: this check can be removed once CDRIVER-3070 is resolved */
+      if (test_framework_is_mongos () || test_framework_is_replset ()) {
+         /* retryable writes includes a txnNumber (int64) */
+         filler_string -= strlen ("txnNumber") + 10;
+      }
+
       ASSERT_OR_PRINT (mongoc_client_session_append (cs, &opts, &error), error);
    }
 

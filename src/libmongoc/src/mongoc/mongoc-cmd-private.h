@@ -36,6 +36,13 @@
 
 BSON_BEGIN_DECLS
 
+/* retryWrites requires sessions, which require crypto */
+#ifdef MONGOC_ENABLE_CRYPTO
+#define MONGOC_DEFAULT_RETRYWRITES true
+#else
+#define MONGOC_DEFAULT_RETRYWRITES false
+#endif
+
 typedef enum {
    MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN,
    MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_YES,

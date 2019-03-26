@@ -3,6 +3,8 @@ Next Release
 
 Features:
   * New option for change streams, "startAfter".
+  * "retryWrites" URI option now defaults to true (requires crypto for session
+    support).
 
 Bug fixes:
   * mongoc_change_stream_next now reports an error if the resume token (_id) is
