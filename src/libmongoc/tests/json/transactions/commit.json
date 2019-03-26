@@ -1,4 +1,8 @@
 {
+  "topology": [
+    "replicaset",
+    "sharded"
+  ],
   "database_name": "transaction-tests",
   "collection_name": "test",
   "data": [],
@@ -356,7 +360,6 @@
     },
     {
       "description": "write concern error on commit",
-      "skipReason": "SERVER-37458 Mongos does not yet support writeConcern on commit",
       "operations": [
         {
           "name": "startTransaction",
@@ -669,6 +672,9 @@
     },
     {
       "description": "reset session state commit",
+      "clientOptions": {
+        "retryWrites": false
+      },
       "operations": [
         {
           "name": "startTransaction",
@@ -788,6 +794,9 @@
     },
     {
       "description": "reset session state abort",
+      "clientOptions": {
+        "retryWrites": false
+      },
       "operations": [
         {
           "name": "startTransaction",
