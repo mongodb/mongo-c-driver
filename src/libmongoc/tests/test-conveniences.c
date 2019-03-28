@@ -1186,7 +1186,8 @@ match_bson_value (const bson_value_t *doc,
       }
    }
 
-   if (is_number_type (pattern->value_type) && ctx &&
+   if (is_number_type (doc->value_type) &&
+       is_number_type (pattern->value_type) && ctx &&
        !ctx->strict_numeric_types) {
       doc_int64 = bson_value_as_int64 (doc);
       pattern_int64 = bson_value_as_int64 (pattern);

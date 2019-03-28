@@ -842,7 +842,7 @@ mongoc_collection_estimated_document_count (
  *       Construct an aggregate pipeline with the following form:
  *       { pipeline: [
  *           { $match: {...} },
- *           { $group: { _id: null, n: { sum: 1 } } },
+ *           { $group: { _id: 1, n: { sum: 1 } } },
  *           { $skip: ... },
  *           { $limit: ... }
  *         ]
@@ -893,7 +893,7 @@ _make_aggregate_for_count (const mongoc_collection_t *coll,
    }
    bson_append_document_begin (&pipeline, keys[key], 1, &group_stage);
    bson_append_document_begin (&group_stage, "$group", 6, &group_stage_doc);
-   bson_append_null (&group_stage_doc, "_id", 3);
+   bson_append_int32 (&group_stage_doc, "_id", 3, 1);
    bson_append_document_begin (&group_stage_doc, "n", 1, &sum);
    bson_append_int32 (&sum, "$sum", 4, 1);
    bson_append_document_end (&group_stage_doc, &sum);
