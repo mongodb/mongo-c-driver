@@ -782,10 +782,13 @@ check_topology_type (const bson_t *test)
 
 /* insert the documents in a spec test scenario's "data" array */
 static void
-insert_data (mongoc_collection_t *collection, const bson_t *scenario)
+insert_data (const char *db_name,
+             const char *collection_name,
+             const bson_t *scenario)
 {
    mongoc_client_t *client;
    mongoc_database_t *db;
+   mongoc_collection_t *collection;
    mongoc_collection_t *tmp_collection;
    bool r;
    bson_error_t error;
@@ -795,32 +798,31 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
    uint32_t server_id;
    bson_t *majority = tmp_bson ("{'writeConcern': {'w': 'majority'}}");
 
-   /* clear data using a fresh client not configured with retryWrites etc. */
+   /* use a fresh client to prepare the collection */
    client = test_framework_client_new ();
-   db = mongoc_client_get_database (client, collection->db);
-   tmp_collection = mongoc_database_get_collection (db, collection->collection);
-   mongoc_collection_delete_many (
-      tmp_collection, tmp_bson ("{}"), majority, NULL, NULL);
 
-   mongoc_collection_destroy (tmp_collection);
+   db = mongoc_client_get_database (client, db_name);
+   collection = mongoc_database_get_collection (db, collection_name);
+   mongoc_collection_delete_many (
+      collection, tmp_bson ("{}"), majority, NULL, NULL);
+
    /* ignore failure if it already exists */
-   tmp_collection = mongoc_database_create_collection (
-      db, collection->collection, majority, &error);
+   tmp_collection =
+      mongoc_database_create_collection (db, collection_name, majority, &error);
 
    if (tmp_collection) {
       mongoc_collection_destroy (tmp_collection);
    }
 
    mongoc_database_destroy (db);
-   mongoc_client_destroy (client);
 
    if (!bson_has_field (scenario, "data")) {
-      return;
+      goto DONE;
    }
 
    bson_lookup_doc (scenario, "data", &documents);
    if (!bson_count_keys (&documents)) {
-      return;
+      goto DONE;
    }
 
    bson_iter_init (&iter, &documents);
@@ -843,6 +845,10 @@ insert_data (mongoc_collection_t *collection, const bson_t *scenario)
    ASSERT_OR_PRINT (server_id, error);
 
    mongoc_bulk_operation_destroy (bulk);
+
+DONE:
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
 }
 
 
@@ -1170,9 +1176,10 @@ run_json_general_test (const json_test_config_t *config)
          MONGOC_WARNING ("Error in killAllSessions: %s", error.message);
       }
 
+      insert_data (db_name, collection_name, scenario);
+
       db = mongoc_client_get_database (client, db_name);
       collection = mongoc_database_get_collection (db, collection_name);
-      insert_data (collection, scenario);
       execute_test (config, client, db, collection, &test);
 
       mongoc_collection_destroy (collection);
