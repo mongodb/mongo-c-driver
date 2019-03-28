@@ -15,6 +15,7 @@
   "tests": [
     {
       "description": "remain pinned after non-transient Interrupted error on insertOne",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -165,6 +166,7 @@
     },
     {
       "description": "unpin after transient error within a transaction",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -313,6 +315,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on insertOne insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -393,6 +396,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on insertMany insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -478,6 +482,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on updateOne update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -563,6 +568,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on replaceOne update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -646,6 +652,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on updateMany update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -733,6 +740,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on deleteOne delete",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -813,6 +821,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on deleteMany delete",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -895,6 +904,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on findOneAndDelete findAndModify",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -975,6 +985,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on findOneAndUpdate findAndModify",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1061,6 +1072,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on findOneAndReplace findAndModify",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1145,6 +1157,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on bulkWrite insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1232,6 +1245,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on bulkWrite update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1324,6 +1338,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on bulkWrite delete",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1411,6 +1426,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on find find",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1491,6 +1507,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on countDocuments aggregate",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1569,6 +1586,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on aggregate aggregate",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1647,6 +1665,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on distinct distinct",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1725,6 +1744,7 @@
     },
     {
       "description": "remain pinned after non-transient Interrupted error on runCommand insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1811,6 +1831,7 @@
     },
     {
       "description": "unpin after transient connection error on insertOne insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1891,6 +1912,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on insertOne insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1971,6 +1993,7 @@
     },
     {
       "description": "unpin after transient connection error on insertMany insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2056,6 +2079,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on insertMany insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2141,6 +2165,7 @@
     },
     {
       "description": "unpin after transient connection error on updateOne update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2226,6 +2251,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on updateOne update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2311,6 +2337,7 @@
     },
     {
       "description": "unpin after transient connection error on replaceOne update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2394,6 +2421,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on replaceOne update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2477,6 +2505,7 @@
     },
     {
       "description": "unpin after transient connection error on updateMany update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2564,6 +2593,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on updateMany update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2651,6 +2681,7 @@
     },
     {
       "description": "unpin after transient connection error on deleteOne delete",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2731,6 +2762,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on deleteOne delete",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2811,6 +2843,7 @@
     },
     {
       "description": "unpin after transient connection error on deleteMany delete",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2893,6 +2926,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on deleteMany delete",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -2975,6 +3009,7 @@
     },
     {
       "description": "unpin after transient connection error on findOneAndDelete findAndModify",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -3055,6 +3090,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on findOneAndDelete findAndModify",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -3135,6 +3171,7 @@
     },
     {
       "description": "unpin after transient connection error on findOneAndUpdate findAndModify",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -3221,6 +3258,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on findOneAndUpdate findAndModify",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -3307,6 +3345,7 @@
     },
     {
       "description": "unpin after transient connection error on findOneAndReplace findAndModify",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -3391,6 +3430,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on findOneAndReplace findAndModify",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -3475,6 +3515,7 @@
     },
     {
       "description": "unpin after transient connection error on bulkWrite insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -3562,6 +3603,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on bulkWrite insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -3649,6 +3691,7 @@
     },
     {
       "description": "unpin after transient connection error on bulkWrite update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -3741,6 +3784,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on bulkWrite update",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -3833,6 +3877,7 @@
     },
     {
       "description": "unpin after transient connection error on bulkWrite delete",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -3920,6 +3965,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on bulkWrite delete",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -4007,6 +4053,7 @@
     },
     {
       "description": "unpin after transient connection error on find find",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -4087,6 +4134,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on find find",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -4167,6 +4215,7 @@
     },
     {
       "description": "unpin after transient connection error on countDocuments aggregate",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -4245,6 +4294,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on countDocuments aggregate",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -4323,6 +4373,7 @@
     },
     {
       "description": "unpin after transient connection error on aggregate aggregate",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -4401,6 +4452,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on aggregate aggregate",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -4479,6 +4531,7 @@
     },
     {
       "description": "unpin after transient connection error on distinct distinct",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -4557,6 +4610,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on distinct distinct",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -4635,6 +4689,7 @@
     },
     {
       "description": "unpin after transient connection error on runCommand insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -4721,6 +4776,7 @@
     },
     {
       "description": "unpin after transient ShutdownInProgress error on runCommand insert",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {

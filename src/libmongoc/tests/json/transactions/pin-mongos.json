@@ -15,6 +15,7 @@
   "tests": [
     {
       "description": "countDocuments",
+      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -129,6 +130,7 @@
     },
     {
       "description": "distinct",
+      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -251,6 +253,7 @@
     },
     {
       "description": "find",
+      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -397,6 +400,7 @@
     },
     {
       "description": "insertOne",
+      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -551,6 +555,7 @@
     },
     {
       "description": "mixed read write operations",
+      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -712,6 +717,7 @@
     },
     {
       "description": "multiple commits",
+      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -822,6 +828,7 @@
     },
     {
       "description": "remain pinned after non-transient error on commit",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -925,6 +932,7 @@
     },
     {
       "description": "unpin after transient error within a transaction",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1066,6 +1074,7 @@
     },
     {
       "description": "unpin after transient error within a transaction and commit",
+      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "clientOptions": {
         "heartbeatFrequencyMS": 30000
