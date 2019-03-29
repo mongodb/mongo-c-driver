@@ -1828,6 +1828,8 @@ mongoc_collection_update (mongoc_collection_t *collection,
       ++collection->client->cluster.operation_id);
    bson_destroy (&opts);
 
+   command.flags.has_multi_write = !!(flags & MONGOC_UPDATE_MULTI_UPDATE);
+
    _mongoc_collection_write_command_execute (
       &command, collection, write_concern, NULL, &result);
 

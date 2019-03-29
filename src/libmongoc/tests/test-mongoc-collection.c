@@ -5949,6 +5949,81 @@ test_update_collation (void)
       WIRE_VERSION_COLLATION - 1, true, false);
 }
 
+
+static void
+test_update_multi (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   unsigned i;
+   bson_t *bptr[10];
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_update_multi");
+
+   (void) mongoc_collection_drop (collection, &error);
+
+   for (i = 0; i < 10; i++) {
+      bptr[i] = tmp_bson ("{'_id': %d, 'x': 1234}", i);
+   }
+
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_many (
+         collection, (const bson_t **) bptr, 10, NULL, NULL, &error),
+      error);
+
+   ASSERT_OR_PRINT (mongoc_collection_update (collection,
+                                              MONGOC_UPDATE_MULTI_UPDATE,
+                                              tmp_bson ("{'_id': {'$gte': 5}}"),
+                                              tmp_bson ("{'$inc': {'x': 1}}"),
+                                              NULL,
+                                              &error),
+                    error);
+
+   _test_docs_in_coll_matches (
+      collection, tmp_bson ("{'_id': {'$lt': 5}, 'x': 1234}"), NULL, 5);
+   _test_docs_in_coll_matches (
+      collection, tmp_bson ("{'_id': {'$gte': 5}, 'x': 1235}"), NULL, 5);
+
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_update_upsert (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_update_upsert");
+
+   (void) mongoc_collection_drop (collection, &error);
+
+   ASSERT_OR_PRINT (
+      mongoc_collection_update (collection,
+                                MONGOC_UPDATE_UPSERT,
+                                tmp_bson ("{'_id': 1}"),
+                                tmp_bson ("{'$set': {'x': 1234}}"),
+                                NULL,
+                                &error),
+      error);
+
+   _test_docs_in_coll_matches (
+      collection, tmp_bson ("{'_id': 1, 'x': 1234}"), NULL, 1);
+
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_collection_install (TestSuite *suite)
 {
@@ -6006,6 +6081,8 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       skip_unless_server_has_decimal128);
    TestSuite_AddLive (suite, "/Collection/update", test_update);
+   TestSuite_AddLive (suite, "/Collection/update/multi", test_update_multi);
+   TestSuite_AddLive (suite, "/Collection/update/upsert", test_update_upsert);
    TestSuite_AddFull (suite,
                       "/Collection/update/oversize",
                       test_update_oversize,
