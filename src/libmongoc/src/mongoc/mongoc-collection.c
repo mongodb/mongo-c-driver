@@ -2261,6 +2261,8 @@ mongoc_collection_remove (mongoc_collection_t *collection,
                                       collection->client->cluster.operation_id);
    bson_destroy (&opts);
 
+   command.flags.has_multi_write = !(flags & MONGOC_REMOVE_SINGLE_REMOVE);
+
    _mongoc_collection_write_command_execute (
       &command, collection, write_concern, NULL, &result);
 

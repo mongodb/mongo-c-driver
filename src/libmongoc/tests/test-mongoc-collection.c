@@ -6024,6 +6024,54 @@ test_update_upsert (void)
 }
 
 
+static void
+test_remove_multi (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   unsigned i;
+   bson_t *bptr[10];
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_remove_multi");
+
+   (void) mongoc_collection_drop (collection, &error);
+
+   for (i = 0; i < 10; i++) {
+      bptr[i] = tmp_bson ("{'_id': %d, 'x': 1234}", i);
+   }
+
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_many (
+         collection, (const bson_t **) bptr, 10, NULL, NULL, &error),
+      error);
+
+   ASSERT_OR_PRINT (mongoc_collection_remove (collection,
+                                              MONGOC_REMOVE_NONE,
+                                              tmp_bson ("{'_id': {'$gte': 8}}"),
+                                              NULL,
+                                              &error),
+                    error);
+
+   /* mongoc_collection_delete is an alias of mongoc_collection_remove, although
+    * its flag type differs slightly */
+   ASSERT_OR_PRINT (mongoc_collection_delete (collection,
+                                              MONGOC_DELETE_NONE,
+                                              tmp_bson ("{'_id': {'$lt': 2}}"),
+                                              NULL,
+                                              &error),
+                    error);
+
+   _test_docs_in_coll_matches (collection, tmp_bson ("{'x': 1234}"), NULL, 6);
+
+   ASSERT_OR_PRINT (mongoc_collection_drop (collection, &error), error);
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
 void
 test_collection_install (TestSuite *suite)
 {
@@ -6090,6 +6138,7 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/remove", test_remove);
+   TestSuite_AddLive (suite, "/Collection/remove/multi", test_remove_multi);
    TestSuite_AddFull (suite,
                       "/Collection/remove/oversize",
                       test_remove_oversize,
