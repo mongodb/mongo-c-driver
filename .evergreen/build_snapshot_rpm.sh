@@ -84,7 +84,7 @@ build_dir=$(basename $(pwd))
 sudo mock -r ${config} --bootstrap-chroot --old-chroot --clean
 sudo mock -r ${config} --bootstrap-chroot --old-chroot --init
 mock_root=$(sudo mock -r ${config} --bootstrap-chroot --old-chroot --print-root-path)
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --install rpmdevtools git rpm-build cmake python GitPython python2-sphinx
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --install rpmdevtools git rpm-build cmake python python2-sphinx
 sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
 if [ ! -f VERSION_CURRENT ]; then
   sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(

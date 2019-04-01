@@ -69,7 +69,7 @@ functions:
         python -m virtualenv venv
         cd venv
         . bin/activate
-        ./bin/pip install sphinx GitPython
+        ./bin/pip install sphinx
         cd ..
         set -o xtrace
         export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
@@ -179,12 +179,6 @@ functions:
       working_dir: mongoc
       script: |-
         set -o errexit
-        # Need Git module for calculating release version
-        python -m virtualenv venv
-        cd venv
-        . bin/activate
-        ./bin/pip install GitPython
-        cd ..
         sh .evergreen/abi-compliance-check.sh
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}

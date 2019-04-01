@@ -72,7 +72,7 @@ all_functions = OD([
         python -m virtualenv venv
         cd venv
         . bin/activate
-        ./bin/pip install sphinx GitPython
+        ./bin/pip install sphinx
         cd ..
         
         set -o xtrace
@@ -169,13 +169,6 @@ all_functions = OD([
     )),
     ('abi report', Function(
         shell_mongoc(r'''
-        # Need Git module for calculating release version
-        python -m virtualenv venv
-        cd venv
-        . bin/activate
-        ./bin/pip install GitPython
-        cd ..
-        
         sh .evergreen/abi-compliance-check.sh
         
         export AWS_ACCESS_KEY_ID=${aws_key}
