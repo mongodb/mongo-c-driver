@@ -24,6 +24,7 @@
 #include "mongoc/mongoc-topology-private.h"
 #include "mongoc/mongoc-topology-description-apm-private.h"
 #include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-cmd-private.h"
 #include "mongoc/mongoc-uri-private.h"
 #include "mongoc/mongoc-util-private.h"
 #include "mongoc/mongoc-trace-private.h"
@@ -209,6 +210,15 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    const mongoc_host_list_t *hl;
 
    BSON_ASSERT (uri);
+
+#ifndef MONGOC_ENABLE_CRYPTO
+   if (mongoc_uri_get_option_as_bool (
+          uri, MONGOC_URI_RETRYWRITES, MONGOC_DEFAULT_RETRYWRITES)) {
+      /* retryWrites requires sessions, which require crypto - just warn */
+      MONGOC_WARNING (
+         "retryWrites not supported without an SSL crypto library");
+   }
+#endif
 
    topology = (mongoc_topology_t *) bson_malloc0 (sizeof *topology);
    topology->session_pool = NULL;

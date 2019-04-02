@@ -876,15 +876,6 @@ mongoc_uri_parse_option (mongoc_uri_t *uri,
       } else {
          goto UNSUPPORTED_VALUE;
       }
-
-#ifndef MONGOC_ENABLE_CRYPTO
-      if (!strcmp (lkey, MONGOC_URI_RETRYWRITES) &&
-          mongoc_uri_get_option_as_bool (uri, lkey, true /* not used */)) {
-         /* retryWrites requires sessions, which require crypto - just warn */
-         MONGOC_WARNING (
-            "retryWrites not supported without an SSL crypto library");
-      }
-#endif
    } else if (!strcmp (lkey, MONGOC_URI_READPREFERENCETAGS)) {
       /* Allows providing this key multiple times */
       if (!mongoc_uri_parse_tags (uri, value)) {

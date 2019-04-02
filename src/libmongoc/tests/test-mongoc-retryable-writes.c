@@ -432,26 +432,68 @@ test_remove_unacknowledged (void)
 static void
 test_retry_no_crypto (void *ctx)
 {
+   mongoc_uri_t *uri;
    mongoc_client_t *client;
+   mongoc_client_pool_t *pool;
 
    capture_logs (true);
 
+   /* Test that no warning is logged if retryWrites is disabled. Warning logic
+    * is implemented in mongoc_topology_new, but test all public APIs that use
+    * the common code path. */
    client = mongoc_client_new ("mongodb://localhost/?retryWrites=false");
    BSON_ASSERT (client);
-
-   ASSERT_NO_CAPTURED_LOGS ("retryWrites=false");
-
+   ASSERT_NO_CAPTURED_LOGS ("mongoc_client_new and retryWrites=false");
    mongoc_client_destroy (client);
 
+   uri = mongoc_uri_new ("mongodb://localhost/?retryWrites=false");
+   BSON_ASSERT (uri);
+
+   client = mongoc_client_new_from_uri (uri);
+   BSON_ASSERT (client);
+   ASSERT_NO_CAPTURED_LOGS ("mongoc_client_new_from_uri and retryWrites=false");
+   mongoc_client_destroy (client);
+
+   pool = mongoc_client_pool_new (uri);
+   BSON_ASSERT (pool);
+   ASSERT_NO_CAPTURED_LOGS ("mongoc_client_pool_new and retryWrites=false");
+   mongoc_client_pool_destroy (pool);
+
+   mongoc_uri_destroy (uri);
+
+   /* Test that a warning is logged if retryWrites is enabled. */
    client = mongoc_client_new ("mongodb://localhost/?retryWrites=true");
    BSON_ASSERT (client);
-
    ASSERT_CAPTURED_LOG (
-      "retryWrites=true",
+      "mongoc_client_new and retryWrites=true",
       MONGOC_LOG_LEVEL_WARNING,
       "retryWrites not supported without an SSL crypto library");
-
    mongoc_client_destroy (client);
+
+   clear_captured_logs ();
+
+   uri = mongoc_uri_new ("mongodb://localhost/?retryWrites=true");
+   BSON_ASSERT (uri);
+
+   client = mongoc_client_new_from_uri (uri);
+   BSON_ASSERT (client);
+   ASSERT_CAPTURED_LOG (
+      "mongoc_client_new_from_uri and retryWrites=true",
+      MONGOC_LOG_LEVEL_WARNING,
+      "retryWrites not supported without an SSL crypto library");
+   mongoc_client_destroy (client);
+
+   clear_captured_logs ();
+
+   pool = mongoc_client_pool_new (uri);
+   BSON_ASSERT (pool);
+   ASSERT_CAPTURED_LOG (
+      "mongoc_client_pool_new and retryWrites=true",
+      MONGOC_LOG_LEVEL_WARNING,
+      "retryWrites not supported without an SSL crypto library");
+   mongoc_client_pool_destroy (pool);
+
+   mongoc_uri_destroy (uri);
 }
 
 
