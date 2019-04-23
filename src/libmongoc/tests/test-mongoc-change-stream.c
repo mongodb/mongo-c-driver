@@ -297,6 +297,7 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
    bson_t opts = BSON_INITIALIZER;
    bson_t doc0_rt, doc1_rt, doc2_rt;
+   const bson_t *resume_token;
 
    client = test_framework_client_new ();
    ASSERT (client);
@@ -338,14 +339,16 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    /* The resume token should be updated to the most recently iterated doc */
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
    ASSERT (next_doc);
-   ASSERT (!bson_empty (&stream->doc_resume_token));
-   bson_copy_to (&stream->doc_resume_token, &doc0_rt);
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (!bson_empty0 (resume_token));
+   bson_copy_to (resume_token, &doc0_rt);
 
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
    ASSERT (next_doc);
-   ASSERT (!bson_empty (&stream->doc_resume_token));
-   ASSERT (bson_compare (&stream->doc_resume_token, &doc0_rt) != 0);
-   bson_copy_to (&stream->doc_resume_token, &doc1_rt);
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (!bson_empty0 (resume_token));
+   ASSERT (bson_compare (resume_token, &doc0_rt) != 0);
+   bson_copy_to (resume_token, &doc1_rt);
 
    _mongoc_client_kill_cursor (client,
                                stream->cursor->server_id,
@@ -362,10 +365,11 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
 
    ASSERT (next_doc);
-   ASSERT (!bson_empty (&stream->doc_resume_token));
-   ASSERT (bson_compare (&stream->doc_resume_token, &doc0_rt) != 0);
-   ASSERT (bson_compare (&stream->doc_resume_token, &doc1_rt) != 0);
-   bson_copy_to (&stream->doc_resume_token, &doc2_rt);
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (!bson_empty0 (resume_token));
+   ASSERT (bson_compare (resume_token, &doc0_rt) != 0);
+   ASSERT (bson_compare (resume_token, &doc1_rt) != 0);
+   bson_copy_to (resume_token, &doc2_rt);
 
    /* There are no docs left. But the next call should still keep the same
     * resume token */
@@ -373,8 +377,9 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL),
                     error);
    ASSERT (!next_doc);
-   ASSERT (!bson_empty (&stream->doc_resume_token));
-   ASSERT (bson_compare (&stream->doc_resume_token, &doc2_rt) == 0);
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (!bson_empty0 (resume_token));
+   ASSERT (bson_compare (resume_token, &doc2_rt) == 0);
 
    bson_destroy (&doc0_rt);
    bson_destroy (&doc1_rt);
@@ -1277,9 +1282,9 @@ typedef struct {
    bool has_initiated;
    bool has_resumed;
    bson_t agg_reply;
-} resume_at_optime_ctx_t;
+} resume_ctx_t;
 
-#define RESUME_AT_OPTIME_INITIALIZER \
+#define RESUME_INITIALIZER           \
    {                                 \
       false, false, BSON_INITIALIZER \
    }
@@ -1287,10 +1292,9 @@ typedef struct {
 static void
 _resume_at_optime_started (const mongoc_apm_command_started_t *event)
 {
-   resume_at_optime_ctx_t *ctx;
+   resume_ctx_t *ctx;
 
-   ctx =
-      (resume_at_optime_ctx_t *) mongoc_apm_command_started_get_context (event);
+   ctx = (resume_ctx_t *) mongoc_apm_command_started_get_context (event);
    if (0 != strcmp (mongoc_apm_command_started_get_command_name (event),
                     "aggregate")) {
       return;
@@ -1298,16 +1302,26 @@ _resume_at_optime_started (const mongoc_apm_command_started_t *event)
 
    if (!ctx->has_initiated) {
       ctx->has_initiated = true;
-   } else {
+      return;
+   }
+
+   ctx->has_resumed = true;
+
+   /* postBatchResumeToken (MongoDB 4.0.7+) supersedes operationTime. Since
+    * test_change_stream_resume_at_optime runs for wire version 7+, decide
+    * whether to skip operationTime assertion based on the command reply. */
+   if (!bson_has_field (&ctx->agg_reply, "cursor.postBatchResumeToken")) {
       bson_value_t replied_optime, sent_optime;
-      ctx->has_resumed = true;
+      match_ctx_t match_ctx = {{0}};
+
       /* it should re-use the same optime on resume. */
       bson_lookup_value (&ctx->agg_reply, "operationTime", &replied_optime);
       bson_lookup_value (mongoc_apm_command_started_get_command (event),
                          "pipeline.0.$changeStream.startAtOperationTime",
                          &sent_optime);
       BSON_ASSERT (replied_optime.value_type == BSON_TYPE_TIMESTAMP);
-      BSON_ASSERT (match_bson_value (&sent_optime, &replied_optime, NULL));
+      BSON_ASSERT (
+         match_bson_value (&sent_optime, &replied_optime, &match_ctx));
       bson_value_destroy (&sent_optime);
       bson_value_destroy (&replied_optime);
    }
@@ -1316,10 +1330,9 @@ _resume_at_optime_started (const mongoc_apm_command_started_t *event)
 static void
 _resume_at_optime_succeeded (const mongoc_apm_command_succeeded_t *event)
 {
-   resume_at_optime_ctx_t *ctx;
+   resume_ctx_t *ctx;
 
-   ctx = (resume_at_optime_ctx_t *) mongoc_apm_command_succeeded_get_context (
-      event);
+   ctx = (resume_ctx_t *) mongoc_apm_command_succeeded_get_context (event);
    if (!strcmp (mongoc_apm_command_succeeded_get_command_name (event),
                 "aggregate")) {
       bson_destroy (&ctx->agg_reply);
@@ -1328,7 +1341,7 @@ _resume_at_optime_succeeded (const mongoc_apm_command_succeeded_t *event)
    }
 }
 
-/* A simple test that passing 'startAtOperationTime' does not error. */
+/* Test that "operationTime" in aggregate reply is used on resume */
 static void
 test_change_stream_resume_at_optime (void *test_ctx)
 {
@@ -1338,11 +1351,103 @@ test_change_stream_resume_at_optime (void *test_ctx)
    const bson_t *doc;
    bson_error_t error;
    mongoc_apm_callbacks_t *callbacks;
-   resume_at_optime_ctx_t ctx = RESUME_AT_OPTIME_INITIALIZER;
+   resume_ctx_t ctx = RESUME_INITIALIZER;
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, _resume_at_optime_started);
    mongoc_apm_set_command_succeeded_cb (callbacks, _resume_at_optime_succeeded);
+   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
+   coll = mongoc_client_get_collection (client, "db", "coll");
+   stream = mongoc_collection_watch (coll, tmp_bson ("{'pipeline': []}"), NULL);
+
+   /* set the cursor id to a wrong cursor id so the next getMore fails and
+    * causes a resume. */
+   stream->cursor->cursor_id = 12345;
+
+   (void) mongoc_change_stream_next (stream, &doc);
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL),
+                    error);
+   BSON_ASSERT (ctx.has_initiated);
+   BSON_ASSERT (ctx.has_resumed);
+
+   bson_destroy (&ctx.agg_reply);
+   mongoc_change_stream_destroy (stream);
+   mongoc_collection_destroy (coll);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_client_destroy (client);
+}
+
+static void
+_resume_with_post_batch_resume_token_started (
+   const mongoc_apm_command_started_t *event)
+{
+   resume_ctx_t *ctx;
+
+   ctx = (resume_ctx_t *) mongoc_apm_command_started_get_context (event);
+   if (0 != strcmp (mongoc_apm_command_started_get_command_name (event),
+                    "aggregate")) {
+      return;
+   }
+
+   if (!ctx->has_initiated) {
+      ctx->has_initiated = true;
+      return;
+   }
+
+   ctx->has_resumed = true;
+
+   /* postBatchResumeToken is available since MongoDB 4.0.7, but the test runs
+    * for wire version 7+. Decide whether to skip postBatchResumeToken assertion
+    * based on the command reply. */
+   if (bson_has_field (&ctx->agg_reply, "cursor.postBatchResumeToken")) {
+      bson_value_t replied_pbrt, sent_pbrt;
+      match_ctx_t match_ctx = {{0}};
+
+      /* it should re-use the same postBatchResumeToken on resume. */
+      bson_lookup_value (
+         &ctx->agg_reply, "cursor.postBatchResumeToken", &replied_pbrt);
+      bson_lookup_value (mongoc_apm_command_started_get_command (event),
+                         "pipeline.0.$changeStream.resumeAfter",
+                         &sent_pbrt);
+      BSON_ASSERT (replied_pbrt.value_type == BSON_TYPE_DOCUMENT);
+      BSON_ASSERT (match_bson_value (&sent_pbrt, &replied_pbrt, &match_ctx));
+      bson_value_destroy (&sent_pbrt);
+      bson_value_destroy (&replied_pbrt);
+   }
+}
+
+static void
+_resume_with_post_batch_resume_token_succeeded (
+   const mongoc_apm_command_succeeded_t *event)
+{
+   resume_ctx_t *ctx;
+
+   ctx = (resume_ctx_t *) mongoc_apm_command_succeeded_get_context (event);
+   if (!strcmp (mongoc_apm_command_succeeded_get_command_name (event),
+                "aggregate")) {
+      bson_destroy (&ctx->agg_reply);
+      bson_copy_to (mongoc_apm_command_succeeded_get_reply (event),
+                    &ctx->agg_reply);
+   }
+}
+
+/* Test that "postBatchResumeToken" in aggregate reply is used on resume */
+static void
+test_change_stream_resume_with_post_batch_resume_token (void *test_ctx)
+{
+   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   const bson_t *doc;
+   bson_error_t error;
+   mongoc_apm_callbacks_t *callbacks;
+   resume_ctx_t ctx = RESUME_INITIALIZER;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (
+      callbacks, _resume_with_post_batch_resume_token_started);
+   mongoc_apm_set_command_succeeded_cb (
+      callbacks, _resume_with_post_batch_resume_token_succeeded);
    mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
    coll = mongoc_client_get_collection (client, "db", "coll");
    stream = mongoc_collection_watch (coll, tmp_bson ("{'pipeline': []}"), NULL);
@@ -1597,7 +1702,8 @@ static void
 _test_resume (const char *opts,
               const char *expected_change_stream_opts,
               const char *first_doc,
-              const char *expected_resume_change_stream_opts)
+              const char *expected_resume_change_stream_opts,
+              const char *cursor_pbr)
 {
    mock_server_t *server;
    request_t *request;
@@ -1621,10 +1727,11 @@ _test_resume (const char *opts,
       tmp_bson ("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { %s "
                 "'fullDocument': 'default' } } ], 'cursor': {  } }",
                 expected_change_stream_opts));
-   msg = bson_strdup_printf ("{'cursor': {'id': 123, 'ns': "
-                             "'db.coll','firstBatch': [%s] }, 'operationTime': "
+   msg = bson_strdup_printf ("{'cursor': {'id': 123, 'ns': 'db.coll',"
+                             "'firstBatch': [%s]%s }, 'operationTime': "
                              "{ '$timestamp': {'t': 1, 'i': 2} }, 'ok': 1 }",
-                             first_doc);
+                             first_doc,
+                             cursor_pbr);
    mock_server_replies_simple (request, msg);
    bson_free (msg);
    stream = future_get_mongoc_change_stream_ptr (future);
@@ -1668,7 +1775,7 @@ _test_resume (const char *opts,
 }
 
 
-/* test resume behavior before and after the first document is receieved. */
+/* test resume behavior before and after the first document is received. */
 static void
 test_resume_cases (void)
 {
@@ -1688,68 +1795,169 @@ test_resume_cases (void)
     * - whether 'resumeAfter' is specified
     * - whether 'startAfterAfter' is specified */
 
-   /* neither 'startAtOperationTime' nor 'resumeAfter' nor 'startAfter'
-    * specified. */
-   /* - if no doc recv'ed use the operationTime returned by aggregate. */
+   /* no options specified. */
+   /* - if no doc recv'ed, use the operationTime returned by aggregate. */
    _test_resume ("{}",
                  NO_OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  "",
-                 AGG_OP "," NO_OPT_RA "," NO_OPT_SA ",");
-   /* - if doc recv'ed use the doc's resume token. */
+                 AGG_OP "," NO_OPT_RA "," NO_OPT_SA ",",
+                 "");
+   /* - if doc recv'ed and iterated, use the doc's resume token. */
    _test_resume ("{}",
                  NO_OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  DOC,
-                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",");
+                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "");
 
-   /* 'startAtOperationTime' specified
-    * - if no doc recv'ed use the startAtOperationTime option. */
+   /* only 'startAtOperationTime' specified. */
+   /* - if no doc recv'ed, use the startAtOperationTime option. */
    _test_resume ("{" OPT_OP "}",
                  OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  "",
-                 OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",");
-   /* - if doc recv'ed use the doc's resume token. */
+                 OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
+                 "");
+   /* - if doc recv'ed and iterated, use the doc's resume token. */
    _test_resume ("{" OPT_OP "}",
                  OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  DOC,
-                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",");
+                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "");
 
-   /* 'resumeAfter' specified. */
-   /* - if no doc recv'ed use the resumeAfter option. */
+   /* only 'resumeAfter' specified. */
+   /* - if no doc recv'ed, use the resumeAfter option. */
    _test_resume ("{" OPT_RA "}",
                  OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  "",
-                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",");
-   /* - if doc recv'ed use the doc's resume token. */
+                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "");
+   /* - if doc recv'ed and iterated, use the doc's resume token. */
    _test_resume ("{" OPT_RA "}",
                  OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  DOC,
-                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",");
+                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "");
 
-   /* 'startAfter' specified. */
-   /* - if no doc recv'ed use the startAfter option for the original aggregate
+   /* only 'startAfter' specified. */
+   /* - if no doc recv'ed, use the startAfter option for the original aggregate
     *   but resumeAfter with the same value when resuming. */
    _test_resume ("{" OPT_SA "}",
                  OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "",
-                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",");
-   /* - if doc recv'ed use the doc's resume token. */
+                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "");
+   /* - if doc recv'ed and iterated, use the doc's resume token. */
    _test_resume ("{" OPT_SA "}",
                  OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  DOC,
-                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",");
+                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "");
 
    /* 'resumeAfter', 'startAfter', and 'startAtOperationTime' are all specified.
     * All should be passed (although the server currently returns an error). */
-   /* - if no doc recv'ed use the resumeAfter option. */
+   /* - if no doc recv'ed, use the resumeAfter option. */
    _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
                  OPT_RA "," OPT_SA "," OPT_OP ",",
                  "",
-                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",");
-   /* - if doc recv'ed use the doc's resume token. */
+                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "");
+   /* - if doc recv'ed and iterated, use the doc's resume token. */
    _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
                  OPT_RA "," OPT_SA "," OPT_OP ",",
                  DOC,
-                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",");
+                 DOC_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "");
+}
+
+
+/* test resume behavior before and after the first document is received when a
+   postBatchResumeToken is available. */
+static void
+test_resume_cases_with_post_batch_resume_token (void)
+{
+#define CURSOR_PBR "'postBatchResumeToken': {'resume': 'pbr'}"
+#define PBR_RA "'resumeAfter': {'resume': 'pbr'}"
+
+   /* test features:
+    * - whether the change stream returns a document before resuming.
+    * - whether 'postBatchResumeToken' is available
+    * - whether 'startAtOperationTime' is specified
+    * - whether 'resumeAfter' is specified
+    * - whether 'startAfterAfter' is specified */
+
+   /* postBatchResumeToken always takes priority over specified options or
+    * operation time. It will also take priority over the resume token of the
+    * last document in the batch (if _test_resume() iterates to that point). */
+
+   /* no options specified. */
+   /* - if no doc recv'ed, use postBatchResumeToken. */
+   _test_resume ("{}",
+                 NO_OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
+                 "",
+                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "," CURSOR_PBR);
+   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   _test_resume ("{}",
+                 NO_OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
+                 DOC,
+                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "," CURSOR_PBR);
+
+   /* only 'startAtOperationTime' specified. */
+   /* - if no doc recv'ed, use postBatchResumeToken. */
+   _test_resume ("{" OPT_OP "}",
+                 OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
+                 "",
+                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "," CURSOR_PBR);
+   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   _test_resume ("{" OPT_OP "}",
+                 OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
+                 DOC,
+                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "," CURSOR_PBR);
+
+   /* only 'resumeAfter' specified. */
+   /* - if no doc recv'ed, use postBatchResumeToken. */
+   _test_resume ("{" OPT_RA "}",
+                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "",
+                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "," CURSOR_PBR);
+   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   _test_resume ("{" OPT_RA "}",
+                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 DOC,
+                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "," CURSOR_PBR);
+
+   /* only 'startAfter' specified. */
+   /* - if no doc recv'ed, use postBatchResumeToken. */
+   _test_resume ("{" OPT_SA "}",
+                 OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
+                 "",
+                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "," CURSOR_PBR);
+   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   _test_resume ("{" OPT_SA "}",
+                 OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
+                 DOC,
+                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "," CURSOR_PBR);
+
+   /* 'resumeAfter', 'startAfter', and 'startAtOperationTime' are all specified.
+    * All should be passed (although the server currently returns an error). */
+   /* - if no doc recv'ed, use postBatchResumeToken. */
+   _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
+                 OPT_RA "," OPT_SA "," OPT_OP ",",
+                 "",
+                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "," CURSOR_PBR);
+   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
+                 OPT_RA "," OPT_SA "," OPT_OP ",",
+                 DOC,
+                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 "," CURSOR_PBR);
 }
 
 
@@ -1874,6 +2082,14 @@ test_change_stream_install (TestSuite *suite)
                       test_framework_skip_if_no_crypto,
                       _skip_if_no_start_at_optime);
    TestSuite_AddFull (suite,
+                      "/change_stream/resume_with_post_batch_resume_token",
+                      test_change_stream_resume_with_post_batch_resume_token,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_rs_version_7,
+                      test_framework_skip_if_no_crypto,
+                      _skip_if_no_start_at_optime);
+   TestSuite_AddFull (suite,
                       "/change_stream/database",
                       test_change_stream_database_watch,
                       NULL,
@@ -1887,6 +2103,10 @@ test_change_stream_install (TestSuite *suite)
                       _skip_if_no_client_watch);
    TestSuite_AddMockServerTest (
       suite, "/change_stream/resume_with_first_doc", test_resume_cases);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/change_stream/resume_with_first_doc/post_batch_resume_token",
+      test_resume_cases_with_post_batch_resume_token);
    TestSuite_AddFull (suite,
                       "/change_stream/error_null_doc",
                       test_error_null_doc,

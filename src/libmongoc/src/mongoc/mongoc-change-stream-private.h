@@ -36,7 +36,7 @@ struct _mongoc_change_stream_t {
    mongoc_change_stream_opts_t opts;
    mongoc_timestamp_t operation_time;
    bson_t pipeline_to_append;
-   bson_t doc_resume_token; /* cached from document _id field, or empty */
+   bson_t resume_token;
    bson_t *full_document;
 
    bson_error_t err;

@@ -30,6 +30,9 @@ typedef struct _mongoc_change_stream_t mongoc_change_stream_t;
 MONGOC_EXPORT (void)
 mongoc_change_stream_destroy (mongoc_change_stream_t *);
 
+MONGOC_EXPORT (const bson_t *)
+mongoc_change_stream_get_resume_token (mongoc_change_stream_t *);
+
 MONGOC_EXPORT (bool)
 mongoc_change_stream_next (mongoc_change_stream_t *, const bson_t **);
 

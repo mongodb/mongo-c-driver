@@ -66,6 +66,19 @@ _is_resumable_error (const bson_t *reply)
       return true;
    }
 }
+
+
+static void
+_set_resume_token (mongoc_change_stream_t *stream, const bson_t *resume_token)
+{
+   BSON_ASSERT (stream);
+   BSON_ASSERT (resume_token);
+
+   bson_destroy (&stream->resume_token);
+   bson_copy_to (resume_token, &stream->resume_token);
+}
+
+
 /* construct the aggregate command in cmd. looks like one of the following:
  * for a collection change stream:
  *   { aggregate: collname, pipeline: [], cursor: { batchSize: x } }
@@ -103,9 +116,9 @@ _make_command (mongoc_change_stream_t *stream,
 
    if (stream->resumed) {
       /* Change stream spec: Resume Process */
-      if (!bson_empty (&stream->doc_resume_token)) {
+      if (!bson_empty (&stream->resume_token)) {
          BSON_APPEND_DOCUMENT (
-            &change_stream_doc, "resumeAfter", &stream->doc_resume_token);
+            &change_stream_doc, "resumeAfter", &stream->resume_token);
       } else if (!bson_empty (&stream->opts.startAfter)) {
          BSON_APPEND_DOCUMENT (
             &change_stream_doc, "resumeAfter", &stream->opts.startAfter);
@@ -126,11 +139,17 @@ _make_command (mongoc_change_stream_t *stream,
       if (!bson_empty (&stream->opts.resumeAfter)) {
          BSON_APPEND_DOCUMENT (
             &change_stream_doc, "resumeAfter", &stream->opts.resumeAfter);
+
+         /* Update the cached resume token */
+         _set_resume_token (stream, &stream->opts.resumeAfter);
       }
 
       if (!bson_empty (&stream->opts.startAfter)) {
          BSON_APPEND_DOCUMENT (
             &change_stream_doc, "startAfter", &stream->opts.startAfter);
+
+         /* Update the cached resume token (take precedence over resumeAfter) */
+         _set_resume_token (stream, &stream->opts.startAfter);
       }
 
       if (!_mongoc_timestamp_empty (&stream->operation_time)) {
@@ -233,8 +252,9 @@ _make_cursor (mongoc_change_stream_t *stream)
       /* Create an implicit session. This session lsid must be the same for the
        * agg command and the subsequent getMores. Thus, this implicit session is
        * passed as if it were an explicit session to
-       * collection_read_command_with_opts and cursor_new_from_reply, but it is
-       * still implicit and its lifetime is owned by this change_stream_t. */
+       * mongoc_client_read_command_with_opts and
+       * _mongoc_cursor_change_stream_new, but it is still implicit and its
+       * lifetime is owned by this change_stream_t. */
       mongoc_session_opt_t *session_opts;
       session_opts = mongoc_session_opts_new ();
       mongoc_session_opts_set_causal_consistency (session_opts, false);
@@ -295,17 +315,37 @@ _make_cursor (mongoc_change_stream_t *stream)
                          stream->batch_size);
    }
 
+   /* steals reply. */
+   stream->cursor =
+      _mongoc_cursor_change_stream_new (stream->client, &reply, &getmore_opts);
+
+   if (mongoc_cursor_error (stream->cursor, NULL)) {
+      goto cleanup;
+   }
+
+   /* Change stream spec: "When aggregate or getMore returns: If an empty batch
+    * was returned and a postBatchResumeToken was included, cache it." */
+   if (_mongoc_cursor_change_stream_end_of_batch (stream->cursor) &&
+       _mongoc_cursor_change_stream_has_post_batch_resume_token (
+          stream->cursor)) {
+      _set_resume_token (
+         stream,
+         _mongoc_cursor_change_stream_get_post_batch_resume_token (
+            stream->cursor));
+   }
+
    /* Change stream spec: startAtOperationTime */
    if (bson_empty (&stream->opts.resumeAfter) &&
        bson_empty (&stream->opts.startAfter) &&
        _mongoc_timestamp_empty (&stream->operation_time) &&
-       max_wire_version >= 7 && bson_empty (&stream->doc_resume_token) &&
-       bson_iter_init_find (&iter, &reply, "operationTime")) {
+       max_wire_version >= 7 && bson_empty (&stream->resume_token) &&
+       bson_iter_init_find (
+          &iter,
+          _mongoc_cursor_change_stream_get_reply (stream->cursor),
+          "operationTime") &&
+       BSON_ITER_HOLDS_TIMESTAMP (&iter)) {
       _mongoc_timestamp_set_from_bson (&stream->operation_time, &iter);
    }
-   /* steals reply. */
-   stream->cursor = mongoc_cursor_new_from_command_reply_with_opts (
-      stream->client, &reply, &getmore_opts);
 
 cleanup:
    bson_destroy (&command);
@@ -334,7 +374,7 @@ _change_stream_init (mongoc_change_stream_t *stream,
    stream->max_await_time_ms = -1;
    stream->batch_size = -1;
    bson_init (&stream->pipeline_to_append);
-   bson_init (&stream->doc_resume_token);
+   bson_init (&stream->resume_token);
    bson_init (&stream->err_doc);
 
    if (!_mongoc_change_stream_opts_parse (
@@ -438,6 +478,18 @@ _mongoc_change_stream_new_from_client (mongoc_client_t *client,
    return stream;
 }
 
+
+const bson_t *
+mongoc_change_stream_get_resume_token (mongoc_change_stream_t *stream)
+{
+   if (!bson_empty (&stream->resume_token)) {
+      return &stream->resume_token;
+   }
+
+   return NULL;
+}
+
+
 bool
 mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
 {
@@ -507,14 +559,25 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
    /* copy the resume token. */
    bson_iter_document (&iter, &len, &data);
    BSON_ASSERT (bson_init_static (&doc_resume_token, data, len));
-   bson_destroy (&stream->doc_resume_token);
-   bson_copy_to (&doc_resume_token, &stream->doc_resume_token);
+   _set_resume_token (stream, &doc_resume_token);
 
    /* clear out the operation time, since we no longer need it to resume. */
    _mongoc_timestamp_clear (&stream->operation_time);
    ret = true;
 
 end:
+   /* Change stream spec: Updating the Cached Resume Token */
+   if (stream->cursor && !mongoc_cursor_error (stream->cursor, NULL) &&
+       _mongoc_cursor_change_stream_end_of_batch (stream->cursor) &&
+       _mongoc_cursor_change_stream_has_post_batch_resume_token (
+          stream->cursor)) {
+      _set_resume_token (
+         stream,
+         _mongoc_cursor_change_stream_get_post_batch_resume_token (
+            stream->cursor));
+   }
+
+
    /* Driver Sessions Spec: "When an implicit session is associated with a
     * cursor for use with getMore operations, the session MUST be returned to
     * the pool immediately following a getMore operation that indicates that the
@@ -560,7 +623,7 @@ mongoc_change_stream_destroy (mongoc_change_stream_t *stream)
    }
 
    bson_destroy (&stream->pipeline_to_append);
-   bson_destroy (&stream->doc_resume_token);
+   bson_destroy (&stream->resume_token);
    bson_destroy (stream->full_document);
    bson_destroy (&stream->err_doc);
    _mongoc_change_stream_opts_cleanup (&stream->opts);

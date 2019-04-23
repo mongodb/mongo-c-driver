@@ -300,6 +300,25 @@ _mongoc_cursor_array_new (mongoc_client_t *client,
                           const bson_t *opts,
                           const char *field_name);
 
+mongoc_cursor_t *
+_mongoc_cursor_change_stream_new (mongoc_client_t *client,
+                                  bson_t *reply,
+                                  const bson_t *opts);
+
+bool
+_mongoc_cursor_change_stream_end_of_batch (mongoc_cursor_t *cursor);
+
+const bson_t *
+_mongoc_cursor_change_stream_get_post_batch_resume_token (
+   mongoc_cursor_t *cursor);
+
+bool
+_mongoc_cursor_change_stream_has_post_batch_resume_token (
+   mongoc_cursor_t *cursor);
+
+const bson_t *
+_mongoc_cursor_change_stream_get_reply (mongoc_cursor_t *cursor);
+
 BSON_END_DECLS
 
 

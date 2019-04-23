@@ -26,15 +26,13 @@ Example
 Starting and Resuming
 `````````````````````
 
-All ``watch`` functions accept two options to indicate where a change stream should start returning changes from: ``startAtOperationTime`` and ``resumeAfter``.
+All ``watch`` functions accept several options to indicate where a change stream should start returning changes from: ``resumeAfter``, ``startAfter``, and ``startAtOperationTime``.
 
-All changes returned by :symbol:`mongoc_change_stream_next` include a resume token in the ``_id`` field. This resume token is automatically cached in libmongoc.
-In the event of an error, libmongoc attempts to recreate the change stream starting where it left off by passing the resume token.
-libmongoc only attempts to resume once, but client applications can cache this resume token and use it for their own resume logic by passing it as the option ``resumeAfter``.
+All changes returned by :symbol:`mongoc_change_stream_next` include a resume token in the ``_id`` field. MongoDB 4.2 also includes an additional resume token in each "aggregate" and "getMore" command response, which points to the end of that response's batch. The current token is automatically cached by libmongoc. In the event of an error, libmongoc attempts to recreate the change stream starting where it left off by passing the cached resume token. libmongoc only attempts to resume once, but client applications can access the cached resume token with :symbol:`mongoc_change_stream_get_resume_token` and use it for their own resume logic by passing it as either the ``resumeAfter`` or ``startAfter`` option.
 
 Additionally, change streams can start returning changes at an operation time by using the ``startAtOperationTime`` field. This can be the timestamp returned in the ``operationTime`` field of a command reply.
 
-``startAtOperationTime`` and ``resumeAfter`` are mutually exclusive options. Setting them both will result in a server error.
+``resumeAfter``, ``startAfter``, and ``startAtOperationTime`` are mutually exclusive options. Setting more than one will result in a server error.
 
 The following example implements custom resuming logic, persisting the resume token in a file.
 
@@ -62,5 +60,6 @@ The following example shows using ``startAtOperationTime`` to synchronize a chan
     mongoc_database_watch
     mongoc_collection_watch
     mongoc_change_stream_next
+    mongoc_change_stream_get_resume_token
     mongoc_change_stream_error_document
     mongoc_change_stream_destroy

@@ -181,6 +181,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-cursor-find-cmd.c
    mongoc-cursor-find-opquery.c
    mongoc-cursor-cmd.c
+   mongoc-cursor-change-stream.c
    mongoc-cursor-cmd-deprecated.c
    mongoc-database.c
    mongoc-error.c
