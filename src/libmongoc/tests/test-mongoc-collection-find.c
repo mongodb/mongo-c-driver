@@ -575,41 +575,6 @@ test_maxtimems (void)
 
 
 static void
-test_index_spec_modifiers (void)
-{
-   /* don't include $max, it needs a slightly different argument to succeed */
-   const char *modifiers[] = {
-      "hint",
-      "min",
-   };
-
-   const char *mod;
-   size_t i;
-   char *query;
-   char *find_command;
-   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
-
-   test_data.expected_result = test_data.docs = "[{'_id': 1}]";
-
-   for (i = 0; i < sizeof (modifiers) / sizeof (const char *); i++) {
-      mod = modifiers[i];
-      query = bson_strdup_printf ("{'$query': {}, '$%s': {'_id': 1}}", mod);
-
-      /* find command has same modifier, without the $-prefix */
-      find_command = bson_strdup_printf (
-         "{'find': 'collection', 'filter': {}, '%s': {'_id': 1}}", mod);
-
-      test_data.expected_op_query = test_data.query_input = query;
-      test_data.expected_find_command = find_command;
-      _test_collection_find (&test_data);
-
-      bson_free (query);
-      bson_free (find_command);
-   }
-}
-
-
-static void
 test_comment (void)
 {
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
@@ -624,14 +589,47 @@ test_comment (void)
 
 
 static void
+test_hint (void)
+{
+   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
+   test_data.docs = "[{'_id': 1}]";
+   test_data.query_input = "{'$query': {}, '$hint': { '_id': 1 }}";
+   test_data.expected_op_query = test_data.query_input;
+   test_data.expected_find_command =
+      "{'find': 'collection', 'filter': {}, 'hint': { '_id': 1 }}";
+   test_data.expected_result = "[{'_id': 1}]";
+   _test_collection_find (&test_data);
+}
+
+
+static void
 test_max (void)
 {
    test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
    test_data.docs = "[{'_id': 1}]";
-   test_data.query_input = "{'$query': {}, '$max': {'_id': 100}}";
+   /* MongoDB 4.2 requires that max/min also use hint */
+   test_data.query_input =
+      "{'$query': {}, '$max': {'_id': 100}, '$hint': { '_id': 1 }}";
    test_data.expected_op_query = test_data.query_input;
    test_data.expected_find_command =
-      "{'find': 'collection', 'filter': {}, 'max': {'_id': 100}}";
+      "{'find': 'collection', 'filter': {}, "
+      "'max': {'_id': 100}, 'hint': { '_id': 1 }}";
+   test_data.expected_result = "[{'_id': 1}]";
+   _test_collection_find (&test_data);
+}
+
+
+static void
+test_min (void)
+{
+   test_collection_find_t test_data = TEST_COLLECTION_FIND_INIT;
+   test_data.docs = "[{'_id': 1}]";
+   /* MongoDB 4.2 requires that max/min also use hint */
+   test_data.query_input =
+      "{'$query': {}, '$min': {'_id': 1}, '$hint': { '_id': 1 }}";
+   test_data.expected_op_query = test_data.query_input;
+   test_data.expected_find_command = "{'find': 'collection', 'filter': {}, "
+                                     "'min': {'_id': 1}, 'hint': { '_id': 1 }}";
    test_data.expected_result = "[{'_id': 1}]";
    _test_collection_find (&test_data);
 }
@@ -1221,11 +1219,10 @@ test_collection_find_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_more_than_6);
    TestSuite_AddLive (
       suite, "/Collection/find/modifiers/maxtimems", test_maxtimems);
-   TestSuite_AddLive (suite,
-                      "/Collection/find/modifiers/index_spec",
-                      test_index_spec_modifiers);
    TestSuite_AddLive (suite, "/Collection/find/comment", test_comment);
+   TestSuite_AddLive (suite, "/Collection/find/hint", test_hint);
    TestSuite_AddLive (suite, "/Collection/find/max", test_max);
+   TestSuite_AddLive (suite, "/Collection/find/min", test_min);
    TestSuite_AddLive (suite, "/Collection/find/modifiers/bool", test_snapshot);
    TestSuite_AddLive (suite, "/Collection/find/showdiskloc", test_diskloc);
    TestSuite_AddLive (suite, "/Collection/find/returnkey", test_returnkey);
