@@ -9,10 +9,10 @@ Synopsis
 .. code-block:: c
 
    void
-   bson_copy_to_excluding_noninit_va (const bson_t *src,
-                                      bson_t *dst,
-				      const char *first_exclude,
-				      va_list args);
+   bson_copy_to_excluding_noinit_va (const bson_t *src,
+                                     bson_t *dst,
+                                     const char *first_exclude,
+                                     va_list args);
 
 Parameters
 ----------
