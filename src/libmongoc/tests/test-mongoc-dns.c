@@ -3,10 +3,10 @@
 #include "mongoc/mongoc.h"
 #include "mongoc/mongoc-host-list-private.h"
 #include "mongoc/mongoc-thread-private.h"
+#include "mongoc/mongoc-uri-private.h"
 
 #include "json-test.h"
 #include "test-libmongoc.h"
-
 
 static void
 _assert_options_match (const bson_t *test, mongoc_client_t *client)
@@ -19,7 +19,7 @@ _assert_options_match (const bson_t *test, mongoc_client_t *client)
    const bson_t *opts_or_creds;
    bson_iter_t test_opts_iter;
    bson_iter_t uri_opts_iter;
-   const char *opt_name;
+   const char *opt_name, *opt_name_canon;
    const bson_value_t *test_value, *uri_value;
 
    if (!bson_iter_init_find (&iter, test, "options")) {
@@ -36,9 +36,11 @@ _assert_options_match (const bson_t *test, mongoc_client_t *client)
 
    while (bson_iter_next (&test_opts_iter)) {
       opt_name = bson_iter_key (&test_opts_iter);
+      opt_name_canon = mongoc_uri_canonicalize_option (opt_name);
       opts_or_creds = !bson_strcasecmp (opt_name, "authSource") ? creds_from_uri
                                                                 : opts_from_uri;
-      if (!bson_iter_init_find_case (&uri_opts_iter, opts_or_creds, opt_name)) {
+      if (!bson_iter_init_find_case (
+             &uri_opts_iter, opts_or_creds, opt_name_canon)) {
          fprintf (stderr,
                   "URI options incorrectly set from TXT record: "
                   "no option named \"%s\"\n"
@@ -168,7 +170,6 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    bool expect_ssl;
    bool expect_error;
    mongoc_uri_t *uri;
-   const bson_t *uri_opts;
    mongoc_apm_callbacks_t *callbacks;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
@@ -210,18 +211,15 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       /* before we set SSL on so that we can connect to the test replica set,
        * assert that the URI has SSL on by default, and SSL off if "ssl=false"
        * is in the URI string */
-      uri_opts =
-         mongoc_uri_get_options (_mongoc_client_pool_get_topology (pool)->uri);
-      BSON_ASSERT (_mongoc_lookup_bool (uri_opts, "ssl", !expect_ssl) ==
-                   expect_ssl);
+      BSON_ASSERT (
+         mongoc_uri_get_tls (_mongoc_client_pool_get_topology (pool)->uri) ==
+         expect_ssl);
       test_framework_set_pool_ssl_opts (pool);
       mongoc_client_pool_set_apm_callbacks (pool, callbacks, &ctx);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = mongoc_client_new_from_uri (uri);
-      uri_opts = mongoc_uri_get_options (client->uri);
-      BSON_ASSERT (_mongoc_lookup_bool (uri_opts, "ssl", !expect_ssl) ==
-                   expect_ssl);
+      BSON_ASSERT (mongoc_uri_get_tls (client->uri) == expect_ssl);
       test_framework_set_ssl_opts (client);
       mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
    }

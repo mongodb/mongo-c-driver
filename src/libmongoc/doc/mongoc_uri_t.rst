@@ -93,7 +93,7 @@ Constant                                   Key                               Des
 MONGOC_URI_RETRYWRITES                     retrywrites                       If "true" and the server is a MongoDB 3.6+ replica set or sharded cluster, the driver safely retries a write that failed due to a network error or replica set failover. Only inserts, updates of single documents, or deletes of single
                                                                              documents are retried.
 MONGOC_URI_APPNAME                         appname                           The client application name. This value is used by MongoDB when it logs connection information and profile information, such as slow queries.
-MONGOC_URI_SSL                             ssl                               {true|false}, indicating if SSL must be used. (See also :symbol:`mongoc_client_set_ssl_opts` and :symbol:`mongoc_client_pool_set_ssl_opts`.)
+MONGOC_URI_TLS                             tls                               {true|false}, indicating if TLS must be used. (See also :symbol:`mongoc_client_set_ssl_opts` and :symbol:`mongoc_client_pool_set_ssl_opts`.)
 MONGOC_URI_COMPRESSORS                     compressors                       Comma separated list of compressors, if any, to use to compress the wire protocol messages. Snappy are Zlib are optional build time dependencies, and enable the "snappy" and "zlib" values respectively. Defaults to empty (no compressors).
 MONGOC_URI_CONNECTTIMEOUTMS                connecttimeoutms                  This setting applies to new server connections. It is also used as the socket timeout for server discovery and monitoring operations. The default is 10,000 ms (10 seconds).
 MONGOC_URI_SOCKETTIMEOUTMS                 sockettimeoutms                   The time in milliseconds to attempt to send or receive on a socket before the attempt times out. The default is 300,000 (5 minutes).
@@ -124,20 +124,38 @@ MONGOC_URI_CANONICALIZEHOSTNAME            canonicalizehostname              Use
 MONGOC_URI_GSSAPISERVICENAME               gssapiservicename                 Use alternative service name. The default is ``mongodb``.
 ========================================== ================================= =========================================================================================================================================================================================================================
 
-SSL Options
+TLS Options
 -----------
 
-========================================== ================================= =========================================================================================================================================================================================================================
+========================================== ================================= ====================================================================================================================================================================================================================================================================================================================
 Constant                                   Key                               Description
-========================================== ================================= =========================================================================================================================================================================================================================
-MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE     sslclientcertificatekeyfile       Path to PEM formatted Private Key, with its Public Certificate concatenated at the end.
-MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD sslclientcertificatekeypassword   The password, if any, to use to unlock encrypted Private Key.
-MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE     sslcertificateauthorityfile       One, or a bundle of, Certificate Authorities whom should be considered to be trusted.
-MONGOC_URI_SSLALLOWINVALIDCERTIFICATES     sslallowinvalidcertificates       Accept and ignore certificate verification errors (e.g. untrusted issuer, expired, etc etc)
-MONGOC_URI_SSLALLOWINVALIDHOSTNAMES        sslallowinvalidhostnames          Ignore hostname verification of the certificate (e.g. Man In The Middle, using valid certificate, but issued for another hostname)
-========================================== ================================= =========================================================================================================================================================================================================================
+========================================== ================================= ====================================================================================================================================================================================================================================================================================================================
+MONGOC_URI_TLSCERTIFICATEKEYFILE           tlscertificatekeyfile             Path to PEM formatted Private Key, with its Public Certificate concatenated at the end.
+MONGOC_URI_TLSCERTIFICATEKEYPASSWORD       tlscertificatekeypassword         The password, if any, to use to unlock encrypted Private Key.
+MONGOC_URI_TLSCERTIFICATEAUTHORITYFILE     tlscertificateauthorityfile       One, or a bundle of, Certificate Authorities whom should be considered to be trusted.
+MONGOC_URI_TLSALLOWINVALIDCERTIFICATES     tlsallowinvalidcertificates       Accept and ignore certificate verification errors (e.g. untrusted issuer, expired, etc etc)
+MONGOC_URI_TLSALLOWINVALIDHOSTNAMES        tlsallowinvalidhostnames          Ignore hostname verification of the certificate (e.g. Man In The Middle, using valid certificate, but issued for another hostname)
+MONGOC_URI_TLSINSECURE                     tlsinsecure                       {true|false}, indicating if insecure TLS options should be used. Currently this implies MONGOC_URI_TLSALLOWINVALIDCERTIFICATES and MONGOC_URI_TLSALLOWINVALIDHOSTNAMES.
+========================================== ================================= ====================================================================================================================================================================================================================================================================================================================
 
 See :symbol:`mongoc_ssl_opt_t` for details about these options and about building libmongoc with SSL support.
+
+Deprecated SSL Options
+----------------------
+
+The following options have been deprecated and may be removed from future releases of libmongoc.
+
+========================================== ================================= ======================================= =================================
+Constant                                   Key                               Deprecated For                          Key
+========================================== ================================= ======================================= =================================
+MONGOC_URI_SSL                             ssl                               MONGOC_URI_TLS                          tls
+MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE     sslclientcertificatekeyfile       MONGOC_URI_TLSCERTIFICATEKEYFILE        tlscertificatekeyfile
+MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD sslclientcertificatekeypassword   MONGOC_URI_TLSCERTIFICATEKEYPASSWORD    tlscertificatekeypassword
+MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE     sslcertificateauthorityfile       MONGOC_URI_TLSCERTIFICATEAUTHORITYFILE  tlscertificateauthorityfile
+MONGOC_URI_SSLALLOWINVALIDCERTIFICATES     sslallowinvalidcertificates       MONGOC_URI_TLSALLOWINVALIDCERTIFICATES  tlsallowinvalidcertificates
+MONGOC_URI_SSLALLOWINVALIDHOSTNAMES        sslallowinvalidhostnames          MONGOC_URI_TLSALLOWINVALIDHOSTNAMES     tlsallowinvalidhostnames
+========================================== ================================= ======================================= =================================
+
 
 .. _sdam_uri_options:
 
@@ -286,6 +304,7 @@ MONGOC_URI_SLAVEOK                         slaveok                           Whe
     mongoc_uri_get_service
     mongoc_uri_get_ssl
     mongoc_uri_get_string
+    mongoc_uri_get_tls
     mongoc_uri_get_username
     mongoc_uri_get_write_concern
     mongoc_uri_new

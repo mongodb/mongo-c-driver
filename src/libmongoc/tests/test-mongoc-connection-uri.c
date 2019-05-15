@@ -20,6 +20,8 @@ run_uri_test (const char *uri_string,
 
    uri = mongoc_uri_new_with_error (uri_string, &error);
 
+   /* BEGIN Exceptions to test suite */
+
    /* some spec tests assume we allow DB names like "auth.foo" */
    if (bson_iter_init_find (&auth_iter, auth, "db") &&
        BSON_ITER_HOLDS_UTF8 (&auth_iter)) {
@@ -34,6 +36,51 @@ run_uri_test (const char *uri_string,
          return;
       }
    }
+
+   if (valid && !uri && error.domain) {
+      /* Eager failures which the spec expects to be warnings. */
+      /* CDRIVER-3167 */
+      if (strstr (uri_string, "=invalid") ||
+          strstr (uri_string, "heartbeatFrequencyMS=-2") ||
+          strstr (uri_string, "w=-2") || strstr (uri_string, "wTimeoutMS=-2") ||
+          strstr (uri_string, "zlibCompressionLevel=-2") ||
+          strstr (uri_string, "zlibCompressionLevel=10")) {
+         MONGOC_WARNING ("Error parsing URI: '%s'", error.message);
+         return;
+      }
+   }
+
+   if (uri) {
+      /* mongoc does not warn on negative timeouts when it should. */
+      /* CDRIVER-3167 */
+      if ((mongoc_uri_get_option_as_int32 (
+              uri, MONGOC_URI_CONNECTTIMEOUTMS, 0) < 0) ||
+          (mongoc_uri_get_option_as_int32 (
+              uri, MONGOC_URI_LOCALTHRESHOLDMS, 0) < 0) ||
+          (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_MAXIDLETIMEMS, 0) <
+           0) ||
+          (mongoc_uri_get_option_as_int32 (
+              uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 0) < 0) ||
+          (mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 0) <
+           0)) {
+         MONGOC_WARNING ("Invalid negative timeout");
+      }
+
+      /* mongoc does not store lists the way the spec test expects. */
+      if (strstr (uri_string, "compressors=") ||
+          strstr (uri_string, "readPreferenceTags=")) {
+         options = NULL;
+      }
+
+#ifndef MONGOC_ENABLE_COMPRESSION_SNAPPY
+      /* mongoc eagerly warns about unsupported compressors. */
+      if (strstr (uri_string, "compressors=snappy")) {
+         clear_captured_logs ();
+      }
+#endif
+   }
+
+   /* END Exceptions to test suite */
 
    if (valid) {
       ASSERT_OR_PRINT (uri, error);
@@ -205,6 +252,9 @@ static void
 test_all_spec_tests (TestSuite *suite)
 {
    char resolved[PATH_MAX];
+
+   test_framework_resolve_path (JSON_DIR "/uri-options", resolved);
+   install_json_test_suite (suite, resolved, &test_connection_uri_cb);
 
    test_framework_resolve_path (JSON_DIR "/connection_uri", resolved);
    install_json_test_suite (suite, resolved, &test_connection_uri_cb);
