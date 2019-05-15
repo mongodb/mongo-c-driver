@@ -168,7 +168,7 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new ("mongodb://localhost/a?" MONGOC_URI_SLAVEOK
-                         "=true&" MONGOC_URI_SSL "=false&" MONGOC_URI_JOURNAL
+                         "=true&" MONGOC_URI_TLS "=false&" MONGOC_URI_JOURNAL
                          "=true");
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
@@ -177,7 +177,7 @@ test_mongoc_uri_new (void)
    ASSERT (bson_iter_find_case (&iter, "" MONGOC_URI_SLAVEOK ""));
    ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
    ASSERT (bson_iter_bool (&iter));
-   ASSERT (bson_iter_find_case (&iter, MONGOC_URI_SSL));
+   ASSERT (bson_iter_find_case (&iter, MONGOC_URI_TLS));
    ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
    ASSERT (!bson_iter_bool (&iter));
    ASSERT (bson_iter_find_case (&iter, MONGOC_URI_JOURNAL));
@@ -202,13 +202,13 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new (
-      "mongodb://%2Ftmp%2Fmongodb-27017.sock/?" MONGOC_URI_SSL "=false");
+      "mongodb://%2Ftmp%2Fmongodb-27017.sock/?" MONGOC_URI_TLS "=false");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host, "/tmp/mongodb-27017.sock");
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new (
-      "mongodb://%2Ftmp%2Fmongodb-27017.sock,localhost:27017/?" MONGOC_URI_SSL
+      "mongodb://%2Ftmp%2Fmongodb-27017.sock,localhost:27017/?" MONGOC_URI_TLS
       "=false");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host, "/tmp/mongodb-27017.sock");
@@ -226,7 +226,7 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new (
-      "mongodb://localhost:27017,%2Ftmp%2Fmongodb-27017.sock/?" MONGOC_URI_SSL
+      "mongodb://localhost:27017,%2Ftmp%2Fmongodb-27017.sock/?" MONGOC_URI_TLS
       "=false");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_hosts (uri)->host_and_port, "localhost:27017");
@@ -608,8 +608,8 @@ test_mongoc_uri_functions (void)
    ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_JOURNAL, false));
    ASSERT (!mongoc_uri_get_option_as_bool (
       uri, MONGOC_URI_CANONICALIZEHOSTNAME, true));
-   /* ssl isn't set, return out fallback */
-   ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SSL, true));
+   /* tls isn't set, return out fallback */
+   ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLS, true));
 
    client = mongoc_client_new_from_uri (uri);
    mongoc_uri_destroy (uri);
@@ -618,8 +618,8 @@ test_mongoc_uri_functions (void)
       mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_JOURNAL, false));
    ASSERT (!mongoc_uri_get_option_as_bool (
       client->uri, MONGOC_URI_CANONICALIZEHOSTNAME, true));
-   /* ssl isn't set, return out fallback */
-   ASSERT (mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_SSL, true));
+   /* tls isn't set, return out fallback */
+   ASSERT (mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_TLS, true));
    mongoc_client_destroy (client);
 
    uri = mongoc_uri_new ("mongodb://localhost/");
@@ -1577,19 +1577,43 @@ test_mongoc_uri_long_hostname (void)
    bson_free (host);
 }
 
-static void
-test_mongoc_uri_ssl (void)
-{
-   mongoc_uri_t *uri;
+#define ASSERT_LOG_DUPE_TLS(tls)                                               \
+   if (!strcasecmp (tls, "tls")) {                                             \
+      ASSERT_CAPTURED_LOG ("tls option overwrite",                             \
+                           MONGOC_LOG_LEVEL_WARNING,                           \
+                           "Overwriting previously provided value for 'tls'"); \
+   } else {                                                                    \
+      ASSERT_CAPTURED_LOG ("ssl option overwrite",                             \
+                           MONGOC_LOG_LEVEL_WARNING,                           \
+                           "Overwriting previously provided value for 'ssl'"); \
+   }
 
-   uri = mongoc_uri_new (
-      "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,ST=New "
-      "York,C=US@ldaptest.10gen.cc/"
-      "?ssl=true&" MONGOC_URI_AUTHMECHANISM
-      "=MONGODB-X509&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE "=tests/"
-      "x509gen/legacy-x509.pem&" MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE
-      "=tests/x509gen/"
-      "legacy-ca.crt&" MONGOC_URI_SSLALLOWINVALIDHOSTNAMES "=true");
+static void
+test_mongoc_uri_tls_ssl (const char *tls,
+                         const char *tlsCertificateKeyFile,
+                         const char *tlsCertificateKeyPassword,
+                         const char *tlsCAFile,
+                         const char *tlsAllowInvalidCertificates,
+                         const char *tlsAllowInvalidHostnames)
+{
+   const char *tlsalt;
+   char url_buffer[2048];
+   mongoc_uri_t *uri;
+   bson_error_t err;
+
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://CN=client,OU=kerneluser,O=10Gen,L=New York City,"
+             "ST=New York,C=US@ldaptest.10gen.cc/?"
+             "%s=true&authMechanism=MONGODB-X509&"
+             "%s=tests/x509gen/legacy-x509.pem&"
+             "%s=tests/x509gen/legacy-ca.crt&"
+             "%s=true",
+             tls,
+             tlsCertificateKeyFile,
+             tlsCAFile,
+             tlsAllowInvalidHostnames);
+   uri = mongoc_uri_new (url_buffer);
 
    ASSERT_CMPSTR (
       mongoc_uri_get_username (uri),
@@ -1600,155 +1624,343 @@ test_mongoc_uri_ssl (void)
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509");
 
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
-                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "none"),
+                     uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, "none"),
                   "tests/x509gen/legacy-x509.pem");
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
-                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "none"),
+                     uri, MONGOC_URI_TLSCERTIFICATEKEYPASSWORD, "none"),
                   "none");
-   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
-                     uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "none"),
-                  "tests/x509gen/legacy-ca.crt");
+   ASSERT_CMPSTR (
+      mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, "none"),
+      "tests/x509gen/legacy-ca.crt");
    ASSERT (!mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+      uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, false));
    ASSERT (mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
+      uri, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES, false));
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new ("mongodb://localhost/"
-                         "?ssl=true&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE
-                         "=key.pem&"
-                         "" MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE "=ca.pem");
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=true&%s=key.pem&%s=ca.pem",
+             tls,
+             tlsCertificateKeyFile,
+             tlsCAFile);
+   uri = mongoc_uri_new (url_buffer);
+
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
                      uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "none"),
+                  "key.pem");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, "none"),
                   "key.pem");
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
                      uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "none"),
                   "none");
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_TLSCERTIFICATEKEYPASSWORD, "none"),
+                  "none");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
                      uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "none"),
                   "ca.pem");
+   ASSERT_CMPSTR (
+      mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, "none"),
+      "ca.pem");
    ASSERT (!mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+      uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, false));
    ASSERT (!mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
+      uri, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES, false));
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new ("mongodb://localhost/?ssl=true");
+   snprintf (
+      url_buffer, sizeof (url_buffer), "mongodb://localhost/?%s=true", tls);
+   uri = mongoc_uri_new (url_buffer);
+
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
-                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "none"),
+                     uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, "none"),
                   "none");
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
-                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "none"),
+                     uri, MONGOC_URI_TLSCERTIFICATEKEYPASSWORD, "none"),
                   "none");
-   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
-                     uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "none"),
-                  "none");
+   ASSERT_CMPSTR (
+      mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, "none"),
+      "none");
    ASSERT (!mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+      uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, false));
    ASSERT (!mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
+      uri, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES, false));
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/"
-      "?ssl=true&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD "=pa$$word!&"
-      "" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE "=encrypted.pem");
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=true&%s=pa$$word!&%s=encrypted.pem",
+             tls,
+             tlsCertificateKeyPassword,
+             tlsCertificateKeyFile);
+   uri = mongoc_uri_new (url_buffer);
+
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
                      uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "none"),
+                  "encrypted.pem");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, "none"),
                   "encrypted.pem");
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
                      uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "none"),
                   "pa$$word!");
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
-                     uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "none"),
-                  "none");
-   ASSERT (!mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
-   ASSERT (!mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
-   mongoc_uri_destroy (uri);
-
-
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?ssl=true&" MONGOC_URI_SSLALLOWINVALIDCERTIFICATES
-      "=true");
-   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
-                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "none"),
-                  "none");
-   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
-                     uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "none"),
-                  "none");
+                     uri, MONGOC_URI_TLSCERTIFICATEKEYPASSWORD, "none"),
+                  "pa$$word!");
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
                      uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "none"),
                   "none");
+   ASSERT_CMPSTR (
+      mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, "none"),
+      "none");
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, false));
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES, false));
+   mongoc_uri_destroy (uri);
+
+
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=true&%s=true",
+             tls,
+             tlsAllowInvalidCertificates);
+   uri = mongoc_uri_new (url_buffer);
+
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, "none"),
+                  "none");
+   ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (
+                     uri, MONGOC_URI_TLSCERTIFICATEKEYPASSWORD, "none"),
+                  "none");
+   ASSERT_CMPSTR (
+      mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, "none"),
+      "none");
    ASSERT (mongoc_uri_get_option_as_bool (
       uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+   ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, false));
    ASSERT (!mongoc_uri_get_option_as_bool (
       uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES, false));
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE
-      "=foo.pem");
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=foo.pem",
+             tlsCertificateKeyFile);
+   uri = mongoc_uri_new (url_buffer);
    ASSERT (mongoc_uri_get_ssl (uri));
+   ASSERT (mongoc_uri_get_tls (uri));
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?" MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE
-      "=foo.pem");
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=foo.pem",
+             tlsCAFile);
+   uri = mongoc_uri_new (url_buffer);
    ASSERT (mongoc_uri_get_ssl (uri));
+   ASSERT (mongoc_uri_get_tls (uri));
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?" MONGOC_URI_SSLALLOWINVALIDCERTIFICATES "=true");
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=true",
+             tlsAllowInvalidCertificates);
+   uri = mongoc_uri_new (url_buffer);
    ASSERT (mongoc_uri_get_ssl (uri));
+   ASSERT (mongoc_uri_get_tls (uri));
    ASSERT (mongoc_uri_get_option_as_bool (
       uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+   ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, false));
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?" MONGOC_URI_SSLALLOWINVALIDHOSTNAMES "=false");
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=true",
+             tlsAllowInvalidHostnames);
+   uri = mongoc_uri_new (url_buffer);
    ASSERT (mongoc_uri_get_ssl (uri));
+   ASSERT (mongoc_uri_get_tls (uri));
+   ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, false));
+   ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES, false));
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?ssl=false&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE
-      "=foo.pem");
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=false&%s=foo.pem",
+             tls,
+             tlsCertificateKeyFile);
+   uri = mongoc_uri_new (url_buffer);
    ASSERT (!mongoc_uri_get_ssl (uri));
+   ASSERT (!mongoc_uri_get_tls (uri));
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?ssl=false&" MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE
-      "=foo.pem");
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=false&%s=foo.pem",
+             tls,
+             tlsCertificateKeyFile);
+   uri = mongoc_uri_new (url_buffer);
    ASSERT (!mongoc_uri_get_ssl (uri));
+   ASSERT (!mongoc_uri_get_tls (uri));
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?ssl=false&" MONGOC_URI_SSLALLOWINVALIDCERTIFICATES
-      "=true");
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=false&%s=true",
+             tls,
+             tlsAllowInvalidCertificates);
+   uri = mongoc_uri_new (url_buffer);
    ASSERT (!mongoc_uri_get_ssl (uri));
+   ASSERT (!mongoc_uri_get_tls (uri));
    ASSERT (mongoc_uri_get_option_as_bool (
       uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+   ASSERT (mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, false));
    mongoc_uri_destroy (uri);
 
 
-   uri = mongoc_uri_new (
-      "mongodb://localhost/?ssl=false&" MONGOC_URI_SSLALLOWINVALIDHOSTNAMES
-      "=false");
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=false&%s=false",
+             tls,
+             tlsAllowInvalidHostnames);
+   uri = mongoc_uri_new (url_buffer);
    ASSERT (!mongoc_uri_get_ssl (uri));
+   ASSERT (!mongoc_uri_get_tls (uri));
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_SSLALLOWINVALIDHOSTNAMES, true));
+   ASSERT (!mongoc_uri_get_option_as_bool (
+      uri, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES, true));
+   mongoc_uri_destroy (uri);
+
+   if (!strcmp (tls, "ssl")) {
+      tlsalt = "tls";
+   } else {
+      tlsalt = "ssl";
+   }
+
+   capture_logs (true);
+
+   /* Mixing options okay so long as they match */
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=true&%s=true",
+             tls,
+             tlsalt);
+   uri = mongoc_uri_new (url_buffer);
+   ASSERT (mongoc_uri_get_option_as_bool (uri, tls, false));
+   ASSERT_LOG_DUPE_TLS (tlsalt);
+   mongoc_uri_destroy (uri);
+
+   /* Same option with different values okay, latter overrides */
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=true&%s=false",
+             tls,
+             tls);
+   uri = mongoc_uri_new (url_buffer);
+   ASSERT (!mongoc_uri_get_option_as_bool (uri, tls, true));
+   ASSERT_LOG_DUPE_TLS (tls);
+   mongoc_uri_destroy (uri);
+
+   /* Mixing options not okay if values differ */
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb://localhost/?%s=true&%s=false",
+             tls,
+             tlsalt);
+   uri = mongoc_uri_new_with_error (url_buffer, &err);
+   snprintf (
+      url_buffer,
+      sizeof (url_buffer),
+      "Unable to set %s on a URI which already has %s set to a different value",
+      tlsalt,
+      tls);
+   ASSERT_ERROR_CONTAINS (
+      err, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, url_buffer);
+   ASSERT_LOG_DUPE_TLS (tls);
+   mongoc_uri_destroy (uri);
+
+   capture_logs (false);
+
+   /* No conflict appears with implicit tls=true via SRV */
+   snprintf (url_buffer,
+             sizeof (url_buffer),
+             "mongodb+srv://a.b.c/?%s=foo.pem",
+             tlsCAFile);
+   uri = mongoc_uri_new (url_buffer);
+   ASSERT (mongoc_uri_get_option_as_bool (uri, tls, false));
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_mongoc_uri_tls ()
+{
+   bson_error_t err = {0};
+   mongoc_uri_t *uri;
+
+   test_mongoc_uri_tls_ssl (MONGOC_URI_TLS,
+                            MONGOC_URI_TLSCERTIFICATEKEYFILE,
+                            MONGOC_URI_TLSCERTIFICATEKEYPASSWORD,
+                            MONGOC_URI_TLSCAFILE,
+                            MONGOC_URI_TLSALLOWINVALIDCERTIFICATES,
+                            MONGOC_URI_TLSALLOWINVALIDHOSTNAMES);
+
+   /* tls-only option */
+   uri = mongoc_uri_new ("mongodb://localhost/?tlsInsecure=true");
+   ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLSINSECURE, false));
+   mongoc_uri_destroy (uri);
+
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/?tlsInsecure=true&tlsAllowInvalidHostnames=false",
+      &err));
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "tlsinsecure may not be specified with "
+                          "tlsallowinvalidcertificates or "
+                          "tlsallowinvalidhostnames");
+
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/"
+      "?tlsInsecure=true&tlsAllowInvalidCertificates=true",
+      &err));
+   ASSERT_ERROR_CONTAINS (err,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "tlsinsecure may not be specified with "
+                          "tlsallowinvalidcertificates or "
+                          "tlsallowinvalidhostnames");
+}
+
+static void
+test_mongoc_uri_ssl ()
+{
+   test_mongoc_uri_tls_ssl (MONGOC_URI_SSL,
+                            MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE,
+                            MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD,
+                            MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE,
+                            MONGOC_URI_SSLALLOWINVALIDCERTIFICATES,
+                            MONGOC_URI_SSLALLOWINVALIDHOSTNAMES);
+}
 
 static void
 test_mongoc_uri_local_threshold_ms (void)
@@ -1830,14 +2042,14 @@ test_mongoc_uri_srv (void)
    ASSERT_CMPSTR (mongoc_uri_get_service (uri), "c.d.com");
    BSON_ASSERT (mongoc_uri_get_hosts (uri) == NULL);
 
-   /* ssl is set to true when we use SRV */
-   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'ssl': true}");
+   /* tls is set to true when we use SRV */
+   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'tls': true}");
 
-   /* but we can override ssl */
+   /* but we can override tls */
    mongoc_uri_destroy (uri);
-   uri = mongoc_uri_new ("mongodb+srv://c.d.com/?ssl=false");
+   uri = mongoc_uri_new ("mongodb+srv://c.d.com/?tls=false");
    BSON_ASSERT (uri);
-   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'ssl': false}");
+   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'tls': false}");
 
    INVALID (uri, "com");
    INVALID (uri, "foo.com");
@@ -1891,18 +2103,18 @@ test_mongoc_uri_dns_options (void)
    BSON_ASSERT (uri);
 
    BSON_ASSERT (!mongoc_uri_parse_options (
-      uri, "ssl=false", true /* from dsn */, &error));
+      uri, "tls=false", true /* from dsn */, &error));
 
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "prohibited in TXT record");
 
-   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'ssl': true}");
+   ASSERT_MATCH (mongoc_uri_get_options (uri), "{'tls': true}");
 
    /* key we want to set, value, value type, whether it's option/credential */
-   PROHIBITED ("sslAllowInvalidHostnames", true, bool, options);
-   PROHIBITED ("sslallowinvalidcertificates", true, bool, options);
+   PROHIBITED ("tlsAllowInvalidHostnames", true, bool, options);
+   PROHIBITED ("tlsallowinvalidcertificates", true, bool, options);
    PROHIBITED ("gssapiServiceName", malicious, utf8, credentials);
 
    /* the two options allowed in TXT records, case-insensitive */
@@ -2162,36 +2374,34 @@ test_mongoc_uri_duplicates (void)
    BSON_ASSERT (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 0) == 2);
 
-   RECREATE_URI (MONGOC_URI_SSL "=false&" MONGOC_URI_SSL "=true");
-   ASSERT_LOG_DUPE (MONGOC_URI_SSL);
-   BSON_ASSERT (mongoc_uri_get_ssl (uri));
+   RECREATE_URI (MONGOC_URI_TLS "=false&" MONGOC_URI_TLS "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_TLS);
+   BSON_ASSERT (mongoc_uri_get_tls (uri));
 
-   RECREATE_URI (MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE
-                 "=a&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE "=b");
-   ASSERT_LOG_DUPE (MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE);
-   str = mongoc_uri_get_option_as_utf8 (
-      uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE, "");
+   RECREATE_URI (MONGOC_URI_TLSCERTIFICATEKEYFILE
+                 "=a&" MONGOC_URI_TLSCERTIFICATEKEYFILE "=b");
+   ASSERT_LOG_DUPE (MONGOC_URI_TLSCERTIFICATEKEYFILE);
+   str =
+      mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, "");
    BSON_ASSERT (strcmp (str, "b") == 0);
 
-   RECREATE_URI (MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD
-                 "=a&" MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD "=b");
-   ASSERT_LOG_DUPE (MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD);
+   RECREATE_URI (MONGOC_URI_TLSCERTIFICATEKEYPASSWORD
+                 "=a&" MONGOC_URI_TLSCERTIFICATEKEYPASSWORD "=b");
+   ASSERT_LOG_DUPE (MONGOC_URI_TLSCERTIFICATEKEYPASSWORD);
    str = mongoc_uri_get_option_as_utf8 (
-      uri, MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD, "");
+      uri, MONGOC_URI_TLSCERTIFICATEKEYPASSWORD, "");
    BSON_ASSERT (strcmp (str, "b") == 0);
 
-   RECREATE_URI (MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE
-                 "=a&" MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE "=b");
-   ASSERT_LOG_DUPE (MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE);
-   str = mongoc_uri_get_option_as_utf8 (
-      uri, MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE, "");
+   RECREATE_URI (MONGOC_URI_TLSCAFILE "=a&" MONGOC_URI_TLSCAFILE "=b");
+   ASSERT_LOG_DUPE (MONGOC_URI_TLSCAFILE);
+   str = mongoc_uri_get_option_as_utf8 (uri, MONGOC_URI_TLSCAFILE, "");
    BSON_ASSERT (strcmp (str, "b") == 0);
 
-   RECREATE_URI (MONGOC_URI_SSLALLOWINVALIDCERTIFICATES
-                 "=false&" MONGOC_URI_SSLALLOWINVALIDCERTIFICATES "=true");
-   ASSERT_LOG_DUPE (MONGOC_URI_SSLALLOWINVALIDCERTIFICATES);
+   RECREATE_URI (MONGOC_URI_TLSALLOWINVALIDCERTIFICATES
+                 "=false&" MONGOC_URI_TLSALLOWINVALIDCERTIFICATES "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_TLSALLOWINVALIDCERTIFICATES);
    BSON_ASSERT (mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES, false));
+      uri, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES, false));
 
    RECREATE_URI (MONGOC_URI_W "=1&" MONGOC_URI_W "=0");
    ASSERT_LOG_DUPE (MONGOC_URI_W);
@@ -2251,6 +2461,7 @@ test_uri_install (TestSuite *suite)
                   test_mongoc_uri_authmechanismproperties);
    TestSuite_Add (suite, "/Uri/functions", test_mongoc_uri_functions);
    TestSuite_Add (suite, "/Uri/ssl", test_mongoc_uri_ssl);
+   TestSuite_Add (suite, "/Uri/tls", test_mongoc_uri_tls);
    TestSuite_Add (
       suite, "/Uri/compound_setters", test_mongoc_uri_compound_setters);
    TestSuite_Add (suite, "/Uri/long_hostname", test_mongoc_uri_long_hostname);

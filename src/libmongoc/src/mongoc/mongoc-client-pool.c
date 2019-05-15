@@ -93,7 +93,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    BSON_ASSERT (uri);
 
 #ifndef MONGOC_ENABLE_SSL
-   if (mongoc_uri_get_ssl (uri)) {
+   if (mongoc_uri_get_tls (uri)) {
       MONGOC_ERROR ("Can't create SSL client pool,"
                     " SSL not enabled in this build.");
       return NULL;
@@ -139,7 +139,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    }
 
 #ifdef MONGOC_ENABLE_SSL
-   if (mongoc_uri_get_ssl (pool->uri)) {
+   if (mongoc_uri_get_tls (pool->uri)) {
       mongoc_ssl_opt_t ssl_opt = {0};
 
       _mongoc_ssl_opts_from_uri (&ssl_opt, pool->uri);

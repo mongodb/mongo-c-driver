@@ -9,7 +9,17 @@ Synopsis
 .. code-block:: c
 
   bool
-  mongoc_uri_get_ssl (const mongoc_uri_t *uri);
+  mongoc_uri_get_ssl (const mongoc_uri_t *uri)
+     BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_tls);
+
+Deprecated
+----------
+
+.. warning::
+
+  This function is deprecated and should not be used in new code.
+
+Please use :doc:`mongoc_uri_get_tls() <mongoc_uri_get_tls>` instead.
 
 Parameters
 ----------
@@ -19,10 +29,10 @@ Parameters
 Description
 -----------
 
-Fetches a boolean indicating if SSL was specified for use in the URI.
+Fetches a boolean indicating if TLS was specified for use in the URI.
 
 Returns
 -------
 
-Returns a boolean, true indicating that SSL should be used.
+Returns a boolean, true indicating that TLS should be used.
 
