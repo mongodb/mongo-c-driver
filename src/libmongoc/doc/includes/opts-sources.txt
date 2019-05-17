@@ -5,7 +5,6 @@ Read Preferences   Read Concern   Write Concern  Collation
 ================== ============== ============== =========
 ``read_prefs``     ``opts``       ``opts``       ``opts``
 Transaction        Transaction    Transaction
-|opts-source|
 ================== ============== ============== =========
 
 In a transaction, read concern and write concern are prohibited in ``opts`` and the read preference must be primary or NULL.
