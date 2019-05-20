@@ -271,7 +271,7 @@ Building on Windows with MinGW-W64 and MSYS2
 
 Install MSYS2 from `msys2.github.io <http://msys2.github.io>`_. Choose the x86_64 version, not i686.
 
-Open ``c:\msys64\ming64_shell.bat`` (not the msys2_shell). Install dependencies:
+Open the MingGW shell with ``c:\msys64\ming64.exe`` (not the msys2_shell). Install dependencies:
 
 .. code-block:: none
 
@@ -284,5 +284,7 @@ Download and untar the latest tarball, enter its directory, and build with CMake
 
 .. code-block:: none
 
-  CC=/mingw64/bin/gcc.exe /mingw64/bin/cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="C:/mongo-c-driver" ..
+  mkdir cmake-build
+  cd cmake-build
+  CC=/mingw64/bin/gcc.exe /mingw64/bin/cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="C:/mongo-c-driver" -DCMAKE_C_FLAGS="-D__USE_MINGW_ANSI_STDIO=1" ..
   make
