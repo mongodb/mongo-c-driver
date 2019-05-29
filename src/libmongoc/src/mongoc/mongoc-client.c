@@ -719,7 +719,7 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
    BSON_ASSERT (host);
 
 #ifndef MONGOC_ENABLE_SSL
-   if (mongoc_uri_get_tls (uri)) {
+   if (mongoc_uri_get_ssl (uri)) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_NO_ACCEPTABLE_PEER,
@@ -1001,7 +1001,7 @@ _mongoc_client_new_from_uri (mongoc_topology_t *topology)
    BSON_ASSERT (topology);
 
 #ifndef MONGOC_ENABLE_SSL
-   if (mongoc_uri_get_tls (topology->uri)) {
+   if (mongoc_uri_get_ssl (topology->uri)) {
       MONGOC_ERROR ("Can't create SSL client, SSL not enabled in this build.");
       return NULL;
    }
@@ -1037,7 +1037,7 @@ _mongoc_client_new_from_uri (mongoc_topology_t *topology)
 
 #ifdef MONGOC_ENABLE_SSL
    client->use_ssl = false;
-   if (mongoc_uri_get_tls (client->uri)) {
+   if (mongoc_uri_get_ssl (client->uri)) {
       mongoc_ssl_opt_t ssl_opt = {0};
 
       _mongoc_ssl_opts_from_uri (&ssl_opt, client->uri);

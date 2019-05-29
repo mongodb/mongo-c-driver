@@ -43,9 +43,6 @@ mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri);
 bool
 _mongoc_uri_requires_auth_negotiation (const mongoc_uri_t *uri);
 
-const char *
-mongoc_uri_canonicalize_option (const char *key);
-
 BSON_END_DECLS
 
 
