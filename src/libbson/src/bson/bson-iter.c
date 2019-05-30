@@ -2335,8 +2335,8 @@ bson_iter_overwrite_double (bson_iter_t *iter, /* IN */
  *--------------------------------------------------------------------------
  */
 void
-bson_iter_overwrite_decimal128 (bson_iter_t *iter,        /* IN */
-                                bson_decimal128_t *value) /* IN */
+bson_iter_overwrite_decimal128 (bson_iter_t *iter,              /* IN */
+                                const bson_decimal128_t *value) /* IN */
 {
    BSON_ASSERT (iter);
 

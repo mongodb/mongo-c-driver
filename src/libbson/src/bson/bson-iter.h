@@ -511,7 +511,7 @@ bson_iter_overwrite_double (bson_iter_t *iter, double value);
 
 
 BSON_EXPORT (void)
-bson_iter_overwrite_decimal128 (bson_iter_t *iter, bson_decimal128_t *value);
+bson_iter_overwrite_decimal128 (bson_iter_t *iter, const bson_decimal128_t *value);
 
 
 BSON_EXPORT (void)
