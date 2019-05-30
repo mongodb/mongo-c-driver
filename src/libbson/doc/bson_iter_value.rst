@@ -21,6 +21,8 @@ Description
 
 Fetches the value for the currently observed type as a boxed type. This allows passing around the value without knowing the type at runtime.
 
+If the :symbol:`bson_iter_t` is further modified, the :symbol:`bson_value_t` is invalidated.
+
 Returns
 -------
 
