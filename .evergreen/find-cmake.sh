@@ -22,14 +22,15 @@ find_cmake ()
   else
      # Some images have no cmake yet, BUILD-4922.
      echo "-- MAKE CMAKE --"
+     CMAKE_INSTALL_DIR=$(readlink -f cmake-install)
      curl --retry 5 https://cmake.org/files/v3.11/cmake-3.11.0.tar.gz -sS --max-time 120 --fail --output cmake.tar.gz
      tar xzf cmake.tar.gz
      cd cmake-3.11.0
-     ./bootstrap --prefix="${INSTALL_DIR}"
+     ./bootstrap --prefix="${CMAKE_INSTALL_DIR}"
      make -j8
      make install
      cd ..
-     CMAKE="${INSTALL_DIR}/bin/cmake"
+     CMAKE="${CMAKE_INSTALL_DIR}/bin/cmake"
      echo "-- DONE MAKING CMAKE --"
   fi
 }
