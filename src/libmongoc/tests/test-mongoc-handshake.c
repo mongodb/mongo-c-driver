@@ -442,6 +442,99 @@ test_mongoc_handshake_too_big (void)
    _reset_handshake ();
 }
 
+/*
+ * Testing whether platform string data is truncated/dropped appropriately
+ * drop specifies what case should be tested for
+ */
+static void
+test_mongoc_platform_truncate (int drop)
+{
+   mongoc_handshake_t *md;
+   bson_t doc = BSON_INITIALIZER;
+
+   char *undropped;
+   char big_string[HANDSHAKE_MAX_SIZE];
+   int handshake_remaining_space;
+
+   /* Need to know how much space storing fields in our BSON will take
+    * so that we can make our platform string the correct length here */
+   int handshake_bson_size = 84;
+
+   _reset_handshake ();
+
+   md = _mongoc_handshake_get ();
+
+   /* we manually bypass the defaults of the handshake to ensure an exceedingly
+    * long field does not cause our test to incorrectly fail */
+   bson_free (md->os_type);
+   md->os_type = bson_strdup ("test_a");
+   bson_free (md->os_name);
+   md->os_name = bson_strdup ("test_b");
+   bson_free (md->os_version);
+   md->os_version = bson_strdup ("test_c");
+   bson_free (md->os_architecture);
+   md->os_architecture = bson_strdup ("test_d");
+   bson_free (md->driver_name);
+   md->driver_name = bson_strdup ("test_e");
+   bson_free (md->driver_version);
+   md->driver_version = bson_strdup ("test_f");
+   bson_free (md->compiler_info);
+   md->compiler_info = bson_strdup ("test_g");
+   bson_free (md->flags);
+   md->flags = bson_strdup ("test_h");
+
+   handshake_remaining_space =
+      HANDSHAKE_MAX_SIZE -
+      (strlen (md->os_type) + strlen (md->os_name) + strlen (md->os_version) +
+       strlen (md->os_architecture) + strlen (md->driver_name) +
+       strlen (md->driver_version) + strlen (md->compiler_info) +
+       strlen (md->flags) + sizeof (*md) + handshake_bson_size);
+
+   /* adjust remaining space depending on which combination of
+    * flags/compiler_info we want to test dropping */
+   if (drop == 2) {
+      handshake_remaining_space +=
+         strlen (md->flags) + strlen (md->compiler_info);
+      undropped = "";
+   } else if (drop == 1) {
+      handshake_remaining_space += strlen (md->flags);
+      undropped = bson_strdup_printf ("%s", md->compiler_info);
+   } else {
+      undropped = bson_strdup_printf ("%s%s", md->compiler_info, md->flags);
+   }
+
+   memset (big_string, 'a', handshake_remaining_space + 1);
+   big_string[handshake_remaining_space + 1] = '\0';
+
+   ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
+   ASSERT (_mongoc_handshake_build_doc_with_application (&doc, "my app"));
+
+   /* doc.len being strictly less than HANDSHAKE_MAX_SIZE proves that we have
+    * dropped the flags correctly, instead of truncating anything
+    */
+   ASSERT_CMPUINT32 (doc.len, <, (uint32_t) HANDSHAKE_MAX_SIZE);
+   bson_iter_t iter;
+   bson_iter_init_find (&iter, &doc, "platform");
+   ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL),
+                  bson_strdup_printf ("%s%s", big_string, undropped));
+
+   bson_destroy (&doc);
+   /* So later tests don't have "aaaaa..." as the md platform string */
+   _reset_handshake ();
+}
+
+/*
+ * Test dropping neither compiler_info/flags, dropping just flags, and dropping
+ * both
+ */
+static void
+test_mongoc_oversized_flags (void)
+{
+   test_mongoc_platform_truncate (0);
+   test_mongoc_platform_truncate (1);
+   test_mongoc_platform_truncate (2);
+}
+
 /* Test the case where we can't prevent the handshake doc being too big
  * and so we just don't send it */
 static void
@@ -750,6 +843,8 @@ test_handshake_install (TestSuite *suite)
                   test_mongoc_handshake_data_append_after_cmd);
    TestSuite_AddMockServerTest (
       suite, "/MongoDB/handshake/too_big", test_mongoc_handshake_too_big);
+   TestSuite_Add (
+      suite, "/MongoDB/handshake/oversized_flags", test_mongoc_oversized_flags);
    TestSuite_AddMockServerTest (suite,
                                 "/MongoDB/handshake/cannot_send",
                                 test_mongoc_handshake_cannot_send);

@@ -87,6 +87,8 @@ typedef struct _mongoc_handshake_t {
    char *driver_name;
    char *driver_version;
    char *platform;
+   char *compiler_info;
+   char *flags;
 
    bool frozen;
 } mongoc_handshake_t;
