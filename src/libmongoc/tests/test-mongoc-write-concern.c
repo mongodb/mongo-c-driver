@@ -57,7 +57,7 @@ test_write_concern_basic (void)
    ASSERT (!mongoc_write_concern_get_journal (write_concern));
    ASSERT (mongoc_write_concern_get_w (write_concern) ==
            MONGOC_WRITE_CONCERN_W_DEFAULT);
-   ASSERT (!mongoc_write_concern_get_wtimeout (write_concern));
+   ASSERT (!mongoc_write_concern_get_wtimeout_int64 (write_concern));
    ASSERT (!mongoc_write_concern_get_wmajority (write_concern));
 
    mongoc_write_concern_set_fsync (write_concern, true);
@@ -79,9 +79,11 @@ test_write_concern_basic (void)
    ASSERT (!mongoc_write_concern_get_wmajority (write_concern));
    mongoc_write_concern_set_wmajority (write_concern, 1000);
    ASSERT (mongoc_write_concern_get_wmajority (write_concern));
-   ASSERT (mongoc_write_concern_get_wtimeout (write_concern) == 1000);
-   mongoc_write_concern_set_wtimeout (write_concern, 0);
-   ASSERT (!mongoc_write_concern_get_wtimeout (write_concern));
+   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == 1000);
+   mongoc_write_concern_set_wtimeout_int64 (write_concern, 0);
+   ASSERT (!mongoc_write_concern_get_wtimeout_int64 (write_concern));
+   mongoc_write_concern_set_wtimeout_int64 (write_concern, LONG_MAX);
+   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == LONG_MAX);
    mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_DEFAULT);
    ASSERT (mongoc_write_concern_get_w (write_concern) ==
            MONGOC_WRITE_CONCERN_W_DEFAULT);
@@ -249,14 +251,14 @@ test_write_concern_wtimeout_validity (void)
    ASSERT (write_concern);
    ASSERT (mongoc_write_concern_get_w (write_concern) ==
            MONGOC_WRITE_CONCERN_W_DEFAULT);
-   ASSERT (mongoc_write_concern_get_wtimeout (write_concern) == 0);
+   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == 0);
    ASSERT (!mongoc_write_concern_get_wmajority (write_concern));
 
-   /* mongoc_write_concern_set_wtimeout() ignores invalid wtimeout */
-   mongoc_write_concern_set_wtimeout (write_concern, -1);
+   /* mongoc_write_concern_set_wtimeout_int64() ignores invalid wtimeout */
+   mongoc_write_concern_set_wtimeout_int64 (write_concern, -1);
    ASSERT (mongoc_write_concern_get_w (write_concern) ==
            MONGOC_WRITE_CONCERN_W_DEFAULT);
-   ASSERT (mongoc_write_concern_get_wtimeout (write_concern) == 0);
+   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == 0);
    ASSERT (!mongoc_write_concern_get_wmajority (write_concern));
    ASSERT (mongoc_write_concern_is_valid (write_concern));
 
@@ -264,7 +266,7 @@ test_write_concern_wtimeout_validity (void)
    mongoc_write_concern_set_wmajority (write_concern, -1);
    ASSERT (mongoc_write_concern_get_w (write_concern) ==
            MONGOC_WRITE_CONCERN_W_MAJORITY);
-   ASSERT (mongoc_write_concern_get_wtimeout (write_concern) == 0);
+   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == 0);
    ASSERT (mongoc_write_concern_get_wmajority (write_concern));
    ASSERT (mongoc_write_concern_is_valid (write_concern));
 
@@ -354,6 +356,12 @@ test_write_concern_from_iterator (void)
    _test_write_concern_from_iterator (
       "{'writeConcern': {'wtimeout': 42}}", true, false);
    _test_write_concern_from_iterator (
+      "{'writeConcern': {'wtimeout': {'$numberLong': '123'}}}", true, false);
+   _test_write_concern_from_iterator (
+      "{'writeConcern': {'wtimeout': {'$numberLong': '2147483648'}}}",
+      false,
+      false);
+   _test_write_concern_from_iterator (
       "{'writeConcern': {'w': 1, 'wtimeout': 42}}", true, false);
    _test_write_concern_from_iterator (
       "{'writeConcern': {'w': 0, 'wtimeout': 42}}", true, false);
@@ -397,7 +405,9 @@ test_write_concern_always_mutable (void)
    ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
                  "{'w': 2, 'fsync': true, 'j': true}");
 
+   BEGIN_IGNORE_DEPRECATIONS
    mongoc_write_concern_set_wtimeout (write_concern, 100);
+   END_IGNORE_DEPRECATIONS
    ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
                  "{'w': 2, 'fsync': true, 'j': true, 'wtimeout': 100}");
 

@@ -171,7 +171,7 @@ create_commit_retry_wc (const mongoc_write_concern_t *existing_wc)
    wc = existing_wc ? mongoc_write_concern_copy (existing_wc)
                     : mongoc_write_concern_new ();
 
-   wtimeout = mongoc_write_concern_get_wtimeout (wc);
+   wtimeout = mongoc_write_concern_get_wtimeout_int64 (wc);
 
    /* Transactions spec: "If the modified write concern does not include a
     * wtimeout value, drivers MUST also apply wtimeout: 10000 to the write

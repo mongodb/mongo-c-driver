@@ -57,7 +57,7 @@ convert_write_concern (const bson_t *wc_doc)
          if (bson_lookup_int32 (wc_doc, "wtimeoutMS") < 0) {
             goto invalid;
          }
-         mongoc_write_concern_set_wtimeout (
+         mongoc_write_concern_set_wtimeout_int64 (
             wc, bson_lookup_int32 (wc_doc, "wtimeoutMS"));
       } else if (strcmp (key, "journal") == 0) {
          mongoc_write_concern_set_journal (

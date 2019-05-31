@@ -190,8 +190,23 @@ mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern, int32_t w)
 int32_t
 mongoc_write_concern_get_wtimeout (const mongoc_write_concern_t *write_concern)
 {
+   return (int32_t) mongoc_write_concern_get_wtimeout_int64(write_concern);
+}
+
+
+int64_t
+mongoc_write_concern_get_wtimeout_int64 (const mongoc_write_concern_t *write_concern)
+{
    BSON_ASSERT (write_concern);
    return write_concern->wtimeout;
+}
+
+
+void
+mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
+                                   int32_t wtimeout_msec)
+{
+   mongoc_write_concern_set_wtimeout_int64(write_concern, (int64_t) wtimeout_msec);
 }
 
 
@@ -207,8 +222,8 @@ mongoc_write_concern_get_wtimeout (const mongoc_write_concern_t *write_concern)
  * be ignored.
  */
 void
-mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
-                                   int32_t wtimeout_msec)
+mongoc_write_concern_set_wtimeout_int64 (mongoc_write_concern_t *write_concern,
+                                   int64_t wtimeout_msec)
 {
    BSON_ASSERT (write_concern);
 
@@ -564,11 +579,15 @@ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter,
          mongoc_write_concern_set_journal (write_concern,
                                            bson_iter_bool (&inner));
       } else if (BSON_ITER_IS_KEY (&inner, "wtimeout")) {
-         if (!BSON_ITER_HOLDS_INT32 (&inner) || bson_iter_int32 (&inner) < 0) {
+         if (BSON_ITER_HOLDS_INT64 (&inner)) {
+            if (bson_iter_int64 (&inner) < 0 || bson_iter_int64 (&inner) > INT32_MAX) {
+               goto fail;
+            }
+         } else if (!BSON_ITER_HOLDS_INT32 (&inner) || bson_iter_int32 (&inner) < 0) {
             goto fail;
          }
-         mongoc_write_concern_set_wtimeout (write_concern,
-                                            bson_iter_int32 (&inner));
+         mongoc_write_concern_set_wtimeout_int64 (write_concern,
+                                            bson_iter_int64 (&inner));
       }
    }
 
