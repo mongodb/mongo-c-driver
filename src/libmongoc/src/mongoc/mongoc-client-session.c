@@ -894,10 +894,10 @@ mongoc_client_session_with_transaction (
                 !timeout_exceeded (expire_at)) {
                /* Commit_transaction applies majority write concern on retry
                 * attempts.
-      *
-      * Here, we don't want to set reply = NULL when we destroy,
-      * because we want to to point to an uninitialized bson_t at
-      * the top of this loop every time. */
+                *
+                * Here, we don't want to set reply = NULL when we destroy,
+                * because we want to to point to an uninitialized bson_t at
+                * the top of this loop every time. */
                bson_destroy (reply);
                continue;
             }
@@ -933,9 +933,36 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
                                          const mongoc_transaction_opt_t *opts,
                                          bson_error_t *error)
 {
-   ENTRY;
+   int32_t max_wire_version;
+   mongoc_server_description_t *sd;
+   bool is_sharded_cluster;
 
+   ENTRY;
    BSON_ASSERT (session);
+
+   sd = mongoc_client_select_server (
+      session->client, true /* selects primary */, NULL, NULL);
+   max_wire_version = sd->max_wire_version;
+   is_sharded_cluster = sd && (sd->type == MONGOC_SERVER_MONGOS);
+   mongoc_server_description_destroy (sd);
+
+   if (is_sharded_cluster) {
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "Multi-document transactions on sharded clusters are not "
+                      "supported by this version of libmongoc");
+      RETURN (false);
+   }
+
+   if (max_wire_version < 7 || (max_wire_version < 8 && is_sharded_cluster)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "Multi-document transactions are not supported by this "
+                      "server version");
+      RETURN (false);
+   }
 
    /* use "switch" so that static checkers ensure we handle all states */
    switch (session->txn.state) {
