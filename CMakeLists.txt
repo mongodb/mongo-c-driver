@@ -94,18 +94,18 @@ if (BUILD_VERSION STREQUAL "0.0.0")
          )
          if (NOT CALC_RELEASE_VERSION_RESULT STREQUAL 0)
             # If python failed above, stderr would tell the user about it
-            message (WARNING
+            message (FATAL_ERROR
                "BUILD_VERSION not specified and could not be calculated\
- (script invocation failed); setting library version to 0.0.0"
+ (script invocation failed); specify in CMake command, -DBUILD_VERSION=<version>"
             )
          else ()
             set (BUILD_VERSION ${CALC_RELEASE_VERSION})
             message ("calculated BUILD_VERSION ${BUILD_VERSION}")
          endif ()
       else ()
-         message (WARNING
+         message (FATAL_ERROR
             "BUILD_VERSION not specified and could not be calculated\
- (Python was not found on the system); setting library version to 0.0.0"
+ (Python was not found on the system); specify in CMake command, -DBUILD_VERSION=<version>"
          )
       endif ()
       message ("storing BUILD_VERSION ${BUILD_VERSION} in file VERSION_CURRENT for later use")
