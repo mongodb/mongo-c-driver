@@ -150,41 +150,32 @@ if (ENABLE_BSON STREQUAL SYSTEM)
    # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
    # but you should use the standard CMAKE_PREFIX_PATH instead.
    message (STATUS "Searching for libbson CMake packages")
-   find_package (libbson-1.0
+   find_package (bson-1.0
       "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
       HINTS
       ${BSON_ROOT_DIR})
 
-   if (ENABLE_BSON STREQUAL SYSTEM AND NOT BSON_LIBRARIES)
+   if (NOT bson-1.0_FOUND)
       message (FATAL_ERROR "System libbson not found")
    endif ()
 
-   if (BSON_LIBRARIES)
-      message ("--   libbson found version \"${BSON_VERSION}\"")
-      message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
-      message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
-      message ("--   disabling test-libmongoc since using system libbson")
-      SET (ENABLE_TESTS OFF)
+   message ("--   libbson found version \"${bson-1.0_VERSION}\"")
+   message ("--   disabling test-libmongoc since using system libbson")
+   SET (ENABLE_TESTS OFF)
 
-      if (ENABLE_STATIC MATCHES "ON|AUTO")
-         find_package (libbson-static-1.0
-            "${MONGOC_MAJOR_VERSION}.${MONGOC_MINOR_VERSION}.${MONGOC_MICRO_VERSION}"
-            HINTS
-            ${BSON_ROOT_DIR})
-
-         if (ENABLE_STATIC STREQUAL ON AND NOT BSON_STATIC_LIBRARY)
-            message (FATAL_ERROR "Static libbson not found. Pass -DENABLE_STATIC=OFF")
-         endif ()
-
-         if (BSON_STATIC_LIBRARY)
-            set (MONGOC_ENABLE_STATIC ON)
-         endif ()
-
-         message ("--   libbson-static found version \"${BSON_STATIC_VERSION}\"")
-         message ("--   libbson-static include path \"${BSON_STATIC_INCLUDE_DIRS}\"")
-         message ("--   libbson-static libraries \"${BSON_STATIC_LIBRARIES}\"")
-      endif ()
+   if (ENABLE_STATIC MATCHES "ON|AUTO")
+      set (MONGOC_ENABLE_STATIC ON)
    endif ()
+
+   set (USING_SYSTEM_BSON TRUE)
+   if (NOT TARGET mongo::bson_shared)
+           message (FATAL_ERROR "System libbson built without shared library target")
+   endif ()
+   set (BSON_LIBRARIES mongo::bson_shared)
+   if (NOT TARGET mongo::bson_static)
+           message (FATAL_ERROR "System libbson built without static library target")
+   endif ()
+   set (BSON_STATIC_LIBRARIES mongo::bson_static)
 endif ()
 
 unset (dist_generated CACHE)
@@ -213,7 +204,7 @@ set (CMAKE_MACOSX_RPATH ON)
 # silence a CMake 3.11 warning that the old behavior is deprecated.
 cmake_policy (SET CMP0042 NEW)
 
-if (NOT BSON_LIBRARIES)
+if (NOT USING_SYSTEM_BSON)
    message ("  -- Using bundled libbson")
    if (ENABLE_STATIC MATCHES "ON|AUTO")
       set (MONGOC_ENABLE_STATIC ON)
@@ -224,7 +215,7 @@ if (NOT BSON_LIBRARIES)
    set (BSON_LIBRARIES bson_shared)
    set (BSON_STATIC_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
    set (BSON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/src/libbson/src" "${PROJECT_BINARY_DIR}/src/libbson/src")
-   set (BSON_STATIC_DEFINITIONS "BSON_STATIC")
+   set (BSON_STATIC_PUBLIC_DEFINITIONS "BSON_STATIC")
 endif ()
 
 if (MSVC)

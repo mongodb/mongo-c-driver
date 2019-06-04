@@ -59,7 +59,6 @@ if (ENABLE_ZLIB MATCHES "SYSTEM|AUTO")
       message ("--   zlib found version \"${ZLIB_VERSION_STRING}\"")
       message ("--   zlib include path \"${ZLIB_INCLUDE_DIRS}\"")
       message ("--   zlib libraries \"${ZLIB_LIBRARIES}\"")
-      include_directories ("${ZLIB_INCLUDE_DIRS}")
    else ()
       if (ENABLE_ZLIB STREQUAL "SYSTEM")
          message (FATAL_ERROR
@@ -72,14 +71,13 @@ if (ENABLE_ZLIB MATCHES "SYSTEM|AUTO")
    endif ()
 endif ()
 
+set (PRIVATE_ZLIB_INCLUDES "")
 if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
    message (STATUS "Enabling zlib compression (bundled)")
    set (SOURCES ${SOURCES} ${ZLIB_SOURCES})
-
-   list (
-      APPEND
-      MONGOC_INTERNAL_INCLUDE_DIRS
+   set (
+      PRIVATE_ZLIB_INCLUDES
       "${SOURCE_DIR}/src/zlib-1.2.11"
       "${CMAKE_BINARY_DIR}/src/zlib-1.2.11"
    )
@@ -637,6 +635,10 @@ set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
    ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES}
 )
+set (STATIC_LIBRARIES
+   ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES}
+)
 
 if (WIN32)
    set (LIBRARIES ${LIBRARIES} ws2_32)
@@ -644,18 +646,23 @@ endif ()
 
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
-target_link_libraries (mongoc_shared ${LIBRARIES} ${BSON_LIBRARIES})
-target_include_directories (mongoc_shared BEFORE PUBLIC ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
-target_compile_definitions (mongoc_shared PUBLIC MONGOC_COMPILATION ${BSON_DEFINITIONS})
+target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
+target_include_directories (mongoc_shared BEFORE PUBLIC ${MONGOC_INTERNAL_INCLUDE_DIRS})
+target_include_directories (mongoc_shared PRIVATE ${PRIVATE_ZLIB_INCLUDES})
+target_compile_definitions (mongoc_shared PRIVATE MONGOC_COMPILATION)
 
 set_target_properties (mongoc_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "mongoc-${MONGOC_API_VERSION}" PREFIX "lib")
 
 if (MONGOC_ENABLE_STATIC)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-   target_link_libraries (mongoc_static ${LIBRARIES} ${BSON_STATIC_LIBRARIES})
-   target_include_directories (mongoc_static BEFORE PUBLIC ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
-   target_compile_definitions (mongoc_static PUBLIC MONGOC_COMPILATION MONGOC_STATIC ${BSON_STATIC_DEFINITIONS})
+   target_link_libraries (mongoc_static ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
+   target_include_directories (mongoc_static BEFORE PUBLIC ${MONGOC_INTERNAL_INCLUDE_DIRS})
+   target_include_directories (mongoc_static PRIVATE ${PRIVATE_ZLIB_INCLUDES})
+   target_compile_definitions (mongoc_static
+      PUBLIC MONGOC_STATIC ${BSON_STATIC_PUBLIC_DEFINITIONS}
+      PRIVATE MONGOC_COMPILATION
+   )
    set_target_properties (mongoc_static PROPERTIES VERSION 0.0.0)
    set_target_properties (mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
 endif ()
@@ -672,7 +679,7 @@ if (ENABLE_APPLE_FRAMEWORK)
 endif ()
 
 add_executable (mongoc-stat ${PROJECT_SOURCE_DIR}/../../src/tools/mongoc-stat.c)
-target_link_libraries (mongoc-stat mongoc_shared)
+target_link_libraries (mongoc-stat mongoc_shared ${LIBRARIES})
 
 # mongoc-stat works if shared memory performance counters are enabled.
 if (ENABLE_SHM_COUNTERS STREQUAL "ON")
@@ -689,12 +696,12 @@ function (mongoc_add_test test use_shared)
          set_source_files_properties (${ARGN} PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
       endif ()
       target_include_directories (${test} PRIVATE ${PROJECT_SOURCE_DIR}/tests)
+      target_compile_definitions (${test} PUBLIC "MONGOC_COMPILATION" PUBLIC "BSON_COMPILATION")
       if (${use_shared})
-         target_link_libraries (${test} mongoc_shared)
+         target_link_libraries (${test} mongoc_shared ${LIBRARIES})
          target_include_directories (${test} PRIVATE ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
       else ()
-         target_compile_definitions (${test} PUBLIC "MONGOC_COMPILATION" PUBLIC "BSON_COMPILATION")
-         target_link_libraries (${test} mongoc_static)
+         target_link_libraries (${test} mongoc_static ${LIBRARIES})
          target_include_directories (${test} PRIVATE ${BSON_STATIC_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
       endif ()
       target_link_libraries (${test} ${RESOLV_LIBRARIES})
@@ -710,9 +717,9 @@ function (mongoc_add_example example use_shared)
    if (ENABLE_EXAMPLES)
       add_executable (${example} ${ARGN})
       if (${use_shared})
-         target_link_libraries (${example} mongoc_shared)
+         target_link_libraries (${example} mongoc_shared ${LIBRARIES})
       else ()
-         target_link_libraries (${example} mongoc_static)
+         target_link_libraries (${example} mongoc_static ${LIBRARIES})
       endif ()
       if (WIN32)
          target_link_libraries (${example} shlwapi)
@@ -909,26 +916,24 @@ file (COPY ${PROJECT_SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/te
 file (COPY ${PROJECT_SOURCE_DIR}/tests/x509gen DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/release_files DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
-install (
-   TARGETS mongoc_shared ${EXAMPLES}
-   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-   FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR} 
-)
-
 if (MONGOC_ENABLE_STATIC)
-   install (
-      TARGETS mongoc_shared mongoc_static ${EXAMPLES}
-      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-      FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR} 
-   )
+   set (TARGETS_TO_INSTALL mongoc_shared mongoc_static)
+else ()
+   set (TARGETS_TO_INSTALL mongoc_shared)
 endif ()
 
 set (MONGOC_HEADER_INSTALL_DIR
    "${CMAKE_INSTALL_INCLUDEDIR}/libmongoc-${MONGOC_API_VERSION}"
+)
+
+install (
+   TARGETS ${TARGETS_TO_INSTALL} ${EXAMPLES}
+   EXPORT mongoc-targets
+   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+   INCLUDES DESTINATION ${MONGOC_HEADER_INSTALL_DIR}
+   FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 install (
@@ -1002,7 +1007,41 @@ if (MONGOC_ENABLE_SSL)
    )
 endif ()
 
-include (../../build/cmake/MongoCPackage.cmake)
+include (CMakePackageConfigHelpers)
+set (INCLUDE_INSTALL_DIRS "${MONGOC_HEADER_INSTALL_DIR}")
+set (LIBRARY_INSTALL_DIRS ${CMAKE_INSTALL_LIBDIR})
+
+write_basic_package_version_file (
+   "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config-version.cmake"
+   VERSION ${MONGOC_VERSION}
+   COMPATIBILITY AnyNewerVersion
+)
+
+export (EXPORT mongoc-targets
+   NAMESPACE mongo::
+   FILE "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-targets.cmake"
+)
+
+configure_file (src/mongoc-config.cmake
+   "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config.cmake"
+   @ONLY
+)
+
+install (EXPORT mongoc-targets
+   NAMESPACE mongo::
+   FILE mongoc-targets.cmake
+   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}
+)
+
+install (
+   FILES
+      "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config.cmake"
+      "${CMAKE_CURRENT_BINARY_DIR}/mongoc/mongoc-${MONGOC_API_VERSION}-config-version.cmake"
+   DESTINATION
+      ${CMAKE_INSTALL_LIBDIR}/cmake/mongoc-${MONGOC_API_VERSION}
+   COMPONENT
+      Devel
+)
 
 if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
    find_package (Sphinx REQUIRED)

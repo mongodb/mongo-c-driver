@@ -17,35 +17,29 @@ if not exist %INSTALL_DIR%\lib\pkgconfig\libmongoc-1.0.pc (
 ) else (
   echo libmongoc-1.0.pc check ok
 )
-if not exist %INSTALL_DIR%\lib\cmake\libmongoc-1.0\libmongoc-1.0-config.cmake (
-  echo libmongoc-1.0-config.cmake missing!
+if not exist %INSTALL_DIR%\lib\cmake\mongoc-1.0\mongoc-1.0-config.cmake (
+  echo mongoc-1.0-config.cmake missing!
   exit /B 1
 ) else (
-  echo libmongoc-1.0-config.cmake check ok
+  echo mongoc-1.0-config.cmake check ok
 )
-if not exist %INSTALL_DIR%\lib\cmake\libmongoc-1.0\libmongoc-1.0-config-version.cmake (
-  echo libmongoc-1.0-config-version.cmake missing!
+if not exist %INSTALL_DIR%\lib\cmake\mongoc-1.0\mongoc-1.0-config-version.cmake (
+  echo mongoc-1.0-config-version.cmake missing!
   exit /B 1
 ) else (
-  echo libmongoc-1.0-config-version.cmake check ok
+  echo mongoc-1.0-config-version.cmake check ok
+)
+if not exist %INSTALL_DIR%\lib\cmake\mongoc-1.0\mongoc-targets.cmake (
+  echo mongoc-targets.cmake missing!
+  exit /B 1
+) else (
+  echo mongoc-targets.cmake check ok
 )
 if not exist %INSTALL_DIR%\lib\pkgconfig\libmongoc-static-1.0.pc (
   echo libmongoc-static-1.0.pc missing!
   exit /B 1
 ) else (
   echo libmongoc-static-1.0.pc check ok
-)
-if not exist %INSTALL_DIR%\lib\cmake\libmongoc-static-1.0\libmongoc-static-1.0-config.cmake (
-  echo libmongoc-static-1.0-config.cmake missing!
-  exit /B 1
-) else (
-  echo libmongoc-static-1.0-config.cmake check ok
-)
-if not exist %INSTALL_DIR%\lib\cmake\libmongoc-static-1.0\libmongoc-static-1.0-config-version.cmake (
-  echo libmongoc-static-1.0-config-version.cmake missing!
-  exit /B 1
-) else (
-  echo libmongoc-static-1.0-config-version.cmake check ok
 )
 
 echo on
