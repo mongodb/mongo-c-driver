@@ -1009,8 +1009,8 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          }
       }
       /* MONGODB-X509 is the only mechanism that doesn't require username */
-      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509")) {
-         if (!mongoc_uri_get_username (uri)) {
+      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509") != 0) {
+         if (!mongoc_uri_get_username (uri) || strcmp (mongoc_uri_get_username (uri), "") == 0) {
             MONGOC_URI_ERROR (error,
                               "'%s' authentication mechanism requires username",
                               mongoc_uri_get_auth_mechanism (uri));
@@ -1018,7 +1018,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          }
       }
       /* MONGODB-X509 errors if a password is supplied. */
-      if (!strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509")) {
+      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509") == 0) {
          if (mongoc_uri_get_password (uri)) {
             MONGOC_URI_ERROR (
                error,
