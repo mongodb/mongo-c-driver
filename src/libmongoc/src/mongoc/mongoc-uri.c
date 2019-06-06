@@ -364,9 +364,8 @@ mongoc_uri_parse_userpass (mongoc_uri_t *uri,
    }
 
    if (strcmp (uri->username, "") == 0) {
-      MONGOC_URI_ERROR (error,
-                        "Incorrect usage of empty string as username in URI.",
-                        escape_instructions);
+      MONGOC_URI_ERROR (
+         error, "%s", "Incorrect usage of empty string as username in URI.");
       return false;
    }
 
