@@ -363,12 +363,6 @@ mongoc_uri_parse_userpass (mongoc_uri_t *uri,
       return false;
    }
 
-   if (strcmp (uri->username, "") == 0) {
-      MONGOC_URI_ERROR (
-         error, "%s", "Incorrect usage of empty string as username in URI.");
-      return false;
-   }
-
    /* Providing password at all is optional */
    if (uri->password) {
       if (mongoc_uri_has_unescaped_chars (uri->password, prohibited)) {
@@ -1016,7 +1010,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
       }
       /* MONGODB-X509 is the only mechanism that doesn't require username */
       if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509")) {
-         if (!mongoc_uri_get_username (uri)) {
+         if (!mongoc_uri_get_username (uri) | strcmp (mongoc_uri_get_username (uri), "") == 0) {
             MONGOC_URI_ERROR (error,
                               "'%s' authentication mechanism requires username",
                               mongoc_uri_get_auth_mechanism (uri));
@@ -1538,11 +1532,6 @@ mongoc_uri_set_username (mongoc_uri_t *uri, const char *username)
    size_t len;
 
    BSON_ASSERT (username);
-
-   if (strcmp (username, "") == 0) {
-      MONGOC_ERROR ("Incorrect usage of empty string as username.");
-      return false;
-   }
 
    len = strlen (username);
 

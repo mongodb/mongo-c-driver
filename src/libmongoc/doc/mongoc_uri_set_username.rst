@@ -20,7 +20,7 @@ Parameters
 Description
 -----------
 
-Sets the URI's username, after the URI has been parsed from a string. The driver authenticates with this username if the password is also set. The empty string is considered an invalid username and will raise an error.
+Sets the URI's username, after the URI has been parsed from a string. The driver authenticates with this username if the password is also set.
 
 Returns
 -------

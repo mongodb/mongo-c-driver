@@ -70,7 +70,6 @@ test_mongoc_uri_new (void)
    ASSERT (!mongoc_uri_new ("mongodb://[::1]:65536"));
    ASSERT (!mongoc_uri_new ("mongodb://[::1]:65536/"));
    ASSERT (!mongoc_uri_new ("mongodb://[::1]:0/"));
-   ASSERT (!mongoc_uri_new ("mongodb://@localhost/"));
 
    uri = mongoc_uri_new (
       "mongodb://[::1]:27888,[::2]:27999/?ipv6=true&" MONGOC_URI_SAFE "=true");
