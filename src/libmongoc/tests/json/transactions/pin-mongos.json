@@ -15,7 +15,6 @@
   "tests": [
     {
       "description": "countDocuments",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -130,7 +129,6 @@
     },
     {
       "description": "distinct",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -253,7 +251,6 @@
     },
     {
       "description": "find",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -400,7 +397,6 @@
     },
     {
       "description": "insertOne",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -555,7 +551,6 @@
     },
     {
       "description": "mixed read write operations",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -717,7 +712,6 @@
     },
     {
       "description": "multiple commits",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {

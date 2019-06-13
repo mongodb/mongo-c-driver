@@ -76,6 +76,7 @@ struct _mongoc_client_session_t {
    uint32_t operation_timestamp;
    uint32_t operation_increment;
    uint32_t client_generation;
+   uint32_t server_id;
 
    /* For testing only */
    int64_t with_txn_timeout_ms;
@@ -133,5 +134,13 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
                                             const bson_t *user_read_concern,
                                             bool is_read_command,
                                             bson_t *cmd);
+
+void
+_mongoc_client_session_unpin (mongoc_client_session_t *session);
+
+void
+_mongoc_client_session_pin (mongoc_client_session_t *session,
+                            uint32_t server_id);
+
 
 #endif /* MONGOC_CLIENT_SESSION_PRIVATE_H */

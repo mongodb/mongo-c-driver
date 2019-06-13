@@ -1861,6 +1861,14 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (server_id);
 
+   if (cs && cs->server_id && cs->server_id != server_id) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_SERVER_SELECTION_INVALID_ID,
+                      "Requested server id does not matched pinned server id");
+      RETURN (NULL);
+   }
+
    if (!error) {
       error = &err_local;
    }
@@ -2123,6 +2131,38 @@ mongoc_cluster_destroy (mongoc_cluster_t *cluster) /* INOUT */
    EXIT;
 }
 
+static uint32_t
+_mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
+                                  mongoc_topology_t *topology,
+                                  mongoc_ss_optype_t optype,
+                                  const mongoc_read_prefs_t *read_prefs,
+                                  bson_error_t *error)
+{
+   uint32_t server_id;
+   bool in_txn;
+
+   in_txn = _mongoc_client_session_in_txn (cs);
+   if (in_txn && _mongoc_topology_get_type (cs->client->topology) ==
+                    MONGOC_TOPOLOGY_SHARDED) {
+      server_id = cs->server_id;
+      if (!server_id) {
+         server_id = mongoc_topology_select_server_id (
+            topology, optype, read_prefs, error);
+         _mongoc_client_session_pin (cs, server_id);
+      }
+   } else {
+      server_id =
+         mongoc_topology_select_server_id (topology, optype, read_prefs, error);
+      /* Transactions Spec: Additionally, any non-transaction operation using a
+       * pinned ClientSession MUST unpin the session and the operation MUST
+       * perform normal server selection. */
+      if (cs && !in_txn) {
+         _mongoc_client_session_unpin (cs);
+      }
+   }
+
+   return server_id;
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -2146,7 +2186,7 @@ static mongoc_server_stream_t *
 _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
                                    mongoc_ss_optype_t optype,
                                    const mongoc_read_prefs_t *read_prefs,
-                                   const mongoc_client_session_t *cs,
+                                   mongoc_client_session_t *cs,
                                    bson_t *reply,
                                    bson_error_t *error)
 {
@@ -2158,8 +2198,8 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
 
    BSON_ASSERT (cluster);
 
-   server_id =
-      mongoc_topology_select_server_id (topology, optype, read_prefs, error);
+   server_id = _mongoc_cluster_select_server_id (
+      cs, topology, optype, read_prefs, error);
 
    if (!server_id) {
       _mongoc_bson_init_with_transient_txn_error (cs, reply);
@@ -2168,8 +2208,8 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
 
    if (!mongoc_cluster_check_interval (cluster, server_id)) {
       /* Server Selection Spec: try once more */
-      server_id =
-         mongoc_topology_select_server_id (topology, optype, read_prefs, error);
+      server_id = _mongoc_cluster_select_server_id (
+         cs, topology, optype, read_prefs, error);
 
       if (!server_id) {
          _mongoc_bson_init_with_transient_txn_error (cs, reply);
@@ -2206,7 +2246,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
-                                 const mongoc_client_session_t *cs,
+                                 mongoc_client_session_t *cs,
                                  bson_t *reply,
                                  bson_error_t *error)
 {
@@ -2240,7 +2280,7 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
 
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
-                                  const mongoc_client_session_t *cs,
+                                  mongoc_client_session_t *cs,
                                   bson_t *reply,
                                   bson_error_t *error)
 {

@@ -1414,8 +1414,7 @@ db_aggregate (mongoc_database_t *db,
    append_session (session, &opts);
    COPY_EXCEPT ("pipeline");
 
-   cursor = mongoc_database_aggregate (
-      db, &pipeline, &opts, read_prefs);
+   cursor = mongoc_database_aggregate (db, &pipeline, &opts, read_prefs);
 
    /* Driver CRUD API Spec: "$out is a special pipeline stage that causes no
     * results to be returned from the server. As such, the iterable here would
@@ -1655,6 +1654,13 @@ json_test_operation (json_test_ctx_t *ctx,
          res = commit_transaction (named_session, test, operation, reply);
       } else if (!strcmp (op_name, "abortTransaction")) {
          res = abort_transaction (named_session, test, operation, reply);
+      } else {
+         test_error ("unrecognized session operation name %s", op_name);
+      }
+   } else if (!strcmp (obj_name, "testRunner")) {
+      if (!strcmp (op_name, "assertSessionPinned")) {
+         bson_init (reply);
+         res = (0 != mongoc_client_session_get_server_id (session));
       } else {
          test_error ("unrecognized session operation name %s", op_name);
       }

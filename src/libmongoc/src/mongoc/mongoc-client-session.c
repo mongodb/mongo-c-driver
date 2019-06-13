@@ -143,6 +143,7 @@ txn_abort (mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
     * after it fails with a retryable error", same for abort */
    error_type = _mongoc_write_error_get_type (r, err_ptr, &reply_local);
    if (error_type == MONGOC_WRITE_ERR_RETRY) {
+      _mongoc_client_session_unpin (session);
       bson_destroy (&reply_local);
       r = mongoc_client_write_command_with_opts (
          session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
@@ -151,6 +152,7 @@ txn_abort (mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
    if (!r) {
       /* we won't return an error from abortTransaction, so warn */
       MONGOC_WARNING ("Error in abortTransaction: %s", err_ptr->message);
+      _mongoc_client_session_unpin (session);
    }
 
 done:
@@ -246,6 +248,7 @@ retry:
    error_type = _mongoc_write_error_get_type (r, err_ptr, &reply_local);
    if (!retrying_after_error && error_type == MONGOC_WRITE_ERR_RETRY) {
       retrying_after_error = true; /* retry after error only once */
+      _mongoc_client_session_unpin (session);
       bson_reinit (&opts);
       GOTO (retry);
    }
@@ -253,19 +256,24 @@ retry:
    /* Transactions Spec: "add the UnknownTransactionCommitResult error label
     * when commitTransaction fails with a network error, server selection
     * error, or write concern failed / timeout." */
-   if (reply) {
-      if ((!r && err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION) ||
-          error_type == MONGOC_WRITE_ERR_RETRY ||
-          error_type == MONGOC_WRITE_ERR_WRITE_CONCERN) {
+   if ((!r && err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION) ||
+       error_type == MONGOC_WRITE_ERR_RETRY ||
+       error_type == MONGOC_WRITE_ERR_WRITE_CONCERN) {
+      /* Drivers MUST unpin a ClientSession when any individual
+       * commitTransaction command attempt fails with an
+       * UnknownTransactionCommitResult error label. Do this even if we won't
+       * actually apply the error label due to reply being NULL */
+      _mongoc_client_session_unpin (session);
+      if (reply) {
          bson_copy_to_excluding_noinit (
             &reply_local, reply, "errorLabels", NULL);
          copy_labels_plus_unknown_commit_result (&reply_local, reply);
-      } else {
-         /* maintain invariants: reply & reply_local are valid until the end */
-         bson_destroy (reply);
-         bson_steal (reply, &reply_local);
-         bson_init (&reply_local);
       }
+   } else if (reply) {
+      /* maintain invariants: reply & reply_local are valid until the end */
+      bson_destroy (reply);
+      bson_steal (reply, &reply_local);
+      bson_init (&reply_local);
    }
 
 done:
@@ -748,6 +756,14 @@ mongoc_client_session_get_cluster_time (const mongoc_client_session_t *session)
    return &session->cluster_time;
 }
 
+uint32_t
+mongoc_client_session_get_server_id (const mongoc_client_session_t *session)
+{
+   BSON_ASSERT (session);
+
+   return session->server_id;
+}
+
 void
 mongoc_client_session_advance_cluster_time (mongoc_client_session_t *session,
                                             const bson_t *cluster_time)
@@ -933,35 +949,24 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
                                          const mongoc_transaction_opt_t *opts,
                                          bson_error_t *error)
 {
-   int32_t max_wire_version;
    mongoc_server_description_t *sd;
-   bool is_sharded_cluster;
+   bool ret;
 
    ENTRY;
    BSON_ASSERT (session);
 
+   ret = true;
    sd = mongoc_client_select_server (
-      session->client, true /* selects primary */, NULL, NULL);
-   max_wire_version = sd->max_wire_version;
-   is_sharded_cluster = sd && (sd->type == MONGOC_SERVER_MONGOS);
-   mongoc_server_description_destroy (sd);
-
-   if (is_sharded_cluster) {
-      bson_set_error (error,
-                      MONGOC_ERROR_TRANSACTION,
-                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
-                      "Multi-document transactions on sharded clusters are not "
-                      "supported by this version of libmongoc");
-      RETURN (false);
-   }
-
-   if (max_wire_version < 7 || (max_wire_version < 8 && is_sharded_cluster)) {
+      session->client, true /* primary */, NULL, NULL);
+   if (sd && (sd->max_wire_version < 7 ||
+              (sd->max_wire_version < 8 && sd->type == MONGOC_SERVER_MONGOS))) {
       bson_set_error (error,
                       MONGOC_ERROR_TRANSACTION,
                       MONGOC_ERROR_TRANSACTION_INVALID_STATE,
                       "Multi-document transactions are not supported by this "
                       "server version");
-      RETURN (false);
+      ret = false;
+      GOTO (done);
    }
 
    /* use "switch" so that static checkers ensure we handle all states */
@@ -972,7 +977,8 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
                       MONGOC_ERROR_TRANSACTION,
                       MONGOC_ERROR_TRANSACTION_INVALID_STATE,
                       "Transaction already in progress");
-      RETURN (false);
+      ret = false;
+      GOTO (done);
    case MONGOC_TRANSACTION_ENDING:
       MONGOC_ERROR ("starting txn in invalid state MONGOC_TRANSACTION_ENDING");
       abort ();
@@ -1005,12 +1011,18 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
          MONGOC_ERROR_TRANSACTION,
          MONGOC_ERROR_TRANSACTION_INVALID_STATE,
          "Transactions do not support unacknowledged write concern");
-      RETURN (false);
+      ret = false;
+      GOTO (done);
    }
 
+   /* Transactions Spec: Starting a new transaction on a pinned ClientSession
+    * MUST unpin the session. */
+   _mongoc_client_session_unpin (session);
    session->txn.state = MONGOC_TRANSACTION_STARTING;
 
-   RETURN (true);
+done:
+   mongoc_server_description_destroy (sd);
+   return ret;
 }
 
 
@@ -1411,4 +1423,21 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
    bson_free (session);
 
    EXIT;
+}
+
+void
+_mongoc_client_session_unpin (mongoc_client_session_t *session)
+{
+   BSON_ASSERT (session);
+
+   session->server_id = 0;
+}
+
+void
+_mongoc_client_session_pin (mongoc_client_session_t *session,
+                            uint32_t server_id)
+{
+   BSON_ASSERT (session);
+
+   session->server_id = server_id;
 }

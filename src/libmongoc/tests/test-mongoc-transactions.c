@@ -545,14 +545,9 @@ test_transaction_fails_on_unsupported_version_or_sharded_cluster (void *ctx)
    ASSERT_OR_PRINT (session, error);
 
    r = mongoc_client_session_start_transaction (session, NULL, &error);
-   if (test_framework_is_mongos ()) {
-      BSON_ASSERT (!r);
-      ASSERT_CONTAINS (error.message,
-                       "Multi-document transactions on sharded clusters are "
-                       "not supported by this version of libmongoc");
-   } else if (!test_framework_max_wire_version_at_least (7) ||
-              (test_framework_is_mongos () &&
-               !test_framework_max_wire_version_at_least (8))) {
+   if (!test_framework_max_wire_version_at_least (7) ||
+       (test_framework_is_mongos () &&
+        !test_framework_max_wire_version_at_least (8))) {
       BSON_ASSERT (!r);
       ASSERT_CONTAINS (error.message,
                        "Multi-document transactions are not supported by this "

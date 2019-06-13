@@ -112,6 +112,9 @@ mongoc_client_session_get_operation_time (
    uint32_t *timestamp,
    uint32_t *increment);
 
+MONGOC_EXPORT (uint32_t)
+mongoc_client_session_get_server_id (const mongoc_client_session_t *session);
+
 MONGOC_EXPORT (void)
 mongoc_client_session_advance_operation_time (mongoc_client_session_t *session,
                                               uint32_t timestamp,
