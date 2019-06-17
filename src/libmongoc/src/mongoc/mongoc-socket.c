@@ -217,9 +217,7 @@ _mongoc_socket_wait (mongoc_socket_t *sock, /* IN */
 
          TRACE ("errno is: %d", errno);
          if (MONGOC_ERRNO_IS_AGAIN (errno)) {
-            now = bson_get_monotonic_time ();
-
-            if (expire_at < now) {
+            if (OPERATION_EXPIRED (expire_at)) {
                _mongoc_socket_capture_errno (sock);
                RETURN (false);
             } else {
