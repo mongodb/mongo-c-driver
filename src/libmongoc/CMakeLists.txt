@@ -26,6 +26,7 @@ set (MONGOC_ENABLE_CRYPTO_SYSTEM_PROFILE 0)
 set (MONGOC_ENABLE_COMPRESSION 0)
 set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
+set (MONGOC_ENABLE_COMPRESSION_ZSTD 0)
 
 if (ENABLE_COVERAGE)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
@@ -35,6 +36,10 @@ if (NOT ENABLE_ZLIB MATCHES "SYSTEM|AUTO|BUNDLED|OFF")
    message (FATAL_ERROR
       "ENABLE_ZLIB option must be SYSTEM, BUNDLED, AUTO, or OFF"
       )
+endif ()
+
+if (NOT ENABLE_ZSTD MATCHES "ON|AUTO|OFF")
+   message (FATAL_ERROR "ENABLE_ZSTD option must be ON, AUTO, or OFF")
 endif ()
 
 # Disable warnings on bundled zlib source files.
@@ -90,6 +95,30 @@ if (NOT ENABLE_ZLIB STREQUAL "OFF")
 else ()
    message (STATUS "Disabling zlib compression")
 endif ()
+
+
+if (NOT ENABLE_ZSTD STREQUAL OFF)
+   if (${CMAKE_VERSION} VERSION_LESS "3.12.0")
+      message (FATAL_ERROR "  zstd not supported on CMake versions less than 3.12")
+   else ()
+      message (STATUS "Searching for compression library zstd")
+      find_package(PkgConfig)
+      pkg_check_modules (ZSTD libzstd)
+
+      if (NOT ZSTD_FOUND)
+         if (ENABLE_ZSTD MATCHES "ON")
+            message (FATAL_ERROR "  Not found")
+         else ()
+            message (STATUS "  Not found")
+         endif ()
+      else ()
+         message (STATUS "  Found in ${ZSTD_INCLUDE_DIRS}")
+         set (MONGOC_INTERNAL_INCLUDE_DIRS ${MONGOC_INTERNAL_INCLUDE_DIRS} ${ZSTD_INCLUDE_DIRS})
+         set (MONGOC_ENABLE_COMPRESSION 1)
+         set (MONGOC_ENABLE_COMPRESSION_ZSTD 1)
+      endif()
+   endif ()
+endif()
 
 if (NOT ENABLE_SSL STREQUAL OFF)
    # Try OpenSSL automatically everywhere but Mac and Windows.
@@ -596,7 +625,7 @@ endif ()
 
 set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} Threads::Threads ${ICU_LIBRARIES}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${ZSTD_LINK_LIBRARIES} Threads::Threads ${ICU_LIBRARIES}
 )
 
 if (WIN32)
@@ -914,7 +943,7 @@ set (libdir "\${prefix}/lib")
 foreach (
       FLAG
       ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${ICU_LIBRARIES})
+      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${ZSTD_LINK_LIBRARIES} ${ICU_LIBRARIES})
 
    if (IS_ABSOLUTE "${FLAG}")
       get_filename_component (FLAG_DIR "${FLAG}" DIRECTORY)

@@ -346,7 +346,7 @@ all_variants = [
     Variant('windows-2015',
             'Windows (VS 2015)',
             'windows-64-vs2015-compile',
-            ['.compression !.snappy',
+            ['.compression !.snappy !.zstd',
              'release-compile',
              'debug-compile-nosasl-nossl',
              'debug-compile-no-align',
@@ -533,6 +533,7 @@ all_variants = [
             '*zSeries',
             'rhel72-zseries-test',
             ['release-compile',
+        #      '.compression', --> TODO: waiting on ticket CDRIVER-3258
              'debug-compile-nosasl-nossl',
              'debug-compile-no-align',
              '.debug-compile !.sspi .openssl',

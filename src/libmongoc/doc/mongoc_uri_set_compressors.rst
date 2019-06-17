@@ -32,9 +32,9 @@ Example
     mongoc_uri_t *uri;
 
     uri = mongoc_uri_new ("mongodb://localhost/");
-    mongoc_uri_set_compressors (uri, "snappy,zlib");
+    mongoc_uri_set_compressors (uri, "snappy,zlib,zstd");
     mongoc_client_new_from_uri (uri);
-    /* Snappy & zlib compressors are enabled */
+    /* Snappy & zlib & zstd compressors are enabled */
 
 Returns
 -------

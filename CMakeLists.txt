@@ -40,6 +40,7 @@ set (ENABLE_MONGOC ON CACHE STRING "Whether to build libmongoc. Set to ON/OFF, d
 set (ENABLE_BSON AUTO CACHE STRING "Whether to build libbson. Set to ON/AUTO/SYSTEM, default AUTO.")
 set (ENABLE_SNAPPY AUTO CACHE STRING "Enable snappy support. Set to ON/AUTO/OFF, default AUTO.")
 set (ENABLE_ZLIB AUTO CACHE STRING "Enable zlib support")
+set (ENABLE_ZSTD AUTO CACHE STRING "Enable zstd support. Set to ON/AUTO/OFF, default AUTO.")
 option (ENABLE_MAN_PAGES "Build MongoDB C Driver manual pages." OFF)
 option (ENABLE_HTML_DOCS "Build MongoDB C Driver HTML documentation." OFF)
 option (ENABLE_EXTRA_ALIGNMENT

@@ -28,6 +28,9 @@
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
 #include <snappy-c.h>
 #endif
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+#include <zstd.h>
+#endif
 #endif
 
 size_t
@@ -49,6 +52,11 @@ mongoc_compressor_max_compressed_length (int32_t compressor_id, size_t len)
       break;
 #endif
 
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+   case MONGOC_COMPRESSOR_ZSTD_ID:
+      return ZSTD_compressBound (len);
+      break;
+#endif
    case MONGOC_COMPRESSOR_NOOP_ID:
       return len;
       break;
@@ -72,6 +80,12 @@ mongoc_compressor_supported (const char *compressor)
    }
 #endif
 
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+   if (!strcasecmp (compressor, MONGOC_COMPRESSOR_ZSTD_STR)) {
+      return true;
+   }
+#endif
+
    if (!strcasecmp (compressor, MONGOC_COMPRESSOR_NOOP_STR)) {
       return true;
    }
@@ -88,6 +102,9 @@ mongoc_compressor_id_to_name (int32_t compressor_id)
 
    case MONGOC_COMPRESSOR_ZLIB_ID:
       return MONGOC_COMPRESSOR_ZLIB_STR;
+
+   case MONGOC_COMPRESSOR_ZSTD_ID:
+      return MONGOC_COMPRESSOR_ZSTD_STR;
 
    case MONGOC_COMPRESSOR_NOOP_ID:
       return MONGOC_COMPRESSOR_NOOP_STR;
@@ -112,6 +129,12 @@ mongoc_compressor_name_to_id (const char *compressor)
    }
 #endif
 
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+   if (strcasecmp (MONGOC_COMPRESSOR_ZSTD_STR, compressor) == 0) {
+      return MONGOC_COMPRESSOR_ZSTD_ID;
+   }
+#endif
+
    if (strcasecmp (MONGOC_COMPRESSOR_NOOP_STR, compressor) == 0) {
       return MONGOC_COMPRESSOR_NOOP_ID;
    }
@@ -129,6 +152,7 @@ mongoc_uncompress (int32_t compressor_id,
    TRACE ("Uncompressing with '%s' (%d)",
           mongoc_compressor_id_to_name (compressor_id),
           compressor_id);
+
    switch (compressor_id) {
    case MONGOC_COMPRESSOR_SNAPPY_ID: {
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
@@ -164,6 +188,29 @@ mongoc_uncompress (int32_t compressor_id,
 #endif
       break;
    }
+
+   case MONGOC_COMPRESSOR_ZSTD_ID: {
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+      int ok;
+
+      ok =
+         ZSTD_decompress ((void *) uncompressed,
+                          *uncompressed_len,
+                          (const void *) compressed,
+                          compressed_len);
+
+      if (!ZSTD_isError (ok)) {
+         *uncompressed_len = ok;
+      }
+
+      return !ZSTD_isError (ok);
+#else
+      MONGOC_WARNING ("Received zstd compressed opcode, but zstd "
+                      "compression is not compiled in");
+      return false;
+#endif
+      break;
+   }
    case MONGOC_COMPRESSOR_NOOP_ID:
       memcpy (uncompressed, compressed, compressed_len);
       *uncompressed_len = compressed_len;
@@ -194,7 +241,6 @@ mongoc_compress (int32_t compressor_id,
       return snappy_compress (
                 uncompressed, uncompressed_len, compressed, compressed_len) ==
              SNAPPY_OK;
-      break;
 #else
       MONGOC_ERROR ("Client attempting to use compress with snappy, but snappy "
                     "compression is not compiled in");
@@ -208,12 +254,32 @@ mongoc_compress (int32_t compressor_id,
                         (unsigned char *) uncompressed,
                         uncompressed_len,
                         compression_level) == Z_OK;
-      break;
 #else
       MONGOC_ERROR ("Client attempting to use compress with zlib, but zlib "
                     "compression is not compiled in");
       return false;
 #endif
+
+   case MONGOC_COMPRESSOR_ZSTD_ID: {
+#ifdef MONGOC_ENABLE_COMPRESSION_ZSTD
+      int ok;
+
+      ok = ZSTD_compress ((void *) compressed,
+                          *compressed_len,
+                          (const void *) uncompressed,
+                          uncompressed_len,
+                          compression_level);
+
+      if (!ZSTD_isError (ok)) {
+         *compressed_len = ok;
+      }
+      return !ZSTD_isError (ok);
+#else
+      MONGOC_ERROR ("Client attempting to use compress with zstd, but zstd "
+                    "compression is not compiled in");
+      return false;
+#endif
+   }
    case MONGOC_COMPRESSOR_NOOP_ID:
       memcpy (compressed, uncompressed, uncompressed_len);
       *compressed_len = uncompressed_len;

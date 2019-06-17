@@ -787,6 +787,7 @@ _mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen)
       BSON_UINT32_FROM_LE (rpc_le->compressed.uncompressed_size);
    bool ok;
    size_t msg_len = BSON_UINT32_TO_LE (buflen);
+   const size_t original_uncompressed_size = uncompressed_size;
 
    BSON_ASSERT (uncompressed_size <= buflen);
    memcpy (buf, (void *) (&msg_len), 4);
@@ -799,6 +800,9 @@ _mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen)
                            rpc_le->compressed.compressed_message_len,
                            buf + 16,
                            &uncompressed_size);
+   
+   BSON_ASSERT (original_uncompressed_size == uncompressed_size);
+
    if (ok) {
       return _mongoc_rpc_scatter (rpc_le, buf, buflen);
    }

@@ -29,7 +29,7 @@ Example
     mongoc_client_t *client;
     mongoc_uri_t *uri;
 
-    uri = mongoc_uri_new ("mongodb://localhost/?compressors=zlib,snappy");
+    uri = mongoc_uri_new ("mongodb://localhost/?compressors=zlib,snappy,zstd");
 
     if (bson_has_field (mongoc_uri_get_compressors (uri), "snappy")) {
        /* snappy enabled */
