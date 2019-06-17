@@ -799,15 +799,41 @@ mongoc_client_session_advance_operation_time (mongoc_client_session_t *session,
    EXIT;
 }
 
-
 bool
 mongoc_client_session_start_transaction (mongoc_client_session_t *session,
                                          const mongoc_transaction_opt_t *opts,
                                          bson_error_t *error)
 {
-   ENTRY;
+   int32_t max_wire_version;
+   mongoc_server_description_t *sd;
+   bool is_sharded_cluster;
 
+   ENTRY;
    BSON_ASSERT (session);
+
+   sd = mongoc_client_select_server (
+      session->client, true /* selects primary */, NULL, NULL);
+   max_wire_version = sd->max_wire_version;
+   is_sharded_cluster = sd && (sd->type == MONGOC_SERVER_MONGOS);
+   mongoc_server_description_destroy (sd);
+
+   if (is_sharded_cluster) {
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "Multi-document transactions on sharded clusters are not "
+                      "supported by this version of libmongoc");
+      RETURN (false);
+   }
+
+   if (max_wire_version < 7 || (max_wire_version < 8 && is_sharded_cluster)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "Multi-document transactions are not supported by this "
+                      "server version");
+      RETURN (false);
+   }
 
    /* use "switch" so that static checkers ensure we handle all states */
    switch (session->txn.state) {

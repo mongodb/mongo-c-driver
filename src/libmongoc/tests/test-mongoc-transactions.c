@@ -45,7 +45,6 @@ test_transactions_cb (bson_t *scenario)
 static void
 test_transactions_supported (void *ctx)
 {
-   bool supported;
    mongoc_client_t *client;
    mongoc_client_session_t *session;
    mongoc_database_t *db;
@@ -59,8 +58,6 @@ test_transactions_supported (void *ctx)
       return;
    }
 
-   supported = test_framework_max_wire_version_at_least (7) &&
-               test_framework_is_replset ();
    client = test_framework_client_new ();
    mongoc_client_set_error_api (client, 2);
    db = mongoc_client_get_database (client, "transaction-tests");
@@ -75,29 +72,24 @@ test_transactions_supported (void *ctx)
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session, error);
 
-   /* Transactions Spec says "startTransaction SHOULD report an error if the
-    * driver can detect that transactions are not supported by the deployment",
-    * but we take advantage of the wiggle room and don't error here. */
-   r = mongoc_client_session_start_transaction (session, NULL, &error);
-   ASSERT_OR_PRINT (r, error);
-
-   r = mongoc_client_session_append (session, &opts, &error);
-   ASSERT_OR_PRINT (r, error);
-   r = mongoc_collection_insert_one (
-      collection, tmp_bson ("{}"), &opts, NULL, &error);
-
-   if (supported) {
+   if ((r = mongoc_client_session_start_transaction (session, NULL, &error))) {
+      r = mongoc_client_session_append (session, &opts, &error);
       ASSERT_OR_PRINT (r, error);
+
+      r = mongoc_collection_insert_one (
+         collection, tmp_bson ("{}"), &opts, NULL, &error);
+
+      /* insert should fail if replset has no members */
+      BSON_ASSERT (r == test_framework_is_replset ());
    } else {
-      BSON_ASSERT (!r);
-      ASSERT_CMPINT32 (error.domain, ==, MONGOC_ERROR_SERVER);
+      ASSERT_CMPINT32 (error.domain, ==, MONGOC_ERROR_TRANSACTION);
       ASSERT_CONTAINS (error.message, "transaction");
    }
 
    bson_destroy (&opts);
    mongoc_collection_destroy (collection);
 
-   if (!supported) {
+   if (!r) {
       /* suppress "error in abortTransaction" warning from session_destroy */
       capture_logs (true);
    }
@@ -533,6 +525,38 @@ test_inherit_from_client (void *ctx)
    mongoc_client_destroy (client);
 }
 
+void
+test_transaction_fails_on_unsupported_version_or_sharded_cluster (void *ctx)
+{
+   bson_error_t error;
+   mongoc_client_session_t *session;
+   mongoc_client_t *client;
+   bool r;
+
+   client = test_framework_client_new ();
+   session = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (session, error);
+
+   r = mongoc_client_session_start_transaction (session, NULL, &error);
+   if (test_framework_is_mongos ()) {
+      BSON_ASSERT (!r);
+      ASSERT_CONTAINS (error.message,
+                       "Multi-document transactions on sharded clusters are "
+                       "not supported by this version of libmongoc");
+   } else if (!test_framework_max_wire_version_at_least (7) ||
+              (test_framework_is_mongos () &&
+               !test_framework_max_wire_version_at_least (8))) {
+      BSON_ASSERT (!r);
+      ASSERT_CONTAINS (error.message,
+                       "Multi-document transactions are not supported by this "
+                       "server version");
+   } else {
+      ASSERT_OR_PRINT (r, error);
+   }
+
+   mongoc_client_session_destroy (session);
+   mongoc_client_destroy (client);
+}
 
 void
 test_transactions_install (TestSuite *suite)
@@ -582,4 +606,13 @@ test_transactions_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_txns);
+   TestSuite_AddFull (
+      suite,
+      "/transactions/"
+      "transaction_fails_on_unsupported_version_or_sharded_cluster",
+      test_transaction_fails_on_unsupported_version_or_sharded_cluster,
+      NULL,
+      NULL,
+      test_framework_skip_if_no_sessions,
+      test_framework_skip_if_no_crypto);
 }
