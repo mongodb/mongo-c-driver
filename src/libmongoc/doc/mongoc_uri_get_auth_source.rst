@@ -24,7 +24,7 @@ Fetches the ``authSource`` parameter of an URI if provided.
 Returns
 -------
 
-A string which should not be modified or freed.
+A string which should not be modified or freed if the ``authSource`` parameter is provided, otherwise ``NULL``.
 
 .. only:: html
 

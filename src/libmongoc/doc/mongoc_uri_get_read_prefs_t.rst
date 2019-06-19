@@ -24,5 +24,5 @@ Fetches a read preference that is owned by the URI instance. This read preferenc
 Returns
 -------
 
-Returns a :symbol:`mongoc_read_prefs_t` that should not be modified or freed.
+Returns a :symbol:`mongoc_read_prefs_t` that should not be modified or freed if ``uri`` has read preferences, otherwise ``NULL``.
 
