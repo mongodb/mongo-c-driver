@@ -24,4 +24,4 @@ Fetches a linked list of hosts that were defined in the URI (the comma-separated
 Returns
 -------
 
-A linked list of :symbol:`mongoc_host_list_t` structures that should not be modified or freed. Returns NULL if this URI's scheme is "mongodb+srv://".
+A linked list of :symbol:`mongoc_host_list_t` structures that should not be modified or freed. Returns ``NULL`` if this URI's scheme is "mongodb+srv://".

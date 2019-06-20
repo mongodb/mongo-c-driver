@@ -24,5 +24,5 @@ Fetches a write concern that is owned by the URI instance. This write concern is
 Returns
 -------
 
-Returns a :symbol:`mongoc_write_concern_t` that should not be modified or freed.
+Returns a :symbol:`mongoc_write_concern_t` that should not be modified or freed if ``uri`` has a write concern provided, otherwise ``NULL``.
 

@@ -24,7 +24,7 @@ Fetches the ``authMechanism`` parameter to an URI if provided.
 Returns
 -------
 
-A string which should not be modified or freed.
+A string which should not be modified or freed. Returns ``NULL`` if the ``authMechanism`` parameter was not provided to ``uri``.
 
 .. only:: html
 

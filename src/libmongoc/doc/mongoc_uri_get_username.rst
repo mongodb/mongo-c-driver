@@ -24,5 +24,5 @@ Fetches the username portion of a URI.
 Returns
 -------
 
-Returns a string which should not be modified or freed.
+Returns a string which should not be modified or freed if ``uri`` has a username provided, otherwise ``NULL``.
 

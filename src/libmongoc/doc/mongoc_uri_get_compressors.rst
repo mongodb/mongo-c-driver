@@ -19,7 +19,7 @@ Parameters
 Description
 -----------
 
-Returns a bson document with the enabled compressors as the keys.
+Returns a bson document with the enabled compressors as the keys if ``uri`` has compressors provided, otherwise ``NULL``.
 
 Example
 -------

@@ -24,5 +24,5 @@ Fetches the ``replicaSet`` parameter of an URI.
 Returns
 -------
 
-Returns a string which should not be modified or freed.
+Returns a string which should not be modified or freed. Returns ``NULL`` if the ``replicaSet`` parameter was not provided to ``uri``.
 

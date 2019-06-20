@@ -33,5 +33,5 @@ Fetches a bson document containing read preference tag information from a URI. N
 Returns
 -------
 
-Returns a bson document that should not be modified or freed.
+Returns a bson document that should not be modified or freed if ``uri`` has read preferences, otherwise ``NULL``.
 

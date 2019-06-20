@@ -24,5 +24,5 @@ Fetches the password portion of an URI.
 Returns
 -------
 
-A string which should not be modified or freed.
+A string which should not be modified or freed if ``uri`` has a password specified, otherwise ``NULL``.
 
