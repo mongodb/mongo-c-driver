@@ -1851,28 +1851,6 @@ mongoc_uri_get_read_prefs (const mongoc_uri_t *uri)
    return mongoc_read_prefs_get_tags (uri->read_prefs);
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_uri_unescape --
- *
- *       Escapes an UTF-8 encoded string containing URI escaped segments
- *       such as %20.
- *
- *       It is a programming error to call this function with a string
- *       that is not UTF-8 encoded!
- *
- * Returns:
- *       A newly allocated string that should be freed with bson_free()
- *       or NULL on failure, such as invalid % encoding.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
 char *
 mongoc_uri_unescape (const char *escaped_string)
 {

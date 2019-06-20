@@ -24,5 +24,5 @@ Fetches the URI as a string.
 Returns
 -------
 
-Returns a string which should not be modified or freed if one is specified for ``uri``, otherwise ``NULL``.
+Returns a string which should not be modified or freed.
 
