@@ -995,8 +995,9 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
       mongoc_secure_channel_setup_crl (secure_channel, opt);
    }
 
+   PCCERT_CONTEXT cert = NULL;
    if (opt->pem_file) {
-      PCCERT_CONTEXT cert =
+      cert =
          mongoc_secure_channel_setup_certificate (secure_channel, opt);
 
       if (cert) {
