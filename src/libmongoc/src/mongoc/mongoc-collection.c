@@ -1124,7 +1124,7 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
                                     bson_iter_int32 (&iter));
       } else {
          bson_string_append_printf (s,
-                                    (i++ ? "_%s_%d" : "%s_%d"),
+                                    (i++ ? "_%s_%" PRId64 : "%s_%" PRId64),
                                     bson_iter_key (&iter),
                                     bson_iter_int64 (&iter));
       }
