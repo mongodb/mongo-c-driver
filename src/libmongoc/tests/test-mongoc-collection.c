@@ -4201,6 +4201,8 @@ test_get_index_info (void)
    const bson_t *indexinfo;
    bson_t indexkey1;
    bson_t indexkey2;
+   bson_t indexkey3;
+   bson_t indexkey4;
    bson_t dummy = BSON_INITIALIZER;
    bson_iter_t idx_spec_iter;
    bson_iter_t idx_spec_iter_copy;
@@ -4208,6 +4210,8 @@ test_get_index_info (void)
    const char *cur_idx_name;
    char *idx1_name = NULL;
    char *idx2_name = NULL;
+   char *idx3_name = NULL;
+   char *idx4_name = NULL;
    const char *id_idx_name = "_id_";
    int num_idxs = 0;
 
@@ -4259,6 +4263,7 @@ test_get_index_info (void)
    bson_init (&indexkey1);
    BSON_APPEND_INT32 (&indexkey1, "raspberry", 1);
    idx1_name = mongoc_collection_keys_to_index_string (&indexkey1);
+   ASSERT (strcmp (idx1_name, "raspberry_1") == 0);
    mongoc_index_opt_init (&opt1);
    opt1.background = true;
    ASSERT_OR_PRINT (
@@ -4269,6 +4274,7 @@ test_get_index_info (void)
    bson_init (&indexkey2);
    BSON_APPEND_INT32 (&indexkey2, "snozzberry", 1);
    idx2_name = mongoc_collection_keys_to_index_string (&indexkey2);
+   ASSERT (strcmp (idx2_name, "snozzberry_1") == 0);
    mongoc_index_opt_init (&opt2);
    opt2.unique = true;
    ASSERT_OR_PRINT (
@@ -4314,8 +4320,26 @@ test_get_index_info (void)
 
    mongoc_cursor_destroy (cursor);
 
+   /*
+    * Test that index strings are formed correctly when using an INT64
+    * for direction.
+    */
+   bson_init (&indexkey3);
+   BSON_APPEND_INT64 (&indexkey3, "blackberry", 1);
+   idx3_name = mongoc_collection_keys_to_index_string (&indexkey3);
+   ASSERT ((0 == strcmp (idx3_name, "blackberry_1")));
+   bson_destroy (&indexkey3);
+
+   bson_init (&indexkey4);
+   BSON_APPEND_INT64 (&indexkey4, "blueberry", -1);
+   idx4_name = mongoc_collection_keys_to_index_string (&indexkey4);
+   ASSERT ((0 == strcmp (idx4_name, "blueberry_-1")));
+   bson_destroy (&indexkey4);
+
    bson_free (idx1_name);
    bson_free (idx2_name);
+   bson_free (idx3_name);
+   bson_free (idx4_name);
 
    bson_destroy (&dummy);
    mongoc_collection_destroy (collection);
