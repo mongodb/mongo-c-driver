@@ -451,15 +451,16 @@ test_mongoc_platform_truncate (int drop)
 {
    mongoc_handshake_t *md;
    bson_t doc = BSON_INITIALIZER;
+   bson_iter_t iter;
 
    char *undropped;
+   char *expected;
    char big_string[HANDSHAKE_MAX_SIZE];
    int handshake_remaining_space;
 
    /* Need to know how much space storing fields in our BSON will take
     * so that we can make our platform string the correct length here */
-   int handshake_bson_size = 84;
-
+   int handshake_bson_size = 163;
    _reset_handshake ();
 
    md = _mongoc_handshake_get ();
@@ -488,14 +489,14 @@ test_mongoc_platform_truncate (int drop)
       (strlen (md->os_type) + strlen (md->os_name) + strlen (md->os_version) +
        strlen (md->os_architecture) + strlen (md->driver_name) +
        strlen (md->driver_version) + strlen (md->compiler_info) +
-       strlen (md->flags) + sizeof (*md) + handshake_bson_size);
+       strlen (md->flags) + handshake_bson_size);
 
    /* adjust remaining space depending on which combination of
     * flags/compiler_info we want to test dropping */
    if (drop == 2) {
       handshake_remaining_space +=
          strlen (md->flags) + strlen (md->compiler_info);
-      undropped = "";
+      undropped = bson_strdup_printf ("%s", "");
    } else if (drop == 1) {
       handshake_remaining_space += strlen (md->flags);
       undropped = bson_strdup_printf ("%s", md->compiler_info);
@@ -513,11 +514,12 @@ test_mongoc_platform_truncate (int drop)
     * dropped the flags correctly, instead of truncating anything
     */
    ASSERT_CMPUINT32 (doc.len, <, (uint32_t) HANDSHAKE_MAX_SIZE);
-   bson_iter_t iter;
-   bson_iter_init_find (&iter, &doc, "platform");
-   ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL),
-                  bson_strdup_printf ("%s%s", big_string, undropped));
+   bson_iter_init_find (&iter, &doc, "platform");   
+   expected = bson_strdup_printf ("%s%s", big_string, undropped);
+   ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), expected);
 
+   bson_free (expected);
+   bson_free (undropped);
    bson_destroy (&doc);
    /* So later tests don't have "aaaaa..." as the md platform string */
    _reset_handshake ();
