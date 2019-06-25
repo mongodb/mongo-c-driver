@@ -33,7 +33,7 @@ struct _mongoc_write_concern_t {
    int8_t fsync_; /* deprecated */
    int8_t journal;
    int32_t w;
-   int32_t wtimeout;
+   int64_t wtimeout;
    char *wtag;
    bool frozen;
    bson_t compiled;
