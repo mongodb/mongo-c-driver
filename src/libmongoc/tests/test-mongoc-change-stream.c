@@ -700,6 +700,8 @@ test_change_stream_resumable_error (void)
    const bson_t *next_doc = NULL;
    const char *not_master_err =
       "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }";
+   const char *interrupted_err =
+      "{ 'code': 11601, 'errmsg': 'interrupted', 'ok': 0 }";
    const char *watch_cmd =
       "{ 'aggregate': 'coll', 'pipeline' "
       ": [ { '$changeStream': { 'fullDocument': 'default' } } ], "
@@ -788,14 +790,31 @@ test_change_stream_resumable_error (void)
    mock_server_replies_simple (request, not_master_err);
    request_destroy (request);
 
+   /* Retry command */
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK, watch_cmd);
+   mock_server_replies_simple (request,
+                               "{'cursor': {'id': 126, 'ns': "
+                               "'db.coll','firstBatch': []},'ok': 1 "
+                               "}");
+   request_destroy (request);
+
+   request =
+      mock_server_receives_command (server,
+                                    "db",
+                                    MONGOC_QUERY_SLAVE_OK,
+                                    "{ 'getMore': 126, 'collection': 'coll' }");
+   mock_server_replies_simple (request, interrupted_err);
+   request_destroy (request);
+
    /* Check that error is returned */
    ASSERT (!future_get_bool (future));
    ASSERT (mongoc_change_stream_error_document (stream, &err, &err_doc));
    ASSERT (next_doc == NULL);
-   ASSERT_ERROR_CONTAINS (err, MONGOC_ERROR_SERVER, 10107, "not master");
-   ASSERT_MATCH (err_doc, not_master_err);
+   ASSERT_ERROR_CONTAINS (err, MONGOC_ERROR_SERVER, 11601, "interrupted");
+   ASSERT_MATCH (err_doc, interrupted_err);
    future_destroy (future);
-   mongoc_change_stream_destroy (stream);
+   DESTROY_CHANGE_STREAM (126);
 
    /* Test an error on the initial aggregate when resuming. */
    future = future_collection_watch (coll, tmp_bson ("{}"), NULL);
@@ -825,7 +844,7 @@ test_change_stream_resumable_error (void)
       server, "db", MONGOC_QUERY_SLAVE_OK, watch_cmd);
    mock_server_replies_simple (request,
                                "{'code': 123, 'errmsg': 'bad cmd', 'ok': 0}");
-   request_destroy (request);
+   request_destroy (request); 
 
    /* Check that error is returned */
    ASSERT (!future_get_bool (future));
@@ -833,7 +852,7 @@ test_change_stream_resumable_error (void)
    ASSERT (next_doc == NULL);
    ASSERT_ERROR_CONTAINS (err, MONGOC_ERROR_SERVER, 123, "bad cmd");
    ASSERT_MATCH (err_doc, "{'code': 123, 'errmsg': 'bad cmd', 'ok': 0}");
-   future_destroy (future);
+   future_destroy (future); 
 
    mongoc_change_stream_destroy (stream);
    mongoc_uri_destroy (uri);

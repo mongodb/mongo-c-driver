@@ -518,7 +518,7 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
       }
 
       resumable = _is_resumable_error (err_doc);
-      if (resumable) {
+      while (resumable) {
          /* recreate the cursor. */
          mongoc_cursor_destroy (stream->cursor);
          stream->cursor = NULL;
@@ -526,13 +526,16 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
          if (!_make_cursor (stream)) {
             goto end;
          }
-         if (!mongoc_cursor_next (stream->cursor, bson)) {
-            resumable =
-               !mongoc_cursor_error_document (stream->cursor, &err, &err_doc);
-            if (resumable) {
-               /* empty batch. */
-               goto end;
-            }
+         if (mongoc_cursor_next (stream->cursor, bson)) {
+            break;
+         }
+         if (!mongoc_cursor_error_document (stream->cursor, &err, &err_doc)) {
+            goto end;
+         }
+         if (err_doc) {
+            resumable = _is_resumable_error (err_doc);
+         } else {
+            resumable = false;
          }
       }
 
