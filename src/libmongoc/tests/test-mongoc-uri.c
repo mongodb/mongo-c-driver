@@ -1460,7 +1460,7 @@ test_mongoc_uri_write_concern (void)
       }
 
       if (t->wtimeoutms) {
-         BSON_ASSERT (t->wtimeoutms == mongoc_write_concern_get_wtimeout_int64 (wr));
+         BSON_ASSERT (t->wtimeoutms == mongoc_write_concern_get_wtimeout (wr));
       }
 
       mongoc_uri_destroy (uri);

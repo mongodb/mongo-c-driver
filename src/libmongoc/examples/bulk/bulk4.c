@@ -16,7 +16,7 @@ bulk4 (mongoc_collection_t *collection)
 
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 4);
-   mongoc_write_concern_set_wtimeout_int64 (wc, 100); /* milliseconds */
+   mongoc_write_concern_set_wtimeout (wc, 100); /* milliseconds */
    mongoc_write_concern_append (wc, &opts);
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);

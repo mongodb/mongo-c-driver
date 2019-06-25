@@ -147,7 +147,7 @@ _test_common_clone_w_concerns (void *ctx)
                   MONGOC_READ_CONCERN_LEVEL_LOCAL);
    /* test cloned write_concern. */
    ASSERT (mongoc_write_concern_get_wmajority (cloned->write_concern));
-   ASSERT (mongoc_write_concern_get_wtimeout_int64 (cloned->write_concern) == 1000);
+   ASSERT (mongoc_write_concern_get_wtimeout (cloned->write_concern) == 1000);
    ASSERT (mongoc_write_concern_get_w (cloned->write_concern) ==
            MONGOC_WRITE_CONCERN_W_MAJORITY);
    /* check generated bson in cloned cursor. */

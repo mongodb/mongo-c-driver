@@ -2732,7 +2732,7 @@ _test_write_concern (bool ordered, bool multi_err)
    collection = mongoc_client_get_collection (client, "test", "test");
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 2);
-   mongoc_write_concern_set_wtimeout_int64 (wc, 100);
+   mongoc_write_concern_set_wtimeout (wc, 100);
    mongoc_write_concern_append (wc, &opts);
    bson_append_bool (&opts, "ordered", 7, ordered);
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);

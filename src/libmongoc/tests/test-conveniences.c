@@ -342,7 +342,7 @@ bson_lookup_write_concern (const bson_t *b, const char *key)
    }
 
    if (bson_has_field (&doc, "wtimeout")) {
-      mongoc_write_concern_set_wtimeout_int64 (wc,
+      mongoc_write_concern_set_wtimeout (wc,
                                          bson_lookup_int32 (&doc, "wtimeout"));
    }
 
