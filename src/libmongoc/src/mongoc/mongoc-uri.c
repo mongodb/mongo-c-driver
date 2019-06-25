@@ -884,6 +884,12 @@ mongoc_uri_split_option (mongoc_uri_t *uri,
    mongoc_uri_bson_append_or_replace_key (options, lkey, value);
    ret = true;
 
+   if (!(strcmp (lkey, MONGOC_URI_REPLICASET)) && *value == '\0') {
+      MONGOC_URI_ERROR (
+         error, "Value for URI option \"%s\" cannot be empty string", lkey);
+      goto CLEANUP;
+   }
+
 CLEANUP:
    bson_free (key);
    bson_free (lkey);
