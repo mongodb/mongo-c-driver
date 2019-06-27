@@ -11,6 +11,9 @@
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
 
+#ifdef _WIN32
+#define snprintf _snprintf
+#endif
 
 static void
 test_mongoc_uri_new (void)
