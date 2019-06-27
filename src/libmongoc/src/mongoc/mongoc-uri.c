@@ -881,6 +881,12 @@ mongoc_uri_split_option (mongoc_uri_t *uri,
       MONGOC_WARNING ("Overwriting previously provided value for '%s'", key);
    }
 
+   if (!(strcmp (lkey, MONGOC_URI_REPLICASET)) && *value == '\0') {
+      MONGOC_URI_ERROR (
+         error, "Value for URI option \"%s\" cannot be empty string", lkey);
+      goto CLEANUP;
+   }
+
    mongoc_uri_bson_append_or_replace_key (options, lkey, value);
    ret = true;
 
