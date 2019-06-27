@@ -48,13 +48,21 @@ def check_output(args):
     provides a reasonable facsimile.
     """
     if 'check_output' in dir(subprocess):
-        return subprocess.check_output(args)
+        out = subprocess.check_output(args)
+    else:
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE)
+        out, err = proc.communicate()
+        ret = proc.poll()
+        if ret:
+            raise subprocess.CalledProcessError(ret, args[0], output=out)
 
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE)
-    out, err = proc.communicate()
-    ret = proc.poll()
-    if ret:
-        raise subprocess.CalledProcessError(ret, args[0], output=out)
+    if type(out) is bytes:
+       """
+       git isn't guaranteed to always return UTF-8, but for our purposes
+       this should be fine as tags and hashes should be ASCII only.
+       """
+       out = out.decode('utf-8')
+
     return out
 
 
