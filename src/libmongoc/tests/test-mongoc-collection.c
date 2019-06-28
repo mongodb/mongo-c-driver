@@ -4352,6 +4352,7 @@ test_get_index_info (void)
    bson_free (idx2_name);
    bson_free (idx3_name);
    bson_free (idx4_name);
+   bson_free (idx5_name);
 
    bson_destroy (&dummy);
    mongoc_collection_destroy (collection);
