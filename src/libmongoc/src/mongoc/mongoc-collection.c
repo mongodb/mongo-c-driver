@@ -1117,19 +1117,23 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
                                     (i++ ? "_%s_%s" : "%s_%s"),
                                     bson_iter_key (&iter),
                                     bson_iter_utf8 (&iter, NULL));
+         return bson_string_free (s, false);
       } else if (type == BSON_TYPE_INT32) {
          bson_string_append_printf (s,
                                     (i++ ? "_%s_%d" : "%s_%d"),
                                     bson_iter_key (&iter),
                                     bson_iter_int32 (&iter));
-      } else {
+         return bson_string_free (s, false);
+      } else if (type == BSON_TYPE_INT64) {
          bson_string_append_printf (s,
                                     (i++ ? "_%s_%" PRId64 : "%s_%" PRId64),
                                     bson_iter_key (&iter),
                                     bson_iter_int64 (&iter));
+         return bson_string_free (s, false);
       }
    }
-   return bson_string_free (s, false);
+   bson_string_free (s, true);
+   return NULL;
 }
 
 

@@ -4203,6 +4203,7 @@ test_get_index_info (void)
    bson_t indexkey2;
    bson_t indexkey3;
    bson_t indexkey4;
+   bson_t indexkey5;
    bson_t dummy = BSON_INITIALIZER;
    bson_iter_t idx_spec_iter;
    bson_iter_t idx_spec_iter_copy;
@@ -4212,6 +4213,7 @@ test_get_index_info (void)
    char *idx2_name = NULL;
    char *idx3_name = NULL;
    char *idx4_name = NULL;
+   char *idx5_name = NULL;
    const char *id_idx_name = "_id_";
    int num_idxs = 0;
 
@@ -4335,6 +4337,15 @@ test_get_index_info (void)
    idx4_name = mongoc_collection_keys_to_index_string (&indexkey4);
    ASSERT ((0 == strcmp (idx4_name, "blueberry_-1")));
    bson_destroy (&indexkey4);
+
+   /*
+    * Test that index string is NULL when an incorrect BSON type is
+    * used for direction.
+    */
+   bson_init (&indexkey5);
+   BSON_APPEND_DOUBLE (&indexkey5, "strawberry", 1.0f);
+   idx5_name = mongoc_collection_keys_to_index_string (&indexkey5);
+   ASSERT ((idx5_name == NULL));
 
    bson_free (idx1_name);
    bson_free (idx2_name);
