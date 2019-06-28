@@ -4346,6 +4346,7 @@ test_get_index_info (void)
    BSON_APPEND_DOUBLE (&indexkey5, "strawberry", 1.0f);
    idx5_name = mongoc_collection_keys_to_index_string (&indexkey5);
    ASSERT ((idx5_name == NULL));
+   bson_destroy (&indexkey5);
 
    bson_free (idx1_name);
    bson_free (idx2_name);
