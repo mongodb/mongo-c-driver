@@ -20,7 +20,7 @@ Parameters
 Description
 -----------
 
-Frees the ``bson_string_t`` structure and optionally the string itself.
+Frees the ``bson_string_t`` structure and optionally ``string->str``.
 
 Returns
 -------
