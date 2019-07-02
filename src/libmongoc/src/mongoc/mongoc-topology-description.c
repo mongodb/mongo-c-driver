@@ -1416,6 +1416,9 @@ _mongoc_topology_description_update_rs_from_primary (
       } else if (strcmp (topology->set_name, server->set_name) != 0) {
          _mongoc_topology_description_remove_server (topology, server);
          _update_rs_type (topology);
+         if (topology->set_name && !topology->servers) {
+            MONGOC_WARNING ("Empty topology");
+         }
          return;
       }
    }

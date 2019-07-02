@@ -73,8 +73,7 @@ test_mongoc_uri_new (void)
    ASSERT (!mongoc_uri_new ("mongodb://[::1]:65536"));
    ASSERT (!mongoc_uri_new ("mongodb://[::1]:65536/"));
    ASSERT (!mongoc_uri_new ("mongodb://[::1]:0/"));
-   ASSERT (!mongoc_uri_new ("mongodb://local1,local2/test?replicaset="));
-   ASSERT (!mongoc_uri_new ("mongodb://localhost:27017/test?replicaset=foo"));
+   ASSERT (!mongoc_uri_new ("mongodb://localhost:27017/test?replicaset="));
 
    uri = mongoc_uri_new (
       "mongodb://[::1]:27888,[::2]:27999/?ipv6=true&" MONGOC_URI_SAFE "=true");
@@ -112,7 +111,7 @@ test_mongoc_uri_new (void)
    ASSERT (uri);
    mongoc_uri_destroy (uri);
 
-   uri = mongoc_uri_new ("mongodb://localhost:27017/test");
+   uri = mongoc_uri_new ("mongodb://localhost:27017/test?replicaset=foo");
    ASSERT (uri);
    hosts = mongoc_uri_get_hosts (uri);
    ASSERT (hosts);
@@ -123,6 +122,8 @@ test_mongoc_uri_new (void)
    ASSERT_CMPSTR (mongoc_uri_get_database (uri), "test");
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
+   ASSERT (bson_iter_init_find (&iter, options, "replicaset"));
+   ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "foo");
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new ("mongodb://local1,local2:999,local3/?replicaset=foo");
@@ -314,7 +315,7 @@ test_mongoc_uri_new (void)
       "uri", MONGOC_LOG_LEVEL_WARNING, "Invalid % escape sequence");
 
    uri = mongoc_uri_new (
-      "mongodb://christian%40realm@localhost:27017,local2/?replicaset=%20");
+      "mongodb://christian%40realm@localhost:27017/?replicaset=%20");
    ASSERT (uri);
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
@@ -324,7 +325,7 @@ test_mongoc_uri_new (void)
    mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new (
-      "mongodb://christian%40realm@[::6]:27017,local2/?replicaset=%20");
+      "mongodb://christian%40realm@[::6]:27017/?replicaset=%20");
    ASSERT (uri);
    options = mongoc_uri_get_options (uri);
    ASSERT (options);
@@ -443,11 +444,6 @@ test_mongoc_uri_new (void)
                          "=SCRAM-SHA1");
    ASSERT (uri);
    ASSERT_CMPSTR (mongoc_uri_get_auth_mechanism (uri), "SCRAM-SHA1");
-   mongoc_uri_destroy (uri);
-
-   uri = mongoc_uri_new ("mongodb://h1,h2/?replicaset=notareplicaset");
-   ASSERT (uri);
-   printf ("replica set: %s\n", mongoc_uri_get_replica_set (uri));
    mongoc_uri_destroy (uri);
 }
 
