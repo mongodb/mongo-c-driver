@@ -6,22 +6,11 @@ compiler:
 
 os:
   - linux
-  - osx
-
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  # https://github.com/Homebrew/homebrew-core/issues/26358
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew unlink python; fi
-  # "brew install" can succeed but return 1 if it has "caveats".
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install mongodb || true; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew services start mongodb; fi
 
 before_script:
   # Add an IPv6 config - see the corresponding Travis issue
   # https://github.com/travis-ci/travis-ci/issues/8361
-  - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then
-      sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6';
-    fi
+  - sudo sh -c 'echo 0 > /proc/sys/net/ipv6/conf/all/disable_ipv6'
 
 services: mongodb
 
@@ -48,9 +37,31 @@ after_failure:
 
 # Exclude gcc on osx since it's just an alias for clang.
 matrix:
-  exclude:
+  include:
   - compiler: gcc
+    os: linux-ppc64le
+    addons:
+      apt:
+        packages:
+        - mongodb-enterprise
+        - gdb
+        sources:
+        - sourceline: 'deb http://repo.mongodb.com/apt/ubuntu xenial/mongodb-enterprise/4.0 multiverse'
+          key_url: 'https://www.mongodb.org/static/pgp/server-4.0.asc'
+        update: true
+    services:
+    before_install:
+    - sudo systemctl start mongod
+  - compiler: clang
     os: osx
+    services:
+    before_script:
+      - brew update
+      # https://github.com/Homebrew/homebrew-core/issues/26358
+      - brew unlink python
+      # "brew install" can succeed but return 1 if it has "caveats".
+      - brew install mongodb || true
+      - brew services start mongodb
 
 git:
   depth: 20
