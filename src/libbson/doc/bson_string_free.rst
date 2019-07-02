@@ -15,15 +15,15 @@ Parameters
 ----------
 
 * ``string``: A :symbol:`bson_string_t`.
-* ``free_segment``: A bool indicating if ``str->str`` should be returned.
+* ``free_segment``: A bool indicating whether ``string->str`` should be freed.
 
 Description
 -----------
 
-Frees the bson_string_t structure and optionally the string itself.
+Frees the ``bson_string_t`` structure and optionally ``string->str``.
 
 Returns
 -------
 
-``str->str`` if ``free_segment`` is true, otherwise NULL.
+``string->str`` if ``free_segment`` is false, otherwise ``NULL``.
 
