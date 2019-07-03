@@ -1097,6 +1097,7 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
 {
    bson_string_t *s;
    bson_iter_t iter;
+   bson_type_t type;
    int i = 0;
 
    BSON_ASSERT (keys);
@@ -1110,19 +1111,27 @@ mongoc_collection_keys_to_index_string (const bson_t *keys)
    while (bson_iter_next (&iter)) {
       /* Index type can be specified as a string ("2d") or as an integer
        * representing direction */
-      if (bson_iter_type (&iter) == BSON_TYPE_UTF8) {
+      type = bson_iter_type (&iter);
+      if (type == BSON_TYPE_UTF8) {
          bson_string_append_printf (s,
                                     (i++ ? "_%s_%s" : "%s_%s"),
                                     bson_iter_key (&iter),
                                     bson_iter_utf8 (&iter, NULL));
-      } else {
+      } else if (type == BSON_TYPE_INT32) {
          bson_string_append_printf (s,
                                     (i++ ? "_%s_%d" : "%s_%d"),
                                     bson_iter_key (&iter),
                                     bson_iter_int32 (&iter));
+      } else if (type == BSON_TYPE_INT64) {
+         bson_string_append_printf (s,
+                                    (i++ ? "_%s_%" PRId64 : "%s_%" PRId64),
+                                    bson_iter_key (&iter),
+                                    bson_iter_int64 (&iter));
+      } else {
+         bson_string_free (s, true);
+         return NULL;
       }
    }
-
    return bson_string_free (s, false);
 }
 
