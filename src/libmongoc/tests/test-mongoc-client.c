@@ -2208,11 +2208,14 @@ test_mongoc_client_mismatched_me (void)
 
    mock_server_replies_simple (request, reply);
 
+   capture_logs (true);
    BSON_ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
                           "No suitable servers");
+   ASSERT_CAPTURED_LOG ("client", MONGOC_LOG_LEVEL_WARNING,
+                        "Last server removed from topology");
 
    bson_free (reply);
    request_destroy (request);

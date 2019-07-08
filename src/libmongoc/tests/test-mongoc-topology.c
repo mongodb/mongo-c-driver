@@ -1021,10 +1021,13 @@ _test_server_removed_during_handshake (bool pooled)
    mongoc_server_description_destroy (sd);
 
    /* opens new stream and runs ismaster again, discovers bad setName. */
+   capture_logs (true);
    r = mongoc_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT (!r);
+   ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_WARNING,
+                        "Last server removed from topology");
    if (!pooled) {
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,
