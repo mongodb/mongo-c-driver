@@ -1869,6 +1869,42 @@ _test_request_scan_on_error (bool pooled,
    mock_server_destroy (secondary);
 }
 
+static void
+test_last_server_removed_warning ()
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   mongoc_server_description_t *description;
+   mongoc_read_prefs_t *primary_pref;
+   bson_error_t error;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "set");
+   client = mongoc_client_new_from_uri (uri);
+   primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'setName': 'rs',"
+                              "  'minWireVersion': 2,"
+                              "  'maxWireVersion': 5,"
+                              " 'hosts': ['127.0.0.1:%hu']}",
+                              mock_server_get_port (server));
+                              
+   capture_logs (true);
+   description = mongoc_topology_select (
+      client->topology, MONGOC_SS_READ, primary_pref, &error);
+   ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_WARNING,
+                        "Last server removed from topology");
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
 
 static void
 test_request_scan_on_error ()
@@ -2086,4 +2122,7 @@ test_topology_install (TestSuite *suite)
                                 test_cluster_time_updated_during_handshake);
    TestSuite_AddMockServerTest (
       suite, "/Topology/request_scan_on_error", test_request_scan_on_error);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/last_server_removed_warning",
+                                test_last_server_removed_warning);
 }

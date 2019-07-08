@@ -125,9 +125,6 @@ test_mongoc_uri_new (void)
    ASSERT (bson_iter_init_find (&iter, options, "replicaset"));
    ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), "foo");
    mongoc_uri_destroy (uri);
-   ASSERT_CAPTURED_LOG (
-      "uri", MONGOC_LOG_LEVEL_WARNING,
-      "Connecting to standalone server with \"replicaset\" option present");
 
    uri = mongoc_uri_new ("mongodb://local1,local2:999,local3/?replicaset=foo");
    ASSERT (uri);

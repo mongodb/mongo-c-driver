@@ -887,11 +887,6 @@ mongoc_uri_split_option (mongoc_uri_t *uri,
       goto CLEANUP;
    }
 
-   if (!strcmp (lkey, MONGOC_URI_REPLICASET) && !(uri->hosts->next)) {
-      MONGOC_WARNING (
-         "Connecting to standalone server with \"%s\" option present", lkey);
-   }
-
    mongoc_uri_bson_append_or_replace_key (options, lkey, value);
    ret = true;
 
