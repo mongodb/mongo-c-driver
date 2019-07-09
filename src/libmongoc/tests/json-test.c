@@ -209,8 +209,9 @@ process_sdam_test_ismaster_responses (bson_t *phase,
       mongoc_topology_description_handle_ismaster (
          td, sd->id, &response, 1, NULL);
       if (td->servers->items_len == 0) {
-         ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_WARNING,
-                        "Last server removed from topology");
+         ASSERT_CAPTURED_LOG ("topology",
+                              MONGOC_LOG_LEVEL_WARNING,
+                              "Last server removed from topology");
       }
    }
 }

@@ -1026,7 +1026,8 @@ _test_server_removed_during_handshake (bool pooled)
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT (!r);
-   ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_WARNING,
+   ASSERT_CAPTURED_LOG ("topology",
+                        MONGOC_LOG_LEVEL_WARNING,
                         "Last server removed from topology");
    if (!pooled) {
       ASSERT_ERROR_CONTAINS (error,
@@ -1878,7 +1879,7 @@ test_last_server_removed_warning ()
    mock_server_t *server;
    mongoc_client_t *client;
    mongoc_uri_t *uri;
-   mongoc_server_description_t *description; // need to free?
+   mongoc_server_description_t *description;
    mongoc_read_prefs_t *read_prefs;
    bson_error_t error;
 
@@ -1897,13 +1898,15 @@ test_last_server_removed_warning ()
                               "  'maxWireVersion': 5,"
                               " 'hosts': ['127.0.0.1:%hu']}",
                               mock_server_get_port (server));
-                              
+
    capture_logs (true);
    description = mongoc_topology_select (
       client->topology, MONGOC_SS_READ, read_prefs, &error);
-   ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_WARNING,
+   ASSERT_CAPTURED_LOG ("topology",
+                        MONGOC_LOG_LEVEL_WARNING,
                         "Last server removed from topology");
 
+   mongoc_server_description_destroy (description);
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
