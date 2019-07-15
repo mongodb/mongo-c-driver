@@ -2206,9 +2206,9 @@ test_mongoc_client_mismatched_me (void)
                                " 'hosts': ['%s']}",
                                mock_server_get_host_and_port (server));
 
-   mock_server_replies_simple (request, reply);
-
    capture_logs (true);
+   mock_server_replies_simple (request, reply);
+   
    BSON_ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
