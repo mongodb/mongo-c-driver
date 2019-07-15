@@ -1792,6 +1792,10 @@ _test_request_scan_on_error (bool pooled,
       client, "db", tmp_bson ("{'ping': 1}"), read_prefs, &reply, &error);
    request = mock_server_receives_msg (
       primary, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+
+   /* Capture logs to swallow warnings about endSessions */
+   capture_logs (true);
+
    mock_server_replies_simple (request, err_response);
    request_destroy (request);
    /* don't check the return value of future. write concern errors are still
@@ -1907,8 +1911,8 @@ test_request_scan_on_error ()
               true /* should_scan */,
               true /* should_mark_unknown */,
               "not master");
-   /* check the error code for InterruptedAtShutdown, which should be considered
-    * a "node is recovering" error. */
+   /* check the error code for InterruptedAtShutdown, which behaves
+    * much like a "node is recovering" error. */
    TEST_SINGLE ("{'ok': 0, 'code': 11600 }",
                 false /* should_scan */,
                 true /* should_mark_unknown */,

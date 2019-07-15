@@ -63,7 +63,10 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_ARRAY_FILTERS 6
 /* first version to support retryable writes  */
 #define WIRE_VERSION_RETRY_WRITES 6
-
+/* version corresponding to server 4.0 release */
+#define WIRE_VERSION_4_0 7
+/* version corresponding to server 4.2 release */
+#define WIRE_VERSION_4_2 8
 
 struct _mongoc_client_t {
    mongoc_uri_t *uri;

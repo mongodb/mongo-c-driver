@@ -408,6 +408,7 @@ done:
 typedef enum {
    MONGOC_REPLY_ERR_TYPE_NONE,
    MONGOC_REPLY_ERR_TYPE_NOT_MASTER,
+   MONGOC_REPLY_ERR_TYPE_SHUTDOWN,
    MONGOC_REPLY_ERR_TYPE_NODE_IS_RECOVERING
 } reply_error_type_t;
 
@@ -436,10 +437,11 @@ _check_not_master_or_recovering_error (const mongoc_client_t *client,
 
    switch (error->code) {
    case 11600: /* InterruptedAtShutdown */
+   case 91:    /* ShutdownInProgress */
+      return MONGOC_REPLY_ERR_TYPE_SHUTDOWN;
    case 11602: /* InterruptedDueToReplStateChange */
    case 13436: /* NotMasterOrSecondary */
    case 189:   /* PrimarySteppedDown */
-   case 91:    /* ShutdownInProgress */
       return MONGOC_REPLY_ERR_TYPE_NODE_IS_RECOVERING;
    case 10107: /* NotMaster */
    case 13435: /* NotMasterNoSlaveOk */
@@ -461,6 +463,7 @@ handle_not_master_error (mongoc_cluster_t *cluster,
                          const bson_t *reply)
 {
    mongoc_topology_t *topology = cluster->client->topology;
+   mongoc_server_description_t *sd;
    bson_error_t error;
    reply_error_type_t error_type =
       _check_not_master_or_recovering_error (cluster->client, reply, &error);
@@ -469,8 +472,19 @@ handle_not_master_error (mongoc_cluster_t *cluster,
       /* Server Discovery and Monitoring Spec: "When the client sees a 'not
        * master' or 'node is recovering' error it MUST replace the server's
        * description with a default ServerDescription of type Unknown."
-       */
+       *
+       * The client MUST clear its connection pool for the server
+       * if the server is 4.0 or earlier, and MUST NOT clear its connection
+       * pool for the server if the server is 4.2 or later. */
+      sd = mongoc_topology_server_by_id (topology, server_id, &error);
+      if (sd->max_wire_version <= WIRE_VERSION_4_0 ||
+          error_type == MONGOC_REPLY_ERR_TYPE_SHUTDOWN) {
+         mongoc_cluster_disconnect_node (cluster, server_id, false, NULL);
+      }
+      mongoc_server_description_destroy (sd);
+
       mongoc_topology_invalidate_server (topology, server_id, &error);
+
       if (topology->single_threaded) {
          /* SDAM Spec: "For single-threaded clients, in the case of a 'not
           * master' error, the client MUST check the server immediately... For a
