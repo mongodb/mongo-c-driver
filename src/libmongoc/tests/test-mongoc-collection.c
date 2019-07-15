@@ -1286,6 +1286,64 @@ test_update (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_bson_stuff (void)
+{
+   char *data;
+   bson_t *bson;
+   bson_error_t error;
+
+   data = "[ { \"foo\" : \"bar\" }, { \"a\" : \"b\" } ]";
+   bson = bson_new_from_json ((const uint8_t *) data, -1, &error);
+
+   ASSERT_OR_PRINT (bson, error);
+                    
+   printf ("%s\n", bson_as_json (bson, NULL));
+}
+
+static void
+test_update_pipeline (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *b;
+   bson_t *q;
+   bson_t *pipeline;
+   bson_t reply;
+   bool res;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   database = get_test_database (client);
+   ASSERT (database);
+
+   collection = get_test_collection (client, "test_update");
+   ASSERT (collection);
+
+   b = BCON_NEW ("hello", BCON_UTF8 ("hi"));
+
+   res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   q = BCON_NEW ("hello", BCON_UTF8 ("hi"));
+
+   pipeline = bson_new_from_json ((const uint8_t *) "[ { \"$match\" : { \"hello\" : \"hi\" } } ]", -1, &error);
+   ASSERT_OR_PRINT (pipeline, error);
+
+   res = mongoc_collection_update_one (collection, b, pipeline, NULL, &reply, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   bson_destroy (b);
+   bson_destroy (q);
+   bson_destroy (pipeline);
+
+   mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
 
 static void
 test_update_oversize (void *ctx)
@@ -6346,4 +6404,6 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_replset);
+   TestSuite_Add (suite, "/Collection/update_pipeline", test_update_pipeline);
+   TestSuite_Add (suite, "/Collection/bson", test_bson_stuff);
 }

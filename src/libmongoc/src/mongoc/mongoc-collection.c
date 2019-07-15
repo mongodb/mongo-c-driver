@@ -287,6 +287,7 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
                              const bson_t *opts,                    /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
+   printf ("here\n%s\n", bson_as_json (pipeline, NULL));
    return _mongoc_aggregate (collection->client,
                              collection->ns,
                              flags,
@@ -900,6 +901,7 @@ _make_aggregate_for_count (const mongoc_collection_t *coll,
    bson_append_document_end (&group_stage, &group_stage_doc);
    bson_append_document_end (&pipeline, &group_stage);
    bson_append_array_end (out, &pipeline);
+   printf ("%s\n", bson_as_json (&pipeline, NULL));
 }
 
 

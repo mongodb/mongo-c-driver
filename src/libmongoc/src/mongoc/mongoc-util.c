@@ -371,18 +371,18 @@ _mongoc_validate_update (const bson_t *update,
       return false;
    }
 
-   while (bson_iter_next (&iter)) {
-      key = bson_iter_key (&iter);
-      if (key[0] != '$') {
-         bson_set_error (error,
-                         MONGOC_ERROR_COMMAND,
-                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid key '%s': update only works with $ operators",
-                         key);
+   // while (bson_iter_next (&iter)) {
+   //    key = bson_iter_key (&iter);
+   //    if (key[0] != '$') {
+   //       bson_set_error (error,
+   //                       MONGOC_ERROR_COMMAND,
+   //                       MONGOC_ERROR_COMMAND_INVALID_ARG,
+   //                       "Invalid key '%s': update only works with $ operators",
+   //                       key);
 
-         return false;
-      }
-   }
+   //       return false;
+   //    }
+   // }
 
    return true;
 }
