@@ -1862,7 +1862,7 @@ mongoc_collection_update (mongoc_collection_t *collection,
 static bool
 _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
                                       const bson_t *selector,
-                                      const bson_t *update,
+                                      const bson_value_t *update,
                                       mongoc_update_opts_t *update_opts,
                                       bool multi,
                                       bool bypass,
@@ -1876,6 +1876,20 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
    mongoc_server_stream_t *server_stream = NULL;
    bool reply_initialized = false;
    bool ret = false;
+
+   /* Consider threading argument down to where we add the update document*/
+   /* Or consider using: */
+   // bson_value_t value;
+
+   // /* in an update function, if there's a pipeline, set the value to */
+   // bson_iter_init_find (update, "pipeline", -1);
+   // value.value_type = bson_iter_value (&iter);
+   // /* otherwise, use the document directly */
+   // value = bson_get_data (update);
+   // value = update->len;
+
+   /* Then: if it's really true that we can't construct a bson_t array, we should remove
+      that from mongoc_collection_aggregate and the documentation... */
 
    ENTRY;
 
@@ -1901,6 +1915,7 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
 
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_update_idl (
+      /* pass that argument through here  */
       &command,
       selector,
       update,
@@ -2006,6 +2021,10 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
 {
    mongoc_update_one_opts_t update_one_opts;
    bool ret;
+   bson_value_t value;
+   bson_iter_t iter;
+   uint32_t len;
+   const uint8_t *data;
 
    ENTRY;
 
@@ -2025,6 +2044,18 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
       _mongoc_bson_init_if_set (reply);
       return false;
    }
+
+   if (bson_iter_init_find (&iter, update, "pipeline")) {
+      value.value_type = BSON_TYPE_ARRAY;
+      bson_iter_array (&iter, &len, &data);
+   } else {
+      value.value_type = BSON_TYPE_DOCUMENT;
+      data = bson_get_data (update);
+      len = update->len;
+   }
+   value.value.v_doc.data_len = len;
+   value.value.v_doc.data = (uint8_t *) data;
+   
 
    ret = _mongoc_collection_update_or_replace (collection,
                                                selector,

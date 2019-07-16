@@ -1289,16 +1289,112 @@ test_update (void)
 static void
 test_bson_stuff (void)
 {
-   char *data;
-   bson_t *bson;
+   bson_t b;
+   bson_t *arr;
+   bson_iter_t iter;
+   uint32_t len;
+   const uint8_t *data;
+
+   arr = tmp_bson ("{ '0': 'a', '1': 'b', '2': 'c' }");
+
+   bson_init (&b);
+   bson_append_array (&b, "arr", -1, arr);
+   printf ("%s\n", bson_as_json (&b, NULL));
+
+   bson_iter_init_find (&iter, &b, "arr");
+   bson_iter_array (&iter, &len, &data);
+   arr = bson_new_from_data (data, len);
+   printf ("%s\n", bson_as_json (arr, NULL));
+
+   bson_destroy (&b);
+   bson_destroy (arr);
+}
+
+static void
+test_update_pipeline2 (void)
+{
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *b;
+   bson_t *q;
+   bson_t *pipeline;
+   bson_t reply;
+   bool res;
+   unsigned i;
+   mongoc_apm_callbacks_t *cb;
+
+   cb = mongoc_apm_callbacks_new ();
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   database = get_test_database (client);
+   ASSERT (database);
+
+   collection = get_test_collection (client, "test_update");
+   ASSERT (collection);
+
+   for (i = 0; i < 5; i++) {
+      b = tmp_bson ("{'x': %d, 'y': %d}", i, i + 1);
+      res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
+      ASSERT_OR_PRINT (res, error);
+   }
+
+   pipeline = tmp_bson ("[{'$addFields': {'fieldSum': {'$add': ['$x', '$y']}}}]");
+   // pipeline = tmp_bson ("[{'$replaceRoot': '$x'}]");
+
+   q = tmp_bson ("{'x': {'$gte': 3}}");
+
+   res = mongoc_collection_update_one (collection, q, pipeline, NULL, &reply, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+   mongoc_apm_callbacks_destroy (cb);
+}
+
+static void
+command_started (const mongoc_apm_command_started_t *event)
+{
+   char *s;
+
+   s = bson_as_json (
+      mongoc_apm_command_started_get_command (event), NULL);
+   printf ("Command %s started on %s:\n%s\n\n",
+           mongoc_apm_command_started_get_command_name (event),
+           mongoc_apm_command_started_get_host (event)->host,
+           s);
+
+   bson_free (s);
+}
+
+static void
+command_succeeded (const mongoc_apm_command_succeeded_t *event)
+{
+   char *s;
+
+   s = bson_as_json (
+      mongoc_apm_command_succeeded_get_reply (event), NULL);
+   printf ("Command %s succeeded:\n%s\n\n",
+           mongoc_apm_command_succeeded_get_command_name (event),
+           s);
+
+   bson_free (s);
+}
+
+
+static void
+command_failed (const mongoc_apm_command_failed_t *event)
+{
    bson_error_t error;
 
-   data = "[ { \"foo\" : \"bar\" }, { \"a\" : \"b\" } ]";
-   bson = bson_new_from_json ((const uint8_t *) data, -1, &error);
-
-   ASSERT_OR_PRINT (bson, error);
-                    
-   printf ("%s\n", bson_as_json (bson, NULL));
+   mongoc_apm_command_failed_get_error (event, &error);
+   printf ("Command %s failed:\n\"%s\"\n\n",
+           mongoc_apm_command_failed_get_command_name (event),
+           error.message);
 }
 
 static void
@@ -1313,32 +1409,35 @@ test_update_pipeline (void)
    bson_t *pipeline;
    bson_t reply;
    bool res;
+   mongoc_apm_callbacks_t *cb;
 
    client = test_framework_client_new ();
    ASSERT (client);
 
+   cb = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (cb, command_started);
+   mongoc_apm_set_command_succeeded_cb (cb, command_succeeded);
+   mongoc_apm_set_command_failed_cb (cb, command_failed);
+   ASSERT (cb);
+   mongoc_client_set_apm_callbacks (client, cb, NULL);
+
    database = get_test_database (client);
    ASSERT (database);
 
-   collection = get_test_collection (client, "test_update");
+   collection = get_test_collection (client, "test_update_pipeline");
    ASSERT (collection);
 
-   b = BCON_NEW ("hello", BCON_UTF8 ("hi"));
-
+   b = tmp_bson ("{'x': 1}");
    res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
-   q = BCON_NEW ("hello", BCON_UTF8 ("hi"));
+   pipeline = tmp_bson ("[{'$addFields': {'y': 2}}]");
+   // pipeline = tmp_bson ("[{'$replaceRoot': '$x'}]");
 
-   pipeline = bson_new_from_json ((const uint8_t *) "[ { \"$match\" : { \"hello\" : \"hi\" } } ]", -1, &error);
-   ASSERT_OR_PRINT (pipeline, error);
+   q = tmp_bson ("{'x': 1}");
 
-   res = mongoc_collection_update_one (collection, b, pipeline, NULL, &reply, &error);
+   res = mongoc_collection_update_one (collection, q, pipeline, NULL, &reply, &error);
    ASSERT_OR_PRINT (res, error);
-
-   bson_destroy (b);
-   bson_destroy (q);
-   bson_destroy (pipeline);
 
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
