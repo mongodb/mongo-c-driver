@@ -35,7 +35,11 @@ test_all_spec_tests (TestSuite *suite)
    char resolved[PATH_MAX];
 
    test_framework_resolve_path (JSON_DIR "/crud", resolved);
-   install_json_test_suite (suite, resolved, &test_crud_cb);
+
+   install_json_test_suite_with_check (suite,
+                                       resolved,
+                                       &test_crud_cb,
+                                       test_framework_skip_if_no_auth);
 }
 
 void

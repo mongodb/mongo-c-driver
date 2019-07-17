@@ -1,11 +1,7 @@
 {
   "runOn": [
     {
-      "minServerVersion": "4.1.0",
-      "topology": [
-        "replicaset",
-        "sharded"
-      ]
+      "minServerVersion": "4.2.0"
     }
   ],
   "data": [
@@ -22,10 +18,158 @@
       "x": 33
     }
   ],
-  "collection_name": "test_aggregate_out_readconcern",
+  "collection_name": "test_aggregate_merge",
   "tests": [
     {
-      "description": "readConcern majority with out stage",
+      "description": "Aggregate with $merge",
+      "operations": [
+        {
+          "object": "collection",
+          "name": "aggregate",
+          "arguments": {
+            "pipeline": [
+              {
+                "$sort": {
+                  "x": 1
+                }
+              },
+              {
+                "$match": {
+                  "_id": {
+                    "$gt": 1
+                  }
+                }
+              },
+              {
+                "$merge": {
+                  "into": "other_test_collection"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expectations": [
+        {
+          "command_started_event": {
+            "command": {
+              "aggregate": "test_aggregate_merge",
+              "pipeline": [
+                {
+                  "$sort": {
+                    "x": 1
+                  }
+                },
+                {
+                  "$match": {
+                    "_id": {
+                      "$gt": 1
+                    }
+                  }
+                },
+                {
+                  "$merge": {
+                    "into": "other_test_collection"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "outcome": {
+        "collection": {
+          "name": "other_test_collection",
+          "data": [
+            {
+              "_id": 2,
+              "x": 22
+            },
+            {
+              "_id": 3,
+              "x": 33
+            }
+          ]
+        }
+      }
+    },
+    {
+      "description": "Aggregate with $merge and batch size of 0",
+      "operations": [
+        {
+          "object": "collection",
+          "name": "aggregate",
+          "arguments": {
+            "pipeline": [
+              {
+                "$sort": {
+                  "x": 1
+                }
+              },
+              {
+                "$match": {
+                  "_id": {
+                    "$gt": 1
+                  }
+                }
+              },
+              {
+                "$merge": {
+                  "into": "other_test_collection"
+                }
+              }
+            ],
+            "batchSize": 0
+          }
+        }
+      ],
+      "expectations": [
+        {
+          "command_started_event": {
+            "command": {
+              "aggregate": "test_aggregate_merge",
+              "pipeline": [
+                {
+                  "$sort": {
+                    "x": 1
+                  }
+                },
+                {
+                  "$match": {
+                    "_id": {
+                      "$gt": 1
+                    }
+                  }
+                },
+                {
+                  "$merge": {
+                    "into": "other_test_collection"
+                  }
+                }
+              ],
+              "cursor": {}
+            }
+          }
+        }
+      ],
+      "outcome": {
+        "collection": {
+          "name": "other_test_collection",
+          "data": [
+            {
+              "_id": 2,
+              "x": 22
+            },
+            {
+              "_id": 3,
+              "x": 33
+            }
+          ]
+        }
+      }
+    },
+    {
+      "description": "Aggregate with $merge and majority readConcern",
       "operations": [
         {
           "object": "collection",
@@ -50,7 +194,9 @@
                 }
               },
               {
-                "$out": "other_test_collection"
+                "$merge": {
+                  "into": "other_test_collection"
+                }
               }
             ]
           }
@@ -60,7 +206,7 @@
         {
           "command_started_event": {
             "command": {
-              "aggregate": "test_aggregate_out_readconcern",
+              "aggregate": "test_aggregate_merge",
               "pipeline": [
                 {
                   "$sort": {
@@ -75,7 +221,9 @@
                   }
                 },
                 {
-                  "$out": "other_test_collection"
+                  "$merge": {
+                    "into": "other_test_collection"
+                  }
                 }
               ],
               "readConcern": {
@@ -102,7 +250,7 @@
       }
     },
     {
-      "description": "readConcern local with out stage",
+      "description": "Aggregate with $merge and local readConcern",
       "operations": [
         {
           "object": "collection",
@@ -127,7 +275,9 @@
                 }
               },
               {
-                "$out": "other_test_collection"
+                "$merge": {
+                  "into": "other_test_collection"
+                }
               }
             ]
           }
@@ -137,7 +287,7 @@
         {
           "command_started_event": {
             "command": {
-              "aggregate": "test_aggregate_out_readconcern",
+              "aggregate": "test_aggregate_merge",
               "pipeline": [
                 {
                   "$sort": {
@@ -152,7 +302,9 @@
                   }
                 },
                 {
-                  "$out": "other_test_collection"
+                  "$merge": {
+                    "into": "other_test_collection"
+                  }
                 }
               ],
               "readConcern": {
@@ -179,7 +331,7 @@
       }
     },
     {
-      "description": "readConcern available with out stage",
+      "description": "Aggregate with $merge and available readConcern",
       "operations": [
         {
           "object": "collection",
@@ -204,7 +356,9 @@
                 }
               },
               {
-                "$out": "other_test_collection"
+                "$merge": {
+                  "into": "other_test_collection"
+                }
               }
             ]
           }
@@ -214,7 +368,7 @@
         {
           "command_started_event": {
             "command": {
-              "aggregate": "test_aggregate_out_readconcern",
+              "aggregate": "test_aggregate_merge",
               "pipeline": [
                 {
                   "$sort": {
@@ -229,7 +383,9 @@
                   }
                 },
                 {
-                  "$out": "other_test_collection"
+                  "$merge": {
+                    "into": "other_test_collection"
+                  }
                 }
               ],
               "readConcern": {
@@ -254,132 +410,6 @@
           ]
         }
       }
-    },
-    {
-      "description": "readConcern linearizable with out stage",
-      "operations": [
-        {
-          "object": "collection",
-          "name": "aggregate",
-          "collectionOptions": {
-            "readConcern": {
-              "level": "linearizable"
-            }
-          },
-          "arguments": {
-            "pipeline": [
-              {
-                "$sort": {
-                  "x": 1
-                }
-              },
-              {
-                "$match": {
-                  "_id": {
-                    "$gt": 1
-                  }
-                }
-              },
-              {
-                "$out": "other_test_collection"
-              }
-            ]
-          },
-          "error": true
-        }
-      ],
-      "expectations": [
-        {
-          "command_started_event": {
-            "command": {
-              "aggregate": "test_aggregate_out_readconcern",
-              "pipeline": [
-                {
-                  "$sort": {
-                    "x": 1
-                  }
-                },
-                {
-                  "$match": {
-                    "_id": {
-                      "$gt": 1
-                    }
-                  }
-                },
-                {
-                  "$out": "other_test_collection"
-                }
-              ],
-              "readConcern": {
-                "level": "linearizable"
-              }
-            }
-          }
-        }
-      ]
-    },
-    {
-      "description": "invalid readConcern with out stage",
-      "operations": [
-        {
-          "object": "collection",
-          "name": "aggregate",
-          "collectionOptions": {
-            "readConcern": {
-              "level": "!invalid123"
-            }
-          },
-          "arguments": {
-            "pipeline": [
-              {
-                "$sort": {
-                  "x": 1
-                }
-              },
-              {
-                "$match": {
-                  "_id": {
-                    "$gt": 1
-                  }
-                }
-              },
-              {
-                "$out": "other_test_collection"
-              }
-            ]
-          },
-          "error": true
-        }
-      ],
-      "expectations": [
-        {
-          "command_started_event": {
-            "command": {
-              "aggregate": "test_aggregate_out_readconcern",
-              "pipeline": [
-                {
-                  "$sort": {
-                    "x": 1
-                  }
-                },
-                {
-                  "$match": {
-                    "_id": {
-                      "$gt": 1
-                    }
-                  }
-                },
-                {
-                  "$out": "other_test_collection"
-                }
-              ],
-              "readConcern": {
-                "level": "!invalid123"
-              }
-            }
-          }
-        }
-      ]
     }
   ]
 }

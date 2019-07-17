@@ -1,39 +1,32 @@
 runOn:
     -
-        minServerVersion: "4.1.0"
-        topology: ["replicaset", "sharded"]
+        minServerVersion: "4.2.0"
 
 data:
     - { _id: 1, x: 11 }
     - { _id: 2, x: 22 }
     - { _id: 3, x: 33 }
 
-collection_name: &collection_name 'test_aggregate_out_readconcern'
+collection_name: &collection_name 'test_aggregate_merge'
 
 tests:
   -
-    description: "readConcern majority with out stage"
+    description: "Aggregate with $merge"
     operations:
       -
         object: collection
         name: aggregate
-        collectionOptions:
-          readConcern: { level: "majority" }
         arguments: &arguments
-          pipeline:
+          pipeline: &pipeline
             - $sort: { x : 1 }
             - $match: { _id: { $gt: 1 } }
-            - $out: &output_collection "other_test_collection"
+            - $merge: { into: &output_collection "other_test_collection" }
     expectations:
       -
         command_started_event:
           command:
             aggregate: *collection_name
-            pipeline: &pipeline
-              - $sort: { x: 1 }
-              - $match: { _id: { $gt: 1 } }
-              - $out: "other_test_collection"
-            readConcern: { level: "majority" }
+            pipeline: *pipeline
     outcome: &outcome
       collection:
         name: *output_collection
@@ -41,7 +34,41 @@ tests:
           - { _id: 2, x: 22 }
           - { _id: 3, x: 33 }
   -
-    description: "readConcern local with out stage"
+    description: "Aggregate with $merge and batch size of 0"
+    operations:
+      -
+        object: collection
+        name: aggregate
+        arguments:
+          <<: *arguments
+          batchSize: 0
+    expectations:
+      -
+        command_started_event:
+          command:
+            aggregate: *collection_name
+            pipeline: *pipeline
+            cursor: {}
+    outcome: *outcome
+  -
+    description: "Aggregate with $merge and majority readConcern"
+    operations:
+      -
+        object: collection
+        name: aggregate
+        collectionOptions:
+          readConcern: { level: "majority" }
+        arguments: *arguments
+    expectations:
+      -
+        command_started_event:
+          command:
+            aggregate: *collection_name
+            pipeline: *pipeline
+            readConcern: { level: "majority" }
+    outcome: *outcome
+  -
+    description: "Aggregate with $merge and local readConcern"
     operations:
       -
         object: collection
@@ -58,7 +85,7 @@ tests:
             readConcern: { level: "local" }
     outcome: *outcome
   -
-    description: "readConcern available with out stage"
+    description: "Aggregate with $merge and available readConcern"
     operations:
       -
         object: collection
@@ -74,37 +101,3 @@ tests:
             pipeline: *pipeline
             readConcern: { level: "available" }
     outcome: *outcome
-  -
-    description: "readConcern linearizable with out stage"
-    operations:
-      -
-        object: collection
-        name: aggregate
-        collectionOptions:
-          readConcern: { level: "linearizable" }
-        arguments: *arguments
-        error: true
-    expectations:
-      -
-        command_started_event:
-          command:
-            aggregate: *collection_name
-            pipeline: *pipeline
-            readConcern: { level: "linearizable" }
-  -
-    description: "invalid readConcern with out stage"
-    operations:
-      -
-        object: collection
-        name: aggregate
-        collectionOptions:
-          readConcern: { level: "!invalid123" }
-        arguments: *arguments
-        error: true
-    expectations:
-      -
-        command_started_event:
-          command:
-            aggregate: *collection_name
-            pipeline: *pipeline
-            readConcern: { level: "!invalid123" }
