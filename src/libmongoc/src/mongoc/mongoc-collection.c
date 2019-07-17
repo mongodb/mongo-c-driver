@@ -287,7 +287,6 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,       /* IN */
                              const bson_t *opts,                    /* IN */
                              const mongoc_read_prefs_t *read_prefs) /* IN */
 {
-   printf ("here\n%s\n", bson_as_json (pipeline, NULL));
    return _mongoc_aggregate (collection->client,
                              collection->ns,
                              flags,
@@ -1755,6 +1754,27 @@ done:
    RETURN (ret);
 }
 
+static bson_value_t
+_mongoc_get_value_from_update_or_pipeline (const bson_t *update)
+{
+   bson_value_t value;
+   bson_iter_t iter;
+   uint32_t len;
+   const uint8_t *data;
+
+   if (bson_iter_init_find (&iter, update, "pipeline")) {
+      value.value_type = BSON_TYPE_ARRAY;
+      bson_iter_array (&iter, &len, &data);
+   } else {
+      value.value_type = BSON_TYPE_DOCUMENT;
+      data = bson_get_data (update);
+      len = update->len;
+   }
+   value.value.v_doc.data_len = len;
+   value.value.v_doc.data = (uint8_t *) data;
+
+   return value;
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -1796,6 +1816,7 @@ mongoc_collection_update (mongoc_collection_t *collection,
    bool ret;
    int flags = uflags;
    bson_t opts;
+   bson_value_t value;
 
    ENTRY;
 
@@ -1829,11 +1850,13 @@ mongoc_collection_update (mongoc_collection_t *collection,
    BSON_APPEND_BOOL (&opts, "upsert", !!(flags & MONGOC_UPDATE_UPSERT));
    BSON_APPEND_BOOL (&opts, "multi", !!(flags & MONGOC_UPDATE_MULTI_UPDATE));
 
+   value = _mongoc_get_value_from_update_or_pipeline (update);
+
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_update (
       &command,
       selector,
-      update,
+      &value,
       &opts,
       write_flags,
       ++collection->client->cluster.operation_id);
@@ -2022,10 +2045,7 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
    mongoc_update_one_opts_t update_one_opts;
    bool ret;
    bson_value_t value;
-   bson_iter_t iter;
-   uint32_t len;
-   const uint8_t *data;
-
+   
    ENTRY;
 
    BSON_ASSERT (collection);
@@ -2045,21 +2065,11 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
       return false;
    }
 
-   if (bson_iter_init_find (&iter, update, "pipeline")) {
-      value.value_type = BSON_TYPE_ARRAY;
-      bson_iter_array (&iter, &len, &data);
-   } else {
-      value.value_type = BSON_TYPE_DOCUMENT;
-      data = bson_get_data (update);
-      len = update->len;
-   }
-   value.value.v_doc.data_len = len;
-   value.value.v_doc.data = (uint8_t *) data;
-   
+   value = _mongoc_get_value_from_update_or_pipeline (update);   
 
    ret = _mongoc_collection_update_or_replace (collection,
                                                selector,
-                                               update,
+                                               &value,
                                                &update_one_opts.update,
                                                false /* multi */,
                                                update_one_opts.update.bypass,
@@ -2083,6 +2093,7 @@ mongoc_collection_update_many (mongoc_collection_t *collection,
 {
    mongoc_update_many_opts_t update_many_opts;
    bool ret;
+   bson_value_t value;
 
    ENTRY;
 
@@ -2103,9 +2114,11 @@ mongoc_collection_update_many (mongoc_collection_t *collection,
       return false;
    }
 
+   value = _mongoc_get_value_from_update_or_pipeline (update);
+
    ret = _mongoc_collection_update_or_replace (collection,
                                                selector,
-                                               update,
+                                               &value,
                                                &update_many_opts.update,
                                                true /* multi */,
                                                update_many_opts.update.bypass,
@@ -2129,6 +2142,7 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
 {
    mongoc_replace_one_opts_t replace_one_opts;
    bool ret;
+   bson_value_t value;
 
    ENTRY;
 
@@ -2149,9 +2163,11 @@ mongoc_collection_replace_one (mongoc_collection_t *collection,
       return false;
    }
 
+   value = _mongoc_get_value_from_update_or_pipeline (replacement);
+
    ret = _mongoc_collection_update_or_replace (collection,
                                                selector,
-                                               replacement,
+                                               &value,
                                                &replace_one_opts.update,
                                                false /* multi */,
                                                replace_one_opts.update.bypass,
