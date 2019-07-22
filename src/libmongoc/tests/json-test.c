@@ -991,14 +991,7 @@ execute_test (const json_test_config_t *config,
    ASSERT_OR_PRINT (server_id, error);
 
    if (bson_has_field (test, "failPoint")) {
-      bson_t command;
-      bool r;
-
-      bson_lookup_doc (test, "failPoint", &command);
-      ASSERT_CMPSTR (_mongoc_get_command_name (&command), "configureFailPoint");
-      r = mongoc_client_command_simple_with_server_id (
-         client, "admin", &command, NULL, server_id, NULL, &error);
-      ASSERT_OR_PRINT (r, error);
+      activate_fail_point (client, server_id, test, "failPoint");
    }
 
    json_test_ctx_init (&ctx, test, client, db, collection, config);
@@ -1042,6 +1035,27 @@ execute_test (const json_test_config_t *config,
    deactivate_fail_points (collection->client, server_id);
 }
 
+
+void
+activate_fail_point (mongoc_client_t *client,
+                     const uint32_t server_id,
+                     const bson_t *test,
+                     const char *key)
+{
+   bson_t command;
+   bson_error_t error;
+   bool r;
+
+   BSON_ASSERT (client);
+   BSON_ASSERT (server_id);
+
+   bson_lookup_doc (test, key, &command);
+
+   ASSERT_CMPSTR (_mongoc_get_command_name (&command), "configureFailPoint");
+   r = mongoc_client_command_simple_with_server_id (
+      client, "admin", &command, NULL, server_id, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+}
 
 /*
  *-----------------------------------------------------------------------
@@ -1186,6 +1200,7 @@ run_json_general_test (const json_test_config_t *config)
       uint32_t server_id;
       bson_error_t error;
       bool r;
+      bson_iter_t uri_iter;
 
       ASSERT (BSON_ITER_HOLDS_DOCUMENT (&tests_iter));
       bson_iter_bson (&tests_iter, &test);
@@ -1209,7 +1224,10 @@ run_json_general_test (const json_test_config_t *config)
 
       bson_free (selected_test);
 
-      uri = test_framework_get_uri ();
+      uri = bson_iter_init_find (&uri_iter, &test, "useMultipleMongoses")
+               ? mongoc_uri_new ("mongodb://localhost:27017,localhost:27018/")
+               : test_framework_get_uri ();
+
       if (bson_iter_init_find (&client_opts_iter, &test, "clientOptions")) {
          bson_t client_opts;
 

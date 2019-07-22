@@ -506,6 +506,14 @@ handle_not_master_error (mongoc_cluster_t *cluster,
    }
 }
 
+bool
+_in_sharded_txn (const mongoc_client_session_t *session)
+{
+   return session && _mongoc_client_session_in_txn (session) &&
+          _mongoc_topology_get_type (session->client->topology) ==
+             MONGOC_TOPOLOGY_SHARDED;
+}
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -542,6 +550,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    bson_t reply_local;
    bson_error_t error_local;
    int32_t compressor_id;
+   bson_iter_t iter;
 
    server_stream = cmd->server_stream;
    server_id = server_stream->sd->id;
@@ -611,6 +620,19 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    }
 
    handle_not_master_error (cluster, server_id, reply);
+
+   if (retval && _in_sharded_txn (cmd->session) &&
+       bson_iter_init_find (&iter, reply, "recoveryToken")) {
+      bson_free (cmd->session->recovery_token);
+      if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         cmd->session->recovery_token =
+            bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
+                                bson_iter_value (&iter)->value.v_doc.data_len);
+      } else {
+         MONGOC_ERROR ("Malformed recovery token from server");
+         cmd->session->recovery_token = NULL;
+      }
+   }
 
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
@@ -2153,11 +2175,8 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
                                   bson_error_t *error)
 {
    uint32_t server_id;
-   bool in_txn;
 
-   in_txn = _mongoc_client_session_in_txn (cs);
-   if (in_txn && _mongoc_topology_get_type (cs->client->topology) ==
-                    MONGOC_TOPOLOGY_SHARDED) {
+   if (_in_sharded_txn (cs)) {
       server_id = cs->server_id;
       if (!server_id) {
          server_id = mongoc_topology_select_server_id (
@@ -2170,7 +2189,7 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
       /* Transactions Spec: Additionally, any non-transaction operation using a
        * pinned ClientSession MUST unpin the session and the operation MUST
        * perform normal server selection. */
-      if (cs && !in_txn) {
+      if (cs && !_mongoc_client_session_in_txn (cs)) {
          _mongoc_client_session_unpin (cs);
       }
    }

@@ -945,6 +945,8 @@ find_and_modify (mongoc_collection_t *collection,
     */
    if (r) {
       bson_lookup_value (reply, "value", &value);
+   } else {
+      value_init_from_doc (&value, reply);
    }
 
    check_result (test, operation, r, &value, &error);
@@ -1658,9 +1660,20 @@ json_test_operation (json_test_ctx_t *ctx,
          test_error ("unrecognized session operation name %s", op_name);
       }
    } else if (!strcmp (obj_name, "testRunner")) {
+      /* We don't use reply, but we need to initialize it for the test runner */
+      bson_init (reply);
       if (!strcmp (op_name, "assertSessionPinned")) {
-         bson_init (reply);
          res = (0 != mongoc_client_session_get_server_id (session));
+      } else if (!strcmp (op_name, "assertSessionUnpinned")) {
+         res = (0 == mongoc_client_session_get_server_id (session));
+      } else if (!strcmp (op_name, "targetedFailPoint")) {
+         mongoc_client_t *client;
+
+         client = mongoc_client_new_from_uri (ctx->client->uri);
+         activate_fail_point (
+            client, session->server_id, operation, "arguments.failPoint");
+
+         mongoc_client_destroy (client);
       } else {
          test_error ("unrecognized session operation name %s", op_name);
       }

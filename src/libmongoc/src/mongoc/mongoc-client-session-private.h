@@ -77,6 +77,7 @@ struct _mongoc_client_session_t {
    uint32_t operation_increment;
    uint32_t client_generation;
    uint32_t server_id;
+   bson_t *recovery_token;
 
    /* For testing only */
    int64_t with_txn_timeout_ms;

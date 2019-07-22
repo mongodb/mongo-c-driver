@@ -8,7 +8,6 @@
   "tests": [
     {
       "description": "commitTransaction explicit retries include recoveryToken",
-      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -135,7 +134,6 @@
     },
     {
       "description": "commitTransaction retry succeeds on new mongos",
-      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -265,7 +263,6 @@
     },
     {
       "description": "commitTransaction retry fails on new mongos",
-      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "clientOptions": {
         "heartbeatFrequencyMS": 30000
@@ -392,7 +389,6 @@
     },
     {
       "description": "abortTransaction does not send recoveryToken",
-      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {

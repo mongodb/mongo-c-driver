@@ -209,6 +209,9 @@ txn_commit (mongoc_client_session_t *session,
    _mongoc_bson_init_if_set (reply);
 
    BSON_APPEND_INT32 (&cmd, "commitTransaction", 1);
+   if (session->recovery_token) {
+      BSON_APPEND_DOCUMENT (&cmd, "recoveryToken", session->recovery_token);
+   }
 
 retry:
    if (!mongoc_client_session_append (session, &opts, err_ptr)) {
@@ -1423,6 +1426,7 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
    txn_opts_cleanup (&session->txn.opts);
 
    bson_destroy (&session->cluster_time);
+   bson_destroy (session->recovery_token);
    bson_free (session);
 
    EXIT;
