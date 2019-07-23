@@ -190,12 +190,13 @@ mongoc_write_concern_set_w (mongoc_write_concern_t *write_concern, int32_t w)
 int32_t
 mongoc_write_concern_get_wtimeout (const mongoc_write_concern_t *write_concern)
 {
-   return (int32_t) mongoc_write_concern_get_wtimeout_int64(write_concern);
+   return (int32_t) mongoc_write_concern_get_wtimeout_int64 (write_concern);
 }
 
 
 int64_t
-mongoc_write_concern_get_wtimeout_int64 (const mongoc_write_concern_t *write_concern)
+mongoc_write_concern_get_wtimeout_int64 (
+   const mongoc_write_concern_t *write_concern)
 {
    BSON_ASSERT (write_concern);
    return write_concern->wtimeout;
@@ -206,24 +207,14 @@ void
 mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
                                    int32_t wtimeout_msec)
 {
-   mongoc_write_concern_set_wtimeout_int64(write_concern, (int64_t) wtimeout_msec);
+   mongoc_write_concern_set_wtimeout_int64 (write_concern,
+                                            (int64_t) wtimeout_msec);
 }
 
 
-/**
- * mongoc_write_concern_set_wtimeout:
- * @write_concern: A mongoc_write_concern_t.
- * @wtimeout_msec: Number of milliseconds before timeout.
- *
- * Sets the number of milliseconds to wait before considering a write
- * request as failed. A value of 0 indicates no write timeout.
- *
- * The @wtimeout_msec parameter must be positive or zero. Negative values will
- * be ignored.
- */
 void
 mongoc_write_concern_set_wtimeout_int64 (mongoc_write_concern_t *write_concern,
-                                   int64_t wtimeout_msec)
+                                         int64_t wtimeout_msec)
 {
    BSON_ASSERT (write_concern);
 
@@ -339,7 +330,7 @@ mongoc_write_concern_is_default (const mongoc_write_concern_t *write_concern)
  * This is an internal function.
  *
  * Encodes the write concern into a bson_t, which may then be returned by
- * mongoc_read_concern_get_bson().
+ * _mongoc_write_concern_get_bson().
  */
 static void
 _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
@@ -374,7 +365,7 @@ _mongoc_write_concern_freeze (mongoc_write_concern_t *write_concern)
    }
 
    if (write_concern->wtimeout) {
-      bson_append_int32 (compiled, "wtimeout", 8, write_concern->wtimeout);
+      bson_append_int64 (compiled, "wtimeout", 8, write_concern->wtimeout);
    }
 }
 
@@ -579,15 +570,11 @@ _mongoc_write_concern_new_from_iter (const bson_iter_t *iter,
          mongoc_write_concern_set_journal (write_concern,
                                            bson_iter_bool (&inner));
       } else if (BSON_ITER_IS_KEY (&inner, "wtimeout")) {
-         if (BSON_ITER_HOLDS_INT64 (&inner)) {
-            if (bson_iter_int64 (&inner) < 0 || bson_iter_int64 (&inner) > INT32_MAX) {
-               goto fail;
-            }
-         } else if (!BSON_ITER_HOLDS_INT32 (&inner) || bson_iter_int32 (&inner) < 0) {
+         if (!BSON_ITER_HOLDS_INT (&inner) || bson_iter_as_int64 (&inner) < 0) {
             goto fail;
          }
          mongoc_write_concern_set_wtimeout_int64 (write_concern,
-                                            bson_iter_as_int64 (&inner));
+                                                  bson_iter_as_int64 (&inner));
       }
    }
 

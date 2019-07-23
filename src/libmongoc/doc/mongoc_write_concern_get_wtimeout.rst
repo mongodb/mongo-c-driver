@@ -23,6 +23,8 @@ Get the timeout in milliseconds that the server should wait before returning wit
 
 A value of 0 indicates no write timeout.
 
+See also: :symbol:`mongoc_write_concern_set_wtimeout` and :symbol:`mongoc_write_concern_get_wtimeout_int64`.
+
 Returns
 -------
 

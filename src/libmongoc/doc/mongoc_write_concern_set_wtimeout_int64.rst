@@ -1,7 +1,7 @@
-:man_page: mongoc_write_concern_set_wtimeout
+:man_page: mongoc_write_concern_set_wtimeout_int64
 
-mongoc_write_concern_set_wtimeout()
-===================================
+mongoc_write_concern_set_wtimeout_int64()
+=========================================
 
 Synopsis
 --------
@@ -9,14 +9,14 @@ Synopsis
 .. code-block:: c
 
   void
-  mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
-                                     int32_t wtimeout_msec);
+  mongoc_write_concern_set_wtimeout_int64 (mongoc_write_concern_t *write_concern,
+                                           int64_t wtimeout_msec);
 
 Parameters
 ----------
 
 * ``write_concern``: A :symbol:`mongoc_write_concern_t`.
-* ``wtimeout_msec``: A positive ``int32_t`` or zero.
+* ``wtimeout_msec``: A positive ``int64_t`` or zero.
 
 Description
 -----------
@@ -28,4 +28,4 @@ it has been used in an operation. Previously, using the struct with an operation
 would mark it as "frozen" and calling this function would log a warning instead
 instead of altering the write concern.
 
-See also: :symbol:`mongoc_write_concern_get_wtimeout` and :symbol:`mongoc_write_concern_set_wtimeout_int64`.
+See also: :symbol:`mongoc_write_concern_get_wtimeout_int64`.
