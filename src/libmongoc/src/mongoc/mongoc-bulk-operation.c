@@ -410,6 +410,8 @@ _mongoc_bulk_operation_update_append (
    bool has_array_filters;
    bson_value_t value;
 
+   value = _mongoc_get_value_from_update_or_pipeline (document);
+
    bson_init (&opts);
    bson_append_bool (&opts, "upsert", 6, update_opts->upsert);
    bson_append_bool (&opts, "multi", 5, update_opts->multi);
@@ -434,9 +436,6 @@ _mongoc_bulk_operation_update_append (
       if (last->type == MONGOC_WRITE_COMMAND_UPDATE) {
          last->flags.has_collation |= has_collation;
          last->flags.has_multi_write |= update_opts->multi;
-         value.value.v_doc.data = (uint8_t *) bson_get_data (document);
-         value.value.v_doc.data_len = document->len;
-         value.value_type = BSON_TYPE_DOCUMENT;
          _mongoc_write_command_update_append (last, selector, &value, &opts);
          bson_destroy (&opts);
          return;

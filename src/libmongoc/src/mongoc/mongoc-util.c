@@ -375,7 +375,12 @@ _mongoc_validate_update (const bson_t *update,
       key = bson_iter_key (&iter);
       if (!strcmp (key, "pipeline")) {
          if (bson_iter_next (&iter)) {
-            // set error
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "Invalid key '%s': update only works with $ operators"
+                            " and pipelines",
+                            key);
             return false;
          } else {
             return true;
@@ -384,7 +389,8 @@ _mongoc_validate_update (const bson_t *update,
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid key '%s': update only works with $ operators",
+                         "Invalid key '%s': update only works with $ operators"
+                         " and pipelines",
                          key);
 
          return false;

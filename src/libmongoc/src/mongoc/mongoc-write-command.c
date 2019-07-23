@@ -138,6 +138,7 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
    command->n_documents++;
 
    bson_destroy (&document);
+   bson_destroy (update);
 
    EXIT;
 }
@@ -297,7 +298,7 @@ _mongoc_write_command_init_delete_idl (mongoc_write_command_t *command,
 void
 _mongoc_write_command_init_update (mongoc_write_command_t *command, /* IN */
                                    const bson_t *selector,          /* IN */
-                                   const bson_value_t *update,            /* IN */
+                                   const bson_value_t *update,      /* IN */
                                    const bson_t *opts,              /* IN */
                                    mongoc_bulk_write_flags_t flags, /* IN */
                                    int64_t operation_id)            /* IN */

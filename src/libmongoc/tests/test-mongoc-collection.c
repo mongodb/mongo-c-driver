@@ -1287,47 +1287,6 @@ test_update (void)
 }
 
 static void
-command_started (const mongoc_apm_command_started_t *event)
-{
-   char *s;
-
-   s = bson_as_json (
-      mongoc_apm_command_started_get_command (event), NULL);
-   printf ("Command %s started on %s:\n%s\n\n",
-           mongoc_apm_command_started_get_command_name (event),
-           mongoc_apm_command_started_get_host (event)->host,
-           s);
-
-   bson_free (s);
-}
-
-static void
-command_succeeded (const mongoc_apm_command_succeeded_t *event)
-{
-   char *s;
-
-   s = bson_as_json (
-      mongoc_apm_command_succeeded_get_reply (event), NULL);
-   printf ("Command %s succeeded:\n%s\n\n",
-           mongoc_apm_command_succeeded_get_command_name (event),
-           s);
-
-   bson_free (s);
-}
-
-
-static void
-command_failed (const mongoc_apm_command_failed_t *event)
-{
-   bson_error_t error;
-
-   mongoc_apm_command_failed_get_error (event, &error);
-   printf ("Command %s failed:\n\"%s\"\n\n",
-           mongoc_apm_command_failed_get_command_name (event),
-           error.message);
-}
-
-static void
 test_update_pipeline (void)
 {
    mongoc_collection_t *collection;
@@ -1339,17 +1298,9 @@ test_update_pipeline (void)
    bson_t *p;
    bson_t reply;
    bool res;
-   mongoc_apm_callbacks_t *cb;
 
    client = test_framework_client_new ();
    ASSERT (client);
-
-   cb = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_command_started_cb (cb, command_started);
-   mongoc_apm_set_command_succeeded_cb (cb, command_succeeded);
-   mongoc_apm_set_command_failed_cb (cb, command_failed);
-   ASSERT (cb);
-   mongoc_client_set_apm_callbacks (client, cb, NULL);
 
    database = get_test_database (client);
    ASSERT (database);
@@ -1361,12 +1312,11 @@ test_update_pipeline (void)
    res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
-   // pipeline = tmp_bson ("[{'$addFields': {'y': 2}}]");
-   // pipeline = tmp_bson ("[{'$replaceRoot': '$x'}]");
+   p = tmp_bson ("{'pipeline':[{'$addFields': {'y': 2}}]}");
 
    q = tmp_bson ("{'x': 1}");
 
-   // res = mongoc_collection_update_one (collection, q, pipeline, NULL, &reply, &error);
+   res = mongoc_collection_update_one (collection, q, p, NULL, &reply, &error);
    ASSERT_OR_PRINT (res, error);
 
    mongoc_collection_destroy (collection);
@@ -6262,8 +6212,8 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       skip_unless_server_has_decimal128);
    TestSuite_AddLive (suite, "/Collection/update", test_update);
-   // TestSuite_AddLive (
-   //    suite, "/Collection/update_pipeline", test_update_pipeline);
+   TestSuite_AddLive (
+      suite, "/Collection/update_pipeline", test_update_pipeline);
    TestSuite_AddLive (suite, "/Collection/update/multi", test_update_multi);
    TestSuite_AddLive (suite, "/Collection/update/upsert", test_update_upsert);
    TestSuite_AddFull (suite,

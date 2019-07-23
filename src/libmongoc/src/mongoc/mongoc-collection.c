@@ -900,7 +900,6 @@ _make_aggregate_for_count (const mongoc_collection_t *coll,
    bson_append_document_end (&group_stage, &group_stage_doc);
    bson_append_document_end (&pipeline, &group_stage);
    bson_append_array_end (out, &pipeline);
-   printf ("%s\n", bson_as_json (&pipeline, NULL));
 }
 
 
@@ -1754,7 +1753,7 @@ done:
    RETURN (ret);
 }
 
-static bson_value_t
+bson_value_t
 _mongoc_get_value_from_update_or_pipeline (const bson_t *update)
 {
    bson_value_t value;
@@ -1900,20 +1899,6 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
    bool reply_initialized = false;
    bool ret = false;
 
-   /* Consider threading argument down to where we add the update document*/
-   /* Or consider using: */
-   // bson_value_t value;
-
-   // /* in an update function, if there's a pipeline, set the value to */
-   // bson_iter_init_find (update, "pipeline", -1);
-   // value.value_type = bson_iter_value (&iter);
-   // /* otherwise, use the document directly */
-   // value = bson_get_data (update);
-   // value = update->len;
-
-   /* Then: if it's really true that we can't construct a bson_t array, we should remove
-      that from mongoc_collection_aggregate and the documentation... */
-
    ENTRY;
 
    BSON_ASSERT (collection);
@@ -1938,7 +1923,6 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
 
    _mongoc_write_result_init (&result);
    _mongoc_write_command_init_update_idl (
-      /* pass that argument through here  */
       &command,
       selector,
       update,
@@ -2045,7 +2029,7 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
    mongoc_update_one_opts_t update_one_opts;
    bool ret;
    bson_value_t value;
-   
+
    ENTRY;
 
    BSON_ASSERT (collection);
@@ -2065,7 +2049,7 @@ mongoc_collection_update_one (mongoc_collection_t *collection,
       return false;
    }
 
-   value = _mongoc_get_value_from_update_or_pipeline (update);   
+   value = _mongoc_get_value_from_update_or_pipeline (update);
 
    ret = _mongoc_collection_update_or_replace (collection,
                                                selector,
