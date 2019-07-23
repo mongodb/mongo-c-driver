@@ -1773,48 +1773,74 @@ test_framework_get_max_wire_version (int64_t *max_version)
    bson_destroy (&reply);
 }
 
+static bool
+_test_framework_has_auth (void)
+{
+   char *user;
+
+#ifndef MONGOC_ENABLE_SSL
+   /* requires SSL for SCRAM implementation, can't test auth */
+   return false;
+#endif
+
+   /* checks if the MONGOC_TEST_USER env var is set */
+   user = test_framework_get_admin_user ();
+   bson_free (user);
+   if (user) {
+      return true;
+   } else {
+      return false;
+   }
+}
+
 
 int
 test_framework_skip_if_auth (void)
 {
-   char *user;
-
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
 
-   /* run tests if the MONGOC_TEST_USER env var is not set */
-   user = test_framework_get_admin_user ();
-   bson_free (user);
-   return user ? 0 : 1;
+   if (_test_framework_has_auth ()) {
+      return 0;
+   }
+
+   return 1;
 }
 
 
 int
 test_framework_skip_if_no_auth (void)
 {
-   char *user;
-
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
 
-#ifndef MONGOC_ENABLE_SSL
-   /* requires SSL for SCRAM implementation, can't test auth */
-   return 0;
-#endif
+   if (!_test_framework_has_auth ()) {
+      return 0;
+   }
 
-   /* run auth tests if the MONGOC_TEST_USER env var is set */
-   user = test_framework_get_admin_user ();
-   bson_free (user);
-   return user ? 1 : 0;
+   return 1;
 }
 
+static bool
+_test_framework_has_crypto (void)
+{
+#ifdef MONGOC_ENABLE_CRYPTO
+   return true;
+#else
+   return false;
+#endif
+}
 
 int
 test_framework_skip_if_no_sessions (void)
 {
    if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
+   if (!_test_framework_has_crypto ()) {
       return 0;
    }
 
@@ -1836,12 +1862,9 @@ test_framework_skip_if_no_cluster_time (void)
 int
 test_framework_skip_if_crypto (void)
 {
-#ifdef MONGOC_ENABLE_CRYPTO
-   return 0;
-#else
-   return 1;
-#endif
+   return _test_framework_has_crypto () ? 0 : 1;
 }
+
 
 int
 test_framework_skip_if_no_crypto (void)
