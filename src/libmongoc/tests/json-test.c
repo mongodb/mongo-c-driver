@@ -213,6 +213,7 @@ process_sdam_test_ismaster_responses (bson_t *phase,
                               MONGOC_LOG_LEVEL_WARNING,
                               "Last server removed from topology");
       }
+      capture_logs (false);
    }
 }
 
