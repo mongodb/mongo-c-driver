@@ -902,6 +902,11 @@ _mongoc_topology_description_remove_server (
 
    _mongoc_topology_description_monitor_server_closed (description, server);
    mongoc_set_rm (description->servers, server->id);
+
+   /* Check if removing server resulted in an empty set of servers */
+   if (description->servers->items_len == 0) {
+      MONGOC_WARNING ("Last server removed from topology");
+   }
 }
 
 typedef struct _mongoc_address_and_id_t {

@@ -2206,6 +2206,7 @@ test_mongoc_client_mismatched_me (void)
                                " 'hosts': ['%s']}",
                                mock_server_get_host_and_port (server));
 
+   capture_logs (true);
    mock_server_replies_simple (request, reply);
 
    BSON_ASSERT (!future_get_bool (future));
@@ -2213,6 +2214,9 @@ test_mongoc_client_mismatched_me (void)
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
                           "No suitable servers");
+   ASSERT_CAPTURED_LOG (
+      "client", MONGOC_LOG_LEVEL_WARNING, "Last server removed from topology");
+   capture_logs (false);
 
    bson_free (reply);
    request_destroy (request);
