@@ -1030,7 +1030,7 @@ _test_server_removed_during_handshake (bool pooled)
                         MONGOC_LOG_LEVEL_WARNING,
                         "Last server removed from topology");
    capture_logs (false);
-   
+
    if (!pooled) {
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,
@@ -1907,6 +1907,7 @@ test_last_server_removed_warning ()
    ASSERT_CAPTURED_LOG ("topology",
                         MONGOC_LOG_LEVEL_WARNING,
                         "Last server removed from topology");
+   capture_logs (false);
 
    mongoc_server_description_destroy (description);
    mongoc_read_prefs_destroy (read_prefs);
