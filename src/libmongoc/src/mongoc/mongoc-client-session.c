@@ -957,9 +957,14 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
 
    ret = true;
    sd = mongoc_client_select_server (
-      session->client, true /* primary */, NULL, NULL);
-   if (sd && (sd->max_wire_version < 7 ||
-              (sd->max_wire_version < 8 && sd->type == MONGOC_SERVER_MONGOS))) {
+      session->client, true /* primary */, NULL, error);
+   if (!sd) {
+      ret = false;
+      GOTO (done);
+   }
+
+   if (sd->max_wire_version < 7 ||
+       (sd->max_wire_version < 8 && sd->type == MONGOC_SERVER_MONGOS)) {
       bson_set_error (error,
                       MONGOC_ERROR_TRANSACTION,
                       MONGOC_ERROR_TRANSACTION_INVALID_STATE,
