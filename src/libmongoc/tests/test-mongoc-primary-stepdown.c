@@ -283,7 +283,7 @@ test_not_master_reset_pool (mongoc_client_t *client)
    res = mongoc_collection_insert_one (
       coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT (!res);
-   ASSERT (error.code = 10107);
+   ASSERT (error.code == 10107);
    ASSERT_CONTAINS (error.message,
                     "Failing command due to 'failCommand' failpoint");
 
@@ -339,7 +339,7 @@ test_shutdown_reset_pool (mongoc_client_t *client)
    res = mongoc_collection_insert_one (
       coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT (!res);
-   ASSERT (error.code = 91);
+   ASSERT (error.code == 91);
    ASSERT_CONTAINS (error.message,
                     "Failing command due to 'failCommand' failpoint");
 
