@@ -22,7 +22,6 @@
   "tests": [
     {
       "description": "UpdateOne using pipelines",
-      "skipReason": "blocked on CDRIVER-3063",
       "operations": [
         {
           "name": "updateOne",
@@ -101,7 +100,6 @@
     },
     {
       "description": "UpdateMany using pipelines",
-      "skipReason": "blocked on CDRIVER-3063",
       "operations": [
         {
           "name": "updateMany",
@@ -175,7 +173,6 @@
     },
     {
       "description": "FindOneAndUpdate using pipelines",
-      "skipReason": "blocked on CDRIVER-3063",
       "operations": [
         {
           "name": "findOneAndUpdate",
