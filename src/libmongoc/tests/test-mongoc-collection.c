@@ -1308,13 +1308,14 @@ test_update_pipeline (void)
    collection = get_test_collection (client, "test_update_pipeline");
    ASSERT (collection);
 
-   b = tmp_bson ("{'x': 1}");
+   b = tmp_bson ("{'age': 21, 'name': {'first': 'isabel', 'last': 'atkinson'}}");
    res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
-   p = tmp_bson ("{'pipeline':[{'$addFields': {'y': 2}}]}");
+   // p = tmp_bson ("{'0': {'$replaceRoot': {'newRoot': '$name'}}, '1': {'$addFields':{'middle': 's'}}}");
+   p = tmp_bson ("{'pipeline': [{'$replaceRoot': {'newRoot': '$name'}}, {'$addFields':{'middle': 's'}}]}");
 
-   q = tmp_bson ("{'x': 1}");
+   q = tmp_bson ("{'age': 21}");
 
    res = mongoc_collection_update_one (collection, q, p, NULL, &reply, &error);
    ASSERT_OR_PRINT (res, error);

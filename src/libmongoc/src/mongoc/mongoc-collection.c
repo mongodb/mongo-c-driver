@@ -1761,9 +1761,16 @@ _mongoc_get_value_from_update_or_pipeline (const bson_t *update)
    uint32_t len;
    const uint8_t *data;
 
-   if (bson_iter_init_find (&iter, update, "pipeline")) {
+   bson_iter_init (&iter, update);
+   bson_iter_next (&iter);
+
+   if (!strcmp (bson_iter_key (&iter), "pipeline")) {
       value.value_type = BSON_TYPE_ARRAY;
       bson_iter_array (&iter, &len, &data);
+   } else if (!strcmp (bson_iter_key (&iter), "0")) {
+      value.value_type = BSON_TYPE_ARRAY;
+      data = bson_get_data (update);
+      len = update->len;
    } else {
       value.value_type = BSON_TYPE_DOCUMENT;
       data = bson_get_data (update);
@@ -1773,6 +1780,26 @@ _mongoc_get_value_from_update_or_pipeline (const bson_t *update)
    value.value.v_doc.data = (uint8_t *) data;
 
    return value;
+}
+
+static bool
+_mongoc_is_array (const bson_t *bson)
+{
+   bson_iter_t iter;
+   int key;
+   int i = 0;
+
+   bson_iter_init (&iter, bson);
+
+   while (bson_iter_next (&iter)) {
+      key = strtol (bson_iter_key (&iter), NULL, 10);
+      
+      if (errno == EINVAL || errno == ERANGE || i++ != key) {
+         return false;
+      }
+   }
+
+   return true;
 }
 
 /*
@@ -3099,7 +3126,11 @@ mongoc_collection_find_and_modify_with_opts (
    }
 
    if (opts->update) {
-      BSON_APPEND_DOCUMENT (&command, "update", opts->update);
+      if (_mongoc_is_array (opts->update)) {
+         BSON_APPEND_ARRAY (&command, "update", opts->update);
+      } else {
+         BSON_APPEND_DOCUMENT (&command, "update", opts->update);
+      }
    }
 
    if (opts->fields) {

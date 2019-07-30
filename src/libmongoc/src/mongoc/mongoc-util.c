@@ -385,6 +385,8 @@ _mongoc_validate_update (const bson_t *update,
          } else {
             return true;
          }
+      } else if (!strcmp (key, "0")) {
+         return true;
       } else if (key[0] != '$') {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
