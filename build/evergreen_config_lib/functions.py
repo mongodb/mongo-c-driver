@@ -52,7 +52,7 @@ all_functions = OD([
             r'[ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz mongoc.tar.gz',
             errexit=False, test=False),
         s3_put(
-            'mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz',
+            '${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz',
             project_path=False, aws_key='${aws_key}',
             aws_secret='${aws_secret}', local_file='mongoc.tar.gz',
             bucket='mciuploads', permissions='public-read',

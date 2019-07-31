@@ -46,7 +46,7 @@ functions:
         set -o xtrace
         [ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz mongoc.tar.gz
   - command: s3.put
-    params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: 'mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz',
+    params: {aws_key: '${aws_key}', aws_secret: '${aws_secret}', remote_file: '${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz',
       bucket: mciuploads, permissions: public-read, local_file: mongoc.tar.gz, content_type: '${content_type|application/x-gzip}'}
   upload build:
   - command: archive.targz_pack
