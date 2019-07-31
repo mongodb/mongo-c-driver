@@ -1294,8 +1294,8 @@ test_update_pipeline (void)
    mongoc_client_t *client;
    bson_error_t error;
    bson_t *b;
-   bson_t *q;
-   bson_t *p;
+   bson_t *pipeline_arr;
+   bson_t pipeline_doc;
    bson_t reply;
    bool res;
 
@@ -1308,18 +1308,37 @@ test_update_pipeline (void)
    collection = get_test_collection (client, "test_update_pipeline");
    ASSERT (collection);
 
-   b = tmp_bson ("{'age': 21, 'name': {'first': 'isabel', 'last': 'atkinson'}}");
+   b = tmp_bson ("{'nums': {'x': 1, 'y': 2}}");
    res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
-   // p = tmp_bson ("{'0': {'$replaceRoot': {'newRoot': '$name'}}, '1': {'$addFields':{'middle': 's'}}}");
-   p = tmp_bson ("{'pipeline': [{'$replaceRoot': {'newRoot': '$name'}}, {'$addFields':{'middle': 's'}}]}");
-
-   q = tmp_bson ("{'age': 21}");
-
-   res = mongoc_collection_update_one (collection, q, p, NULL, &reply, &error);
+   /* format 1: array document with incrementing keys
+      (i.e. {"0": value, "1": value, "2": value}) */
+   pipeline_arr = tmp_bson ("{'0': {'$replaceRoot': {'newRoot': '$nums'}},"
+                            " '1': {'$addFields': {'z': 3}}}");
+   res = mongoc_collection_update_one (collection,
+                                       b,
+                                       pipeline_arr,
+                                       NULL,
+                                       &reply,
+                                       &error);
    ASSERT_OR_PRINT (res, error);
 
+   res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   /* format 2: document with pipeline key and array value */
+   bson_init (&pipeline_doc);
+   bson_append_array (&pipeline_doc, "pipeline", 8, pipeline_arr);
+   res = mongoc_collection_update_one (collection,
+                                       b,
+                                       &pipeline_doc,
+                                       NULL,
+                                       &reply,
+                                       &error);
+   ASSERT_OR_PRINT (res, error);
+
+   bson_destroy (&pipeline_doc);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
