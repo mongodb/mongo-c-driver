@@ -1000,7 +1000,6 @@ execute_test (const json_test_config_t *config,
       config->before_test_cb (&ctx, test);
    }
 
-   // sets ctx.events
    json_test_operations (&ctx, test);
 
    if (config->after_test_cb) {
@@ -1013,7 +1012,6 @@ execute_test (const json_test_config_t *config,
       bson_t expectations;
 
       bson_lookup_doc (test, "expectations", &expectations);
-      // failure line
       check_json_apm_events (&ctx, &expectations);
       if (config->events_check_cb) {
          config->events_check_cb (&ctx.events);

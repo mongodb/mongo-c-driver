@@ -105,26 +105,24 @@ _mongoc_write_command_insert_append (mongoc_write_command_t *command,
 void
 _mongoc_write_command_update_append (mongoc_write_command_t *command,
                                      const bson_t *selector,
-                                     const bson_value_t *update_v,
+                                     const bson_t *update,
                                      const bson_t *opts)
 {
    bson_t document;
-   bson_t *update;
-   const uint8_t *data;
-   size_t len;
+   bson_iter_t iter;
 
    ENTRY;
 
    BSON_ASSERT (command);
    BSON_ASSERT (command->type == MONGOC_WRITE_COMMAND_UPDATE);
-   BSON_ASSERT (selector && update_v);
+   BSON_ASSERT (selector && update);
 
    bson_init (&document);
    BSON_APPEND_DOCUMENT (&document, "q", selector);
-   data = update_v->value.v_doc.data;
-   len = update_v->value.v_doc.data_len;
-   update = bson_new_from_data (data, len);
-   if (update_v->value_type == BSON_TYPE_ARRAY) {
+   if (bson_iter_init_find (&iter, update, "pipeline")
+         && BSON_ITER_HOLDS_ARRAY (&iter)) {
+      bson_append_iter (&document, "u", 1, &iter);
+   } else if (_mongoc_document_is_array (update)) {
       BSON_APPEND_ARRAY (&document, "u", update);
    } else {
       BSON_APPEND_DOCUMENT (&document, "u", update);
@@ -138,7 +136,6 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
    command->n_documents++;
 
    bson_destroy (&document);
-   bson_destroy (update);
 
    EXIT;
 }
@@ -298,7 +295,7 @@ _mongoc_write_command_init_delete_idl (mongoc_write_command_t *command,
 void
 _mongoc_write_command_init_update (mongoc_write_command_t *command, /* IN */
                                    const bson_t *selector,          /* IN */
-                                   const bson_value_t *update,      /* IN */
+                                   const bson_t *update,            /* IN */
                                    const bson_t *opts,              /* IN */
                                    mongoc_bulk_write_flags_t flags, /* IN */
                                    int64_t operation_id)            /* IN */
@@ -320,7 +317,7 @@ _mongoc_write_command_init_update (mongoc_write_command_t *command, /* IN */
 void
 _mongoc_write_command_init_update_idl (mongoc_write_command_t *command,
                                        const bson_t *selector,
-                                       const bson_value_t *update,
+                                       const bson_t *update,
                                        const bson_t *opts,
                                        int64_t operation_id)
 {

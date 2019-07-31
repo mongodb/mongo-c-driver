@@ -25,6 +25,7 @@
 #include "mongoc/mongoc-client.h"
 #include "mongoc/mongoc-client-session-private.h"
 #include "mongoc/mongoc-trace-private.h"
+#include "mongoc/mongoc-collection-private.h"
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
@@ -363,6 +364,10 @@ _mongoc_validate_update (const bson_t *update,
       return false;
    }
 
+   if (_mongoc_document_is_array (update)) {
+      return true;
+   }
+
    if (!bson_iter_init (&iter, update)) {
       bson_set_error (error,
                       MONGOC_ERROR_BSON,
@@ -373,21 +378,20 @@ _mongoc_validate_update (const bson_t *update,
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
+
       if (!strcmp (key, "pipeline")) {
-         if (bson_iter_next (&iter)) {
+         if (BSON_ITER_HOLDS_ARRAY (&iter)) {
+            return true;
+         } else {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "Invalid key '%s': update only works with $ operators"
-                            " and pipelines",
-                            key);
+                            "'pipeline' key must have an array value");
             return false;
-         } else {
-            return true;
          }
-      } else if (!strcmp (key, "0")) {
-         return true;
-      } else if (key[0] != '$') {
+      }
+      
+      if (key[0] != '$') {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,

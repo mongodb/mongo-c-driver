@@ -1602,8 +1602,6 @@ json_test_operation (json_test_ctx_t *ctx,
       wc = mongoc_write_concern_new ();
    }
 
-   printf ("object name: %s, op name: %s\n", obj_name, op_name);
-
    if (!strcmp (obj_name, "collection")) {
       if (!strcmp (op_name, "bulkWrite")) {
          res = bulk_write (c, test, operation, session, wc, reply);

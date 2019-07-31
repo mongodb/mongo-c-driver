@@ -48,8 +48,8 @@ _mongoc_collection_new (mongoc_client_t *client,
                         const mongoc_read_concern_t *read_concern,
                         const mongoc_write_concern_t *write_concern);
 
-bson_value_t
-_mongoc_get_value_from_update_or_pipeline (const bson_t *update);
+bool
+_mongoc_document_is_array (const bson_t *bson);
 
 BSON_END_DECLS
 
