@@ -7,11 +7,75 @@
 #include "TestSuite.h"
 #include "test-libmongoc.h"
 #include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-cursor-private.h"
 #include "mongoc/mongoc-database-private.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
 #include "test-conveniences.h"
 
+
+static void
+test_aggregate_write_concern (void)
+{
+   mongoc_database_t *database;
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_cursor_t *cursor;
+   bson_t *with_out_key;
+   bson_t *no_out_key;
+   mongoc_write_concern_t *wc;
+   bson_t opts = BSON_INITIALIZER;
+
+   /* The newest wire version that is still too old to
+      support aggregate with writeConcern and $out/$merge */
+   server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   database = mongoc_client_get_database (client, "agg");
+
+   /* If we run an aggregate without a terminal stage,
+      then it should be ok for us to have a write concern,
+      even with an old wire version. */
+   no_out_key = BCON_NEW (
+      "pipeline", "[", "{", "$match", "{", "fakeField", "A", "}", "}", "]");
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_wmajority (wc, 100);
+   mongoc_write_concern_append (wc, &opts);
+   cursor = mongoc_database_aggregate (database, no_out_key, &opts, NULL);
+   ASSERT_ERROR_CONTAINS (cursor->error, 0, 0, "");
+   mongoc_cursor_destroy (cursor);
+
+   /* If we run an aggregate with a terminal stage and
+      a write concern, it should not be allowed. */
+   with_out_key = BCON_NEW ("pipeline",
+                            "[",
+                            "{",
+                            "$currentOp",
+                            "{",
+                            "}",
+                            "}",
+                            "{",
+                            "$out",
+                            BCON_UTF8 ("ops"),
+                            "}",
+                            "]");
+
+   cursor = mongoc_database_aggregate (database, with_out_key, &opts, NULL);
+
+   ASSERT_ERROR_CONTAINS (cursor->error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                          "does not support writeConcern with wire version");
+
+
+   bson_destroy (with_out_key);
+   bson_destroy (no_out_key);
+   mongoc_cursor_destroy (cursor);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
 
 static void
 test_aggregate_inherit_database (void)
@@ -1152,6 +1216,9 @@ test_get_default_database (void)
 void
 test_database_install (TestSuite *suite)
 {
+   TestSuite_AddMockServerTest (
+      suite, "/Database/aggregate/writeConcern", test_aggregate_write_concern);
+
    TestSuite_AddMockServerTest (suite,
                                 "/Database/aggregate/inherit/database",
                                 test_aggregate_inherit_database);
