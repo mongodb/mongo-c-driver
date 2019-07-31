@@ -119,8 +119,8 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
 
    bson_init (&document);
    BSON_APPEND_DOCUMENT (&document, "q", selector);
-   if (bson_iter_init_find (&iter, update, "pipeline")
-         && BSON_ITER_HOLDS_ARRAY (&iter)) {
+   if (bson_iter_init_find (&iter, update, "pipeline") &&
+       BSON_ITER_HOLDS_ARRAY (&iter)) {
       bson_append_iter (&document, "u", 1, &iter);
    } else if (_mongoc_document_is_array (update)) {
       BSON_APPEND_ARRAY (&document, "u", update);

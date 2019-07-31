@@ -1316,12 +1316,8 @@ test_update_pipeline (void)
       (i.e. {"0": value, "1": value, "2": value}) */
    pipeline_arr = tmp_bson ("{'0': {'$replaceRoot': {'newRoot': '$nums'}},"
                             " '1': {'$addFields': {'z': 3}}}");
-   res = mongoc_collection_update_one (collection,
-                                       b,
-                                       pipeline_arr,
-                                       NULL,
-                                       &reply,
-                                       &error);
+   res = mongoc_collection_update_one (
+      collection, b, pipeline_arr, NULL, &reply, &error);
    ASSERT_OR_PRINT (res, error);
 
    res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
@@ -1330,12 +1326,8 @@ test_update_pipeline (void)
    /* format 2: document with pipeline key and array value */
    bson_init (&pipeline_doc);
    bson_append_array (&pipeline_doc, "pipeline", 8, pipeline_arr);
-   res = mongoc_collection_update_one (collection,
-                                       b,
-                                       &pipeline_doc,
-                                       NULL,
-                                       &reply,
-                                       &error);
+   res = mongoc_collection_update_one (
+      collection, b, &pipeline_doc, NULL, &reply, &error);
    ASSERT_OR_PRINT (res, error);
 
    bson_destroy (&pipeline_doc);

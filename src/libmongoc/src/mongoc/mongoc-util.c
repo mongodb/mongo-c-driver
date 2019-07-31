@@ -390,7 +390,7 @@ _mongoc_validate_update (const bson_t *update,
             return false;
          }
       }
-      
+
       if (key[0] != '$') {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
