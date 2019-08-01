@@ -1287,7 +1287,7 @@ test_update (void)
 }
 
 static void
-test_update_pipeline (void)
+test_update_pipeline (void *ctx)
 {
    mongoc_collection_t *collection;
    mongoc_database_t *database;
@@ -6224,8 +6224,12 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       skip_unless_server_has_decimal128);
    TestSuite_AddLive (suite, "/Collection/update", test_update);
-   TestSuite_AddLive (
-      suite, "/Collection/update_pipeline", test_update_pipeline);
+   TestSuite_AddFull (suite,
+                      "/Collection/update_pipeline",
+                      test_update_pipeline,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddLive (suite, "/Collection/update/multi", test_update_multi);
    TestSuite_AddLive (suite, "/Collection/update/upsert", test_update_upsert);
    TestSuite_AddFull (suite,
