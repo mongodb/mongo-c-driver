@@ -16,7 +16,7 @@ Parameters
 ----------
 
 * ``write_concern``: A :symbol:`mongoc_write_concern_t`.
-* ``wtimeout_msec``: A positive ``int32_t`` or zero. If you need to set wtimeout with an ``int64_t``, use :symbol:`mongoc_write_concern_set_wtimeout_int64`.
+* ``wtimeout_msec``: A positive ``int32_t`` or zero.
 
 Description
 -----------

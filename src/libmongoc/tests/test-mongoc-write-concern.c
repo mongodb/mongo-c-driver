@@ -79,11 +79,11 @@ test_write_concern_basic (void)
    ASSERT (!mongoc_write_concern_get_wmajority (write_concern));
    mongoc_write_concern_set_wmajority (write_concern, 1000);
    ASSERT (mongoc_write_concern_get_wmajority (write_concern));
-   ASSERT (mongoc_write_concern_get_wtimeout (write_concern) == 1000);
-   mongoc_write_concern_set_wtimeout (write_concern, 0);
-   ASSERT (!mongoc_write_concern_get_wtimeout (write_concern));
-   mongoc_write_concern_set_wtimeout_int64 (write_concern, INT64_MAX);
-   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == INT64_MAX);
+   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == 1000);
+   mongoc_write_concern_set_wtimeout_int64 (write_concern, 0);
+   ASSERT (!mongoc_write_concern_get_wtimeout_int64 (write_concern));
+   mongoc_write_concern_set_wtimeout_int64 (write_concern, LONG_MAX);
+   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == LONG_MAX);
    mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_DEFAULT);
    ASSERT (mongoc_write_concern_get_w (write_concern) ==
            MONGOC_WRITE_CONCERN_W_DEFAULT);
@@ -356,12 +356,10 @@ test_write_concern_from_iterator (void)
    _test_write_concern_from_iterator (
       "{'writeConcern': {'wtimeout': 42}}", true, false);
    _test_write_concern_from_iterator (
-      "{'writeConcern': {'wtimeout': -42}}", false, false);
-   _test_write_concern_from_iterator (
       "{'writeConcern': {'wtimeout': {'$numberLong': '123'}}}", true, false);
    _test_write_concern_from_iterator (
       "{'writeConcern': {'wtimeout': {'$numberLong': '2147483648'}}}",
-      true,
+      false,
       false);
    _test_write_concern_from_iterator (
       "{'writeConcern': {'w': 1, 'wtimeout': 42}}", true, false);
@@ -407,7 +405,9 @@ test_write_concern_always_mutable (void)
    ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
                  "{'w': 2, 'fsync': true, 'j': true}");
 
-   mongoc_write_concern_set_wtimeout_int64 (write_concern, 100);
+   BEGIN_IGNORE_DEPRECATIONS
+   mongoc_write_concern_set_wtimeout (write_concern, 100);
+   END_IGNORE_DEPRECATIONS
    ASSERT_MATCH (_mongoc_write_concern_get_bson (write_concern),
                  "{'w': 2, 'fsync': true, 'j': true, 'wtimeout': 100}");
 
@@ -573,33 +573,6 @@ test_write_concern_unacknowledged (void)
    mongoc_client_destroy (client);
 }
 
-
-/* Regression test to to demonstrate that a 64-bit wtimeoutms value is properly
- * preserved. */
-static void
-test_write_concern_wtimeout_preserved (void)
-{
-   mongoc_write_concern_t *write_concern = mongoc_write_concern_new ();
-   bson_t *cmd = tmp_bson ("{}");
-   bson_iter_t iter;
-   bson_iter_t child;
-
-   ASSERT (write_concern);
-
-   mongoc_write_concern_set_wtimeout_int64 (write_concern, INT64_MAX);
-   mongoc_write_concern_append (write_concern, cmd);
-
-   ASSERT (bson_iter_init_find (&iter, cmd, "writeConcern"));
-   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
-   ASSERT (bson_iter_recurse (&iter, &child));
-   ASSERT (bson_iter_next (&child));
-   ASSERT_CMPSTR (bson_iter_key (&child), "wtimeout");
-   ASSERT_CMPINT64 (bson_iter_int64 (&child), ==, INT64_MAX);
-   
-   mongoc_write_concern_destroy (write_concern);
-}
-
-
 void
 test_write_concern_install (TestSuite *suite)
 {
@@ -621,9 +594,6 @@ test_write_concern_install (TestSuite *suite)
       suite, "/WriteConcern/from_iterator", test_write_concern_from_iterator);
    TestSuite_Add (
       suite, "/WriteConcern/always_mutable", test_write_concern_always_mutable);
-   TestSuite_Add (suite,
-                  "/WriteConcern/wtimeout_preserved",
-                  test_write_concern_wtimeout_preserved);
    TestSuite_AddMockServerTest (
       suite, "/WriteConcern/allowed", test_write_concern_allowed);
    TestSuite_AddMockServerTest (

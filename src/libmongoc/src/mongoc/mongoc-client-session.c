@@ -168,23 +168,25 @@ static mongoc_write_concern_t *
 create_commit_retry_wc (const mongoc_write_concern_t *existing_wc)
 {
    mongoc_write_concern_t *wc;
+   int32_t wtimeout;
 
    wc = existing_wc ? mongoc_write_concern_copy (existing_wc)
                     : mongoc_write_concern_new ();
+
+   wtimeout = mongoc_write_concern_get_wtimeout_int64 (wc);
 
    /* Transactions spec: "If the modified write concern does not include a
     * wtimeout value, drivers MUST also apply wtimeout: 10000 to the write
     * concern in order to avoid waiting forever if the majority write concern
     * cannot be satisfied." */
-   if (mongoc_write_concern_get_wtimeout_int64 (wc) <= 0) {
-      mongoc_write_concern_set_wtimeout_int64 (
-         wc, MONGOC_DEFAULT_WTIMEOUT_FOR_COMMIT_RETRY);
+   if (wtimeout <= 0) {
+      wtimeout = MONGOC_DEFAULT_WTIMEOUT_FOR_COMMIT_RETRY;
    }
 
    /* Transactions spec: "If the transaction is using a write concern that is
     * not the server default, any other write concern options MUST be left as-is
     * when applying w:majority. */
-   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+   mongoc_write_concern_set_wmajority (wc, wtimeout);
 
    return wc;
 }
