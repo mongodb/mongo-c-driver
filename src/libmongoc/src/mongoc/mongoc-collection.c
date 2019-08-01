@@ -1758,7 +1758,7 @@ _mongoc_document_is_array (const bson_t *document)
 {
    bson_iter_t iter;
    const char *key;
-   int i = 0;
+   uint32_t i = 0;
    char *i_str;
 
    bson_iter_init (&iter, document);
