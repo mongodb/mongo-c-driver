@@ -722,12 +722,12 @@ check_scenario_version (const bson_t *scenario)
 
       while (bson_iter_next (&iter)) {
          bson_iter_bson (&iter, &version_info);
-         if (!check_version_info (&version_info)) {
-            return false;
+         if (check_version_info (&version_info)) {
+            return true;
          }
       }
 
-      return true;
+      return false;
    }
 
    return check_version_info (scenario);
