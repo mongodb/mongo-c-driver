@@ -69,8 +69,10 @@ test_aggregate_write_concern (void)
                           "does not support writeConcern with wire version");
 
 
+   bson_destroy (&opts);
    bson_destroy (with_out_key);
    bson_destroy (no_out_key);
+   mongoc_write_concern_destroy (wc);
    mongoc_cursor_destroy (cursor);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
