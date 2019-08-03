@@ -1294,6 +1294,72 @@ tasks:
     vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: sharded_cluster, VERSION: latest}
   - func: run tests
     vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'on'}
+- name: test-valgrind-4.2-server-auth-nosasl-openssl
+  tags: [test-valgrind]
+  exec_timeout_secs: 7200
+  depends_on: {name: debug-compile-valgrind}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-valgrind}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'on'}
+- name: test-valgrind-4.2-server-noauth-nosasl-nossl
+  tags: [test-valgrind]
+  exec_timeout_secs: 7200
+  depends_on: {name: debug-compile-valgrind}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-valgrind}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'on'}
+- name: test-valgrind-4.2-replica-set-auth-nosasl-openssl
+  tags: [test-valgrind]
+  exec_timeout_secs: 7200
+  depends_on: {name: debug-compile-valgrind}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-valgrind}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'on'}
+- name: test-valgrind-4.2-replica-set-noauth-nosasl-nossl
+  tags: [test-valgrind]
+  exec_timeout_secs: 7200
+  depends_on: {name: debug-compile-valgrind}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-valgrind}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'on'}
+- name: test-valgrind-4.2-sharded-auth-nosasl-openssl
+  tags: [test-valgrind]
+  exec_timeout_secs: 7200
+  depends_on: {name: debug-compile-valgrind}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-valgrind}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'on'}
+- name: test-valgrind-4.2-sharded-noauth-nosasl-nossl
+  tags: [test-valgrind]
+  exec_timeout_secs: 7200
+  depends_on: {name: debug-compile-valgrind}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-valgrind}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'on'}
 - name: test-valgrind-4.0-server-auth-nosasl-openssl
   tags: [test-valgrind]
   exec_timeout_secs: 7200
@@ -1690,6 +1756,72 @@ tasks:
     vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: sharded_cluster, VERSION: latest}
   - func: run tests
     vars: {ASAN: 'on', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
+- name: test-asan-4.2-server-auth-nosasl-openssl
+  tags: [test-asan]
+  exec_timeout_secs: 3600
+  depends_on: {name: debug-compile-asan-clang-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-asan-clang-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'on', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+- name: test-asan-4.2-server-noauth-nosasl-nossl
+  tags: [test-asan]
+  exec_timeout_secs: 3600
+  depends_on: {name: debug-compile-asan-clang}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-asan-clang}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'on', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
+- name: test-asan-4.2-replica-set-auth-nosasl-openssl
+  tags: [test-asan]
+  exec_timeout_secs: 3600
+  depends_on: {name: debug-compile-asan-clang-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-asan-clang-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'on', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+- name: test-asan-4.2-replica-set-noauth-nosasl-nossl
+  tags: [test-asan]
+  exec_timeout_secs: 3600
+  depends_on: {name: debug-compile-asan-clang}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-asan-clang}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'on', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
+- name: test-asan-4.2-sharded-auth-nosasl-openssl
+  tags: [test-asan]
+  exec_timeout_secs: 3600
+  depends_on: {name: debug-compile-asan-clang-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-asan-clang-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'on', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+- name: test-asan-4.2-sharded-noauth-nosasl-nossl
+  tags: [test-asan]
+  exec_timeout_secs: 3600
+  depends_on: {name: debug-compile-asan-clang}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-asan-clang}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'on', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
 - name: test-asan-4.0-server-auth-nosasl-openssl
   tags: [test-asan]
   exec_timeout_secs: 3600
@@ -2077,6 +2209,66 @@ tasks:
   - {func: debug-compile-coverage-notest-nosasl-nossl}
   - func: bootstrap mongo-orchestration
     vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: sharded_cluster, VERSION: latest}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
+  - {func: update codecov.io}
+- name: test-coverage-4.2-server-auth-nosasl-openssl
+  tags: [test-coverage]
+  exec_timeout_secs: 3600
+  commands:
+  - {func: debug-compile-coverage-notest-nosasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+  - {func: update codecov.io}
+- name: test-coverage-4.2-server-noauth-nosasl-nossl
+  tags: [test-coverage]
+  exec_timeout_secs: 3600
+  commands:
+  - {func: debug-compile-coverage-notest-nosasl-nossl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
+  - {func: update codecov.io}
+- name: test-coverage-4.2-replica-set-auth-nosasl-openssl
+  tags: [test-coverage]
+  exec_timeout_secs: 3600
+  commands:
+  - {func: debug-compile-coverage-notest-nosasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+  - {func: update codecov.io}
+- name: test-coverage-4.2-replica-set-noauth-nosasl-nossl
+  tags: [test-coverage]
+  exec_timeout_secs: 3600
+  commands:
+  - {func: debug-compile-coverage-notest-nosasl-nossl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
+  - {func: update codecov.io}
+- name: test-coverage-4.2-sharded-auth-nosasl-openssl
+  tags: [test-coverage]
+  exec_timeout_secs: 3600
+  commands:
+  - {func: debug-compile-coverage-notest-nosasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+  - {func: update codecov.io}
+- name: test-coverage-4.2-sharded-noauth-nosasl-nossl
+  tags: [test-coverage]
+  exec_timeout_secs: 3600
+  commands:
+  - {func: debug-compile-coverage-notest-nosasl-nossl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
   - func: run tests
     vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
   - {func: update codecov.io}
@@ -2778,6 +2970,396 @@ tasks:
     vars: {BUILD_NAME: debug-compile-nosasl-nossl}
   - func: bootstrap mongo-orchestration
     vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: sharded_cluster, VERSION: latest}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
+- name: test-4.2-server-auth-sasl-openssl
+  tags: ['4.2', auth, openssl, sasl, server]
+  depends_on: {name: debug-compile-sasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-server-auth-sasl-darwinssl
+  tags: ['4.2', auth, darwinssl, sasl, server]
+  depends_on: {name: debug-compile-sasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: darwinssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-server-auth-sasl-winssl
+  tags: ['4.2', auth, sasl, server, winssl]
+  depends_on: {name: debug-compile-sasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: winssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-server-auth-nosasl-openssl
+  tags: ['4.2', auth, nosasl, openssl, server]
+  depends_on: {name: debug-compile-nosasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-server-auth-nosasl-darwinssl
+  tags: ['4.2', auth, darwinssl, nosasl, server]
+  depends_on: {name: debug-compile-nosasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: darwinssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-server-auth-nosasl-winssl
+  tags: ['4.2', auth, nosasl, server, winssl]
+  depends_on: {name: debug-compile-nosasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: winssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-server-noauth-sasl-openssl
+  tags: ['4.2', noauth, openssl, sasl, server]
+  depends_on: {name: debug-compile-sasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: openssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-server-noauth-sasl-darwinssl
+  tags: ['4.2', darwinssl, noauth, sasl, server]
+  depends_on: {name: debug-compile-sasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: darwinssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-server-noauth-sasl-winssl
+  tags: ['4.2', noauth, sasl, server, winssl]
+  depends_on: {name: debug-compile-sasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: winssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-server-noauth-nosasl-openssl
+  tags: ['4.2', noauth, nosasl, openssl, server]
+  depends_on: {name: debug-compile-nosasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: openssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-server-noauth-nosasl-darwinssl
+  tags: ['4.2', darwinssl, noauth, nosasl, server]
+  depends_on: {name: debug-compile-nosasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: darwinssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-server-noauth-nosasl-winssl
+  tags: ['4.2', noauth, nosasl, server, winssl]
+  depends_on: {name: debug-compile-nosasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: winssl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-server-noauth-nosasl-nossl
+  tags: ['4.2', noauth, nosasl, nossl, server]
+  depends_on: {name: debug-compile-nosasl-nossl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-nossl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: server, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-auth-sasl-openssl
+  tags: ['4.2', auth, openssl, replica_set, sasl]
+  depends_on: {name: debug-compile-sasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-auth-sasl-darwinssl
+  tags: ['4.2', auth, darwinssl, replica_set, sasl]
+  depends_on: {name: debug-compile-sasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: darwinssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-auth-sasl-winssl
+  tags: ['4.2', auth, replica_set, sasl, winssl]
+  depends_on: {name: debug-compile-sasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: winssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-auth-nosasl-openssl
+  tags: ['4.2', auth, nosasl, openssl, replica_set]
+  depends_on: {name: debug-compile-nosasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-auth-nosasl-darwinssl
+  tags: ['4.2', auth, darwinssl, nosasl, replica_set]
+  depends_on: {name: debug-compile-nosasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: darwinssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-auth-nosasl-winssl
+  tags: ['4.2', auth, nosasl, replica_set, winssl]
+  depends_on: {name: debug-compile-nosasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: winssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-noauth-sasl-openssl
+  tags: ['4.2', noauth, openssl, replica_set, sasl]
+  depends_on: {name: debug-compile-sasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: openssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-noauth-sasl-darwinssl
+  tags: ['4.2', darwinssl, noauth, replica_set, sasl]
+  depends_on: {name: debug-compile-sasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: darwinssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-noauth-sasl-winssl
+  tags: ['4.2', noauth, replica_set, sasl, winssl]
+  depends_on: {name: debug-compile-sasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: winssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-noauth-nosasl-openssl
+  tags: ['4.2', noauth, nosasl, openssl, replica_set]
+  depends_on: {name: debug-compile-nosasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: openssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-noauth-nosasl-darwinssl
+  tags: ['4.2', darwinssl, noauth, nosasl, replica_set]
+  depends_on: {name: debug-compile-nosasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: darwinssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-noauth-nosasl-winssl
+  tags: ['4.2', noauth, nosasl, replica_set, winssl]
+  depends_on: {name: debug-compile-nosasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: winssl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-replica-set-noauth-nosasl-nossl
+  tags: ['4.2', noauth, nosasl, nossl, replica_set]
+  depends_on: {name: debug-compile-nosasl-nossl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-nossl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: replica_set, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
+- name: test-4.2-sharded-auth-sasl-openssl
+  tags: ['4.2', auth, openssl, sasl, sharded_cluster]
+  depends_on: {name: debug-compile-sasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-auth-sasl-darwinssl
+  tags: ['4.2', auth, darwinssl, sasl, sharded_cluster]
+  depends_on: {name: debug-compile-sasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: darwinssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-auth-sasl-winssl
+  tags: ['4.2', auth, sasl, sharded_cluster, winssl]
+  depends_on: {name: debug-compile-sasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: winssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-auth-nosasl-openssl
+  tags: ['4.2', auth, nosasl, openssl, sharded_cluster]
+  depends_on: {name: debug-compile-nosasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: openssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-auth-nosasl-darwinssl
+  tags: ['4.2', auth, darwinssl, nosasl, sharded_cluster]
+  depends_on: {name: debug-compile-nosasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: darwinssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-auth-nosasl-winssl
+  tags: ['4.2', auth, nosasl, sharded_cluster, winssl]
+  depends_on: {name: debug-compile-nosasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: auth, SSL: winssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: auth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-noauth-sasl-openssl
+  tags: ['4.2', noauth, openssl, sasl, sharded_cluster]
+  depends_on: {name: debug-compile-sasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: openssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-noauth-sasl-darwinssl
+  tags: ['4.2', darwinssl, noauth, sasl, sharded_cluster]
+  depends_on: {name: debug-compile-sasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: darwinssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-noauth-sasl-winssl
+  tags: ['4.2', noauth, sasl, sharded_cluster, winssl]
+  depends_on: {name: debug-compile-sasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-sasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: winssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-noauth-nosasl-openssl
+  tags: ['4.2', noauth, nosasl, openssl, sharded_cluster]
+  depends_on: {name: debug-compile-nosasl-openssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-openssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: openssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: openssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-noauth-nosasl-darwinssl
+  tags: ['4.2', darwinssl, noauth, nosasl, sharded_cluster]
+  depends_on: {name: debug-compile-nosasl-darwinssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-darwinssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: darwinssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: darwinssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-noauth-nosasl-winssl
+  tags: ['4.2', noauth, nosasl, sharded_cluster, winssl]
+  depends_on: {name: debug-compile-nosasl-winssl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-winssl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: winssl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
+  - func: run tests
+    vars: {ASAN: 'off', AUTH: noauth, SSL: winssl, VALGRIND: 'off'}
+- name: test-4.2-sharded-noauth-nosasl-nossl
+  tags: ['4.2', noauth, nosasl, nossl, sharded_cluster]
+  depends_on: {name: debug-compile-nosasl-nossl}
+  commands:
+  - func: fetch build
+    vars: {BUILD_NAME: debug-compile-nosasl-nossl}
+  - func: bootstrap mongo-orchestration
+    vars: {AUTH: noauth, SSL: nossl, TOPOLOGY: sharded_cluster, VERSION: '4.2'}
   - func: run tests
     vars: {ASAN: 'off', AUTH: noauth, SSL: nossl, VALGRIND: 'off'}
 - name: test-4.0-server-auth-sasl-openssl
@@ -5142,17 +5724,23 @@ buildvariants:
   run_on: ubuntu1404-build
   tasks: [debug-compile-scan-build, release-compile, debug-compile-nosasl-nossl, debug-compile-rdtscp,
     .debug-compile !.sspi .openssl, .debug-compile !.sspi .nossl, .authentication-tests
-      .openssl, .latest .openssl !.nosasl .server, .4.0 .openssl !.nosasl .server,
-    .3.6 .openssl !.nosasl .server, .3.4 .openssl !.nosasl .server, .3.2 .openssl
-      !.nosasl .server, .3.0 .openssl !.nosasl !.auth]
+      .openssl, .4.0 .openssl !.nosasl .server, .3.6 .openssl !.nosasl .server, .3.4
+      .openssl !.nosasl .server, .3.2 .openssl !.nosasl .server, .3.0 .openssl !.nosasl
+      !.auth]
 - name: clang35
   display_name: clang 3.5 (Debian 8.1)
   expansions: {CC: clang}
   run_on: debian81-test
   tasks: [release-compile, debug-compile-nosasl-nossl, .debug-compile .stdflags !.c89,
     .debug-compile !.sspi .openssl, .debug-compile !.sspi .nossl, .authentication-tests
-      .openssl, .latest .openssl !.nosasl .server, .latest .nossl, .4.0 .openssl !.nosasl
-      .server]
+      .openssl, .4.0 .openssl !.nosasl .server]
+- name: clang38
+  display_name: clang 3.8 (Debian 9.2)
+  expansions: {CC: clang}
+  run_on: debian92-test
+  tasks: [release-compile, debug-compile-nosasl-nossl, .debug-compile .stdflags !.c89,
+    .debug-compile !.sspi .openssl, .debug-compile !.sspi .nossl, .latest .openssl
+      !.nosasl .server, .latest .nossl, .4.2 .openssl !.nosasl .server]
 - name: openssl
   display_name: OpenSSL / LibreSSL
   run_on: archlinux-build
@@ -5174,8 +5762,8 @@ buildvariants:
   run_on: ubuntu1604-test
   tasks: [debug-compile-scan-build, release-compile, debug-compile-nosasl-nossl, debug-compile-no-align,
     .debug-compile .stdflags !.c89, .debug-compile !.sspi .nossl .nosasl, .latest
-      .nossl .nosasl, .4.0 .nossl .nosasl, .3.6 .nossl .nosasl]
-- name: clang38
+      .nossl .nosasl, .4.2 .nossl .nosasl, .4.0 .nossl .nosasl, .3.6 .nossl .nosasl]
+- name: clang38ubuntu
   display_name: clang 3.8 (Ubuntu 16.04)
   expansions: {CC: clang}
   run_on: ubuntu1604-test
@@ -5183,8 +5771,8 @@ buildvariants:
     release-compile, debug-compile-nosasl-nossl, debug-compile-no-align, .debug-compile
       .stdflags !.c89, .debug-compile !.sspi .openssl, .debug-compile !.sspi .nossl,
     .authentication-tests .openssl, .authentication-tests .valgrind, .latest .openssl
-      !.nosasl .server, .latest .nossl, .4.0 .openssl !.nosasl .server, .3.6 .openssl
-      !.nosasl .server]
+      !.nosasl .server, .latest .nossl, .4.2 .openssl !.nosasl .server, .4.0 .openssl
+      !.nosasl .server, .3.6 .openssl !.nosasl .server]
 - name: gcc46
   display_name: GCC 4.6 (Ubuntu 12.04)
   expansions: {CC: gcc}
@@ -5199,33 +5787,40 @@ buildvariants:
   expansions: {CC: gcc}
   run_on: ubuntu1404-build
   tasks: [release-compile, debug-compile-nosasl-nossl, .debug-compile !.sspi .openssl,
-    .debug-compile !.sspi .nossl, .authentication-tests .openssl, .latest .openssl
-      !.nosasl .server, .latest .nossl, .latest .nossl !.ipv4-ipv6, .4.0 .openssl
-      !.nosasl .server, .3.6 .openssl !.nosasl .server, .3.4 .openssl !.nosasl .server,
-    .3.2 .openssl !.nosasl .server, .3.0 .openssl !.nosasl !.auth, .latest .openssl
-      .nosasl .replica_set, .latest .openssl !.nosasl .replica_set]
+    .debug-compile !.sspi .nossl, .authentication-tests .openssl, .4.0 .openssl !.nosasl
+      .server, .3.6 .openssl !.nosasl .server, .3.4 .openssl !.nosasl .server, .3.2
+      .openssl !.nosasl .server, .3.0 .openssl !.nosasl !.auth]
 - name: gcc48rhel
   display_name: GCC 4.8 (RHEL 7.0)
   expansions: {CC: gcc}
   run_on: rhel70
   tasks: [.hardened, .compression !.snappy, release-compile, debug-compile-nosasl-nossl,
     .debug-compile !.sspi .openssl, .debug-compile !.sspi .nossl, .authentication-tests
-      .openssl, .latest .openssl !.nosasl .server, .latest .nossl, .4.0 .openssl !.nosasl
-      .server, .3.6 .openssl !.nosasl .server, .3.4 .openssl !.nosasl .server, .3.2
-      .openssl !.nosasl .server, .3.0 .openssl !.nosasl !.auth]
+      .openssl, .latest .openssl !.nosasl .server, .latest .nossl, .4.2 .openssl !.nosasl
+      .server, .4.0 .openssl !.nosasl .server, .3.6 .openssl !.nosasl .server, .3.4
+      .openssl !.nosasl .server, .3.2 .openssl !.nosasl .server, .3.0 .openssl !.nosasl
+      !.auth]
 - name: gcc49
   display_name: GCC 4.9 (Debian 8.1)
   expansions: {CC: gcc}
   run_on: debian81-test
   tasks: [release-compile, debug-compile-nosasl-nossl, .debug-compile !.sspi .openssl,
-    .debug-compile !.sspi .nossl, .authentication-tests .openssl, .latest .openssl
-      !.nosasl .server, .latest .nossl, .4.0 .openssl !.nosasl .server]
+    .debug-compile !.sspi .nossl, .authentication-tests .openssl, .4.0 .openssl !.nosasl
+      .server]
+- name: gcc63
+  display_name: GCC 6.3 (Debian 9.2)
+  expansions: {CC: gcc}
+  run_on: debian92-test
+  tasks: [release-compile, debug-compile-nosasl-nossl, .debug-compile !.sspi .openssl,
+    .debug-compile !.sspi .nossl, .latest .openssl !.nosasl .server, .latest .nossl,
+    .4.2 .openssl !.nosasl .server]
 - name: gcc54-i386
   display_name: GCC 5.4 (i386) (Ubuntu 16.04)
   expansions: {CC: gcc, MARCH: i386}
   run_on: ubuntu1604-test
   tasks: [debug-compile-coverage, release-compile, debug-compile-nosasl-nossl, debug-compile-no-align,
-    .debug-compile !.sspi .nossl .nosasl, .latest .nossl .nosasl, .4.0 .nossl .nosasl]
+    .debug-compile !.sspi .nossl .nosasl, .latest .nossl .nosasl, .4.2 .nossl .nosasl,
+    .4.0 .nossl .nosasl]
 - name: gcc54
   display_name: GCC 5.4 (Ubuntu 16.04)
   expansions: {CC: gcc}
@@ -5234,8 +5829,9 @@ buildvariants:
     release-compile, debug-compile-nosasl-nossl, debug-compile-no-align, .debug-compile
       !.sspi .openssl, .debug-compile !.sspi .nossl, .authentication-tests .openssl,
     .authentication-tests .valgrind, .latest .openssl !.nosasl .server, .latest .nossl,
-    retry-true-3.4-replica-set, retry-true-latest-server, .4.0 .openssl !.nosasl .server,
-    test-dns-openssl, test-dns-auth-openssl]
+    .latest .openssl .nosasl .replica_set, .latest .openssl !.nosasl .replica_set,
+    retry-true-3.4-replica-set, retry-true-latest-server, .4.2 .openssl !.nosasl .server,
+    .4.0 .openssl !.nosasl .server, test-dns-openssl, test-dns-auth-openssl]
 - name: darwin
   display_name: '*Darwin, macOS (Apple LLVM)'
   expansions: {CC: clang}
@@ -5243,10 +5839,10 @@ buildvariants:
   tasks: [.compression !.snappy, debug-compile-coverage, release-compile, debug-compile-nosasl-nossl,
     debug-compile-rdtscp, debug-compile-no-align, debug-compile-nosrv, .debug-compile
       .darwinssl, .debug-compile !.sspi .nossl, .debug-compile .clang, .authentication-tests
-      .darwinssl, .latest .darwinssl !.nosasl .server, .latest .nossl, .4.0 .darwinssl
-      !.nosasl .server, .3.6 .darwinssl !.nosasl .server, .3.4 .darwinssl !.nosasl
-      .server, .3.2 .darwinssl !.nosasl .server, .3.2 .nossl, test-dns-darwinssl,
-    test-dns-auth-darwinssl, debug-compile-lto, debug-compile-lto-thin]
+      .darwinssl, .latest .darwinssl !.nosasl .server, .latest .nossl, .4.2 .darwinssl
+      !.nosasl .server, .4.0 .darwinssl !.nosasl .server, .3.6 .darwinssl !.nosasl
+      .server, .3.4 .darwinssl !.nosasl .server, .3.2 .darwinssl !.nosasl .server,
+    .3.2 .nossl, test-dns-darwinssl, test-dns-auth-darwinssl, debug-compile-lto, debug-compile-lto-thin]
 - name: windows-2015
   display_name: Windows (VS 2015)
   expansions: {CC: Visual Studio 14 2015 Win64}
@@ -5255,9 +5851,9 @@ buildvariants:
     debug-compile-nosrv, .debug-compile .winssl, .debug-compile !.sspi .openssl, .debug-compile
       !.sspi .nossl, .debug-compile .sspi, .authentication-tests .openssl !.sasl,
     .authentication-tests .winssl, .latest .winssl !.nosasl .server, .latest .openssl
-      !.nosasl .server, .latest .nossl, .4.0 .winssl !.nosasl .server, .3.6 .winssl
-      !.nosasl .server, .3.4 .winssl !.nosasl .server, .3.2 .winssl !.nosasl .server,
-    .3.0 .nossl, test-dns-winssl, test-dns-auth-winssl]
+      !.nosasl .server, .latest .nossl, .4.2 .winssl !.nosasl .server, .4.0 .winssl
+      !.nosasl .server, .3.6 .winssl !.nosasl .server, .3.4 .winssl !.nosasl .server,
+    .3.2 .winssl !.nosasl .server, .3.0 .nossl, test-dns-winssl, test-dns-auth-winssl]
 - name: windows-2015-32
   display_name: Windows (i386) (VS 2015)
   expansions: {CC: Visual Studio 14 2015}
@@ -5265,7 +5861,8 @@ buildvariants:
   tasks: [.compression !.snappy, release-compile, debug-compile-nosasl-nossl, debug-compile-no-align,
     .debug-compile .sspi !.openssl, .debug-compile .winssl .nosasl, .debug-compile
       !.sspi .nossl .nosasl, .authentication-tests .winssl, .latest .winssl .nosasl
-      .server, .latest .nossl .nosasl, .latest .sspi, .4.0 .winssl .nosasl .server]
+      .server, .latest .nossl .nosasl, .latest .sspi, .4.2 .winssl .nosasl .server,
+    .4.0 .winssl .nosasl .server]
 - name: windows-2013
   display_name: Windows (VS 2013)
   expansions: {CC: Visual Studio 12 2013 Win64}
@@ -5274,7 +5871,7 @@ buildvariants:
       .winssl, .debug-compile !.sspi .openssl, .debug-compile !.sspi .nossl, .debug-compile
       .sspi, .authentication-tests .openssl !.sasl, .authentication-tests .winssl,
     .latest .winssl !.nosasl .server, .latest .openssl !.nosasl .server, .latest .nossl,
-    .latest .sspi, .4.0 .winssl !.nosasl .server]
+    .latest .sspi, .4.2 .winssl !.nosasl .server, .4.0 .winssl !.nosasl .server]
 - name: windows-2013-32
   display_name: Windows (i386) (VS 2013)
   expansions: {CC: Visual Studio 12 2013}
@@ -5282,7 +5879,8 @@ buildvariants:
   tasks: [release-compile, debug-compile-nosasl-nossl, debug-compile-rdtscp, .debug-compile
       .sspi !.openssl, .debug-compile .winssl .nosasl, .debug-compile !.sspi .nossl
       .nosasl, .authentication-tests .winssl, .latest .winssl .nosasl .server, .latest
-      .nossl .nosasl, .latest .sspi, .4.0 .winssl .nosasl .server]
+      .nossl .nosasl, .latest .sspi, .4.2 .winssl .nosasl .server, .4.0 .winssl .nosasl
+      .server]
 - name: windows-2010
   display_name: Windows (VS 2010)
   expansions: {CC: Visual Studio 10 2010 Win64}
@@ -5291,7 +5889,8 @@ buildvariants:
     .debug-compile .winssl, .debug-compile !.sspi .openssl, .debug-compile !.sspi
       .nossl, .debug-compile .sspi, .authentication-tests .openssl !.sasl, .authentication-tests
       .winssl, .latest .winssl !.nosasl .server, .latest .openssl !.nosasl .server,
-    .latest .nossl, .latest .sspi, .4.0 .winssl !.nosasl .server]
+    .latest .nossl, .latest .sspi, .4.2 .winssl !.nosasl .server, .4.0 .winssl !.nosasl
+      .server]
 - name: windows-2010-32
   display_name: Windows (i386) (VS 2010)
   expansions: {CC: Visual Studio 10 2010}
@@ -5299,7 +5898,8 @@ buildvariants:
   tasks: [release-compile, debug-compile-nosasl-nossl, .debug-compile .winssl .sspi,
     .debug-compile .winssl .nosasl, .debug-compile !.sspi .nossl .nosasl, .debug-compile
       .nossl .sspi, .authentication-tests .winssl, .latest .winssl .nosasl .server,
-    .latest .nossl .nosasl, .latest .sspi, .4.0 .winssl .nosasl .server]
+    .latest .nossl .nosasl, .latest .sspi, .4.2 .winssl .nosasl .server, .4.0 .winssl
+      .nosasl .server]
 - name: mingw
   display_name: MinGW-W64
   expansions: {CC: mingw}
@@ -5313,8 +5913,8 @@ buildvariants:
   run_on: rhel71-power8-build
   tasks: [.compression !.snappy, release-compile, debug-compile-nosasl-nossl, debug-compile-no-align,
     .debug-compile !.sspi .openssl, .debug-compile !.sspi .nossl, .authentication-tests
-      .openssl !.sasl, .latest .openssl !.nosasl .server, .latest .nossl, .4.0 .openssl
-      !.nosasl .server]
+      .openssl !.sasl, .latest .openssl !.nosasl .server, .latest .nossl, .4.2 .openssl
+      !.nosasl .server, .4.0 .openssl !.nosasl .server]
   batchtime: 1440
 - name: power8-ubuntu1604
   display_name: Power8 (ppc64le) (Ubuntu 16.04)
@@ -5322,8 +5922,15 @@ buildvariants:
   run_on: ubuntu1604-power8-test
   tasks: [debug-compile-scan-build, debug-compile-coverage, release-compile, debug-compile-nosasl-nossl,
     .debug-compile !.sspi .openssl, .debug-compile !.sspi .nossl, .authentication-tests
-      .openssl, .latest .openssl !.nosasl .server, .latest .nossl, .4.0 .openssl !.nosasl
-      .server, test-dns-openssl]
+      .openssl, .4.0 .openssl !.nosasl .server, test-dns-openssl]
+  batchtime: 1440
+- name: power8-ubuntu1804
+  display_name: Power8 (ppc64le) (Ubuntu 18.04)
+  expansions: {CC: gcc}
+  run_on: ubuntu1804-power8-test
+  tasks: [release-compile, debug-compile-nosasl-nossl, .debug-compile !.sspi .openssl,
+    .debug-compile !.sspi .nossl, .latest .openssl !.nosasl .server, .latest .nossl,
+    .4.2 .openssl !.nosasl .server, test-dns-openssl]
   batchtime: 1440
 - name: arm-ubuntu1604
   display_name: '*ARM (aarch64) (Ubuntu 16.04)'
@@ -5332,8 +5939,8 @@ buildvariants:
   tasks: [.compression !.snappy, debug-compile-scan-build, debug-compile-coverage,
     debug-compile-no-align, release-compile, debug-compile-nosasl-nossl, .debug-compile
       !.sspi .openssl, .debug-compile !.sspi .nossl, .authentication-tests .openssl,
-    .latest .openssl !.nosasl .server, .latest .nossl, .4.0 .openssl !.nosasl .server,
-    test-dns-openssl]
+    .latest .openssl !.nosasl .server, .latest .nossl, .4.2 .openssl !.nosasl .server,
+    .4.0 .openssl !.nosasl .server, test-dns-openssl]
   batchtime: 1440
 - name: zseries-rhel72
   display_name: '*zSeries'
@@ -5341,25 +5948,26 @@ buildvariants:
   run_on: rhel72-zseries-test
   tasks: [release-compile, debug-compile-nosasl-nossl, debug-compile-no-align, .debug-compile
       !.sspi .openssl, .debug-compile !.sspi .nossl, .authentication-tests .openssl,
-    .latest .openssl !.nosasl .server, .latest .nossl, .4.0 .openssl !.nosasl .server]
+    .latest .openssl !.nosasl .server, .latest .nossl, .4.2 .openssl !.nosasl .server,
+    .4.0 .openssl !.nosasl .server]
   batchtime: 1440
 - name: valgrind-ubuntu
-  display_name: Valgrind Tests (Ubuntu 14.04)
+  display_name: Valgrind Tests (Ubuntu 18.04)
   expansions: {CC: gcc}
-  run_on: ubuntu1404-build
+  run_on: ubuntu1804-build
   tasks: [.debug-compile !.sspi .openssl !.sasl, .debug-compile !.sspi .nossl !.sasl,
     .debug-compile .special .valgrind, .test-valgrind]
   batchtime: 10080
 - name: asan-ubuntu
-  display_name: ASAN Tests (Ubuntu 14.04)
+  display_name: ASAN Tests (Ubuntu 16.04)
   expansions: {CC: clang}
-  run_on: ubuntu1404-test
+  run_on: ubuntu1604-test
   tasks: [.debug-compile .asan-clang, .test-asan]
   batchtime: 1440
 - name: code-coverage-ubuntu
   display_name: Code Coverage Tests
   expansions: {CC: gcc}
-  run_on: ubuntu1404-build
+  run_on: ubuntu1604-build
   tasks: [.test-coverage]
   batchtime: 1440
 - name: ios-102-debug
