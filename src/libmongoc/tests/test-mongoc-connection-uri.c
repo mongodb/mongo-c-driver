@@ -72,9 +72,15 @@ run_uri_test (const char *uri_string,
          options = NULL;
       }
 
-#ifndef MONGOC_ENABLE_COMPRESSION_SNAPPY
       /* mongoc eagerly warns about unsupported compressors. */
+#ifndef MONGOC_ENABLE_COMPRESSION_SNAPPY
       if (strstr (uri_string, "compressors=snappy")) {
+         clear_captured_logs ();
+      }
+#endif
+
+#ifndef MONGOC_ENABLE_COMPRESSION_ZLIB
+      if (strstr (uri_string, "compressors=zlib")) {
          clear_captured_logs ();
       }
 #endif
