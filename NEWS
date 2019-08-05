@@ -1,3 +1,23 @@
+mongo-c-driver 1.14.1
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.14.1.
+
+Bug fixes:
+
+  * Prohibit starting a transaction for pre-4.0 MongoDB servers.
+  * Prohibit starting a sharded transaction for pre-4.2 MongoDB servers.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Jeremy Mikola
+  * Clyde Bazile
+
+Peace,
+
+    Kevin Albertson
+
+
 mongo-c-driver 1.14.0
 =====================
 
