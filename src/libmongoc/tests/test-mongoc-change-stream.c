@@ -513,6 +513,7 @@ _test_resume_token_error (const char *id_projection)
 
    client = test_framework_client_new ();
    ASSERT (client);
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
 
    coll = drop_and_get_coll (client, "db", "coll_missing_resume");
    ASSERT (coll);
@@ -544,6 +545,12 @@ _test_resume_token_error (const char *id_projection)
                              MONGOC_ERROR_CURSOR,
                              MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
                              "Cannot provide resume functionality");
+   } else {
+      ASSERT_ERROR_CONTAINS (err,
+                             MONGOC_ERROR_SERVER,
+                             280,
+                             "Only transformations that retain the unmodified "
+                             "_id field are allowed.");
    }
 
    bson_destroy (&opts);
@@ -844,7 +851,7 @@ test_change_stream_resumable_error (void)
       server, "db", MONGOC_QUERY_SLAVE_OK, watch_cmd);
    mock_server_replies_simple (request,
                                "{'code': 123, 'errmsg': 'bad cmd', 'ok': 0}");
-   request_destroy (request); 
+   request_destroy (request);
 
    /* Check that error is returned */
    ASSERT (!future_get_bool (future));
@@ -852,7 +859,7 @@ test_change_stream_resumable_error (void)
    ASSERT (next_doc == NULL);
    ASSERT_ERROR_CONTAINS (err, MONGOC_ERROR_SERVER, 123, "bad cmd");
    ASSERT_MATCH (err_doc, "{'code': 123, 'errmsg': 'bad cmd', 'ok': 0}");
-   future_destroy (future); 
+   future_destroy (future);
 
    mongoc_change_stream_destroy (stream);
    mongoc_uri_destroy (uri);
