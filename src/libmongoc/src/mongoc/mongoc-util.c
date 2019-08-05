@@ -25,7 +25,6 @@
 #include "mongoc/mongoc-client.h"
 #include "mongoc/mongoc-client-session-private.h"
 #include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-collection-private.h"
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
@@ -539,4 +538,30 @@ _mongoc_bson_init_with_transient_txn_error (const mongoc_client_session_t *cs,
       BSON_APPEND_UTF8 (&labels, "0", TRANSIENT_TXN_ERR);
       bson_append_array_end (reply, &labels);
    }
+}
+
+bool
+_mongoc_document_is_array (const bson_t *document)
+{
+   bson_iter_t iter;
+   const char *key;
+   int i = 0;
+   char *i_str;
+
+   bson_iter_init (&iter, document);
+
+   while (bson_iter_next (&iter)) {
+      key = bson_iter_key (&iter);
+      i_str = bson_strdup_printf ("%d", i++);
+
+      if (strcmp (key, i_str)) {
+         bson_free (i_str);
+         return false;
+      }
+
+      bson_free (i_str);
+   }
+
+   /* should return false when the document is empty */
+   return i != 0;
 }

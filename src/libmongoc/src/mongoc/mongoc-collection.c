@@ -1753,31 +1753,6 @@ done:
    RETURN (ret);
 }
 
-bool
-_mongoc_document_is_array (const bson_t *document)
-{
-   bson_iter_t iter;
-   const char *key;
-   int i = 0;
-   char *i_str;
-
-   bson_iter_init (&iter, document);
-
-   while (bson_iter_next (&iter)) {
-      key = bson_iter_key (&iter);
-      i_str = bson_strdup_printf ("%d", i++);
-
-      if (strcmp (key, i_str)) {
-         return false;
-      }
-
-      bson_free (i_str);
-   }
-
-   /* should return false when the document is empty */
-   return i != 0;
-}
-
 /*
  *--------------------------------------------------------------------------
  *

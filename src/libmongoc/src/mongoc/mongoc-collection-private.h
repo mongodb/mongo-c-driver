@@ -48,9 +48,6 @@ _mongoc_collection_new (mongoc_client_t *client,
                         const mongoc_read_concern_t *read_concern,
                         const mongoc_write_concern_t *write_concern);
 
-bool
-_mongoc_document_is_array (const bson_t *bson);
-
 BSON_END_DECLS
 
 
