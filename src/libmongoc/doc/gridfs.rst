@@ -2,7 +2,7 @@ GridFS
 ======
 
 The C driver includes two APIs for GridFS.
-FOOBAR1234
+FOOBAR12345
 
 The older API consists of :symbol:`mongoc_gridfs_t` and its derivatives. It contains deprecated API, does not support read preferences, and is not recommended in new applications. It does not conform to the `MongoDB GridFS specification <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_.
 
