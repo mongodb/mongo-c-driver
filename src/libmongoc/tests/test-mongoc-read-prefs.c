@@ -433,21 +433,25 @@ _test_read_prefs (read_pref_test_type_t test_type,
 static void
 test_read_prefs_standalone_null (void)
 {
-   _test_read_prefs (READ_PREF_TEST_STANDALONE,
-                     NULL,
-                     "{}",
-                     "{}",
-                     MONGOC_QUERY_SLAVE_OK,
-                     "{'find': 'test', 'filter':  {}}",
-                     MONGOC_QUERY_SLAVE_OK);
+   _test_read_prefs_op_msg (READ_PREF_TEST_STANDALONE,
+                            NULL,
+                            "{}",
+                            "{}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{'find': 'test', 'filter': {}}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{ 'find': 'test', 'filter': {}, "
+                            "'$readPreference': { '$exists': false } }");
 
-   _test_read_prefs (READ_PREF_TEST_STANDALONE,
-                     NULL,
-                     "{'a': 1}",
-                     "{'a': 1}",
-                     MONGOC_QUERY_SLAVE_OK,
-                     "{'find': 'test', 'filter':  {'a': 1}}",
-                     MONGOC_QUERY_SLAVE_OK);
+   _test_read_prefs_op_msg (READ_PREF_TEST_STANDALONE,
+                            NULL,
+                            "{'a': 1}",
+                            "{'a': 1}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{'find': 'test', 'filter': {}}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{ 'find': 'test', 'filter': {'a': 1}, "
+                            "'$readPreference': { '$exists': false } }");
 }
 
 static void
@@ -461,21 +465,25 @@ test_read_prefs_standalone_primary (void)
     * */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   _test_read_prefs (READ_PREF_TEST_STANDALONE,
-                     read_prefs,
-                     "{}",
-                     "{}",
-                     MONGOC_QUERY_SLAVE_OK,
-                     "{'find': 'test', 'filter':  {}}",
-                     MONGOC_QUERY_SLAVE_OK);
+   _test_read_prefs_op_msg (READ_PREF_TEST_STANDALONE,
+                            read_prefs,
+                            "{}",
+                            "{}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{'find': 'test', 'filter':  {}}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{ 'find': 'test', 'filter': {}, "
+                            "'$readPreference': { '$exists': false } }");
 
-   _test_read_prefs (READ_PREF_TEST_STANDALONE,
-                     read_prefs,
-                     "{'a': 1}",
-                     "{'a': 1}",
-                     MONGOC_QUERY_SLAVE_OK,
-                     "{'find': 'test', 'filter':  {'a': 1}}",
-                     MONGOC_QUERY_SLAVE_OK);
+   _test_read_prefs_op_msg (READ_PREF_TEST_STANDALONE,
+                            read_prefs,
+                            "{'a': 1}",
+                            "{'a': 1}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{'find': 'test', 'filter':  {}}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{ 'find': 'test', 'filter': {'a': 1}, "
+                            "'$readPreference': { '$exists': false } }");
 
    mongoc_read_prefs_destroy (read_prefs);
 }
@@ -488,21 +496,25 @@ test_read_prefs_standalone_secondary (void)
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
-   _test_read_prefs (READ_PREF_TEST_STANDALONE,
-                     read_prefs,
-                     "{}",
-                     "{}",
-                     MONGOC_QUERY_SLAVE_OK,
-                     "{'find': 'test', 'filter':  {}}",
-                     MONGOC_QUERY_SLAVE_OK);
+   _test_read_prefs_op_msg (READ_PREF_TEST_STANDALONE,
+                            read_prefs,
+                            "{}",
+                            "{}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{'find': 'test', 'filter':  {}}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{ 'find': 'test', 'filter': {}, "
+                            "'$readPreference': { '$exists': false } }");
 
-   _test_read_prefs (READ_PREF_TEST_STANDALONE,
-                     read_prefs,
-                     "{'a': 1}",
-                     "{'a': 1}",
-                     MONGOC_QUERY_SLAVE_OK,
-                     "{'find': 'test', 'filter':  {'a': 1}}",
-                     MONGOC_QUERY_SLAVE_OK);
+   _test_read_prefs_op_msg (READ_PREF_TEST_STANDALONE,
+                            read_prefs,
+                            "{'a': 1}",
+                            "{'a': 1}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{'find': 'test', 'filter':  {}}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{ 'find': 'test', 'filter': {'a': 1}, "
+                            "'$readPreference': { '$exists': false } }");
 
    mongoc_read_prefs_destroy (read_prefs);
 }
@@ -520,21 +532,25 @@ test_read_prefs_standalone_tags (void)
    mongoc_read_prefs_add_tag (read_prefs, &b);
    mongoc_read_prefs_add_tag (read_prefs, NULL);
 
-   _test_read_prefs (READ_PREF_TEST_STANDALONE,
-                     read_prefs,
-                     "{}",
-                     "{}",
-                     MONGOC_QUERY_SLAVE_OK,
-                     "{'find': 'test', 'filter':  {}}",
-                     MONGOC_QUERY_SLAVE_OK);
+   _test_read_prefs_op_msg (READ_PREF_TEST_STANDALONE,
+                            read_prefs,
+                            "{}",
+                            "{}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{'find': 'test', 'filter':  {}}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{ 'find': 'test', 'filter': {}, "
+                            "'$readPreference': { '$exists': false } }");
 
-   _test_read_prefs (READ_PREF_TEST_STANDALONE,
-                     read_prefs,
-                     "{'a': 1}",
-                     "{'a': 1}",
-                     MONGOC_QUERY_SLAVE_OK,
-                     "{'find': 'test', 'filter':  {'a': 1}}",
-                     MONGOC_QUERY_SLAVE_OK);
+   _test_read_prefs_op_msg (READ_PREF_TEST_STANDALONE,
+                            read_prefs,
+                            "{'a': 1}",
+                            "{'a': 1}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{'find': 'test', 'filter':  {}}",
+                            MONGOC_QUERY_SLAVE_OK,
+                            "{ 'find': 'test', 'filter': {'a': 1}, "
+                            "'$readPreference': { '$exists': false } }");
 
    bson_destroy (&b);
    mongoc_read_prefs_destroy (read_prefs);
@@ -848,7 +864,16 @@ _test_op_msg_direct_connection (bool is_mongos,
    if (is_mongos) {
       server = mock_mongos_new (WIRE_VERSION_OP_MSG);
    } else {
-      server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+      char* ismaster = bson_strdup_printf ("{'ok': 1.0,"
+                                        " 'ismaster': true,"
+                                        " 'setName': 'rs0',"
+                                        " 'secondary': true,"
+                                        " 'minWireVersion': 0,"
+                                        " 'maxWireVersion': %d}",
+                                        WIRE_VERSION_OP_MSG);
+      server = mock_server_new ();
+      mock_server_auto_ismaster (server, ismaster);
+      bson_free (ismaster);
    }
 
    mock_server_auto_endsessions (server);

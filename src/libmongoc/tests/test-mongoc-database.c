@@ -133,7 +133,7 @@ test_aggregate_inherit_database (void)
                 "  'pipeline' : [ { '$currentOp': { } }, { '$out' : 'ops' } ],"
                 "  'cursor' : { },"
                 "  '$db' : 'admin',"
-                "  '$readPreference' : { 'mode': 'primaryPreferred' },"
+                "  '$readPreference' : { '$exists': false },"
                 "  'readConcern' : { 'level' : 'majority' },"
                 "  'writeConcern' : { 'w' : 2 } }"));
 
@@ -164,7 +164,7 @@ test_aggregate_inherit_database (void)
                 "  'pipeline' : [ { '$currentOp': { } }, { '$out' : 'ops' } ],"
                 "  'cursor' : { },"
                 "  '$db' : 'admin',"
-                "  '$readPreference' : { 'mode': 'primaryPreferred' },"
+                "  '$readPreference' : { '$exists': false },"
                 "  'readConcern' : { 'level' : 'local' },"
                 "  'writeConcern' : { 'w' : 3 } }"));
 
@@ -187,7 +187,7 @@ test_aggregate_inherit_database (void)
                 "  'pipeline' : [ { '$currentOp': { } }, { '$out' : 'ops' } ],"
                 "  'cursor' : { },"
                 "  '$db' : 'admin',"
-                "  '$readPreference' : { 'mode': 'primaryPreferred' },"
+                "  '$readPreference' : { '$exists': false },"
                 "  'readConcern' : { 'level' : 'majority' },"
                 "  'writeConcern' : { 'w' : 2 } }"));
 
@@ -213,7 +213,7 @@ test_aggregate_inherit_database (void)
                 "  'pipeline' : [ { '$currentOp': { } } ],"
                 "  'cursor' : { },"
                 "  '$db' : 'admin',"
-                "  '$readPreference' : { 'mode': 'primaryPreferred' },"
+                "  '$readPreference' : { '$exists': false },"
                 "  'readConcern' : { 'level' : 'local' },"
                 "  'writeConcern' : { '$exists' : false } }"));
 

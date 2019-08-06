@@ -821,7 +821,10 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                             "Read preference in a transaction must be primary");
             GOTO (done);
          }
-      } else if (!IS_PREF_PRIMARY (prefs_ptr)) {
+      } else if (!IS_PREF_PRIMARY (prefs_ptr) &&
+                 server_type != MONGOC_SERVER_STANDALONE) {
+         /* "Type Standalone: clients MUST NOT send the read preference to the
+          * server" */
          _mongoc_cmd_parts_add_read_prefs (&parts->extra, prefs_ptr);
       }
 
