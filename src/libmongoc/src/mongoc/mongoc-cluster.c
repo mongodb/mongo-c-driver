@@ -251,9 +251,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
    if (compressor_id != -1 && IS_NOT_COMMAND ("ismaster") &&
        IS_NOT_COMMAND ("saslstart") && IS_NOT_COMMAND ("saslcontinue") &&
        IS_NOT_COMMAND ("getnonce") && IS_NOT_COMMAND ("authenticate") &&
-       IS_NOT_COMMAND ("createuser") && IS_NOT_COMMAND ("updateuser") &&
-       IS_NOT_COMMAND ("copydbsaslstart") &&
-       IS_NOT_COMMAND ("copydbgetnonce") && IS_NOT_COMMAND ("copydb")) {
+       IS_NOT_COMMAND ("createuser") && IS_NOT_COMMAND ("updateuser")) {
       output = _mongoc_rpc_compress (cluster, compressor_id, &rpc, error);
       if (output == NULL) {
          GOTO (done);

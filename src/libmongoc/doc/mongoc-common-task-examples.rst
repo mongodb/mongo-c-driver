@@ -5,8 +5,6 @@ Common Tasks
 
 Drivers for some other languages provide helper functions to perform certain common tasks. In the C Driver we must explicitly build commands to send to the server.
 
-This snippet contains example code for the ``explain`` and ``copydb`` commands.
-
 Setup
 -----
 
@@ -24,19 +22,6 @@ This is how to use the ``explain`` command in MongoDB 3.2+:
 .. literalinclude:: ../examples/common_operations/explain.c
    :language: c
    :caption: explain.c
-
-.. _mongoc-common-task-examples_copydb:
-
-"copydb" Command
-----------------
-
-This example requires two instances of mongo to be running.
-
-Here's how to use the ``copydb`` command to copy a database from another instance of MongoDB:
-
-.. literalinclude:: ../examples/common_operations/copydb.c
-   :language: c
-   :caption: copydb.c
 
 Running the Examples
 --------------------
@@ -120,6 +105,4 @@ Now compile and run the example program:
         "version" : "3.2.6"
      }
   }
-  copydb
-  { "ok" : 1 }
 

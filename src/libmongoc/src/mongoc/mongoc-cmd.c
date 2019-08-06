@@ -977,8 +977,5 @@ mongoc_cmd_is_compressible (mongoc_cmd_t *cmd)
           !!strcasecmp (cmd->command_name, "saslstart") &&
           !!strcasecmp (cmd->command_name, "saslcontinue") &&
           !!strcasecmp (cmd->command_name, "createuser") &&
-          !!strcasecmp (cmd->command_name, "updateuser") &&
-          !!strcasecmp (cmd->command_name, "copydb") &&
-          !!strcasecmp (cmd->command_name, "copydbsaslstart") &&
-          !!strcasecmp (cmd->command_name, "copydbgetnonce");
+          !!strcasecmp (cmd->command_name, "updateuser");
 }
