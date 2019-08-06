@@ -113,7 +113,8 @@ _mongoc_collection_write_command_execute_idl (
       EXIT;
    }
 
-   if (!crud->writeConcern) {
+   if (!crud->writeConcern &&
+       !_mongoc_client_session_in_txn (crud->client_session)) {
       crud->writeConcern = collection->write_concern;
       crud->write_concern_owned = false;
    }
@@ -1951,7 +1952,8 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
       GOTO (done);
    }
 
-   if (!update_opts->crud.writeConcern) {
+   if (!update_opts->crud.writeConcern &&
+       !_mongoc_client_session_in_txn (update_opts->crud.client_session)) {
       update_opts->crud.writeConcern = collection->write_concern;
       update_opts->crud.write_concern_owned = false;
    }
@@ -2945,14 +2947,16 @@ mongoc_collection_create_bulk_operation_with_opts (
 {
    mongoc_bulk_opts_t bulk_opts;
    mongoc_bulk_write_flags_t write_flags = MONGOC_BULK_WRITE_FLAGS_INIT;
-   mongoc_write_concern_t *wc;
+   mongoc_write_concern_t *wc = NULL;
    mongoc_bulk_operation_t *bulk;
    bson_error_t err = {0};
 
    BSON_ASSERT (collection);
 
    (void) _mongoc_bulk_opts_parse (collection->client, opts, &bulk_opts, &err);
-   wc = COALESCE (bulk_opts.writeConcern, collection->write_concern);
+   if (!_mongoc_client_session_in_txn (bulk_opts.client_session)) {
+      wc = COALESCE (bulk_opts.writeConcern, collection->write_concern);
+   }
    write_flags.ordered = bulk_opts.ordered;
    bulk = _mongoc_bulk_operation_new (collection->client,
                                       collection->db,
