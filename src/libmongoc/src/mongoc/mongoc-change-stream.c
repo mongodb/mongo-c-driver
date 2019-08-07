@@ -46,6 +46,10 @@ _is_resumable_error (const bson_t *reply)
       return true;
    }
 
+   if (mongoc_error_has_label (reply, "NonRetryableChangeStreamError")) {
+      return false;
+   }
+
    /* Change Streams Spec resumable criteria: "a server error response with an
     * error message containing the substring 'not master' or 'node is
     * recovering' */
