@@ -133,6 +133,9 @@ txn_abort (mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
    }
 
    BSON_APPEND_INT32 (&cmd, "abortTransaction", 1);
+   if (session->recovery_token) {
+      BSON_APPEND_DOCUMENT (&cmd, "recoveryToken", session->recovery_token);
+   }
 
    /* will be reinitialized by mongoc_client_write_command_with_opts */
    bson_destroy (&reply_local);
