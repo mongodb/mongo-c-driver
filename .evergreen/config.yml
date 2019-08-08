@@ -244,9 +244,9 @@ functions:
       remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html
       bucket: mciuploads
       permissions: public-read
-      display_name: 'ABI Report:'
-      content_type: text/html
       local_files_include_filter: mongoc/abi-compliance/compat_reports/**/*.html
+      content_type: text/html
+      display_name: 'ABI Report:'
   upload scan artifacts:
   - command: shell.exec
     type: test
@@ -11145,35 +11145,12 @@ tasks:
       AUTH: noauth
       COMPRESSORS: snappy
       SSL: nossl
-- name: test-latest-server-compression-zstd
-  tags:
-  - compression
-  - latest
-  - zstd
-  depends_on:
-    name: debug-compile-compression-zstd
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-compression-zstd
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      ORCHESTRATION_FILE: zstd
-      SSL: nossl
-      VERSION: latest
-  - func: run tests
-    vars:
-      AUTH: noauth
-      COMPRESSORS: zstd
-      SSL: nossl
 - name: test-latest-server-compression
   tags:
   - compression
   - latest
   - snappy
   - zlib
-  - zstd
   depends_on:
     name: debug-compile-compression
   commands:
@@ -11189,7 +11166,7 @@ tasks:
   - func: run tests
     vars:
       AUTH: noauth
-      COMPRESSORS: snappy,zlib,zstd
+      COMPRESSORS: snappy,zlib
       SSL: nossl
 - name: retry-true-latest-server
   depends_on:
@@ -11703,7 +11680,6 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
-  - .latest .nossl
   - .4.0 .nossl
   - .3.6 .nossl
   - .3.4 .nossl
@@ -11761,8 +11737,6 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
-  - .latest .openssl !.nosasl .server
-  - .latest .nossl
   - .3.6 .openssl !.nosasl .server
   - .3.4 .openssl !.nosasl .server
   - .3.2 .openssl !.nosasl .server
