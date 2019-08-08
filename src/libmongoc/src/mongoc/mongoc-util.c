@@ -363,7 +363,7 @@ _mongoc_validate_update (const bson_t *update,
       return false;
    }
 
-   if (_mongoc_document_is_array (update)) {
+   if (_mongoc_document_is_pipeline (update)) {
       return true;
    }
 
@@ -377,19 +377,6 @@ _mongoc_validate_update (const bson_t *update,
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
-
-      if (!strcmp (key, "pipeline")) {
-         if (BSON_ITER_HOLDS_ARRAY (&iter)) {
-            return true;
-         } else {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "'pipeline' key must have an array value");
-            return false;
-         }
-      }
-
       if (key[0] != '$') {
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
@@ -541,9 +528,10 @@ _mongoc_bson_init_with_transient_txn_error (const mongoc_client_session_t *cs,
 }
 
 bool
-_mongoc_document_is_array (const bson_t *document)
+_mongoc_document_is_pipeline (const bson_t *document)
 {
    bson_iter_t iter;
+   bson_iter_t child;
    const char *key;
    int i = 0;
    char *i_str;
@@ -560,6 +548,17 @@ _mongoc_document_is_array (const bson_t *document)
       }
 
       bson_free (i_str);
+
+      if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         bson_iter_recurse (&iter, &child);
+         bson_iter_next (&child);
+         key = bson_iter_key (&child);
+         if (key[0] != '$') {
+            return false;
+         }
+      } else {
+         return false;
+      }
    }
 
    /* should return false when the document is empty */

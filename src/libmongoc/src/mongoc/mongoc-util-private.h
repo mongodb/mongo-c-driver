@@ -132,7 +132,7 @@ _mongoc_bson_init_with_transient_txn_error (const mongoc_client_session_t *cs,
                                             bson_t *reply);
 
 bool
-_mongoc_document_is_array (const bson_t *document);
+_mongoc_document_is_pipeline (const bson_t *document);
 
 BSON_END_DECLS
 

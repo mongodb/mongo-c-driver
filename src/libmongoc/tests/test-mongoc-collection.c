@@ -1295,8 +1295,7 @@ test_update_pipeline (void *ctx)
    bson_error_t error;
    bson_t *b;
    bson_t *pipeline_arr;
-   bson_t pipeline_doc;
-   bson_t reply;
+   bson_t *replacement;
    bool res;
 
    client = test_framework_client_new ();
@@ -1312,25 +1311,33 @@ test_update_pipeline (void *ctx)
    res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
-   /* format 1: array document with incrementing keys
+   /* format: array document with incrementing keys
       (i.e. {"0": value, "1": value, "2": value}) */
    pipeline_arr = tmp_bson ("{'0': {'$replaceRoot': {'newRoot': '$nums'}},"
                             " '1': {'$addFields': {'z': 3}}}");
    res = mongoc_collection_update_one (
-      collection, b, pipeline_arr, NULL, &reply, &error);
+      collection, b, pipeline_arr, NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
    res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
-   /* format 2: document with pipeline key and array value */
-   bson_init (&pipeline_doc);
-   bson_append_array (&pipeline_doc, "pipeline", 8, pipeline_arr);
-   res = mongoc_collection_update_one (
-      collection, b, &pipeline_doc, NULL, &reply, &error);
+   /* ensure that arrays sent to mongoc_collection_replace_one are not
+      treated as pipelines */
+   replacement = tmp_bson ("{'0': 0, '1': 1}");
+   res = mongoc_collection_replace_one (
+      collection, b, replacement, NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
 
-   bson_destroy (&pipeline_doc);
+   /* ensure that pipeline updates sent to mongoc_collection_replace_one receive
+      a client-side error */
+   res = mongoc_collection_replace_one (
+      collection, b, pipeline_arr, NULL, NULL, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "invalid argument for replace");
+
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
