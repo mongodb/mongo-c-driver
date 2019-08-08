@@ -2,6 +2,7 @@
 
 #include "json-test.h"
 #include "mongoc/mongoc-client-session-private.h"
+#include "test-conveniences.h"
 #include "test-libmongoc.h"
 
 typedef struct _cb_ctx_t {
@@ -17,12 +18,12 @@ with_transaction_callback_runner (mongoc_client_session_t *session,
                                   bson_error_t *error)
 {
    cb_ctx_t *cb_ctx = (cb_ctx_t *) ctx;
-   bson_t local_reply;
    bson_t operation;
    bson_t operations;
    bson_t *test;
    bson_iter_t iter;
    bool res = false;
+   bson_t local_reply;
 
    test = &(cb_ctx->callback);
 
@@ -70,6 +71,7 @@ with_transaction_test_run_operation (json_test_ctx_t *ctx,
    mongoc_transaction_opt_t *opts = NULL;
    mongoc_client_session_t *session = NULL;
    bson_error_t error;
+   bson_value_t value;
    bson_t args;
    bson_t reply;
    bool res;
@@ -80,8 +82,6 @@ with_transaction_test_run_operation (json_test_ctx_t *ctx,
    /* If there is a 'callback' field, run the nested operations through
       mongoc_client_session_with_transaction(). */
    if (bson_has_field (&args, "callback")) {
-      bson_init (&reply);
-
       ASSERT (bson_has_field (operation, "object"));
       session = session_from_name (ctx, bson_lookup_utf8 (operation, "object"));
       ASSERT (session);
@@ -94,7 +94,16 @@ with_transaction_test_run_operation (json_test_ctx_t *ctx,
       }
 
       res = mongoc_client_session_with_transaction (
-         session, with_transaction_callback_runner, opts, &cb_ctx, &error);
+         session,
+         with_transaction_callback_runner,
+         opts,
+         &cb_ctx,
+         &reply,
+         &error);
+
+      value_init_from_doc (&value, &reply);
+      check_result (test, operation, res, &value, &error);
+      bson_value_destroy (&value);
 
    } else {
       /* If there is no 'callback' field, then run simply. */
@@ -183,7 +192,7 @@ test_with_transaction_timeout (void *ctx)
       error with the TransientTransactionError label and
       we have exceeded the timeout, withTransaction fails. */
    res = mongoc_client_session_with_transaction (
-      session, with_transaction_fail_transient_txn, NULL, NULL, &error);
+      session, with_transaction_fail_transient_txn, NULL, NULL, NULL, &error);
    ASSERT (!res);
 
    /* Test Case 2: If committing returns an error with the
@@ -191,7 +200,7 @@ test_with_transaction_timeout (void *ctx)
       the timeout, withTransaction fails. */
    session->fail_commit_label = UNKNOWN_COMMIT_RESULT;
    res = mongoc_client_session_with_transaction (
-      session, with_transaction_do_nothing, NULL, NULL, &error);
+      session, with_transaction_do_nothing, NULL, NULL, NULL, &error);
    ASSERT (!res);
 
    /* Test Case 3: If committing returns an error with the
@@ -199,7 +208,7 @@ test_with_transaction_timeout (void *ctx)
       timeout, withTransaction fails. */
    session->fail_commit_label = TRANSIENT_TXN_ERR;
    res = mongoc_client_session_with_transaction (
-      session, with_transaction_do_nothing, NULL, NULL, &error);
+      session, with_transaction_do_nothing, NULL, NULL, NULL, &error);
    ASSERT (!res);
 
    mongoc_client_session_destroy (session);

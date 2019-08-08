@@ -76,6 +76,18 @@ test_conveniences_cleanup ()
 }
 
 
+void
+value_init_from_doc (bson_value_t *value, const bson_t *doc)
+{
+   BSON_ASSERT (doc);
+
+   value->value_type = BSON_TYPE_DOCUMENT;
+   value->value.v_doc.data = bson_malloc ((size_t) doc->len);
+   memcpy (value->value.v_doc.data, bson_get_data (doc), (size_t) doc->len);
+   value->value.v_doc.data_len = doc->len;
+}
+
+
 MONGOC_PRINTF_FORMAT (1, 2)
 bson_t *
 tmp_bson (const char *json, ...)
@@ -342,8 +354,8 @@ bson_lookup_write_concern (const bson_t *b, const char *key)
    }
 
    if (bson_has_field (&doc, "wtimeout")) {
-      mongoc_write_concern_set_wtimeout_int64 (wc,
-                                         bson_lookup_int32 (&doc, "wtimeout"));
+      mongoc_write_concern_set_wtimeout_int64 (
+         wc, bson_lookup_int32 (&doc, "wtimeout"));
    }
 
    if (bson_has_field (&doc, "j")) {
@@ -488,6 +500,7 @@ bson_lookup_txn_opts (const bson_t *b, const char *key)
    mongoc_read_concern_t *rc;
    mongoc_write_concern_t *wc;
    mongoc_read_prefs_t *prefs;
+   int64_t max_commit_time_ms;
 
    bson_lookup_doc (b, key, &doc);
    opts = mongoc_transaction_opts_new ();
@@ -508,6 +521,11 @@ bson_lookup_txn_opts (const bson_t *b, const char *key)
       prefs = bson_lookup_read_prefs (&doc, "readPreference");
       mongoc_transaction_opts_set_read_prefs (opts, prefs);
       mongoc_read_prefs_destroy (prefs);
+   }
+
+   if (bson_has_field (&doc, "maxCommitTimeMS")) {
+      max_commit_time_ms = bson_lookup_int32 (&doc, "maxCommitTimeMS");
+      mongoc_transaction_opts_set_max_commit_time_ms (opts, max_commit_time_ms);
    }
 
    return opts;

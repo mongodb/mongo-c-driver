@@ -68,4 +68,11 @@ json_test_operation (json_test_ctx_t *ctx,
 void
 json_test_operations (json_test_ctx_t *ctx, const bson_t *test);
 
+void
+check_result (const bson_t *test,
+              const bson_t *operation,
+              bool succeeded,
+              const bson_value_t *result,
+              const bson_error_t *error);
+
 #endif

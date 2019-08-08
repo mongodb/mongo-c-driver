@@ -53,6 +53,8 @@ json_with_all_types ();
 const char *
 bson_lookup_utf8 (const bson_t *b, const char *key);
 
+void
+value_init_from_doc (bson_value_t *value, const bson_t *doc);
 
 void
 bson_lookup_value (const bson_t *b, const char *key, bson_value_t *value);

@@ -26,12 +26,14 @@
 #define SESSION_NEVER_USED (-1)
 
 #define WITH_TXN_TIMEOUT_MS (120 * 1000)
+#define DEFAULT_MAX_COMMIT_TIME_MS -1
 
 static void
 txn_opts_set (mongoc_transaction_opt_t *opts,
               const mongoc_read_concern_t *read_concern,
               const mongoc_write_concern_t *write_concern,
-              const mongoc_read_prefs_t *read_prefs)
+              const mongoc_read_prefs_t *read_prefs,
+              int64_t max_commit_time_ms)
 {
    if (read_concern) {
       mongoc_transaction_opts_set_read_concern (opts, read_concern);
@@ -43,6 +45,10 @@ txn_opts_set (mongoc_transaction_opt_t *opts,
 
    if (read_prefs) {
       mongoc_transaction_opts_set_read_prefs (opts, read_prefs);
+   }
+
+   if (max_commit_time_ms != DEFAULT_MAX_COMMIT_TIME_MS) {
+      mongoc_transaction_opts_set_max_commit_time_ms (opts, max_commit_time_ms);
    }
 }
 
@@ -70,6 +76,7 @@ txn_opts_copy (const mongoc_transaction_opt_t *src,
    dst->read_concern = mongoc_read_concern_copy (src->read_concern);
    dst->write_concern = mongoc_write_concern_copy (src->write_concern);
    dst->read_prefs = mongoc_read_prefs_copy (src->read_prefs);
+   dst->max_commit_time_ms = src->max_commit_time_ms;
 }
 
 
@@ -221,6 +228,17 @@ retry:
       GOTO (done);
    }
 
+   if (session->txn.opts.max_commit_time_ms != DEFAULT_MAX_COMMIT_TIME_MS) {
+      if (!bson_append_int64 (
+             &opts, "maxTimeMS", -1, session->txn.opts.max_commit_time_ms)) {
+         bson_set_error (err_ptr,
+                         MONGOC_ERROR_BSON,
+                         MONGOC_ERROR_BSON_INVALID,
+                         "error appending maxCommitTimeMS");
+         GOTO (done);
+      }
+   }
+
    /* Transactions Spec: "When commitTransaction is retried, either by the
     * driver's internal retry-once logic or explicitly by the user calling
     * commitTransaction again, drivers MUST apply w:majority to the write
@@ -259,10 +277,11 @@ retry:
 
    /* Transactions Spec: "add the UnknownTransactionCommitResult error label
     * when commitTransaction fails with a network error, server selection
-    * error, or write concern failed / timeout." */
+    * error, MaxTimeMSExpired error, or write concern failed / timeout." */
    if ((!r && err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION) ||
        error_type == MONGOC_WRITE_ERR_RETRY ||
-       error_type == MONGOC_WRITE_ERR_WRITE_CONCERN) {
+       error_type == MONGOC_WRITE_ERR_WRITE_CONCERN ||
+       err_ptr->code == MONGOC_ERROR_MAX_TIME_MS_EXPIRED) {
       /* Drivers MUST unpin a ClientSession when any individual
        * commitTransaction command attempt fails with an
        * UnknownTransactionCommitResult error label. Do this even if we won't
@@ -296,8 +315,12 @@ done:
 mongoc_transaction_opt_t *
 mongoc_transaction_opts_new (void)
 {
-   return (mongoc_transaction_opt_t *) bson_malloc0 (
+   mongoc_transaction_opt_t *opts;
+   opts = (mongoc_transaction_opt_t *) bson_malloc0 (
       sizeof (mongoc_transaction_opt_t));
+   opts->max_commit_time_ms = DEFAULT_MAX_COMMIT_TIME_MS;
+
+   return opts;
 }
 
 
@@ -330,6 +353,23 @@ mongoc_transaction_opts_destroy (mongoc_transaction_opt_t *opts)
    bson_free (opts);
 
    EXIT;
+}
+
+
+void
+mongoc_transaction_opts_set_max_commit_time_ms (mongoc_transaction_opt_t *opts,
+                                                int64_t max_commit_time_ms)
+{
+   BSON_ASSERT (opts);
+   opts->max_commit_time_ms = max_commit_time_ms;
+}
+
+
+int64_t
+mongoc_transaction_opts_get_max_commit_time_ms (mongoc_transaction_opt_t *opts)
+{
+   BSON_ASSERT (opts);
+   return opts->max_commit_time_ms;
 }
 
 
@@ -439,7 +479,8 @@ mongoc_session_opts_set_default_transaction_opts (
    txn_opts_set (&opts->default_txn_opts,
                  txn_opts->read_concern,
                  txn_opts->write_concern,
-                 txn_opts->read_prefs);
+                 txn_opts->read_prefs,
+                 txn_opts->max_commit_time_ms);
 
    EXIT;
 }
@@ -701,14 +742,16 @@ _mongoc_client_session_new (mongoc_client_t *client,
    txn_opts_set (&session->opts.default_txn_opts,
                  client->read_concern,
                  client->write_concern,
-                 client->read_prefs);
+                 client->read_prefs,
+                 DEFAULT_MAX_COMMIT_TIME_MS);
 
    if (opts) {
       session->opts.flags = opts->flags;
       txn_opts_set (&session->opts.default_txn_opts,
                     opts->default_txn_opts.read_concern,
                     opts->default_txn_opts.write_concern,
-                    opts->default_txn_opts.read_prefs);
+                    opts->default_txn_opts.read_prefs,
+                    opts->default_txn_opts.max_commit_time_ms);
    } else {
       /* sessions are causally consistent by default */
       session->opts.flags = MONGOC_SESSION_CAUSAL_CONSISTENCY;
@@ -831,19 +874,49 @@ timeout_exceeded (int64_t expire_at)
    return current_time >= expire_at;
 }
 
+static bool
+_max_time_ms_failure (bson_t *reply)
+{
+   bson_iter_t iter;
+   bson_iter_t descendant;
+
+   if (!reply) {
+      return false;
+   }
+
+   /* We can fail with a maxTimeMS error with the error code at the top
+      level, or nested within a writeConcernError. */
+   if (bson_iter_init_find (&iter, reply, "codeName") &&
+       BSON_ITER_HOLDS_UTF8 (&iter) &&
+       0 == strcmp (bson_iter_utf8 (&iter, NULL), MAX_TIME_MS_EXPIRED)) {
+      return true;
+   }
+
+   bson_iter_init (&iter, reply);
+   if (bson_iter_find_descendant (
+          &iter, "writeConcernError.codeName", &descendant) &&
+       BSON_ITER_HOLDS_UTF8 (&descendant) &&
+       0 == strcmp (bson_iter_utf8 (&descendant, NULL), MAX_TIME_MS_EXPIRED)) {
+      return true;
+   }
+
+   return false;
+}
+
 bool
 mongoc_client_session_with_transaction (
    mongoc_client_session_t *session,
    mongoc_client_session_with_transaction_cb_t cb,
    const mongoc_transaction_opt_t *opts,
    void *ctx,
+   bson_t *reply,
    bson_error_t *error)
 {
    mongoc_transaction_state_t state;
    int64_t timeout;
    int64_t expire_at;
    bson_t local_reply;
-   bson_t *reply = NULL;
+   bson_t *active_reply = NULL;
    bool res;
 
    ENTRY;
@@ -856,7 +929,10 @@ mongoc_client_session_with_transaction (
    /* Attempt to wrap a user callback in start- and end- transaction semantics.
       If this fails for transient reasons, restart, either from the very
       beginning, or just retry committing the transaction. Will retry until
-      the timeout WITH_TXN_TIMEOUT_MS is exhausted. */
+      the timeout WITH_TXN_TIMEOUT_MS is exhausted.
+
+      At the top of this loop, active_reply should always be NULL, and
+      local_reply should always be uninitialized. */
    while (true) {
       res = mongoc_client_session_start_transaction (session, opts, error);
 
@@ -864,14 +940,14 @@ mongoc_client_session_with_transaction (
          GOTO (done);
       }
 
-      res = cb (session, ctx, &reply, error);
+      res = cb (session, ctx, &active_reply, error);
       state = session->txn.state;
 
       /* If the user cb set a reply, use it. Otherwise, sub in local_reply
-         since we must have a reply object one way or another. */
-      if (!reply) {
+         since we must have an active reply object one way or another. */
+      if (!active_reply) {
          bson_init (&local_reply);
-         reply = &local_reply;
+         active_reply = &local_reply;
       }
 
       if (!res) {
@@ -881,10 +957,10 @@ mongoc_client_session_with_transaction (
                mongoc_client_session_abort_transaction (session, NULL));
          }
 
-         if (mongoc_error_has_label (reply, TRANSIENT_TXN_ERR) &&
+         if (mongoc_error_has_label (active_reply, TRANSIENT_TXN_ERR) &&
              !timeout_exceeded (expire_at)) {
-            bson_destroy (reply);
-            reply = NULL;
+            bson_destroy (active_reply);
+            active_reply = NULL;
             continue;
          }
 
@@ -900,34 +976,47 @@ mongoc_client_session_with_transaction (
       }
 
       /* Whether or not we used local_reply above, use it now, but
-    access it through reply so cleanup in DONE is simpler. */
-      bson_destroy (reply);
-      reply = &local_reply;
+    access it through active_reply so cleanup in DONE is simpler. */
+      bson_destroy (active_reply);
+      active_reply = &local_reply;
 
-      /* Commit the transaction, retrying either from here or from the start on
-       * error */
+      /* Commit the transaction, retrying either from here or from the outer
+    loop on error.
+
+    At the top of this loop, active_reply should always be pointing to
+    an uninitialized stack-allocated bson_t, so we can pass it into
+         commit_transaction, which requires this like our other public
+         functions that take a bson_t reply. */
       while (true) {
-         res = mongoc_client_session_commit_transaction (session, reply, error);
+         res = mongoc_client_session_commit_transaction (
+            session, active_reply, error);
 
          if (!res) {
-            if (mongoc_error_has_label (reply, UNKNOWN_COMMIT_RESULT) &&
+            /* If we have a MaxTimeMsExpired error, fail and propogate
+               the error to the caller. */
+            if (_max_time_ms_failure (active_reply)) {
+               GOTO (done);
+            }
+
+            if (mongoc_error_has_label (active_reply, UNKNOWN_COMMIT_RESULT) &&
                 !timeout_exceeded (expire_at)) {
                /* Commit_transaction applies majority write concern on retry
                 * attempts.
                 *
-                * Here, we don't want to set reply = NULL when we destroy,
-                * because we want to to point to an uninitialized bson_t at
-                * the top of this loop every time. */
-               bson_destroy (reply);
+                * Here, we don't want to set active_reply = NULL when we
+                * destroy, because we want it to point to an uninitialized
+                * bson_t
+                * at the top of this loop every time.*/
+               bson_destroy (active_reply);
                continue;
             }
 
-            if (mongoc_error_has_label (reply, TRANSIENT_TXN_ERR) &&
+            if (mongoc_error_has_label (active_reply, TRANSIENT_TXN_ERR) &&
                 !timeout_exceeded (expire_at)) {
                /* In the case of a transient txn error, go back to outside loop.
                   We must set the reply to NULL so it may be used by the cb. */
-               bson_destroy (reply);
-               reply = NULL;
+               bson_destroy (active_reply);
+               active_reply = NULL;
                break;
             }
 
@@ -941,9 +1030,15 @@ mongoc_client_session_with_transaction (
    }
 
 done:
-   /* At this point, reply is either pointing to the user's reply
-      object, or our local one on the stack. Either way, destroy it. */
-   bson_destroy (reply);
+   /* At this point, active_reply is either pointing to the user's reply
+      object, or our local one on the stack, or is NULL. */
+   if (reply && active_reply) {
+      bson_copy_to (active_reply, reply);
+   } else if (reply) {
+      bson_init (reply);
+   }
+
+   bson_destroy (active_reply);
 
    RETURN (res);
 }
@@ -1004,13 +1099,15 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
    txn_opts_set (&session->txn.opts,
                  session->opts.default_txn_opts.read_concern,
                  session->opts.default_txn_opts.write_concern,
-                 session->opts.default_txn_opts.read_prefs);
+                 session->opts.default_txn_opts.read_prefs,
+                 session->opts.default_txn_opts.max_commit_time_ms);
 
    if (opts) {
       txn_opts_set (&session->txn.opts,
                     opts->read_concern,
                     opts->write_concern,
-                    opts->read_prefs);
+                    opts->read_prefs,
+                    opts->max_commit_time_ms);
    }
 
    if (!mongoc_write_concern_is_acknowledged (

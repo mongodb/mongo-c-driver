@@ -21,7 +21,8 @@
 
 #include <bson/bson.h>
 #include "mongoc/mongoc-macros.h"
-/* mongoc_client_session_t and mongoc_session_opt_t are typedef'ed here */
+/* mongoc_client_session_t, mongoc_transaction_opt_t, and
+   mongoc_session_opt_t are typedef'ed here */
 #include "mongoc/mongoc-client.h"
 
 BSON_BEGIN_DECLS
@@ -43,6 +44,13 @@ mongoc_transaction_opts_clone (const mongoc_transaction_opt_t *opts);
 
 MONGOC_EXPORT (void)
 mongoc_transaction_opts_destroy (mongoc_transaction_opt_t *opts);
+
+MONGOC_EXPORT (void)
+mongoc_transaction_opts_set_max_commit_time_ms (mongoc_transaction_opt_t *opts,
+                                                int64_t max_commit_time_ms);
+
+MONGOC_EXPORT (int64_t)
+mongoc_transaction_opts_get_max_commit_time_ms (mongoc_transaction_opt_t *opts);
 
 MONGOC_EXPORT (void)
 mongoc_transaction_opts_set_read_concern (
@@ -126,6 +134,7 @@ mongoc_client_session_with_transaction (
    mongoc_client_session_with_transaction_cb_t cb,
    const mongoc_transaction_opt_t *opts,
    void *ctx,
+   bson_t *reply,
    bson_error_t *error);
 
 MONGOC_EXPORT (bool)
