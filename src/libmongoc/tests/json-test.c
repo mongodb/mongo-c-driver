@@ -629,7 +629,7 @@ get_bson_from_json_file (char *filename)
 }
 
 static bool
-check_version_info (const bson_t *scenario)
+check_version_info (const bson_t *scenario, bool print_reason)
 {
    const char *s;
    char *padded;
@@ -643,7 +643,7 @@ check_version_info (const bson_t *scenario)
       bson_free (padded);
       server_version = test_framework_get_server_version ();
       if (server_version > test_version) {
-         if (test_suite_debug_output ()) {
+         if (print_reason && test_suite_debug_output ()) {
             printf ("      SKIP, maxServerVersion=\"%s\"\n", s);
             fflush (stdout);
          }
@@ -657,7 +657,7 @@ check_version_info (const bson_t *scenario)
       test_version = test_framework_str_to_version (s);
       server_version = test_framework_get_server_version ();
       if (server_version < test_version) {
-         if (test_suite_debug_output ()) {
+         if (print_reason && test_suite_debug_output ()) {
             printf ("      SKIP, minServerVersion=\"%s\"\n", s);
             fflush (stdout);
          }
@@ -698,8 +698,11 @@ check_version_info (const bson_t *scenario)
       }
 
       /* If we didn't match any of the listed topologies, skip */
-      printf ("     SKIP, test topologies do not match current %s setup\n",
-              current_topology);
+      if (print_reason && test_suite_debug_output ()) {
+         printf ("     SKIP, test topologies do not match current %s setup\n",
+                 current_topology);
+         fflush (stdout);
+      }
 
       return false;
    }
@@ -721,15 +724,20 @@ check_scenario_version (const bson_t *scenario)
 
       while (bson_iter_next (&iter)) {
          bson_iter_bson (&iter, &version_info);
-         if (check_version_info (&version_info)) {
+         if (check_version_info (&version_info, false)) {
             return true;
          }
+      }
+
+      if (test_suite_debug_output ()) {
+         printf ("      SKIP, no matching topologies in runOn\n");
+         fflush (stdout);
       }
 
       return false;
    }
 
-   return check_version_info (scenario);
+   return check_version_info (scenario, true);
 }
 
 
@@ -989,16 +997,17 @@ execute_test (const json_test_config_t *config,
       collection->client->topology, MONGOC_SS_WRITE, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
-   if (bson_has_field (test, "failPoint")) {
-      activate_fail_point (client, server_id, test, "failPoint");
-   }
-
    json_test_ctx_init (&ctx, test, client, db, collection, config);
-   set_apm_callbacks (&ctx, collection->client);
 
    if (config->before_test_cb) {
       config->before_test_cb (&ctx, test);
    }
+
+   if (bson_has_field (test, "failPoint")) {
+      activate_fail_point (client, server_id, test, "failPoint");
+   }
+
+   set_apm_callbacks (&ctx, collection->client);
 
    json_test_operations (&ctx, test);
 
@@ -1138,6 +1147,9 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
       } else if (!strcmp (bson_iter_key (&iter), "retryWrites")) {
          mongoc_uri_set_option_as_bool (
             uri, "retryWrites", bson_iter_bool (&iter));
+      } else if (!strcmp (bson_iter_key (&iter), "heartbeatFrequencyMS")) {
+         mongoc_uri_set_option_as_int32 (
+            uri, "heartbeatFrequencyMS", bson_iter_int32 (&iter));
       } else {
          MONGOC_ERROR ("Unsupported clientOptions field \"%s\" in %s",
                        bson_iter_key (&iter),
@@ -1145,6 +1157,44 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
          abort ();
       }
    }
+}
+
+
+static bool
+_should_skip_due_to_server_39704 (const bson_t *test)
+{
+   const char *desc = bson_lookup_utf8 (test, "description");
+   const char *bad_tests[] = {
+      "only first countDocuments includes readConcern",
+      "only first find includes readConcern",
+      "only first aggregate includes readConcern",
+      "only first distinct includes readConcern",
+      "only first runCommand includes readConcern",
+      "transaction options inherited from defaultTransactionOptions",
+      "startTransaction options override defaults",
+      "defaultTransactionOptions override client options",
+      "readConcern snapshot in startTransaction options",
+      "withTransaction inherits transaction options from "
+      "defaultTransactionOptions",
+      "withTransaction explicit transaction options",
+      "withTransaction explicit transaction options override "
+      "defaultTransactionOptions",
+      "withTransaction explicit transaction options override client options"};
+   int i;
+
+   /* Only an issue for sharded clusters. */
+   if (!test_framework_is_mongos ()) {
+      return false;
+   }
+
+   for (i = 0; i < sizeof (bad_tests) / sizeof (char *); i++) {
+      if (0 == strcmp (desc, bad_tests[i])) {
+         return true;
+      }
+   }
+
+
+   return false;
 }
 
 
@@ -1221,13 +1271,22 @@ run_json_general_test (const json_test_config_t *config)
          continue;
       }
 
+      if (_should_skip_due_to_server_39704 (&test)) {
+         fprintf (stderr,
+                  " - %s SKIPPED, reason: SERVER-39704 causes sharded tests to "
+                  "fail when using readConcern: snapshot\n",
+                  description);
+         continue;
+      }
+
       bson_free (selected_test);
 
       uri = test_framework_get_uri ();
 
-      /* If we are using multiple mongos, hardcode them in, for now,
-    but keep the other URI components (CDRIVER-3285) */
-      if (bson_iter_init_find (&uri_iter, &test, "useMultipleMongoses")) {
+      /* If we are using multiple mongos, hardcode them in, for now, but keep
+       * the other URI components (CDRIVER-3285) */
+      if (bson_iter_init_find (&uri_iter, &test, "useMultipleMongoses") &&
+          bson_iter_as_bool (&uri_iter)) {
          ASSERT_OR_PRINT (
             mongoc_uri_upsert_host_and_port (uri, "localhost:27017", &error),
             error);

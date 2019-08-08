@@ -1946,6 +1946,13 @@ test_framework_skip_if_no_txns (void)
       return 1;
    }
 
+   if (test_framework_skip_if_no_crypto () &&
+       test_framework_skip_if_no_sessions () &&
+       test_framework_skip_if_not_mongos () &&
+       test_framework_skip_if_max_wire_version_less_than_8 ()) {
+      return 1;
+   }
+
    /* transactions not supported, skip the test */
    return 0;
 }

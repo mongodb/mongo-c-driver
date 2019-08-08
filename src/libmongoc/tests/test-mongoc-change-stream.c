@@ -1633,6 +1633,8 @@ change_stream_spec_before_test_cb (json_test_ctx_t *test_ctx,
    bson_t pipeline;
    const char *target = bson_lookup_utf8 (test, "target");
 
+   set_apm_callbacks (test_ctx, test_ctx->client);
+
    bson_lookup_doc (test, "changeStreamOptions", &opts);
    bson_lookup_doc (test, "changeStreamPipeline", &pipeline);
    if (!strcmp (target, "collection")) {

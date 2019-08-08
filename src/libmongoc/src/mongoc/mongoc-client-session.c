@@ -26,7 +26,7 @@
 #define SESSION_NEVER_USED (-1)
 
 #define WITH_TXN_TIMEOUT_MS (120 * 1000)
-#define DEFAULT_MAX_COMMIT_TIME_MS -1
+#define DEFAULT_MAX_COMMIT_TIME_MS 0
 
 static void
 txn_opts_set (mongoc_transaction_opt_t *opts,
@@ -975,8 +975,8 @@ mongoc_client_session_with_transaction (
          GOTO (done);
       }
 
-      /* Whether or not we used local_reply above, use it now, but
-    access it through active_reply so cleanup in DONE is simpler. */
+      /* Whether or not we used local_reply above, use it now, but access it
+       * through active_reply so cleanup in DONE is simpler. */
       bson_destroy (active_reply);
       active_reply = &local_reply;
 
@@ -1005,8 +1005,7 @@ mongoc_client_session_with_transaction (
                 *
                 * Here, we don't want to set active_reply = NULL when we
                 * destroy, because we want it to point to an uninitialized
-                * bson_t
-                * at the top of this loop every time.*/
+                * bson_t at the top of this loop every time.*/
                bson_destroy (active_reply);
                continue;
             }
@@ -1126,8 +1125,8 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
    _mongoc_client_session_unpin (session);
    session->txn.state = MONGOC_TRANSACTION_STARTING;
    /* Transactions spec: "Drivers MUST clear a session's cached
-      * 'recoveryToken' when transitioning to the 'no transaction' or
-      * 'starting transaction' state." */
+    * 'recoveryToken' when transitioning to the 'no transaction' or
+    * 'starting transaction' state." */
    bson_destroy (session->recovery_token);
    session->recovery_token = NULL;
 

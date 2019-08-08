@@ -26,6 +26,7 @@
 #include "mongoc/mongoc-topology-private.h"
 #include "mongoc/mongoc-util-private.h"
 #include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-uri-private.h"
 
 #include "json-test-operations.h"
 #include "json-test.h"
@@ -69,7 +70,8 @@ json_test_ctx_init (json_test_ctx_t *ctx,
    ctx->config = config;
    ctx->n_events = 0;
    bson_init (&ctx->events);
-   ctx->test_framework_uri = test_framework_get_uri ();
+
+   ctx->test_framework_uri = mongoc_uri_copy (client->uri);
    ctx->acknowledged = true;
    ctx->verbose = test_framework_getenv_bool ("MONGOC_TEST_MONITORING_VERBOSE");
    bson_init (&ctx->lsids[0]);
@@ -347,6 +349,8 @@ error_code_from_name (const char *name)
       return 79;
    } else if (!strcmp (name, "UnsatisfiableWriteConcern")) {
       return 100;
+   } else if (!strcmp (name, "OperationNotSupportedInTransaction")) {
+      return 263;
    }
 
    test_error ("Add errorCodeName \"%s\" to error_code_from_name()", name);
