@@ -507,7 +507,7 @@ handle_not_master_error (mongoc_cluster_t *cluster,
 bool
 _in_sharded_txn (const mongoc_client_session_t *session)
 {
-   return session && _mongoc_client_session_in_txn (session) &&
+   return session && _mongoc_client_session_in_txn_or_ending (session) &&
           _mongoc_topology_get_type (session->client->topology) ==
              MONGOC_TOPOLOGY_SHARDED;
 }
@@ -621,7 +621,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
 
    if (retval && _in_sharded_txn (cmd->session) &&
        bson_iter_init_find (&iter, reply, "recoveryToken")) {
-      bson_free (cmd->session->recovery_token);
+      bson_destroy (cmd->session->recovery_token);
       if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
          cmd->session->recovery_token =
             bson_new_from_data (bson_iter_value (&iter)->value.v_doc.data,
@@ -2187,7 +2187,7 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
       /* Transactions Spec: Additionally, any non-transaction operation using a
        * pinned ClientSession MUST unpin the session and the operation MUST
        * perform normal server selection. */
-      if (cs && !_mongoc_client_session_in_txn (cs)) {
+      if (cs && !_mongoc_client_session_in_txn_or_ending (cs)) {
          _mongoc_client_session_unpin (cs);
       }
    }

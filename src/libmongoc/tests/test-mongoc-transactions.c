@@ -8,6 +8,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "json-test-operations.h"
+#include "mongoc/mongoc-uri-private.h"
 
 
 static bool
@@ -560,6 +561,80 @@ test_transaction_fails_on_unsupported_version_or_sharded_cluster (void *ctx)
    mongoc_client_destroy (client);
 }
 
+
+static void
+test_transaction_recovery_token_cleared (void *ctx)
+{
+   bson_error_t error;
+   mongoc_client_session_t *session;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_uri_t *uri;
+   bson_t txn_opts;
+
+   uri = test_framework_get_uri ();
+   ASSERT_OR_PRINT (mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error), error);
+   client = mongoc_client_new_from_uri (uri);
+   mongoc_uri_destroy (uri);
+   session = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (session, error);
+   coll = get_test_collection (client, "transaction_test");
+
+   mongoc_client_command_with_opts (client,
+                                    "admin",
+                                    tmp_bson ("{'killAllSessions': []}"),
+                                    NULL,
+                                    NULL,
+                                    NULL,
+                                    &error);
+   /* Create the collection by inserting a canary document. You cannot create
+    * inside a transaction */
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (coll, tmp_bson ("{}"), NULL, NULL, &error),
+      error);
+
+   bson_init (&txn_opts);
+   ASSERT_OR_PRINT (mongoc_client_session_append (session, &txn_opts, &error),
+                    error);
+
+   ASSERT_OR_PRINT (
+      mongoc_client_session_start_transaction (session, NULL, &error), error);
+
+   /* Initially no recovery token. */
+   BSON_ASSERT (!session->recovery_token);
+   mongoc_collection_insert_one (
+      coll, tmp_bson ("{}"), &txn_opts, NULL, &error);
+   BSON_ASSERT (session->recovery_token);
+   ASSERT_OR_PRINT (
+      mongoc_client_session_commit_transaction (session, NULL, &error), error);
+   BSON_ASSERT (session->recovery_token);
+
+   /* Starting a new transaction clears the recovery token. */
+   ASSERT_OR_PRINT (
+      mongoc_client_session_start_transaction (session, NULL, &error), error);
+   BSON_ASSERT (!session->recovery_token);
+
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll, tmp_bson ("{}"), &txn_opts, NULL, &error),
+                    error);
+   BSON_ASSERT (session->recovery_token);
+   ASSERT_OR_PRINT (
+      mongoc_client_session_commit_transaction (session, NULL, &error), error);
+   BSON_ASSERT (session->recovery_token);
+
+   /* Transitioning to the "none" state (i.e. a new operation outside of a
+    * transaction), clears the recovery token */
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll, tmp_bson ("{}"), &txn_opts, NULL, &error),
+                    error);
+   BSON_ASSERT (!session->recovery_token);
+
+   bson_destroy (&txn_opts);
+   mongoc_collection_destroy (coll);
+   mongoc_client_session_destroy (session);
+   mongoc_client_destroy (client);
+}
+
 void
 test_transactions_install (TestSuite *suite)
 {
@@ -617,4 +692,13 @@ test_transactions_install (TestSuite *suite)
       NULL,
       test_framework_skip_if_no_sessions,
       test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/transactions/recovery_token_cleared",
+                      test_transaction_recovery_token_cleared,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_crypto,
+                      test_framework_skip_if_max_wire_version_less_than_8,
+                      test_framework_skip_if_not_mongos);
 }

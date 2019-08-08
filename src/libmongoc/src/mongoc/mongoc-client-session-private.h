@@ -125,6 +125,10 @@ bool
 _mongoc_client_session_in_txn (const mongoc_client_session_t *session);
 
 bool
+_mongoc_client_session_in_txn_or_ending (
+   const mongoc_client_session_t *session);
+
+bool
 _mongoc_client_session_txn_in_progress (const mongoc_client_session_t *session);
 
 bool

@@ -1125,6 +1125,11 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
     * MUST unpin the session. */
    _mongoc_client_session_unpin (session);
    session->txn.state = MONGOC_TRANSACTION_STARTING;
+   /* Transactions spec: "Drivers MUST clear a session's cached
+      * 'recoveryToken' when transitioning to the 'no transaction' or
+      * 'starting transaction' state." */
+   bson_destroy (session->recovery_token);
+   session->recovery_token = NULL;
 
 done:
    mongoc_server_description_destroy (sd);
@@ -1289,7 +1294,8 @@ _mongoc_client_session_from_iter (mongoc_client_t *client,
       client, (uint32_t) bson_iter_int64 (iter), cs, error));
 }
 
-
+/* Returns true if in the middle of a transaction. Note: this returns false if
+ * the commit/abort is running. */
 bool
 _mongoc_client_session_in_txn (const mongoc_client_session_t *session)
 {
@@ -1304,6 +1310,30 @@ _mongoc_client_session_in_txn (const mongoc_client_session_t *session)
       return true;
    case MONGOC_TRANSACTION_NONE:
    case MONGOC_TRANSACTION_ENDING:
+   case MONGOC_TRANSACTION_COMMITTED:
+   case MONGOC_TRANSACTION_COMMITTED_EMPTY:
+   case MONGOC_TRANSACTION_ABORTED:
+   default:
+      return false;
+   }
+}
+
+/* Like _mongoc_client_session_in_txn, but also returns true if running the
+ * commit/abort for this transaction. */
+bool
+_mongoc_client_session_in_txn_or_ending (const mongoc_client_session_t *session)
+{
+   if (!session) {
+      return false;
+   }
+
+   /* use "switch" so that static checkers ensure we handle all states */
+   switch (session->txn.state) {
+   case MONGOC_TRANSACTION_STARTING:
+   case MONGOC_TRANSACTION_IN_PROGRESS:
+   case MONGOC_TRANSACTION_ENDING:
+      return true;
+   case MONGOC_TRANSACTION_NONE:
    case MONGOC_TRANSACTION_COMMITTED:
    case MONGOC_TRANSACTION_COMMITTED_EMPTY:
    case MONGOC_TRANSACTION_ABORTED:
@@ -1390,6 +1420,12 @@ _mongoc_client_session_append_txn (mongoc_client_session_t *session,
    case MONGOC_TRANSACTION_ABORTED:
       txn_opts_cleanup (&session->txn.opts);
       txn->state = MONGOC_TRANSACTION_NONE;
+
+      /* Transactions spec: "Drivers MUST clear a session's cached
+       * 'recoveryToken' when transitioning to the 'no transaction' or
+       * 'starting transaction' state." */
+      bson_destroy (session->recovery_token);
+      session->recovery_token = NULL;
       RETURN (true);
    case MONGOC_TRANSACTION_NONE:
    default:
