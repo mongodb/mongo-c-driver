@@ -80,7 +80,8 @@ run_uri_test (const char *uri_string,
 #endif
 
 #ifndef MONGOC_ENABLE_COMPRESSION_ZLIB
-      if (strstr (uri_string, "compressors=zlib")) {
+      if (strstr (uri_string, "compressors=zlib") ||
+          strstr (uri_string, "compressors=snappy,zlib")) {
          clear_captured_logs ();
       }
 #endif
