@@ -25,6 +25,11 @@
 BSON_BEGIN_DECLS
 
 
+
+bool
+mongoc_uri_upsert_host_and_port (mongoc_uri_t *uri,
+				 const char *host_and_port,
+				 bson_error_t *error);
 bool
 mongoc_uri_append_host (mongoc_uri_t *uri,
                         const char *host,

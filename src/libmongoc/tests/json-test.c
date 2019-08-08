@@ -18,6 +18,7 @@
 #include <mongoc/mongoc.h>
 #include "mongoc/mongoc-collection-private.h"
 #include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-uri-private.h"
 
 #include "json-test.h"
 #include "json-test-operations.h"
@@ -1224,9 +1225,14 @@ run_json_general_test (const json_test_config_t *config)
 
       bson_free (selected_test);
 
-      uri = bson_iter_init_find (&uri_iter, &test, "useMultipleMongoses")
-               ? mongoc_uri_new ("mongodb://localhost:27017,localhost:27018/")
-               : test_framework_get_uri ();
+      uri = test_framework_get_uri ();
+
+      /* If we are using multiple mongos, hardcode them in, for now,
+	 but keep the other URI components (CDRIVER-3285) */
+      if (bson_iter_init_find (&uri_iter, &test, "useMultipleMongoses")) {
+	 ASSERT_OR_PRINT (mongoc_uri_upsert_host_and_port (uri, "localhost:27017", &error), error);
+	 ASSERT_OR_PRINT (mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error), error);
+      }
 
       if (bson_iter_init_find (&client_opts_iter, &test, "clientOptions")) {
          bson_t client_opts;
