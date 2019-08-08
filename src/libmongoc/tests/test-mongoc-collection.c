@@ -1331,7 +1331,7 @@ test_update_pipeline (void *ctx)
 
    /* ensure that pipeline updates sent to mongoc_collection_replace_one receive
       a client-side error */
-   res = mongoc_collection_replace_one (
+   mongoc_collection_replace_one (
       collection, b, pipeline_arr, NULL, NULL, &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
