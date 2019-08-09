@@ -21,7 +21,7 @@ Parameters
 
 * ``collection``: A :symbol:`mongoc_collection_t`.
 * ``selector``: A :symbol:`bson:bson_t` containing the query to match the document for updating.
-* ``update``: A :symbol:`bson:bson_t` containing the update to perform.
+* ``update``: A :symbol:`bson:bson_t` containing the update to perform. If updating with a pipeline, a :symbol:`bson:bson_t` array.
 * ``reply``: Optional. An uninitialized :symbol:`bson:bson_t` populated with the update result, or ``NULL``.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 

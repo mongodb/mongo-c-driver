@@ -555,7 +555,7 @@ _mongoc_document_is_pipeline (const bson_t *document)
          if (!bson_iter_recurse (&iter, &child)) {
             return false;
          }
-         if (! bson_iter_next (&child)) {
+         if (!bson_iter_next (&child)) {
             return false;
          }
          key = bson_iter_key (&child);
