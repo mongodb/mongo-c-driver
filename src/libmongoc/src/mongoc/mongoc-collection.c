@@ -1753,7 +1753,6 @@ done:
    RETURN (ret);
 }
 
-
 /*
  *--------------------------------------------------------------------------
  *
@@ -3066,7 +3065,11 @@ mongoc_collection_find_and_modify_with_opts (
    }
 
    if (opts->update) {
-      BSON_APPEND_DOCUMENT (&command, "update", opts->update);
+      if (_mongoc_document_is_pipeline (opts->update)) {
+         BSON_APPEND_ARRAY (&command, "update", opts->update);
+      } else {
+         BSON_APPEND_DOCUMENT (&command, "update", opts->update);
+      }
    }
 
    if (opts->fields) {

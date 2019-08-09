@@ -1286,6 +1286,73 @@ test_update (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_update_pipeline (void *ctx)
+{
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *b;
+   bson_t *pipeline;
+   bson_t *replacement;
+   bool res;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   database = get_test_database (client);
+   ASSERT (database);
+
+   collection = get_test_collection (client, "test_update_pipeline");
+   ASSERT (collection);
+
+   b = tmp_bson ("{'nums': {'x': 1, 'y': 2}}");
+   res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   /* format: array document with incrementing keys
+      (i.e. {"0": value, "1": value, "2": value}) */
+   pipeline = tmp_bson ("{'0': {'$replaceRoot': {'newRoot': '$nums'}},"
+                        " '1': {'$addFields': {'z': 3}}}");
+   res = mongoc_collection_update_one (
+      collection, b, pipeline, NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   /* ensure that arrays sent to mongoc_collection_replace_one are not
+      treated as pipelines */
+   replacement = tmp_bson ("{'0': 0, '1': 1}");
+   res = mongoc_collection_replace_one (
+      collection, b, replacement, NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   /* ensure that pipeline updates sent to mongoc_collection_replace_one
+      receive a client-side error */
+   res = mongoc_collection_replace_one (
+      collection, b, pipeline, NULL, NULL, &error);
+   ASSERT (!res);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "invalid argument for replace");
+
+   /* ensure that a pipeline with an empty document is considered invalid */
+   pipeline = tmp_bson ("{ '0': {} }");
+   res = mongoc_collection_update_one (
+      collection, b, pipeline, NULL, NULL, &error);
+   ASSERT (!res);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid key");
+
+   mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
 
 static void
 test_update_oversize (void *ctx)
@@ -6175,6 +6242,12 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       skip_unless_server_has_decimal128);
    TestSuite_AddLive (suite, "/Collection/update", test_update);
+   TestSuite_AddFull (suite,
+                      "/Collection/update_pipeline",
+                      test_update_pipeline,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddLive (suite, "/Collection/update/multi", test_update_multi);
    TestSuite_AddLive (suite, "/Collection/update/upsert", test_update_upsert);
    TestSuite_AddFull (suite,

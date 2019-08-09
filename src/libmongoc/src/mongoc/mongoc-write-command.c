@@ -118,7 +118,11 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
 
    bson_init (&document);
    BSON_APPEND_DOCUMENT (&document, "q", selector);
-   BSON_APPEND_DOCUMENT (&document, "u", update);
+   if (_mongoc_document_is_pipeline (update)) {
+      BSON_APPEND_ARRAY (&document, "u", update);
+   } else {
+      BSON_APPEND_DOCUMENT (&document, "u", update);
+   }
    if (opts) {
       bson_concat (&document, opts);
    }
