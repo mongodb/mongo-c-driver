@@ -17,7 +17,7 @@
 #include "mongoc/mongoc-host-list-private.h"
 /* strcasecmp on windows */
 #include "mongoc/mongoc-util-private.h"
-
+#include "mongoc/utlist.h"
 
 /*
  *--------------------------------------------------------------------------
@@ -49,6 +49,29 @@ _mongoc_host_list_push (const char *host,
 
    h->family = family;
    h->next = next;
+
+   return h;
+}
+
+/* Duplicates the elements of {src}, creating a new chain,
+ * optionally prepended to an existing chain {next}.
+ *
+ * Note that as a side-effect of the implementation,
+ * this reverses the order of src's copy in the destination.
+ */
+mongoc_host_list_t *
+_mongoc_host_list_copy (const mongoc_host_list_t *src, mongoc_host_list_t *next)
+{
+   mongoc_host_list_t *h = NULL;
+   const mongoc_host_list_t *src_iter;
+
+   LL_FOREACH (src, src_iter)
+   {
+      h = bson_malloc0 (sizeof (mongoc_host_list_t));
+      memcpy (h, src_iter, sizeof (mongoc_host_list_t));
+
+      LL_PREPEND (next, h);
+   }
 
    return h;
 }
@@ -245,4 +268,27 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
 
    link_->next = NULL;
    return true;
+}
+
+void
+_mongoc_host_list_remove_host (mongoc_host_list_t **hosts,
+                               const char *host,
+                               uint16_t port)
+{
+   mongoc_host_list_t *current;
+   mongoc_host_list_t *prev = NULL;
+
+   for (current = *hosts; current; prev = current, current = current->next) {
+      if ((current->port == port) && (strcmp (current->host, host) == 0)) {
+         /* Node found, unlink. */
+         if (prev) {
+            prev->next = current->next;
+         } else {
+            /* No previous, unlinking at head. */
+            *hosts = current->next;
+         }
+         bson_free (current);
+         break;
+      }
+   }
 }

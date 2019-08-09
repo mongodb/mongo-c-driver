@@ -116,10 +116,24 @@ BSON_STATIC_ASSERT2 (mongoc_cmd_rw,
 
 typedef enum { MONGOC_RR_SRV, MONGOC_RR_TXT } mongoc_rr_type_t;
 
+typedef struct _mongoc_rr_data_t {
+   /* Number of records returned by DNS. */
+   uint32_t count;
+
+   /* Set to lowest TTL found when polling SRV records. */
+   uint32_t min_ttl;
+
+   /* Initialized with copy of uri->hosts prior to polling.
+    * Any remaining records after DNS query are no longer active.
+    */
+   mongoc_host_list_t *hosts;
+} mongoc_rr_data_t;
+
 bool
 _mongoc_client_get_rr (const char *service,
                        mongoc_rr_type_t rr_type,
                        mongoc_uri_t *uri,
+                       mongoc_rr_data_t *rr_data,
                        bson_error_t *error);
 
 mongoc_client_t *

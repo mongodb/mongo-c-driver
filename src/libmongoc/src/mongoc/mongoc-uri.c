@@ -45,7 +45,7 @@ struct _mongoc_uri_t {
    char *username;
    char *password;
    char *database;
-   bson_t raw; /* Unparsed options, see mongoc_uri_parse_options */
+   bson_t raw;     /* Unparsed options, see mongoc_uri_parse_options */
    bson_t options; /* Type-coerced and canonicalized options */
    bson_t credentials;
    bson_t compressors;
@@ -160,13 +160,13 @@ validate_srv_result (mongoc_uri_t *uri, const char *host, bson_error_t *error)
 
 static mongoc_host_list_t *
 _mongoc_host_list_find_host_and_port (mongoc_host_list_t *hosts,
-				      const char *host_and_port)
+                                      const char *host_and_port)
 {
    mongoc_host_list_t *iter;
    LL_FOREACH (hosts, iter)
    {
       if (strcmp (iter->host_and_port, host_and_port) == 0) {
-            return iter;
+         return iter;
       }
    }
 
@@ -174,11 +174,11 @@ _mongoc_host_list_find_host_and_port (mongoc_host_list_t *hosts,
 }
 
 /* upsert @host into @uri's host list. Side effect: modifies host->next when
-* inserting. */
+ * inserting. */
 static bool
 _upsert_into_host_list (mongoc_uri_t *uri,
-			mongoc_host_list_t *host,
-			bson_error_t *error)
+                        mongoc_host_list_t *host,
+                        bson_error_t *error)
 {
    mongoc_host_list_t *link;
 
@@ -188,7 +188,6 @@ _upsert_into_host_list (mongoc_uri_t *uri,
 
    link =
       _mongoc_host_list_find_host_and_port (uri->hosts, host->host_and_port);
-
    if (!link) {
       link = bson_malloc0 (sizeof (mongoc_host_list_t));
       LL_APPEND (uri->hosts, link);
@@ -202,11 +201,10 @@ _upsert_into_host_list (mongoc_uri_t *uri,
    return true;
 }
 
-
 bool
 mongoc_uri_upsert_host_and_port (mongoc_uri_t *uri,
-				 const char *host_and_port,
-				 bson_error_t *error)
+                                 const char *host_and_port,
+                                 bson_error_t *error)
 {
    mongoc_host_list_t temp;
 
@@ -219,48 +217,25 @@ mongoc_uri_upsert_host_and_port (mongoc_uri_t *uri,
 }
 
 bool
-mongoc_uri_append_host_and_port (mongoc_uri_t *uri,
-                                 const char *host_and_port,
-                                 bson_error_t *error)
-{
-   bool r;
-   mongoc_host_list_t *link_ = bson_malloc0 (sizeof (mongoc_host_list_t));
-   r = _mongoc_host_list_from_string_with_err (link_, host_and_port, error);
-   if (!r) {
-      bson_free (link_);
-      return false;
-   }
-
-   if (uri->is_srv && !validate_srv_result (uri, link_->host, error)) {
-      bson_free (link_);
-      return false;
-   }
-
-   LL_APPEND (uri->hosts, link_);
-   return true;
-}
-
-bool
-mongoc_uri_append_host (mongoc_uri_t *uri,
+mongoc_uri_upsert_host (mongoc_uri_t *uri,
                         const char *host,
                         uint16_t port,
                         bson_error_t *error)
 {
-   bool r;
-   mongoc_host_list_t *link_ = bson_malloc0 (sizeof (mongoc_host_list_t));
-   r = _mongoc_host_list_from_hostport_with_err (link_, host, port, error);
-   if (!r) {
-      bson_free (link_);
+   mongoc_host_list_t temp;
+
+   memset (&temp, 0, sizeof (mongoc_host_list_t));
+   if (!_mongoc_host_list_from_hostport_with_err (&temp, host, port, error)) {
       return false;
    }
 
-   if (uri->is_srv && !validate_srv_result (uri, link_->host, error)) {
-      bson_free (link_);
-      return false;
-   }
+   return _upsert_into_host_list (uri, &temp, error);
+}
 
-   LL_APPEND (uri->hosts, link_);
-   return true;
+void
+mongoc_uri_remove_host (mongoc_uri_t *uri, const char *host, uint16_t port)
+{
+   _mongoc_host_list_remove_host (&(uri->hosts), host, port);
 }
 
 /*
@@ -465,7 +440,7 @@ mongoc_uri_parse_host (mongoc_uri_t *uri, const char *host_and_port_in)
       return false;
    }
 
-   r = mongoc_uri_append_host_and_port (uri, host_and_port, &err);
+   r = mongoc_uri_upsert_host_and_port (uri, host_and_port, &err);
 
    if (!r) {
       MONGOC_ERROR ("%s", err.message);
@@ -1118,14 +1093,14 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
       } else if (!strcmp (key, MONGOC_URI_AUTHMECHANISM) ||
                  !strcmp (key, MONGOC_URI_AUTHSOURCE)) {
          if (bson_has_field (&uri->credentials, key)) {
-            HANDLE_DUPE();
+            HANDLE_DUPE ();
          }
          mongoc_uri_bson_append_or_replace_key (
             &uri->credentials, canon, value);
 
       } else if (!strcmp (key, MONGOC_URI_READCONCERNLEVEL)) {
          if (!mongoc_read_concern_is_default (uri->read_concern)) {
-            HANDLE_DUPE();
+            HANDLE_DUPE ();
          }
          mongoc_read_concern_set_level (uri->read_concern, value);
 
@@ -1144,7 +1119,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
 
       } else if (!strcmp (key, MONGOC_URI_AUTHMECHANISMPROPERTIES)) {
          if (bson_has_field (&uri->credentials, key)) {
-            HANDLE_DUPE();
+            HANDLE_DUPE ();
          }
          if (!mongoc_uri_parse_auth_mechanism_properties (uri, value)) {
             goto UNSUPPORTED_VALUE;
@@ -1158,7 +1133,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
 
       } else if (!strcmp (key, MONGOC_URI_COMPRESSORS)) {
          if (!bson_empty (mongoc_uri_get_compressors (uri))) {
-            HANDLE_DUPE();
+            HANDLE_DUPE ();
          }
          if (!mongoc_uri_set_compressors (uri, value)) {
             goto UNSUPPORTED_VALUE;
@@ -1289,8 +1264,10 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          }
       }
       /* MONGODB-X509 is the only mechanism that doesn't require username */
-      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509") != 0) {
-         if (!mongoc_uri_get_username (uri) || strcmp (mongoc_uri_get_username (uri), "") == 0) {
+      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509") !=
+          0) {
+         if (!mongoc_uri_get_username (uri) ||
+             strcmp (mongoc_uri_get_username (uri), "") == 0) {
             MONGOC_URI_ERROR (error,
                               "'%s' authentication mechanism requires username",
                               mongoc_uri_get_auth_mechanism (uri));
@@ -1298,7 +1275,8 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
          }
       }
       /* MONGODB-X509 errors if a password is supplied. */
-      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509") == 0) {
+      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509") ==
+          0) {
          if (mongoc_uri_get_password (uri)) {
             MONGOC_URI_ERROR (
                error,
@@ -2100,8 +2078,9 @@ mongoc_uri_copy (const mongoc_uri_t *uri)
    copy->read_concern = mongoc_read_concern_copy (uri->read_concern);
    copy->write_concern = mongoc_write_concern_copy (uri->write_concern);
 
-   for (iter = uri->hosts; iter; iter = iter->next) {
-      if (!mongoc_uri_append_host (copy, iter->host, iter->port, &error)) {
+   LL_FOREACH (uri->hosts, iter)
+   {
+      if (!mongoc_uri_upsert_host (copy, iter->host, iter->port, &error)) {
          MONGOC_ERROR ("%s", error.message);
          mongoc_uri_destroy (copy);
          return NULL;

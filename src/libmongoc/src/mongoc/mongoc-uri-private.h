@@ -31,10 +31,13 @@ mongoc_uri_upsert_host_and_port (mongoc_uri_t *uri,
 				 const char *host_and_port,
 				 bson_error_t *error);
 bool
-mongoc_uri_append_host (mongoc_uri_t *uri,
+mongoc_uri_upsert_host (mongoc_uri_t *uri,
                         const char *host,
                         uint16_t port,
                         bson_error_t *error);
+void
+mongoc_uri_remove_host (mongoc_uri_t *uri, const char *host, uint16_t port);
+
 bool
 mongoc_uri_parse_host (mongoc_uri_t *uri, const char *str);
 bool

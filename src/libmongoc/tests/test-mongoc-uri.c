@@ -1464,7 +1464,8 @@ test_mongoc_uri_write_concern (void)
       }
 
       if (t->wtimeoutms) {
-         BSON_ASSERT (t->wtimeoutms == mongoc_write_concern_get_wtimeout_int64 (wr));
+         BSON_ASSERT (t->wtimeoutms ==
+                      mongoc_write_concern_get_wtimeout_int64 (wr));
       }
 
       mongoc_uri_destroy (uri);
@@ -2011,14 +2012,14 @@ test_mongoc_uri_local_threshold_ms (void)
 
 
 #define INVALID(_uri, _host)                                           \
-   BSON_ASSERT (!mongoc_uri_append_host ((_uri), (_host), 1, &error)); \
+   BSON_ASSERT (!mongoc_uri_upsert_host ((_uri), (_host), 1, &error)); \
    ASSERT_ERROR_CONTAINS (error,                                       \
                           MONGOC_ERROR_STREAM,                         \
                           MONGOC_ERROR_STREAM_NAME_RESOLUTION,         \
                           "must be subdomain")
 
 #define VALID(_uri, _host) \
-   ASSERT_OR_PRINT (mongoc_uri_append_host ((_uri), (_host), 1, &error), error)
+   ASSERT_OR_PRINT (mongoc_uri_upsert_host ((_uri), (_host), 1, &error), error)
 
 
 static void

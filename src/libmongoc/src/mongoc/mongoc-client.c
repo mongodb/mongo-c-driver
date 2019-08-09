@@ -104,22 +104,31 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
 typedef bool (*mongoc_rr_callback_t) (const char *service,
                                       PDNS_RECORD pdns,
                                       mongoc_uri_t *uri,
+                                      mongoc_rr_data_t *rr_data,
                                       bson_error_t *error);
 
 static bool
 srv_callback (const char *service,
               PDNS_RECORD pdns,
               mongoc_uri_t *uri,
+              mongoc_rr_data_t *rr_data,
               bson_error_t *error)
 {
-   return mongoc_uri_append_host (
+   if (rr_data && rr_data->hosts) {
+      _mongoc_host_list_remove_host (
+         &(rr_data->hosts), pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort);
+   }
+
+   return mongoc_uri_upsert_host (
       uri, pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort, error);
 }
 
+/* rr_data is unused, but here to match srv_callback signature */
 static bool
 txt_callback (const char *service,
               PDNS_RECORD pdns,
               mongoc_uri_t *uri,
+              mongoc_rr_data_t *rr_data,
               bson_error_t *error)
 {
    DWORD i;
@@ -165,6 +174,7 @@ static bool
 _mongoc_get_rr_dnsapi (const char *service,
                        mongoc_rr_type_t rr_type,
                        mongoc_uri_t *uri,
+                       mongoc_rr_data_t *rr_data,
                        bson_error_t *error)
 {
    const char *rr_type_name;
@@ -240,7 +250,13 @@ _mongoc_get_rr_dnsapi (const char *service,
             DNS_ERROR ("Multiple TXT records for \"%s\"", service);
          }
 
-         if (!callback (service, pdns, uri, error)) {
+         if (rr_data) {
+            if ((i == 0) || (pdns->dwTtl < rr_data->min_ttl)) {
+               rr_data->min_ttl = pdns->dwTtl;
+            }
+         }
+
+         if (!callback (service, pdns, uri, rr_data, error)) {
             callback_success = false;
             GOTO (done);
          }
@@ -250,6 +266,10 @@ _mongoc_get_rr_dnsapi (const char *service,
 
       pdns = pdns->pNext;
    } while (pdns);
+
+   if (rr_data) {
+      rr_data->count = i;
+   }
 
 done:
    if (pdns) {
@@ -269,6 +289,7 @@ typedef bool (*mongoc_rr_callback_t) (const char *service,
                                       ns_msg *ns_answer,
                                       ns_rr *rr,
                                       mongoc_uri_t *uri,
+                                      mongoc_rr_data_t *rr_data,
                                       bson_error_t *error);
 
 static bool
@@ -276,6 +297,7 @@ srv_callback (const char *service,
               ns_msg *ns_answer,
               ns_rr *rr,
               mongoc_uri_t *uri,
+              mongoc_rr_data_t *rr_data,
               bson_error_t *error)
 {
    const uint8_t *data;
@@ -302,17 +324,22 @@ srv_callback (const char *service,
                  strerror (h_errno));
    }
 
-   ret = mongoc_uri_append_host (uri, name, port, error);
+   if (rr_data && rr_data->hosts) {
+      _mongoc_host_list_remove_host (&(rr_data->hosts), name, port);
+   }
+   ret = mongoc_uri_upsert_host (uri, name, port, error);
 
 done:
    return ret;
 }
 
+/* rr_data is unused, but here to match srv_callback signature */
 static bool
 txt_callback (const char *service,
               ns_msg *ns_answer,
               ns_rr *rr,
               mongoc_uri_t *uri,
+              mongoc_rr_data_t *rr_data,
               bson_error_t *error)
 {
    char s[256];
@@ -374,6 +401,7 @@ static bool
 _mongoc_get_rr_search (const char *service,
                        mongoc_rr_type_t rr_type,
                        mongoc_uri_t *uri,
+                       mongoc_rr_data_t *rr_data,
                        bson_error_t *error)
 {
 #ifdef MONGOC_HAVE_RES_NSEARCH
@@ -432,6 +460,10 @@ _mongoc_get_rr_search (const char *service,
       DNS_ERROR ("No %s records for \"%s\"", rr_type_name, service);
    }
 
+   if (rr_data) {
+      rr_data->count = n;
+   }
+
    for (i = 0; i < n; i++) {
       if (i > 0 && rr_type == MONGOC_RR_TXT) {
          /* Initial DNS Seedlist Discovery Spec: a client "MUST raise an error
@@ -448,7 +480,17 @@ _mongoc_get_rr_search (const char *service,
                     strerror (h_errno));
       }
 
-      if (!callback (service, &ns_answer, &resource_record, uri, error)) {
+      if (rr_data) {
+         uint32_t ttl;
+
+         ttl = ns_rr_ttl (resource_record);
+         if ((i == 0) || (ttl < rr_data->min_ttl)) {
+            rr_data->min_ttl = ttl;
+         }
+      }
+
+      if (!callback (
+             service, &ns_answer, &resource_record, uri, rr_data, error)) {
          callback_success = false;
          GOTO (done);
       }
@@ -490,12 +532,13 @@ bool
 _mongoc_client_get_rr (const char *service,
                        mongoc_rr_type_t rr_type,
                        mongoc_uri_t *uri,
+                       mongoc_rr_data_t *rr_data,
                        bson_error_t *error)
 {
 #ifdef MONGOC_HAVE_DNSAPI
-   return _mongoc_get_rr_dnsapi (service, rr_type, uri, error);
+   return _mongoc_get_rr_dnsapi (service, rr_type, uri, rr_data, error);
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
-   return _mongoc_get_rr_search (service, rr_type, uri, error);
+   return _mongoc_get_rr_search (service, rr_type, uri, rr_data, error);
 #else
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,
