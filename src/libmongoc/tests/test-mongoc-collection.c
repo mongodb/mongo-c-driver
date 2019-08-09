@@ -2489,6 +2489,29 @@ test_count_documents (void)
    bson_destroy (&reply);
    request_destroy (request);
    future_destroy (future);
+
+   future =
+      future_collection_count_documents (collection,
+                                         tmp_bson ("{}"),
+                                         tmp_bson ("{'limit': 2, 'skip': 1}"),
+                                         NULL,
+                                         &reply,
+                                         &error);
+
+   /* even with an empty filter, we still prepend $match */
+   request = mock_server_receives_msg (
+      server,
+      0,
+      tmp_bson ("{'aggregate': 'coll', 'pipeline': [{'$match': {}}, {'$skip': "
+                "1}, {'$limit': 2}, {'$group': "
+                "{'n': {'$sum': 1}}}]}"));
+   mock_server_replies_simple (request, server_reply);
+   ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
+   ASSERT_MATCH (&reply, server_reply);
+   bson_destroy (&reply);
+   request_destroy (request);
+   future_destroy (future);
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
@@ -3256,10 +3279,9 @@ test_aggregate_is_sent_to_primary_w_dollar_out (void *ctx)
    BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
    BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
 
-   ASSERT_CAPTURED_LOG (
-      "mongoc_collection_aggregate",
-      MONGOC_LOG_LEVEL_WARNING,
-      "Overriding read preference to primary.");
+   ASSERT_CAPTURED_LOG ("mongoc_collection_aggregate",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Overriding read preference to primary.");
 
    capture_logs (false);
 

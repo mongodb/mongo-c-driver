@@ -873,11 +873,10 @@ _make_aggregate_for_count (const mongoc_collection_t *coll,
    bson_append_document_begin (out, "cursor", 6, &empty);
    bson_append_document_end (out, &empty);
    bson_append_array_begin (out, "pipeline", 8, &pipeline);
-   if (!bson_empty (filter)) {
-      bson_append_document_begin (&pipeline, keys[key++], 1, &match_stage);
-      bson_append_document (&match_stage, "$match", 6, filter);
-      bson_append_document_end (&pipeline, &match_stage);
-   }
+
+   bson_append_document_begin (&pipeline, keys[key++], 1, &match_stage);
+   bson_append_document (&match_stage, "$match", 6, filter);
+   bson_append_document_end (&pipeline, &match_stage);
    /* if @opts includes "skip", or "count", append $skip and $count stages to
     * the aggregate pipeline. */
    if (opts && bson_iter_init_find (&iter, opts, "skip")) {
