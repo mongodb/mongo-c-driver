@@ -536,7 +536,9 @@ _mongoc_document_is_pipeline (const bson_t *document)
    int i = 0;
    char *i_str;
 
-   bson_iter_init (&iter, document);
+   if (!bson_iter_init (&iter, document)) {
+      return false;
+   }
 
    while (bson_iter_next (&iter)) {
       key = bson_iter_key (&iter);
@@ -550,8 +552,12 @@ _mongoc_document_is_pipeline (const bson_t *document)
       bson_free (i_str);
 
       if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         bson_iter_recurse (&iter, &child);
-         bson_iter_next (&child);
+         if (!bson_iter_recurse (&iter, &child)) {
+            return false;
+         }
+         if (! bson_iter_next (&child)) {
+            return false;
+         }
          key = bson_iter_key (&child);
          if (key[0] != '$') {
             return false;
