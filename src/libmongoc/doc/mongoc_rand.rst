@@ -11,7 +11,7 @@ Synopsis
 .. code-block:: c
 
   void
-  mongoc_rand_add (const void *buf, int num, doubel entropy);
+  mongoc_rand_add (const void *buf, int num, double entropy);
 
   void
   mongoc_rand_seed (const void *buf, int num);
