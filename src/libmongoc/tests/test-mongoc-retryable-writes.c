@@ -43,6 +43,7 @@ test_retryable_writes_cb (bson_t *scenario)
    config.ctx = &explicit_session;
    config.run_operation_cb = retryable_writes_test_run_operation;
    config.scenario = scenario;
+   config.command_started_events_only = true;
    explicit_session = true;
    run_json_general_test (&config);
    explicit_session = false;

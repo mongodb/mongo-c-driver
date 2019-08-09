@@ -25,6 +25,7 @@ test_crud_cb (bson_t *scenario)
 {
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
    config.run_operation_cb = crud_test_operation_cb;
+   config.command_started_events_only = true;
    config.scenario = scenario;
    run_json_general_test (&config);
 }

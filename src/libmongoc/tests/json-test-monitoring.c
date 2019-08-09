@@ -385,8 +385,7 @@ apm_match_visitor (match_ctx_t *ctx,
 void
 check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
 {
-   bson_iter_t expectations_iter;
-   bson_iter_t events_iter;
+   bson_iter_t expectations_iter, actual_iter;
    bool allow_subset;
    match_ctx_t match_ctx = {{0}};
    apm_match_visitor_ctx_t apm_match_visitor_ctx = {0};
@@ -407,44 +406,58 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
    allow_subset = ctx->config->command_monitoring_allow_subset;
 
    BSON_ASSERT (bson_iter_init (&expectations_iter, expectations));
-   BSON_ASSERT (bson_iter_init (&events_iter, &ctx->events));
-   i = 0;
+   BSON_ASSERT (bson_iter_init (&actual_iter, &ctx->events));
 
+   /* Compare the captured actual events against the expectations. */
    while (bson_iter_next (&expectations_iter)) {
-      bson_t expectation;
+      bson_t expectation, actual;
+      bool matched = false;
+
       bson_iter_bson (&expectations_iter, &expectation);
-
-      for (; i < ctx->n_events; i++) {
-         bson_t event;
-         bool matched;
-
-         if (!bson_iter_next (&events_iter)) {
-            test_error ("could not match APM event in empty array\n"
-                        "\texpected: %s\n\n",
-                        bson_as_canonical_extended_json (&expectation, NULL));
-         }
-
-         bson_iter_bson (&events_iter, &event);
-
-         matched = match_bson_with_ctx (&event, &expectation, &match_ctx);
+      /* match against the current actual event, and possibly skip actual events
+       * if we allow subset matching. */
+      while (bson_iter_next (&actual_iter)) {
+         bson_iter_bson (&actual_iter, &actual);
+         matched = match_bson_with_ctx (&actual, &expectation, &match_ctx);
          apm_match_visitor_ctx_reset (&apm_match_visitor_ctx);
-         bson_destroy (&event);
+         bson_destroy (&actual);
 
          if (matched) {
             break;
          }
 
-         if (!allow_subset || i == ctx->n_events - 1) {
+         if (allow_subset) {
+            /* if we allow matching only a subset of actual events, skip
+             * non-matching ones */
+            continue;
+         } else {
             test_error ("could not match APM event\n"
                         "\texpected: %s\n\n"
                         "\tactual  : %s\n\n"
                         "\terror   : %s\n\n",
                         bson_as_canonical_extended_json (&expectation, NULL),
-                        bson_as_canonical_extended_json (&event, NULL),
+                        bson_as_canonical_extended_json (&actual, NULL),
                         match_ctx.errmsg);
          }
       }
+
+      if (!matched) {
+         test_error ("expectation unmatched\n"
+                     "\texpected: %s\n\n",
+                     bson_as_canonical_extended_json (&expectation, NULL));
+      }
+
       bson_destroy (&expectation);
+   }
+
+   /* If we do not allow matching against a subset of actual events, check if
+    * there are extra "actual" events */
+   if (!allow_subset && bson_iter_next (&actual_iter)) {
+      bson_t extra;
+
+      bson_iter_bson (&actual_iter, &extra);
+      test_error ("extra actual event was not found in expectations: %s\n",
+                  bson_as_canonical_extended_json (&extra, NULL));
    }
 
    for (i = 0; i < 2; i++) {
