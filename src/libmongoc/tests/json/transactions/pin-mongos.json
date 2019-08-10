@@ -827,7 +827,7 @@
     },
     {
       "description": "remain pinned after non-transient error on commit",
-      "skipReason": "currently failing",
+      "skipReason": "blocked on SPEC-1320",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1072,7 +1072,6 @@
     },
     {
       "description": "unpin after transient error within a transaction and commit",
-      "skipReason": "currently failing",
       "useMultipleMongoses": true,
       "clientOptions": {
         "heartbeatFrequencyMS": 30000

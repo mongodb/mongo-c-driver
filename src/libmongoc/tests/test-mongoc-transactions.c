@@ -68,20 +68,29 @@ _disable_failpoints (json_test_ctx_t *ctx, const char *host_str)
       ctx->test_framework_uri, host_str);
 
    /* Some transactions tests have a failCommand for "isMaster" repeat seven
-    * times.
-    * Repeat this seven times. */
-   for (i = 0; i < 7; i++) {
-      client = mongoc_client_new_from_uri (uri);
+    * times. Repeat this seven times. And set a reduced server selection timeout
+    * so we don't hang on failed ismaster commands. */
+   mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 500);
 
-      ASSERT_OR_PRINT (
-         mongoc_client_command_simple (
-            client,
-            "admin",
-            tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': 'off'}"),
-            NULL,
-            NULL,
-            &error),
-         error);
+   for (i = 0; i < 7; i++) {
+      bool ret;
+
+      client = mongoc_client_new_from_uri (uri);
+      ret = mongoc_client_command_simple (
+         client,
+         "admin",
+         tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': 'off'}"),
+         NULL,
+         NULL,
+         &error);
+      if (!ret) {
+         /* Tests that fail with isMaster also fail to disable the failpoint
+          * (since we run isMaster when opening the connection). Ignore those
+          * errors. */
+         BSON_ASSERT (NULL !=
+                      strstr (error.message, "No suitable servers found"));
+      }
       mongoc_client_destroy (client);
    }
    mongoc_uri_destroy (uri);

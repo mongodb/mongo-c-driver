@@ -2779,12 +2779,9 @@ network_error_reply (bson_t *reply, mongoc_cmd_t *cmd)
 {
    bson_t labels;
 
-   if (!reply) {
-      return;
+   if (reply) {
+      bson_init (reply);
    }
-
-   bson_init (reply);
-
    /* Transactions Spec defines TransientTransactionError: "Any
     * network error or server selection error encountered running any
     * command besides commitTransaction in a transaction. In the case
@@ -2792,6 +2789,17 @@ network_error_reply (bson_t *reply, mongoc_cmd_t *cmd)
     * network errors or server selection errors where the client
     * receives no server reply, the client adds the label." */
    if (_mongoc_client_session_in_txn (cmd->session) && !cmd->is_txn_finish) {
+      /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
+       * within a transaction, including commitTransaction and abortTransaction,
+       * fails with a TransientTransactionError". If we're about to add
+       * a TransientTransactionError label due to a client side error then we
+       * unpin. If commitTransaction/abortTransation includes a label in the
+       * server reply, we unpin in _mongoc_client_session_handle_reply. */
+      cmd->session->server_id = 0;
+      if (!reply) {
+         return;
+      }
+
       BSON_APPEND_ARRAY_BEGIN (reply, "errorLabels", &labels);
       BSON_APPEND_UTF8 (&labels, "0", TRANSIENT_TXN_ERR);
       bson_append_array_end (reply, &labels);

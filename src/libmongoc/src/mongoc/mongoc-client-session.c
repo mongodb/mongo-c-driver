@@ -637,6 +637,15 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
       return;
    }
 
+   if (mongoc_error_has_label (reply, "TransientTransactionError")) {
+      /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
+       * within a transaction, including commitTransaction and abortTransaction,
+       * fails with a TransientTransactionError". If the server reply included
+       * a TransientTransactionError, we unpin here. If a network error caused
+       * us to add a label client-side, we unpin in network_error_reply. */
+      session->server_id = 0;
+   }
+
    while (bson_iter_next (&iter)) {
       if (!strcmp (bson_iter_key (&iter), "$clusterTime") &&
           BSON_ITER_HOLDS_DOCUMENT (&iter)) {
