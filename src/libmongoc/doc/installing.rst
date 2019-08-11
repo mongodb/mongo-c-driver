@@ -105,7 +105,7 @@ Building from a release tarball
 
 Unless you intend to contribute to mongo-c-driver and/or libbson, you will want to build from a release tarball.
 
-The most recent release of libmongoc and libbson, both of which are included in mongo-c-driver, can be downloaded here <https://github.com/mongodb/mongo-c-driver/releases/latest>. The instructions in this document utilize ``cmake``'s out-of-source build feature to keep build artifacts separate from source files.
+The most recent release of libmongoc and libbson, both of which are included in mongo-c-driver, can be `downloaded here <https://github.com/mongodb/mongo-c-driver/releases/latest>`_. The instructions in this document utilize ``cmake``'s out-of-source build feature to keep build artifacts separate from source files.
 
 The following snippet will download and extract the driver, and configure it:
 
