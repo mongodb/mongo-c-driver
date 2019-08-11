@@ -458,6 +458,72 @@ test_split_opquery_with_options (void)
    mock_server_destroy (server);
 }
 
+static void
+test_opmsg_disconnect_mid_batch_helper (int wire_version)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_t **docs;
+   int i;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   int n_docs;
+
+   /* Use a reduced maxBsonObjectSize, and wire version for OP_QUERY */
+   const char *ismaster = "{'ok': 1.0,"
+                          " 'ismaster': true,"
+                          " 'minWireVersion': 0,"
+                          " 'maxWireVersion': %d,"
+                          " 'maxBsonObjectSize': 100}";
+
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server, ismaster, wire_version);
+   mock_server_run (server);
+
+   /* create enough documents for two batches. Note, because of our wonky
+    * batch splitting behavior (to be fixed in CDRIVER-3310) we need add 16K
+    * of documents. After CDRIVER-3310, we'll need to update this test. */
+   n_docs = ((BSON_OBJECT_ALLOWANCE) / tmp_bson ("{ '_id': 1 }")->len) + 1;
+   docs = bson_malloc (sizeof (bson_t *) * n_docs);
+   for (i = 0; i < n_docs; i++) {
+      docs[i] = BCON_NEW ("_id", BCON_INT64 (i));
+   }
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   future = future_collection_insert_many (
+      coll, (const bson_t **) docs, n_docs, NULL, NULL, &error);
+   /* Mock server recieves first insert. */
+   request = mock_server_receives_request (server);
+   BSON_ASSERT (request);
+   mock_server_hangs_up (request);
+   request_destroy (request);
+
+   BSON_ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
+
+   for (i = 0; i < n_docs; i++) {
+      bson_destroy (docs[i]);
+   }
+   bson_free (docs);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+static void
+test_opmsg_disconnect_mid_batch (void)
+{
+   test_opmsg_disconnect_mid_batch_helper (WIRE_VERSION_OP_MSG);
+   test_opmsg_disconnect_mid_batch_helper (WIRE_VERSION_OP_MSG - 1);
+}
+
 void
 test_write_command_install (TestSuite *suite)
 {
@@ -475,4 +541,7 @@ test_write_command_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/WriteCommand/split_opquery_with_options",
                                 test_split_opquery_with_options);
+   TestSuite_AddMockServerTest (suite,
+                                "/WriteCommand/insert_disconnect_mid_batch",
+                                test_opmsg_disconnect_mid_batch);
 }
