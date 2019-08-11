@@ -131,6 +131,7 @@ request_new (const mongoc_buffer_t *buffer,
 const bson_t *
 request_get_doc (const request_t *request, int n)
 {
+   BSON_ASSERT (request);
    return _mongoc_array_index (&request->docs, const bson_t *, n);
 }
 

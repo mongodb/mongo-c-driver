@@ -3458,6 +3458,7 @@ test_client_reset_sessions (void)
    /* Add an autoresponder for endSessions to unblock the test. */
    mock_server_auto_endsessions (server);
 
+   bson_destroy (&opts);
    bson_destroy (&lsid);
    request_destroy (request);
    future_destroy (future);
