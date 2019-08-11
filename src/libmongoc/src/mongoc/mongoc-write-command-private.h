@@ -216,6 +216,11 @@ _mongoc_write_error_get_type (bool cmd_ret,
                               const bson_error_t *cmd_err,
                               const bson_t *reply);
 
+bool
+_mongoc_write_error_update_if_unsupported_storage_engine (bool cmd_ret,
+                                                          bson_error_t *cmd_err,
+                                                          bson_t *reply);
+
 BSON_END_DECLS
 
 

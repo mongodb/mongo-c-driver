@@ -1602,6 +1602,10 @@ retry:
    ret = mongoc_cluster_run_command_monitored (
       &client->cluster, &parts->assembled, reply, error);
 
+   if (is_retryable) {
+      _mongoc_write_error_update_if_unsupported_storage_engine (ret, error, reply);
+   }
+
    /* If a retryable error is encountered and the write is retryable, select
     * a new writable stream and retry. If server selection fails or the selected
     * server does not support retryable writes, fall through and allow the

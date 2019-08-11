@@ -594,6 +594,10 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
           * the selected server does not support retryable writes, fall through
           * and allow the original error to be reported. */
          error_type = _mongoc_write_error_get_type (ret, error, &reply);
+         if (is_retryable) {
+            _mongoc_write_error_update_if_unsupported_storage_engine (
+               ret, error, &reply);
+         }
          if (is_retryable && error_type == MONGOC_WRITE_ERR_RETRY) {
             bson_error_t ignored_error;
 
@@ -1491,4 +1495,42 @@ _mongoc_write_error_get_type (bool cmd_ret,
       }
       return MONGOC_WRITE_ERR_OTHER;
    }
+}
+
+/* Returns true and modifies reply and cmd_err. */
+bool
+_mongoc_write_error_update_if_unsupported_storage_engine (bool cmd_ret,
+                                                          bson_error_t *cmd_err,
+                                                          bson_t *reply)
+{
+   bson_error_t server_error;
+
+   if (cmd_ret) {
+      return false;
+   }
+
+   if (_mongoc_cmd_check_ok_no_wce (
+          reply, MONGOC_ERROR_API_VERSION_2, &server_error)) {
+      return false;
+   }
+
+   if (server_error.code == 20 &&
+       strstr (server_error.message, "Transaction numbers") ==
+          server_error.message) {
+      const char *replacement = "This MongoDB deployment does not support "
+                                "retryable writes. Please add "
+                                "retryWrites=false to your connection string.";
+
+      strcpy (cmd_err->message, replacement);
+
+      if (reply) {
+         bson_t *new_reply = bson_new ();
+         bson_copy_to_excluding_noinit (reply, new_reply, "errmsg", NULL);
+         BSON_APPEND_UTF8 (new_reply, "errmsg", replacement);
+         bson_destroy (reply);
+         bson_steal (reply, new_reply);
+      }
+      return true;
+   }
+   return false;
 }

@@ -496,7 +496,59 @@ test_retry_no_crypto (void *ctx)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_unsupported_storage_engine_error (void)
+{
+   mock_rs_t *rs;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_t reply;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   mongoc_client_session_t *session;
+   bson_t opts;
+   const char *expected_msg = "This MongoDB deployment does not support "
+                              "retryable writes. Please add retryWrites=false "
+                              "to your connection string.";
 
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_RETRY_WRITES, true, 0, 0);
+   mock_rs_run (rs);
+   client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+   session = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_OR_PRINT (session, error);
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   coll = mongoc_client_get_collection (client, "test", "test");
+   bson_init (&opts);
+   ASSERT_OR_PRINT (mongoc_client_session_append (session, &opts, &error),
+                    error);
+   /* findandmodify is retryable through mongoc_client_write_command_with_opts.
+    */
+   future = future_client_write_command_with_opts (
+      client,
+      "test",
+      tmp_bson ("{'findandmodify': 'coll' }"),
+      &opts,
+      &reply,
+      &error);
+   request = mock_rs_receives_request (rs);
+   mock_server_replies_simple (
+      request,
+      "{'ok': 0, 'code': 20, 'errmsg': 'Transaction numbers are great'}");
+   request_destroy (request);
+
+   BSON_ASSERT (!future_get_bool (future));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 20, expected_msg);
+   ASSERT_MATCH (&reply, "{'code': 20, 'errmsg': '%s'}", expected_msg);
+
+   bson_destroy (&opts);
+   mongoc_client_session_destroy (session);
+   bson_destroy (&reply);
+   future_destroy (future);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_rs_destroy (rs);
+}
 /*
  *-----------------------------------------------------------------------
  *
@@ -558,4 +610,9 @@ test_retryable_writes_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_crypto);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/retryable_writes/unsupported_storage_engine_error",
+      test_unsupported_storage_engine_error,
+      test_framework_skip_if_no_crypto);
 }
