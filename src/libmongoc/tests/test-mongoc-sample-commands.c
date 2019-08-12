@@ -2554,7 +2554,7 @@ test_example_change_stream (mongoc_database_t *db)
    bson_t opts = BSON_INITIALIZER;
    mongoc_change_stream_t *stream;
    const bson_t *change;
-   const bson_t *resume_token = bson_new ();
+   const bson_t *resume_token;
    bson_error_t error;
 
    collection = mongoc_database_get_collection (db, "inventory");
