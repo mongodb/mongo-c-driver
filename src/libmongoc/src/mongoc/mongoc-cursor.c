@@ -1062,9 +1062,9 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
          cursor->server_id = server_stream->sd->id;
          parts.assembled.server_stream = server_stream;
          bson_destroy (reply);
-         
+
          ret = mongoc_cluster_run_command_monitored (
-         &cursor->client->cluster, &parts.assembled, reply, &ignored_error);
+            &cursor->client->cluster, &parts.assembled, reply, &ignored_error);
 
          if (ret) {
             memset (&cursor->error, 0, sizeof (bson_error_t));
@@ -1663,7 +1663,8 @@ _mongoc_cursor_response_refresh (mongoc_cursor_t *cursor,
 
    /* server replies to find / aggregate with {cursor: {id: N, firstBatch: []}},
     * to getMore command with {cursor: {id: N, nextBatch: []}}. */
-   if (_mongoc_cursor_run_command (cursor, command, opts, &response->reply, false) &&
+   if (_mongoc_cursor_run_command (
+          cursor, command, opts, &response->reply, false) &&
        _mongoc_cursor_start_reading_response (cursor, response)) {
       return;
    }

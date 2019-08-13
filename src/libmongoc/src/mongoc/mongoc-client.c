@@ -1672,7 +1672,7 @@ _mongoc_client_retryable_read_command_with_stream (
     * server does not support retryable reads, fall through and allow the
     * original error to be reported. */
    if (_mongoc_read_error_get_type (ret, error, reply) ==
-          MONGOC_READ_ERR_RETRY) {
+       MONGOC_READ_ERR_RETRY) {
       bson_error_t ignored_error;
 
       retry_server_stream =
@@ -1689,7 +1689,7 @@ _mongoc_client_retryable_read_command_with_stream (
          bson_destroy (reply);
 
          ret = mongoc_cluster_run_command_monitored (
-         &client->cluster, &parts->assembled, reply, &ignored_error);
+            &client->cluster, &parts->assembled, reply, &ignored_error);
 
          if (ret) {
             memset (error, 0, sizeof (bson_error_t));
