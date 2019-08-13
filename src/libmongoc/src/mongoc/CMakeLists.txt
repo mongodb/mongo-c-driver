@@ -99,6 +99,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-cyrus-private.h
    mongoc-database-private.h
    mongoc-errno-private.h
+   mongoc-error-private.h
    mongoc-find-and-modify-private.h
    mongoc-gridfs-bucket-file-private.h
    mongoc-gridfs-bucket-private.h

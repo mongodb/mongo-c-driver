@@ -855,52 +855,24 @@ check_topology_type (const bson_t *test)
 }
 
 
-/* insert the documents in a spec test scenario's "data" array */
 static void
-insert_data (const char *db_name,
-             const char *collection_name,
-             const bson_t *scenario)
+_insert_data (mongoc_collection_t *collection, bson_t *documents)
 {
-   mongoc_client_t *client;
-   mongoc_database_t *db;
-   mongoc_collection_t *collection;
-   mongoc_collection_t *tmp_collection;
-   bool r;
-   bson_error_t error;
-   mongoc_bulk_operation_t *bulk;
-   bson_t documents;
    bson_iter_t iter;
-   uint32_t server_id;
+   mongoc_bulk_operation_t *bulk;
    bson_t *majority = tmp_bson ("{'writeConcern': {'w': 'majority'}}");
+   bool r;
+   uint32_t server_id;
+   bson_error_t error;
 
-   /* use a fresh client to prepare the collection */
-   client = test_framework_client_new ();
-
-   db = mongoc_client_get_database (client, db_name);
-   collection = mongoc_database_get_collection (db, collection_name);
    mongoc_collection_delete_many (
       collection, tmp_bson ("{}"), majority, NULL, NULL);
 
-   /* ignore failure if it already exists */
-   tmp_collection =
-      mongoc_database_create_collection (db, collection_name, majority, &error);
-
-   if (tmp_collection) {
-      mongoc_collection_destroy (tmp_collection);
+   if (!bson_count_keys (documents)) {
+      return;
    }
 
-   mongoc_database_destroy (db);
-
-   if (!bson_has_field (scenario, "data")) {
-      goto DONE;
-   }
-
-   bson_lookup_doc (scenario, "data", &documents);
-   if (!bson_count_keys (&documents)) {
-      goto DONE;
-   }
-
-   bson_iter_init (&iter, &documents);
+   bson_iter_init (&iter, documents);
    bulk =
       mongoc_collection_create_bulk_operation_with_opts (collection, majority);
 
@@ -920,8 +892,65 @@ insert_data (const char *db_name,
    ASSERT_OR_PRINT (server_id, error);
 
    mongoc_bulk_operation_destroy (bulk);
+}
+
+
+/* insert the documents in a spec test scenario's "data" array */
+static void
+insert_data (const char *db_name,
+             const char *collection_name,
+             const bson_t *scenario)
+{
+   mongoc_client_t *client;
+   mongoc_database_t *db;
+   mongoc_collection_t *collection;
+   mongoc_collection_t *tmp_collection;
+   bson_error_t error;
+   bson_t documents;
+   bson_iter_t iter;
+   bson_t *majority = tmp_bson ("{'writeConcern': {'w': 'majority'}}");
+
+   /* use a fresh client to prepare the collection */
+   client = test_framework_client_new ();
+
+   db = mongoc_client_get_database (client, db_name);
+   collection = mongoc_database_get_collection (db, collection_name);
+   mongoc_collection_delete_many (
+      collection, tmp_bson ("{}"), majority, NULL, NULL);
+
+   /* ignore failure if it already exists */
+   tmp_collection =
+      mongoc_database_create_collection (db, collection_name, majority, &error);
+
+   if (tmp_collection) {
+      mongoc_collection_destroy (tmp_collection);
+   }
+
+   if (!bson_has_field (scenario, "data")) {
+      goto DONE;
+   }
+
+   bson_iter_init_find (&iter, scenario, "data");
+
+   if (BSON_ITER_HOLDS_ARRAY (&iter)) {
+      bson_lookup_doc (scenario, "data", &documents);
+      _insert_data (collection, &documents);
+   } else {
+      /* go through collection: [] */
+      bson_iter_recurse (&iter, &iter);
+      while (bson_iter_next (&iter)) {
+         bson_t collection_documents;
+
+         mongoc_collection_destroy (collection);
+         collection =
+            mongoc_database_get_collection (db, bson_iter_key (&iter));
+         bson_iter_bson (&iter, &collection_documents);
+         _insert_data (collection, &collection_documents);
+      }
+   }
 
 DONE:
+   mongoc_database_destroy (db);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
 }
@@ -1150,6 +1179,9 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
       } else if (!strcmp (bson_iter_key (&iter), "heartbeatFrequencyMS")) {
          mongoc_uri_set_option_as_int32 (
             uri, "heartbeatFrequencyMS", bson_iter_int32 (&iter));
+      } else if (!strcmp (bson_iter_key (&iter), "retryReads")) {
+         mongoc_uri_set_option_as_bool (
+            uri, "retryReads", bson_iter_bool (&iter));
       } else {
          MONGOC_ERROR ("Unsupported clientOptions field \"%s\" in %s",
                        bson_iter_key (&iter),

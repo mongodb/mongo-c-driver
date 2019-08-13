@@ -52,6 +52,7 @@
 #define MONGOC_URI_READPREFERENCE "readpreference"
 #define MONGOC_URI_READPREFERENCETAGS "readpreferencetags"
 #define MONGOC_URI_REPLICASET "replicaset"
+#define MONGOC_URI_RETRYREADS "retryreads"
 #define MONGOC_URI_RETRYWRITES "retrywrites"
 #define MONGOC_URI_SAFE "safe"
 #define MONGOC_URI_SERVERSELECTIONTIMEOUTMS "serverselectiontimeoutms"

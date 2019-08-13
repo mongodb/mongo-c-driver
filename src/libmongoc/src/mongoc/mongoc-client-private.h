@@ -61,6 +61,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_OP_MSG 6
 /* first version to support array filters for "update" command */
 #define WIRE_VERSION_ARRAY_FILTERS 6
+/* first version to support retryable reads  */
+#define WIRE_VERSION_RETRY_READS 6
 /* first version to support retryable writes  */
 #define WIRE_VERSION_RETRY_WRITES 6
 /* version corresponding to server 4.0 release */

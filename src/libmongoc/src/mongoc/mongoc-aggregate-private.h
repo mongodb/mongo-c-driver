@@ -42,6 +42,8 @@ _mongoc_aggregate (mongoc_client_t *client,
                    const mongoc_read_concern_t *default_rc,
                    const mongoc_write_concern_t *default_wc);
 
+bool
+_has_write_key (bson_iter_t *iter);
 
 BSON_END_DECLS
 
