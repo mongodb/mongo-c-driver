@@ -37,4 +37,4 @@ Parameters
 Return
 ------
 
-Returns ``true`` if the transaction was completed succesfully.  Otherwise, returns ``false`` in case of failure.  In cases of failure ``error`` will also be set, except if the passed-in ``cb`` fails without setting ``error``.  If a non-NULL ``reply`` is passed in, ``reply`` will be set to the value of the last server response, except if the passed-in ``cb`` fails without setting a ``reply``.
+Returns ``true`` if the transaction was completed successfully.  Otherwise, returns ``false`` in case of failure.  In cases of failure ``error`` will also be set, except if the passed-in ``cb`` fails without setting ``error``.  If a non-NULL ``reply`` is passed in, ``reply`` will be set to the value of the last server response, except if the passed-in ``cb`` fails without setting a ``reply``.
