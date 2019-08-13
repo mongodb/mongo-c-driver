@@ -208,7 +208,7 @@ txn_commit (mongoc_client_session_t *session,
 {
    bson_t cmd = BSON_INITIALIZER;
    bson_t opts = BSON_INITIALIZER;
-   bson_error_t err_local;
+   bson_error_t err_local = {0};
    bson_error_t *err_ptr = error ? error : &err_local;
    bson_t reply_local = BSON_INITIALIZER;
    mongoc_write_err_type_t error_type;
@@ -278,10 +278,10 @@ retry:
    /* Transactions Spec: "add the UnknownTransactionCommitResult error label
     * when commitTransaction fails with a network error, server selection
     * error, MaxTimeMSExpired error, or write concern failed / timeout." */
-   if ((!r && err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION) ||
+   if (!r && (err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION ||
        error_type == MONGOC_WRITE_ERR_RETRY ||
        error_type == MONGOC_WRITE_ERR_WRITE_CONCERN ||
-       err_ptr->code == MONGOC_ERROR_MAX_TIME_MS_EXPIRED) {
+       err_ptr->code == MONGOC_ERROR_MAX_TIME_MS_EXPIRED)) {
       /* Drivers MUST unpin a ClientSession when any individual
        * commitTransaction command attempt fails with an
        * UnknownTransactionCommitResult error label. Do this even if we won't
