@@ -1653,17 +1653,19 @@ _mongoc_client_retryable_read_command_with_stream (
    bson_error_t *error)
 {
    mongoc_server_stream_t *retry_server_stream = NULL;
+   bool is_retryable = true;
    bool ret;
    bson_t reply_local;
-
-   ENTRY;
 
    if (reply == NULL) {
       reply = &reply_local;
    }
 
+   ENTRY;
+
    BSON_ASSERT (parts->is_retryable_read);
 
+retry:
    ret = mongoc_cluster_run_command_monitored (
       &client->cluster, &parts->assembled, reply, error);
 
@@ -1671,9 +1673,17 @@ _mongoc_client_retryable_read_command_with_stream (
     * a new readable stream and retry. If server selection fails or the selected
     * server does not support retryable reads, fall through and allow the
     * original error to be reported. */
-   if (_mongoc_read_error_get_type (ret, error, reply) ==
-       MONGOC_READ_ERR_RETRY) {
+   if (is_retryable &&
+       _mongoc_read_error_get_type (ret, error, reply) ==
+          MONGOC_READ_ERR_RETRY) {
       bson_error_t ignored_error;
+
+      /* each read command may be retried at most once */
+      is_retryable = false;
+
+      if (retry_server_stream) {
+         mongoc_server_stream_cleanup (retry_server_stream);
+      }
 
       retry_server_stream =
          mongoc_cluster_stream_for_reads (&client->cluster,
@@ -1687,13 +1697,7 @@ _mongoc_client_retryable_read_command_with_stream (
              WIRE_VERSION_RETRY_READS) {
          parts->assembled.server_stream = retry_server_stream;
          bson_destroy (reply);
-
-         ret = mongoc_cluster_run_command_monitored (
-            &client->cluster, &parts->assembled, reply, &ignored_error);
-
-         if (ret) {
-            memset (error, 0, sizeof (bson_error_t));
-         }
+         GOTO (retry);
       }
    }
 

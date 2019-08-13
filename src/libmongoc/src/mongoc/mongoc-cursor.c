@@ -1041,13 +1041,18 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
+retry:
    ret = mongoc_cluster_run_command_monitored (
       &cursor->client->cluster, &parts.assembled, reply, &cursor->error);
+
+   if (ret) {
+      memset (&cursor->error, 0, sizeof (bson_error_t));
+   }
 
    if (is_retryable &&
        _mongoc_read_error_get_type (ret, &cursor->error, reply) ==
           MONGOC_READ_ERR_RETRY) {
-      bson_error_t ignored_error;
+      is_retryable = false;
 
       mongoc_server_stream_cleanup (server_stream);
 
@@ -1062,13 +1067,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
          cursor->server_id = server_stream->sd->id;
          parts.assembled.server_stream = server_stream;
          bson_destroy (reply);
-
-         ret = mongoc_cluster_run_command_monitored (
-            &cursor->client->cluster, &parts.assembled, reply, &ignored_error);
-
-         if (ret) {
-            memset (&cursor->error, 0, sizeof (bson_error_t));
-         }
+         GOTO (retry);
       }
    }
 
