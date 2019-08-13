@@ -1,18 +1,59 @@
-Next Release
-============
+mongo-c-driver 1.15.0
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.15.0. This release adds
+support for MongoDB 4.2 features.
 
 Features:
-  * New option for change streams, "startAfter".
+
+  * Support for sharded transactions on MongoDB sharded clusters 4.2+.
+  * Add convenient transaction runner (mongoc_client_session_with_transaction),
+    which accepts a callback and performs appropriate retry logic.
+  * Add a new transaction option to specify maximum time to wait for a commit,
+    mongoc_transaction_opts_set_max_commit_time_ms.
+  * Add URI option "retryReads=true" safely and automatically retries certain
+    read operations if the server is a MongoDB 3.6+.
+  * Poll SRV records to mongos servers periodically.
+  * Keep connections alive after a primary stepdown detected.
+  * Standardizes URI options supported across all spec-compliant MongoDB drivers.
   * "retryWrites" URI option now defaults to true (requires crypto for session
     support).
+  * Send any aggregate with $out or $merge stage to a primary.
+  * Add the ability to specify an aggregate pipeline as an update document.
+  * Add a database aggregate helper, mongoc_database_aggregate.
+  * Add option for change streams, "startAfter".
+  * Add mongoc_change_stream_get_resume_token, which returns the resume token
+    which should be used to resume a change stream.
+  * Add support for zstd compression.
 
 Bug fixes:
-  * mongoc_change_stream_next now reports an error if the resume token (_id) is
-    not a document. Previously, an error was only reported if the field was
-    missing.
-  * mongoc_collection_update with MONGOC_UPDATE_MULTI_UPDATE,
-    mongoc_collection_remove, and mongoc_collection_delete would fail if
-    retryWrites was enabled.
+  * Correctly report an error in mongoc_change_stream_next if the resume token
+    (_id) is not a document. Previously, an error was only reported if the
+    field was missing.
+  * Fix mongoc_collection_update with MONGOC_UPDATE_MULTI_UPDATE,
+    mongoc_collection_remove, and mongoc_collection_delete when retryWrites
+    was enabled. They would fail previously.
+  * Command options are now correctly taken into account when batching bulk
+    writes for OP_QUERY. It was possible to exceed the maximum document size
+    before.
+  * Fix a crash if a multi-batch bulk write with OP_MSG errored on a batch.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Jeremy Mikola
+  * Haris Sheikh
+  * Samantha Ritter
+  * Isabel Atkinson
+  * Sara Golemon
+  * Clyde Bazile
+  * Roberto C. Sánchez
+  * Lior Kaplan
+  * pasniak
+
+Peace,
+
+    Kevin Albertson
 
 
 mongo-c-driver 1.14.1
