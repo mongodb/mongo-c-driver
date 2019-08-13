@@ -67,6 +67,7 @@ json_test_ctx_init (json_test_ctx_t *ctx,
    ctx->client = client;
    ctx->db = db;
    ctx->collection = collection;
+   ctx->change_stream = NULL;
    ctx->config = config;
    ctx->n_events = 0;
    bson_init (&ctx->events);
@@ -126,6 +127,7 @@ void
 json_test_ctx_cleanup (json_test_ctx_t *ctx)
 {
    json_test_ctx_end_sessions (ctx);
+   mongoc_change_stream_destroy (ctx->change_stream);
    bson_destroy (&ctx->lsids[0]);
    bson_destroy (&ctx->lsids[1]);
    bson_destroy (&ctx->events);
@@ -930,6 +932,7 @@ find_and_modify (mongoc_collection_t *collection,
    bson_lookup_doc (operation, "arguments.filter", &filter);
 
    opts = create_find_and_modify_opts (name, &args, session, wc);
+
    r = mongoc_collection_find_and_modify_with_opts (
       collection, &filter, opts, reply, &error);
 
@@ -1323,6 +1326,44 @@ find (mongoc_collection_t *collection,
    return true;
 }
 
+/* TODO: merge into single_write */
+static bool
+find_one (mongoc_collection_t *collection,
+          const bson_t *test,
+          const bson_t *operation,
+          mongoc_client_session_t *session,
+          const mongoc_read_prefs_t *read_prefs,
+          bson_t *reply)
+{
+   bson_t filter;
+   bson_t opts = BSON_INITIALIZER;
+   const bson_t *doc;
+   mongoc_cursor_t *cursor;
+   bson_value_t value;
+   bson_error_t error;
+
+   bson_lookup_doc (operation, "arguments.filter", &filter);
+
+   cursor =
+      mongoc_collection_find_with_opts (collection, &filter, &opts, read_prefs);
+
+   if (mongoc_cursor_next (cursor, &doc)) {
+      value_init_from_doc (&value, doc);
+      mongoc_cursor_error (cursor, &error);
+      check_result (test, operation, true, &value, &error);
+   } else if (mongoc_cursor_error_document (cursor, &error, &doc)) {
+      value_init_from_doc (&value, doc);
+      check_result (test, operation, false, &value, &error);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (&filter);
+   bson_destroy (&opts);
+   bson_value_destroy (&value);
+   bson_init (reply);
+   return true;
+}
+
 
 static bool
 _is_aggregate_out (const bson_t *pipeline)
@@ -1561,6 +1602,162 @@ abort_transaction (mongoc_client_session_t *session,
 }
 
 
+static bool
+list_databases (mongoc_client_t *client,
+                const bson_t *test,
+                const bson_t *operation,
+                mongoc_client_session_t *session,
+                const mongoc_read_prefs_t *read_prefs,
+                bson_t *reply,
+                bool name_only)
+{
+   mongoc_cursor_t *cursor;
+   bson_t cmd = BSON_INITIALIZER;
+
+   BSON_ASSERT (client);
+   BSON_APPEND_INT32 (&cmd, "listDatabases", 1);
+
+   if (name_only) {
+      BSON_APPEND_BOOL (&cmd, "nameOnly", true);
+   }
+
+   /* ignore client read prefs */
+   cursor = _mongoc_cursor_array_new (client, "admin", &cmd, NULL, "databases");
+   bson_destroy (&cmd);
+
+   check_cursor (cursor, test, operation);
+   mongoc_cursor_destroy (cursor);
+   bson_init (reply);
+   return true;
+}
+
+
+/* TODO: use find_indexes/collection/databases helpers */
+static bool
+list_indexes (mongoc_collection_t *collection,
+              const bson_t *test,
+              const bson_t *operation,
+              mongoc_client_session_t *session,
+              const mongoc_read_prefs_t *read_prefs,
+              bson_t *reply,
+              bool name_only)
+{
+   mongoc_cursor_t *cursor;
+   bson_t cmd = BSON_INITIALIZER;
+   bson_t child;
+   bson_error_t error;
+
+   BSON_ASSERT (collection);
+
+   bson_append_utf8 (&cmd,
+                     "listIndexes",
+                     -1,
+                     collection->collection,
+                     collection->collectionlen);
+
+   if (name_only) {
+      BSON_APPEND_BOOL (&cmd, "nameOnly", true);
+   }
+
+   BSON_APPEND_DOCUMENT_BEGIN (&cmd, "cursor", &child);
+   bson_append_document_end (&cmd, &child);
+
+   /* No read preference. Index Enumeration Spec: "run listIndexes on the
+    * primary node in replicaSet mode". */
+   cursor = _mongoc_cursor_cmd_new (
+      collection->client, collection->ns, &cmd, NULL, NULL, NULL, NULL);
+
+   if (!mongoc_cursor_error (cursor, &error)) {
+      _mongoc_cursor_prime (cursor);
+   }
+
+   bson_destroy (&cmd);
+
+   check_cursor (cursor, test, operation);
+   mongoc_cursor_destroy (cursor);
+   bson_init (reply);
+   return true;
+}
+
+
+static bool
+list_collections (mongoc_client_t *client,
+                  const bson_t *test,
+                  const bson_t *operation,
+                  mongoc_client_session_t *session,
+                  const mongoc_read_prefs_t *read_prefs,
+                  bson_t *reply,
+                  bool name_only)
+{
+   mongoc_cursor_t *cursor;
+   bson_t cmd = BSON_INITIALIZER;
+
+   BSON_APPEND_INT32 (&cmd, "listCollections", 1);
+
+   if (name_only) {
+      BSON_APPEND_BOOL (&cmd, "nameOnly", true);
+   }
+
+   /* Enumerate Collections Spec: "run listCollections on the primary node in
+    * replicaset mode" */
+   cursor =
+      _mongoc_cursor_cmd_new (client, "admin", &cmd, NULL, NULL, NULL, NULL);
+   if (cursor->error.domain == 0) {
+      _mongoc_cursor_prime (cursor);
+   }
+   bson_destroy (&cmd);
+
+   check_cursor (cursor, test, operation);
+   mongoc_cursor_destroy (cursor);
+   bson_init (reply);
+
+   return true;
+}
+
+
+static bool
+gridfs_download (mongoc_database_t *db,
+                 const bson_t *test,
+                 const bson_t *operation,
+                 mongoc_client_session_t *session,
+                 const mongoc_read_prefs_t *read_prefs,
+                 bson_t *reply)
+{
+   mongoc_gridfs_bucket_t *bucket;
+   bson_value_t value;
+   bson_error_t error;
+   mongoc_stream_t *stream;
+   char buf[512];
+
+   bson_lookup_value (operation, "arguments.id", &value);
+
+   bucket = mongoc_gridfs_bucket_new (db, NULL, read_prefs, &error);
+   stream = mongoc_gridfs_bucket_open_download_stream (bucket, &value, &error);
+
+   if (stream != NULL) {
+      mongoc_stream_read (stream, buf, 1, 1, 0);
+   }
+
+   mongoc_stream_destroy (stream);
+   mongoc_gridfs_bucket_destroy (bucket);
+   bson_init (reply);
+
+   return true;
+}
+
+/* The download_by_name functionality is part of the Advanced API for GridFS
+ * and the C Driver hasn't implemented the Advanced API yet. This is a
+ * placeholder to be used when the download_by_name is implemented. */
+static bool
+gridfs_download_by_name ()
+{
+   test_error ("The download_by_name functionality is part of the Advanced API "
+               "for GridFS and the C Driver hasn't implemented the Advanced "
+               "API yet.");
+   return false;
+}
+
+
 bool
 json_test_operation (json_test_ctx_t *ctx,
                      const bson_t *test,
@@ -1636,8 +1833,22 @@ json_test_operation (json_test_ctx_t *ctx,
          res = distinct (c, test, operation, session, read_prefs, reply);
       } else if (!strcmp (op_name, "find")) {
          res = find (c, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "findOne")) {
+         res = find_one (c, test, operation, session, read_prefs, reply);
       } else if (!strcmp (op_name, "aggregate")) {
          res = aggregate (c, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "listIndexNames")) {
+         res =
+            list_indexes (c, test, operation, session, read_prefs, reply, true);
+      } else if (!strcmp (op_name, "listIndexes")) {
+         res = list_indexes (
+            c, test, operation, session, read_prefs, reply, false);
+      } else if (!strcmp (op_name, "watch")) {
+         bson_t pipeline = BSON_INITIALIZER;
+         mongoc_change_stream_destroy (ctx->change_stream);
+         ctx->change_stream = mongoc_collection_watch (c, &pipeline, NULL);
+         bson_init (reply);
+         bson_destroy (&pipeline);
       } else {
          test_error ("unrecognized collection operation name %s", op_name);
       }
@@ -1646,6 +1857,19 @@ json_test_operation (json_test_ctx_t *ctx,
          res = db_aggregate (db, test, operation, session, read_prefs, reply);
       } else if (!strcmp (op_name, "runCommand")) {
          res = command (db, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "listCollections") ||
+                 !strcmp (op_name, "listCollectionObjects")) {
+         res = list_collections (
+            c->client, test, operation, session, read_prefs, reply, false);
+      } else if (!strcmp (op_name, "listCollectionNames")) {
+         res = list_collections (
+            c->client, test, operation, session, read_prefs, reply, true);
+      } else if (!strcmp (op_name, "watch")) {
+         bson_t pipeline = BSON_INITIALIZER;
+         mongoc_change_stream_destroy (ctx->change_stream);
+         ctx->change_stream = mongoc_database_watch (db, &pipeline, NULL);
+         bson_init (reply);
+         bson_destroy (&pipeline);
       } else {
          test_error ("unrecognized database operation name %s", op_name);
       }
@@ -1679,6 +1903,33 @@ json_test_operation (json_test_ctx_t *ctx,
          mongoc_client_destroy (client);
       } else {
          test_error ("unrecognized session operation name %s", op_name);
+      }
+   } else if (!strcmp (obj_name, "client")) {
+      if (!strcmp (op_name, "listDatabases") ||
+          !strcmp (op_name, "listDatabaseObjects")) {
+         res = list_databases (
+            c->client, test, operation, session, read_prefs, reply, false);
+      } else if (!strcmp (op_name, "listDatabaseNames")) {
+         res = list_databases (
+            c->client, test, operation, session, read_prefs, reply, true);
+      } else if (!strcmp (op_name, "watch")) {
+         bson_t pipeline = BSON_INITIALIZER;
+         mongoc_change_stream_destroy (ctx->change_stream);
+         ctx->change_stream = mongoc_client_watch (c->client, &pipeline, NULL);
+         bson_init (reply);
+         bson_destroy (&pipeline);
+      } else {
+         test_error ("unrecognized client operation name %s", op_name);
+      }
+   } else if (!strcmp (obj_name, "gridfsbucket")) {
+      if (!strcmp (op_name, "download")) {
+         res =
+            gridfs_download (db, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "download_by_name")) {
+         res = gridfs_download_by_name ();
+         bson_init (reply);
+      } else {
+         test_error ("unrecognized gridfs operation name %s", op_name);
       }
    } else {
       test_error ("unrecognized object name %s", obj_name);

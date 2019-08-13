@@ -176,7 +176,8 @@ bool
 _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
                             const bson_t *command,
                             const bson_t *opts,
-                            bson_t *reply);
+                            bson_t *reply,
+                            bool retry_prohibited);
 bool
 _mongoc_cursor_more (mongoc_cursor_t *cursor);
 

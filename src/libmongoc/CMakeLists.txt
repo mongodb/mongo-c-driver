@@ -787,6 +787,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-write-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-prefs.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-rpc.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sample-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-scram.c

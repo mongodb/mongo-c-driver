@@ -39,6 +39,7 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *parts,
    parts->is_write_command = false;
    parts->prohibit_lsid = false;
    parts->allow_txn_number = MONGOC_CMD_PARTS_ALLOW_TXN_NUMBER_UNKNOWN;
+   parts->is_retryable_read = false;
    parts->is_retryable_write = false;
    parts->has_temp_session = false;
    parts->client = client;
@@ -730,6 +731,39 @@ _is_retryable_write (const mongoc_cmd_parts_t *parts,
 }
 
 
+/* Check if the read command should support retryable behavior. */
+bool
+_is_retryable_read (const mongoc_cmd_parts_t *parts,
+                    const mongoc_server_stream_t *server_stream)
+{
+   if (!parts->is_read_command) {
+      return false;
+   }
+
+   /* Commands that go through read_write_command helpers are also write
+    * commands. Prohibit from read retry. */
+   if (parts->is_write_command) {
+      return false;
+   }
+
+   if (server_stream->sd->max_wire_version < WIRE_VERSION_RETRY_READS) {
+      return false;
+   }
+
+   if (_mongoc_client_session_in_txn (parts->assembled.session)) {
+      return false;
+   }
+
+   if (!mongoc_uri_get_option_as_bool (parts->client->uri,
+                                       MONGOC_URI_RETRYREADS,
+                                       MONGOC_DEFAULT_RETRYREADS)) {
+      return false;
+   }
+
+   return true;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -886,6 +920,11 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          _mongoc_cmd_parts_ensure_copied (parts);
          bson_append_int64 (&parts->assembled_body, "txnNumber", 9, 0);
          parts->is_retryable_write = true;
+      }
+
+      /* Conversely, check if the command is retryable if it is a read. */
+      if (_is_retryable_read (parts, server_stream) && !is_get_more) {
+         parts->is_retryable_read = true;
       }
 
       if (!bson_empty (&server_stream->cluster_time)) {

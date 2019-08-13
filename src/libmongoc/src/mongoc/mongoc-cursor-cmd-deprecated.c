@@ -32,7 +32,7 @@ _prime (mongoc_cursor_t *cursor)
    data_cmd_deprecated_t *data = (data_cmd_deprecated_t *) cursor->impl.data;
    bson_destroy (&data->reply);
    if (_mongoc_cursor_run_command (
-          cursor, &data->cmd, &cursor->opts, &data->reply)) {
+          cursor, &data->cmd, &cursor->opts, &data->reply, true)) {
       return IN_BATCH;
    } else {
       return DONE;

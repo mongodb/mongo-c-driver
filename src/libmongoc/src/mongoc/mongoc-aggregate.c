@@ -37,7 +37,7 @@
  *--------------------------------------------------------------------------
  */
 
-static bool
+bool
 _has_write_key (bson_iter_t *iter)
 {
    bson_iter_t stage;

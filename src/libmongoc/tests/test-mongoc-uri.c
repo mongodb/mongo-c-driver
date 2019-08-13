@@ -2342,6 +2342,11 @@ test_mongoc_uri_duplicates (void)
    str = mongoc_uri_get_replica_set (uri);
    BSON_ASSERT (strcmp (str, "b") == 0);
 
+   RECREATE_URI (MONGOC_URI_RETRYREADS "=false&" MONGOC_URI_RETRYREADS "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_RETRYREADS);
+   BSON_ASSERT (
+      mongoc_uri_get_option_as_bool (uri, MONGOC_URI_RETRYREADS, false));
+
    RECREATE_URI (MONGOC_URI_RETRYWRITES "=false&" MONGOC_URI_RETRYWRITES
                                         "=true");
    ASSERT_LOG_DUPE (MONGOC_URI_RETRYWRITES);
