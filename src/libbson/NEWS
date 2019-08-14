@@ -1,3 +1,11 @@
+libbson 1.15.0
+==============
+
+No change since 1.14.1; released to keep pace with libmongoc's version.
+
+-- Kevin Albertson
+
+
 Next Release
 ============
 
