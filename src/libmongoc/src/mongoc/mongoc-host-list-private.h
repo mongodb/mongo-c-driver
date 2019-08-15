@@ -30,6 +30,10 @@ _mongoc_host_list_push (const char *host,
                         int family,
                         mongoc_host_list_t *next);
 
+void
+_mongoc_host_list_upsert (mongoc_host_list_t **list,
+                          mongoc_host_list_t *new_host);
+
 mongoc_host_list_t *
 _mongoc_host_list_copy (const mongoc_host_list_t *src,
                         mongoc_host_list_t *next);
@@ -48,6 +52,9 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *host_list,
                                           const char *host,
                                           uint16_t port,
                                           bson_error_t *error);
+
+int
+_mongoc_host_list_length (mongoc_host_list_t *list);
 
 bool
 _mongoc_host_list_equal (const mongoc_host_list_t *host_a,

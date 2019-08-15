@@ -133,6 +133,8 @@ test_log_install (TestSuite *suite);
 extern void
 test_matcher_install (TestSuite *suite);
 extern void
+test_mongos_pinning_install (TestSuite *suite);
+extern void
 test_handshake_install (TestSuite *suite);
 extern void
 test_queue_install (TestSuite *suite);
@@ -2375,6 +2377,7 @@ main (int argc, char *argv[])
    test_list_install (&suite);
    test_log_install (&suite);
    test_matcher_install (&suite);
+   test_mongos_pinning_install (&suite);
    test_queue_install (&suite);
    test_primary_stepdown_install (&suite);
    test_read_concern_install (&suite);

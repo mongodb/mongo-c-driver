@@ -158,21 +158,6 @@ validate_srv_result (mongoc_uri_t *uri, const char *host, bson_error_t *error)
    return true;
 }
 
-static mongoc_host_list_t *
-_mongoc_host_list_find_host_and_port (mongoc_host_list_t *hosts,
-                                      const char *host_and_port)
-{
-   mongoc_host_list_t *iter;
-   LL_FOREACH (hosts, iter)
-   {
-      if (strcmp (iter->host_and_port, host_and_port) == 0) {
-         return iter;
-      }
-   }
-
-   return NULL;
-}
-
 /* upsert @host into @uri's host list. Side effect: modifies host->next when
  * inserting. */
 static bool
@@ -186,17 +171,7 @@ _upsert_into_host_list (mongoc_uri_t *uri,
       return false;
    }
 
-   link =
-      _mongoc_host_list_find_host_and_port (uri->hosts, host->host_and_port);
-   if (!link) {
-      link = bson_malloc0 (sizeof (mongoc_host_list_t));
-      LL_APPEND (uri->hosts, link);
-   } else {
-      /* Make sure linking is preserved when copying data into final. */
-      host->next = link->next;
-   }
-
-   memcpy (link, host, sizeof (mongoc_host_list_t));
+   _mongoc_host_list_upsert (&uri->hosts, host);
 
    return true;
 }

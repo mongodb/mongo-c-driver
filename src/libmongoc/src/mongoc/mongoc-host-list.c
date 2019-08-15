@@ -53,6 +53,63 @@ _mongoc_host_list_push (const char *host,
    return h;
 }
 
+static mongoc_host_list_t *
+_mongoc_host_list_find_host_and_port (mongoc_host_list_t *hosts,
+                                      const char *host_and_port)
+{
+   mongoc_host_list_t *iter;
+   LL_FOREACH (hosts, iter)
+   {
+      BSON_ASSERT (iter);
+
+      if (strcmp (iter->host_and_port, host_and_port) == 0) {
+         return iter;
+      }
+   }
+
+   return NULL;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_host_list_upsert --
+ *
+ *       If new_host is not already in list, add it to the end of list.
+ *
+ * Returns:
+ *       Nothing.
+ *
+ * Side effects:
+ *       Modifies new_host->next when inserting.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+_mongoc_host_list_upsert (mongoc_host_list_t **list,
+                          mongoc_host_list_t *new_host)
+{
+   mongoc_host_list_t *link = NULL;
+
+   BSON_ASSERT (list);
+   if (!new_host) {
+      return;
+   }
+
+   link = _mongoc_host_list_find_host_and_port (*list, new_host->host_and_port);
+
+   if (!link) {
+      link = bson_malloc0 (sizeof (mongoc_host_list_t));
+      LL_APPEND (*list, link);
+   } else {
+      /* Make sure linking is preserved when copying data into final. */
+      new_host->next = link->next;
+   }
+
+   memcpy (link, new_host, sizeof (mongoc_host_list_t));
+}
+
+
 /* Duplicates the elements of {src}, creating a new chain,
  * optionally prepended to an existing chain {next}.
  *
@@ -74,6 +131,21 @@ _mongoc_host_list_copy (const mongoc_host_list_t *src, mongoc_host_list_t *next)
    }
 
    return h;
+}
+
+int
+_mongoc_host_list_length (mongoc_host_list_t *list)
+{
+   mongoc_host_list_t *tmp;
+   int counter = 0;
+
+   tmp = list;
+   while (tmp) {
+      tmp = tmp->next;
+      counter++;
+   }
+
+   return counter;
 }
 
 /*
