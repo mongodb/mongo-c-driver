@@ -57,10 +57,10 @@ To provide the client certificate, the user must configure the ``pem_file`` to p
   ssl_opts.pem_file = "/path/to/client-certificate.pem"
 
   /* Then set the client ssl_opts, when using a single client mongoc_client_t */
-  mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
+  mongoc_client_set_ssl_opts (client, &ssl_opts);
 
   /* or, set the pool ssl_opts, when using a the thread safe mongoc_client_pool_t */
-  mongoc_client_set_ssl_opts (client, &ssl_opts);
+  mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
 
 Server Certificate Verification
 -------------------------------
