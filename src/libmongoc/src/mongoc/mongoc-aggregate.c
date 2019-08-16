@@ -41,9 +41,16 @@ bool
 _has_write_key (bson_iter_t *iter)
 {
    bson_iter_t stage;
+   bson_iter_t next;
+
+   memcpy (&next, iter, sizeof (bson_iter_t));
+   if (!bson_iter_next (&next)) {
+      /* default to false when iter is emtpy */
+      return false;
+   }
 
    while (bson_iter_next (iter)) {
-      if (BSON_ITER_HOLDS_DOCUMENT (iter)) {
+      if (!bson_iter_next (&next) && BSON_ITER_HOLDS_DOCUMENT (iter)) {
          bson_iter_recurse (iter, &stage);
          if (bson_iter_find (&stage, "$out")) {
             return true;
