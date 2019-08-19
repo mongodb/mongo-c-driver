@@ -852,6 +852,121 @@ test_transaction_recovery_token_cleared (void *ctx)
    mongoc_client_destroy (client);
 }
 
+static void
+test_selected_server_is_pinned_to_mongos (void *ctx)
+{
+   mongoc_uri_t *uri = NULL;
+   mongoc_client_t *client = NULL;
+   mongoc_set_t *servers = NULL;
+   mongoc_transaction_opt_t *txn_opts = NULL;
+   mongoc_session_opt_t *session_opts = NULL;
+   mongoc_client_session_t *session = NULL;
+   mongoc_server_stream_t *server_stream = NULL;
+   bson_error_t error;
+   bson_t reply;
+   bson_t *insert_opts = NULL;
+   mongoc_database_t *db = NULL;
+   mongoc_collection_t *coll = NULL;
+   bool r;
+   uint32_t expected_id;
+   uint32_t actual_id;
+   mongoc_server_description_t *sd = NULL;
+   int i;
+
+   uri = test_framework_get_uri ();
+   ASSERT_OR_PRINT (
+      mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error), error);
+
+   client = mongoc_client_new_from_uri (uri);
+   BSON_ASSERT (client);
+
+   txn_opts = mongoc_transaction_opts_new ();
+   session_opts = mongoc_session_opts_new ();
+
+   session = mongoc_client_start_session (client, session_opts, &error);
+   ASSERT_OR_PRINT (session, error);
+
+   /* set the server id to an arbitrary value */
+   _mongoc_client_session_pin (session, 42);
+   BSON_ASSERT (42 == mongoc_client_session_get_server_id (session));
+
+   /* starting a transaction should clear the server id */
+   r = mongoc_client_session_start_transaction (session, txn_opts, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (0 == mongoc_client_session_get_server_id (session));
+
+   expected_id = mongoc_topology_select_server_id (
+      client->topology, MONGOC_SS_WRITE, NULL, &error);
+   ASSERT_OR_PRINT (expected_id, error);
+
+   /* session should still be unpinned */
+   BSON_ASSERT (0 == mongoc_client_session_get_server_id (session));
+
+   /* should pin to the expected server id */
+   server_stream = mongoc_cluster_stream_for_server (
+      &client->cluster, expected_id, true, session, NULL, &error);
+   ASSERT_OR_PRINT (server_stream, error);
+   ASSERT_CMPINT32 (
+      expected_id, ==, mongoc_client_session_get_server_id (session));
+
+   db = mongoc_client_get_database (client, "db");
+   coll = mongoc_database_create_collection (db, "coll", NULL, &error);
+
+   insert_opts = bson_new ();
+   r = mongoc_client_session_append (session, insert_opts, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   /* this should not override the expected server id */
+   r = mongoc_collection_insert_one (
+      coll, tmp_bson ("{}"), insert_opts, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   actual_id = mongoc_client_session_get_server_id (session);
+
+   ASSERT_CMPINT32 (actual_id, ==, expected_id);
+
+   /* get a valid server id that's different from the pinned server id */
+   servers = client->topology->description.servers;
+   for (i = 0; i < servers->items_len; i++) {
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (servers, i);
+      if (sd && sd->id != actual_id) {
+         break;
+      }
+   }
+
+   /* attempting to pin to a different but valid server id should fail */
+   BSON_ASSERT (sd);
+   r = mongoc_client_command_with_opts (
+      client,
+      "db",
+      tmp_bson ("{'ping': 1}"),
+      NULL,
+      tmp_bson ("{'serverId': %d, 'sessionId': {'$numberLong': '%ld'}}",
+                sd->id,
+                session->client_session_id),
+      &reply,
+      &error);
+
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_SERVER_SELECTION_INVALID_ID,
+      "Requested server id does not matched pinned server id");
+
+   r = mongoc_client_session_abort_transaction (session, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   bson_destroy (insert_opts);
+   mongoc_collection_destroy (coll);
+   mongoc_database_destroy (db);
+   mongoc_session_opts_destroy (session_opts);
+   mongoc_transaction_opts_destroy (txn_opts);
+   mongoc_server_stream_cleanup (server_stream);
+   mongoc_client_session_destroy (session);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+}
+
 void
 test_transactions_install (TestSuite *suite)
 {
@@ -917,6 +1032,14 @@ test_transactions_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_crypto,
+                      test_framework_skip_if_max_wire_version_less_than_8,
+                      test_framework_skip_if_not_mongos);
+   TestSuite_AddFull (suite,
+                      "/transactions/selected_server_pinned_to_mongos",
+                      test_selected_server_is_pinned_to_mongos,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_sessions,
                       test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_not_mongos);
 }
