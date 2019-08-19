@@ -1883,7 +1883,7 @@ mongoc_server_stream_t *
 mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                   uint32_t server_id,
                                   bool reconnect_ok,
-                                  const mongoc_client_session_t *cs,
+                                  mongoc_client_session_t *cs,
                                   bson_t *reply,
                                   bson_error_t *error)
 {
@@ -1913,6 +1913,17 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
    if (!server_stream) {
       /* failed */
       mongoc_cluster_disconnect_node (cluster, server_id, true, error);
+   }
+
+   if (_in_sharded_txn (cs)) {
+      _mongoc_client_session_pin (cs, server_id);
+   } else {
+      /* Transactions Spec: Additionally, any non-transaction operation using
+       * a pinned ClientSession MUST unpin the session and the operation MUST
+       * perform normal server selection. */
+      if (cs && !_mongoc_client_session_in_txn_or_ending (cs)) {
+         _mongoc_client_session_unpin (cs);
+      }
    }
 
    RETURN (server_stream);
@@ -2179,7 +2190,9 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
       if (!server_id) {
          server_id = mongoc_topology_select_server_id (
             topology, optype, read_prefs, error);
-         _mongoc_client_session_pin (cs, server_id);
+         if (server_id) {
+            _mongoc_client_session_pin (cs, server_id);
+         }
       }
    } else {
       server_id =
