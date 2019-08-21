@@ -298,6 +298,16 @@ opts_structs = OrderedDict([
     ('mongoc_gridfs_bucket_upload_opts_t', Struct([
         ('chunkSizeBytes', {'type': 'int32_t', 'convert': '_mongoc_convert_int32_positive', 'help': 'An ``int32`` chunk size to use for this file. Overrides the ``chunkSizeBytes`` set on ``bucket``.'}),
         ('metadata', {'type': 'document', 'help': 'A :symbol:`bson_t` representing metadata to include with the file.'})
+    ])),
+
+    ('mongoc_aggregate_opts_t', Struct([
+        read_concern_option,
+        write_concern_option,
+        session_option,
+        bypass_option,
+        collation_option,
+        server_option,
+        ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_cursor_next`', 'check_set': True})
     ]))
 ])
 

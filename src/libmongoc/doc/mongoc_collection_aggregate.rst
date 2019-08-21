@@ -25,15 +25,9 @@ Parameters
 * ``opts``: A :symbol:`bson:bson_t` containing options for the command, or ``NULL``.
 * ``read_prefs``: A :symbol:`mongoc_read_prefs_t` or ``NULL``.
 
-``opts`` may be NULL or a BSON document with additional command options:
+.. |opts-source| replace:: ``collection``
 
-* ``readConcern``: Construct a :symbol:`mongoc_read_concern_t` and use :symbol:`mongoc_read_concern_append` to add the read concern to ``opts``. See the example code for :symbol:`mongoc_client_read_command_with_opts`. Read concern requires MongoDB 3.2 or later, otherwise an error is returned.
-* ``writeConcern``: For aggregations that include "$out", you can construct a :symbol:`mongoc_write_concern_t` and use :symbol:`mongoc_write_concern_append` to add the write concern to ``opts``. See the example code for :symbol:`mongoc_client_write_command_with_opts`.
-* ``sessionId``: Construct a :symbol:`mongoc_client_session_t` with :symbol:`mongoc_client_start_session` and use :symbol:`mongoc_client_session_append` to add the session to ``opts``. See the example code for :symbol:`mongoc_client_session_t`.
-* ``bypassDocumentValidation``: Set to ``true`` to skip server-side schema validation of the provided BSON documents.
-* ``collation``: Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_. Collation requires MongoDB 3.2 or later, otherwise an error is returned.
-* ``serverId``: To target a specific server, include an int32 "serverId" field. Obtain the id by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.
-* ``batchSize``: To specify the number of documents to return in each batch of a response from the server, include an int "batchSize" field.
+.. include:: includes/aggregate-opts.txt
 
 For a list of all options, see `the MongoDB Manual entry on the aggregate command <http://docs.mongodb.org/manual/reference/command/aggregate/>`_.
 

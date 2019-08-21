@@ -27,6 +27,9 @@ typedef struct _{{ struct_type }} {
 {% set the_name = info.get('field', opt_name) %}
 {% set space = '' if the_type.endswith('*') else ' ' %}
    {{ the_type }}{{ space }}{{ the_name }};
+{% if info.check_set %}
+   bool {{ the_name }}_is_set;
+{% endif %}
 {% endfor %}
 {% if not description.is_shared %}
    bson_t extra;

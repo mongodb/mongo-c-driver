@@ -168,6 +168,19 @@ typedef struct _mongoc_gridfs_bucket_upload_opts_t {
    bson_t extra;
 } mongoc_gridfs_bucket_upload_opts_t;
 
+typedef struct _mongoc_aggregate_opts_t {
+   mongoc_read_concern_t *readConcern;
+   mongoc_write_concern_t *writeConcern;
+   bool write_concern_owned;
+   mongoc_client_session_t *client_session;
+   bool bypass;
+   bson_t collation;
+   uint32_t serverId;
+   int32_t batchSize;
+   bool batchSize_is_set;
+   bson_t extra;
+} mongoc_aggregate_opts_t;
+
 bool
 _mongoc_insert_one_opts_parse (
    mongoc_client_t *client,
@@ -357,5 +370,15 @@ _mongoc_gridfs_bucket_upload_opts_parse (
 
 void
 _mongoc_gridfs_bucket_upload_opts_cleanup (mongoc_gridfs_bucket_upload_opts_t *mongoc_gridfs_bucket_upload_opts);
+
+bool
+_mongoc_aggregate_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_aggregate_opts_t *mongoc_aggregate_opts,
+   bson_error_t *error);
+
+void
+_mongoc_aggregate_opts_cleanup (mongoc_aggregate_opts_t *mongoc_aggregate_opts);
 
 #endif /* MONGOC_OPTS_H */
