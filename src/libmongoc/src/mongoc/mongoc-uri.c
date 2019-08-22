@@ -165,8 +165,6 @@ _upsert_into_host_list (mongoc_uri_t *uri,
                         mongoc_host_list_t *host,
                         bson_error_t *error)
 {
-   mongoc_host_list_t *link;
-
    if (uri->is_srv && !validate_srv_result (uri, host->host, error)) {
       return false;
    }

@@ -45,7 +45,6 @@ test_new_transaction_unpins (void *ctx)
    mongoc_host_list_t *servers = NULL;
    mongoc_cursor_t *cursor;
    bson_t *opts;
-   char *host;
    int i;
 
    uri = test_framework_get_uri ();
@@ -122,7 +121,6 @@ test_non_transaction_unpins (void *ctx)
    mongoc_host_list_t *servers = NULL;
    mongoc_cursor_t *cursor;
    bson_t *opts;
-   char *host;
    int i;
 
    uri = test_framework_get_uri ();
