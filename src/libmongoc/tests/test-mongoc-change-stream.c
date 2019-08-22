@@ -691,6 +691,19 @@ test_getmore_errors (void)
    _test_getmore_error ("{'ok': 0, 'errmsg': 'random error'}",
                         false /* should_resume */,
                         false /* resume_kills_cursor */);
+   /* An error with a 'NonResumableChangeStreamError' label should not attempt
+    * to resume. */
+   _test_getmore_error (
+      "{'ok': 0, 'code': 280, 'errorLabels': "
+      "['NonResumableChangeStreamError'], 'errmsg': 'random error'}",
+      false /* should_resume */,
+      false /* resume_kills_cursor */);
+   /* But other error labels should resume. */
+   _test_getmore_error (
+      "{'ok': 0, 'code': 280, 'errorLabels': "
+      "['NonRetryableChangeStreamError'], 'errmsg': 'random error'}",
+      true /* should_resume */,
+      true /* resume_kills_cursor */);
 }
 /* From Change Streams Spec tests:
  * "ChangeStream will automatically resume one time on a resumable error

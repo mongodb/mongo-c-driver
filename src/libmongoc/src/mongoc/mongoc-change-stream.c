@@ -46,7 +46,7 @@ _is_resumable_error (const bson_t *reply)
       return true;
    }
 
-   if (mongoc_error_has_label (reply, "NonRetryableChangeStreamError")) {
+   if (mongoc_error_has_label (reply, "NonResumableChangeStreamError")) {
       return false;
    }
 
