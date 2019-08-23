@@ -79,6 +79,8 @@ test_writer_install (TestSuite *suite);
 /* libmongoc */
 
 extern void
+test_aggregate_install (TestSuite *suite);
+extern void
 test_array_install (TestSuite *suite);
 extern void
 test_async_install (TestSuite *suite);
@@ -2349,6 +2351,7 @@ main (int argc, char *argv[])
 
    /* libmongoc */
 
+   test_aggregate_install (&suite);
    test_array_install (&suite);
    test_async_install (&suite);
    test_buffer_install (&suite);

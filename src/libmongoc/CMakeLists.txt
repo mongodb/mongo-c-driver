@@ -751,6 +751,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-conveniences.c
    ${PROJECT_SOURCE_DIR}/tests/test-libmongoc.c
    ${PROJECT_SOURCE_DIR}/tests/test-happy-eyeballs.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-array.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-async.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-buffer.c
