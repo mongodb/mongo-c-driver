@@ -8,7 +8,7 @@
 #include "test-conveniences.h"
 
 static void
-test_tailable_query_flag (void)
+_test_tailable_query_flag (bool flag)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -23,11 +23,12 @@ test_tailable_query_flag (void)
    mock_server_run (server);
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
-   cursor = mongoc_collection_aggregate (collection,
-                                         MONGOC_QUERY_TAILABLE_CURSOR,
-                                         BCON_NEW ("pipeline", "[", "]"),
-                                         NULL,
-                                         NULL);
+   cursor = mongoc_collection_aggregate (
+      collection,
+      flag ? MONGOC_QUERY_TAILABLE_CURSOR : MONGOC_QUERY_NONE,
+      tmp_bson ("{'pipeline': []}"),
+      flag ? NULL : tmp_bson ("{'tailable': true}"),
+      NULL);
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
@@ -47,6 +48,7 @@ test_tailable_query_flag (void)
                                "    'ns': 'db.collection',"
                                "    'nextBatch': [{}]}}");
    ASSERT (future_get_bool (future));
+   future_destroy (future);
 
    /* "getMore" command */
    future = future_cursor_next (cursor, &doc);
@@ -72,6 +74,13 @@ test_tailable_query_flag (void)
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
+}
+
+static void
+test_tailable_query_flag (void)
+{
+   _test_tailable_query_flag (true);
+   _test_tailable_query_flag (false);
 }
 
 void
