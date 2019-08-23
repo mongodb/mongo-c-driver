@@ -74,7 +74,7 @@ _test_query_flag (mongoc_query_flags_t flag, bson_t *opt)
 }
 
 static void
-test_tailable_query_flag (void)
+test_query_flags (void)
 {
    int i;
 
@@ -84,8 +84,11 @@ test_tailable_query_flag (void)
    } flag_and_opt_t;
 
    flag_and_opt_t flags_and_opts[] = {
-      {MONGOC_QUERY_TAILABLE_CURSOR, tmp_bson ("{'tailable': true}")}};
+      {MONGOC_QUERY_TAILABLE_CURSOR, tmp_bson ("{'tailable': true}")},
+      {MONGOC_QUERY_TAILABLE_CURSOR | MONGOC_QUERY_AWAIT_DATA,
+       tmp_bson ("{'tailable': true, 'awaitData': true}")}};
 
+   /* test with both flag and opt */
    for (i = 0; i < (sizeof flags_and_opts) / (sizeof (flag_and_opt_t)); i++) {
       _test_query_flag (flags_and_opts[i].flag, NULL);
       _test_query_flag (MONGOC_QUERY_NONE, flags_and_opts[i].opt);
@@ -96,5 +99,5 @@ void
 test_aggregate_install (TestSuite *suite)
 {
    TestSuite_AddMockServerTest (
-      suite, "/Aggregate/tailable_query_flag", test_tailable_query_flag);
+      suite, "/Aggregate/query_flags", test_query_flags);
 }
