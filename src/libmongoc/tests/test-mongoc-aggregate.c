@@ -8,7 +8,7 @@
 #include "test-conveniences.h"
 
 static void
-_test_tailable_query_flag (bool flag)
+_test_query_flag (mongoc_query_flags_t flag, bson_t *opt)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -24,11 +24,7 @@ _test_tailable_query_flag (bool flag)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
    cursor = mongoc_collection_aggregate (
-      collection,
-      flag ? MONGOC_QUERY_TAILABLE_CURSOR : MONGOC_QUERY_NONE,
-      tmp_bson ("{'pipeline': []}"),
-      flag ? NULL : tmp_bson ("{'tailable': true}"),
-      NULL);
+      collection, flag, tmp_bson ("{'pipeline': []}"), opt, NULL);
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
@@ -48,6 +44,7 @@ _test_tailable_query_flag (bool flag)
                                "    'ns': 'db.collection',"
                                "    'nextBatch': [{}]}}");
    ASSERT (future_get_bool (future));
+   request_destroy (request);
    future_destroy (future);
 
    /* "getMore" command */
@@ -79,8 +76,20 @@ _test_tailable_query_flag (bool flag)
 static void
 test_tailable_query_flag (void)
 {
-   _test_tailable_query_flag (true);
-   _test_tailable_query_flag (false);
+   int i;
+
+   typedef struct {
+      mongoc_query_flags_t flag;
+      bson_t *opt;
+   } flag_and_opt_t;
+
+   flag_and_opt_t flags_and_opts[] = {
+      {MONGOC_QUERY_TAILABLE_CURSOR, tmp_bson ("{'tailable': true}")}};
+
+   for (i = 0; i < (sizeof flags_and_opts) / (sizeof (flag_and_opt_t)); i++) {
+      _test_query_flag (flags_and_opts[i].flag, NULL);
+      _test_query_flag (MONGOC_QUERY_NONE, flags_and_opts[i].opt);
+   }
 }
 
 void
