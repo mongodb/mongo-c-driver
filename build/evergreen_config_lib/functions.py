@@ -296,6 +296,7 @@ all_functions = OD([
     ('run tests bson', Function(
         shell_mongoc(r'CC="${CC}" sh .evergreen/run-tests-bson.sh'),
     )),
+    # Use "silent=True" to hide output since errors may contain credentials.
     ('run auth tests', Function(
         shell_mongoc(r'''
         export AUTH_HOST='${auth_host}'

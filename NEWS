@@ -1,3 +1,10 @@
+Next
+====
+
+Bug fixes:
+  * Fix a bug with Windows SSPI failing to authenticate with GSSAPI when using
+    pooled clients for certain operations.
+
 mongo-c-driver 1.15.0
 =====================
 
