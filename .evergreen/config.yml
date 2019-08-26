@@ -244,9 +244,9 @@ functions:
       remote_file: ${project}/${build_variant}/${revision}/${version_id}/${build_id}/abi-compliance/compat_report.html
       bucket: mciuploads
       permissions: public-read
-      local_files_include_filter: mongoc/abi-compliance/compat_reports/**/*.html
-      content_type: text/html
       display_name: 'ABI Report:'
+      content_type: text/html
+      local_files_include_filter: mongoc/abi-compliance/compat_reports/**/*.html
   upload scan artifacts:
   - command: shell.exec
     type: test
@@ -11145,12 +11145,35 @@ tasks:
       AUTH: noauth
       COMPRESSORS: snappy
       SSL: nossl
+- name: test-latest-server-compression-zstd
+  tags:
+  - compression
+  - latest
+  - zstd
+  depends_on:
+    name: debug-compile-compression-zstd
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-compression-zstd
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      ORCHESTRATION_FILE: zstd
+      SSL: nossl
+      VERSION: latest
+  - func: run tests
+    vars:
+      AUTH: noauth
+      COMPRESSORS: zstd
+      SSL: nossl
 - name: test-latest-server-compression
   tags:
   - compression
   - latest
   - snappy
   - zlib
+  - zstd
   depends_on:
     name: debug-compile-compression
   commands:
@@ -11166,7 +11189,7 @@ tasks:
   - func: run tests
     vars:
       AUTH: noauth
-      COMPRESSORS: snappy,zlib
+      COMPRESSORS: snappy,zlib,zstd
       SSL: nossl
 - name: retry-true-latest-server
   depends_on:
@@ -11708,7 +11731,8 @@ buildvariants:
     CC: clang
   run_on: ubuntu1604-test
   tasks:
-  - .compression
+  - .compression !.zstd
+  - debug-compile-compression-zstd
   - debug-compile-scan-build
   - debug-compile-asan-clang
   - debug-compile-ubsan
@@ -11824,7 +11848,7 @@ buildvariants:
     CC: gcc
   run_on: ubuntu1604-test
   tasks:
-  - .compression
+  - .compression !.zstd
   - debug-compile-asan-gcc
   - debug-compile-coverage
   - debug-compile-nosrv
@@ -11851,7 +11875,7 @@ buildvariants:
     CC: clang
   run_on: macos-1012
   tasks:
-  - .compression !.snappy
+  - .compression !.snappy !.zstd
   - debug-compile-coverage
   - release-compile
   - debug-compile-nosasl-nossl
@@ -11908,7 +11932,7 @@ buildvariants:
     CC: Visual Studio 14 2015
   run_on: windows-64-vs2015-compile
   tasks:
-  - .compression !.snappy
+  - .compression !.snappy !.zstd
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
@@ -11927,7 +11951,7 @@ buildvariants:
     CC: Visual Studio 12 2013 Win64
   run_on: windows-64-vs2013-compile
   tasks:
-  - .compression !.snappy
+  - .compression !.snappy !.zstd
   - release-compile
   - debug-compile-nosasl-nossl
   - .debug-compile .winssl
@@ -11966,7 +11990,7 @@ buildvariants:
     CC: Visual Studio 10 2010 Win64
   run_on: windows-64-vs2010-compile
   tasks:
-  - .compression !.snappy
+  - .compression !.snappy !.zstd
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-rdtscp
@@ -12067,7 +12091,7 @@ buildvariants:
     CC: gcc
   run_on: ubuntu1604-arm64-large
   tasks:
-  - .compression !.snappy
+  - .compression !.snappy !.zstd
   - debug-compile-scan-build
   - debug-compile-coverage
   - debug-compile-no-align
