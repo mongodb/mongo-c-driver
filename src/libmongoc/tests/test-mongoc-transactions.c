@@ -957,6 +957,7 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    ASSERT_OR_PRINT (r, error);
 
    bson_destroy (insert_opts);
+   bson_destroy (&reply);
    mongoc_collection_destroy (coll);
    mongoc_database_destroy (db);
    mongoc_session_opts_destroy (session_opts);
