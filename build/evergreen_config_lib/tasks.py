@@ -491,7 +491,7 @@ all_tasks = chain(all_tasks, DNSTask.matrix())
 
 
 class CompressionTask(MatrixTask):
-    axes = OD([('compression', ['zlib', 'snappy', 'compression'])]) # TODO: CDRIVER-3274 add "zstd"
+    axes = OD([('compression', ['zlib', 'snappy', 'zstd', 'compression'])])
     name_prefix = 'test-latest-server'
 
     def __init__(self, *args, **kwargs):
@@ -542,7 +542,7 @@ class CompressionTask(MatrixTask):
         elif self.compression == 'zstd':
             return ['zstd']
         else:
-            return ['snappy', 'zlib'] # TODO: CDRIVER-3247 add zstd
+            return ['snappy', 'zlib', 'zstd']
 
 
 all_tasks = chain(all_tasks, CompressionTask.matrix())
