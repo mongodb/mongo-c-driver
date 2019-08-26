@@ -945,7 +945,7 @@ endif ()
 # Define pkg-config files
 set (VERSION "${MONGOC_VERSION}")
 set (prefix "${CMAKE_INSTALL_PREFIX}")
-set (libdir "\${prefix}/lib")
+set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 
 foreach (
       FLAG

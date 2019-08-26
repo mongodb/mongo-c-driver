@@ -348,7 +348,7 @@ endforeach ()
 
 set (VERSION "${BSON_VERSION}")
 set (prefix "${CMAKE_INSTALL_PREFIX}")
-set (libdir "\${prefix}/lib")
+set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 configure_file (
    ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-1.0.pc.in
    ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-1.0.pc
