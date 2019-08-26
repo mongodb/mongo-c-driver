@@ -120,17 +120,25 @@ _make_command (mongoc_change_stream_t *stream,
 
    if (stream->resumed) {
       /* Change stream spec: Resume Process */
+      /* If there is a cached resumeToken: */
       if (!bson_empty (&stream->resume_token)) {
-         BSON_APPEND_DOCUMENT (
-            &change_stream_doc, "resumeAfter", &stream->resume_token);
-      } else if (!bson_empty (&stream->opts.startAfter)) {
-         BSON_APPEND_DOCUMENT (
-            &change_stream_doc, "resumeAfter", &stream->opts.startAfter);
-      } else if (!bson_empty (&stream->opts.resumeAfter)) {
-         BSON_APPEND_DOCUMENT (
-            &change_stream_doc, "resumeAfter", &stream->opts.resumeAfter);
+         /* If the ChangeStream was started with startAfter
+            and has yet to return a result document: */
+         if (!bson_empty (&stream->opts.startAfter) &&
+             !stream->has_returned_results) {
+            /* The driver MUST set startAfter to the cached resumeToken */
+            BSON_APPEND_DOCUMENT (
+               &change_stream_doc, "startAfter", &stream->resume_token);
+         } else {
+            /* The driver MUST set resumeAfter to the cached resumeToken */
+            BSON_APPEND_DOCUMENT (
+               &change_stream_doc, "resumeAfter", &stream->resume_token);
+         }
       } else if (!_mongoc_timestamp_empty (&stream->operation_time) &&
                  max_wire_version >= 7) {
+         /* Else if there is no cached resumeToken and the ChangeStream
+            has a saved operation time and the max wire version is >= 7,
+            the driver MUST set startAtOperationTime */
          _mongoc_timestamp_append (&stream->operation_time,
                                    &change_stream_doc,
                                    "startAtOperationTime");
@@ -553,6 +561,8 @@ mongoc_change_stream_next (mongoc_change_stream_t *stream, const bson_t **bson)
 
    /* we have received documents, either from the first call to next or after a
     * resume. */
+   stream->has_returned_results = true;
+
    if (!bson_iter_init_find (&iter, *bson, "_id") ||
        !BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       bson_set_error (&stream->err,

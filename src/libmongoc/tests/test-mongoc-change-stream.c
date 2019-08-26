@@ -1887,11 +1887,11 @@ test_resume_cases (void)
 
    /* only 'startAfter' specified. */
    /* - if no doc recv'ed, use the startAfter option for the original aggregate
-    *   but resumeAfter with the same value when resuming. */
+    *   whether or not we are resuming. */
    _test_resume ("{" OPT_SA "}",
                  OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "",
-                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "");
    /* - if doc recv'ed and iterated, use the doc's resume token. */
    _test_resume ("{" OPT_SA "}",
@@ -1902,13 +1902,14 @@ test_resume_cases (void)
 
    /* 'resumeAfter', 'startAfter', and 'startAtOperationTime' are all specified.
     * All should be passed (although the server currently returns an error). */
-   /* - if no doc recv'ed, use the resumeAfter option. */
+   /* - if no doc recv'ed, use startAfter. */
    _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
                  OPT_RA "," OPT_SA "," OPT_OP ",",
                  "",
-                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "");
-   /* - if doc recv'ed and iterated, use the doc's resume token. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with doc's resume
+    * token. */
    _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
                  OPT_RA "," OPT_SA "," OPT_OP ",",
                  DOC,
@@ -1924,6 +1925,7 @@ test_resume_cases_with_post_batch_resume_token (void)
 {
 #define CURSOR_PBR "'postBatchResumeToken': {'resume': 'pbr'}"
 #define PBR_RA "'resumeAfter': {'resume': 'pbr'}"
+#define PBR_SA "'startAfter': {'resume': 'pbr'}"
 
    /* test features:
     * - whether the change stream returns a document before resuming.
@@ -1937,13 +1939,14 @@ test_resume_cases_with_post_batch_resume_token (void)
     * last document in the batch (if _test_resume() iterates to that point). */
 
    /* no options specified. */
-   /* - if no doc recv'ed, use postBatchResumeToken. */
+   /* - if no doc recv'ed, use resumeAfter with postBatchResumeToken. */
    _test_resume ("{}",
                  NO_OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  "",
                  PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  "," CURSOR_PBR);
-   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with
+    * postBatchResumeToken. */
    _test_resume ("{}",
                  NO_OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  DOC,
@@ -1951,13 +1954,14 @@ test_resume_cases_with_post_batch_resume_token (void)
                  "," CURSOR_PBR);
 
    /* only 'startAtOperationTime' specified. */
-   /* - if no doc recv'ed, use postBatchResumeToken. */
+   /* - if no doc recv'ed, use resumeAfter with postBatchResumeToken. */
    _test_resume ("{" OPT_OP "}",
                  OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  "",
                  PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  "," CURSOR_PBR);
-   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with
+    * postBatchResumeToken. */
    _test_resume ("{" OPT_OP "}",
                  OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  DOC,
@@ -1965,13 +1969,14 @@ test_resume_cases_with_post_batch_resume_token (void)
                  "," CURSOR_PBR);
 
    /* only 'resumeAfter' specified. */
-   /* - if no doc recv'ed, use postBatchResumeToken. */
+   /* - if no doc recv'ed, use resumeAfter with postBatchResumeToken. */
    _test_resume ("{" OPT_RA "}",
                  OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  "",
                  PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  "," CURSOR_PBR);
-   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with
+    * postBatchResumeToken. */
    _test_resume ("{" OPT_RA "}",
                  OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  DOC,
@@ -1979,13 +1984,14 @@ test_resume_cases_with_post_batch_resume_token (void)
                  "," CURSOR_PBR);
 
    /* only 'startAfter' specified. */
-   /* - if no doc recv'ed, use postBatchResumeToken. */
+   /* - if no doc recv'ed, use startAfter with postBatchResumeToken. */
    _test_resume ("{" OPT_SA "}",
                  OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "",
-                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 PBR_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "," CURSOR_PBR);
-   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with
+    * postBatchResumeToken. */
    _test_resume ("{" OPT_SA "}",
                  OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  DOC,
@@ -1994,13 +2000,14 @@ test_resume_cases_with_post_batch_resume_token (void)
 
    /* 'resumeAfter', 'startAfter', and 'startAtOperationTime' are all specified.
     * All should be passed (although the server currently returns an error). */
-   /* - if no doc recv'ed, use postBatchResumeToken. */
+   /* - if no doc recv'ed, use startAfter with postBatchResumeToken. */
    _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
                  OPT_RA "," OPT_SA "," OPT_OP ",",
                  "",
-                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 PBR_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "," CURSOR_PBR);
-   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with
+    * postBatchResumeToken. */
    _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
                  OPT_RA "," OPT_SA "," OPT_OP ",",
                  DOC,
@@ -2312,6 +2319,156 @@ prose_test_14 (void *test_ctx)
 
 
 void
+prose_test_17 (void)
+{
+   mock_server_t *server;
+   request_t *request;
+   future_t *future;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   const bson_t *next_doc = NULL;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   coll = mongoc_client_get_collection (client, "db", "coll");
+   /* Pass an arbitrary document as the resume token, like {'x': 1} */
+   future = future_collection_watch (
+      coll, tmp_bson ("{}"), tmp_bson ("{'startAfter': {'x': 1}}"));
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { "
+                "'startAfter': {'x': 1} , 'resumeAfter': { '$exists': false }, "
+                "'startAtOperationTime': { '$exists': false } } } ]}"));
+
+   mock_server_replies_simple (
+      request,
+      "{'cursor': {'id': 123, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1 }");
+
+   request_destroy (request);
+
+   stream = future_get_mongoc_change_stream_ptr (future);
+   ASSERT (stream);
+   future_destroy (future);
+
+   future = future_change_stream_next (stream, &next_doc);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'getMore': {'$numberLong': '123'}, 'collection': 'coll' }"));
+
+   mock_server_replies_simple (
+      request, "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }");
+
+   request_destroy (request);
+
+   /* Resume occurs. */
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate': 'coll', 'pipeline': [ { "
+                "'$changeStream': { 'startAfter': {'x': 1}, 'resumeAfter': { "
+                "'$exists': false }, 'startAtOperationTime': { '$exists': "
+                "false } } "
+                "}]}"));
+
+   /* Reply with a 0 cursor ID to prevent a killCursors command. */
+   mock_server_replies_simple (
+      request,
+      "{'cursor': {'id': 0, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1 }");
+   request_destroy (request);
+   BSON_ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   mongoc_change_stream_destroy (stream);
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+void
+prose_test_18 (void)
+{
+   mock_server_t *server;
+   request_t *request;
+   future_t *future;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   const bson_t *next_doc = NULL;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   coll = mongoc_client_get_collection (client, "db", "coll");
+   /* Pass an arbitrary document as the resume token, like {'x': 1} */
+   future = future_collection_watch (
+      coll, tmp_bson ("{}"), tmp_bson ("{'startAfter': {'x': 1}}"));
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { "
+                "'startAfter': {'x': 1}, 'resumeAfter': { '$exists': false }, "
+                "'startAtOperationTime': { '$exists': false } } } ]}"));
+
+   mock_server_replies_simple (request,
+                               "{'cursor': {'id': 123, 'ns': "
+                               "'db.coll', 'firstBatch': [{'_id': "
+                               "{'y': 1}}]}, 'ok': 1 }");
+
+   request_destroy (request);
+   stream = future_get_mongoc_change_stream_ptr (future);
+   ASSERT (stream);
+   future_destroy (future);
+
+   /* The first call to mongoc_change_stream_next returns the batched document.
+    */
+   mongoc_change_stream_next (stream, &next_doc);
+
+   future = future_change_stream_next (stream, &next_doc);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'getMore': {'$numberLong': '123'}, 'collection': 'coll' }"));
+
+   mock_server_replies_simple (
+      request, "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }");
+
+   request_destroy (request);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate': 'coll', 'pipeline': [ { "
+                "'$changeStream': { 'resumeAfter': {'y': 1}, 'startAfter': { "
+                "'$exists': false }, 'startAtOperationTime': { '$exists': "
+                "false } } "
+                "}]}"));
+   /* Reply with a 0 cursor ID to prevent a killCursors command. */
+   mock_server_replies_simple (
+      request,
+      "{'cursor': {'id': 0, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1 }");
+   request_destroy (request);
+   BSON_ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   mongoc_change_stream_destroy (stream);
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+void
 test_change_stream_install (TestSuite *suite)
 {
    char resolved[PATH_MAX];
@@ -2469,6 +2626,11 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_mongos,
                       test_framework_skip_if_not_rs_version_7);
+   TestSuite_AddMockServerTest (
+      suite, "/change_streams/prose_test_17", prose_test_17);
+   TestSuite_AddMockServerTest (
+      suite, "/change_streams/prose_test_18", prose_test_18);
+
 
    test_framework_resolve_path (JSON_DIR "/change_streams", resolved);
    install_json_test_suite (suite, resolved, &test_change_stream_spec_cb);
