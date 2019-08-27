@@ -2255,6 +2255,25 @@ prose_test_13 (void *ctx)
    mongoc_collection_destroy (coll);
 }
 
+static void
+_save_operation_time_from_agg (const mongoc_apm_command_succeeded_t *event)
+{
+   if (0 == strcmp ("aggregate",
+                    mongoc_apm_command_succeeded_get_command_name (event))) {
+      mongoc_timestamp_t *timestamp;
+      bson_iter_t iter;
+      const bson_t *cmd;
+
+      cmd = mongoc_apm_command_succeeded_get_reply (event);
+      timestamp = mongoc_apm_command_succeeded_get_context (event);
+      /* Capture the operationTime from the first aggregate reply. */
+      if (timestamp->timestamp == 0) {
+         BSON_ASSERT (bson_iter_init_find (&iter, cmd, "operationTime"));
+         _mongoc_timestamp_set_from_bson (timestamp, &iter);
+      }
+   }
+}
+
 void
 prose_test_14 (void *test_ctx)
 {
@@ -2266,10 +2285,21 @@ prose_test_14 (void *test_ctx)
    const bson_t *resume_token;
    bson_t expected_token;
    const bson_t *doc = NULL;
+   mongoc_timestamp_t optime = {0};
+   mongoc_apm_callbacks_t *callbacks;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_succeeded_cb (callbacks,
+                                        _save_operation_time_from_agg);
+   mongoc_client_set_apm_callbacks (client, callbacks, &optime);
+   mongoc_apm_callbacks_destroy (callbacks);
 
    coll = drop_and_get_coll (client, "db", "coll");
    bson_init (&opts);
    stream = mongoc_collection_watch (coll, tmp_bson ("{}"), &opts);
+   /* The _save_operation_time_from_agg listener must have stored the operation
+    * time. */
+   BSON_ASSERT (optime.timestamp != 0);
 
    ASSERT_OR_PRINT (mongoc_collection_insert_one (
                        coll, tmp_bson ("{'_id': 0}"), &opts, NULL, &error),
@@ -2309,6 +2339,17 @@ prose_test_14 (void *test_ctx)
 
    resume_token = mongoc_change_stream_get_resume_token (stream);
    ASSERT (bson_equal (resume_token, &expected_token));
+   mongoc_change_stream_destroy (stream);
+
+   /* Finally, with neither. */
+   bson_destroy (&opts);
+   bson_init (&opts);
+   BSON_APPEND_TIMESTAMP (
+      &opts, "startAtOperationTime", optime.timestamp, optime.increment);
+   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), &opts);
+
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (resume_token == NULL);
 
    bson_destroy (&expected_token);
    bson_destroy (&opts);
