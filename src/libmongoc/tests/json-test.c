@@ -1225,7 +1225,6 @@ _should_skip_due_to_server_39704 (const bson_t *test)
       }
    }
 
-
    return false;
 }
 
@@ -1391,6 +1390,61 @@ json_test_config_cleanup (json_test_config_t *config)
 }
 
 
+/* Tests on unsupported operations are automatically skipped with a message
+ * indicating why. */
+static bson_t *
+_skip_if_unsupported (const char *test_name, bson_t *original)
+{
+   int i;
+   bool skip = false;
+   const char *unsupported_tests[] = {
+      "/retryable_reads/gridfs-downloadByName",
+      "/retryable_reads/gridfs-downloadByName-serverErrors",
+      "/retryable_reads/listCollectionObjects",
+      "/retryable_reads/listCollectionObjects-serverErrors",
+      "/retryable_reads/listDatabaseObjects",
+      "/retryable_reads/listDatabaseObjects-serverErrors",
+      "/retryable_reads/listIndexNames",
+      "/retryable_reads/listIndexNames-serverErrors",
+      "/retryable_reads/mapReduce"};
+
+   for (i = 0; i < sizeof (unsupported_tests) / sizeof (unsupported_tests[0]);
+        i++) {
+      if (0 == strcmp (test_name, unsupported_tests[i])) {
+         skip = true;
+         break;
+      }
+   }
+
+   if (skip) {
+      /* Modify the test file to give all entries in "tests" a skipReason */
+      bson_t *modified = bson_new ();
+      bson_t modified_tests;
+      bson_iter_t iter;
+
+      bson_copy_to_excluding_noinit (original, modified, "tests", NULL);
+      BSON_APPEND_ARRAY_BEGIN (modified, "tests", &modified_tests);
+      BSON_ASSERT (bson_iter_init_find (&iter, original, "tests"));
+      for (bson_iter_recurse (&iter, &iter); bson_iter_next (&iter);) {
+         bson_t original_test;
+         bson_t modified_test;
+
+         bson_iter_bson (&iter, &original_test);
+         BSON_APPEND_DOCUMENT_BEGIN (
+            &modified_tests, bson_iter_key (&iter), &modified_test);
+         bson_concat (&modified_test, &original_test);
+         BSON_APPEND_UTF8 (&modified_test,
+                           "skipReason",
+                           "libmongoc does not support required operation.");
+         bson_append_document_end (&modified_tests, &modified_test);
+      }
+      bson_append_array_end (modified, &modified_tests);
+      bson_destroy (original);
+      return modified;
+   }
+   return original;
+}
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -1432,6 +1486,7 @@ _install_json_test_suite_with_check (TestSuite *suite,
       BSON_ASSERT (ext);
       ext[0] = '\0';
 
+      test = _skip_if_unsupported (skip_json, test);
       /* list of "check" functions that decide whether to skip the test */
       va_start (ap, callback);
       _V_TestSuite_AddFull (suite,

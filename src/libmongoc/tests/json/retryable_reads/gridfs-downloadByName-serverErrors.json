@@ -51,7 +51,6 @@
   },
   "tests": [
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName succeeds after InterruptedAtShutdown",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -116,7 +115,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName succeeds after InterruptedDueToReplStateChange",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -181,7 +179,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName succeeds after NotMaster",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -246,7 +243,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName succeeds after NotMasterNoSlaveOk",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -311,7 +307,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName succeeds after NotMasterOrSecondary",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -376,7 +371,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName succeeds after PrimarySteppedDown",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -441,7 +435,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName succeeds after ShutdownInProgress",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -506,7 +499,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName succeeds after HostNotFound",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -571,7 +563,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName succeeds after HostUnreachable",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -636,7 +627,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName succeeds after NetworkTimeout",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -701,7 +691,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName succeeds after SocketException",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -766,7 +755,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName fails after two NotMaster errors",
       "failPoint": {
         "configureFailPoint": "failCommand",
@@ -816,7 +804,6 @@
       ]
     },
     {
-      "skipReason": "DownloadByName is not currently supported in the cdriver",
       "description": "DownloadByName fails after NotMaster when retryReads is false",
       "clientOptions": {
         "retryReads": false
