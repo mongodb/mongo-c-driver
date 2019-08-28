@@ -268,7 +268,7 @@ mongoc_compress (int32_t compressor_id,
                           *compressed_len,
                           (const void *) uncompressed,
                           uncompressed_len,
-                          compression_level);
+                          0);
 
       if (!ZSTD_isError (ok)) {
          *compressed_len = ok;
