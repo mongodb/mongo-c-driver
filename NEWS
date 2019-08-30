@@ -1,3 +1,24 @@
+mongo-c-driver 1.15.1
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.15.1.
+
+Bug fixes:
+   * Fix change stream resume logic when no documents received
+   * Reduce the required cmake version to build with zstd support
+   * Minor fixes to mongos pinning logic
+   * Do not resume a change stream on NonResumableChangeStreamError
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Clyde Bazile
+
+Peace,
+
+    Clyde Bazile
+
+
 mongo-c-driver 1.15.0
 =====================
 

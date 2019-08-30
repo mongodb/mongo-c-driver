@@ -1,3 +1,11 @@
+libbson 1.15.1
+==============
+
+No change since 1.15.1; released to keep pace with libmongoc's version.
+
+-- Clyde Bazile
+
+
 libbson 1.15.0
 ==============
 
