@@ -31,6 +31,8 @@ This is a simplified version of :symbol:`mongoc_collection_command()` that retur
 
 This function tries to unwrap an embedded error in the command when possible. The unwrapped error will be propagated via the ``error`` parameter. Additionally, the result document is set in ``reply``.
 
+.. include:: includes/not-retryable-read.txt
+
 Errors
 ------
 

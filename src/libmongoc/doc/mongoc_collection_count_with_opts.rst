@@ -57,6 +57,8 @@ In addition to the standard functionality available from mongoc_collection_count
 
 For more information, see the `query reference <http://docs.mongodb.org/manual/reference/operator/query/>`_ at the MongoDB website.
 
+.. include:: includes/retryable-read.txt
+
 Errors
 ------
 

@@ -24,6 +24,10 @@ Execute a command on the server, applying logic that is specific to commands tha
 
 ``reply`` is always initialized, and must be freed with :symbol:`bson:bson_destroy()`.
 
+.. include:: includes/retryable-read.txt
+.. |generic-cmd| replace:: :symbol:`mongoc_collection_command_with_opts`
+.. include:: includes/retryable-read-command.txt
+
 Parameters
 ----------
 

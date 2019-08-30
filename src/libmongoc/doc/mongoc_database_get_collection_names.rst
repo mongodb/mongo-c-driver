@@ -24,6 +24,8 @@ Description
 
 Fetches a ``NULL`` terminated array of ``NULL-byte`` terminated ``char*`` strings containing the names of all of the collections in ``database``.
 
+.. include:: includes/retryable-read.txt
+
 Parameters
 ----------
 

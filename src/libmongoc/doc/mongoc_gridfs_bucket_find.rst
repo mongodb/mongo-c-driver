@@ -25,6 +25,8 @@ Description
 
 Finds file documents from the bucket's ``files`` collection.
 
+.. include:: includes/retryable-read.txt
+
 Returns
 -------
 A newly allocated :symbol:`mongoc_cursor_t` that must be freed with :symbol:`mongoc_cursor_destroy()`.

@@ -37,6 +37,8 @@ Description
 
 This functions executes a count query on ``collection``. In contrast with :symbol:`mongoc_collection_estimated_document_count()`, the count returned is guaranteed to be accurate.
 
+.. include:: includes/retryable-read.txt
+
 Errors
 ------
 

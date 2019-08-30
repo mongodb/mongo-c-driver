@@ -24,6 +24,8 @@ will be used. This may happen if the change stream encounters a resumable error.
 
    A change stream is only supported with majority read concern.
 
+.. include:: includes/retryable-read.txt
+
 Parameters
 ----------
 

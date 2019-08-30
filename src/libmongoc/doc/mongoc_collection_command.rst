@@ -21,6 +21,8 @@ Synopsis
 
 This function is superseded by :symbol:`mongoc_collection_command_with_opts()`, :symbol:`mongoc_collection_read_command_with_opts()`, :symbol:`mongoc_collection_write_command_with_opts()`, and :symbol:`mongoc_collection_read_write_command_with_opts()`.
 
+.. include:: includes/not-retryable-read.txt
+
 Parameters
 ----------
 
