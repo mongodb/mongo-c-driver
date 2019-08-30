@@ -19,6 +19,8 @@ Synopsis
 
 This function executes a command on a specific server, using the database and command specification provided.
 
+.. include:: includes/not-retryable-read.txt
+
 Parameters
 ----------
 

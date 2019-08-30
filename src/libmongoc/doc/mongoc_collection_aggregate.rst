@@ -31,6 +31,9 @@ Parameters
 
 For a list of all options, see `the MongoDB Manual entry on the aggregate command <http://docs.mongodb.org/manual/reference/command/aggregate/>`_.
 
+
+.. include:: includes/retryable-read-aggregate.txt
+
 Description
 -----------
 

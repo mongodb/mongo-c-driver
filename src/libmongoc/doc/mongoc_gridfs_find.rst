@@ -28,6 +28,8 @@ Description
 
 Finds all gridfs files matching ``query``. You can iterate the matched gridfs files with the resulting file list.
 
+.. include:: includes/retryable-read.txt
+
 Returns
 -------
 

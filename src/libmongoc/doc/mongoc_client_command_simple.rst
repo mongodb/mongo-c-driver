@@ -22,6 +22,8 @@ This is a simplified interface to :symbol:`mongoc_client_command()`. It returns 
 
   ``reply`` is always set, and should be released with :symbol:`bson:bson_destroy()`.
 
+.. include:: includes/not-retryable-read.txt
+
 Parameters
 ----------
 

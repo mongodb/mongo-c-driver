@@ -34,6 +34,8 @@ To target a specific server, include an integer "serverId" field in ``opts`` wit
 
 .. include:: includes/read-opts-sources.txt
 
+.. include:: includes/retryable-read.txt
+
 Returns
 -------
 

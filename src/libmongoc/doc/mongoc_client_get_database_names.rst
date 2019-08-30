@@ -23,6 +23,8 @@ Description
 
 This function queries the MongoDB server for a list of known databases.
 
+.. include:: includes/retryable-read.txt
+
 Parameters
 ----------
 

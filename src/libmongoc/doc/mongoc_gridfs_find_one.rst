@@ -31,6 +31,8 @@ Description
 
 This function shall execute a query on the underlying gridfs implementation. The first file matching ``query`` will be returned. If there is an error, NULL is returned and ``error`` is filled out; if there is no error but no matching file is found, NULL is returned and the error code and domain are 0.
 
+.. include:: includes/retryable-read.txt
+
 Errors
 ------
 

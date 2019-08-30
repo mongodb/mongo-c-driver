@@ -26,6 +26,8 @@ Description
 
 Fetches a cursor containing documents, each corresponding to a collection on this database.
 
+.. include:: includes/retryable-read.txt
+
 Parameters
 ----------
 

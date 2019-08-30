@@ -13,6 +13,8 @@ Use :symbol:`mongoc_collection_count_documents` or :symbol:`mongoc_collection_es
 
 :symbol:`mongoc_collection_estimated_document_count` has the same performance as calling :symbol:`mongoc_collection_count` with a NULL ``query``, but is not guaranteed to retrieve an accurate collection count.
 
+.. include:: includes/retryable-read.txt
+
 Synopsis
 --------
 

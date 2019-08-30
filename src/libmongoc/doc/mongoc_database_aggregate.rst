@@ -46,6 +46,8 @@ Transaction        Transaction    Transaction
 
 :ref:`See the example for transactions <mongoc_client_session_start_transaction_example>` and for :ref:`the "distinct" command with opts <mongoc_client_read_command_with_opts_example>`.
 
+.. include:: includes/retryable-read-aggregate.txt
+
 Returns
 -------
 

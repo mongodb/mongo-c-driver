@@ -26,6 +26,8 @@ Parameters
 
 .. include:: includes/generic-opts.txt
 
+.. include:: includes/retryable-read.txt
+
 Errors
 ------
 
