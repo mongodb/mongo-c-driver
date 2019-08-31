@@ -168,7 +168,7 @@ data (if possible), but the server might still reply using ``snappy``,
 depending on how the server was configured.
 
 The driver must be built with zlib and/or snappy and/or zstd support to enable compression
-support, any unknown (or not compiled in) compressor value will be ignored. Note: to build with zstd requires cmake 3.12 or higher.
+support, any unknown (or not compiled in) compressor value will be ignored.
 
 Additional Connection Options
 -----------------------------
