@@ -279,9 +279,9 @@ retry:
     * when commitTransaction fails with a network error, server selection
     * error, MaxTimeMSExpired error, or write concern failed / timeout." */
    if (!r && (err_ptr->domain == MONGOC_ERROR_SERVER_SELECTION ||
-       error_type == MONGOC_WRITE_ERR_RETRY ||
-       error_type == MONGOC_WRITE_ERR_WRITE_CONCERN ||
-       err_ptr->code == MONGOC_ERROR_MAX_TIME_MS_EXPIRED)) {
+              error_type == MONGOC_WRITE_ERR_RETRY ||
+              error_type == MONGOC_WRITE_ERR_WRITE_CONCERN ||
+              err_ptr->code == MONGOC_ERROR_MAX_TIME_MS_EXPIRED)) {
       /* Drivers MUST unpin a ClientSession when any individual
        * commitTransaction command attempt fails with an
        * UnknownTransactionCommitResult error label. Do this even if we won't
@@ -497,6 +497,21 @@ mongoc_session_opts_get_default_transaction_opts (
    RETURN (&opts->default_txn_opts);
 }
 
+
+mongoc_transaction_opt_t *
+mongoc_session_opts_get_transaction_opts (
+   const mongoc_client_session_t *session)
+{
+   ENTRY;
+
+   BSON_ASSERT (session);
+
+   if (mongoc_client_session_in_transaction (session)) {
+      RETURN (mongoc_transaction_opts_clone (&session->txn.opts));
+   }
+
+   RETURN (NULL);
+}
 
 static void
 _mongoc_session_opts_copy (const mongoc_session_opt_t *src,

@@ -92,6 +92,10 @@ MONGOC_EXPORT (const mongoc_transaction_opt_t *)
 mongoc_session_opts_get_default_transaction_opts (
    const mongoc_session_opt_t *opts);
 
+MONGOC_EXPORT (mongoc_transaction_opt_t *)
+mongoc_session_opts_get_transaction_opts (
+   const mongoc_client_session_t *session);
+
 MONGOC_EXPORT (mongoc_session_opt_t *)
 mongoc_session_opts_clone (const mongoc_session_opt_t *opts);
 

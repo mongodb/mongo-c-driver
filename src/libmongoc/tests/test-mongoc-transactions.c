@@ -10,6 +10,8 @@
 #include "json-test-operations.h"
 #include "mongoc/mongoc-uri-private.h"
 #include "mongoc/mongoc-host-list-private.h"
+#include "mongoc/mongoc-read-concern-private.h"
+#include "mongoc/mongoc-write-concern-private.h"
 
 /* Reset server state by disabling failpoints, killing sessions, and... running
  * a distinct command. */
@@ -968,6 +970,90 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_get_transaction_opts (void)
+{
+   mongoc_uri_t *uri = NULL;
+   mongoc_client_t *client = NULL;
+   mongoc_client_session_t *session = NULL;
+   mongoc_transaction_opt_t *expected_txn_opts = NULL;
+   mongoc_transaction_opt_t *actual_txn_opts = NULL;
+   mongoc_session_opt_t *session_opts = NULL;
+   mongoc_read_concern_t *read_concern = NULL;
+   mongoc_write_concern_t *write_concern = NULL;
+   mongoc_read_prefs_t *read_prefs = NULL;
+   mock_server_t *server = NULL;
+   int64_t max_commit_time_ms = 123; /* arbitrary */
+   bson_error_t error;
+   bool r;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   rs_response_to_ismaster (server, 7, true /* primary */, false /* tags */);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   BSON_ASSERT (client);
+
+   read_concern = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (read_concern, "snapshot");
+
+   write_concern = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_MAJORITY);
+
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+
+   expected_txn_opts = mongoc_transaction_opts_new ();
+
+   mongoc_transaction_opts_set_read_concern (expected_txn_opts, read_concern);
+   mongoc_transaction_opts_set_write_concern (expected_txn_opts, write_concern);
+   mongoc_transaction_opts_set_read_prefs (expected_txn_opts, read_prefs);
+   mongoc_transaction_opts_set_max_commit_time_ms (expected_txn_opts,
+                                                   max_commit_time_ms);
+
+   session_opts = mongoc_session_opts_new ();
+   session = mongoc_client_start_session (client, session_opts, &error);
+   ASSERT_OR_PRINT (session, error);
+   /* outside of a txn this function should return NULL */
+   BSON_ASSERT (!mongoc_session_opts_get_transaction_opts (session));
+
+   r = mongoc_client_session_start_transaction (
+      session, expected_txn_opts, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   actual_txn_opts = mongoc_session_opts_get_transaction_opts (session);
+   BSON_ASSERT (actual_txn_opts);
+   BSON_ASSERT (
+      0 == bson_compare (
+              _mongoc_read_concern_get_bson (actual_txn_opts->read_concern),
+              _mongoc_read_concern_get_bson (expected_txn_opts->read_concern)));
+
+   BSON_ASSERT (0 == bson_compare (_mongoc_write_concern_get_bson (
+                                      actual_txn_opts->write_concern),
+                                   _mongoc_write_concern_get_bson (
+                                      expected_txn_opts->write_concern)));
+
+   BSON_ASSERT (mongoc_read_prefs_get_mode (actual_txn_opts->read_prefs) ==
+                mongoc_read_prefs_get_mode (expected_txn_opts->read_prefs));
+
+   BSON_ASSERT (actual_txn_opts->max_commit_time_ms ==
+                expected_txn_opts->max_commit_time_ms);
+
+   r = mongoc_client_session_abort_transaction (session, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (!mongoc_session_opts_get_transaction_opts (session));
+
+   mongoc_read_concern_destroy (read_concern);
+   mongoc_write_concern_destroy (write_concern);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_transaction_opts_destroy (expected_txn_opts);
+   mongoc_transaction_opts_destroy (actual_txn_opts);
+   mongoc_session_opts_destroy (session_opts);
+   mongoc_client_session_destroy (session);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
 void
 test_transactions_install (TestSuite *suite)
 {
@@ -1043,4 +1129,8 @@ test_transactions_install (TestSuite *suite)
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_not_mongos);
+   TestSuite_AddMockServerTest (suite,
+                                "/transactions/get_transaction_opts",
+                                test_get_transaction_opts,
+                                test_framework_skip_if_no_crypto);
 }
