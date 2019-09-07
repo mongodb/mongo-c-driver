@@ -11827,6 +11827,18 @@ buildvariants:
   - .latest .openssl !.nosasl .server
   - .latest .nossl
   - .4.2 .openssl !.nosasl .server
+- name: gcc83
+  display_name: GCC 8.3 (Debian 10.0)
+  expansions:
+    CC: gcc
+  run_on: debian10-test
+  tasks:
+  - release-compile
+  - debug-compile-nosasl-nossl
+  - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .nossl
+  - .latest .openssl !.nosasl .server
+  - .latest .nossl
 - name: gcc54-i386
   display_name: GCC 5.4 (i386) (Ubuntu 16.04)
   expansions:

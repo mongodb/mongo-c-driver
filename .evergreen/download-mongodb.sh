@@ -240,6 +240,17 @@ get_mongodb_download_url_for ()
              MONGODB_26=""
              MONGODB_24=""
       ;;
+      linux-debian-10*)
+         MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-debian10-latest.tgz"
+             MONGODB_42=""
+             MONGODB_40=""
+             MONGODB_36=""
+             MONGODB_34=""
+             MONGODB_32=""
+             MONGODB_30=""
+             MONGODB_26=""
+             MONGODB_24=""
+      ;;
       linux-ubuntu-18.04-s390x)
          MONGODB_LATEST=""
              MONGODB_42=""
