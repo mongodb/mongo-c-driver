@@ -11781,6 +11781,21 @@ buildvariants:
   - .3.4 .openssl !.nosasl .server
   - .3.2 .openssl !.nosasl .server
   - .3.0 .openssl !.nosasl !.auth
+- name: gcc82rhel
+  display_name: GCC 8.2 (RHEL 8.0)
+  expansions:
+    CC: gcc
+  run_on: rhel80-test
+  tasks:
+  - .hardened
+  - .compression !.snappy !.zstd
+  - release-compile
+  - debug-compile-nosasl-nossl
+  - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .nossl
+  - .authentication-tests .openssl
+  - .latest .openssl !.nosasl .server
+  - .latest .nossl
 - name: gcc48rhel
   display_name: GCC 4.8 (RHEL 7.0)
   expansions:
