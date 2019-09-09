@@ -28,7 +28,7 @@ Parameters
 ----------
 
 * ``session``: A :symbol:`mongoc_client_session_t`.
-* ``cb``: A :symbol:`mongoc_client_session_with_transaction_cb_t` callback, which will run inside of a new transaction on the session.
+* ``cb``: A :symbol:`mongoc_client_session_with_transaction_cb_t` callback, which will run inside of a new transaction on the session. See example below.
 * ``opts``: An optional :symbol:`mongoc_transaction_opt_t`.
 * ``ctx``: A ``void*``. This user-provided data will be passed to ``cb``.
 * ``reply``: An optional location to initialize a :symbol:`bson_t` or ``NULL``. This should be on the stack.
@@ -38,3 +38,10 @@ Return
 ------
 
 Returns ``true`` if the transaction was completed successfully.  Otherwise, returns ``false`` in case of failure.  In cases of failure ``error`` will also be set, except if the passed-in ``cb`` fails without setting ``error``.  If a non-NULL ``reply`` is passed in, ``reply`` will be set to the value of the last server response, except if the passed-in ``cb`` fails without setting a ``reply``.
+
+Example
+-------
+
+.. literalinclude:: ../examples/example-with-transaction-cb.c
+   :language: c
+   :caption: Use with_transaction() to run a callback within a transaction
