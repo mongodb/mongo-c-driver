@@ -989,7 +989,8 @@ test_get_transaction_opts (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   rs_response_to_ismaster (server, 7, true /* primary */, false /* tags */);
+   rs_response_to_ismaster (
+      server, 7, true /* primary */, false /* tags */, server, NULL);
 
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    BSON_ASSERT (client);
