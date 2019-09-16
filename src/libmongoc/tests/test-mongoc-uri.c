@@ -2129,7 +2129,8 @@ test_mongoc_uri_dns_options (void)
 
    /* test that URI string overrides TXT record options */
    mongoc_uri_destroy (uri);
-   uri = mongoc_uri_new ("mongodb+srv://a.b.c/?authSource=db1&replicaSet=rs1");
+   uri = mongoc_uri_new (
+      "mongodb+srv://user@a.b.c/?authSource=db1&replicaSet=rs1");
 
    capture_logs (true);
    /* parse_options returns true, but logs warnings */

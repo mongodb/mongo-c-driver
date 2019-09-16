@@ -349,6 +349,7 @@ mongoc_uri_parse_userpass (mongoc_uri_t *uri,
    const char *end_user;
 
    BSON_ASSERT (str);
+   BSON_ASSERT (uri);
 
    if ((uri->username = scan_to_unichar (str, ':', "", &end_user))) {
       uri->password = bson_strdup (end_user + 1);
@@ -1210,7 +1211,9 @@ mongoc_uri_finalize_tls (mongoc_uri_t *uri, bson_error_t *error)
 
 
 static bool
-mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
+mongoc_uri_finalize_auth (mongoc_uri_t *uri,
+                          bson_error_t *error,
+                          bool require_auth)
 {
    bson_iter_t iter;
    const char *source = NULL;
@@ -1218,10 +1221,11 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
    if (bson_iter_init_find_case (
           &iter, &uri->credentials, MONGOC_URI_AUTHSOURCE)) {
       source = bson_iter_utf8 (&iter, NULL);
+      require_auth = true;
    }
 
-   /* authSource with GSSAPI or X509 should always be external */
    if (mongoc_uri_get_auth_mechanism (uri)) {
+      /* authSource with GSSAPI or X509 should always be external */
       if (!strcasecmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI") ||
           !strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509")) {
          if (source) {
@@ -1258,6 +1262,33 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
                mongoc_uri_get_auth_mechanism (uri));
             return false;
          }
+      }
+      /* GSSAPI uses 'mongodb' as the default service name */
+      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "GSSAPI") == 0 &&
+          !(bson_iter_init_find (
+               &iter, &uri->credentials, MONGOC_URI_AUTHMECHANISMPROPERTIES) &&
+            BSON_ITER_HOLDS_DOCUMENT (&iter) &&
+            bson_iter_recurse (&iter, &iter) &&
+            bson_iter_find_case (&iter, "SERVICE_NAME"))) {
+         bson_t tmp;
+         bson_t *props = NULL;
+
+         props = mongoc_uri_get_mechanism_properties (uri, &tmp)
+                    ? bson_copy (&tmp)
+                    : bson_new ();
+
+         BSON_APPEND_UTF8 (props, "SERVICE_NAME", "mongodb");
+         mongoc_uri_set_mechanism_properties (uri, props);
+
+         bson_destroy (props);
+      }
+
+   } else if (require_auth) /* Default auth mechanism is used */ {
+      if (!mongoc_uri_get_username (uri) ||
+          strcmp (mongoc_uri_get_username (uri), "") == 0) {
+         MONGOC_URI_ERROR (
+            error, "%s", "Default authentication mechanism requires username");
+         return false;
       }
    }
    return true;
@@ -1314,6 +1345,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
    char *before_slash = NULL;
    const char *tmp;
+   bool require_auth = false;
 
    if (!bson_utf8_validate (str, strlen (str), false /* allow_null */)) {
       MONGOC_URI_ERROR (error, "%s", "Invalid UTF-8 in URI");
@@ -1369,7 +1401,8 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       goto error;
    }
 
-   if (!mongoc_uri_finalize_auth (uri, error)) {
+   require_auth = uri->username != NULL;
+   if (!mongoc_uri_finalize_auth (uri, error, require_auth)) {
       goto error;
    }
 

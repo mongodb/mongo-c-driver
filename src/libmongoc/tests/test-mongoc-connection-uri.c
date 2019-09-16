@@ -6,6 +6,58 @@
 #include "mongoc/mongoc-read-concern-private.h"
 
 
+/*
+ * Asserts every key-value pair in 'needle' is in 'haystack', including those in
+ * embedded documents.
+ */
+static void
+bson_contains_iter (const bson_t *haystack, bson_iter_t *needle)
+{
+   bson_iter_t iter;
+   uint32_t bson_type;
+
+   if (!bson_iter_next (needle)) {
+      return;
+   }
+
+   ASSERT (bson_iter_init_find_case (&iter, haystack, bson_iter_key (needle)));
+
+   bson_type = bson_iter_type (needle);
+   switch (bson_type) {
+   case BSON_TYPE_ARRAY:
+   case BSON_TYPE_DOCUMENT: {
+      bson_t sub_bson;
+      bson_iter_t sub_iter;
+
+      ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
+      bson_iter_bson (&iter, &sub_bson);
+
+      bson_iter_recurse (needle, &sub_iter);
+      bson_contains_iter (&sub_bson, &sub_iter);
+
+      bson_destroy (&sub_bson);
+      return;
+   }
+   case BSON_TYPE_BOOL:
+      ASSERT (bson_iter_as_bool (needle) == bson_iter_as_bool (&iter));
+      return bson_contains_iter (haystack, needle);
+   case BSON_TYPE_UTF8:
+      ASSERT (0 ==
+              strcmp (bson_iter_utf8 (needle, 0), bson_iter_utf8 (&iter, 0)));
+      return bson_contains_iter (haystack, needle);
+   case BSON_TYPE_DOUBLE:
+      ASSERT (bson_iter_double (needle) == bson_iter_double (&iter));
+      return bson_contains_iter (haystack, needle);
+   case BSON_TYPE_INT64:
+   case BSON_TYPE_INT32:
+      ASSERT (bson_iter_as_int64 (needle) == bson_iter_as_int64 (&iter));
+      return bson_contains_iter (haystack, needle);
+   default:
+      ASSERT (false);
+      return;
+   }
+}
+
 static void
 run_uri_test (const char *uri_string,
               bool valid,
@@ -23,7 +75,8 @@ run_uri_test (const char *uri_string,
    /* BEGIN Exceptions to test suite */
 
    /* some spec tests assume we allow DB names like "auth.foo" */
-   if (bson_iter_init_find (&auth_iter, auth, "db") &&
+   if ((bson_iter_init_find (&auth_iter, auth, "db") ||
+        bson_iter_init_find (&auth_iter, auth, "source")) &&
        BSON_ITER_HOLDS_UTF8 (&auth_iter)) {
       db = bson_iter_utf8 (&auth_iter, NULL);
       if (strchr (db, '.')) {
@@ -150,32 +203,59 @@ run_uri_test (const char *uri_string,
          ASSERT_CMPSTR (password, bson_iter_utf8 (&iter, NULL));
       }
 
-      if (bson_iter_init_find (&iter, auth, "db") &&
+      if ((bson_iter_init_find (&iter, auth, "db") ||
+           bson_iter_init_find (&iter, auth, "source")) &&
           BSON_ITER_HOLDS_UTF8 (&iter)) {
          ASSERT_CMPSTR (auth_source, bson_iter_utf8 (&iter, NULL));
       }
    }
+
    if (options) {
       const mongoc_read_concern_t *rc;
-      bson_t all = BSON_INITIALIZER;
+      bson_t uri_options = BSON_INITIALIZER;
+      bson_t test_options = BSON_INITIALIZER;
       bson_iter_t iter;
-      bson_iter_t key_iter;
 
-      bson_concat (&all, mongoc_uri_get_options (uri));
-      bson_concat (&all, mongoc_uri_get_credentials (uri));
+      bson_concat (&uri_options, mongoc_uri_get_options (uri));
+      bson_concat (&uri_options, mongoc_uri_get_credentials (uri));
+
       rc = mongoc_uri_get_read_concern (uri);
       if (!mongoc_read_concern_is_default (rc)) {
-         BSON_APPEND_UTF8 (
-            &all, "readconcernlevel", mongoc_read_concern_get_level (rc));
+         BSON_APPEND_UTF8 (&uri_options,
+                           "readconcernlevel",
+                           mongoc_read_concern_get_level (rc));
       }
 
-      for (bson_iter_init (&iter, options); bson_iter_next (&iter);) {
-         ASSERT (
-            bson_iter_init_find_case (&key_iter, &all, bson_iter_key (&iter)));
-         ASSERT_CMPSTR (bson_iter_utf8 (&key_iter, 0),
-                        bson_iter_utf8 (&iter, 0));
+      bson_copy_to_excluding_noinit (
+         options,
+         &test_options,
+         "username", /* these 'auth' params may be included in 'options' */
+         "password",
+         "source",
+         "mechanism", /* renamed to 'authmechanism' for consistency */
+         "mechanism_properties", /* renamed to 'authmechanismproperties' for
+                                  * consistency */
+         NULL);
+
+      if ((bson_iter_init_find (&iter, options, "mechanism") ||
+           bson_iter_init_find (&iter, options, "authmechanism")) &&
+          BSON_ITER_HOLDS_UTF8 (&iter)) {
+         BSON_APPEND_UTF8 (
+            &test_options, "authmechanism", bson_iter_utf8 (&iter, NULL));
       }
-      bson_destroy (&all);
+
+      if ((bson_iter_init_find (&iter, options, "mechanism_properties") ||
+           bson_iter_init_find (&iter, options, "authmechanismproperties")) &&
+          BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         ASSERT (bson_append_iter (
+            &test_options, "authmechanismproperties", -1, &iter));
+      }
+
+      bson_iter_init (&iter, &test_options);
+      bson_contains_iter (&uri_options, &iter);
+
+      bson_destroy (&test_options);
+      bson_destroy (&uri_options);
    }
 
    if (uri) {
@@ -229,9 +309,22 @@ test_connection_uri_cb (bson_t *scenario)
       }
 
       uri_string = bson_lookup_utf8 (&test_case, "uri");
-      bson_lookup_doc_null_ok (&test_case, "hosts", &hosts);
-      bson_lookup_doc_null_ok (&test_case, "auth", &auth);
-      bson_lookup_doc_null_ok (&test_case, "options", &options);
+      /* newer spec test replaces both "auth" and "options" with "credential"
+       */
+      if (bson_has_field (&test_case, "credential")) {
+         bson_lookup_doc_null_ok (&test_case, "credential", &auth);
+         bson_lookup_doc_null_ok (&test_case, "credential", &options);
+         bson_init (&hosts);
+      } else if (bson_has_field (&test_case, "auth")) {
+         bson_lookup_doc_null_ok (&test_case, "auth", &auth);
+         bson_lookup_doc_null_ok (&test_case, "options", &options);
+         bson_lookup_doc_null_ok (&test_case, "hosts", &hosts);
+      } else {
+         /* These are expected to be initialized */
+         bson_init (&hosts);
+         bson_init (&auth);
+         bson_init (&options);
+      }
 
       valid = _mongoc_lookup_bool (&test_case, "valid", true);
       capture_logs (true);
