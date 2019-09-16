@@ -14,7 +14,8 @@ Synopsis
      const char *db_name,
      const bson_t *command,
      const mongoc_read_prefs_t *read_prefs,
-     uint32_t server_id bson_t *reply,
+     uint32_t server_id,
+     bson_t *reply,
      bson_error_t *error);
 
 This function executes a command on a specific server, using the database and command specification provided.
