@@ -1018,3 +1018,60 @@ mongoc_cmd_is_compressible (mongoc_cmd_t *cmd)
           !!strcasecmp (cmd->command_name, "createuser") &&
           !!strcasecmp (cmd->command_name, "updateuser");
 }
+
+/*--------------------------------------------------------------------------
+ *
+ * _mongoc_cmd_append_payload_as_array --
+ *    Append a write command payload as an array in a BSON document.
+ *    Used by APM and Client-Side Encryption
+ *
+ * Arguments:
+ *    cmd The mongoc_cmd_t, which may contain a payload to be appended.
+ *    out A bson_t, which will be appended to if @cmd->payload is set.
+ *
+ * Pre-conditions:
+ *    - @out is initialized.
+ *    - cmd has a payload (i.e. is a write command).
+ *
+ * Post-conditions:
+ *    - If @cmd->payload is set, then @out is appended to with the payload
+ *      field's name ("documents" if insert, "updates" if update,
+ *      "deletes" if delete) an the payload as a BSON array.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+_mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
+{
+   int32_t doc_len;
+   bson_t doc;
+   const uint8_t *pos;
+   const char *field_name;
+   bson_t bson;
+   char str[16];
+   const char *key;
+   uint32_t i;
+
+   BSON_ASSERT (cmd->payload && cmd->payload_size);
+
+   /* make array from outgoing OP_MSG payload type 1 on an "insert",
+    * "update", or "delete" command. */
+   field_name = _mongoc_get_documents_field_name (cmd->command_name);
+   BSON_ASSERT (field_name);
+   BSON_ASSERT (BSON_APPEND_ARRAY_BEGIN (out, field_name, &bson));
+
+   pos = cmd->payload;
+   i = 0;
+   while (pos < cmd->payload + cmd->payload_size) {
+      memcpy (&doc_len, pos, sizeof (doc_len));
+      doc_len = BSON_UINT32_FROM_LE (doc_len);
+      BSON_ASSERT (bson_init_static (&doc, pos, (size_t) doc_len));
+      bson_uint32_to_string (i, &key, str, sizeof (str));
+      BSON_APPEND_DOCUMENT (&bson, key, &doc);
+
+      pos += doc_len;
+      i++;
+   }
+
+   bson_append_array_end (out, &bson);
+}

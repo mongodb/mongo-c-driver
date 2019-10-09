@@ -28,6 +28,7 @@
 #include "mongoc/mongoc-change-stream.h"
 #include "mongoc/mongoc-client.h"
 #include "mongoc/mongoc-client-pool.h"
+#include "mongoc/mongoc-client-side-encryption.h"
 #include "mongoc/mongoc-collection.h"
 #include "mongoc/mongoc-config.h"
 #include "mongoc/mongoc-cursor.h"

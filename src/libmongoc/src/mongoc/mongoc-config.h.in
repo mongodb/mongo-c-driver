@@ -372,11 +372,21 @@
 
 
 /*
+ * Set if we have Client Side Encryption support.
+ */
+
+#define MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION @MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION@
+
+#if MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION != 1
+#  undef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+#endif
+
+/*
  * NOTICE:
  * If you're about to update this file and add a config flag, make sure to
  * update:
  * o The bitfield in mongoc-handshake-private.h
- * o _get_config_bitfield() in mongoc-handshake.c
+ * o _mongoc_handshake_get_config_hex_string() in mongoc-handshake.c
  * o examples/parse_handshake_cfg.py
  * o test_handshake_config_string in test-mongoc-handshake.c
  */

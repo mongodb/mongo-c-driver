@@ -396,6 +396,35 @@ if (NOT ENABLE_ICU STREQUAL OFF)
    endif()
 endif()
 
+# Configure client side encryption.
+set (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION 0)
+if (NOT ENABLE_CLIENT_SIDE_ENCRYPTION MATCHES "AUTO|ON|OFF")
+   message (FATAL_ERROR, "ENABLE_CLIENT_SIDE_ENCRYPTION option must be AUTO, ON, or OFF")
+endif ()
+
+if (NOT MONGOC_ENABLE_SSL)
+   if (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL ON)
+      message (FATAL_ERROR "SSL disabled, but is required for Client-Side Field Level Encryption support.")
+   elseif (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL AUTO)
+      message (STATUS "SSL disabled. Configuring without Client-Side Field Level Encryption support.")
+   endif ()
+elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
+   message ("Searching for libmongocrypt")
+   find_package (mongocrypt)
+   if (mongocrypt_FOUND)
+      set (CLIENT_SIDE_ENCRYPTION_LIBRARIES mongo::mongocrypt)
+      get_target_property (LIBMONGOCRYPT_LOCATION mongo::mongocrypt LOCATION)
+      get_target_property (LIBMONGOCRYPT_INCLUDE_DIRECTORIES mongo::mongocrypt INTERFACE_INCLUDE_DIRECTORIES)
+      message ("--   libmongocrypt found at ${LIBMONGOCRYPT_LOCATION}")
+      message ("--   libmongocrypt include path ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES}")
+      set (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION 1)
+   elseif (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL ON)
+      message (FATAL_ERROR "Required library (libmongocrypt) not found.")
+   else ()
+      message (STATUS "libmongocrypt not found. Configuring without Client-Side Field Level Encryption support.")
+   endif ()
+endif ()
+
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
@@ -428,6 +457,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-change-stream.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-pool.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-side-encryption.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cluster-sasl.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-collection.c
@@ -507,6 +537,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-change-stream.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-pool.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-side-encryption.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-collection.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.h
@@ -633,11 +664,11 @@ endif ()
 
 set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${CLIENT_SIDE_ENCRYPTION_LIBRARIES}
 )
 set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${CLIENT_SIDE_ENCRYPTION_LIBRARIES}
 )
 
 if (WIN32)
@@ -772,6 +803,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-change-stream.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-pool.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-side-encryption.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find.c

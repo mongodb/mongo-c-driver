@@ -514,7 +514,7 @@ test_mongoc_platform_truncate (int drop)
     * dropped the flags correctly, instead of truncating anything
     */
    ASSERT_CMPUINT32 (doc.len, <, (uint32_t) HANDSHAKE_MAX_SIZE);
-   bson_iter_init_find (&iter, &doc, "platform");   
+   bson_iter_init_find (&iter, &doc, "platform");
    expected = bson_strdup_printf ("%s%s", big_string, undropped);
    ASSERT_CMPSTR (bson_iter_utf8 (&iter, NULL), expected);
 
@@ -775,6 +775,16 @@ test_handshake_platform_config ()
 #ifdef MONGOC_TRACE
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_TRACE));
 #endif
+
+#ifdef MONGOC_ENABLE_ICU
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_ICU));
+#endif
+
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+   BSON_ASSERT (
+      _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION));
+#endif
+
    /* any excess bits should all be zero. */
    for (i = LAST_MONGOC_MD_FLAG; i < total_bits; i++) {
       BSON_ASSERT (!_get_bit (config_str, i));

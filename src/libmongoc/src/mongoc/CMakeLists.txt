@@ -19,6 +19,7 @@ set (src_libmongoc_src_mongoc_DIST_hs
    mongoc-change-stream.h
    mongoc-client.h
    mongoc-client-pool.h
+   mongoc-client-side-encryption.h
    mongoc-collection.h
    mongoc-cursor.h
    mongoc-database.h
@@ -81,6 +82,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-change-stream-private.h
    mongoc-client-pool-private.h
    mongoc-client-private.h
+   mongoc-client-side-encryption-private.h
    mongoc-cluster-cyrus-private.h
    mongoc-cluster-private.h
    mongoc-cluster-sasl-private.h
@@ -171,6 +173,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-change-stream.c
    mongoc-client.c
    mongoc-client-pool.c
+   mongoc-client-side-encryption.c
    mongoc-cluster.c
    mongoc-collection.c
    mongoc-compression.c

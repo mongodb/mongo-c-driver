@@ -55,6 +55,7 @@ option (ENABLE_RDTSCP
 option (ENABLE_APPLE_FRAMEWORK "Build libraries as frameworks on darwin platforms" OFF) 
 set (ENABLE_ICU AUTO CACHE STRING "Enable ICU support, necessary to use non-ASCII usernames or passwords, default AUTO.")
 option (ENABLE_UNINSTALL "Enable creation of uninstall script and associated uninstall build target." ON)
+set (ENABLE_CLIENT_SIDE_ENCRYPTION AUTO CACHE STRING "Enable Client-Side Field Level Encryption support. Requires libmongocrypt. Set to ON/AUTO/OFF, default AUTO.")
 
 project (mongo-c-driver C)
 

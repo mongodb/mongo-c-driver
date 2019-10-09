@@ -17,3 +17,4 @@ Guides
    visual-studio-guide
    create-indexes
    debugging
+   using_client_side_encryption

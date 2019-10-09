@@ -222,6 +222,8 @@ extern void
 test_crud_install (TestSuite *suite);
 extern void
 test_apm_install (TestSuite *suite);
+extern void
+test_client_side_encryption_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2288,6 +2290,15 @@ test_framework_skip_if_no_failpoint (void)
    return 1;
 }
 
+int
+test_framework_skip_if_no_client_side_encryption (void)
+{
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+   return 1; /* proceed */
+#else
+   return 0; /* do not proceed. */
+#endif
+}
 
 void
 test_framework_resolve_path (const char *path, char *resolved)
@@ -2425,6 +2436,7 @@ main (int argc, char *argv[])
    test_counters_install (&suite);
    test_crud_install (&suite);
    test_apm_install (&suite);
+   test_client_side_encryption_install (&suite);
 
    ret = TestSuite_Run (&suite);
 

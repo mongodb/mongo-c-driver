@@ -136,6 +136,9 @@ bool
 _is_retryable_read (const mongoc_cmd_parts_t *parts,
                     const mongoc_server_stream_t *server_stream);
 
+void
+_mongoc_cmd_append_payload_as_array (const mongoc_cmd_t* cmd, bson_t *out);
+
 BSON_END_DECLS
 
 

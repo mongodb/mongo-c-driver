@@ -21,6 +21,7 @@
 
 #include "mongoc/mongoc-cluster-private.h"
 #include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-client-side-encryption-private.h"
 #include "mongoc/mongoc-counters-private.h"
 #include "mongoc/mongoc-config.h"
 #include "mongoc/mongoc-error.h"
@@ -549,6 +550,9 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    bson_error_t error_local;
    int32_t compressor_id;
    bson_iter_t iter;
+   bson_t encrypted = BSON_INITIALIZER;
+   bson_t decrypted = BSON_INITIALIZER;
+   mongoc_cmd_t encrypted_cmd;
 
    server_stream = cmd->server_stream;
    server_id = server_stream->sd->id;
@@ -560,6 +564,18 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    }
    if (!error) {
       error = &error_local;
+   }
+
+   if (cluster->client->cse_enabled) {
+      bson_destroy (&encrypted);
+
+      retval = _mongoc_cse_auto_encrypt (
+         cluster->client, cmd, &encrypted_cmd, &encrypted, error);
+      bson_init (reply);
+      cmd = &encrypted_cmd;
+      if (!retval) {
+         goto fail_no_events;
+      }
    }
 
    if (callbacks->started) {
@@ -576,6 +592,19 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       retval = mongoc_cluster_run_command_opquery (
          cluster, cmd, server_stream->stream, compressor_id, reply, error);
    }
+
+   if (cluster->client->cse_enabled) {
+      bson_destroy (&decrypted);
+      retval = _mongoc_cse_auto_decrypt (
+         cluster->client, cmd->db_name, reply, &decrypted, error);
+      bson_destroy (reply);
+      bson_steal (reply, &decrypted);
+      bson_init (&decrypted);
+      if (!retval) {
+         goto fail_no_events;
+      }
+   }
+
    if (retval && callbacks->succeeded) {
       bson_t fake_reply = BSON_INITIALIZER;
       /*
@@ -632,9 +661,13 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       }
    }
 
+fail_no_events:
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
    }
+
+   bson_destroy (&encrypted);
+   bson_destroy (&decrypted);
 
    _mongoc_topology_update_last_used (cluster->client->topology, server_id);
 
@@ -650,6 +683,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
  *       Internal function to run a command on a given stream.
  *       @error and @reply are optional out-pointers.
  *       The client's APM callbacks are not executed.
+ *       Automatic encryption/decryption is not performed.
  *
  * Returns:
  *       true if successful; otherwise false and @error is set.

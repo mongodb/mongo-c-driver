@@ -37,6 +37,10 @@
 #include "mongoc/mongoc-topology-private.h"
 #include "mongoc/mongoc-write-concern.h"
 
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+#include <mongocrypt/mongocrypt.h>
+#endif
+
 BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
@@ -69,6 +73,10 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_4_0 7
 /* version corresponding to server 4.2 release */
 #define WIRE_VERSION_4_2 8
+/* version corresponding to client side field level encryption support. */
+#define WIRE_VERSION_CSE 8
+
+struct _mongoc_collection_t;
 
 struct _mongoc_client_t {
    mongoc_uri_t *uri;
@@ -100,6 +108,16 @@ struct _mongoc_client_t {
    unsigned int csid_rand_seed;
 
    uint32_t generation;
+
+   /* Is client side encryption enabled? */
+   bool cse_enabled;
+
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+   mongocrypt_t *crypt;
+   mongoc_client_t *mongocryptd_client;
+   struct _mongoc_collection_t *key_vault_coll;
+   bool bypass_auto_encryption;
+#endif
 };
 
 /* Defines whether _mongoc_client_command_with_opts() is acting as a read
@@ -205,6 +223,11 @@ _mongoc_client_push_server_session (mongoc_client_t *client,
                                     mongoc_server_session_t *server_session);
 void
 _mongoc_client_end_sessions (mongoc_client_t *client);
+
+mongoc_stream_t *
+mongoc_client_connect_tcp (int32_t connecttimeoutms,
+                           const mongoc_host_list_t *host,
+                           bson_error_t *error);
 BSON_END_DECLS
 
 #endif /* MONGOC_CLIENT_PRIVATE_H */

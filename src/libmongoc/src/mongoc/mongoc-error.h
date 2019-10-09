@@ -48,6 +48,7 @@ typedef enum {
    MONGOC_ERROR_WRITE_CONCERN,
    MONGOC_ERROR_SERVER, /* Error API Version 2 only */
    MONGOC_ERROR_TRANSACTION,
+   MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, /* An error coming from libmongocrypt */
 } mongoc_error_domain_t;
 
 
@@ -117,7 +118,11 @@ typedef enum {
    MONGOC_ERROR_TRANSACTION_INVALID_STATE,
    MONGOC_ERROR_GRIDFS_CORRUPT,
    MONGOC_ERROR_GRIDFS_BUCKET_FILE_NOT_FOUND,
-   MONGOC_ERROR_GRIDFS_BUCKET_STREAM
+   MONGOC_ERROR_GRIDFS_BUCKET_STREAM,
+
+   /* An error related to initializing client side encryption. */
+   MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+   MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG
 } mongoc_error_code_t;
 
 MONGOC_EXPORT (bool)
