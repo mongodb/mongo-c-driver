@@ -408,8 +408,9 @@ _mongoc_get_rr_search (const char *service,
 #ifdef MONGOC_HAVE_RES_NSEARCH
    struct __res_state state = {0};
 #endif
-   int size;
-   unsigned char search_buf[1024];
+   int size = 0;
+   unsigned char *search_buf = NULL;
+   size_t buffer_size = 1024;
    ns_msg ns_answer;
    int n;
    int i;
@@ -436,21 +437,35 @@ _mongoc_get_rr_search (const char *service,
       callback = txt_callback;
    }
 
+   do {
+      if (search_buf) {
+         free (search_buf);
+
+         /* increase buffer size by the previous response size. This ensures
+          * that even if a subsequent response is larger, we'll still be able
+          * to fit it in the response buffer */
+         buffer_size = buffer_size + size;
+      }
+
+      search_buf = (unsigned char *) bson_malloc (buffer_size);
+      BSON_ASSERT (search_buf);
+
 #ifdef MONGOC_HAVE_RES_NSEARCH
-   /* thread-safe */
-   res_ninit (&state);
-   size = res_nsearch (
-      &state, service, ns_c_in, nst, search_buf, sizeof (search_buf));
+      /* thread-safe */
+      res_ninit (&state);
+      size =
+         res_nsearch (&state, service, ns_c_in, nst, search_buf, buffer_size);
 #elif defined(MONGOC_HAVE_RES_SEARCH)
-   size = res_search (service, ns_c_in, nst, search_buf, sizeof (search_buf));
+      size = res_search (service, ns_c_in, nst, search_buf, buffer_size);
 #endif
 
-   if (size < 0) {
-      DNS_ERROR ("Failed to look up %s record \"%s\": %s",
-                 rr_type_name,
-                 service,
-                 strerror (h_errno));
-   }
+      if (size < 0) {
+         DNS_ERROR ("Failed to look up %s record \"%s\": %s",
+                    rr_type_name,
+                    service,
+                    strerror (h_errno));
+      }
+   } while (size > buffer_size);
 
    if (ns_initparse (search_buf, size, &ns_answer)) {
       DNS_ERROR ("Invalid %s answer for \"%s\"", rr_type_name, service);
@@ -500,6 +515,8 @@ _mongoc_get_rr_search (const char *service,
    dns_success = true;
 
 done:
+
+   free (search_buf);
 
 #ifdef MONGOC_HAVE_RES_NDESTROY
    /* defined on BSD/Darwin, and only if MONGOC_HAVE_RES_NSEARCH is defined */
