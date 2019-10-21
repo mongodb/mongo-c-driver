@@ -46,4 +46,9 @@ _mongoc_cse_enable_auto_encryption (
    mongoc_auto_encryption_opts_t *opts /* may be NULL */,
    bson_error_t *error);
 
+bool
+_mongoc_fle_spawn_mongocryptd (const char *mongocryptd_spawn_path,
+                               const bson_iter_t *mongocryptd_spawn_args,
+                               bson_error_t *error);
+
 #endif /* MONGOC_CLIENT_SIDE_ENCRYPTION_PRIVATE_H */

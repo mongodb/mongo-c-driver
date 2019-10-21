@@ -19,6 +19,7 @@
 #ifndef MONGOC_TOPOLOGY_PRIVATE_H
 #define MONGOC_TOPOLOGY_PRIVATE_H
 
+#include "mongoc/mongoc-config.h"
 #include "mongoc/mongoc-topology-scanner-private.h"
 #include "mongoc/mongoc-server-description-private.h"
 #include "mongoc/mongoc-topology-description-private.h"
@@ -167,4 +168,7 @@ const bson_t *
 _mongoc_topology_get_ismaster (mongoc_topology_t *topology);
 void
 _mongoc_topology_request_scan (mongoc_topology_t *topology);
+
+void
+_mongoc_topology_bypass_cooldown (mongoc_topology_t *topology);
 #endif

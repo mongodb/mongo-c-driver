@@ -72,9 +72,11 @@ _mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_socket_setnonblock --
+ * _mongoc_socket_setflags --
  *
- *       A helper to set a socket in nonblocking mode.
+ *       A helper to set socket flags. Sets to nonblocking mode. On
+ *       POSIX sets closeonexec.
+ *
  *
  * Returns:
  *       true if successful; otherwise false.
@@ -87,9 +89,9 @@ _mongoc_socket_capture_errno (mongoc_socket_t *sock) /* IN */
 
 static bool
 #ifdef _WIN32
-_mongoc_socket_setnonblock (SOCKET sd)
+_mongoc_socket_setflags (SOCKET sd)
 #else
-_mongoc_socket_setnonblock (int sd)
+_mongoc_socket_setflags (int sd)
 #endif
 {
 #ifdef _WIN32
@@ -99,7 +101,13 @@ _mongoc_socket_setnonblock (int sd)
    int flags;
 
    flags = fcntl (sd, F_GETFL, sd);
+
+#ifdef FD_CLOEXEC
+   return (-1 != fcntl (sd, F_SETFL, (flags | O_NONBLOCK | FD_CLOEXEC)));
+#else
    return (-1 != fcntl (sd, F_SETFL, (flags | O_NONBLOCK)));
+#endif
+
 #endif
 }
 
@@ -702,7 +710,7 @@ again:
       RETURN (NULL);
    } else if (failed) {
       RETURN (NULL);
-   } else if (!_mongoc_socket_setnonblock (sd)) {
+   } else if (!_mongoc_socket_setflags (sd)) {
 #ifdef _WIN32
       closesocket (sd);
 #else
@@ -993,7 +1001,7 @@ mongoc_socket_new (int domain,   /* IN */
       RETURN (NULL);
    }
 
-   if (!_mongoc_socket_setnonblock (sd)) {
+   if (!_mongoc_socket_setflags (sd)) {
       GOTO (fail);
    }
 

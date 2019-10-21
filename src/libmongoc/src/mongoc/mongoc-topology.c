@@ -1636,3 +1636,10 @@ _mongoc_topology_get_ismaster (mongoc_topology_t *topology)
    bson_mutex_unlock (&topology->mutex);
    return cmd;
 }
+
+void
+_mongoc_topology_bypass_cooldown (mongoc_topology_t *topology)
+{
+   BSON_ASSERT (topology->single_threaded);
+   topology->scanner->bypass_cooldown = true;
+}

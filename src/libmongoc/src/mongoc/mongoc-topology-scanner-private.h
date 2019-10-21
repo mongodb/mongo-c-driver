@@ -107,6 +107,7 @@ typedef struct mongoc_topology_scanner {
    int64_t dns_cache_timeout_ms;
    /* only used by single-threaded clients to negotiate auth mechanisms. */
    bool negotiate_sasl_supported_mechs;
+   bool bypass_cooldown;
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *

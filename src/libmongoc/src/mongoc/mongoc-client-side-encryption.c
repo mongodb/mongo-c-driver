@@ -942,6 +942,44 @@ fail:
    RETURN (ret);
 }
 
+static void
+_log_callback (mongocrypt_log_level_t mongocrypt_log_level,
+               const char *message,
+               uint32_t message_len,
+               void *ctx)
+{
+   mongoc_log_level_t log_level = MONGOC_LOG_LEVEL_ERROR;
+
+   switch (mongocrypt_log_level) {
+   case MONGOCRYPT_LOG_LEVEL_FATAL:
+      log_level = MONGOC_LOG_LEVEL_CRITICAL;
+      break;
+   case MONGOCRYPT_LOG_LEVEL_ERROR:
+      log_level = MONGOC_LOG_LEVEL_ERROR;
+      break;
+   case MONGOCRYPT_LOG_LEVEL_WARNING:
+      log_level = MONGOC_LOG_LEVEL_WARNING;
+      break;
+   case MONGOCRYPT_LOG_LEVEL_INFO:
+      log_level = MONGOC_LOG_LEVEL_INFO;
+      break;
+   case MONGOCRYPT_LOG_LEVEL_TRACE:
+      log_level = MONGOC_LOG_LEVEL_TRACE;
+      break;
+   }
+
+   mongoc_log (log_level, MONGOC_LOG_DOMAIN, "%s", message, NULL);
+}
+
+static void
+_uri_construction_error (bson_error_t *error)
+{
+   bson_set_error (error,
+                   MONGOC_ERROR_CLIENT,
+                   MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                   "Error constructing URI to mongocryptd");
+}
+
 bool
 _mongoc_cse_enable_auto_encryption (mongoc_client_t *client,
                                     mongoc_auto_encryption_opts_t *opts,
@@ -954,6 +992,17 @@ _mongoc_cse_enable_auto_encryption (mongoc_client_t *client,
    mongoc_uri_t *mongocryptd_uri = NULL;
 
    ENTRY;
+
+
+   if (!client->topology->single_threaded) {
+      bson_set_error (
+         error,
+         MONGOC_ERROR_CLIENT,
+         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+         "Automatic encryption on pooled clients must be set on the pool");
+      goto fail;
+   }
+
    if (client->cse_enabled) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
@@ -990,6 +1039,102 @@ _mongoc_cse_enable_auto_encryption (mongoc_client_t *client,
    client->cse_enabled = true;
    client->bypass_auto_encryption = opts->bypass_auto_encryption;
 
+   if (!client->bypass_auto_encryption) {
+      /* Spawn mongocryptd if needed, and create a client to it. */
+      bool mongocryptd_bypass_spawn = false;
+      const char *mongocryptd_spawn_path = NULL;
+      bson_iter_t mongocryptd_spawn_args;
+      bool has_spawn_args = false;
+
+      if (opts->extra) {
+         if (bson_iter_init_find (
+                &iter, opts->extra, "mongocryptdBypassSpawn") &&
+             bson_iter_as_bool (&iter)) {
+            mongocryptd_bypass_spawn = true;
+         }
+         if (bson_iter_init_find (&iter, opts->extra, "mongocryptdSpawnPath") &&
+             BSON_ITER_HOLDS_UTF8 (&iter)) {
+            mongocryptd_spawn_path = bson_iter_utf8 (&iter, NULL);
+         }
+         if (bson_iter_init_find (&iter, opts->extra, "mongocryptdSpawnArgs") &&
+             BSON_ITER_HOLDS_ARRAY (&iter)) {
+            memcpy (&mongocryptd_spawn_args, &iter, sizeof (bson_iter_t));
+            has_spawn_args = true;
+         }
+
+         if (bson_iter_init_find (&iter, opts->extra, "mongocryptdURI")) {
+            if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+               bson_set_error (error,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                               "Expected string for option 'mongocryptdURI'");
+               goto fail;
+            }
+            mongocryptd_uri =
+               mongoc_uri_new_with_error (bson_iter_utf8 (&iter, NULL), error);
+            if (!mongocryptd_uri) {
+               goto fail;
+            }
+         }
+      }
+
+      if (!mongocryptd_bypass_spawn) {
+         if (!_mongoc_fle_spawn_mongocryptd (
+                mongocryptd_spawn_path,
+                has_spawn_args ? &mongocryptd_spawn_args : NULL,
+                error)) {
+            goto fail;
+         }
+      }
+
+      if (!mongocryptd_uri) {
+         /* Always default to connecting to TCP, despite spec v1.0.0. Because
+          * starting mongocryptd when one is running removes the domain socket
+          * file per SERVER-41029. Connecting over TCP is more reliable.
+          */
+         mongocryptd_uri =
+            mongoc_uri_new_with_error ("mongodb://localhost:27020", error);
+
+         if (!mongocryptd_uri) {
+            goto fail;
+         }
+
+         if (!mongoc_uri_set_option_as_int32 (
+                mongocryptd_uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 5000)) {
+            _uri_construction_error (error);
+            goto fail;
+         }
+      }
+
+      /* By default, single threaded clients set serverSelectionTryOnce to
+       * true, which means server selection fails if a topology scan fails
+       * the first time (i.e. it will not make repeat attempts until
+       * serverSelectionTimeoutMS expires). Override this, since the first
+       * attempt to connect to mongocryptd may fail when spawning, as it
+       * takes some time for mongocryptd to listen on sockets. */
+      if (!mongoc_uri_set_option_as_bool (
+             mongocryptd_uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false)) {
+         _uri_construction_error (error);
+         goto fail;
+      }
+
+      client->mongocryptd_client = mongoc_client_new_from_uri (mongocryptd_uri);
+
+      if (!client->mongocryptd_client) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "Unable to create client to mongocryptd");
+         goto fail;
+      }
+      /* Similarly, single threaded clients will by default wait for 5 second
+       * cooldown period after failing to connect to a server before making
+       * another attempt. Meaning if the first attempt to mongocryptd fails
+       * to connect, then the user observes a 5 second delay. This is not
+       * configurable in the URI, so override. */
+      _mongoc_topology_bypass_cooldown (client->mongocryptd_client->topology);
+   }
+
    /* Get the key vault collection. */
    if (opts->key_vault_client) {
       client->key_vault_coll = mongoc_client_get_collection (
@@ -1001,6 +1146,9 @@ _mongoc_cse_enable_auto_encryption (mongoc_client_t *client,
 
    /* Create the handle to libmongocrypt. */
    client->crypt = mongocrypt_new ();
+
+   mongocrypt_setopt_log_handler (
+      client->crypt, _log_callback, NULL /* context */);
 
    /* Take options from the kms_providers map. */
    if (bson_iter_init_find (&iter, opts->kms_providers, "aws")) {
@@ -1083,48 +1231,6 @@ _mongoc_cse_enable_auto_encryption (mongoc_client_t *client,
       goto fail;
    }
 
-   /* Spawn mongocryptd (if applicable) and create a client to it. */
-   if (opts->extra) {
-      bson_iter_t subiter;
-
-      if (bson_iter_init_find (&subiter, opts->extra, "mongocryptdURI")) {
-         if (!BSON_ITER_HOLDS_UTF8 (&subiter)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_CLIENT,
-                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                            "Expected string for option 'mongocryptdURI'");
-            goto fail;
-         }
-         mongocryptd_uri =
-            mongoc_uri_new_with_error (bson_iter_utf8 (&subiter, NULL), error);
-         if (!mongocryptd_uri) {
-            goto fail;
-         }
-      }
-
-      /* TODO: parse spawning options and spawn mongocryptd */
-   }
-
-   if (!mongocryptd_uri) {
-      /* Always default to connecting to TCP, despite spec v1.0.0. Because
-       * starting mongocryptd when one is running removes the domain socket file
-       * per SERVER-41029. Connecting over TCP is more reliable. */
-      mongocryptd_uri = mongoc_uri_new_with_error (
-         "mongodb://localhost:27020/?serverSelectionTimeoutMS=1000", error);
-      if (!mongocryptd_uri) {
-         goto fail;
-      }
-   }
-
-   client->mongocryptd_client = mongoc_client_new_from_uri (mongocryptd_uri);
-   if (!client->mongocryptd_client) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
-                      "Unable to create client to mongocryptd");
-      goto fail;
-   }
-
    ret = true;
 fail:
    mongocrypt_binary_destroy (local_masterkey_bin);
@@ -1133,5 +1239,300 @@ fail:
    RETURN (ret);
 }
 
+#ifdef _WIN32
+static bool
+_do_spawn (const char *path, char **args, bson_error_t *error)
+{
+   bson_string_t *command;
+   char **arg;
+   PROCESS_INFORMATION process_information;
+   STARTUPINFO startup_info;
+
+   /* Construct the full command, quote path and arguments. */
+   command = bson_string_new ("");
+   bson_string_append (command, "\"");
+   if (path) {
+      bson_string_append (command, path);
+   }
+   bson_string_append (command, "mongocryptd.exe");
+   bson_string_append (command, "\"");
+   /* skip the "mongocryptd" first arg. */
+   arg = args + 1;
+   while (*arg) {
+      bson_string_append (command, " \"");
+      bson_string_append (command, *arg);
+      bson_string_append (command, "\"");
+      arg++;
+   }
+
+   ZeroMemory (&process_information, sizeof (process_information));
+   ZeroMemory (&startup_info, sizeof (startup_info));
+
+   startup_info.cb = sizeof (startup_info);
+
+   if (!CreateProcessA (NULL,
+                        command->str,
+                        NULL,
+                        NULL,
+                        false /* inherit descriptors */,
+                        DETACHED_PROCESS /* FLAGS */,
+                        NULL /* environment */,
+                        NULL /* current directory */,
+                        &startup_info,
+                        &process_information)) {
+      long lastError = GetLastError ();
+      LPSTR message = NULL;
+
+      FormatMessageA (
+         FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_ARGUMENT_ARRAY |
+            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+         NULL,
+         lastError,
+         0,
+         (LPSTR) &message,
+         0,
+         NULL);
+
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                      "failed to spawn mongocryptd: %s",
+                      message);
+      LocalFree (message);
+      bson_string_free (command, true);
+      return false;
+   }
+
+   bson_string_free (command, true);
+   return true;
+}
+#else
+
+/*--------------------------------------------------------------------------
+ *
+ * _do_spawn --
+ *
+ *   Spawn process defined by arg[0] on POSIX systems.
+ *
+ *   Note, if mongocryptd fails to spawn (due to not being found on the path),
+ *   an error is not reported and true is returned. Users will get an error
+ *   later, upon first attempt to use mongocryptd.
+ *
+ *   These comments refer to three distinct processes: parent, child, and
+ *   mongocryptd.
+ *   - parent is initial calling process
+ *   - child is the first forked child. It fork-execs mongocryptd then
+ *     terminates. This makes mongocryptd an orphan, making it immediately
+ *     adopted by the init process.
+ *   - mongocryptd is the final background daemon (grandchild process).
+ *
+ * Return:
+ *   False if an error definitely occurred. Returns true if no reportable
+ *   error occurred (though an error may have occurred in starting
+ *   mongocryptd, resulting in the process not running).
+ *
+ * Arguments:
+ *    args - A NULL terminated list of arguments. The first argument MUST
+ *    be the name of the process to execute, and the last argument MUST be
+ *    NULL.
+ *
+ * Post-conditions:
+ *    If return false, @error is set.
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+_do_spawn (const char *path, char **args, bson_error_t *error)
+{
+   pid_t pid;
+   int fd;
+   char *to_exec;
+
+   /* Fork. The child will terminate immediately (after fork-exec'ing
+    * mongocryptd). This orphans mongocryptd, and allows parent to wait on
+    * child. */
+   pid = fork ();
+   if (pid < 0) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                      "failed to fork (errno=%d) '%s'",
+                      errno,
+                      strerror (errno));
+      return false;
+   } else if (pid > 0) {
+      int child_status;
+
+      /* Child will spawn mongocryptd and immediately terminate to turn
+       * mongocryptd into an orphan. */
+      if (waitpid (pid, &child_status, 0 /* options */) < 0) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
+                         "failed to wait for child (errno=%d) '%s'",
+                         errno,
+                         strerror (errno));
+         return false;
+      }
+      /* parent is done at this point, return. */
+      return true;
+   }
+
+   /* We're no longer in the parent process. Errors encountered result in an
+    * exit.
+    * Note, we're not logging here, because that would require the user's log
+    * callback to be fork-safe.
+    */
+
+   /* Start a new session for the child, so it is not bound to the current
+    * session (e.g. terminal session). */
+   if (setsid () < 0) {
+      exit (EXIT_FAILURE);
+   }
+
+   /* Fork again. Child terminates so mongocryptd gets orphaned and immedately
+    * adopted by init. */
+   signal (SIGHUP, SIG_IGN);
+   pid = fork ();
+   if (pid < 0) {
+      exit (EXIT_FAILURE);
+   } else if (pid > 0) {
+      /* Child terminates immediately. */
+      exit (EXIT_SUCCESS);
+   }
+
+   /* TODO: Depending on the outcome of MONGOCRYPT-115, possibly change the
+    * process's working directory with chdir like: `chdir (default_pid_path)`.
+    * Currently pid file ends up in application's working directory. */
+
+   /* Set the user file creation mask to zero. */
+   umask (0);
+
+   /* Close and reopen stdin. */
+   fd = open ("/dev/null", O_RDONLY);
+   if (fd < 0) {
+      exit (EXIT_FAILURE);
+   }
+   dup2 (fd, STDIN_FILENO);
+   close (fd);
+
+   /* Close and reopen stdout. */
+   fd = open ("/dev/null", O_WRONLY);
+   if (fd < 0) {
+      exit (EXIT_FAILURE);
+   }
+   if (dup2 (fd, STDOUT_FILENO) < 0 || close (fd) < 0) {
+      exit (EXIT_FAILURE);
+   }
+
+   /* Close and reopen stderr. */
+   fd = open ("/dev/null", O_RDWR);
+   if (fd < 0) {
+      exit (EXIT_FAILURE);
+   }
+   if (dup2 (fd, STDERR_FILENO) < 0 || close (fd) < 0) {
+      exit (EXIT_FAILURE);
+   }
+   fd = 0;
+
+   if (path) {
+      to_exec = bson_strdup_printf ("%s%s", path, args[0]);
+   } else {
+      to_exec = bson_strdup (args[0]);
+   }
+   if (execvp (to_exec, args) < 0) {
+      /* Need to exit. */
+      exit (EXIT_FAILURE);
+   }
+
+   /* Will never execute. */
+   return false;
+}
+#endif
+
+/*--------------------------------------------------------------------------
+ *
+ * _mongoc_fle_spawn_mongocryptd --
+ *
+ *   Attempt to spawn mongocryptd as a background process.
+ *
+ * Return:
+ *   False if an error definitely occurred. Returns true if no reportable
+ *   error occurred (though an error may have occurred in starting
+ *   mongocryptd, resulting in the process not running).
+ *
+ * Arguments:
+ *    mongocryptd_spawn_path May be NULL, otherwise the path to mongocryptd.
+ *    mongocryptd_spawn_args May be NULL, otherwise a bson_iter_t to the
+ *    value "mongocryptdSpawnArgs" in AutoEncryptionOpts.extraOptions
+ *    (see spec).
+ *
+ * Post-conditions:
+ *    If return false, @error is set.
+ *
+ *--------------------------------------------------------------------------
+ */
+bool
+_mongoc_fle_spawn_mongocryptd (const char *mongocryptd_spawn_path,
+                               const bson_iter_t *mongocryptd_spawn_args,
+                               bson_error_t *error)
+{
+   char **args = NULL;
+   bson_iter_t iter;
+   bool passed_idle_shutdown_timeout_secs = false;
+   int num_args = 2; /* for leading "mongocrypt" and trailing NULL */
+   int i;
+
+   /* iterate once to get length and validate all are strings */
+   if (mongocryptd_spawn_args) {
+      BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (mongocryptd_spawn_args));
+      bson_iter_recurse (mongocryptd_spawn_args, &iter);
+      while (bson_iter_next (&iter)) {
+         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                            "invalid argument for mongocryptd, must be string");
+            return false;
+         }
+         /* Check if the arg starts with --idleShutdownTimeoutSecs= or is equal
+          * to --idleShutdownTimeoutSecs */
+         if (0 == strncmp ("--idleShutdownTimeoutSecs=",
+                           bson_iter_utf8 (&iter, NULL),
+                           26) ||
+             0 == strcmp ("--idleShutdownTimeoutSecs",
+                          bson_iter_utf8 (&iter, NULL))) {
+            passed_idle_shutdown_timeout_secs = true;
+         }
+         num_args++;
+      }
+   }
+
+   if (!passed_idle_shutdown_timeout_secs) {
+      /* add one more */
+      num_args++;
+   }
+
+   args = (char **) bson_malloc (sizeof (char *) * num_args);
+   i = 0;
+   args[i++] = "mongocryptd";
+
+   if (mongocryptd_spawn_args) {
+      BSON_ASSERT (BSON_ITER_HOLDS_ARRAY (mongocryptd_spawn_args));
+      bson_iter_recurse (mongocryptd_spawn_args, &iter);
+      while (bson_iter_next (&iter)) {
+         args[i++] = (char *) bson_iter_utf8 (&iter, NULL);
+      }
+   }
+
+   if (!passed_idle_shutdown_timeout_secs) {
+      args[i++] = "--idleShutdownTimeoutSecs=60";
+   }
+
+   BSON_ASSERT (i == num_args - 1);
+   args[i++] = NULL;
+
+   return _do_spawn (mongocryptd_spawn_path, args, error);
+}
 
 #endif /* MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION */
