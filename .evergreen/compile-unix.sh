@@ -157,9 +157,6 @@ esac
 case "$OS" in
    darwin)
       CFLAGS="$CFLAGS -Wno-unknown-pragmas"
-      # TODO CDRIVER-3354 do not explicitly set -DENABLE_ZSTD=OFF
-      # once macOS evergreen hosts have consistent zstd installation.
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_ZSTD=OFF"
       # llvm-cov is installed from brew
       export PATH=$PATH:/usr/local/opt/llvm/bin
    ;;
