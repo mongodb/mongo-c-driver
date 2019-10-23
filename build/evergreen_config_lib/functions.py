@@ -32,7 +32,7 @@ all_functions = OD([
             ]))]),
         shell_mongoc(r'''
         if [ "${is_patch}" = "true" ]; then
-           VERSION=$(git describe --abbrev=7)-patch-${version_id}
+           VERSION=$(git describe --abbrev=7 --match='1.*')-patch-${version_id}
         else
            VERSION=latest
         fi
