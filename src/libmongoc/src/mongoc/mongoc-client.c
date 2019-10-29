@@ -2974,8 +2974,6 @@ mongoc_client_reset (mongoc_client_t *client)
 
    /* Server sessions are owned by us, so we clear the pool on reset. */
    _mongoc_topology_clear_session_pool (client->topology);
-
-   mongoc_cluster_disconnect (&(client->cluster));
 }
 
 mongoc_change_stream_t *

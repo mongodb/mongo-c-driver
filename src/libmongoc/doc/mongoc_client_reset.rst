@@ -11,9 +11,9 @@ Synopsis
   void
   mongoc_client_reset (mongoc_client_t *client);
 
-Causes the client to clear its session pool without sending endSessions, and to close all its connections. Call this method in the child after forking.
+Call this method in the child after forking.
 
-This method increments an internal generation counter on the given client. After this method is called, cursors from previous generations will not issue a killCursors command when they are destroyed.
+This method causes the client to clear its session pool without sending endSessions. It also increments an internal generation counter on the given client. After this method is called, cursors from previous generations will not issue a killCursors command when they are destroyed. Client sessions from previous generations cannot be used and should be destroyed.
 
 Parameters
 ----------

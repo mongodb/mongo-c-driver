@@ -3574,15 +3574,19 @@ test_client_reset_cursors (void)
 }
 
 static bool
-mongoc_topology_scanner_is_disconnected (mongoc_topology_scanner_t *scanner)
+mongoc_topology_scanner_is_connected (mongoc_topology_scanner_t *scanner)
 {
    mongoc_topology_scanner_node_t *node;
 
    BSON_ASSERT (scanner);
    node = scanner->nodes;
 
+   if (!node) {
+      return false;
+   }
+
    while (node) {
-      if (node->stream) {
+      if (!node->stream) {
          return false;
       }
 
@@ -3607,7 +3611,7 @@ test_client_reset_connections (void)
    autoresponder_id = mock_server_auto_ismaster (server, "{ 'isMaster': 1.0 }");
    mock_server_run (server);
 
-   /* After calling reset, check that connections have been closed. Set
+   /* After calling reset, check that connections are left as-is. Set
       heartbeat frequency high, so a background scan won't interfere. */
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
@@ -3624,9 +3628,12 @@ test_client_reset_connections (void)
    ASSERT (future_get_bool (future));
 
    mock_server_remove_autoresponder (server, autoresponder_id);
+
+   ASSERT (mongoc_topology_scanner_is_connected (client->topology->scanner));
+
    mongoc_client_reset (client);
 
-   ASSERT (mongoc_topology_scanner_is_disconnected (client->topology->scanner));
+   ASSERT (mongoc_topology_scanner_is_connected (client->topology->scanner));
 
    request_destroy (request);
    future_destroy (future);
