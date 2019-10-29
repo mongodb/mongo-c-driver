@@ -3893,7 +3893,6 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Client/client_reset/sessions",
                                 test_client_reset_sessions,
-                                test_framework_skip_if_no_sessions,
                                 test_framework_skip_if_no_crypto);
 
    TestSuite_AddMockServerTest (
