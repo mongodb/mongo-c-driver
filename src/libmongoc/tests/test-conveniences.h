@@ -65,6 +65,9 @@ bson_lookup_doc (const bson_t *b, const char *key, bson_t *doc);
 void
 bson_lookup_doc_null_ok (const bson_t *b, const char *key, bson_t *doc);
 
+bool
+bson_lookup_bool (const bson_t *b, const char *key);
+
 int32_t
 bson_lookup_int32 (const bson_t *b, const char *key);
 

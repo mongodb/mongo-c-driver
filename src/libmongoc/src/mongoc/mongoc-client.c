@@ -1654,6 +1654,11 @@ retry:
       mongoc_server_stream_cleanup (retry_server_stream);
    }
 
+   if (ret && error) {
+      /* if a retry succeeded, clear the initial error */
+      memset (error, 0, sizeof (bson_error_t));
+   }
+
    RETURN (ret);
 }
 
@@ -1717,6 +1722,11 @@ retry:
 
    if (retry_server_stream) {
       mongoc_server_stream_cleanup (retry_server_stream);
+   }
+
+   if (ret && error) {
+      /* if a retry succeeded, clear the initial error */
+      memset (error, 0, sizeof (bson_error_t));
    }
 
    RETURN (ret);

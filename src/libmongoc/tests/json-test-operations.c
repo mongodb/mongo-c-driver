@@ -17,6 +17,7 @@
 
 #include "bson/bson.h"
 
+#include "mongoc/mongoc-change-stream-private.h"
 #include "mongoc/mongoc-collection-private.h"
 #include "mongoc/mongoc-config.h"
 #include "mongoc/mongoc-cursor-private.h"
@@ -24,9 +25,8 @@
 #include "mongoc/mongoc-server-description-private.h"
 #include "mongoc/mongoc-topology-description-private.h"
 #include "mongoc/mongoc-topology-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-util-private.h"
 #include "mongoc/mongoc-uri-private.h"
+#include "mongoc/mongoc-util-private.h"
 
 #include "json-test-operations.h"
 #include "json-test.h"
@@ -1759,6 +1759,13 @@ gridfs_download (mongoc_database_t *db,
    return true;
 }
 
+static bool
+op_error (const bson_t *operation)
+{
+   return bson_has_field (operation, "error") &&
+          bson_lookup_bool (operation, "error");
+}
+
 bool
 json_test_operation (json_test_ctx_t *ctx,
                      const bson_t *test,
@@ -1844,6 +1851,13 @@ json_test_operation (json_test_ctx_t *ctx,
          bson_t pipeline = BSON_INITIALIZER;
          mongoc_change_stream_destroy (ctx->change_stream);
          ctx->change_stream = mongoc_collection_watch (c, &pipeline, NULL);
+         res = (op_error (operation) == (bool) ctx->change_stream->err.code);
+         if (!res) {
+            test_error ("expected error=%s, but actual error='%s'",
+                        op_error (operation) ? "true" : "false",
+                        ctx->change_stream->err.message);
+         }
+
          bson_init (reply);
          bson_destroy (&pipeline);
       } else if (!strcmp (op_name, "mapReduce") ||
@@ -1865,6 +1879,13 @@ json_test_operation (json_test_ctx_t *ctx,
          bson_t pipeline = BSON_INITIALIZER;
          mongoc_change_stream_destroy (ctx->change_stream);
          ctx->change_stream = mongoc_database_watch (db, &pipeline, NULL);
+         res = (op_error (operation) == (bool) ctx->change_stream->err.code);
+         if (!res) {
+            test_error ("expected error=%s, but actual error='%s'",
+                        op_error (operation) ? "true" : "false",
+                        ctx->change_stream->err.message);
+         }
+
          bson_init (reply);
          bson_destroy (&pipeline);
       } else if (!strcmp (op_name, "listCollectionObjects")) {
@@ -1912,6 +1933,13 @@ json_test_operation (json_test_ctx_t *ctx,
          bson_t pipeline = BSON_INITIALIZER;
          mongoc_change_stream_destroy (ctx->change_stream);
          ctx->change_stream = mongoc_client_watch (c->client, &pipeline, NULL);
+         res = (op_error (operation) == (bool) ctx->change_stream->err.code);
+         if (!res) {
+            test_error ("expected error=%s, but actual error='%s'",
+                        op_error (operation) ? "true" : "false",
+                        ctx->change_stream->err.message);
+         }
+
          bson_init (reply);
          bson_destroy (&pipeline);
       } else if (!strcmp (op_name, "listDatabaseObjects")) {
