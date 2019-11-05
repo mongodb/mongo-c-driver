@@ -1851,7 +1851,7 @@ json_test_operation (json_test_ctx_t *ctx,
          bson_t pipeline = BSON_INITIALIZER;
          mongoc_change_stream_destroy (ctx->change_stream);
          ctx->change_stream = mongoc_collection_watch (c, &pipeline, NULL);
-         res = (op_error (operation) == (bool) ctx->change_stream->err.code);
+         res = (op_error (operation) == (0 != ctx->change_stream->err.code));
          if (!res) {
             test_error ("expected error=%s, but actual error='%s'",
                         op_error (operation) ? "true" : "false",
@@ -1879,7 +1879,7 @@ json_test_operation (json_test_ctx_t *ctx,
          bson_t pipeline = BSON_INITIALIZER;
          mongoc_change_stream_destroy (ctx->change_stream);
          ctx->change_stream = mongoc_database_watch (db, &pipeline, NULL);
-         res = (op_error (operation) == (bool) ctx->change_stream->err.code);
+         res = (op_error (operation) == (0 != ctx->change_stream->err.code));
          if (!res) {
             test_error ("expected error=%s, but actual error='%s'",
                         op_error (operation) ? "true" : "false",
@@ -1933,7 +1933,7 @@ json_test_operation (json_test_ctx_t *ctx,
          bson_t pipeline = BSON_INITIALIZER;
          mongoc_change_stream_destroy (ctx->change_stream);
          ctx->change_stream = mongoc_client_watch (c->client, &pipeline, NULL);
-         res = (op_error (operation) == (bool) ctx->change_stream->err.code);
+         res = (op_error (operation) == (0 != ctx->change_stream->err.code));
          if (!res) {
             test_error ("expected error=%s, but actual error='%s'",
                         op_error (operation) ? "true" : "false",
