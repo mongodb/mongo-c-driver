@@ -198,8 +198,7 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
                                    const bson_t *document,          /* IN */
                                    const bson_t *cmd_opts,          /* IN */
                                    mongoc_bulk_write_flags_t flags, /* IN */
-                                   int64_t operation_id,            /* IN */
-                                   bool allow_bulk_op_insert)       /* IN */
+                                   int64_t operation_id)            /* IN */
 {
    ENTRY;
 
@@ -208,7 +207,6 @@ _mongoc_write_command_init_insert (mongoc_write_command_t *command, /* IN */
    _mongoc_write_command_init_bulk (
       command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
 
-   command->u.insert.allow_bulk_op_insert = (uint8_t) allow_bulk_op_insert;
    /* must handle NULL document from mongoc_collection_insert_bulk */
    if (document) {
       _mongoc_write_command_insert_append (command, document);
@@ -222,8 +220,7 @@ void
 _mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
                                        const bson_t *document,
                                        const bson_t *cmd_opts,
-                                       int64_t operation_id,
-                                       bool allow_bulk_op_insert)
+                                       int64_t operation_id)
 {
    mongoc_bulk_write_flags_t flags = MONGOC_BULK_WRITE_FLAGS_INIT;
 
@@ -234,7 +231,6 @@ _mongoc_write_command_init_insert_idl (mongoc_write_command_t *command,
    _mongoc_write_command_init_bulk (
       command, MONGOC_WRITE_COMMAND_INSERT, flags, operation_id, cmd_opts);
 
-   command->u.insert.allow_bulk_op_insert = (uint8_t) allow_bulk_op_insert;
    /* must handle NULL document from mongoc_collection_insert_bulk */
    if (document) {
       _mongoc_write_command_insert_append (command, document);

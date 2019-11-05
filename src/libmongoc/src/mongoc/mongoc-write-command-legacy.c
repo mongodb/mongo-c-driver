@@ -245,7 +245,6 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
    uint32_t idx = 0;
    int32_t max_msg_size;
    int32_t max_bson_obj_size;
-   bool singly;
    bson_reader_t *reader;
    const bson_t *bson;
    bool eof;
@@ -264,8 +263,6 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
 
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
    max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
-
-   singly = !command->u.insert.allow_bulk_op_insert;
 
    if (!command->n_documents) {
       bson_set_error (error,
@@ -303,8 +300,7 @@ again:
             /* send the batch so far (if any) and return the error */
             break;
          }
-      } else if ((n_docs_in_batch == 1 && singly) ||
-                 size > (max_msg_size - bson->len)) {
+      } else if (size > (max_msg_size - bson->len)) {
          /* batch is full, send it and then start the next batch */
          has_more = true;
          break;

@@ -51,8 +51,7 @@ test_split_insert (void)
                                       docs[0],
                                       NULL,
                                       write_flags,
-                                      ++client->cluster.operation_id,
-                                      true);
+                                      ++client->cluster.operation_id);
 
    for (i = 1; i < 3000; i++) {
       _mongoc_write_command_insert_append (&command, docs[i]);
@@ -127,7 +126,7 @@ test_invalid_write_concern (void)
    doc = BCON_NEW ("_id", BCON_INT32 (0));
 
    _mongoc_write_command_init_insert (
-      &command, doc, NULL, write_flags, ++client->cluster.operation_id, true);
+      &command, doc, NULL, write_flags, ++client->cluster.operation_id);
    _mongoc_write_result_init (&result);
    server_stream =
       mongoc_cluster_stream_for_writes (&client->cluster, NULL, NULL, &error);
@@ -524,6 +523,59 @@ test_opmsg_disconnect_mid_batch (void)
    test_opmsg_disconnect_mid_batch_helper (WIRE_VERSION_OP_MSG - 1);
 }
 
+static void
+test_w0_legacy_insert_many (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_t **docs;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   bson_t opts;
+   mongoc_write_concern_t *wc;
+
+   /* wire version will use OP_INSERT for w:0 insert many (since no OP_MSG) */
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server,
+                              "{'ismaster': true,"
+                              " 'maxWireVersion': 5}");
+   mock_server_run (server);
+
+   docs = bson_malloc (sizeof (bson_t *) * 2);
+   docs[0] = BCON_NEW ("x", BCON_INT32 (1));
+   docs[1] = BCON_NEW ("x", BCON_INT32 (2));
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   /* Add unacknowldged write concern */
+   bson_init (&opts);
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   mongoc_write_concern_append (wc, &opts);
+   mongoc_write_concern_destroy (wc);
+
+   future = future_collection_insert_many (
+      coll, (const bson_t **) docs, 2, &opts, NULL, &error);
+   /* Mock server receives one OP_INSERT with two documents */
+   request = mock_server_receives_bulk_insert (server, "db.coll", 0, 2);
+   BSON_ASSERT (request);
+
+   mock_server_replies_ok_and_destroys (request);
+   BSON_ASSERT (future_get_bool (future));
+
+   future_destroy (future);
+   bson_destroy (docs[0]);
+   bson_destroy (docs[1]);
+   bson_free (docs);
+   bson_destroy (&opts);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
 void
 test_write_command_install (TestSuite *suite)
 {
@@ -544,4 +596,7 @@ test_write_command_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/WriteCommand/insert_disconnect_mid_batch",
                                 test_opmsg_disconnect_mid_batch);
+   TestSuite_AddMockServerTest (suite,
+                                "/WriteCommand/w0_legacy_insert_many",
+                                test_w0_legacy_insert_many);
 }

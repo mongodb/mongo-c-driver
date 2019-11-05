@@ -1517,8 +1517,7 @@ mongoc_collection_insert_bulk (mongoc_collection_t *collection,
       NULL,
       NULL,
       write_flags,
-      ++collection->client->cluster.operation_id,
-      true);
+      ++collection->client->cluster.operation_id);
 
    for (i = 0; i < n_documents; i++) {
       _mongoc_write_command_insert_append (&command, documents[i]);
@@ -1634,8 +1633,7 @@ mongoc_collection_insert_one (mongoc_collection_t *collection,
       &command,
       document,
       &insert_one_opts.extra,
-      ++collection->client->cluster.operation_id,
-      false);
+      ++collection->client->cluster.operation_id);
 
    command.flags.bypass_document_validation = insert_one_opts.bypass;
    _mongoc_collection_write_command_execute_idl (
@@ -1717,8 +1715,7 @@ mongoc_collection_insert_many (mongoc_collection_t *collection,
       &command,
       NULL,
       &insert_many_opts.extra,
-      ++collection->client->cluster.operation_id,
-      false);
+      ++collection->client->cluster.operation_id);
 
    command.flags.ordered = insert_many_opts.ordered;
    command.flags.bypass_document_validation = insert_many_opts.bypass;

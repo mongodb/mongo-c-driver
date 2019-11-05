@@ -382,8 +382,7 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
       document,
       &insert_opts.extra,
       bulk->flags,
-      bulk->operation_id,
-      !mongoc_write_concern_is_acknowledged (bulk->write_concern));
+      bulk->operation_id);
 
    _mongoc_array_append_val (&bulk->commands, command);
 
