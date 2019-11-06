@@ -1104,5 +1104,5 @@ test_transactions_install (TestSuite *suite)
                       test_max_commit_time_ms_is_reset,
                       NULL,
                       NULL,
-                      NULL);
+                      test_framework_skip_if_no_crypto);
 }
