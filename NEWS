@@ -1,3 +1,22 @@
+mongo-c-driver 1.15.2
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.15.2.
+
+Bug fixes:
+   * Prevent mongoc_transaction_opts_set_max_commit_time_ms from applying to subsequent transactions that should be using the default.
+   * Do not report the initial error if a retry for a change stream function (mongoc_collection_watch, mongoc_database_watch, or mongoc_client_watch) succeeds
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Andreas Braun
+  * Clyde Bazile
+
+Peace,
+
+    Kevin Albertson
+
+
 mongo-c-driver 1.15.1
 =====================
 

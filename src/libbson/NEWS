@@ -1,7 +1,17 @@
+libbson 1.15.2
+==============
+
+It is my pleasure to announce libbson 1.15.2.
+
+No changes since 1.15.1; release to keep pace with libmongoc's version.
+
+-- Kevin Albertson
+
+
 libbson 1.15.1
 ==============
 
-No change since 1.15.1; released to keep pace with libmongoc's version.
+No change since 1.15.0; released to keep pace with libmongoc's version.
 
 -- Clyde Bazile
 
