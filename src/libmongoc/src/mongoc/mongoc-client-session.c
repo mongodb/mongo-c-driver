@@ -26,7 +26,6 @@
 #define SESSION_NEVER_USED (-1)
 
 #define WITH_TXN_TIMEOUT_MS (120 * 1000)
-#define DEFAULT_MAX_COMMIT_TIME_MS 0
 
 static void
 txn_opts_set (mongoc_transaction_opt_t *opts,
@@ -64,6 +63,7 @@ txn_opts_cleanup (mongoc_transaction_opt_t *opts)
    opts->read_concern = NULL;
    opts->write_concern = NULL;
    opts->read_prefs = NULL;
+   opts->max_commit_time_ms = DEFAULT_MAX_COMMIT_TIME_MS;
 }
 
 
@@ -1246,6 +1246,7 @@ mongoc_client_session_abort_transaction (mongoc_client_session_t *session,
    case MONGOC_TRANSACTION_STARTING:
       /* we sent no commands, not actually started on server */
       session->txn.state = MONGOC_TRANSACTION_ABORTED;
+      txn_opts_cleanup (&session->txn.opts);
       RETURN (true);
    case MONGOC_TRANSACTION_IN_PROGRESS:
       session->txn.state = MONGOC_TRANSACTION_ENDING;

@@ -968,6 +968,62 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_max_commit_time_ms_is_reset (void *ctx)
+{
+   mock_rs_t *rs;
+   mongoc_uri_t *uri = NULL;
+   mongoc_client_t *client = NULL;
+   mongoc_transaction_opt_t *txn_opts = NULL;
+   mongoc_session_opt_t *session_opts = NULL;
+   mongoc_client_session_t *session = NULL;
+   bson_error_t error;
+   bool r;
+
+   rs = mock_rs_with_autoismaster (WIRE_VERSION_4_2,
+                                   true /* has primary */,
+                                   2 /* secondaries */,
+                                   0 /* arbiters */);
+
+   mock_rs_run (rs);
+   uri = mongoc_uri_copy (mock_rs_get_uri (rs));
+
+   client = mongoc_client_new_from_uri (uri);
+   BSON_ASSERT (client);
+
+   txn_opts = mongoc_transaction_opts_new ();
+   session_opts = mongoc_session_opts_new ();
+
+   session = mongoc_client_start_session (client, session_opts, &error);
+   ASSERT_OR_PRINT (session, error);
+
+   mongoc_transaction_opts_set_max_commit_time_ms (txn_opts, 1);
+
+   r = mongoc_client_session_start_transaction (session, txn_opts, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (1 == session->txn.opts.max_commit_time_ms);
+
+   r = mongoc_client_session_abort_transaction (session, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (DEFAULT_MAX_COMMIT_TIME_MS == session->txn.opts.max_commit_time_ms);
+
+   mongoc_transaction_opts_set_max_commit_time_ms (txn_opts, DEFAULT_MAX_COMMIT_TIME_MS);
+
+   r = mongoc_client_session_start_transaction (session, txn_opts, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (DEFAULT_MAX_COMMIT_TIME_MS == session->txn.opts.max_commit_time_ms);
+
+   r = mongoc_client_session_abort_transaction (session, &error);
+   ASSERT_OR_PRINT (r, error);
+
+   mongoc_session_opts_destroy (session_opts);
+   mongoc_transaction_opts_destroy (txn_opts);
+   mongoc_client_session_destroy (session);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_rs_destroy (rs);
+}
+
 void
 test_transactions_install (TestSuite *suite)
 {
@@ -1043,4 +1099,10 @@ test_transactions_install (TestSuite *suite)
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_not_mongos);
+   TestSuite_AddFull (suite,
+                      "/transactions/max_commit_time_ms_is_reset",
+                      test_max_commit_time_ms_is_reset,
+                      NULL,
+                      NULL,
+                      NULL);
 }
