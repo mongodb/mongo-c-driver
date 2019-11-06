@@ -46,6 +46,8 @@ This function shall execute a query on the underlying ``collection``.
 
 If no options are necessary, ``query`` can simply contain a query such as ``{a:1}``. If you would like to specify options such as a sort order, the query must be placed inside of ``{"$query": {}}``. See the example below for how to properly specify additional options to ``query``.
 
+.. include:: includes/retryable-read.txt
+
 Returns
 -------
 

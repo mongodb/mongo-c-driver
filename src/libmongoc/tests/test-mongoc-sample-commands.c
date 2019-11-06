@@ -2554,7 +2554,7 @@ test_example_change_stream (mongoc_database_t *db)
    bson_t opts = BSON_INITIALIZER;
    mongoc_change_stream_t *stream;
    const bson_t *change;
-   bson_iter_t iter;
+   const bson_t *resume_token;
    bson_error_t error;
 
    collection = mongoc_database_get_collection (db, "inventory");
@@ -2583,8 +2583,8 @@ test_example_change_stream (mongoc_database_t *db)
    /* Start Changestream Example 3 */
    stream = mongoc_collection_watch (collection, pipeline, NULL);
    if (mongoc_change_stream_next (stream, &change)) {
-      bson_iter_init_find (&iter, change, "_id");
-      BSON_APPEND_VALUE (&opts, "resumeAfter", bson_iter_value (&iter));
+      resume_token = mongoc_change_stream_get_resume_token (stream);
+      BSON_APPEND_DOCUMENT (&opts, "resumeAfter", resume_token);
 
       mongoc_change_stream_destroy (stream);
       stream = mongoc_collection_watch (collection, pipeline, &opts);

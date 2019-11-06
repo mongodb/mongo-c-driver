@@ -118,7 +118,11 @@ _mongoc_write_command_update_append (mongoc_write_command_t *command,
 
    bson_init (&document);
    BSON_APPEND_DOCUMENT (&document, "q", selector);
-   BSON_APPEND_DOCUMENT (&document, "u", update);
+   if (_mongoc_document_is_pipeline (update)) {
+      BSON_APPEND_ARRAY (&document, "u", update);
+   } else {
+      BSON_APPEND_DOCUMENT (&document, "u", update);
+   }
    if (opts) {
       bson_concat (&document, opts);
    }
@@ -414,7 +418,7 @@ _mongoc_write_command_will_overflow (uint32_t len_so_far,
    /* max BSON object size + 16k bytes.
     * server guarantees there is enough room: SERVER-10643
     */
-   int32_t max_cmd_size = max_bson_size + 16384;
+   int32_t max_cmd_size = max_bson_size + BSON_OBJECT_ALLOWANCE;
 
    BSON_ASSERT (max_bson_size);
 
@@ -465,12 +469,11 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    BSON_ASSERT (server_stream);
    BSON_ASSERT (collection);
 
-/* MongoDB has a extra allowance to allow updating 16mb document,
- * as the update operators would otherwise overflow the 16mb object limit
- */
-#define BSON_OBJECT_ALLOWANCE (16 * 1024)
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
    max_msg_size = mongoc_server_stream_max_msg_size (server_stream);
+   if (client->cse_enabled) {
+      max_msg_size = MONGOC_REDUCED_MAX_MSG_SIZE_FOR_FLE;
+   }
    max_document_count =
       mongoc_server_stream_max_write_batch_size (server_stream);
 
@@ -590,6 +593,10 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
           * the selected server does not support retryable writes, fall through
           * and allow the original error to be reported. */
          error_type = _mongoc_write_error_get_type (ret, error, &reply);
+         if (is_retryable) {
+            _mongoc_write_error_update_if_unsupported_storage_engine (
+               ret, error, &reply);
+         }
          if (is_retryable && error_type == MONGOC_WRITE_ERR_RETRY) {
             bson_error_t ignored_error;
 
@@ -614,6 +621,9 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
 
          if (!ret) {
             result->failed = true;
+            /* Conservatively set must_stop to true. Per CDRIVER-3305 we
+             * shouldn't stop for unordered bulk writes, but also need to check
+             * if the server stream was invalidated per CDRIVER-3306. */
             result->must_stop = true;
          }
 
@@ -627,7 +637,7 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
          bson_destroy (&reply);
       }
       /* While we have more documents to write */
-   } while (payload_total_offset < command->payload.len);
+   } while (payload_total_offset < command->payload.len && !result->must_stop);
 
    bson_destroy (&cmd);
    mongoc_cmd_parts_cleanup (&parts);
@@ -675,6 +685,41 @@ _append_array_from_command (mongoc_write_command_t *command, bson_t *bson)
    bson_reader_destroy (reader);
 }
 
+/* Assemble the base @cmd with all of the command options.
+ * @parts is always initialized, even on error.
+ * This is called twice in _mongoc_write_opquery.
+ * Once with no payload documents, to determine the total size. And once with
+ * payload documents, to send the final command. */
+static bool
+_assemble_cmd (bson_t *cmd,
+               mongoc_write_command_t *command,
+               mongoc_client_t *client,
+               mongoc_server_stream_t *server_stream,
+               const char *database,
+               const mongoc_write_concern_t *write_concern,
+               mongoc_cmd_parts_t *parts,
+               bson_error_t *error)
+{
+   bool ret;
+   bson_iter_t iter;
+
+   mongoc_cmd_parts_init (parts, client, database, MONGOC_QUERY_NONE, cmd);
+   parts->is_write_command = true;
+   parts->assembled.operation_id = command->operation_id;
+
+   ret = mongoc_cmd_parts_set_write_concern (
+      parts, write_concern, server_stream->sd->max_wire_version, error);
+   if (ret) {
+      BSON_ASSERT (bson_iter_init (&iter, &command->cmd_opts));
+      ret = mongoc_cmd_parts_append_opts (
+         parts, &iter, server_stream->sd->max_wire_version, error);
+   }
+   if (ret) {
+      ret = mongoc_cmd_parts_assemble (parts, server_stream, error);
+   }
+   return ret;
+}
+
 static void
 _mongoc_write_opquery (mongoc_write_command_t *command,
                        mongoc_client_t *client,
@@ -687,12 +732,10 @@ _mongoc_write_opquery (mongoc_write_command_t *command,
                        bson_error_t *error)
 {
    mongoc_cmd_parts_t parts;
-   bson_iter_t iter;
    const char *key;
    uint32_t len = 0;
    bson_t ar;
    bson_t cmd;
-   bson_t reply;
    char str[16];
    bool has_more;
    bool ret = false;
@@ -724,10 +767,30 @@ again:
    i = 0;
 
    _mongoc_write_command_init (&cmd, command, collection);
+   /* If any part of assembling failed, return with failure. */
+   if (!_assemble_cmd (&cmd,
+                       command,
+                       client,
+                       server_stream,
+                       database,
+                       write_concern,
+                       &parts,
+                       error)) {
+      result->failed = true;
+      bson_destroy (&cmd);
+      mongoc_cmd_parts_cleanup (&parts);
+      EXIT;
+   }
 
-   /* 1 byte to specify array type, 1 byte for field name's null terminator */
-   overhead = cmd.len + 2 + gCommandFieldLens[command->type];
-
+   /* Use the assembled command to compute the overhead, since it may be a new
+    * BSON document with options applied. If no options were applied, then
+    * parts.assembled.command points to cmd. The constant 2 is due to 1 byte to
+    * specify array type and 1 byte for field name's null terminator. */
+   overhead =
+      parts.assembled.command->len + 2 + gCommandFieldLens[command->type];
+   /* Toss out the assembled command, we'll assemble again after adding all of
+    * the payload documents. */
+   mongoc_cmd_parts_cleanup (&parts);
 
    reader = bson_reader_new_from_data (command->payload.data + data_offset,
                                        command->payload.len - data_offset);
@@ -765,36 +828,20 @@ again:
          data_offset += len;
       }
    } else {
-      mongoc_cmd_parts_init (&parts, client, database, MONGOC_QUERY_NONE, &cmd);
-      parts.is_write_command = true;
-      parts.assembled.operation_id = command->operation_id;
-      if (!mongoc_cmd_parts_set_write_concern (
-             &parts,
-             write_concern,
-             server_stream->sd->max_wire_version,
-             error)) {
-         bson_reader_destroy (reader);
-         bson_destroy (&cmd);
-         mongoc_cmd_parts_cleanup (&parts);
-         EXIT;
-      }
+      bson_t reply;
 
-      BSON_ASSERT (bson_iter_init (&iter, &command->cmd_opts));
-      if (!mongoc_cmd_parts_append_opts (
-             &parts, &iter, server_stream->sd->max_wire_version, error)) {
-         bson_reader_destroy (reader);
-         bson_destroy (&cmd);
-         mongoc_cmd_parts_cleanup (&parts);
-         EXIT;
-      }
-
-      ret = mongoc_cmd_parts_assemble (&parts, server_stream, error);
+      ret = _assemble_cmd (&cmd,
+                           command,
+                           client,
+                           server_stream,
+                           database,
+                           write_concern,
+                           &parts,
+                           error);
       if (ret) {
          ret = mongoc_cluster_run_command_monitored (
             &client->cluster, &parts.assembled, &reply, error);
       } else {
-         /* assembling failed */
-         result->must_stop = true;
          bson_init (&reply);
       }
 
@@ -1487,4 +1534,42 @@ _mongoc_write_error_get_type (bool cmd_ret,
       }
       return MONGOC_WRITE_ERR_OTHER;
    }
+}
+
+/* Returns true and modifies reply and cmd_err. */
+bool
+_mongoc_write_error_update_if_unsupported_storage_engine (bool cmd_ret,
+                                                          bson_error_t *cmd_err,
+                                                          bson_t *reply)
+{
+   bson_error_t server_error;
+
+   if (cmd_ret) {
+      return false;
+   }
+
+   if (_mongoc_cmd_check_ok_no_wce (
+          reply, MONGOC_ERROR_API_VERSION_2, &server_error)) {
+      return false;
+   }
+
+   if (server_error.code == 20 &&
+       strstr (server_error.message, "Transaction numbers") ==
+          server_error.message) {
+      const char *replacement = "This MongoDB deployment does not support "
+                                "retryable writes. Please add "
+                                "retryWrites=false to your connection string.";
+
+      strcpy (cmd_err->message, replacement);
+
+      if (reply) {
+         bson_t *new_reply = bson_new ();
+         bson_copy_to_excluding_noinit (reply, new_reply, "errmsg", NULL);
+         BSON_APPEND_UTF8 (new_reply, "errmsg", replacement);
+         bson_destroy (reply);
+         bson_steal (reply, new_reply);
+      }
+      return true;
+   }
+   return false;
 }

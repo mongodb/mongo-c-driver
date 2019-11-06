@@ -16,6 +16,8 @@ Fetches a cursor containing documents, each corresponding to a collection on thi
 
 To get collection names only, use :symbol:`mongoc_database_get_collection_names_with_opts`.
 
+.. include:: includes/retryable-read.txt
+
 Parameters
 ----------
 

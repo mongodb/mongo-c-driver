@@ -215,7 +215,8 @@ set (HEADERS_FORWARDING
 
 add_library (bson_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set (CMAKE_CXX_VISIBILITY_PRESET hidden)
-set_target_properties (bson_shared PROPERTIES COMPILE_DEFINITIONS "BSON_COMPILATION;JSONSL_PARSE_NAN")
+target_compile_definitions (bson_shared PRIVATE BSON_COMPILATION JSONSL_PARSE_NAN)
+target_include_directories (bson_shared INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
 set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "bson-${BSON_API_VERSION}" PREFIX "lib")
 
@@ -231,25 +232,25 @@ if (ENABLE_APPLE_FRAMEWORK)
 endif ()
 
 if (RT_LIBRARY)
-   target_link_libraries (bson_shared ${RT_LIBRARY})
+   target_link_libraries (bson_shared PRIVATE ${RT_LIBRARY})
 endif ()
 
 find_library (M_LIBRARY m)
 if (M_LIBRARY)
-   target_link_libraries (bson_shared ${M_LIBRARY})
+   target_link_libraries (bson_shared PRIVATE ${M_LIBRARY})
    set (BSON_LIBRARIES ${BSON_LIBRARIES} ${M_LIBRARY})
 endif ()
 
 set (THREADS_PREFER_PTHREAD_FLAG 1)
 find_package (Threads REQUIRED)
-target_link_libraries (bson_shared Threads::Threads)
+target_link_libraries (bson_shared PRIVATE Threads::Threads)
 if (CMAKE_USE_PTHREADS_INIT)
    set (BSON_LIBRARIES ${BSON_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif ()
 
 if (WIN32)
    # gethostbyname
-   target_link_libraries (bson_shared ws2_32)
+   target_link_libraries (bson_shared PRIVATE ws2_32)
    # Can't find_library () system dependencies
    # must be handled specially since we can't resolve them
    set (BSON_SYSTEM_LIBRARIES ${BSON_SYSTEM_LIBRARIES} ws2_32)
@@ -257,10 +258,16 @@ endif ()
 
 if (ENABLE_STATIC MATCHES "ON|AUTO")
    add_library (bson_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-   set_target_properties (bson_static PROPERTIES COMPILE_DEFINITIONS "BSON_COMPILATION;BSON_STATIC;JSONSL_PARSE_NAN")
+   target_compile_definitions (bson_static
+      PUBLIC BSON_STATIC
+      PRIVATE BSON_COMPILATION JSONSL_PARSE_NAN
+   )
+   target_include_directories (bson_static INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
    set_target_properties (bson_static PROPERTIES VERSION 0.0.0)
    set_target_properties (bson_static PROPERTIES OUTPUT_NAME "bson-static-${BSON_API_VERSION}")
-   target_link_libraries (bson_static Threads::Threads)
+   # We use CMAKE_THREAD_LIBS_INIT rather than Threads::Threads here because the
+   # latter fails when building on Mac OS X
+   target_link_libraries (bson_static ${CMAKE_THREAD_LIBS_INIT})
    if (RT_LIBRARY)
       target_link_libraries (bson_static ${RT_LIBRARY})
    endif ()
@@ -301,22 +308,21 @@ set (BSON_HEADER_INSTALL_DIR
    "${CMAKE_INSTALL_INCLUDEDIR}/libbson-${BSON_API_VERSION}"
 )
 
+if (ENABLE_STATIC MATCHES "ON|AUTO")
+   set (TARGETS_TO_INSTALL bson_shared bson_static)
+else ()
+   set (TARGETS_TO_INSTALL bson_shared)
+endif ()
 install (
-   TARGETS bson_shared ${EXAMPLES}
+   TARGETS ${TARGETS_TO_INSTALL} ${EXAMPLES}
+   EXPORT bson-targets
    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-   FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR} 
+   INCLUDES DESTINATION ${BSON_HEADER_INSTALL_DIR}
+   FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
-if (ENABLE_STATIC MATCHES "ON|AUTO")
-   install (
-      TARGETS bson_static ${EXAMPLES}
-      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-      FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR} 
-   )
-endif ()
+
 install (
    FILES ${HEADERS}
    DESTINATION "${BSON_HEADER_INSTALL_DIR}/bson"
@@ -348,7 +354,7 @@ endforeach ()
 
 set (VERSION "${BSON_VERSION}")
 set (prefix "${CMAKE_INSTALL_PREFIX}")
-set (libdir "\${prefix}/lib")
+set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 configure_file (
    ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-1.0.pc.in
    ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-1.0.pc
@@ -375,7 +381,41 @@ if (ENABLE_STATIC MATCHES "ON|AUTO")
    )
 endif ()
 
-include (build/cmake/BSONPackage.cmake)
+include (CMakePackageConfigHelpers)
+set (INCLUDE_INSTALL_DIRS "${BSON_HEADER_INSTALL_DIR}")
+set (LIBRARY_INSTALL_DIRS ${CMAKE_INSTALL_LIBDIR})
+
+write_basic_package_version_file (
+   "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-${BSON_API_VERSION}-config-version.cmake"
+   VERSION ${BSON_VERSION}
+   COMPATIBILITY AnyNewerVersion
+)
+
+export (EXPORT bson-targets
+   NAMESPACE mongo::
+   FILE "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-targets.cmake"
+)
+
+configure_file (src/bson-config.cmake
+   "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-${BSON_API_VERSION}-config.cmake"
+   COPYONLY
+)
+
+install (EXPORT bson-targets
+   NAMESPACE mongo::
+   FILE bson-targets.cmake
+   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/bson-${BSON_API_VERSION}
+)
+
+install (
+   FILES
+      "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-${BSON_API_VERSION}-config.cmake"
+      "${CMAKE_CURRENT_BINARY_DIR}/bson/bson-${BSON_API_VERSION}-config-version.cmake"
+   DESTINATION
+      ${CMAKE_INSTALL_LIBDIR}/cmake/bson-${BSON_API_VERSION}
+   COMPONENT
+      Devel
+)
 
 if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
    find_package (Sphinx REQUIRED)

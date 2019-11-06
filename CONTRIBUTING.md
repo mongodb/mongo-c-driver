@@ -223,6 +223,11 @@ The mock server timeout threshold for future functions can be set with:
 
 This is useful for debugging, so future calls don't timeout when stepping through code.
 
+Tests of Client-Side Field Level Encryption require credentials to an AWS user which has list and read permissions to AWS KMS.
+
+* `MONGOC_TEST_AWS_SECRET_ACCESS_KEY=<string>`
+* `MONGOC_TEST_AWS_ACCESS_KEY_ID=<string>`
+
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner

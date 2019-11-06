@@ -53,6 +53,7 @@ Example
     mongoc_client_command_simple_with_server_id
     mongoc_client_command_with_opts
     mongoc_client_destroy
+    mongoc_client_enable_auto_encryption
     mongoc_client_find_databases_with_opts
     mongoc_client_get_collection
     mongoc_client_get_database

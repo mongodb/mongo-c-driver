@@ -3,7 +3,8 @@
     {
       "description": "Repeated authSource key",
       "uri": "mongodb://example.com/?authSource=bar&authSource=foo",
-      "valid": true,
+      "valid": false, 
+      "comment": "invalid URI (see SPEC-1424)",
       "warning": true,
       "hosts": [
         {
@@ -48,7 +49,7 @@
       ],
       "auth": null,
       "options": {
-        "authmechanismproperties": { "SERVICE_NAME": 49 }
+        "authmechanismproperties": { "SERVICE_NAME": "49" }
       }
     },
     {
@@ -103,6 +104,36 @@
       "hosts": null,
       "auth": null,
       "options": null
-    }
+    },
+    {
+      "description": "should default to SERVICE_NAME:mongodb even if other authMechanismProperties present",
+      "uri": "mongodb://user%40DOMAIN.COM@localhost/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true",
+      "valid": true,
+      "credential": {
+        "username": "user@DOMAIN.COM",
+        "password": null,
+        "source": "$external",
+        "mechanism": "GSSAPI",
+        "mechanism_properties": {
+            "SERVICE_NAME": "mongodb",
+            "CANONICALIZE_HOST_NAME": true
+        }
+      }
+    },
+    {
+      "description": "should detect case-insensitive service_name",
+      "uri": "mongodb://user%40DOMAIN.COM@localhost/?authMechanism=GSSAPI&authMechanismProperties=CANONICALIZE_HOST_NAME:true,service_name:abc",
+      "valid": true,
+      "credential": {
+        "username": "user@DOMAIN.COM",
+        "password": null,
+        "source": "$external",
+        "mechanism": "GSSAPI",
+        "mechanism_properties": {
+            "SERVICE_NAME": "abc",
+            "CANONICALIZE_HOST_NAME": true
+        }
+      }
+   }
   ]
 }

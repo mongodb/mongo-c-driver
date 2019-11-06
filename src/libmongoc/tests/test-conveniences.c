@@ -76,6 +76,18 @@ test_conveniences_cleanup ()
 }
 
 
+void
+value_init_from_doc (bson_value_t *value, const bson_t *doc)
+{
+   BSON_ASSERT (doc);
+
+   value->value_type = BSON_TYPE_DOCUMENT;
+   value->value.v_doc.data = bson_malloc ((size_t) doc->len);
+   memcpy (value->value.v_doc.data, bson_get_data (doc), (size_t) doc->len);
+   value->value.v_doc.data_len = doc->len;
+}
+
+
 MONGOC_PRINTF_FORMAT (1, 2)
 bson_t *
 tmp_bson (const char *json, ...)
@@ -342,8 +354,8 @@ bson_lookup_write_concern (const bson_t *b, const char *key)
    }
 
    if (bson_has_field (&doc, "wtimeout")) {
-      mongoc_write_concern_set_wtimeout_int64 (wc,
-                                         bson_lookup_int32 (&doc, "wtimeout"));
+      mongoc_write_concern_set_wtimeout_int64 (
+         wc, bson_lookup_int32 (&doc, "wtimeout"));
    }
 
    if (bson_has_field (&doc, "j")) {
@@ -488,6 +500,7 @@ bson_lookup_txn_opts (const bson_t *b, const char *key)
    mongoc_read_concern_t *rc;
    mongoc_write_concern_t *wc;
    mongoc_read_prefs_t *prefs;
+   int64_t max_commit_time_ms;
 
    bson_lookup_doc (b, key, &doc);
    opts = mongoc_transaction_opts_new ();
@@ -508,6 +521,11 @@ bson_lookup_txn_opts (const bson_t *b, const char *key)
       prefs = bson_lookup_read_prefs (&doc, "readPreference");
       mongoc_transaction_opts_set_read_prefs (opts, prefs);
       mongoc_read_prefs_destroy (prefs);
+   }
+
+   if (bson_has_field (&doc, "maxCommitTimeMS")) {
+      max_commit_time_ms = bson_lookup_int32 (&doc, "maxCommitTimeMS");
+      mongoc_transaction_opts_set_max_commit_time_ms (opts, max_commit_time_ms);
    }
 
    return opts;
@@ -574,6 +592,9 @@ get_exists_operator (const bson_value_t *value, bool *exists);
 
 static bool
 get_empty_operator (const bson_value_t *value, bool *exists);
+
+static bool
+get_type_operator (const bson_value_t *value, bson_type_t *out);
 
 static bool
 is_empty_doc_or_array (const bson_value_t *value);
@@ -815,8 +836,10 @@ derive (match_ctx_t *ctx, match_ctx_t *derived, const char *key)
  *       if its key-value pairs are a simple superset of pattern's. Order
  *       matters.
  *
- *       The only special pattern syntaxes are "field": {"$exists": true/false}
- *       and "field": {"$empty": true/false}.
+ *       The only special pattern syntaxes are:
+ *         "field": {"$exists": true/false}
+ *         "field": {"$empty": true/false}
+ *         "field": {"$$type": "type string"}
  *
  *       The first key matches case-insensitively if ctx->is_command.
  *
@@ -843,8 +866,10 @@ match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
    bool is_first = true;
    bool is_exists_operator;
    bool is_empty_operator;
+   bool is_type_operator;
    bool exists;
    bool empty;
+   bson_type_t bson_type;
    bool found;
    bson_iter_t doc_iter;
    bson_value_t doc_value;
@@ -877,6 +902,9 @@ match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
       /* is value {"$empty": true} or {"$empty": false} ? */
       is_empty_operator = get_empty_operator (value, &empty);
 
+      /* is value {"$$type": "string" } ? */
+      is_type_operator = get_type_operator (value, &bson_type);
+
       derive (ctx, &derived, key);
 
       if (ctx->visitor_fn) {
@@ -906,6 +934,11 @@ match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
       } else if (is_empty_operator) {
          if (empty != is_empty_doc_or_array (&doc_value)) {
             match_err (&derived, "%s found", empty ? "" : " not");
+            goto fail;
+         }
+      } else if (is_type_operator) {
+         if (doc_value.value_type != bson_type) {
+            match_err (&derived, "incorrect type");
             goto fail;
          }
       } else if (!match_bson_value (&doc_value, value, &derived)) {
@@ -1062,6 +1095,88 @@ bool
 get_empty_operator (const bson_value_t *value, bool *empty)
 {
    return _is_operator ("$empty", value, empty);
+}
+
+
+/*--------------------------------------------------------------------------
+ *
+ * get_type_operator --
+ *
+ *       Is value a subdocument like {"$$type": "BSON type string"}?
+ *
+ * Returns:
+ *       True if the value is a subdocument with the first key "$$type",
+ *       and sets the @bson_type.
+ *
+ * Side effects:
+ *       If the function returns true, *@bson_type is set.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+get_type_operator (const bson_value_t *value, bson_type_t *out)
+{
+   bson_t bson;
+   bson_iter_t iter;
+   const char *value_string;
+
+   /* See list of aliases on this page:
+    * https://docs.mongodb.com/manual/reference/bson-types/ */
+   if (value->value_type == BSON_TYPE_DOCUMENT &&
+       bson_init_from_value (&bson, value) &&
+       bson_iter_init_find (&iter, &bson, "$$type")) {
+      value_string = bson_iter_utf8 (&iter, NULL);
+      if (0 == strcasecmp ("double", value_string)) {
+         *out = BSON_TYPE_DOUBLE;
+      } else if (0 == strcasecmp ("string", value_string)) {
+         *out = BSON_TYPE_UTF8;
+      } else if (0 == strcasecmp ("object", value_string)) {
+         *out = BSON_TYPE_DOCUMENT;
+      } else if (0 == strcasecmp ("array", value_string)) {
+         *out = BSON_TYPE_ARRAY;
+      } else if (0 == strcasecmp ("binData", value_string)) {
+         *out = BSON_TYPE_BINARY;
+      } else if (0 == strcasecmp ("undefined", value_string)) {
+         *out = BSON_TYPE_UNDEFINED;
+      } else if (0 == strcasecmp ("objectId", value_string)) {
+         *out = BSON_TYPE_OID;
+      } else if (0 == strcasecmp ("bool", value_string)) {
+         *out = BSON_TYPE_BOOL;
+      } else if (0 == strcasecmp ("date", value_string)) {
+         *out = BSON_TYPE_DATE_TIME;
+      } else if (0 == strcasecmp ("null", value_string)) {
+         *out = BSON_TYPE_NULL;
+      } else if (0 == strcasecmp ("regex", value_string)) {
+         *out = BSON_TYPE_REGEX;
+      } else if (0 == strcasecmp ("dbPointer", value_string)) {
+         *out = BSON_TYPE_DBPOINTER;
+      } else if (0 == strcasecmp ("javascript", value_string)) {
+         *out = BSON_TYPE_CODE;
+      } else if (0 == strcasecmp ("symbol", value_string)) {
+         *out = BSON_TYPE_SYMBOL;
+      } else if (0 == strcasecmp ("javascriptWithScope", value_string)) {
+         *out = BSON_TYPE_CODEWSCOPE;
+      } else if (0 == strcasecmp ("int", value_string)) {
+         *out = BSON_TYPE_INT32;
+      } else if (0 == strcasecmp ("timestamp", value_string)) {
+         *out = BSON_TYPE_TIMESTAMP;
+      } else if (0 == strcasecmp ("long", value_string)) {
+         *out = BSON_TYPE_INT64;
+      } else if (0 == strcasecmp ("decimal", value_string)) {
+         *out = BSON_TYPE_DECIMAL128;
+      } else if (0 == strcasecmp ("minKey", value_string)) {
+         *out = BSON_TYPE_MINKEY;
+      } else if (0 == strcasecmp ("maxKey", value_string)) {
+         *out = BSON_TYPE_MAXKEY;
+      } else {
+         fprintf (stderr, "unrecognized $$type value: %s\n", value_string);
+         abort ();
+      }
+      return true;
+   }
+
+   return false;
 }
 
 

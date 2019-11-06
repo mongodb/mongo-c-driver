@@ -1756,3 +1756,132 @@ _mongoc_gridfs_bucket_upload_opts_cleanup (mongoc_gridfs_bucket_upload_opts_t *m
    bson_destroy (&mongoc_gridfs_bucket_upload_opts->metadata);
    bson_destroy (&mongoc_gridfs_bucket_upload_opts->extra);
 }
+
+bool
+_mongoc_aggregate_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_aggregate_opts_t *mongoc_aggregate_opts,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
+
+   mongoc_aggregate_opts->readConcern = NULL;
+   mongoc_aggregate_opts->writeConcern = NULL;
+   mongoc_aggregate_opts->write_concern_owned = false;
+   mongoc_aggregate_opts->client_session = NULL;
+   mongoc_aggregate_opts->bypass = false;
+   bson_init (&mongoc_aggregate_opts->collation);
+   mongoc_aggregate_opts->serverId = 0;
+   mongoc_aggregate_opts->batchSize = 0;
+   mongoc_aggregate_opts->batchSize_is_set = false;
+   bson_init (&mongoc_aggregate_opts->extra);
+
+   if (!opts) {
+      return true;
+   }
+
+   if (!bson_iter_init (&iter, opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Invalid 'opts' parameter.");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "readConcern")) {
+         if (!_mongoc_convert_read_concern (
+               client,
+               &iter,
+               &mongoc_aggregate_opts->readConcern,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+         if (!_mongoc_convert_write_concern (
+               client,
+               &iter,
+               &mongoc_aggregate_opts->writeConcern,
+               error)) {
+            return false;
+         }
+
+         mongoc_aggregate_opts->write_concern_owned = true;
+      }
+      else if (!strcmp (bson_iter_key (&iter), "sessionId")) {
+         if (!_mongoc_convert_session_id (
+               client,
+               &iter,
+               &mongoc_aggregate_opts->client_session,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "bypassDocumentValidation")) {
+         if (!_mongoc_convert_bool (
+               client,
+               &iter,
+               &mongoc_aggregate_opts->bypass,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "collation")) {
+         if (!_mongoc_convert_document (
+               client,
+               &iter,
+               &mongoc_aggregate_opts->collation,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "serverId")) {
+         if (!_mongoc_convert_server_id (
+               client,
+               &iter,
+               &mongoc_aggregate_opts->serverId,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "batchSize")) {
+         if (!_mongoc_convert_int32_t (
+               client,
+               &iter,
+               &mongoc_aggregate_opts->batchSize,
+               error)) {
+            return false;
+         }
+
+         mongoc_aggregate_opts->batchSize_is_set = true;
+      }
+      else {
+         /* unrecognized values are copied to "extra" */
+         if (!BSON_APPEND_VALUE (
+               &mongoc_aggregate_opts->extra,
+               bson_iter_key (&iter),
+               bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+void
+_mongoc_aggregate_opts_cleanup (mongoc_aggregate_opts_t *mongoc_aggregate_opts)
+{
+   mongoc_read_concern_destroy (mongoc_aggregate_opts->readConcern);
+   if (mongoc_aggregate_opts->write_concern_owned) {
+      mongoc_write_concern_destroy (mongoc_aggregate_opts->writeConcern);
+   }
+   bson_destroy (&mongoc_aggregate_opts->collation);
+   bson_destroy (&mongoc_aggregate_opts->extra);
+}

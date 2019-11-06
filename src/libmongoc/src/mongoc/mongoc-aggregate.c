@@ -26,10 +26,10 @@
 
 /*--------------------------------------------------------------------------
  *
- * _has_out_key --
+ * _has_write_key --
  *
- *       Returns true if the aggregation pipeline's last stage is "$out";
- *       otherwise returns false.
+ *       Returns true if the aggregation pipeline's last stage is "$out"
+ *       or "$merge"; otherwise returns false.
  *
  * Side effects:
  *       Advances @iter to the last element.
@@ -37,14 +37,27 @@
  *--------------------------------------------------------------------------
  */
 
-static bool
-_has_out_key (bson_iter_t *iter)
+bool
+_has_write_key (bson_iter_t *iter)
 {
    bson_iter_t stage;
+   bson_iter_t next;
+
+   memcpy (&next, iter, sizeof (bson_iter_t));
+   if (!bson_iter_next (&next)) {
+      /* default to false when iter is emtpy */
+      return false;
+   }
 
    while (bson_iter_next (iter)) {
-      if (BSON_ITER_HOLDS_DOCUMENT (iter) && bson_iter_recurse (iter, &stage)) {
+      if (!bson_iter_next (&next) && BSON_ITER_HOLDS_DOCUMENT (iter)) {
+         bson_iter_recurse (iter, &stage);
          if (bson_iter_find (&stage, "$out")) {
+            return true;
+         }
+
+         bson_iter_recurse (iter, &stage);
+         if (bson_iter_find (&stage, "$merge")) {
             return true;
          }
       }
@@ -75,16 +88,15 @@ _has_out_key (bson_iter_t *iter)
 static bool
 _make_agg_cmd (const char *ns,
                const bson_t *pipeline,
-               const bson_t *opts,
+               mongoc_aggregate_opts_t *opts,
                bson_t *command,
                bson_error_t *err)
 {
    const char *dot;
    bson_iter_t iter;
-   int32_t batch_size = 0;
    bson_t child;
-   bool has_out_key;
-   bson_iter_t has_out_key_iter;
+   bool has_write_key;
+   bson_iter_t has_write_key_iter;
 
    bson_init (command);
 
@@ -105,7 +117,7 @@ _make_agg_cmd (const char *ns,
     */
    if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
        BSON_ITER_HOLDS_ARRAY (&iter)) {
-      bson_iter_recurse (&iter, &has_out_key_iter);
+      bson_iter_recurse (&iter, &has_write_key_iter);
       if (!bson_append_iter (command, "pipeline", 8, &iter)) {
          bson_set_error (err,
                          MONGOC_ERROR_COMMAND,
@@ -115,19 +127,14 @@ _make_agg_cmd (const char *ns,
       }
    } else {
       BSON_APPEND_ARRAY (command, "pipeline", pipeline);
-      bson_iter_init (&has_out_key_iter, pipeline);
+      bson_iter_init (&has_write_key_iter, pipeline);
    }
 
-   has_out_key = _has_out_key (&has_out_key_iter);
+   has_write_key = _has_write_key (&has_write_key_iter);
    bson_append_document_begin (command, "cursor", 6, &child);
-   if (opts && bson_iter_init_find (&iter, opts, "batchSize") &&
-       BSON_ITER_HOLDS_NUMBER (&iter)) {
-      batch_size = (int32_t) bson_iter_as_int64 (&iter);
-
-      /* Ignore batchSize=0 for aggregates with $out */
-      if (!(has_out_key && batch_size == 0)) {
-         BSON_APPEND_INT32 (&child, "batchSize", batch_size);
-      }
+   /* Ignore batchSize=0 for aggregates with $out or $merge */
+   if (opts->batchSize_is_set && !(has_write_key && opts->batchSize == 0)) {
+      BSON_APPEND_INT32 (&child, "batchSize", opts->batchSize);
    }
 
    bson_append_document_end (command, &child);
@@ -157,7 +164,7 @@ _make_agg_cmd (const char *ns,
  *       @pipeline: A bson_t containing the pipeline request. @pipeline
  *                  will be sent as an array type in the request.
  *       @opts: A bson_t containing aggregation options, such as
- *              bypassDocumentValidation (used with $out pipeline), maxTimeMS
+ *              bypassDocumentValidation (used with $out and $merge), maxTimeMS
  *              (declaring maximum server execution time) and explain (return
  *              information on the processing of the pipeline).
  *       @user_rp: Optional read preferences for the command.
@@ -188,16 +195,17 @@ _mongoc_aggregate (mongoc_client_t *client,
 
 {
    mongoc_server_stream_t *server_stream = NULL;
-   bool has_out_key;
-   bool has_write_concern;
+   bool has_write_key;
    bson_iter_t ar;
    mongoc_cursor_t *cursor;
-   uint32_t server_id;
    bson_iter_t iter;
    bson_t command;
    bson_t cursor_opts;
    bool created_command;
    bson_error_t create_cmd_err = {0};
+   mongoc_aggregate_opts_t aggregate_opts;
+   bson_error_t opts_err = {0};
+   bool parsed_opts;
 
    ENTRY;
 
@@ -211,8 +219,16 @@ _mongoc_aggregate (mongoc_client_t *client,
       bson_concat (&cursor_opts /* destination */, opts /* source */);
    }
 
-   created_command =
-      _make_agg_cmd (ns, pipeline, opts, &command, &create_cmd_err);
+   parsed_opts =
+      _mongoc_aggregate_opts_parse (client, opts, &aggregate_opts, &opts_err);
+
+   if (parsed_opts) {
+      created_command = _make_agg_cmd (
+         ns, pipeline, &aggregate_opts, &command, &create_cmd_err);
+   } else {
+      created_command = false;
+   }
+
    cursor = _mongoc_cursor_cmd_new (client,
                                     ns,
                                     created_command ? &command : NULL,
@@ -221,8 +237,15 @@ _mongoc_aggregate (mongoc_client_t *client,
                                     default_rp,
                                     default_rc);
 
-   bson_destroy (&command);
+   if (created_command) {
+      bson_destroy (&command);
+   }
    bson_destroy (&cursor_opts);
+
+   if (!parsed_opts) {
+      memcpy (&cursor->error, &opts_err, sizeof (bson_error_t));
+      GOTO (done);
+   }
 
    if (!created_command) {
       /* copy error back to cursor. */
@@ -230,19 +253,7 @@ _mongoc_aggregate (mongoc_client_t *client,
       GOTO (done);
    }
 
-   /* Get serverId from opts; if invalid set cursor err. _mongoc_cursor_cmd_new
-    * has already done this, but we want a COMMAND error, not CURSOR, since that
-    * has been the contract since serverId was first implemented. */
-   if (!_mongoc_get_server_id_from_opts (opts,
-                                         MONGOC_ERROR_COMMAND,
-                                         MONGOC_ERROR_COMMAND_INVALID_ARG,
-                                         &server_id,
-                                         &cursor->error)) {
-      GOTO (done);
-   }
-
    if (mongoc_cursor_error (cursor, NULL)) {
-      /* something else is wrong with opts */
       GOTO (done);
    }
 
@@ -253,7 +264,7 @@ _mongoc_aggregate (mongoc_client_t *client,
    /* pipeline could be like {pipeline: [{$out: 'test'}]} or [{$out: 'test'}] */
    if (bson_iter_init_find (&iter, pipeline, "pipeline") &&
        BSON_ITER_HOLDS_ARRAY (&iter) && bson_iter_recurse (&iter, &ar)) {
-      has_out_key = _has_out_key (&ar);
+      has_write_key = _has_write_key (&ar);
    } else {
       if (!bson_iter_init (&iter, pipeline)) {
          bson_set_error (&cursor->error,
@@ -262,14 +273,14 @@ _mongoc_aggregate (mongoc_client_t *client,
                          "Pipeline is invalid BSON");
          GOTO (done);
       }
-      has_out_key = _has_out_key (&iter);
+      has_write_key = _has_write_key (&iter);
    }
 
-   if (has_out_key && cursor->read_prefs->mode != MONGOC_READ_PRIMARY) {
+   if (has_write_key && cursor->read_prefs->mode != MONGOC_READ_PRIMARY) {
       mongoc_read_prefs_destroy (cursor->read_prefs);
       cursor->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-      MONGOC_WARNING (
-         "$out stage specified. Overriding read preference to primary.");
+      MONGOC_WARNING ("$out or $merge stage specified. Overriding read "
+                      "preference to primary.");
    }
 
    /* server id isn't enough. ensure we're connected & know wire version */
@@ -278,27 +289,28 @@ _mongoc_aggregate (mongoc_client_t *client,
       GOTO (done);
    }
 
-   has_write_concern = bson_has_field (&cursor->opts, "writeConcern");
-   if (has_write_concern &&
+   if (aggregate_opts.write_concern_owned && has_write_key &&
        server_stream->sd->max_wire_version < WIRE_VERSION_CMD_WRITE_CONCERN) {
-      bson_set_error (&cursor->error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                      "\"aggregate\" with \"$out\" does not support "
-                      "writeConcern with wire version %d, wire version %d is "
-                      "required",
-                      server_stream->sd->max_wire_version,
-                      WIRE_VERSION_CMD_WRITE_CONCERN);
+      bson_set_error (
+         &cursor->error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+         "\"aggregate\" with \"$out\" or \"$merge\" does not support "
+         "writeConcern with wire version %d, wire version %d is "
+         "required",
+         server_stream->sd->max_wire_version,
+         WIRE_VERSION_CMD_WRITE_CONCERN);
       GOTO (done);
    }
 
-   /* Only inherit WriteConcern when for aggregate with $out */
-   if (!bson_has_field (&cursor->opts, "writeConcern") && has_out_key) {
+   /* Only inherit WriteConcern when aggregate has $out or $merge */
+   if (!aggregate_opts.write_concern_owned && has_write_key) {
       mongoc_write_concern_destroy (cursor->write_concern);
       cursor->write_concern = mongoc_write_concern_copy (default_wc);
    }
 
 done:
+   _mongoc_aggregate_opts_cleanup (&aggregate_opts);
    mongoc_server_stream_cleanup (server_stream); /* null ok */
 
    /* we always return the cursor, even if it fails; users can detect the

@@ -40,7 +40,10 @@ typedef struct _json_test_config_t {
    bool command_monitoring_allow_subset;
 } json_test_config_t;
 
-#define JSON_TEST_CONFIG_INIT {NULL, NULL, NULL, NULL, false}
+#define JSON_TEST_CONFIG_INIT       \
+   {                                \
+      NULL, NULL, NULL, NULL, false \
+   }
 
 bson_t *
 get_bson_from_json_file (char *filename);
@@ -75,8 +78,9 @@ server_type_from_test (const char *type);
 
 void
 activate_fail_point (mongoc_client_t *client,
-                     uint32_t server_id,
-                     const bson_t *opts);
+                     const uint32_t server_id,
+                     const bson_t *test,
+                     const char *key);
 
 void
 deactivate_fail_points (mongoc_client_t *client, uint32_t server_id);

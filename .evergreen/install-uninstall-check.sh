@@ -68,17 +68,23 @@ if test -f $INSTALL_DIR/lib/pkgconfig/libbson-1.0.pc; then
 else
   echo "libbson-1.0.pc check ok"
 fi
-if test -f $INSTALL_DIR/lib/cmake/libbson-1.0/libbson-1.0-config.cmake; then
-  echo "libbson-1.0-config.cmake found!"
+if test -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-1.0-config.cmake; then
+  echo "bson-1.0-config.cmake found!"
   exit 1
 else
-  echo "libbson-1.0-config.cmake check ok"
+  echo "bson-1.0-config.cmake check ok"
 fi
-if test -f $INSTALL_DIR/lib/cmake/libbson-1.0/libbson-1.0-config-version.cmake; then
-  echo "libbson-1.0-config-version.cmake found!"
+if test -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-1.0-config-version.cmake; then
+  echo "bson-1.0-config-version.cmake found!"
   exit 1
 else
-  echo "libbson-1.0-config-version.cmake check ok"
+  echo "bson-1.0-config-version.cmake check ok"
+fi
+if test -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-targets.cmake; then
+  echo "bson-targets.cmake found!"
+  exit 1
+else
+  echo "bson-targets.cmake check ok"
 fi
 if test ! -f $INSTALL_DIR/lib/canary.txt; then
   echo "canary.txt not found!"
@@ -99,17 +105,23 @@ if [ -z "$BSON_ONLY" ]; then
   else
     echo "libmongoc-1.0.pc check ok"
   fi
-  if test -f $INSTALL_DIR/lib/cmake/libmongoc-1.0/libmongoc-1.0-config.cmake; then
-    echo "libmongoc-1.0-config.cmake found!"
+  if test -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-1.0-config.cmake; then
+    echo "mongoc-1.0-config.cmake found!"
     exit 1
   else
-    echo "libmongoc-1.0-config.cmake check ok"
+    echo "mongoc-1.0-config.cmake check ok"
   fi
-  if test -f $INSTALL_DIR/lib/cmake/libmongoc-1.0/libmongoc-1.0-config-version.cmake; then
-    echo "libmongoc-1.0-config-version.cmake found!"
+  if test -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-1.0-config-version.cmake; then
+    echo "mongoc-1.0-config-version.cmake found!"
     exit 1
   else
-    echo "libmongoc-1.0-config-version.cmake check ok"
+    echo "mongoc-1.0-config-version.cmake check ok"
+  fi
+  if test -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-targets.cmake; then
+    echo "mongoc-targets.cmake found!"
+    exit 1
+  else
+    echo "mongoc-targets.cmake check ok"
   fi
 fi
 if test -f $INSTALL_DIR/include/libbson-1.0/bson/bson.h; then

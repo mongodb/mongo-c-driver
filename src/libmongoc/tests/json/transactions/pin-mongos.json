@@ -1,6 +1,11 @@
 {
-  "topology": [
-    "sharded"
+  "runOn": [
+    {
+      "minServerVersion": "4.1.8",
+      "topology": [
+        "sharded"
+      ]
+    }
   ],
   "database_name": "transaction-tests",
   "collection_name": "test",
@@ -15,7 +20,6 @@
   "tests": [
     {
       "description": "countDocuments",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -130,7 +134,6 @@
     },
     {
       "description": "distinct",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -253,7 +256,6 @@
     },
     {
       "description": "find",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -400,7 +402,6 @@
     },
     {
       "description": "insertOne",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -555,7 +556,6 @@
     },
     {
       "description": "mixed read write operations",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -717,7 +717,6 @@
     },
     {
       "description": "multiple commits",
-      "skipReason": "CDRIVER-2872 Support mongos pinning for sharded transactions",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -828,7 +827,7 @@
     },
     {
       "description": "remain pinned after non-transient error on commit",
-      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
+      "skipReason": "blocked on SPEC-1320",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -932,7 +931,6 @@
     },
     {
       "description": "unpin after transient error within a transaction",
-      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "operations": [
         {
@@ -1052,7 +1050,7 @@
               "startTransaction": null,
               "autocommit": false,
               "writeConcern": null,
-              "recoveryToken": null
+              "recoveryToken": 42
             },
             "command_name": "abortTransaction",
             "database_name": "admin"
@@ -1074,7 +1072,6 @@
     },
     {
       "description": "unpin after transient error within a transaction and commit",
-      "skipReason": "CDRIVER-2883 Support sharded transactions recovery token",
       "useMultipleMongoses": true,
       "clientOptions": {
         "heartbeatFrequencyMS": 30000

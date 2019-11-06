@@ -17,7 +17,7 @@
 #include "mongoc/mongoc-host-list-private.h"
 /* strcasecmp on windows */
 #include "mongoc/mongoc-util-private.h"
-
+#include "mongoc/utlist.h"
 
 /*
  *--------------------------------------------------------------------------
@@ -51,6 +51,101 @@ _mongoc_host_list_push (const char *host,
    h->next = next;
 
    return h;
+}
+
+static mongoc_host_list_t *
+_mongoc_host_list_find_host_and_port (mongoc_host_list_t *hosts,
+                                      const char *host_and_port)
+{
+   mongoc_host_list_t *iter;
+   LL_FOREACH (hosts, iter)
+   {
+      BSON_ASSERT (iter);
+
+      if (strcmp (iter->host_and_port, host_and_port) == 0) {
+         return iter;
+      }
+   }
+
+   return NULL;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_host_list_upsert --
+ *
+ *       If new_host is not already in list, add it to the end of list.
+ *
+ * Returns:
+ *       Nothing.
+ *
+ * Side effects:
+ *       Modifies new_host->next when inserting.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+_mongoc_host_list_upsert (mongoc_host_list_t **list,
+                          mongoc_host_list_t *new_host)
+{
+   mongoc_host_list_t *link = NULL;
+
+   BSON_ASSERT (list);
+   if (!new_host) {
+      return;
+   }
+
+   link = _mongoc_host_list_find_host_and_port (*list, new_host->host_and_port);
+
+   if (!link) {
+      link = bson_malloc0 (sizeof (mongoc_host_list_t));
+      LL_APPEND (*list, link);
+   } else {
+      /* Make sure linking is preserved when copying data into final. */
+      new_host->next = link->next;
+   }
+
+   memcpy (link, new_host, sizeof (mongoc_host_list_t));
+}
+
+
+/* Duplicates the elements of {src}, creating a new chain,
+ * optionally prepended to an existing chain {next}.
+ *
+ * Note that as a side-effect of the implementation,
+ * this reverses the order of src's copy in the destination.
+ */
+mongoc_host_list_t *
+_mongoc_host_list_copy (const mongoc_host_list_t *src, mongoc_host_list_t *next)
+{
+   mongoc_host_list_t *h = NULL;
+   const mongoc_host_list_t *src_iter;
+
+   LL_FOREACH (src, src_iter)
+   {
+      h = bson_malloc0 (sizeof (mongoc_host_list_t));
+      memcpy (h, src_iter, sizeof (mongoc_host_list_t));
+
+      LL_PREPEND (next, h);
+   }
+
+   return h;
+}
+
+int
+_mongoc_host_list_length (mongoc_host_list_t *list)
+{
+   mongoc_host_list_t *tmp;
+   int counter = 0;
+
+   tmp = list;
+   while (tmp) {
+      tmp = tmp->next;
+      counter++;
+   }
+
+   return counter;
 }
 
 /*
@@ -245,4 +340,27 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *link_,
 
    link_->next = NULL;
    return true;
+}
+
+void
+_mongoc_host_list_remove_host (mongoc_host_list_t **hosts,
+                               const char *host,
+                               uint16_t port)
+{
+   mongoc_host_list_t *current;
+   mongoc_host_list_t *prev = NULL;
+
+   for (current = *hosts; current; prev = current, current = current->next) {
+      if ((current->port == port) && (strcmp (current->host, host) == 0)) {
+         /* Node found, unlink. */
+         if (prev) {
+            prev->next = current->next;
+         } else {
+            /* No previous, unlinking at head. */
+            *hosts = current->next;
+         }
+         bson_free (current);
+         break;
+      }
+   }
 }

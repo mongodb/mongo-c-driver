@@ -42,6 +42,13 @@
       request_destroy (_request);                                             \
    } while (0);
 
+
+typedef struct _data_change_stream_t {
+   mongoc_cursor_response_t response;
+   bson_t post_batch_resume_token;
+} _data_change_stream_t;
+
+
 static int
 test_framework_skip_if_not_single_version_5 (void)
 {
@@ -513,6 +520,7 @@ _test_resume_token_error (const char *id_projection)
 
    client = test_framework_client_new ();
    ASSERT (client);
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
 
    coll = drop_and_get_coll (client, "db", "coll_missing_resume");
    ASSERT (coll);
@@ -544,6 +552,12 @@ _test_resume_token_error (const char *id_projection)
                              MONGOC_ERROR_CURSOR,
                              MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
                              "Cannot provide resume functionality");
+   } else {
+      ASSERT_ERROR_CONTAINS (err,
+                             MONGOC_ERROR_SERVER,
+                             280,
+                             "Only transformations that retain the unmodified "
+                             "_id field are allowed.");
    }
 
    bson_destroy (&opts);
@@ -677,6 +691,19 @@ test_getmore_errors (void)
    _test_getmore_error ("{'ok': 0, 'errmsg': 'random error'}",
                         false /* should_resume */,
                         false /* resume_kills_cursor */);
+   /* An error with a 'NonResumableChangeStreamError' label should not attempt
+    * to resume. */
+   _test_getmore_error (
+      "{'ok': 0, 'code': 280, 'errorLabels': "
+      "['NonResumableChangeStreamError'], 'errmsg': 'random error'}",
+      false /* should_resume */,
+      false /* resume_kills_cursor */);
+   /* But other error labels should resume. */
+   _test_getmore_error (
+      "{'ok': 0, 'code': 280, 'errorLabels': "
+      "['NonRetryableChangeStreamError'], 'errmsg': 'random error'}",
+      true /* should_resume */,
+      true /* resume_kills_cursor */);
 }
 /* From Change Streams Spec tests:
  * "ChangeStream will automatically resume one time on a resumable error
@@ -700,6 +727,8 @@ test_change_stream_resumable_error (void)
    const bson_t *next_doc = NULL;
    const char *not_master_err =
       "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }";
+   const char *interrupted_err =
+      "{ 'code': 11601, 'errmsg': 'interrupted', 'ok': 0 }";
    const char *watch_cmd =
       "{ 'aggregate': 'coll', 'pipeline' "
       ": [ { '$changeStream': { 'fullDocument': 'default' } } ], "
@@ -788,14 +817,31 @@ test_change_stream_resumable_error (void)
    mock_server_replies_simple (request, not_master_err);
    request_destroy (request);
 
+   /* Retry command */
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SLAVE_OK, watch_cmd);
+   mock_server_replies_simple (request,
+                               "{'cursor': {'id': 126, 'ns': "
+                               "'db.coll','firstBatch': []},'ok': 1 "
+                               "}");
+   request_destroy (request);
+
+   request =
+      mock_server_receives_command (server,
+                                    "db",
+                                    MONGOC_QUERY_SLAVE_OK,
+                                    "{ 'getMore': 126, 'collection': 'coll' }");
+   mock_server_replies_simple (request, interrupted_err);
+   request_destroy (request);
+
    /* Check that error is returned */
    ASSERT (!future_get_bool (future));
    ASSERT (mongoc_change_stream_error_document (stream, &err, &err_doc));
    ASSERT (next_doc == NULL);
-   ASSERT_ERROR_CONTAINS (err, MONGOC_ERROR_SERVER, 10107, "not master");
-   ASSERT_MATCH (err_doc, not_master_err);
+   ASSERT_ERROR_CONTAINS (err, MONGOC_ERROR_SERVER, 11601, "interrupted");
+   ASSERT_MATCH (err_doc, interrupted_err);
    future_destroy (future);
-   mongoc_change_stream_destroy (stream);
+   DESTROY_CHANGE_STREAM (126);
 
    /* Test an error on the initial aggregate when resuming. */
    future = future_collection_watch (coll, tmp_bson ("{}"), NULL);
@@ -1600,6 +1646,8 @@ change_stream_spec_before_test_cb (json_test_ctx_t *test_ctx,
    bson_t pipeline;
    const char *target = bson_lookup_utf8 (test, "target");
 
+   set_apm_callbacks (test_ctx, test_ctx->client);
+
    bson_lookup_doc (test, "changeStreamOptions", &opts);
    bson_lookup_doc (test, "changeStreamPipeline", &pipeline);
    if (!strcmp (target, "collection")) {
@@ -1839,11 +1887,11 @@ test_resume_cases (void)
 
    /* only 'startAfter' specified. */
    /* - if no doc recv'ed, use the startAfter option for the original aggregate
-    *   but resumeAfter with the same value when resuming. */
+    *   whether or not we are resuming. */
    _test_resume ("{" OPT_SA "}",
                  OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "",
-                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "");
    /* - if doc recv'ed and iterated, use the doc's resume token. */
    _test_resume ("{" OPT_SA "}",
@@ -1854,13 +1902,14 @@ test_resume_cases (void)
 
    /* 'resumeAfter', 'startAfter', and 'startAtOperationTime' are all specified.
     * All should be passed (although the server currently returns an error). */
-   /* - if no doc recv'ed, use the resumeAfter option. */
+   /* - if no doc recv'ed, use startAfter. */
    _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
                  OPT_RA "," OPT_SA "," OPT_OP ",",
                  "",
-                 OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "");
-   /* - if doc recv'ed and iterated, use the doc's resume token. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with doc's resume
+    * token. */
    _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
                  OPT_RA "," OPT_SA "," OPT_OP ",",
                  DOC,
@@ -1876,6 +1925,7 @@ test_resume_cases_with_post_batch_resume_token (void)
 {
 #define CURSOR_PBR "'postBatchResumeToken': {'resume': 'pbr'}"
 #define PBR_RA "'resumeAfter': {'resume': 'pbr'}"
+#define PBR_SA "'startAfter': {'resume': 'pbr'}"
 
    /* test features:
     * - whether the change stream returns a document before resuming.
@@ -1889,13 +1939,14 @@ test_resume_cases_with_post_batch_resume_token (void)
     * last document in the batch (if _test_resume() iterates to that point). */
 
    /* no options specified. */
-   /* - if no doc recv'ed, use postBatchResumeToken. */
+   /* - if no doc recv'ed, use resumeAfter with postBatchResumeToken. */
    _test_resume ("{}",
                  NO_OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  "",
                  PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  "," CURSOR_PBR);
-   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with
+    * postBatchResumeToken. */
    _test_resume ("{}",
                  NO_OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  DOC,
@@ -1903,13 +1954,14 @@ test_resume_cases_with_post_batch_resume_token (void)
                  "," CURSOR_PBR);
 
    /* only 'startAtOperationTime' specified. */
-   /* - if no doc recv'ed, use postBatchResumeToken. */
+   /* - if no doc recv'ed, use resumeAfter with postBatchResumeToken. */
    _test_resume ("{" OPT_OP "}",
                  OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  "",
                  PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  "," CURSOR_PBR);
-   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with
+    * postBatchResumeToken. */
    _test_resume ("{" OPT_OP "}",
                  OPT_OP "," NO_OPT_RA "," NO_OPT_SA ",",
                  DOC,
@@ -1917,13 +1969,14 @@ test_resume_cases_with_post_batch_resume_token (void)
                  "," CURSOR_PBR);
 
    /* only 'resumeAfter' specified. */
-   /* - if no doc recv'ed, use postBatchResumeToken. */
+   /* - if no doc recv'ed, use resumeAfter with postBatchResumeToken. */
    _test_resume ("{" OPT_RA "}",
                  OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  "",
                  PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  "," CURSOR_PBR);
-   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with
+    * postBatchResumeToken. */
    _test_resume ("{" OPT_RA "}",
                  OPT_RA "," NO_OPT_OP "," NO_OPT_SA ",",
                  DOC,
@@ -1931,13 +1984,14 @@ test_resume_cases_with_post_batch_resume_token (void)
                  "," CURSOR_PBR);
 
    /* only 'startAfter' specified. */
-   /* - if no doc recv'ed, use postBatchResumeToken. */
+   /* - if no doc recv'ed, use startAfter with postBatchResumeToken. */
    _test_resume ("{" OPT_SA "}",
                  OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "",
-                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 PBR_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "," CURSOR_PBR);
-   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with
+    * postBatchResumeToken. */
    _test_resume ("{" OPT_SA "}",
                  OPT_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  DOC,
@@ -1946,13 +2000,14 @@ test_resume_cases_with_post_batch_resume_token (void)
 
    /* 'resumeAfter', 'startAfter', and 'startAtOperationTime' are all specified.
     * All should be passed (although the server currently returns an error). */
-   /* - if no doc recv'ed, use postBatchResumeToken. */
+   /* - if no doc recv'ed, use startAfter with postBatchResumeToken. */
    _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
                  OPT_RA "," OPT_SA "," OPT_OP ",",
                  "",
-                 PBR_RA "," NO_OPT_OP "," NO_OPT_SA ",",
+                 PBR_SA "," NO_OPT_OP "," NO_OPT_RA ",",
                  "," CURSOR_PBR);
-   /* - if one doc recv'ed and iterated, use postBatchResumeToken. */
+   /* - if one doc recv'ed and iterated, use resumeAfter with
+    * postBatchResumeToken. */
    _test_resume ("{" OPT_RA "," OPT_SA "," OPT_OP "}",
                  OPT_RA "," OPT_SA "," OPT_OP ",",
                  DOC,
@@ -1980,6 +2035,477 @@ test_error_null_doc (void *ctx)
    BSON_ASSERT (!error_doc);
    mongoc_change_stream_destroy (stream);
    mongoc_client_destroy (client);
+}
+
+
+void
+_check_doc_resume_token (const bson_t *doc, const bson_t *resume_token)
+{
+   bson_t document_resume_token;
+
+   bson_lookup_doc (doc, "_id", &document_resume_token);
+   ASSERT (bson_equal (resume_token, &document_resume_token));
+
+   bson_destroy (&document_resume_token);
+}
+
+
+void
+prose_test_11 (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   bson_error_t error;
+   const bson_t *next_doc = NULL;
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   bson_t opts = BSON_INITIALIZER;
+   const bson_t *resume_token;
+   _data_change_stream_t *post_batch_expected;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   coll = drop_and_get_coll (client, "db", "coll_resume");
+   ASSERT (coll);
+
+   /* Set the batch size to 1 so we only get one document per call to next. */
+   stream = mongoc_collection_watch (
+      coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"));
+   ASSERT (stream);
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL),
+                    error);
+
+   /* The resume token should be updated to the post batch resume token */
+   ASSERT (!mongoc_change_stream_next (stream, &next_doc));
+   ASSERT (!next_doc);
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (!bson_empty0 (resume_token));
+
+   /* Look into the struct and get the actual post batch resume token, assert it
+    * is equal to our resume token */
+   post_batch_expected = (_data_change_stream_t *) stream->cursor->impl.data;
+   ASSERT (bson_compare (resume_token,
+                         &post_batch_expected->post_batch_resume_token) == 0);
+
+   mongoc_write_concern_set_wmajority (wc, 30000);
+   mongoc_write_concern_append (wc, &opts);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll, tmp_bson ("{'_id': 0}"), &opts, NULL, &error),
+                    error);
+
+   /* Checking that a resume token is returned */
+   ASSERT (mongoc_change_stream_next (stream, &next_doc));
+   ASSERT (next_doc);
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (!bson_empty0 (resume_token));
+   ASSERT (bson_compare (resume_token,
+                         &post_batch_expected->post_batch_resume_token) == 0);
+
+   bson_destroy (&opts);
+   mongoc_write_concern_destroy (wc);
+   mongoc_change_stream_destroy (stream);
+   mongoc_client_destroy (client);
+   mongoc_collection_destroy (coll);
+}
+
+
+void
+prose_test_12 (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   bson_error_t error;
+   const bson_t *next_doc = NULL;
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   bson_t opts = BSON_INITIALIZER;
+   const bson_t *resume_token;
+   bson_iter_t iter, child;
+   bson_t expected_token;
+   bson_t expected_doc;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   coll = drop_and_get_coll (client, "db", "coll_resume");
+   ASSERT (coll);
+
+   /* Set the batch size to 1 so we only get one document per call to next. */
+   stream = mongoc_collection_watch (
+      coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"));
+   ASSERT (stream);
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL),
+                    error);
+
+   mongoc_write_concern_set_wmajority (wc, 30000);
+   mongoc_write_concern_append (wc, &opts);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll, tmp_bson ("{'_id': 0}"), &opts, NULL, &error),
+                    error);
+
+   /* Checking that a resume token is returned */
+   ASSERT (mongoc_change_stream_next (stream, &next_doc));
+   ASSERT (next_doc);
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (!bson_empty0 (resume_token));
+
+   /* Need to now check that we are getting back the _id of the last inserted
+    * document when we iterate to the last document */
+   bson_copy_to (next_doc, &expected_doc);
+   _check_doc_resume_token (&expected_doc, resume_token);
+
+   ASSERT (bson_iter_init_find (&iter, next_doc, "documentKey"));
+   ASSERT (bson_iter_recurse (&iter, &child));
+   ASSERT (bson_iter_find (&child, "_id") && bson_iter_int32 (&child) == 0);
+
+   /* Must check that getResumeToken returns resumeAfter correctly when
+    * specified. */
+   bson_copy_to (resume_token, &expected_token);
+   mongoc_change_stream_destroy (stream);
+   bson_destroy (&opts);
+   bson_init (&opts);
+   BSON_APPEND_DOCUMENT (&opts, "resumeAfter", &expected_token);
+
+   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), &opts);
+   ASSERT (stream);
+
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (bson_equal (resume_token, &expected_token));
+
+   bson_destroy (&expected_doc);
+   bson_destroy (&expected_token);
+   bson_destroy (&opts);
+   mongoc_write_concern_destroy (wc);
+   mongoc_change_stream_destroy (stream);
+   mongoc_client_destroy (client);
+   mongoc_collection_destroy (coll);
+}
+
+
+void
+prose_test_13 (void *ctx)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   bson_error_t error;
+   const bson_t *next_doc = NULL;
+   mongoc_apm_callbacks_t *callbacks;
+   mongoc_write_concern_t *wc = mongoc_write_concern_new ();
+   bson_t opts = BSON_INITIALIZER;
+   const bson_t *resume_token;
+   bson_iter_t iter, child;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks,
+                                      test_resume_token_command_start);
+   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
+
+   coll = drop_and_get_coll (client, "db", "coll_resume");
+   ASSERT (coll);
+   ASSERT_OR_PRINT (
+      mongoc_collection_insert_one (coll, tmp_bson (NULL), NULL, NULL, &error),
+      error);
+
+   /* Set the batch size to 1 so we only get one document per call to next. */
+   stream = mongoc_collection_watch (
+      coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"));
+   ASSERT (stream);
+   ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL),
+                    error);
+
+   /* Insert a few docs to listen for. Use write concern majority, so subsequent
+    * call to watch will be guaranteed to retrieve them. */
+   mongoc_write_concern_set_wmajority (wc, 30000);
+   mongoc_write_concern_append (wc, &opts);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll, tmp_bson ("{'_id': 0}"), &opts, NULL, &error),
+                    error);
+
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll, tmp_bson ("{'_id': 1}"), &opts, NULL, &error),
+                    error);
+
+   /* The resume token should be updated to the most recently iterated doc */
+   ASSERT (mongoc_change_stream_next (stream, &next_doc));
+   ASSERT (next_doc);
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (!bson_empty0 (resume_token));
+   _check_doc_resume_token (next_doc, resume_token);
+
+   ASSERT (mongoc_change_stream_next (stream, &next_doc));
+   ASSERT (next_doc);
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (!bson_empty0 (resume_token));
+   _check_doc_resume_token (next_doc, resume_token);
+
+   ASSERT (bson_iter_init_find (&iter, next_doc, "documentKey"));
+   ASSERT (bson_iter_recurse (&iter, &child));
+   ASSERT (bson_iter_find (&child, "_id") && bson_iter_int32 (&child) == 1);
+
+   bson_destroy (&opts);
+   mongoc_write_concern_destroy (wc);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_change_stream_destroy (stream);
+   mongoc_client_destroy (client);
+   mongoc_collection_destroy (coll);
+}
+
+static void
+_save_operation_time_from_agg (const mongoc_apm_command_succeeded_t *event)
+{
+   if (0 == strcmp ("aggregate",
+                    mongoc_apm_command_succeeded_get_command_name (event))) {
+      mongoc_timestamp_t *timestamp;
+      bson_iter_t iter;
+      const bson_t *cmd;
+
+      cmd = mongoc_apm_command_succeeded_get_reply (event);
+      timestamp = mongoc_apm_command_succeeded_get_context (event);
+      /* Capture the operationTime from the first aggregate reply. */
+      if (timestamp->timestamp == 0) {
+         BSON_ASSERT (bson_iter_init_find (&iter, cmd, "operationTime"));
+         _mongoc_timestamp_set_from_bson (timestamp, &iter);
+      }
+   }
+}
+
+void
+prose_test_14 (void *test_ctx)
+{
+   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   bson_t opts;
+   bson_error_t error;
+   const bson_t *resume_token;
+   bson_t expected_token;
+   const bson_t *doc = NULL;
+   mongoc_timestamp_t optime = {0};
+   mongoc_apm_callbacks_t *callbacks;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_succeeded_cb (callbacks,
+                                        _save_operation_time_from_agg);
+   mongoc_client_set_apm_callbacks (client, callbacks, &optime);
+   mongoc_apm_callbacks_destroy (callbacks);
+
+   coll = drop_and_get_coll (client, "db", "coll");
+   bson_init (&opts);
+   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), &opts);
+   /* The _save_operation_time_from_agg listener must have stored the operation
+    * time. */
+   BSON_ASSERT (optime.timestamp != 0);
+
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll, tmp_bson ("{'_id': 0}"), &opts, NULL, &error),
+                    error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll, tmp_bson ("{'_id': 1}"), &opts, NULL, &error),
+                    error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll, tmp_bson ("{'_id': 2}"), &opts, NULL, &error),
+                    error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       coll, tmp_bson ("{'_id': 3}"), &opts, NULL, &error),
+                    error);
+
+   ASSERT (mongoc_change_stream_next (stream, &doc));
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+
+   bson_copy_to (resume_token, &expected_token);
+   BSON_APPEND_DOCUMENT (&opts, "startAfter", &expected_token);
+
+   mongoc_change_stream_destroy (stream);
+
+   /* Start a new change stream using "startAfter" set to a previously obtained
+   resume token to guarantee a non-empty initial batch */
+   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), &opts);
+
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (bson_equal (resume_token, &expected_token));
+
+   /* Doing the same using "resumeAfter" instead */
+   mongoc_change_stream_destroy (stream);
+   bson_destroy (&opts);
+   bson_init (&opts);
+   BSON_APPEND_DOCUMENT (&opts, "resumeAfter", &expected_token);
+
+   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), &opts);
+
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (bson_equal (resume_token, &expected_token));
+   mongoc_change_stream_destroy (stream);
+
+   /* Finally, with neither. */
+   bson_destroy (&opts);
+   bson_init (&opts);
+   BSON_APPEND_TIMESTAMP (
+      &opts, "startAtOperationTime", optime.timestamp, optime.increment);
+   stream = mongoc_collection_watch (coll, tmp_bson ("{}"), &opts);
+
+   resume_token = mongoc_change_stream_get_resume_token (stream);
+   ASSERT (resume_token == NULL);
+
+   bson_destroy (&expected_token);
+   bson_destroy (&opts);
+   mongoc_change_stream_destroy (stream);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
+
+void
+prose_test_17 (void)
+{
+   mock_server_t *server;
+   request_t *request;
+   future_t *future;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   const bson_t *next_doc = NULL;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   coll = mongoc_client_get_collection (client, "db", "coll");
+   /* Pass an arbitrary document as the resume token, like {'x': 1} */
+   future = future_collection_watch (
+      coll, tmp_bson ("{}"), tmp_bson ("{'startAfter': {'x': 1}}"));
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { "
+                "'startAfter': {'x': 1} , 'resumeAfter': { '$exists': false }, "
+                "'startAtOperationTime': { '$exists': false } } } ]}"));
+
+   mock_server_replies_simple (
+      request,
+      "{'cursor': {'id': 123, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1 }");
+
+   request_destroy (request);
+
+   stream = future_get_mongoc_change_stream_ptr (future);
+   ASSERT (stream);
+   future_destroy (future);
+
+   future = future_change_stream_next (stream, &next_doc);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'getMore': {'$numberLong': '123'}, 'collection': 'coll' }"));
+
+   mock_server_replies_simple (
+      request, "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }");
+
+   request_destroy (request);
+
+   /* Resume occurs. */
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate': 'coll', 'pipeline': [ { "
+                "'$changeStream': { 'startAfter': {'x': 1}, 'resumeAfter': { "
+                "'$exists': false }, 'startAtOperationTime': { '$exists': "
+                "false } } "
+                "}]}"));
+
+   /* Reply with a 0 cursor ID to prevent a killCursors command. */
+   mock_server_replies_simple (
+      request,
+      "{'cursor': {'id': 0, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1 }");
+   request_destroy (request);
+   BSON_ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   mongoc_change_stream_destroy (stream);
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+void
+prose_test_18 (void)
+{
+   mock_server_t *server;
+   request_t *request;
+   future_t *future;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_change_stream_t *stream;
+   const bson_t *next_doc = NULL;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   coll = mongoc_client_get_collection (client, "db", "coll");
+   /* Pass an arbitrary document as the resume token, like {'x': 1} */
+   future = future_collection_watch (
+      coll, tmp_bson ("{}"), tmp_bson ("{'startAfter': {'x': 1}}"));
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate': 'coll', 'pipeline' : [ { '$changeStream': { "
+                "'startAfter': {'x': 1}, 'resumeAfter': { '$exists': false }, "
+                "'startAtOperationTime': { '$exists': false } } } ]}"));
+
+   mock_server_replies_simple (request,
+                               "{'cursor': {'id': 123, 'ns': "
+                               "'db.coll', 'firstBatch': [{'_id': "
+                               "{'y': 1}}]}, 'ok': 1 }");
+
+   request_destroy (request);
+   stream = future_get_mongoc_change_stream_ptr (future);
+   ASSERT (stream);
+   future_destroy (future);
+
+   /* The first call to mongoc_change_stream_next returns the batched document.
+    */
+   mongoc_change_stream_next (stream, &next_doc);
+
+   future = future_change_stream_next (stream, &next_doc);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'getMore': {'$numberLong': '123'}, 'collection': 'coll' }"));
+
+   mock_server_replies_simple (
+      request, "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }");
+
+   request_destroy (request);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson ("{ 'aggregate': 'coll', 'pipeline': [ { "
+                "'$changeStream': { 'resumeAfter': {'y': 1}, 'startAfter': { "
+                "'$exists': false }, 'startAtOperationTime': { '$exists': "
+                "false } } "
+                "}]}"));
+   /* Reply with a 0 cursor ID to prevent a killCursors command. */
+   mock_server_replies_simple (
+      request,
+      "{'cursor': {'id': 0, 'ns': 'db.coll', 'firstBatch': []}, 'ok': 1 }");
+   request_destroy (request);
+   BSON_ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   mongoc_change_stream_destroy (stream);
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
 }
 
 
@@ -2113,6 +2639,39 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       NULL,
                       _skip_if_no_client_watch);
+   TestSuite_AddFull (suite,
+                      "/change_stream/live/prose_test_11",
+                      prose_test_11,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_rs_version_6,
+                      test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (suite,
+                      "/change_stream/live/prose_test_12",
+                      prose_test_12,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_rs_version_6,
+                      test_framework_skip_if_max_wire_version_more_than_7);
+   TestSuite_AddFull (suite,
+                      "/change_stream/live/prose_test_13",
+                      prose_test_13,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_not_rs_version_6,
+                      _skip_if_no_start_at_optime);
+   TestSuite_AddFull (suite,
+                      "/change_stream/live/prose_test_14",
+                      prose_test_14,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_mongos,
+                      test_framework_skip_if_not_rs_version_7);
+   TestSuite_AddMockServerTest (
+      suite, "/change_streams/prose_test_17", prose_test_17);
+   TestSuite_AddMockServerTest (
+      suite, "/change_streams/prose_test_18", prose_test_18);
+
 
    test_framework_resolve_path (JSON_DIR "/change_streams", resolved);
    install_json_test_suite (suite, resolved, &test_change_stream_spec_cb);

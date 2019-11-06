@@ -20,6 +20,7 @@
 #include "mongoc/mongoc-handshake-private.h"
 
 #include "mongoc/mongoc-error.h"
+#include "mongoc/mongoc-host-list-private.h"
 #include "mongoc/mongoc-log.h"
 #include "mongoc/mongoc-topology-private.h"
 #include "mongoc/mongoc-topology-description-apm-private.h"
@@ -208,6 +209,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    char *prefixed_service;
    uint32_t id;
    const mongoc_host_list_t *hl;
+   mongoc_rr_data_t rr_data;
 
    BSON_ASSERT (uri);
 
@@ -300,17 +302,25 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    topology_valid = true;
    service = mongoc_uri_get_service (uri);
    if (service) {
+      memset (&rr_data, 0, sizeof (mongoc_rr_data_t));
+
       /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
       prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
       if (!_mongoc_client_get_rr (prefixed_service,
                                   MONGOC_RR_SRV,
                                   topology->uri,
+                                  &rr_data,
                                   &topology->scanner->error) ||
           !_mongoc_client_get_rr (service,
                                   MONGOC_RR_TXT,
                                   topology->uri,
+                                  NULL,
                                   &topology->scanner->error)) {
          topology_valid = false;
+      } else {
+         topology->last_srv_scan = bson_get_monotonic_time ();
+         topology->rescanSRVIntervalMS = BSON_MAX (
+            rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
       }
 
       bson_free (prefixed_service);
@@ -456,6 +466,92 @@ _mongoc_topology_clear_session_pool (mongoc_topology_t *topology)
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_topology_rescan_srv --
+ *
+ *      Queries SRV records for new hosts in a mongos cluster.
+ *
+ *      NOTE: this method expects @topology's mutex to be locked on entry.
+ *
+ * --------------------------------------------------------------------------
+ */
+static void
+mongoc_topology_rescan_srv (mongoc_topology_t *topology)
+{
+   mongoc_rr_data_t rr_data = {0};
+   mongoc_host_list_t *h = NULL;
+   const char *service;
+   char *prefixed_service = NULL;
+   int64_t scan_time;
+
+   if ((topology->description.type != MONGOC_TOPOLOGY_SHARDED) &&
+       (topology->description.type != MONGOC_TOPOLOGY_UNKNOWN)) {
+      /* Only perform rescan for sharded topology. */
+      return;
+   }
+
+   service = mongoc_uri_get_service (topology->uri);
+   if (!service) {
+      /* Only rescan if we have a mongodb+srv:// URI. */
+      return;
+   }
+
+   scan_time = topology->last_srv_scan + (topology->rescanSRVIntervalMS * 1000);
+   if (bson_get_monotonic_time () < scan_time) {
+      /* Query SRV no more frequently than rescanSRVIntervalMS. */
+      return;
+   }
+
+   /* Go forth and query... */
+   rr_data.hosts =
+      _mongoc_host_list_copy (mongoc_uri_get_hosts (topology->uri), NULL);
+
+   prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
+   if (!_mongoc_client_get_rr (prefixed_service,
+                               MONGOC_RR_SRV,
+                               topology->uri,
+                               &rr_data,
+                               &topology->scanner->error)) {
+      /* Failed querying, soldier on and try again next time. */
+      topology->rescanSRVIntervalMS = topology->description.heartbeat_msec;
+      GOTO (done);
+   }
+
+   topology->last_srv_scan = bson_get_monotonic_time ();
+   topology->rescanSRVIntervalMS = BSON_MAX (
+      rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
+
+   if (rr_data.count == 0) {
+      /* Special case when DNS returns zero records successfully.
+       * Leave the toplogy alone and perform another scan at the next interval
+       * rather than removing all records and having nothing to connect to.
+       * For no verified hosts drivers "MUST temporarily set rescanSRVIntervalMS
+       * to heartbeatFrequencyMS until at least one verified SRV record is
+       * obtained."
+       */
+      topology->rescanSRVIntervalMS = topology->description.heartbeat_msec;
+      GOTO (done);
+   }
+
+   /* rr_data.hosts was initialized to the current set of known hosts
+    * on entry, and mongoc_client_get_rr will have stripped it down to
+    * only include hosts which were NOT included in the most recent query.
+    * Remove those hosts and we're left with only active servers.
+    */
+   for (h = rr_data.hosts; h; h = rr_data.hosts) {
+      rr_data.hosts = h->next;
+      mongoc_uri_remove_host (topology->uri, h->host, h->port);
+      bson_free (h);
+   }
+
+done:
+   bson_free (prefixed_service);
+   _mongoc_host_list_destroy_all (rr_data.hosts);
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_topology_scan_once --
  *
  *      Runs a single complete scan.
@@ -469,6 +565,9 @@ _mongoc_topology_clear_session_pool (mongoc_topology_t *topology)
 static void
 mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
 {
+   /* Prior to scanning hosts, update the list of SRV hosts, if applicable. */
+   mongoc_topology_rescan_srv (topology);
+
    /* since the last scan, members may be added or removed from the topology
     * description based on ismaster responses in connection handshakes, see
     * _mongoc_topology_update_from_handshake. retire scanner nodes for removed
@@ -1536,4 +1635,11 @@ _mongoc_topology_get_ismaster (mongoc_topology_t *topology)
    cmd = _mongoc_topology_scanner_get_ismaster (topology->scanner);
    bson_mutex_unlock (&topology->mutex);
    return cmd;
+}
+
+void
+_mongoc_topology_bypass_cooldown (mongoc_topology_t *topology)
+{
+   BSON_ASSERT (topology->single_threaded);
+   topology->scanner->bypass_cooldown = true;
 }

@@ -860,7 +860,7 @@ bool
 mongoc_topology_scanner_node_in_cooldown (mongoc_topology_scanner_node_t *node,
                                           int64_t when)
 {
-   if (node->last_failed == -1) {
+   if (node->last_failed == -1 || node->ts->bypass_cooldown) {
       return false; /* node is new, or connected */
    }
 
@@ -884,6 +884,9 @@ mongoc_topology_scanner_in_cooldown (mongoc_topology_scanner_t *ts,
 {
    mongoc_topology_scanner_node_t *node;
 
+   if (ts->bypass_cooldown) {
+      return false;
+   }
    DL_FOREACH (ts->nodes, node)
    {
       if (!mongoc_topology_scanner_node_in_cooldown (node, when)) {

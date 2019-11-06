@@ -233,19 +233,18 @@ test_aggregate_inherit_collection (void)
 }
 
 static void
-test_aggregate_with_batch_size ()
+_batch_size_test (bson_t *pipeline,
+                  bson_t *batch_size,
+                  bool use_batch_size,
+                  int size)
 {
    mock_server_t *mock_server;
    mongoc_client_t *client;
    mongoc_collection_t *coll;
-   mongoc_cursor_t *cursor;
    future_t *future;
    request_t *request;
+   mongoc_cursor_t *cursor;
    const bson_t *doc;
-   bson_t *pipeline_with_dollar_out;
-   bson_t *pipeline_without_dollar_out;
-   bson_t *batch_size_zero;
-   bson_t *batch_size_one;
 
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
    mock_server_run (mock_server);
@@ -253,83 +252,71 @@ test_aggregate_with_batch_size ()
    client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
    coll = mongoc_client_get_collection (client, "db", "coll");
 
-   pipeline_with_dollar_out =
-      tmp_bson ("{ 'pipeline': [ { '$out' : 'coll2' } ] }");
-   pipeline_without_dollar_out = tmp_bson ("{ 'pipeline': [ ] }");
+   cursor = mongoc_collection_aggregate (
+      coll, MONGOC_QUERY_NONE, pipeline, batch_size, NULL);
+   future = future_cursor_next (cursor, &doc);
+
+   if (use_batch_size) {
+      request = mock_server_receives_msg (
+         mock_server,
+         0,
+         tmp_bson ("{ 'cursor' : { 'batchSize' : %d } }", size));
+   } else {
+      request = mock_server_receives_msg (
+         mock_server,
+         0,
+         tmp_bson ("{ 'cursor' : { 'batchSize' : { '$exists': false } } }"));
+   }
+
+   mock_server_replies_simple (request, "{'ok': 1}");
+
+   request_destroy (request);
+   future_wait (future);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (mock_server);
+}
+
+static void
+test_aggregate_with_batch_size ()
+{
+   bson_t *pipeline_dollar_out;
+   bson_t *pipeline_dollar_merge;
+   bson_t *pipeline_no_terminal_key;
+   bson_t *batch_size_zero;
+   bson_t *batch_size_one;
+
+   pipeline_dollar_out = tmp_bson ("{ 'pipeline': [ { '$out' : 'coll2' } ] }");
+   pipeline_dollar_merge =
+      tmp_bson ("{ 'pipeline': [ { '$merge' : 'coll2' } ] }");
+   pipeline_no_terminal_key = tmp_bson ("{ 'pipeline': [ ] }");
 
    batch_size_one = tmp_bson (" { 'batchSize': 1 } ");
    batch_size_zero = tmp_bson (" { 'batchSize': 0 } ");
 
    /* Case 1:
-      Test that with $out and batchSize > 0, we use the batchSize */
-   cursor = mongoc_collection_aggregate (
-      coll, MONGOC_QUERY_NONE, pipeline_with_dollar_out, batch_size_one, NULL);
-   future = future_cursor_next (cursor, &doc);
-
-   request = mock_server_receives_msg (
-      mock_server, 0, tmp_bson ("{ 'cursor' : { 'batchSize' : 1 } }"));
-   mock_server_replies_simple (request, "{'ok': 1}");
-
-   request_destroy (request);
-   future_wait (future);
-   future_destroy (future);
-   mongoc_cursor_destroy (cursor);
+      Test that with a terminal key and batchSize > 0,
+      we use the batchSize */
+   _batch_size_test (pipeline_dollar_out, batch_size_one, true, 1);
+   _batch_size_test (pipeline_dollar_merge, batch_size_one, true, 1);
 
    /* Case 2:
-      Test that with $out and batchSize == 0, we don't use the batchSize */
-   cursor = mongoc_collection_aggregate (
-      coll, MONGOC_QUERY_NONE, pipeline_with_dollar_out, batch_size_zero, NULL);
-   future = future_cursor_next (cursor, &doc);
-
-   request = mock_server_receives_msg (
-      mock_server,
-      0,
-      tmp_bson ("{ 'cursor' : { 'batchSize' : { '$exists': false } } }"));
-   mock_server_replies_simple (request, "{'ok': 1}");
-
-   request_destroy (request);
-   future_wait (future);
-   future_destroy (future);
-   mongoc_cursor_destroy (cursor);
+      Test that with terminal key and batchSize == 0,
+      we don't use the batchSize */
+   _batch_size_test (pipeline_dollar_out, batch_size_zero, false, 0);
+   _batch_size_test (pipeline_dollar_merge, batch_size_zero, false, 0);
 
    /* Case 3:
-      Test that without $out and batchSize > 0, we use the batchSize */
-   cursor = mongoc_collection_aggregate (coll,
-                                         MONGOC_QUERY_NONE,
-                                         pipeline_without_dollar_out,
-                                         batch_size_one,
-                                         NULL);
-   future = future_cursor_next (cursor, &doc);
-
-   request = mock_server_receives_msg (
-      mock_server, 0, tmp_bson ("{ 'cursor' : { 'batchSize' : 1 } }"));
-   mock_server_replies_simple (request, "{'ok': 1}");
-
-   request_destroy (request);
-   future_wait (future);
-   future_destroy (future);
-   mongoc_cursor_destroy (cursor);
+      Test that without a terminal key and batchSize > 0,
+      we use the batchSize */
+   _batch_size_test (pipeline_no_terminal_key, batch_size_one, true, 1);
 
    /* Case 4:
-      Test that without $out and batchSize == 0, we use the batchSize */
-   cursor = mongoc_collection_aggregate (coll,
-                                         MONGOC_QUERY_NONE,
-                                         pipeline_without_dollar_out,
-                                         batch_size_zero,
-                                         NULL);
-   future = future_cursor_next (cursor, &doc);
-
-   request = mock_server_receives_msg (
-      mock_server, 0, tmp_bson ("{ 'cursor' : { 'batchSize' : 0 } }"));
-   mock_server_replies_simple (request, "{'ok': 1}");
-
-   future_wait (future);
-   future_destroy (future);
-   mongoc_collection_destroy (coll);
-   request_destroy (request);
-   mock_server_destroy (mock_server);
-   mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
+      Test that without $out and batchSize == 0,
+      we use the batchSize */
+   _batch_size_test (pipeline_no_terminal_key, batch_size_zero, true, 0);
 }
 
 static void
@@ -1299,6 +1286,73 @@ test_update (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_update_pipeline (void *ctx)
+{
+   mongoc_collection_t *collection;
+   mongoc_database_t *database;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bson_t *b;
+   bson_t *pipeline;
+   bson_t *replacement;
+   bool res;
+
+   client = test_framework_client_new ();
+   ASSERT (client);
+
+   database = get_test_database (client);
+   ASSERT (database);
+
+   collection = get_test_collection (client, "test_update_pipeline");
+   ASSERT (collection);
+
+   b = tmp_bson ("{'nums': {'x': 1, 'y': 2}}");
+   res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   /* format: array document with incrementing keys
+      (i.e. {"0": value, "1": value, "2": value}) */
+   pipeline = tmp_bson ("{'0': {'$replaceRoot': {'newRoot': '$nums'}},"
+                        " '1': {'$addFields': {'z': 3}}}");
+   res = mongoc_collection_update_one (
+      collection, b, pipeline, NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   res = mongoc_collection_insert_one (collection, b, NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   /* ensure that arrays sent to mongoc_collection_replace_one are not
+      treated as pipelines */
+   replacement = tmp_bson ("{'0': 0, '1': 1}");
+   res = mongoc_collection_replace_one (
+      collection, b, replacement, NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   /* ensure that pipeline updates sent to mongoc_collection_replace_one
+      receive a client-side error */
+   res = mongoc_collection_replace_one (
+      collection, b, pipeline, NULL, NULL, &error);
+   ASSERT (!res);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "invalid argument for replace");
+
+   /* ensure that a pipeline with an empty document is considered invalid */
+   pipeline = tmp_bson ("{ '0': {} }");
+   res = mongoc_collection_update_one (
+      collection, b, pipeline, NULL, NULL, &error);
+   ASSERT (!res);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid key");
+
+   mongoc_collection_destroy (collection);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+}
 
 static void
 test_update_oversize (void *ctx)
@@ -2502,6 +2556,29 @@ test_count_documents (void)
    bson_destroy (&reply);
    request_destroy (request);
    future_destroy (future);
+
+   future =
+      future_collection_count_documents (collection,
+                                         tmp_bson ("{}"),
+                                         tmp_bson ("{'limit': 2, 'skip': 1}"),
+                                         NULL,
+                                         &reply,
+                                         &error);
+
+   /* even with an empty filter, we still prepend $match */
+   request = mock_server_receives_msg (
+      server,
+      0,
+      tmp_bson ("{'aggregate': 'coll', 'pipeline': [{'$match': {}}, {'$skip': "
+                "1}, {'$limit': 2}, {'$group': "
+                "{'n': {'$sum': 1}}}]}"));
+   mock_server_replies_simple (request, server_reply);
+   ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
+   ASSERT_MATCH (&reply, server_reply);
+   bson_destroy (&reply);
+   request_destroy (request);
+   future_destroy (future);
+
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
@@ -3269,10 +3346,9 @@ test_aggregate_is_sent_to_primary_w_dollar_out (void *ctx)
    BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
    BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
 
-   ASSERT_CAPTURED_LOG (
-      "mongoc_collection_aggregate",
-      MONGOC_LOG_LEVEL_WARNING,
-      "$out stage specified. Overriding read preference to primary.");
+   ASSERT_CAPTURED_LOG ("mongoc_collection_aggregate",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Overriding read preference to primary.");
 
    capture_logs (false);
 
@@ -4201,6 +4277,9 @@ test_get_index_info (void)
    const bson_t *indexinfo;
    bson_t indexkey1;
    bson_t indexkey2;
+   bson_t indexkey3;
+   bson_t indexkey4;
+   bson_t indexkey5;
    bson_t dummy = BSON_INITIALIZER;
    bson_iter_t idx_spec_iter;
    bson_iter_t idx_spec_iter_copy;
@@ -4208,6 +4287,9 @@ test_get_index_info (void)
    const char *cur_idx_name;
    char *idx1_name = NULL;
    char *idx2_name = NULL;
+   char *idx3_name = NULL;
+   char *idx4_name = NULL;
+   char *idx5_name = NULL;
    const char *id_idx_name = "_id_";
    int num_idxs = 0;
 
@@ -4259,6 +4341,7 @@ test_get_index_info (void)
    bson_init (&indexkey1);
    BSON_APPEND_INT32 (&indexkey1, "raspberry", 1);
    idx1_name = mongoc_collection_keys_to_index_string (&indexkey1);
+   ASSERT (strcmp (idx1_name, "raspberry_1") == 0);
    mongoc_index_opt_init (&opt1);
    opt1.background = true;
    ASSERT_OR_PRINT (
@@ -4269,6 +4352,7 @@ test_get_index_info (void)
    bson_init (&indexkey2);
    BSON_APPEND_INT32 (&indexkey2, "snozzberry", 1);
    idx2_name = mongoc_collection_keys_to_index_string (&indexkey2);
+   ASSERT (strcmp (idx2_name, "snozzberry_1") == 0);
    mongoc_index_opt_init (&opt2);
    opt2.unique = true;
    ASSERT_OR_PRINT (
@@ -4314,8 +4398,37 @@ test_get_index_info (void)
 
    mongoc_cursor_destroy (cursor);
 
+   /*
+    * Test that index strings are formed correctly when using an INT64
+    * for direction.
+    */
+   bson_init (&indexkey3);
+   BSON_APPEND_INT64 (&indexkey3, "blackberry", 1);
+   idx3_name = mongoc_collection_keys_to_index_string (&indexkey3);
+   ASSERT ((0 == strcmp (idx3_name, "blackberry_1")));
+   bson_destroy (&indexkey3);
+
+   bson_init (&indexkey4);
+   BSON_APPEND_INT64 (&indexkey4, "blueberry", -1);
+   idx4_name = mongoc_collection_keys_to_index_string (&indexkey4);
+   ASSERT ((0 == strcmp (idx4_name, "blueberry_-1")));
+   bson_destroy (&indexkey4);
+
+   /*
+    * Test that index string is NULL when an incorrect BSON type is
+    * used for direction.
+    */
+   bson_init (&indexkey5);
+   BSON_APPEND_DOUBLE (&indexkey5, "strawberry", 1.0f);
+   idx5_name = mongoc_collection_keys_to_index_string (&indexkey5);
+   ASSERT ((idx5_name == NULL));
+   bson_destroy (&indexkey5);
+
    bson_free (idx1_name);
    bson_free (idx2_name);
+   bson_free (idx3_name);
+   bson_free (idx4_name);
+   bson_free (idx5_name);
 
    bson_destroy (&dummy);
    mongoc_collection_destroy (collection);
@@ -6129,6 +6242,12 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       skip_unless_server_has_decimal128);
    TestSuite_AddLive (suite, "/Collection/update", test_update);
+   TestSuite_AddFull (suite,
+                      "/Collection/update_pipeline",
+                      test_update_pipeline,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddLive (suite, "/Collection/update/multi", test_update_multi);
    TestSuite_AddLive (suite, "/Collection/update/upsert", test_update_upsert);
    TestSuite_AddFull (suite,
@@ -6292,7 +6411,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (
       suite, "/Collection/insert_bulk_validate", test_insert_bulk_validate);
    TestSuite_AddMockServerTest (suite,
-                                "/Collection/aggregate/with/batch/size",
+                                "/Collection/aggregate_with_batch_size",
                                 test_aggregate_with_batch_size);
    TestSuite_AddFull (suite,
                       "/Collection/aggregate_is_sent_to_primary_w_dollar_out",

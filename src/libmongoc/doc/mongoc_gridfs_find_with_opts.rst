@@ -27,6 +27,8 @@ Finds all gridfs files matching ``filter``. You can iterate the matched gridfs f
 
 See :symbol:`mongoc_collection_find_with_opts` for a description of the ``filter`` and ``opts`` parameters.
 
+.. include:: includes/retryable-read.txt
+
 Returns
 -------
 

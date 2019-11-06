@@ -15,7 +15,7 @@
 # Demonstrates how to use the CMake 'find_package' mechanism to locate
 # and build against libbson.
 
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.0)
 
 if (APPLE)
    cmake_policy (SET CMP0042 OLD)
@@ -28,14 +28,8 @@ project (hello_bson LANGUAGES C)
 # building libbson.
 # -- sphinx-include-start --
 # Specify the minimum version you require.
-find_package (libbson-1.0 1.7 REQUIRED)
-
-message ("--   libbson found version \"${BSON_VERSION}\"")
-message ("--   libbson include path \"${BSON_INCLUDE_DIRS}\"")
-message ("--   libbson libraries \"${BSON_LIBRARIES}\"")
+find_package (bson-1.0 1.7 REQUIRED)
 
 # The "hello_bson.c" sample program is shared among four tests.
 add_executable (hello_bson ../../hello_bson.c)
-target_include_directories (hello_bson PRIVATE ${BSON_INCLUDE_DIRS})
-target_link_libraries (hello_bson PRIVATE ${BSON_LIBRARIES})
-target_compile_definitions (hello_bson PRIVATE ${BSON_DEFINITIONS})
+target_link_libraries (hello_bson PRIVATE mongo::bson_shared)

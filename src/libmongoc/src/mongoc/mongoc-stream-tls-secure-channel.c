@@ -923,6 +923,7 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    SCHANNEL_CRED schannel_cred;
    mongoc_stream_tls_t *tls;
    mongoc_stream_tls_secure_channel_t *secure_channel;
+   PCCERT_CONTEXT cert = NULL;
 
    ENTRY;
    BSON_ASSERT (base_stream);
@@ -996,8 +997,7 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    }
 
    if (opt->pem_file) {
-      PCCERT_CONTEXT cert =
-         mongoc_secure_channel_setup_certificate (secure_channel, opt);
+      cert = mongoc_secure_channel_setup_certificate (secure_channel, opt);
 
       if (cert) {
          schannel_cred.cCreds = 1;

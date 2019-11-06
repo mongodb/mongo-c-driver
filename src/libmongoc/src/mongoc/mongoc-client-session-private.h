@@ -25,6 +25,8 @@
 /* error labels: see Transactions Spec */
 #define TRANSIENT_TXN_ERR "TransientTransactionError"
 #define UNKNOWN_COMMIT_RESULT "UnknownTransactionCommitResult"
+#define MAX_TIME_MS_EXPIRED "MaxTimeMSExpired"
+#define DEFAULT_MAX_COMMIT_TIME_MS 0
 
 #define MONGOC_DEFAULT_WTIMEOUT_FOR_COMMIT_RETRY 10000
 
@@ -32,6 +34,7 @@ struct _mongoc_transaction_opt_t {
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;
    mongoc_read_prefs_t *read_prefs;
+   int64_t max_commit_time_ms;
 };
 
 typedef enum {
@@ -76,6 +79,8 @@ struct _mongoc_client_session_t {
    uint32_t operation_timestamp;
    uint32_t operation_increment;
    uint32_t client_generation;
+   uint32_t server_id;
+   bson_t *recovery_token;
 
    /* For testing only */
    int64_t with_txn_timeout_ms;
@@ -121,6 +126,10 @@ bool
 _mongoc_client_session_in_txn (const mongoc_client_session_t *session);
 
 bool
+_mongoc_client_session_in_txn_or_ending (
+   const mongoc_client_session_t *session);
+
+bool
 _mongoc_client_session_txn_in_progress (const mongoc_client_session_t *session);
 
 bool
@@ -133,5 +142,13 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
                                             const bson_t *user_read_concern,
                                             bool is_read_command,
                                             bson_t *cmd);
+
+void
+_mongoc_client_session_unpin (mongoc_client_session_t *session);
+
+void
+_mongoc_client_session_pin (mongoc_client_session_t *session,
+                            uint32_t server_id);
+
 
 #endif /* MONGOC_CLIENT_SESSION_PRIVATE_H */

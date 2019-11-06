@@ -11,14 +11,13 @@ Supported Platforms
 The MongoDB C Driver is `continuously tested <https://evergreen.mongodb.com/waterfall/mongo-c-driver>`_ on variety of platforms including:
 
 - Archlinux
-- Debian 8.1
-- macOS 10.10
+- Debian 9.2
+- macOS 10.12
 - Microsoft Windows Server 2008
 - RHEL 7.0, 7.1, 7.2
-- SUSE 12
-- Ubuntu 12.04, 14.04, 16.04
+- Ubuntu 16.04, 18.04
 - Clang 3.4, 3.5, 3.7, 3.8
-- GCC 4.6, 4.8, 4.9, 5.3
+- GCC 4.6, 4.8, 4.9, 5.4, 6.3
 - MinGW-W64
 - Visual Studio 2010, 2013, 2015
 - x86, x86_64, ARM (aarch64), Power8 (ppc64le), zSeries (s390x)
@@ -106,7 +105,7 @@ Building from a release tarball
 
 Unless you intend to contribute to mongo-c-driver and/or libbson, you will want to build from a release tarball.
 
-The most recent release of libmongoc and libbson, both of which are included in mongo-c-driver, can be downloaded here <https://github.com/mongodb/mongo-c-driver/releases/latest>. The instructions in this document utilize ``cmake``'s out-of-source build feature to keep build artifacts separate from source files.
+The most recent release of libmongoc and libbson, both of which are included in mongo-c-driver, can be `downloaded here <https://github.com/mongodb/mongo-c-driver/releases/latest>`_. The instructions in this document utilize ``cmake``'s out-of-source build feature to keep build artifacts separate from source files.
 
 The following snippet will download and extract the driver, and configure it:
 

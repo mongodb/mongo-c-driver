@@ -25,6 +25,7 @@ test_crud_cb (bson_t *scenario)
 {
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
    config.run_operation_cb = crud_test_operation_cb;
+   config.command_started_events_only = true;
    config.scenario = scenario;
    run_json_general_test (&config);
 }
@@ -35,7 +36,11 @@ test_all_spec_tests (TestSuite *suite)
    char resolved[PATH_MAX];
 
    test_framework_resolve_path (JSON_DIR "/crud", resolved);
-   install_json_test_suite (suite, resolved, &test_crud_cb);
+
+   install_json_test_suite_with_check (suite,
+                                       resolved,
+                                       &test_crud_cb,
+                                       test_framework_skip_if_no_sessions);
 }
 
 void

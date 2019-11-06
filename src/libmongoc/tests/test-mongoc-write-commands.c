@@ -10,6 +10,9 @@
 
 #include "test-libmongoc.h"
 #include "test-conveniences.h"
+#include "mock_server/mock-server.h"
+#include "mock_server/future.h"
+#include "mock_server/future-functions.h"
 
 
 static void
@@ -369,6 +372,158 @@ test_bypass_not_sent ()
    mongoc_client_destroy (client);
 }
 
+static void
+test_split_opquery_with_options (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_t **docs;
+   int i;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   const bson_t *insert;
+   bson_t opts;
+   mongoc_write_concern_t *wc;
+   int n_docs;
+
+   /* Use a reduced maxBsonObjectSize, and wire version for OP_QUERY */
+   const char *ismaster = "{'ok': 1.0,"
+                          " 'ismaster': true,"
+                          " 'minWireVersion': 0,"
+                          " 'maxWireVersion': 5,"
+                          " 'maxBsonObjectSize': 100}";
+
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server, ismaster);
+   mock_server_run (server);
+
+   /* Create an insert with two batches. Because of the reduced
+   * maxBsonObjectSize, each document must be less than 100 bytes.
+   * Because of the hardcoded allowance (see SERVER-10643), and our current
+   * incorrect batching logic (see CDRIVER-3310) the complete insert
+   * command can be can be 16k + 100 bytes.
+   * After CDRIVER-3310, update this test, since the allowance will not be
+   * taken into consideration for document batching.
+   * So create enough documents to fill up at least one batch.
+   */
+   n_docs = ((BSON_OBJECT_ALLOWANCE) / tmp_bson ("{ '_id': 1 }")->len) +
+            1; /* inexact, but errs towards more than enough documents. */
+   docs = bson_malloc (sizeof (bson_t *) * n_docs);
+   for (i = 0; i < n_docs; i++) {
+      docs[i] = BCON_NEW ("_id", BCON_INT64 (i));
+   }
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   /* Add a write concern, to ensure that it is taken into account during
+    * splitting. */
+   bson_init (&opts);
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_wmajority (wc, 100);
+   mongoc_write_concern_append (wc, &opts);
+
+   future = future_collection_insert_many (
+      coll, (const bson_t **) docs, n_docs, &opts, NULL, &error);
+   /* Mock server recieves first insert. */
+   request = mock_server_receives_request (server);
+   BSON_ASSERT (request);
+   insert = request_get_doc (request, 0);
+   /* The total command size is just a hair under BSON_OBJECT_ALLOWANCE (16384)
+    * + 100 */
+   BSON_ASSERT (insert->len == 16482);
+   mock_server_replies_ok_and_destroys (request);
+
+   /* Mock server recieves second insert. */
+   request = mock_server_receives_request (server);
+   BSON_ASSERT (request);
+   insert = request_get_doc (request, 0);
+   /* The size doesn't really matter for the purpose of the test, but check it
+    * anyway. */
+   BSON_ASSERT (insert->len == 10433);
+   mock_server_replies_ok_and_destroys (request);
+   BSON_ASSERT (future_get_bool (future));
+
+   future_destroy (future);
+   for (i = 0; i < n_docs; i++) {
+      bson_destroy (docs[i]);
+   }
+   bson_free (docs);
+   bson_destroy (&opts);
+   mongoc_collection_destroy (coll);
+   mongoc_write_concern_destroy (wc);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+static void
+test_opmsg_disconnect_mid_batch_helper (int wire_version)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_t **docs;
+   int i;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   int n_docs;
+
+   /* Use a reduced maxBsonObjectSize, and wire version for OP_QUERY */
+   const char *ismaster = "{'ok': 1.0,"
+                          " 'ismaster': true,"
+                          " 'minWireVersion': 0,"
+                          " 'maxWireVersion': %d,"
+                          " 'maxBsonObjectSize': 100}";
+
+   server = mock_server_new ();
+   mock_server_auto_ismaster (server, ismaster, wire_version);
+   mock_server_run (server);
+
+   /* create enough documents for two batches. Note, because of our wonky
+    * batch splitting behavior (to be fixed in CDRIVER-3310) we need add 16K
+    * of documents. After CDRIVER-3310, we'll need to update this test. */
+   n_docs = ((BSON_OBJECT_ALLOWANCE) / tmp_bson ("{ '_id': 1 }")->len) + 1;
+   docs = bson_malloc (sizeof (bson_t *) * n_docs);
+   for (i = 0; i < n_docs; i++) {
+      docs[i] = BCON_NEW ("_id", BCON_INT64 (i));
+   }
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   future = future_collection_insert_many (
+      coll, (const bson_t **) docs, n_docs, NULL, NULL, &error);
+   /* Mock server recieves first insert. */
+   request = mock_server_receives_request (server);
+   BSON_ASSERT (request);
+   mock_server_hangs_up (request);
+   request_destroy (request);
+
+   BSON_ASSERT (!future_get_bool (future));
+   future_destroy (future);
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
+
+   for (i = 0; i < n_docs; i++) {
+      bson_destroy (docs[i]);
+   }
+   bson_free (docs);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+static void
+test_opmsg_disconnect_mid_batch (void)
+{
+   test_opmsg_disconnect_mid_batch_helper (WIRE_VERSION_OP_MSG);
+   test_opmsg_disconnect_mid_batch_helper (WIRE_VERSION_OP_MSG - 1);
+}
+
 void
 test_write_command_install (TestSuite *suite)
 {
@@ -383,4 +538,10 @@ test_write_command_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
+   TestSuite_AddMockServerTest (suite,
+                                "/WriteCommand/split_opquery_with_options",
+                                test_split_opquery_with_options);
+   TestSuite_AddMockServerTest (suite,
+                                "/WriteCommand/insert_disconnect_mid_batch",
+                                test_opmsg_disconnect_mid_batch);
 }

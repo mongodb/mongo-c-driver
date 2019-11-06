@@ -29,15 +29,6 @@ static void
 append_documents_from_cmd (const mongoc_cmd_t *cmd,
                            mongoc_apm_command_started_t *event)
 {
-   int32_t doc_len;
-   bson_t doc;
-   const uint8_t *pos;
-   const char *field_name;
-   bson_t bson;
-   char str[16];
-   const char *key;
-   uint32_t i;
-
    if (!cmd->payload || !cmd->payload_size) {
       return;
    }
@@ -47,26 +38,7 @@ append_documents_from_cmd (const mongoc_cmd_t *cmd,
       event->command_owned = true;
    }
 
-   /* make array from outgoing OP_MSG payload type 1 on an "insert",
-    * "update", or "delete" command. */
-   field_name = _mongoc_get_documents_field_name (cmd->command_name);
-   BSON_ASSERT (field_name);
-   BSON_ASSERT (BSON_APPEND_ARRAY_BEGIN (event->command, field_name, &bson));
-
-   pos = cmd->payload;
-   i = 0;
-   while (pos < cmd->payload + cmd->payload_size) {
-      memcpy (&doc_len, pos, sizeof (doc_len));
-      doc_len = BSON_UINT32_FROM_LE (doc_len);
-      BSON_ASSERT (bson_init_static (&doc, pos, (size_t) doc_len));
-      bson_uint32_to_string (i, &key, str, sizeof (str));
-      BSON_APPEND_DOCUMENT (&bson, key, &doc);
-
-      pos += doc_len;
-      i++;
-   }
-
-   bson_append_array_end (event->command, &bson);
+   _mongoc_cmd_append_payload_as_array (cmd, event->command);
 }
 
 

@@ -55,6 +55,8 @@ struct _mongoc_change_stream_t {
    int64_t max_await_time_ms;
    int32_t batch_size;
 
+   bool has_returned_results;
+
    /* Track whether the change stream has resumed after an error, as this
     * determines how we construct an initial or resuming aggregate command. */
    bool resumed;

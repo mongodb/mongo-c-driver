@@ -32,6 +32,7 @@ typedef struct {
    mongoc_client_t *client;
    mongoc_database_t *db;
    mongoc_collection_t *collection;
+   mongoc_change_stream_t *change_stream;
 } json_test_ctx_t;
 
 mongoc_client_session_t *
@@ -67,5 +68,12 @@ json_test_operation (json_test_ctx_t *ctx,
 
 void
 json_test_operations (json_test_ctx_t *ctx, const bson_t *test);
+
+void
+check_result (const bson_t *test,
+              const bson_t *operation,
+              bool succeeded,
+              const bson_value_t *result,
+              const bson_error_t *error);
 
 #endif

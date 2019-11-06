@@ -30,6 +30,8 @@ Find the first GridFS file matching ``filter``. If there is an error, NULL is re
 
 See :symbol:`mongoc_collection_find_with_opts` for a description of the ``filter`` and ``opts`` parameters.
 
+.. include:: includes/retryable-read.txt
+
 Errors
 ------
 

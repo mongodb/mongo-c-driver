@@ -114,17 +114,23 @@ if test ! -f $INSTALL_DIR/lib/pkgconfig/libmongoc-1.0.pc; then
 else
   echo "libmongoc-1.0.pc check ok"
 fi
-if test ! -f $INSTALL_DIR/lib/cmake/libmongoc-1.0/libmongoc-1.0-config.cmake; then
-  echo "libmongoc-1.0-config.cmake missing!"
+if test ! -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-1.0-config.cmake; then
+  echo "mongoc-1.0-config.cmake missing!"
   exit 1
 else
-  echo "libmongoc-1.0-config.cmake check ok"
+  echo "mongoc-1.0-config.cmake check ok"
 fi
-if test ! -f $INSTALL_DIR/lib/cmake/libmongoc-1.0/libmongoc-1.0-config-version.cmake; then
-  echo "libmongoc-1.0-config-version.cmake missing!"
+if test ! -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-1.0-config-version.cmake; then
+  echo "mongoc-1.0-config-version.cmake missing!"
   exit 1
 else
-  echo "libmongoc-1.0-config-version.cmake check ok"
+  echo "mongoc-1.0-config-version.cmake check ok"
+fi
+if test ! -f $INSTALL_DIR/lib/cmake/mongoc-1.0/mongoc-targets.cmake; then
+  echo "mongoc-targets.cmake missing!"
+  exit 1
+else
+  echo "mongoc-targets.cmake check ok"
 fi
 
 
@@ -141,18 +147,6 @@ if [ "$LINK_STATIC" ]; then
   else
     echo "libmongoc-static-1.0.pc check ok"
   fi
-  if test ! -f $INSTALL_DIR/lib/cmake/libmongoc-static-1.0/libmongoc-static-1.0-config.cmake; then
-    echo "libmongoc-static-1.0-config.cmake missing!"
-    exit 1
-  else
-    echo "libmongoc-static-1.0-config.cmake check ok"
-  fi
-  if test ! -f $INSTALL_DIR/lib/cmake/libmongoc-static-1.0/libmongoc-static-1.0-config-version.cmake; then
-    echo "libmongoc-static-1.0-config-version.cmake missing!"
-    exit 1
-  else
-    echo "libmongoc-static-1.0-config-version.cmake check ok"
-  fi
 else
   if test -f $INSTALL_DIR/lib/libmongoc-static-1.0.a; then
     echo "libmongoc-static-1.0.a shouldn't have been installed"
@@ -164,14 +158,6 @@ else
   fi
   if test -f $INSTALL_DIR/lib/pkgconfig/libmongoc-static-1.0.pc; then
     echo "libmongoc-static-1.0.pc shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/cmake/libmongoc-static-1.0/libmongoc-static-1.0-config.cmake; then
-    echo "libmongoc-static-1.0-config.cmake shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/cmake/libmongoc-static-1.0/libmongoc-static-1.0-config-version.cmake; then
-    echo "libmongoc-static-1.0-config-version.cmake shouldn't have been installed"
     exit 1
   fi
 fi

@@ -79,6 +79,8 @@ test_writer_install (TestSuite *suite);
 /* libmongoc */
 
 extern void
+test_aggregate_install (TestSuite *suite);
+extern void
 test_array_install (TestSuite *suite);
 extern void
 test_async_install (TestSuite *suite);
@@ -133,9 +135,13 @@ test_log_install (TestSuite *suite);
 extern void
 test_matcher_install (TestSuite *suite);
 extern void
+test_mongos_pinning_install (TestSuite *suite);
+extern void
 test_handshake_install (TestSuite *suite);
 extern void
 test_queue_install (TestSuite *suite);
+extern void
+test_primary_stepdown_install (TestSuite *suite);
 extern void
 test_read_concern_install (TestSuite *suite);
 extern void
@@ -144,6 +150,8 @@ extern void
 test_read_prefs_install (TestSuite *suite);
 extern void
 test_retryable_writes_install (TestSuite *suite);
+extern void
+test_retryable_reads_install (TestSuite *suite);
 extern void
 test_rpc_install (TestSuite *suite);
 extern void
@@ -214,6 +222,8 @@ extern void
 test_crud_install (TestSuite *suite);
 extern void
 test_apm_install (TestSuite *suite);
+extern void
+test_client_side_encryption_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -1771,48 +1781,74 @@ test_framework_get_max_wire_version (int64_t *max_version)
    bson_destroy (&reply);
 }
 
+static bool
+_test_framework_has_auth (void)
+{
+   char *user;
+
+#ifndef MONGOC_ENABLE_SSL
+   /* requires SSL for SCRAM implementation, can't test auth */
+   return false;
+#endif
+
+   /* checks if the MONGOC_TEST_USER env var is set */
+   user = test_framework_get_admin_user ();
+   bson_free (user);
+   if (user) {
+      return true;
+   } else {
+      return false;
+   }
+}
+
 
 int
 test_framework_skip_if_auth (void)
 {
-   char *user;
-
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
 
-   /* run tests if the MONGOC_TEST_USER env var is not set */
-   user = test_framework_get_admin_user ();
-   bson_free (user);
-   return user ? 0 : 1;
+   if (_test_framework_has_auth ()) {
+      return 0;
+   }
+
+   return 1;
 }
 
 
 int
 test_framework_skip_if_no_auth (void)
 {
-   char *user;
-
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
 
-#ifndef MONGOC_ENABLE_SSL
-   /* requires SSL for SCRAM implementation, can't test auth */
-   return 0;
-#endif
+   if (!_test_framework_has_auth ()) {
+      return 0;
+   }
 
-   /* run auth tests if the MONGOC_TEST_USER env var is set */
-   user = test_framework_get_admin_user ();
-   bson_free (user);
-   return user ? 1 : 0;
+   return 1;
 }
 
+static bool
+_test_framework_has_crypto (void)
+{
+#ifdef MONGOC_ENABLE_CRYPTO
+   return true;
+#else
+   return false;
+#endif
+}
 
 int
 test_framework_skip_if_no_sessions (void)
 {
    if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
+   if (!_test_framework_has_crypto ()) {
       return 0;
    }
 
@@ -1834,12 +1870,9 @@ test_framework_skip_if_no_cluster_time (void)
 int
 test_framework_skip_if_crypto (void)
 {
-#ifdef MONGOC_ENABLE_CRYPTO
-   return 0;
-#else
-   return 1;
-#endif
+   return _test_framework_has_crypto () ? 0 : 1;
 }
+
 
 int
 test_framework_skip_if_no_crypto (void)
@@ -1918,6 +1951,13 @@ test_framework_skip_if_no_txns (void)
        test_framework_skip_if_no_sessions () &&
        test_framework_skip_if_not_replset () &&
        test_framework_skip_if_max_wire_version_less_than_7 ()) {
+      return 1;
+   }
+
+   if (test_framework_skip_if_no_crypto () &&
+       test_framework_skip_if_no_sessions () &&
+       test_framework_skip_if_not_mongos () &&
+       test_framework_skip_if_max_wire_version_less_than_8 ()) {
       return 1;
    }
 
@@ -2223,6 +2263,43 @@ test_framework_skip_if_compressors (void)
    return !test_framework_skip_if_no_compressors ();
 }
 
+int
+test_framework_skip_if_no_failpoint (void)
+{
+   mongoc_client_t *client;
+   bool ret;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   ret = mongoc_client_command_simple (
+      client,
+      "admin",
+      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': 'off', 'data': "
+                "{'errorCode': 10107, 'failCommands': ['count']}}"),
+      NULL,
+      NULL,
+      &error);
+   mongoc_client_destroy (client);
+
+   if (!ret) {
+      return 0; /* do not proceed */
+   }
+
+   /* proceed. */
+   return 1;
+}
+
+int
+test_framework_skip_if_no_client_side_encryption (void)
+{
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+   return 1; /* proceed */
+#else
+   return 0; /* do not proceed. */
+#endif
+}
+
 void
 test_framework_resolve_path (const char *path, char *resolved)
 {
@@ -2285,6 +2362,7 @@ main (int argc, char *argv[])
 
    /* libmongoc */
 
+   test_aggregate_install (&suite);
    test_array_install (&suite);
    test_async_install (&suite);
    test_buffer_install (&suite);
@@ -2313,11 +2391,14 @@ main (int argc, char *argv[])
    test_list_install (&suite);
    test_log_install (&suite);
    test_matcher_install (&suite);
+   test_mongos_pinning_install (&suite);
    test_queue_install (&suite);
+   test_primary_stepdown_install (&suite);
    test_read_concern_install (&suite);
    test_read_write_concern_install (&suite);
    test_read_prefs_install (&suite);
    test_retryable_writes_install (&suite);
+   test_retryable_reads_install (&suite);
    test_rpc_install (&suite);
    test_socket_install (&suite);
    test_opts_install (&suite);
@@ -2355,6 +2436,7 @@ main (int argc, char *argv[])
    test_counters_install (&suite);
    test_crud_install (&suite);
    test_apm_install (&suite);
+   test_client_side_encryption_install (&suite);
 
    ret = TestSuite_Run (&suite);
 

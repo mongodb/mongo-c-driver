@@ -1021,10 +1021,16 @@ _test_server_removed_during_handshake (bool pooled)
    mongoc_server_description_destroy (sd);
 
    /* opens new stream and runs ismaster again, discovers bad setName. */
+   capture_logs (true);
    r = mongoc_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT (!r);
+   ASSERT_CAPTURED_LOG ("topology",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Last server removed from topology");
+   capture_logs (false);
+
    if (!pooled) {
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,
@@ -1792,6 +1798,10 @@ _test_request_scan_on_error (bool pooled,
       client, "db", tmp_bson ("{'ping': 1}"), read_prefs, &reply, &error);
    request = mock_server_receives_msg (
       primary, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+
+   /* Capture logs to swallow warnings about endSessions */
+   capture_logs (true);
+
    mock_server_replies_simple (request, err_response);
    request_destroy (request);
    /* don't check the return value of future. write concern errors are still
@@ -1865,6 +1875,46 @@ _test_request_scan_on_error (bool pooled,
    mock_server_destroy (secondary);
 }
 
+static void
+test_last_server_removed_warning ()
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   mongoc_server_description_t *description;
+   mongoc_read_prefs_t *read_prefs;
+   bson_error_t error;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "set");
+   client = mongoc_client_new_from_uri (uri);
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'setName': 'rs',"
+                              "  'minWireVersion': 2,"
+                              "  'maxWireVersion': 5,"
+                              " 'hosts': ['127.0.0.1:%hu']}",
+                              mock_server_get_port (server));
+
+   capture_logs (true);
+   description = mongoc_topology_select (
+      client->topology, MONGOC_SS_READ, read_prefs, &error);
+   ASSERT_CAPTURED_LOG ("topology",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Last server removed from topology");
+   capture_logs (false);
+
+   mongoc_server_description_destroy (description);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
 
 static void
 test_request_scan_on_error ()
@@ -1907,8 +1957,8 @@ test_request_scan_on_error ()
               true /* should_scan */,
               true /* should_mark_unknown */,
               "not master");
-   /* check the error code for InterruptedAtShutdown, which should be considered
-    * a "node is recovering" error. */
+   /* check the error code for InterruptedAtShutdown, which behaves
+    * much like a "node is recovering" error. */
    TEST_SINGLE ("{'ok': 0, 'code': 11600 }",
                 false /* should_scan */,
                 true /* should_mark_unknown */,
@@ -2082,4 +2132,7 @@ test_topology_install (TestSuite *suite)
                                 test_cluster_time_updated_during_handshake);
    TestSuite_AddMockServerTest (
       suite, "/Topology/request_scan_on_error", test_request_scan_on_error);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/last_server_removed_warning",
+                                test_last_server_removed_warning);
 }

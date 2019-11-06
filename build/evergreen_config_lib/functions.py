@@ -32,7 +32,7 @@ all_functions = OD([
             ]))]),
         shell_mongoc(r'''
         if [ "${is_patch}" = "true" ]; then
-           VERSION=$(git describe --abbrev=7)-patch-${version_id}
+           VERSION=$(git describe --abbrev=7 --match='1.*')-patch-${version_id}
         else
            VERSION=latest
         fi
@@ -52,7 +52,7 @@ all_functions = OD([
             r'[ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz mongoc.tar.gz',
             errexit=False, test=False),
         s3_put(
-            'mongo-c-driver/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz',
+            '${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz',
             project_path=False, aws_key='${aws_key}',
             aws_secret='${aws_secret}', local_file='mongoc.tar.gz',
             bucket='mciuploads', permissions='public-read',
@@ -296,6 +296,7 @@ all_functions = OD([
     ('run tests bson', Function(
         shell_mongoc(r'CC="${CC}" sh .evergreen/run-tests-bson.sh'),
     )),
+    # Use "silent=True" to hide output since errors may contain credentials.
     ('run auth tests', Function(
         shell_mongoc(r'''
         export AUTH_HOST='${auth_host}'

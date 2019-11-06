@@ -37,6 +37,11 @@ struct _mongoc_crud_opts_t;
 #define MONGOC_WRITE_COMMAND_INSERT 1
 #define MONGOC_WRITE_COMMAND_UPDATE 2
 
+/* MongoDB has a extra allowance to allow updating 16mb document, as the update
+ * operators would otherwise overflow the 16mb object limit. See SERVER-10643
+ * for context. */
+#define BSON_OBJECT_ALLOWANCE (16 * 1024)
+
 struct _mongoc_bulk_write_flags_t {
    bool ordered;
    bool bypass_document_validation;
@@ -215,6 +220,11 @@ mongoc_write_err_type_t
 _mongoc_write_error_get_type (bool cmd_ret,
                               const bson_error_t *cmd_err,
                               const bson_t *reply);
+
+bool
+_mongoc_write_error_update_if_unsupported_storage_engine (bool cmd_ret,
+                                                          bson_error_t *cmd_err,
+                                                          bson_t *reply);
 
 BSON_END_DECLS
 

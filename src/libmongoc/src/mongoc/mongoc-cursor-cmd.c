@@ -64,7 +64,7 @@ _prime (mongoc_cursor_t *cursor)
    cursor->operation_id = ++cursor->client->cluster.operation_id;
    /* commands like agg have a cursor field, so copy opts without "batchSize" */
    bson_copy_to_excluding_noinit (
-      &cursor->opts, &copied_opts, "batchSize", NULL);
+      &cursor->opts, &copied_opts, "batchSize", "tailable", NULL);
 
    /* server replies to aggregate/listIndexes/listCollections with:
     * {cursor: {id: N, firstBatch: []}} */

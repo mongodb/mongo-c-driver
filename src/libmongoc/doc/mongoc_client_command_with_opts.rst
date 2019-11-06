@@ -26,6 +26,8 @@ Execute a command on the server, interpreting ``opts`` according to the MongoDB 
 
 ``reply`` is always initialized, and must be freed with :symbol:`bson:bson_destroy()`.
 
+.. include:: includes/not-retryable-read.txt
+
 Parameters
 ----------
 

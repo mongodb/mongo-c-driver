@@ -298,6 +298,9 @@ _mongoc_stream_tls_secure_transport_readv (mongoc_stream_t *stream,
    size_t iov_pos = 0;
    int64_t now;
    int64_t expire = 0;
+   size_t to_read;
+   size_t remaining_buf_size;
+   size_t remaining_to_read;
 
    BSON_ASSERT (iov);
    BSON_ASSERT (iovcnt);
@@ -314,9 +317,23 @@ _mongoc_stream_tls_secure_transport_readv (mongoc_stream_t *stream,
       iov_pos = 0;
 
       while (iov_pos < iov[i].iov_len) {
+
+	 remaining_buf_size = iov[i].iov_len - iov_pos;
+	 remaining_to_read = min_bytes - ret;
+
+	 /* The third argument passed to SSLRead is an all-or-nothing
+	    dataLength, which it will attempt to read until it succeeds or
+	    times out. If our buffer is larger than the message we expect
+	    to read, choose the smaller number of the two. */
+	 if (remaining_to_read > 0 && remaining_to_read < remaining_buf_size) {
+	    to_read = remaining_to_read;
+	 } else {
+	    to_read = remaining_buf_size;
+	 }
+
          OSStatus status = SSLRead (secure_transport->ssl_ctx_ref,
                                     (char *) iov[i].iov_base + iov_pos,
-                                    (int) (iov[i].iov_len - iov_pos),
+				    to_read,
                                     &read_ret);
 
          if (status != noErr) {

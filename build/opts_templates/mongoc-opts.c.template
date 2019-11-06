@@ -40,6 +40,9 @@ _{{ struct_name }}_parse (
 {% else %}
    {{ struct_name }}->{{ path }} = {{ description.default(opt_name, 'NULL') }};
 {% endif %}
+{% if info['check_set'] %}
+   {{ struct_name }}->{{ opt_name }}_is_set = false;
+{% endif %}
 {% endfor %}
    bson_init (&{{ struct_name }}->extra);
 
@@ -70,7 +73,6 @@ _{{ struct_name }}_parse (
 {% set the_name = info.get('field', opt_name) %}
 {% set the_converter = info.get('convert', '_mongoc_convert_' + info['type'] ) %}
       {% if loop.index > 1 %}else {% endif %}if (!strcmp (bson_iter_key (&iter), "{{ opt_name }}")) {
-{% if the_converter == '_mongoc_convert_write_concern' %}
          if (!{{ the_converter }} (
                client,
                &iter,
@@ -78,16 +80,13 @@ _{{ struct_name }}_parse (
                error)) {
             return false;
          }
+{% if the_converter == '_mongoc_convert_write_concern' %}
 
          {{ struct_name }}->{{ path_to(struct_type, "write_concern_owned") }} = true;
-{% else %}
-         if (!{{ the_converter }} (
-               client,
-               &iter,
-               &{{ struct_name }}->{{ path }},
-               error)) {
-            return false;
-         }
+{% endif %}
+{% if info['check_set'] %}
+
+         {{ struct_name }}->{{ the_name }}_is_set = true;
 {% endif %}
       }
 {% endfor %}

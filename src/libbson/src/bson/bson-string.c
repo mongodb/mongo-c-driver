@@ -83,27 +83,6 @@ bson_string_new (const char *str) /* IN */
    return ret;
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * bson_string_free --
- *
- *       Free the bson_string_t @string and related allocations.
- *
- *       If @free_segment is false, then the strings buffer will be
- *       returned and is not freed. Otherwise, NULL is returned.
- *
- * Returns:
- *       The string->str if free_segment is false.
- *       Otherwise NULL.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
 char *
 bson_string_free (bson_string_t *string, /* IN */
                   bool free_segment)     /* IN */

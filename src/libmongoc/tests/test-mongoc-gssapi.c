@@ -68,7 +68,15 @@ gssapi_kerberos_worker (void *data)
    int i;
 
    for (i = 0; i < NLOOPS; i++) {
+      bson_t *cmd = BCON_NEW ("ping", BCON_INT32 (1));
+
       client = mongoc_client_pool_pop (pool);
+      if (!mongoc_client_command_with_opts (
+             client, "test", cmd, NULL, NULL, NULL, &error)) {
+         fprintf (stderr, "ping command failed: %s\n", error.message);
+         abort ();
+      }
+      bson_destroy (cmd);
       collection = mongoc_client_get_collection (client, "kerberos", "test");
       cursor = mongoc_collection_find (
          collection, MONGOC_QUERY_NONE, 0, 0, 0, &query, NULL, NULL);

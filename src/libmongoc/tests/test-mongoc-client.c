@@ -2206,6 +2206,7 @@ test_mongoc_client_mismatched_me (void)
                                " 'hosts': ['%s']}",
                                mock_server_get_host_and_port (server));
 
+   capture_logs (true);
    mock_server_replies_simple (request, reply);
 
    BSON_ASSERT (!future_get_bool (future));
@@ -2213,6 +2214,9 @@ test_mongoc_client_mismatched_me (void)
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
                           "No suitable servers");
+   ASSERT_CAPTURED_LOG (
+      "client", MONGOC_LOG_LEVEL_WARNING, "Last server removed from topology");
+   capture_logs (false);
 
    bson_free (reply);
    request_destroy (request);
@@ -2308,6 +2312,37 @@ test_ssl_pooled (void)
 {
    _test_mongoc_client_ssl_opts (true);
 }
+
+static void
+test_client_buildinfo_hang (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_database_t *database;
+   bson_error_t error;
+   bson_t command;
+   bson_t reply;
+
+   pool = test_framework_client_pool_new ();
+   BSON_ASSERT (pool);
+   client = mongoc_client_pool_pop (pool);
+
+   database = mongoc_client_get_database (client, "admin");
+   bson_init (&command);
+   bson_append_int32 (&command, "buildInfo", -1, 1);
+
+   /* Prior to a bug fix this command caused a hang - see CDRIVER-3318 */
+   ASSERT_OR_PRINT (
+      mongoc_database_command_simple (database, &command, NULL, &reply, &error),
+      error);
+
+   bson_destroy (&command);
+   bson_destroy (&reply);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+   mongoc_client_pool_destroy (pool);
+}
+
 #else
 /* MONGOC_ENABLE_SSL is not defined */
 static void
@@ -3454,6 +3489,7 @@ test_client_reset_sessions (void)
    /* Add an autoresponder for endSessions to unblock the test. */
    mock_server_auto_endsessions (server);
 
+   bson_destroy (&opts);
    bson_destroy (&lsid);
    request_destroy (request);
    future_destroy (future);
@@ -3837,6 +3873,9 @@ test_client_install (TestSuite *suite)
       suite, "/Client/ssl/reconnect/single", test_ssl_reconnect_single);
    TestSuite_AddMockServerTest (
       suite, "/Client/ssl/reconnect/pooled", test_ssl_reconnect_pooled);
+
+   TestSuite_AddLive (suite, "/Client/ssl_hang", test_client_buildinfo_hang);
+
 #endif
 #else
    /* No SSL support at all */

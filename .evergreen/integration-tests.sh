@@ -8,7 +8,7 @@ DIR=$(dirname $0)
 
 get_distro
 get_mongodb_download_url_for "$DISTRO" "$MONGODB_VERSION"
-download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT"
+DRIVERS_TOOLS=./ download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT"
 
 
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')

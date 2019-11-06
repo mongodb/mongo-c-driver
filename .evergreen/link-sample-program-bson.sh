@@ -70,14 +70,6 @@ else
     echo "libbson-static-1.0.pc shouldn't have been installed"
     exit 1
   fi
-  if test -f $INSTALL_DIR/lib/cmake/libbson-static-1.0/libbson-static-1.0-config.cmake; then
-    echo "libbson-static-1.0-config.cmake shouldn't have been installed"
-    exit 1
-  fi
-  if test -f $INSTALL_DIR/lib/cmake/libbson-static-1.0/libbson-static-1.0-config-version.cmake; then
-    echo "libbson-static-1.0-config-version.cmake shouldn't have been installed"
-    exit 1
-  fi
 
 fi
 
@@ -117,17 +109,23 @@ if test ! -f $INSTALL_DIR/lib/pkgconfig/libbson-1.0.pc; then
 else
   echo "libbson-1.0.pc check ok"
 fi
-if test ! -f $INSTALL_DIR/lib/cmake/libbson-1.0/libbson-1.0-config.cmake; then
-  echo "libbson-1.0-config.cmake missing!"
+if test ! -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-1.0-config.cmake; then
+  echo "bson-1.0-config.cmake missing!"
   exit 1
 else
-  echo "libbson-1.0-config.cmake check ok"
+  echo "bson-1.0-config.cmake check ok"
 fi
-if test ! -f $INSTALL_DIR/lib/cmake/libbson-1.0/libbson-1.0-config-version.cmake; then
-  echo "libbson-1.0-config-version.cmake missing!"
+if test ! -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-1.0-config-version.cmake; then
+  echo "bson-1.0-config-version.cmake missing!"
   exit 1
 else
-  echo "libbson-1.0-config-version.cmake check ok"
+  echo "bson-1.0-config-version.cmake check ok"
+fi
+if test ! -f $INSTALL_DIR/lib/cmake/bson-1.0/bson-targets.cmake; then
+  echo "bson-targets.cmake missing!"
+  exit 1
+else
+  echo "bson-targets.cmake check ok"
 fi
 
 if [ "$LINK_STATIC" ]; then
@@ -142,18 +140,6 @@ if [ "$LINK_STATIC" ]; then
     exit 1
   else
     echo "libbson-static-1.0.pc check ok"
-  fi
-  if test ! -f $INSTALL_DIR/lib/cmake/libbson-static-1.0/libbson-static-1.0-config.cmake; then
-    echo "libbson-static-1.0-config.cmake missing!"
-    exit 1
-  else
-    echo "libbson-static-1.0-config.cmake check ok"
-  fi
-  if test ! -f $INSTALL_DIR/lib/cmake/libbson-static-1.0/libbson-static-1.0-config-version.cmake; then
-    echo "libbson-static-1.0-config-version.cmake missing!"
-    exit 1
-  else
-    echo "libbson-static-1.0-config-version.cmake check ok"
   fi
 fi
 

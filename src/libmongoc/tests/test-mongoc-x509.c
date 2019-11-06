@@ -12,12 +12,12 @@ test_extract_subject (void)
    subject = mongoc_ssl_extract_subject (CERT_SERVER, NULL);
    ASSERT_CMPSTR (
       subject,
-      "C=US,ST=California,L=Palo Alto,O=MongoDB,OU=Drivers,CN=localhost");
+      "C=US,ST=New York,L=New York City,O=MongoDB,OU=Drivers,CN=localhost");
    bson_free (subject);
 
    subject = mongoc_ssl_extract_subject (CERT_CLIENT, NULL);
-   ASSERT_CMPSTR (subject,
-                  "C=NO,ST=Oslo,L=Oslo,O=MongoDB,OU=Drivers,CN=client");
+   ASSERT_CMPSTR (
+      subject, "C=US,ST=New York,L=New York City,O=MDB,OU=Drivers,CN=client");
    bson_free (subject);
 }
 #endif

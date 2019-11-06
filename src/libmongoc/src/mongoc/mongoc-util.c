@@ -363,6 +363,10 @@ _mongoc_validate_update (const bson_t *update,
       return false;
    }
 
+   if (_mongoc_document_is_pipeline (update)) {
+      return true;
+   }
+
    if (!bson_iter_init (&iter, update)) {
       bson_set_error (error,
                       MONGOC_ERROR_BSON,
@@ -377,7 +381,8 @@ _mongoc_validate_update (const bson_t *update,
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Invalid key '%s': update only works with $ operators",
+                         "Invalid key '%s': update only works with $ operators"
+                         " and pipelines",
                          key);
 
          return false;
@@ -520,4 +525,48 @@ _mongoc_bson_init_with_transient_txn_error (const mongoc_client_session_t *cs,
       BSON_APPEND_UTF8 (&labels, "0", TRANSIENT_TXN_ERR);
       bson_append_array_end (reply, &labels);
    }
+}
+
+bool
+_mongoc_document_is_pipeline (const bson_t *document)
+{
+   bson_iter_t iter;
+   bson_iter_t child;
+   const char *key;
+   int i = 0;
+   char *i_str;
+
+   if (!bson_iter_init (&iter, document)) {
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      key = bson_iter_key (&iter);
+      i_str = bson_strdup_printf ("%d", i++);
+
+      if (strcmp (key, i_str)) {
+         bson_free (i_str);
+         return false;
+      }
+
+      bson_free (i_str);
+
+      if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         if (!bson_iter_recurse (&iter, &child)) {
+            return false;
+         }
+         if (!bson_iter_next (&child)) {
+            return false;
+         }
+         key = bson_iter_key (&child);
+         if (key[0] != '$') {
+            return false;
+         }
+      } else {
+         return false;
+      }
+   }
+
+   /* should return false when the document is empty */
+   return i != 0;
 }

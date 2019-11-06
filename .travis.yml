@@ -60,8 +60,8 @@ matrix:
       # https://github.com/Homebrew/homebrew-core/issues/26358
       - brew unlink python
       # "brew install" can succeed but return 1 if it has "caveats".
-      - brew install mongodb || true
-      - brew services start mongodb
+      - brew tap mongodb/brew && brew install mongodb-community || true
+      - brew services start mongodb-community
 
 git:
   depth: 20

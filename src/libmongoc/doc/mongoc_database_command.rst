@@ -25,6 +25,8 @@ Description
 
 This function creates a cursor which will execute the command when :symbol:`mongoc_cursor_next` is called on it. The database's read preference, read concern, and write concern are not applied to the command, and :symbol:`mongoc_cursor_next` will not check the server response for a write concern error or write concern timeout.
 
+.. include:: includes/not-retryable-read.txt
+
 Parameters
 ----------
 

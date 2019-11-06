@@ -19,6 +19,7 @@
 #ifndef MONGOC_TOPOLOGY_PRIVATE_H
 #define MONGOC_TOPOLOGY_PRIVATE_H
 
+#include "mongoc/mongoc-config.h"
 #include "mongoc/mongoc-topology-scanner-private.h"
 #include "mongoc/mongoc-server-description-private.h"
 #include "mongoc/mongoc-topology-description-private.h"
@@ -33,6 +34,7 @@
 #define MONGOC_TOPOLOGY_SERVER_SELECTION_TIMEOUT_MS 30000
 #define MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED 10000
 #define MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED 60000
+#define MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS 60000
 
 typedef enum {
    MONGOC_TOPOLOGY_SCANNER_OFF,
@@ -53,6 +55,11 @@ typedef struct _mongoc_topology_t {
    int64_t server_selection_timeout_msec;
    /* defaults to 500ms, configurable by tests */
    int64_t min_heartbeat_frequency_msec;
+
+   /* Minimum of SRV record TTLs, but no lower than 60 seconds.
+    * May be zero for non-SRV/non-MongoS topology. */
+   int64_t rescanSRVIntervalMS;
+   int64_t last_srv_scan;
 
    bson_mutex_t mutex;
    mongoc_cond_t cond_client;
@@ -161,4 +168,7 @@ const bson_t *
 _mongoc_topology_get_ismaster (mongoc_topology_t *topology);
 void
 _mongoc_topology_request_scan (mongoc_topology_t *topology);
+
+void
+_mongoc_topology_bypass_cooldown (mongoc_topology_t *topology);
 #endif

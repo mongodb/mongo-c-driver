@@ -72,6 +72,9 @@ if [ "${?}" != "0" -o ! -f "${spec_file}" ]; then
   echo "Could not retrieve spec file from URL: ${spec_url}"
   exit 1
 fi
+if [ -f .evergreen/spec.patch ]; then
+  patch -d .. -p0 -i $(pwd)/.evergreen/spec.patch
+fi
 
 changelog_package=$(rpmspec --srpm -q --qf "%{name}" ${spec_file})
 if [ "${package}" != "${changelog_package}" ]; then

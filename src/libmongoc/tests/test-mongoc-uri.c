@@ -1464,7 +1464,8 @@ test_mongoc_uri_write_concern (void)
       }
 
       if (t->wtimeoutms) {
-         BSON_ASSERT (t->wtimeoutms == mongoc_write_concern_get_wtimeout_int64 (wr));
+         BSON_ASSERT (t->wtimeoutms ==
+                      mongoc_write_concern_get_wtimeout_int64 (wr));
       }
 
       mongoc_uri_destroy (uri);
@@ -2011,14 +2012,14 @@ test_mongoc_uri_local_threshold_ms (void)
 
 
 #define INVALID(_uri, _host)                                           \
-   BSON_ASSERT (!mongoc_uri_append_host ((_uri), (_host), 1, &error)); \
+   BSON_ASSERT (!mongoc_uri_upsert_host ((_uri), (_host), 1, &error)); \
    ASSERT_ERROR_CONTAINS (error,                                       \
                           MONGOC_ERROR_STREAM,                         \
                           MONGOC_ERROR_STREAM_NAME_RESOLUTION,         \
                           "must be subdomain")
 
 #define VALID(_uri, _host) \
-   ASSERT_OR_PRINT (mongoc_uri_append_host ((_uri), (_host), 1, &error), error)
+   ASSERT_OR_PRINT (mongoc_uri_upsert_host ((_uri), (_host), 1, &error), error)
 
 
 static void
@@ -2128,7 +2129,8 @@ test_mongoc_uri_dns_options (void)
 
    /* test that URI string overrides TXT record options */
    mongoc_uri_destroy (uri);
-   uri = mongoc_uri_new ("mongodb+srv://a.b.c/?authSource=db1&replicaSet=rs1");
+   uri = mongoc_uri_new (
+      "mongodb+srv://user@a.b.c/?authSource=db1&replicaSet=rs1");
 
    capture_logs (true);
    /* parse_options returns true, but logs warnings */
@@ -2340,6 +2342,11 @@ test_mongoc_uri_duplicates (void)
    ASSERT_LOG_DUPE (MONGOC_URI_REPLICASET);
    str = mongoc_uri_get_replica_set (uri);
    BSON_ASSERT (strcmp (str, "b") == 0);
+
+   RECREATE_URI (MONGOC_URI_RETRYREADS "=false&" MONGOC_URI_RETRYREADS "=true");
+   ASSERT_LOG_DUPE (MONGOC_URI_RETRYREADS);
+   BSON_ASSERT (
+      mongoc_uri_get_option_as_bool (uri, MONGOC_URI_RETRYREADS, false));
 
    RECREATE_URI (MONGOC_URI_RETRYWRITES "=false&" MONGOC_URI_RETRYWRITES
                                         "=true");

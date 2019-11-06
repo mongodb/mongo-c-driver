@@ -119,13 +119,13 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
-                                 const mongoc_client_session_t *cs,
+                                 mongoc_client_session_t *cs,
                                  bson_t *reply,
                                  bson_error_t *error);
 
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
-                                  const mongoc_client_session_t *cs,
+                                  mongoc_client_session_t *cs,
                                   bson_t *reply,
                                   bson_error_t *error);
 
@@ -133,7 +133,7 @@ mongoc_server_stream_t *
 mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                   uint32_t server_id,
                                   bool reconnect_ok,
-                                  const mongoc_client_session_t *cs,
+                                  mongoc_client_session_t *cs,
                                   bson_t *reply,
                                   bson_error_t *error);
 

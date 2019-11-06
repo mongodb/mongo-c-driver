@@ -90,17 +90,23 @@ if exist %INSTALL_DIR%\lib\pkgconfig\libbson-1.0.pc (
 ) else (
    echo libbson-1.0.pc check ok
 )
-if exist %INSTALL_DIR%\lib\cmake\libbson-1.0\libbson-1.0-config.cmake (
-   echo libbson-1.0-config.cmake found!
+if exist %INSTALL_DIR%\lib\cmake\bson-1.0\bson-1.0-config.cmake (
+   echo bson-1.0-config.cmake found!
    exit /B 1
 ) else (
-   echo libbson-1.0-config.cmake check ok
+   echo bson-1.0-config.cmake check ok
 )
-if exist %INSTALL_DIR%\lib\cmake\libbson-1.0\libbson-1.0-config-version.cmake (
-   echo libbson-1.0-config-version.cmake found!
+if exist %INSTALL_DIR%\lib\cmake\bson-1.0\bson-1.0-config-version.cmake (
+   echo bson-1.0-config-version.cmake found!
    exit /B 1
 ) else (
-   echo libbson-1.0-config-version.cmake check ok
+   echo bson-1.0-config-version.cmake check ok
+)
+if exist %INSTALL_DIR%\lib\cmake\bson-1.0\bson-targets.cmake (
+   echo bson-targets.cmake found!
+   exit /B 1
+) else (
+   echo bson-targets.cmake check ok
 )
 if not exist %INSTALL_DIR%\lib\canary.txt (
    echo canary.txt not found!
@@ -121,17 +127,23 @@ if "%BSON_ONLY%" NEQ "1" (
    ) else (
      echo libmongoc-1.0.pc check ok
    )
-   if exist %INSTALL_DIR%\lib\cmake\libmongoc-1.0\libmongoc-1.0-config.cmake (
-     echo libmongoc-1.0-config.cmake found!
+   if exist %INSTALL_DIR%\lib\cmake\mongoc-1.0\mongoc-1.0-config.cmake (
+     echo mongoc-1.0-config.cmake found!
      exit /B 1
    ) else (
-     echo libmongoc-1.0-config.cmake check ok
+     echo mongoc-1.0-config.cmake check ok
    )
-   if exist %INSTALL_DIR%\lib\cmake\libmongoc-1.0\libmongoc-1.0-config-version.cmake (
-     echo libmongoc-1.0-config-version.cmake found!
+   if exist %INSTALL_DIR%\lib\cmake\mongoc-1.0\mongoc-1.0-config-version.cmake (
+     echo mongoc-1.0-config-version.cmake found!
      exit /B 1
    ) else (
-     echo libmongoc-1.0-config-version.cmake check ok
+     echo mongoc-1.0-config-version.cmake check ok
+   )
+   if exist %INSTALL_DIR%\lib\cmake\mongoc-1.0\mongoc-targets.cmake (
+     echo mongoc-targets.cmake found!
+     exit /B 1
+   ) else (
+     echo mongoc-targets.cmake check ok
    )
 )
 if exist %INSTALL_DIR%\include\libbson-1.0\bson\bson.h (

@@ -26,6 +26,16 @@
 #define MONGOC_DEFAULT_WRITE_BATCH_SIZE 1000
 #define MONGOC_DEFAULT_BSON_OBJ_SIZE 16 * 1024 * 1024
 #define MONGOC_DEFAULT_MAX_MSG_SIZE 48000000
+/* This is slightly out-of-spec as of the current version of the spec (1.0.0),
+ * but SPEC-1397 plans to amend "Size limits and Wire Protocol Considerations"
+ * to say that drivers MAY split with a reduced maxBsonObjectSize or
+ * maxMessageSizeBytes
+ * depending on the implementation. It is less invasive for libmongoc to split
+ * OP_MSG payload type 1 with a reduced maxMessageSizeBytes and convert it to a
+ * payload type 0
+ * rather than split a payload type 0 with a reduced maxBsonObjectSize.
+ */
+#define MONGOC_REDUCED_MAX_MSG_SIZE_FOR_FLE 2097152
 #define MONGOC_NO_SESSIONS -1
 #define MONGOC_IDLE_WRITE_PERIOD_MS 10 * 1000
 

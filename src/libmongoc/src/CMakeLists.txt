@@ -5,6 +5,7 @@ set_local_dist (src_libmongoc_src_DIST_local
    libmongoc-1.0.pc.in
    libmongoc-ssl-1.0.pc.in
    libmongoc-static-1.0.pc.in
+   mongoc-config.cmake
 )
 
 set (src_libmongoc_src_DIST

@@ -17,6 +17,7 @@
 
 #include "bson/bson.h"
 
+#include "mongoc/mongoc-change-stream-private.h"
 #include "mongoc/mongoc-collection-private.h"
 #include "mongoc/mongoc-config.h"
 #include "mongoc/mongoc-cursor-private.h"
@@ -24,7 +25,7 @@
 #include "mongoc/mongoc-server-description-private.h"
 #include "mongoc/mongoc-topology-description-private.h"
 #include "mongoc/mongoc-topology-private.h"
-#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-uri-private.h"
 #include "mongoc/mongoc-util-private.h"
 
 #include "json-test-operations.h"
@@ -66,10 +67,12 @@ json_test_ctx_init (json_test_ctx_t *ctx,
    ctx->client = client;
    ctx->db = db;
    ctx->collection = collection;
+   ctx->change_stream = NULL;
    ctx->config = config;
    ctx->n_events = 0;
    bson_init (&ctx->events);
-   ctx->test_framework_uri = test_framework_get_uri ();
+
+   ctx->test_framework_uri = mongoc_uri_copy (client->uri);
    ctx->acknowledged = true;
    ctx->verbose = test_framework_getenv_bool ("MONGOC_TEST_MONITORING_VERBOSE");
    bson_init (&ctx->lsids[0]);
@@ -124,6 +127,7 @@ void
 json_test_ctx_cleanup (json_test_ctx_t *ctx)
 {
    json_test_ctx_end_sessions (ctx);
+   mongoc_change_stream_destroy (ctx->change_stream);
    bson_destroy (&ctx->lsids[0]);
    bson_destroy (&ctx->lsids[1]);
    bson_destroy (&ctx->events);
@@ -142,19 +146,6 @@ append_session (mongoc_client_session_t *session, bson_t *opts)
       ASSERT_OR_PRINT (r, error);
    }
 }
-
-
-static void
-value_init_from_doc (bson_value_t *value, const bson_t *doc)
-{
-   BSON_ASSERT (doc);
-
-   value->value_type = BSON_TYPE_DOCUMENT;
-   value->value.v_doc.data = bson_malloc ((size_t) doc->len);
-   memcpy (value->value.v_doc.data, bson_get_data (doc), (size_t) doc->len);
-   value->value.v_doc.data_len = doc->len;
-}
-
 
 static char *
 value_to_str (const bson_value_t *value)
@@ -354,6 +345,14 @@ error_code_from_name (const char *name)
       return 112;
    } else if (!strcmp (name, "Interrupted")) {
       return 11601;
+   } else if (!strcmp (name, "MaxTimeMSExpired")) {
+      return 50;
+   } else if (!strcmp (name, "UnknownReplWriteConcern")) {
+      return 79;
+   } else if (!strcmp (name, "UnsatisfiableWriteConcern")) {
+      return 100;
+   } else if (!strcmp (name, "OperationNotSupportedInTransaction")) {
+      return 263;
    }
 
    test_error ("Add errorCodeName \"%s\" to error_code_from_name()", name);
@@ -367,13 +366,20 @@ static void
 check_error_code_name (const bson_t *operation, const bson_error_t *error)
 {
    const char *code_name;
+   uint32_t expected_error_code;
 
    if (!bson_has_field (operation, "errorCodeName")) {
       return;
    }
 
    code_name = bson_lookup_utf8 (operation, "errorCodeName");
-   ASSERT_CMPUINT32 (error->code, ==, error_code_from_name (code_name));
+   expected_error_code = error_code_from_name (code_name);
+   if (error->code != expected_error_code) {
+      test_error ("Expected error code %d : %s but got error code %d\n",
+                  expected_error_code,
+                  code_name,
+                  error->code);
+   }
 }
 
 
@@ -387,6 +393,7 @@ check_error_contains (const bson_t *operation, const bson_error_t *error)
    }
 
    msg = bson_lookup_utf8 (operation, "errorContains");
+
    ASSERT_CONTAINS (error->message, msg);
 }
 
@@ -487,8 +494,7 @@ check_error_labels_omit (const bson_t *operation, const bson_value_t *result)
  *--------------------------------------------------------------------------
  */
 
-
-static void
+void
 check_result (const bson_t *test,
               const bson_t *operation,
               bool succeeded,
@@ -522,7 +528,6 @@ check_result (const bson_t *test,
           *          errorLabelsContain: ["TransientTransactionError"]
           *          errorLabelsOmit: ["UnknownTransactionCommitResult"]
           */
-
          check_success_expected (&expected_doc, succeeded, false, error);
          check_error_code_name (&expected_doc, error);
          check_error_contains (&expected_doc, error);
@@ -927,6 +932,7 @@ find_and_modify (mongoc_collection_t *collection,
    bson_lookup_doc (operation, "arguments.filter", &filter);
 
    opts = create_find_and_modify_opts (name, &args, session, wc);
+
    r = mongoc_collection_find_and_modify_with_opts (
       collection, &filter, opts, reply, &error);
 
@@ -945,6 +951,8 @@ find_and_modify (mongoc_collection_t *collection,
     */
    if (r) {
       bson_lookup_value (reply, "value", &value);
+   } else {
+      value_init_from_doc (&value, reply);
    }
 
    check_result (test, operation, r, &value, &error);
@@ -1320,6 +1328,44 @@ find (mongoc_collection_t *collection,
 
 
 static bool
+find_one (mongoc_collection_t *collection,
+          const bson_t *test,
+          const bson_t *operation,
+          mongoc_client_session_t *session,
+          const mongoc_read_prefs_t *read_prefs,
+          bson_t *reply)
+{
+   bson_t filter;
+   bson_t opts = BSON_INITIALIZER;
+   const bson_t *doc;
+   mongoc_cursor_t *cursor;
+   bson_value_t value;
+   bson_error_t error;
+
+   bson_lookup_doc (operation, "arguments.filter", &filter);
+
+   cursor =
+      mongoc_collection_find_with_opts (collection, &filter, &opts, read_prefs);
+
+   if (mongoc_cursor_next (cursor, &doc)) {
+      value_init_from_doc (&value, doc);
+      mongoc_cursor_error (cursor, &error);
+      check_result (test, operation, true, &value, &error);
+   } else if (mongoc_cursor_error_document (cursor, &error, &doc)) {
+      value_init_from_doc (&value, doc);
+      check_result (test, operation, false, &value, &error);
+   }
+
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (&filter);
+   bson_destroy (&opts);
+   bson_value_destroy (&value);
+   bson_init (reply);
+   return true;
+}
+
+
+static bool
 _is_aggregate_out (const bson_t *pipeline)
 {
    bson_iter_t iter;
@@ -1414,8 +1460,7 @@ db_aggregate (mongoc_database_t *db,
    append_session (session, &opts);
    COPY_EXCEPT ("pipeline");
 
-   cursor = mongoc_database_aggregate (
-      db, &pipeline, &opts, read_prefs);
+   cursor = mongoc_database_aggregate (db, &pipeline, &opts, read_prefs);
 
    /* Driver CRUD API Spec: "$out is a special pipeline stage that causes no
     * results to be returned from the server. As such, the iterable here would
@@ -1557,6 +1602,170 @@ abort_transaction (mongoc_client_session_t *session,
 }
 
 
+static bool
+list_databases (mongoc_client_t *client,
+                const bson_t *test,
+                const bson_t *operation,
+                mongoc_client_session_t *session,
+                bson_t *reply)
+{
+   mongoc_cursor_t *cursor;
+   bson_t opts;
+
+   BSON_ASSERT (client);
+   bson_init (&opts);
+   append_session (session, &opts);
+
+   cursor = mongoc_client_find_databases_with_opts (client, &opts);
+   bson_destroy (&opts);
+
+   check_cursor (cursor, test, operation);
+   mongoc_cursor_destroy (cursor);
+   bson_init (reply);
+   return true;
+}
+
+
+static bool
+list_database_names (mongoc_client_t *client,
+                     const bson_t *test,
+                     const bson_t *operation,
+                     mongoc_client_session_t *session,
+                     bson_t *reply)
+{
+   char **database_names;
+   bson_t opts;
+   bson_error_t error;
+
+   BSON_ASSERT (client);
+   bson_init (&opts);
+   append_session (session, &opts);
+
+   database_names =
+      mongoc_client_get_database_names_with_opts (client, &opts, &error);
+   bson_destroy (&opts);
+
+   check_result (
+      test, operation, database_names != NULL, NULL /* result */, &error);
+   bson_init (reply);
+   bson_strfreev (database_names);
+   return true;
+}
+
+
+static bool
+list_indexes (mongoc_collection_t *collection,
+              const bson_t *test,
+              const bson_t *operation,
+              mongoc_client_session_t *session,
+              bson_t *reply)
+{
+   bson_t opts;
+   mongoc_cursor_t *cursor;
+
+   BSON_ASSERT (collection);
+
+   bson_init (&opts);
+   append_session (session, &opts);
+
+   cursor = mongoc_collection_find_indexes_with_opts (collection, &opts);
+   check_cursor (cursor, test, operation);
+   mongoc_cursor_destroy (cursor);
+   bson_init (reply);
+   bson_destroy (&opts);
+   return true;
+}
+
+
+static bool
+list_collections (mongoc_database_t *db,
+                  const bson_t *test,
+                  const bson_t *operation,
+                  mongoc_client_session_t *session,
+                  bson_t *reply)
+{
+   mongoc_cursor_t *cursor;
+   bson_t opts;
+
+   bson_init (&opts);
+   append_session (session, &opts);
+
+   cursor = mongoc_database_find_collections_with_opts (db, &opts);
+
+   bson_destroy (&opts);
+
+   check_cursor (cursor, test, operation);
+   mongoc_cursor_destroy (cursor);
+   bson_init (reply);
+
+   return true;
+}
+
+static bool
+list_collection_names (mongoc_database_t *db,
+                       const bson_t *test,
+                       const bson_t *operation,
+                       mongoc_client_session_t *session,
+                       bson_t *reply)
+{
+   char **collection_names;
+   bson_t opts;
+   bson_error_t error;
+
+   bson_init (&opts);
+   append_session (session, &opts);
+
+   collection_names =
+      mongoc_database_get_collection_names_with_opts (db, &opts, &error);
+
+   bson_destroy (&opts);
+
+   check_result (
+      test, operation, collection_names != NULL, NULL /* result */, &error);
+   bson_init (reply);
+   bson_strfreev (collection_names);
+
+   return true;
+}
+
+
+static bool
+gridfs_download (mongoc_database_t *db,
+                 const bson_t *test,
+                 const bson_t *operation,
+                 mongoc_client_session_t *session,
+                 const mongoc_read_prefs_t *read_prefs,
+                 bson_t *reply)
+{
+   mongoc_gridfs_bucket_t *bucket;
+   bson_value_t value;
+   bson_error_t error;
+   mongoc_stream_t *stream;
+   char buf[512];
+
+   bson_lookup_value (operation, "arguments.id", &value);
+
+   bucket = mongoc_gridfs_bucket_new (db, NULL, read_prefs, &error);
+   stream = mongoc_gridfs_bucket_open_download_stream (bucket, &value, &error);
+
+   if (stream != NULL) {
+      mongoc_stream_read (stream, buf, 1, 1, 0);
+   }
+
+   mongoc_stream_destroy (stream);
+   mongoc_gridfs_bucket_destroy (bucket);
+   bson_init (reply);
+
+   return true;
+}
+
+static bool
+op_error (const bson_t *operation)
+{
+   return bson_has_field (operation, "error") &&
+          bson_lookup_bool (operation, "error");
+}
+
 bool
 json_test_operation (json_test_ctx_t *ctx,
                      const bson_t *test,
@@ -1632,8 +1841,28 @@ json_test_operation (json_test_ctx_t *ctx,
          res = distinct (c, test, operation, session, read_prefs, reply);
       } else if (!strcmp (op_name, "find")) {
          res = find (c, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "findOne")) {
+         res = find_one (c, test, operation, session, read_prefs, reply);
       } else if (!strcmp (op_name, "aggregate")) {
          res = aggregate (c, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "listIndexes")) {
+         res = list_indexes (c, test, operation, session, reply);
+      } else if (!strcmp (op_name, "watch")) {
+         bson_t pipeline = BSON_INITIALIZER;
+         mongoc_change_stream_destroy (ctx->change_stream);
+         ctx->change_stream = mongoc_collection_watch (c, &pipeline, NULL);
+         res = (op_error (operation) == (0 != ctx->change_stream->err.code));
+         if (!res) {
+            test_error ("expected error=%s, but actual error='%s'",
+                        op_error (operation) ? "true" : "false",
+                        ctx->change_stream->err.message);
+         }
+
+         bson_init (reply);
+         bson_destroy (&pipeline);
+      } else if (!strcmp (op_name, "mapReduce") ||
+                 !strcmp (op_name, "listIndexNames")) {
+         test_error ("operation not implemented in libmongoc");
       } else {
          test_error ("unrecognized collection operation name %s", op_name);
       }
@@ -1642,6 +1871,25 @@ json_test_operation (json_test_ctx_t *ctx,
          res = db_aggregate (db, test, operation, session, read_prefs, reply);
       } else if (!strcmp (op_name, "runCommand")) {
          res = command (db, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "listCollections")) {
+         res = list_collections (db, test, operation, session, reply);
+      } else if (!strcmp (op_name, "listCollectionNames")) {
+         res = list_collection_names (db, test, operation, session, reply);
+      } else if (!strcmp (op_name, "watch")) {
+         bson_t pipeline = BSON_INITIALIZER;
+         mongoc_change_stream_destroy (ctx->change_stream);
+         ctx->change_stream = mongoc_database_watch (db, &pipeline, NULL);
+         res = (op_error (operation) == (0 != ctx->change_stream->err.code));
+         if (!res) {
+            test_error ("expected error=%s, but actual error='%s'",
+                        op_error (operation) ? "true" : "false",
+                        ctx->change_stream->err.message);
+         }
+
+         bson_init (reply);
+         bson_destroy (&pipeline);
+      } else if (!strcmp (op_name, "listCollectionObjects")) {
+         test_error ("listCollectionObjects is not implemented in libmongoc");
       } else {
          test_error ("unrecognized database operation name %s", op_name);
       }
@@ -1657,6 +1905,57 @@ json_test_operation (json_test_ctx_t *ctx,
          res = abort_transaction (named_session, test, operation, reply);
       } else {
          test_error ("unrecognized session operation name %s", op_name);
+      }
+   } else if (!strcmp (obj_name, "testRunner")) {
+      /* We don't use reply, but we need to initialize it for the test runner */
+      bson_init (reply);
+      if (!strcmp (op_name, "assertSessionPinned")) {
+         res = (0 != mongoc_client_session_get_server_id (session));
+      } else if (!strcmp (op_name, "assertSessionUnpinned")) {
+         res = (0 == mongoc_client_session_get_server_id (session));
+      } else if (!strcmp (op_name, "targetedFailPoint")) {
+         mongoc_client_t *client;
+
+         client = mongoc_client_new_from_uri (ctx->client->uri);
+         activate_fail_point (
+            client, session->server_id, operation, "arguments.failPoint");
+
+         mongoc_client_destroy (client);
+      } else {
+         test_error ("unrecognized session operation name %s", op_name);
+      }
+   } else if (!strcmp (obj_name, "client")) {
+      if (!strcmp (op_name, "listDatabases")) {
+         res = list_databases (c->client, test, operation, session, reply);
+      } else if (!strcmp (op_name, "listDatabaseNames")) {
+         res = list_database_names (c->client, test, operation, session, reply);
+      } else if (!strcmp (op_name, "watch")) {
+         bson_t pipeline = BSON_INITIALIZER;
+         mongoc_change_stream_destroy (ctx->change_stream);
+         ctx->change_stream = mongoc_client_watch (c->client, &pipeline, NULL);
+         res = (op_error (operation) == (0 != ctx->change_stream->err.code));
+         if (!res) {
+            test_error ("expected error=%s, but actual error='%s'",
+                        op_error (operation) ? "true" : "false",
+                        ctx->change_stream->err.message);
+         }
+
+         bson_init (reply);
+         bson_destroy (&pipeline);
+      } else if (!strcmp (op_name, "listDatabaseObjects")) {
+         test_error ("listDatabaseObjects is not implemented in libmongoc");
+      } else {
+         test_error ("unrecognized client operation name %s", op_name);
+      }
+   } else if (!strcmp (obj_name, "gridfsbucket")) {
+      if (!strcmp (op_name, "download")) {
+         res =
+            gridfs_download (db, test, operation, session, read_prefs, reply);
+      } else if (!strcmp (op_name, "download_by_name")) {
+         test_error ("download_by_name is part of the optional advanced API "
+                     "and not implemented in libmongoc");
+      } else {
+         test_error ("unrecognized gridfs operation name %s", op_name);
       }
    } else {
       test_error ("unrecognized object name %s", obj_name);

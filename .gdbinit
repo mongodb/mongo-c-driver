@@ -16,11 +16,11 @@ define __printbson
 	set $bson = ((uint32_t*)$arg0)
 	printf " (len=%d)\n", $bson[0]
 	printf "{\n"
-	__printelements ($bson+1) 0 1
+	__printElements ($bson+1) 0 1
 	printf "\n}\n"
 end
 
-define __printelements
+define __printElements
 	set $data = ((uint8_t*)$arg0)
 	set $isDocument = $arg1
 	set $depth = $arg2

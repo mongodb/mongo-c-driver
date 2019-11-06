@@ -45,5 +45,7 @@ Example
     mongoc_transaction_opts_set_write_concern
     mongoc_transaction_opts_get_read_prefs
     mongoc_transaction_opts_set_read_prefs
+    mongoc_transaction_opts_get_max_commit_time_ms
+    mongoc_transaction_opts_set_max_commit_time_ms
     mongoc_transaction_opts_clone
     mongoc_transaction_opts_destroy

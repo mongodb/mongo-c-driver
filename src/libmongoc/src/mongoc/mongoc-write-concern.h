@@ -66,17 +66,16 @@ MONGOC_EXPORT (void)
 mongoc_write_concern_set_wtag (mongoc_write_concern_t *write_concern,
                                const char *tag);
 MONGOC_EXPORT (int32_t)
-mongoc_write_concern_get_wtimeout (const mongoc_write_concern_t *write_concern)
-   BSON_GNUC_DEPRECATED_FOR (mongoc_write_concern_get_wtimeout_int64);
+mongoc_write_concern_get_wtimeout (const mongoc_write_concern_t *write_concern);
 MONGOC_EXPORT (int64_t)
-mongoc_write_concern_get_wtimeout_int64 (const mongoc_write_concern_t *write_concern);
+mongoc_write_concern_get_wtimeout_int64 (
+   const mongoc_write_concern_t *write_concern);
 MONGOC_EXPORT (void)
 mongoc_write_concern_set_wtimeout (mongoc_write_concern_t *write_concern,
-                                   int32_t wtimeout_msec)
-   BSON_GNUC_DEPRECATED_FOR (mongoc_write_concern_set_wtimeout_int64);
+                                   int32_t wtimeout_msec);
 MONGOC_EXPORT (void)
 mongoc_write_concern_set_wtimeout_int64 (mongoc_write_concern_t *write_concern,
-                                   int64_t wtimeout_msec);
+                                         int64_t wtimeout_msec);
 MONGOC_EXPORT (bool)
 mongoc_write_concern_get_wmajority (
    const mongoc_write_concern_t *write_concern);

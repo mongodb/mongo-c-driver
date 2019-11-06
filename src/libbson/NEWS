@@ -1,3 +1,19 @@
+libbson 1.15.1
+==============
+
+No change since 1.15.1; released to keep pace with libmongoc's version.
+
+-- Clyde Bazile
+
+
+libbson 1.15.0
+==============
+
+No change since 1.14.1; released to keep pace with libmongoc's version.
+
+-- Kevin Albertson
+
+
 Next Release
 ============
 
@@ -6,6 +22,24 @@ Features:
 
 Bug fixes:
   *
+
+libbson 1.14.1
+==============
+
+It is my pleasure to announce libbson 1.14.1.
+
+Bug fixes:
+
+  * Remove unnecessary dependencies from pkg-config.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+Peace,
+
+    Kevin Albertson
+
 
 libbson 1.14.0
 ==============

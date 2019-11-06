@@ -160,6 +160,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    int res = MONGOC_SSPI_AUTH_GSS_CONTINUE;
    int step;
    mongoc_server_stream_t *server_stream;
+   bool ret = false;
 
    state = _mongoc_cluster_sspi_new (cluster->uri, stream, sd->host.host);
 
@@ -200,7 +201,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
-         break;
+         goto failure;
       }
 
       if (step == 0) {
@@ -223,11 +224,12 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       server_stream = _mongoc_cluster_create_server_stream (
          cluster->client->topology, sd->id, stream, error);
 
-      if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
+      if (!server_stream ||
+          !mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
          mongoc_server_stream_cleanup (server_stream);
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
-         break;
+         goto failure;
       }
 
       if (!mongoc_cluster_run_command_private (
@@ -236,7 +238,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
          bson_destroy (&reply);
-         break;
+         goto failure;
       }
 
       mongoc_server_stream_cleanup (server_stream);
@@ -258,7 +260,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
                          MONGOC_ERROR_CLIENT,
                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
                          "Received invalid SASL reply from MongoDB server.");
-         break;
+         goto failure;
       }
 
 
@@ -271,7 +273,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
                          "SASL reply from MongoDB is too large.");
 
          bson_destroy (&reply);
-         break;
+         goto failure;
       }
 
       memcpy (buf, tmpstr, buflen);
@@ -279,15 +281,10 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       bson_destroy (&reply);
    }
 
-   bson_free (state);
-
+   ret = true;
 failure:
-
-   if (error->domain) {
-      return false;
-   }
-
-   return true;
+   bson_free (state);
+   return ret;
 }
 
 #endif

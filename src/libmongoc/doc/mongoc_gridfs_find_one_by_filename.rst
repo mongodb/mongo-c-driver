@@ -25,6 +25,8 @@ Description
 
 Finds the first file matching the filename specified. If there is an error, NULL is returned and ``error`` is filled out; if there is no error but no matching file is found, NULL is returned and the error code and domain are 0.
 
+.. include:: includes/retryable-read.txt
+
 Errors
 ------
 

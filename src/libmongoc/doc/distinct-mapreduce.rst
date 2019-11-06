@@ -34,7 +34,10 @@ First define the ``map`` and ``reduce`` functions:
    :language: c
    :caption: constants.c
 
-Run the ``mapReduce`` command:
+Run the ``mapReduce`` command. Use the generic command helpers (e.g. :symbol:`mongoc_database_command_simple()`).
+Do not the read command helpers (e.g. :symbol:`mongoc_database_read_command_with_opts()`) because they are considered
+retryable read operations. If retryable reads are enabled, those operations will retry once on a retryable error,
+giving undesirable behavior for ``mapReduce``.
 
 .. literalinclude:: ../examples/basic_aggregation/map-reduce-basic.c
    :language: c

@@ -23,7 +23,6 @@ const char *COLLECTION_NAME = "things";
 
 #include "../doc-common-insert.c"
 #include "explain.c"
-#include "copydb.c"
 
 
 int
@@ -36,7 +35,6 @@ main (int argc, char *argv[])
    bson_error_t error;
    char *host_and_port;
    int res = 0;
-   char *other_host_and_port = NULL;
 
    if (argc < 2 || argc > 3) {
       fprintf (stderr,
@@ -62,7 +60,6 @@ main (int argc, char *argv[])
    } else {
       host_and_port = bson_strdup_printf ("mongodb://%s", argv[1]);
    }
-   other_host_and_port = argc > 2 ? argv[2] : NULL;
 
    uri = mongoc_uri_new_with_error (host_and_port, &error);
    if (!uri) {
@@ -95,14 +92,6 @@ main (int argc, char *argv[])
    if (!explain (collection)) {
       res = EXIT_FAILURE;
       goto cleanup;
-   }
-
-   if (other_host_and_port) {
-      printf ("copydb\n");
-      if (!copydb (client, other_host_and_port)) {
-         res = EXIT_FAILURE;
-         goto cleanup;
-      }
    }
 
 cleanup:

@@ -42,13 +42,13 @@ All libmongoc's functions and types are available in one header file. Simply inc
 CMake
 '''''
 
-The libmongoc installation includes a `CMake config-file package`_, so you can use CMake's `find_package`_ command to find libmongoc's header and library paths and link to libmongoc:
+The libmongoc installation includes a `CMake config-file package`_, so you can use CMake's `find_package`_ command to import libmongoc's CMake target and link to libmongoc (as a shared library):
 
 .. literalinclude:: ../examples/cmake/find_package/CMakeLists.txt
   :caption: CMakeLists.txt
   :start-after: -- sphinx-include-start --
 
-By default, libmongoc is dynamically linked. You can use libmongoc as a static library instead: Use the included ``libmongoc-static-1.0`` config-file package:
+You can also use libmongoc as a static library instead: Use the ``mongo::mongoc_static`` CMake target:
 
 .. literalinclude:: ../examples/cmake/find_package_static/CMakeLists.txt
   :start-after: -- sphinx-include-start --
