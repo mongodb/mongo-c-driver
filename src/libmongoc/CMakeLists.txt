@@ -28,6 +28,8 @@ set (MONGOC_ENABLE_COMPRESSION_SNAPPY 0)
 set (MONGOC_ENABLE_COMPRESSION_ZLIB 0)
 set (MONGOC_ENABLE_COMPRESSION_ZSTD 0)
 
+set(MONGOC_OUTPUT_BASENAME "mongoc" CACHE STRING "Output mongoc library base name")
+
 if (ENABLE_COVERAGE)
    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g --coverage")
 endif ()
@@ -683,7 +685,7 @@ target_include_directories (mongoc_shared PRIVATE ${PRIVATE_ZLIB_INCLUDES})
 target_compile_definitions (mongoc_shared PRIVATE MONGOC_COMPILATION)
 
 set_target_properties (mongoc_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
-set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "mongoc-${MONGOC_API_VERSION}" PREFIX "lib")
+set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}" PREFIX "lib")
 
 if (MONGOC_ENABLE_STATIC)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
@@ -695,17 +697,17 @@ if (MONGOC_ENABLE_STATIC)
       PRIVATE MONGOC_COMPILATION
    )
    set_target_properties (mongoc_static PROPERTIES VERSION 0.0.0)
-   set_target_properties (mongoc_static PROPERTIES OUTPUT_NAME "mongoc-static-${MONGOC_API_VERSION}")
+   set_target_properties (mongoc_static PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}")
 endif ()
 
 if (ENABLE_APPLE_FRAMEWORK)
-   set_target_properties (mongoc_shared PROPERTIES 
-      FRAMEWORK TRUE 
-      MACOSX_FRAMEWORK_BUNDLE_VERSION ${MONGOC_VERSION} 
+   set_target_properties (mongoc_shared PROPERTIES
+      FRAMEWORK TRUE
+      MACOSX_FRAMEWORK_BUNDLE_VERSION ${MONGOC_VERSION}
       MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${MONGOC_VERSION}
       MACOSX_FRAMEWORK_IDENTIFIER org.mongodb.mongoc
-      OUTPUT_NAME "mongoc"
-      PUBLIC_HEADER "${HEADERS}" 
+      OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}"
+      PUBLIC_HEADER "${HEADERS}"
    )
 endif ()
 
