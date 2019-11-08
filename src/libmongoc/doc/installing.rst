@@ -287,3 +287,16 @@ Download and untar the latest tarball, enter its directory, and build with CMake
   cd cmake-build
   CC=/mingw64/bin/gcc.exe /mingw64/bin/cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="C:/mongo-c-driver" -DCMAKE_C_FLAGS="-D__USE_MINGW_ANSI_STDIO=1" ..
   make
+
+Additional Options for Integrators
+----------------------------------
+
+In the event that you are building the BSON library and/or the C driver to embed with other components and you wish to avoid the potential for collision with components installed from a standard build or from a distribution package manager, you can make use of the ``BSON_OUTPUT_BASENAME`` and ``MONGOC_OUTPUT_BASENAME`` options to ``cmake``.
+
+.. code-block:: none
+
+  mkdir cmake-build
+  cd cmake-build
+  cmake -DBSON_OUTPUT_BASENAME=custom_bson -DMONGOC_OUTPUT_BASENAME=custom_mongoc ..
+
+The above command would produce libraries named ``libcustom_bson.so`` and ``libcustom_mongoc.so`` (or with the extension appropriate for the build platform).  Those libraries could be placed in a standard system directory or in an alternate location and could be linked to by specifying something like ``-lcustom_mongoc -lcustom_bson`` on the linker command line (possibly adjusting the specific flags to those required by your linker).
