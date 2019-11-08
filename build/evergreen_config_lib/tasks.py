@@ -31,13 +31,18 @@ from evergreen_config_lib import shell_mongoc
 class CompileTask(NamedTask):
     def __init__(self, task_name, tags=None, config='debug',
                  compression='default', continue_on_err=False,
-                 extra_commands=None, depends_on=None, **kwargs):
+                 extra_commands=None, depends_on=None,
+                 extra_script=None, **kwargs):
         super(CompileTask, self).__init__(task_name=task_name,
                                           depends_on=depends_on,
                                           tags=tags,
                                           **kwargs)
 
         self.extra_commands = extra_commands or []
+        if extra_script:
+            self.extra_script = "\n" + extra_script
+        else:
+            self.extra_script = ""
 
         # Environment variables for .evergreen/compile.sh.
         self.compile_sh_opt = kwargs
@@ -64,7 +69,8 @@ class CompileTask(NamedTask):
         for opt, value in sorted(self.compile_sh_opt.items()):
             script += 'export %s="%s"\n' % (opt, value)
 
-        script += "CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh"
+        script += "CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh" + \
+            self.extra_script
         task['commands'].append(shell_mongoc(script))
         task['commands'].append(func('upload build'))
         task['commands'].extend(self.extra_commands)
@@ -75,6 +81,57 @@ class SpecialTask(CompileTask):
     def __init__(self, *args, **kwargs):
         super(SpecialTask, self).__init__(*args, **kwargs)
         self.add_tags('special')
+
+
+class CompileWithClientSideEncryption(CompileTask):
+    def __init__(self, *args, **kwargs):
+        # Compiling with ClientSideEncryption support is a little strange.
+        # It requires linking against the library libmongocrypt. But libmongocrypt
+        # depends on libbson. So we do the following:
+        # 1. Build and install libbson normally
+        # 2. Build and install libmongocrypt (which links against the previously built libbson)
+        # 3. Build and install libmongoc
+        # First, compile and install without CSE.
+        # Then, compile and install libmongocrypt.
+        compile_with_cse = CompileTask(*args,
+                                       CFLAGS="-fPIC",
+                                       COMPILE_LIBMONGOCRYPT="ON",
+                                       EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON",
+                                       **kwargs).to_dict()
+        extra_script = "rm CMakeCache.txt\n" + \
+            compile_with_cse["commands"][0]["params"]["script"]
+
+        # Skip running mock server tests, because those were already run in the non-CSE build.
+        super(CompileWithClientSideEncryption, self).__init__(*args, CFLAGS="-fPIC",
+                                                              extra_script=extra_script,
+                                                              EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF",
+                                                              SKIP_MOCK_TESTS="ON",
+                                                              **kwargs)
+        self.add_tags('client-side-encryption', 'special')
+
+
+class CompileWithClientSideEncryptionAsan(CompileTask):
+    def __init__(self, *args, **kwargs):
+        compile_with_cse = CompileTask(*args,
+                                       CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK",
+                                       COMPILE_LIBMONGOCRYPT="ON",
+                                       CHECK_LOG="ON",
+                                       EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF",
+                                       PATH='/usr/lib/llvm-3.8/bin:$PATH',
+                                       **kwargs).to_dict()
+        extra_script = "rm CMakeCache.txt\n" + \
+            compile_with_cse["commands"][0]["params"]["script"]
+
+        # Skip running mock server tests, because those were already run in the non-CSE build.
+        super(CompileWithClientSideEncryptionAsan, self).__init__(*args,
+                                                                  CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK",
+                                                                  extra_script=extra_script,
+                                                                  CHECK_LOG="ON",
+                                                                  EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF",
+                                                                  PATH='/usr/lib/llvm-3.8/bin:$PATH',
+                                                                  SKIP_MOCK_TESTS="ON",
+                                                                  **kwargs)
+        self.add_tags('client-side-encryption')
 
 
 class LinkTask(NamedTask):
@@ -288,7 +345,7 @@ all_tasks = [
     NamedTask('debian-package-build',
               commands=[
                   shell_mongoc('export IS_PATCH="${is_patch}"\n'
-                             'sh .evergreen/debian_package_build.sh'),
+                               'sh .evergreen/debian_package_build.sh'),
                   s3_put(local_file='deb.tar.gz',
                          remote_file='${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
                          content_type='${content_type|application/x-gzip}')]),
@@ -319,7 +376,16 @@ all_tasks = [
                   DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
                   BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
                   sh ./.evergreen/install-uninstall-check.sh''')]),
-    CompileTask('debug-compile-with-warnings', CFLAGS='-Werror -Wno-cast-align'),
+    CompileTask('debug-compile-with-warnings',
+                CFLAGS='-Werror -Wno-cast-align'),
+    CompileWithClientSideEncryption('debug-compile-sasl-openssl-cse', tags=[
+                                    'debug-compile', 'sasl', 'openssl'], SASL="AUTO", SSL="OPENSSL"),
+    CompileWithClientSideEncryption('debug-compile-sasl-darwinssl-cse', tags=[
+                                    'debug-compile', 'sasl', 'darwinssl'], SASL="AUTO", SSL="DARWIN"),
+    CompileWithClientSideEncryption('debug-compile-sasl-winssl-cse', tags=[
+                                    'debug-compile', 'sasl', 'winssl'], SASL="AUTO", SSL="WINSSL"),
+    CompileWithClientSideEncryptionAsan('debug-compile-asan-openssl-cse', tags=[
+                                        'debug-compile', 'asan-clang'], SSL="OPENSSL")
 ]
 
 
@@ -327,11 +393,13 @@ class IntegrationTask(MatrixTask):
     axes = OD([('valgrind', ['valgrind', False]),
                ('asan', ['asan', False]),
                ('coverage', ['coverage', False]),
-               ('version', ['latest', '4.2', '4.0', '3.6', '3.4', '3.2', '3.0']),
+               ('version', ['latest', '4.2', '4.0',
+                            '3.6', '3.4', '3.2', '3.0']),
                ('topology', ['server', 'replica_set', 'sharded_cluster']),
                ('auth', [True, False]),
                ('sasl', ['sasl', 'sspi', False]),
-               ('ssl', ['openssl', 'darwinssl', 'winssl', False])])
+               ('ssl', ['openssl', 'darwinssl', 'winssl', False]),
+               ('cse', [True, False])])
 
     def __init__(self, *args, **kwargs):
         super(IntegrationTask, self).__init__(*args, **kwargs)
@@ -351,15 +419,23 @@ class IntegrationTask(MatrixTask):
                           self.display('sasl'),
                           self.display('auth'))
 
+        if self.cse:
+            self.add_tags("client-side-encryption")
         # E.g., test-latest-server-auth-sasl-ssl needs debug-compile-sasl-ssl.
         # Coverage tasks use a build function instead of depending on a task.
         if self.valgrind:
             self.add_dependency('debug-compile-valgrind')
+        elif self.asan and self.ssl and self.cse:
+            self.add_dependency('debug-compile-asan-%s-cse' % (
+                self.display('ssl'),))
         elif self.asan and self.ssl:
             self.add_dependency('debug-compile-asan-clang-%s' % (
                 self.display('ssl'),))
         elif self.asan:
             self.add_dependency('debug-compile-asan-clang')
+        elif self.cse:
+            self.add_dependency('debug-compile-%s-%s-cse' %
+                                (self.display('sasl'), self.display('ssl')))
         elif not self.coverage:
             self.add_dependency('debug-compile-%s-%s' % (
                 self.display('sasl'), self.display('ssl')))
@@ -392,10 +468,14 @@ class IntegrationTask(MatrixTask):
                                   TOPOLOGY=self.topology,
                                   AUTH='auth' if self.auth else 'noauth',
                                   SSL=self.display('ssl')))
+        extra = {}
+        if self.cse:
+            extra["CLIENT_SIDE_ENCRYPTION"] = "on"
         commands.append(run_tests(VALGRIND=self.on_off('valgrind'),
                                   ASAN=self.on_off('asan'),
                                   AUTH=self.display('auth'),
-                                  SSL=self.display('ssl')))
+                                  SSL=self.display('ssl'),
+                                  **extra))
         if self.coverage:
             commands.append(func('update codecov.io'))
 
@@ -403,6 +483,7 @@ class IntegrationTask(MatrixTask):
 
     def _check_allowed(self):
         if self.valgrind:
+            prohibit(self.cse)
             prohibit(self.asan)
             prohibit(self.sasl)
             require(self.ssl in ('openssl', False))
@@ -444,6 +525,16 @@ class IntegrationTask(MatrixTask):
             else:
                 prohibit(self.ssl)
 
+        if self.cse:
+            require(self.version == 'latest' or self.version == "4.2")
+            require(self.topology == 'server')
+            if not self.asan:
+                # limit to SASL=AUTO to reduce redundant tasks.
+                require(self.sasl)
+                require(self.sasl != 'sspi')
+            prohibit(self.coverage)
+            require(self.ssl)
+
 
 all_tasks = chain(all_tasks, IntegrationTask.matrix())
 
@@ -457,7 +548,8 @@ class DNSTask(MatrixTask):
     def __init__(self, *args, **kwargs):
         super(DNSTask, self).__init__(*args, **kwargs)
         sasl = 'sspi' if self.ssl == 'winssl' else 'sasl'
-        self.add_dependency('debug-compile-%s-%s' % (sasl, self.display('ssl')))
+        self.add_dependency('debug-compile-%s-%s' %
+                            (sasl, self.display('ssl')))
 
     @property
     def name(self):
@@ -507,7 +599,8 @@ class CompressionTask(MatrixTask):
     def to_dict(self):
         task = super(CompressionTask, self).to_dict()
         commands = task['commands']
-        commands.append(func('fetch build', BUILD_NAME=self.depends_on['name']))
+        commands.append(
+            func('fetch build', BUILD_NAME=self.depends_on['name']))
         if self.compression == 'compression':
             orchestration_file = 'snappy-zlib-zstd'
         else:

@@ -9,7 +9,7 @@ mkdir abi-compliance/latest-release-install
 mkdir abi-compliance/dumps
 
 # build the current changes
-export SKIP_TESTS=ON
+export SKIP_MOCK_TESTS=ON
 export EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/changes-install -DCMAKE_C_FLAGS=-g -Og"
 python build/calc_release_version.py > VERSION_CURRENT
 python build/calc_release_version.py -p > VERSION_RELEASED
@@ -23,7 +23,7 @@ current=`cat VERSION_CURRENT`
 git checkout tags/$newest -f
 
 # build the newest release
-export SKIP_TESTS=ON
+export SKIP_MOCK_TESTS=ON
 export EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/latest-release-install -DCMAKE_C_FLAGS=-g -Og"
 sh .evergreen/compile.sh
 make install

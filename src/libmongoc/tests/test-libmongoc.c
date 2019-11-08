@@ -2293,12 +2293,28 @@ test_framework_skip_if_no_failpoint (void)
 int
 test_framework_skip_if_no_client_side_encryption (void)
 {
+   char *aws_secret_access_key;
+   char *aws_access_key_id;
+   bool has_creds;
+
+   aws_secret_access_key =
+      test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+   aws_access_key_id = test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+
+   has_creds = (NULL != aws_secret_access_key) && (NULL != aws_access_key_id);
+
+   bson_free (aws_secret_access_key);
+   bson_free (aws_access_key_id);
+
+   if (has_creds) {
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
-   return 1; /* proceed */
+      return 1; /* 1 == proceed. */
 #else
-   return 0; /* do not proceed. */
+      return 0; /* 0 == do not proceed. */
 #endif
-}
+   }
+   return 0; /* 0 == do not proceed. */
+   }
 
 void
 test_framework_resolve_path (const char *path, char *resolved)

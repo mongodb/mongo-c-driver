@@ -1083,7 +1083,7 @@ execute_test (const json_test_config_t *config,
 
    mongoc_client_set_apm_callbacks (collection->client, NULL, NULL);
    json_test_ctx_cleanup (&ctx);
-   
+
    if (!client->cse_enabled) {
       /* The configureFailpoint command is not supported for CSE.
        * But we need to disable failpoints on the client that knows
@@ -1224,6 +1224,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
    mongoc_auto_encryption_opts_t *auto_encryption_opts;
    bson_error_t error;
    bool ret;
+   bson_t extra;
 
    if (!bson_has_field (test, "clientOptions.autoEncryptOpts")) {
       return;
@@ -1310,6 +1311,26 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       mongoc_auto_encryption_opts_set_key_vault_namespace (
          auto_encryption_opts, "admin", "datakeys");
    }
+
+   if (bson_iter_init_find (&iter, &opts, "extra")) {
+      bson_t tmp;
+
+      bson_iter_bson (&iter, &tmp);
+      bson_copy_to (&tmp, &extra);
+   } else {
+      bson_init (&extra);
+   }
+
+   if (test_framework_getenv_bool ("MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN") &&
+       !bson_iter_init_find (&iter, &extra, "mongocryptdBypassSpawn")) {
+      /* forking is disallowed in test runner, bypass spawning mongocryptd and
+       * assume it is running in the background. */
+      BSON_APPEND_BOOL (&extra, "mongocryptdBypassSpawn", true);
+   }
+
+   mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, &extra);
+   bson_destroy (&extra);
+
    ret = mongoc_client_enable_auto_encryption (
       client, auto_encryption_opts, &error);
    ASSERT_OR_PRINT (ret, error);

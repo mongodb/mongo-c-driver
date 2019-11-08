@@ -18,7 +18,12 @@
 
 #include "mongoc/mongoc-client-side-encryption-private.h"
 
-#include "mongoc/mongoc-config.h"
+#ifndef _WIN32
+#include <sys/wait.h>
+#include <signal.h>
+#endif
+
+#include "mongoc/mongoc.h"
 
 /* Auto encryption opts. */
 struct _mongoc_auto_encryption_opts_t {
@@ -585,14 +590,14 @@ _state_need_kms (mongoc_client_t *client,
 
       /* Read and feed reply. */
       while (mongocrypt_kms_ctx_bytes_needed (kms_ctx) > 0) {
-         const int buf_size = 1024;
-         uint8_t buf[buf_size];
+#define BUFFER_SIZE 1024
+         uint8_t buf[BUFFER_SIZE];
          uint32_t bytes_needed = mongocrypt_kms_ctx_bytes_needed (kms_ctx);
          ssize_t read_ret;
 
          /* Cap the bytes requested at the buffer size. */
-         if (bytes_needed > buf_size) {
-            bytes_needed = buf_size;
+         if (bytes_needed > BUFFER_SIZE) {
+            bytes_needed = BUFFER_SIZE;
          }
 
          read_ret = mongoc_stream_read (tls_stream,
@@ -643,6 +648,7 @@ fail:
    mongocrypt_binary_destroy (http_req);
    mongocrypt_binary_destroy (http_reply);
    return ret;
+#undef BUFFER_SIZE
 }
 
 static bool
@@ -811,6 +817,7 @@ _mongoc_cse_auto_encrypt (mongoc_client_t *client,
 
    if (client->bypass_auto_encryption) {
       memcpy (encrypted_cmd, cmd, sizeof (mongoc_cmd_t));
+      bson_destroy (&cmd_bson);
       return true;
    }
 

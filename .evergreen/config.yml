@@ -408,6 +408,15 @@ functions:
         export VALGRIND=${VALGRIND}
         export MONGOC_TEST_URI=${URI}
         export DNS=${DNS}
+        export ASAN=${ASAN}
+        export CLIENT_SIDE_ENCRYPTION=${CLIENT_SIDE_ENCRYPTION}
+        # Hide credentials.
+        set +o xtrace
+        set +o errexit
+        export MONGOC_TEST_AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key}"
+        export MONGOC_TEST_AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id}"
+        set -o errexit
+        set -o xtrace
         sh .evergreen/run-tests.sh
   run tests bson:
   - command: shell.exec
@@ -588,7 +597,7 @@ functions:
         set -o errexit
         set -o xtrace
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_TESTS=ON sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
   debug-compile-coverage-notest-nosasl-openssl:
   - command: shell.exec
     type: test
@@ -598,7 +607,7 @@ functions:
         set -o errexit
         set -o xtrace
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_TESTS=ON sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
 pre:
 - func: fetch source
 - func: windows fix
@@ -1489,6 +1498,138 @@ tasks:
         set -o xtrace
         export CFLAGS="-Werror -Wno-cast-align"
         export DEBUG="ON"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - func: upload build
+- name: debug-compile-sasl-openssl-cse
+  tags:
+  - client-side-encryption
+  - debug-compile
+  - openssl
+  - sasl
+  - special
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-fPIC"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
+        export SASL="AUTO"
+        export SKIP_MOCK_TESTS="ON"
+        export SSL="OPENSSL"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        rm CMakeCache.txt
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-fPIC"
+        export COMPILE_LIBMONGOCRYPT="ON"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export SASL="AUTO"
+        export SSL="OPENSSL"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - func: upload build
+- name: debug-compile-sasl-darwinssl-cse
+  tags:
+  - client-side-encryption
+  - darwinssl
+  - debug-compile
+  - sasl
+  - special
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-fPIC"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
+        export SASL="AUTO"
+        export SKIP_MOCK_TESTS="ON"
+        export SSL="DARWIN"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        rm CMakeCache.txt
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-fPIC"
+        export COMPILE_LIBMONGOCRYPT="ON"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export SASL="AUTO"
+        export SSL="DARWIN"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - func: upload build
+- name: debug-compile-sasl-winssl-cse
+  tags:
+  - client-side-encryption
+  - debug-compile
+  - sasl
+  - special
+  - winssl
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-fPIC"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
+        export SASL="AUTO"
+        export SKIP_MOCK_TESTS="ON"
+        export SSL="WINSSL"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        rm CMakeCache.txt
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-fPIC"
+        export COMPILE_LIBMONGOCRYPT="ON"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export SASL="AUTO"
+        export SSL="WINSSL"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - func: upload build
+- name: debug-compile-asan-openssl-cse
+  tags:
+  - asan-clang
+  - client-side-encryption
+  - debug-compile
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CHECK_LOG="ON"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF"
+        export PATH="/usr/lib/llvm-3.8/bin:$PATH"
+        export SKIP_MOCK_TESTS="ON"
+        export SSL="OPENSSL"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        rm CMakeCache.txt
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CHECK_LOG="ON"
+        export COMPILE_LIBMONGOCRYPT="ON"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON -DENABLE_EXTRA_ALIGNMENT=OFF"
+        export PATH="/usr/lib/llvm-3.8/bin:$PATH"
+        export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: test-valgrind-latest-server-auth-nosasl-openssl
@@ -2415,6 +2556,30 @@ tasks:
       AUTH: noauth
       SSL: nossl
       VALGRIND: 'on'
+- name: test-asan-latest-server-auth-nosasl-openssl-cse
+  tags:
+  - client-side-encryption
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-asan-latest-server-auth-nosasl-openssl
   tags:
   - test-asan
@@ -2546,6 +2711,30 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
+      VALGRIND: 'off'
+- name: test-asan-4.2-server-auth-nosasl-openssl-cse
+  tags:
+  - client-side-encryption
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
       VALGRIND: 'off'
 - name: test-asan-4.2-server-auth-nosasl-openssl
   tags:
@@ -4137,6 +4326,33 @@ tasks:
       SSL: nossl
       VALGRIND: 'off'
   - func: update codecov.io
+- name: test-latest-server-auth-sasl-openssl-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - latest
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-latest-server-auth-sasl-openssl
   tags:
   - auth
@@ -4162,6 +4378,33 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-latest-server-auth-sasl-darwinssl-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - darwinssl
+  - latest
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
 - name: test-latest-server-auth-sasl-darwinssl
   tags:
   - auth
@@ -4186,6 +4429,33 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-latest-server-auth-sasl-winssl-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - latest
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
       VALGRIND: 'off'
 - name: test-latest-server-auth-sasl-winssl
   tags:
@@ -4312,6 +4582,33 @@ tasks:
       AUTH: auth
       SSL: winssl
       VALGRIND: 'off'
+- name: test-latest-server-noauth-sasl-openssl-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - noauth
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-openssl
   tags:
   - latest
@@ -4337,6 +4634,33 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-latest-server-noauth-sasl-darwinssl-cse
+  tags:
+  - client-side-encryption
+  - darwinssl
+  - latest
+  - noauth
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-darwinssl
   tags:
   - darwinssl
@@ -4361,6 +4685,33 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-latest-server-noauth-sasl-winssl-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - noauth
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
       VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-winssl
   tags:
@@ -5137,6 +5488,33 @@ tasks:
       AUTH: noauth
       SSL: nossl
       VALGRIND: 'off'
+- name: test-4.2-server-auth-sasl-openssl-cse
+  tags:
+  - '4.2'
+  - auth
+  - client-side-encryption
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-openssl
   tags:
   - '4.2'
@@ -5162,6 +5540,33 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.2-server-auth-sasl-darwinssl-cse
+  tags:
+  - '4.2'
+  - auth
+  - client-side-encryption
+  - darwinssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-darwinssl
   tags:
   - '4.2'
@@ -5186,6 +5591,33 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.2-server-auth-sasl-winssl-cse
+  tags:
+  - '4.2'
+  - auth
+  - client-side-encryption
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
       VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-winssl
   tags:
@@ -5287,6 +5719,33 @@ tasks:
       AUTH: auth
       SSL: winssl
       VALGRIND: 'off'
+- name: test-4.2-server-noauth-sasl-openssl-cse
+  tags:
+  - '4.2'
+  - client-side-encryption
+  - noauth
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-openssl
   tags:
   - '4.2'
@@ -5312,6 +5771,33 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.2-server-noauth-sasl-darwinssl-cse
+  tags:
+  - '4.2'
+  - client-side-encryption
+  - darwinssl
+  - noauth
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-darwinssl
   tags:
   - '4.2'
@@ -5336,6 +5822,33 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.2-server-noauth-sasl-winssl-cse
+  tags:
+  - '4.2'
+  - client-side-encryption
+  - noauth
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
       VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-winssl
   tags:
@@ -11581,7 +12094,7 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - .debug-compile .stdflags
-  - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .openssl !.asan-clang
   - .debug-compile !.sspi .nossl
   - debug-compile-valgrind
   - debug-compile-no-counters
@@ -11981,17 +12494,17 @@ buildvariants:
   - .compression !.snappy !.zstd
   - release-compile
   - debug-compile-nosasl-nossl
-  - .debug-compile .winssl
-  - .debug-compile !.sspi .openssl
+  - .debug-compile .winssl !.client-side-encryption
+  - .debug-compile !.sspi .openssl !.client-side-encryption
   - .debug-compile !.sspi .nossl
-  - .debug-compile .sspi
+  - .debug-compile .sspi !.client-side-encryption
   - .authentication-tests .openssl !.sasl
   - .authentication-tests .winssl
-  - .latest .winssl !.nosasl .server
-  - .latest .openssl !.nosasl .server
+  - .latest .winssl !.nosasl .server !.client-side-encryption
+  - .latest .openssl !.nosasl .server !.client-side-encryption
   - .latest .nossl
   - .latest .sspi
-  - .4.2 .winssl !.nosasl .server
+  - .4.2 .winssl !.nosasl .server !.client-side-encryption
   - .4.0 .winssl !.nosasl .server
 - name: windows-2013-32
   display_name: Windows (i386) (VS 2013)
@@ -12003,13 +12516,13 @@ buildvariants:
   - debug-compile-nosasl-nossl
   - debug-compile-rdtscp
   - .debug-compile .sspi !.openssl
-  - .debug-compile .winssl .nosasl
+  - .debug-compile .winssl .nosasl !.client-side-encryption
   - .debug-compile !.sspi .nossl .nosasl
   - .authentication-tests .winssl
-  - .latest .winssl .nosasl .server
+  - .latest .winssl .nosasl .server !.client-side-encryption
   - .latest .nossl .nosasl
   - .latest .sspi
-  - .4.2 .winssl .nosasl .server
+  - .4.2 .winssl .nosasl .server !.client-side-encryption
   - .4.0 .winssl .nosasl .server
 - name: windows-2010
   display_name: Windows (VS 2010)
@@ -12021,17 +12534,17 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-rdtscp
-  - .debug-compile .winssl
-  - .debug-compile !.sspi .openssl
+  - .debug-compile .winssl !.client-side-encryption
+  - .debug-compile !.sspi .openssl !.client-side-encryption
   - .debug-compile !.sspi .nossl
   - .debug-compile .sspi
   - .authentication-tests .openssl !.sasl
   - .authentication-tests .winssl
-  - .latest .winssl !.nosasl .server
-  - .latest .openssl !.nosasl .server
+  - .latest .winssl !.nosasl .server !.client-side-encryption
+  - .latest .openssl !.nosasl .server !.client-side-encryption
   - .latest .nossl
   - .latest .sspi
-  - .4.2 .winssl !.nosasl .server
+  - .4.2 .winssl !.nosasl .server !.client-side-encryption
   - .4.0 .winssl !.nosasl .server
 - name: windows-2010-32
   display_name: Windows (i386) (VS 2010)
@@ -12043,10 +12556,10 @@ buildvariants:
   - debug-compile-nosasl-nossl
   - .debug-compile .winssl .sspi
   - .debug-compile .winssl .nosasl
-  - .debug-compile !.sspi .nossl .nosasl
+  - .debug-compile !.sspi .nossl .nosasl !.client-side-encryption
   - .debug-compile .nossl .sspi
   - .authentication-tests .winssl
-  - .latest .winssl .nosasl .server
+  - .latest .winssl .nosasl .server !.client-side-encryption
   - .latest .nossl .nosasl
   - .latest .sspi
   - .4.2 .winssl .nosasl .server

@@ -254,7 +254,8 @@ all_functions = OD([
     ('upload working dir', Function(
         targz_pack('working-dir.tar.gz', 'mongoc', './**'),
         s3_put(
-            build_path + '/artifacts/${task_id}-${execution}-working-dir.tar.gz',
+            build_path +
+            '/artifacts/${task_id}-${execution}-working-dir.tar.gz',
             aws_key='${aws_key}', aws_secret='${aws_secret}',
             local_file='working-dir.tar.gz', bucket='mciuploads',
             permissions='public-read',
@@ -290,6 +291,15 @@ all_functions = OD([
         export VALGRIND=${VALGRIND}
         export MONGOC_TEST_URI=${URI}
         export DNS=${DNS}
+        export ASAN=${ASAN}
+        export CLIENT_SIDE_ENCRYPTION=${CLIENT_SIDE_ENCRYPTION}
+        # Hide credentials.
+        set +o xtrace
+        set +o errexit
+        export MONGOC_TEST_AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key}"
+        export MONGOC_TEST_AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id}"
+        set -o errexit
+        set -o xtrace
         sh .evergreen/run-tests.sh
         '''),
     )),
@@ -416,13 +426,13 @@ all_functions = OD([
     ('debug-compile-coverage-notest-nosasl-nossl', Function(
         shell_mongoc(r'''
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_TESTS=ON sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
         '''),
     )),
     ('debug-compile-coverage-notest-nosasl-openssl', Function(
         shell_mongoc(r'''
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
-        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_TESTS=ON sh .evergreen/compile.sh
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
         '''),
     )),
 ])

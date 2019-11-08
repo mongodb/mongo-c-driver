@@ -106,6 +106,7 @@ test_client_side_encryption_cb (bson_t *scenario)
    config.run_operation_cb = _run_operation;
    config.scenario = scenario;
    config.command_started_events_only = true;
+   config.command_monitoring_allow_subset = false;
    run_json_general_test (&config);
 }
 

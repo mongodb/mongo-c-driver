@@ -4,14 +4,15 @@ set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
-#       CC            Which compiler to use
-#       SSL           OPENSSL, WINDOWS, or OFF
-#       SASL          AUTO, SSPI, CYRUS, or OFF
-#       SRV           Whether to enable SRV: ON or OFF
-#       RELEASE       Enable release-build MSVC flags (default: debug flags)
+#  CC              Which compiler to use
+#  SSL             OPENSSL, WINDOWS, or OFF
+#  SASL            AUTO, SSPI, CYRUS, or OFF
+#  SRV             Whether to enable SRV: ON or OFF
+#  RELEASE         Enable release-build MSVC flags (default: debug flags)
+#  SKIP_MOCK_TESTS Skips running the libmongoc mock server tests after compiling
 
 
-INSTALL_DIR="C:/mongoc"
+INSTALL_DIR="$(cygpath -a ./install-dir -w)"
 CONFIGURE_FLAGS="\
    -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
    -DCMAKE_PREFIX_PATH=${INSTALL_DIR} \
@@ -119,12 +120,22 @@ esac
 if [ "$RELEASE" ]; then
    BUILD_FLAGS="$BUILD_FLAGS /p:Configuration=RelWithDebInfo"
    TEST_PATH="./src/libmongoc/RelWithDebInfo/test-libmongoc.exe"
-   export PATH=$PATH:`pwd`/src/libbson/RelWithDebInfo:`pwd`/src/libmongoc/RelWithDebInfo
+   export PATH=$PATH:`pwd`/src/libbson/RelWithDebInfo:`pwd`/src/libmongoc/RelWithDebInfo:`pwd`/install-dir/bin
 else
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS"
    BUILD_FLAGS="$BUILD_FLAGS /p:Configuration=Debug"
    TEST_PATH="./src/libmongoc/Debug/test-libmongoc.exe"
-   export PATH=$PATH:`pwd`/src/libbson/Debug:`pwd`/src/libmongoc/Debug
+   export PATH=$PATH:`pwd`/src/libbson/Debug:`pwd`/src/libmongoc/Debug:`pwd`/install-dir/bin
+fi
+
+if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
+   # Build libmongocrypt, using the previously fetched installed source.
+   git clone https://github.com/mongodb/libmongocrypt
+   mkdir libmongocrypt/cmake-build
+   cd libmongocrypt/cmake-build
+   "$CMAKE" -G "$CC" "-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/lib/cmake" -DENABLE_SHARED_BSON=ON -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" ../
+   "$BUILD" $BUILD_FLAGS INSTALL.vcxproj
+   cd ../../
 fi
 
 "$CMAKE" -G "$CC" "-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/lib/cmake" $CONFIGURE_FLAGS
@@ -134,4 +145,10 @@ fi
 export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
 export MONGOC_TEST_SKIP_LIVE=on
 export MONGOC_TEST_SKIP_SLOW=on
+
+# We are done here if we don't want to run the tests.
+if [ "$SKIP_MOCK_TESTS" = "ON" ]; then
+   exit 0
+fi
+
 "$TEST_PATH" --no-fork -d -F test-results.json

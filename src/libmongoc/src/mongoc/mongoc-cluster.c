@@ -571,9 +571,9 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
 
       retval = _mongoc_cse_auto_encrypt (
          cluster->client, cmd, &encrypted_cmd, &encrypted, error);
-      bson_init (reply);
       cmd = &encrypted_cmd;
       if (!retval) {
+         bson_init (reply);
          goto fail_no_events;
       }
    }

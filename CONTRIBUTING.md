@@ -228,6 +228,11 @@ Tests of Client-Side Field Level Encryption require credentials to an AWS user w
 * `MONGOC_TEST_AWS_SECRET_ACCESS_KEY=<string>`
 * `MONGOC_TEST_AWS_ACCESS_KEY_ID=<string>`
 
+Tests of Client-Side Field Level Encryption spawn an extra process, "mongocryptd", by default. To bypass this spawning,
+start mongocryptd on port 27020 and set the following:
+
+* `MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN=on`
+
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner

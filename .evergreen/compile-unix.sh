@@ -14,7 +14,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       ANALYZE                 Run the build through clangs scan-build
 #       COVERAGE                Produce code coverage reports
 #       RDTSCP                  Use Intel RDTSCP instruction
-#       SKIP_TESTS              Skips running the libmongoc tests after compiling
+#       SKIP_MOCK_TESTS         Skips running the libmongoc mock server tests after compiling
 # Options for CMake:
 #       LIBBSON                 Build against bundled or external libbson
 #       EXTRA_CONFIGURE_FLAGS   Extra configure flags to use
@@ -33,7 +33,7 @@ VALGRIND=${VALGRIND:-OFF}
 ANALYZE=${ANALYZE:-OFF}
 COVERAGE=${COVERAGE:-OFF}
 RDTSCP=${RDTSCP:-OFF}
-SKIP_TESTS=${SKIP_TESTS:-OFF}
+SKIP_MOCK_TESTS=${SKIP_MOCK_TESTS:-OFF}
 ENABLE_SHM_COUNTERS=${ENABLE_SHM_COUNTERS:-AUTO}
 
 # CMake options.
@@ -52,7 +52,7 @@ echo "VALGRIND: $VALGRIND"
 echo "CC: $CC"
 echo "ANALYZE: $ANALYZE"
 echo "COVERAGE: $COVERAGE"
-echo "SKIP_TESTS: $SKIP_TESTS"
+echo "SKIP_MOCK_TESTS: $SKIP_MOCK_TESTS"
 echo "ZLIB: $ZLIB"
 
 # Get the kernel name, lowercased
@@ -188,6 +188,16 @@ export PATH=$INSTALL_DIR/bin:$PATH
 echo "OpenSSL Version:"
 pkg-config --modversion libssl || true
 
+if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
+   # Build libmongocrypt, using the previously fetched installed source.
+   git clone https://github.com/mongodb/libmongocrypt
+   mkdir libmongocrypt/cmake-build
+   cd libmongocrypt/cmake-build
+   $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DCMAKE_PREFIX_PATH="$INSTALL_DIR" ../
+   make install
+   cd ../../
+fi
+
 if [ "$ANALYZE" = "ON" ]; then
    # Clang static analyzer, available on Ubuntu 16.04 images.
    # https://clang-analyzer.llvm.org/scan-build.html
@@ -210,9 +220,12 @@ openssl md5 README.rst || true
 
 ulimit -c unlimited || true
 
+if [ "$ANALYZE" != "ON" ]; then
+   make -j8 install
+fi
 
 # We are done here if we don't want to run the tests.
-if [ "$SKIP_TESTS" = "ON" ]; then
+if [ "$SKIP_MOCK_TESTS" = "ON" ]; then
    exit 0
 fi
 
@@ -248,6 +261,7 @@ if [ -s error.log ]; then
       grep -v "^ar: " error.log > log.log
       if [ -s log.log ]; then
          cat error.log
+         echo "Found unexpected error logs"
          # Mark build as failed if there is unknown things in the log
          exit 2
       fi

@@ -15,6 +15,10 @@ find_cmake ()
   elif command -v cmake 2>/dev/null; then
      CMAKE=cmake
   elif uname -a | grep -iq 'x86_64 GNU/Linux'; then
+     if [ -f "$(pwd)/cmake-3.11.0/bin/cmake" ]; then
+      CMAKE="$(pwd)/cmake-3.11.0/bin/cmake"
+      return 0
+     fi
      curl --retry 5 https://cmake.org/files/v3.11/cmake-3.11.0-Linux-x86_64.tar.gz -sS --max-time 120 --fail --output cmake.tar.gz
      mkdir cmake-3.11.0
      tar xzf cmake.tar.gz -C cmake-3.11.0 --strip-components=1
