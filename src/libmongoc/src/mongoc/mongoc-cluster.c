@@ -1561,16 +1561,6 @@ _mongoc_cluster_auth_node (
    RETURN (ret);
 }
 
-static bool
-_mongoc_cluster_disconnect_node_in_set (uint32_t id, void *item, void *ctx)
-{
-   mongoc_cluster_t *cluster = (mongoc_cluster_t *) ctx;
-
-   mongoc_cluster_disconnect_node (cluster, id, false, NULL);
-
-   return true;
-}
-
 
 /*
  *--------------------------------------------------------------------------
