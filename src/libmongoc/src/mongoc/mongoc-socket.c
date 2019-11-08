@@ -102,12 +102,17 @@ _mongoc_socket_setflags (int sd)
 
    flags = fcntl (sd, F_GETFL, sd);
 
-#ifdef FD_CLOEXEC
-   return (-1 != fcntl (sd, F_SETFL, (flags | O_NONBLOCK | FD_CLOEXEC)));
-#else
-   return (-1 != fcntl (sd, F_SETFL, (flags | O_NONBLOCK)));
-#endif
+   if (-1 == fcntl (sd, F_SETFL, (flags | O_NONBLOCK))) {
+      return false;
+   }
 
+#ifdef FD_CLOEXEC
+   flags = fcntl (sd, F_GETFD, sd);
+   if (-1 == fcntl (sd, F_SETFD, (flags | FD_CLOEXEC))) {
+      return false;
+   }
+#endif
+   return true;
 #endif
 }
 
