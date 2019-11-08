@@ -8,7 +8,7 @@ if (ENABLE_TESTS AND NOT ENABLE_STATIC MATCHES "ON|AUTO")
    message (FATAL_ERROR "-DENABLE_STATIC=OFF also requires -DENABLE_TESTS=OFF")
 endif ()
 
-set(BSON_OUTPUT_BASENAME "bson" CACHE STRING "Output bson library base name")
+set (BSON_OUTPUT_BASENAME "bson" CACHE STRING "Output bson library base name")
 
 include (CheckFunctionExists)
 include (CheckIncludeFile)
