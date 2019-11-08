@@ -8,6 +8,8 @@ if (ENABLE_TESTS AND NOT ENABLE_STATIC MATCHES "ON|AUTO")
    message (FATAL_ERROR "-DENABLE_STATIC=OFF also requires -DENABLE_TESTS=OFF")
 endif ()
 
+set (BSON_OUTPUT_BASENAME "bson" CACHE STRING "Output bson library base name")
+
 include (CheckFunctionExists)
 include (CheckIncludeFile)
 include (CheckStructHasMember)
@@ -22,7 +24,7 @@ set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../build/cm
 include (LoadVersion)
 LoadVersion (${PROJECT_SOURCE_DIR}/../../VERSION_CURRENT BSON)
 
-message ("libbson version (from VERSION_CURRENT file): ${BSON_VERSION}")
+message ("lib${BSON_OUTPUT_BASENAME} version (from VERSION_CURRENT file): ${BSON_VERSION}")
 
 set (BSON_API_VERSION 1.0)
 
@@ -218,16 +220,16 @@ set (CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_compile_definitions (bson_shared PRIVATE BSON_COMPILATION JSONSL_PARSE_NAN)
 target_include_directories (bson_shared INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
 set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
-set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "bson-${BSON_API_VERSION}" PREFIX "lib")
+set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}" PREFIX "lib")
 
 if (ENABLE_APPLE_FRAMEWORK)
-   set_target_properties(bson_shared PROPERTIES 
-      FRAMEWORK TRUE 
-      MACOSX_FRAMEWORK_BUNDLE_VERSION ${MONGOC_VERSION} 
+   set_target_properties(bson_shared PROPERTIES
+      FRAMEWORK TRUE
+      MACOSX_FRAMEWORK_BUNDLE_VERSION ${MONGOC_VERSION}
       MACOSX_FRAMEWORK_SHORT_VERSION_STRING ${MONGOC_VERSION}
       MACOSX_FRAMEWORK_IDENTIFIER org.mongodb.bson
-      OUTPUT_NAME "bson"
-      PUBLIC_HEADER "${HEADERS}" 
+      OUTPUT_NAME "${BSON_OUTPUT_BASENAME}"
+      PUBLIC_HEADER "${HEADERS}"
    )
 endif ()
 
@@ -264,7 +266,7 @@ if (ENABLE_STATIC MATCHES "ON|AUTO")
    )
    target_include_directories (bson_static INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
    set_target_properties (bson_static PROPERTIES VERSION 0.0.0)
-   set_target_properties (bson_static PROPERTIES OUTPUT_NAME "bson-static-${BSON_API_VERSION}")
+   set_target_properties (bson_static PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-static-${BSON_API_VERSION}")
    # We use CMAKE_THREAD_LIBS_INIT rather than Threads::Threads here because the
    # latter fails when building on Mac OS X
    target_link_libraries (bson_static ${CMAKE_THREAD_LIBS_INIT})
