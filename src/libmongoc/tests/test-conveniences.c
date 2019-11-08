@@ -1491,11 +1491,21 @@ match_bson_value (const bson_value_t *doc,
       return true;
 
    case BSON_TYPE_DBPOINTER:
-      test_error ("DBPointer comparison not implemented");
-      abort ();
+      ret = (0 == strcmp (doc->value.v_dbpointer.collection,
+                          pattern->value.v_dbpointer.collection) &&
+             bson_oid_equal (&doc->value.v_dbpointer.oid,
+                             &pattern->value.v_dbpointer.oid));
+      break;
+
    case BSON_TYPE_DECIMAL128:
-      test_error ("Decimal128 comparison not implemented");
-      abort ();
+      ret = (doc->value.v_decimal128.low == pattern->value.v_decimal128.low &&
+             doc->value.v_decimal128.high == pattern->value.v_decimal128.high);
+      if (!ret) {
+         match_err (ctx,
+                    "Decimal128 is not an exact binary match (though "
+                    "numeric values may be equal)");
+      }
+      break;
    default:
       test_error ("unexpected value type %d: %s",
                   doc->value_type,

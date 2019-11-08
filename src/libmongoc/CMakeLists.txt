@@ -411,12 +411,18 @@ if (NOT MONGOC_ENABLE_SSL)
    endif ()
 elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
    message ("Searching for libmongocrypt")
-   find_package (mongocrypt)
+   if (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL ON)
+      # do not suppress log output if find_package cannot find libmongocrypt
+      find_package (mongocrypt)
+   elseif (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL AUTO)
+      find_package (mongocrypt QUIET)
+   endif ()
+
    if (mongocrypt_FOUND)
-      set (CLIENT_SIDE_ENCRYPTION_LIBRARIES mongo::mongocrypt)
-      get_target_property (LIBMONGOCRYPT_LOCATION mongo::mongocrypt LOCATION)
+      set (LIBMONGOCRYPT_TARGET mongo::mongocrypt)
+      get_target_property (LIBMONGOCRYPT_LIBRARY mongo::mongocrypt LOCATION)
       get_target_property (LIBMONGOCRYPT_INCLUDE_DIRECTORIES mongo::mongocrypt INTERFACE_INCLUDE_DIRECTORIES)
-      message ("--   libmongocrypt found at ${LIBMONGOCRYPT_LOCATION}")
+      message ("--   libmongocrypt found at ${LIBMONGOCRYPT_LIBRARY}")
       message ("--   libmongocrypt include path ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES}")
       set (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION 1)
    elseif (ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL ON)
@@ -471,6 +477,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-collection.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-compression.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-counters.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-crypt.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-array.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-cursor-cmd.c
@@ -672,11 +679,11 @@ endif ()
 
 set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${CLIENT_SIDE_ENCRYPTION_LIBRARIES}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${LIBMONGOCRYPT_TARGET}
 )
 set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${CLIENT_SIDE_ENCRYPTION_LIBRARIES}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_TARGET}
 )
 
 if (WIN32)
@@ -1001,7 +1008,8 @@ set (libdir "\${prefix}/${CMAKE_INSTALL_LIBDIR}")
 foreach (
       FLAG
       ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES})
+      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES}
+      ${LIBMONGOCRYPT_LIBRARY})
 
    if (IS_ABSOLUTE "${FLAG}")
       get_filename_component (FLAG_DIR "${FLAG}" DIRECTORY)

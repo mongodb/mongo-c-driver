@@ -28,8 +28,9 @@ See Also
 
     mongoc_auto_encryption_opts_new
     mongoc_auto_encryption_opts_destroy
-    mongoc_auto_encryption_opts_set_key_vault_client
-    mongoc_auto_encryption_opts_set_key_vault_namespace
+    mongoc_auto_encryption_opts_set_keyvault_client
+    mongoc_auto_encryption_opts_set_keyvault_client_pool
+    mongoc_auto_encryption_opts_set_keyvault_namespace
     mongoc_auto_encryption_opts_set_kms_providers
     mongoc_auto_encryption_opts_set_schema_map
     mongoc_auto_encryption_opts_set_bypass_auto_encryption

@@ -415,6 +415,16 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
       return;
    }
 
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+   bson_free (topology->keyvault_db);
+   bson_free (topology->keyvault_coll);
+   mongoc_client_destroy (topology->mongocryptd_client);
+   mongoc_client_pool_destroy (topology->mongocryptd_client_pool);
+   _mongoc_crypt_destroy (topology->crypt);
+   bson_destroy (topology->mongocryptd_spawn_args);
+   bson_free (topology->mongocryptd_spawn_path);
+#endif
+
    _mongoc_topology_background_thread_stop (topology);
    _mongoc_topology_description_monitor_closed (&topology->description);
 

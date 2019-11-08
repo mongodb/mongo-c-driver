@@ -20,8 +20,10 @@
 #define MONGOC_CLIENT_SIDE_ENCRYPTION_PRIVATE_H
 
 #include "mongoc/mongoc-client.h"
+#include "mongoc/mongoc-client-pool.h"
 #include "mongoc/mongoc-client-side-encryption.h"
 #include "mongoc/mongoc-cmd-private.h"
+#include "mongoc/mongoc-topology-private.h"
 #include "bson/bson.h"
 
 /* cse is an abbreviation for "Client Side Encryption" */
@@ -41,14 +43,23 @@ _mongoc_cse_auto_decrypt (mongoc_client_t *client,
                           bson_error_t *error);
 
 bool
-_mongoc_cse_enable_auto_encryption (
+_mongoc_cse_client_enable_auto_encryption (
    mongoc_client_t *client,
    mongoc_auto_encryption_opts_t *opts /* may be NULL */,
    bson_error_t *error);
 
 bool
-_mongoc_fle_spawn_mongocryptd (const char *mongocryptd_spawn_path,
-                               const bson_iter_t *mongocryptd_spawn_args,
-                               bson_error_t *error);
+_mongoc_cse_client_pool_enable_auto_encryption (
+   mongoc_topology_t *topology,
+   mongoc_auto_encryption_opts_t *opts /* may be NULL */,
+   bson_error_t *error);
+
+/* If this returns true, client side encryption is enabled
+ * on the client (or it's parent client pool), and cannot
+ * be disabled. This check is done while holding the
+ * topology lock. So if this returns true, callers are
+ * guaranteed that CSE remains enabled afterwards. */
+bool
+_mongoc_cse_is_enabled (mongoc_client_t *client);
 
 #endif /* MONGOC_CLIENT_SIDE_ENCRYPTION_PRIVATE_H */

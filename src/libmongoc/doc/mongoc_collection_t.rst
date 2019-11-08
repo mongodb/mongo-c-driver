@@ -8,8 +8,6 @@ Synopsis
 
 .. code-block:: c
 
-  #include <mongoc/mongoc.h>
-
   typedef struct _mongoc_collection_t mongoc_collection_t;
 
 ``mongoc_collection_t`` provides access to a MongoDB collection.  This handle is useful for actions for most CRUD operations, I.e. insert, update, delete, find, etc.

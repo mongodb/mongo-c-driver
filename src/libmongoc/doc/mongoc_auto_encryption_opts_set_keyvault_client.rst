@@ -1,7 +1,7 @@
 :man_page: mongoc_auto_encryption_opts_set_key_vault_client
 
-mongoc_auto_encryption_opts_set_key_vault_client()
-==================================================
+mongoc_auto_encryption_opts_set_keyvault_client()
+=================================================
 
 Synopsis
 --------
@@ -9,10 +9,10 @@ Synopsis
 .. code-block:: c
 
    void
-   mongoc_auto_encryption_opts_set_key_vault_client (
-      mongoc_auto_encryption_opts_t *opts, struct _mongoc_client_t *client);
+   mongoc_auto_encryption_opts_set_keyvault_client (
+      mongoc_auto_encryption_opts_t *opts, mongoc_client_t *client);
 
-Set an optional separate :symbol:`mongoc_client_t` to use during key lookup for automatic encryption and decryption.
+Set an optional separate :symbol:`mongoc_client_t` to use during key lookup for automatic encryption and decryption. Only applies to automatic encryption on a single-threaded :symbol:`mongoc_client_t`.
 
 Parameters
 ----------
@@ -24,4 +24,5 @@ See also
 --------
 
 * :symbol:`mongoc_client_enable_auto_encryption()`
+* :symbol:`mongoc_auto_encryption_opts_set_keyvault_client_pool()`
 * The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`

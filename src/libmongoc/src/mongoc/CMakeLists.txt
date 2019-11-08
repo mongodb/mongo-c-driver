@@ -93,6 +93,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-compression-private.h
    mongoc-config.h.in
    mongoc-counters-private.h
+   mongoc-crypt-private.h
    mongoc-crypto-cng-private.h
    mongoc-crypto-common-crypto-private.h
    mongoc-crypto-openssl-private.h
@@ -178,6 +179,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-collection.c
    mongoc-compression.c
    mongoc-counters.c
+   mongoc-crypt.c
    mongoc-cursor.c
    mongoc-cursor-legacy.c
    mongoc-cursor-array.c

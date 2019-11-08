@@ -21,6 +21,8 @@ Automatic encryption requires the authenticated user to have the `listCollection
 
 Enabling automatic encryption reduces the maximum message size and may have a negative performance impact.
 
+Only applies to a single-threaded :symbol:`mongoc_client_t`. To use with client pools, see :symbol:`mongoc_client_pool_enable_auto_encryption()`.
+
 Parameters
 ----------
 
@@ -37,5 +39,6 @@ See also
 --------
 
 * :symbol:`mongoc_auto_encryption_opts_t`
+* :symbol:`mongoc_client_pool_enable_auto_encryption()`
 * The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>` for libmongoc
 * The MongoDB Manual for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_

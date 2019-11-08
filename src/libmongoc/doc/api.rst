@@ -13,6 +13,10 @@ API Reference
    mongoc_auto_encryption_opts_t
    mongoc_bulk_operation_t
    mongoc_change_stream_t
+   mongoc_client_encryption_t
+   mongoc_client_encryption_datakey_opts_t
+   mongoc_client_encryption_encrypt_opts_t
+   mongoc_client_encryption_opts_t
    mongoc_client_pool_t
    mongoc_client_session_t
    mongoc_client_session_with_transaction_cb_t

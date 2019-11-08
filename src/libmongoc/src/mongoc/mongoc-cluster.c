@@ -566,7 +566,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       error = &error_local;
    }
 
-   if (cluster->client->cse_enabled) {
+   if (_mongoc_cse_is_enabled (cluster->client)) {
       bson_destroy (&encrypted);
 
       retval = _mongoc_cse_auto_encrypt (
@@ -593,7 +593,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
          cluster, cmd, server_stream->stream, compressor_id, reply, error);
    }
 
-   if (cluster->client->cse_enabled) {
+   if (_mongoc_cse_is_enabled (cluster->client)) {
       bson_destroy (&decrypted);
       retval = _mongoc_cse_auto_decrypt (
          cluster->client, cmd->db_name, reply, &decrypted, error);

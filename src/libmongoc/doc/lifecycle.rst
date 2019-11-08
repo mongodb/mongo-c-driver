@@ -37,3 +37,12 @@ Sessions
 --------
 
 .. include:: includes/session-lifecycle.txt
+
+Client Side Encryption
+----------------------
+
+When configuring a :symbol:`mongoc_client_t` for automatic encryption via :symbol:`mongoc_client_enable_auto_encryption()`, if a separate key vault client is set in the options (via :symbol:`mongoc_auto_encryption_opts_set_keyvault_client()`) the key vault client must outlive the encrypted client.
+
+When configuring a :symbol:`mongoc_client_pool_t` for automatic encryption via :symbol:`mongoc_client_pool_enable_auto_encryption()`, if a separate key vault client pool is set in the options (via :symbol:`mongoc_auto_encryption_opts_set_keyvault_client_pool()`) the key vault client pool must outlive the encrypted client pool.
+
+When creating a :symbol:`mongoc_client_encryption_t`, the configured key vault client (set via :symbol:`mongoc_client_encryption_opts_set_keyvault_client()`) must outlive the :symbol:`mongoc_client_encryption_t`.

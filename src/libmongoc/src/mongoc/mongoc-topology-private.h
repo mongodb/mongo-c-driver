@@ -26,6 +26,7 @@
 #include "mongoc/mongoc-thread-private.h"
 #include "mongoc/mongoc-uri.h"
 #include "mongoc/mongoc-client-session-private.h"
+#include "mongoc/mongoc-crypt-private.h"
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
@@ -42,6 +43,8 @@ typedef enum {
    MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN,
    MONGOC_TOPOLOGY_SCANNER_SINGLE_THREADED,
 } mongoc_topology_scanner_state_t;
+
+struct _mongoc_client_pool_t;
 
 typedef struct _mongoc_topology_t {
    mongoc_topology_description_t description;
@@ -72,6 +75,23 @@ typedef struct _mongoc_topology_t {
    bool stale;
 
    mongoc_server_session_t *session_pool;
+
+   /* Is client side encryption enabled? */
+   bool cse_enabled;
+
+#ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
+   _mongoc_crypt_t *crypt;
+   struct _mongoc_client_t *mongocryptd_client;           /* single threaded */
+   struct _mongoc_client_t *keyvault_client;              /* single threaded */
+   struct _mongoc_client_pool_t *mongocryptd_client_pool; /* multi threaded */
+   struct _mongoc_client_pool_t *keyvault_client_pool;    /* multi threaded */
+   char *keyvault_db;
+   char *keyvault_coll;
+   bool bypass_auto_encryption;
+   bool mongocryptd_bypass_spawn;
+   char *mongocryptd_spawn_path;
+   bson_t *mongocryptd_spawn_args;
+#endif
 } mongoc_topology_t;
 
 mongoc_topology_t *

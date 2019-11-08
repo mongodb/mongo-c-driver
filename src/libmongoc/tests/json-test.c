@@ -16,6 +16,7 @@
 
 
 #include <mongoc/mongoc.h>
+#include "mongoc/mongoc-client-side-encryption-private.h"
 #include "mongoc/mongoc-collection-private.h"
 #include "mongoc/mongoc-util-private.h"
 #include "mongoc/mongoc-uri-private.h"
@@ -1084,7 +1085,7 @@ execute_test (const json_test_config_t *config,
    mongoc_client_set_apm_callbacks (collection->client, NULL, NULL);
    json_test_ctx_cleanup (&ctx);
 
-   if (!client->cse_enabled) {
+   if (!_mongoc_cse_is_enabled (client)) {
       /* The configureFailpoint command is not supported for CSE.
        * But we need to disable failpoints on the client that knows
        * the server description for "server_id". I.e. we cannot use
@@ -1289,18 +1290,18 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
    }
 
    if (bson_iter_init_find (&iter, &opts, "keyVaultNamespace")) {
-      const char *key_vault_ns;
+      const char *keyvault_ns;
       char *db_name;
       char *coll_name;
       char *dot;
 
       BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
-      key_vault_ns = bson_iter_utf8 (&iter, NULL);
-      dot = strstr (key_vault_ns, ".");
+      keyvault_ns = bson_iter_utf8 (&iter, NULL);
+      dot = strstr (keyvault_ns, ".");
       BSON_ASSERT (dot);
-      db_name = bson_strndup (key_vault_ns, dot - key_vault_ns);
+      db_name = bson_strndup (keyvault_ns, dot - keyvault_ns);
       coll_name = bson_strdup (dot + 1);
-      mongoc_auto_encryption_opts_set_key_vault_namespace (
+      mongoc_auto_encryption_opts_set_keyvault_namespace (
          auto_encryption_opts, db_name, coll_name);
 
       bson_free (db_name);
@@ -1308,7 +1309,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
    } else {
       /* "If ``autoEncryptOpts`` does not include ``keyVaultNamespace``, default
        * it to ``admin.datakeys``" */
-      mongoc_auto_encryption_opts_set_key_vault_namespace (
+      mongoc_auto_encryption_opts_set_keyvault_namespace (
          auto_encryption_opts, "admin", "datakeys");
    }
 

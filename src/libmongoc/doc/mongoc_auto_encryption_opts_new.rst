@@ -16,12 +16,12 @@ Create a new :symbol:`mongoc_auto_encryption_opts_t`.
 
 Caller must set the required options:
 
-* :symbol:`mongoc_auto_encryption_opts_set_key_vault_namespace()`
+* :symbol:`mongoc_auto_encryption_opts_set_keyvault_namespace()`
 * :symbol:`mongoc_auto_encryption_opts_set_kms_providers()`
 
 Caller may set optionally set the following:
 
-* :symbol:`mongoc_auto_encryption_opts_set_key_vault_client()`
+* :symbol:`mongoc_auto_encryption_opts_set_keyvault_client()`
 * :symbol:`mongoc_auto_encryption_opts_set_schema_map()`
 * :symbol:`mongoc_auto_encryption_opts_set_bypass_auto_encryption()`
 * :symbol:`mongoc_auto_encryption_opts_set_extra()`

@@ -31,6 +31,7 @@ Example
     :maxdepth: 1
 
     mongoc_client_pool_destroy
+    mongoc_client_pool_enable_auto_encryption
     mongoc_client_pool_max_size
     mongoc_client_pool_min_size
     mongoc_client_pool_new

@@ -1,7 +1,7 @@
 :man_page: mongoc_auto_encryption_opts_set_key_vault_namespace
 
-mongoc_auto_encryption_opts_set_key_vault_namespace()
-=====================================================
+mongoc_auto_encryption_opts_set_keyvault_namespace()
+====================================================
 
 Synopsis
 --------
@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
    void
-   mongoc_auto_encryption_opts_set_key_vault_namespace (
+   mongoc_auto_encryption_opts_set_keyvault_namespace (
       mongoc_auto_encryption_opts_t *opts, const char *db, const char *coll);
 
 Set the database and collection name of the key vault. The key vault is the specially designated collection containing encrypted data keys for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_.
