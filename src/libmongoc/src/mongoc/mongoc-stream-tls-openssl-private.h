@@ -24,6 +24,11 @@
 
 BSON_BEGIN_DECLS
 
+typedef struct {
+    const char *host;
+    bool allow_invalid_hostname;
+    bool weak_cert_validation;
+} mongoc_openssl_ocsp_opt_t;
 
 /**
  * mongoc_stream_tls_openssl_t:
@@ -34,6 +39,7 @@ typedef struct {
    BIO *bio;
    BIO_METHOD *meth;
    SSL_CTX *ctx;
+   mongoc_openssl_ocsp_opt_t *ocsp_opts;
 } mongoc_stream_tls_openssl_t;
 
 

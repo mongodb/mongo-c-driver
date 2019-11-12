@@ -23,17 +23,19 @@
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <openssl/ocsp.h>
 #include <openssl/x509v3.h>
 #include <openssl/crypto.h>
 
 #include <string.h>
 
 #include "mongoc-init.h"
+#include "mongoc-openssl-private.h"
 #include "mongoc-socket.h"
 #include "mongoc-ssl.h"
-#include "mongoc-openssl-private.h"
-#include "mongoc-trace-private.h"
+#include "mongoc-stream-tls-openssl-private.h"
 #include "mongoc-thread-private.h"
+#include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 
 #ifdef _WIN32
@@ -451,6 +453,189 @@ _mongoc_openssl_setup_pem_file (SSL_CTX *ctx,
    return 1;
 }
 
+#ifdef MONGOC_ENABLE_OCSP
+
+static X509 *
+_get_issuer (X509 *cert, STACK_OF (X509) * chain)
+{
+   X509 *issuer = NULL, *candidate = NULL;
+   X509_NAME *issuer_name = NULL, *candidate_name = NULL;
+   int i;
+
+   issuer_name = X509_get_issuer_name (cert);
+   for (i = 0; i < sk_X509_num (chain) && issuer == NULL; i++) {
+      candidate = sk_X509_value (chain, i);
+      candidate_name = X509_get_subject_name (candidate);
+      if (0 == X509_NAME_cmp (candidate_name, issuer_name)) {
+         issuer = candidate;
+      }
+   }
+   return issuer;
+}
+
+#define ERR_STR (ERR_error_string (ERR_get_error (), NULL))
+
+int
+_mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
+{
+   const int ERROR = -1, FAILURE = 0, SUCCESS = 1;
+   OCSP_RESPONSE *resp = NULL;
+   OCSP_BASICRESP *basic = NULL;
+   X509_STORE *store = NULL;
+   X509 *peer = NULL, *issuer = NULL;
+   STACK_OF (X509) *cert_chain = NULL;
+   const unsigned char *r = NULL;
+   int cert_status, reason, len, status, ret;
+   OCSP_CERTID *id = NULL;
+   mongoc_openssl_ocsp_opt_t *opts = (mongoc_openssl_ocsp_opt_t *) arg;
+   ASN1_GENERALIZEDTIME *produced_at = NULL, *this_update = NULL,
+                        *next_update = NULL;
+
+   if (opts->weak_cert_validation) {
+      return SUCCESS;
+   }
+
+   if (!(peer = SSL_get_peer_certificate (ssl))) {
+      MONGOC_ERROR ("No certificate was presented by the peer: %s", ERR_STR);
+      ret = ERROR;
+      goto done;
+   }
+
+   /* Get the stapled OCSP response returned by the server */
+   len = SSL_get_tlsext_status_ocsp_resp (ssl, &r);
+   if (!r) {
+      bool must_staple = X509_get_ext_d2i (peer, NID_tlsfeature, 0, 0) != NULL;
+      if (must_staple) {
+         MONGOC_ERROR ("Server must contain a stapled response: %s", ERR_STR);
+         ret = FAILURE;
+         goto done;
+      }
+      ret = SUCCESS; // TODO: contact OCSP responder
+      goto done;
+   }
+
+   /* obtain an OCSP_RESPONSE object from the OCSP response */
+   if (!d2i_OCSP_RESPONSE (&resp, &r, len)) {
+      MONGOC_ERROR ("Failed to parse OCSP response: %s", ERR_STR);
+      ret = ERROR;
+      goto done;
+   }
+
+   /* Validate the OCSP response status of the OCSP_RESPONSE object */
+   status = OCSP_response_status (resp);
+   if (status != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
+      MONGOC_ERROR ("OCSP response error %d %s",
+                    status,
+                    OCSP_response_status_str (status));
+      ret = ERROR;
+      goto done;
+   }
+
+   /* Get the OCSP_BASICRESP structure contained in OCSP_RESPONSE object for the
+    * peer cert */
+   basic = OCSP_response_get1_basic (resp);
+   if (!basic) {
+      MONGOC_ERROR ("Could not find BasicOCSPResponse: %s", ERR_STR);
+      ret = ERROR;
+      goto done;
+   }
+
+   store = SSL_CTX_get_cert_store (SSL_get_SSL_CTX (ssl));
+
+   /* Get a STACK_OF(X509) certs forming the cert chain of the peer, including
+    * the peer's cert */
+   if (!(cert_chain = SSL_get0_verified_chain (ssl))) {
+      MONGOC_ERROR ("No certificate was presented by the peer: %s", ERR_STR);
+      ret = ERROR;
+      goto done;
+   }
+
+   /*
+    * checks that the basic response message is correctly signed and that the
+    * signer certificate can be validated.
+    * 1. The function first verifies the signer cert of the response is in the
+    * given cert chain.
+    * 2. Next, the function verifies the signature of the basic response.
+    * 3. Finally, the function validates the signer cert, constructing the
+    * validation path via the untrusted cert chain.
+    */
+   if (SUCCESS != OCSP_basic_verify (basic, cert_chain, store, 0)) {
+      MONGOC_ERROR ("OCSP response failed verification: %s", ERR_STR);
+      ret = ERROR;
+      goto done;
+   }
+
+   if (!(issuer = _get_issuer (peer, cert_chain))) {
+      MONGOC_ERROR ("Could not get issuer from peer cert");
+      ret = ERROR;
+      goto done;
+   }
+
+   if (!(id = OCSP_cert_to_id (NULL /* SHA1 */, peer, issuer))) {
+      MONGOC_ERROR ("Could not obtain a valid OCSP_CERTID for peer: %s",
+                    ERR_STR);
+      ret = ERROR;
+      goto done;
+   }
+
+   /* searches the basic response for an OCSP response for the given cert ID */
+   if (!OCSP_resp_find_status (basic,
+                               id,
+                               &cert_status,
+                               &reason,
+                               &produced_at,
+                               &this_update,
+                               &next_update)) {
+      MONGOC_ERROR ("No OCSP response found for the peer certificate: %s",
+                    ERR_STR);
+      ret = ERROR;
+      goto done;
+   }
+
+   /* checks the validity of this_update and next_update values */
+   if (!OCSP_check_validity (this_update, next_update, 0L, -1L)) {
+      MONGOC_ERROR ("OCSP response has expired: %s", ERR_STR);
+      ret = ERROR;
+      goto done;
+   }
+
+   switch (cert_status) {
+   case V_OCSP_CERTSTATUS_GOOD:
+      /* TODO: cache response */
+      break;
+
+   case V_OCSP_CERTSTATUS_REVOKED:
+      MONGOC_ERROR ("OCSP Certificate Status: Revoked. Reason %d", reason);
+      ret = FAILURE;
+      goto done;
+
+   default: /* V_OCSP_CERTSTATUS_UNKNOWN */
+      break;
+   }
+
+   /* Validate hostname matches cert */
+   if (!opts->allow_invalid_hostname &&
+       X509_check_host (peer, opts->host, 0, 0, NULL) != SUCCESS &&
+       X509_check_ip_asc (peer, opts->host, 0) != SUCCESS) {
+      ret = FAILURE;
+      goto done;
+   }
+
+   ret = SUCCESS;
+done:
+   if (basic)
+      OCSP_BASICRESP_free (basic);
+   if (resp)
+      OCSP_RESPONSE_free (resp);
+   if (id)
+       OCSP_CERTID_free (id);
+   if (peer)
+       X509_free (peer);
+   if (issuer)
+       X509_free (issuer);
+   return ret;
+}
+#endif
 
 /**
  * _mongoc_openssl_ctx_new:
@@ -493,7 +678,8 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
    ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
 #endif
 
-/* man SSL_get_options says: "SSL_OP_NO_RENEGOTIATION options were added in OpenSSL 1.1.1". */
+/* man SSL_get_options says: "SSL_OP_NO_RENEGOTIATION options were added in
+ * OpenSSL 1.1.1". */
 #ifdef SSL_OP_NO_RENEGOTIATION
    ssl_ctx_options |= SSL_OP_NO_RENEGOTIATION;
 #endif

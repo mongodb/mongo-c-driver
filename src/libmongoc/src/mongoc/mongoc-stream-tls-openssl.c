@@ -45,7 +45,8 @@
 
 #define MONGOC_STREAM_TLS_OPENSSL_BUFFER_SIZE 4096
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+   (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
 static void
 BIO_meth_free (BIO_METHOD *meth)
 {
@@ -92,6 +93,11 @@ _mongoc_stream_tls_openssl_destroy (mongoc_stream_t *stream)
 
    SSL_CTX_free (openssl->ctx);
    openssl->ctx = NULL;
+
+   if (openssl->ocsp_opts)
+       bson_free ((char *) openssl->ocsp_opts->host);
+   bson_free (openssl->ocsp_opts);
+   openssl->ocsp_opts = NULL;
 
    bson_free (openssl);
    bson_free (stream);
@@ -540,11 +546,11 @@ _mongoc_stream_tls_openssl_check_closed (mongoc_stream_t *stream) /* IN */
 /**
  * mongoc_stream_tls_openssl_handshake:
  */
-bool
-mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
-                                     const char *host,
-                                     int *events,
-                                     bson_error_t *error)
+static bool
+_mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
+                                      const char *host,
+                                      int *events,
+                                      bson_error_t *error)
 {
    mongoc_stream_tls_t *tls = (mongoc_stream_tls_t *) stream;
    mongoc_stream_tls_openssl_t *openssl =
@@ -558,10 +564,21 @@ mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
    BIO_get_ssl (openssl->bio, &ssl);
 
    if (BIO_do_handshake (openssl->bio) == 1) {
+#if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
+      X509 *peer = NULL;
+      peer = SSL_get_peer_certificate (ssl);
+
+      if (tls->ssl_opts.allow_invalid_hostname ||
+         X509_check_host (peer, host, 0, 0, NULL) == 1 ||
+         X509_check_ip_asc (peer, host, 0) == 1) {
+         RETURN (true);
+      }
+#else
       if (_mongoc_openssl_check_cert (
              ssl, host, tls->ssl_opts.allow_invalid_hostname)) {
          RETURN (true);
       }
+#endif
 
       *events = 0;
       bson_set_error (error,
@@ -674,6 +691,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
 {
    mongoc_stream_tls_t *tls;
    mongoc_stream_tls_openssl_t *openssl;
+   mongoc_openssl_ocsp_opt_t *ocsp_opts = NULL;
    SSL_CTX *ssl_ctx = NULL;
    BIO *bio_ssl = NULL;
    BIO *bio_mongoc_shim = NULL;
@@ -712,6 +730,21 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
        * Set a callback to get the SNI, if provided */
       SSL_CTX_set_tlsext_servername_callback (ssl_ctx,
                                               _mongoc_stream_tls_openssl_sni);
+#ifdef MONGOC_ENABLE_OCSP
+   } else {
+      if (!SSL_CTX_set_tlsext_status_type (ssl_ctx, TLSEXT_STATUSTYPE_ocsp)) {
+         SSL_CTX_free (ssl_ctx);
+         RETURN (NULL);
+      }
+
+      ocsp_opts = bson_malloc(sizeof(mongoc_openssl_ocsp_opt_t));
+      ocsp_opts->allow_invalid_hostname = opt->allow_invalid_hostname;
+      ocsp_opts->weak_cert_validation = opt->weak_cert_validation;
+      ocsp_opts->host = bson_strdup(host);
+
+      SSL_CTX_set_tlsext_status_arg (ssl_ctx, ocsp_opts);
+      SSL_CTX_set_tlsext_status_cb (ssl_ctx, _mongoc_ocsp_tlsext_status_cb);
+#endif
    }
 
    if (opt->weak_cert_validation) {
@@ -750,6 +783,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
    openssl->bio = bio_ssl;
    openssl->meth = meth;
    openssl->ctx = ssl_ctx;
+   openssl->ocsp_opts = ocsp_opts;
 
    tls = (mongoc_stream_tls_t *) bson_malloc0 (sizeof *tls);
    tls->parent.type = MONGOC_STREAM_TLS;
@@ -765,7 +799,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
    tls->parent.timed_out = _mongoc_stream_tls_openssl_timed_out;
    tls->parent.should_retry = _mongoc_stream_tls_openssl_should_retry;
    memcpy (&tls->ssl_opts, opt, sizeof tls->ssl_opts);
-   tls->handshake = mongoc_stream_tls_openssl_handshake;
+   tls->handshake = _mongoc_stream_tls_openssl_handshake;
    tls->ctx = (void *) openssl;
    tls->timeout_msec = -1;
    tls->base_stream = base_stream;
