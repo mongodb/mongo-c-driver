@@ -353,25 +353,69 @@ test_in_transaction (void *ctx)
    r = mongoc_client_session_append (session, &opts, &error);
    ASSERT_OR_PRINT (r, error);
    BSON_ASSERT (!mongoc_client_session_in_transaction (session));
+   ASSERT_CMPINT (mongoc_client_session_get_transaction_state (session),
+                  ==,
+                  MONGOC_TRANSACTION_NONE);
+   ASSERT_CMPINT (session->txn.state, ==, MONGOC_INTERNAL_TRANSACTION_NONE);
 
    /* commit an empty transaction */
    r = mongoc_client_session_start_transaction (session, NULL, &error);
    ASSERT_OR_PRINT (r, error);
    BSON_ASSERT (mongoc_client_session_in_transaction (session));
+   ASSERT_CMPINT (mongoc_client_session_get_transaction_state (session),
+                  ==,
+                  MONGOC_TRANSACTION_STARTING);
+   ASSERT_CMPINT (session->txn.state, ==, MONGOC_INTERNAL_TRANSACTION_STARTING);
    r = mongoc_client_session_commit_transaction (session, NULL, &error);
    ASSERT_OR_PRINT (r, error);
    BSON_ASSERT (!mongoc_client_session_in_transaction (session));
+   ASSERT_CMPINT (mongoc_client_session_get_transaction_state (session),
+                  ==,
+                  MONGOC_TRANSACTION_COMMITTED);
+   ASSERT_CMPINT (
+      session->txn.state, ==, MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY);
 
    /* commit a transaction with an insert */
    r = mongoc_client_session_start_transaction (session, NULL, &error);
    ASSERT_OR_PRINT (r, error);
    BSON_ASSERT (mongoc_client_session_in_transaction (session));
+   ASSERT_CMPINT (mongoc_client_session_get_transaction_state (session),
+                  ==,
+                  MONGOC_TRANSACTION_STARTING);
+   ASSERT_CMPINT (session->txn.state, ==, MONGOC_INTERNAL_TRANSACTION_STARTING);
    r = mongoc_collection_insert_one (
       collection, tmp_bson ("{}"), &opts, NULL, &error);
+   ASSERT_CMPINT (mongoc_client_session_get_transaction_state (session),
+                  ==,
+                  MONGOC_TRANSACTION_IN_PROGRESS);
+   ASSERT_CMPINT (
+      session->txn.state, ==, MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS);
    ASSERT_OR_PRINT (r, error);
    r = mongoc_client_session_commit_transaction (session, NULL, &error);
    ASSERT_OR_PRINT (r, error);
    BSON_ASSERT (!mongoc_client_session_in_transaction (session));
+   ASSERT_CMPINT (mongoc_client_session_get_transaction_state (session),
+                  ==,
+                  MONGOC_TRANSACTION_COMMITTED);
+   ASSERT_CMPINT (
+      session->txn.state, ==, MONGOC_INTERNAL_TRANSACTION_COMMITTED);
+
+   /* abort a transaction */
+   r = mongoc_client_session_start_transaction (session, NULL, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (mongoc_client_session_in_transaction (session));
+   ASSERT_CMPINT (mongoc_client_session_get_transaction_state (session),
+                  ==,
+                  MONGOC_TRANSACTION_STARTING);
+   ASSERT_CMPINT (session->txn.state, ==, MONGOC_INTERNAL_TRANSACTION_STARTING);
+   ASSERT_OR_PRINT (r, error);
+   r = mongoc_client_session_abort_transaction (session, &error);
+   ASSERT_OR_PRINT (r, error);
+   BSON_ASSERT (!mongoc_client_session_in_transaction (session));
+   ASSERT_CMPINT (mongoc_client_session_get_transaction_state (session),
+                  ==,
+                  MONGOC_TRANSACTION_ABORTED);
+   ASSERT_CMPINT (session->txn.state, ==, MONGOC_INTERNAL_TRANSACTION_ABORTED);
 
    bson_destroy (&opts);
    mongoc_collection_destroy (collection);
@@ -1092,13 +1136,16 @@ test_max_commit_time_ms_is_reset (void *ctx)
 
    r = mongoc_client_session_abort_transaction (session, &error);
    ASSERT_OR_PRINT (r, error);
-   BSON_ASSERT (DEFAULT_MAX_COMMIT_TIME_MS == session->txn.opts.max_commit_time_ms);
+   BSON_ASSERT (DEFAULT_MAX_COMMIT_TIME_MS ==
+                session->txn.opts.max_commit_time_ms);
 
-   mongoc_transaction_opts_set_max_commit_time_ms (txn_opts, DEFAULT_MAX_COMMIT_TIME_MS);
+   mongoc_transaction_opts_set_max_commit_time_ms (txn_opts,
+                                                   DEFAULT_MAX_COMMIT_TIME_MS);
 
    r = mongoc_client_session_start_transaction (session, txn_opts, &error);
    ASSERT_OR_PRINT (r, error);
-   BSON_ASSERT (DEFAULT_MAX_COMMIT_TIME_MS == session->txn.opts.max_commit_time_ms);
+   BSON_ASSERT (DEFAULT_MAX_COMMIT_TIME_MS ==
+                session->txn.opts.max_commit_time_ms);
 
    r = mongoc_client_session_abort_transaction (session, &error);
    ASSERT_OR_PRINT (r, error);

@@ -936,7 +936,7 @@ mongoc_client_session_with_transaction (
    bson_t *reply,
    bson_error_t *error)
 {
-   mongoc_transaction_state_t state;
+   mongoc_internal_transaction_state_t state;
    int64_t timeout;
    int64_t expire_at;
    bson_t local_reply;
@@ -975,8 +975,8 @@ mongoc_client_session_with_transaction (
       }
 
       if (!res) {
-         if (state == MONGOC_TRANSACTION_STARTING ||
-             state == MONGOC_TRANSACTION_IN_PROGRESS) {
+         if (state == MONGOC_INTERNAL_TRANSACTION_STARTING ||
+             state == MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS) {
             BSON_ASSERT (
                mongoc_client_session_abort_transaction (session, NULL));
          }
@@ -992,10 +992,10 @@ mongoc_client_session_with_transaction (
          GOTO (done);
       }
 
-      if (state == MONGOC_TRANSACTION_ABORTED ||
-          state == MONGOC_TRANSACTION_NONE ||
-          state == MONGOC_TRANSACTION_COMMITTED ||
-          state == MONGOC_TRANSACTION_COMMITTED_EMPTY) {
+      if (state == MONGOC_INTERNAL_TRANSACTION_ABORTED ||
+          state == MONGOC_INTERNAL_TRANSACTION_NONE ||
+          state == MONGOC_INTERNAL_TRANSACTION_COMMITTED ||
+          state == MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY) {
          GOTO (done);
       }
 
@@ -1098,21 +1098,22 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
 
    /* use "switch" so that static checkers ensure we handle all states */
    switch (session->txn.state) {
-   case MONGOC_TRANSACTION_STARTING:
-   case MONGOC_TRANSACTION_IN_PROGRESS:
+   case MONGOC_INTERNAL_TRANSACTION_STARTING:
+   case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS:
       bson_set_error (error,
                       MONGOC_ERROR_TRANSACTION,
                       MONGOC_ERROR_TRANSACTION_INVALID_STATE,
                       "Transaction already in progress");
       ret = false;
       GOTO (done);
-   case MONGOC_TRANSACTION_ENDING:
-      MONGOC_ERROR ("starting txn in invalid state MONGOC_TRANSACTION_ENDING");
+   case MONGOC_INTERNAL_TRANSACTION_ENDING:
+      MONGOC_ERROR (
+         "starting txn in invalid state MONGOC_INTERNAL_TRANSACTION_ENDING");
       abort ();
-   case MONGOC_TRANSACTION_COMMITTED:
-   case MONGOC_TRANSACTION_COMMITTED_EMPTY:
-   case MONGOC_TRANSACTION_ABORTED:
-   case MONGOC_TRANSACTION_NONE:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY:
+   case MONGOC_INTERNAL_TRANSACTION_ABORTED:
+   case MONGOC_INTERNAL_TRANSACTION_NONE:
    default:
       break;
    }
@@ -1147,7 +1148,7 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
    /* Transactions Spec: Starting a new transaction on a pinned ClientSession
     * MUST unpin the session. */
    _mongoc_client_session_unpin (session);
-   session->txn.state = MONGOC_TRANSACTION_STARTING;
+   session->txn.state = MONGOC_INTERNAL_TRANSACTION_STARTING;
    /* Transactions spec: "Drivers MUST clear a session's cached
     * 'recoveryToken' when transitioning to the 'no transaction' or
     * 'starting transaction' state." */
@@ -1171,6 +1172,38 @@ mongoc_client_session_in_transaction (const mongoc_client_session_t *session)
    RETURN (_mongoc_client_session_in_txn (session));
 }
 
+
+mongoc_transaction_state_t
+mongoc_client_session_get_transaction_state (
+   const mongoc_client_session_t *session)
+{
+   ENTRY;
+
+   BSON_ASSERT (session);
+
+   switch (session->txn.state) {
+   case MONGOC_INTERNAL_TRANSACTION_NONE:
+      RETURN (MONGOC_TRANSACTION_NONE);
+   case MONGOC_INTERNAL_TRANSACTION_STARTING:
+      RETURN (MONGOC_TRANSACTION_STARTING);
+   case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS:
+      RETURN (MONGOC_TRANSACTION_IN_PROGRESS);
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
+      RETURN (MONGOC_TRANSACTION_COMMITTED);
+   case MONGOC_INTERNAL_TRANSACTION_ABORTED:
+      RETURN (MONGOC_TRANSACTION_ABORTED);
+   case MONGOC_INTERNAL_TRANSACTION_ENDING:
+      MONGOC_ERROR ("invalid state MONGOC_INTERNAL_TRANSACTION_ENDING when "
+                    "getting transaction state");
+      abort ();
+   default:
+      MONGOC_ERROR ("invalid state %d when getting transaction state",
+                    (int) session->txn.state);
+      abort ();
+      break;
+   }
+}
 
 bool
 mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
@@ -1205,36 +1238,38 @@ mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
     * commit again to retry after network error */
 
    switch (session->txn.state) {
-   case MONGOC_TRANSACTION_NONE:
+   case MONGOC_INTERNAL_TRANSACTION_NONE:
       bson_set_error (error,
                       MONGOC_ERROR_TRANSACTION,
                       MONGOC_ERROR_TRANSACTION_INVALID_STATE,
                       "No transaction started");
       _mongoc_bson_init_if_set (reply);
       break;
-   case MONGOC_TRANSACTION_STARTING:
-   case MONGOC_TRANSACTION_COMMITTED_EMPTY:
+   case MONGOC_INTERNAL_TRANSACTION_STARTING:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY:
       /* we sent no commands, not actually started on server */
-      session->txn.state = MONGOC_TRANSACTION_COMMITTED_EMPTY;
+      session->txn.state = MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY;
       _mongoc_bson_init_if_set (reply);
       r = true;
       break;
-   case MONGOC_TRANSACTION_COMMITTED:
-   case MONGOC_TRANSACTION_IN_PROGRESS: {
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
+   case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS: {
       bool explicitly_retrying =
-         (session->txn.state == MONGOC_TRANSACTION_COMMITTED);
-      /* in MONGOC_TRANSACTION_ENDING we add txnNumber and autocommit: false
-       * to the commitTransaction command, but if it fails with network error
-       * we add UnknownTransactionCommitResult not TransientTransactionError */
-      session->txn.state = MONGOC_TRANSACTION_ENDING;
+         (session->txn.state == MONGOC_INTERNAL_TRANSACTION_COMMITTED);
+      /* in MONGOC_INTERNAL_TRANSACTION_ENDING we add txnNumber and autocommit:
+       * false to the commitTransaction command, but if it fails with network
+       * error we add UnknownTransactionCommitResult not
+       * TransientTransactionError */
+      session->txn.state = MONGOC_INTERNAL_TRANSACTION_ENDING;
       r = txn_commit (session, explicitly_retrying, reply, error);
-      session->txn.state = MONGOC_TRANSACTION_COMMITTED;
+      session->txn.state = MONGOC_INTERNAL_TRANSACTION_COMMITTED;
       break;
    }
-   case MONGOC_TRANSACTION_ENDING:
-      MONGOC_ERROR ("commit called in invalid state MONGOC_TRANSACTION_ENDING");
+   case MONGOC_INTERNAL_TRANSACTION_ENDING:
+      MONGOC_ERROR (
+         "commit called in invalid state MONGOC_INTERNAL_TRANSACTION_ENDING");
       abort ();
-   case MONGOC_TRANSACTION_ABORTED:
+   case MONGOC_INTERNAL_TRANSACTION_ABORTED:
    default:
       bson_set_error (
          error,
@@ -1258,35 +1293,36 @@ mongoc_client_session_abort_transaction (mongoc_client_session_t *session,
    BSON_ASSERT (session);
 
    switch (session->txn.state) {
-   case MONGOC_TRANSACTION_STARTING:
+   case MONGOC_INTERNAL_TRANSACTION_STARTING:
       /* we sent no commands, not actually started on server */
-      session->txn.state = MONGOC_TRANSACTION_ABORTED;
+      session->txn.state = MONGOC_INTERNAL_TRANSACTION_ABORTED;
       txn_opts_cleanup (&session->txn.opts);
       RETURN (true);
-   case MONGOC_TRANSACTION_IN_PROGRESS:
-      session->txn.state = MONGOC_TRANSACTION_ENDING;
+   case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS:
+      session->txn.state = MONGOC_INTERNAL_TRANSACTION_ENDING;
       /* Transactions Spec: ignore errors from abortTransaction command */
       txn_abort (session, NULL, NULL);
-      session->txn.state = MONGOC_TRANSACTION_ABORTED;
+      session->txn.state = MONGOC_INTERNAL_TRANSACTION_ABORTED;
       RETURN (true);
-   case MONGOC_TRANSACTION_COMMITTED:
-   case MONGOC_TRANSACTION_COMMITTED_EMPTY:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY:
       bson_set_error (
          error,
          MONGOC_ERROR_TRANSACTION,
          MONGOC_ERROR_TRANSACTION_INVALID_STATE,
          "Cannot call abortTransaction after calling commitTransaction");
       RETURN (false);
-   case MONGOC_TRANSACTION_ABORTED:
+   case MONGOC_INTERNAL_TRANSACTION_ABORTED:
       bson_set_error (error,
                       MONGOC_ERROR_TRANSACTION,
                       MONGOC_ERROR_TRANSACTION_INVALID_STATE,
                       "Cannot call abortTransaction twice");
       RETURN (false);
-   case MONGOC_TRANSACTION_ENDING:
-      MONGOC_ERROR ("abort called in invalid state MONGOC_TRANSACTION_ENDING");
+   case MONGOC_INTERNAL_TRANSACTION_ENDING:
+      MONGOC_ERROR (
+         "abort called in invalid state MONGOC_INTERNAL_TRANSACTION_ENDING");
       abort ();
-   case MONGOC_TRANSACTION_NONE:
+   case MONGOC_INTERNAL_TRANSACTION_NONE:
    default:
       bson_set_error (error,
                       MONGOC_ERROR_TRANSACTION,
@@ -1329,14 +1365,14 @@ _mongoc_client_session_in_txn (const mongoc_client_session_t *session)
 
    /* use "switch" so that static checkers ensure we handle all states */
    switch (session->txn.state) {
-   case MONGOC_TRANSACTION_STARTING:
-   case MONGOC_TRANSACTION_IN_PROGRESS:
+   case MONGOC_INTERNAL_TRANSACTION_STARTING:
+   case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS:
       return true;
-   case MONGOC_TRANSACTION_NONE:
-   case MONGOC_TRANSACTION_ENDING:
-   case MONGOC_TRANSACTION_COMMITTED:
-   case MONGOC_TRANSACTION_COMMITTED_EMPTY:
-   case MONGOC_TRANSACTION_ABORTED:
+   case MONGOC_INTERNAL_TRANSACTION_NONE:
+   case MONGOC_INTERNAL_TRANSACTION_ENDING:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY:
+   case MONGOC_INTERNAL_TRANSACTION_ABORTED:
    default:
       return false;
    }
@@ -1353,14 +1389,14 @@ _mongoc_client_session_in_txn_or_ending (const mongoc_client_session_t *session)
 
    /* use "switch" so that static checkers ensure we handle all states */
    switch (session->txn.state) {
-   case MONGOC_TRANSACTION_STARTING:
-   case MONGOC_TRANSACTION_IN_PROGRESS:
-   case MONGOC_TRANSACTION_ENDING:
+   case MONGOC_INTERNAL_TRANSACTION_STARTING:
+   case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS:
+   case MONGOC_INTERNAL_TRANSACTION_ENDING:
       return true;
-   case MONGOC_TRANSACTION_NONE:
-   case MONGOC_TRANSACTION_COMMITTED:
-   case MONGOC_TRANSACTION_COMMITTED_EMPTY:
-   case MONGOC_TRANSACTION_ABORTED:
+   case MONGOC_INTERNAL_TRANSACTION_NONE:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY:
+   case MONGOC_INTERNAL_TRANSACTION_ABORTED:
    default:
       return false;
    }
@@ -1374,7 +1410,7 @@ _mongoc_client_session_txn_in_progress (const mongoc_client_session_t *session)
       return false;
    }
 
-   return session->txn.state == MONGOC_TRANSACTION_IN_PROGRESS;
+   return session->txn.state == MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS;
 }
 
 
@@ -1421,17 +1457,17 @@ _mongoc_client_session_append_txn (mongoc_client_session_t *session,
    /* See Transactions Spec for state transitions. In COMMITTED / ABORTED, the
     * next operation resets the session and moves to TRANSACTION_NONE */
    switch (session->txn.state) {
-   case MONGOC_TRANSACTION_STARTING:
-      txn->state = MONGOC_TRANSACTION_IN_PROGRESS;
+   case MONGOC_INTERNAL_TRANSACTION_STARTING:
+      txn->state = MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS;
       bson_append_bool (cmd, "startTransaction", 16, true);
    /* FALL THROUGH */
-   case MONGOC_TRANSACTION_IN_PROGRESS:
-   case MONGOC_TRANSACTION_ENDING:
+   case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS:
+   case MONGOC_INTERNAL_TRANSACTION_ENDING:
       bson_append_int64 (
          cmd, "txnNumber", 9, session->server_session->txn_number);
       bson_append_bool (cmd, "autocommit", 10, false);
       RETURN (true);
-   case MONGOC_TRANSACTION_COMMITTED:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
       if (!strcmp (_mongoc_get_command_name (cmd), "commitTransaction")) {
          /* send commitTransaction again */
          bson_append_int64 (
@@ -1440,10 +1476,10 @@ _mongoc_client_session_append_txn (mongoc_client_session_t *session,
          RETURN (true);
       }
    /* FALL THROUGH */
-   case MONGOC_TRANSACTION_COMMITTED_EMPTY:
-   case MONGOC_TRANSACTION_ABORTED:
+   case MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY:
+   case MONGOC_INTERNAL_TRANSACTION_ABORTED:
       txn_opts_cleanup (&session->txn.opts);
-      txn->state = MONGOC_TRANSACTION_NONE;
+      txn->state = MONGOC_INTERNAL_TRANSACTION_NONE;
 
       /* Transactions spec: "Drivers MUST clear a session's cached
        * 'recoveryToken' when transitioning to the 'no transaction' or
@@ -1451,7 +1487,7 @@ _mongoc_client_session_append_txn (mongoc_client_session_t *session,
       bson_destroy (session->recovery_token);
       session->recovery_token = NULL;
       RETURN (true);
-   case MONGOC_TRANSACTION_NONE:
+   case MONGOC_INTERNAL_TRANSACTION_NONE:
    default:
       RETURN (true);
    }
@@ -1482,7 +1518,7 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
                                             bson_t *cmd)
 {
    const mongoc_read_concern_t *txn_rc;
-   mongoc_transaction_state_t txn_state;
+   mongoc_internal_transaction_state_t txn_state;
    bool user_rc_has_level;
    bool txn_has_level;
    bool has_timestamp;
@@ -1496,16 +1532,16 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
    txn_state = cs->txn.state;
    txn_rc = cs->txn.opts.read_concern;
 
-   if (txn_state == MONGOC_TRANSACTION_IN_PROGRESS) {
+   if (txn_state == MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS) {
       return;
    }
 
    has_timestamp =
-      (txn_state == MONGOC_TRANSACTION_STARTING || is_read_command) &&
+      (txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING || is_read_command) &&
       mongoc_session_opts_get_causal_consistency (&cs->opts) &&
       cs->operation_timestamp;
    user_rc_has_level = rc && bson_has_field (rc, "level");
-   txn_has_level = txn_state == MONGOC_TRANSACTION_STARTING &&
+   txn_has_level = txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING &&
                    !mongoc_read_concern_is_default (txn_rc);
    has_level = user_rc_has_level || txn_has_level;
 
@@ -1518,7 +1554,7 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
       bson_concat (&child, rc);
    }
 
-   if (txn_state == MONGOC_TRANSACTION_STARTING) {
+   if (txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING) {
       /* add transaction's read concern level unless user overrides */
       if (txn_has_level && !user_rc_has_level) {
          bson_append_utf8 (&child, "level", 5, txn_rc->level, -1);

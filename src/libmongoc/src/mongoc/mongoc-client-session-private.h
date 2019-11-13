@@ -55,17 +55,17 @@ typedef struct _mongoc_server_session_t {
 } mongoc_server_session_t;
 
 typedef enum {
-   MONGOC_TRANSACTION_NONE,
-   MONGOC_TRANSACTION_STARTING,
-   MONGOC_TRANSACTION_IN_PROGRESS,
-   MONGOC_TRANSACTION_ENDING,
-   MONGOC_TRANSACTION_COMMITTED,
-   MONGOC_TRANSACTION_COMMITTED_EMPTY,
-   MONGOC_TRANSACTION_ABORTED,
-} mongoc_transaction_state_t;
+   MONGOC_INTERNAL_TRANSACTION_NONE,
+   MONGOC_INTERNAL_TRANSACTION_STARTING,
+   MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS,
+   MONGOC_INTERNAL_TRANSACTION_ENDING,
+   MONGOC_INTERNAL_TRANSACTION_COMMITTED,
+   MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY,
+   MONGOC_INTERNAL_TRANSACTION_ABORTED,
+} mongoc_internal_transaction_state_t;
 
 typedef struct _mongoc_transaction_t {
-   mongoc_transaction_state_t state;
+   mongoc_internal_transaction_state_t state;
    mongoc_transaction_opt_t opts;
 } mongoc_transaction_t;
 

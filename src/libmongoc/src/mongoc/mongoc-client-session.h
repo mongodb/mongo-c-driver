@@ -33,6 +33,13 @@ typedef bool (*mongoc_client_session_with_transaction_cb_t) (
    bson_t **reply,
    bson_error_t *error);
 
+typedef enum {
+   MONGOC_TRANSACTION_NONE = 0,
+   MONGOC_TRANSACTION_STARTING = 1,
+   MONGOC_TRANSACTION_IN_PROGRESS = 2,
+   MONGOC_TRANSACTION_COMMITTED = 3,
+   MONGOC_TRANSACTION_ABORTED = 4,
+} mongoc_transaction_state_t;
 
 /* these options types are named "opt_t" but their functions are named with
  * "opts", for consistency with the older mongoc_ssl_opt_t */
@@ -148,6 +155,10 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
 
 MONGOC_EXPORT (bool)
 mongoc_client_session_in_transaction (const mongoc_client_session_t *session);
+
+MONGOC_EXPORT (mongoc_transaction_state_t)
+mongoc_client_session_get_transaction_state (
+   const mongoc_client_session_t *session);
 
 MONGOC_EXPORT (bool)
 mongoc_client_session_commit_transaction (mongoc_client_session_t *session,
