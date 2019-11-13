@@ -220,7 +220,7 @@ set (CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_compile_definitions (bson_shared PRIVATE BSON_COMPILATION JSONSL_PARSE_NAN)
 target_include_directories (bson_shared INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
 set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
-set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}" PREFIX "lib")
+set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}")
 
 if (ENABLE_APPLE_FRAMEWORK)
    set_target_properties(bson_shared PROPERTIES
