@@ -19,5 +19,9 @@ Parameters
 Description
 -----------
 
-Returns true if the option is a known MongoDB URI option of integer type. For example, "socketTimeoutMS=100" is a valid MongoDB URI option, so ``mongoc_uri_option_is_int32 ("connectTimeoutMS")`` is true.
+Returns true if the option is a known MongoDB URI option of integer type. For example, "zlibCompressionLevel=5" is a valid integer MongoDB URI option, so ``mongoc_uri_option_is_int32 ("zlibCompressionLevel")`` is true. This will also return true for all 64-bit integer options.
 
+See Also
+--------
+
+* :symbol:`mongoc_uri_option_is_int64()`

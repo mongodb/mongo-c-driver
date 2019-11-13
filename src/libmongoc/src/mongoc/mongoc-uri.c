@@ -77,6 +77,12 @@ _mongoc_uri_set_option_as_int32_with_error (mongoc_uri_t *uri,
                                             bson_error_t *error);
 
 static bool
+_mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri,
+                                            const char *option,
+                                            int64_t value,
+                                            bson_error_t *error);
+
+static bool
 ends_with (const char *str, const char *suffix);
 
 static void
@@ -699,7 +705,8 @@ mongoc_uri_bson_append_or_replace_key (bson_t *options,
 bool
 mongoc_uri_option_is_int32 (const char *key)
 {
-   return !strcasecmp (key, MONGOC_URI_CONNECTTIMEOUTMS) ||
+   return mongoc_uri_option_is_int64 (key) ||
+          !strcasecmp (key, MONGOC_URI_CONNECTTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_HEARTBEATFREQUENCYMS) ||
           !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_SOCKETCHECKINTERVALMS) ||
@@ -711,8 +718,13 @@ mongoc_uri_option_is_int32 (const char *key)
           !strcasecmp (key, MONGOC_URI_MAXIDLETIMEMS) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUEMULTIPLE) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
-          !strcasecmp (key, MONGOC_URI_WTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL);
+}
+
+bool
+mongoc_uri_option_is_int64 (const char *key)
+{
+   return !strcasecmp (key, MONGOC_URI_WTIMEOUTMS);
 }
 
 bool
@@ -771,7 +783,7 @@ mongoc_uri_canonicalize_option (const char *key)
 }
 
 static bool
-mongoc_uri_parse_int32 (const char *key, const char *value, int32_t *result)
+_mongoc_uri_parse_int64 (const char *key, const char *value, int64_t *result)
 {
    char *endptr;
    int64_t i;
@@ -780,6 +792,23 @@ mongoc_uri_parse_int32 (const char *key, const char *value, int32_t *result)
    i = bson_ascii_strtoll (value, &endptr, 10);
    if (errno || endptr < value + strlen (value)) {
       MONGOC_WARNING ("Invalid %s: cannot parse integer\n", key);
+      return false;
+   }
+
+   *result = i;
+   return true;
+}
+
+
+static bool
+mongoc_uri_parse_int32 (const char *key, const char *value, int32_t *result)
+{
+   int64_t i;
+
+   if (!_mongoc_uri_parse_int64 (key, value, &i)) {
+      /* _mongoc_uri_parse_int64 emits a warning if it could not parse the
+       * given value, so we don't have to add one here.
+       */
       return false;
    }
 
@@ -989,6 +1018,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
 {
    bson_iter_t iter;
    int32_t v_int;
+   int64_t v_int64;
    const char *key = NULL;
    const char *canon = NULL;
    const char *value = NULL;
@@ -1004,7 +1034,19 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
       /* Keep a record of how the option was originally presented. */
       mongoc_uri_bson_append_or_replace_key (&uri->raw, key, value);
 
-      if (mongoc_uri_option_is_int32 (key)) {
+      /* This check precedes mongoc_uri_option_is_int32 as all 64-bit values are
+       * also recognised as 32-bit ints.
+       */
+      if (mongoc_uri_option_is_int64 (key)) {
+         if (!_mongoc_uri_parse_int64 (key, value, &v_int64)) {
+            goto UNSUPPORTED_VALUE;
+         }
+
+         if (!_mongoc_uri_set_option_as_int64_with_error (
+                uri, canon, v_int64, error)) {
+            return false;
+         }
+      } else if (mongoc_uri_option_is_int32 (key)) {
          if (!mongoc_uri_parse_int32 (key, value, &v_int)) {
             goto UNSUPPORTED_VALUE;
          }
@@ -1013,7 +1055,6 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
                 uri, canon, v_int, error)) {
             return false;
          }
-
       } else if (!strcmp (key, MONGOC_URI_W)) {
          if (*value == '-' || isdigit (*value)) {
             v_int = (int) strtol (value, NULL, 10);
@@ -1594,7 +1635,7 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
    mongoc_write_concern_t *write_concern;
    const char *str;
    bson_iter_t iter;
-   int32_t wtimeoutms;
+   int64_t wtimeoutms;
    int value;
 
    BSON_ASSERT (uri);
@@ -1609,10 +1650,10 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
          bson_iter_bool (&iter) ? 1 : MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    }
 
-   wtimeoutms = mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0);
+   wtimeoutms = mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 0);
    if (wtimeoutms < 0) {
       MONGOC_URI_ERROR (
-         error, "Unsupported wtimeoutMS value [w=%d]", wtimeoutms);
+         error, "Unsupported wtimeoutMS value [w=%" PRId64 "]", wtimeoutms);
       return false;
    } else if (wtimeoutms > 0) {
       mongoc_write_concern_set_wtimeout_int64 (write_concern, wtimeoutms);
@@ -1649,7 +1690,8 @@ _mongoc_uri_build_write_concern (mongoc_uri_t *uri, bson_error_t *error)
          str = bson_iter_utf8 (&iter, NULL);
 
          if (0 == strcasecmp ("majority", str)) {
-            mongoc_write_concern_set_wmajority (write_concern, wtimeoutms);
+            mongoc_write_concern_set_w (write_concern,
+                                        MONGOC_WRITE_CONCERN_W_MAJORITY);
          } else {
             mongoc_write_concern_set_wtag (write_concern, str);
          }
@@ -2269,9 +2311,8 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
  *       Checks if the URI 'option' is set and of correct type (int32).
  *       The special value '0' is considered as "unset".
  *       This is so users can provide
- *       sprintf(mongodb://localhost/?option=%d, myvalue) style connection
- *strings,
- *       and still apply default values.
+ *       sprintf("mongodb://localhost/?option=%d", myvalue) style connection
+ *       strings, and still apply default values.
  *
  *       If not set, or set to invalid type, 'fallback' is returned.
  *
@@ -2279,7 +2320,7 @@ mongoc_uri_get_ssl (const mongoc_uri_t *uri) /* IN */
  *
  * Returns:
  *       The value of 'option' if available as int32 (and not 0), or
- *'fallback'.
+ *       'fallback'.
  *
  *--------------------------------------------------------------------------
  */
@@ -2292,18 +2333,32 @@ mongoc_uri_get_option_as_int32 (const mongoc_uri_t *uri,
    const char *option;
    const bson_t *options;
    bson_iter_t iter;
-   int32_t retval = fallback;
+   int64_t retval = 0;
 
    option = mongoc_uri_canonicalize_option (option_orig);
-   if ((options = mongoc_uri_get_options (uri)) &&
-       bson_iter_init_find_case (&iter, options, option) &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-      if (!(retval = bson_iter_int32 (&iter))) {
-         retval = fallback;
+
+   /* BC layer to allow retrieving 32-bit values stored in 64-bit options */
+   if (mongoc_uri_option_is_int64 (option_orig)) {
+      retval = mongoc_uri_get_option_as_int64 (uri, option_orig, 0);
+
+      if (retval > INT32_MAX || retval < INT32_MIN) {
+         MONGOC_WARNING ("Cannot read 64-bit value for \"%s\": %" PRId64,
+                         option_orig,
+                         retval);
+
+         retval = 0;
       }
+   } else if ((options = mongoc_uri_get_options (uri)) &&
+              bson_iter_init_find_case (&iter, options, option) &&
+              BSON_ITER_HOLDS_INT32 (&iter)) {
+      retval = bson_iter_int32 (&iter);
    }
 
-   return retval;
+   if (!retval) {
+      retval = fallback;
+   }
+
+   return (int32_t) retval;
 }
 
 /*
@@ -2340,7 +2395,12 @@ mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
    bson_error_t error;
    bool r;
 
+   if (mongoc_uri_option_is_int64 (option_orig)) {
+      return mongoc_uri_set_option_as_int64 (uri, option_orig, value);
+   }
+
    option = mongoc_uri_canonicalize_option (option_orig);
+
    if (!mongoc_uri_option_is_int32 (option)) {
       MONGOC_WARNING (
          "Unsupported value for \"%s\": %d, \"%s\" is not an int32 option",
@@ -2415,7 +2475,7 @@ _mongoc_uri_set_option_as_int32_with_error (mongoc_uri_t *uri,
       } else {
          MONGOC_URI_ERROR (error,
                            "Cannot set URI option \"%s\" to %d, it already has "
-                           "a non-integer value",
+                           "a non-32-bit integer value",
                            option,
                            value);
          return false;
@@ -2471,6 +2531,170 @@ _mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
    return true;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_uri_get_option_as_int64 --
+ *
+ *       Checks if the URI 'option' is set and of correct type (int32 or
+ *       int64).
+ *       The special value '0' is considered as "unset".
+ *       This is so users can provide
+ *       sprintf("mongodb://localhost/?option=%" PRId64, myvalue) style
+ *       connection strings, and still apply default values.
+ *
+ *       If not set, or set to invalid type, 'fallback' is returned.
+ *
+ *       NOTE: 'option' is case*in*sensitive.
+ *
+ * Returns:
+ *       The value of 'option' if available as int64 or int32 (and not 0), or
+ *       'fallback'.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+int64_t
+mongoc_uri_get_option_as_int64 (const mongoc_uri_t *uri,
+                                const char *option_orig,
+                                int64_t fallback)
+{
+   const char *option;
+   const bson_t *options;
+   bson_iter_t iter;
+   int64_t retval = fallback;
+
+   option = mongoc_uri_canonicalize_option (option_orig);
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, option)) {
+      if (BSON_ITER_HOLDS_INT (&iter)) {
+         if (!(retval = bson_iter_as_int64 (&iter))) {
+            retval = fallback;
+         }
+      }
+   }
+
+   return retval;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_uri_set_option_as_int64 --
+ *
+ *       Sets a URI option 'after the fact'. Allows users to set individual
+ *       URI options without passing them as a connection string.
+ *
+ *       Only allows a set of known options to be set.
+ *       @see mongoc_uri_option_is_int64 ().
+ *
+ *       Does in-place-update of the option BSON if 'option' is already set.
+ *       Appends the option to the end otherwise.
+ *
+ *       NOTE: If 'option' is already set, and is of invalid type, this
+ *       function will return false.
+ *
+ *       NOTE: 'option' is case*in*sensitive.
+ *
+ * Returns:
+ *       true on successfully setting the option, false on failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_uri_set_option_as_int64 (mongoc_uri_t *uri,
+                                const char *option_orig,
+                                int64_t value)
+{
+   const char *option;
+   bson_error_t error;
+   bool r;
+
+   option = mongoc_uri_canonicalize_option (option_orig);
+   if (!mongoc_uri_option_is_int64 (option)) {
+      if (mongoc_uri_option_is_int32 (option_orig)) {
+         if (value >= INT32_MIN && value <= INT32_MAX) {
+            MONGOC_WARNING (
+               "Setting value for 32-bit option \"%s\" through 64-bit method",
+               option_orig);
+
+            return mongoc_uri_set_option_as_int32 (
+               uri, option_orig, (int32_t) value);
+         }
+
+         MONGOC_WARNING ("Unsupported value for \"%s\": %" PRId64
+                         ", \"%s\" is not an int64 option",
+                         option_orig,
+                         value,
+                         option);
+         return false;
+      }
+   }
+
+   r = _mongoc_uri_set_option_as_int64_with_error (uri, option, value, &error);
+   if (!r) {
+      MONGOC_WARNING ("%s", error.message);
+   }
+
+   return r;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_uri_set_option_as_int64_with_error --
+ *
+ *       Same as mongoc_uri_set_option_as_int64, with error reporting.
+ *
+ * Precondition:
+ *       mongoc_uri_option_is_int64(option) must be true.
+ *
+ * Returns:
+ *       true on successfully setting the option, false on failure.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+static bool
+_mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri,
+                                            const char *option_orig,
+                                            int64_t value,
+                                            bson_error_t *error)
+{
+   const char *option;
+   const bson_t *options;
+   bson_iter_t iter;
+
+   option = mongoc_uri_canonicalize_option (option_orig);
+
+   if ((options = mongoc_uri_get_options (uri)) &&
+       bson_iter_init_find_case (&iter, options, option)) {
+      if (BSON_ITER_HOLDS_INT64 (&iter)) {
+         bson_iter_overwrite_int64 (&iter, value);
+         return true;
+      } else {
+         MONGOC_URI_ERROR (error,
+                           "Cannot set URI option \"%s\" to %" PRId64
+                           ", it already has "
+                           "a non-64-bit integer value",
+                           option,
+                           value);
+         return false;
+      }
+   }
+
+   if (!bson_append_int64 (&uri->options, option, -1, value)) {
+      MONGOC_URI_ERROR (error,
+                        "Failed to set URI option \"%s\" to %" PRId64,
+                        option_orig,
+                        value);
+
+      return false;
+   }
+
+   return true;
+}
 
 /*
  *--------------------------------------------------------------------------

@@ -573,9 +573,15 @@ test_mongoc_uri_functions (void)
 
    ASSERT_CMPINT (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 18), ==, 42);
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 18), ==, 42);
    ASSERT (mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 18));
    ASSERT_CMPINT (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 19), ==, 18);
+
+   ASSERT (mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 20));
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 19), ==, 20);
 
    ASSERT (mongoc_uri_set_option_as_int32 (
       uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500));
@@ -1351,7 +1357,7 @@ typedef struct {
    bool parses;
    int32_t w;
    const char *wtag;
-   int32_t wtimeoutms;
+   int64_t wtimeoutms;
    const char *log_msg;
 } write_concern_test;
 
@@ -1405,6 +1411,12 @@ test_mongoc_uri_write_concern (void)
        2,
        NULL,
        1000},
+      {"mongodb://localhost/?" MONGOC_URI_W "=2&" MONGOC_URI_WTIMEOUTMS
+       "=2147483648",
+       true,
+       2,
+       NULL,
+       2147483648LL},
       {"mongodb://localhost/?" MONGOC_URI_W "=majority&" MONGOC_URI_WTIMEOUTMS
        "=1000",
        true,
@@ -2443,12 +2455,138 @@ test_mongoc_uri_duplicates (void)
    ASSERT_LOG_DUPE (MONGOC_URI_WTIMEOUTMS);
    BSON_ASSERT (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0) == 2);
+   BSON_ASSERT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 0) == 2);
 
    RECREATE_URI (MONGOC_URI_ZLIBCOMPRESSIONLEVEL
                  "=1&" MONGOC_URI_ZLIBCOMPRESSIONLEVEL "=2");
    ASSERT_LOG_DUPE (MONGOC_URI_ZLIBCOMPRESSIONLEVEL);
    BSON_ASSERT (mongoc_uri_get_option_as_int32 (
                    uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0) == 2);
+
+   mongoc_uri_destroy (uri);
+}
+
+
+/* Tests behavior of int32 and int64 options */
+static void
+test_mongoc_uri_int_options (void)
+{
+   mongoc_uri_t *uri;
+
+   capture_logs (true);
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+
+   /* Set an int64 option as int64 succeeds */
+   ASSERT (mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 10));
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 10);
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 10);
+
+   /* Set an int64 option as int32 succeeds */
+   ASSERT (mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 15));
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 15);
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 15);
+
+   /* Setting an int32 option through _as_int64 succeeds for 32-bit values but
+    * emits a warning */
+   ASSERT (
+      mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 9));
+   ASSERT_CAPTURED_LOG ("option: " MONGOC_URI_ZLIBCOMPRESSIONLEVEL,
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Setting value for 32-bit option "
+                        "\"zlibcompressionlevel\" through 64-bit method");
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
+      ==,
+      9);
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
+      ==,
+      9);
+
+   clear_captured_logs ();
+
+   ASSERT (!mongoc_uri_set_option_as_int64 (
+      uri, MONGOC_URI_CONNECTTIMEOUTMS, 2147483648LL));
+   ASSERT_CAPTURED_LOG (
+      "option: " MONGOC_URI_CONNECTTIMEOUTMS,
+      MONGOC_LOG_LEVEL_WARNING,
+      "Unsupported value for \"connecttimeoutms\": 2147483648,"
+      " \"connecttimeoutms\" is not an int64 option");
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 0),
+      ==,
+      0);
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 0),
+      ==,
+      0);
+
+   clear_captured_logs ();
+
+   /* Setting an int32 option as int32 succeeds */
+   ASSERT (
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 9));
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
+      ==,
+      9);
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
+      ==,
+      9);
+
+   /* Truncating a 64-bit value when fetching as 32-bit emits a warning */
+   ASSERT (mongoc_uri_set_option_as_int64 (
+      uri, MONGOC_URI_WTIMEOUTMS, 2147483648LL));
+   ASSERT_CMPINT32 (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 5), ==, 5);
+   ASSERT_CAPTURED_LOG (
+      "option: " MONGOC_URI_WTIMEOUTMS " with 64-bit value",
+      MONGOC_LOG_LEVEL_WARNING,
+      "Cannot read 64-bit value for \"wtimeoutms\": 2147483648");
+   ASSERT_CMPINT64 (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 5),
+      ==,
+      2147483648LL);
+
+   clear_captured_logs ();
+
+   ASSERT (mongoc_uri_set_option_as_int64 (
+      uri, MONGOC_URI_WTIMEOUTMS, -2147483649LL));
+   ASSERT_CMPINT32 (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 5), ==, 5);
+   ASSERT_CAPTURED_LOG (
+      "option: " MONGOC_URI_WTIMEOUTMS " with 64-bit value",
+      MONGOC_LOG_LEVEL_WARNING,
+      "Cannot read 64-bit value for \"wtimeoutms\": -2147483649");
+   ASSERT_CMPINT64 (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 5),
+      ==,
+      -2147483649LL);
+
+   clear_captured_logs ();
+
+   /* Setting a INT_MAX and INT_MIN values doesn't cause truncation errors */
+   ASSERT (
+      mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, INT32_MAX));
+   ASSERT_CMPINT32 (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0),
+      ==,
+      INT32_MAX);
+   ASSERT_NO_CAPTURED_LOGS ("INT_MAX");
+   ASSERT (
+      mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, INT32_MIN));
+   ASSERT_CMPINT32 (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0),
+      ==,
+      INT32_MIN);
+   ASSERT_NO_CAPTURED_LOGS ("INT_MIN");
 
    mongoc_uri_destroy (uri);
 }
@@ -2483,4 +2621,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/dns_options", test_mongoc_uri_dns_options);
    TestSuite_Add (suite, "/Uri/utf8", test_mongoc_uri_utf8);
    TestSuite_Add (suite, "/Uri/duplicates", test_mongoc_uri_duplicates);
+   TestSuite_Add (suite, "/Uri/int_options", test_mongoc_uri_int_options);
 }

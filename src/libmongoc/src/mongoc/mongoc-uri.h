@@ -119,6 +119,8 @@ mongoc_uri_set_password (mongoc_uri_t *uri, const char *password);
 MONGOC_EXPORT (bool)
 mongoc_uri_option_is_int32 (const char *key);
 MONGOC_EXPORT (bool)
+mongoc_uri_option_is_int64 (const char *key);
+MONGOC_EXPORT (bool)
 mongoc_uri_option_is_bool (const char *key);
 MONGOC_EXPORT (bool)
 mongoc_uri_option_is_utf8 (const char *key);
@@ -126,6 +128,10 @@ MONGOC_EXPORT (int32_t)
 mongoc_uri_get_option_as_int32 (const mongoc_uri_t *uri,
                                 const char *option,
                                 int32_t fallback);
+MONGOC_EXPORT (int64_t)
+mongoc_uri_get_option_as_int64 (const mongoc_uri_t *uri,
+                                const char *option,
+                                int64_t fallback);
 MONGOC_EXPORT (bool)
 mongoc_uri_get_option_as_bool (const mongoc_uri_t *uri,
                                const char *option,
@@ -138,6 +144,10 @@ MONGOC_EXPORT (bool)
 mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
                                 const char *option,
                                 int32_t value);
+MONGOC_EXPORT (bool)
+mongoc_uri_set_option_as_int64 (mongoc_uri_t *uri,
+                                const char *option,
+                                int64_t value);
 MONGOC_EXPORT (bool)
 mongoc_uri_set_option_as_bool (mongoc_uri_t *uri,
                                const char *option,

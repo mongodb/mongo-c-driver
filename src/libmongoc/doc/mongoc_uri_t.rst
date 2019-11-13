@@ -295,6 +295,7 @@ MONGOC_URI_SLAVEOK                         slaveok                           Whe
     mongoc_uri_get_mechanism_properties
     mongoc_uri_get_option_as_bool
     mongoc_uri_get_option_as_int32
+    mongoc_uri_get_option_as_int64
     mongoc_uri_get_option_as_utf8
     mongoc_uri_get_options
     mongoc_uri_get_password
@@ -313,6 +314,7 @@ MONGOC_URI_SLAVEOK                         slaveok                           Whe
     mongoc_uri_new_with_error
     mongoc_uri_option_is_bool
     mongoc_uri_option_is_int32
+    mongoc_uri_option_is_int64
     mongoc_uri_option_is_utf8
     mongoc_uri_set_auth_mechanism
     mongoc_uri_set_auth_source
@@ -321,6 +323,7 @@ MONGOC_URI_SLAVEOK                         slaveok                           Whe
     mongoc_uri_set_mechanism_properties
     mongoc_uri_set_option_as_bool
     mongoc_uri_set_option_as_int32
+    mongoc_uri_set_option_as_int64
     mongoc_uri_set_option_as_utf8
     mongoc_uri_set_password
     mongoc_uri_set_read_concern
