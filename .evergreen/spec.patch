@@ -1,27 +1,19 @@
 --- mongo-c-driver.spec.orig	2019-08-27 21:43:20.721612865 +0000
 +++ mongo-c-driver.spec	2019-08-27 22:28:57.276867708 +0000
-@@ -132,7 +132,6 @@
- 
- : Static library
- rm -f  %{buildroot}%{_libdir}/*.a
--rm -rf %{buildroot}%{_libdir}/cmake/*static*
- rm -rf %{buildroot}%{_libdir}/pkgconfig/*static*
- : Documentation
- rm -rf %{buildroot}%{_datadir}/%{name}
-@@ -181,7 +180,7 @@
+@@ -181,7 +181,8 @@
  %{_includedir}/%{libname}-%{libver}
  %{_libdir}/%{libname}-%{libver}.so
  %{_libdir}/pkgconfig/%{libname}-*.pc
--%{_libdir}/cmake/%{libname}-%{libver}
+ %{_libdir}/cmake/%{libname}-%{libver}
 +%{_libdir}/cmake/mongoc*
  %{_mandir}/man3/mongoc*
  
  %files -n libbson
-@@ -194,7 +193,7 @@
+@@ -195,7 +195,8 @@
  %doc src/libbson/NEWS
  %{_includedir}/libbson-%{libver}
  %{_libdir}/libbson*.so
--%{_libdir}/cmake/libbson-%{libver}
+ %{_libdir}/cmake/libbson-%{libver}
 +%{_libdir}/cmake/bson*
  %{_libdir}/pkgconfig/libbson-*.pc
  %{_mandir}/man3/bson*

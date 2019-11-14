@@ -5,12 +5,13 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # Supported/used environment variables:
 #   LINK_STATIC                Whether to statically link to libmongoc
 #   BUILD_SAMPLE_WITH_CMAKE    Link program w/ CMake. Default: use pkg-config.
+#   BUILD_SAMPLE_WITH_CMAKE_DEPRECATED  If BUILD_SAMPLE_WITH_CMAKE is set, then use deprecated CMake scripts instead.
 #   ENABLE_SSL                 Set -DENABLE_SSL
 #   ENABLE_SNAPPY              Set -DENABLE_SNAPPY
 #   CMAKE                      Path to cmake executable.
 
 
-echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE"
+echo "LINK_STATIC=$LINK_STATIC BUILD_SAMPLE_WITH_CMAKE=$BUILD_SAMPLE_WITH_CMAKE BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=$BUILD_SAMPLE_WITH_CMAKE_DEPRECATED"
 
 DIR=$(dirname $0)
 . $DIR/find-cmake.sh
@@ -180,7 +181,11 @@ set -o xtrace
 
 if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
   # Test our CMake package config file with CMake's find_package command.
-  EXAMPLE_DIR=$SRCROOT/src/libmongoc/examples/cmake/find_package
+  if [ "$BUILD_SAMPLE_WITH_CMAKE_DEPRECATED" ]; then
+    EXAMPLE_DIR=$SRCROOT/src/libmongoc/examples/cmake-deprecated/find_package
+  else
+    EXAMPLE_DIR=$SRCROOT/src/libmongoc/examples/cmake/find_package
+  fi
 
   if [ "$LINK_STATIC" ]; then
     EXAMPLE_DIR="${EXAMPLE_DIR}_static"
