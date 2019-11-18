@@ -267,6 +267,10 @@ if (ENABLE_STATIC MATCHES "ON|AUTO")
    target_include_directories (bson_static INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src>)
    set_target_properties (bson_static PROPERTIES VERSION 0.0.0)
    set_target_properties (bson_static PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-static-${BSON_API_VERSION}")
+   if (ENABLE_WINDOWS_STATIC_RUNTIME)
+      target_compile_options (bson_static PUBLIC /MT)
+   endif ()
+
    # We use CMAKE_THREAD_LIBS_INIT rather than Threads::Threads here because the
    # latter fails when building on Mac OS X
    target_link_libraries (bson_static ${CMAKE_THREAD_LIBS_INIT})
