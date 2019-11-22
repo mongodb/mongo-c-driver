@@ -77,7 +77,7 @@ all_variants = [
              'compile-tracing',
              'debian-package-build',
              OD([('name', 'rpm-package-build'),
-                 ('distros', ['rhel70'])]),
+                 ('distros', ['rhel80-test'])]),
              'link-with-cmake',
              'link-with-cmake-deprecated',
              'abi-compliance-check',

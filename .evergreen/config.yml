@@ -12155,7 +12155,7 @@ buildvariants:
   - debian-package-build
   - name: rpm-package-build
     distros:
-    - rhel70
+    - rhel80-test
   - link-with-cmake
   - link-with-cmake-deprecated
   - abi-compliance-check

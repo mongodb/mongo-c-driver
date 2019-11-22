@@ -32,7 +32,7 @@ for arg in "$@"; do
     echo "  current repository."
     echo ""
     echo "  This script must be called from the base directory of the repository, and"
-    echo "  requires utilites from these packages: rpm-build, mock, wget"
+    echo "  requires utilites from these packages: rpm-build, mock, curl"
     echo ""
     exit
   fi
@@ -41,7 +41,7 @@ done
 package=mongo-c-driver
 spec_file=../mongo-c-driver.spec
 spec_url=https://src.fedoraproject.org/rpms/mongo-c-driver/raw/master/f/mongo-c-driver.spec
-config=${MOCK_TARGET_CONFIG:=fedora-28-x86_64}
+config=${MOCK_TARGET_CONFIG:=fedora-29-x86_64}
 
 if [ ! -x /usr/bin/rpmbuild -o ! -x /usr/bin/rpmspec ]; then
   echo "Missing the rpmbuild or rpmspec utility from the rpm-build package"
@@ -58,8 +58,8 @@ if [ ! -x /usr/bin/mock ]; then
   exit 1
 fi
 
-if [ ! -x /usr/bin/wget ]; then
-  echo "Missing wget"
+if [ ! -x /usr/bin/curl ]; then
+  echo "Missing curl"
   exit 1
 fi
 
@@ -67,7 +67,7 @@ if [ -f "${spec_file}" ]; then
   echo "Found old spec file (${spec_file})...removing"
   rm -f  ${spec_file}
 fi
-/usr/bin/wget -O "${spec_file}" "${spec_url}"
+/usr/bin/curl -L --retry 5 -o "${spec_file}" "${spec_url}"
 if [ "${?}" != "0" -o ! -f "${spec_file}" ]; then
   echo "Could not retrieve spec file from URL: ${spec_url}"
   exit 1
@@ -87,7 +87,7 @@ build_dir=$(basename $(pwd))
 sudo mock -r ${config} --bootstrap-chroot --old-chroot --clean
 sudo mock -r ${config} --bootstrap-chroot --old-chroot --init
 mock_root=$(sudo mock -r ${config} --bootstrap-chroot --old-chroot --print-root-path)
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --install rpmdevtools git rpm-build cmake python python2-sphinx
+sudo mock -r ${config} --bootstrap-chroot --old-chroot --install rpmdevtools git rpm-build cmake python python2-sphinx gcc
 sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
 if [ ! -f VERSION_CURRENT ]; then
   sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
@@ -101,7 +101,7 @@ fi
 bare_upstream_version=$(sed -E 's/([^-]+).*/\1/' VERSION_CURRENT)
 # Upstream version in the .spec file cannot have hyphen (-); replace the current
 # version so that the dist tarball version does not have a pre-release component
-echo ${bare_upstream_version} > VERSION_CURRENT
+sudo sh -c "echo ${bare_upstream_version} > VERSION_CURRENT"
 echo "Found bare upstream version: ${bare_upstream_version}"
 git_rev="$(git rev-parse --short HEAD)"
 snapshot_version="${bare_upstream_version}-0.$(date +%Y%m%d)+git${git_rev}"
