@@ -35,14 +35,14 @@ git clone https://salsa.debian.org/installer-team/debootstrap.git debootstrap.gi
 mkdir unstable-chroot
 export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
 # perl-openssl-defaults is explicitly listed to work around https://bugs.debian.org/907015
-sudo -E ./debootstrap.git/debootstrap --include=build-essential,perl-openssl-defaults,git-buildpackage,fakeroot,debhelper,cmake,libssl-dev,pkg-config,python3-sphinx,zlib1g-dev,libicu-dev,libsasl2-dev,libsnappy-dev,python-git unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
+sudo -E ./debootstrap.git/debootstrap --include=build-essential,perl-openssl-defaults,git-buildpackage,fakeroot,debhelper,cmake,libssl-dev,pkg-config,python3-sphinx,zlib1g-dev,libicu-dev,libsasl2-dev,libsnappy-dev unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a mongoc ./unstable-chroot/tmp/
 sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
   cd /tmp/mongoc && \
   git clean -fdx && \
   git reset --hard HEAD && \
-  python build/calc_release_version.py > VERSION_CURRENT && \
-  python build/calc_release_version.py -p > VERSION_RELEASED && \
+  python3 build/calc_release_version.py > VERSION_CURRENT && \
+  python3 build/calc_release_version.py -p > VERSION_RELEASED && \
   git add --force VERSION_CURRENT VERSION_RELEASED && \
   git commit VERSION_CURRENT VERSION_RELEASED -m 'Set current/released versions' && \
   LANG=C /bin/bash ./debian/build_snapshot.sh && \
