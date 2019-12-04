@@ -817,25 +817,6 @@ all_tasks = chain(all_tasks, [
     SSLTask('openssl-1.0.2', 'l'),
     SSLTask('openssl-1.1.0', 'f'),
     SSLTask('libressl-2.5', '.2', require_tls12=True),
-    NamedTask('compile-libmongocapi',
-              commands=[shell_mongoc(r'''
-                  . ./.evergreen/find-cmake.sh
-                  ${setup_android_toolchain|}
-                  export ${libmongocapi_compile_env|}
-                  mkdir cmake-build-libmongocapi
-                  $CMAKE \
-                    -DCMAKE_INSTALL_PREFIX=cmake-build-libmongocapi \
-                    -DENABLE_SNAPPY=OFF \
-                    -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
-                    -DENABLE_ZLIB=OFF -DENABLE_SSL=OFF \
-                    -DENABLE_SASL=OFF \
-                    -DENABLE_TESTS=OFF \
-                    -DENABLE_SRV=OFF \
-                    -DENABLE_EXAMPLES=OFF \
-                    -DENABLE_STATIC=OFF \
-                    -DENABLE_SHM_COUNTERS=OFF \
-                    ${libmongocapi_cmake_flags}
-                  make install VERBOSE=1''')]),
 ])
 
 

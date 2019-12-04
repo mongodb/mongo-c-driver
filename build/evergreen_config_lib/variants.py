@@ -24,44 +24,6 @@ mobile_flags = (
     ' -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY'
 )
 
-
-def ios(sdk):
-    arch = 'arm64' if sdk == 'iphoneos' else 'x86_64'
-    root = '$(xcrun --sdk %s --show-sdk-path)' % (sdk,)
-    cflags = '-arch %s -isysroot %s -miphoneos-version-min=10.2' % (arch, root)
-    flags = mobile_flags + (
-        ' -DCMAKE_SYSTEM_NAME=Darwin'
-        ' -DCMAKE_FIND_ROOT_PATH="%s"'
-        ' -DCMAKE_INSTALL_NAME_DIR=@rpath'
-        ' -DCMAKE_C_FLAGS="%s"'
-    ) % (root, cflags)
-
-    env = 'DEVELOPER_DIR=/Applications/Xcode9.2.app'
-
-    return OD([('libmongocapi_cmake_flags', flags),
-               ('libmongocapi_compile_env', env)])
-
-
-def android(abi):
-    toolchain = './android_sdk/ndk-bundle/build/cmake/android.toolchain.cmake'
-    flags = mobile_flags + (
-        ' -DANDROID_NATIVE_API_LEVEL=21'
-        ' -DANDROID_ABI=%s'
-        ' -DTHREADS_PTHREAD_ARG=2'
-        ' -DCMAKE_TOOLCHAIN_FILE=%s'
-        ' -DCMAKE_FIND_ROOT_PATH="./android_toolchain"'
-        ' -DCMAKE_INSTALL_RPATH=\\$ORIGIN/../lib'
-    ) % (abi, toolchain)
-
-    toolchain_arch = 'arm64' if abi == 'arm64-v8a' else abi
-    setup = ('JAVA_HOME=/opt/java/jdk8/'
-             ' ./.evergreen/setup-android-toolchain.sh %s %s'
-             ) % (abi, toolchain_arch)
-
-    return OD([('libmongocapi_cmake_flags', flags),
-               ('setup_android_toolchain', setup)])
-
-
 all_variants = [
     Variant('releng',
             '**Release Archive Creator',
@@ -601,29 +563,5 @@ all_variants = [
             'ubuntu1604-build',
             ['.test-coverage'],
             {'CC': 'gcc'},
-            batchtime=1440),
-    Variant('ios-102-debug',
-            'iOS 10.2 DEBUG',
-            'macos-1012',
-            ['compile-libmongocapi'],
-            ios('iphoneos'),
-            batchtime=1440),
-    Variant('ios-sim-102-debug',
-            'iOS Simulator 10.2 DEBUG',
-            'macos-1012',
-            ['compile-libmongocapi'],
-            ios('iphonesimulator'),
-            batchtime=1440),
-    Variant('android-debug-arm64',
-            'Android arm64 (Ubuntu 16.04)',
-            'ubuntu1604-build',
-            ['compile-libmongocapi'],
-            android('arm64-v8a'),
-            batchtime=1440),
-    Variant('android-debug-x86',
-            'Android x86_64 (Ubuntu 16.04)',
-            'ubuntu1604-build',
-            ['compile-libmongocapi'],
-            android('x86_64'),
-            batchtime=1440),
+            batchtime=1440)
 ]
