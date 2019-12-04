@@ -958,6 +958,11 @@ mongoc_add_example (common-operations TRUE ${PROJECT_SOURCE_DIR}/examples/common
 # examples/find_and_modify_with_opts/
 mongoc_add_example (fam TRUE ${PROJECT_SOURCE_DIR}/examples/find_and_modify_with_opts/fam.c)
 
+if (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
+   mongoc_add_example (client-side-encryption-tour TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-tour.c)
+   mongoc_add_example (client-side-encryption-options-tour TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-options-tour.c)
+endif ()
+
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/x509gen DESTINATION ${PROJECT_BINARY_DIR}/tests)

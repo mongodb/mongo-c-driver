@@ -45,6 +45,9 @@ On recent Red Hat systems, such as CentOS and RHEL 7, a mongo-c-driver package i
 
   $ yum install mongo-c-driver
 
+
+.. _installing_libbson_with_pkg_manager:
+
 Install libbson with a Package Manager
 --------------------------------------
 
