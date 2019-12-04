@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include "mongoc-prelude.h"
 
 #ifndef MONGOC_SSL_PRIVATE_H
 #define MONGOC_SSL_PRIVATE_H
 
 #include <bson/bson.h>
-#include "mongoc/mongoc-uri-private.h"
+#include "mongoc-uri-private.h"
 
 
 BSON_BEGIN_DECLS

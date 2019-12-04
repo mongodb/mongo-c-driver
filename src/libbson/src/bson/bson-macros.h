@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "bson/bson-prelude.h"
+#include "bson-prelude.h"
 
 
 #ifndef BSON_MACROS_H
@@ -27,7 +27,7 @@
 #include <algorithm>
 #endif
 
-#include "bson/bson-config.h"
+#include "bson-config.h"
 
 
 #if BSON_OS == 1

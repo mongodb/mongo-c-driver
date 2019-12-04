@@ -15,11 +15,11 @@
  */
 
 
-#include "bson/bson.h"
-#include "bson/bson-config.h"
-#include "bson/bson-private.h"
-#include "bson/bson-string.h"
-#include "bson/bson-iso8601-private.h"
+#include "bson.h"
+#include "bson-config.h"
+#include "bson-private.h"
+#include "bson-string.h"
+#include "bson-iso8601-private.h"
 
 #include "common-b64-private.h"
 

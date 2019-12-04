@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-config.h"
+#include "mongoc-config.h"
 
-#include "mongoc/mongoc-handshake.h"
-#include "mongoc/mongoc-handshake-private.h"
+#include "mongoc-handshake.h"
+#include "mongoc-handshake-private.h"
 
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-host-list-private.h"
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-topology-private.h"
-#include "mongoc/mongoc-topology-description-apm-private.h"
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-cmd-private.h"
-#include "mongoc/mongoc-uri-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-trace-private.h"
+#include "mongoc-error.h"
+#include "mongoc-host-list-private.h"
+#include "mongoc-log.h"
+#include "mongoc-topology-private.h"
+#include "mongoc-topology-description-apm-private.h"
+#include "mongoc-client-private.h"
+#include "mongoc-cmd-private.h"
+#include "mongoc-uri-private.h"
+#include "mongoc-util-private.h"
+#include "mongoc-trace-private.h"
 
-#include "mongoc/utlist.h"
+#include "utlist.h"
 
 static bool
 _mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd,

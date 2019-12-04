@@ -20,10 +20,10 @@
 #include <sys/types.h>
 #include <math.h>
 
-#include "bson/bson.h"
-#include "bson/bson-config.h"
-#include "bson/bson-json.h"
-#include "bson/bson-iso8601-private.h"
+#include "bson.h"
+#include "bson-config.h"
+#include "bson-json.h"
+#include "bson-iso8601-private.h"
 
 #include "common-b64-private.h"
 #include "jsonsl/jsonsl.h"

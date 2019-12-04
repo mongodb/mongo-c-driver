@@ -15,7 +15,7 @@
  */
 
 
-#include "mongoc/mongoc-list-private.h"
+#include "mongoc-list-private.h"
 
 
 /**

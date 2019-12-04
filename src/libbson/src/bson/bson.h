@@ -20,33 +20,33 @@
 
 #define BSON_INSIDE
 
-#include "bson/bson-compat.h"
+#include "bson-compat.h"
 
 #include <string.h>
 #include <time.h>
 
-#include "bson/bson-macros.h"
-#include "bson/bson-config.h"
-#include "bson/bson-atomic.h"
-#include "bson/bson-context.h"
-#include "bson/bson-clock.h"
-#include "bson/bson-decimal128.h"
-#include "bson/bson-error.h"
-#include "bson/bson-iter.h"
-#include "bson/bson-json.h"
-#include "bson/bson-keys.h"
-#include "bson/bson-md5.h"
-#include "bson/bson-memory.h"
-#include "bson/bson-oid.h"
-#include "bson/bson-reader.h"
-#include "bson/bson-string.h"
-#include "bson/bson-types.h"
-#include "bson/bson-utf8.h"
-#include "bson/bson-value.h"
-#include "bson/bson-version.h"
-#include "bson/bson-version-functions.h"
-#include "bson/bson-writer.h"
-#include "bson/bcon.h"
+#include "bson-macros.h"
+#include "bson-config.h"
+#include "bson-atomic.h"
+#include "bson-context.h"
+#include "bson-clock.h"
+#include "bson-decimal128.h"
+#include "bson-error.h"
+#include "bson-iter.h"
+#include "bson-json.h"
+#include "bson-keys.h"
+#include "bson-md5.h"
+#include "bson-memory.h"
+#include "bson-oid.h"
+#include "bson-reader.h"
+#include "bson-string.h"
+#include "bson-types.h"
+#include "bson-utf8.h"
+#include "bson-value.h"
+#include "bson-version.h"
+#include "bson-version-functions.h"
+#include "bson-writer.h"
+#include "bcon.h"
 
 #undef BSON_INSIDE
 

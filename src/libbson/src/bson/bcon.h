@@ -3,7 +3,7 @@
  * @brief BCON (BSON C Object Notation) Declarations
  */
 
-#include "bson/bson-prelude.h"
+#include "bson-prelude.h"
 
 /*    Copyright 2009-2013 MongoDB, Inc.
  *
@@ -23,7 +23,7 @@
 #ifndef BCON_H_
 #define BCON_H_
 
-#include "bson/bson.h"
+#include "bson.h"
 
 
 BSON_BEGIN_DECLS

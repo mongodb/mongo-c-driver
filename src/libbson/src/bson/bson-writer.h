@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "bson/bson-prelude.h"
+#include "bson-prelude.h"
 
 
 #ifndef BSON_WRITER_H
 #define BSON_WRITER_H
 
 
-#include "bson/bson.h"
+#include "bson.h"
 
 
 BSON_BEGIN_DECLS

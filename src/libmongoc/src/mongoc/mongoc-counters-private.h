@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include "mongoc-prelude.h"
 
 #ifndef MONGOC_COUNTERS_PRIVATE_H
 #define MONGOC_COUNTERS_PRIVATE_H
 
-#include <mongoc/mongoc.h>
 #include <bson/bson.h>
+
+#include "mongoc.h"
 
 #ifdef __linux__
 #include <sched.h>

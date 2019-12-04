@@ -18,9 +18,9 @@
 #include <bson/bson.h>
 #include <stdarg.h>
 
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-buffer-private.h"
-#include "mongoc/mongoc-trace-private.h"
+#include "mongoc-error.h"
+#include "mongoc-buffer-private.h"
+#include "mongoc-trace-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN

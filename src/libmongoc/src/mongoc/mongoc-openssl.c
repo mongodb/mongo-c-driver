@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-config.h"
+#include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 
@@ -28,13 +28,13 @@
 
 #include <string.h>
 
-#include "mongoc/mongoc-init.h"
-#include "mongoc/mongoc-socket.h"
-#include "mongoc/mongoc-ssl.h"
-#include "mongoc/mongoc-openssl-private.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-thread-private.h"
-#include "mongoc/mongoc-util-private.h"
+#include "mongoc-init.h"
+#include "mongoc-socket.h"
+#include "mongoc-ssl.h"
+#include "mongoc-openssl-private.h"
+#include "mongoc-trace-private.h"
+#include "mongoc-thread-private.h"
+#include "mongoc-util-private.h"
 
 #ifdef _WIN32
 #include <wincrypt.h>

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-host-list-private.h"
+#include "mongoc-host-list-private.h"
 /* strcasecmp on windows */
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/utlist.h"
+#include "mongoc-util-private.h"
+#include "utlist.h"
 
 /*
  *--------------------------------------------------------------------------

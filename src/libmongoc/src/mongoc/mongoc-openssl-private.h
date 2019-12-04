@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include "mongoc-prelude.h"
 
 #ifndef MONGOC_OPENSSL_PRIVATE_H
 #define MONGOC_OPENSSL_PRIVATE_H
@@ -24,7 +24,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-#include "mongoc/mongoc-ssl.h"
+#include "mongoc-ssl.h"
 
 
 BSON_BEGIN_DECLS

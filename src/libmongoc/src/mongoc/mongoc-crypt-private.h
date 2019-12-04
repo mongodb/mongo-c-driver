@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include "mongoc-prelude.h"
 
 #ifndef MONGOC_CRYPT_PRIVATE_H
 #define MONGOC_CRYPT_PRIVATE_H
 
-#include "mongoc/mongoc-config.h"
+#include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
 
-#include "mongoc/mongoc.h"
+#include "mongoc.h"
 
 /* For interacting with libmongocrypt */
 typedef struct __mongoc_crypt_t _mongoc_crypt_t;

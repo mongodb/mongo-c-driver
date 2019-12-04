@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include "mongoc-prelude.h"
 
 #ifndef MONGOC_ERRNO_PRIVATE_H
 #define MONGOC_ERRNO_PRIVATE_H

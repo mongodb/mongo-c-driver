@@ -37,7 +37,7 @@ checks = [
             mongoc_prefix + "mongoc-prelude.h",
             mongoc_prefix + "mongoc.h"
         ],
-        "include": "#include \"mongoc/mongoc-prelude.h\""
+        "include": "#include \"mongoc-prelude.h\""
     },
     {
         "name": "libbson",
@@ -46,7 +46,7 @@ checks = [
             bson_prefix + "bson-prelude.h",
             bson_prefix + "bson.h"
         ],
-        "include": "#include \"bson/bson-prelude.h\""
+        "include": "#include \"bson-prelude.h\""
     },
     {
         "name": "common",

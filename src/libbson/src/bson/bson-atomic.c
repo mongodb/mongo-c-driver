@@ -15,7 +15,7 @@
  */
 
 
-#include "bson/bson-atomic.h"
+#include "bson-atomic.h"
 
 
 /*

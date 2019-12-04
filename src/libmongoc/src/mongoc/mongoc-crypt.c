@@ -16,16 +16,16 @@
 
 #define MONGOC_LOG_DOMAIN "client-side-encryption"
 
-#include "mongoc/mongoc-crypt-private.h"
+#include "mongoc-crypt-private.h"
 
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
 
 #include <mongocrypt/mongocrypt.h>
 
-#include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-collection-private.h"
-#include "mongoc/mongoc-host-list-private.h"
-#include "mongoc/mongoc-stream-private.h"
+#include "mongoc-client-private.h"
+#include "mongoc-collection-private.h"
+#include "mongoc-host-list-private.h"
+#include "mongoc-stream-private.h"
 
 struct __mongoc_crypt_t {
    mongocrypt_t *handle;

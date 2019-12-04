@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include "mongoc-prelude.h"
 
 #ifndef MONGOC_CLUSTER_SSPI_PRIVATE_H
 #define MONGOC_CLUSTER_SSPI_PRIVATE_H
 
-#include "mongoc/mongoc-config.h"
-#include "mongoc/mongoc-cluster-private.h"
+#include "mongoc-config.h"
+#include "mongoc-cluster-private.h"
 #include <bson/bson.h>
 
 bool

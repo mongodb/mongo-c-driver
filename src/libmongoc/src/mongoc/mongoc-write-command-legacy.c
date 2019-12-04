@@ -16,9 +16,9 @@
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-write-command-legacy-private.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-util-private.h"
+#include "mongoc-write-command-legacy-private.h"
+#include "mongoc-trace-private.h"
+#include "mongoc-util-private.h"
 
 static void
 _mongoc_monitor_legacy_write (mongoc_client_t *client,

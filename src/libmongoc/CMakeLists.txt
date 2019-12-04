@@ -457,6 +457,7 @@ if (ENABLE_APPLE_FRAMEWORK)
 endif ()
 
 include_directories ("${PROJECT_BINARY_DIR}/src")
+include_directories ("${PROJECT_BINARY_DIR}/src/mongoc")
 include_directories ("${PROJECT_SOURCE_DIR}/src")
 include_directories ("${PROJECT_SOURCE_DIR}/../../src/common")
 

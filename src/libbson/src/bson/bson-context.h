@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "bson/bson-prelude.h"
+#include "bson-prelude.h"
 
 
 #ifndef BSON_CONTEXT_H
 #define BSON_CONTEXT_H
 
 
-#include "bson/bson-macros.h"
-#include "bson/bson-types.h"
+#include "bson-macros.h"
+#include "bson-types.h"
 
 
 BSON_BEGIN_DECLS

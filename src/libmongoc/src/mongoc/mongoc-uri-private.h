@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include "mongoc-prelude.h"
 
 #ifndef MONGOC_URI_PRIVATE_H
 #define MONGOC_URI_PRIVATE_H
 
-#include "mongoc/mongoc-uri.h"
+#include "mongoc-uri.h"
 
 
 BSON_BEGIN_DECLS

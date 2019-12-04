@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "bson/bson-compat.h"
+#include "bson-compat.h"
 
 #include <limits.h>
 #include <stdarg.h>
@@ -22,11 +22,11 @@
 #include <string.h>
 #include <time.h>
 
-#include "bson/bson-atomic.h"
-#include "bson/bson-clock.h"
-#include "bson/bson-context.h"
-#include "bson/bson-context-private.h"
-#include "bson/bson-memory.h"
+#include "bson-atomic.h"
+#include "bson-clock.h"
+#include "bson-context.h"
+#include "bson-context-private.h"
+#include "bson-memory.h"
 #include "common-thread-private.h"
 
 #ifdef BSON_HAVE_SYSCALL_TID

@@ -17,13 +17,13 @@
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc.h"
-#include "mongoc/mongoc-rpc-private.h"
-#include "mongoc/mongoc-counters-private.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-util-private.h"
-#include "mongoc/mongoc-compression-private.h"
-#include "mongoc/mongoc-cluster-private.h"
+#include "mongoc.h"
+#include "mongoc-rpc-private.h"
+#include "mongoc-counters-private.h"
+#include "mongoc-trace-private.h"
+#include "mongoc-util-private.h"
+#include "mongoc-compression-private.h"
+#include "mongoc-cluster-private.h"
 
 
 #define RPC(_name, _code)                                               \

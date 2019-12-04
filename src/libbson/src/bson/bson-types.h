@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "bson/bson-prelude.h"
+#include "bson-prelude.h"
 
 
 #ifndef BSON_TYPES_H
@@ -24,10 +24,10 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-#include "bson/bson-macros.h"
-#include "bson/bson-config.h"
-#include "bson/bson-compat.h"
-#include "bson/bson-endian.h"
+#include "bson-macros.h"
+#include "bson-config.h"
+#include "bson-compat.h"
+#include "bson-endian.h"
 
 BSON_BEGIN_DECLS
 

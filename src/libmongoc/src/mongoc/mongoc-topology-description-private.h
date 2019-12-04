@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include "mongoc-prelude.h"
 
 #ifndef MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
 #define MONGOC_TOPOLOGY_DESCRIPTION_PRIVATE_H
 
-#include "mongoc/mongoc-set-private.h"
-#include "mongoc/mongoc-server-description.h"
-#include "mongoc/mongoc-array-private.h"
-#include "mongoc/mongoc-topology-description.h"
-#include "mongoc/mongoc-apm-private.h"
+#include "mongoc-set-private.h"
+#include "mongoc-server-description.h"
+#include "mongoc-array-private.h"
+#include "mongoc-topology-description.h"
+#include "mongoc-apm-private.h"
 
 
 typedef enum {

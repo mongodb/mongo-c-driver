@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include "mongoc-prelude.h"
 
 #ifdef MONGOC_ENABLE_CRYPTO_CNG
 
@@ -22,7 +22,7 @@
 #define MONGOC_CRYPTO_CNG_PRIVATE_H
 
 
-#include "mongoc/mongoc-config.h"
+#include "mongoc-config.h"
 
 
 BSON_BEGIN_DECLS

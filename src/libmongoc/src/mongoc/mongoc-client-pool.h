@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include "mongoc-prelude.h"
 
 #ifndef MONGOC_CLIENT_POOL_H
 #define MONGOC_CLIENT_POOL_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-macros.h"
-#include "mongoc/mongoc-apm.h"
-#include "mongoc/mongoc-client.h"
-#include "mongoc/mongoc-config.h"
+#include "mongoc-macros.h"
+#include "mongoc-apm.h"
+#include "mongoc-client.h"
+#include "mongoc-config.h"
 #ifdef MONGOC_ENABLE_SSL
-#include "mongoc/mongoc-ssl.h"
+#include "mongoc-ssl.h"
 #endif
-#include "mongoc/mongoc-uri.h"
+#include "mongoc-uri.h"
 
 
 BSON_BEGIN_DECLS

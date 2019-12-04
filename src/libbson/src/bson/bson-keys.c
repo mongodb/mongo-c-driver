@@ -17,8 +17,8 @@
 
 #include <stdio.h>
 
-#include "bson/bson-keys.h"
-#include "bson/bson-string.h"
+#include "bson-keys.h"
+#include "bson-string.h"
 
 
 static const char *gUint32Strs[] = {

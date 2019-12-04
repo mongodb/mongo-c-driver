@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-prelude.h"
+#include "mongoc-prelude.h"
 
 #ifndef MONGOC_ASYNC_CMD_PRIVATE_H
 #define MONGOC_ASYNC_CMD_PRIVATE_H
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-client.h"
-#include "mongoc/mongoc-async-private.h"
-#include "mongoc/mongoc-array-private.h"
-#include "mongoc/mongoc-buffer-private.h"
-#include "mongoc/mongoc-rpc-private.h"
-#include "mongoc/mongoc-stream.h"
+#include "mongoc-client.h"
+#include "mongoc-async-private.h"
+#include "mongoc-array-private.h"
+#include "mongoc-buffer-private.h"
+#include "mongoc-rpc-private.h"
+#include "mongoc-stream.h"
 
 BSON_BEGIN_DECLS
 

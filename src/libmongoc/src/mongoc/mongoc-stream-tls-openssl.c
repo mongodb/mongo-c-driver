@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc-config.h"
+#include "mongoc-config.h"
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
 
@@ -27,17 +27,17 @@
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
 
-#include "mongoc/mongoc-counters-private.h"
-#include "mongoc/mongoc-errno-private.h"
-#include "mongoc/mongoc-stream-tls.h"
-#include "mongoc/mongoc-stream-private.h"
-#include "mongoc/mongoc-stream-tls-private.h"
-#include "mongoc/mongoc-stream-tls-openssl-bio-private.h"
-#include "mongoc/mongoc-stream-tls-openssl-private.h"
-#include "mongoc/mongoc-openssl-private.h"
-#include "mongoc/mongoc-trace-private.h"
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-error.h"
+#include "mongoc-counters-private.h"
+#include "mongoc-errno-private.h"
+#include "mongoc-stream-tls.h"
+#include "mongoc-stream-private.h"
+#include "mongoc-stream-tls-private.h"
+#include "mongoc-stream-tls-openssl-bio-private.h"
+#include "mongoc-stream-tls-openssl-private.h"
+#include "mongoc-openssl-private.h"
+#include "mongoc-trace-private.h"
+#include "mongoc-log.h"
+#include "mongoc-error.h"
 
 
 #undef MONGOC_LOG_DOMAIN

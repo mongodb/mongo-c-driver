@@ -16,9 +16,9 @@
 
 #include <bson/bson.h>
 
-#include "mongoc/mongoc-error.h"
-#include "mongoc/mongoc-error-private.h"
-#include "mongoc/mongoc-rpc-private.h"
+#include "mongoc-error.h"
+#include "mongoc-error-private.h"
+#include "mongoc-rpc-private.h"
 
 bool
 mongoc_error_has_label (const bson_t *reply, const char *label)

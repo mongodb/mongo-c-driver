@@ -18,11 +18,11 @@
 #include <limits.h>
 #include <stdarg.h>
 
-#include "bson/bson-compat.h"
-#include "bson/bson-config.h"
-#include "bson/bson-string.h"
-#include "bson/bson-memory.h"
-#include "bson/bson-utf8.h"
+#include "bson-compat.h"
+#include "bson-config.h"
+#include "bson-string.h"
+#include "bson-memory.h"
+#include "bson-utf8.h"
 
 #ifdef BSON_HAVE_STRINGS_H
 #include <strings.h>

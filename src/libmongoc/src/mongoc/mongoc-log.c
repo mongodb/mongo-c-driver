@@ -27,9 +27,9 @@
 #include <stdarg.h>
 #include <time.h>
 
-#include "mongoc/mongoc-log.h"
-#include "mongoc/mongoc-log-private.h"
-#include "mongoc/mongoc-thread-private.h"
+#include "mongoc-log.h"
+#include "mongoc-log-private.h"
+#include "mongoc-thread-private.h"
 
 
 static bson_once_t once = BSON_ONCE_INIT;

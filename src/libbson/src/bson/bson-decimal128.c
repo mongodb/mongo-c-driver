@@ -19,10 +19,10 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "bson/bson-decimal128.h"
-#include "bson/bson-types.h"
-#include "bson/bson-macros.h"
-#include "bson/bson-string.h"
+#include "bson-decimal128.h"
+#include "bson-types.h"
+#include "bson-macros.h"
+#include "bson-string.h"
 
 
 #define BSON_DECIMAL128_EXPONENT_MAX 6111

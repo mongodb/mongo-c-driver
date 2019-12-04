@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "mongoc/mongoc.h"
+#include "mongoc.h"
 #include "mongoc-gridfs-bucket-file-private.h"
 #include "mongoc-gridfs-bucket-private.h"
 #include "mongoc-trace-private.h"
