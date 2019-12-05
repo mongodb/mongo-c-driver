@@ -1311,6 +1311,7 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
    int conv_id = 0;
    bson_subtype_t btype;
    mongoc_server_stream_t *server_stream;
+   bool done = false;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
@@ -1334,6 +1335,10 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
       if (!_mongoc_scram_step (
              &scram, buf, buflen, buf, sizeof buf, &buflen, error)) {
          goto failure;
+      }
+
+      if (done && (scram.step >= 3)) {
+         break;
       }
 
       bson_init (&cmd);
@@ -1381,8 +1386,20 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
 
       if (bson_iter_init_find (&iter, &reply, "done") &&
           bson_iter_as_bool (&iter)) {
-         bson_destroy (&reply);
-         break;
+         if (scram.step < 2) {
+            /* Prior to step 2, we haven't even received server proof. */
+            bson_destroy (&reply);
+            bson_set_error (error,
+                            MONGOC_ERROR_CLIENT,
+                            MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                            "Incorrect step for 'done'");
+            goto failure;
+         }
+         done = true;
+         if (scram.step >= 3) {
+            bson_destroy (&reply);
+            break;
+         }
       }
 
       if (!bson_iter_init_find (&iter, &reply, "conversationId") ||
