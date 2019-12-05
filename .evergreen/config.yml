@@ -22,6 +22,7 @@ functions:
   - command: shell.exec
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -37,6 +38,7 @@ functions:
   - command: shell.exec
     params:
       continue_on_err: true
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -45,6 +47,7 @@ functions:
   upload release:
   - command: shell.exec
     params:
+      shell: bash
       script: |-
         set -o xtrace
         [ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz mongoc.tar.gz
@@ -78,6 +81,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         # Need modern Sphinx for :caption: in literal includes.
@@ -95,6 +99,7 @@ functions:
   - command: shell.exec
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -103,6 +108,7 @@ functions:
   - command: shell.exec
     params:
       continue_on_err: true
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -117,6 +123,7 @@ functions:
   - command: shell.exec
     params:
       continue_on_err: true
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -132,6 +139,7 @@ functions:
     params:
       silent: true
       working_dir: mongoc/cmake_build/src/libbson
+      shell: bash
       script: |-
         set -o errexit
         export AWS_ACCESS_KEY_ID=${aws_key}
@@ -151,6 +159,7 @@ functions:
     params:
       silent: true
       working_dir: mongoc/cmake_build/src/libmongoc
+      shell: bash
       script: |-
         set -o errexit
         export AWS_ACCESS_KEY_ID=${aws_key}
@@ -171,6 +180,7 @@ functions:
     params:
       silent: true
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         # Get "aha", the ANSI HTML Adapter.
@@ -206,6 +216,7 @@ functions:
     params:
       silent: true
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         export AWS_ACCESS_KEY_ID=${aws_key}
@@ -226,6 +237,7 @@ functions:
     params:
       silent: true
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         sh .evergreen/abi-compliance-check.sh
@@ -252,6 +264,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -264,6 +277,7 @@ functions:
     params:
       silent: true
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         export AWS_ACCESS_KEY_ID=${aws_key}
@@ -283,6 +297,7 @@ functions:
   - command: shell.exec
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -312,6 +327,7 @@ functions:
   - command: shell.exec
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -351,6 +367,7 @@ functions:
   - command: shell.exec
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -380,6 +397,7 @@ functions:
   - command: shell.exec
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -396,6 +414,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -423,6 +442,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -433,6 +453,7 @@ functions:
     params:
       silent: true
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         export AUTH_HOST='${auth_host}'
@@ -455,6 +476,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -463,6 +485,7 @@ functions:
   - command: shell.exec
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -472,6 +495,7 @@ functions:
   - command: shell.exec
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         for i in $(find .evergreen -name \*.sh); do
@@ -482,6 +506,7 @@ functions:
   - command: shell.exec
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         for i in $(find .evergreen -name \*.sh); do
@@ -492,6 +517,7 @@ functions:
     params:
       silent: true
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         if test "${keytab|}"; then
@@ -504,6 +530,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -520,6 +547,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -536,6 +564,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -551,6 +580,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -562,6 +592,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -577,6 +608,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -587,6 +619,7 @@ functions:
   - command: shell.exec
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         export CODECOV_TOKEN=${codecov_token}
@@ -596,6 +629,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -606,6 +640,7 @@ functions:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -629,6 +664,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -637,6 +673,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -656,6 +693,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -679,6 +717,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -697,6 +736,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -715,6 +755,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -735,6 +776,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -752,6 +794,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -772,6 +815,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -784,6 +828,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -797,6 +842,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -815,6 +861,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -833,6 +880,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -851,6 +899,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -868,6 +917,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -888,6 +938,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -905,6 +956,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -922,6 +974,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -944,6 +997,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -966,6 +1020,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -989,6 +1044,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1014,6 +1070,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1027,6 +1084,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1039,6 +1097,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1055,6 +1114,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1071,6 +1131,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1088,6 +1149,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1105,6 +1167,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1122,6 +1185,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1140,6 +1204,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1158,6 +1223,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1176,6 +1242,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1194,6 +1261,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1212,6 +1280,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1226,6 +1295,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1243,6 +1313,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1259,6 +1330,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1462,6 +1534,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1482,6 +1555,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1504,6 +1578,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1519,6 +1594,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1534,6 +1610,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1546,6 +1623,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1565,6 +1643,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1598,6 +1677,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1631,6 +1711,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -1662,6 +1743,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -11908,6 +11990,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -11924,6 +12007,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -11941,6 +12025,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -11958,6 +12043,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -11974,6 +12060,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -11990,6 +12077,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -12005,6 +12093,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -12020,6 +12109,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -12034,6 +12124,7 @@ tasks:
     type: test
     params:
       working_dir: mongoc
+      shell: bash
       script: |-
         set -o errexit
         set -o xtrace
@@ -12304,7 +12395,6 @@ buildvariants:
   run_on: ubuntu1604-test
   tasks:
   - .compression !.zstd
-  - debug-compile-compression-zstd
   - debug-compile-scan-build
   - debug-compile-asan-clang
   - debug-compile-ubsan
@@ -12474,7 +12564,7 @@ buildvariants:
     CC: clang
   run_on: macos-1012
   tasks:
-  - .compression !.snappy !.zstd
+  - .compression !.snappy
   - debug-compile-coverage
   - release-compile
   - debug-compile-nosasl-nossl
