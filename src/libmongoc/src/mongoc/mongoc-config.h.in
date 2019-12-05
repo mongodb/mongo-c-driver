@@ -381,6 +381,17 @@
 #  undef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
 #endif
 
+
+/*
+ * Set if struct sockaddr_storage has __ss_family (instead of ss_family)
+ */
+
+#define MONGOC_HAVE_SS_FAMILY @MONGOC_HAVE_SS_FAMILY@
+
+#if MONGOC_HAVE_SS_FAMILY != 1
+#  undef MONGOC_HAVE_SS_FAMILY
+#endif
+
 /*
  * NOTICE:
  * If you're about to update this file and add a config flag, make sure to
