@@ -116,13 +116,12 @@ if (NOT ENABLE_ZSTD STREQUAL OFF)
          message (STATUS "Detected zstd version ${ZSTD_VERSION} but version 0.8.0 required")
       endif ()
    else ()
-      message (STATUS "  Found in ${ZSTD_INCLUDE_DIRS}")
+      message (STATUS "  Found zstd version ${ZSTD_VERSION} in ${ZSTD_INCLUDE_DIRS}")
       set (MONGOC_ENABLE_COMPRESSION 1)
       set (MONGOC_ENABLE_COMPRESSION_ZSTD 1)
-      set (MONGOC_INTERNAL_INCLUDE_DIRS ${MONGOC_INTERNAL_INCLUDE_DIRS} ${ZSTD_INCLUDE_DIRS})
 
+      include_directories (${ZSTD_INCLUDE_DIRS})
       if (${CMAKE_VERSION} VERSION_LESS "3.12.0")
-         link_directories(${ZSTD_LIBRARY_DIRS})
          set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LIBRARIES})
       else ()
          set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LINK_LIBRARIES})
@@ -961,7 +960,7 @@ set (libdir "\${prefix}/lib")
 foreach (
       FLAG
       ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${ZSTD_LINK_LIBRARIES} ${ICU_LIBRARIES})
+      ${THREAD_LIB} ${ZLIB_LIBRARIES} ${SNAPPY_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${ICU_LIBRARIES})
 
    if (IS_ABSOLUTE "${FLAG}")
       get_filename_component (FLAG_DIR "${FLAG}" DIRECTORY)

@@ -19,11 +19,12 @@ set -o errexit  # Exit the script with error if any of the commands fail
 #       LIBBSON                 Build against bundled or external libbson
 #       EXTRA_CONFIGURE_FLAGS   Extra configure flags to use
 #       ZLIB                    Build against bundled or external zlib, or none
-#       SNAPPY                  Build against bundled or external Snappy, or none
+#       SNAPPY                  Build against Snappy, or none
 #       SSL                     Build against OpenSSL or native or none
 #       SASL                    Build against SASL or not
 #       SRV                     Whether to enable SRV: ON or OFF
 #       ENABLE_SHM_COUNTERS     Build with SHM counters
+#       ZSTD                    Build against system zstd.
 
 # Options for this script.
 RELEASE=${RELEASE:-OFF}
@@ -54,6 +55,7 @@ echo "ANALYZE: $ANALYZE"
 echo "COVERAGE: $COVERAGE"
 echo "SKIP_TESTS: $SKIP_TESTS"
 echo "ZLIB: $ZLIB"
+echo "ZSTD: $ZSTD"
 
 # Get the kernel name, lowercased
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -85,6 +87,10 @@ fi
 
 if [ ! -z "$SNAPPY" ]; then
    DEBUG_AND_RELEASE_FLAGS="$DEBUG_AND_RELEASE_FLAGS -DENABLE_SNAPPY=${SNAPPY}"
+fi
+
+if [ ! -z "$ZSTD" ]; then
+   DEBUG_AND_RELEASE_FLAGS="$DEBUG_AND_RELEASE_FLAGS -DENABLE_ZSTD=${ZSTD}"
 fi
 
 DEBUG_FLAGS="${DEBUG_AND_RELEASE_FLAGS} -DCMAKE_BUILD_TYPE=Debug"
