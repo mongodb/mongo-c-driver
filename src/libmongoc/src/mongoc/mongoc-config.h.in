@@ -370,6 +370,15 @@
 #  undef MONGOC_ENABLE_ICU
 #endif
 
+/*
+ * Set if struct sockaddr_storage has __ss_family (instead of ss_family)
+ */
+
+#define MONGOC_HAVE_SS_FAMILY @MONGOC_HAVE_SS_FAMILY@
+
+#if MONGOC_HAVE_SS_FAMILY != 1
+#  undef MONGOC_HAVE_SS_FAMILY
+#endif
 
 /*
  * NOTICE:

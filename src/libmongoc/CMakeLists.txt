@@ -398,6 +398,13 @@ if (NOT ENABLE_ICU STREQUAL OFF)
    endif()
 endif()
 
+CHECK_STRUCT_HAS_MEMBER("struct sockaddr_storage" ss_family "sys/socket.h" MONGOC_HAVE_SS_FAMILY)
+if (NOT MONGOC_HAVE_SS_FAMILY)
+   set (MONGOC_HAVE_SS_FAMILY 0)
+else ()
+   set (MONGOC_HAVE_SS_FAMILY 1)
+endif ()
+
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-config.h.in"
    "${PROJECT_BINARY_DIR}/src/mongoc/mongoc-config.h"
