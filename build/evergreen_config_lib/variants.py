@@ -583,7 +583,17 @@ all_variants = [
             'ASAN Tests (Ubuntu 16.04)',
             'ubuntu1604-test',
             ['.debug-compile .asan-clang',
-             '.test-asan'],
+             '.test-asan !.3.0'],
+            {'CC': 'clang'},
+            batchtime=1440),
+    # There is no MongoDB 3.0 with SSL available on Ubuntu post 14.04. And MongoDB 4.2 not supported on Ubuntu 14.04.
+    # So have one variant for ASAN to test against MongoDB 3.0.
+    Variant('asan-ubuntu-ubuntu1404',
+            'ASAN Tests - MongoDB 3.0 (Ubuntu 14.04)',
+            'ubuntu1404-test',
+            # Omit compiling with client-side-encryption, since tests only run against 4.2+.
+            ['.debug-compile .asan-clang !.client-side-encryption',
+             '.test-asan .3.0'],
             {'CC': 'clang'},
             batchtime=1440),
     Variant('code-coverage-ubuntu',

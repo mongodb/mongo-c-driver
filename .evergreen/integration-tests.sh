@@ -7,7 +7,12 @@ DIR=$(dirname $0)
 . $DIR/download-mongodb.sh
 
 get_distro
+GENERIC_LINUX_URL=$(get_mongodb_download_url_for "linux-x86_64" "$MONGODB_VERSION")
 get_mongodb_download_url_for "$DISTRO" "$MONGODB_VERSION"
+if [ "$MONGODB_DOWNLOAD_URL" = $GENERIC_LINUX_URL -a -n "$SSL" ]; then
+   echo "Requested a version of MongoDB with SSL, but only generic (non-SSL) Linux version available"
+   exit 1;
+fi
 DRIVERS_TOOLS=./ download_and_extract "$MONGODB_DOWNLOAD_URL" "$EXTRACT"
 
 

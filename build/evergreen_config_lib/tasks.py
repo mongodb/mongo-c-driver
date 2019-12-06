@@ -432,7 +432,7 @@ class IntegrationTask(MatrixTask):
             self.add_tags('test-coverage')
             self.options['exec_timeout_secs'] = 3600
         elif self.asan:
-            self.add_tags('test-asan')
+            self.add_tags('test-asan', self.version)
             self.options['exec_timeout_secs'] = 3600
         else:
             self.add_tags(self.topology,
