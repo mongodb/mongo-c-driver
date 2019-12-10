@@ -49,10 +49,10 @@ get_mongodb_download_url_for ()
    _DISTRO=$1
    _VERSION=$2
 
-   VERSION_42="4.2.0-rc5"
-   VERSION_40="4.0.11"
-   VERSION_36="3.6.13"
-   VERSION_34="3.4.22"
+   VERSION_42="4.2.2"
+   VERSION_40="4.0.13"
+   VERSION_36="3.6.15"
+   VERSION_34="3.4.23"
    VERSION_32="3.2.22"
    VERSION_30="3.0.15"
    VERSION_26="2.6.12"
@@ -276,6 +276,17 @@ get_mongodb_download_url_for ()
       linux-ubuntu-18.04-aarch64)
          MONGODB_LATEST="http://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu1804-latest.tgz"
              MONGODB_42="http://fastdl.mongodb.org/linux/mongodb-linux-aarch64-ubuntu1804-${VERSION_42}.tgz"
+             MONGODB_40=""
+             MONGODB_36=""
+             MONGODB_34=""
+             MONGODB_32=""
+             MONGODB_30=""
+             MONGODB_26=""
+             MONGODB_24=""
+      ;;
+      linux-ubuntu-18.04-ppc64le)
+         MONGODB_LATEST="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-ubuntu1804-latest.tgz"
+             MONGODB_42="http://downloads.10gen.com/linux/mongodb-linux-ppc64le-enterprise-ubuntu1804-${VERSION_42}.tgz"
              MONGODB_40=""
              MONGODB_36=""
              MONGODB_34=""
