@@ -9,7 +9,7 @@ DIR=$(dirname $0)
 get_distro
 GENERIC_LINUX_URL=$(get_mongodb_download_url_for "linux-x86_64" "$MONGODB_VERSION")
 get_mongodb_download_url_for "$DISTRO" "$MONGODB_VERSION"
-if [ "$MONGODB_DOWNLOAD_URL" = $GENERIC_LINUX_URL -a -n "$SSL" ]; then
+if [ "$MONGODB_DOWNLOAD_URL" = $GENERIC_LINUX_URL -a ! "$SSL" = "nossl" ]; then
    echo "Requested a version of MongoDB with SSL, but only generic (non-SSL) Linux version available"
    exit 1;
 fi
@@ -96,6 +96,14 @@ case "$OS" in
       else
          PYTHON=python
       fi
+
+      PYTHON_MAJ=$(python -c 'import sys; print (sys.version_info[0])')
+      PYTHON_MIN=$(python -c 'import sys; print (sys.version_info[1])')
+      if [ "$PYTHON_MAJ" -ge "3" -a "$PYTHON_MIN" -ge "8" ]; then
+         # mongo-orchestration currently does not run with python 3.8 per PYTHON-2067. Explicitly use python 2.
+         PYTHON=python2
+      fi
+
       $PYTHON -m virtualenv venv
       cd venv
       . bin/activate
