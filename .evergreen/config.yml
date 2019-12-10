@@ -3709,6 +3709,7 @@ tasks:
       VALGRIND: 'off'
 - name: test-coverage-latest-server-auth-nosasl-openssl
   tags:
+  - latest
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3728,6 +3729,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-latest-server-noauth-nosasl-nossl
   tags:
+  - latest
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3747,6 +3749,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-latest-replica-set-auth-nosasl-openssl
   tags:
+  - latest
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3766,6 +3769,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-latest-replica-set-noauth-nosasl-nossl
   tags:
+  - latest
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3785,6 +3789,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-latest-sharded-auth-nosasl-openssl
   tags:
+  - latest
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3804,6 +3809,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-latest-sharded-noauth-nosasl-nossl
   tags:
+  - latest
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3823,6 +3829,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.2-server-auth-nosasl-openssl
   tags:
+  - '4.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3842,6 +3849,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.2-server-noauth-nosasl-nossl
   tags:
+  - '4.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3861,6 +3869,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.2-replica-set-auth-nosasl-openssl
   tags:
+  - '4.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3880,6 +3889,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.2-replica-set-noauth-nosasl-nossl
   tags:
+  - '4.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3899,6 +3909,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.2-sharded-auth-nosasl-openssl
   tags:
+  - '4.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3918,6 +3929,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.2-sharded-noauth-nosasl-nossl
   tags:
+  - '4.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3937,6 +3949,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.0-server-auth-nosasl-openssl
   tags:
+  - '4.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3956,6 +3969,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.0-server-noauth-nosasl-nossl
   tags:
+  - '4.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3975,6 +3989,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.0-replica-set-auth-nosasl-openssl
   tags:
+  - '4.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -3994,6 +4009,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.0-replica-set-noauth-nosasl-nossl
   tags:
+  - '4.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4013,6 +4029,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.0-sharded-auth-nosasl-openssl
   tags:
+  - '4.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4032,6 +4049,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-4.0-sharded-noauth-nosasl-nossl
   tags:
+  - '4.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4051,6 +4069,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.6-server-auth-nosasl-openssl
   tags:
+  - '3.6'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4070,6 +4089,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.6-server-noauth-nosasl-nossl
   tags:
+  - '3.6'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4089,6 +4109,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.6-replica-set-auth-nosasl-openssl
   tags:
+  - '3.6'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4108,6 +4129,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.6-replica-set-noauth-nosasl-nossl
   tags:
+  - '3.6'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4127,6 +4149,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.6-sharded-auth-nosasl-openssl
   tags:
+  - '3.6'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4146,6 +4169,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.6-sharded-noauth-nosasl-nossl
   tags:
+  - '3.6'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4165,6 +4189,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.4-server-auth-nosasl-openssl
   tags:
+  - '3.4'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4184,6 +4209,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.4-server-noauth-nosasl-nossl
   tags:
+  - '3.4'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4203,6 +4229,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.4-replica-set-auth-nosasl-openssl
   tags:
+  - '3.4'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4222,6 +4249,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.4-replica-set-noauth-nosasl-nossl
   tags:
+  - '3.4'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4241,6 +4269,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.4-sharded-auth-nosasl-openssl
   tags:
+  - '3.4'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4260,6 +4289,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.4-sharded-noauth-nosasl-nossl
   tags:
+  - '3.4'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4279,6 +4309,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.2-server-auth-nosasl-openssl
   tags:
+  - '3.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4298,6 +4329,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.2-server-noauth-nosasl-nossl
   tags:
+  - '3.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4317,6 +4349,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.2-replica-set-auth-nosasl-openssl
   tags:
+  - '3.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4336,6 +4369,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.2-replica-set-noauth-nosasl-nossl
   tags:
+  - '3.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4355,6 +4389,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.2-sharded-auth-nosasl-openssl
   tags:
+  - '3.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4374,6 +4409,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.2-sharded-noauth-nosasl-nossl
   tags:
+  - '3.2'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4393,6 +4429,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.0-server-auth-nosasl-openssl
   tags:
+  - '3.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4412,6 +4449,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.0-server-noauth-nosasl-nossl
   tags:
+  - '3.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4431,6 +4469,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.0-replica-set-auth-nosasl-openssl
   tags:
+  - '3.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4450,6 +4489,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.0-replica-set-noauth-nosasl-nossl
   tags:
+  - '3.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4469,6 +4509,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.0-sharded-auth-nosasl-openssl
   tags:
+  - '3.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -4488,6 +4529,7 @@ tasks:
   - func: update codecov.io
 - name: test-coverage-3.0-sharded-noauth-nosasl-nossl
   tags:
+  - '3.0'
   - test-coverage
   exec_timeout_secs: 3600
   commands:
@@ -12162,6 +12204,33 @@ tasks:
     vars:
       require_tls12: true
   - func: upload build
+- name: compile-libmongocapi
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        . ./.evergreen/find-cmake.sh
+        ${setup_android_toolchain|}
+        export ${libmongocapi_compile_env|}
+        mkdir cmake-build-libmongocapi
+        $CMAKE \
+          -DCMAKE_INSTALL_PREFIX=cmake-build-libmongocapi \
+          -DENABLE_SNAPPY=OFF \
+          -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
+          -DENABLE_ZLIB=OFF -DENABLE_SSL=OFF \
+          -DENABLE_SASL=OFF \
+          -DENABLE_TESTS=OFF \
+          -DENABLE_SRV=OFF \
+          -DENABLE_EXAMPLES=OFF \
+          -DENABLE_STATIC=OFF \
+          -DENABLE_SHM_COUNTERS=OFF \
+          ${libmongocapi_cmake_flags}
+        make install VERBOSE=1
 - name: test-latest-server-ipv6-client-ipv6-noauth-nosasl-nossl
   tags:
   - ipv4-ipv6
@@ -12428,6 +12497,7 @@ buildvariants:
   - .4.2 .openssl !.nosasl .server
   - .4.0 .openssl !.nosasl .server
   - .3.6 .openssl !.nosasl .server
+  - .test-coverage !.3.0
 - name: gcc46
   display_name: GCC 4.6 (Ubuntu 12.04)
   expansions:
@@ -12460,6 +12530,7 @@ buildvariants:
   - .3.4 .openssl !.nosasl .server
   - .3.2 .openssl !.nosasl .server
   - .3.0 .openssl !.nosasl !.auth
+  - .test-coverage .3.0
 - name: gcc82rhel
   display_name: GCC 8.2 (RHEL 8.0)
   expansions:
@@ -12858,11 +12929,56 @@ buildvariants:
   - .debug-compile .asan-clang !.client-side-encryption
   - .test-asan .3.0
   batchtime: 1440
-- name: code-coverage-ubuntu
-  display_name: Code Coverage Tests
+- name: ios-102-debug
+  display_name: iOS 10.2 DEBUG
   expansions:
-    CC: gcc
+    libmongocapi_cmake_flags: ' -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
+      -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+      -DCMAKE_SYSTEM_NAME=Darwin -DCMAKE_FIND_ROOT_PATH="$(xcrun --sdk iphoneos --show-sdk-path)"
+      -DCMAKE_INSTALL_NAME_DIR=@rpath -DCMAKE_C_FLAGS="-arch arm64 -isysroot $(xcrun
+      --sdk iphoneos --show-sdk-path) -miphoneos-version-min=10.2"'
+    libmongocapi_compile_env: DEVELOPER_DIR=/Applications/Xcode9.2.app
+  run_on: macos-1012
+  tasks:
+  - compile-libmongocapi
+  batchtime: 1440
+- name: ios-sim-102-debug
+  display_name: iOS Simulator 10.2 DEBUG
+  expansions:
+    libmongocapi_cmake_flags: ' -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
+      -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+      -DCMAKE_SYSTEM_NAME=Darwin -DCMAKE_FIND_ROOT_PATH="$(xcrun --sdk iphonesimulator
+      --show-sdk-path)" -DCMAKE_INSTALL_NAME_DIR=@rpath -DCMAKE_C_FLAGS="-arch x86_64
+      -isysroot $(xcrun --sdk iphonesimulator --show-sdk-path) -miphoneos-version-min=10.2"'
+    libmongocapi_compile_env: DEVELOPER_DIR=/Applications/Xcode9.2.app
+  run_on: macos-1012
+  tasks:
+  - compile-libmongocapi
+  batchtime: 1440
+- name: android-debug-arm64
+  display_name: Android arm64 (Ubuntu 16.04)
+  expansions:
+    libmongocapi_cmake_flags: ' -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
+      -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+      -DANDROID_NATIVE_API_LEVEL=21 -DANDROID_ABI=arm64-v8a -DTHREADS_PTHREAD_ARG=2
+      -DCMAKE_TOOLCHAIN_FILE=./android_sdk/ndk-bundle/build/cmake/android.toolchain.cmake
+      -DCMAKE_FIND_ROOT_PATH="./android_toolchain" -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib'
+    setup_android_toolchain: JAVA_HOME=/opt/java/jdk8/ ./.evergreen/setup-android-toolchain.sh
+      arm64-v8a arm64
   run_on: ubuntu1604-build
   tasks:
-  - .test-coverage
+  - compile-libmongocapi
+  batchtime: 1440
+- name: android-debug-x86
+  display_name: Android x86_64 (Ubuntu 16.04)
+  expansions:
+    libmongocapi_cmake_flags: ' -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
+      -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+      -DANDROID_NATIVE_API_LEVEL=21 -DANDROID_ABI=x86_64 -DTHREADS_PTHREAD_ARG=2 -DCMAKE_TOOLCHAIN_FILE=./android_sdk/ndk-bundle/build/cmake/android.toolchain.cmake
+      -DCMAKE_FIND_ROOT_PATH="./android_toolchain" -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib'
+    setup_android_toolchain: JAVA_HOME=/opt/java/jdk8/ ./.evergreen/setup-android-toolchain.sh
+      x86_64 x86_64
+  run_on: ubuntu1604-build
+  tasks:
+  - compile-libmongocapi
   batchtime: 1440
