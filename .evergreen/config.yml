@@ -1769,6 +1769,7 @@ tasks:
   - func: upload build
 - name: test-valgrind-latest-server-auth-nosasl-openssl
   tags:
+  - latest
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -1791,6 +1792,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-latest-server-noauth-nosasl-nossl
   tags:
+  - latest
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -1813,6 +1815,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-latest-replica-set-auth-nosasl-openssl
   tags:
+  - latest
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -1835,6 +1838,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-latest-replica-set-noauth-nosasl-nossl
   tags:
+  - latest
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -1857,6 +1861,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-latest-sharded-auth-nosasl-openssl
   tags:
+  - latest
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -1879,6 +1884,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-latest-sharded-noauth-nosasl-nossl
   tags:
+  - latest
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -1901,6 +1907,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.2-server-auth-nosasl-openssl
   tags:
+  - '4.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -1923,6 +1930,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.2-server-noauth-nosasl-nossl
   tags:
+  - '4.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -1945,6 +1953,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.2-replica-set-auth-nosasl-openssl
   tags:
+  - '4.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -1967,6 +1976,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.2-replica-set-noauth-nosasl-nossl
   tags:
+  - '4.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -1989,6 +1999,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.2-sharded-auth-nosasl-openssl
   tags:
+  - '4.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2011,6 +2022,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.2-sharded-noauth-nosasl-nossl
   tags:
+  - '4.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2033,6 +2045,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.0-server-auth-nosasl-openssl
   tags:
+  - '4.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2055,6 +2068,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.0-server-noauth-nosasl-nossl
   tags:
+  - '4.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2077,6 +2091,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.0-replica-set-auth-nosasl-openssl
   tags:
+  - '4.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2099,6 +2114,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.0-replica-set-noauth-nosasl-nossl
   tags:
+  - '4.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2121,6 +2137,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.0-sharded-auth-nosasl-openssl
   tags:
+  - '4.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2143,6 +2160,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-4.0-sharded-noauth-nosasl-nossl
   tags:
+  - '4.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2165,6 +2183,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.6-server-auth-nosasl-openssl
   tags:
+  - '3.6'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2187,6 +2206,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.6-server-noauth-nosasl-nossl
   tags:
+  - '3.6'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2209,6 +2229,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.6-replica-set-auth-nosasl-openssl
   tags:
+  - '3.6'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2231,6 +2252,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.6-replica-set-noauth-nosasl-nossl
   tags:
+  - '3.6'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2253,6 +2275,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.6-sharded-auth-nosasl-openssl
   tags:
+  - '3.6'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2275,6 +2298,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.6-sharded-noauth-nosasl-nossl
   tags:
+  - '3.6'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2297,6 +2321,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.4-server-auth-nosasl-openssl
   tags:
+  - '3.4'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2319,6 +2344,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.4-server-noauth-nosasl-nossl
   tags:
+  - '3.4'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2341,6 +2367,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.4-replica-set-auth-nosasl-openssl
   tags:
+  - '3.4'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2363,6 +2390,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.4-replica-set-noauth-nosasl-nossl
   tags:
+  - '3.4'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2385,6 +2413,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.4-sharded-auth-nosasl-openssl
   tags:
+  - '3.4'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2407,6 +2436,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.4-sharded-noauth-nosasl-nossl
   tags:
+  - '3.4'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2429,6 +2459,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.2-server-auth-nosasl-openssl
   tags:
+  - '3.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2451,6 +2482,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.2-server-noauth-nosasl-nossl
   tags:
+  - '3.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2473,6 +2505,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.2-replica-set-auth-nosasl-openssl
   tags:
+  - '3.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2495,6 +2528,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.2-replica-set-noauth-nosasl-nossl
   tags:
+  - '3.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2517,6 +2551,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.2-sharded-auth-nosasl-openssl
   tags:
+  - '3.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2539,6 +2574,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.2-sharded-noauth-nosasl-nossl
   tags:
+  - '3.2'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2561,6 +2597,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.0-server-auth-nosasl-openssl
   tags:
+  - '3.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2583,6 +2620,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.0-server-noauth-nosasl-nossl
   tags:
+  - '3.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2605,6 +2643,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.0-replica-set-auth-nosasl-openssl
   tags:
+  - '3.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2627,6 +2666,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.0-replica-set-noauth-nosasl-nossl
   tags:
+  - '3.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2649,6 +2689,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.0-sharded-auth-nosasl-openssl
   tags:
+  - '3.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -2671,6 +2712,7 @@ tasks:
       VALGRIND: 'on'
 - name: test-valgrind-3.0-sharded-noauth-nosasl-nossl
   tags:
+  - '3.0'
   - test-valgrind
   exec_timeout_secs: 7200
   depends_on:
@@ -12882,7 +12924,21 @@ buildvariants:
   - .debug-compile !.sspi .openssl !.sasl
   - .debug-compile !.sspi .nossl !.sasl
   - .debug-compile .special .valgrind
-  - .test-valgrind
+  - .test-valgrind !.3.0 !.3.2 !.3.4 !.3.6
+  batchtime: 10080
+- name: valgrind-ubuntu-1404
+  display_name: Valgrind Tests - MongoDB (pre 4.0) (Ubuntu 14.04)
+  expansions:
+    CC: gcc
+  run_on: ubuntu1404-build
+  tasks:
+  - .debug-compile !.sspi .openssl !.sasl
+  - .debug-compile !.sspi .nossl !.sasl
+  - .debug-compile .special .valgrind
+  - .test-valgrind .3.0
+  - .test-valgrind .3.2
+  - .test-valgrind .3.4
+  - .test-valgrind .3.6
   batchtime: 10080
 - name: asan-ubuntu
   display_name: ASAN Tests (Ubuntu 16.04)

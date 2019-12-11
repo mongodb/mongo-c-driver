@@ -427,6 +427,7 @@ class IntegrationTask(MatrixTask):
         super(IntegrationTask, self).__init__(*args, **kwargs)
         if self.valgrind:
             self.add_tags('test-valgrind')
+            self.add_tags(self.version)
             self.options['exec_timeout_secs'] = 7200
         elif self.coverage:
             self.add_tags('test-coverage')

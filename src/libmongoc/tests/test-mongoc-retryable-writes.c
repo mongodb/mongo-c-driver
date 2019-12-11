@@ -567,7 +567,8 @@ test_all_spec_tests (TestSuite *suite)
                                        resolved,
                                        test_retryable_writes_cb,
                                        test_framework_skip_if_no_crypto,
-                                       test_framework_skip_if_not_replset);
+                                       test_framework_skip_if_not_replset,
+                                       test_framework_skip_if_slow);
 }
 
 void
