@@ -975,7 +975,7 @@ _log_callback (mongocrypt_log_level_t mongocrypt_log_level,
       break;
    }
 
-   mongoc_log (log_level, MONGOC_LOG_DOMAIN, "%s", message, NULL);
+   mongoc_log (log_level, MONGOC_LOG_DOMAIN, "%s", message);
 }
 
 static void
