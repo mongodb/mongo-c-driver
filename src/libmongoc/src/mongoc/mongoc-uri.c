@@ -2242,7 +2242,10 @@ mongoc_uri_get_tls (const mongoc_uri_t *uri) /* IN */
    if (bson_has_field (&uri->options, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
        bson_has_field (&uri->options, MONGOC_URI_TLSCAFILE) ||
        bson_has_field (&uri->options, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
-       bson_has_field (&uri->options, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES)) {
+       bson_has_field (&uri->options, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
+       bson_has_field (&uri->options, MONGOC_URI_TLSINSECURE) ||
+       bson_has_field (&uri->options,
+                       MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD)) {
       return true;
    }
 

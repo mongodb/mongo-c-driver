@@ -2452,6 +2452,42 @@ test_mongoc_uri_duplicates (void)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_one_tls_option_enables_tls ()
+{
+   const char *opts[] = {MONGOC_URI_TLS "=true",
+                         MONGOC_URI_TLSCERTIFICATEKEYFILE "=file.pem",
+                         MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD "=file.pem",
+                         MONGOC_URI_TLSCAFILE "=file.pem",
+                         MONGOC_URI_TLSALLOWINVALIDCERTIFICATES "=true",
+                         MONGOC_URI_TLSALLOWINVALIDHOSTNAMES "=true",
+                         MONGOC_URI_TLSINSECURE "=true",
+                         MONGOC_URI_SSL "=true",
+                         MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE "=file.pem",
+                         MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD "=file.pem",
+                         MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE "=file.pem",
+                         MONGOC_URI_SSLALLOWINVALIDCERTIFICATES "=true",
+                         MONGOC_URI_SSLALLOWINVALIDHOSTNAMES "=true"};
+   int i;
+
+   for (i = 0; i < sizeof (opts) / sizeof (opts[0]); i++) {
+      mongoc_uri_t *uri;
+      bson_error_t error;
+      char *uri_string;
+
+      uri_string =
+         bson_strdup_printf ("mongodb://localhost:27017/?%s", opts[i]);
+      uri = mongoc_uri_new_with_error (uri_string, &error);
+      bson_free (uri_string);
+      ASSERT_OR_PRINT (uri, error);
+      if (!mongoc_uri_get_tls (uri)) {
+         test_error (
+            "unexpected tls not enabled when following option set: %s\n",
+            opts[i]);
+      }
+      mongoc_uri_destroy (uri);
+   }
+}
 
 void
 test_uri_install (TestSuite *suite)
@@ -2482,4 +2518,7 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/dns_options", test_mongoc_uri_dns_options);
    TestSuite_Add (suite, "/Uri/utf8", test_mongoc_uri_utf8);
    TestSuite_Add (suite, "/Uri/duplicates", test_mongoc_uri_duplicates);
+   TestSuite_Add (suite,
+                  "/Uri/one_tls_option_enables_tls",
+                  test_one_tls_option_enables_tls);
 }
