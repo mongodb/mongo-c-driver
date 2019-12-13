@@ -24,5 +24,5 @@ Fetches a boolean indicating if TLS was specified for use in the URI.
 Returns
 -------
 
-Returns a boolean, true indicating that TLS should be used.
+Returns a boolean, true indicating that TLS should be used. This returns true if *any* :ref:`TLS option <tls_options>` is specified.
 

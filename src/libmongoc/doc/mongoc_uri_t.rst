@@ -125,6 +125,9 @@ MONGOC_URI_CANONICALIZEHOSTNAME            canonicalizehostname              Use
 MONGOC_URI_GSSAPISERVICENAME               gssapiservicename                 Use alternative service name. The default is ``mongodb``.
 ========================================== ================================= =========================================================================================================================================================================================================================
 
+
+.. _tls_options:
+
 TLS Options
 -----------
 
