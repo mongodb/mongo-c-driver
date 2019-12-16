@@ -1,3 +1,24 @@
+mongo-c-driver 1.15.3
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.15.3.
+
+Bug fixes:
+    * Fix a hang on macOS when connecting to a server over TLS
+    * Add zstd as a dependency when libmongoc static library is compiled with zstd support
+    * Fix compilation on AIX 6.1
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Samantha Ritter
+  * EGuesnet
+
+Peace,
+
+    Kevin Albertson
+
+
 mongo-c-driver 1.15.2
 =====================
 

@@ -1,3 +1,13 @@
+libbson 1.15.3
+==============
+
+It is my pleasure to announce libbson 1.15.3.
+
+No changes since 1.15.2; release to keep pace with libmongoc's version.
+
+-- Kevin Albertson
+
+
 libbson 1.15.2
 ==============
 
