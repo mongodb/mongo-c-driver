@@ -19,6 +19,7 @@
 #include <stdarg.h>
 
 #include "bson/bson-compat.h"
+#include "bson/bson-config.h"
 #include "bson/bson-string.h"
 #include "bson/bson-memory.h"
 #include "bson/bson-utf8.h"
@@ -545,8 +546,12 @@ bson_strncpy (char *dst,       /* IN */
       return;
    }
 
+/* Prefer strncpy_s for MSVC, or strlcpy, which has additional checks and only
+ * adds one trailing \0 */
 #ifdef _MSC_VER
    strncpy_s (dst, size, src, _TRUNCATE);
+#elif defined(BSON_HAVE_STRLCPY)
+   strlcpy (dst, src, size);
 #else
    strncpy (dst, src, size);
    dst[size - 1] = '\0';

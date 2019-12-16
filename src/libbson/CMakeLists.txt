@@ -91,6 +91,13 @@ if (NOT BSON_HAVE_STRINGS_H)
    set (BSON_HAVE_STRINGS_H 0)
 endif ()
 
+CHECK_SYMBOL_EXISTS (strlcpy string.h BSON_HAVE_STRLCPY)
+if (NOT BSON_HAVE_STRLCPY)
+   set (BSON_HAVE_STRLCPY 0)
+else ()
+   set (BSON_HAVE_STRLCPY 1)
+endif ()
+
 if (MSVC)
    set (BSON_HAVE_CLOCK_GETTIME 0)
    set (BSON_HAVE_STDBOOL_H 0)
