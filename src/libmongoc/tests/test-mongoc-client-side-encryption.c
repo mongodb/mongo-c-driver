@@ -1801,6 +1801,145 @@ test_malformed_explicit (void *unused)
    mongoc_client_destroy (client);
 }
 
+static void
+_check_mongocryptd_not_spawned (void)
+{
+   mongoc_client_t *client;
+   bson_t *cmd;
+   bson_error_t error;
+   bool ret;
+
+   client = mongoc_client_new (
+      "mongodb://localhost:27021/db?serverSelectionTimeoutMS=1000");
+   cmd = BCON_NEW ("ismaster", BCON_INT32 (1));
+   ret = mongoc_client_command_simple (
+      client, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "No suitable servers");
+   mongoc_client_destroy (client);
+   bson_destroy (cmd);
+}
+
+static void
+test_bypass_spawning_via_mongocryptdBypassSpawn (void *unused)
+{
+   mongoc_client_t *client_encrypted;
+   mongoc_auto_encryption_opts_t *auto_encryption_opts;
+   bson_t *kms_providers;
+   bson_t *doc_to_insert;
+   bson_t *extra;
+   bson_t *schema_map;
+   bson_t *schema;
+   bool ret;
+   bson_error_t error;
+   mongoc_collection_t *coll;
+
+   auto_encryption_opts = mongoc_auto_encryption_opts_new ();
+   kms_providers = _make_kms_providers (false /* aws */, true /* local */);
+   mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
+                                                  kms_providers);
+   mongoc_auto_encryption_opts_set_keyvault_namespace (
+      auto_encryption_opts, "admin", "datakeys");
+   schema = get_bson_from_json_file ("./src/libmongoc/tests/"
+                                     "client_side_encryption_prose/external/"
+                                     "external-schema.json");
+   schema_map = BCON_NEW ("db.coll", BCON_DOCUMENT (schema));
+
+   /* Create a MongoClient with encryption enabled */
+   client_encrypted = test_framework_client_new ();
+   extra =
+      BCON_NEW ("mongocryptdBypassSpawn",
+                BCON_BOOL (true),
+                "mongocryptdSpawnArgs",
+                "[",
+                "--pidfilepath=bypass-spawning-mongocryptd.pid",
+                "--port=27021",
+                "]",
+                "mongocryptdURI",
+                "mongodb://localhost:27021/?serverSelectionTimeoutMS=1000");
+   mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra);
+   mongoc_auto_encryption_opts_set_schema_map (auto_encryption_opts,
+                                               schema_map);
+   bson_destroy (extra);
+   ret = mongoc_client_enable_auto_encryption (
+      client_encrypted, auto_encryption_opts, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   /* Insert { 'encrypt': 'test' }. Should fail with a server selection error.
+    */
+   coll = mongoc_client_get_collection (client_encrypted, "db", "coll");
+   doc_to_insert = BCON_NEW ("encrypt", "test");
+   ret = mongoc_collection_insert_one (
+      coll, doc_to_insert, NULL /* opts */, NULL /* reply */, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "mongocryptd error: No suitable servers found");
+
+   _check_mongocryptd_not_spawned ();
+   bson_destroy (schema_map);
+   bson_destroy (schema);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client_encrypted);
+   bson_destroy (doc_to_insert);
+   mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
+   bson_destroy (kms_providers);
+}
+
+static void
+test_bypass_spawning_via_bypassAutoEncryption (void *unused)
+{
+   mongoc_client_t *client_encrypted;
+   mongoc_auto_encryption_opts_t *auto_encryption_opts;
+   bson_t *kms_providers;
+   bson_t *doc_to_insert;
+   bson_t *extra;
+   bool ret;
+   bson_error_t error;
+   mongoc_collection_t *coll;
+
+   auto_encryption_opts = mongoc_auto_encryption_opts_new ();
+   kms_providers = _make_kms_providers (false /* aws */, true /* local */);
+   mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
+                                                  kms_providers);
+   mongoc_auto_encryption_opts_set_keyvault_namespace (
+      auto_encryption_opts, "admin", "datakeys");
+   mongoc_auto_encryption_opts_set_bypass_auto_encryption (auto_encryption_opts,
+                                                           true);
+
+   /* Create a MongoClient with encryption enabled */
+   client_encrypted = test_framework_client_new ();
+   extra = BCON_NEW ("mongocryptdSpawnArgs",
+                     "[",
+                     "--pidfilepath=bypass-spawning-mongocryptd.pid",
+                     "--port=27021",
+                     "]");
+   mongoc_auto_encryption_opts_set_extra (auto_encryption_opts, extra);
+   bson_destroy (extra);
+   ret = mongoc_client_enable_auto_encryption (
+      client_encrypted, auto_encryption_opts, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   /* Insert { 'encrypt': 'test' }. Should succeed. */
+   coll = mongoc_client_get_collection (client_encrypted, "db", "coll");
+   doc_to_insert = BCON_NEW ("unencrypted", "test");
+   ret = mongoc_collection_insert_one (
+      coll, doc_to_insert, NULL /* opts */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   _check_mongocryptd_not_spawned ();
+
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client_encrypted);
+   bson_destroy (doc_to_insert);
+   mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
+   bson_destroy (kms_providers);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -1861,6 +2000,22 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8,
                       test_framework_skip_if_offline /* requires AWS */);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/bypass_spawning_mongocryptd/"
+                      "mongocryptdBypassSpawn",
+                      test_bypass_spawning_via_mongocryptdBypassSpawn,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/bypass_spawning_mongocryptd/"
+                      "bypassAutoEncryption",
+                      test_bypass_spawning_via_bypassAutoEncryption,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
    /* Other, C driver specific, tests. */
    TestSuite_AddFull (suite,
                       "/client_side_encryption/single_and_pool_mismatches",
