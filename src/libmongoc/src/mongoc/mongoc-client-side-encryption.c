@@ -945,7 +945,7 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
       exit (EXIT_SUCCESS);
    }
 
-   /* TODO: Depending on the outcome of MONGOCRYPT-115, possibly change the
+   /* If we later decide to change the working directory for the pid file path, possibly change the
     * process's working directory with chdir like: `chdir (default_pid_path)`.
     * Currently pid file ends up in application's working directory. */
 
