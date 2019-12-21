@@ -5,6 +5,7 @@ project (libmongoc C)
 set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../build/cmake)
 
 include (InstallRequiredSystemLibraries)
+include (CheckStructHasMember)
 
 message ("libmongoc version (from VERSION_CURRENT file): ${MONGOC_VERSION}")
 
