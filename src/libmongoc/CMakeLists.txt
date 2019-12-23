@@ -961,8 +961,10 @@ mongoc_add_example (common-operations TRUE ${PROJECT_SOURCE_DIR}/examples/common
 mongoc_add_example (fam TRUE ${PROJECT_SOURCE_DIR}/examples/find_and_modify_with_opts/fam.c)
 
 if (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
-   mongoc_add_example (client-side-encryption-tour TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-tour.c)
-   mongoc_add_example (client-side-encryption-options-tour TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-options-tour.c)
+   mongoc_add_example (client-side-encryption-schema-map TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-schema-map.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
+   mongoc_add_example (client-side-encryption-server-schema TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-server-schema.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
+   mongoc_add_example (client-side-encryption-explicit TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-explicit.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
+   mongoc_add_example (client-side-encryption-auto-decryption TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
 endif ()
 
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)
