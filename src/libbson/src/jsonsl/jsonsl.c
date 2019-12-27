@@ -284,13 +284,15 @@ jsonsl_feed(jsonsl_t jsn, const jsonsl_char_t *bytes, size_t nbytes)
         INVOKE_ERROR(HKEY_EXPECTED); \
     }
 
-#define VERIFY_SPECIAL(lit) \
-        if (CUR_CHAR != (lit)[jsn->pos - state->pos_begin]) { \
+#define VERIFY_SPECIAL(lit, lit_len) \
+        if ((jsn->pos - state->pos_begin) > lit_len \
+                || CUR_CHAR != (lit)[jsn->pos - state->pos_begin]) { \
             INVOKE_ERROR(SPECIAL_EXPECTED); \
         }
 
-#define VERIFY_SPECIAL_CI(lit) \
-        if (tolower(CUR_CHAR) != (lit)[jsn->pos - state->pos_begin]) { \
+#define VERIFY_SPECIAL_CI(lit, lit_len) \
+        if ((jsn->pos - state->pos_begin) > lit_len \
+                || tolower(CUR_CHAR) != (lit)[jsn->pos - state->pos_begin]) { \
             INVOKE_ERROR(SPECIAL_EXPECTED); \
         }
 
@@ -440,18 +442,18 @@ jsonsl_feed(jsonsl_t jsn, const jsonsl_char_t *bytes, size_t nbytes)
 
                 /* Verify TRUE, FALSE, NULL */
                 if (state->special_flags == JSONSL_SPECIALf_TRUE) {
-                    VERIFY_SPECIAL("true");
+                    VERIFY_SPECIAL("true", 4 /* strlen("true") */);
                 } else if (state->special_flags == JSONSL_SPECIALf_FALSE) {
-                    VERIFY_SPECIAL("false");
+                    VERIFY_SPECIAL("false", 5 /* strlen("false") */);
                 } else if (state->special_flags == JSONSL_SPECIALf_NULL) {
-                    VERIFY_SPECIAL("null");
+                    VERIFY_SPECIAL("null", 4 /* strlen("null") */);
 #ifdef JSONSL_PARSE_NAN
                 } else if (state->special_flags == JSONSL_SPECIALf_POS_INF) {
-                    VERIFY_SPECIAL_CI("infinity");
+                    VERIFY_SPECIAL_CI("infinity", 8 /* strlen("infinity") */);
                 } else if (state->special_flags == JSONSL_SPECIALf_NEG_INF) {
-                    VERIFY_SPECIAL_CI("-infinity");
+                    VERIFY_SPECIAL_CI("-infinity", 9 /* strlen("-infinity") */);
                 } else if (state->special_flags == JSONSL_SPECIALf_NAN) {
-                    VERIFY_SPECIAL_CI("nan");
+                    VERIFY_SPECIAL_CI("nan", 3 /* strlen("nan") */);
                 } else if (state->special_flags & JSONSL_SPECIALf_NULL ||
                            state->special_flags & JSONSL_SPECIALf_NAN) {
                    /* previous char was "n", are we parsing null or nan? */
