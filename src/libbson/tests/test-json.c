@@ -923,6 +923,22 @@ test_bson_json_read (void)
 }
 
 static void
+test_bson_json_read_invalid_base64 (void)
+{
+   const char *bad_json = "{ \"x\": { \"$binary\": {\"subType\": \"00\", "
+                          "\"base64\": \"\x30\x30\x30\x30\xcd\x8d\x79\" }}}";
+   bson_error_t error = {0};
+
+   BSON_ASSERT (!bson_new_from_json ((uint8_t *) bad_json, -1, &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      BSON_ERROR_JSON,
+      BSON_JSON_ERROR_READ_INVALID_PARAM,
+      "Invalid input string \"\x30\x30\x30\x30\xcd\x8d\x79\", looking for "
+      "base64-encoded binary");
+}
+
+static void
 test_bson_json_read_raw_utf8 (void)
 {
    bson_t *bson;
@@ -2887,6 +2903,9 @@ test_json_install (TestSuite *suite)
    TestSuite_Add (suite, "/bson/json/read/bad_cb", test_bson_json_read_bad_cb);
    TestSuite_Add (
       suite, "/bson/json/read/invalid", test_bson_json_read_invalid);
+   TestSuite_Add (suite,
+                  "/bson/json/read/invalid_base64",
+                  test_bson_json_read_invalid_base64);
    TestSuite_Add (
       suite, "/bson/json/read/raw_utf8", test_bson_json_read_raw_utf8);
    TestSuite_Add (
