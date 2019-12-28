@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hello_mongoc", "hello_mongoc.vcxproj", "{5B467525-E57F-3DBB-95BF-0D47C8F02F32}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+		MinSizeRel|x64 = MinSizeRel|x64
+		RelWithDebInfo|x64 = RelWithDebInfo|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5B467525-E57F-3DBB-95BF-0D47C8F02F32}.Debug|x64.ActiveCfg = Debug|x64
+		{5B467525-E57F-3DBB-95BF-0D47C8F02F32}.Debug|x64.Build.0 = Debug|x64
+		{5B467525-E57F-3DBB-95BF-0D47C8F02F32}.Release|x64.ActiveCfg = Release|x64
+		{5B467525-E57F-3DBB-95BF-0D47C8F02F32}.Release|x64.Build.0 = Release|x64
+		{5B467525-E57F-3DBB-95BF-0D47C8F02F32}.MinSizeRel|x64.ActiveCfg = MinSizeRel|x64
+		{5B467525-E57F-3DBB-95BF-0D47C8F02F32}.MinSizeRel|x64.Build.0 = MinSizeRel|x64
+		{5B467525-E57F-3DBB-95BF-0D47C8F02F32}.RelWithDebInfo|x64.ActiveCfg = RelWithDebInfo|x64
+		{5B467525-E57F-3DBB-95BF-0D47C8F02F32}.RelWithDebInfo|x64.Build.0 = RelWithDebInfo|x64
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DA0D97BB-8251-3A88-86EB-D312C083201D}
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

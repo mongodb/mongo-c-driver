@@ -700,7 +700,7 @@ target_include_directories (mongoc_shared PRIVATE ${PRIVATE_ZLIB_INCLUDES})
 target_compile_definitions (mongoc_shared PRIVATE MONGOC_COMPILATION)
 
 set_target_properties (mongoc_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
-set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}" PREFIX "lib")
+set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}")
 
 if (MONGOC_ENABLE_STATIC)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
@@ -991,6 +991,33 @@ install (
    INCLUDES DESTINATION ${MONGOC_HEADER_INSTALL_DIR}
    FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+if (MSVC)
+   add_custom_command (
+      TARGET mongoc_shared
+      POST_BUILD
+      COMMAND cd \"$<TARGET_LINKER_FILE_DIR:mongoc_shared>\"
+      COMMAND copy $<TARGET_LINKER_FILE_NAME:mongoc_shared> lib$<TARGET_LINKER_FILE_NAME:mongoc_shared>
+      COMMENT "Creating copy with 'lib' prefix"
+   )
+   install (
+      FILES $<TARGET_LINKER_FILE_DIR:mongoc_shared>/lib$<TARGET_LINKER_FILE_NAME:mongoc_shared>
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   )
+   if (TARGET mongoc_static)
+      add_custom_command (
+         TARGET mongoc_static
+         POST_BUILD
+         COMMAND cd \"$<TARGET_LINKER_FILE_DIR:mongoc_static>\"
+         COMMAND copy $<TARGET_LINKER_FILE_NAME:mongoc_static> lib$<TARGET_LINKER_FILE_NAME:mongoc_static>
+         COMMENT "Creating copy with 'lib' prefix"
+      )
+      install (
+         FILES $<TARGET_LINKER_FILE_DIR:mongoc_static>/lib$<TARGET_LINKER_FILE_NAME:mongoc_static>
+         DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      )
+   endif ()
+endif ()
 
 install (
    FILES ${HEADERS}

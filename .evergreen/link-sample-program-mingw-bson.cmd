@@ -40,10 +40,12 @@ if errorlevel 1 (
    exit /B 1
 )
 
+set MINGW=1
 call ..\.evergreen\check-installed-files-bson.bat
 if errorlevel 1 (
    exit /B 1
 )
+set MINGW=
 
 if not exist %INSTALL_DIR%\lib\libbson-static-1.0.a (
   echo libbson-static-1.0.a missing!

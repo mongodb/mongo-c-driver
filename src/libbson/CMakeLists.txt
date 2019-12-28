@@ -231,7 +231,7 @@ set (CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_compile_definitions (bson_shared PRIVATE BSON_COMPILATION JSONSL_PARSE_NAN)
 target_include_directories (bson_shared INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src/bson>)
 set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
-set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}" PREFIX "lib")
+set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}")
 
 if (ENABLE_APPLE_FRAMEWORK)
    set_target_properties(bson_shared PROPERTIES
@@ -335,6 +335,33 @@ install (
    INCLUDES DESTINATION ${BSON_HEADER_INSTALL_DIR}
    FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+if (MSVC)
+   add_custom_command (
+      TARGET bson_shared
+      POST_BUILD
+      COMMAND cd \"$<TARGET_LINKER_FILE_DIR:bson_shared>\"
+      COMMAND copy $<TARGET_LINKER_FILE_NAME:bson_shared> lib$<TARGET_LINKER_FILE_NAME:bson_shared>
+      COMMENT "Creating copy with 'lib' prefix"
+   )
+   install (
+      FILES $<TARGET_LINKER_FILE_DIR:bson_shared>/lib$<TARGET_LINKER_FILE_NAME:bson_shared>
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+   )
+   if (TARGET bson_static)
+      add_custom_command (
+         TARGET bson_static
+         POST_BUILD
+         COMMAND cd \"$<TARGET_LINKER_FILE_DIR:bson_static>\"
+         COMMAND copy $<TARGET_LINKER_FILE_NAME:bson_static> lib$<TARGET_LINKER_FILE_NAME:bson_static>
+         COMMENT "Creating copy with 'lib' prefix"
+      )
+      install (
+         FILES $<TARGET_LINKER_FILE_DIR:bson_static>/lib$<TARGET_LINKER_FILE_NAME:bson_static>
+         DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      )
+   endif ()
+endif ()
 
 install (
    FILES ${HEADERS}

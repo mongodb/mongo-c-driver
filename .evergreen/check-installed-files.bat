@@ -4,12 +4,34 @@ rem link-sample-program-mingw.bat
 echo off
 
 rem Notice that the dll goes in "bin".
-set DLL=%INSTALL_DIR%\bin\libmongoc-1.0.dll
-if not exist %DLL% (
-  echo %DLL% is missing!
-  exit /B 1
+set DLL=%INSTALL_DIR%\bin\mongoc-1.0.dll
+set LIB_DLL=%INSTALL_DIR%\bin\libmongoc-1.0.dll
+set LIB_LIB=%INSTALL_DIR%\lib\libmongoc-1.0.lib
+if "%MINGW%"=="1" (
+  if not exist %LIB_DLL% (
+    echo %LIB_DLL% is missing!
+    exit /B 1
+  ) else (
+    echo libmongoc-1.0.dll check ok
+  )
+  if exist %DLL% (
+    echo %DLL% is present and should not be!
+    exit /B 1
+  )
 ) else (
-  echo libmongoc-1.0.dll check ok
+  if not exist %DLL% (
+    echo %DLL% is missing!
+    exit /B 1
+  ) else (
+    echo mongoc-1.0.dll check ok
+  )
+  rem When the "lib"-prefixed artifacts are removed (CDRIVER-3450), flip this test
+  if not exist %LIB_LIB% (
+    echo %LIB_LIB% is missing!
+    exit /B 1
+  ) else (
+    echo libmongoc-1.0.lib check ok
+  )
 )
 if not exist %INSTALL_DIR%\lib\pkgconfig\libmongoc-1.0.pc (
   echo libmongoc-1.0.pc missing!
