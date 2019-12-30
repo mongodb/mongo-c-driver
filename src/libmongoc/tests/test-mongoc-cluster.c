@@ -2,6 +2,7 @@
 #include <mongoc/mongoc.h>
 
 #include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-client-pool-private.h"
 #include "mongoc/mongoc-uri-private.h"
 
 #include "mock_server/mock-server.h"
@@ -852,8 +853,7 @@ _test_cluster_time_comparison (bool pooled)
 
    if (pooled) {
       /* a pooled client handshakes its own connection */
-      request =
-         mock_server_receives_msg (server, 0, tmp_bson ("{'ismaster': 1}"));
+      request = mock_server_receives_ismaster (server);
       replies_with_cluster_time (request, 1, 1, ismaster);
    }
 
@@ -1553,6 +1553,187 @@ test_advanced_cluster_time_not_sent_to_standalone (void)
    mock_server_destroy (server);
 }
 
+/* Responds properly to isMaster, hangs up on serverStatus, and replies {ok:1}
+ * to everything else. */
+static bool
+_responder (request_t *req, void *data)
+{
+   char *ismaster;
+
+   ismaster = (char *) data;
+   if (0 == strcmp (req->command_name, "isMaster")) {
+      mock_server_replies_simple (req, ismaster);
+      request_destroy (req);
+      return true;
+   } else if (0 == strcmp (req->command_name, "serverStatus")) {
+      mock_server_hangs_up (req);
+      request_destroy (req);
+      return true;
+   }
+
+   /* Otherwise, reply {ok:1} */
+   mock_server_replies_ok_and_destroys (req);
+   return true;
+}
+
+static mongoc_stream_t *
+_initiator_fn (const mongoc_uri_t *uri,
+               const mongoc_host_list_t *host,
+               void *user_data,
+               bson_error_t *error)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   bool ret;
+   bson_t *cmd;
+   bson_error_t ss_error;
+   mongoc_stream_t *stream;
+
+   cmd = BCON_NEW ("serverStatus", BCON_INT32 (1));
+   pool = (mongoc_client_pool_t *) user_data;
+   client = mongoc_client_pool_pop (pool);
+
+   /* Hide warnings that get logged from network errors. */
+   capture_logs (true);
+   ret =
+      mongoc_client_command_simple (client, "db", cmd, NULL, NULL, &ss_error);
+   capture_logs (false);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (ss_error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_SOCKET,
+                          "socket error or timeout");
+   stream = mongoc_client_default_stream_initiator (uri, host, client, error);
+   ASSERT_OR_PRINT (stream != NULL, (*error));
+   mongoc_client_pool_push (pool, client);
+   bson_destroy (cmd);
+   return stream;
+}
+
+static void
+_test_ismaster_on_unknown (char *ismaster)
+{
+   mock_server_t *mock_server;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bool ret;
+   mongoc_uri_t *uri;
+
+   mock_server = mock_server_new ();
+   mock_server_run (mock_server);
+   mock_server_autoresponds (mock_server, _responder, ismaster, NULL);
+
+   uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
+
+   /* Add a placeholder additional host, so the topology type can be SHARDED.
+    * The host will get removed on the first failed ismaster. */
+   ret = mongoc_uri_upsert_host (uri, "localhost", 12345, &error);
+   ASSERT_OR_PRINT (ret, error);
+   pool = mongoc_client_pool_new (uri);
+
+   client = mongoc_client_pool_pop (pool);
+
+   mongoc_client_set_stream_initiator (client, _initiator_fn, pool);
+
+   /* The other client marked the server as unknown after this client selected
+    * the server and created a stream, but *before* constructing the initial
+    * ismaster. This reproduces the crash reported in CDRIVER-3404. */
+   ret = mongoc_client_command_simple (
+      client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+
+   mongoc_uri_destroy (uri);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mock_server_destroy (mock_server);
+}
+
+void
+test_ismaster_on_unknown (void)
+{
+   /* Test with pre-OP_MSG to test fix to CDRIVER-3404. */
+   _test_ismaster_on_unknown ("{ 'ok': 1.0, 'ismaster': true, "
+                              "'minWireVersion': 0, 'maxWireVersion': 5, "
+                              "'msg': 'isdbgrid'}");
+
+   /* Test with OP_MSG. */
+   _test_ismaster_on_unknown ("{ 'ok': 1.0, 'ismaster': true, "
+                              "'minWireVersion': 0, 'maxWireVersion': 8, "
+                              "'msg': 'isdbgrid'}");
+}
+
+
+/* Test what happens when running a command directly on a server (by passing an
+ * explicit server id) that is marked as "unknown" in the topology description.
+ * Prior to the bug fix of CDRIVER-3404, a pooled client would erroneously
+ * attempt to send the command. */
+void
+_test_cmd_on_unknown_serverid (bool pooled)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   bson_error_t error;
+   bool ret;
+
+   if (pooled) {
+      pool = test_framework_client_pool_new ();
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new ();
+   }
+
+   ret = mongoc_client_command_simple_with_server_id (client,
+                                                      "admin",
+                                                      tmp_bson ("{'ping': 1}"),
+                                                      NULL /* read prefs */,
+                                                      1,
+                                                      NULL /* reply */,
+                                                      &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   /* Invalidate the server, giving it the server type MONGOC_SERVER_UNKNOWN */
+   mongoc_topology_invalidate_server (client->topology, 1, &error);
+
+   /* The next command is attempted directly on the unknown server and should
+    * result in an error. */
+   ret = mongoc_client_command_simple_with_server_id (client,
+                                                      "admin",
+                                                      tmp_bson ("{'ping': 1}"),
+                                                      NULL /* read prefs */,
+                                                      1,
+                                                      NULL /* reply */,
+                                                      &error);
+   BSON_ASSERT (!ret);
+   if (!pooled) {
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_CONNECT,
+                             "unknown error calling ismaster")
+   } else {
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "Cannot assemble command for invalidated server")
+   }
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
+void
+test_cmd_on_unknown_serverid (void)
+{
+   _test_cmd_on_unknown_serverid (false /* pooled */);
+   _test_cmd_on_unknown_serverid (true /* pooled */);
+}
+
+
 void
 test_cluster_install (TestSuite *suite)
 {
@@ -1688,4 +1869,8 @@ test_cluster_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/command_error/op_query",
                                 test_cluster_command_error_op_query);
+   TestSuite_AddMockServerTest (
+      suite, "/Cluster/ismaster_on_unknown/mock", test_ismaster_on_unknown);
+   TestSuite_AddLive (
+      suite, "/Cluster/cmd_on_unknown_serverid", test_cmd_on_unknown_serverid);
 }

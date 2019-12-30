@@ -795,7 +795,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
                              bson_error_t *error)
 {
    const bson_t *command;
-   mongoc_cmd_parts_t parts;
+   mongoc_cmd_t ismaster_cmd;
    bson_t reply;
    int64_t start;
    int64_t rtt_msec;
@@ -827,11 +827,19 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
       RETURN (NULL);
    }
 
-   mongoc_cmd_parts_init (
-      &parts, cluster->client, "admin", MONGOC_QUERY_SLAVE_OK, command);
-   parts.prohibit_lsid = true;
-   if (!mongoc_cluster_run_command_parts (
-          cluster, server_stream, &parts, &reply, error)) {
+   /* Always use OP_QUERY for the isMaster handshake, regardless of whether the
+    * last known ismaster indicates the server supports a newer wire protocol.
+    */
+   server_stream->sd->max_wire_version = WIRE_VERSION_MIN;
+   memset (&ismaster_cmd, 0, sizeof (ismaster_cmd));
+   ismaster_cmd.db_name = "admin";
+   ismaster_cmd.command = command;
+   ismaster_cmd.command_name = _mongoc_get_command_name (command);
+   ismaster_cmd.query_flags = MONGOC_QUERY_SLAVE_OK;
+   ismaster_cmd.server_stream = server_stream;
+
+   if (!mongoc_cluster_run_command_private (
+          cluster, &ismaster_cmd, &reply, error)) {
       if (negotiate_sasl_supported_mechs) {
          if (bson_iter_init_find (&iter, &reply, "ok") &&
              !bson_iter_as_bool (&iter)) {

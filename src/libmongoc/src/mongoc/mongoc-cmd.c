@@ -806,6 +806,19 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    server_type = server_stream->sd->type;
    cs = parts->prohibit_lsid ? NULL : parts->assembled.session;
 
+   /* Assembling the command depends on the type of server. If the server has
+    * been invalidated, error. */
+   if (server_type == MONGOC_SERVER_UNKNOWN) {
+      if (error) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot assemble command for invalidated server: %s",
+                         server_stream->sd->error.message);
+      }
+      RETURN (false);
+   }
+
    /* must not be assembled already */
    BSON_ASSERT (!parts->assembled.command);
    BSON_ASSERT (bson_empty (&parts->assembled_body));
