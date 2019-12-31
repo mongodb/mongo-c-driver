@@ -1056,3 +1056,11 @@ test_suite_mock_server_log (const char *msg, ...)
 
    bson_mutex_unlock (&gTestMutex);
 }
+
+bool
+TestSuite_NoFork (TestSuite *suite) {
+   if (suite->flags & TEST_NOFORK) {
+      return true;
+   }
+   return false;
+}

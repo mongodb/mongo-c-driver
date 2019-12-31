@@ -587,7 +587,9 @@ test_oid_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/bson/oid/counter_overflow", test_bson_oid_counter_overflow);
 #ifndef _WIN32
-   TestSuite_Add (suite, "/bson/oid/after_fork", test_bson_oid_after_fork);
+   if (!TestSuite_NoFork (suite)) {
+      TestSuite_Add (suite, "/bson/oid/after_fork", test_bson_oid_after_fork);
+   }
 #endif
    TestSuite_Add (suite, "/bson/oid/hostnames", test_bson_hostnames);
 }

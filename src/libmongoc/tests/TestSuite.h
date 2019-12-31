@@ -709,6 +709,9 @@ test_suite_valgrind (void);
 void
 test_suite_mock_server_log (const char *msg, ...);
 
+bool
+TestSuite_NoFork (TestSuite *suite);
+
 #ifdef __cplusplus
 }
 #endif
