@@ -143,7 +143,6 @@ A build configuration description similar to the one above will be displayed, th
 
 .. code-block:: none
 
-  $ make
   $ sudo make install
 
 There are two ways to uninstall the components that have been installed.  The first is to invoke the uninstall program directly.  On Linux/Unix:
@@ -156,7 +155,7 @@ On Windows:
 
 .. code-block:: none
 
-  C:\Users\user> C:\mongo-c-driver\share\mongo-c-driver\uninstall.bat
+  $ C:\mongo-c-driver\share\mongo-c-driver\uninstall.bat
 
 The second way to uninstall is from within the build directory, assuming that it is in the exact same state as when the install command was invoked:
 
@@ -180,7 +179,6 @@ Clone the repository and build the current master or a particular release tag:
   $ mkdir cmake-build
   $ cd cmake-build
   $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..
-  $ make
   $ sudo make install
 
 Generating the documentation
@@ -228,6 +226,7 @@ Build and install the driver:
   $ mkdir cmake-build
   $ cd cmake-build
   $ cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF ..
+  $ make install
 
 All of the same variations described above (e.g., building only libbson, building documentation, etc.) are available when building on macOS.
 
@@ -242,13 +241,13 @@ Let's start by generating Visual Studio project files. The following assumes we 
 
 .. parsed-literal::
 
-  cd mongo-c-driver-x.y.z
-  mkdir cmake-build
-  cd cmake-build
-  cmake -G "Visual Studio 14 2015 Win64" \\
-    "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
-    "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver" \\
-    ..
+  $ cd mongo-c-driver-x.y.z
+  $ mkdir cmake-build
+  $ cd cmake-build
+  $ cmake -G "Visual Studio 14 2015 Win64" \\
+      "-DCMAKE_INSTALL_PREFIX=C:\\mongo-c-driver" \\
+      "-DCMAKE_PREFIX_PATH=C:\\mongo-c-driver" \\
+      ..
 
 (Run ``cmake -LH ..`` for a list of other options.)
 
@@ -256,13 +255,13 @@ Now that we have project files generated, we can either open the project in Visu
 
 .. code-block:: none
 
-  msbuild.exe /p:Configuration=RelWithDebInfo ALL_BUILD.vcxproj
+  $ msbuild.exe /p:Configuration=RelWithDebInfo ALL_BUILD.vcxproj
 
 Visual Studio's default build type is ``Debug``, but we recommend a release build with debug info for production use. Now that libmongoc and libbson are compiled, let's install them using msbuild. It will be installed to the path specified by ``CMAKE_INSTALL_PREFIX``.
 
 .. code-block:: none
 
-  msbuild.exe INSTALL.vcxproj
+  $ msbuild.exe INSTALL.vcxproj
 
 You should now see libmongoc and libbson installed in ``C:\mongo-c-driver``
 
@@ -277,19 +276,27 @@ Open the MingGW shell with ``c:\msys64\ming64.exe`` (not the msys2_shell). Insta
 
 .. code-block:: none
 
-  pacman --noconfirm -Syu
-  pacman --noconfirm -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake
-  pacman --noconfirm -S mingw-w64-x86_64-extra-cmake-modules make tar
-  pacman --noconfirm -S mingw64/mingw-w64-x86_64-cyrus-sasl
+  $ pacman --noconfirm -Syu
+  $ pacman --noconfirm -S mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake
+  $ pacman --noconfirm -S mingw-w64-x86_64-extra-cmake-modules make tar
+  $ pacman --noconfirm -S mingw64/mingw-w64-x86_64-cyrus-sasl
 
-Download and untar the latest tarball, enter its directory, and build with CMake:
+Download and untar the latest tarball.
 
 .. code-block:: none
 
-  mkdir cmake-build
-  cd cmake-build
-  CC=/mingw64/bin/gcc.exe /mingw64/bin/cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="C:/mongo-c-driver" -DCMAKE_C_FLAGS="-D__USE_MINGW_ANSI_STDIO=1" ..
-  make
+  $ curl -LO https://github.com/mongodb/mongo-c-driver/releases/download/x.y.z/mongo-c-driver-x.y.z.tar.gz
+  $ tar xzf mongo-c-driver-x.y.z.tar.gz
+  $ cd mongo-c-driver-x.y.z
+
+Create a build directory and build and install with cmake:
+
+.. code-block:: none
+
+  $ mkdir cmake-build
+  $ cd cmake-build
+  $ CC=/mingw64/bin/gcc.exe /mingw64/bin/cmake -G "MSYS Makefiles" -DCMAKE_INSTALL_PREFIX="C:/mongo-c-driver" -DCMAKE_C_FLAGS="-D__USE_MINGW_ANSI_STDIO=1" ..
+  $ make install
 
 Additional Options for Integrators
 ----------------------------------
@@ -298,8 +305,8 @@ In the event that you are building the BSON library and/or the C driver to embed
 
 .. code-block:: none
 
-  mkdir cmake-build
-  cd cmake-build
-  cmake -DBSON_OUTPUT_BASENAME=custom_bson -DMONGOC_OUTPUT_BASENAME=custom_mongoc ..
+  $ mkdir cmake-build
+  $ cd cmake-build
+  $ cmake -DBSON_OUTPUT_BASENAME=custom_bson -DMONGOC_OUTPUT_BASENAME=custom_mongoc ..
 
 The above command would produce libraries named ``libcustom_bson.so`` and ``libcustom_mongoc.so`` (or with the extension appropriate for the build platform).  Those libraries could be placed in a standard system directory or in an alternate location and could be linked to by specifying something like ``-lcustom_mongoc -lcustom_bson`` on the linker command line (possibly adjusting the specific flags to those required by your linker).
