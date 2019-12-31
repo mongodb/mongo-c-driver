@@ -10,10 +10,15 @@ set +o xtrace   # Don't echo commands
 # AUTH_CROSSREALM=${auth_crossrealm} # Evergreen variable
 # AUTH_GSSAPI_UTF8=${auth_gssapi_utf8} # Evergreen variable
 # ATLAS_FREE=${atlas_free} # Evergreen variable
+# ATLAS_FREE_SRV=${atlas_free_srv} # Evergreen variable
 # ATLAS_REPLSET=${atlas_replset} # Evergreen variable
+# ATLAS_REPLSET_SRV=${atlas_replset_srv} # Evergreen variable
 # ATLAS_SHARD=${atlas_shard} # Evergreen variable
+# ATLAS_SHARD_SRV=${atlas_shard_srv} # Evergreen variable
 # ATLAS_TLS11=${atlas_tls11} # Evergreen variable
+# ATLAS_TLS11_SRV=${atlas_tls11_srv} # Evergreen variable
 # ATLAS_TLS12=${atlas_tls12} # Evergreen variable
+# ATLAS_TLS12_SRV=${atlas_tls12_srv} # Evergreen variable
 # REQUIRE_TLS12=${require_tls12} # libmongoc requires TLS 1.2+
 # OBSOLETE_TLS=${obsolete_tls} # libmongoc was built with old TLS lib, don't try connecting to Atlas
 # VALGRIND=${valgrind} # Whether to run with valgrind
@@ -87,16 +92,26 @@ if [ $SSL -eq 1 ]; then
    if [ "${OBSOLETE_TLS}" != "true" ]; then
       echo "Connecting to Atlas Free Tier"
       $PING "$ATLAS_FREE&${C_TIMEOUT}"
+      echo "Connecting to Atlas Free Tier with SRV"
+      $PING "$ATLAS_FREE_SRV&${C_TIMEOUT}"
       echo "Connecting to Atlas Replica Set"
       $PING "$ATLAS_REPLSET&${C_TIMEOUT}"
+      echo "Connecting to Atlas Replica Set with SRV"
+      $PING "$ATLAS_REPLSET_SRV${C_TIMEOUT}"
       echo "Connecting to Atlas Sharded Cluster"
       $PING "$ATLAS_SHARD&${C_TIMEOUT}"
+      echo "Connecting to Atlas Sharded Cluster with SRV"
+      $PING "$ATLAS_SHARD_SRV${C_TIMEOUT}"
       if [ -z "$REQUIRE_TLS12" ]; then
          echo "Connecting to Atlas with only TLS 1.1 enabled"
          $PING "$ATLAS_TLS11&${C_TIMEOUT}"
+         echo "Connecting to Atlas with only TLS 1.1 enabled with SRV"
+         $PING "$ATLAS_TLS11_SRV${C_TIMEOUT}"
       fi
       echo "Connecting to Atlas with only TLS 1.2 enabled"
       $PING "$ATLAS_TLS12&${C_TIMEOUT}"
+      echo "Connecting to Atlas with only TLS 1.2 enabled with SRV"
+      $PING "$ATLAS_TLS12_SRV${C_TIMEOUT}"
    fi
 fi
 

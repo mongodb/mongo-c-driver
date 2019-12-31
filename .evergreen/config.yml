@@ -451,7 +451,6 @@ functions:
   - command: shell.exec
     type: test
     params:
-      silent: true
       working_dir: mongoc
       shell: bash
       script: |-
@@ -463,10 +462,15 @@ functions:
         export AUTH_CROSSREALM='${auth_crossrealm}'
         export AUTH_GSSAPI_UTF8='${auth_gssapi_utf8}'
         export ATLAS_FREE='${atlas_free}'
+        export ATLAS_FREE_SRV='${atlas_free_srv}'
         export ATLAS_REPLSET='${atlas_replset}'
+        export ATLAS_REPLSET_SRV='${atlas_replset_srv}'
         export ATLAS_SHARD='${atlas_shard}'
+        export ATLAS_SHARD_SRV='${atlas_shard_srv}'
         export ATLAS_TLS11='${atlas_tls11}'
+        export ATLAS_TLS11_SRV='${atlas_tls11_srv}'
         export ATLAS_TLS12='${atlas_tls12}'
+        export ATLAS_TLS12_SRV='${atlas_tls12_srv}'
         export REQUIRE_TLS12='${require_tls12}'
         export OBSOLETE_TLS='${obsolete_tls}'
         export VALGRIND='${valgrind}'
