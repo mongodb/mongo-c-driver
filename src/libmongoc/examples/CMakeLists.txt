@@ -3,6 +3,11 @@ file (GLOB_RECURSE src_libmongoc_examples_DIST_cs
    ${CMAKE_CURRENT_SOURCE_DIR}
    *.c
 )
+file (GLOB_RECURSE src_libmongoc_examples_DIST_hs
+   RELATIVE
+   ${CMAKE_CURRENT_SOURCE_DIR}
+   *.h
+)
 file (GLOB_RECURSE src_libmongoc_examples_DIST_shs
    RELATIVE
    ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14,5 +19,6 @@ set_dist_list (src_libmongoc_examples_DIST
    cmake/find_package/CMakeLists.txt
    cmake/find_package_static/CMakeLists.txt
    ${src_libmongoc_examples_DIST_cs}
+   ${src_libmongoc_examples_DIST_hs}
    ${src_libmongoc_examples_DIST_shs}
 )

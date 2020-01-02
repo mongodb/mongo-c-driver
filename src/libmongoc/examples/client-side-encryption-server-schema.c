@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "client-side-encryption-helpers.h"
+
 /* Helper method to create and return a JSON schema to use for encryption.
 The caller will use the returned schema for server-side encryption validation.
 */
