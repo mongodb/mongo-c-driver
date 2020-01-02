@@ -141,7 +141,7 @@ main (int argc, char **argv)
    /* Explicitly encrypt a field */
    encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
    mongoc_client_encryption_encrypt_opts_set_algorithm (
-      encrypt_opts, AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+      encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
    mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &datakey_id);
    to_encrypt.value_type = BSON_TYPE_UTF8;
    to_encrypt.value.v_utf8.str = "123456789";

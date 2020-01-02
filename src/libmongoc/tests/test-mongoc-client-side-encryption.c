@@ -472,7 +472,7 @@ test_datakey_and_double_encryption_creating_and_using (
    /* Call client_encryption.encrypt() with the value "hello local" */
    encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
    mongoc_client_encryption_encrypt_opts_set_algorithm (
-      encrypt_opts, AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+      encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
    mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
 
    hello = bson_strdup_printf ("hello %s", kms_provider);
@@ -518,7 +518,7 @@ test_datakey_and_double_encryption_creating_and_using (
     * key_alt_name of <kms provider>_altname. */
    encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
    mongoc_client_encryption_encrypt_opts_set_algorithm (
-      encrypt_opts, AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+      encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
    mongoc_client_encryption_encrypt_opts_set_keyaltname (encrypt_opts, altname);
 
    ret = mongoc_client_encryption_encrypt (client_encryption,
@@ -742,7 +742,7 @@ _test_key_vault (bool with_external_key_vault)
     * ``LOCALAAAAAAAAAAAAAAAAA==`` and deterministic algorithm. */
    encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
    mongoc_client_encryption_encrypt_opts_set_algorithm (
-      encrypt_opts, AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+      encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
    BSON_ASSERT (bson_iter_init_find (&iter, datakey, "_id"));
    keyid = bson_iter_value (&iter);
    mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, keyid);
@@ -877,7 +877,7 @@ test_custom_endpoint (void *unused)
 
    encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
    mongoc_client_encryption_encrypt_opts_set_algorithm (
-      encrypt_opts, AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+      encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
 
    /* No endpoint, expect to succeed. */
    masterkey = BCON_NEW ("region",
@@ -1103,10 +1103,10 @@ _corpus_copy_field (mongoc_client_encryption_t *client_encryption,
    encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
    if (0 == strcmp ("rand", field->algo)) {
       mongoc_client_encryption_encrypt_opts_set_algorithm (
-         encrypt_opts, AEAD_AES_256_CBC_HMAC_SHA_512_RANDOM);
+         encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_RANDOM);
    } else if (0 == strcmp ("det", field->algo)) {
       mongoc_client_encryption_encrypt_opts_set_algorithm (
-         encrypt_opts, AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
+         encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
    }
 
    if (0 == strcmp ("id", field->identifier)) {
