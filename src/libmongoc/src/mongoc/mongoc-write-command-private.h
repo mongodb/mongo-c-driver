@@ -80,6 +80,10 @@ typedef struct {
    bool must_stop; /* The stream may have been disconnected */
    bson_error_t error;
    uint32_t upsert_append_count;
+   /* If the command initially failed with a retryable write, and selected a new
+    * primary, this contains the server id of the newly selected primary. Only
+    * applies to OP_MSG. Is left at 0 if no retry occurs. */
+   uint32_t retry_server_id;
 } mongoc_write_result_t;
 
 

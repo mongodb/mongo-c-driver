@@ -378,11 +378,7 @@ mongoc_bulk_operation_insert_with_opts (mongoc_bulk_operation_t *bulk,
    }
 
    _mongoc_write_command_init_insert (
-      &command,
-      document,
-      &insert_opts.extra,
-      bulk->flags,
-      bulk->operation_id);
+      &command, document, &insert_opts.extra, bulk->flags, bulk->operation_id);
 
    _mongoc_array_append_val (&bulk->commands, command);
 
@@ -787,6 +783,11 @@ mongoc_bulk_operation_execute (mongoc_bulk_operation_t *bulk, /* IN */
                                      &bulk->result);
 
       bulk->server_id = server_stream->sd->id;
+      /* If a retryable error occurred and a new primary was selected, use it in
+       * subsequent commands. */
+      if (bulk->result.retry_server_id) {
+         bulk->server_id = bulk->result.retry_server_id;
+      }
 
       if (bulk->result.failed &&
           (bulk->flags.ordered || bulk->result.must_stop)) {

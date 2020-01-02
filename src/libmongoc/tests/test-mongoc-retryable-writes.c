@@ -571,6 +571,92 @@ test_all_spec_tests (TestSuite *suite)
                                        test_framework_skip_if_slow);
 }
 
+
+typedef struct {
+   int num_inserts;
+   int num_updates;
+} _tracks_new_server_counters_t;
+
+static void
+_tracks_new_server_cb (const mongoc_apm_command_started_t *event)
+{
+   const char *cmd_name;
+   _tracks_new_server_counters_t *counters;
+
+   cmd_name = mongoc_apm_command_started_get_command_name (event);
+   counters =
+      (_tracks_new_server_counters_t *) mongoc_apm_command_started_get_context (
+         event);
+
+   if (0 == strcmp (cmd_name, "insert")) {
+      counters->num_inserts++;
+   } else if (0 == strcmp (cmd_name, "update")) {
+      counters->num_updates++;
+   }
+}
+
+/* Tests that when a command within a bulk write succeeds after a retryable
+ * error, and selects a new server, it continues to use that server in
+ * subsequent commands. */
+static void
+test_bulk_retry_tracks_new_server (void *unused)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t error;
+   mongoc_read_prefs_t *read_prefs;
+   bool ret;
+   mongoc_server_description_t *sd;
+   mongoc_apm_callbacks_t *callbacks;
+   _tracks_new_server_counters_t counters = {0};
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, _tracks_new_server_cb);
+
+   client = test_framework_client_new ();
+   mongoc_client_set_apm_callbacks (client, callbacks, &counters);
+   collection = get_test_collection (client, "tracks_new_server");
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+
+   /* The bulk write contains two operations, an insert, followed by an update.
+    */
+   ret = mongoc_bulk_operation_insert_with_opts (
+      bulk, tmp_bson ("{'x': 1}"), NULL /* opts */, &error);
+   ASSERT_OR_PRINT (ret, error);
+   mongoc_bulk_operation_update_one (bulk,
+                                     tmp_bson ("{}"),
+                                     tmp_bson ("{'$inc': {'x': 1}}"),
+                                     false /* upsert */);
+
+   /* Explicitly tell the bulk write to use a secondary. That will result in a
+    * retryable error, causing the first command to be sent twice. */
+   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   sd = mongoc_client_select_server (
+      client, false /* for_writes */, read_prefs, &error);
+   ASSERT_OR_PRINT (sd, error);
+   mongoc_bulk_operation_set_hint (bulk, mongoc_server_description_id (sd));
+   ret = mongoc_bulk_operation_execute (bulk, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   /* The first insert fails with a retryable write error since it is sent to a
+    * secondary. The retry selects the primary and succeeds. The second command
+    * should use the newly selected server, so the update succeeds on the first
+    * try. */
+   ASSERT_CMPINT (counters.num_inserts, ==, 2);
+   ASSERT_CMPINT (counters.num_updates, ==, 1);
+   ASSERT_CMPINT (mongoc_bulk_operation_get_hint (bulk),
+                  !=,
+                  mongoc_server_description_id (sd));
+
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_server_description_destroy (sd);
+   mongoc_read_prefs_destroy (read_prefs);
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
 void
 test_retryable_writes_install (TestSuite *suite)
 {
@@ -617,4 +703,11 @@ test_retryable_writes_install (TestSuite *suite)
       "/retryable_writes/unsupported_storage_engine_error",
       test_unsupported_storage_engine_error,
       test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/retryable_writes/bulk_tracks_new_server",
+                      test_bulk_retry_tracks_new_server,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_not_rs_version_6,
+                      test_framework_skip_if_no_crypto);
 }

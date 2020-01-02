@@ -641,6 +641,12 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
    mongoc_cmd_parts_cleanup (&parts);
 
    if (retry_server_stream) {
+      if (ret) {
+         /* if a retry succeeded, report that in the result so bulk write can
+          * use the newly selected server. */
+         result->retry_server_id =
+            mongoc_server_description_id (retry_server_stream->sd);
+      }
       mongoc_server_stream_cleanup (retry_server_stream);
    }
 
