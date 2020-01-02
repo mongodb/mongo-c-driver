@@ -1247,11 +1247,8 @@ test_bson_validate (void)
                   12,
                   BSON_VALIDATE_NONE,
                   "corrupt BSON");
-   VALIDATE_TEST ("test59.bson",
-                  BSON_VALIDATE_NONE,
-                  9,
-                  BSON_VALIDATE_NONE,
-                  "corrupt BSON");
+   VALIDATE_TEST (
+      "test59.bson", BSON_VALIDATE_NONE, 9, BSON_VALIDATE_NONE, "corrupt BSON");
 
    /* DBRef validation */
    b = BCON_NEW ("my_dbref",
@@ -2373,6 +2370,81 @@ test_bson_iter_init_from_data_at_offset (void)
    }
 }
 
+static void
+_check_null_binary (bson_t *bson, bool is_legacy)
+{
+   const bson_value_t *original;
+   bson_value_t copy;
+   bson_iter_t iter;
+
+   BSON_ASSERT (bson_iter_init_find (&iter, bson, "binary"));
+   BSON_ASSERT (BSON_ITER_HOLDS_BINARY (&iter));
+   original = bson_iter_value (&iter);
+   ASSERT_CMPINT (original->value.v_binary.data_len, ==, 0);
+   /* Because v_binary.data points to the BSON buffer, data is not NULL */
+   BSON_ASSERT (original->value.v_binary.data != NULL);
+   /* But copying it results in a NULL value because it is empty, even if is
+    * legacy binary, (which appends the length in the data payload when
+    * appending). */
+   bson_value_copy (original, &copy);
+   BSON_ASSERT (copy.value.v_binary.data_len == 0);
+   BSON_ASSERT (copy.value.v_binary.data == NULL);
+   bson_value_destroy (&copy);
+}
+
+/* Check the behavior of what happens when that bson binary value is NULL. */
+static void
+_binary_null_handling (bool is_legacy)
+{
+   bson_value_t val;
+   bson_t *bson;
+   bson_error_t error;
+   bson_subtype_t subtype = BSON_SUBTYPE_BINARY;
+
+   if (is_legacy) {
+      subtype = BSON_SUBTYPE_BINARY_DEPRECATED;
+   }
+
+   bson = bson_new ();
+   BSON_ASSERT (bson_append_binary (bson, "binary", -1, subtype, NULL, 0));
+   _check_null_binary (bson, is_legacy);
+   bson_destroy (bson);
+
+   /* Appending NULL with non-zero length is an error */
+   bson = bson_new ();
+   BSON_ASSERT (!bson_append_binary (bson, "binary", -1, subtype, NULL, 1));
+   bson_destroy (bson);
+
+   bson = bson_new ();
+   val.value_type = BSON_TYPE_BINARY;
+   val.value.v_binary.subtype = subtype;
+   val.value.v_binary.data = NULL;
+   val.value.v_binary.data_len = 0;
+   BSON_ASSERT (bson_append_value (bson, "binary", -1, &val));
+   _check_null_binary (bson, is_legacy);
+   bson_destroy (bson);
+
+   bson = BCON_NEW ("binary", BCON_BIN (subtype, NULL, 0));
+   _check_null_binary (bson, is_legacy);
+   bson_destroy (bson);
+
+   bson = bson_new_from_json (
+      (uint8_t *) "{\"binary\": { \"$binary\": { \"subType\": \"00\", "
+                  "\"base64\": \"\" } } }",
+      -1,
+      &error);
+   ASSERT_OR_PRINT (bson, error);
+   _check_null_binary (bson, is_legacy);
+   bson_destroy (bson);
+}
+
+static void
+test_bson_binary_null_handling (void)
+{
+   _binary_null_handling (false /* is legacy */);
+   _binary_null_handling (true /* is legacy */);
+}
+
 void
 test_bson_install (TestSuite *suite)
 {
@@ -2465,4 +2537,6 @@ test_bson_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/bson/iter/init_from_data_at_offset",
                   test_bson_iter_init_from_data_at_offset);
+   TestSuite_Add (
+      suite, "/bson/value/null_handling", test_bson_binary_null_handling);
 }

@@ -337,9 +337,15 @@ _bson_append_va (bson_t *bson,              /* IN */
 
    do {
       n_pairs--;
-      memcpy (buf, data, data_len);
-      bson->len += data_len;
-      buf += data_len;
+      /* data may be NULL if data_len is 0. memcpy is not safe to call with NULL. */
+      if (BSON_LIKELY (data_len != 0 && data != NULL)) {
+         memcpy (buf, data, data_len);
+         bson->len += data_len;
+         buf += data_len;
+      } else if (BSON_UNLIKELY (data_len != 0 && data == NULL)) {
+         /* error, user appending NULL with non-zero length. */
+         return false;
+      }
 
       if (n_pairs) {
          data_len = va_arg (args, uint32_t);
@@ -813,7 +819,6 @@ bson_append_binary (bson_t *bson,           /* IN */
 
    BSON_ASSERT (bson);
    BSON_ASSERT (key);
-   BSON_ASSERT (binary);
 
    if (key_length < 0) {
       key_length = (int) strlen (key);
