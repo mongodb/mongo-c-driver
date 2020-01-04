@@ -3401,7 +3401,6 @@ example_func (mongoc_client_t *client)
    mongoc_client_session_destroy (cs);
 }
 /* End Transactions Retry Example 3 */
-/* clang-format off */
 
 static void
 test_sample_txn_commands (mongoc_client_t *client)
@@ -3429,6 +3428,149 @@ test_sample_txn_commands (mongoc_client_t *client)
    mongoc_collection_destroy (events);
 }
 
+static mongoc_client_t *
+get_client (void)
+{
+   return test_framework_client_new ();
+}
+
+static bool
+callback (mongoc_client_session_t *session,
+          void *ctx,
+          bson_t **reply,
+          bson_error_t *error);
+
+/* See additional usage of mongoc_client_session_with_transaction at
+ * http://mongoc.org/libmongoc/1.15.3/mongoc_client_session_with_transaction.html
+ */
+/* Start Transactions withTxn API Example 1 */
+static bool
+with_transaction_example (bson_error_t *error)
+{
+   mongoc_client_t *client = NULL;
+   mongoc_write_concern_t *wc = NULL;
+   mongoc_read_concern_t *rc = NULL;
+   mongoc_read_prefs_t *rp = NULL;
+   mongoc_collection_t *coll = NULL;
+   bool success = false;
+   bool ret = false;
+   bson_t *doc = NULL;
+   bson_t *insert_opts = NULL;
+   mongoc_client_session_t *session = NULL;
+   mongoc_transaction_opt_t *txn_opts = NULL;
+
+   /* For a replica set, include the replica set name and a seedlist of the
+    * members in the URI string; e.g.
+    * uri_repl = "mongodb://mongodb0.example.com:27017,mongodb1.example.com:" \
+    *    "27017/?replicaSet=myRepl";
+    * client = mongoc_client_new (uri_repl);
+    * For a sharded cluster, connect to the mongos instances; e.g.
+    * uri_sharded =
+    * "mongodb://mongos0.example.com:27017,mongos1.example.com:27017/";
+    * client = mongoc_client_new (uri_sharded);
+    */
+
+   client = get_client ();
+
+   /* Prereq: Create collections. CRUD operations in transactions must be on
+    * existing collections. */
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_wmajority (wc, 1000);
+   insert_opts = bson_new ();
+   mongoc_write_concern_append (wc, insert_opts);
+   coll = mongoc_client_get_collection (client, "mydb1", "foo");
+   doc = BCON_NEW ("abc", BCON_INT32 (0));
+   ret = mongoc_collection_insert_one (
+      coll, doc, insert_opts, NULL /* reply */, error);
+   if (!ret) {
+      goto fail;
+   }
+   bson_destroy (doc);
+   mongoc_collection_destroy (coll);
+   coll = mongoc_client_get_collection (client, "mydb2", "bar");
+   doc = BCON_NEW ("xyz", BCON_INT32 (0));
+   ret = mongoc_collection_insert_one (
+      coll, doc, insert_opts, NULL /* reply */, error);
+   if (!ret) {
+      goto fail;
+   }
+
+   /* Step 1: Start a client session. */
+   session = mongoc_client_start_session (client, NULL /* opts */, error);
+   if (!session) {
+      goto fail;
+   }
+
+   /* Step 2: Optional. Define options to use for the transaction. */
+   txn_opts = mongoc_transaction_opts_new ();
+   rp = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   rc = mongoc_read_concern_new ();
+   mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
+   mongoc_transaction_opts_set_read_prefs (txn_opts, rp);
+   mongoc_transaction_opts_set_read_concern (txn_opts, rc);
+   mongoc_transaction_opts_set_write_concern (txn_opts, wc);
+
+   /* Step 3: Use mongoc_client_session_with_transaction to start a transaction,
+    * execute the callback, and commit (or abort on error). */
+   ret = mongoc_client_session_with_transaction (
+      session, callback, txn_opts, NULL /* ctx */, NULL /* reply */, error);
+   if (!ret) {
+      goto fail;
+   }
+
+   success = true;
+fail:
+   bson_destroy (doc);
+   mongoc_collection_destroy (coll);
+   bson_destroy (insert_opts);
+   mongoc_read_concern_destroy (rc);
+   mongoc_read_prefs_destroy (rp);
+   mongoc_write_concern_destroy (wc);
+   mongoc_transaction_opts_destroy (txn_opts);
+   mongoc_client_session_destroy (session);
+   mongoc_client_destroy (client);
+   return success;
+}
+
+/* Define the callback that specifies the sequence of operations to perform
+ * inside the transactions. */
+static bool
+callback (mongoc_client_session_t *session,
+          void *ctx,
+          bson_t **reply,
+          bson_error_t *error)
+{
+   mongoc_client_t *client = NULL;
+   mongoc_collection_t *coll = NULL;
+   bson_t *doc = NULL;
+   bool success = false;
+   bool ret = false;
+
+   client = mongoc_client_session_get_client (session);
+   coll = mongoc_client_get_collection (client, "mydb1", "foo");
+   doc = BCON_NEW ("abc", BCON_INT32 (1));
+   ret =
+      mongoc_collection_insert_one (coll, doc, NULL /* opts */, *reply, error);
+   if (!ret) {
+      goto fail;
+   }
+   bson_destroy (doc);
+   mongoc_collection_destroy (coll);
+   coll = mongoc_client_get_collection (client, "mydb2", "bar");
+   doc = BCON_NEW ("xyz", BCON_INT32 (999));
+   ret =
+      mongoc_collection_insert_one (coll, doc, NULL /* opts */, *reply, error);
+   if (!ret) {
+      goto fail;
+   }
+
+   success = true;
+fail:
+   mongoc_collection_destroy (coll);
+   bson_destroy (doc);
+   return success;
+}
+/* End Transactions withTxn API Example 1 */
 
 static void
 test_sample_commands (void)
@@ -3511,9 +3653,22 @@ test_sample_commands (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_with_txn_example (void *unused)
+{
+   bson_error_t error;
+   ASSERT_OR_PRINT (with_transaction_example (&error), error);
+}
+
 
 void
 test_samples_install (TestSuite *suite)
 {
    TestSuite_AddLive (suite, "/Samples", test_sample_commands);
+   TestSuite_AddFull (suite,
+                      "/Samples/with_txn",
+                      test_with_txn_example,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_txns);
 }
