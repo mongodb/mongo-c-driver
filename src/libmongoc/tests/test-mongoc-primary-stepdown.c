@@ -290,6 +290,11 @@ test_not_master_reset_pool (mongoc_client_t *client)
    /* Verify that the pool has been cleared */
    ASSERT ((conn_count + 1) == _connection_count (db));
 
+   /* Execute an insert into the test collection and verify it succeeds */
+   res = mongoc_collection_insert_one (
+      coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_collection_destroy (coll);
    mongoc_database_destroy (db);
@@ -346,6 +351,11 @@ test_shutdown_reset_pool (mongoc_client_t *client)
    /* Verify that the pool has been cleared */
    ASSERT ((conn_count + 1) == _connection_count (db));
 
+   /* Execute an insert into the test collection and verify it succeeds */
+   res = mongoc_collection_insert_one (
+      coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
+
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_collection_destroy (coll);
    mongoc_database_destroy (db);
@@ -401,6 +411,11 @@ test_interrupted_shutdown_reset_pool (mongoc_client_t *client)
 
    /* Verify that the pool has been cleared */
    ASSERT ((conn_count + 1) == _connection_count (db));
+
+   /* Execute an insert into the test collection and verify it succeeds */
+   res = mongoc_collection_insert_one (
+      coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
+   ASSERT_OR_PRINT (res, error);
 
    mongoc_read_prefs_destroy (read_prefs);
    mongoc_collection_destroy (coll);
