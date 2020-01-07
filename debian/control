@@ -13,7 +13,8 @@ Build-Depends: debhelper (>= 11),
                zlib1g-dev,
                libicu-dev,
                libsasl2-dev,
-               libsnappy-dev
+               libsnappy-dev,
+               libzstd-dev
 Standards-Version: 4.4.1
 Section: libs
 Homepage: https://github.com/mongodb/mongo-c-driver
