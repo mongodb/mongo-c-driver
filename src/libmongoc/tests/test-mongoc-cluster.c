@@ -1676,13 +1676,31 @@ _test_cmd_on_unknown_serverid (bool pooled)
    mongoc_client_t *client;
    bson_error_t error;
    bool ret;
+   mongoc_uri_t *uri;
+
+   uri = test_framework_get_uri ();
+   /* Set a high heartbeatFrequencyMS so subsequent topology scans do not
+    * interfere with the test. */
+   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
 
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = mongoc_client_pool_new (uri);
+      test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new ();
+      client = mongoc_client_new_from_uri (uri);
+      test_framework_set_ssl_opts (client);
    }
+
+   /* Do the initial topology scan and selection. */
+   ret = mongoc_client_command_simple (client,
+                                       "admin",
+                                       tmp_bson ("{ 'ping': 1 }"),
+                                       NULL /* read prefs */,
+                                       NULL /* reply */,
+                                       &error);
+   ASSERT_OR_PRINT (ret, error);
+
 
    ret = mongoc_client_command_simple_with_server_id (client,
                                                       "admin",
@@ -1694,7 +1712,9 @@ _test_cmd_on_unknown_serverid (bool pooled)
    ASSERT_OR_PRINT (ret, error);
 
    /* Invalidate the server, giving it the server type MONGOC_SERVER_UNKNOWN */
+   bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
    mongoc_topology_invalidate_server (client->topology, 1, &error);
+   memset (&error, 0, sizeof (error));
 
    /* The next command is attempted directly on the unknown server and should
     * result in an error. */
@@ -1710,7 +1730,7 @@ _test_cmd_on_unknown_serverid (bool pooled)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_STREAM,
                              MONGOC_ERROR_STREAM_CONNECT,
-                             "unknown error calling ismaster")
+                             "invalidated")
    } else {
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
@@ -1724,6 +1744,7 @@ _test_cmd_on_unknown_serverid (bool pooled)
    } else {
       mongoc_client_destroy (client);
    }
+   mongoc_uri_destroy (uri);
 }
 
 void
