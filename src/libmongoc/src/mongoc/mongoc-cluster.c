@@ -1962,7 +1962,26 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
    topology = cluster->client->topology;
    scanner_node =
       mongoc_topology_scanner_get_node (topology->scanner, server_id);
-   BSON_ASSERT (scanner_node && !scanner_node->retired);
+   /* This could happen if a user explicitly passes a bad server id. */
+   if (!scanner_node) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Could not find server with id: %d",
+                      server_id);
+      return NULL;
+   }
+
+   /* Retired scanner nodes are removed at the end of a scan. If the node was
+    * retired, that would indicate a bug. */
+   if (scanner_node->retired) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Unexpected, selecting server marked for removal: %s",
+                      scanner_node->host.host_and_port);
+      return NULL;
+   }
 
    if (scanner_node->stream) {
       sd = mongoc_topology_server_by_id (topology, server_id, error);

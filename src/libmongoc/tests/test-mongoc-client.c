@@ -3680,6 +3680,29 @@ test_get_database (void)
 }
 
 
+static void
+test_invalid_server_id (void)
+{
+   mongoc_client_t *client;
+   bson_error_t error;
+   bool ret;
+
+   client = mongoc_client_new ("mongodb://localhost");
+   ret = mongoc_client_command_simple_with_server_id (client,
+                                                      "admin",
+                                                      tmp_bson ("{'ping': 1}"),
+                                                      NULL /* read prefs */,
+                                                      123,
+                                                      NULL /* reply */,
+                                                      &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Could not find server with id: 123");
+   mongoc_client_destroy (client);
+}
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -3945,4 +3968,5 @@ test_client_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Client/get_database", test_get_database);
+   TestSuite_Add (suite, "/Client/invalid_server_id", test_invalid_server_id);
 }
