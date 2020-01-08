@@ -9,6 +9,7 @@
 #include "test-libmongoc.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/future-functions.h"
+#include "json-test.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "session-test"
@@ -2460,9 +2461,148 @@ test_unacknowledged_explicit_cs_explicit_wc (void *ctx)
       test_framework_skip_if_no_crypto)
 
 
+static bool
+_test_run_operation (json_test_ctx_t *ctx,
+                     const bson_t *test,
+                     const bson_t *operation)
+{
+   bson_t reply;
+   mongoc_client_session_t *session = NULL;
+   /* Look up the session to use by name. Really, json_test_operation should
+    * probably handle this. Let's wait until unified test runner is spec'ed. */
+
+   if (bson_has_field (operation, "arguments.session")) {
+      session = session_from_name (
+         ctx, bson_lookup_utf8 (operation, "arguments.session"));
+   }
+
+   json_test_operation (ctx, test, operation, ctx->collection, session, &reply);
+   bson_destroy (&reply);
+   return true;
+}
+
+static void
+test_sessions_spec_cb (bson_t *scenario)
+{
+   json_test_config_t config = JSON_TEST_CONFIG_INIT;
+   config.run_operation_cb = _test_run_operation;
+   config.scenario = scenario;
+   config.command_started_events_only = true;
+   run_json_general_test (&config);
+}
+
+/* Test that a session is made dirty after a network error, and that it is not
+ * added back to the session pool. */
+static void
+_test_session_dirty_helper (bool retry_succeeds)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_client_session_t *session;
+   bson_t opts;
+   bool ret;
+   bson_error_t error;
+   bson_t *failpoint_cmd;
+   int pooled_session_count_pre;
+   int pooled_session_count_post;
+   mongoc_server_session_t *next;
+   int fail_count;
+   mongoc_uri_t *uri;
+
+   uri = test_framework_get_uri ();
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
+   client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
+   session = mongoc_client_start_session (client, NULL /* opts */, &error);
+   ASSERT_OR_PRINT (session, error);
+   coll = mongoc_client_get_collection (client, "test", "test");
+   bson_init (&opts);
+   ret = mongoc_client_session_append (session, &opts, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   ret = mongoc_collection_insert_one (
+      coll, tmp_bson ("{}"), &opts, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (ret, error);
+   BSON_ASSERT (!session->server_session->dirty);
+
+   if (retry_succeeds) {
+      /* Only fail once, so retried insert succeeds. */
+      fail_count = 1;
+   } else {
+      /* Fail twice, so retried insert fails as well. */
+      fail_count = 2;
+   }
+
+   /* Enable failpoint. */
+   failpoint_cmd = BCON_NEW ("configureFailPoint",
+                             "failCommand",
+                             "mode",
+                             "{",
+                             "times",
+                             BCON_INT32 (fail_count),
+                             "}",
+                             "data",
+                             "{",
+                             "failCommands",
+                             "[",
+                             "insert",
+                             "]",
+                             "closeConnection",
+                             BCON_BOOL (true),
+                             "}");
+   ret = mongoc_client_command_simple (client,
+                                       "admin",
+                                       failpoint_cmd,
+                                       NULL /* read prefs */,
+                                       NULL /* reply */,
+                                       &error);
+   ASSERT_OR_PRINT (ret, error);
+   ret = mongoc_collection_insert_one (
+      coll, tmp_bson ("{}"), &opts, NULL /* reply */, &error);
+   if (retry_succeeds) {
+      ASSERT_OR_PRINT (ret, error);
+   } else {
+      BSON_ASSERT (!ret);
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
+   }
+   /* Regardless of whether the retry succeeded, the session should be marked dirty */
+   BSON_ASSERT (session->server_session->dirty);
+
+   CDL_COUNT (client->topology->session_pool, next, pooled_session_count_pre);
+   mongoc_client_session_destroy (session);
+   CDL_COUNT (client->topology->session_pool, next, pooled_session_count_post);
+
+   /* Check that destroying in the session did not add it back to the pool. */
+   ASSERT_CMPINT (pooled_session_count_pre, ==, pooled_session_count_post);
+
+   mongoc_client_command_simple (
+      client,
+      "admin",
+      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': 'off'}"),
+      NULL /* read prefs */,
+      NULL /* reply */,
+      &error);
+
+   bson_destroy (&opts);
+   bson_destroy (failpoint_cmd);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+}
+
+static void
+test_session_dirty (void *unused)
+{
+   _test_session_dirty_helper (true /* retry succceeds */);
+   _test_session_dirty_helper (false /* retry succceeds */);
+}
+
 void
 test_session_install (TestSuite *suite)
 {
+   char resolved[PATH_MAX];
+
    TestSuite_Add (suite, "/Session/opts/clone", test_session_opts_clone);
    TestSuite_AddFull (suite,
                       "/Session/no_crypto",
@@ -2801,4 +2941,20 @@ test_session_install (TestSuite *suite)
       test_write_cmd,
       false,
       false);
+
+   ASSERT (realpath (JSON_DIR "/sessions", resolved));
+   install_json_test_suite_with_check (suite,
+                                       resolved,
+                                       test_sessions_spec_cb,
+                                       test_framework_skip_if_no_sessions);
+
+   TestSuite_AddFull (suite,
+                      "/Session/dirty",
+                      test_session_dirty,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_failpoint,
+                      /* Tests with retryable writes, requires non-standalone. */
+                      test_framework_skip_if_single);
 }

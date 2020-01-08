@@ -1559,7 +1559,10 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
       }
    }
 
-   if (_mongoc_server_session_timed_out (server_session, timeout)) {
+   /* If session is expiring or "dirty" (a network error occurred on it), do not
+    * return it to the pool. */
+   if (_mongoc_server_session_timed_out (server_session, timeout) ||
+       server_session->dirty) {
       _mongoc_server_session_destroy (server_session);
    } else {
       /* silences clang scan-build */

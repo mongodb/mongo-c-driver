@@ -33,6 +33,8 @@ typedef struct {
    mongoc_database_t *db;
    mongoc_collection_t *collection;
    mongoc_change_stream_t *change_stream;
+   /* Sessions tests check the most recently sent two lsid's */
+   bson_t *sent_lsids[2];
 } json_test_ctx_t;
 
 mongoc_client_session_t *

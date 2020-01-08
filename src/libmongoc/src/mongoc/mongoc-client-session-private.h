@@ -52,6 +52,7 @@ typedef struct _mongoc_server_session_t {
    int64_t last_used_usec;
    bson_t lsid;        /* logical session id */
    int64_t txn_number; /* transaction number */
+   bool dirty;
 } mongoc_server_session_t;
 
 typedef enum {

@@ -98,6 +98,18 @@ started_cb (const mongoc_apm_command_started_t *event)
       bson_free (cmd_json);
    }
 
+   /* Track the last two lsid's */
+   if (bson_has_field (event->command, "lsid")) {
+      bson_t lsid;
+
+      /* Push on the circular queue */
+      bson_destroy (ctx->sent_lsids[0]);
+      ctx->sent_lsids[0] = ctx->sent_lsids[1];
+      bson_lookup_doc (event->command, "lsid", &lsid);
+      ctx->sent_lsids[1] = bson_copy (&lsid);
+      bson_destroy (&lsid);
+   }
+
    BSON_ASSERT (mongoc_apm_command_started_get_request_id (event) > 0);
    BSON_ASSERT (mongoc_apm_command_started_get_server_id (event) > 0);
    /* check that event->host is sane */

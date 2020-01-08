@@ -64,6 +64,8 @@ json_test_ctx_init (json_test_ctx_t *ctx,
    int i;
    bson_error_t error;
 
+   memset (ctx, 0, sizeof (*ctx));
+
    ctx->client = client;
    ctx->db = db;
    ctx->collection = collection;
@@ -82,7 +84,7 @@ json_test_ctx_init (json_test_ctx_t *ctx,
    ctx->has_sessions = test_framework_session_timeout_minutes () > -1 &&
                        test_framework_skip_if_no_crypto ();
 
-   /* transactions tests require two sessions named session1 and session2,
+   /* transactions tests require two sessions named session0 and session1,
     * retryable writes use one explicit session or none */
    if (ctx->has_sessions) {
       for (i = 0; i < 2; i++) {
@@ -132,6 +134,8 @@ json_test_ctx_cleanup (json_test_ctx_t *ctx)
    bson_destroy (&ctx->lsids[1]);
    bson_destroy (&ctx->events);
    mongoc_uri_destroy (ctx->test_framework_uri);
+   bson_destroy (ctx->sent_lsids[0]);
+   bson_destroy (ctx->sent_lsids[1]);
 }
 
 
@@ -1910,6 +1914,17 @@ json_test_operation (json_test_ctx_t *ctx,
          res = commit_transaction (named_session, test, operation, reply);
       } else if (!strcmp (op_name, "abortTransaction")) {
          res = abort_transaction (named_session, test, operation, reply);
+      } else if (!strcmp (op_name, "endSession")) {
+         mongoc_client_session_destroy (named_session);
+         if (0 == strcmp (obj_name, "session0")) {
+            ctx->sessions[0] = NULL;
+         } else if (0 == strcmp (obj_name, "session1")) {
+            ctx->sessions[1] = NULL;
+         } else {
+            test_error ("unrecognized session: %s", op_name);
+         }
+         res = true;
+         bson_init (reply);
       } else {
          test_error ("unrecognized session operation name %s", op_name);
       }
@@ -1928,6 +1943,22 @@ json_test_operation (json_test_ctx_t *ctx,
             client, session->server_id, operation, "arguments.failPoint");
 
          mongoc_client_destroy (client);
+      } else if (!strcmp (op_name, "assertSessionNotDirty")) {
+         BSON_ASSERT (!session->server_session->dirty);
+      } else if (!strcmp (op_name, "assertSessionDirty")) {
+         BSON_ASSERT (session->server_session->dirty);
+      } else if (!strcmp (op_name, "assertSameLsidOnLastTwoCommands")) {
+         if (!ctx->sent_lsids[0] || !ctx->sent_lsids[1]) {
+            test_error ("attempting to check last two session IDs, but test "
+                        "runner has not captured them");
+         }
+         BSON_ASSERT (bson_equal (ctx->sent_lsids[0], ctx->sent_lsids[1]));
+      } else if (!strcmp (op_name, "assertDifferentLsidOnLastTwoCommands")) {
+         if (!ctx->sent_lsids[0] || !ctx->sent_lsids[1]) {
+            test_error ("attempting to check last two session IDs, but test "
+                        "runner has not captured them");
+         }
+         BSON_ASSERT (!bson_equal (ctx->sent_lsids[0], ctx->sent_lsids[1]));
       } else {
          test_error ("unrecognized session operation name %s", op_name);
       }
