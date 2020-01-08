@@ -19,21 +19,21 @@ set INSTALL_DIR=%CD%\install-dir
 rmdir /S /Q %INSTALL_DIR%
 mkdir %INSTALL_DIR%
 
-set PATH=%PATH%;"c:\Program Files (x86)\MSBuild\14.0\Bin"
-set PATH=%PATH%;"c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin"
 set PATH=%PATH%;%INSTALL_DIR%\bin
+rem Set path to dumpbin.exe and other VS tools.
+"C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\VC\Auxiliary\Build\vcvars64.bat"
 
 cd %BUILD_DIR%
 %TAR% xf ..\..\mongoc.tar.gz -C . --strip-components=1
 
 if "%LINK_STATIC%"=="1" (
-  %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF -DENABLE_BSON=ON .
+  %CMAKE% -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF -DENABLE_BSON=ON .
 ) else (
-  %CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF -DENABLE_BSON=ON -DENABLE_STATIC=OFF .
+  %CMAKE% -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DENABLE_TESTS=OFF -DENABLE_BSON=ON -DENABLE_STATIC=OFF .
 )
 
-msbuild.exe /m ALL_BUILD.vcxproj
-msbuild.exe INSTALL.vcxproj
+%CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m
+%CMAKE% --build . --target INSTALL --config "Debug" -- /m
 
 call ..\.evergreen\check-installed-files-bson.bat
 if errorlevel 1 (
@@ -48,8 +48,8 @@ if "%LINK_STATIC%"=="1" (
 )
 
 cd %EXAMPLE_DIR%
-%CMAKE% -G "Visual Studio 14 2015 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake .
-msbuild.exe ALL_BUILD.vcxproj
+%CMAKE% -G "Visual Studio 15 2017 Win64" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake .
+%CMAKE% --build . --target ALL_BUILD --config "Debug" -- /m
 
 rem Yes, they should've named it "dependencies".
 dumpbin.exe /dependents Debug\hello_bson.exe

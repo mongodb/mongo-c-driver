@@ -405,7 +405,7 @@ all_tasks = [
     CompileWithClientSideEncryption('debug-compile-sasl-darwinssl-cse', tags=[
                                     'debug-compile', 'sasl', 'darwinssl'], SASL="AUTO", SSL="DARWIN"),
     CompileWithClientSideEncryption('debug-compile-sasl-winssl-cse', tags=[
-                                    'debug-compile', 'sasl', 'winssl'], SASL="AUTO", SSL="WINSSL"),
+                                    'debug-compile', 'sasl', 'winssl'], SASL="AUTO", SSL="WINDOWS"),
     CompileWithClientSideEncryptionAsan('debug-compile-asan-openssl-cse', tags=[
                                         'debug-compile', 'asan-clang'], SSL="OPENSSL")
 ]

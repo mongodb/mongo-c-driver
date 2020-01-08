@@ -712,7 +712,7 @@ bson_ascii_strtoll (const char *s, char **e, int base)
 
    c = *tok;
 
-   while (isspace (c)) {
+   while (c >= -1 && c <= 255 && isspace (c)) {
       c = *++tok;
    }
 

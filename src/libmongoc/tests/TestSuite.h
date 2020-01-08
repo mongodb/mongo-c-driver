@@ -348,13 +348,13 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       char *__bb = bson_malloc0 (strlen (__b) + 1);            \
       char *f = __a;                                           \
       do {                                                     \
-         while (isspace (*__a))                                \
+         while (*__a >= -1 &&*__a <= 255 && isspace (*__a))    \
             __a++;                                             \
          __aa[i++] = *__a++;                                   \
       } while (*__a);                                          \
       i = 0;                                                   \
       do {                                                     \
-         while (isspace (*__b))                                \
+         while (*__b >= -1 &&*__b <= 255 && isspace (*__b))    \
             __b++;                                             \
          __bb[i++] = *__b++;                                   \
       } while (*__b);                                          \

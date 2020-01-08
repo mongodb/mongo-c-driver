@@ -96,34 +96,15 @@ case "$CC" in
       fi
       exit 0
    ;;
-   # Resolve the compiler name to correct MSBuild location
-   "Visual Studio 10 2010")
-      BUILD="/cygdrive/c/Windows/Microsoft.NET/Framework/v4.0.30319/MSBuild.exe"
-   ;;
-   "Visual Studio 10 2010 Win64")
-      BUILD="/cygdrive/c/Windows/Microsoft.NET/Framework64/v4.0.30319/MSBuild.exe"
-   ;;
-   "Visual Studio 12 2013")
-      BUILD="/cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe"
-   ;;
-   "Visual Studio 12 2013 Win64")
-      BUILD="/cygdrive/c/Program Files (x86)/MSBuild/12.0/Bin/MSBuild.exe"
-   ;;
-   "Visual Studio 14 2015")
-      BUILD="/cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe"
-   ;;
-   "Visual Studio 14 2015 Win64")
-      BUILD="/cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe"
-   ;;
 esac
 
 if [ "$RELEASE" ]; then
-   BUILD_FLAGS="$BUILD_FLAGS /p:Configuration=RelWithDebInfo"
+   BUILD_CONFIG="RelWithDebInfo"
    TEST_PATH="./src/libmongoc/RelWithDebInfo/test-libmongoc.exe"
    export PATH=$PATH:`pwd`/src/libbson/RelWithDebInfo:`pwd`/src/libmongoc/RelWithDebInfo:`pwd`/install-dir/bin
 else
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS"
-   BUILD_FLAGS="$BUILD_FLAGS /p:Configuration=Debug"
+   BUILD_CONFIG="Debug"
    TEST_PATH="./src/libmongoc/Debug/test-libmongoc.exe"
    export PATH=$PATH:`pwd`/src/libbson/Debug:`pwd`/src/libmongoc/Debug:`pwd`/install-dir/bin
 fi
@@ -134,13 +115,13 @@ if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
    "$CMAKE" -G "$CC" "-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/lib/cmake" -DENABLE_SHARED_BSON=ON -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" ../
-   "$BUILD" $BUILD_FLAGS INSTALL.vcxproj
+   "$CMAKE" --build . --target INSTALL --config $BUILD_CONFIG -- $BUILD_FLAGS
    cd ../../
 fi
 
 "$CMAKE" -G "$CC" "-DCMAKE_PREFIX_PATH=${INSTALL_DIR}/lib/cmake" $CONFIGURE_FLAGS
-"$BUILD" $BUILD_FLAGS ALL_BUILD.vcxproj
-"$BUILD" $BUILD_FLAGS INSTALL.vcxproj
+"$CMAKE" --build . --target ALL_BUILD --config $BUILD_CONFIG -- $BUILD_FLAGS
+"$CMAKE" --build . --target INSTALL --config $BUILD_CONFIG -- $BUILD_FLAGS
 
 export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
 export MONGOC_TEST_SKIP_LIVE=on
