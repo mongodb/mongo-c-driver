@@ -160,6 +160,26 @@ test_sdam_cb (bson_t *test)
                                       MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                                       "");
             }
+         } else if (strcmp ("maxSetVersion", bson_iter_key (&outcome_iter)) ==
+                    0) {
+            ASSERT_CMPINT64 (
+               bson_iter_as_int64 (&outcome_iter), ==, td->max_set_version);
+         } else if (strcmp ("maxElectionId", bson_iter_key (&outcome_iter)) ==
+                    0) {
+            const bson_oid_t *expected_oid;
+            expected_oid = bson_iter_oid (&outcome_iter);
+
+            if (!bson_oid_equal (expected_oid, &td->max_election_id)) {
+               char expected_oid_str[25];
+               char actual_oid_str[25];
+
+               bson_oid_to_string (expected_oid, expected_oid_str);
+               bson_oid_to_string (&td->max_election_id, actual_oid_str);
+               test_error ("ERROR: Expected topology description's "
+                           "maxElectionId to be %s, but was %s",
+                           expected_oid_str,
+                           actual_oid_str);
+            }
          } else {
             fprintf (stderr,
                      "ERROR: unparsed test field %s\n",
@@ -189,7 +209,8 @@ test_all_spec_tests (TestSuite *suite)
    install_json_test_suite (suite, resolved, &test_sdam_cb);
 
    /* Replica set */
-   test_framework_resolve_path (JSON_DIR "/server_discovery_and_monitoring/rs", resolved);
+   test_framework_resolve_path (JSON_DIR "/server_discovery_and_monitoring/rs",
+                                resolved);
    install_json_test_suite (suite, resolved, &test_sdam_cb);
 
    /* Sharded */

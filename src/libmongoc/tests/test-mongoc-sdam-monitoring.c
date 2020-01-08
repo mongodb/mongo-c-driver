@@ -460,6 +460,7 @@ test_sdam_monitoring_cb (bson_t *test)
    bson_iter_t iter;
    bson_t events_expected;
    context_t context;
+   bool first_phase;
 
    /* parse out the uri and use it to create a client */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
@@ -473,12 +474,21 @@ test_sdam_monitoring_cb (bson_t *test)
    bson_iter_bson (&iter, &phases);
    bson_iter_init (&phase_iter, &phases);
 
+   first_phase = true;
    while (bson_iter_next (&phase_iter)) {
       bson_iter_bson (&phase_iter, &phase);
 
-      /* this test doesn't exercise this code path naturally, see below in
-       * _test_topology_events for a non-hacky test of this event */
-      _mongoc_topology_description_monitor_opening (&topology->description);
+      if (first_phase) {
+         /* Force the topology opening and server opening events. This test doesn't
+          * exercise this code path naturally, see below in _test_topology_events
+          * for a non-hacky test of this event */
+         _mongoc_topology_description_monitor_opening (&topology->description);
+         first_phase = false;
+      } else {
+         /* clear the stored events. */
+         bson_reinit (&context.events);
+         context.n_events = 0;
+      }
       process_sdam_test_ismaster_responses (&phase,
                                             &client->topology->description);
 
