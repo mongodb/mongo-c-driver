@@ -2445,6 +2445,22 @@ test_bson_binary_null_handling (void)
    _binary_null_handling (true /* is legacy */);
 }
 
+static void
+test_bson_append_null_from_utf8_or_symbol (void) {
+   bson_t bson;
+   bson_iter_t iter;
+
+   bson_init (&bson);
+   bson_append_utf8 (&bson, "from_utf8", -1, NULL, 0);
+   bson_append_symbol (&bson, "from_symbol", -1, NULL, 0);
+   bson_iter_init (&iter, &bson);
+   BSON_ASSERT (bson_iter_next (&iter));
+   BSON_ASSERT (BSON_ITER_HOLDS_NULL (&iter));
+   BSON_ASSERT (bson_iter_next (&iter));
+   BSON_ASSERT (BSON_ITER_HOLDS_NULL (&iter));
+   bson_destroy (&bson);
+}
+
 void
 test_bson_install (TestSuite *suite)
 {
@@ -2539,4 +2555,5 @@ test_bson_install (TestSuite *suite)
                   test_bson_iter_init_from_data_at_offset);
    TestSuite_Add (
       suite, "/bson/value/null_handling", test_bson_binary_null_handling);
+   TestSuite_Add (suite, "/bson/append_null_from_utf8_or_symbol", test_bson_append_null_from_utf8_or_symbol);
 }

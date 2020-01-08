@@ -32,6 +32,8 @@ Description
 
 Appends a new field to ``bson`` of type BSON_TYPE_SYMBOL. This BSON type is deprecated and should not be used in new code.
 
+Due to legacy behavior, passing ``NULL`` for ``value`` appends a null value, *not* a symbol value. To append a null value directly, prefer using :symbol:`bson_append_null()`.
+
 Returns
 -------
 

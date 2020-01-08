@@ -38,6 +38,8 @@ Some UTF-8 implementations allow for ``\0`` to be contained within the string (e
 
 It is suggested to use modified UTF-8 which uses a 2 byte representation for embedded ``\0`` within the string. This will allow these UTF-8 encoded strings to used with many libc functions.
 
+Due to legacy behavior, passing ``NULL`` for ``value`` appends a null value, *not* a UTF8 value. To append a null value directly, prefer using :symbol:`bson_append_null()`.
+
 Returns
 -------
 
