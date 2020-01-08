@@ -1927,6 +1927,35 @@ test_mongoc_uri_tls_ssl (const char *tls,
    uri = mongoc_uri_new (url_buffer);
    ASSERT (mongoc_uri_get_option_as_bool (uri, tls, false));
    mongoc_uri_destroy (uri);
+
+   /* Set TLS options after creating mongoc_uri_t from connection string */
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   ASSERT (mongoc_uri_set_option_as_utf8 (
+      uri, tlsCertificateKeyFile, "/path/to/pem"));
+   ASSERT (mongoc_uri_get_tls (uri));
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   ASSERT (mongoc_uri_set_option_as_utf8 (
+      uri, tlsCertificateKeyPassword, "password"));
+   ASSERT (mongoc_uri_get_tls (uri));
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   ASSERT (mongoc_uri_set_option_as_utf8 (uri, tlsCAFile, "/path/to/pem"));
+   ASSERT (mongoc_uri_get_tls (uri));
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   ASSERT (
+      mongoc_uri_set_option_as_bool (uri, tlsAllowInvalidCertificates, false));
+   ASSERT (mongoc_uri_get_tls (uri));
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   ASSERT (mongoc_uri_set_option_as_bool (uri, tlsAllowInvalidHostnames, true));
+   ASSERT (mongoc_uri_get_tls (uri));
+   mongoc_uri_destroy (uri);
 }
 
 static void
@@ -1941,6 +1970,24 @@ test_mongoc_uri_tls ()
                             MONGOC_URI_TLSCAFILE,
                             MONGOC_URI_TLSALLOWINVALIDCERTIFICATES,
                             MONGOC_URI_TLSALLOWINVALIDHOSTNAMES);
+
+   /* non-canonical case for tls options */
+   test_mongoc_uri_tls_ssl ("tls",
+                            "TlsCertificateKeyFile",
+                            "tlsCertificateKeyFilePASSWORD",
+                            "tlsCAFILE",
+                            "TLSALLOWINVALIDCERTIFICATES",
+                            "tLSaLLOWiNVALIDhOSTNAMES");
+
+   /* non-canonical case for tls option */
+   uri = mongoc_uri_new ("mongodb://localhost/?tLs=true");
+   ASSERT (mongoc_uri_get_tls (uri));
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   ASSERT (mongoc_uri_set_option_as_bool (uri, "TLS", true));
+   ASSERT (mongoc_uri_get_tls (uri));
+   mongoc_uri_destroy (uri);
 
    /* tls-only option */
    uri = mongoc_uri_new ("mongodb://localhost/?tlsInsecure=true");
@@ -1972,12 +2019,32 @@ test_mongoc_uri_tls ()
 static void
 test_mongoc_uri_ssl ()
 {
+   mongoc_uri_t *uri;
+
    test_mongoc_uri_tls_ssl (MONGOC_URI_SSL,
                             MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE,
                             MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD,
                             MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE,
                             MONGOC_URI_SSLALLOWINVALIDCERTIFICATES,
                             MONGOC_URI_SSLALLOWINVALIDHOSTNAMES);
+
+   /* non-canonical case for ssl options */
+   test_mongoc_uri_tls_ssl ("ssl",
+                            "SslClientCertificateKeyFile",
+                            "sslClientCertificateKeyPASSWORD",
+                            "sslCERTIFICATEAUTHORITYFILE",
+                            "SSLALLOWINVALIDCERTIFICATES",
+                            "sSLaLLOWiNVALIDhOSTNAMES");
+
+   /* non-canonical case for ssl option */
+   uri = mongoc_uri_new ("mongodb://localhost/?sSl=true");
+   ASSERT (mongoc_uri_get_tls (uri));
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   ASSERT (mongoc_uri_set_option_as_bool (uri, "SSL", true));
+   ASSERT (mongoc_uri_get_tls (uri));
+   mongoc_uri_destroy (uri);
 }
 
 static void

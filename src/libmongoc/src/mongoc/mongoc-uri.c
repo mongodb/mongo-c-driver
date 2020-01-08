@@ -2287,13 +2287,18 @@ mongoc_uri_get_tls (const mongoc_uri_t *uri) /* IN */
        BSON_ITER_HOLDS_BOOL (&iter)) {
       return bson_iter_bool (&iter);
    }
-   if (bson_has_field (&uri->options, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
-       bson_has_field (&uri->options, MONGOC_URI_TLSCAFILE) ||
-       bson_has_field (&uri->options, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
-       bson_has_field (&uri->options, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
-       bson_has_field (&uri->options, MONGOC_URI_TLSINSECURE) ||
-       bson_has_field (&uri->options,
-                       MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD)) {
+
+   if (bson_iter_init_find_case (
+          &iter, &uri->options, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
+       bson_iter_init_find_case (&iter, &uri->options, MONGOC_URI_TLSCAFILE) ||
+       bson_iter_init_find_case (
+          &iter, &uri->options, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
+       bson_iter_init_find_case (
+          &iter, &uri->options, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
+       bson_iter_init_find_case (
+          &iter, &uri->options, MONGOC_URI_TLSINSECURE) ||
+       bson_iter_init_find_case (
+          &iter, &uri->options, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD)) {
       return true;
    }
 
