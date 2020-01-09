@@ -596,6 +596,13 @@ add_request_to_bulk (mongoc_bulk_operation_t *bulk,
       BSON_APPEND_DOCUMENT (&opts, "collation", &collation);
    }
 
+   if (bson_has_field (&args, "hint")) {
+      bson_value_t hint;
+      bson_lookup_value (&args, "hint", &hint);
+      BSON_APPEND_VALUE (&opts, "hint", &hint);
+      bson_value_destroy (&hint);
+   }
+
    if (!strcmp (name, "deleteMany")) {
       bson_t filter;
 
