@@ -344,3 +344,17 @@ _mongoc_convert_read_concern (mongoc_client_t *client,
    }
    return true;
 }
+
+bool
+_mongoc_convert_hint (mongoc_client_t *client,
+                      const bson_iter_t *iter,
+                      bson_value_t *value,
+                      bson_error_t *error)
+{
+   if (BSON_ITER_HOLDS_UTF8 (iter) || BSON_ITER_HOLDS_DOCUMENT (iter)) {
+      bson_value_copy (bson_iter_value ((bson_iter_t *) iter), value);
+      return true;
+   }
+
+   CONVERSION_ERR ("The hint option must be a string or document");
+}

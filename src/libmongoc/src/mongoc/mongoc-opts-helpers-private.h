@@ -134,4 +134,10 @@ _mongoc_convert_read_concern (mongoc_client_t *client,
                               mongoc_read_concern_t **rc,
                               bson_error_t *error);
 
+bool
+_mongoc_convert_hint (mongoc_client_t *client,
+                      const bson_iter_t *iter,
+                      bson_value_t *value,
+                      bson_error_t *error);
+
 #endif

@@ -6064,6 +6064,135 @@ test_update_collation (void)
 
 
 static void
+_test_update_hint (int wire, bool is_replace, bool is_multi, const char *hint)
+{
+   mock_server_t *server;
+   mongoc_collection_t *collection;
+   mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   future_update_fn_t fn;
+
+   if (is_replace) {
+      BSON_ASSERT (!is_multi);
+      fn = future_collection_replace_one;
+   } else {
+      fn = is_multi ? future_collection_update_many
+                    : future_collection_update_one;
+   }
+
+   server = mock_server_with_autoismaster (wire);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "db", "collection");
+   future = fn (collection,
+                tmp_bson ("{}"),
+                tmp_bson ("{}"),
+                tmp_bson ("{'hint': %s}", hint),
+                NULL,
+                &error);
+
+   if (wire >= WIRE_VERSION_UPDATE_HINT) {
+      request = mock_server_receives_msg (
+         server,
+         0,
+         tmp_bson ("{'update': 'collection'}"),
+         tmp_bson ("{'q': {}, 'u': {}, 'hint': %s %s }",
+                   hint,
+                   is_multi ? ", 'multi': true" : ""));
+      mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+      ASSERT_OR_PRINT (future_get_bool (future), error);
+      request_destroy (request);
+   } else {
+      ASSERT (!future_get_bool (future));
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+         "The selected server does not support hint for update");
+   }
+
+   future_destroy (future);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+static void
+test_update_hint (void)
+{
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT, false, false, "'_id_'");
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT, false, true, "'_id_'");
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT, true, false, "'_id_'");
+
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, false, false, "'_id_'");
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, false, true, "'_id_'");
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, true, false, "'_id_'");
+
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT, false, false, "{'_id': 1}");
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT, false, true, "{'_id': 1}");
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT, true, false, "{'_id': 1}");
+
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, false, false, "{'_id': 1}");
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, false, true, "{'_id': 1}");
+   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, true, false, "{'_id': 1}");
+}
+
+static void
+test_update_hint_validate (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, 2);
+   collection = get_test_collection (client, "test_update_hint_validation");
+   r = mongoc_collection_update_one (collection,
+                                     tmp_bson ("{}"),
+                                     tmp_bson ("{'$set': {'x': 1}}"),
+                                     tmp_bson ("{'hint': 1}"),
+                                     NULL,
+                                     &error);
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "The hint option must be a string or document");
+
+   r = mongoc_collection_update_many (collection,
+                                      tmp_bson ("{}"),
+                                      tmp_bson ("{'$set': {'x': 1}}"),
+                                      tmp_bson ("{'hint': 3.14}"),
+                                      NULL,
+                                      &error);
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "The hint option must be a string or document");
+
+   r = mongoc_collection_replace_one (collection,
+                                      tmp_bson ("{}"),
+                                      tmp_bson ("{'x': 1}"),
+                                      tmp_bson ("{'hint': []}"),
+                                      NULL,
+                                      &error);
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "The hint option must be a string or document");
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
 test_update_multi (void)
 {
    mongoc_client_t *client;
@@ -6398,6 +6527,10 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/delete/collation", test_delete_collation);
    TestSuite_AddMockServerTest (
       suite, "/Collection/update/collation", test_update_collation);
+   TestSuite_AddMockServerTest (
+      suite, "/Collection/update/hint", test_update_hint);
+   TestSuite_AddLive (
+      suite, "/Collection/update/hint/validate", test_update_hint_validate);
    TestSuite_AddMockServerTest (
       suite, "/Collection/count_documents", test_count_documents);
    TestSuite_AddLive (

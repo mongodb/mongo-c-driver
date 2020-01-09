@@ -145,6 +145,12 @@ server_option = ('serverId', {
     'help': 'To target a specific server, include an int32 "serverId" field. Obtain the id by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.'
 })
 
+hint_option = ('hint', {
+    'type': 'bson_value_t',
+    'convert': '_mongoc_convert_hint',
+    'help': 'A document or string that specifies the index to use to support the query predicate.'
+})
+
 opts_structs = OrderedDict([
     ('mongoc_crud_opts_t', Shared([
         write_concern_option,
@@ -156,6 +162,7 @@ opts_structs = OrderedDict([
         ('crud', {'type': 'mongoc_crud_opts_t'}),
         bypass_option,
         collation_option,
+        hint_option,
         upsert_option,
     ])),
 
@@ -207,6 +214,7 @@ opts_structs = OrderedDict([
     ('mongoc_bulk_update_opts_t', Shared([
         validate_option,
         collation_option,
+        hint_option,
         ('upsert', {
             'type': 'bool',
             'help': 'If true, insert a document if none match ``selector``.'

@@ -403,6 +403,7 @@ _mongoc_bulk_operation_update_append (
    bson_t opts;
    bool has_collation;
    bool has_array_filters;
+   bool has_update_hint;
 
    bson_init (&opts);
    bson_append_bool (&opts, "upsert", 6, update_opts->upsert);
@@ -418,6 +419,11 @@ _mongoc_bulk_operation_update_append (
       bson_append_document (&opts, "collation", 9, &update_opts->collation);
    }
 
+   has_update_hint = !!(update_opts->hint.value_type);
+   if (has_update_hint) {
+      bson_append_value (&opts, "hint", 4, &update_opts->hint);
+   }
+
    if (extra_opts) {
       bson_concat (&opts, extra_opts);
    }
@@ -427,6 +433,7 @@ _mongoc_bulk_operation_update_append (
          &bulk->commands, mongoc_write_command_t, bulk->commands.len - 1);
       if (last->type == MONGOC_WRITE_COMMAND_UPDATE) {
          last->flags.has_collation |= has_collation;
+         last->flags.has_update_hint |= has_update_hint;
          last->flags.has_multi_write |= update_opts->multi;
          _mongoc_write_command_update_append (last, selector, document, &opts);
          bson_destroy (&opts);
@@ -439,6 +446,7 @@ _mongoc_bulk_operation_update_append (
 
    command.flags.has_array_filters = has_array_filters;
    command.flags.has_collation = has_collation;
+   command.flags.has_update_hint = has_update_hint;
    command.flags.has_multi_write = update_opts->multi;
 
    _mongoc_array_append_val (&bulk->commands, command);

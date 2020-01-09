@@ -1885,6 +1885,10 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
       bson_append_document (extra, "collation", 9, &update_opts->collation);
    }
 
+   if (update_opts->hint.value_type) {
+      bson_append_value (extra, "hint", 4, &update_opts->hint);
+   }
+
    if (!bson_empty0 (array_filters)) {
       bson_append_array (extra, "arrayFilters", 12, array_filters);
    }
@@ -1905,6 +1909,9 @@ _mongoc_collection_update_or_replace (mongoc_collection_t *collection,
    command.flags.bypass_document_validation = bypass;
    if (!bson_empty (&update_opts->collation)) {
       command.flags.has_collation = true;
+   }
+   if (update_opts->hint.value_type) {
+      command.flags.has_update_hint = true;
    }
 
    server_stream =
