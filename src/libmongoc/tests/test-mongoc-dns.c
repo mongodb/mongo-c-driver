@@ -9,7 +9,7 @@
 #include "test-libmongoc.h"
 
 static void
-_assert_options_match (const bson_t *test, mongoc_client_t *client)
+_assert_options_match (const bson_t *test, mongoc_uri_t *uri)
 {
    match_ctx_t ctx = {{0}};
    bson_iter_t iter;
@@ -30,9 +30,8 @@ _assert_options_match (const bson_t *test, mongoc_client_t *client)
    bson_iter_bson (&iter, &opts_from_test);
    BSON_ASSERT (bson_iter_init (&test_opts_iter, &opts_from_test));
 
-   /* the client's URI is not updated from TXT, but the topology's copy is */
-   opts_from_uri = mongoc_uri_get_options (client->topology->uri);
-   creds_from_uri = mongoc_uri_get_credentials (client->topology->uri);
+   opts_from_uri = mongoc_uri_get_options (uri);
+   creds_from_uri = mongoc_uri_get_credentials (uri);
 
    while (bson_iter_next (&test_opts_iter)) {
       opt_name = bson_iter_key (&test_opts_iter);
@@ -241,7 +240,11 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
                              "");
    }
 
-   _assert_options_match (test, client);
+   /* the client's URI is updated after initial seedlist discovery (though for
+    * background SRV polling, only the topology's URI is updated). Check that
+    * both the topology and client URI have the expected options. */
+   _assert_options_match (test, client->uri);
+   _assert_options_match (test, client->topology->uri);
 
    /* the client has a copy of the topology's URI, assert they're the same */
    ASSERT (bson_equal (mongoc_uri_get_options (client->uri),
