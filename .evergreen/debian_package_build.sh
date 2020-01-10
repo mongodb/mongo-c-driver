@@ -35,7 +35,7 @@ git clone https://salsa.debian.org/installer-team/debootstrap.git debootstrap.gi
 mkdir unstable-chroot
 export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
 # perl-openssl-defaults is explicitly listed to work around https://bugs.debian.org/907015
-sudo -E ./debootstrap.git/debootstrap --include=build-essential,perl-openssl-defaults,git-buildpackage,fakeroot,debhelper,cmake,libssl-dev,pkg-config,python3-sphinx,zlib1g-dev,libicu-dev,libsasl2-dev,libsnappy-dev unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
+sudo -E ./debootstrap.git/debootstrap --include=build-essential,perl-openssl-defaults,git-buildpackage,fakeroot,debhelper,cmake,libssl-dev,pkg-config,python3-sphinx,zlib1g-dev,libicu-dev,libsasl2-dev,libsnappy-dev,libzstd-dev unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a mongoc ./unstable-chroot/tmp/
 sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
   cd /tmp/mongoc && \
