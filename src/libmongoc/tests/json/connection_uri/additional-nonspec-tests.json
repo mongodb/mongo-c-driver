@@ -134,6 +134,24 @@
             "CANONICALIZE_HOST_NAME": true
         }
       }
-   }
+   },
+   {
+    "description": "Username containing percent encoded multi-byte UTF-8 is valid",
+    "uri": "mongodb://%E2%98%83",
+    "valid": true,
+    "hosts": [
+      {
+        "type": "hostname",
+        "host": "☃",
+        "port": null
+      }
+    ]
+  },
+  {
+    "description": "Username containing percent encoded multi-byte UTF-8 is valid",
+    "uri": "mongodb://%E2%D8%83",
+    "valid": false,
+    "warning": true
+  }
   ]
 }

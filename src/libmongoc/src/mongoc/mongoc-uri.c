@@ -2169,6 +2169,7 @@ mongoc_uri_unescape (const char *escaped_string)
    const char *ptr;
    const char *end;
    size_t len;
+   bool unescape_occurred = false;
 
    BSON_ASSERT (escaped_string);
 
@@ -2192,22 +2193,30 @@ mongoc_uri_unescape (const char *escaped_string)
       case '%':
          if (((end - ptr) < 2) || !isxdigit (ptr[1]) || !isxdigit (ptr[2]) ||
 #ifdef _MSC_VER
-             (1 != sscanf_s (&ptr[1], "%02x", &hex)) ||
+             (1 != sscanf_s (&ptr[1], "%02x", &hex))
 #else
-             (1 != sscanf (&ptr[1], "%02x", &hex)) ||
+             (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
-             !isprint (hex)) {
+          || 0 == hex) {
             bson_string_free (str, true);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
          }
          bson_string_append_c (str, hex);
          ptr += 2;
+         unescape_occurred = true;
          break;
       default:
          bson_string_append_unichar (str, c);
          break;
       }
+   }
+
+   /* Check that after unescaping, it is still valid UTF-8 */
+   if (unescape_occurred && !bson_utf8_validate (str->str, str->len, false)) {
+      MONGOC_WARNING ("Invalid %% escape sequence: unescaped string contains invalid UTF-8");
+      bson_string_free (str, true);
+      return NULL;
    }
 
    return bson_string_free (str, false);

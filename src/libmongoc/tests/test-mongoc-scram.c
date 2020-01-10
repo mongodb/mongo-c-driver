@@ -61,7 +61,8 @@ test_iteration_count (int count, bool should_succeed)
    /* set up the scram state to immediately test step 2. */
    _mongoc_scram_init (&scram, MONGOC_CRYPTO_ALGORITHM_SHA_1);
    _mongoc_scram_set_pass (&scram, "password");
-   bson_strncpy (scram.encoded_nonce, client_nonce, sizeof (scram.encoded_nonce));
+   bson_strncpy (
+      scram.encoded_nonce, client_nonce, sizeof (scram.encoded_nonce));
    scram.encoded_nonce_len = (int32_t) strlen (client_nonce);
    scram.auth_message = bson_malloc0 (4096);
    scram.auth_messagemax = 4096;
@@ -291,6 +292,50 @@ _check_error (const bson_error_t *error, test_error_t expected_error)
    ASSERT_ERROR_CONTAINS ((*error), domain, code, message);
 }
 
+static void
+_try_auth_from_uri (bool pooled, mongoc_uri_t *uri, test_error_t expected_error)
+{
+   mongoc_client_pool_t *client_pool = NULL;
+   mongoc_client_t *client = NULL;
+   mongoc_collection_t *coll;
+   bson_error_t error;
+   bson_t reply;
+   bool res;
+
+   if (pooled) {
+      client_pool = mongoc_client_pool_new (uri);
+      test_framework_set_pool_ssl_opts (client_pool);
+      mongoc_client_pool_set_error_api (client_pool, 2);
+      client = mongoc_client_pool_pop (client_pool);
+      /* suppress the auth failure logs from pooled clients. */
+      capture_logs (true);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      mongoc_client_set_error_api (client, 2);
+      test_framework_set_ssl_opts (client);
+   }
+   coll = get_test_collection (client, "try_auth");
+   res = mongoc_collection_insert_one (
+      coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error);
+
+   if (expected_error == MONGOC_TEST_NO_ERROR) {
+      ASSERT_OR_PRINT (res, error);
+      ASSERT_MATCH (&reply, "{'insertedCount': 1 }");
+   } else {
+      ASSERT (!res);
+      _check_error (&error, expected_error);
+   }
+   bson_destroy (&reply);
+   mongoc_collection_destroy (coll);
+   if (pooled) {
+      mongoc_client_pool_push (client_pool, client);
+      mongoc_client_pool_destroy (client_pool);
+      capture_logs (false);
+   } else {
+      mongoc_client_destroy (client);
+   }
+}
+
 /* if auth is expected to succeed, expected_error is zero'd out. */
 static void
 _try_auth (bool pooled,
@@ -300,11 +345,6 @@ _try_auth (bool pooled,
            test_error_t expected_error)
 {
    mongoc_uri_t *uri;
-   mongoc_client_pool_t *client_pool = NULL;
-   mongoc_client_t *client = NULL;
-   bson_error_t error;
-   bson_t reply;
-   bool res;
 
    uri = test_framework_get_uri ();
    mongoc_uri_set_username (uri, user);
@@ -312,39 +352,8 @@ _try_auth (bool pooled,
    if (mechanism) {
       mongoc_uri_set_auth_mechanism (uri, mechanism);
    }
-   if (pooled) {
-      client_pool = mongoc_client_pool_new (uri);
-      mongoc_client_pool_set_error_api (client_pool, 2);
-      client = mongoc_client_pool_pop (client_pool);
-      /* suppress the auth failure logs from pooled clients. */
-      capture_logs (true);
-   } else {
-      client = mongoc_client_new_from_uri (uri);
-      mongoc_client_set_error_api (client, 2);
-   }
-   res = mongoc_client_command_simple (client,
-                                       "admin",
-                                       tmp_bson ("{'dbstats': 1}"),
-                                       NULL /* read_prefs. */,
-                                       &reply,
-                                       &error);
-
-   if (expected_error == MONGOC_TEST_NO_ERROR) {
-      ASSERT (res);
-      ASSERT_MATCH (&reply, "{'db': 'admin', 'ok': 1}");
-   } else {
-      ASSERT (!res);
-      _check_error (&error, expected_error);
-   }
-   bson_destroy (&reply);
+   _try_auth_from_uri (pooled, uri, expected_error);
    mongoc_uri_destroy (uri);
-   if (pooled) {
-      mongoc_client_pool_push (client_pool, client);
-      mongoc_client_pool_destroy (client_pool);
-      capture_logs (false);
-   } else {
-      mongoc_client_destroy (client);
-   }
 }
 
 
@@ -395,8 +404,7 @@ _test_mongoc_scram_auth (bool pooled)
    /* Auth spec: "For a non-existent username, verify that not specifying a
     * mechanism when connecting fails with the same error type that would occur
     * with a correct username but incorrect password or mechanism." */
-   _try_auth (
-      pooled, "unknown_user", "bad", NULL, MONGOC_TEST_USER_NOT_FOUND_ERROR);
+   _try_auth (pooled, "unknown_user", "bad", NULL, MONGOC_TEST_AUTH_ERROR);
 }
 
 /* test the auth tests described in the auth spec. */
@@ -414,20 +422,31 @@ test_mongoc_scram_auth (void *ctx)
 static int
 _skip_if_no_sha256 ()
 {
-   mongoc_uri_t *uri;
    mongoc_client_t *client;
    bool res;
+   bson_error_t error;
 
-   uri = test_framework_get_uri ();
-   mongoc_uri_set_auth_mechanism (uri, "SCRAM-SHA-256");
-   client = mongoc_client_new_from_uri (uri);
-   res = mongoc_client_command_simple (client,
-                                       "admin",
-                                       tmp_bson ("{'dbstats': 1}"),
-                                       NULL /* read_prefs */,
-                                       NULL /* reply */,
-                                       NULL /* error */);
-   mongoc_uri_destroy (uri);
+   client = test_framework_client_new ();
+
+   /* Check if SCRAM-SHA-256 is a supported auth mechanism by attempting to
+    * create a new user with it. */
+   res = mongoc_client_command_simple (
+      client,
+      "admin",
+      tmp_bson ("{'createUser': 'temp', 'pwd': 'sha256', 'roles': ['root'], "
+                "'mechanisms': ['SCRAM-SHA-256']}"),
+      NULL /* read_prefs */,
+      NULL /* reply */,
+      &error);
+
+   if (res) {
+      mongoc_database_t *db;
+
+      db = mongoc_client_get_database (client, "admin");
+      ASSERT_OR_PRINT (mongoc_database_remove_user (db, "temp", &error), error);
+      mongoc_database_destroy (db);
+   }
+
    mongoc_client_destroy (client);
    return res ? 1 : 0;
 }
@@ -498,8 +517,67 @@ _drop_saslprep_users ()
 }
 
 static void
+_make_uri (const char *username, const char *password, mongoc_uri_t **out)
+{
+   char *uri_str;
+   char *tmp;
+
+   tmp = test_framework_get_uri_str_no_auth ("admin");
+   uri_str = test_framework_add_user_password (tmp, username, password);
+   mongoc_uri_destroy (*out);
+   *out = mongoc_uri_new (uri_str);
+   bson_free (tmp);
+   bson_free (uri_str);
+}
+
+static void
 _test_mongoc_scram_saslprep_auth (bool pooled)
 {
+   mongoc_uri_t *uri = NULL;
+
+   /* Test URIs of the form in the auth spec test plan for SASLPrep.
+      - mongodb://IX:IX@mongodb.example.com/admin
+      - mongodb://IX:I%C2%ADX@mongodb.example.com/admin
+      - mongodb://%E2%85%A8:IV@mongodb.example.com/admin
+      - mongodb://%E2%85%A8:I%C2%ADV@mongodb.example.com/admin
+
+      Test in three ways.
+      1. By embedding the multi-byte UTF-8 characters directly into the
+      connection string.
+      2. By percent escaping the multi-byte UTF-8 characters.
+      3. By using the setters, mongoc_uri_set_username/mongoc_uri_set_password
+      and embedding the UTF-8 characters (percent unescaping does not occur for
+      the setters)
+   */
+
+   /* Way 1: embedding multi-byte UTF-8 characters directly */
+   _make_uri ("IX", "IX", &uri);
+   _try_auth_from_uri (pooled, uri, MONGOC_TEST_NO_ERROR);
+
+   _make_uri ("IX", ROMAN_NUMERAL_NINE, &uri);
+   _try_auth_from_uri (pooled, uri, MONGOC_TEST_NO_ERROR);
+
+   _make_uri (ROMAN_NUMERAL_NINE, "IV", &uri);
+   _try_auth_from_uri (pooled, uri, MONGOC_TEST_NO_ERROR);
+
+   _make_uri (ROMAN_NUMERAL_NINE, ROMAN_NUMERAL_FOUR, &uri);
+   _try_auth_from_uri (pooled, uri, MONGOC_TEST_NO_ERROR);
+
+   /* Way 2: Percent escaping */
+   _make_uri ("IX", "IX", &uri);
+   _try_auth_from_uri (pooled, uri, MONGOC_TEST_NO_ERROR);
+
+   _make_uri ("IX", "I%C2%ADX", &uri);
+   _try_auth_from_uri (pooled, uri, MONGOC_TEST_NO_ERROR);
+
+   _make_uri ("%E2%85%A8", "IV", &uri);
+   _try_auth_from_uri (pooled, uri, MONGOC_TEST_NO_ERROR);
+
+   _make_uri ("%E2%85%A8", "I%C2%ADV", &uri);
+   _try_auth_from_uri (pooled, uri, MONGOC_TEST_NO_ERROR);
+   mongoc_uri_destroy (uri);
+
+   /* Way 3: with username/password setters. */
    _try_auth (pooled, "IX", "IX", NULL, MONGOC_TEST_NO_ERROR);
    _try_auth (pooled, "IX", ROMAN_NUMERAL_NINE, NULL, MONGOC_TEST_NO_ERROR);
    _try_auth (pooled, ROMAN_NUMERAL_NINE, "IV", NULL, MONGOC_TEST_NO_ERROR);
