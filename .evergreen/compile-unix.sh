@@ -61,6 +61,12 @@ echo "ZSTD: $ZSTD"
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 echo "OS: $OS"
 
+# Since zstd inconsitently installed on macos-1014.
+# Remove this check in CDRIVER-3483.
+if [ "darwin" = "$OS" ]; then
+   ZSTD="OFF"
+fi
+
 # Automatically retrieve the machine architecture, lowercase, unless provided
 # as an environment variable (e.g. to force 32bit)
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')

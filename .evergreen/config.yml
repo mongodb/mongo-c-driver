@@ -12362,10 +12362,10 @@ buildvariants:
   - link-with-cmake-snappy-deprecated
   - name: link-with-cmake-mac
     distros:
-    - macos-1012
+    - macos-1014
   - name: link-with-cmake-mac-deprecated
     distros:
-    - macos-1012
+    - macos-1014
   - name: link-with-cmake-windows
     distros:
     - windows-64-vs2015-compile
@@ -12383,7 +12383,7 @@ buildvariants:
     - ubuntu1604-test
   - name: link-with-pkg-config-mac
     distros:
-    - macos-1012
+    - macos-1014
   - link-with-pkg-config-ssl
   - link-with-bson
   - name: link-with-bson-windows
@@ -12391,7 +12391,7 @@ buildvariants:
     - windows-64-vs2015-compile
   - name: link-with-bson-mac
     distros:
-    - macos-1012
+    - macos-1014
   - name: link-with-bson-mingw
     distros:
     - windows-64-vs2013-compile
@@ -12670,9 +12670,9 @@ buildvariants:
   display_name: '*Darwin, macOS (Apple LLVM)'
   expansions:
     CC: clang
-  run_on: macos-1012
+  run_on: macos-1014
   tasks:
-  - .compression !.snappy
+  - .compression !.snappy !.zstd
   - debug-compile-coverage
   - release-compile
   - debug-compile-nosasl-nossl
