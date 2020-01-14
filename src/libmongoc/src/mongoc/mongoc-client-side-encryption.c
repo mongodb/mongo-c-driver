@@ -644,7 +644,7 @@ _mongoc_cse_auto_encrypt (mongoc_client_t *client_encrypted,
    bson_iter_t iter;
    mongoc_client_t *mongocryptd_client = NULL;
    mongoc_collection_t *keyvault_coll = NULL;
-   bool retried;
+   bool retried = false;
 
    ENTRY;
 
@@ -977,7 +977,6 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
    if (dup2 (fd, STDERR_FILENO) < 0 || close (fd) < 0) {
       exit (EXIT_FAILURE);
    }
-   fd = 0;
 
    if (path) {
       to_exec = bson_strdup_printf ("%s%s", path, args[0]);
