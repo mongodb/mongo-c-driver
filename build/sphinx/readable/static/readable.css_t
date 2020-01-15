@@ -1,44 +1,23 @@
 /*
- * mongoc.css_t
+ * readable.css_t
  * ~~~~~~~~~~~~~~
  *
- * Sphinx stylesheet -- MongoDB C Driver theme.
+ * Sphinx stylesheet -- readable theme.
  *
- * Adapted from Sphinx Readable Theme, Copyright 2013 by Ignacy Sokolowski
- * https://github.com/ignacysokolowski/sphinx-readable-theme
+ * :copyright: Copyright 2013 by Ignacy Sokolowski.
+ * :license: MIT, see LICENSE for details.
  *
- * Copyright (c) 2017 MongoDB, Inc.
- *
- *                               MIT LICENSE
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
  */
 
-{% set page_width = '90%' %}
+{% set page_width = '940px' %}
 
 @import url('basic.css');
  
 /* -- page layout --------------------------------------------------------- */
  
 body {
-    font-family: sans-serif;
-    font-size: 18px;
+    font-family: 'Georgia', serif;
+    font-size: 17px;
     margin: 0;
     padding: 0;
 }
@@ -57,11 +36,6 @@ div.bodywrapper {
     margin: 0 0 0 {{ theme_sidebarwidth|toint }}px;
 }
 
-/* make room for the big table */
-div.bodywrapper#errors {
-    margin: 0;
-}
-
 div.body {
     background-color: #ffffff;
     color: #3e4349;
@@ -72,30 +46,20 @@ div.footer {
     color: #555;
     font-size: 14px;
     margin: 20px auto 30px auto;
-    padding: 1em;
+    text-align: right;
     max-width: 880px;
 }
  
 div.footer a {
+    color: #444;
     text-decoration: underline;
 }
-
+ 
 div.related {
-    padding: 10px 0;
+    padding: 10px 10px;
     width: auto;
 }
-
-/* on wide windows, show the sidebar and hide the home link */
-div.related li.nav-item-0 {
-    display: none;
-}
-
-div.related ul {
-    padding: 0;
-    padding-left: 0 !important;
-    margin: 0 !important;
-}
-
+ 
 div.sphinxsidebar {
     float: left;
     font-size: 14px;
@@ -107,7 +71,7 @@ div.sphinxsidebar {
 div.sphinxsidebarwrapper {
     font-size: 14px;
     line-height: 1.5em;
-    padding: 10px 0;
+    padding: 10px 0 10px 10px;
 }
 
 div.sphinxsidebar h3,
@@ -117,10 +81,6 @@ div.sphinxsidebar h4 {
     font-weight: normal;
     margin: 0 0 5px 0;
     padding: 0;
-}
-
-div.sphinxsidebarwrapper h3:first-of-type {
-    margin-bottom: 44px;
 }
 
 div.sphinxsidebar h4 {
@@ -144,11 +104,7 @@ div.sphinxsidebar ul {
     margin: 10px 0 20px;
     padding: 0;
 }
-
-div.sphinxsidebar ul li.current > a {
-    font-weight: bold;
-}
-
+ 
 div.sphinxsidebar a {
     color: #444;
 }
@@ -161,31 +117,6 @@ div.sphinxsidebar input {
     border: 1px solid #ccc;
     font-family: sans-serif;
     font-size: 1em;
-}
-
-div.footer-nav {
-    clear: both;
-}
-
-div.footer a.footer-nav-button {
-    display: block;
-    font-size: 18px;
-    margin: 0.5em 0;
-    text-decoration: none;
-}
-
-a.footer-nav-button-prev {
-    float: left;
-}
-
-a.footer-nav-button-next {
-    float: right;
-}
-
-div.colophon {
-    clear: both;
-    text-align: center;
-    padding: 2em;
 }
 
 /* -- body styles --------------------------------------------------------- */
@@ -307,10 +238,10 @@ div.body ol > li:before {
     text-align: left;
 }
 
-
-div.body p, div.body dd, div.body li,
-div.body blockquote {
-	hyphens: none;
+div.body p,
+div.body dd,
+div.body li {
+    line-height: 1.4em;
 }
  
 div.admonition p.admonition-title + p {
@@ -339,16 +270,7 @@ div.danger, div.error, div.warning {
     background-color: #ffe4e4;
     border: 1px solid #f66;
 }
-
-div.literal-block-wrapper {
-  padding: 0;
-}
-
-span.caption-text {
-  font-family: monospace;
-  font-size: 0.75em;
-}
-
+ 
 p.admonition-title {
     display: inline;
 }
@@ -389,43 +311,6 @@ tt.xref, a tt, code.xref, a code {
 
 span.pre {
     padding: 0 2px;
-}
-
-/* Table-of-contents lists (UL) on home page should look like section headers */
-{% set toc_selector = 'div.bodywrapper#index div.toctree-wrapper > ul' %}
-
-{{ toc_selector }} {
-    margin: 0;
-}
-
-{{ toc_selector }} {
-    padding: 0;
-    margin: 20px 0 0 0;
-}
-
-{{ toc_selector }} > li.toctree-l1 {
-    list-style: none;
-    margin: 20px 0 10px;
-}
-
-{{ toc_selector }} li.toctree-l1 > a {
-    width: 100%;
-    display: block;
-    padding: 17px 0;
-    margin-bottom: 17px;
-    border-bottom: 1px solid #ddd;
-    font-size: 180%;
-    font-weight: normal;
-    color: black;
-}
-
-{{ toc_selector }} li.toctree-l1 > a:hover {
-    text-decoration: none;
-    color: #d00;
-}
-
-{{ toc_selector }} li.toctree-l1 ul {
-    padding-left: 20px;
 }
 
 dl.class, dl.function {
@@ -508,21 +393,15 @@ div.viewcode-block:target {
     border-bottom: 1px solid #fbe091;
 }
 
-a.symbol > span {
-    font-family: monospace;
-    font-size: 0.85em;
-}
-
-div.code-block-caption {
-    font-size: inherit;
-    padding: 0 0 1em 0;
-}
-
 @media screen and (max-width: 870px) {
 
     div.document {
         width: auto;
         margin: 0;
+    }
+
+    div.documentwrapper {
+        float: none;
     }
 
     div.bodywrapper {
@@ -534,12 +413,49 @@ div.code-block-caption {
         padding: 0 20px 30px 20px;
     }
 
-    /* hide side bar and reveal home page link */
-    div.sphinxsidebar, div.colophon {
-        display: none;
+    div.footer {
+        background-color: #333;
+        color: #888;
+        margin: 0;
+        padding: 10px 20px 20px;
+        text-align: left;
+        width: auto;
     }
 
-    div.related li.nav-item-0 {
-        display: inline;
+    div.footer a {
+        color: #bbb;
     }
+
+    div.footer a:hover {
+        color: #fff;
+    }
+
+    div.sphinxsidebar {
+        background-color: #333;
+        color: #fff;
+        float: none;
+        margin: 0;
+        padding: 10px 20px;
+        width: auto;
+    }
+
+    div.sphinxsidebar h3,
+    div.sphinxsidebar h4,
+    div.sphinxsidebar p,
+    div.sphinxsidebar h3 a {
+        color: #fff;
+    }
+
+    div.sphinxsidebar ul {
+        color: #999;
+    }
+
+    div.sphinxsidebar a {
+        color: #aaa;
+    }
+
+    div.sphinxsidebar a:hover {
+        color: #fff;
+    }
+
 }

@@ -1,4 +1,4 @@
-Libbson
+libbson
 =======
 
 A Cross Platform BSON Library for C

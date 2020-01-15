@@ -16,7 +16,7 @@ extensions = [
 ]
 
 # General information about the project.
-project = 'MongoDB C Driver'
+project = 'libmongoc'
 copyright = '2017-present, MongoDB, Inc'
 author = 'MongoDB, Inc'
 
@@ -38,13 +38,15 @@ intersphinx_mapping = {
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme_path = ['../../../build/sphinx']
-html_theme = 'mongoc-theme'
-html_title = html_shorttitle = 'MongoDB C Driver %s' % version
+html_theme_path = ["../../../build/sphinx"]
+html_theme = 'readable'
+html_title = html_shorttitle = 'libmongoc %s' % version
 # html_favicon = None
+html_use_index = False
 
+templates_path = ["../../../build/sphinx"]
 html_sidebars = {
-    '**': ['globaltoc.html'],
+    '**': ['globaltoc.html', 'customindexlink.html', 'searchbox.html'],
     'errors': [],  # Make more room for the big table.
     'mongoc_uri_t': [],  # Make more room for the big table.
 }

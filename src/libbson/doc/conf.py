@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import os.path
 import sys
 
@@ -14,8 +15,9 @@ extensions = [
 ]
 
 # General information about the project.
-project = 'Libbson'
+project = 'libbson'
 copyright = '2017-present, MongoDB, Inc'
+author = 'MongoDB, Inc'
 
 version_path = os.path.join(
     os.path.dirname(__file__), '../../..', 'VERSION_CURRENT')
@@ -27,15 +29,18 @@ master_doc = 'index'
 
 # -- Options for HTML output ----------------------------------------------
 
-html_theme_path = ['../../../build/sphinx']
-html_theme = 'mongoc-theme'
+html_theme_path = ["../../../build/sphinx"]
+html_theme = 'readable'
 html_title = html_shorttitle = 'libbson %s' % version
 # html_favicon = None
 
+templates_path = ["../../../build/sphinx"]
 html_sidebars = {
-    '**': ['globaltoc.html'],
+    '**': ['globaltoc.html', 'customindexlink.html', 'searchbox.html'],
     'errors': [],  # Make more room for the big table.
 }
+
+html_use_index = False
 
 
 def add_canonical_link(app, pagename, templatename, context, doctree):
@@ -43,7 +48,6 @@ def add_canonical_link(app, pagename, templatename, context, doctree):
             ' href="http://mongoc.org/libbson/current/%s.html"/>' % pagename)
 
     context['metatags'] = context.get('metatags', '') + link
-
 
 def setup(app):
     mongoc_common_setup(app)

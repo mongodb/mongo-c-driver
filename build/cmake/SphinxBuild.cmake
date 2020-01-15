@@ -62,7 +62,6 @@ function (sphinx_build_html target_name doc_dir)
 
    # Ensure additional Sphinx-generated content gets installed
    install (FILES
-      ${SPHINX_HTML_DIR}/genindex.html
       ${SPHINX_HTML_DIR}/search.html
       ${SPHINX_HTML_DIR}/objects.inv
       ${SPHINX_HTML_DIR}/searchindex.js

@@ -1,5 +1,5 @@
-MongoDB C Driver
-================
+libmongoc
+=========
 
 A Cross Platform MongoDB Client Library for C
 
