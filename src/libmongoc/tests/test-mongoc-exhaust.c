@@ -539,6 +539,93 @@ test_exhaust_server_err_2nd_batch_pooled (void)
    _mock_test_exhaust (true, SECOND_BATCH, SERVER_ERROR);
 }
 
+#ifndef _WIN32
+#include <sys/wait.h>
+/* Test that calling mongoc_client_reset on a client that has an exhaust cursor
+ * closes the socket open to that server, and marks the client as no longer in
+ * exhaust. */
+static void
+test_exhaust_in_child (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bool ret;
+   mongoc_cursor_t *cursor;
+   bson_t *to_insert;
+   int i;
+   bson_error_t error;
+   const bson_t *doc;
+   mongoc_bulk_operation_t *bulk;
+   pid_t pid;
+   uint32_t server_id;
+   int child_exit_status;
+
+   client = test_framework_client_new ();
+   coll = get_test_collection (client, "exhaust_in_child");
+
+   /* insert some documents, more than one reply's worth. */
+   to_insert = BCON_NEW ("x", BCON_INT32 (1));
+   bulk = mongoc_collection_create_bulk_operation (coll, false, NULL /* wc */);
+   for (i = 0; i < 1001; i++) {
+      ret = mongoc_bulk_operation_insert_with_opts (
+         bulk, to_insert, NULL /* opts */, &error);
+      ASSERT_OR_PRINT (ret, error);
+   }
+   ret = mongoc_bulk_operation_execute (bulk, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (ret, error);
+   mongoc_bulk_operation_destroy (bulk);
+
+   /* create an exhaust cursor. */
+   cursor = mongoc_collection_find_with_opts (coll,
+                                              tmp_bson ("{}"),
+                                              tmp_bson ("{'exhaust': true }"),
+                                              NULL /* read prefs */);
+   BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
+   BSON_ASSERT (client->in_exhaust);
+   server_id = mongoc_cursor_get_hint (cursor);
+
+   pid = fork ();
+   if (pid == 0) {
+      bson_t *ping;
+
+      /* In child process, reset the client and destroy the cursor. */
+      mongoc_client_reset (client);
+      mongoc_cursor_destroy (cursor);
+      /* The client should no longer be in exhaust */
+      BSON_ASSERT (!client->in_exhaust);
+      /* A command directly on that server should still work (it should open a
+       * new socket). */
+      ping = BCON_NEW ("ping", BCON_INT32 (1));
+      ret = mongoc_client_command_simple_with_server_id (client,
+                                                         "admin",
+                                                         ping,
+                                                         NULL /* read prefs */,
+                                                         server_id,
+                                                         NULL /* reply */,
+                                                         &error);
+      ASSERT_OR_PRINT (ret, error);
+      mongoc_collection_destroy (coll);
+      mongoc_client_destroy (client);
+      /* Clean up and exit, so child does not continue running test-libmongoc.
+       */
+      mongoc_cleanup ();
+      exit (0);
+   }
+
+   BSON_ASSERT (-1 != waitpid (pid, &child_exit_status, 0 /* opts */));
+   BSON_ASSERT (0 == child_exit_status);
+   while (mongoc_cursor_next (cursor, &doc))
+      ;
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   bson_destroy (to_insert);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_drop (coll, &error);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+#endif /* _WIN32 */
+
 void
 test_exhaust_install (TestSuite *suite)
 {
@@ -595,4 +682,12 @@ test_exhaust_install (TestSuite *suite)
       suite,
       "/Client/exhaust_cursor/err/server/2nd_batch/pooled",
       test_exhaust_server_err_2nd_batch_pooled);
+#ifndef _WIN32
+   /* Skip on Windows, since "fork" is not available and this test is not
+    * particularly platform dependent. */
+   if (!TestSuite_NoFork (suite)) {
+      TestSuite_AddLive (
+         suite, "/Client/exhaust_cursor/after_reset", test_exhaust_in_child);
+   }
+#endif /* _WIN32 */
 }

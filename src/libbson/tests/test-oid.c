@@ -469,7 +469,7 @@ test_bson_oid_after_fork (void)
       bson_oid_t parent_2_oid;
       _parsed_oid_t parent_2_parsed;
 
-      wait (&child_exit_status);
+      BSON_ASSERT (-1 != waitpid (pid, &child_exit_status, 0 /* opts */));
       BSON_ASSERT (child_exit_status == 0);
 
       /* but initializing another OID in the parent does *not* change random
@@ -501,7 +501,7 @@ test_bson_oid_after_fork (void)
       bson_oid_t parent_2_oid;
       _parsed_oid_t parent_2_parsed;
 
-      wait (&child_exit_status);
+      BSON_ASSERT (-1 != waitpid (pid, &child_exit_status, 0 /* opts */));
       BSON_ASSERT (child_exit_status == 0);
 
       /* but initializing another OID in the parent does *not* change random
@@ -536,13 +536,8 @@ test_bson_hostnames (void)
 {
    bson_context_t *ctx;
    bson_oid_t oid;
-   char *hostname_tests[] = {"",
-                             "h",
-                             "host",
-                             "host1",
-                             "host12",
-                             "host123",
-                             "placeholder"};
+   char *hostname_tests[] = {
+      "", "h", "host", "host1", "host12", "host123", "placeholder"};
    int i;
    char max_len_host[HOST_NAME_MAX] = {0};
 

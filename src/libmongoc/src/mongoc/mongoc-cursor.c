@@ -598,16 +598,19 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       cursor->impl.destroy (&cursor->impl);
    }
 
-   if (cursor->client_generation == cursor->client->generation) {
-      if (cursor->in_exhaust) {
-         cursor->client->in_exhaust = false;
-         if (cursor->state != DONE) {
-            /* The only way to stop an exhaust cursor is to kill the connection
-             */
-            mongoc_cluster_disconnect_node (
-               &cursor->client->cluster, cursor->server_id, false, NULL);
-         }
-      } else if (cursor->cursor_id) {
+   /* Always close the socket for an exhaust cursor, even if the client was
+    * reset with mongoc_client_reset. That prevents further use of that socket.
+    */
+   if (cursor->in_exhaust) {
+      cursor->client->in_exhaust = false;
+      if (cursor->state != DONE) {
+         /* The only way to stop an exhaust cursor is to kill the connection
+            */
+         mongoc_cluster_disconnect_node (
+            &cursor->client->cluster, cursor->server_id, false, NULL);
+      }
+   } else if (cursor->client_generation == cursor->client->generation) {
+      if (cursor->cursor_id) {
          bson_strncpy (db, cursor->ns, cursor->dblen + 1);
 
          _mongoc_client_kill_cursor (cursor->client,
