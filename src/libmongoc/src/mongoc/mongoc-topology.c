@@ -470,6 +470,7 @@ _mongoc_topology_clear_session_pool (mongoc_topology_t *topology)
    {
       _mongoc_server_session_destroy (ss);
    }
+   topology->session_pool = NULL;
 }
 
 
