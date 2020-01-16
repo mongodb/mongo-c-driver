@@ -88,7 +88,7 @@ def find_node(doctree, klass):
     if not matches:
         raise IndexError("No %s in %s" % (klass, doctree))
 
-    return matches[0]
+    return next(matches)
 
 class VersionList(Directive):
     """ Custom directive to generate the version list from an environment variable """
