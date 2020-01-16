@@ -124,13 +124,13 @@ count_dots (const char *s)
 }
 
 
-/* at least one character, and does not start or end with dot */
+/* at least one character, and does not start with dot */
 static bool
 valid_hostname (const char *s)
 {
    size_t len = strlen (s);
 
-   return len > 1 && s[0] != '.' && s[len - 1] != '.';
+   return len > 1 && s[0] != '.';
 }
 
 

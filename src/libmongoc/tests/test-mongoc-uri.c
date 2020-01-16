@@ -2116,7 +2116,6 @@ test_mongoc_uri_srv (void)
    ASSERT (!mongoc_uri_new ("mongodb+srv://.foo"));
    ASSERT (!mongoc_uri_new ("mongodb+srv://.."));
    ASSERT (!mongoc_uri_new ("mongodb+srv://.a."));
-   ASSERT (!mongoc_uri_new ("mongodb+srv://a.b.c.com."));
    ASSERT (!mongoc_uri_new ("mongodb+srv://.a.b.c.com"));
    ASSERT (!mongoc_uri_new ("mongodb+srv://foo\x08\x00bar"));
    ASSERT (!mongoc_uri_new ("mongodb+srv://foo%00bar"));
@@ -2158,6 +2157,23 @@ test_mongoc_uri_srv (void)
    VALID (uri, "b.c.d.com");
    VALID (uri, "a.b.c.d.com");
    VALID (uri, "foo.a.b.c.d.com");
+
+   mongoc_uri_destroy (uri);
+
+   /* trailing dot is OK */
+   uri = mongoc_uri_new ("mongodb+srv://service.consul.");
+   BSON_ASSERT (uri);
+   ASSERT_CMPSTR (mongoc_uri_get_service (uri), "service.consul.");
+   BSON_ASSERT (mongoc_uri_get_hosts (uri) == NULL);
+
+   INVALID (uri, ".consul.");
+   INVALID (uri, "service.consul");
+   INVALID (uri, "a.service.consul");
+   INVALID (uri, "service.a.consul");
+   INVALID (uri, "a.com");
+   VALID (uri, "service.consul.");
+   VALID (uri, "a.service.consul.");
+   VALID (uri, "a.b.service.consul.");
 
    mongoc_uri_destroy (uri);
 }
