@@ -1,9 +1,76 @@
-Next
-====
+mongo-c-driver 1.16.0
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.16.0.
+
+Features:
+  
+  * Support Client-side Field Level Encryption.
+  * Support ability to pass an index hint to update operations.
+  * Add cmake export targets.
 
 Bug fixes:
   * Fix a bug with Windows SSPI failing to authenticate with GSSAPI when using
     pooled clients for certain operations.
+  * Fix behavior for bulk writes that retry to keep track of the successful server.
+  * Remove hard limit of 1024 characters for SRV response.
+  * Fix racy crash when using client pool against a sharded cluster if a server is invalidated shortly before a new socket is opened against it.
+  * Remove unnecessary library dependencies causing overlinking.
+  * Ensure server proof has been validated during SCRAM conversation.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Jeremy Mikola
+  * Clyde Bazile
+  * Andreas Braun
+  * Roberto C. Sánchez
+  * Samantha Ritter
+  * Isabel Atkinson
+  * Kaitlin Mahar
+  * Diego Barrios Romero
+  * Sara Golemon
+  * Vasil Velichkov
+  * EGuesnet
+
+Peace,
+
+    Kevin Albertson
+
+mongo-c-driver 1.15.3
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.15.3.
+
+Bug fixes:
+    * Fix a hang on macOS when connecting to a server over TLS
+    * Add zstd as a dependency when libmongoc static library is compiled with zstd support
+    * Fix compilation on AIX 6.1
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Samantha Ritter
+  * EGuesnet
+
+mongo-c-driver 1.15.2
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.15.2.
+
+Bug fixes:
+   * Prevent mongoc_transaction_opts_set_max_commit_time_ms from applying to subsequent transactions that should be using the default.
+   * Do not report the initial error if a retry for a change stream function (mongoc_collection_watch, mongoc_database_watch, or mongoc_client_watch) succeeds
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Andreas Braun
+  * Clyde Bazile
+
+Peace,
+
+    Kevin Albertson
+
 
 mongo-c-driver 1.15.1
 =====================

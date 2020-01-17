@@ -1,7 +1,48 @@
+libbson 1.16.0
+==============
+
+It is my pleasure to announce libbson 1.16.0.
+
+Bug fixes:
+
+  * Fix crash if an empty BSON binary value is copied and then appended.
+  * Fix out-of-bounds read when parsing JSON.
+  * Fix out-of-bounds read when parsing base64.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Roberto C. Sánchez
+  * Clyde Bazile
+  * Diego Barrios Romero
+  * Vasil Velichkov
+
+Peace,
+
+    Kevin Albertson
+
+libbson 1.15.3
+==============
+
+It is my pleasure to announce libbson 1.15.3.
+
+No changes since 1.15.2; release to keep pace with libmongoc's version.
+
+-- Kevin Albertson
+
+libbson 1.15.2
+==============
+
+It is my pleasure to announce libbson 1.15.2.
+
+No changes since 1.15.1; release to keep pace with libmongoc's version.
+
+-- Kevin Albertson
+
 libbson 1.15.1
 ==============
 
-No change since 1.15.1; released to keep pace with libmongoc's version.
+No change since 1.15.0; released to keep pace with libmongoc's version.
 
 -- Clyde Bazile
 
