@@ -19,7 +19,7 @@ Standards-Version: 4.4.1
 Section: libs
 Homepage: https://github.com/mongodb/mongo-c-driver
 Vcs-Git: https://github.com/mongodb/mongo-c-driver.git
-Vcs-Browser: https://github.com/mongodb/mongo-c-driver/tree/master
+Vcs-Browser: https://github.com/mongodb/mongo-c-driver/tree/r1.16
 
 Package: libmongoc-dev
 Section: libdevel
