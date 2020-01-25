@@ -44,7 +44,7 @@ Files: build/sphinx/taglist.py src/libbson/doc/taglist.py
 Copyright: 2007-2009 by the Sphinx team
 License: Expat
 
-Files: build/sphinx/mongoc-theme/static/mongoc.css_t
+Files: build/sphinx/readable/static/readable.css_t
 Copyright: 2013 by Ignacy Sokolowski
 License: Expat
 
