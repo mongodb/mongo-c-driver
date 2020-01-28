@@ -1352,6 +1352,8 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
       bson_init (&cmd);
 
       if (scram.step == 1) {
+         bson_t options;
+
          BSON_APPEND_INT32 (&cmd, "saslStart", 1);
          if (algo == MONGOC_CRYPTO_ALGORITHM_SHA_1) {
             BSON_APPEND_UTF8 (&cmd, "mechanism", "SCRAM-SHA-1");
@@ -1363,6 +1365,11 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
          bson_append_binary (
             &cmd, "payload", 7, BSON_SUBTYPE_BINARY, buf, buflen);
          BSON_APPEND_INT32 (&cmd, "autoAuthorize", 1);
+
+         BSON_APPEND_DOCUMENT_BEGIN (&cmd, "options", &options);
+         BSON_APPEND_BOOL (&options, "skipEmptyExchange", true);
+         bson_append_document_end (&cmd, &options);
+
       } else {
          BSON_APPEND_INT32 (&cmd, "saslContinue", 1);
          BSON_APPEND_INT32 (&cmd, "conversationId", conv_id);
