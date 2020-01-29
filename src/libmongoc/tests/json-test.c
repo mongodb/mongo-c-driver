@@ -1221,6 +1221,11 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
             uri, "retryReads", bson_iter_bool (&iter));
       } else if (!strcmp (bson_iter_key (&iter), "autoEncryptOpts")) {
          /* Auto encrypt options are set on constructed client, not in URI. */
+      } else if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+         mongoc_write_concern_t *wc =
+            bson_lookup_write_concern (opts, "writeConcern");
+         mongoc_uri_set_write_concern (uri, wc);
+         mongoc_write_concern_destroy (wc);
       } else {
          MONGOC_ERROR ("Unsupported clientOptions field \"%s\" in %s",
                        bson_iter_key (&iter),
@@ -1351,12 +1356,24 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
    mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
 }
 
+static bool
+_in_blacklist (const bson_t *test, char **blacklist, uint32_t blacklist_len)
+{
+   int i;
+   const char *desc = bson_lookup_utf8 (test, "description");
 
+   for (i = 0; i < blacklist_len; i++) {
+      if (0 == strcmp (desc, blacklist[i])) {
+         return true;
+      }
+   }
+
+   return false;
+}
 static bool
 _should_skip_due_to_server_39704 (const bson_t *test)
 {
-   const char *desc = bson_lookup_utf8 (test, "description");
-   const char *bad_tests[] = {
+   char *blacklist[] = {
       "only first countDocuments includes readConcern",
       "only first find includes readConcern",
       "only first aggregate includes readConcern",
@@ -1372,17 +1389,27 @@ _should_skip_due_to_server_39704 (const bson_t *test)
       "withTransaction explicit transaction options override "
       "defaultTransactionOptions",
       "withTransaction explicit transaction options override client options"};
-   int i;
 
    /* Only an issue for sharded clusters. */
    if (!test_framework_is_mongos ()) {
       return false;
    }
 
-   for (i = 0; i < sizeof (bad_tests) / sizeof (char *); i++) {
-      if (0 == strcmp (desc, bad_tests[i])) {
-         return true;
-      }
+   if (_in_blacklist (test, blacklist, sizeof (blacklist) / sizeof (char *))) {
+      return true;
+   }
+
+   return false;
+}
+
+static bool
+_should_skip_due_to_unsupported_operation (const bson_t *test)
+{
+   char *blacklist[] = {"CreateIndex and dropIndex omits default write concern",
+                        "MapReduce omits default write concern"};
+
+   if (_in_blacklist (test, blacklist, sizeof (blacklist) / sizeof (char *))) {
+      return true;
    }
 
    return false;
@@ -1467,6 +1494,15 @@ run_json_general_test (const json_test_config_t *config)
                   " - %s SKIPPED, reason: SERVER-39704 causes sharded tests to "
                   "fail when using readConcern: snapshot\n",
                   description);
+         continue;
+      }
+
+      if (_should_skip_due_to_unsupported_operation (&test)) {
+         fprintf (
+            stderr,
+            " - %s SKIPPED, reason: test requires operation that libmongoc"
+            " does not provide\n",
+            description);
          continue;
       }
 

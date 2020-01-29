@@ -315,6 +315,10 @@ bson_lookup_read_concern (const bson_t *b, const char *key)
    mongoc_read_concern_t *rc = mongoc_read_concern_new ();
 
    bson_lookup_doc (b, key, &doc);
+   if (!bson_has_field (&doc, "level")) {
+      /* empty document means default read concern. */
+      return rc;
+   }
    mongoc_read_concern_set_level (rc, bson_lookup_utf8 (&doc, "level"));
 
    return rc;
@@ -341,10 +345,10 @@ bson_lookup_write_concern (const bson_t *b, const char *key)
    bson_lookup_doc (b, key, &doc);
    BSON_ASSERT (bson_iter_init (&iter, &doc));
 
-   /* current command monitoring tests always have "w" but may also have
-    * "wtimeout" and "j" fields. */
-   ASSERT_CMPUINT32 (bson_count_keys (&doc), >=, (uint32_t) 1);
-   BSON_ASSERT (bson_iter_find_descendant (&iter, "w", &w));
+   if (!bson_iter_find_descendant (&iter, "w", &w)) {
+      /* empty document means default write concern. */
+      return wc;
+   }
 
    if (BSON_ITER_HOLDS_NUMBER (&w)) {
       mongoc_write_concern_set_w (wc, (int32_t) bson_iter_as_int64 (&w));
