@@ -48,11 +48,6 @@ main (int argc, char *argv[])
    mongoc_client_set_error_api (client, 2);
 
    bson_init (&query);
-
-#if 0
-   bson_append_utf8 (&query, "hello", -1, "world", -1);
-#endif
-
    collection = mongoc_client_get_collection (client, "test", collection_name);
    cursor = mongoc_collection_find_with_opts (
       collection,
