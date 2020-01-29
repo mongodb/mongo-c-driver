@@ -15,6 +15,7 @@ We provide a small number of character and string routines to substitute for tho
     :maxdepth: 1
 
     bson_ascii_strtoll
+    bson_isspace
     bson_snprintf
     bson_strcasecmp
     bson_strdup

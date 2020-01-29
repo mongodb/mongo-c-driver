@@ -287,7 +287,7 @@ static MONGOC_COMMON_ONCE_FUN (bson_b64_initialize_rmap)
    for (i = 1; i < 256; ++i) {
       ch = (unsigned char) i;
       /* Whitespaces */
-      if (ch >= -1 && ch <= 255 && isspace (ch))
+      if (bson_isspace (ch))
          mongoc_b64rmap[i] = mongoc_b64rmap_space;
       /* Padding: stop parsing */
       else if (ch == Pad64)

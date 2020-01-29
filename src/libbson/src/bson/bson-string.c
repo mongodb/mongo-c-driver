@@ -712,7 +712,7 @@ bson_ascii_strtoll (const char *s, char **e, int base)
 
    c = *tok;
 
-   while (c >= -1 && c <= 255 && isspace (c)) {
+   while (bson_isspace (c)) {
       c = *++tok;
    }
 
@@ -810,4 +810,11 @@ bson_strcasecmp (const char *s1, const char *s2)
 #else
    return strcasecmp (s1, s2);
 #endif
+}
+
+
+bool
+bson_isspace (int c)
+{
+   return c >= -1 && c <= 255 && isspace (c);
 }
