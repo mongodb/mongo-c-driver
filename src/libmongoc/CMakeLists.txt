@@ -421,7 +421,9 @@ elseif (NOT ENABLE_CLIENT_SIDE_ENCRYPTION STREQUAL OFF)
 
    if (mongocrypt_FOUND)
       set (LIBMONGOCRYPT_TARGET mongo::mongocrypt)
-      get_target_property (LIBMONGOCRYPT_LIBRARY mongo::mongocrypt LOCATION)
+      get_target_property (LIBMONGOCRYPT_RUNTIME_LIBRARY mongo::mongocrypt LOCATION)
+      get_filename_component(LIBMONGOCRYPT_LIBRARY_LOCATION ${LIBMONGOCRYPT_RUNTIME_LIBRARY} DIRECTORY)
+      find_library (LIBMONGOCRYPT_LIBRARY NAMES mongocrypt PATHS ${LIBMONGOCRYPT_LIBRARY_LOCATION})
       get_target_property (LIBMONGOCRYPT_INCLUDE_DIRECTORIES mongo::mongocrypt INTERFACE_INCLUDE_DIRECTORIES)
       message ("--   libmongocrypt found at ${LIBMONGOCRYPT_LIBRARY}")
       message ("--   libmongocrypt include path ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES}")
@@ -681,11 +683,11 @@ endif ()
 
 set (LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${LIBMONGOCRYPT_TARGET}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} Threads::Threads ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 set (STATIC_LIBRARIES
    ${SASL_LIBRARIES} ${SSL_LIBRARIES} ${SHM_LIBRARIES} ${RESOLV_LIBRARIES}
-   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_TARGET}
+   ${SNAPPY_LIBRARIES} ${ZLIB_LIBRARIES} ${MONGOC_ZSTD_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES} ${LIBMONGOCRYPT_LIBRARY}
 )
 
 if (WIN32)
@@ -697,6 +699,7 @@ set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidd
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
 target_include_directories (mongoc_shared BEFORE PUBLIC ${MONGOC_INTERNAL_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${PRIVATE_ZLIB_INCLUDES})
+target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
 target_compile_definitions (mongoc_shared PRIVATE MONGOC_COMPILATION)
 
 set_target_properties (mongoc_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
@@ -707,6 +710,7 @@ if (MONGOC_ENABLE_STATIC)
    target_link_libraries (mongoc_static ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
    target_include_directories (mongoc_static BEFORE PUBLIC ${MONGOC_INTERNAL_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${PRIVATE_ZLIB_INCLUDES})
+   target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    target_compile_definitions (mongoc_static
       PUBLIC MONGOC_STATIC ${BSON_STATIC_PUBLIC_DEFINITIONS}
       PRIVATE MONGOC_COMPILATION

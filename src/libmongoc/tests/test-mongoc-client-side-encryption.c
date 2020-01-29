@@ -1793,7 +1793,6 @@ test_malformed_explicit (void *unused)
    ret = mongoc_client_encryption_decrypt (
       client_encryption, &ciphertext, &value, &error);
    BSON_ASSERT (!ret);
-   printf ("message=%s\n", error.message);
    bson_value_destroy (&value);
 
    mongoc_client_encryption_opts_destroy (client_encryption_opts);

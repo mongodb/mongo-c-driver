@@ -296,8 +296,14 @@ all_functions = OD([
         # Hide credentials.
         set +o xtrace
         set +o errexit
-        export MONGOC_TEST_AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key}"
-        export MONGOC_TEST_AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id}"
+        # Only set creds if testing with Client Side Encryption.
+        # libmongoc may build with CSE enabled (if the host has libmongocrypt installed)
+        # and will try to run those tests (which fail on ASAN unless spawning is bypassed).
+        if [ -n "$CLIENT_SIDE_ENCRYPTION" ]; then
+          echo "testing with CSE"
+          export MONGOC_TEST_AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key}"
+          export MONGOC_TEST_AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id}"
+        fi
         set -o errexit
         set -o xtrace
         sh .evergreen/run-tests.sh
