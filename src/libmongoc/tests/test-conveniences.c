@@ -28,6 +28,7 @@
 #include "mongoc/mongoc-client-private.h"
 
 #include "test-conveniences.h"
+#include "test-libmongoc.h"
 #include "TestSuite.h"
 
 #ifdef BSON_HAVE_STRINGS_H
@@ -1792,4 +1793,26 @@ json_with_all_types ()
                       "    }\n"
                       "}";
    return json;
+}
+
+void
+assert_wc_oob_error (bson_error_t *error)
+{
+   if (test_framework_get_server_version () >=
+       test_framework_str_to_version ("4.3.3")) {
+      /* Error reporting changed in SERVER-45584 */
+      ASSERT_ERROR_CONTAINS (
+         (*error),
+         MONGOC_ERROR_SERVER,
+         9,
+         "w has to be a non-negative number and not greater than 50");
+   } else {
+      if (test_framework_is_replset ()) { /* replset */
+         ASSERT_ERROR_CONTAINS (
+            (*error), MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
+      } else { /* standalone */
+         ASSERT_CMPINT (error->domain, ==, MONGOC_ERROR_SERVER);
+         ASSERT_CMPINT (error->code, ==, 2);
+      }
+   }
 }

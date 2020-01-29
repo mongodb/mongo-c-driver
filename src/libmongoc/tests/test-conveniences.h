@@ -198,4 +198,7 @@ match_in_array (const bson_t *doc, const bson_t *array, match_ctx_t *ctx);
 void
 match_err (match_ctx_t *ctx, const char *fmt, ...);
 
+void
+assert_wc_oob_error (bson_error_t *error);
+
 #endif /* TEST_CONVENIENCES_H */
