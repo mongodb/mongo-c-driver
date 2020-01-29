@@ -24,7 +24,7 @@ python build/calc_release_version.py -p > VERSION_RELEASED
 # file checks.
 mkdir cmake_build
 cd cmake_build
-$CMAKE -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED -DENABLE_BSON=ON -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF ../
+$CMAKE -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED -DENABLE_BSON=ON ../
 make DISTCHECK_BUILD_OPTS="-j 8" distcheck
 
 # Check that docs were included, but sphinx temp files weren't.

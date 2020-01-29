@@ -1025,6 +1025,7 @@ _spawn_mongocryptd (const char *mongocryptd_spawn_path,
    bool passed_idle_shutdown_timeout_secs = false;
    int num_args = 2; /* for leading "mongocrypt" and trailing NULL */
    int i;
+   bool ret;
 
    /* iterate once to get length and validate all are strings */
    if (mongocryptd_spawn_args) {
@@ -1073,7 +1074,9 @@ _spawn_mongocryptd (const char *mongocryptd_spawn_path,
    BSON_ASSERT (i == num_args - 1);
    args[i++] = NULL;
 
-   return _do_spawn (mongocryptd_spawn_path, args, error);
+   ret = _do_spawn (mongocryptd_spawn_path, args, error);
+   bson_free (args);
+   return ret;
 }
 
 static bool

@@ -208,10 +208,6 @@ if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DCMAKE_PREFIX_PATH="$INSTALL_DIR" ../
    make install
    cd ../../
-else
-   # Hosts may have libmongocrypt installed from apt/yum. We do not want to pick those up
-   # since those libmongocrypt packages statically link libbson.
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF"
 fi
 
 if [ "$ANALYZE" = "ON" ]; then
