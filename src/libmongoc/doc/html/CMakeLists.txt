@@ -20,15 +20,12 @@ extra_dist_generated (
    _static/down-pressed.png
    _static/down.png
    _static/file.png
-   _static/jquery-3.2.1.js
    _static/jquery.js
-   _static/language_data.js
    _static/minus.png
    _static/plus.png
    _static/pygments.css
    _static/readable.css
    _static/searchtools.js
-   _static/underscore-1.3.1.js
    _static/underscore.js
    _static/up-pressed.png
    _static/up.png
