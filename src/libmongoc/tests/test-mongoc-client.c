@@ -224,7 +224,13 @@ test_client_cmd_w_write_concern (void *ctx)
       /* bad write concern in opts */
       ASSERT (!mongoc_client_write_command_with_opts (
          client, "test", command, opts, &reply, &error));
-      assert_wc_oob_error (&error);
+      if (test_framework_is_replset ()) { /* replset */
+         ASSERT_ERROR_CONTAINS (
+            error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
+      } else { /* standalone */
+         ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
+         ASSERT_CMPINT (error.code, ==, 2);
+      }
       bson_destroy (&reply);
    }
 

@@ -307,7 +307,13 @@ test_create_with_write_concern (void *ctx)
 
       if (wire_version_5) {
          ASSERT (!collection);
-         assert_wc_oob_error (&error);
+         if (test_framework_is_replset ()) { /* replica set */
+            ASSERT_ERROR_CONTAINS (
+               error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
+         } else { /* standalone */
+            ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
+            ASSERT_CMPINT (error.code, ==, 2);
+         }
       } else { /* if wire_version <= 4, no error */
          ASSERT_OR_PRINT (collection, error);
          ASSERT (!error.code);
@@ -654,7 +660,13 @@ test_drop (void)
          mongoc_write_concern_append_bad (bad_wc, opts);
          r = mongoc_database_drop_with_opts (database, opts, &error);
          ASSERT (!r);
-         assert_wc_oob_error (&error);
+         if (test_framework_is_replset ()) {
+            ASSERT_ERROR_CONTAINS (
+               error, MONGOC_ERROR_WRITE_CONCERN, 100, "Write Concern error:");
+         } else { /* standalone */
+            ASSERT_CMPINT (error.domain, ==, MONGOC_ERROR_SERVER);
+            ASSERT_CMPINT (error.code, ==, 2);
+         }
          mongoc_database_destroy (database);
       }
    } /* wire_version_5 */
