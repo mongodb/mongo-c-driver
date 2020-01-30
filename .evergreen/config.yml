@@ -12368,16 +12368,16 @@ buildvariants:
     - macos-1014
   - name: link-with-cmake-windows
     distros:
-    - windows-64-vs2017-compile
+    - windows-64-vs2017-test
   - name: link-with-cmake-windows-ssl
     distros:
-    - windows-64-vs2017-compile
+    - windows-64-vs2017-test
   - name: link-with-cmake-windows-snappy
     distros:
-    - windows-64-vs2017-compile
+    - windows-64-vs2017-test
   - name: link-with-cmake-mingw
     distros:
-    - windows-64-vs2017-compile
+    - windows-64-vs2017-test
   - name: link-with-pkg-config
     distros:
     - ubuntu1604-test
@@ -12388,7 +12388,7 @@ buildvariants:
   - link-with-bson
   - name: link-with-bson-windows
     distros:
-    - windows-64-vs2017-compile
+    - windows-64-vs2017-test
   - name: link-with-bson-mac
     distros:
     - macos-1014
@@ -12399,10 +12399,10 @@ buildvariants:
   - install-uninstall-check
   - name: install-uninstall-check-mingw
     distros:
-    - windows-64-vs2017-compile
+    - windows-64-vs2017-test
   - name: install-uninstall-check-msvc
     distros:
-    - windows-64-vs2017-compile
+    - windows-64-vs2017-test
   - debug-compile-with-warnings
 - name: clang34ubuntu
   display_name: clang 3.4 (Ubuntu 14.04)
@@ -12699,7 +12699,7 @@ buildvariants:
   display_name: Windows (i386) (VS 2017)
   expansions:
     CC: Visual Studio 15 2017
-  run_on: windows-64-vs2017-compile
+  run_on: windows-64-vs2017-test
   tasks:
   - .debug-compile .winssl
   - .debug-compile !.sspi .nossl
@@ -12712,7 +12712,7 @@ buildvariants:
   display_name: Windows (VS 2017)
   expansions:
     CC: Visual Studio 15 2017 Win64
-  run_on: windows-64-vs2017-compile
+  run_on: windows-64-vs2017-test
   tasks:
   - .debug-compile .winssl
   - .debug-compile !.sspi .openssl
@@ -12833,7 +12833,7 @@ buildvariants:
   display_name: MinGW-W64 (Windows Server 2016)
   expansions:
     CC: mingw
-  run_on: windows-64-vs2017-compile
+  run_on: windows-64-vs2017-test
   tasks:
   - debug-compile-nosasl-nossl
   - .debug-compile .winssl .sspi
