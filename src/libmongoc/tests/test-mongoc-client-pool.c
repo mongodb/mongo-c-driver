@@ -282,6 +282,59 @@ test_mongoc_client_pool_handshake (void)
    mongoc_client_pool_destroy (pool);
 }
 
+/* Test that destroying a pool without pushing all clients is ok. */
+static void
+test_client_pool_destroy_without_pushing (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client_in_pool;
+   mongoc_client_t *client1;
+   mongoc_client_t *client2;
+   bson_error_t error;
+   bson_t *cmd;
+   bool ret;
+
+   cmd = BCON_NEW ("ping", BCON_INT32 (1));
+   pool = test_framework_client_pool_new ();
+   client1 = mongoc_client_pool_pop (pool);
+   client2 = mongoc_client_pool_pop (pool);
+
+   /* Push a client back onto the pool so endSessions succeeds to avoid a
+    * warning. */
+   client_in_pool = mongoc_client_pool_pop (pool);
+   ret = mongoc_client_command_simple (client_in_pool,
+                                       "admin",
+                                       cmd,
+                                       NULL /* read prefs */,
+                                       NULL /* reply */,
+                                       &error);
+   ASSERT_OR_PRINT (ret, error);
+   mongoc_client_pool_push (pool, client_in_pool);
+
+
+   ret = mongoc_client_command_simple (
+      client1, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (ret, error);
+   ret = mongoc_client_command_simple (
+      client2, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   /* Since clients are checked out of pool, it is technically ok to
+    * mongoc_client_destroy them instead of pushing. */
+   mongoc_client_destroy (client1);
+
+   /* An operation on client2 should still be ok. */
+   ret = mongoc_client_command_simple (
+      client2, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (ret, error);
+   mongoc_client_destroy (client2);
+
+   /* Destroy the pool, which destroys the shared topology object. */
+   mongoc_client_pool_destroy (pool);
+
+   bson_destroy (cmd);
+}
+
 void
 test_client_pool_install (TestSuite *suite)
 {
@@ -306,4 +359,5 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);
 #endif
+   TestSuite_AddLive (suite, "/ClientPool/destroy_without_push", test_client_pool_destroy_without_pushing);
 }
