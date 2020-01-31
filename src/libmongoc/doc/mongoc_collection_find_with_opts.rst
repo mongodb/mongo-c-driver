@@ -146,7 +146,7 @@ Any fields in ``opts`` that are not listed here are passed to the server unmodif
 Deprecated Options
 ------------------
 
-The ``snapshot`` boolean option is removed in MongoDB 4.0. The ``maxScan`` option, a non-negative int64, is deprecated in MongoDB 4.0 and will be removed in a future MongoDB version. Both options are supported by the C Driver with older MongoDB versions.
+The ``snapshot`` boolean option is removed in MongoDB 4.0. The ``maxScan`` option, a non-negative int64, is deprecated in MongoDB 4.0 and will be removed in a future MongoDB version. The ``oplogReplay`` boolean option is deprecated in MongoDB 4.4. All of these options are supported by the C Driver with older MongoDB versions.
 
 See Also
 --------
