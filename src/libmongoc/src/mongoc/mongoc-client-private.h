@@ -43,7 +43,7 @@ BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
 #define WIRE_VERSION_MIN 3
-#define WIRE_VERSION_MAX 8
+#define WIRE_VERSION_MAX 9
 
 /* first version that supported "find" and "getMore" commands */
 #define WIRE_VERSION_FIND_CMD 4
@@ -75,6 +75,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_4_2 8
 /* version corresponding to client side field level encryption support. */
 #define WIRE_VERSION_CSE 8
+/* version corresponding to server 4.4 release */
+#define WIRE_VERSION_4_4 9
 
 struct _mongoc_collection_t;
 
