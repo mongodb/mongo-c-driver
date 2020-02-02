@@ -440,7 +440,7 @@ _mongoc_get_rr_search (const char *service,
 
    do {
       if (search_buf) {
-         free (search_buf);
+         bson_free (search_buf);
 
          /* increase buffer size by the previous response size. This ensures
           * that even if a subsequent response is larger, we'll still be able
@@ -517,7 +517,7 @@ _mongoc_get_rr_search (const char *service,
 
 done:
 
-   free (search_buf);
+   bson_free (search_buf);
 
 #ifdef MONGOC_HAVE_RES_NDESTROY
    /* defined on BSD/Darwin, and only if MONGOC_HAVE_RES_NSEARCH is defined */
