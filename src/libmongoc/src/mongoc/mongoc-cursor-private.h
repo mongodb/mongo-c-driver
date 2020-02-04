@@ -136,7 +136,7 @@ struct _mongoc_cursor_t {
 
    uint32_t count;
 
-   char ns[140];
+   char *ns;
    uint32_t nslen;
    uint32_t dblen;
 

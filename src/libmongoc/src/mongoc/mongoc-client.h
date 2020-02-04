@@ -42,7 +42,8 @@
 
 BSON_BEGIN_DECLS
 
-
+/* This define is part of our public API. But per MongoDB 4.4, there is no
+ * longer a size limit on collection names. */
 #define MONGOC_NAMESPACE_MAX 128
 
 

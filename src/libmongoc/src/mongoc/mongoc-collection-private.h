@@ -28,10 +28,10 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_collection_t {
    mongoc_client_t *client;
-   char ns[128];
+   char *ns;
    uint32_t nslen;
-   char db[128];
-   char collection[128];
+   char *db;
+   char *collection;
    uint32_t collectionlen;
    mongoc_read_prefs_t *read_prefs;
    mongoc_read_concern_t *read_concern;

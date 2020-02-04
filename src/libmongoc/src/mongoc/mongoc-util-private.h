@@ -84,8 +84,9 @@ _mongoc_get_documents_field_name (const char *command_name);
 bool
 _mongoc_lookup_bool (const bson_t *bson, const char *key, bool default_value);
 
-void
-_mongoc_get_db_name (const char *ns, char *db /* OUT */);
+/* Returns a database name that the caller must free. */
+char *
+_mongoc_get_db_name (const char *ns);
 
 void
 _mongoc_bson_init_if_set (bson_t *bson);

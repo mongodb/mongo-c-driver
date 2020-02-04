@@ -440,8 +440,8 @@ _mongoc_change_stream_new_from_collection (const mongoc_collection_t *coll,
 
    stream =
       (mongoc_change_stream_t *) bson_malloc0 (sizeof (mongoc_change_stream_t));
-   bson_strncpy (stream->db, coll->db, sizeof (stream->db));
-   bson_strncpy (stream->coll, coll->collection, sizeof (stream->coll));
+   stream->db = bson_strdup (coll->db);
+   stream->coll = bson_strdup (coll->collection);
    stream->read_prefs = mongoc_read_prefs_copy (coll->read_prefs);
    stream->read_concern = mongoc_read_concern_copy (coll->read_concern);
    stream->client = coll->client;
@@ -460,8 +460,8 @@ _mongoc_change_stream_new_from_database (const mongoc_database_t *db,
 
    stream =
       (mongoc_change_stream_t *) bson_malloc0 (sizeof (mongoc_change_stream_t));
-   bson_strncpy (stream->db, db->name, sizeof (stream->db));
-   stream->coll[0] = '\0';
+   stream->db = bson_strdup (db->name);
+   stream->coll = NULL;
    stream->read_prefs = mongoc_read_prefs_copy (db->read_prefs);
    stream->read_concern = mongoc_read_concern_copy (db->read_concern);
    stream->client = db->client;
@@ -480,8 +480,8 @@ _mongoc_change_stream_new_from_client (mongoc_client_t *client,
 
    stream =
       (mongoc_change_stream_t *) bson_malloc0 (sizeof (mongoc_change_stream_t));
-   bson_strncpy (stream->db, "admin", sizeof (stream->db));
-   stream->coll[0] = '\0';
+   stream->db = bson_strdup ("admin");
+   stream->coll = NULL;
    stream->read_prefs = mongoc_read_prefs_copy (client->read_prefs);
    stream->read_concern = mongoc_read_concern_copy (client->read_concern);
    stream->client = client;
@@ -649,5 +649,7 @@ mongoc_change_stream_destroy (mongoc_change_stream_t *stream)
    mongoc_read_prefs_destroy (stream->read_prefs);
    mongoc_read_concern_destroy (stream->read_concern);
 
+   bson_free (stream->db);
+   bson_free (stream->coll);
    bson_free (stream);
 }

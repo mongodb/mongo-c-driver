@@ -185,9 +185,9 @@ _mongoc_collection_new (mongoc_client_t *client,
    col->read_prefs = read_prefs ? mongoc_read_prefs_copy (read_prefs)
                                 : mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   bson_snprintf (col->ns, sizeof col->ns, "%s.%s", db, collection);
-   bson_snprintf (col->db, sizeof col->db, "%s", db);
-   bson_snprintf (col->collection, sizeof col->collection, "%s", collection);
+   col->ns = bson_strdup_printf ("%s.%s", db, collection);
+   col->db = bson_strdup (db);
+   col->collection = bson_strdup (collection);
 
    col->collectionlen = (uint32_t) strlen (col->collection);
    col->nslen = (uint32_t) strlen (col->ns);
@@ -241,6 +241,9 @@ mongoc_collection_destroy (mongoc_collection_t *collection) /* IN */
       collection->write_concern = NULL;
    }
 
+   bson_free (collection->collection);
+   bson_free (collection->db);
+   bson_free (collection->ns);
    bson_free (collection);
 
    EXIT;
@@ -492,7 +495,7 @@ mongoc_collection_command (mongoc_collection_t *collection,
                            const bson_t *fields,
                            const mongoc_read_prefs_t *read_prefs)
 {
-   char ns[MONGOC_NAMESPACE_MAX];
+   char *ns;
    mongoc_cursor_t *cursor;
 
    BSON_ASSERT (collection);
@@ -505,9 +508,9 @@ mongoc_collection_command (mongoc_collection_t *collection,
    bson_clear (&collection->gle);
 
    if (NULL == strstr (collection->collection, "$cmd")) {
-      bson_snprintf (ns, sizeof ns, "%s.$cmd", collection->db);
+      ns = bson_strdup_printf ("%s.$cmd", collection->db);
    } else {
-      bson_snprintf (ns, sizeof ns, "%s", collection->db);
+      ns = bson_strdup (collection->db);
    }
 
    /* Server Selection Spec: "The generic command method has a default read
@@ -520,6 +523,7 @@ mongoc_collection_command (mongoc_collection_t *collection,
    /* flags, skip, limit, batch_size, fields are unused */
    cursor = _mongoc_cursor_cmd_deprecated_new (
       collection->client, ns, query, read_prefs);
+   bson_free (ns);
    return cursor;
 }
 
@@ -2790,7 +2794,7 @@ mongoc_collection_rename_with_opts (mongoc_collection_t *collection,
                                     bson_error_t *error)
 {
    bson_t cmd = BSON_INITIALIZER;
-   char newns[MONGOC_NAMESPACE_MAX + 1];
+   char *newns;
    bool ret;
 
    BSON_ASSERT (collection);
@@ -2805,8 +2809,8 @@ mongoc_collection_rename_with_opts (mongoc_collection_t *collection,
       return false;
    }
 
-   bson_snprintf (
-      newns, sizeof newns, "%s.%s", new_db ? new_db : collection->db, new_name);
+   newns =
+      bson_strdup_printf ("%s.%s", new_db ? new_db : collection->db, new_name);
 
    BSON_APPEND_UTF8 (&cmd, "renameCollection", collection->ns);
    BSON_APPEND_UTF8 (&cmd, "to", newns);
@@ -2830,21 +2834,20 @@ mongoc_collection_rename_with_opts (mongoc_collection_t *collection,
 
    if (ret) {
       if (new_db) {
-         bson_snprintf (collection->db, sizeof collection->db, "%s", new_db);
+         bson_free (collection->db);
+         collection->db = bson_strdup (new_db);
       }
 
-      bson_snprintf (
-         collection->collection, sizeof collection->collection, "%s", new_name);
+      bson_free (collection->collection);
+      collection->collection = bson_strdup (new_name);
       collection->collectionlen = (int) strlen (collection->collection);
 
-      bson_snprintf (collection->ns,
-                     sizeof collection->ns,
-                     "%s.%s",
-                     collection->db,
-                     new_name);
+      bson_free (collection->ns);
+      collection->ns = bson_strdup_printf ("%s.%s", collection->db, new_name);
       collection->nslen = (int) strlen (collection->ns);
    }
 
+   bson_free (newns);
    bson_destroy (&cmd);
 
    return ret;

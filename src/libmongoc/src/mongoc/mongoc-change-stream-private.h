@@ -49,8 +49,8 @@ struct _mongoc_change_stream_t {
    mongoc_read_concern_t *read_concern;
 
    mongoc_change_stream_type_t change_stream_type;
-   char db[140];
-   char coll[140];
+   char *db;
+   char *coll;
 
    int64_t max_await_time_ms;
    int32_t batch_size;

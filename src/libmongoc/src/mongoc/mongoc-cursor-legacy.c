@@ -39,7 +39,7 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor,
                                         mongoc_server_stream_t *server_stream)
 {
    bson_t doc;
-   char db[MONGOC_NAMESPACE_MAX];
+   char *db;
    mongoc_client_t *client;
    mongoc_apm_command_started_t event;
 
@@ -53,7 +53,7 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor,
 
    _mongoc_cursor_prepare_getmore_command (cursor, &doc);
 
-   bson_strncpy (db, cursor->ns, cursor->dblen + 1);
+   db = bson_strndup (cursor->ns, cursor->dblen);
    mongoc_apm_command_started_init (&event,
                                     &doc,
                                     db,
@@ -67,6 +67,7 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor,
    client->apm_callbacks.started (&event);
    mongoc_apm_command_started_cleanup (&event);
    bson_destroy (&doc);
+   bson_free (db);
 
    RETURN (true);
 }
@@ -79,7 +80,7 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
 {
    bson_t doc;
    mongoc_client_t *client;
-   char db[MONGOC_NAMESPACE_MAX];
+   char *db;
    bool r;
 
    ENTRY;
@@ -91,7 +92,7 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
    }
 
    bson_init (&doc);
-   bson_strncpy (db, cursor->ns, cursor->dblen + 1);
+   db = bson_strndup (cursor->ns, cursor->dblen);
 
    /* simulate a MongoDB 3.2+ "find" command */
    _mongoc_cursor_prepare_find_command (cursor, filter, &doc);
@@ -102,6 +103,7 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
    r = _mongoc_cursor_monitor_command (cursor, server_stream, &doc, "find");
 
    bson_destroy (&doc);
+   bson_free (db);
 
    RETURN (r);
 }

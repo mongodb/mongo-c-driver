@@ -1381,9 +1381,9 @@ mock_server_replies_to_find (request_t *request,
                              bool is_command)
 {
    char *find_reply;
-   char db[MONGOC_NAMESPACE_MAX];
+   char *db;
 
-   _mongoc_get_db_name (ns, db);
+   db = _mongoc_get_db_name (ns);
 
    /* minimal validation, we're not testing query / find cmd here */
    if (request->is_command && !is_command) {
@@ -1417,6 +1417,7 @@ mock_server_replies_to_find (request_t *request,
       mock_server_replies (
          request, MONGOC_REPLY_NONE, cursor_id, 0, number_returned, reply_json);
    }
+   bson_free (db);
 }
 
 

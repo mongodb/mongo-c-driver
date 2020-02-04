@@ -31,7 +31,7 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_database_t {
    mongoc_client_t *client;
-   char name[128];
+   char *name;
    mongoc_read_prefs_t *read_prefs;
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;

@@ -66,7 +66,7 @@ typedef struct _mongoc_async_cmd {
    mongoc_rpc_t rpc;
    bson_t reply;
    bool reply_needs_cleanup;
-   char ns[MONGOC_NAMESPACE_MAX];
+   char *ns;
    struct addrinfo *dns_result;
 
    struct _mongoc_async_cmd *next;

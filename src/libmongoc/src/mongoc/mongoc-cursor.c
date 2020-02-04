@@ -164,8 +164,9 @@ _mongoc_set_cursor_ns (mongoc_cursor_t *cursor, const char *ns, uint32_t nslen)
 {
    const char *dot;
 
-   bson_strncpy (cursor->ns, ns, sizeof cursor->ns);
-   cursor->nslen = BSON_MIN (nslen, sizeof cursor->ns);
+   bson_free (cursor->ns);
+   cursor->ns = bson_strndup (ns, nslen);
+   cursor->nslen = nslen;
    dot = strstr (cursor->ns, ".");
 
    if (dot) {
@@ -587,7 +588,7 @@ done:
 void
 mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 {
-   char db[MONGOC_NAMESPACE_MAX];
+   char *db;
    ENTRY;
 
    if (!cursor) {
@@ -611,7 +612,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       }
    } else if (cursor->client_generation == cursor->client->generation) {
       if (cursor->cursor_id) {
-         bson_strncpy (db, cursor->ns, cursor->dblen + 1);
+         db = bson_strndup (cursor->ns, cursor->dblen);
 
          _mongoc_client_kill_cursor (cursor->client,
                                      cursor->server_id,
@@ -620,6 +621,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
                                      db,
                                      cursor->ns + cursor->dblen + 1,
                                      cursor->client_session);
+         bson_free (db);
       }
    }
 
@@ -633,6 +635,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
 
    bson_destroy (&cursor->opts);
    bson_destroy (&cursor->error_doc);
+   bson_free (cursor->ns);
    bson_free (cursor);
 
    mongoc_counter_cursors_active_dec ();
@@ -688,7 +691,7 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
 {
    mongoc_client_t *client;
    mongoc_apm_command_started_t event;
-   char db[MONGOC_NAMESPACE_MAX];
+   char *db;
 
    ENTRY;
 
@@ -698,7 +701,7 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
       RETURN (true);
    }
 
-   bson_strncpy (db, cursor->ns, cursor->dblen + 1);
+   db = bson_strndup (cursor->ns, cursor->dblen);
 
    mongoc_apm_command_started_init (&event,
                                     cmd,
@@ -712,6 +715,7 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
 
    client->apm_callbacks.started (&event);
    mongoc_apm_command_started_cleanup (&event);
+   bson_free (db);
 
    RETURN (true);
 }
@@ -918,7 +922,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    const char *cmd_name;
    bool is_primary;
    mongoc_read_prefs_t *prefs = NULL;
-   char db[MONGOC_NAMESPACE_MAX];
+   char *db = NULL;
    mongoc_session_opt_t *session_opts;
    bool ret = false;
    bool is_retryable = true;
@@ -986,7 +990,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
-   bson_strncpy (db, cursor->ns, cursor->dblen + 1);
+   db = bson_strndup (cursor->ns, cursor->dblen);
    parts.assembled.db_name = db;
 
    if (!_mongoc_cursor_opts_to_flags (
@@ -1095,6 +1099,7 @@ done:
    mongoc_server_stream_cleanup (server_stream);
    mongoc_cmd_parts_cleanup (&parts);
    mongoc_read_prefs_destroy (prefs);
+   bson_free (db);
 
    return ret;
 }
@@ -1369,7 +1374,7 @@ mongoc_cursor_clone (const mongoc_cursor_t *cursor)
    bson_copy_to (&cursor->opts, &_clone->opts);
    bson_init (&_clone->error_doc);
 
-   bson_strncpy (_clone->ns, cursor->ns, sizeof _clone->ns);
+   _clone->ns = bson_strdup (cursor->ns);
 
    /* copy the context functions by default. */
    memcpy (&_clone->impl, &cursor->impl, sizeof (cursor->impl));

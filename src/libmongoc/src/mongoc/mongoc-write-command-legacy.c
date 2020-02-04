@@ -133,7 +133,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
    bson_iter_t q_iter;
    uint32_t len;
    int64_t limit = 0;
-   char ns[MONGOC_NAMESPACE_MAX + 1];
+   char *ns;
    bool r;
    bson_reader_t *reader;
    const bson_t *bson;
@@ -160,7 +160,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
       EXIT;
    }
 
-   bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
+   ns = bson_strdup_printf ("%s.%s", database, collection);
 
    reader =
       bson_reader_new_from_data (command->payload.data, command->payload.len);
@@ -178,6 +178,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
             error, 0, len, max_bson_obj_size);
          result->failed = true;
          bson_reader_destroy (reader);
+         bson_free (ns);
          EXIT;
       }
 
@@ -205,6 +206,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
       if (!mongoc_cluster_legacy_rpc_sendv_to_server (
              &client->cluster, &rpc, server_stream, error)) {
          result->failed = true;
+         bson_free (ns);
          bson_reader_destroy (reader);
          EXIT;
       }
@@ -220,6 +222,7 @@ _mongoc_write_command_delete_legacy (mongoc_write_command_t *command,
    }
    bson_reader_destroy (reader);
 
+   bson_free (ns);
    EXIT;
 }
 
@@ -239,7 +242,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
    mongoc_rpc_t rpc;
    uint32_t size = 0;
    bool has_more;
-   char ns[MONGOC_NAMESPACE_MAX + 1];
+   char *ns;
    uint32_t n_docs_in_batch;
    uint32_t request_id = 0;
    uint32_t idx = 0;
@@ -273,7 +276,7 @@ _mongoc_write_command_insert_legacy (mongoc_write_command_t *command,
       EXIT;
    }
 
-   bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
+   ns = bson_strdup_printf ("%s.%s", database, collection);
 
    iov = (mongoc_iovec_t *) bson_malloc ((sizeof *iov) * command->n_documents);
 
@@ -356,6 +359,7 @@ cleanup:
       GOTO (again);
    }
 
+   bson_free (ns);
    bson_free (iov);
 
    EXIT;
@@ -383,7 +387,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
    uint32_t len = 0;
    size_t err_offset;
    bool val = false;
-   char ns[MONGOC_NAMESPACE_MAX + 1];
+   char *ns;
    int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
                  BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
    bson_reader_t *reader;
@@ -435,7 +439,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
       }
    }
 
-   bson_snprintf (ns, sizeof ns, "%s.%s", database, collection);
+   ns = bson_strdup_printf ("%s.%s", database, collection);
 
    bson_reader_destroy (reader);
    reader =
@@ -460,6 +464,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
                   error, 0, len, max_bson_obj_size);
                result->failed = true;
                bson_reader_destroy (reader);
+               bson_free (ns);
                EXIT;
             }
 
@@ -472,6 +477,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
                   error, 0, len, max_bson_obj_size);
                result->failed = true;
                bson_reader_destroy (reader);
+               bson_free (ns);
                EXIT;
             }
 
@@ -499,6 +505,7 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
              &client->cluster, &rpc, server_stream, error)) {
          result->failed = true;
          bson_reader_destroy (reader);
+         bson_free (ns);
          EXIT;
       }
 
@@ -512,4 +519,5 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
       started = bson_get_monotonic_time ();
    }
    bson_reader_destroy (reader);
+   bson_free (ns);
 }

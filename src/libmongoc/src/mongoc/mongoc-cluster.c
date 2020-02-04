@@ -58,17 +58,6 @@
 
 #define CHECK_CLOSED_DURATION_MSEC 1000
 
-#define DB_AND_CMD_FROM_COLLECTION(outstr, name)              \
-   do {                                                       \
-      const char *dot = strchr (name, '.');                   \
-      if (!dot || ((dot - name) > (sizeof outstr - 6))) {     \
-         bson_snprintf (outstr, sizeof outstr, "admin.$cmd"); \
-      } else {                                                \
-         memcpy (outstr, name, dot - name);                   \
-         memcpy (outstr + (dot - name), ".$cmd", 6);          \
-      }                                                       \
-   } while (0)
-
 #define IS_NOT_COMMAND(_name) (!!strcasecmp (cmd->command_name, _name))
 
 /**
@@ -212,7 +201,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
    mongoc_rpc_t rpc;   /* sent to server */
    bson_t reply_local;
    bson_t *reply_ptr;
-   char cmd_ns[MONGOC_NAMESPACE_MAX];
+   char *cmd_ns;
    uint32_t request_id;
    int32_t msg_len;
    size_t doc_len;
@@ -240,7 +229,7 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
 
    _mongoc_array_clear (&cluster->iov);
 
-   bson_snprintf (cmd_ns, sizeof cmd_ns, "%s.$cmd", cmd->db_name);
+   cmd_ns = bson_strdup_printf ("%s.$cmd", cmd->db_name);
    request_id = ++cluster->request_id;
    _mongoc_rpc_prep_command (&rpc, cmd_ns, cmd);
    rpc.header.request_id = request_id;
@@ -399,6 +388,7 @@ done:
       bson_destroy (reply_ptr);
    }
    bson_free (output);
+   bson_free (cmd_ns);
 
    RETURN (ret);
 }
@@ -2852,7 +2842,8 @@ network_error_reply (bson_t *reply, mongoc_cmd_t *cmd)
       * receives no server reply, the client adds the label." */
       if (_mongoc_client_session_in_txn (cmd->session) && !cmd->is_txn_finish) {
          /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
-         * within a transaction, including commitTransaction and abortTransaction,
+         * within a transaction, including commitTransaction and
+         * abortTransaction,
          * fails with a TransientTransactionError". If we're about to add
          * a TransientTransactionError label due to a client side error then we
          * unpin. If commitTransaction/abortTransation includes a label in the

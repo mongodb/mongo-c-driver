@@ -174,8 +174,8 @@ _mongoc_lookup_bool (const bson_t *bson, const char *key, bool default_value)
    return bson_iter_as_bool (&child);
 }
 
-void
-_mongoc_get_db_name (const char *ns, char *db /* OUT */)
+char *
+_mongoc_get_db_name (const char *ns)
 {
    size_t dblen;
    const char *dot;
@@ -185,10 +185,10 @@ _mongoc_get_db_name (const char *ns, char *db /* OUT */)
    dot = strstr (ns, ".");
 
    if (dot) {
-      dblen = BSON_MIN (dot - ns + 1, MONGOC_NAMESPACE_MAX);
-      bson_strncpy (db, ns, dblen);
+      dblen = dot - ns;
+      return bson_strndup (ns, dblen);
    } else {
-      bson_strncpy (db, ns, MONGOC_NAMESPACE_MAX);
+      return bson_strdup (ns);
    }
 }
 

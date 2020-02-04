@@ -136,7 +136,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
 void
 _mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname)
 {
-   bson_snprintf (acmd->ns, sizeof acmd->ns, "%s.$cmd", dbname);
+   acmd->ns = bson_strdup_printf ("%s.$cmd", dbname);
 
    acmd->rpc.header.msg_len = 0;
    acmd->rpc.header.request_id = ++acmd->async->request_id;
@@ -236,6 +236,7 @@ mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd)
    _mongoc_array_destroy (&acmd->array);
    _mongoc_buffer_destroy (&acmd->buffer);
 
+   bson_free (acmd->ns);
    bson_free (acmd);
 }
 

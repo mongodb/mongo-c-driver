@@ -77,7 +77,7 @@ _mongoc_database_new (mongoc_client_t *client,
    db->read_prefs = read_prefs ? mongoc_read_prefs_copy (read_prefs)
                                : mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   bson_strncpy (db->name, name, sizeof db->name);
+   db->name = bson_strdup (name);
 
    RETURN (db);
 }
@@ -123,6 +123,7 @@ mongoc_database_destroy (mongoc_database_t *database)
       database->write_concern = NULL;
    }
 
+   bson_free (database->name);
    bson_free (database);
 
    EXIT;
@@ -188,12 +189,13 @@ mongoc_database_command (mongoc_database_t *database,
                          const bson_t *fields,
                          const mongoc_read_prefs_t *read_prefs)
 {
-   char ns[MONGOC_NAMESPACE_MAX];
+   char *ns;
+   mongoc_cursor_t *cursor;
 
    BSON_ASSERT (database);
    BSON_ASSERT (command);
 
-   bson_snprintf (ns, sizeof ns, "%s.$cmd", database->name);
+   ns = bson_strdup_printf ("%s.$cmd", database->name);
 
    /* Server Selection Spec: "The generic command method has a default read
     * preference of mode 'primary'. The generic command method MUST ignore any
@@ -203,8 +205,10 @@ mongoc_database_command (mongoc_database_t *database,
     */
 
    /* flags, skip, limit, batch_size, fields are unused */
-   return _mongoc_cursor_cmd_deprecated_new (
+   cursor = _mongoc_cursor_cmd_deprecated_new (
       database->client, ns, command, read_prefs);
+   bson_free (ns);
+   return cursor;
 }
 
 

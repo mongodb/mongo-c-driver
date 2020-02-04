@@ -100,8 +100,12 @@ bson_open (const char *filename, int flags, ...)
 
 
 void
-test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
+_test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 
+#define test_error(...)                                                      \
+   fprintf (                                                                 \
+      stderr, "test error in: %s %d:%s()\n", __FILE__, __LINE__, BSON_FUNC); \
+   _test_error (__VA_ARGS__);
 
 #define bson_eq_bson(bson, expected)                                          \
    do {                                                                       \
@@ -327,16 +331,21 @@ test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
    } while (0)
 
 
-#define ASSERT_CMPSTR(a, b)                                                \
-   do {                                                                    \
-      /* evaluate once */                                                  \
-      const char *_a = a;                                                  \
-      const char *_b = b;                                                  \
-      if (((_a) != (_b)) && !!strcmp ((_a), (_b))) {                       \
-         fprintf (                                                         \
-            stderr, "FAIL\n\nAssert Failure: \"%s\" != \"%s\"\n", _a, _b); \
-         abort ();                                                         \
-      }                                                                    \
+#define ASSERT_CMPSTR(a, b)                                                   \
+   do {                                                                       \
+      /* evaluate once */                                                     \
+      const char *_a = a;                                                     \
+      const char *_b = b;                                                     \
+      if (((_a) != (_b)) && !!strcmp ((_a), (_b))) {                          \
+         fprintf (stderr,                                                     \
+                  "FAIL\n\nAssert Failure: \"%s\" != \"%s\"\n %s:%d  %s()\n", \
+                  _a,                                                         \
+                  _b,                                                         \
+                  __FILE__,                                                   \
+                  __LINE__,                                                   \
+                  BSON_FUNC);                                                 \
+         abort ();                                                            \
+      }                                                                       \
    } while (0)
 
 #define ASSERT_CMPJSON(_a, _b)                                 \

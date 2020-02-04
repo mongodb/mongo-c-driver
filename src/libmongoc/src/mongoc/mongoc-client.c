@@ -1561,7 +1561,7 @@ mongoc_client_command (mongoc_client_t *client,
                        const bson_t *fields,
                        const mongoc_read_prefs_t *read_prefs)
 {
-   char ns[MONGOC_NAMESPACE_MAX];
+   char *ns = NULL;
    mongoc_cursor_t *cursor;
 
    BSON_ASSERT (client);
@@ -1572,13 +1572,14 @@ mongoc_client_command (mongoc_client_t *client,
     * Allow a caller to provide a fully qualified namespace
     */
    if (NULL == strstr (db_name, "$cmd")) {
-      bson_snprintf (ns, sizeof ns, "%s.$cmd", db_name);
+      ns = bson_strdup_printf ("%s.$cmd", db_name);
       db_name = ns;
    }
 
    cursor =
       _mongoc_cursor_cmd_deprecated_new (client, db_name, query, read_prefs);
 
+   bson_free (ns);
    return cursor;
 }
 

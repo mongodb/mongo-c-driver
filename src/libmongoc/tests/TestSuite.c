@@ -69,7 +69,7 @@ test_msg (const char *format, ...)
 
 
 void
-test_error (const char *format, ...)
+_test_error (const char *format, ...)
 {
    va_list ap;
 
@@ -1058,7 +1058,8 @@ test_suite_mock_server_log (const char *msg, ...)
 }
 
 bool
-TestSuite_NoFork (TestSuite *suite) {
+TestSuite_NoFork (TestSuite *suite)
+{
    if (suite->flags & TEST_NOFORK) {
       return true;
    }
