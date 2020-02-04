@@ -1,3 +1,21 @@
+libbson 1.16.1
+==============
+
+It is my pleasure to announce libbson 1.16.1.
+
+Features:
+
+  * Add bson_isspace, a safer isspace alternative.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+Peace,
+
+    Kevin Albertson
+
+
 libbson 1.16.0
 ==============
 
@@ -36,16 +54,6 @@ libbson 1.15.0
 No change since 1.14.1; released to keep pace with libmongoc's version.
 
 -- Kevin Albertson
-
-
-Next Release
-============
-
-Features:
-  *
-
-Bug fixes:
-  *
 
 libbson 1.14.1
 ==============
