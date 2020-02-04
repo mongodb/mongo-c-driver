@@ -279,7 +279,8 @@ all_tasks = [
                 SSL='DARWIN'),
     CompileTask('debug-compile-sasl-winssl',
                 tags=['debug-compile', 'sasl', 'winssl'],
-                SASL='AUTO',
+                # Explicitly use CYRUS.
+                SASL='CYRUS',
                 SSL='WINDOWS'),
     CompileTask('debug-compile-sspi-nossl',
                 tags=['debug-compile', 'sspi', 'nossl'],

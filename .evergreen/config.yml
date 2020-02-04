@@ -1258,7 +1258,7 @@ tasks:
         set -o errexit
         set -o xtrace
         export DEBUG="ON"
-        export SASL="AUTO"
+        export SASL="CYRUS"
         export SSL="WINDOWS"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
