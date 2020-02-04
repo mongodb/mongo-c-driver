@@ -1,3 +1,24 @@
+mongo-c-driver 1.16.1
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.16.1.
+
+Bug fixes:
+
+  * Fix listed library dependency on mongoc_static target when building with libmongocrypt.
+  * Replace a call of free to bson_free.
+  * Vendor Sphinx basic theme and correctly list static files for docs.
+  * Fix a compilation warning introduced in 1.16.0.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+Peace,
+
+    Kevin Albertson
+
+
 mongo-c-driver 1.16.0
 =====================
 
