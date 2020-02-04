@@ -124,6 +124,10 @@ bson_b64_ntop (uint8_t const *src,
    uint8_t output[4];
    size_t i;
 
+   if (!target) {
+      return -1;
+   }
+
    while (2 < srclength) {
       input[0] = *src++;
       input[1] = *src++;
@@ -521,8 +525,36 @@ bson_b64_pton (char const *src, uint8_t *target, size_t targsize)
 
    mongoc_common_once (&once, bson_b64_initialize_rmap);
 
+   if (!src) {
+      return -1;
+   }
+
    if (target)
       return mongoc_b64_pton_do (src, target, targsize);
    else
       return mongoc_b64_pton_len (src);
+}
+
+size_t
+bson_b64_ntop_calculate_target_size (size_t raw_size)
+{
+   size_t num_bits = raw_size * 8;
+   /* Calculate how many groups of six bits this contains, adding 5 to round up
+    * to the nearest group of 6. */
+   size_t num_b64_chars = (num_bits + 5) / 6;
+   /* Round to nearest set of four. */
+   size_t num_b64_chars_with_padding = 4 * ((num_b64_chars + 3) / 4);
+   /* Add one for NULL byte. */
+   return num_b64_chars_with_padding + 1;
+}
+
+size_t
+bson_b64_pton_calculate_target_size (size_t base64_encoded_size)
+{
+   /* Without inspecting the data, we don't know how many padding characters
+    * there are. Assuming none, that means each character represents 6 bits of
+    * data. */
+   size_t num_bits = base64_encoded_size * 6;
+   /* Round down to the nearest group of eight. */
+   return num_bits / 8;
 }

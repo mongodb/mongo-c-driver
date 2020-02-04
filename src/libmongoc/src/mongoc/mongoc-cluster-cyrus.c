@@ -30,12 +30,17 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
                                  bson_error_t *error)
 {
    mongoc_cmd_parts_t parts;
-   uint32_t buflen = 0;
    mongoc_cyrus_t sasl;
    bson_iter_t iter;
    bool ret = false;
    const char *tmpstr;
-   uint8_t buf[4096] = {0};
+   /* input into cyrus */
+   uint8_t *inbuf = NULL;
+   uint32_t inbuf_len = 0;
+   /* output from cyrus */
+   uint8_t *outbuf = NULL;
+   uint32_t outbuf_len = 0;
+
    bson_t cmd;
    bson_t reply;
    int conv_id = 0;
@@ -53,19 +58,25 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
       mongoc_cmd_parts_init (
          &parts, cluster->client, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
 
+      /* If this is the first step, input buffer is NULL. */
+      bson_free (outbuf);
+      outbuf = NULL;
+      outbuf_len = 0;
       if (!_mongoc_cyrus_step (
-             &sasl, buf, buflen, buf, sizeof buf, &buflen, error)) {
+             &sasl, inbuf, inbuf_len, &outbuf, &outbuf_len, error)) {
          goto failure;
       }
 
       bson_init (&cmd);
 
       if (sasl.step == 1) {
-         _mongoc_cluster_build_sasl_start (
-            &cmd, sasl.credentials.mechanism, (const char *) buf, buflen);
+         _mongoc_cluster_build_sasl_start (&cmd,
+                                           sasl.credentials.mechanism,
+                                           (const char *) outbuf,
+                                           outbuf_len);
       } else {
          _mongoc_cluster_build_sasl_continue (
-            &cmd, conv_id, (const char *) buf, buflen);
+            &cmd, conv_id, (const char *) outbuf, outbuf_len);
       }
 
       TRACE ("SASL: authenticating (step %d)", sasl.step);
@@ -109,19 +120,12 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
          goto failure;
       }
 
-      tmpstr = bson_iter_utf8 (&iter, &buflen);
-
-      if (buflen > sizeof buf) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "SASL reply from MongoDB is too large.");
-
-         bson_destroy (&reply);
-         goto failure;
-      }
-
-      memcpy (buf, tmpstr, buflen);
+      tmpstr = bson_iter_utf8 (&iter, &inbuf_len);
+      bson_free (inbuf);
+      /* include the trailing NULL byte, since base64 decoding expects a NULL
+       * terminates string. */
+      inbuf = bson_malloc (inbuf_len + 1);
+      memcpy (inbuf, tmpstr, inbuf_len + 1);
 
       bson_destroy (&reply);
       mongoc_cmd_parts_cleanup (&parts);
@@ -132,6 +136,8 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
    ret = true;
 
 failure:
+   bson_free (inbuf);
+   bson_free (outbuf);
    _mongoc_cyrus_destroy (&sasl);
    mongoc_cmd_parts_cleanup (&parts);
 

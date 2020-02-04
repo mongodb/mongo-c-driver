@@ -75,6 +75,8 @@ extern void
 test_value_install (TestSuite *suite);
 extern void
 test_writer_install (TestSuite *suite);
+extern void
+test_b64_install (TestSuite *suite);
 
 /* libmongoc */
 
@@ -2376,6 +2378,7 @@ main (int argc, char *argv[])
    test_utf8_install (&suite);
    test_value_install (&suite);
    test_writer_install (&suite);
+   test_b64_install (&suite);
 
    /* libmongoc */
 

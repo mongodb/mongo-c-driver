@@ -24,7 +24,6 @@
 #include "mongoc-sasl-private.h"
 #include <bson/bson.h>
 #include <sasl/sasl.h>
-#include <sasl/saslutil.h>
 
 
 BSON_BEGIN_DECLS
@@ -63,8 +62,7 @@ bool
 _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
                     const uint8_t *inbuf,
                     uint32_t inbuflen,
-                    uint8_t *outbuf,
-                    uint32_t outbufmax,
+                    uint8_t **outbuf,
                     uint32_t *outbuflen,
                     bson_error_t *error);
 

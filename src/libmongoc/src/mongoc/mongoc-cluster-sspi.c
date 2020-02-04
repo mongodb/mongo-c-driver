@@ -150,7 +150,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 {
    mongoc_cmd_parts_t parts;
    mongoc_sspi_client_state_t *state;
-   SEC_CHAR buf[4096] = {0};
+   SEC_CHAR* buf = NULL;
    bson_iter_t iter;
    uint32_t buflen;
    bson_t reply;
@@ -265,17 +265,8 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 
 
       tmpstr = bson_iter_utf8 (&iter, &buflen);
-
-      if (buflen > sizeof buf) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                         "SASL reply from MongoDB is too large.");
-
-         bson_destroy (&reply);
-         goto failure;
-      }
-
+      bson_free (buf);
+      buf = bson_malloc (sizeof (SEC_CHAR) * buflen);
       memcpy (buf, tmpstr, buflen);
 
       bson_destroy (&reply);
@@ -283,6 +274,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 
    ret = true;
 failure:
+   bson_free (buf);
    bson_free (state);
    return ret;
 }

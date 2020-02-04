@@ -337,7 +337,8 @@ _bson_append_va (bson_t *bson,              /* IN */
 
    do {
       n_pairs--;
-      /* data may be NULL if data_len is 0. memcpy is not safe to call with NULL. */
+      /* data may be NULL if data_len is 0. memcpy is not safe to call with
+       * NULL. */
       if (BSON_LIKELY (data_len != 0 && data != NULL)) {
          memcpy (buf, data, data_len);
          bson->len += data_len;
@@ -2712,7 +2713,7 @@ _bson_as_json_visit_binary (const bson_iter_t *iter,
    size_t b64_len;
    char *b64;
 
-   b64_len = (v_binary_len / 3 + 1) * 4 + 1;
+   b64_len = bson_b64_ntop_calculate_target_size (v_binary_len);
    b64 = bson_malloc0 (b64_len);
    BSON_ASSERT (bson_b64_ntop (v_binary, v_binary_len, b64, b64_len) != -1);
 
