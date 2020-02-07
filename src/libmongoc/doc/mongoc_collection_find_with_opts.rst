@@ -129,6 +129,7 @@ Option                   BSON type           Option               BSON type
 ``awaitData``            bool                ``sessionId``        (none)
 ``collation``            document            ``showRecordId``     bool
 ``comment``              string              ``singleBatch``      bool
+``allowDiskUse``         bool
 =======================  ==================  ===================  ==================
 
 All options are documented in the reference page for `the "find" command`_ in the MongoDB server manual, except for "maxAwaitTimeMS" and "sessionId".
