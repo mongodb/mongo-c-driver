@@ -35,8 +35,8 @@ check_json_sdam_events (const bson_t *events, const bson_t *expectations)
 
    if (expected_keys != actual_keys) {
       test_error ("SDAM test failed expectations:\n\n"
-                  "%s\n\n"
-                  "events:\n%s\n\n"
+                  "expected\n%s\n\n"
+                  "actual:\n%s\n\n"
                   "expected %" PRIu32 " events, got %" PRIu32,
                   bson_as_canonical_extended_json (expectations, NULL),
                   bson_as_canonical_extended_json (events, NULL),
@@ -46,8 +46,8 @@ check_json_sdam_events (const bson_t *events, const bson_t *expectations)
 
    if (!match_bson_with_ctx (events, expectations, &match_ctx)) {
       test_error ("SDAM test failed expectations:\n\n"
-                  "%s\n\n"
-                  "events:\n%s\n\n%s",
+                  "expected\n%s\n\n"
+                  "actual:\n%s\n\n%s",
                   bson_as_canonical_extended_json (expectations, NULL),
                   bson_as_canonical_extended_json (events, NULL),
                   match_ctx.errmsg);
@@ -479,9 +479,9 @@ test_sdam_monitoring_cb (bson_t *test)
       bson_iter_bson (&phase_iter, &phase);
 
       if (first_phase) {
-         /* Force the topology opening and server opening events. This test doesn't
-          * exercise this code path naturally, see below in _test_topology_events
-          * for a non-hacky test of this event */
+         /* Force the topology opening and server opening events. This test
+          * doesn't exercise this code path naturally, see below in
+          * _test_topology_events for a non-hacky test of this event */
          _mongoc_topology_description_monitor_opening (&topology->description);
          first_phase = false;
       } else {
@@ -872,6 +872,110 @@ test_heartbeat_fails_dns_pooled (void *ctx)
    _test_heartbeat_fails_dns (true);
 }
 
+typedef struct {
+   uint32_t num_server_description_changed_events;
+   uint32_t num_topology_description_changed_events;
+} duplicates_counter_t;
+
+void
+duplicates_server_changed (const mongoc_apm_server_changed_t *event)
+{
+   duplicates_counter_t *counters;
+
+   counters = mongoc_apm_server_changed_get_context (event);
+   counters->num_server_description_changed_events++;
+}
+
+void
+duplicates_topology_changed (const mongoc_apm_topology_changed_t *event)
+{
+   duplicates_counter_t *counters;
+
+   counters = mongoc_apm_topology_changed_get_context (event);
+   counters->num_topology_description_changed_events++;
+}
+
+/* Test that duplicate ismaster responses do not trigger two server
+ * description changed events or topology changed events */
+static void
+test_no_duplicates (void)
+{
+   mock_server_t *server;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   request_t *request;
+   bson_error_t error;
+   future_t *future;
+   mongoc_uri_t *uri;
+   char *first_ismaster_response =
+      "{'ok': 1.0, 'ismaster': true, 'minWireVersion': 0, 'maxWireVersion': 9}";
+   char *second_ismaster_response = "{'ok': 1.0, 'ismaster': true, "
+                                    "'minWireVersion': 0, 'maxWireVersion': 9, "
+                                    "'lastWrite': {'lastWriteDate': {'$date': "
+                                    "{'$numberLong': '123'}}, 'opTime': 2}}";
+   mongoc_apm_callbacks_t *callbacks;
+   duplicates_counter_t duplicates_counter = {0};
+   mongoc_server_description_t *sd;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   callbacks = mongoc_apm_callbacks_new ();
+   /* Set a high heartbeat frequency ms to prevent periodic background scanning
+    * from interfering. */
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
+   pool = mongoc_client_pool_new (uri);
+   mongoc_apm_set_server_changed_cb (callbacks, duplicates_server_changed);
+   mongoc_apm_set_topology_changed_cb (callbacks, duplicates_topology_changed);
+   mongoc_client_pool_set_apm_callbacks (pool, callbacks, &duplicates_counter);
+   client = mongoc_client_pool_pop (pool);
+
+   /* Topology scanning thread starts, and sends an ismaster. */
+   request = mock_server_receives_ismaster (server);
+   mock_server_replies_simple (request, first_ismaster_response);
+   request_destroy (request);
+
+   /* Perform a ping, which creates a new connection, which performs the
+    * ismaster handshake before sending the ping command. */
+   future = future_client_command_simple (client,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+   request = mock_server_receives_ismaster (server);
+   mock_server_replies_simple (request, second_ismaster_response);
+   request_destroy (request);
+   request = mock_server_receives_msg (
+      server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   ASSERT_CMPINT (
+      duplicates_counter.num_server_description_changed_events, ==, 1);
+   /* There should be two topology changed events. One for the initial topology
+    * (where the server is set to Unknown), and one for the first ismaster (but
+    * not the second) */
+   ASSERT_CMPINT (
+      duplicates_counter.num_topology_description_changed_events, ==, 2);
+
+   /* Even though no topology description changed event was emitted, the newly
+    * created server description should still overwrite the old one in the
+    * topology description. It differs in that it has the 'lastWrite' field,
+    * which does not have an effect in equality comparison. */
+   sd = mongoc_client_get_server_description (client, 1);
+   BSON_ASSERT (bson_has_field (&sd->last_is_master, "lastWrite"));
+   mongoc_server_description_destroy (sd);
+
+   mongoc_uri_destroy (uri);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mock_server_destroy (server);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+}
+
 void
 test_sdam_monitoring_install (TestSuite *suite)
 {
@@ -918,4 +1022,10 @@ test_sdam_monitoring_install (TestSuite *suite)
       NULL,
       NULL,
       test_framework_skip_if_offline);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/server_discovery_and_monitoring/monitoring/no_duplicates",
+      test_no_duplicates,
+      NULL,
+      NULL);
 }

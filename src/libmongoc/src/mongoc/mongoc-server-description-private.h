@@ -63,6 +63,10 @@ struct _mongoc_server_description_t {
    bson_t last_is_master;
    bool has_is_master;
    const char *connection_address;
+   /* SDAM dictates storing me/hosts/passives/arbiters after being "normalized
+    * to lower-case" Instead, they are stored in the casing they are received,
+    * but compared case insensitively. This should be addressed in CDRIVER-3527.
+    */
    const char *me;
 
    /* whether an APM server-opened callback has been fired before */
@@ -79,6 +83,8 @@ struct _mongoc_server_description_t {
    int32_t max_write_batch_size;
    int64_t session_timeout_minutes;
 
+   /* hosts, passives, and arbiters are stored as a BSON array, but compared
+    * case insensitively. This should be improved in CDRIVER-3527. */
    bson_t hosts;
    bson_t passives;
    bson_t arbiters;
@@ -146,5 +152,11 @@ mongoc_server_description_filter_tags (
    mongoc_server_description_t **descriptions,
    size_t description_len,
    const mongoc_read_prefs_t *read_prefs);
+
+/* Compares server descriptions following the "Server Description Equality"
+ * rules. Not all fields are considered. */
+bool
+_mongoc_server_description_equal (mongoc_server_description_t *sd1,
+                                  mongoc_server_description_t *sd2);
 
 #endif

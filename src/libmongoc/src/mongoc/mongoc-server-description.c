@@ -1005,3 +1005,102 @@ mongoc_server_description_compressor_id (
 
    return -1;
 }
+
+static int
+_nullable_strcasecmp (const char *a, const char *b)
+{
+   if (!a && b) {
+      return 1;
+   }
+
+   if (a && !b) {
+      return 1;
+   }
+
+   if (!a && !b) {
+      return 0;
+   }
+
+   /* Both not NULL. */
+   return strcasecmp (a, b);
+}
+
+static int
+_nullable_strcmp (const char *a, const char *b)
+{
+   if (!a && b) {
+      return 1;
+   }
+
+   if (a && !b) {
+      return 1;
+   }
+
+   if (!a && !b) {
+      return 0;
+   }
+
+   /* Both not NULL. */
+   return strcmp (a, b);
+}
+
+bool
+_mongoc_server_description_equal (mongoc_server_description_t *sd1,
+                                  mongoc_server_description_t *sd2)
+{
+   if (sd1->type != sd2->type) {
+      return false;
+   }
+
+   if (sd1->min_wire_version != sd2->min_wire_version) {
+      return false;
+   }
+
+   if (sd1->max_wire_version != sd2->max_wire_version) {
+      return false;
+   }
+
+   if (0 != _nullable_strcasecmp (sd1->me, sd2->me)) {
+      return false;
+   }
+
+   /* CDRIVER-3527: The hosts/passives/arbiters checks should really be a set
+    * comparison of case insensitive hostnames. */
+   if (!bson_equal (&sd1->hosts, &sd2->hosts)) {
+      return false;
+   }
+
+   if (!bson_equal (&sd1->passives, &sd2->passives)) {
+      return false;
+   }
+
+   if (!bson_equal (&sd1->arbiters, &sd2->arbiters)) {
+      return false;
+   }
+
+   if (!bson_equal (&sd1->tags, &sd2->tags)) {
+      return false;
+   }
+
+   if (0 != _nullable_strcmp (sd1->set_name, sd2->set_name)) {
+      return false;
+   }
+
+   if (sd1->set_version != sd2->set_version) {
+      return false;
+   }
+
+   if (!bson_oid_equal (&sd1->election_id, &sd2->election_id)) {
+      return false;
+   }
+
+   if (0 != _nullable_strcasecmp (sd1->current_primary, sd2->current_primary)) {
+      return false;
+   }
+
+   if (sd1->session_timeout_minutes != sd2->session_timeout_minutes) {
+      return false;
+   }
+
+   return true;
+}

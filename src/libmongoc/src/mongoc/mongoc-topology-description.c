@@ -1923,6 +1923,9 @@ mongoc_topology_description_handle_ismaster (
    mongoc_topology_description_t *prev_td = NULL;
    mongoc_server_description_t *prev_sd = NULL;
    mongoc_server_description_t *sd;
+   /* sd_changed is set if the server description meaningfully changed AND
+    * callbacks are registered. */
+   bool sd_changed = false;
 
    BSON_ASSERT (topology);
    BSON_ASSERT (server_id != 0);
@@ -1937,7 +1940,10 @@ mongoc_topology_description_handle_ismaster (
       _mongoc_topology_description_copy_to (topology, prev_td);
    }
 
-   if (topology->apm_callbacks.server_changed) {
+   if (topology->apm_callbacks.topology_changed ||
+       topology->apm_callbacks.server_changed) {
+      /* Only copy the previous server description if a monitoring callback is
+       * registered. */
       prev_sd = mongoc_server_description_new_copy (sd);
    }
 
@@ -1947,7 +1953,14 @@ mongoc_topology_description_handle_ismaster (
 
    mongoc_topology_description_update_cluster_time (topology,
                                                     ismaster_response);
-   _mongoc_topology_description_monitor_server_changed (topology, prev_sd, sd);
+
+   if (prev_sd) {
+      sd_changed = !_mongoc_server_description_equal (prev_sd, sd);
+   }
+   if (sd_changed) {
+      _mongoc_topology_description_monitor_server_changed (
+         topology, prev_sd, sd);
+   }
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
       TRACE ("Transitioning to %s for %s",
@@ -1966,7 +1979,12 @@ mongoc_topology_description_handle_ismaster (
    if (ismaster_response && (!error || !error->code)) {
       _mongoc_topology_description_check_compatible (topology);
    }
-   _mongoc_topology_description_monitor_changed (prev_td, topology);
+
+   /* If server description did not change, then neither did topology
+    * description */
+   if (sd_changed) {
+      _mongoc_topology_description_monitor_changed (prev_td, topology);
+   }
 
    if (prev_td) {
       mongoc_topology_description_destroy (prev_td);

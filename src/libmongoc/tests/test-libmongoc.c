@@ -228,6 +228,8 @@ extern void
 test_client_side_encryption_install (TestSuite *suite);
 extern void
 test_long_namespace_install (TestSuite *suite);
+extern void
+test_server_description_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2460,6 +2462,7 @@ main (int argc, char *argv[])
    test_crud_install (&suite);
    test_apm_install (&suite);
    test_client_side_encryption_install (&suite);
+   test_server_description_install (&suite);
 
    ret = TestSuite_Run (&suite);
 

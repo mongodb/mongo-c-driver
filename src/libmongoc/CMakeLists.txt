@@ -868,6 +868,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-transactions.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-session.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-set.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-description.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-socket.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-dns.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream.c
