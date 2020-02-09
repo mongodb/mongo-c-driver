@@ -786,12 +786,15 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-atomic.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-b64.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson.c
+   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bcon-basic.c
+   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bcon-extract.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-corpus.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-error.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson-version.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-endian.c
+   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bson.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-clock.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-decimal128.c
+   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-endian.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-iso8601.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-iter.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-json.c
@@ -801,47 +804,47 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-utf8.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-value.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-writer.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bcon-basic.c
-   ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-bcon-extract.c
    ${PROJECT_SOURCE_DIR}/tests/debug-stream.c
-   ${PROJECT_SOURCE_DIR}/tests/json-test.c
    ${PROJECT_SOURCE_DIR}/tests/json-test-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/json-test-operations.c
-   ${PROJECT_SOURCE_DIR}/tests/mock_server/future.c
+   ${PROJECT_SOURCE_DIR}/tests/json-test.c
    ${PROJECT_SOURCE_DIR}/tests/mock_server/future-functions.c
    ${PROJECT_SOURCE_DIR}/tests/mock_server/future-value.c
-   ${PROJECT_SOURCE_DIR}/tests/mock_server/sync-queue.c
+   ${PROJECT_SOURCE_DIR}/tests/mock_server/future.c
    ${PROJECT_SOURCE_DIR}/tests/mock_server/mock-rs.c
    ${PROJECT_SOURCE_DIR}/tests/mock_server/mock-server.c
    ${PROJECT_SOURCE_DIR}/tests/mock_server/request.c
+   ${PROJECT_SOURCE_DIR}/tests/mock_server/sync-queue.c
    ${PROJECT_SOURCE_DIR}/tests/test-conveniences.c
-   ${PROJECT_SOURCE_DIR}/tests/test-libmongoc.c
    ${PROJECT_SOURCE_DIR}/tests/test-happy-eyeballs.c
+   ${PROJECT_SOURCE_DIR}/tests/test-libmongoc.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-array.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-async.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-buffer.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-bulk.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-change-stream.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-pool.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-session.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-side-encryption.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cluster.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find-with-opts.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-connection-uri.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-command-monitoring.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-connection-uri.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-counters.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-crud.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cursor.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-database.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-dns.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-error.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-exhaust.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-find-and-modify.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs-bucket.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-handshake.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-list.c
@@ -851,36 +854,34 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-max-staleness.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-mongos-pinning.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-opts.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-queue.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-primary-stepdown.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-queue.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-concern.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-write-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-prefs.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-read-write-concern.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-reads.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-retryable-writes.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-rpc.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sample-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-scram.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam-monitoring.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-transactions.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-session.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-set.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-sdam.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-description.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-set.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-socket.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-dns.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-thread.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-description.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-reconcile.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-scanner.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-transactions.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-uri.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-version.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-usleep.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-util.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-version.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-with-transaction.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-concern.c
@@ -889,10 +890,10 @@ set (test-libmongoc-sources
 
 if (MONGOC_ENABLE_SSL)
    set (test-libmongoc-sources ${test-libmongoc-sources}
-      ${PROJECT_SOURCE_DIR}/tests/test-mongoc-x509.c
       ${PROJECT_SOURCE_DIR}/tests/ssl-test.c
-      ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-tls.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-tls-error.c
+      ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-tls.c
+      ${PROJECT_SOURCE_DIR}/tests/test-mongoc-x509.c
    )
 endif ()
 

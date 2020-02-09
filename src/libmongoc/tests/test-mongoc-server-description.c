@@ -220,9 +220,49 @@ test_server_description_equal (void)
    mongoc_server_description_cleanup (&sd2);
 }
 
+/* Test that msg set to anything else besides "isdbgrid" is not considered
+ * server type mongos */
+void
+test_server_description_msg_without_isdbgrid (void)
+{
+   mongoc_server_description_t sd;
+   bson_t *ismaster;
+   bson_error_t error;
+
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   ismaster = BCON_NEW ("minWireVersion",
+                        BCON_INT32 (0),
+                        "maxWireVersion",
+                        BCON_INT32 (WIRE_VERSION_MAX),
+                        "msg",
+                        "isdbgrid");
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_handle_ismaster (
+      &sd, ismaster, 0 /* rtt */, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_MONGOS);
+
+   mongoc_server_description_reset (&sd);
+   bson_destroy (ismaster);
+   ismaster = BCON_NEW ("minWireVersion",
+                        BCON_INT32 (0),
+                        "maxWireVersion",
+                        BCON_INT32 (WIRE_VERSION_MAX),
+                        "msg",
+                        "something_else");
+   mongoc_server_description_handle_ismaster (
+      &sd, ismaster, 0 /* rtt */, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+
+   bson_destroy (ismaster);
+   mongoc_server_description_cleanup (&sd);
+}
+
 void
 test_server_description_install (TestSuite *suite)
 {
    TestSuite_Add (
       suite, "/server_description/equal", test_server_description_equal);
+   TestSuite_Add (suite,
+                  "/server_description/msg_without_isdbgrid",
+                  test_server_description_msg_without_isdbgrid);
 }

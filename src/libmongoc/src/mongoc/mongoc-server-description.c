@@ -587,9 +587,13 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
             goto failure;
          sd->max_wire_version = bson_iter_int32 (&iter);
       } else if (strcmp ("msg", bson_iter_key (&iter)) == 0) {
+         const char *msg;
          if (!BSON_ITER_HOLDS_UTF8 (&iter))
             goto failure;
-         is_shard = !!bson_iter_utf8 (&iter, NULL);
+         msg = bson_iter_utf8 (&iter, NULL);
+         if (msg && 0 == strcmp (msg, "isdbgrid")) {
+            is_shard = true;
+         }
       } else if (strcmp ("setName", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter))
             goto failure;
@@ -1006,8 +1010,12 @@ mongoc_server_description_compressor_id (
    return -1;
 }
 
+/* Returns true if either or both is NULL. out is 1 if exactly one NULL, 0 if
+ * both NULL */
+typedef int (*strcmp_fn) (const char *, const char *);
+
 static int
-_nullable_strcasecmp (const char *a, const char *b)
+_nullable_cmp (const char *a, const char *b, strcmp_fn cmp_fn)
 {
    if (!a && b) {
       return 1;
@@ -1022,26 +1030,18 @@ _nullable_strcasecmp (const char *a, const char *b)
    }
 
    /* Both not NULL. */
-   return strcasecmp (a, b);
+   return cmp_fn (a, b);
+}
+static int
+_nullable_strcasecmp (const char *a, const char *b)
+{
+   return _nullable_cmp (a, b, strcasecmp);
 }
 
 static int
 _nullable_strcmp (const char *a, const char *b)
 {
-   if (!a && b) {
-      return 1;
-   }
-
-   if (a && !b) {
-      return 1;
-   }
-
-   if (!a && !b) {
-      return 0;
-   }
-
-   /* Both not NULL. */
-   return strcmp (a, b);
+   return _nullable_cmp (a, b, strcmp);
 }
 
 bool
