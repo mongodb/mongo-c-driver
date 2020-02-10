@@ -763,6 +763,19 @@ check_test_version (const bson_t *test)
       }
    }
 
+   if (bson_has_field (test, "maxServerVersion")) {
+      s = bson_lookup_utf8 (test, "maxServerVersion");
+      test_version = test_framework_str_to_version (s);
+      server_version = test_framework_get_server_version ();
+      if (server_version >= test_version) {
+         if (test_suite_debug_output ()) {
+            printf ("      SKIP, maxServerVersion %s\n", s);
+            fflush (stdout);
+         }
+         return false;
+      }
+   }
+
    if (bson_has_field (test, "ignore_if_server_version_greater_than")) {
       s = bson_lookup_utf8 (test, "ignore_if_server_version_greater_than");
       /* s is like "3.0", don't skip if server is 3.0.x but skip 3.1+ */

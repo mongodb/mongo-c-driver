@@ -552,12 +552,19 @@ _test_resume_token_error (const char *id_projection)
                              MONGOC_ERROR_CURSOR,
                              MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
                              "Cannot provide resume functionality");
-   } else {
+   } else if (test_framework_get_server_version () <
+              test_framework_str_to_version ("4.3.2")) {
       ASSERT_ERROR_CONTAINS (err,
                              MONGOC_ERROR_SERVER,
                              280,
                              "Only transformations that retain the unmodified "
                              "_id field are allowed.");
+   } else {
+      /* Error was changed in SERVER-45505. */
+      ASSERT_ERROR_CONTAINS (
+         err, MONGOC_ERROR_SERVER, 20, "Encountered an event whose _id field, "
+                                       "which contains the resume token, was "
+                                       "modified by the pipeline.");
    }
 
    bson_destroy (&opts);
@@ -1673,59 +1680,82 @@ change_stream_spec_after_test_cb (json_test_ctx_t *test_ctx, const bson_t *test)
    change_stream_spec_ctx_t *ctx =
       (change_stream_spec_ctx_t *) test_ctx->config->ctx;
    bson_error_t error;
-   if (mongoc_change_stream_error_document (ctx->change_stream, &error, NULL)) {
+   const bson_t *reply;
+   const bson_t *doc;
+
+   if (bson_has_field (test, "result.error")) {
       int32_t expected_err_code;
-      /* verify that the error code matches the result. */
-      ASSERT_WITH_MSG (
-         bson_has_field (test, "result.error.code"),
-         "Change stream got error: \"%s\" but test does not assert error: %s.",
-         error.message,
-         bson_as_json (test, NULL));
+
+      /* iterate change stream once. */
+      mongoc_change_stream_next (ctx->change_stream, &doc);
+
+      if (!mongoc_change_stream_error_document (
+             ctx->change_stream, &error, &reply)) {
+         test_error (
+            "Expected error, but change stream did not return an error");
+      }
+
       expected_err_code = bson_lookup_int32 (test, "result.error.code");
       ASSERT_CMPINT64 (expected_err_code, ==, (int32_t) error.code);
-   } else {
-      if (bson_has_field (test, "result.success")) {
-         bson_t expected_docs;
-         bson_iter_t expected_iter;
-         bson_t all_changes = BSON_INITIALIZER;
-         int i = 0;
-         const bson_t *doc;
 
-         bson_lookup_doc (test, "result.success", &expected_docs);
-         BSON_ASSERT (bson_iter_init (&expected_iter, &expected_docs));
+      /* Check expected error labels. */
+      if (bson_has_field (test, "result.error.errorLabels")) {
+         bson_iter_t iter;
 
-         /* iterate over the change stream, and verify that the document exists.
-          */
-         while (mongoc_change_stream_next (ctx->change_stream, &doc)) {
-            char *key = bson_strdup_printf ("%d", i);
-            i++;
-            bson_append_document (&all_changes, key, -1, doc);
-            bson_free (key);
+         if (!reply) {
+            test_error ("test expects error labels but no reply set");
          }
+         bson_iter_init (&iter, test);
+         bson_iter_find_descendant (&iter, "result.error.errorLabels", &iter);
+         while (bson_iter_next (&iter)) {
+            const char *label;
 
-         /* check that everything in the "result.success" array is contained in
-          * our captured changes. */
-         while (bson_iter_next (&expected_iter)) {
-            bson_t expected_doc;
-            match_ctx_t match_ctx = {{0}};
-
-            match_ctx.allow_placeholders = true;
-            match_ctx.retain_dots_in_keys = true;
-            match_ctx.strict_numeric_types = false;
-            bson_iter_bson (&expected_iter, &expected_doc);
-            match_in_array (&expected_doc, &all_changes, &match_ctx);
+            BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+            label = bson_iter_utf8 (&iter, NULL);
+            BSON_ASSERT (mongoc_error_has_label (reply, label));
          }
-         bson_destroy (&all_changes);
       }
-      /* verify no failure. */
-      ASSERT_OR_PRINT (!mongoc_change_stream_error_document (
-                          ctx->change_stream, &error, NULL),
-                       error);
 
-      /* go through the results. */
+   } else if (bson_has_field (test, "result.success")) {
+      bson_t expected_docs;
+      bson_iter_t expected_iter;
+      bson_t all_changes = BSON_INITIALIZER;
+      int i = 0;
+
+      bson_lookup_doc (test, "result.success", &expected_docs);
+      BSON_ASSERT (bson_iter_init (&expected_iter, &expected_docs));
+
+      /* iterate over the change stream, and verify that the document exists.
+         */
+      while (mongoc_change_stream_next (ctx->change_stream, &doc)) {
+         char *key = bson_strdup_printf ("%d", i);
+         i++;
+         bson_append_document (&all_changes, key, -1, doc);
+         bson_free (key);
+      }
+
+      /* check that everything in the "result.success" array is contained in
+         * our captured changes. */
+      while (bson_iter_next (&expected_iter)) {
+         bson_t expected_doc;
+         match_ctx_t match_ctx = {{0}};
+
+         match_ctx.allow_placeholders = true;
+         match_ctx.retain_dots_in_keys = true;
+         match_ctx.strict_numeric_types = false;
+         bson_iter_bson (&expected_iter, &expected_doc);
+         match_in_array (&expected_doc, &all_changes, &match_ctx);
+      }
+      bson_destroy (&all_changes);
+
+      if (mongoc_change_stream_error_document (
+             ctx->change_stream, &error, NULL)) {
+         test_error ("Expected success, but error occurred: %s", error.message);
+      }
+   } else {
+      test_error ("Test format unrecognized, expected 'result.success' or "
+                  "'result.error'");
    }
-   /* based on results, do something. */
-   /* call a "test ended" callback */
    /* or easier, just destroy the change stream here. */
    mongoc_change_stream_destroy (ctx->change_stream);
 }
