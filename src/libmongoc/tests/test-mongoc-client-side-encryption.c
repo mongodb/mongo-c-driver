@@ -443,7 +443,7 @@ test_datakey_and_double_encryption_creating_and_using (
 
    /* Expect a BSON binary with subtype 4 to be returned */
    BSON_ASSERT (keyid.value_type == BSON_TYPE_BINARY);
-   BSON_ASSERT (keyid.value.v_binary.subtype = BSON_SUBTYPE_UUID);
+   BSON_ASSERT (keyid.value.v_binary.subtype == BSON_SUBTYPE_UUID);
 
    /* Check that client captured a command_started event for the insert command
     * containing a majority writeConcern. */
@@ -488,7 +488,7 @@ test_datakey_and_double_encryption_creating_and_using (
 
    /* Expect the return value to be a BSON binary subtype 6 */
    BSON_ASSERT (encrypted.value_type == BSON_TYPE_BINARY);
-   BSON_ASSERT (encrypted.value.v_binary.subtype = BSON_SUBTYPE_ENCRYPTED);
+   BSON_ASSERT (encrypted.value.v_binary.subtype == BSON_SUBTYPE_ENCRYPTED);
 
    /* Use client_encrypted to insert { _id: "<kms provider>", "value":
     * <encrypted> } into db.coll */
@@ -532,7 +532,7 @@ test_datakey_and_double_encryption_creating_and_using (
    /* Expect the return value to be a BSON binary subtype 6. Expect the value to
     * exactly match the value of encrypted. */
    BSON_ASSERT (encrypted_via_altname.value_type == BSON_TYPE_BINARY);
-   BSON_ASSERT (encrypted_via_altname.value.v_binary.subtype =
+   BSON_ASSERT (encrypted_via_altname.value.v_binary.subtype ==
                    BSON_SUBTYPE_ENCRYPTED);
    BSON_ASSERT (encrypted_via_altname.value.v_binary.data_len ==
                 encrypted.value.v_binary.data_len);
