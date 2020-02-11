@@ -1540,6 +1540,7 @@ _mongoc_write_error_get_type (bool cmd_ret,
    case 6:     /* HostUnreachable */
    case 89:    /* NetworkTimeout */
    case 9001:  /* SocketException */
+   case 262:   /* ExceededTimeLimit */
       return MONGOC_WRITE_ERR_RETRY;
    case 64: /* WriteConcernFailed */
       return MONGOC_WRITE_ERR_WRITE_CONCERN;
