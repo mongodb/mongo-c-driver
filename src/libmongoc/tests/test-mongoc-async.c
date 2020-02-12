@@ -371,12 +371,14 @@ test_async_install (TestSuite *suite)
       suite, "/Async/ismaster_ssl", test_ismaster_ssl);
 #else
    /* Skip this test on OpenSSL since was having issues connecting. */
+   /* Skip on Windows until CDRIVER-3519 is resolved. */
    TestSuite_AddFull (suite,
                       "/Async/large_ismaster",
                       test_large_ismaster,
                       NULL /* dtor */,
                       NULL /* ctx */,
-                      test_framework_skip_if_not_single);
+                      TestSuite_CheckLive,
+                      test_framework_skip_if_windows);
 #endif
    TestSuite_AddMockServerTest (suite, "/Async/delay", test_ismaster_delay);
 }
