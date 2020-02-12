@@ -869,6 +869,28 @@ check_topology_type (const bson_t *test)
    return can_proceed;
 }
 
+static void
+_recreate (mongoc_client_t *client,
+           const char *db_name,
+           const char *collection_name)
+{
+   mongoc_collection_t *collection;
+   mongoc_database_t *db;
+
+   if (!db_name || !collection_name) {
+      return;
+   }
+   collection = mongoc_client_get_collection (client, db_name, collection_name);
+   mongoc_collection_drop (collection, NULL);
+   mongoc_collection_destroy (collection);
+
+   db = mongoc_client_get_database (client, db_name);
+   collection = mongoc_database_create_collection (
+      db, collection_name, NULL /* options */, NULL);
+   mongoc_collection_destroy (collection);
+   mongoc_database_destroy (db);
+}
+
 
 static void
 _insert_data (mongoc_collection_t *collection, bson_t *documents)
@@ -1174,6 +1196,15 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
       }
    }
 
+   if (sd->max_wire_version >= WIRE_VERSION_4_4) {
+      /* failGetMoreAfterCursorCheckout added in 4.4 */
+      command = tmp_bson ("{'configureFailPoint': "
+                          "'failGetMoreAfterCursorCheckout', 'mode': 'off'}");
+      r = mongoc_client_command_simple_with_server_id (
+         client, "admin", command, NULL, server_id, NULL, &error);
+      ASSERT_OR_PRINT (r, error);
+   }
+
    mongoc_server_description_destroy (sd);
 }
 
@@ -1435,8 +1466,8 @@ run_json_general_test (const json_test_config_t *config)
    const bson_t *scenario = config->scenario;
    bson_iter_t scenario_iter;
    bson_iter_t tests_iter;
-   const char *db_name;
-   const char *collection_name;
+   const char *db_name, *db2_name;
+   const char *collection_name, *collection2_name;
 
    ASSERT (scenario);
 
@@ -1450,6 +1481,15 @@ run_json_general_test (const json_test_config_t *config)
    collection_name = bson_has_field (scenario, "collection_name")
                         ? bson_lookup_utf8 (scenario, "collection_name")
                         : "test";
+
+   /* database2_name/collection2_name are optional. */
+   db2_name = bson_has_field (scenario, "database2_name")
+                 ? bson_lookup_utf8 (scenario, "database2_name")
+                 : NULL;
+   collection2_name = bson_has_field (scenario, "collection2_name")
+                         ? bson_lookup_utf8 (scenario, "collection2_name")
+                         : NULL;
+
 
    ASSERT (bson_iter_init_find (&scenario_iter, scenario, "tests"));
    ASSERT (BSON_ITER_HOLDS_ARRAY (&scenario_iter));
@@ -1557,6 +1597,9 @@ run_json_general_test (const json_test_config_t *config)
       }
 
       set_auto_encryption_opts (client, &test);
+      /* Drop and recreate test database/collection if necessary. */
+      _recreate (client, db_name, collection_name);
+      _recreate (client, db2_name, collection2_name);
       insert_data (db_name, collection_name, scenario);
 
       db = mongoc_client_get_database (client, db_name);

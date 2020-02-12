@@ -48,6 +48,32 @@ typedef struct _data_change_stream_t {
    bson_t post_batch_resume_token;
 } _data_change_stream_t;
 
+static void
+_setup_for_resume (mongoc_change_stream_t *stream)
+{
+   bool ret;
+   bson_error_t error;
+   mongoc_client_t *client;
+   const char *cmd;
+
+   client = stream->cursor->client;
+   if (stream->max_wire_version >= WIRE_VERSION_4_4) {
+      cmd = "{'configureFailPoint': 'failGetMoreAfterCursorCheckout', 'mode': "
+            "{ 'times': 1 }, 'data': { 'errorCode': 6 }}";
+   } else {
+      cmd = "{'configureFailPoint': 'failCommand', 'mode': { 'times': 1 }, "
+            "'data': { 'failCommands': ['getMore'], 'errorCode': 6 }}";
+   }
+   ret = mongoc_client_command_simple_with_server_id (client,
+                                                      "admin",
+                                                      tmp_bson (cmd),
+                                                      NULL /* read prefs */,
+                                                      stream->cursor->server_id,
+                                                      NULL /* reply */,
+                                                      &error);
+   ASSERT_OR_PRINT (ret, error);
+}
+
 
 static int
 test_framework_skip_if_not_single_version_5 (void)
@@ -357,16 +383,9 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    ASSERT (bson_compare (resume_token, &doc0_rt) != 0);
    bson_copy_to (resume_token, &doc1_rt);
 
-   _mongoc_client_kill_cursor (client,
-                               stream->cursor->server_id,
-                               mongoc_cursor_get_id (stream->cursor),
-                               1 /* operation id */,
-                               "db",
-                               "coll_resume",
-                               NULL /* session */);
+   _setup_for_resume (stream);
+   /* A resume will occur, forcing a resumeAfter token in the aggregate cmd. */
 
-   /* Now that the cursor has been killed, the next call to next will have to
-    * resume, forcing it to send the resumeAfter token in the aggregate cmd. */
    ctx.expecting_resume_token = true;
    ctx.expected_resume_token_bson = &doc1_rt;
    ASSERT (mongoc_change_stream_next (stream, &next_doc));
@@ -661,14 +680,14 @@ static void
 test_getmore_errors (void)
 {
    _test_getmore_error ("{'ok': 0, 'code': 1, 'errmsg': 'internal error'}",
-                        true /* should_resume */,
-                        true /* resume_kills_cursor */);
+                        false /* should_resume */,
+                        false /* ignored */);
    _test_getmore_error ("{'ok': 0, 'code': 6, 'errmsg': 'host unreachable'}",
                         true /* should_resume */,
                         true /* resume_kills_cursor */);
    _test_getmore_error ("{'ok': 0, 'code': 12345, 'errmsg': 'random error'}",
-                        true /* should_resume */,
-                        true /* resume_kills_cursor */);
+                        false /* should_resume */,
+                        false /* ignored */);
    /* most error codes are resumable, excluding a few blacklisted ones. */
    _test_getmore_error ("{'ok': 0, 'code': 11601, 'errmsg': 'interrupted'}",
                         false /* should_resume */,
@@ -676,32 +695,23 @@ test_getmore_errors (void)
    _test_getmore_error (
       "{'ok': 0, 'code': 136, 'errmsg': 'capped position lost'}",
       false /* should_resume */,
-      true /* resume_kills_cursor */);
+      false /* ignored */);
    _test_getmore_error ("{'ok': 0, 'code': 237, 'errmsg': 'cursor killed'}",
                         false /* should_resume */,
                         false /* ignored */);
-   /* if the error code is missing, a message containing 'not master' or 'node
-    * is recovering' is still considered resumable. */
-   _test_getmore_error ("{'ok': 0, 'errmsg': 'not master'}",
-                        true /* should_resume */,
-                        false /* resume_kills_cursor */);
-   _test_getmore_error ("{'ok': 0, 'errmsg': 'node is recovering'}",
-                        true /* should_resume */,
-                        false /* resume_kills_cursor */);
    _test_getmore_error ("{'ok': 0, 'errmsg': 'random error'}",
                         false /* should_resume */,
-                        false /* resume_kills_cursor */);
-   /* An error with a 'NonResumableChangeStreamError' label should not attempt
-    * to resume. */
+                        false /* ignored */);
+   /* Even an error with a 'NonResumableChangeStreamError' label will resume if
+    * it is on the whitelist. */
    _test_getmore_error (
-      "{'ok': 0, 'code': 280, 'errorLabels': "
-      "['NonResumableChangeStreamError'], 'errmsg': 'random error'}",
-      false /* should_resume */,
-      false /* resume_kills_cursor */);
-   /* But other error labels should resume. */
+      "{'ok': 0, 'code': 6, 'errorLabels': "
+      "['NonResumableChangeStreamError'], 'errmsg': 'host unreachable'}",
+      true /* should_resume */,
+      true /* resume_kills_cursor */);
    _test_getmore_error (
-      "{'ok': 0, 'code': 280, 'errorLabels': "
-      "['NonRetryableChangeStreamError'], 'errmsg': 'random error'}",
+      "{'ok': 0, 'code': 6, 'errorLabels': "
+      "['NonRetryableChangeStreamError'], 'errmsg': 'host unreachable'}",
       true /* should_resume */,
       true /* resume_kills_cursor */);
 }
@@ -1114,13 +1124,7 @@ test_change_stream_live_read_prefs (void *test_ctx)
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &err, NULL),
                     err);
 
-   _mongoc_client_kill_cursor (client,
-                               raw_cursor->server_id,
-                               mongoc_cursor_get_id (raw_cursor),
-                               1 /* operation_id */,
-                               "db",
-                               "coll_read_prefs",
-                               NULL /* session */);
+   _setup_for_resume (stream);
 
    /* Change stream client will resume with another cursor. */
    /* depending on the server version, this may or may not receive another
@@ -1406,10 +1410,7 @@ test_change_stream_resume_at_optime (void *test_ctx)
    coll = mongoc_client_get_collection (client, "db", "coll");
    stream = mongoc_collection_watch (coll, tmp_bson ("{'pipeline': []}"), NULL);
 
-   /* set the cursor id to a wrong cursor id so the next getMore fails and
-    * causes a resume. */
-   stream->cursor->cursor_id = 12345;
-
+   _setup_for_resume (stream);
    (void) mongoc_change_stream_next (stream, &doc);
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL),
                     error);
@@ -1498,10 +1499,7 @@ test_change_stream_resume_with_post_batch_resume_token (void *test_ctx)
    coll = mongoc_client_get_collection (client, "db", "coll");
    stream = mongoc_collection_watch (coll, tmp_bson ("{'pipeline': []}"), NULL);
 
-   /* set the cursor id to a wrong cursor id so the next getMore fails and
-    * causes a resume. */
-   stream->cursor->cursor_id = 12345;
-
+   _setup_for_resume (stream);
    (void) mongoc_change_stream_next (stream, &doc);
    ASSERT_OR_PRINT (!mongoc_change_stream_error_document (stream, &error, NULL),
                     error);
@@ -1644,11 +1642,16 @@ change_stream_spec_before_test_cb (json_test_ctx_t *test_ctx,
       (change_stream_spec_ctx_t *) test_ctx->config->ctx;
    bson_t opts;
    bson_t pipeline;
+   bson_t tmp;
    const char *target = bson_lookup_utf8 (test, "target");
 
    set_apm_callbacks (test_ctx, test_ctx->client);
 
-   bson_lookup_doc (test, "changeStreamOptions", &opts);
+   bson_lookup_doc (test, "changeStreamOptions", &tmp);
+   bson_copy_to (&tmp, &opts);
+   if (!bson_has_field (&tmp, "maxAwaitTimeMS")) {
+      BSON_APPEND_INT64 (&opts, "maxAwaitTimeMS", 1000);
+   }
    bson_lookup_doc (test, "changeStreamPipeline", &pipeline);
    if (!strcmp (target, "collection")) {
       ctx->change_stream =
@@ -1665,6 +1668,35 @@ change_stream_spec_before_test_cb (json_test_ctx_t *test_ctx,
                        target,
                        bson_as_json (test, NULL));
    }
+   bson_destroy (&opts);
+}
+
+/* The iteration of change streams for most drivers blocks until either
+ * an event is available or an error has occurred. libmongoc differs.
+ * It does not block indefinitely if there are no events. It is more like a
+ * "try_next" iteration. This behaves the way other drivers iterate.
+ *
+ * Returns true on success (i.e. no error), false on error.
+ */
+static bool
+_iterate_until_error_or_event (mongoc_change_stream_t *stream,
+                               const bson_t **event,
+                               bson_error_t *error,
+                               const bson_t **error_reply)
+{
+   uint32_t max_retry = 100;
+   bool has_error;
+   bool has_document;
+
+   do {
+      has_document = mongoc_change_stream_next (stream, event);
+      has_error =
+         mongoc_change_stream_error_document (stream, error, error_reply);
+      /* in case the test was set-up incorrectly, and there really are no events
+       * coming, exit early. */
+      max_retry--;
+   } while (!has_error && !has_document && max_retry > 0);
+   return !has_error;
 }
 
 static void
@@ -1675,15 +1707,15 @@ change_stream_spec_after_test_cb (json_test_ctx_t *test_ctx, const bson_t *test)
    bson_error_t error;
    const bson_t *reply;
    const bson_t *doc;
+   bool ret;
 
    if (bson_has_field (test, "result.error")) {
       int32_t expected_err_code;
 
       /* iterate change stream once. */
-      mongoc_change_stream_next (ctx->change_stream, &doc);
-
-      if (!mongoc_change_stream_error_document (
-             ctx->change_stream, &error, &reply)) {
+      ret = _iterate_until_error_or_event (
+         ctx->change_stream, &doc, &error, &reply);
+      if (ret) {
          test_error (
             "Expected error, but change stream did not return an error");
       }
@@ -1713,16 +1745,32 @@ change_stream_spec_after_test_cb (json_test_ctx_t *test_ctx, const bson_t *test)
       bson_t expected_docs;
       bson_iter_t expected_iter;
       bson_t all_changes = BSON_INITIALIZER;
-      int i = 0;
+      int i;
+      int num_iterations = 0;
 
       bson_lookup_doc (test, "result.success", &expected_docs);
       BSON_ASSERT (bson_iter_init (&expected_iter, &expected_docs));
 
+      /* If there was no error and result.success is non-empty, iterate
+       * changeStream until it returns as many changes as there are elements in
+       * the result.success array. */
+      BSON_ASSERT (bson_iter_init (&expected_iter, &expected_docs));
+      while (bson_iter_next (&expected_iter)) {
+         num_iterations++;
+      }
+
       /* iterate over the change stream, and verify that the document exists.
          */
-      while (mongoc_change_stream_next (ctx->change_stream, &doc)) {
+      for (i = 0; i < num_iterations; i++) {
          char *key = bson_strdup_printf ("%d", i);
-         i++;
+         ret = _iterate_until_error_or_event (
+            ctx->change_stream, &doc, &error, &reply);
+         if (!ret) {
+            test_error ("unexpected error at iteration %d/%d: %s\n",
+                        i + 1,
+                        num_iterations,
+                        error.message);
+         }
          bson_append_document (&all_changes, key, -1, doc);
          bson_free (key);
       }
@@ -1749,7 +1797,7 @@ change_stream_spec_after_test_cb (json_test_ctx_t *test_ctx, const bson_t *test)
       test_error ("Test format unrecognized, expected 'result.success' or "
                   "'result.error'");
    }
-   /* or easier, just destroy the change stream here. */
+
    mongoc_change_stream_destroy (ctx->change_stream);
 }
 
@@ -2427,7 +2475,9 @@ prose_test_17 (void)
       tmp_bson ("{ 'getMore': {'$numberLong': '123'}, 'collection': 'coll' }"));
 
    mock_server_replies_simple (
-      request, "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }");
+      request,
+      "{ 'code': 10107, 'errmsg': 'not master', 'errorLabels': "
+      "['ResumableChangeStreamError'], 'ok': 0 }");
 
    request_destroy (request);
 
@@ -2505,7 +2555,9 @@ prose_test_18 (void)
       tmp_bson ("{ 'getMore': {'$numberLong': '123'}, 'collection': 'coll' }"));
 
    mock_server_replies_simple (
-      request, "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }");
+      request,
+      "{ 'code': 10107, 'errmsg': 'not master', 'errorLabels': "
+      "['ResumableChangeStreamError'], 'ok': 0 }");
 
    request_destroy (request);
 
@@ -2551,7 +2603,8 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_track_resume_token,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_6);
+                      test_framework_skip_if_not_rs_version_6,
+                      test_framework_skip_if_no_failpoint);
 
    TestSuite_AddFull (suite,
                       "/change_stream/live/batch_size",
@@ -2593,7 +2646,8 @@ test_change_stream_install (TestSuite *suite)
                       test_change_stream_live_read_prefs,
                       NULL,
                       NULL,
-                      _skip_if_no_start_at_optime);
+                      _skip_if_no_start_at_optime,
+                      test_framework_skip_if_no_failpoint);
 
    TestSuite_Add (suite,
                   "/change_stream/server_selection_fails",
@@ -2629,7 +2683,8 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_not_rs_version_7,
                       test_framework_skip_if_no_crypto,
-                      _skip_if_no_start_at_optime);
+                      _skip_if_no_start_at_optime,
+                      test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/change_stream/resume_with_post_batch_resume_token",
                       test_change_stream_resume_with_post_batch_resume_token,
@@ -2637,7 +2692,8 @@ test_change_stream_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_not_rs_version_7,
                       test_framework_skip_if_no_crypto,
-                      _skip_if_no_start_at_optime);
+                      _skip_if_no_start_at_optime,
+                      test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/change_stream/database",
                       test_change_stream_database_watch,
@@ -2694,7 +2750,6 @@ test_change_stream_install (TestSuite *suite)
       suite, "/change_streams/prose_test_17", prose_test_17);
    TestSuite_AddMockServerTest (
       suite, "/change_streams/prose_test_18", prose_test_18);
-
 
    test_framework_resolve_path (JSON_DIR "/change_streams", resolved);
    install_json_test_suite (suite, resolved, &test_change_stream_spec_cb);
