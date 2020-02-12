@@ -6,15 +6,6 @@ compiler:
 
 os:
   - linux
-  - osx
-
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  # https://github.com/Homebrew/homebrew-core/issues/26358
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew unlink python; fi
-  # "brew install" can succeed but return 1 if it has "caveats".
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew tap mongodb/brew && brew install mongodb-community || true; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew services start mongodb-community; fi
 
 before_script:
   # Add an IPv6 config - see the corresponding Travis issue
@@ -43,14 +34,7 @@ script:
 
 
 after_failure:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gdb; fi
   - find /cores . -name \*core\* -exec ./.travis.scripts/debug-core.sh {} \;
-
-# Exclude gcc on osx since it's just an alias for clang.
-matrix:
-  exclude:
-  - compiler: gcc
-    os: osx
 
 git:
   depth: 20
