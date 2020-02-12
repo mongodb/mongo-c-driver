@@ -88,6 +88,10 @@ _test_decode_helper (char *input,
 
    target_size = bson_b64_pton_calculate_target_size (strlen (input));
    output = bson_malloc (target_size);
+   /* bson_malloc returns NULL if requesting 0 bytes, memcmp expects non-NULL. */
+   if (target_size == 0) {
+      output = bson_malloc (1);
+   }
 
    /* Calling bson_b64_pton with a NULL output is valid, and returns the exact
     * target size. */
