@@ -12707,11 +12707,11 @@ buildvariants:
     CC: Visual Studio 15 2017
   run_on: windows-64-vs2017-test
   tasks:
-  - .debug-compile .winssl
-  - .debug-compile !.sspi .nossl
+  - .debug-compile .winssl .nosasl
+  - .debug-compile !.sspi .nossl .nosasl
   - .debug-compile .sspi !.openssl
-  - .server .winssl .latest
-  - .latest .nossl
+  - .server .winssl .latest .nosasl
+  - .latest .nossl .nosasl
   - .nosasl .latest .nossl
   - .sspi .latest
 - name: windows-2017
