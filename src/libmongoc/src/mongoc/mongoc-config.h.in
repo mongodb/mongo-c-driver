@@ -393,6 +393,15 @@
 #endif
 
 /*
+ * Set if building with AWS IAM support.
+ */
+#define MONGOC_ENABLE_MONGODB_AWS_AUTH @MONGOC_ENABLE_MONGODB_AWS_AUTH@
+
+#if MONGOC_ENABLE_MONGODB_AWS_AUTH != 1
+#  undef MONGOC_ENABLE_MONGODB_AWS_AUTH
+#endif
+
+/*
  * NOTICE:
  * If you're about to update this file and add a config flag, make sure to
  * update:

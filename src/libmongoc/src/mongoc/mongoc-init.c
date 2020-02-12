@@ -35,6 +35,11 @@
 #include "mongoc-crypto-cng-private.h"
 #endif
 
+#ifdef MONGOC_ENABLE_MONGODB_AWS_AUTH
+#include "kms_message/kms_message.h"
+#endif
+
+
 #ifndef MONGOC_NO_AUTOMATIC_GLOBALS
 #pragma message( \
    "Configure the driver with ENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF.\
@@ -162,6 +167,10 @@ static BSON_ONCE_FUN (_mongoc_do_cleanup)
 
 #if defined(MONGOC_ENABLE_CRYPTO_CNG)
    mongoc_crypto_cng_cleanup ();
+#endif
+
+#if defined(MONGOC_ENABLE_MONGODB_AWS_AUTH)
+   kms_message_init ();
 #endif
 
    _mongoc_counters_cleanup ();

@@ -51,6 +51,7 @@
 #include "mongoc-cmd-private.h"
 #include "utlist.h"
 #include "mongoc-handshake-private.h"
+#include "mongoc-cluster-aws-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"
@@ -1564,6 +1565,8 @@ _mongoc_cluster_auth_node (
       ret = _mongoc_cluster_auth_node_sasl (cluster, stream, sd, error);
    } else if (0 == strcasecmp (mechanism, "PLAIN")) {
       ret = _mongoc_cluster_auth_node_plain (cluster, stream, sd, error);
+   } else if (0 == strcasecmp (mechanism, "MONGODB-AWS")) {
+      ret = _mongoc_cluster_auth_node_aws (cluster, stream, sd, error);
    } else {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,

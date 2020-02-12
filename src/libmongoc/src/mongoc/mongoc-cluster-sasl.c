@@ -35,6 +35,8 @@
 #include "mongoc-cluster-sspi-private.h"
 #endif
 
+#endif
+
 void
 _mongoc_cluster_build_sasl_start (bson_t *cmd,
                                   const char *mechanism,
@@ -42,7 +44,7 @@ _mongoc_cluster_build_sasl_start (bson_t *cmd,
                                   uint32_t buflen)
 {
    BSON_APPEND_INT32 (cmd, "saslStart", 1);
-   BSON_APPEND_UTF8 (cmd, "mechanism", "GSSAPI");
+   BSON_APPEND_UTF8 (cmd, "mechanism", mechanism);
    bson_append_utf8 (cmd, "payload", 7, buf, buflen);
    BSON_APPEND_INT32 (cmd, "autoAuthorize", 1);
 }
@@ -68,7 +70,6 @@ _mongoc_cluster_get_conversation_id (const bson_t *reply)
 
    return 0;
 }
-#endif
 
 /*
  *--------------------------------------------------------------------------

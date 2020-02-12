@@ -194,6 +194,10 @@ _mongoc_handshake_get_config_hex_string (void)
    _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION);
 #endif
 
+#ifdef MONGOC_ENABLE_MONGODB_AWS_AUTH
+   _set_bit (bf, byte_count, MONGOC_MD_FLAG_ENABLE_MONGODB_AWS_AUTH);
+#endif
+
    str = bson_string_new ("0x");
    for (i = 0; i < byte_count; i++) {
       bson_string_append_printf (str, "%02x", bf[i]);

@@ -22,6 +22,7 @@ Currently supported values for the authMechanism connection string option are:
 * :ref:`GSSAPI <authentication_kerberos>`
 * :ref:`PLAIN <authentication_plain>`
 * :ref:`X509 <authentication_x509>`
+* :ref:`MONGODB-AWS <authentication_aws>`
 
 .. _authentication_scram_sha_256:
 
@@ -198,6 +199,13 @@ The ``MONGODB-X509`` mechanism authenticates a username derived from the disting
 .. note::
 
   The MongoDB C Driver will attempt to determine the x509 derived username when none is provided, and as of MongoDB 3.4 providing the username is not required at all.
+
+.. _authentication_aws:
+
+Authentication via AWS IAM
+--------------------------
+
+Coming soon.
 
 .. only:: html
 

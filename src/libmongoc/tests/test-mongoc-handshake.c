@@ -785,6 +785,10 @@ test_handshake_platform_config ()
       _get_bit (config_str, MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION));
 #endif
 
+#ifdef MONGOC_ENABLE_MONGODB_AWS_AUTH
+   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_MONGODB_AWS_AUTH));
+#endif
+
    /* any excess bits should all be zero. */
    for (i = LAST_MONGOC_MD_FLAG; i < total_bits; i++) {
       BSON_ASSERT (!_get_bit (config_str, i));

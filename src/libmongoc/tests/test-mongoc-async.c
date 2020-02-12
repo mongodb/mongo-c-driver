@@ -336,9 +336,9 @@ test_ismaster_delay ()
 
    BSON_ASSERT (bson_append_int32 (&ismaster_cmd, "isMaster", 8, 1));
    mongoc_async_cmd_new (async,
-                         NULL, /* stream, initialized after delay. */
+                         NULL,  /* stream, initialized after delay. */
                          false, /* is setup done. */
-                         NULL, /* dns result. */
+                         NULL,  /* dns result. */
                          test_ismaster_delay_initializer,
                          100,  /* delay 100ms. */
                          NULL, /* setup function. */

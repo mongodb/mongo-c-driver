@@ -83,6 +83,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-client-pool-private.h
    mongoc-client-private.h
    mongoc-client-side-encryption-private.h
+   mongoc-cluster-aws-private.h
    mongoc-cluster-cyrus-private.h
    mongoc-cluster-private.h
    mongoc-cluster-sasl-private.h
@@ -176,6 +177,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-client-pool.c
    mongoc-client-side-encryption.c
    mongoc-cluster.c
+   mongoc-cluster-aws.c
    mongoc-collection.c
    mongoc-compression.c
    mongoc-counters.c

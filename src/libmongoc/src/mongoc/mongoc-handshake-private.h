@@ -74,6 +74,7 @@ typedef enum {
    MONGOC_MD_FLAG_TRACE,
    MONGOC_MD_FLAG_ENABLE_ICU,
    MONGOC_MD_FLAG_ENABLE_CLIENT_SIDE_ENCRYPTION,
+   MONGOC_MD_FLAG_ENABLE_MONGODB_AWS_AUTH,
    /* Add additional config flags here, above LAST_MONGOC_MD_FLAG. */
    LAST_MONGOC_MD_FLAG
 } mongoc_handshake_config_flag_bit_t;
