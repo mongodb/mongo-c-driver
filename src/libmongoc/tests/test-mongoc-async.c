@@ -377,7 +377,7 @@ test_async_install (TestSuite *suite)
                       test_large_ismaster,
                       NULL /* dtor */,
                       NULL /* ctx */,
-                      TestSuite_CheckLive,
+                      test_framework_skip_if_not_single,
                       test_framework_skip_if_windows);
 #endif
    TestSuite_AddMockServerTest (suite, "/Async/delay", test_ismaster_delay);
