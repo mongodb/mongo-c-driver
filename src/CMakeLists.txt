@@ -1,5 +1,6 @@
 # sub-directory 'libbson' was already included at the top-level
 # sub-directory 'libmongoc' was already included at the top-level
+# sub-directory 'kms-message' was already included at the top-level
 add_subdirectory (tools)
 add_subdirectory (common)
 
@@ -25,6 +26,8 @@ foreach (zlib_src IN LISTS ZLIB_SOURCES)
    list (APPEND src_zlib_DIST ${zlib_src_rel})
 endforeach ()
 
+file (GLOB_RECURSE src_kms_message_DIST RELATIVE "${SOURCE_DIR}" kms-message/*)
+
 set_local_dist (src_DIST_local
    CMakeLists.txt
 )
@@ -34,5 +37,6 @@ set (src_DIST
    ${src_tools_DIST}
    ${src_zlib_DIST}
    ${src_common_DIST}
+   ${src_kms_message_DIST}
    PARENT_SCOPE
 )

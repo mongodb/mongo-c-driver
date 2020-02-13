@@ -15,6 +15,8 @@ set (build_cmake_MODULES
 
 set_local_dist (build_cmake_DIST_local
    CMakeLists.txt
+   libmongoc-hidden-symbols.map
+   libmongoc-hidden-symbols.txt
    ${build_cmake_MODULES}
 )
 

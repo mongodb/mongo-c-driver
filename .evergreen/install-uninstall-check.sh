@@ -56,6 +56,26 @@ else
 fi
 touch $INSTALL_DIR/lib/canary.txt
 
+# no kms-message components should be installed
+if test -f $INSTALL_DIR/include/kms_message/kms_message.h; then
+  echo "kms_message.h found!"
+  exit 1
+else
+  echo "kms_message.h check ok"
+fi
+if test -f $INSTALL_DIR/lib/libkms_message-static.a; then
+  echo "libkms_message-static.a found!"
+  exit 1
+else
+  echo "libkms_message-static.a check ok"
+fi
+if test -f $INSTALL_DIR/lib/cmake/kms_message/kms_message-config.cmake; then
+  echo "kms_message-config.cmake found!"
+  exit 1
+else
+  echo "kms_message-config.cmake check ok"
+fi
+
 ls -l $INSTALL_DIR/share/mongo-c-driver
 
 make uninstall

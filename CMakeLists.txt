@@ -56,6 +56,11 @@ option (ENABLE_APPLE_FRAMEWORK "Build libraries as frameworks on darwin platform
 set (ENABLE_ICU AUTO CACHE STRING "Enable ICU support, necessary to use non-ASCII usernames or passwords, default AUTO.")
 option (ENABLE_UNINSTALL "Enable creation of uninstall script and associated uninstall build target." ON)
 set (ENABLE_CLIENT_SIDE_ENCRYPTION AUTO CACHE STRING "Enable Client-Side Field Level Encryption support. Requires libmongocrypt. Set to ON/AUTO/OFF, default AUTO.")
+option (ENABLE_MONGODB_AWS_AUTH
+   "Enable support for MONGODB-AWS authentication mechanism. Set to ON/AUTO/OFF,\
+ default AUTO. (also requires ENABLE_SSL not set to OFF)"
+   AUTO
+)
 
 project (mongo-c-driver C)
 
@@ -272,6 +277,41 @@ if (ENABLE_MONGOC)
       add_definitions (-Wno-deprecated-declarations)
    endif ()
 
+   if (NOT ENABLE_MONGODB_AWS_AUTH MATCHES "ON|OFF|AUTO")
+      message (FATAL_ERROR "ENABLE_MONGODB_AWS_AUTH option must be ON, AUTO, or OFF")
+   endif ()
+   set (MONGOC_ENABLE_MONGODB_AWS_AUTH 0)
+   if (ENABLE_MONGODB_AWS_AUTH STREQUAL ON)
+      if (MSVC AND MSVC_VERSION LESS_EQUAL 1800)
+         message (FATAL_ERROR "Use Visual Studio 2015 or higher for ENABLE_MONGODB_AWS_AUTH")
+      endif ()
+      if (ENABLE_SSL STREQUAL OFF)
+         message (FATAL_ERROR
+            "Option ENABLE_MONGODB_AWS_AUTH requires ENABLE_SSL not set to OFF"
+         )
+      endif ()
+      set (MONGOC_ENABLE_MONGODB_AWS_AUTH 1)
+   elseif (ENABLE_MONGODB_AWS_AUTH STREQUAL AUTO)
+      if (MSVC AND MSVC_VERSION LESS_EQUAL 1800)
+         message (WARNING "MS Visual Studio too old for ENABLE_MONGODB_AWS_AUTH")
+      elseif (ENABLE_SSL STREQUAL OFF)
+              message (WARNING
+            "Option ENABLE_MONGODB_AWS_AUTH requires ENABLE_SSL not set to OFF"
+         )
+      else ()
+         set (MONGOC_ENABLE_MONGODB_AWS_AUTH 1)
+      endif ()
+   endif ()
+
+   if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
+      # disable warnings on kms_message components; those are dealt with in libmongocrypt
+      set (CMAKE_C_FLAGS_OLD "${CMAKE_C_FLAGS}")
+      set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
+      # EXCLUDE_FROM_ALL ensures that only explicitly required kms-message
+      # components are built and that none are installed
+      add_subdirectory (src/kms-message EXCLUDE_FROM_ALL)
+      set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS_OLD}")
+   endif ()
    add_subdirectory (src/libmongoc)
 
    if (ENABLE_MAN_PAGES STREQUAL ON OR ENABLE_HTML_DOCS STREQUAL ON)
@@ -294,6 +334,7 @@ if (ENABLE_MONGOC)
    add_subdirectory (orchestration_configs)
    add_subdirectory (src)
    # 'src/libbson' was already included, so 'src' will not include it directly
+   # 'src/kms-message' was already included if appropriate
    # 'src/libmongoc' was already included, so 'src' will not include it directly
 
    set (PACKAGE_PREFIX "mongo-c-driver-${MONGOC_DIST_VERSION}")

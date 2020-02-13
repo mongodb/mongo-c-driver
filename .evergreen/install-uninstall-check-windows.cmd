@@ -55,6 +55,26 @@ echo.%CC%| findstr /I "gcc">Nul && (
      exit /B 1
   )
 
+  REM no kms-message components should be installed
+  if exist %INSTALL_DIR%\include\kms_message\kms_message.h (
+     echo kms_message.h found!
+     exit /B 1
+  ) else (
+     echo kms_message.h check ok
+  )
+  if exist %INSTALL_DIR%\lib\libkms_message-static.a (
+     echo libkms_message-static.a found!
+     exit /B 1
+  ) else (
+     echo libkms_message-static.a check ok
+  )
+  if exist %INSTALL_DIR%\lib\cmake\kms_message\kms_message-config.cmake (
+     echo kms_message-config.cmake found!
+     exit /B 1
+  ) else (
+     echo kms_message-config.cmake check ok
+  )
+
   echo > %INSTALL_DIR%\lib\canary.txt
 
   dir %INSTALL_DIR%\share\mongo-c-driver
@@ -75,6 +95,26 @@ echo.%CC%| findstr /I "gcc">Nul && (
   )
 
   echo > %INSTALL_DIR%\lib\canary.txt
+
+  REM no kms-message components should be installed
+  if exist %INSTALL_DIR%\include\kms_message\kms_message.h (
+     echo kms_message.h found!
+     exit /B 1
+  ) else (
+     echo kms_message.h check ok
+  )
+  if exist %INSTALL_DIR%\lib\libkms_message-static.a (
+     echo libkms_message-static.a found!
+     exit /B 1
+  ) else (
+     echo libkms_message-static.a check ok
+  )
+  if exist %INSTALL_DIR%\lib\cmake\kms_message\kms_message-config.cmake (
+     echo kms_message-config.cmake found!
+     exit /B 1
+  ) else (
+     echo kms_message-config.cmake check ok
+  )
 
   dir %INSTALL_DIR%\share\mongo-c-driver
 
