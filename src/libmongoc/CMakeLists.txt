@@ -1000,33 +1000,6 @@ install (
    FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-if (MSVC)
-   add_custom_command (
-      TARGET mongoc_shared
-      POST_BUILD
-      COMMAND cd \"$<TARGET_LINKER_FILE_DIR:mongoc_shared>\"
-      COMMAND copy $<TARGET_LINKER_FILE_NAME:mongoc_shared> lib$<TARGET_LINKER_FILE_NAME:mongoc_shared>
-      COMMENT "Creating copy with 'lib' prefix"
-   )
-   install (
-      FILES $<TARGET_LINKER_FILE_DIR:mongoc_shared>/lib$<TARGET_LINKER_FILE_NAME:mongoc_shared>
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}
-   )
-   if (TARGET mongoc_static)
-      add_custom_command (
-         TARGET mongoc_static
-         POST_BUILD
-         COMMAND cd \"$<TARGET_LINKER_FILE_DIR:mongoc_static>\"
-         COMMAND copy $<TARGET_LINKER_FILE_NAME:mongoc_static> lib$<TARGET_LINKER_FILE_NAME:mongoc_static>
-         COMMENT "Creating copy with 'lib' prefix"
-      )
-      install (
-         FILES $<TARGET_LINKER_FILE_DIR:mongoc_static>/lib$<TARGET_LINKER_FILE_NAME:mongoc_static>
-         DESTINATION ${CMAKE_INSTALL_LIBDIR}
-      )
-   endif ()
-endif ()
-
 install (
    FILES ${HEADERS}
    DESTINATION "${MONGOC_HEADER_INSTALL_DIR}/mongoc"

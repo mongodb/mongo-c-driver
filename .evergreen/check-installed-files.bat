@@ -25,9 +25,8 @@ if "%MINGW%"=="1" (
   ) else (
     echo mongoc-1.0.dll check ok
   )
-  rem When the "lib"-prefixed artifacts are removed (CDRIVER-3450), flip this test
-  if not exist %LIB_LIB% (
-    echo %LIB_LIB% is missing!
+  if exist %LIB_LIB% (
+    echo %LIB_LIB% is present and should not be!
     exit /B 1
   ) else (
     echo libmongoc-1.0.lib check ok

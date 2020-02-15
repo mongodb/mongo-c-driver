@@ -98,30 +98,3 @@ rem Yes, they should've named it "dependencies".
 dumpbin.exe /dependents Debug\hello_mongoc.exe
 
 Debug\hello_mongoc.exe %MONGODB_EXAMPLE_URI%
-
-Rem No need to test the manual linkage again for the Snappy build
-if "%ENABLE_SNAPPY%"=="1" (
-  exit /B 0
-)
-
-rem Test manual linkage against library with the deprecated 'lib' prefix
-set EXAMPLE_DIR=%SRCROOT%\src\libmongoc\examples\manual_build_against_deprecated_lib_prefix
-
-if "%LINK_STATIC%"=="1" (
-  set EXAMPLE_DIR="%EXAMPLE_DIR%_static"
-)
-
-cd %EXAMPLE_DIR%
-
-if "%ENABLE_SSL%"=="1" (
-  cp ..\..\tests\x509gen\client.pem .
-  cp ..\..\tests\x509gen\ca.pem .
-  set MONGODB_EXAMPLE_URI="mongodb://localhost/?ssl=true&sslclientcertificatekeyfile=client.pem&sslcertificateauthorityfile=ca.pem&sslallowinvalidhostnames=true"
-)
-
-msbuild.exe /p:Configuration=Debug hello_mongoc.vcxproj
-
-rem Yes, they should've named it "dependencies".
-dumpbin.exe /dependents Debug\hello_mongoc.exe
-
-Debug\hello_mongoc.exe %MONGODB_EXAMPLE_URI%

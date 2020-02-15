@@ -55,18 +55,3 @@ rem Yes, they should've named it "dependencies".
 dumpbin.exe /dependents Debug\hello_bson.exe
 
 Debug\hello_bson.exe
-
-rem Test manual linkage against library with the deprecated 'lib' prefix
-set EXAMPLE_DIR=%SRCROOT%\src\libbson\examples\manual_build_against_deprecated_lib_prefix
-
-if "%LINK_STATIC%"=="1" (
-  set EXAMPLE_DIR="%EXAMPLE_DIR%_static"
-)
-
-cd %EXAMPLE_DIR%
-msbuild.exe /p:Configuration=Debug hello_bson.vcxproj
-
-rem Yes, they should've named it "dependencies".
-dumpbin.exe /dependents Debug\hello_bson.exe
-
-Debug\hello_bson.exe

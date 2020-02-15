@@ -336,33 +336,6 @@ install (
    FRAMEWORK DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-if (MSVC)
-   add_custom_command (
-      TARGET bson_shared
-      POST_BUILD
-      COMMAND cd \"$<TARGET_LINKER_FILE_DIR:bson_shared>\"
-      COMMAND copy $<TARGET_LINKER_FILE_NAME:bson_shared> lib$<TARGET_LINKER_FILE_NAME:bson_shared>
-      COMMENT "Creating copy with 'lib' prefix"
-   )
-   install (
-      FILES $<TARGET_LINKER_FILE_DIR:bson_shared>/lib$<TARGET_LINKER_FILE_NAME:bson_shared>
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}
-   )
-   if (TARGET bson_static)
-      add_custom_command (
-         TARGET bson_static
-         POST_BUILD
-         COMMAND cd \"$<TARGET_LINKER_FILE_DIR:bson_static>\"
-         COMMAND copy $<TARGET_LINKER_FILE_NAME:bson_static> lib$<TARGET_LINKER_FILE_NAME:bson_static>
-         COMMENT "Creating copy with 'lib' prefix"
-      )
-      install (
-         FILES $<TARGET_LINKER_FILE_DIR:bson_static>/lib$<TARGET_LINKER_FILE_NAME:bson_static>
-         DESTINATION ${CMAKE_INSTALL_LIBDIR}
-      )
-   endif ()
-endif ()
-
 install (
    FILES ${HEADERS}
    DESTINATION "${BSON_HEADER_INSTALL_DIR}/bson"
