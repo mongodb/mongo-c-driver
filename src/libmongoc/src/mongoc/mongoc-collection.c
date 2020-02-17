@@ -3017,18 +3017,19 @@ mongoc_collection_find_and_modify_with_opts (
    bson_error_t *error)
 {
    mongoc_cluster_t *cluster;
-   mongoc_client_session_t *cs = NULL;
    mongoc_cmd_parts_t parts;
    bool is_retryable;
    bson_iter_t iter;
    bson_iter_t inner;
    const char *name;
+   bson_t ss_reply;
    bson_t reply_local;
    bson_t *reply_ptr;
    bool ret = false;
    bson_t command = BSON_INITIALIZER;
    mongoc_server_stream_t *server_stream = NULL;
    mongoc_server_stream_t *retry_server_stream = NULL;
+   mongoc_find_and_modify_appended_opts_t appended_opts;
 
    ENTRY;
 
@@ -3044,25 +3045,31 @@ mongoc_collection_find_and_modify_with_opts (
    parts.is_read_command = true;
    parts.is_write_command = true;
 
-   /* we need a session to fetch a stream to call cmd_parts_append_opts
-    * below, which parses the session from opts->extra *again*
-    */
-   if (bson_iter_init_find (&iter, &opts->extra, "sessionId")) {
-      if (!_mongoc_client_session_from_iter (
-             collection->client, &iter, &cs, error)) {
-         bson_init (reply_ptr);
-         GOTO (done);
-      }
-   }
+   bson_init (reply_ptr);
 
-   server_stream =
-      mongoc_cluster_stream_for_writes (cluster, cs, reply_ptr, error);
-
-   if (!server_stream) {
+   if (!_mongoc_find_and_modify_appended_opts_parse (
+          cluster->client, &opts->extra, &appended_opts, error)) {
       GOTO (done);
    }
 
-   bson_init (reply_ptr);
+   server_stream = mongoc_cluster_stream_for_writes (
+      cluster, appended_opts.client_session, &ss_reply, error);
+
+   if (!server_stream) {
+      bson_concat (reply_ptr, &ss_reply);
+      bson_destroy (&ss_reply);
+      GOTO (done);
+   }
+
+   if (appended_opts.hint.value_type &&
+       server_stream->sd->max_wire_version < WIRE_VERSION_4_2) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+                      "selected server does not support hint on findAndModify");
+      GOTO (done);
+   }
+
    name = mongoc_collection_get_name (collection);
    BSON_APPEND_UTF8 (&command, "findAndModify", name);
    BSON_APPEND_DOCUMENT (&command, "query", query);
@@ -3105,7 +3112,29 @@ mongoc_collection_find_and_modify_with_opts (
       BSON_APPEND_INT32 (&command, "maxTimeMS", opts->max_time_ms);
    }
 
-   if (bson_iter_init (&iter, &opts->extra)) {
+   /* Some options set via mongoc_find_and_modify_opts_append were parsed. Set
+    * them on the command parts. */
+   if (appended_opts.client_session) {
+      mongoc_cmd_parts_set_session (&parts, appended_opts.client_session);
+   }
+
+   if (appended_opts.writeConcern) {
+      if (!mongoc_cmd_parts_set_write_concern (
+             &parts,
+             appended_opts.writeConcern,
+             server_stream->sd->max_wire_version,
+             error)) {
+         GOTO (done);
+      }
+   }
+
+   if (appended_opts.hint.value_type) {
+      bson_append_value (&parts.extra, "hint", 4, &appended_opts.hint);
+   }
+
+   /* Append any remaining unparsed options set via
+    * mongoc_find_and_modify_opts_append to the command part. */
+   if (bson_iter_init (&iter, &appended_opts.extra)) {
       bool ok = mongoc_cmd_parts_append_opts (
          &parts, &iter, server_stream->sd->max_wire_version, error);
       if (!ok) {
@@ -3114,7 +3143,7 @@ mongoc_collection_find_and_modify_with_opts (
    }
 
    if (_mongoc_client_session_in_txn (parts.assembled.session) &&
-       !bson_empty (&parts.write_concern_document)) {
+       appended_opts.writeConcern) {
       bson_set_error (error,
                       MONGOC_ERROR_COMMAND,
                       MONGOC_ERROR_COMMAND_INVALID_ARG,
@@ -3122,7 +3151,7 @@ mongoc_collection_find_and_modify_with_opts (
       GOTO (done);
    }
 
-   if (!bson_has_field (&opts->extra, "writeConcern")) {
+   if (!appended_opts.writeConcern) {
       if (server_stream->sd->max_wire_version >=
           WIRE_VERSION_FAM_WRITE_CONCERN) {
          if (!mongoc_write_concern_is_valid (collection->write_concern)) {
@@ -3228,6 +3257,7 @@ done:
    if (&reply_local == reply_ptr) {
       bson_destroy (&reply_local);
    }
+   _mongoc_find_and_modify_appended_opts_cleanup (&appended_opts);
    RETURN (ret);
 }
 

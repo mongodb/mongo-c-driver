@@ -183,6 +183,14 @@ typedef struct _mongoc_aggregate_opts_t {
    bson_t extra;
 } mongoc_aggregate_opts_t;
 
+typedef struct _mongoc_find_and_modify_appended_opts_t {
+   mongoc_write_concern_t *writeConcern;
+   bool write_concern_owned;
+   mongoc_client_session_t *client_session;
+   bson_value_t hint;
+   bson_t extra;
+} mongoc_find_and_modify_appended_opts_t;
+
 bool
 _mongoc_insert_one_opts_parse (
    mongoc_client_t *client,
@@ -382,5 +390,15 @@ _mongoc_aggregate_opts_parse (
 
 void
 _mongoc_aggregate_opts_cleanup (mongoc_aggregate_opts_t *mongoc_aggregate_opts);
+
+bool
+_mongoc_find_and_modify_appended_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_find_and_modify_appended_opts_t *mongoc_find_and_modify_appended_opts,
+   bson_error_t *error);
+
+void
+_mongoc_find_and_modify_appended_opts_cleanup (mongoc_find_and_modify_appended_opts_t *mongoc_find_and_modify_appended_opts);
 
 #endif /* MONGOC_OPTS_H */

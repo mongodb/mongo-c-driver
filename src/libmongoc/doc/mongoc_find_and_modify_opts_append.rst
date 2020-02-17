@@ -25,6 +25,10 @@ Adds arbitrary options to a `findAndModify <https://docs.mongodb.org/manual/refe
 
 ``extra`` does not have to remain valid after calling this function.
 
+.. |opts-source| replace:: ``collection``
+
+.. include:: includes/find-and-modify-appended-opts.txt
+
 Returns
 -------
 

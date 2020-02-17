@@ -1951,3 +1951,88 @@ _mongoc_aggregate_opts_cleanup (mongoc_aggregate_opts_t *mongoc_aggregate_opts)
    bson_destroy (&mongoc_aggregate_opts->collation);
    bson_destroy (&mongoc_aggregate_opts->extra);
 }
+
+bool
+_mongoc_find_and_modify_appended_opts_parse (
+   mongoc_client_t *client,
+   const bson_t *opts,
+   mongoc_find_and_modify_appended_opts_t *mongoc_find_and_modify_appended_opts,
+   bson_error_t *error)
+{
+   bson_iter_t iter;
+
+   mongoc_find_and_modify_appended_opts->writeConcern = NULL;
+   mongoc_find_and_modify_appended_opts->write_concern_owned = false;
+   mongoc_find_and_modify_appended_opts->client_session = NULL;
+   memset (&mongoc_find_and_modify_appended_opts->hint, 0, sizeof (bson_value_t));
+   bson_init (&mongoc_find_and_modify_appended_opts->extra);
+
+   if (!opts) {
+      return true;
+   }
+
+   if (!bson_iter_init (&iter, opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "Invalid 'opts' parameter.");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+         if (!_mongoc_convert_write_concern (
+               client,
+               &iter,
+               &mongoc_find_and_modify_appended_opts->writeConcern,
+               error)) {
+            return false;
+         }
+
+         mongoc_find_and_modify_appended_opts->write_concern_owned = true;
+      }
+      else if (!strcmp (bson_iter_key (&iter), "sessionId")) {
+         if (!_mongoc_convert_session_id (
+               client,
+               &iter,
+               &mongoc_find_and_modify_appended_opts->client_session,
+               error)) {
+            return false;
+         }
+      }
+      else if (!strcmp (bson_iter_key (&iter), "hint")) {
+         if (!_mongoc_convert_hint (
+               client,
+               &iter,
+               &mongoc_find_and_modify_appended_opts->hint,
+               error)) {
+            return false;
+         }
+      }
+      else {
+         /* unrecognized values are copied to "extra" */
+         if (!BSON_APPEND_VALUE (
+               &mongoc_find_and_modify_appended_opts->extra,
+               bson_iter_key (&iter),
+               bson_iter_value (&iter))) {
+            bson_set_error (error,
+                            MONGOC_ERROR_BSON,
+                            MONGOC_ERROR_BSON_INVALID,
+                            "Invalid 'opts' parameter.");
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+void
+_mongoc_find_and_modify_appended_opts_cleanup (mongoc_find_and_modify_appended_opts_t *mongoc_find_and_modify_appended_opts)
+{
+   if (mongoc_find_and_modify_appended_opts->write_concern_owned) {
+      mongoc_write_concern_destroy (mongoc_find_and_modify_appended_opts->writeConcern);
+   }
+   bson_value_destroy (&mongoc_find_and_modify_appended_opts->hint);
+   bson_destroy (&mongoc_find_and_modify_appended_opts->extra);
+}

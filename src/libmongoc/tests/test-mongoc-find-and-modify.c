@@ -558,6 +558,45 @@ test_find_and_modify_collation_fail (void)
    test_find_and_modify_collation (WIRE_VERSION_COLLATION - 1);
 }
 
+
+static void
+test_find_and_modify_hint (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   mongoc_find_and_modify_opts_t *opts;
+   bson_error_t error;
+   bool ret;
+
+   /* Test setting a hint as a string. Should fail on server < 4.2. */
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   coll = get_test_collection (client, "fam_hint");
+   opts = mongoc_find_and_modify_opts_new ();
+   mongoc_find_and_modify_opts_append (opts, tmp_bson ("{'hint': 'abc'}"));
+   mongoc_find_and_modify_opts_set_update (opts, tmp_bson ("{}"));
+   ret = mongoc_collection_find_and_modify_with_opts (
+      coll, tmp_bson ("{}"), opts, NULL /* reply */, &error);
+   if (test_framework_max_wire_version_at_least (WIRE_VERSION_4_4)) {
+      ASSERT_OR_PRINT (ret, error);
+   } else if (test_framework_max_wire_version_at_least (WIRE_VERSION_4_2)) {
+      BSON_ASSERT (!ret);
+      BSON_ASSERT (error.domain == MONGOC_ERROR_SERVER);
+      /* server error. */
+   } else {
+      BSON_ASSERT (!ret);
+      ASSERT_ERROR_CONTAINS (
+         error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+         "selected server does not support hint on findAndModify");
+   }
+
+   mongoc_find_and_modify_opts_destroy (opts);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
 void
 test_find_and_modify_install (TestSuite *suite)
 {
@@ -594,4 +633,6 @@ test_find_and_modify_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/find_and_modify/collation/fail",
                                 test_find_and_modify_collation_fail);
+   TestSuite_AddLive (
+      suite, "/find_and_modify/hint", test_find_and_modify_hint);
 }

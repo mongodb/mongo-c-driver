@@ -854,6 +854,7 @@ create_find_and_modify_opts (const char *name,
    mongoc_find_and_modify_opts_t *opts;
    mongoc_find_and_modify_flags_t flags = MONGOC_FIND_AND_MODIFY_NONE;
    bson_t extra = BSON_INITIALIZER;
+   bson_iter_t iter;
 
    opts = mongoc_find_and_modify_opts_new ();
 
@@ -906,6 +907,10 @@ create_find_and_modify_opts (const char *name,
    if (bson_has_field (args, "returnDocument") &&
        !strcmp ("After", bson_lookup_utf8 (args, "returnDocument"))) {
       flags |= MONGOC_FIND_AND_MODIFY_RETURN_NEW;
+   }
+
+   if (bson_iter_init_find (&iter, args, "hint")) {
+      bson_append_iter (&extra, "hint", 4, &iter);
    }
 
    mongoc_find_and_modify_opts_set_flags (opts, flags);

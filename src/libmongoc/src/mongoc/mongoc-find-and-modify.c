@@ -192,7 +192,10 @@ mongoc_find_and_modify_opts_append (mongoc_find_and_modify_opts_t *opts,
                                     const bson_t *extra)
 {
    BSON_ASSERT (opts);
-   BSON_ASSERT (extra);
+
+   if (!extra) {
+      return true;
+   }
 
    return bson_concat (&opts->extra, extra);
 }

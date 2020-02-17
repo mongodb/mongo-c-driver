@@ -261,8 +261,8 @@ opts_structs = OrderedDict([
 
     ('mongoc_change_stream_opts_t', Struct([
         ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_change_stream_next`'}),
-        ('resumeAfter', {'type': 'document', 'help': 'A ``Document`` representing the logical starting point of the change stream. The ``_id`` field  of any change received from a change stream can be used here. This option is mutually exclusive with ``startAfter`` and ``startAtOperationTime``.'}),
-        ('startAfter', {'type': 'document', 'help': 'A ``Document`` representing the logical starting point of the change stream. Unlike ``resumeAfter``, this can resume notifications after an "invalidate" event. The ``_id`` field  of any change received from a change stream can be used here.  This option is mutually exclusive with ``resumeAfter`` and ``startAtOperationTime``.'}),
+        ('resumeAfter', {'type': 'document', 'help': 'A ``Document`` representing the logical starting point of the change stream. The result of :symbol:`mongoc_change_stream_get_resume_token()` or the ``_id`` field  of any change received from a change stream can be used here. This option is mutually exclusive with ``startAfter`` and ``startAtOperationTime``.'}),
+        ('startAfter', {'type': 'document', 'help': 'A ``Document`` representing the logical starting point of the change stream. Unlike ``resumeAfter``, this can resume notifications after an "invalidate" event. The result of :symbol:`mongoc_change_stream_get_resume_token()` or the ``_id`` field  of any change received from a change stream can be used here.  This option is mutually exclusive with ``resumeAfter`` and ``startAtOperationTime``.'}),
         ('startAtOperationTime', {'type': 'timestamp', 'help': 'A ``Timestamp``. The change stream only provides changes that occurred at or after the specified timestamp. Any command run against the server will return an operation time that can be used here. This option is mutually exclusive with ``resumeAfter`` and ``startAfter``.'}),
         ('maxAwaitTimeMS', {'type': 'int64_t', 'convert': '_mongoc_convert_int64_positive', 'help': 'An ``int64`` representing the maximum amount of time a call to :symbol:`mongoc_change_stream_next` will block waiting for data'}),
         ('fullDocument', {'type': 'utf8', 'help': 'A UTF-8 string. Set this option to "updateLookup" to direct the change stream cursor to lookup the most current majority-committed version of the document associated to an update change stream event.'}),
@@ -316,7 +316,13 @@ opts_structs = OrderedDict([
         collation_option,
         server_option,
         ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_cursor_next`', 'check_set': True})
-    ]))
+    ])),
+
+    ('mongoc_find_and_modify_appended_opts_t', Struct([
+        write_concern_option,
+        session_option,
+        hint_option
+    ], opts_name='extra'))
 ])
 
 header_comment = """/**************************************************
