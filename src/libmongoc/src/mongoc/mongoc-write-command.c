@@ -590,7 +590,12 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
           * select a new writable stream and retry. If server selection fails or
           * the selected server does not support retryable writes, fall through
           * and allow the original error to be reported. */
-         error_type = _mongoc_write_error_get_type (ret, error, &reply);
+         error_type = _mongoc_write_error_get_type (
+            ret,
+            error,
+            &reply,
+            server_stream->sd->max_wire_version <
+               WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL);
          if (is_retryable) {
             _mongoc_write_error_update_if_unsupported_storage_engine (
                ret, error, &reply);
@@ -1494,6 +1499,125 @@ _mongoc_write_result_complete (
 
 /*--------------------------------------------------------------------------
  *
+ * _mongoc_write_error_is_retryable --
+ *
+ *       Checks if the error from a write command is considered retryable
+ *       when checking code and message.
+ *
+ *
+ * Return:
+ *       True if the error is retryable, false otherwise.
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+_mongoc_write_error_is_retryable (bson_error_t *error)
+{
+   switch (error->code) {
+      case 6:     /* HostUnreachable */
+      case 7:     /* HostNotFound */
+      case 89:    /* NetworkTimeout */
+      case 91:    /* ShutdownInProgress */
+      case 189:   /* PrimarySteppedDown */
+      case 262:   /* ExceededTimeLimit */
+      case 9001:  /* SocketException */
+      case 10107: /* NotMaster */
+      case 11600: /* InterruptedAtShutdown */
+      case 11602: /* InterruptedDueToReplStateChange */
+      case 13435: /* NotMasterNoSlaveOk */
+      case 13436: /* NotMasterOrSecondary */
+         return true;
+      default:
+         if (strstr (error->message, "not master") ||
+             strstr (error->message, "node is recovering")) {
+            return true;
+         }
+         return false;
+   }
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * _mongoc_write_error_has_retryable_label --
+ *
+ *       Checks if the error from a write command has a "RetryableWriteError"
+ *       error label.
+ *
+ *
+ * Return:
+ *       True if the label is found, false otherwise.
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool
+_mongoc_write_error_has_retryable_label (const bson_t *reply)
+{
+   bson_iter_t iter;
+   bson_iter_t label;
+
+   if (!bson_iter_init_find (&iter, reply, "errorLabels")) {
+      return false;
+   }
+
+   BSON_ASSERT (bson_iter_recurse (&iter, &label));
+   while (bson_iter_next (&label)) {
+      if (!BSON_ITER_HOLDS_UTF8 (&label)) {
+         continue;
+      }
+
+      if (!strcmp (bson_iter_utf8 (&label, NULL), RETRYABLE_WRITE_ERROR)) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
+static void
+copy_labels_plus_retryable_write_error (const bson_t *src, bson_t *dst)
+{
+   bson_iter_t iter;
+   bson_iter_t src_label;
+   bson_t dst_labels;
+   char str[16];
+   uint32_t i = 0;
+   const char *key;
+
+   BSON_APPEND_ARRAY_BEGIN (dst, "errorLabels", &dst_labels);
+   BSON_APPEND_UTF8 (&dst_labels, "0", RETRYABLE_WRITE_ERROR);
+
+   /* append any other errorLabels already in "src" */
+   if (bson_iter_init_find (&iter, src, "errorLabels") &&
+       bson_iter_recurse (&iter, &src_label)) {
+      while (bson_iter_next (&src_label) && BSON_ITER_HOLDS_UTF8 (&src_label)) {
+         if (strcmp (bson_iter_utf8 (&src_label, NULL),
+                     RETRYABLE_WRITE_ERROR) != 0) {
+            i++;
+            bson_uint32_to_string (i, &key, str, sizeof str);
+            BSON_APPEND_UTF8 (
+               &dst_labels, key, bson_iter_utf8 (&src_label, NULL));
+         }
+      }
+   }
+
+   bson_append_array_end (dst, &dst_labels);
+}
+
+static void
+_mongoc_write_error_append_retryable_label (bson_t *reply)
+{
+   bson_t reply_local = BSON_INITIALIZER;
+
+   if (reply) {
+      bson_copy_to_excluding_noinit (&reply_local, reply, "errorLabels", NULL);
+      copy_labels_plus_retryable_write_error (&reply_local, reply);
+   }
+
+   bson_destroy (&reply_local);
+}
+
+/*--------------------------------------------------------------------------
+ *
  * _mongoc_write_error_get_type --
  *
  *       Checks if the error or reply from a write command is considered
@@ -1511,12 +1635,22 @@ _mongoc_write_result_complete (
 mongoc_write_err_type_t
 _mongoc_write_error_get_type (bool cmd_ret,
                               const bson_error_t *cmd_err,
-                              const bson_t *reply)
+                              bson_t *reply,
+                              bool append_retryable_label)
 {
    bson_error_t error;
 
+   if (_mongoc_write_error_has_retryable_label (reply)) {
+      return MONGOC_WRITE_ERR_RETRY;
+   }
+
    /* check for a client error. */
    if (!cmd_ret && cmd_err->domain == MONGOC_ERROR_STREAM) {
+      /* Retryable writes spec: When the driver encounters a network error
+       * communicating with any server version that supports retryable
+       * writes, it MUST add a RetryableWriteError label to that error. */
+      _mongoc_write_error_append_retryable_label (reply);
+
       /* Retryable writes spec: "considered retryable if [...] any network
        * exception (e.g. socket timeout or error) */
       return MONGOC_WRITE_ERR_RETRY;
@@ -1528,27 +1662,18 @@ _mongoc_write_error_get_type (bool cmd_ret,
       return MONGOC_WRITE_ERR_NONE;
    }
 
-   switch (error.code) {
-   case 11600: /* InterruptedAtShutdown */
-   case 11602: /* InterruptedDueToReplStateChange */
-   case 10107: /* NotMaster */
-   case 13435: /* NotMasterNoSlaveOk */
-   case 13436: /* NotMasterOrSecondary */
-   case 189:   /* PrimarySteppedDown */
-   case 91:    /* ShutdownInProgress */
-   case 7:     /* HostNotFound */
-   case 6:     /* HostUnreachable */
-   case 89:    /* NetworkTimeout */
-   case 9001:  /* SocketException */
-   case 262:   /* ExceededTimeLimit */
+   if (_mongoc_write_error_is_retryable (&error)) {
+      if (append_retryable_label) {
+         _mongoc_write_error_append_retryable_label (reply);
+      }
+
       return MONGOC_WRITE_ERR_RETRY;
+   }
+
+   switch (error.code) {
    case 64: /* WriteConcernFailed */
       return MONGOC_WRITE_ERR_WRITE_CONCERN;
    default:
-      if (strstr (error.message, "not master") ||
-          strstr (error.message, "node is recovering")) {
-         return MONGOC_WRITE_ERR_RETRY;
-      }
       return MONGOC_WRITE_ERR_OTHER;
    }
 }

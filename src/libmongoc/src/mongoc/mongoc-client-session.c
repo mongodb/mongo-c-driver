@@ -150,8 +150,9 @@ txn_abort (mongoc_client_session_t *session, bson_t *reply, bson_error_t *error)
       session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
 
    /* Transactions Spec: "Drivers MUST retry the commitTransaction command once
-    * after it fails with a retryable error", same for abort */
-   error_type = _mongoc_write_error_get_type (r, err_ptr, &reply_local);
+    * after it fails with a retryable error", same for abort. Note that a
+    * RetryableWriteError label has already been appended here. */
+   error_type = _mongoc_write_error_get_type (r, err_ptr, &reply_local, false);
    if (error_type == MONGOC_WRITE_ERR_RETRY) {
       _mongoc_client_session_unpin (session);
       bson_destroy (&reply_local);
@@ -266,8 +267,9 @@ retry:
       session->client, "admin", &cmd, &opts, &reply_local, err_ptr);
 
    /* Transactions Spec: "Drivers MUST retry the commitTransaction command once
-    * after it fails with a retryable error", same for abort */
-   error_type = _mongoc_write_error_get_type (r, err_ptr, &reply_local);
+    * after it fails with a retryable error", same for abort. Note that a
+    * RetryableWriteError label has already been appended here. */
+   error_type = _mongoc_write_error_get_type (r, err_ptr, &reply_local, false);
    if (!retrying_after_error && error_type == MONGOC_WRITE_ERR_RETRY) {
       retrying_after_error = true; /* retry after error only once */
       _mongoc_client_session_unpin (session);

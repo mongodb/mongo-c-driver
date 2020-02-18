@@ -3176,9 +3176,13 @@ retry:
     * a new writable stream and retry. If server selection fails or the selected
     * server does not support retryable writes, fall through and allow the
     * original error to be reported. */
-   if (is_retryable &&
-       _mongoc_write_error_get_type (ret, error, reply_ptr) ==
-          MONGOC_WRITE_ERR_RETRY) {
+   if (is_retryable && _mongoc_write_error_get_type (
+                          ret,
+                          error,
+                          reply_ptr,
+                          server_stream->sd->max_wire_version <
+                             WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL) ==
+                          MONGOC_WRITE_ERR_RETRY) {
       bson_error_t ignored_error;
 
       /* each write command may be retried at most once */
