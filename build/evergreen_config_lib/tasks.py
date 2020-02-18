@@ -777,14 +777,16 @@ all_tasks = chain(all_tasks, [
 
 
 class SSLTask(Task):
-    def __init__(self, version, patch, cflags=None, fips=False, **kwargs):
+    def __init__(self, version, patch, cflags=None, fips=False, enable_ssl=False, **kwargs):
         full_version = version + patch + ('-fips' if fips else '')
         script = ''
         if cflags:
             script += 'export CFLAGS=%s\n' % (cflags,)
 
         script += "DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF"
-        if 'libressl' in version:
+        if enable_ssl:
+            script += " SSL=" + enable_ssl
+        elif 'libressl' in version:
             script += " SSL=LIBRESSL"
         else:
             script += " SSL=OPENSSL"
@@ -802,12 +804,15 @@ class SSLTask(Task):
 
         self.version = version
         self.fips = fips
+        self.enable_ssl = enable_ssl
 
     @property
     def name(self):
         s = 'build-and-run-authentication-tests-' + self.version
         if self.fips:
             return s + '-fips'
+        if self.enable_ssl:
+            return s + "-" + self.enable_ssl.lower()
 
         return s
 
@@ -820,6 +825,8 @@ all_tasks = chain(all_tasks, [
     SSLTask('openssl-1.0.2', 'l'),
     SSLTask('openssl-1.1.0', 'f'),
     SSLTask('libressl-2.5', '.2', require_tls12=True),
+    SSLTask('libressl-3.0', '.2', require_tls12=True, enable_ssl="AUTO"),
+    SSLTask('libressl-3.0', '.2', require_tls12=True),
 ])
 
 

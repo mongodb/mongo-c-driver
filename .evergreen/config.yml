@@ -12257,6 +12257,42 @@ tasks:
     vars:
       require_tls12: true
   - func: upload build
+- name: build-and-run-authentication-tests-libressl-3.0-auto
+  commands:
+  - func: install ssl
+    vars:
+      SSL: libressl-3.0.2
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=AUTO sh .evergreen/compile.sh
+  - func: run auth tests
+    vars:
+      require_tls12: true
+  - func: upload build
+- name: build-and-run-authentication-tests-libressl-3.0
+  commands:
+  - func: install ssl
+    vars:
+      SSL: libressl-3.0.2
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL sh .evergreen/compile.sh
+  - func: run auth tests
+    vars:
+      require_tls12: true
+  - func: upload build
 - name: test-latest-server-ipv6-client-ipv6-noauth-nosasl-nossl
   tags:
   - ipv4-ipv6
@@ -12466,6 +12502,8 @@ buildvariants:
   - build-and-run-authentication-tests-openssl-1.1.0
   - build-and-run-authentication-tests-openssl-1.0.1-fips
   - build-and-run-authentication-tests-libressl-2.5
+  - build-and-run-authentication-tests-libressl-3.0-auto
+  - build-and-run-authentication-tests-libressl-3.0
 - name: clang37
   display_name: clang 3.7 (Archlinux)
   expansions:
