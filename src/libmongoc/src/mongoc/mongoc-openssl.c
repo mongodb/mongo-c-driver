@@ -493,8 +493,8 @@ _mongoc_openssl_ctx_new (mongoc_ssl_opt_t *opt)
    ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
 #endif
 
-/* man SSL_get_options says: "SSL_OP_NO_RENEGOTIATION options were added in OpenSSL 1.1.1" */
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+/* man SSL_get_options says: "SSL_OP_NO_RENEGOTIATION options were added in OpenSSL 1.1.1". */
+#ifdef SSL_OP_NO_RENEGOTIATION
    ssl_ctx_options |= SSL_OP_NO_RENEGOTIATION;
 #endif
 
