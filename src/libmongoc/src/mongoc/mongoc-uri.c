@@ -1282,9 +1282,12 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri,
                &uri->credentials, MONGOC_URI_AUTHSOURCE, -1, "$external", -1);
          }
       }
-      /* MONGODB-X509 is the only mechanism that doesn't require username */
-      if (strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509") !=
-          0) {
+      /* MONGODB-X509 and MONGODB-AWS are the only mechanisms that don't require
+       * username */
+      if (!(strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-X509") ==
+               0 ||
+            strcasecmp (mongoc_uri_get_auth_mechanism (uri), "MONGODB-AWS") ==
+               0)) {
          if (!mongoc_uri_get_username (uri) ||
              strcmp (mongoc_uri_get_username (uri), "") == 0) {
             MONGOC_URI_ERROR (error,
@@ -2197,7 +2200,8 @@ mongoc_uri_unescape (const char *escaped_string)
 #else
              (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
-          || 0 == hex) {
+             ||
+             0 == hex) {
             bson_string_free (str, true);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
@@ -2214,7 +2218,8 @@ mongoc_uri_unescape (const char *escaped_string)
 
    /* Check that after unescaping, it is still valid UTF-8 */
    if (unescape_occurred && !bson_utf8_validate (str->str, str->len, false)) {
-      MONGOC_WARNING ("Invalid %% escape sequence: unescaped string contains invalid UTF-8");
+      MONGOC_WARNING (
+         "Invalid %% escape sequence: unescaped string contains invalid UTF-8");
       bson_string_free (str, true);
       return NULL;
    }

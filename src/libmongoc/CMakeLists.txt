@@ -862,6 +862,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-array.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-async.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-aws.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-buffer.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-bulk.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-change-stream.c

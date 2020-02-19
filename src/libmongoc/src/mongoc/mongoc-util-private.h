@@ -135,6 +135,24 @@ _mongoc_bson_init_with_transient_txn_error (const mongoc_client_session_t *cs,
 bool
 _mongoc_document_is_pipeline (const bson_t *document);
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_getenv --
+ *
+ *       Get the value of an environment variable.
+ *
+ * Returns:
+ *       A string you must bson_free, or NULL if the variable is not set.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+char *
+_mongoc_getenv (const char *name);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_UTIL_PRIVATE_H */

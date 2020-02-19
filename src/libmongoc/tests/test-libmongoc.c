@@ -230,6 +230,8 @@ extern void
 test_long_namespace_install (TestSuite *suite);
 extern void
 test_server_description_install (TestSuite *suite);
+extern void
+test_aws_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -435,41 +437,33 @@ get_test_collection (mongoc_client_t *client, const char *prefix)
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * test_framework_get_env --
- *
- *       Get the value of an environment variable.
- *
- * Returns:
- *       A string you must bson_free, or NULL if the variable is not set.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
 char *
 test_framework_getenv (const char *name)
 {
-#ifdef _MSC_VER
-   char buf[1024];
-   size_t buflen;
+   return _mongoc_getenv (name);
+}
 
-   if ((0 == getenv_s (&buflen, buf, sizeof buf, name)) && buflen) {
-      return bson_strdup (buf);
-   } else {
-      return NULL;
+/* Returns false if unable to set environment variable. Which may occur if
+ * test-libmongoc lacks permissions to do so. */
+bool
+test_framework_setenv (const char *name, const char *value)
+{
+#ifdef _WIN32
+   char *envstring;
+
+   envstring = bson_strdup_printf ("%s=%s", name, value);
+   if (0 != _putenv (envstring)) {
+      return false;
    }
+
+   return true;
 #else
 
-   if (getenv (name) && strlen (getenv (name))) {
-      return bson_strdup (getenv (name));
-   } else {
-      return NULL;
+   if (0 != setenv (name, value, 1)) {
+      return false;
    }
 
+   return true;
 #endif
 }
 
@@ -2323,6 +2317,32 @@ test_framework_skip_if_no_client_side_encryption (void)
    return 0; /* 0 == do not proceed. */
 }
 
+int
+test_framework_skip_if_no_aws (void)
+{
+#ifdef MONGOC_ENABLE_MONGODB_AWS_AUTH
+   return 1; /* proceed. */
+#else
+   return 0;    /* do not proceed. */
+#endif
+}
+
+/* test-libmongoc may not have permissions to set environment variables. */
+int
+test_framework_skip_if_no_setenv (void)
+{
+   char *value;
+   if (!test_framework_setenv ("MONGOC_TEST_CANARY", "VALUE")) {
+      return 0; /* do not proceed. */
+   }
+   value = test_framework_getenv ("MONGOC_TEST_CANARY");
+   if (!value || 0 != strcmp (value, "VALUE")) {
+      return 0; /* do not proceed. */
+   }
+   bson_free (value);
+   return 1;
+}
+
 void
 test_framework_resolve_path (const char *path, char *resolved)
 {
@@ -2478,6 +2498,7 @@ main (int argc, char *argv[])
    test_apm_install (&suite);
    test_client_side_encryption_install (&suite);
    test_server_description_install (&suite);
+   test_aws_install (&suite);
 
    ret = TestSuite_Run (&suite);
 

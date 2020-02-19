@@ -571,3 +571,26 @@ _mongoc_document_is_pipeline (const bson_t *document)
    /* should return false when the document is empty */
    return i != 0;
 }
+
+char *
+_mongoc_getenv (const char *name)
+{
+#ifdef _MSC_VER
+   char buf[1024];
+   size_t buflen;
+
+   if ((0 == getenv_s (&buflen, buf, sizeof buf, name)) && buflen) {
+      return bson_strdup (buf);
+   } else {
+      return NULL;
+   }
+#else
+
+   if (getenv (name) && strlen (getenv (name))) {
+      return bson_strdup (getenv (name));
+   } else {
+      return NULL;
+   }
+
+#endif
+}

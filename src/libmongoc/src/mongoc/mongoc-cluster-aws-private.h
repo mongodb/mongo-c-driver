@@ -28,4 +28,20 @@ _mongoc_cluster_auth_node_aws (mongoc_cluster_t *cluster,
                                mongoc_server_description_t *sd,
                                bson_error_t *error);
 
+/* The following are declared in the private header for testing. It is only used
+ * in test-mongoc-aws.c and mongoc-cluster.aws.c */
+typedef struct {
+   char *access_key_id;
+   char *secret_access_key;
+   char *session_token;
+} _mongoc_aws_credentials_t;
+
+bool
+_mongoc_aws_credentials_obtain (mongoc_uri_t *uri,
+                                _mongoc_aws_credentials_t *creds,
+                                bson_error_t *error);
+
+void
+_mongoc_aws_credentials_cleanup (_mongoc_aws_credentials_t *creds);
+
 #endif /* MONGOC_CLUSTER_AWS_PRIVATE_H */
