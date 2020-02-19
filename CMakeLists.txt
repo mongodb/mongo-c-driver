@@ -306,7 +306,7 @@ if (ENABLE_MONGOC)
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
       # disable warnings on kms_message components; those are dealt with in libmongocrypt
       set (CMAKE_C_FLAGS_OLD "${CMAKE_C_FLAGS}")
-      set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w")
+      set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w -fPIC")
       # EXCLUDE_FROM_ALL ensures that only explicitly required kms-message
       # components are built and that none are installed
       add_subdirectory (src/kms-message EXCLUDE_FROM_ALL)
