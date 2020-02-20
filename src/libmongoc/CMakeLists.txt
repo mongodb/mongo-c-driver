@@ -964,6 +964,7 @@ endif ()
 
 # examples/
 mongoc_add_example (example-client TRUE ${PROJECT_SOURCE_DIR}/examples/example-client.c)
+mongoc_add_example (mongodb-aws TRUE ${PROJECT_SOURCE_DIR}/examples/mongodb-aws.c)
 mongoc_add_example (example-collection-watch TRUE ${PROJECT_SOURCE_DIR}/examples/example-collection-watch.c)
 if (NOT WIN32)
    mongoc_add_example (example-resume TRUE ${PROJECT_SOURCE_DIR}/examples/example-resume.c)

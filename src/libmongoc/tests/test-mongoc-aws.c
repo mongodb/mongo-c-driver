@@ -64,12 +64,12 @@ test_obtain_credentials (void *unused)
    _mongoc_aws_credentials_cleanup (&creds);
    mongoc_uri_destroy (uri);
 
-   /* A session token may be set through the SESSION_TOKEN auth mechanism
+   /* A session token may be set through the AWS_SESSION_TOKEN auth mechanism
     * property */
    uri = mongoc_uri_new ("mongodb://"
                          "access_key_id:secret_access_key@localhost/?"
                          "authMechanism=MONGODB-AWS&authMechanismProperties="
-                         "SESSION_TOKEN:token");
+                         "AWS_SESSION_TOKEN:token");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    ASSERT_OR_PRINT (ret, error);
    ASSERT_CMPSTR (creds.access_key_id, "access_key_id");
@@ -81,13 +81,13 @@ test_obtain_credentials (void *unused)
    /* A session token in the URI with no username/password is an error. */
    uri = mongoc_uri_new ("mongodb://localhost/"
                          "?authMechanism=MONGODB-AWS&authMechanismProperties="
-                         "SESSION_TOKEN:token");
+                         "AWS_SESSION_TOKEN:token");
    ret = _mongoc_aws_credentials_obtain (uri, &creds, &error);
    BSON_ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
                           MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "SESSION_TOKEN is set, but ACCESS_KEY_ID and "
+                          "AWS_SESSION_TOKEN is set, but ACCESS_KEY_ID and "
                           "SECRET_ACCESS_KEY are missing");
    _mongoc_aws_credentials_cleanup (&creds);
    mongoc_uri_destroy (uri);
@@ -156,7 +156,7 @@ test_obtain_credentials_from_env (void *unused)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
                           MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                          "SESSION_TOKEN is set, but ACCESS_KEY_ID and "
+                          "AWS_SESSION_TOKEN is set, but ACCESS_KEY_ID and "
                           "SECRET_ACCESS_KEY are missing");
    _mongoc_aws_credentials_cleanup (&creds);
    mongoc_uri_destroy (uri);

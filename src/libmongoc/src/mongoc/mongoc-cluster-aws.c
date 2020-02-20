@@ -17,7 +17,6 @@
 /* All interaction with kms_message should be limited to this file. */
 
 #include "mongoc-cluster-aws-private.h"
-
 #include "mongoc-client-private.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-rand-private.h"
@@ -28,6 +27,11 @@
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "aws_auth"
+
+#include <openssl/bio.h>
+#include <openssl/sha.h>
+#include <string.h>
+#include <common-b64-private.h>
 
 #define AUTH_ERROR_AND_FAIL(...)                     \
    bson_set_error (error,                            \
@@ -103,18 +107,18 @@ _sasl_reply_parse_payload_as_bson (const bson_t *reply,
 
    if (!bson_iter_init_find (&iter, reply, "payload") ||
        !BSON_ITER_HOLDS_BINARY (&iter)) {
-      AUTH_ERROR_AND_FAIL ("server reply did not contain binary payload");
+      AUTH_ERROR_AND_FAIL ("server reply did not contain binary payload")
    }
 
    bson_iter_binary (&iter, &payload_subtype, &payload_len, &payload_data);
 
    if (payload_subtype != BSON_SUBTYPE_BINARY) {
-      AUTH_ERROR_AND_FAIL ("server reply contained unexpected binary subtype");
+      AUTH_ERROR_AND_FAIL ("server reply contained unexpected binary subtype")
    }
 
    bson_destroy (payload);
    if (!bson_init_static (payload, payload_data, payload_len)) {
-      AUTH_ERROR_AND_FAIL ("server payload is invalid BSON");
+      AUTH_ERROR_AND_FAIL ("server payload is invalid BSON")
    }
 
    ret = true;
@@ -202,13 +206,13 @@ _send_http_request (const char *ip,
       char *errmsg;
 
       errmsg = bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf);
-      AUTH_ERROR_AND_FAIL ("error occurred reading stream: %s", errmsg);
+      AUTH_ERROR_AND_FAIL ("error occurred reading stream: %s", errmsg)
    }
 
    /* Find the body. */
    ptr = strstr (http_response->str, "\r\n\r\n");
    if (NULL == ptr) {
-      AUTH_ERROR_AND_FAIL ("error occurred reading response, body not found");
+      AUTH_ERROR_AND_FAIL ("error occurred reading response, body not found")
    }
 
    *http_response_headers =
@@ -254,17 +258,17 @@ _set_creds (const char *access_key_id,
    /* Check for invalid combinations of URI parameters. */
    if (has_access_key_id && !has_secret_access_key) {
       AUTH_ERROR_AND_FAIL (
-         "ACCESS_KEY_ID is set, but SECRET_ACCESS_KEY is missing");
+         "ACCESS_KEY_ID is set, but SECRET_ACCESS_KEY is missing")
    }
 
    if (!has_access_key_id && has_secret_access_key) {
       AUTH_ERROR_AND_FAIL (
-         "SECRET_ACCESS_KEY is set, but ACCESS_KEY_ID is missing");
+         "SECRET_ACCESS_KEY is set, but ACCESS_KEY_ID is missing")
    }
 
    if (!has_access_key_id && !has_secret_access_key && has_session_token) {
-      AUTH_ERROR_AND_FAIL ("SESSION_TOKEN is set, but ACCESS_KEY_ID and "
-                           "SECRET_ACCESS_KEY are missing");
+      AUTH_ERROR_AND_FAIL ("AWS_SESSION_TOKEN is set, but ACCESS_KEY_ID and "
+                           "SECRET_ACCESS_KEY are missing")
    }
 
    creds->access_key_id = bson_strdup (access_key_id);
@@ -298,7 +302,7 @@ _set_creds_from_uri (_mongoc_aws_credentials_t *creds,
    if (mongoc_uri_get_mechanism_properties (uri, &auth_mechanism_props)) {
       bson_iter_t iter;
       if (bson_iter_init_find_case (
-             &iter, &auth_mechanism_props, "SESSION_TOKEN") &&
+             &iter, &auth_mechanism_props, "AWS_SESSION_TOKEN") &&
           BSON_ITER_HOLDS_UTF8 (&iter)) {
          uri_session_token = bson_iter_utf8 (&iter, NULL);
       }
@@ -371,23 +375,23 @@ _set_creds_from_ecs (_mongoc_aws_credentials_t *creds,
       return true;
    }
 
-   if (!_send_http_request ("169.254.170.2",
-                            80,
-                            "GET",
+    if (!_send_http_request ("169.254.170.2",
+                             80,
+                             "GET",
                             relative_ecs_uri,
                             "",
                             &http_response_body,
                             &http_response_headers,
                             &http_error)) {
       AUTH_ERROR_AND_FAIL ("failed to contact ECS link local server: %s",
-                           http_error.message);
+                           http_error.message)
    }
 
    response_json = bson_new_from_json (
       (const uint8_t *) http_response_body, strlen (http_response_body), error);
    if (!response_json) {
       AUTH_ERROR_AND_FAIL ("invalid JSON in ECS response. Response headers: %s",
-                           http_response_headers);
+                           http_response_headers)
    }
 
    if (bson_iter_init_find_case (&iter, response_json, "AccessKeyId") &&
@@ -455,13 +459,13 @@ _set_creds_from_ec2 (_mongoc_aws_credentials_t *creds,
                             &http_response_headers,
                             &http_error)) {
       AUTH_ERROR_AND_FAIL ("failed to contact EC2 link local server: %s",
-                           http_error.message);
+                           http_error.message)
    }
 
    if (0 == strlen (token)) {
       AUTH_ERROR_AND_FAIL (
          "unable to retrieve token from EC2 metadata. Headers: %s",
-         http_response_headers);
+         http_response_headers)
    }
 
    bson_free (http_response_headers);
@@ -479,13 +483,13 @@ _set_creds_from_ec2 (_mongoc_aws_credentials_t *creds,
                             &http_response_headers,
                             &http_error)) {
       AUTH_ERROR_AND_FAIL ("failed to contact EC2 link local server: %s",
-                           http_error.message);
+                           http_error.message)
    }
 
    if (0 == strlen (role_name)) {
       AUTH_ERROR_AND_FAIL (
          "unable to retrieve role_name from EC2 metadata. Headers: %s",
-         http_response_headers);
+         http_response_headers)
    }
 
    /* Get the creds. */
@@ -502,14 +506,14 @@ _set_creds_from_ec2 (_mongoc_aws_credentials_t *creds,
                             &http_response_headers,
                             &http_error)) {
       AUTH_ERROR_AND_FAIL ("failed to contact EC2 link local server: %s",
-                           http_error.message);
+                           http_error.message)
    }
 
    response_json = bson_new_from_json (
       (const uint8_t *) http_response_body, strlen (http_response_body), error);
    if (!response_json) {
       AUTH_ERROR_AND_FAIL ("invalid JSON in ECS response. Response headers: %s",
-                           http_response_headers);
+                           http_response_headers)
    }
 
    if (bson_iter_init_find_case (&iter, response_json, "AccessKeyId") &&
@@ -573,7 +577,7 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri,
    creds->secret_access_key = NULL;
    creds->session_token = NULL;
 
-   TRACE ("%s", "checking URI");
+   TRACE ("%s", "checking URI")
    if (!_set_creds_from_uri (creds, uri, &creds_set, error)) {
       goto fail;
    }
@@ -581,7 +585,7 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri,
       goto succeed;
    }
 
-   TRACE ("%s", "checking environment variables");
+   TRACE ("%s", "checking environment variables")
    if (!_set_creds_from_env (creds, &creds_set, error)) {
       goto fail;
    }
@@ -589,7 +593,7 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri,
       goto succeed;
    }
 
-   TRACE ("%s", "checking ECS metadata");
+   TRACE ("%s", "checking ECS metadata")
    if (!_set_creds_from_ecs (creds, &creds_set, error)) {
       goto fail;
    }
@@ -597,7 +601,7 @@ _mongoc_aws_credentials_obtain (mongoc_uri_t *uri,
       goto succeed;
    }
 
-   TRACE ("%s", "checking EC2 metadata");
+   TRACE ("%s", "checking EC2 metadata")
    if (!_set_creds_from_ec2 (creds, &creds_set, error)) {
       goto fail;
    }
@@ -670,7 +674,7 @@ _client_first (mongoc_cluster_t *cluster,
 #ifdef MONGOC_ENABLE_CRYPTO
    /* Generate secure random nonce. */
    if (!_mongoc_rand_bytes (client_nonce, 32)) {
-      AUTH_ERROR_AND_FAIL ("Could not generate client nonce");
+      AUTH_ERROR_AND_FAIL ("Could not generate client nonce")
    }
 #else
    AUTH_ERROR_AND_FAIL ("libmongoc requires a cryptography library (libcrypto, "
@@ -701,7 +705,7 @@ _client_first (mongoc_cluster_t *cluster,
 
    *conv_id = _mongoc_cluster_get_conversation_id (&server_reply);
    if (!*conv_id) {
-      AUTH_ERROR_AND_FAIL ("server reply did not contain conversationId");
+      AUTH_ERROR_AND_FAIL ("server reply did not contain conversationId")
    }
 
    bson_destroy (&server_payload);
@@ -712,27 +716,27 @@ _client_first (mongoc_cluster_t *cluster,
 
    if (!bson_iter_init_find (&iter, &server_payload, "h") ||
        !BSON_ITER_HOLDS_UTF8 (&iter)) {
-      AUTH_ERROR_AND_FAIL ("server payload did not contain string STS FQDN");
+      AUTH_ERROR_AND_FAIL ("server payload did not contain string STS FQDN")
    }
    *sts_fqdn = bson_strdup (bson_iter_utf8 (&iter, NULL));
 
    if (!bson_iter_init_find (&iter, &server_payload, "s") ||
        !BSON_ITER_HOLDS_BINARY (&iter)) {
-      AUTH_ERROR_AND_FAIL ("server payload did not contain nonce");
+      AUTH_ERROR_AND_FAIL ("server payload did not contain nonce")
    }
 
    bson_iter_binary (
       &iter, &reply_nonce_subtype, &reply_nonce_len, &reply_nonce_data);
    if (reply_nonce_len != 64) {
-      AUTH_ERROR_AND_FAIL ("server reply nonce was not 64 bytes");
+      AUTH_ERROR_AND_FAIL ("server reply nonce was not 64 bytes")
    }
 
    if (0 != memcmp (reply_nonce_data, client_nonce, 32)) {
       AUTH_ERROR_AND_FAIL (
-         "server reply nonce prefix did not match client nonce");
+         "server reply nonce prefix did not match client nonce")
    }
 
-   memcpy (server_nonce, reply_nonce_data + 32, 32);
+   memcpy (server_nonce, reply_nonce_data, 64);
 
    ret = true;
 fail:
@@ -743,6 +747,7 @@ fail:
    return ret;
 }
 
+#define AMZ_DT_FORMAT "YYYYmmDDTHHMMSSZ"
 /* --------------------------------------------------------------------------
  * Step 2
  * --------------------------------------------------------------------------
@@ -769,18 +774,93 @@ _client_second (mongoc_cluster_t *cluster,
                 int conv_id,
                 bson_error_t *error)
 {
-   bool ret = false;
+    bool ret = false;
+    kms_request_t *request;
+    const struct tm *tm = NULL;
+    char *signature = NULL;
+    const char *date = NULL;
+    const size_t server_nonce_str_len = bson_b64_ntop_calculate_target_size(64);
+    char server_nonce_str[server_nonce_str_len];
+    bson_t client_payload = BSON_INITIALIZER;
+    bson_t client_command = BSON_INITIALIZER;
+    bson_t server_payload = BSON_INITIALIZER;
+    bson_t server_reply = BSON_INITIALIZER;
 
-   BSON_ASSERT (cluster);
-   BSON_ASSERT (stream);
-   BSON_ASSERT (sd);
-   BSON_ASSERT (creds);
-   BSON_ASSERT (server_nonce);
-   BSON_ASSERT (sts_fqdn);
-   BSON_ASSERT (conv_id);
-   AUTH_ERROR_AND_FAIL ("TODO - step 2 not implemented yet");
-fail:
-   return ret;
+    BSON_ASSERT (cluster);
+    BSON_ASSERT (stream);
+    BSON_ASSERT (sd);
+    BSON_ASSERT (creds);
+    BSON_ASSERT (server_nonce);
+    BSON_ASSERT (sts_fqdn);
+    BSON_ASSERT (conv_id);
+    BSON_ASSERT (creds->access_key_id);
+    BSON_ASSERT (creds->secret_access_key);
+
+    request = kms_request_new ("POST", "/", NULL);
+
+    kms_request_set_access_key_id (request, creds->access_key_id);
+    kms_request_set_secret_key (request, creds->secret_access_key);
+    printf("session token: %s\n", creds->session_token);
+
+    if (!kms_request_set_date (request, tm)) {
+        MONGOC_ERROR("Failed to set date");
+        goto fail;
+    }
+    if (-1 == bson_b64_ntop (server_nonce, 64, server_nonce_str, server_nonce_str_len)) {
+        MONGOC_ERROR("Failed to parse server nonce");
+        goto fail;
+    }
+    printf("0.Server nonce: %s\n", server_nonce_str);
+
+    kms_request_set_region (request, "us-east-1");
+    kms_request_set_service (request, "sts");
+
+    kms_request_append_payload (request, "Action=GetCallerIdentity&Version=2011-06-15", -1);
+    kms_request_add_header_field(request, "Content-Type", "application/x-www-form-urlencoded");
+    kms_request_add_header_field(request, "Content-Length", "43");
+    kms_request_add_header_field(request, "Host", sts_fqdn);
+    kms_request_add_header_field(request, "X-MongoDB-Server-Nonce", server_nonce_str);
+    kms_request_add_header_field(request, "X-MongoDB-GS2-CB-Flag", "n");
+    if (creds->session_token) {
+        kms_request_add_header_field(request, "X-Amz-Security-Token", creds->session_token);
+    }
+
+
+    signature = kms_request_get_signature (request);
+    date = kms_request_get_canonical_header(request, "X-Amz-Date");
+
+    BCON_APPEND (&client_payload,
+                 "a", BCON_UTF8 (signature),
+                 "d", BCON_UTF8 (date));
+    if (creds->session_token) {
+        BCON_APPEND (&client_payload,
+                     "t", BCON_UTF8(creds->session_token));
+    }
+
+    BCON_APPEND (&client_command,
+                 "saslContinue", BCON_INT32 (1),
+                 "conversationId", BCON_INT32 (conv_id),
+                 "payload", BCON_BIN (BSON_SUBTYPE_BINARY,
+                           bson_get_data (&client_payload),
+                           client_payload.len));
+
+    printf("Signature: %s\n", kms_request_get_signed(request));
+    printf("Date: %s\n", date);
+    printf("Error: %s\n", kms_request_get_error (request));
+
+    bson_destroy (&server_reply);
+    if (!_run_command (
+            cluster, stream, sd, &client_command, &server_reply, error)) {
+        goto fail;
+    }
+
+    ret = true;
+    fail:
+    bson_destroy (&client_payload);
+    bson_destroy (&client_command);
+    bson_destroy (&server_reply);
+    bson_destroy (&server_payload);
+    return ret;
 }
 
 bool
@@ -790,7 +870,7 @@ _mongoc_cluster_auth_node_aws (mongoc_cluster_t *cluster,
                                bson_error_t *error)
 {
    bool ret = false;
-   uint8_t server_nonce[32];
+   uint8_t server_nonce[64];
    char *sts_fqdn = NULL;
    int conv_id = 0;
    _mongoc_aws_credentials_t creds = {0};
