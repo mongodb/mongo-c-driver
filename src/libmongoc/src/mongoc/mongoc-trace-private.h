@@ -102,7 +102,7 @@ BSON_BEGIN_DECLS
       mongoc_log_trace_iovec (MONGOC_LOG_DOMAIN, _iov, _iovcnt); \
    } while (0)
 #else
-#define TRACE(msg, ...)
+#define TRACE(msg, ...) (void) 0
 #define ENTRY
 #define EXIT return
 #define RETURN(ret) return ret

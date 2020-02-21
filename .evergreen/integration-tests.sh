@@ -34,12 +34,10 @@ rm -rf $MONGO_ORCHESTRATION_HOME
 mkdir -p $MONGO_ORCHESTRATION_HOME/lib
 mkdir -p $MONGO_ORCHESTRATION_HOME/db
 
-if [ -z $ORCHESTRATION_FILE ]; then
-   ORCHESTRATION_FILE="basic"
-fi
-
 if [ "$AUTH" = "auth" ]; then
-  ORCHESTRATION_FILE="auth"
+  if [ -z $ORCHESTRATION_FILE ]; then
+    ORCHESTRATION_FILE="auth"
+  fi
   MONGO_SHELL_CONNECTION_FLAGS="-ubob -ppwd123"
 fi
 
@@ -50,6 +48,10 @@ fi
 if [ ! -z "$AUTHSOURCE" ]; then
    ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-${AUTHSOURCE}"
    MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --authenticationDatabase ${AUTHSOURCE}"
+fi
+
+if [ -z $ORCHESTRATION_FILE ]; then
+   ORCHESTRATION_FILE="basic"
 fi
 
 if [ "$SSL" != "nossl" ]; then

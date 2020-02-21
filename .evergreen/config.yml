@@ -654,6 +654,51 @@ functions:
         set -o xtrace
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
+  run aws tests:
+  - command: shell.exec
+    type: test
+    params:
+      silent: true
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        # Add AWS variables to a file.
+        # Clone in one directory above so it does not get uploaded in working directory.
+        git clone --depth=1 git://github.com/bazile-clyde/drivers-evergreen-tools.git ../drivers-evergreen-tools
+        cat <<EOF > ../drivers-evergreen-tools/.evergreen/auth_aws/aws_e2e_setup.json
+        {
+            "iam_auth_ecs_account" : "${iam_auth_ecs_account}",
+            "iam_auth_ecs_secret_access_key" : "${iam_auth_ecs_secret_access_key}",
+            "iam_auth_ecs_account_arn": "arn:aws:iam::557821124784:user/authtest_fargate_user",
+            "iam_auth_ecs_cluster": "${iam_auth_ecs_cluster}",
+            "iam_auth_ecs_task_definition": "${iam_auth_ecs_task_definition}",
+            "iam_auth_ecs_subnet_a": "${iam_auth_ecs_subnet_a}",
+            "iam_auth_ecs_subnet_b": "${iam_auth_ecs_subnet_b}",
+            "iam_auth_ecs_security_group": "${iam_auth_ecs_security_group}",
+            "iam_auth_assume_aws_account" : "${iam_auth_assume_aws_account}",
+            "iam_auth_assume_aws_secret_access_key" : "${iam_auth_assume_aws_secret_access_key}",
+            "iam_auth_assume_role_name" : "${iam_auth_assume_role_name}",
+            "iam_auth_ec2_instance_account" : "${iam_auth_ec2_instance_account}",
+            "iam_auth_ec2_instance_secret_access_key" : "${iam_auth_ec2_instance_secret_access_key}",
+            "iam_auth_ec2_instance_profile" : "${iam_auth_ec2_instance_profile}"
+        }
+        EOF
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o errexit
+        # Export the variables we need to construct URIs
+        set +o xtrace
+        export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
+        export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
+        set -o xtrace
+        sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
 pre:
 - func: fetch source
 - func: windows fix
@@ -12324,6 +12369,101 @@ tasks:
     vars:
       IPV4_ONLY: 'on'
       URI: mongodb://localhost/
+- name: debug-compile-aws
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
+        . .evergreen/find-cmake.sh
+        $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
+        $CMAKE --build . --target mongoc-ping
+  - func: upload build
+- name: test-aws-openssl-regular
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run aws tests
+    vars:
+      TESTCASE: REGULAR
+- name: test-aws-openssl-ec2
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run aws tests
+    vars:
+      TESTCASE: EC2
+- name: test-aws-openssl-ecs
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run aws tests
+    vars:
+      TESTCASE: ECS
+- name: test-aws-openssl-lambda
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run aws tests
+    vars:
+      TESTCASE: LAMBDA
+- name: test-aws-openssl-assume_role
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run aws tests
+    vars:
+      TESTCASE: ASSUME_ROLE
 buildvariants:
 - name: releng
   display_name: '**Release Archive Creator'
@@ -12680,6 +12820,8 @@ buildvariants:
   - test-dns-auth-darwinssl
   - debug-compile-lto
   - debug-compile-lto-thin
+  - debug-compile-aws
+  - test-aws-openssl-regular
 - name: windows-2017-32
   display_name: Windows (i386) (VS 2017)
   expansions:
@@ -12710,6 +12852,8 @@ buildvariants:
   - .sspi .latest
   - test-dns-winssl
   - test-dns-auth-winssl
+  - debug-compile-aws
+  - test-aws-openssl-regular
 - name: windows-2015
   display_name: Windows (VS 2015)
   expansions:
@@ -12964,3 +13108,15 @@ buildvariants:
   - .debug-compile .asan-clang !.client-side-encryption
   - .test-asan .3.0
   batchtime: 1440
+- name: clang60ubuntu
+  display_name: clang 6.0 (Ubuntu 18.04)
+  expansions:
+    CC: clang
+  run_on: ubuntu1804-test
+  tasks:
+  - debug-compile-aws
+  - test-aws-openssl-regular
+  - test-aws-openssl-ec2
+  - test-aws-openssl-ecs
+  - test-aws-openssl-assume_role
+  - test-aws-openssl-lambda

@@ -446,4 +446,38 @@ all_functions = OD([
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
         '''),
     )),
+    ('run aws tests', Function(
+        shell_mongoc(r'''
+        # Add AWS variables to a file.
+        # Clone in one directory above so it does not get uploaded in working directory.
+        git clone --depth=1 git://github.com/bazile-clyde/drivers-evergreen-tools.git ../drivers-evergreen-tools
+        cat <<EOF > ../drivers-evergreen-tools/.evergreen/auth_aws/aws_e2e_setup.json
+        {
+            "iam_auth_ecs_account" : "${iam_auth_ecs_account}",
+            "iam_auth_ecs_secret_access_key" : "${iam_auth_ecs_secret_access_key}",
+            "iam_auth_ecs_account_arn": "arn:aws:iam::557821124784:user/authtest_fargate_user",
+            "iam_auth_ecs_cluster": "${iam_auth_ecs_cluster}",
+            "iam_auth_ecs_task_definition": "${iam_auth_ecs_task_definition}",
+            "iam_auth_ecs_subnet_a": "${iam_auth_ecs_subnet_a}",
+            "iam_auth_ecs_subnet_b": "${iam_auth_ecs_subnet_b}",
+            "iam_auth_ecs_security_group": "${iam_auth_ecs_security_group}",
+            "iam_auth_assume_aws_account" : "${iam_auth_assume_aws_account}",
+            "iam_auth_assume_aws_secret_access_key" : "${iam_auth_assume_aws_secret_access_key}",
+            "iam_auth_assume_role_name" : "${iam_auth_assume_role_name}",
+            "iam_auth_ec2_instance_account" : "${iam_auth_ec2_instance_account}",
+            "iam_auth_ec2_instance_secret_access_key" : "${iam_auth_ec2_instance_secret_access_key}",
+            "iam_auth_ec2_instance_profile" : "${iam_auth_ec2_instance_profile}"
+        }
+        EOF
+        ''', silent=True),
+        shell_mongoc(r'''
+        set -o errexit
+        # Export the variables we need to construct URIs
+        set +o xtrace
+        export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
+        export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
+        set -o xtrace
+        sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
+        ''', xtrace=False)
+    ))
 ])

@@ -180,6 +180,92 @@ test_obtain_credentials_from_env (void *unused)
    test_framework_setenv ("AWS_SESSION_TOKEN", "");
 }
 
+static void
+test_derive_region (void *unused)
+{
+   bson_error_t error;
+   char *region;
+   bool ret;
+   char *large;
+
+#define WITH_LEN(s) s, strlen (s)
+
+   ret = _mongoc_validate_and_derive_region (
+      WITH_LEN ("abc..def"), &region, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "Invalid STS host: empty part");
+   bson_free (region);
+
+   ret = _mongoc_validate_and_derive_region (WITH_LEN ("."), &region, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "Invalid STS host: empty part");
+   bson_free (region);
+
+   ret = _mongoc_validate_and_derive_region (WITH_LEN ("..."), &region, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "Invalid STS host: empty part");
+   bson_free (region);
+
+   ret =
+      _mongoc_validate_and_derive_region (WITH_LEN ("first."), &region, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "Invalid STS host: empty part");
+   bson_free (region);
+
+   ret = _mongoc_validate_and_derive_region (
+      WITH_LEN ("sts.amazonaws.com"), &region, &error);
+   BSON_ASSERT (ret);
+   ASSERT_CMPSTR ("us-east-1", region);
+   bson_free (region);
+
+   ret = _mongoc_validate_and_derive_region (
+      WITH_LEN ("first.second"), &region, &error);
+   BSON_ASSERT (ret);
+   ASSERT_CMPSTR ("second", region);
+   bson_free (region);
+
+   ret =
+      _mongoc_validate_and_derive_region (WITH_LEN ("first"), &region, &error);
+   BSON_ASSERT (ret);
+   ASSERT_CMPSTR ("us-east-1", region);
+   bson_free (region);
+
+   ret = _mongoc_validate_and_derive_region (WITH_LEN (""), &region, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "Invalid STS host: empty");
+   bson_free (region);
+
+   large = bson_malloc0 (257);
+   memset (large, 'a', 256);
+
+   ret = _mongoc_validate_and_derive_region (
+      large, strlen (large), &region, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                          "Invalid STS host: too large");
+   bson_free (region);
+   bson_free (large);
+
+#undef WITH_LEN
+}
+
 void
 test_aws_install (TestSuite *suite)
 {
@@ -196,4 +282,10 @@ test_aws_install (TestSuite *suite)
                       NULL /* ctx */,
                       test_framework_skip_if_no_aws,
                       test_framework_skip_if_no_setenv);
+   TestSuite_AddFull (suite,
+                      "/aws/derive_region",
+                      test_derive_region,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_aws);
 }

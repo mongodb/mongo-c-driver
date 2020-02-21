@@ -23,6 +23,8 @@ find_cmake ()
      mkdir cmake-3.11.0
      tar xzf cmake.tar.gz -C cmake-3.11.0 --strip-components=1
      CMAKE=$(pwd)/cmake-3.11.0/bin/cmake
+  elif [ -f "/cygdrive/c/cmake/bin/cmake" ]; then
+     CMAKE="/cygdrive/c/cmake/bin/cmake"
   fi
   if [ -z "$CMAKE" -o -z "$( $CMAKE --version 2>/dev/null )" ]; then
      # Some images have no cmake yet, or a broken cmake (see: BUILD-8570)

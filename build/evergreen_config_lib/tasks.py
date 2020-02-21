@@ -846,4 +846,32 @@ class IPTask(MatrixTask):
 
 
 all_tasks = chain(all_tasks, IPTask.matrix())
+
+aws_compile_task = NamedTask('debug-compile-aws', commands=[shell_mongoc('''
+        # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
+        . .evergreen/find-cmake.sh
+        $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
+        $CMAKE --build . --target mongoc-ping
+'''), func('upload build')])
+
+all_tasks = chain(all_tasks, [aws_compile_task])
+
+class AWSTestTask(MatrixTask):
+    axes = OD([('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role'])])
+
+    name_prefix = 'test-aws-openssl'
+
+    def __init__(self, *args, **kwargs):
+        super(AWSTestTask, self).__init__(*args, **kwargs)
+        self.add_dependency('debug-compile-aws')
+        self.commands.extend([
+            func('fetch build', BUILD_NAME=self.depends_on['name']),
+            bootstrap(AUTH="auth", ORCHESTRATION_FILE="auth-aws", VERSION="latest", TOPOLOGY="server"),
+            func('run aws tests', TESTCASE=self.testcase.upper())])
+
+    @property
+    def name(self):
+        return '-'.join([self.name_prefix, self.testcase])
+
+all_tasks = chain(all_tasks, AWSTestTask.matrix())
 all_tasks = list(all_tasks)

@@ -205,7 +205,51 @@ The ``MONGODB-X509`` mechanism authenticates a username derived from the disting
 Authentication via AWS IAM
 --------------------------
 
-Coming soon.
+The ``MONGODB-AWS`` mechanism authenticates to MongoDB servers with credentials provided by AWS Identity and Access Management (IAM).
+
+To authenticate, create a user with an associated Amazon Resource Name (ARN) on the ``$external`` database, and specify the ``MONGODB-AWS`` ``authMechanism`` in the URI.
+
+.. code-block:: c
+
+   mongoc_uri_t *uri = mongoc_uri_new ("mongodb://localhost/?authMechanism=MONGODB-AWS");
+
+Since ``MONGODB-AWS`` always authenticates against the ``$external`` database, so specifying the authSource database is not required.
+
+Credentials include the ``access key id``, ``secret access key``, and optional ``session token``. They may be obtained from the following ways.
+
+AWS credentials via URI
+```````````````````````
+
+Credentials may be passed directly in the URI as username/password.
+
+.. code-block:: c
+
+   mongoc_uri_t *uri = mongoc_uri_new ("mongodb://<access key id>:<secret access key>localhost/?authMechanism=MONGODB-AWS");
+
+This may include a ``session token`` passed with ``authMechanismProperties``.
+
+.. code-block:: c
+
+   mongoc_uri_t *uri = mongoc_uri_new ("mongodb://<access key id>:<secret access key>localhost/?authMechanism=MONGODB-AWS&authMechanismProperties=AWS_SESSION_TOKEN:<token>");
+
+AWS credentials via environment
+```````````````````````````````
+
+If credentials are not passed through the URI, libmongoc will check for the following environment variables.
+
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+- AWS_SESSION_TOKEN (optional)
+
+AWS Credentials via ECS
+```````````````````````
+
+If credentials are not passed in the URI or with environment variables, libmongoc will check if the environment variable ``AWS_CONTAINER_CREDENTIALS_RELATIVE_URI`` is set, and if so, attempt to retrieve temporary credentials from the ECS task metadata by querying a link local address.
+
+AWS Credentials via EC2
+```````````````````````
+
+If credentials are not passed in the URI or with environment variables, and the environment variable ``AWS_CONTAINER_CREDENTIALS_RELATIVE_URI`` is not set, libmongoc will attempt to retrieve temporary credentials from the EC2 machine metadata by querying link local addresses.
 
 .. only:: html
 
