@@ -316,7 +316,8 @@ append_canonical_headers (kms_kv_list_t *lst, kms_request_str_t *str)
     * values in headers that have multiple values." */
    for (i = 0; i < lst->len; i++) {
       kv = &lst->kvs[i];
-      if (previous_key && 0 == strcasecmp (previous_key->str, kv->key->str)) {
+      if (previous_key &&
+          0 == kms_strcasecmp (previous_key->str, kv->key->str)) {
          /* duplicate header */
          kms_request_str_append_char (str, ',');
          kms_request_str_append_stripped (str, kv->value);
@@ -346,12 +347,13 @@ append_signed_headers (kms_kv_list_t *lst, kms_request_str_t *str)
 
    for (i = 0; i < lst->len; i++) {
       kv = &lst->kvs[i];
-      if (previous_key && 0 == strcasecmp (previous_key->str, kv->key->str)) {
+      if (previous_key &&
+          0 == kms_strcasecmp (previous_key->str, kv->key->str)) {
          /* duplicate header */
          continue;
       }
 
-      if (0 == strcasecmp (kv->key->str, "connection")) {
+      if (0 == kms_strcasecmp (kv->key->str, "connection")) {
          continue;
       }
 
@@ -419,7 +421,8 @@ finalize (kms_request_t *request)
 static int
 cmp_header_field_names (const void *a, const void *b)
 {
-   return strcasecmp (((kms_kv_t *) a)->key->str, ((kms_kv_t *) b)->key->str);
+   return kms_strcasecmp (((kms_kv_t *) a)->key->str,
+                          ((kms_kv_t *) b)->key->str);
 }
 
 static kms_kv_list_t *

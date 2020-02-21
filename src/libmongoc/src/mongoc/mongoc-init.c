@@ -136,6 +136,10 @@ static BSON_ONCE_FUN (_mongoc_do_init)
 
    _mongoc_handshake_init ();
 
+#if defined(MONGOC_ENABLE_MONGODB_AWS_AUTH)
+   kms_message_init ();
+#endif
+
    BSON_ONCE_RETURN;
 }
 
@@ -169,13 +173,13 @@ static BSON_ONCE_FUN (_mongoc_do_cleanup)
    mongoc_crypto_cng_cleanup ();
 #endif
 
-#if defined(MONGOC_ENABLE_MONGODB_AWS_AUTH)
-   kms_message_init ();
-#endif
-
    _mongoc_counters_cleanup ();
 
    _mongoc_handshake_cleanup ();
+
+#if defined(MONGOC_ENABLE_MONGODB_AWS_AUTH)
+   kms_message_cleanup ();
+#endif
 
    BSON_ONCE_RETURN;
 }

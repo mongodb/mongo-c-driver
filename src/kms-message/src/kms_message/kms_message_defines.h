@@ -55,30 +55,12 @@ kms_message_cleanup (void);
 
 #ifdef _MSC_VER
 #include <basetsd.h>
-#ifndef __cplusplus
-/* benign redefinition of type */
-#pragma warning(disable : 4142)
-#ifndef _SSIZE_T_DEFINED
-#define _SSIZE_T_DEFINED
-typedef SSIZE_T ssize_t;
-#endif
-#ifndef _SIZE_T_DEFINED
-#define _SIZE_T_DEFINED
-typedef SIZE_T size_t;
-#endif
-#pragma warning(default : 4142)
-#else
-/*
- * MSVC++ does not include ssize_t, just size_t.
- * So we need to synthesize that as well.
- */
 #pragma warning(disable : 4142)
 #ifndef _SSIZE_T_DEFINED
 #define _SSIZE_T_DEFINED
 typedef SSIZE_T ssize_t;
 #endif
 #pragma warning(default : 4142)
-#endif
 #endif
 
 #endif /* KMS_MESSAGE_DEFINES_H */

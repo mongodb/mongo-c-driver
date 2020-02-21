@@ -89,7 +89,7 @@ kms_kv_list_find (const kms_kv_list_t *lst, const char *key)
    size_t i;
 
    for (i = 0; i < lst->len; i++) {
-      if (0 == strcasecmp (lst->kvs[i].key->str, key)) {
+      if (0 == kms_strcasecmp (lst->kvs[i].key->str, key)) {
          return &lst->kvs[i];
       }
    }

@@ -700,12 +700,26 @@ if (WIN32)
 endif ()
 
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
-   set (KMS_LIB kms_message_static)
+   # Disable warnings on bundled kms_message source files.
+   set_source_files_properties (${KMS_MSG_SOURCES} PROPERTIES COMPILE_FLAGS -w)
+   set (SOURCES ${SOURCES} ${KMS_MSG_SOURCES})
+
+   set (KMS_MSG_DEFINITIONS KMS_MSG_STATIC KMS_MESSAGE_ENABLE_CRYPTO)
+
+   if (MONGOC_ENABLE_CRYPTO_CNG)
+      set (KMS_MSG_DEFINITIONS ${KMS_MSG_DEFINITIONS} KMS_MESSAGE_ENABLE_CRYPTO_CNG)
+   elseif (MONGOC_ENABLE_CRYPTO_COMMON_CRYPTO)
+      set (KMS_MSG_DEFINITIONS ${KMS_MSG_DEFINITIONS} KMS_MESSAGE_ENABLE_CRYPTO_COMMON_CRYPTO)
+   elseif(MONGOC_ENABLE_CRYPTO_LIBCRYPTO)
+      set (KMS_MSG_DEFINITIONS ${KMS_MSG_DEFINITIONS} KMS_MESSAGE_ENABLE_CRYPTO_LIBCRYPTO)
+   else ()
+      message (FATAL_ERROR "MONGODB-AWS requires a crypto library")
+   endif()
 endif ()
 
 add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
-target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} ${KMS_LIB} PUBLIC ${BSON_LIBRARIES})
+target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
 target_include_directories (mongoc_shared BEFORE PUBLIC ${MONGOC_INTERNAL_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${PRIVATE_ZLIB_INCLUDES})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
@@ -718,31 +732,23 @@ if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    endif ()
 
 endif ()
-target_compile_definitions (mongoc_shared PRIVATE MONGOC_COMPILATION)
+target_compile_definitions (mongoc_shared PRIVATE MONGOC_COMPILATION ${KMS_MSG_DEFINITIONS})
 
 set_target_properties (mongoc_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}")
 
 if (MONGOC_ENABLE_STATIC)
-   if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
-      # Use the target objects (.o files) instead of linking to the static library
-      # since the latter would require that we ship libkms_message-static.a for
-      # those who want to statically link to libmongoc; we'd like to avoid that
-      add_library (mongoc_static STATIC ${SOURCES} $<TARGET_OBJECTS:kms_message_obj> ${HEADERS} ${HEADERS_FORWARDING})
-   else ()
-      add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
-   endif ()
+   add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    target_link_libraries (mongoc_static ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
    target_include_directories (mongoc_static BEFORE PUBLIC ${MONGOC_INTERNAL_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${PRIVATE_ZLIB_INCLUDES})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
       target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
-      target_compile_definitions (mongoc_static PUBLIC KMS_MSG_STATIC)
    endif ()
    target_compile_definitions (mongoc_static
       PUBLIC MONGOC_STATIC ${BSON_STATIC_PUBLIC_DEFINITIONS}
-      PRIVATE MONGOC_COMPILATION
+      PRIVATE MONGOC_COMPILATION ${KMS_MSG_DEFINITIONS}
    )
    set_target_properties (mongoc_static PROPERTIES VERSION 0.0.0)
    set_target_properties (mongoc_static PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}")

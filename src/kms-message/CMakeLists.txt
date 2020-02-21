@@ -26,6 +26,7 @@ set (KMS_MESSAGE_SOURCES
    src/kms_kv_list.c
    src/kms_kv_list.h
    src/kms_message.c
+   src/kms_port.c
    src/kms_message/kms_caller_identity_request.h
    src/kms_message/kms_decrypt_request.h
    src/kms_message/kms_encrypt_request.h
@@ -144,6 +145,7 @@ install (
 install (
    FILES
    src/kms_message/kms_b64.h
+   src/kms_message/kms_caller_identity_request.h
    src/kms_message/kms_decrypt_request.h
    src/kms_message/kms_encrypt_request.h
    src/kms_message/kms_message.h

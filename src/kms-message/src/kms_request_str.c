@@ -160,7 +160,7 @@ kms_request_str_dup (kms_request_str_t *str)
    KMS_ASSERT (dup);
 
 
-   dup->str = strndup (str->str, str->len);
+   dup->str = kms_strndup (str->str, str->len);
    dup->len = str->len;
    dup->size = str->len + 1;
 

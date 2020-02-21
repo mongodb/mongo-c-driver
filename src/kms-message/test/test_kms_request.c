@@ -272,9 +272,10 @@ read_req (const char *path)
 
    /* like "GET /path HTTP/1.1" */
    line_len = test_getline (&line, &len, f);
-   method = strndup (line, strchr (line, ' ') - line);
-   uri_path = strndup (line + strlen (method) + 1,
-                       line_len - strlen (method) - 1 - strlen (" HTTP/1.1\n"));
+   method = kms_strndup (line, strchr (line, ' ') - line);
+   uri_path =
+      kms_strndup (line + strlen (method) + 1,
+                   line_len - strlen (method) - 1 - strlen (" HTTP/1.1\n"));
 
    request = kms_request_new (method, uri_path, NULL);
    request->auto_content_length = false;
@@ -992,13 +993,13 @@ kms_request_validate_test (void)
    kms_request_destroy (request);
 }
 
-#define RUN_TEST(_func)                                      \
-   do {                                                      \
-      if (!selector || 0 == strcasecmp (#_func, selector)) { \
-         printf ("%s\n", #_func);                            \
-         _func ();                                           \
-         ran_tests = true;                                   \
-      }                                                      \
+#define RUN_TEST(_func)                                          \
+   do {                                                          \
+      if (!selector || 0 == kms_strcasecmp (#_func, selector)) { \
+         printf ("%s\n", #_func);                                \
+         _func ();                                               \
+         ran_tests = true;                                       \
+      }                                                          \
    } while (0)
 
 int
