@@ -747,7 +747,31 @@ fail:
    return ret;
 }
 
-#define AMZ_DT_FORMAT "YYYYmmDDTHHMMSSZ"
+#define KMS_REQUEST_ADD_HEADER(key, value)                        \
+    do {                                                          \
+        if (!kms_request_add_header_field(request, key, value)) { \
+            MONGOC_ERROR("Failed to add header '%s'", key);       \
+            goto fail;                                            \
+        }                                                         \
+    } while (0)
+
+#define KMS_REQUEST_SET(fn, name, value)        \
+do {                                            \
+    if (!fn(request, value)) {                  \
+        MONGOC_ERROR("Failed to set %s", name); \
+        goto fail;                              \
+    }                                           \
+} while (0)
+
+#define CLIENT_AUTHENTICATION_ERROR(_msg, ...)          \
+   do {                                                 \
+      bson_set_error (error,                            \
+                      MONGOC_ERROR_CLIENT,              \
+                      MONGOC_ERROR_CLIENT_AUTHENTICATE, \
+                      _msg,                             \
+                      __VA_ARGS__);                     \
+   } while (0)
+
 /* --------------------------------------------------------------------------
  * Step 2
  * --------------------------------------------------------------------------
@@ -781,6 +805,7 @@ _client_second (mongoc_cluster_t *cluster,
     const char *date = NULL;
     const size_t server_nonce_str_len = bson_b64_ntop_calculate_target_size(64);
     char server_nonce_str[server_nonce_str_len];
+    const char *body = "Action=GetCallerIdentity&Version=2011-06-15";
     bson_t client_payload = BSON_INITIALIZER;
     bson_t client_command = BSON_INITIALIZER;
     bson_t server_payload = BSON_INITIALIZER;
@@ -797,37 +822,46 @@ _client_second (mongoc_cluster_t *cluster,
     BSON_ASSERT (creds->secret_access_key);
 
     request = kms_request_new ("POST", "/", NULL);
-
-    kms_request_set_access_key_id (request, creds->access_key_id);
-    kms_request_set_secret_key (request, creds->secret_access_key);
-    printf("session token: %s\n", creds->session_token);
-
-    if (!kms_request_set_date (request, tm)) {
-        MONGOC_ERROR("Failed to set date");
+    if (kms_request_get_error(request)) {
+        CLIENT_AUTHENTICATION_ERROR("Failed to create new KMS request: %s", kms_request_get_error(request));
         goto fail;
     }
-    if (-1 == bson_b64_ntop (server_nonce, 64, server_nonce_str, server_nonce_str_len)) {
+
+    if (bson_b64_ntop (server_nonce, 64, server_nonce_str, server_nonce_str_len) == -1) {
         MONGOC_ERROR("Failed to parse server nonce");
         goto fail;
     }
-    printf("0.Server nonce: %s\n", server_nonce_str);
 
-    kms_request_set_region (request, "us-east-1");
-    kms_request_set_service (request, "sts");
-
-    kms_request_append_payload (request, "Action=GetCallerIdentity&Version=2011-06-15", -1);
-    kms_request_add_header_field(request, "Content-Type", "application/x-www-form-urlencoded");
-    kms_request_add_header_field(request, "Content-Length", "43");
-    kms_request_add_header_field(request, "Host", sts_fqdn);
-    kms_request_add_header_field(request, "X-MongoDB-Server-Nonce", server_nonce_str);
-    kms_request_add_header_field(request, "X-MongoDB-GS2-CB-Flag", "n");
-    if (creds->session_token) {
-        kms_request_add_header_field(request, "X-Amz-Security-Token", creds->session_token);
+    if (!kms_request_append_payload (request, body, -1)) {
+        MONGOC_ERROR("Failed to append payload");
+        goto fail;
     }
 
+    KMS_REQUEST_SET(kms_request_set_access_key_id, "access key ID", creds->access_key_id);
+    KMS_REQUEST_SET(kms_request_set_secret_key, "secret key", creds->secret_access_key);
+    KMS_REQUEST_SET(kms_request_set_date, "date", tm);
+    KMS_REQUEST_SET(kms_request_set_region, "region", "us-east-1");
+    KMS_REQUEST_SET(kms_request_set_service, "service", "sts");
+
+    KMS_REQUEST_ADD_HEADER("Content-Type", "application/x-www-form-urlencoded");
+    KMS_REQUEST_ADD_HEADER("Host", sts_fqdn);
+    KMS_REQUEST_ADD_HEADER("X-MongoDB-Server-Nonce", server_nonce_str);
+    KMS_REQUEST_ADD_HEADER("X-MongoDB-GS2-CB-Flag", "n");
+    if (creds->session_token) {
+        KMS_REQUEST_ADD_HEADER("X-Amz-Security-Token", creds->session_token);
+    }
 
     signature = kms_request_get_signature (request);
+    if (kms_request_get_error(request)) {
+        CLIENT_AUTHENTICATION_ERROR("Failed to get signature: %s", kms_request_get_error(request));
+        goto fail;
+    }
+
     date = kms_request_get_canonical_header(request, "X-Amz-Date");
+    if (kms_request_get_error(request)) {
+        CLIENT_AUTHENTICATION_ERROR("Failed to get canonical header: %s", kms_request_get_error(request));
+        goto fail;
+    }
 
     BCON_APPEND (&client_payload,
                  "a", BCON_UTF8 (signature),
@@ -843,10 +877,6 @@ _client_second (mongoc_cluster_t *cluster,
                  "payload", BCON_BIN (BSON_SUBTYPE_BINARY,
                            bson_get_data (&client_payload),
                            client_payload.len));
-
-    printf("Signature: %s\n", kms_request_get_signed(request));
-    printf("Date: %s\n", date);
-    printf("Error: %s\n", kms_request_get_error (request));
 
     bson_destroy (&server_reply);
     if (!_run_command (
