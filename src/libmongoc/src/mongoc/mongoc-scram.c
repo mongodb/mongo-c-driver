@@ -289,10 +289,10 @@ _mongoc_scram_start (mongoc_scram_t *scram,
       goto FAIL;
    }
 
-   scram->encoded_nonce_len = bson_b64_ntop (nonce,
-                                             sizeof (nonce),
-                                             scram->encoded_nonce,
-                                             sizeof (scram->encoded_nonce));
+   scram->encoded_nonce_len = mongoc_common_bson_b64_ntop (nonce,
+                                                           sizeof (nonce),
+                                                           scram->encoded_nonce,
+                                                           sizeof (scram->encoded_nonce));
 
    if (-1 == scram->encoded_nonce_len) {
       bson_set_error (error,
@@ -486,7 +486,7 @@ _mongoc_scram_generate_client_proof (mongoc_scram_t *scram,
       client_proof[i] = scram->client_key[i] ^ client_signature[i];
    }
 
-   r = bson_b64_ntop (client_proof,
+   r = mongoc_common_bson_b64_ntop (client_proof,
                       _scram_hash_size (scram),
                       (char *) outbuf + *outbuflen,
                       outbufmax - *outbuflen);
@@ -701,7 +701,7 @@ _mongoc_scram_step2 (mongoc_scram_t *scram,
    }
 
    decoded_salt_len =
-      bson_b64_pton ((char *) val_s, decoded_salt, sizeof (decoded_salt));
+      mongoc_common_bson_b64_pton ((char *) val_s, decoded_salt, sizeof (decoded_salt));
 
    if (-1 == decoded_salt_len) {
       bson_set_error (error,
@@ -836,10 +836,10 @@ _mongoc_scram_verify_server_signature (mongoc_scram_t *scram,
                        server_signature);
 
    encoded_server_signature_len =
-      bson_b64_ntop (server_signature,
-                     _scram_hash_size (scram),
-                     encoded_server_signature,
-                     sizeof (encoded_server_signature));
+      mongoc_common_bson_b64_ntop (server_signature,
+                                   _scram_hash_size (scram),
+                                   encoded_server_signature,
+                                   sizeof (encoded_server_signature));
    if (encoded_server_signature_len == -1) {
       return false;
    }

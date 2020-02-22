@@ -114,10 +114,10 @@ static const char Pad64 = '=';
  */
 
 int
-bson_b64_ntop (uint8_t const *src,
-               size_t srclength,
-               char *target,
-               size_t targsize)
+COMMON_PREFIX(bson_b64_ntop) (uint8_t const *src,
+                              size_t srclength,
+                              char *target,
+                              size_t targsize)
 {
    size_t datalength = 0;
    uint8_t input[3];
@@ -519,7 +519,7 @@ mongoc_b64_pton_len (char const *src)
 
 
 int
-bson_b64_pton (char const *src, uint8_t *target, size_t targsize)
+COMMON_PREFIX(bson_b64_pton) (char const *src, uint8_t *target, size_t targsize)
 {
    static mongoc_common_once_t once = MONGOC_COMMON_ONCE_INIT;
 
@@ -536,7 +536,7 @@ bson_b64_pton (char const *src, uint8_t *target, size_t targsize)
 }
 
 size_t
-bson_b64_ntop_calculate_target_size (size_t raw_size)
+COMMON_PREFIX(bson_b64_ntop_calculate_target_size) (size_t raw_size)
 {
    size_t num_bits = raw_size * 8;
    /* Calculate how many groups of six bits this contains, adding 5 to round up
@@ -549,7 +549,7 @@ bson_b64_ntop_calculate_target_size (size_t raw_size)
 }
 
 size_t
-bson_b64_pton_calculate_target_size (size_t base64_encoded_size)
+COMMON_PREFIX(bson_b64_pton_calculate_target_size) (size_t base64_encoded_size)
 {
    /* Without inspecting the data, we don't know how many padding characters
     * there are. Assuming none, that means each character represents 6 bits of

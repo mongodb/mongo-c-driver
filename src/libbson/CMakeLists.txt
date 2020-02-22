@@ -154,6 +154,7 @@ include_directories ("${PROJECT_BINARY_DIR}/src")
 # But when installed, all libbson headers will be in the same directory.
 include_directories ("${PROJECT_BINARY_DIR}/src/bson")
 include_directories ("${PROJECT_SOURCE_DIR}/src")
+add_definitions (-DCOMMON_PREFIX_=_bson_common)
 include_directories ("${PROJECT_SOURCE_DIR}/../../src/common")
 
 if (APPLE)

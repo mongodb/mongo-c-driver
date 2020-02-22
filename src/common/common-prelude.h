@@ -18,3 +18,10 @@
    !defined(BSON_COMPILATION) && !defined(BSON_INSIDE)
 #error "Only <mongoc/mongoc.h> or <bson/bson.h> can be included directly."
 #endif
+
+#ifndef COMMON_PREFIX_
+#define COMMON_PREFIX_
+#endif
+#define JOINER(x,y) x ## _ ## y
+#define NAME_EVALUATOR(x,y) JOINER(x,y)
+#define COMMON_PREFIX(name) NAME_EVALUATOR(COMMON_PREFIX_, name)

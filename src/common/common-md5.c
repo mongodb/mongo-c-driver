@@ -325,7 +325,7 @@ bson_md5_process (bson_md5_t *md5, const uint8_t *data)
 }
 
 void
-_bson_md5_init (bson_md5_t *pms)
+COMMON_PREFIX(_bson_md5_init) (bson_md5_t *pms)
 {
    pms->count[0] = pms->count[1] = 0;
    pms->abcd[0] = 0x67452301;
@@ -335,7 +335,7 @@ _bson_md5_init (bson_md5_t *pms)
 }
 
 void
-_bson_md5_append (bson_md5_t *pms, const uint8_t *data, uint32_t nbytes)
+COMMON_PREFIX(_bson_md5_append) (bson_md5_t *pms, const uint8_t *data, uint32_t nbytes)
 {
    const uint8_t *p = data;
    int left = nbytes;
@@ -374,7 +374,7 @@ _bson_md5_append (bson_md5_t *pms, const uint8_t *data, uint32_t nbytes)
 
 
 void
-_bson_md5_finish (bson_md5_t *pms, uint8_t digest[16])
+COMMON_PREFIX(_bson_md5_finish)(bson_md5_t *pms, uint8_t digest[16])
 {
    static const uint8_t pad[64] = {
       0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -387,9 +387,9 @@ _bson_md5_finish (bson_md5_t *pms, uint8_t digest[16])
    for (i = 0; i < 8; ++i)
       data[i] = (uint8_t) (pms->count[i >> 2] >> ((i & 3) << 3));
    /* Pad to 56 bytes mod 64. */
-   _bson_md5_append (pms, pad, ((55 - (pms->count[0] >> 3)) & 63) + 1);
+   COMMON_PREFIX(_bson_md5_append) (pms, pad, ((55 - (pms->count[0] >> 3)) & 63) + 1);
    /* Append the length. */
-   _bson_md5_append (pms, data, sizeof (data));
+   COMMON_PREFIX(_bson_md5_append) (pms, data, sizeof (data));
    for (i = 0; i < 16; ++i)
       digest[i] = (uint8_t) (pms->abcd[i >> 2] >> ((i & 3) << 3));
 }

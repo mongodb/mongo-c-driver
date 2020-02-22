@@ -29,13 +29,13 @@ _test_encode_helper (char *input,
    size_t target_size;
    int ret;
 
-   target_size = bson_b64_ntop_calculate_target_size (input_len);
+   target_size = mongoc_common_bson_b64_ntop_calculate_target_size (input_len);
    output = bson_malloc (target_size);
 
    /* bson_ntop_calculate_target_size includes trailing NULL. */
    ASSERT_CMPSIZE_T (target_size, ==, (size_t) expected_output_len + 1);
    /* returned value does not count trailing NULL. */
-   ret = bson_b64_ntop ((uint8_t *) input, input_len, output, target_size);
+   ret = mongoc_common_bson_b64_ntop ((uint8_t *) input, input_len, output, target_size);
    ASSERT_CMPINT (target_size - 1, ==, ret);
    ASSERT_CMPSTR (output, expected_output);
    bson_free (output);
@@ -57,21 +57,21 @@ test_bson_b64_encode (void)
 
    /* Even on empty input, the output is still NULL terminated. */
    output[0] = 'a';
-   ret = bson_b64_ntop ((uint8_t *) "", 0, output, 1);
+   ret = mongoc_common_bson_b64_ntop ((uint8_t *) "", 0, output, 1);
    ASSERT_CMPINT (ret, ==, 0);
    BSON_ASSERT (output[0] == '\0');
 
    /* Test NULL input. */
-   ret = bson_b64_ntop (NULL, 0, output, 32);
+   ret = mongoc_common_bson_b64_ntop (NULL, 0, output, 32);
    ASSERT_CMPINT (0, ==, ret);
    BSON_ASSERT (output[0] == '\0');
 
    /* Test NULL output */
-   ret = bson_b64_ntop (NULL, 0, NULL, 0);
+   ret = mongoc_common_bson_b64_ntop (NULL, 0, NULL, 0);
    ASSERT_CMPINT (-1, ==, ret);
 
    /* Test output not large enough. */
-   ret = bson_b64_ntop ((uint8_t *) "test", 4, output, 1);
+   ret = mongoc_common_bson_b64_ntop ((uint8_t *) "test", 4, output, 1);
    ASSERT_CMPINT (-1, ==, ret);
 }
 
@@ -86,20 +86,20 @@ _test_decode_helper (char *input,
    int exact_target_size;
    int ret;
 
-   target_size = bson_b64_pton_calculate_target_size (strlen (input));
+   target_size = mongoc_common_bson_b64_pton_calculate_target_size (strlen (input));
    output = bson_malloc (target_size);
    /* bson_malloc returns NULL if requesting 0 bytes, memcmp expects non-NULL. */
    if (target_size == 0) {
       output = bson_malloc (1);
    }
 
-   /* Calling bson_b64_pton with a NULL output is valid, and returns the exact
-    * target size. */
-   exact_target_size = bson_b64_pton (input, NULL, 0);
+   /* Calling mongoc_common_bson_b64_pton with a NULL output is valid, and returns
+    * the exact target size. */
+   exact_target_size = mongoc_common_bson_b64_pton (input, NULL, 0);
    ASSERT_CMPINT (exact_target_size, ==, expected_output_len);
    ASSERT_CMPSIZE_T (target_size, ==, (size_t) expected_calculated_target_size);
 
-   ret = bson_b64_pton (input, output, target_size);
+   ret = mongoc_common_bson_b64_pton (input, output, target_size);
    ASSERT_CMPINT (expected_output_len, ==, ret);
    BSON_ASSERT (0 == memcmp (output, expected_output, ret));
    bson_free (output);
@@ -120,20 +120,20 @@ test_bson_b64_decode (void)
    _test_decode_helper ("Zm9vYmFy", "foobar", 6, 6);
 
    /* Test NULL input. */
-   ret = bson_b64_pton (NULL, output, 32);
+   ret = mongoc_common_bson_b64_pton (NULL, output, 32);
    ASSERT_CMPINT (ret, ==, -1);
 
    /* Test NULL output. */
-   ret = bson_b64_pton ("Zm8=", NULL, 0);
+   ret = mongoc_common_bson_b64_pton ("Zm8=", NULL, 0);
    /* The return value is actually the number of bytes for output. */
    ASSERT_CMPINT (ret, ==, 2);
 
    /* Test output not large enough. */
-   ret = bson_b64_pton ("Zm9vYmFy", output, 1);
+   ret = mongoc_common_bson_b64_pton ("Zm9vYmFy", output, 1);
    ASSERT_CMPINT (ret, ==, -1);
 
    /* Test malformed base64 */
-   ret = bson_b64_pton ("bad!", output, 32);
+   ret = mongoc_common_bson_b64_pton ("bad!", output, 32);
    ASSERT_CMPINT (ret, ==, -1);
 }
 

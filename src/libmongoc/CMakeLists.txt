@@ -467,6 +467,7 @@ endif ()
 include_directories ("${PROJECT_BINARY_DIR}/src")
 include_directories ("${PROJECT_BINARY_DIR}/src/mongoc")
 include_directories ("${PROJECT_SOURCE_DIR}/src")
+add_definitions (-DCOMMON_PREFIX_=_mongoc_common)
 include_directories ("${PROJECT_SOURCE_DIR}/../../src/common")
 
 set (SOURCES ${SOURCES}
