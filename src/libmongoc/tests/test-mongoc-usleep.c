@@ -1,9 +1,10 @@
 #include "mongoc/mongoc-util-private.h"
 #include "TestSuite.h"
+#include "test-libmongoc.h"
 
 
 static void
-test_mongoc_usleep_basic (void)
+test_mongoc_usleep_basic (void *unused)
 {
    int64_t start;
    int64_t duration;
@@ -18,5 +19,10 @@ test_mongoc_usleep_basic (void)
 void
 test_usleep_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Sleep/basic", test_mongoc_usleep_basic);
+   TestSuite_AddFull (suite,
+                      "/Sleep/basic",
+                      test_mongoc_usleep_basic,
+                      NULL /* dtor */,
+                      NULL /* dtor */,
+                      test_framework_skip_if_time_sensitive);
 }
