@@ -552,19 +552,12 @@ _test_resume_token_error (const char *id_projection)
                              MONGOC_ERROR_CURSOR,
                              MONGOC_ERROR_CHANGE_STREAM_NO_RESUME_TOKEN,
                              "Cannot provide resume functionality");
-   } else if (test_framework_get_server_version () <
-              test_framework_str_to_version ("4.3.2")) {
+   } else {
       ASSERT_ERROR_CONTAINS (err,
                              MONGOC_ERROR_SERVER,
                              280,
                              "Only transformations that retain the unmodified "
                              "_id field are allowed.");
-   } else {
-      /* Error was changed in SERVER-45505. */
-      ASSERT_ERROR_CONTAINS (
-         err, MONGOC_ERROR_SERVER, 20, "Encountered an event whose _id field, "
-                                       "which contains the resume token, was "
-                                       "modified by the pipeline.");
    }
 
    bson_destroy (&opts);
