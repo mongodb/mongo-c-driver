@@ -2333,6 +2333,21 @@ test_framework_resolve_path (const char *path, char *resolved)
    }
 }
 
+int
+test_framework_skip_if_time_sensitive (void)
+{
+   if (test_suite_valgrind ()) {
+      return 0;
+   }
+
+/* Skip time sensitive tests on macOS per CDRIVER-3549. */
+#ifdef __APPLE__
+   return 0;
+#else
+   return 1;
+#endif
+}
+
 static char MONGOC_TEST_UNIQUE[32];
 
 int

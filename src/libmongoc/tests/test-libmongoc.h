@@ -205,6 +205,9 @@ test_framework_skip_if_no_failpoint (void);
 int
 test_framework_skip_if_no_client_side_encryption (void);
 
+int
+test_framework_skip_if_time_sensitive (void);
+
 void
 test_framework_resolve_path (const char *path, char *resolved);
 

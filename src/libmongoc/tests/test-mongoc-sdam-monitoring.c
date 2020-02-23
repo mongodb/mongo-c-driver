@@ -1004,10 +1004,12 @@ test_sdam_monitoring_install (TestSuite *suite)
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/succeeded",
       test_heartbeat_events_pooled_succeeded);
-   TestSuite_AddMockServerTest (
+   _TestSuite_AddMockServerTest (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/pooled/failed",
-      test_heartbeat_events_pooled_failed);
+      test_heartbeat_events_pooled_failed,
+      test_framework_skip_if_time_sensitive,
+      NULL);
    TestSuite_AddFull (
       suite,
       "/server_discovery_and_monitoring/monitoring/heartbeat/single/dns",
