@@ -2067,10 +2067,16 @@ test_topology_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_offline);
-   TestSuite_AddMockServerTest (
-      suite, "/Topology/connect_timeout/succeed", test_select_after_timeout);
-   TestSuite_AddMockServerTest (
-      suite, "/Topology/try_once/succeed", test_select_after_try_once);
+   _TestSuite_AddMockServerTest (suite,
+                                 "/Topology/connect_timeout/succeed",
+                                 test_select_after_timeout,
+                                 test_framework_skip_if_time_sensitive,
+                                 NULL);
+   _TestSuite_AddMockServerTest (suite,
+                                 "/Topology/try_once/succeed",
+                                 test_select_after_try_once,
+                                 test_framework_skip_if_time_sensitive,
+                                 NULL);
    TestSuite_AddLive (
       suite, "/Topology/invalid_server_id", test_invalid_server_id);
    TestSuite_AddMockServerTest (suite,

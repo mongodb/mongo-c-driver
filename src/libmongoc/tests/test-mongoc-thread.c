@@ -1,10 +1,11 @@
 #include "mongoc/mongoc-thread-private.h"
 
 #include "TestSuite.h"
+#include "test-libmongoc.h"
 
 
 static void
-test_cond_wait (void)
+test_cond_wait (void *unused)
 {
    int64_t start, duration_usec;
    bson_mutex_t mutex;
@@ -20,8 +21,8 @@ test_cond_wait (void)
    bson_mutex_unlock (&mutex);
 
    if (!((50 * 1000 < duration_usec) && (150 * 1000 > duration_usec))) {
-      fprintf (
-         stderr, "expected to wait 100ms, waited %" PRId64 "\n", duration_usec);
+      test_error ("expected to wait 100ms, waited %" PRId64 "\n",
+                  duration_usec / 1000);
    }
 
    mongoc_cond_destroy (&cond);
@@ -32,5 +33,10 @@ test_cond_wait (void)
 void
 test_thread_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Thread/cond_wait", test_cond_wait);
+   TestSuite_AddFull (suite,
+                      "/Thread/cond_wait",
+                      test_cond_wait,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_time_sensitive);
 }
