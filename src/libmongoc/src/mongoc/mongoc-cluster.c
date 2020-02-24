@@ -1167,7 +1167,8 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
 
    str = bson_strdup_printf ("%c%s%c%s", '\0', username, '\0', password);
    len = strlen (username) + strlen (password) + 2;
-   buflen = mongoc_common_bson_b64_ntop ((const uint8_t *) str, len, buf, sizeof buf);
+   buflen =
+      mongoc_common_bson_b64_ntop ((const uint8_t *) str, len, buf, sizeof buf);
    bson_free (str);
 
    if (buflen == -1) {
@@ -2838,19 +2839,19 @@ network_error_reply (bson_t *reply, mongoc_cmd_t *cmd)
          cmd->session->server_session->dirty = true;
       }
       /* Transactions Spec defines TransientTransactionError: "Any
-      * network error or server selection error encountered running any
-      * command besides commitTransaction in a transaction. In the case
-      * of command errors, the server adds the label; in the case of
-      * network errors or server selection errors where the client
-      * receives no server reply, the client adds the label." */
+       * network error or server selection error encountered running any
+       * command besides commitTransaction in a transaction. In the case
+       * of command errors, the server adds the label; in the case of
+       * network errors or server selection errors where the client
+       * receives no server reply, the client adds the label." */
       if (_mongoc_client_session_in_txn (cmd->session) && !cmd->is_txn_finish) {
          /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
-         * within a transaction, including commitTransaction and
-         * abortTransaction,
-         * fails with a TransientTransactionError". If we're about to add
-         * a TransientTransactionError label due to a client side error then we
-         * unpin. If commitTransaction/abortTransation includes a label in the
-         * server reply, we unpin in _mongoc_client_session_handle_reply. */
+          * within a transaction, including commitTransaction and
+          * abortTransaction,
+          * fails with a TransientTransactionError". If we're about to add
+          * a TransientTransactionError label due to a client side error then we
+          * unpin. If commitTransaction/abortTransation includes a label in the
+          * server reply, we unpin in _mongoc_client_session_handle_reply. */
          cmd->session->server_id = 0;
          if (!reply) {
             return;

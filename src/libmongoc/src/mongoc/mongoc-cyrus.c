@@ -343,7 +343,8 @@ _mongoc_cyrus_start (mongoc_cyrus_t *sasl,
    }
 
    *outbuflen = 0;
-   outbuf_capacity = mongoc_common_bson_b64_ntop_calculate_target_size (raw_len);
+   outbuf_capacity =
+      mongoc_common_bson_b64_ntop_calculate_target_size (raw_len);
    *outbuf = bson_malloc (outbuf_capacity);
 
    b64_ret = mongoc_common_bson_b64_ntop (
@@ -410,10 +411,11 @@ _mongoc_cyrus_step (mongoc_cyrus_t *sasl,
    }
 
    decoded_len = 0;
-   decoded_capacity = mongoc_common_bson_b64_pton_calculate_target_size (inbuflen);
+   decoded_capacity =
+      mongoc_common_bson_b64_pton_calculate_target_size (inbuflen);
    decoded = bson_malloc (decoded_capacity);
-   b64_ret =
-      mongoc_common_bson_b64_pton ((char *) inbuf, (uint8_t *) decoded, decoded_capacity);
+   b64_ret = mongoc_common_bson_b64_pton (
+      (char *) inbuf, (uint8_t *) decoded, decoded_capacity);
    if (b64_ret == -1) {
       bson_set_error (error,
                       MONGOC_ERROR_SASL,

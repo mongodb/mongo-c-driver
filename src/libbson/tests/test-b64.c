@@ -35,7 +35,8 @@ _test_encode_helper (char *input,
    /* bson_ntop_calculate_target_size includes trailing NULL. */
    ASSERT_CMPSIZE_T (target_size, ==, (size_t) expected_output_len + 1);
    /* returned value does not count trailing NULL. */
-   ret = mongoc_common_bson_b64_ntop ((uint8_t *) input, input_len, output, target_size);
+   ret = mongoc_common_bson_b64_ntop (
+      (uint8_t *) input, input_len, output, target_size);
    ASSERT_CMPINT (target_size - 1, ==, ret);
    ASSERT_CMPSTR (output, expected_output);
    bson_free (output);
@@ -86,15 +87,17 @@ _test_decode_helper (char *input,
    int exact_target_size;
    int ret;
 
-   target_size = mongoc_common_bson_b64_pton_calculate_target_size (strlen (input));
+   target_size =
+      mongoc_common_bson_b64_pton_calculate_target_size (strlen (input));
    output = bson_malloc (target_size);
-   /* bson_malloc returns NULL if requesting 0 bytes, memcmp expects non-NULL. */
+   /* bson_malloc returns NULL if requesting 0 bytes, memcmp expects non-NULL.
+    */
    if (target_size == 0) {
       output = bson_malloc (1);
    }
 
-   /* Calling mongoc_common_bson_b64_pton with a NULL output is valid, and returns
-    * the exact target size. */
+   /* Calling mongoc_common_bson_b64_pton with a NULL output is valid, and
+    * returns the exact target size. */
    exact_target_size = mongoc_common_bson_b64_pton (input, NULL, 0);
    ASSERT_CMPINT (exact_target_size, ==, expected_output_len);
    ASSERT_CMPSIZE_T (target_size, ==, (size_t) expected_calculated_target_size);

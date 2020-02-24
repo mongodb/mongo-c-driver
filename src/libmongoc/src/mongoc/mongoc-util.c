@@ -69,7 +69,8 @@ _mongoc_hex_md5 (const char *input)
    int i;
 
    mongoc_common__bson_md5_init (&md5);
-   mongoc_common__bson_md5_append (&md5, (const uint8_t *) input, (uint32_t) strlen (input));
+   mongoc_common__bson_md5_append (
+      &md5, (const uint8_t *) input, (uint32_t) strlen (input));
    mongoc_common__bson_md5_finish (&md5, digest);
 
    for (i = 0; i < sizeof digest; i++) {

@@ -113,11 +113,10 @@ static const char Pad64 = '=';
  *    characters followed by one "=" padding character.
  */
 
-int
-COMMON_PREFIX(bson_b64_ntop) (uint8_t const *src,
-                              size_t srclength,
-                              char *target,
-                              size_t targsize)
+int COMMON_PREFIX (bson_b64_ntop) (uint8_t const *src,
+                                   size_t srclength,
+                                   char *target,
+                                   size_t targsize)
 {
    size_t datalength = 0;
    uint8_t input[3];
@@ -388,8 +387,8 @@ mongoc_b64_pton_do (char const *src, uint8_t *target, size_t targsize)
          if (ch != Pad64)
             return (-1);
          ch = *src++; /* Skip the = */
-      /* Fall through to "single trailing =" case. */
-      /* FALLTHROUGH */
+         /* Fall through to "single trailing =" case. */
+         /* FALLTHROUGH */
 
       case 3: /* Valid, means two bytes of info */
          /*
@@ -490,8 +489,8 @@ mongoc_b64_pton_len (char const *src)
          if (ch != Pad64)
             return (-1);
          ch = *src++; /* Skip the = */
-      /* Fall through to "single trailing =" case. */
-      /* FALLTHROUGH */
+         /* Fall through to "single trailing =" case. */
+         /* FALLTHROUGH */
 
       case 3: /* Valid, means two bytes of info */
          /*
@@ -518,8 +517,9 @@ mongoc_b64_pton_len (char const *src)
 }
 
 
-int
-COMMON_PREFIX(bson_b64_pton) (char const *src, uint8_t *target, size_t targsize)
+int COMMON_PREFIX (bson_b64_pton) (char const *src,
+                                   uint8_t *target,
+                                   size_t targsize)
 {
    static mongoc_common_once_t once = MONGOC_COMMON_ONCE_INIT;
 
@@ -535,8 +535,7 @@ COMMON_PREFIX(bson_b64_pton) (char const *src, uint8_t *target, size_t targsize)
       return mongoc_b64_pton_len (src);
 }
 
-size_t
-COMMON_PREFIX(bson_b64_ntop_calculate_target_size) (size_t raw_size)
+size_t COMMON_PREFIX (bson_b64_ntop_calculate_target_size) (size_t raw_size)
 {
    size_t num_bits = raw_size * 8;
    /* Calculate how many groups of six bits this contains, adding 5 to round up
@@ -548,8 +547,8 @@ COMMON_PREFIX(bson_b64_ntop_calculate_target_size) (size_t raw_size)
    return num_b64_chars_with_padding + 1;
 }
 
-size_t
-COMMON_PREFIX(bson_b64_pton_calculate_target_size) (size_t base64_encoded_size)
+size_t COMMON_PREFIX (bson_b64_pton_calculate_target_size) (
+   size_t base64_encoded_size)
 {
    /* Without inspecting the data, we don't know how many padding characters
     * there are. Assuming none, that means each character represents 6 bits of

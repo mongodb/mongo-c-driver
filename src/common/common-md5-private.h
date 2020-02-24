@@ -23,12 +23,11 @@
 
 BSON_BEGIN_DECLS
 
-void
-COMMON_PREFIX(_bson_md5_init) (bson_md5_t *pms);
-void
-COMMON_PREFIX(_bson_md5_append) (bson_md5_t *pms, const uint8_t *data, uint32_t nbytes);
-void
-COMMON_PREFIX(_bson_md5_finish) (bson_md5_t *pms, uint8_t digest[16]);
+void COMMON_PREFIX (_bson_md5_init) (bson_md5_t *pms);
+void COMMON_PREFIX (_bson_md5_append) (bson_md5_t *pms,
+                                       const uint8_t *data,
+                                       uint32_t nbytes);
+void COMMON_PREFIX (_bson_md5_finish) (bson_md5_t *pms, uint8_t digest[16]);
 
 BSON_END_DECLS
 
