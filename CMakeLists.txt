@@ -57,6 +57,10 @@ set (ENABLE_ICU AUTO CACHE STRING "Enable ICU support, necessary to use non-ASCI
 option (ENABLE_UNINSTALL "Enable creation of uninstall script and associated uninstall build target." ON)
 set (ENABLE_CLIENT_SIDE_ENCRYPTION AUTO CACHE STRING "Enable Client-Side Field Level Encryption support. Requires libmongocrypt. Set to ON/AUTO/OFF, default AUTO.")
 set (ENABLE_MONGODB_AWS_AUTH AUTO CACHE STRING "Enable support for MONGODB-AWS authentication mechanism. Set to ON/AUTO/OFF, default AUTO. (also requires ENABLE_SSL not set to OFF)")
+option (ENABLE_PIC 
+   "Enables building of position independent code for static library components."
+   ON
+)
 
 project (mongo-c-driver C)
 
