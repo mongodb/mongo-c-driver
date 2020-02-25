@@ -7,18 +7,18 @@
 void
 bson_md5_init (bson_md5_t *pms)
 {
-   bson_common__bson_md5_init (pms);
+   _bson_common__bson_md5_init (pms);
 }
 
 
 void
 bson_md5_append (bson_md5_t *pms, const uint8_t *data, uint32_t nbytes)
 {
-   bson_common__bson_md5_append (pms, data, nbytes);
+   _bson_common__bson_md5_append (pms, data, nbytes);
 }
 
 void
 bson_md5_finish (bson_md5_t *pms, uint8_t digest[16])
 {
-   bson_common__bson_md5_finish (pms, digest);
+   _bson_common__bson_md5_finish (pms, digest);
 }
