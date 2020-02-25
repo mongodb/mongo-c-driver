@@ -1617,7 +1617,9 @@ _mongoc_write_error_get_type (bool cmd_ret,
    }
 
    /* check for a client error. */
-   if (!cmd_ret && cmd_err->domain == MONGOC_ERROR_STREAM) {
+   if (!cmd_ret && (cmd_err->domain == MONGOC_ERROR_STREAM ||
+                    (cmd_err->domain == MONGOC_ERROR_PROTOCOL &&
+                     cmd_err->code == MONGOC_ERROR_PROTOCOL_INVALID_REPLY))) {
       /* Retryable writes spec: When the driver encounters a network error
        * communicating with any server version that supports retryable
        * writes, it MUST add a RetryableWriteError label to that error. */
