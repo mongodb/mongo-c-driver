@@ -1,3 +1,15 @@
+mongo-c-driver 1.16.2
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.16.2.
+
+Bug fixes:
+
+  * Fix compilation with LibreSSL when configuring with -DENABLE_SSL=AUTO
+
+-- Kevin Albertson
+
+
 mongo-c-driver 1.16.1
 =====================
 

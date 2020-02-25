@@ -1,6 +1,14 @@
 libbson 1.16.1
 ==============
 
+No change since 1.16.1; released to keep pace with libmongoc's version.
+
+-- Kevin Albertson
+
+
+libbson 1.16.1
+==============
+
 It is my pleasure to announce libbson 1.16.1.
 
 Features:
