@@ -100,3 +100,34 @@ _mongoc_read_error_get_type (bool cmd_ret,
       return MONGOC_READ_ERR_OTHER;
    }
 }
+
+void
+_mongoc_error_copy_labels_and_upsert (const bson_t *src,
+                                      bson_t *dst,
+                                      char *label)
+{
+   bson_iter_t iter;
+   bson_iter_t src_label;
+   bson_t dst_labels;
+   char str[16];
+   uint32_t i = 0;
+   const char *key;
+
+   BSON_APPEND_ARRAY_BEGIN (dst, "errorLabels", &dst_labels);
+   BSON_APPEND_UTF8 (&dst_labels, "0", label);
+
+   /* append any other errorLabels already in "src" */
+   if (bson_iter_init_find (&iter, src, "errorLabels") &&
+       bson_iter_recurse (&iter, &src_label)) {
+      while (bson_iter_next (&src_label) && BSON_ITER_HOLDS_UTF8 (&src_label)) {
+         if (strcmp (bson_iter_utf8 (&src_label, NULL), label) != 0) {
+            i++;
+            bson_uint32_to_string (i, &key, str, sizeof str);
+            BSON_APPEND_UTF8 (
+               &dst_labels, key, bson_iter_utf8 (&src_label, NULL));
+         }
+      }
+   }
+
+   bson_append_array_end (dst, &dst_labels);
+}

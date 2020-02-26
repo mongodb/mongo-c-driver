@@ -32,4 +32,9 @@ _mongoc_read_error_get_type (bool cmd_ret,
                              const bson_error_t *cmd_err,
                              const bson_t *reply);
 
+void
+_mongoc_error_copy_labels_and_upsert (const bson_t *src,
+                                      bson_t *dst,
+                                      char *label);
+
 BSON_END_DECLS

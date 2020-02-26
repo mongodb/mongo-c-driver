@@ -20,6 +20,7 @@
 #include "mongoc-client-session-private.h"
 #include "mongoc-client-side-encryption-private.h"
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-write-command-private.h"
 #include "mongoc-write-command-legacy-private.h"
@@ -1574,43 +1575,14 @@ _mongoc_write_error_has_retryable_label (const bson_t *reply)
 }
 
 static void
-copy_labels_plus_retryable_write_error (const bson_t *src, bson_t *dst)
-{
-   bson_iter_t iter;
-   bson_iter_t src_label;
-   bson_t dst_labels;
-   char str[16];
-   uint32_t i = 0;
-   const char *key;
-
-   BSON_APPEND_ARRAY_BEGIN (dst, "errorLabels", &dst_labels);
-   BSON_APPEND_UTF8 (&dst_labels, "0", RETRYABLE_WRITE_ERROR);
-
-   /* append any other errorLabels already in "src" */
-   if (bson_iter_init_find (&iter, src, "errorLabels") &&
-       bson_iter_recurse (&iter, &src_label)) {
-      while (bson_iter_next (&src_label) && BSON_ITER_HOLDS_UTF8 (&src_label)) {
-         if (strcmp (bson_iter_utf8 (&src_label, NULL),
-                     RETRYABLE_WRITE_ERROR) != 0) {
-            i++;
-            bson_uint32_to_string (i, &key, str, sizeof str);
-            BSON_APPEND_UTF8 (
-               &dst_labels, key, bson_iter_utf8 (&src_label, NULL));
-         }
-      }
-   }
-
-   bson_append_array_end (dst, &dst_labels);
-}
-
-static void
 _mongoc_write_error_append_retryable_label (bson_t *reply)
 {
    bson_t reply_local = BSON_INITIALIZER;
 
    if (reply) {
       bson_copy_to_excluding_noinit (&reply_local, reply, "errorLabels", NULL);
-      copy_labels_plus_retryable_write_error (&reply_local, reply);
+      _mongoc_error_copy_labels_and_upsert (
+         &reply_local, reply, RETRYABLE_WRITE_ERROR);
    }
 
    bson_destroy (&reply_local);
