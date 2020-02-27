@@ -68,10 +68,10 @@ _mongoc_hex_md5 (const char *input)
    char digest_str[33];
    int i;
 
-   _mongoc_common__bson_md5_init (&md5);
-   _mongoc_common__bson_md5_append (
-      &md5, (const uint8_t *) input, (uint32_t) strlen (input));
-   _mongoc_common__bson_md5_finish (&md5, digest);
+   COMMON_PREFIX (_bson_md5_init (&md5));
+   COMMON_PREFIX (_bson_md5_append (
+      &md5, (const uint8_t *) input, (uint32_t) strlen (input)));
+   COMMON_PREFIX (_bson_md5_finish (&md5, digest));
 
    for (i = 0; i < sizeof digest; i++) {
       bson_snprintf (&digest_str[i * 2], 3, "%02x", digest[i]);

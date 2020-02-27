@@ -882,7 +882,7 @@ _client_second (mongoc_cluster_t *cluster,
    char *signature = NULL;
    const char *date = NULL;
    const size_t server_nonce_str_len =
-      _mongoc_common_bson_b64_ntop_calculate_target_size (64);
+      COMMON_PREFIX (bson_b64_ntop_calculate_target_size (64));
    char *server_nonce_str = NULL;
    const char *body = "Action=GetCallerIdentity&Version=2011-06-15";
    bson_t client_payload = BSON_INITIALIZER;
@@ -907,7 +907,7 @@ _client_second (mongoc_cluster_t *cluster,
                            kms_request_get_error (request));
    }
 
-   if (_mongoc_common_bson_b64_ntop (
+   if (COMMON_PREFIX (bson_b64_ntop) (
           server_nonce, 64, server_nonce_str, server_nonce_str_len) == -1) {
       AUTH_ERROR_AND_FAIL ("Failed to parse server nonce");
    }
