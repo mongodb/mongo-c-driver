@@ -739,7 +739,7 @@ target_compile_definitions (mongoc_shared PRIVATE MONGOC_COMPILATION ${KMS_MSG_D
 set_target_properties (mongoc_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}")
 
-if (MONGOC_ENABLE_STATIC)
+if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (mongoc_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    target_link_libraries (mongoc_static ${STATIC_LIBRARIES} ${BSON_STATIC_LIBRARIES})
    if (NOT WIN32 AND ENABLE_PIC)
@@ -1022,7 +1022,7 @@ file (COPY ${PROJECT_SOURCE_DIR}/tests/json DESTINATION ${PROJECT_BINARY_DIR}/te
 file (COPY ${PROJECT_SOURCE_DIR}/tests/x509gen DESTINATION ${PROJECT_BINARY_DIR}/tests)
 file (COPY ${PROJECT_SOURCE_DIR}/tests/release_files DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
-if (MONGOC_ENABLE_STATIC)
+if (MONGOC_ENABLE_STATIC_INSTALL)
    set (TARGETS_TO_INSTALL mongoc_shared mongoc_static)
 else ()
    set (TARGETS_TO_INSTALL mongoc_shared)
@@ -1092,7 +1092,7 @@ install (
    FILES ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-1.0.pc
    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
-if (MONGOC_ENABLE_STATIC)
+if (MONGOC_ENABLE_STATIC_INSTALL)
    configure_file (
       ${CMAKE_CURRENT_SOURCE_DIR}/src/libmongoc-static-1.0.pc.in
       ${CMAKE_CURRENT_BINARY_DIR}/src/libmongoc-static-1.0.pc

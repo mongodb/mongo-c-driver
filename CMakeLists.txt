@@ -26,7 +26,7 @@ set (ENABLE_SASL AUTO CACHE STRING
 
 set_property(CACHE ENABLE_SASL PROPERTY STRINGS "CYRUS|SSPI|AUTO|OFF")
 
-set (ENABLE_STATIC AUTO CACHE STRING "Build static libmongoc. Set to ON/AUTO/OFF, default AUTO.")
+set (ENABLE_STATIC AUTO CACHE STRING "Build and install static libbson/libmongoc. Set to ON/AUTO/OFF/BUILD_ONLY/DONT_INSTALL, default AUTO.")
 option (ENABLE_TESTS "Build MongoDB C Driver tests." ON)
 option (ENABLE_EXAMPLES "Build MongoDB C Driver examples." ON)
 set (ENABLE_SRV AUTO CACHE STRING "Support mongodb+srv URIs. Set to ON/AUTO/OFF, default AUTO.")
@@ -152,6 +152,22 @@ if (NOT ENABLE_BSON MATCHES "ON|AUTO|SYSTEM")
    message (FATAL_ERROR "ENABLE_BSON option must be ON, AUTO, or SYSTEM")
 endif ()
 
+if (NOT ENABLE_STATIC MATCHES "ON|OFF|AUTO|BUILD_ONLY|DONT_INSTALL")
+   message (FATAL_ERROR
+      "ENABLE_STATIC option must be ON, OFF, AUTO, BUILD_ONLY, or DONT_INSTALL"
+   )
+endif ()
+
+set (MONGOC_ENABLE_STATIC_BUILD 0)
+set (MONGOC_ENABLE_STATIC_INSTALL 0)
+
+if (ENABLE_STATIC MATCHES "ON|AUTO")
+   set (MONGOC_ENABLE_STATIC_BUILD 1)
+   set (MONGOC_ENABLE_STATIC_INSTALL 1)
+elseif (ENABLE_STATIC MATCHES "BUILD_ONLY|DONT_INSTALL")
+   set (MONGOC_ENABLE_STATIC_BUILD 1)
+endif()
+
 if (ENABLE_BSON STREQUAL SYSTEM)
    # The input variable BSON_ROOT_DIR is respected for backwards compatibility,
    # but you should use the standard CMAKE_PREFIX_PATH instead.
@@ -168,10 +184,6 @@ if (ENABLE_BSON STREQUAL SYSTEM)
    message ("--   libbson found version \"${bson-1.0_VERSION}\"")
    message ("--   disabling test-libmongoc since using system libbson")
    SET (ENABLE_TESTS OFF)
-
-   if (ENABLE_STATIC MATCHES "ON|AUTO")
-      set (MONGOC_ENABLE_STATIC ON)
-   endif ()
 
    set (USING_SYSTEM_BSON TRUE)
    if (NOT TARGET mongo::bson_shared)
@@ -212,9 +224,7 @@ cmake_policy (SET CMP0042 NEW)
 
 if (NOT USING_SYSTEM_BSON)
    message ("  -- Using bundled libbson")
-   if (ENABLE_STATIC MATCHES "ON|AUTO")
-      set (MONGOC_ENABLE_STATIC ON)
-   endif ()
+
    add_subdirectory (src/libbson)
    # Defined in src/libbson/CMakeLists.txt
    set (BSON_STATIC_LIBRARIES bson_static)
@@ -234,8 +244,8 @@ add_definitions (-D_DEFAULT_SOURCE)
 
 if (ENABLE_MONGOC)
 
-   if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC)
-      message (FATAL_ERROR "ENABLE_TESTS requires ENABLE_STATIC")
+   if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC_BUILD)
+      message (FATAL_ERROR "ENABLE_TESTS requires ENABLE_STATIC or ENABLE_STATIC_BUILD")
    endif ()
 
    if (NOT ENABLE_SSL MATCHES "DARWIN|WINDOWS|OPENSSL|LIBRESSL|AUTO|OFF")

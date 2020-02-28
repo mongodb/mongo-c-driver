@@ -4,8 +4,10 @@ project (libbson C)
 
 # In the future we may need to check whether static dependencies are
 # available. For now, AUTO means ON.
-if (ENABLE_TESTS AND NOT ENABLE_STATIC MATCHES "ON|AUTO")
-   message (FATAL_ERROR "-DENABLE_STATIC=OFF also requires -DENABLE_TESTS=OFF")
+if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC_BUILD)
+   message (FATAL_ERROR
+      "-DENABLE_STATIC=OFF and -DENABLE_STATIC_BUILD=OFF also requires -DENABLE_TESTS=OFF"
+   )
 endif ()
 
 set (BSON_OUTPUT_BASENAME "bson" CACHE STRING "Output bson library base name")
@@ -270,7 +272,7 @@ if (WIN32)
    set (BSON_SYSTEM_LIBRARIES ${BSON_SYSTEM_LIBRARIES} ws2_32)
 endif ()
 
-if (ENABLE_STATIC MATCHES "ON|AUTO")
+if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (bson_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    target_compile_definitions (bson_static
       PUBLIC BSON_STATIC
@@ -326,7 +328,7 @@ set (BSON_HEADER_INSTALL_DIR
    "${CMAKE_INSTALL_INCLUDEDIR}/libbson-${BSON_API_VERSION}"
 )
 
-if (ENABLE_STATIC MATCHES "ON|AUTO")
+if (MONGOC_ENABLE_STATIC_INSTALL)
    set (TARGETS_TO_INSTALL bson_shared bson_static)
 else ()
    set (TARGETS_TO_INSTALL bson_shared)
@@ -385,7 +387,7 @@ install (
       ${CMAKE_INSTALL_LIBDIR}/pkgconfig
 )
 
-if (ENABLE_STATIC MATCHES "ON|AUTO")
+if (MONGOC_ENABLE_STATIC_INSTALL)
    configure_file (
       ${CMAKE_CURRENT_SOURCE_DIR}/src/libbson-static-1.0.pc.in
       ${CMAKE_CURRENT_BINARY_DIR}/src/libbson-static-1.0.pc
