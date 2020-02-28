@@ -57,10 +57,9 @@ typedef uint32_t bson_unichar_t;
  *
  * %BSON_CONTEXT_NONE: Use default options.
  * %BSON_CONTEXT_THREAD_SAFE: Context will be called from multiple threads.
+ * %BSON_CONTEXT_DISABLE_HOST_CACHE: Does nothing, is ignored.
  * %BSON_CONTEXT_DISABLE_PID_CACHE: Call getpid() instead of caching the
  *   result of getpid() when initializing the context.
- * %BSON_CONTEXT_DISABLE_HOST_CACHE: Call gethostname() instead of caching the
- *   result of gethostname() when initializing the context.
  */
 typedef enum {
    BSON_CONTEXT_NONE = 0,

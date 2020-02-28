@@ -355,10 +355,6 @@ _bson_context_init (bson_context_t *context, bson_context_flags_t flags)
  *       be bitwise-or'd with your flags. This requires synchronization
  *       between threads.
  *
- *       If you expect your hostname to change often, you may consider
- *       specifying %BSON_CONTEXT_DISABLE_HOST_CACHE so that gethostname()
- *       is called for every OID generated. This is much slower.
- *
  *       If you expect your pid to change without notice, such as from an
  *       unexpected call to fork(), then specify
  *       %BSON_CONTEXT_DISABLE_PID_CACHE.

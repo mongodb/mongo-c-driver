@@ -36,7 +36,7 @@ Description
 
 The :symbol:`bson_context_t` structure is context for generation of BSON Object
 IDs. This context allows overriding behavior of generating ObjectIDs. The flags
-``BSON_CONTEXT_NONE``, ``BSON_CONTEXT_THREAD_SAFE``, and ``BSON_CONTEXT_DISABLE_HOST_CACHE``
+``BSON_CONTEXT_NONE``, ``BSON_CONTEXT_THREAD_SAFE``, and ``BSON_CONTEXT_DISABLE_PID_CACHE``
 are the only ones used. The others have no effect.
 
 .. only:: html
