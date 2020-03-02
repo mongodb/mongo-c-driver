@@ -666,7 +666,7 @@ functions:
         set -o xtrace
         # Add AWS variables to a file.
         # Clone in one directory above so it does not get uploaded in working directory.
-        git clone --depth=1 git://github.com/bazile-clyde/drivers-evergreen-tools.git ../drivers-evergreen-tools
+        git clone --depth=1 git://github.com/mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
         cat <<EOF > ../drivers-evergreen-tools/.evergreen/auth_aws/aws_e2e_setup.json
         {
             "iam_auth_ecs_account" : "${iam_auth_ecs_account}",
