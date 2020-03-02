@@ -11834,7 +11834,6 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
       AUTHSOURCE: thisDB
-      ORCHESTRATION_FILE: auth-thisdb-ssl
   - func: run tests
     vars:
       AUTH: auth
@@ -11854,7 +11853,6 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
       AUTHSOURCE: thisDB
-      ORCHESTRATION_FILE: auth-thisdb-ssl
   - func: run tests
     vars:
       AUTH: auth
@@ -11874,7 +11872,6 @@ tasks:
       TOPOLOGY: replica_set
       VERSION: latest
       AUTHSOURCE: thisDB
-      ORCHESTRATION_FILE: auth-thisdb-ssl
   - func: run tests
     vars:
       AUTH: auth

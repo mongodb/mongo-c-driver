@@ -572,7 +572,6 @@ class DNSTask(MatrixTask):
 
         if self.auth:
             orchestration['vars']['AUTHSOURCE'] = 'thisDB'
-            orchestration['vars']['ORCHESTRATION_FILE'] = 'auth-thisdb-ssl'
 
         commands.append(orchestration)
         commands.append(run_tests(SSL='ssl',

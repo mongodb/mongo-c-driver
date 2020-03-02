@@ -41,6 +41,10 @@ if [ "$AUTH" = "auth" ]; then
   MONGO_SHELL_CONNECTION_FLAGS="-ubob -ppwd123"
 fi
 
+if [ -z "$ORCHESTRATION_FILE" ]; then
+   ORCHESTRATION_FILE="basic"
+fi
+
 if [ "$IPV4_ONLY" = "on" ]; then
   ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-ipv4-only"
 fi
@@ -48,10 +52,6 @@ fi
 if [ ! -z "$AUTHSOURCE" ]; then
    ORCHESTRATION_FILE="${ORCHESTRATION_FILE}-${AUTHSOURCE}"
    MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --authenticationDatabase ${AUTHSOURCE}"
-fi
-
-if [ -z $ORCHESTRATION_FILE ]; then
-   ORCHESTRATION_FILE="basic"
 fi
 
 if [ "$SSL" != "nossl" ]; then
