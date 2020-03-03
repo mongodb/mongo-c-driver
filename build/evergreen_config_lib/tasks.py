@@ -895,4 +895,74 @@ class AWSTestTask(MatrixTask):
         return '-'.join([self.name_prefix, self.testcase])
 
 all_tasks = chain(all_tasks, AWSTestTask.matrix())
+
+
+class OCSPTask(MatrixTask):
+    axes = OD([('test', ['test_1', 'test_2', 'test_3', 'test_4', 'soft_fail_test', 'malicious_server_test_1', 'malicious_server_test_2']),
+               ('delegate', ['delegate', 'nodelegate']),
+               ('cert', ['rsa', 'ecdsa']),
+               ('ssl', ['openssl', 'darwinssl', 'winssl'])])
+
+    name_prefix = 'test-ocsp'
+
+    def __init__(self, *args, **kwargs):
+        super(OCSPTask, self).__init__(*args, **kwargs)
+        self.add_dependency('debug-compile-nosasl-%s' % (self.display('ssl')))
+        self.add_tags('ocsp-' + self.display('ssl'))
+
+    @property
+    def name(self):
+        return 'ocsp-' + self.display('ssl') + '-' + self.display('test') + '-' + self.display('cert') + '-' + self.display ('delegate')
+
+    def to_dict(self):
+        task = super(MatrixTask, self).to_dict()
+        commands = task['commands']
+        commands.append(
+            func('fetch build', BUILD_NAME=self.depends_on['name']))
+
+        stapling = 'mustStaple'
+        if self.test in [ 'test_3', 'test_4', 'soft_fail_test']:
+            stapling = 'disableStapling'
+        if self.test in [ 'malicious_server_test_1', 'malicious_server_test_2' ]:
+            stapling = 'mustStaple-disableStapling'
+
+        orchestration_file = '%s-basic-tls-ocsp-%s' % (self.cert, stapling)
+        orchestration = bootstrap(TOPOLOGY='server', SSL='ssl', OCSP='on', ORCHESTRATION_FILE=orchestration_file)
+
+        commands.append(orchestration)
+        commands.append(shell_mongoc('TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert, 'on' if self.delegate == 'delegate' else 'off')))
+
+        return task
+
+    # Testing in OCSP has a lot of exceptions.
+    def _check_allowed(self):
+        # Current latest macOS does not support the disableStapling failpoint.
+        # There are no tests that can run on macOS in current evergreen configuration.
+        # Removing windows for now too.
+        if self.ssl == 'darwinssl' or self.ssl == 'winssl':
+            # TODO: remove this when macOS latest download is updated
+            prohibit (True)
+
+        # ECDSA certs can't be loaded (in the PEM format they're stored) on Windows/macOS. Skip them.
+        if self.ssl == 'darwinssl' or self.ssl == 'winssl':
+            prohibit (self.cert == 'ecdsa')
+
+        # OCSP stapling is not supported on macOS or Windows.
+        if self.ssl == 'darwinssl' or self.ssl == 'winssl':
+            prohibit (self.test in ['test_1', 'test_2'])
+        if self.test == 'soft_fail_test' or self.test == 'malicious_server_test_2':
+            prohibit(self.delegate == 'delegate')
+
+        # Until soft-fail is supported on Windows, skip test.
+        if self.ssl == 'winssl':
+            prohibit (self.test == 'soft_fail_test')
+        
+        # Until OCSP is supported in OpenSSL, skip tests that expect to be revoked.
+        if self.ssl == 'openssl':
+            prohibit (self.test in ['test_2', 'test_4', 'malicious_server_test_1', 'malicious_server_test_2'])
+
+
+all_tasks = chain(all_tasks, OCSPTask.matrix())
+
+
 all_tasks = list(all_tasks)

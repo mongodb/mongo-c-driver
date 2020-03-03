@@ -613,4 +613,12 @@ all_variants = [
         ],
         { 'CC': 'gcc' },
         batchtime=1440),
+    Variant ('ocsp', 'OCSP tests', 'ubuntu1804-test', [
+        OD([('name', 'debug-compile-nosasl-openssl'), ('distros', ['ubuntu1804-test'])]),
+        #OD([('name', 'debug-compile-nosasl-darwinssl'), ('distros', ['macos-1014'])]),
+        #OD([('name', 'debug-compile-nosasl-winssl'), ('distros', ['windows-64-vs2017-test'])]),
+        OD([('name', '.ocsp-openssl'), ('distros', ['ubuntu1804-test'])]),
+        #OD([('name', '.ocsp-darwinssl'), ('distros', ['macos-1014'])]),
+        #OD([('name', '.ocsp-winssl'), ('distros', ['windows-64-vs2017-test'])])
+    ])
 ]

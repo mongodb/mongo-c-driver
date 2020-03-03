@@ -21,7 +21,7 @@ CONFIGURE_FLAGS="\
    -DENABLE_BSON=ON"
 BUILD_FLAGS="/m"  # Number of concurrent processes. No value=# of cpus
 CMAKE="/cygdrive/c/cmake/bin/cmake"
-CC=${CC:-"Visual Studio 14 2015 Win64"}
+CC=${CC:-"Visual Studio 15 2017 Win64"}
 SSL=${SSL:-WINDOWS}
 SASL=${SASL:-SSPI}
 
