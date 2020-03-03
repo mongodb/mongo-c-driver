@@ -54,6 +54,9 @@ mongoc_secure_transport_setup_certificate (
    mongoc_stream_tls_secure_transport_t *secure_transport,
    mongoc_ssl_opt_t *opt);
 
+void
+CFReleaseSafe (CFTypeRef cf);
+
 BSON_END_DECLS
 
 
