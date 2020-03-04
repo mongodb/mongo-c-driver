@@ -217,10 +217,7 @@ void
 _append_array_from_command (mongoc_write_command_t *command, bson_t *bson);
 
 mongoc_write_err_type_t
-_mongoc_write_error_get_type (bool cmd_ret,
-                              const bson_error_t *cmd_err,
-                              bson_t *reply,
-                              bool append_retryable_label);
+_mongoc_write_error_get_type (bson_t *reply);
 
 bool
 _mongoc_write_error_update_if_unsupported_storage_engine (bool cmd_ret,
