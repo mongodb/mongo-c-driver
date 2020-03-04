@@ -601,5 +601,16 @@ all_variants = [
         'test-aws-openssl-ecs',
         'test-aws-openssl-assume_role',
         'test-aws-openssl-lambda'
-    ], {'CC': 'clang'})
+    ], {'CC': 'clang'}),
+    Variant('rhel62',
+        'RHEL 6.2',
+        'rhel62-test',
+        ['debug-compile-sasl-openssl',
+        'test-4.0-server-auth-sasl-openssl',
+        'test-4.0-replica-set-auth-sasl-openssl',
+        'test-latest-server-auth-sasl-openssl',
+        'test-latest-replica-set-auth-sasl-openssl'
+        ],
+        { 'CC': 'gcc' },
+        batchtime=1440),
 ]

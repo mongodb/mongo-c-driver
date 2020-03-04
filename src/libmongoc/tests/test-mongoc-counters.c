@@ -534,7 +534,6 @@ test_counters_streams_timeout ()
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 300);
    client = mongoc_client_new_from_uri (uri);
-   test_framework_set_ssl_opts (client);
    mongoc_uri_destroy (uri);
    sd = mongoc_client_select_server (client, true, NULL, &err);
    mongoc_server_description_destroy (sd);
