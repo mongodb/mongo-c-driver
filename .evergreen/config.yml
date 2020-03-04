@@ -13176,3 +13176,13 @@ buildvariants:
   - test-aws-openssl-ecs
   - test-aws-openssl-assume_role
   - test-aws-openssl-lambda
+- name: rhel62
+  display_name: RHEL 6.2
+  expansions:
+    CC: gcc
+  run_on: rhel62-test
+  tasks:
+  - debug-compile-sasl-openssl
+  - test-4.0-server-auth-sasl-openssl
+  - test-latest-server-auth-sasl-openssl
+  batchtime: 1440
