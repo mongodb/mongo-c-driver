@@ -261,7 +261,7 @@ Visual Studio's default build type is ``Debug``, but we recommend a release buil
 
 .. code-block:: none
 
-  $ msbuild.exe INSTALL.vcxproj
+  $ msbuild.exe /p:Configuration=RelWithDebInfo INSTALL.vcxproj
 
 You should now see libmongoc and libbson installed in ``C:\mongo-c-driver``
 
