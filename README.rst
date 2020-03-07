@@ -19,8 +19,7 @@ The documentation is available at http://mongoc.org/.
 For issues with, questions about, or feedback for libmongoc, please look into
 our `support channels <http://www.mongodb.org/about/support>`_. Please
 do not email any of the libmongoc developers directly with issues or
-questions - you're more likely to get an answer on the `mongodb-user list`_
-on Google Groups.
+questions - you're more likely to get an answer on the `MongoDB Community Forums`_.
 
 Bugs / Feature Requests
 =======================
@@ -38,8 +37,8 @@ Core Server (i.e. SERVER) project are **public**.
 How To Ask For Help
 -------------------
 
-If you are having difficulty building the driver after reading the below instructions, please email
-the `mongodb-user list`_ to ask for help. Please include in your email all of the following
+If you are having difficulty building the driver after reading the below instructions, please post on
+the `MongoDB Community Forums`_ to ask for help. Please include in your post all of the following
 information:
 
 - The version of the driver you are trying to build (branch or tag).
@@ -73,7 +72,7 @@ information:
 
   Can you tell me what I need to install? Thanks!
 
-.. _mongodb-user list: http://groups.google.com/group/mongodb-user
+.. _MongoDB Community Forums: https://community.mongodb.com/tags/c/drivers-odms-connectors/7/c-driver
 
 Security Vulnerabilities
 ------------------------
