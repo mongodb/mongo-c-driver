@@ -3220,8 +3220,9 @@ retry:
       retry_server_stream = mongoc_cluster_stream_for_writes (
          cluster, parts.assembled.session, NULL /* reply */, &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream &&
+          retry_server_stream->sd->max_wire_version >=
+             WIRE_VERSION_RETRY_WRITES) {
          parts.assembled.server_stream = retry_server_stream;
          GOTO (retry);
       }
@@ -3235,7 +3236,7 @@ retry:
       BSON_ASSERT (bson_iter_recurse (&iter, &inner));
       while (bson_iter_next (&inner)) {
          if (BSON_ITER_IS_KEY (&inner, "code")) {
-            code = bson_iter_int32 (&inner);
+            code = (uint32_t) bson_iter_as_int64 (&inner);
          } else if (BSON_ITER_IS_KEY (&inner, "errmsg")) {
             errmsg = bson_iter_utf8 (&inner, NULL);
          }

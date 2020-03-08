@@ -364,6 +364,22 @@ apm_match_visitor (match_ctx_t *ctx,
 }
 
 
+static void
+_apm_match_error_context (const bson_t *actual, const bson_t *expectations)
+{
+   char *actual_str;
+   char *expectations_str;
+
+   actual_str = bson_as_canonical_extended_json (actual, NULL);
+   expectations_str = bson_as_canonical_extended_json (expectations, NULL);
+   fprintf (stderr,
+            "Error in APM matching\nFull list of captured events: %s\nFull "
+            "list of expectations: %s",
+            actual_str,
+            expectations_str);
+   bson_free (actual_str);
+   bson_free (expectations_str);
+}
 /*
  *-----------------------------------------------------------------------
  *
@@ -443,6 +459,7 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
              * non-matching ones */
             continue;
          } else {
+            _apm_match_error_context (&ctx->events, expectations);
             test_error ("could not match APM event\n"
                         "\texpected: %s\n\n"
                         "\tactual  : %s\n\n"
@@ -454,6 +471,7 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
       }
 
       if (!matched) {
+         _apm_match_error_context (&ctx->events, expectations);
          test_error ("expectation unmatched\n"
                      "\texpected: %s\n\n",
                      bson_as_canonical_extended_json (&expectation, NULL));
@@ -468,6 +486,7 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
       bson_t extra;
 
       bson_iter_bson (&actual_iter, &extra);
+      _apm_match_error_context (&ctx->events, expectations);
       test_error ("extra actual event was not found in expectations: %s\n",
                   bson_as_canonical_extended_json (&extra, NULL));
    }

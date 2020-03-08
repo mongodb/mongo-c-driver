@@ -800,7 +800,7 @@ _mongoc_rpc_decompress (mongoc_rpc_t *rpc_le, uint8_t *buf, size_t buflen)
                            rpc_le->compressed.compressed_message_len,
                            buf + 16,
                            &uncompressed_size);
-   
+
    BSON_ASSERT (original_uncompressed_size == uncompressed_size);
 
    if (ok) {
@@ -1067,9 +1067,13 @@ _parse_error_reply (const bson_t *doc,
    BSON_ASSERT (code);
    *code = 0;
 
+   /* The server only returns real error codes as int32.
+    * But it may return as a double or int64 if a failpoint
+    * based on how it is configured to error. */
    if (bson_iter_init_find (&iter, doc, "code") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-      *code = (uint32_t) bson_iter_int32 (&iter);
+       BSON_ITER_HOLDS_NUMBER (&iter)) {
+      *code = (uint32_t) bson_iter_as_int64 (&iter);
+      BSON_ASSERT (*code);
       found_error = true;
    }
 
@@ -1095,8 +1099,9 @@ _parse_error_reply (const bson_t *doc,
          bson_iter_t child;
          BSON_ASSERT (bson_iter_recurse (&iter, &child));
          if (bson_iter_find (&child, "code") &&
-             BSON_ITER_HOLDS_INT32 (&child)) {
-            *code = (uint32_t) bson_iter_int32 (&child);
+             BSON_ITER_HOLDS_NUMBER (&child)) {
+            *code = (uint32_t) bson_iter_as_int64 (&child);
+            BSON_ASSERT (*code);
             found_error = true;
          }
          BSON_ASSERT (bson_iter_recurse (&iter, &child));
@@ -1236,8 +1241,9 @@ _mongoc_populate_query_error (const bson_t *doc,
    BSON_ASSERT (doc);
 
    if (bson_iter_init_find (&iter, doc, "code") &&
-       BSON_ITER_HOLDS_INT32 (&iter)) {
-      code = (uint32_t) bson_iter_int32 (&iter);
+       BSON_ITER_HOLDS_NUMBER (&iter)) {
+      code = (uint32_t) bson_iter_as_int64 (&iter);
+      BSON_ASSERT (code);
    }
 
    if (bson_iter_init_find (&iter, doc, "$err") &&

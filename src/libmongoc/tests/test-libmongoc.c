@@ -2271,6 +2271,10 @@ test_framework_skip_if_no_failpoint (void)
    bool ret;
    bson_error_t error;
 
+   if (!TestSuite_CheckLive ()) {
+      return 0;
+   }
+
    client = test_framework_client_new ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    ret = mongoc_client_command_simple (

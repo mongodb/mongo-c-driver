@@ -462,7 +462,7 @@ _mongoc_parse_wc_err (const bson_t *doc, bson_error_t *error)
       BSON_ASSERT (bson_iter_recurse (&iter, &inner));
       while (bson_iter_next (&inner)) {
          if (BSON_ITER_IS_KEY (&inner, "code")) {
-            code = bson_iter_int32 (&inner);
+            code = (uint32_t) bson_iter_as_int64 (&inner);
          } else if (BSON_ITER_IS_KEY (&inner, "errmsg")) {
             errmsg = bson_iter_utf8 (&inner, NULL);
          }

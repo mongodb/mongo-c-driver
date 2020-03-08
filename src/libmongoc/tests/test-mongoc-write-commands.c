@@ -47,11 +47,8 @@ test_split_insert (void)
 
    _mongoc_write_result_init (&result);
 
-   _mongoc_write_command_init_insert (&command,
-                                      docs[0],
-                                      NULL,
-                                      write_flags,
-                                      ++client->cluster.operation_id);
+   _mongoc_write_command_init_insert (
+      &command, docs[0], NULL, write_flags, ++client->cluster.operation_id);
 
    for (i = 1; i < 3000; i++) {
       _mongoc_write_command_insert_append (&command, docs[i]);
@@ -576,6 +573,59 @@ test_w0_legacy_insert_many (void)
    mock_server_destroy (server);
 }
 
+static void
+_configure_failpoint (mongoc_client_t *client,
+                      const char *mode,
+                      const char *data)
+{
+   bool ret;
+   bson_error_t error;
+
+   ret = mongoc_client_command_simple (
+      client,
+      "admin",
+      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': %s, 'data': %s}",
+                mode,
+                data),
+      NULL,
+      NULL,
+      &error);
+   ASSERT_OR_PRINT (ret, error);
+}
+
+static void
+_test_invalid_wc_server_error (void *unused)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bool ret;
+   bson_t reply;
+   bson_error_t error;
+
+   client = test_framework_client_new ();
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   coll = get_test_collection (client, "server_wc_error");
+
+   _configure_failpoint (client,
+                         "{'times': 2}",
+                         "{ 'failCommands': ['insert'], "
+                         "'writeConcernError': {'code' : "
+                         "91.0, 'errmsg': 'Replication is "
+                         "being shut down' }}");
+   ret = mongoc_collection_insert_one (
+      coll, tmp_bson ("{'x':1}"), NULL /* opts */, &reply, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_MATCH (&reply,
+                 "{'writeConcernErrors': [{'code': 91, 'errmsg': "
+                 "'Replication is being shut down'}]}");
+
+   _configure_failpoint (client, "'off'", "{}");
+
+   bson_destroy (&reply);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+}
+
 void
 test_write_command_install (TestSuite *suite)
 {
@@ -596,7 +646,12 @@ test_write_command_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/WriteCommand/insert_disconnect_mid_batch",
                                 test_opmsg_disconnect_mid_batch);
-   TestSuite_AddMockServerTest (suite,
-                                "/WriteCommand/w0_legacy_insert_many",
-                                test_w0_legacy_insert_many);
+   TestSuite_AddMockServerTest (
+      suite, "/WriteCommand/w0_legacy_insert_many", test_w0_legacy_insert_many);
+   TestSuite_AddFull (suite,
+                      "/WriteCommand/invalid_wc_server_error",
+                      _test_invalid_wc_server_error,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_failpoint);
 }
