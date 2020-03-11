@@ -584,5 +584,16 @@ all_variants = [
             ['.debug-compile .asan-clang !.client-side-encryption',
              '.test-asan .3.0'],
             {'CC': 'clang'},
-            batchtime=1440)
+            batchtime=1440),
+    Variant('rhel62',
+            'RHEL 6.2',
+            'rhel62-test',
+            ['debug-compile-sasl-openssl',
+            'test-4.0-server-auth-sasl-openssl',
+            'test-4.0-replica-set-auth-sasl-openssl',
+            'test-latest-server-auth-sasl-openssl',
+            'test-latest-replica-set-auth-sasl-openssl'
+            ],
+            { 'CC': 'gcc' },
+            batchtime=1440),
 ]

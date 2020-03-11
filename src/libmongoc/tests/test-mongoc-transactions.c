@@ -25,6 +25,7 @@ _reset_server (json_test_ctx_t *ctx, const char *host_str)
       ctx->test_framework_uri, host_str);
 
    client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
 
    /* From Transactions tests runner: "Create a MongoClient and call
     * client.admin.runCommand({killAllSessions: []}) to clean up any open
@@ -749,6 +750,7 @@ test_inherit_from_client (void *ctx)
    mongoc_uri_set_write_concern (uri, wc);
 
    client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
 
    sopt = mongoc_session_opts_new ();
    topt = mongoc_transaction_opts_new ();
@@ -838,6 +840,7 @@ test_transaction_recovery_token_cleared (void *ctx)
    ASSERT_OR_PRINT (
       mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error), error);
    client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
    mongoc_uri_destroy (uri);
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session, error);
@@ -925,6 +928,7 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
 
    client = mongoc_client_new_from_uri (uri);
    BSON_ASSERT (client);
+   test_framework_set_ssl_opts (client);
 
    txn_opts = mongoc_transaction_opts_new ();
    session_opts = mongoc_session_opts_new ();

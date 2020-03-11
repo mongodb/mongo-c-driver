@@ -12985,3 +12985,15 @@ buildvariants:
   - .debug-compile .asan-clang !.client-side-encryption
   - .test-asan .3.0
   batchtime: 1440
+- name: rhel62
+  display_name: RHEL 6.2
+  expansions:
+    CC: gcc
+  run_on: rhel62-test
+  tasks:
+  - debug-compile-sasl-openssl
+  - test-4.0-server-auth-sasl-openssl
+  - test-4.0-replica-set-auth-sasl-openssl
+  - test-latest-server-auth-sasl-openssl
+  - test-latest-replica-set-auth-sasl-openssl
+  batchtime: 1440

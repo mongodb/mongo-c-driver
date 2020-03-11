@@ -98,12 +98,14 @@ _run_test_single_and_pooled (_test_fn_t test)
 
    /* Run in single-threaded mode */
    client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
    _setup_test_with_client (client);
    test (client);
    mongoc_client_destroy (client);
 
    /* Run in pooled mode */
    pool = mongoc_client_pool_new (uri);
+   test_framework_set_pool_ssl_opts (pool);
    client = mongoc_client_pool_pop (pool);
    _setup_test_with_client (client);
    test (client);
