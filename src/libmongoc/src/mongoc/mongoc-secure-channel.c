@@ -383,8 +383,17 @@ mongoc_secure_channel_setup_ca (
       L"Root"); /* system store name. "My" or "Root" */
 
    if (cert_store == NULL) {
-      MONGOC_ERROR ("Error opening certificate store");
-      return false;
+      cert_store = CertOpenStore (
+         CERT_STORE_PROV_SYSTEM,                  /* provider */
+         X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* certificate encoding */
+         0,                                       /* unused */
+         CERT_SYSTEM_STORE_CURRENT_USER,         /* dwFlags */
+         L"My"); /* system store name. "My" or "Root" */
+
+      if (cert_store == NULL) {
+         MONGOC_ERROR ("Error opening certificate store");
+         return false;
+      }
    }
 
    if (CertAddCertificateContextToStore (

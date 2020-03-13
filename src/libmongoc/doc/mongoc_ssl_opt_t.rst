@@ -96,7 +96,7 @@ When compiled against the Windows native libraries, the ``ca_dir`` option is not
 
 Encrypted PEM files (e.g., requiring ``pem_pwd``) are also not supported, and will result in error when attempting to load them.
 
-When ``ca_file`` is provided, the driver will only allow server certificates issued by the authority (or authorities) provided. When no ``ca_file`` is provided, the driver will look up the Certificate Authority using the ``System Local Machine Root`` certificate store to confirm the provided certificate.
+When ``ca_file`` is provided, the driver will only allow server certificates issued by the authority (or authorities) provided. When no ``ca_file`` is provided, the driver will look up the Certificate Authority using the ``System Local Machine Root`` certificate store to confirm the provided certificate or the ``Current user certificate store`` if the ``System Local Machine Root`` certificate store is unavailable.
 
 When ``crl_file`` is provided, the driver will import the revocation list to the ``System Local Machine Root`` certificate store.
 

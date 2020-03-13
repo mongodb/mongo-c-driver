@@ -111,12 +111,6 @@ expect_failure () {
     fi
 }
 
-# Start a mock responder if necessary.
-if curl localhost:8100 > /dev/null 2>&1; then
-    echo "Detected process listening on port 8100. Attempting to kill running mock responders.";
-    pkill -f "ocsp_mock" || true
-fi
-
 # Same responder is used for both server and client. So even stapling tests require a responder.
 if [ "TEST_1" = "$TEST_COLUMN" ]; then
     RESPONDER_REQUIRED="valid"
@@ -132,33 +126,52 @@ else
     RESPONDER_REQUIRED=""
 fi
 
-if [ "ON" = "$USE_DELEGATE" ]; then
-    DELEGATE_TOKEN="delegate"
-fi
-
 if [ -n "$RESPONDER_REQUIRED" ]; then
     echo "Starting mock responder"
     if [ -z "$SKIP_PIP_INSTALL" ]; then
         echo "Installing python dependencies"
         # Installing dependencies.
-        /opt/mongodbtoolchain/v3/bin/python3 -m venv ./venv
-        . ./venv/bin/activate
-        pip install oscrypto bottle asn1crypto
+        if [ "$OS" = "WINDOWS" ]; then
+            /cygdrive/c/python/Python36/python --version
+            /cygdrive/c/python/Python36/python -m virtualenv venv_ocsp
+            PYTHON="$(pwd)/venv_ocsp/Scripts/python"
+        else
+            /opt/mongodbtoolchain/v3/bin/python3 -m venv ./venv_ocsp
+            PYTHON=./venv_ocsp/bin/python
+        fi
+        $PYTHON -m pip install oscrypto bottle asn1crypto
     fi
     cd "$CDRIVER_ROOT/.evergreen/ocsp/$CERT_TYPE"
-    ./mock-$DELEGATE_TOKEN$RESPONDER_REQUIRED.sh > $CDRIVER_BUILD/responder.log 2>&1 &
+    if [ "$RESPONDER_REQUIRED" = "invalid" ]; then
+        FAULT="--fault revoked"
+    fi
+    if [ "ON" = "$USE_DELEGATE" ]; then
+        RESPONDER_SIGNER="ocsp-responder"
+    else
+        RESPONDER_SIGNER="ca"
+    fi
+    $PYTHON ../ocsp_mock.py \
+        --ca_file ca.pem \
+        --ocsp_responder_cert $RESPONDER_SIGNER.crt \
+        --ocsp_responder_key $RESPONDER_SIGNER.key \
+        -p 8100 -v $FAULT \
+        > $CDRIVER_BUILD/responder.log 2>&1 &
     cd -
 fi
 
 echo "Clearing OCSP cache for macOS/Windows"
 if [ "$OS" = "MACOS" ]; then
-    find ~/profile/Library/Keychains -name 'ocspcache.sqlite3' -exec sqlite3 "{}" 'DELETE FROM responses' \;
+    find ~/profile/Library/Keychains -name 'ocspcache.sqlite3' -exec sqlite3 "{}" 'DELETE FROM responses' \; || true
 elif [ "$OS" = "WINDOWS" ]; then
-    certutil -urlcache "*" delete
+    certutil -urlcache "*" delete || true
 fi
 
 # Always add the tlsCAFile
-BASE_URI="mongodb://localhost:$MONGODB_PORT/?tls=true&tlsCAFile=$CDRIVER_ROOT/.evergreen/ocsp/$CERT_TYPE/ca.pem"
+CA_PATH=$CDRIVER_ROOT/.evergreen/ocsp/$CERT_TYPE/ca.pem
+if [ "$OS" = "WINDOWS" ]; then
+    CA_PATH=$(cygpath -m -a $CA_PATH)
+fi
+BASE_URI="mongodb://localhost:$MONGODB_PORT/?tls=true&tlsCAFile=$CA_PATH"
 MONGODB_URI="$BASE_URI"
 
 # Only a handful of cases are expected to fail.

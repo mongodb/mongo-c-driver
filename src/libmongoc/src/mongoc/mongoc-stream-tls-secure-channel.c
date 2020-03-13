@@ -972,10 +972,14 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
 #ifdef SCH_USE_STRONG_CRYPTO
    schannel_cred.dwFlags = SCH_USE_STRONG_CRYPTO;
 #endif
+
+   /* Consider a failure to reach out over network for revocation checks
+    * a "soft-fail". */
+   schannel_cred.dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
+
    if (opt->weak_cert_validation) {
       schannel_cred.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION |
-                               SCH_CRED_IGNORE_NO_REVOCATION_CHECK |
-                               SCH_CRED_IGNORE_REVOCATION_OFFLINE;
+                               SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
       TRACE ("disabled server certificate checks");
    } else {
       schannel_cred.dwFlags |=

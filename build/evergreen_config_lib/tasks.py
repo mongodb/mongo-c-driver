@@ -938,8 +938,7 @@ class OCSPTask(MatrixTask):
     def _check_allowed(self):
         # Current latest macOS does not support the disableStapling failpoint.
         # There are no tests that can run on macOS in current evergreen configuration.
-        # Removing windows for now too.
-        if self.ssl == 'darwinssl' or self.ssl == 'winssl':
+        if self.ssl == 'darwinssl':
             # TODO: remove this when macOS latest download is updated
             prohibit (True)
 
@@ -950,12 +949,9 @@ class OCSPTask(MatrixTask):
         # OCSP stapling is not supported on macOS or Windows.
         if self.ssl == 'darwinssl' or self.ssl == 'winssl':
             prohibit (self.test in ['test_1', 'test_2'])
+
         if self.test == 'soft_fail_test' or self.test == 'malicious_server_test_2':
             prohibit(self.delegate == 'delegate')
-
-        # Until soft-fail is supported on Windows, skip test.
-        if self.ssl == 'winssl':
-            prohibit (self.test == 'soft_fail_test')
         
         # Until OCSP is supported in OpenSSL, skip tests that expect to be revoked.
         if self.ssl == 'openssl':
