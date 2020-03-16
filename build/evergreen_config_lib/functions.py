@@ -170,7 +170,8 @@ all_functions = OD([
     ('abi report', Function(
         shell_mongoc(r'''
         sh .evergreen/abi-compliance-check.sh
-        
+        ''', test=False, xtrace=True),
+        shell_mongoc(r'''
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
         aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/%s/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
@@ -180,7 +181,7 @@ all_functions = OD([
         else
           exit 0
         fi
-        ''' % (build_path,), test=False, silent=True, xtrace=False),
+        ''' % (build_path,), silent=True, test=False, xtrace=False),
         s3_put(build_path + '/abi-compliance/compat_report.html',
                aws_key='${aws_key}', aws_secret='${aws_secret}',
                local_files_include_filter='mongoc/abi-compliance/compat_reports/**/*.html',
