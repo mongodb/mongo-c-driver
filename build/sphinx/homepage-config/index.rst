@@ -26,7 +26,7 @@ Documentation
 How To Ask For Help
 -------------------
 
-For help using the driver: `MongoDB Users Mailing List <http://groups.google.com/group/mongodb-user>`_.
+For help using the driver: `MongoDB Community Forums <https://community.mongodb.com/tags/c/drivers-odms-connectors/7/c-driver>`_.
 
 To file a bug or feature request: `MongoDB Jira Issue Tracker <https://jira.mongodb.org/browse/CDRIVER>`_.
 
