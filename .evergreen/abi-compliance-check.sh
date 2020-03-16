@@ -11,8 +11,8 @@ mkdir abi-compliance/dumps
 # build the current changes
 export SKIP_MOCK_TESTS=ON
 export EXTRA_CONFIGURE_FLAGS="-DCMAKE_INSTALL_PREFIX=./abi-compliance/changes-install -DCMAKE_C_FLAGS=-g -Og"
-python build/calc_release_version.py > VERSION_CURRENT
-python build/calc_release_version.py -p > VERSION_RELEASED
+echo "1.17.0-pre" > VERSION_CURRENT
+echo "1.16.2" > VERSION_RELEASED
 sh .evergreen/compile.sh
 make install
 
