@@ -14,14 +14,14 @@ Synopsis
                               const mongoc_ssl_opt_t *opts);
   #endif
 
-Sets the SSL options to use when connecting to SSL enabled MongoDB servers.
+Sets the TLS (SSL) options to use when connecting to TLS enabled MongoDB servers.
 
 The ``mongoc_ssl_opt_t`` struct is copied by the client along with the strings
 it points to (``pem_file``, ``pem_pwd``, ``ca_file``, ``ca_dir``, and
 ``crl_file``) so they don't have to remain valid after the call to
 ``mongoc_client_set_ssl_opts``.
 
-A call to ``mongoc_client_set_ssl_opts`` overrides all SSL options set through
+A call to ``mongoc_client_set_ssl_opts`` overrides all TLS options set through
 the connection string with which the ``mongoc_client_t`` was constructed.
 
 It is a programming error to call this function on a client from a

@@ -131,18 +131,9 @@ MONGOC_URI_GSSAPISERVICENAME               gssapiservicename                 Use
 TLS Options
 -----------
 
-========================================== ================================= ====================================================================================================================================================================================================================================================================================================================
-Constant                                   Key                               Description
-========================================== ================================= ====================================================================================================================================================================================================================================================================================================================
-MONGOC_URI_TLSCERTIFICATEKEYFILE           tlscertificatekeyfile             Path to PEM formatted Private Key, with its Public Certificate concatenated at the end.
-MONGOC_URI_TLSCERTIFICATEKEYPASSWORD       tlscertificatekeypassword         The password, if any, to use to unlock encrypted Private Key.
-MONGOC_URI_TLSCERTIFICATEAUTHORITYFILE     tlscertificateauthorityfile       One, or a bundle of, Certificate Authorities whom should be considered to be trusted.
-MONGOC_URI_TLSALLOWINVALIDCERTIFICATES     tlsallowinvalidcertificates       Accept and ignore certificate verification errors (e.g. untrusted issuer, expired, etc etc)
-MONGOC_URI_TLSALLOWINVALIDHOSTNAMES        tlsallowinvalidhostnames          Ignore hostname verification of the certificate (e.g. Man In The Middle, using valid certificate, but issued for another hostname)
-MONGOC_URI_TLSINSECURE                     tlsinsecure                       {true|false}, indicating if insecure TLS options should be used. Currently this implies MONGOC_URI_TLSALLOWINVALIDCERTIFICATES and MONGOC_URI_TLSALLOWINVALIDHOSTNAMES.
-========================================== ================================= ====================================================================================================================================================================================================================================================================================================================
+.. include:: includes/tls-options.txt
 
-See :symbol:`mongoc_ssl_opt_t` for details about these options and about building libmongoc with SSL support.
+See :doc:`configuring_tls` for details about these options and about building libmongoc with TLS support.
 
 Deprecated SSL Options
 ----------------------
@@ -155,7 +146,7 @@ Constant                                   Key                               Dep
 MONGOC_URI_SSL                             ssl                               MONGOC_URI_TLS                          tls
 MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE     sslclientcertificatekeyfile       MONGOC_URI_TLSCERTIFICATEKEYFILE        tlscertificatekeyfile
 MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD sslclientcertificatekeypassword   MONGOC_URI_TLSCERTIFICATEKEYPASSWORD    tlscertificatekeypassword
-MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE     sslcertificateauthorityfile       MONGOC_URI_TLSCERTIFICATEAUTHORITYFILE  tlscertificateauthorityfile
+MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE     sslcertificateauthorityfile       MONGOC_URI_TLSCAFILE                    tlscafile
 MONGOC_URI_SSLALLOWINVALIDCERTIFICATES     sslallowinvalidcertificates       MONGOC_URI_TLSALLOWINVALIDCERTIFICATES  tlsallowinvalidcertificates
 MONGOC_URI_SSLALLOWINVALIDHOSTNAMES        sslallowinvalidhostnames          MONGOC_URI_TLSALLOWINVALIDHOSTNAMES     tlsallowinvalidhostnames
 ========================================== ================================= ======================================= =================================

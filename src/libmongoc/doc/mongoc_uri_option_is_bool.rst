@@ -19,5 +19,5 @@ Parameters
 Description
 -----------
 
-Returns true if the option is a known MongoDB URI option of boolean type. For example, "ssl=false" is a valid MongoDB URI option, so ``mongoc_uri_option_is_bool ("ssl")`` is true.
+Returns true if the option is a known MongoDB URI option of boolean type. For example, "tls=false" is a valid MongoDB URI option, so ``mongoc_uri_option_is_bool ("tls")`` is true.
 

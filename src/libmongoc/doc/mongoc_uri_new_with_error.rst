@@ -48,7 +48,7 @@ Examples of some valid MongoDB connection strings can be seen below.
 
 ``"mongodb://[::1]:27017/"``
 
-``"mongodb://10.0.0.1:27017,10.0.0.1:27018,[::1]:27019/?ssl=true"``
+``"mongodb://10.0.0.1:27017,10.0.0.1:27018,[::1]:27019/?tls=true"``
 
 ``"mongodb://%2Ftmp%2Fmongodb-27017.sock"``
 

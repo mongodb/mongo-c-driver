@@ -49,6 +49,7 @@ html_sidebars = {
     '**': ['globaltoc.html', 'customindexlink.html', 'searchbox.html'],
     'errors': [],  # Make more room for the big table.
     'mongoc_uri_t': [],  # Make more room for the big table.
+    'configuring_tls': [],  # Make more room for the big table.
 }
 
 

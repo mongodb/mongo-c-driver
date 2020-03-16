@@ -155,7 +155,7 @@ MongoDB Enterprise Edition supports the ``SASL PLAIN`` authentication mechanism,
 
 .. note::
 
-  ``SASL PLAIN`` is a clear-text authentication mechanism. It is strongly recommended to connect to MongoDB using SSL with certificate validation when using the ``PLAIN`` mechanism.
+  ``SASL PLAIN`` is a clear-text authentication mechanism. It is strongly recommended to connect to MongoDB using TLS with certificate validation when using the ``PLAIN`` mechanism.
 
 .. code-block:: none
 
@@ -172,13 +172,13 @@ X.509 Certificate Authentication
 
 .. note::
 
-  The MongoDB C Driver must be compiled with SSL support for X.509 authentication support. Once this is done, start a server with the following options:
+  The MongoDB C Driver must be compiled with TLS support for X.509 authentication support. Once this is done, start a server with the following options:
 
   .. code-block:: none
 
-    $ mongod --sslMode requireSSL --sslPEMKeyFile server.pem --sslCAFile ca.pem
+    $ mongod --tlsMode requireTLS --tlsCertificateKeyFile server.pem --tlsCAFile ca.pem
 
-The ``MONGODB-X509`` mechanism authenticates a username derived from the distinguished subject name of the X.509 certificate presented by the driver during SSL negotiation. This authentication method requires the use of SSL connections with certificate validation.
+The ``MONGODB-X509`` mechanism authenticates a username derived from the distinguished subject name of the X.509 certificate presented by the driver during TLS negotiation. This authentication method requires the use of TLS connections with certificate validation.
 
 .. code-block:: none
 

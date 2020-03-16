@@ -78,7 +78,7 @@ Building on Unix
 Prerequisites for libmongoc
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-OpenSSL is required for authentication or for SSL connections to MongoDB. Kerberos or LDAP support requires Cyrus SASL.
+OpenSSL is required for authentication or for TLS connections to MongoDB. Kerberos or LDAP support requires Cyrus SASL.
 
 To install all optional dependencies on RedHat / Fedora:
 

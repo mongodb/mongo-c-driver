@@ -109,7 +109,8 @@ Include username and password like so:
 
   mongoc_uri_t *uri = mongoc_uri_new ("mongodb://user:pass@%2Ftmp%2Fmongodb-27017.sock");
 
-Connecting to a server over SSL
+
+Connecting to a server over TLS
 -------------------------------
 
 These are instructions for configuring TLS/SSL connections.
@@ -118,33 +119,28 @@ To run a server locally (on port 27017, for example):
 
 .. code-block:: none
 
-  $ mongod --port 27017 --sslMode requireSSL --sslPEMKeyFile server.pem --sslCAFile ca.pem
+  $ mongod --port 27017 --tlsMode requireTLS --tlsCertificateKeyFile server.pem --tlsCAFile ca.pem
 
-Add ``/?ssl=true`` to the end of a client URI.
+Add ``/?tls=true`` to the end of a client URI.
 
 .. code-block:: none
 
   mongoc_client_t *client = NULL;
-  client = mongoc_client_new ("mongodb://localhost:27017/?ssl=true");
+  client = mongoc_client_new ("mongodb://localhost:27017/?tls=true");
 
-MongoDB requires client certificates by default, unless the ``--sslAllowConnectionsWithoutCertificates`` is provided. The C Driver can be configured to present a client certificate using a ``mongoc_ssl_opt_t``:
+MongoDB requires client certificates by default, unless the ``--tlsAllowConnectionsWithoutCertificates`` is provided. The C Driver can be configured to present a client certificate using the URI option ``tlsCertificateKeyFile``, which may be referenced through the constant ``MONGOC_URI_TLSCERTIFICATEKEYFILE``.
 
 .. code-block:: none
 
-  const mongoc_ssl_opt_t *ssl_default = mongoc_ssl_opt_get_default ();
-  mongoc_ssl_opt_t ssl_opts = { 0 };
+  mongoc_client_t *client = NULL;
+  mongoc_uri_t *uri = mongoc_uri_new ("mongodb://localhost:27017/?tls=true");
+  mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_TLSCERTIFICATEKEYFILE, "client.pem");
 
-  /* optionally copy in a custom trust directory or file; otherwise the default is used. */
-  memcpy (&ssl_opts, ssl_default, sizeof ssl_opts);
-  ssl_opts.pem_file = "client.pem"
+  client = mongoc_client_new_from_uri (uri);
 
-  mongoc_client_set_ssl_opts (client, &ssl_opts);
+The client certificate provided by ``tlsCertificateKeyFile`` must be issued by one of the server trusted Certificate Authorities listed in ``--tlsCAFile``, or issued by a CA in the native certificate store on the server when omitted.
 
-The client certificate provided by ``pem_file`` must be issued by one of the server trusted Certificate Authorities listed in ``--sslCAFile``, or issued by a CA in the native certificate store on the server when omitted.
-
-To verify the server certificate against a specific CA, provide a PEM armored file with a CA certificate, or concatenated list of CA certificates using the ``ca_file`` option, or ``c_rehash`` directory structure of CAs, pointed to using the ``ca_dir`` option. When no ``ca_file`` or ``ca_dir`` is provided, the driver will use CAs provided by the native platform certificate store.
-
-See :doc:`mongoc_ssl_opt_t` for more information on the various SSL related options.
+See :doc:`configuring_tls` for more information on the various TLS related options.
 
 Compressing data to and from MongoDB
 ------------------------------------

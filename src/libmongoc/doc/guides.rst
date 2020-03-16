@@ -7,6 +7,7 @@ Guides
    :titlesonly:
    :maxdepth: 1
 
+   configuring_tls
    mongoc-common-task-examples
    advanced-connections
    connection-pooling

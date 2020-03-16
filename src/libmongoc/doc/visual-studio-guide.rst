@@ -65,7 +65,7 @@ Following the instructions above, you have dynamically linked your application t
 .. image::
   static/msvc-add-dependencies-static.png
 
-(To explain the purpose of each library: ``bson-static-1.0.lib`` and ``mongoc-static-1.0.lib`` are static archives of the driver code. The socket library ``ws2_32`` is required by libbson, which uses the socket routine ``gethostname`` to help guarantee ObjectId uniqueness. The ``BCrypt`` library is used by libmongoc for SSL connections to MongoDB, and ``Secur32`` and ``Crypt32`` are required for enterprise authentication methods like Kerberos.)
+(To explain the purpose of each library: ``bson-static-1.0.lib`` and ``mongoc-static-1.0.lib`` are static archives of the driver code. The socket library ``ws2_32`` is required by libbson, which uses the socket routine ``gethostname`` to help guarantee ObjectId uniqueness. The ``BCrypt`` library is used by libmongoc for TLS connections to MongoDB, and ``Secur32`` and ``Crypt32`` are required for enterprise authentication methods like Kerberos.)
 
 Finally, define two preprocessor symbols before including ``mongoc/mongoc.h`` in your ``stdafx.h``:
 
