@@ -8,10 +8,19 @@
  BuildRequires: perl-interpreter
  # From man pages
  BuildRequires: python3
-@@ -124,7 +123,6 @@ Documentation: http://mongoc.org/libbson/%{version}/
+@@ -68,7 +67,6 @@ Requires:   %{name}%{?_isa} = %{version}-%{release}
+ Requires:   pkgconfig
+ Requires:   cmake-filesystem
+ Requires:   pkgconfig(libzstd)
+-Requires:   cmake(mongocrypt)
+ 
+ %description devel
+ This package contains the header files and development libraries
+@@ -126,7 +124,6 @@ Documentation: http://mongoc.org/libbson/%{version}/
  %endif
      -DENABLE_EXAMPLES:BOOL=OFF \
      -DENABLE_UNINSTALL:BOOL=OFF \
 -    -DENABLE_CLIENT_SIDE_ENCRYPTION:BOOL=ON \
      .
-
+ 
+ make %{?_smp_mflags}
