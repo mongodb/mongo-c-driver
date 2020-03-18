@@ -499,7 +499,7 @@ run_test (void *ctx)
    one_test (&test_fixture);
    test_fixture_cleanup (&test_fixture);
    /* Large collection name. */
-   test_fixture_init (&test_fixture, 32, 500);
+   test_fixture_init (&test_fixture, 32, 100);
    one_test (&test_fixture);
    test_fixture_cleanup (&test_fixture);
    /* Maximum valid database name is still 64 characters. */
@@ -507,7 +507,7 @@ run_test (void *ctx)
    one_test (&test_fixture);
    test_fixture_cleanup (&test_fixture);
    /* Large for both names. */
-   test_fixture_init (&test_fixture, 63, 500);
+   test_fixture_init (&test_fixture, 63, 100);
    one_test (&test_fixture);
    test_fixture_cleanup (&test_fixture);
 }
