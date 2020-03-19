@@ -25,3 +25,9 @@
    * - MONGOC_URI_TLSINSECURE
      - tlsinsecure
      - {true|false}, indicating if insecure TLS options should be used. Currently this implies MONGOC_URI_TLSALLOWINVALIDCERTIFICATES and MONGOC_URI_TLSALLOWINVALIDHOSTNAMES.
+   * - MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK
+     - tlsdisablecertificaterevocationcheck
+     - {true|false}, indicates if revocation checking (CRL / OCSP) should be disabled.
+   * - MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK
+     - tlsdisableocspendpointcheck
+     - {true|false}, indicates if OCSP responder endpoints should not be requested when an OCSP response is not stapled.

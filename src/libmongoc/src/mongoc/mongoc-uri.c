@@ -741,6 +741,8 @@ mongoc_uri_option_is_bool (const char *key)
           !strcasecmp (key, MONGOC_URI_TLSINSECURE) ||
           !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
           !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
+          !strcasecmp (key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK) ||
+          !strcasecmp (key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK) ||
           /* deprecated options */
           !strcasecmp (key, MONGOC_URI_SSL) ||
           !strcasecmp (key, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES) ||
@@ -1235,15 +1237,53 @@ mongoc_uri_finalize_tls (mongoc_uri_t *uri, bson_error_t *error)
       mongoc_uri_set_option_as_bool (uri, MONGOC_URI_TLS, true);
    }
 
+   /* tlsInsecure implies tlsAllowInvalidCertificates, tlsAllowInvalidHostnames,
+    * tlsDisableOCSPEndpointCheck, and tlsDisableCertificateRevocationCheck, so
+    * consider it an error to have both. The user might have the wrong idea. */
    if (bson_has_field (&uri->options, MONGOC_URI_TLSINSECURE) &&
        (bson_has_field (&uri->options,
                         MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
-        bson_has_field (&uri->options, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES))) {
+        bson_has_field (&uri->options, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
+        bson_has_field (&uri->options,
+                        MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK) ||
+        bson_has_field (&uri->options,
+                        MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK))) {
       MONGOC_URI_ERROR (error,
-                        "%s may not be specified with %s or %s",
+                        "%s may not be specified with %s, %s, %s, or %s",
                         MONGOC_URI_TLSINSECURE,
                         MONGOC_URI_TLSALLOWINVALIDCERTIFICATES,
-                        MONGOC_URI_TLSALLOWINVALIDHOSTNAMES);
+                        MONGOC_URI_TLSALLOWINVALIDHOSTNAMES,
+                        MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK,
+                        MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK);
+      return false;
+   }
+
+   /* tlsAllowInvalidCertificates implies tlsDisableOCSPEndpointCheck and
+    * tlsDisableCertificateRevocationCheck, so consider it an error to have
+    * both. The user might have the wrong idea. */
+   if (bson_has_field (&uri->options, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) &&
+       (bson_has_field (&uri->options,
+                        MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK) ||
+        bson_has_field (&uri->options,
+                        MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK))) {
+      MONGOC_URI_ERROR (error,
+                        "%s may not be specified with %s or %s",
+                        MONGOC_URI_TLSALLOWINVALIDCERTIFICATES,
+                        MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK,
+                        MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK);
+      return false;
+   }
+
+   /*  tlsDisableCertificateRevocationCheck implies tlsDisableOCSPEndpointCheck,
+    * so consider it an error to have both. The user might have the wrong idea.
+    */
+   if (bson_has_field (&uri->options,
+                       MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK) &&
+       bson_has_field (&uri->options, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK)) {
+      MONGOC_URI_ERROR (error,
+                        "%s may not be specified with %s",
+                        MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK,
+                        MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK);
       return false;
    }
 

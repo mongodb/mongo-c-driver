@@ -9,6 +9,10 @@
 #include "mongoc/mongoc-host-list-private.h"
 #include "mongoc/mongoc-read-concern-private.h"
 #include "mongoc/mongoc-set-private.h"
+#ifdef MONGOC_ENABLE_SSL
+#include "mongoc/mongoc-ssl.h"
+#include "mongoc/mongoc-ssl-private.h"
+#endif
 #include "mongoc/mongoc-util-private.h"
 #include "mongoc/mongoc-write-concern-private.h"
 
@@ -3697,6 +3701,43 @@ test_invalid_server_id (void)
    mongoc_client_destroy (client);
 }
 
+#ifdef MONGOC_ENABLE_SSL
+static void
+test_ssl_opts_override (void)
+{
+   /* Test that mongoc_client_set_ssl_opts does not override the internal TLS
+    * options that can only be set through the URI. */
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_ssl_opt_t ssl_opts = {0};
+
+   uri = mongoc_uri_new (
+      "mongodb://localhost:27017/?tls=true&tlsDisableOCSPEndpointCheck=true");
+   client = mongoc_client_new_from_uri (uri);
+   ssl_opts.allow_invalid_hostname = true;
+   mongoc_client_set_ssl_opts (client, &ssl_opts);
+   BSON_ASSERT (client->ssl_opts.allow_invalid_hostname);
+   BSON_ASSERT (((_mongoc_internal_tls_opts_t *) client->ssl_opts.internal)
+                   ->tls_disable_ocsp_endpoint_check);
+   mongoc_uri_destroy (uri);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_ssl_opts_padding_not_null (void)
+{
+   mongoc_client_t *client;
+   mongoc_ssl_opt_t ssl_opt = {0};
+
+   ssl_opt.allow_invalid_hostname = true;
+   ssl_opt.internal = (void *) 123;
+   client = mongoc_client_new ("mongodb://localhost:27017");
+   mongoc_client_set_ssl_opts (client, &ssl_opt);
+   BSON_ASSERT (client->ssl_opts.internal == NULL);
+   mongoc_client_destroy (client);
+}
+#endif
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -3884,7 +3925,10 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Client/ssl_opts/single", test_ssl_single);
    TestSuite_AddLive (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
    TestSuite_Add (suite, "/Client/set_ssl_opts", test_set_ssl_opts);
-
+   TestSuite_Add (suite, "/Client/ssl_opts_override", test_ssl_opts_override);
+   TestSuite_Add (suite,
+                  "/Client/ssl_opts_padding_not_null/single",
+                  test_ssl_opts_padding_not_null);
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
    defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    TestSuite_AddMockServerTest (suite,

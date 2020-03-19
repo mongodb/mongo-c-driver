@@ -29,6 +29,7 @@
 #include "mongoc-log.h"
 #include "mongoc-secure-transport-private.h"
 #include "mongoc-ssl.h"
+#include "mongoc-ssl-private.h"
 #include "mongoc-error.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-stream-tls.h"
@@ -744,6 +745,16 @@ mongoc_stream_tls_secure_transport_new (mongoc_stream_t *base_stream,
 
 
    mongoc_counter_streams_active_inc ();
+
+   if (_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
+      MONGOC_ERROR ("Setting tlsDisableCertificateRevocationCheck has no "
+                    "effect when built against Secure Transport");
+   }
+
+   if (_mongoc_ssl_opts_disable_ocsp_endpoint_check (opt)) {
+      MONGOC_ERROR ("Setting tlsDisableOCSPEndpointCheck has no effect when "
+                    "built against Secure Transport");
+   }
    RETURN ((mongoc_stream_t *) tls);
 }
 #endif /* MONGOC_ENABLE_SSL_SECURE_TRANSPORT */

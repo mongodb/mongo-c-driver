@@ -1997,23 +1997,25 @@ test_mongoc_uri_tls ()
    ASSERT (!mongoc_uri_new_with_error (
       "mongodb://localhost/?tlsInsecure=true&tlsAllowInvalidHostnames=false",
       &err));
-   ASSERT_ERROR_CONTAINS (err,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "tlsinsecure may not be specified with "
-                          "tlsallowinvalidcertificates or "
-                          "tlsallowinvalidhostnames");
+   ASSERT_ERROR_CONTAINS (
+      err,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "tlsinsecure may not be specified with "
+      "tlsallowinvalidcertificates, tlsallowinvalidhostnames, "
+      "tlsdisableocspendpointcheck, or tlsdisablecertificaterevocationcheck");
 
    ASSERT (!mongoc_uri_new_with_error (
       "mongodb://localhost/"
       "?tlsInsecure=true&tlsAllowInvalidCertificates=true",
       &err));
-   ASSERT_ERROR_CONTAINS (err,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "tlsinsecure may not be specified with "
-                          "tlsallowinvalidcertificates or "
-                          "tlsallowinvalidhostnames");
+   ASSERT_ERROR_CONTAINS (
+      err,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "tlsinsecure may not be specified with "
+      "tlsallowinvalidcertificates, tlsallowinvalidhostnames, "
+      "tlsdisableocspendpointcheck, or tlsdisablecertificaterevocationcheck");
 }
 
 static void

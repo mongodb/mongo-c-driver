@@ -25,16 +25,32 @@
 
 BSON_BEGIN_DECLS
 
+typedef struct {
+   bool tls_disable_certificate_revocation_check;
+   bool tls_disable_ocsp_endpoint_check;
+} _mongoc_internal_tls_opts_t;
 
 char *
 mongoc_ssl_extract_subject (const char *filename, const char *passphrase);
 
 void
-_mongoc_ssl_opts_from_uri (mongoc_ssl_opt_t *ssl_opt, mongoc_uri_t *uri);
+_mongoc_ssl_opts_from_uri (mongoc_ssl_opt_t *ssl_opt,
+                           _mongoc_internal_tls_opts_t *internal,
+                           mongoc_uri_t *uri);
 void
-_mongoc_ssl_opts_copy_to (const mongoc_ssl_opt_t *src, mongoc_ssl_opt_t *dst);
+_mongoc_ssl_opts_copy_to (const mongoc_ssl_opt_t *src,
+                          mongoc_ssl_opt_t *dst,
+                          bool copy_internal);
+
+bool
+_mongoc_ssl_opts_disable_certificate_revocation_check (
+   const mongoc_ssl_opt_t *ssl_opt);
+
+bool
+_mongoc_ssl_opts_disable_ocsp_endpoint_check (const mongoc_ssl_opt_t *ssl_opt);
+
 void
-_mongoc_ssl_opts_cleanup (mongoc_ssl_opt_t *opt);
+_mongoc_ssl_opts_cleanup (mongoc_ssl_opt_t *opt, bool free_internal);
 
 BSON_END_DECLS
 

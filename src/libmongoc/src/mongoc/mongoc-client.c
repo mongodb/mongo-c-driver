@@ -975,6 +975,21 @@ mongoc_client_new (const char *uri_string)
  */
 
 #ifdef MONGOC_ENABLE_SSL
+/* Only called internally. Caller must ensure opts->internal is valid. */
+void
+_mongoc_client_set_internal_tls_opts (mongoc_client_t *client,
+                                      _mongoc_internal_tls_opts_t *internal)
+{
+   if (!client->use_ssl) {
+      return;
+   }
+   client->ssl_opts.internal =
+      bson_malloc (sizeof (_mongoc_internal_tls_opts_t));
+   memcpy (client->ssl_opts.internal,
+           internal,
+           sizeof (_mongoc_internal_tls_opts_t));
+}
+
 void
 mongoc_client_set_ssl_opts (mongoc_client_t *client,
                             const mongoc_ssl_opt_t *opts)
@@ -982,10 +997,12 @@ mongoc_client_set_ssl_opts (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (opts);
 
-   _mongoc_ssl_opts_cleanup (&client->ssl_opts);
+   _mongoc_ssl_opts_cleanup (&client->ssl_opts,
+                             false /* don't free internal opts */);
 
    client->use_ssl = true;
-   _mongoc_ssl_opts_copy_to (opts, &client->ssl_opts);
+   _mongoc_ssl_opts_copy_to (
+      opts, &client->ssl_opts, false /* don't overwrite internal opts */);
 
    if (client->topology->single_threaded) {
       mongoc_topology_scanner_set_ssl_opts (client->topology->scanner,
@@ -1091,10 +1108,12 @@ _mongoc_client_new_from_uri (mongoc_topology_t *topology)
    client->use_ssl = false;
    if (mongoc_uri_get_tls (client->uri)) {
       mongoc_ssl_opt_t ssl_opt = {0};
+      _mongoc_internal_tls_opts_t internal_tls_opts = {0};
 
-      _mongoc_ssl_opts_from_uri (&ssl_opt, client->uri);
+      _mongoc_ssl_opts_from_uri (&ssl_opt, &internal_tls_opts, client->uri);
       /* sets use_ssl = true */
       mongoc_client_set_ssl_opts (client, &ssl_opt);
+      _mongoc_client_set_internal_tls_opts (client, &internal_tls_opts);
    }
 #endif
 
@@ -1137,7 +1156,7 @@ mongoc_client_destroy (mongoc_client_t *client)
       mongoc_set_destroy (client->client_sessions);
 
 #ifdef MONGOC_ENABLE_SSL
-      _mongoc_ssl_opts_cleanup (&client->ssl_opts);
+      _mongoc_ssl_opts_cleanup (&client->ssl_opts, true);
 #endif
 
       bson_free (client);
@@ -1638,8 +1657,9 @@ retry:
       retry_server_stream = mongoc_cluster_stream_for_writes (
          &client->cluster, parts->assembled.session, NULL, &ignored_error);
 
-      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
-                                    WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream &&
+          retry_server_stream->sd->max_wire_version >=
+             WIRE_VERSION_RETRY_WRITES) {
          parts->assembled.server_stream = retry_server_stream;
          bson_destroy (reply);
          GOTO (retry);

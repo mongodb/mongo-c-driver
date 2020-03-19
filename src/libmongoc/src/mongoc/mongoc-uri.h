@@ -67,6 +67,9 @@
 #define MONGOC_URI_TLSALLOWINVALIDCERTIFICATES "tlsallowinvalidcertificates"
 #define MONGOC_URI_TLSALLOWINVALIDHOSTNAMES "tlsallowinvalidhostnames"
 #define MONGOC_URI_TLSINSECURE "tlsinsecure"
+#define MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK \
+   "tlsdisablecertificaterevocationcheck"
+#define MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK "tlsdisableocspendpointcheck"
 #define MONGOC_URI_W "w"
 #define MONGOC_URI_WAITQUEUEMULTIPLE "waitqueuemultiple"
 #define MONGOC_URI_WAITQUEUETIMEOUTMS "waitqueuetimeoutms"

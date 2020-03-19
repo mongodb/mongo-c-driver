@@ -383,17 +383,8 @@ mongoc_secure_channel_setup_ca (
       L"Root"); /* system store name. "My" or "Root" */
 
    if (cert_store == NULL) {
-      cert_store = CertOpenStore (
-         CERT_STORE_PROV_SYSTEM,                  /* provider */
-         X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, /* certificate encoding */
-         0,                                       /* unused */
-         CERT_SYSTEM_STORE_CURRENT_USER,         /* dwFlags */
-         L"My"); /* system store name. "My" or "Root" */
-
-      if (cert_store == NULL) {
-         MONGOC_ERROR ("Error opening certificate store");
-         return false;
-      }
+      MONGOC_ERROR ("Error opening certificate store");
+      return false;
    }
 
    if (CertAddCertificateContextToStore (
@@ -830,10 +821,10 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
                           "has expired");
             break;
          case CRYPT_E_NO_REVOCATION_CHECK:
-            /* This seems to be raised also when hostname doesn't match the
-             * certificate */
-            MONGOC_ERROR ("SSL Certification verification failed: failed "
-                          "revocation/hostname check");
+            MONGOC_ERROR ("SSL Certification verification failed: certificate "
+                          "does not include revocation check. Set "
+                          "tlsDisableCertificateRevocationCheck to disable "
+                          "revocation checking");
             break;
 
          case SEC_E_INSUFFICIENT_MEMORY:

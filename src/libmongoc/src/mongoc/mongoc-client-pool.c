@@ -15,7 +15,6 @@
  */
 
 
-
 #include "mongoc.h"
 #include "mongoc-apm-private.h"
 #include "mongoc-counters-private.h"
@@ -58,23 +57,36 @@ void
 mongoc_client_pool_set_ssl_opts (mongoc_client_pool_t *pool,
                                  const mongoc_ssl_opt_t *opts)
 {
-   BSON_ASSERT (pool);
-
    bson_mutex_lock (&pool->mutex);
 
-   _mongoc_ssl_opts_cleanup (&pool->ssl_opts);
+   _mongoc_ssl_opts_cleanup (&pool->ssl_opts,
+                             false /* don't free internal opts. */);
 
-   memset (&pool->ssl_opts, 0, sizeof pool->ssl_opts);
    pool->ssl_opts_set = false;
 
    if (opts) {
-      _mongoc_ssl_opts_copy_to (opts, &pool->ssl_opts);
+      _mongoc_ssl_opts_copy_to (
+         opts, &pool->ssl_opts, false /* don't overwrite internal opts. */);
       pool->ssl_opts_set = true;
    }
 
    mongoc_topology_scanner_set_ssl_opts (pool->topology->scanner,
                                          &pool->ssl_opts);
 
+   bson_mutex_unlock (&pool->mutex);
+}
+
+void
+_mongoc_client_pool_set_internal_tls_opts (
+   mongoc_client_pool_t *pool, _mongoc_internal_tls_opts_t *internal)
+{
+   bson_mutex_lock (&pool->mutex);
+   if (!pool->ssl_opts_set) {
+      return;
+   }
+   pool->ssl_opts.internal = bson_malloc (sizeof (_mongoc_internal_tls_opts_t));
+   memcpy (
+      pool->ssl_opts.internal, internal, sizeof (_mongoc_internal_tls_opts_t));
    bson_mutex_unlock (&pool->mutex);
 }
 #endif
@@ -143,10 +155,12 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 #ifdef MONGOC_ENABLE_SSL
    if (mongoc_uri_get_tls (pool->uri)) {
       mongoc_ssl_opt_t ssl_opt = {0};
+      _mongoc_internal_tls_opts_t internal_tls_opts = {0};
 
-      _mongoc_ssl_opts_from_uri (&ssl_opt, pool->uri);
+      _mongoc_ssl_opts_from_uri (&ssl_opt, &internal_tls_opts, pool->uri);
       /* sets use_ssl = true */
       mongoc_client_pool_set_ssl_opts (pool, &ssl_opt);
+      _mongoc_client_pool_set_internal_tls_opts (pool, &internal_tls_opts);
    }
 #endif
    mongoc_counter_client_pools_active_inc ();
@@ -184,7 +198,7 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
    mongoc_cond_destroy (&pool->cond);
 
 #ifdef MONGOC_ENABLE_SSL
-   _mongoc_ssl_opts_cleanup (&pool->ssl_opts);
+   _mongoc_ssl_opts_cleanup (&pool->ssl_opts, true);
 #endif
 
    bson_free (pool);

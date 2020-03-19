@@ -16,7 +16,8 @@ Synopsis
      const char *crl_file;
      bool weak_cert_validation;
      bool allow_invalid_hostname;
-     void *padding[7];
+     void *internal;
+     void *padding[6];
   } mongoc_ssl_opt_t;
 
 Description

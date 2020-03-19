@@ -63,6 +63,7 @@
 #include "mongoc-stream-tls-secure-channel-private.h"
 #include "mongoc-secure-channel-private.h"
 #include "mongoc-ssl.h"
+#include "mongoc-ssl-private.h"
 #include "mongoc-error.h"
 #include "mongoc-counters-private.h"
 #include "mongoc-errno-private.h"
@@ -973,14 +974,15 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    schannel_cred.dwFlags = SCH_USE_STRONG_CRYPTO;
 #endif
 
-   /* Consider a failure to reach out over network for revocation checks
-    * a "soft-fail". */
-   schannel_cred.dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
-
    if (opt->weak_cert_validation) {
       schannel_cred.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION |
-                               SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
+                               SCH_CRED_IGNORE_NO_REVOCATION_CHECK |
+                               SCH_CRED_IGNORE_REVOCATION_OFFLINE;
       TRACE ("disabled server certificate checks");
+   } else if (_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
+      schannel_cred.dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK |
+                               SCH_CRED_IGNORE_REVOCATION_OFFLINE;
+      TRACE ("disabled server certificate revocation checks");
    } else {
       schannel_cred.dwFlags |=
          SCH_CRED_AUTO_CRED_VALIDATION | SCH_CRED_REVOCATION_CHECK_CHAIN;
@@ -1057,6 +1059,10 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
                     "against Secure Channel");
    }
 
+   if (_mongoc_ssl_opts_disable_ocsp_endpoint_check (opt)) {
+      MONGOC_ERROR ("Setting tlsDisableOCSPEndpointCheck has no effect when "
+                    "built against Secure Channel");
+   }
 
    mongoc_counter_streams_active_inc ();
    RETURN ((mongoc_stream_t *) tls);

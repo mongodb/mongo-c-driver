@@ -29,6 +29,8 @@
 
 #include "mongoc-counters-private.h"
 #include "mongoc-errno-private.h"
+#include "mongoc-ssl.h"
+#include "mongoc-ssl-private.h"
 #include "mongoc-stream-tls.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-tls-private.h"
@@ -737,7 +739,8 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
       SSL_CTX_set_tlsext_servername_callback (ssl_ctx,
                                               _mongoc_stream_tls_openssl_sni);
 #ifdef MONGOC_ENABLE_OCSP
-   } else {
+   } else if (!opt->weak_cert_validation &&
+              !_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
       if (!SSL_CTX_set_tlsext_status_type (ssl_ctx, TLSEXT_STATUSTYPE_ocsp)) {
          MONGOC_ERROR ("cannot enable OCSP status request extension");
          SSL_CTX_free (ssl_ctx);
@@ -815,6 +818,11 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
    mongoc_stream_tls_openssl_bio_set_data (bio_mongoc_shim, tls);
 
    mongoc_counter_streams_active_inc ();
+
+   if (_mongoc_ssl_opts_disable_ocsp_endpoint_check (opt)) {
+      MONGOC_ERROR ("Setting tlsDisableOCSPEndpointCheck has no effect when "
+                    "built against OpenSSL");
+   }
 
    RETURN ((mongoc_stream_t *) tls);
 }
