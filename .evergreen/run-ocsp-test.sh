@@ -4,7 +4,9 @@
 # Closely models the tests described in the specification:
 # https://github.com/mongodb/specifications/tree/master/source/ocsp-support/tests#integration-tests-permutations-to-be-tested.
 # Based on the test case, this may start a mock responder process.
-# Precondition: mongod is running with the correct configuration.
+# Preconditions:
+# - A mock responder configured for the test case is running (use run-ocsp-responder.sh – before running mongod).
+# - mongod is running with the correct configuration. (use integration-tests.sh or spawn one manually).
 #
 # Environment variables:
 #
@@ -13,9 +15,6 @@
 #   TEST_1, TEST_2, TEST_3, TEST_4, SOFT_FAIL_TEST, MALICIOUS_SERVER_TEST_1, MALICIOUS_SERVER_TEST_2
 # CERT_TYPE
 #   Required. Set to either rsa or ecdsa.
-# USE_DELEGATE
-#   Optional. May be ON or OFF. If a test requires use of a responder, this decides whether
-#   the responder uses a delegate certificate. Defaults to "OFF"
 # CDRIVER_BUILD
 #   Optional. The path to the build of mongo-c-driver (e.g. mongo-c-driver/cmake-build).
 #   Defaults to $(pwd)
@@ -24,8 +23,6 @@
 #   Defaults to $(pwd)
 # MONGODB_PORT
 #   Optional. A custom port to connect to. Defaults to 27017.
-# SKIP_PIP_INSTALL
-#   Optional. Skip pip install for required packages for mock responder.
 #
 # Example:
 # TEST_COLUMN=TEST_1 CERT_TYPE=rsa ./run-ocsp-test.sh
@@ -38,7 +35,6 @@ set -o xtrace
 CDRIVER_ROOT=${CDRIVER_ROOT:-$(pwd)}
 CDRIVER_BUILD=${CDRIVER_BUILD:-$(pwd)}
 MONGODB_PORT=${MONGODB_PORT:-"27017"}
-USE_DELEGATE=${USE_DELEGATE:-OFF}
 
 if [ -z "$TEST_COLUMN" -o -z "$CERT_TYPE" ]; then
     echo "Required environment variable unset. See file comments for help."
@@ -110,54 +106,6 @@ expect_failure () {
         exit 1
     fi
 }
-
-# Same responder is used for both server and client. So even stapling tests require a responder.
-if [ "TEST_1" = "$TEST_COLUMN" ]; then
-    RESPONDER_REQUIRED="valid"
-elif [ "TEST_2" = "$TEST_COLUMN" ]; then
-    RESPONDER_REQUIRED="invalid"
-elif [ "TEST_3" = "$TEST_COLUMN" ]; then
-    RESPONDER_REQUIRED="valid"
-elif [ "TEST_4" = "$TEST_COLUMN" ]; then
-    RESPONDER_REQUIRED="invalid"
-elif [ "MALICIOUS_SERVER_TEST_1" = "$TEST_COLUMN" ]; then
-    RESPONDER_REQUIRED="invalid"
-else
-    RESPONDER_REQUIRED=""
-fi
-
-if [ -n "$RESPONDER_REQUIRED" ]; then
-    echo "Starting mock responder"
-    if [ -z "$SKIP_PIP_INSTALL" ]; then
-        echo "Installing python dependencies"
-        # Installing dependencies.
-        if [ "$OS" = "WINDOWS" ]; then
-            /cygdrive/c/python/Python36/python --version
-            /cygdrive/c/python/Python36/python -m virtualenv venv_ocsp
-            PYTHON="$(pwd)/venv_ocsp/Scripts/python"
-        else
-            /opt/mongodbtoolchain/v3/bin/python3 -m venv ./venv_ocsp
-            PYTHON=./venv_ocsp/bin/python
-        fi
-        $PYTHON -m pip install oscrypto bottle asn1crypto
-    fi
-    cd "$CDRIVER_ROOT/.evergreen/ocsp/$CERT_TYPE"
-    if [ "$RESPONDER_REQUIRED" = "invalid" ]; then
-        FAULT="--fault revoked"
-    fi
-    if [ "ON" = "$USE_DELEGATE" ]; then
-        RESPONDER_SIGNER="ocsp-responder"
-    else
-        RESPONDER_SIGNER="ca"
-    fi
-    $PYTHON ../ocsp_mock.py \
-        --ca_file ca.pem \
-        --ocsp_responder_cert $RESPONDER_SIGNER.crt \
-        --ocsp_responder_key $RESPONDER_SIGNER.key \
-        -p 8100 -v $FAULT \
-        > $CDRIVER_BUILD/responder.log 2>&1 &
-    cd -
-fi
 
 echo "Clearing OCSP cache for macOS/Windows"
 if [ "$OS" = "MACOS" ]; then
