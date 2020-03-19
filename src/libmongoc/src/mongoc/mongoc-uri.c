@@ -1040,22 +1040,30 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
        * also recognised as 32-bit ints.
        */
       if (mongoc_uri_option_is_int64 (key)) {
-         if (!_mongoc_uri_parse_int64 (key, value, &v_int64)) {
-            goto UNSUPPORTED_VALUE;
-         }
+         if (0 < strlen (value)) {
+            if (!_mongoc_uri_parse_int64 (key, value, &v_int64)) {
+               goto UNSUPPORTED_VALUE;
+            }
 
-         if (!_mongoc_uri_set_option_as_int64_with_error (
-                uri, canon, v_int64, error)) {
-            return false;
+            if (!_mongoc_uri_set_option_as_int64_with_error (
+                  uri, canon, v_int64, error)) {
+               return false;
+            }
+         } else {
+            MONGOC_WARNING ("Empty value provided for \"%s\"", key);
          }
       } else if (mongoc_uri_option_is_int32 (key)) {
-         if (!mongoc_uri_parse_int32 (key, value, &v_int)) {
-            goto UNSUPPORTED_VALUE;
-         }
+         if (0 < strlen (value)) {
+            if (!mongoc_uri_parse_int32 (key, value, &v_int)) {
+               goto UNSUPPORTED_VALUE;
+            }
 
-         if (!_mongoc_uri_set_option_as_int32_with_error (
-                uri, canon, v_int, error)) {
-            return false;
+            if (!_mongoc_uri_set_option_as_int32_with_error (
+                  uri, canon, v_int, error)) {
+               return false;
+            }
+         } else {
+            MONGOC_WARNING ("Empty value provided for \"%s\"", key);
          }
       } else if (!strcmp (key, MONGOC_URI_W)) {
          if (*value == '-' || isdigit (*value)) {
@@ -1070,36 +1078,40 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
          }
 
       } else if (mongoc_uri_option_is_bool (key)) {
-         if (0 == strcasecmp (value, "true")) {
-            bval = true;
-         } else if (0 == strcasecmp (value, "false")) {
-            bval = false;
-         } else if ((0 == strcmp (value, "1")) ||
-                    (0 == strcasecmp (value, "yes")) ||
-                    (0 == strcasecmp (value, "y")) ||
-                    (0 == strcasecmp (value, "t"))) {
-            MONGOC_WARNING ("Deprecated boolean value for \"%s\": \"%s\", "
-                            "please update to \"%s=true\"",
-                            key,
-                            value,
-                            key);
-            bval = true;
-         } else if ((0 == strcasecmp (value, "0")) ||
-                    (0 == strcasecmp (value, "-1")) ||
-                    (0 == strcmp (value, "no")) || (0 == strcmp (value, "n")) ||
-                    (0 == strcmp (value, "f"))) {
-            MONGOC_WARNING ("Deprecated boolean value for \"%s\": \"%s\", "
-                            "please update to \"%s=false\"",
-                            key,
-                            value,
-                            key);
-            bval = false;
-         } else {
-            goto UNSUPPORTED_VALUE;
-         }
+         if (0 < strlen (value)) {
+            if (0 == strcasecmp (value, "true")) {
+               bval = true;
+            } else if (0 == strcasecmp (value, "false")) {
+               bval = false;
+            } else if ((0 == strcmp (value, "1")) ||
+                     (0 == strcasecmp (value, "yes")) ||
+                     (0 == strcasecmp (value, "y")) ||
+                     (0 == strcasecmp (value, "t"))) {
+               MONGOC_WARNING ("Deprecated boolean value for \"%s\": \"%s\", "
+                              "please update to \"%s=true\"",
+                              key,
+                              value,
+                              key);
+               bval = true;
+            } else if ((0 == strcasecmp (value, "0")) ||
+                     (0 == strcasecmp (value, "-1")) ||
+                     (0 == strcmp (value, "no")) || (0 == strcmp (value, "n")) ||
+                     (0 == strcmp (value, "f"))) {
+               MONGOC_WARNING ("Deprecated boolean value for \"%s\": \"%s\", "
+                              "please update to \"%s=false\"",
+                              key,
+                              value,
+                              key);
+               bval = false;
+            } else {
+               goto UNSUPPORTED_VALUE;
+            }
 
-         if (!mongoc_uri_set_option_as_bool (uri, canon, bval)) {
-            return false;
+            if (!mongoc_uri_set_option_as_bool (uri, canon, bval)) {
+               return false;
+            }
+         } else {
+            MONGOC_WARNING ("Empty value provided for \"%s\"", key);
          }
 
       } else if (!strcmp (key, MONGOC_URI_READPREFERENCETAGS)) {
