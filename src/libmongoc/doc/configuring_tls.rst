@@ -1,4 +1,4 @@
-:man_page: configuring_tls
+:man_page: mongoc_configuring_tls
 
 Configuring TLS
 ===============
