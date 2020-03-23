@@ -1804,7 +1804,8 @@ create_collection (mongoc_database_t *db,
    collection_name = bson_lookup_utf8 (&args, "collection");
    COPY_EXCEPT ("collection");
 
-   collection = mongoc_database_create_collection (db, collection_name, &opts, &error);
+   collection =
+      mongoc_database_create_collection (db, collection_name, &opts, &error);
 
    bson_destroy (&opts);
 
@@ -1912,13 +1913,13 @@ static bool
 collection_exists (mongoc_client_t *client, const bson_t *operation)
 {
    char **names;
-   char **name;
    bson_t args;
    const char *database_name;
    const char *collection_name;
    bson_error_t error;
    mongoc_database_t *db;
    bool found = false;
+   uint32_t i;
 
    bson_lookup_doc (operation, "arguments", &args);
    database_name = bson_lookup_utf8 (&args, "database");
@@ -1927,17 +1928,20 @@ collection_exists (mongoc_client_t *client, const bson_t *operation)
    db = mongoc_client_get_database (client, database_name);
 
    names = mongoc_database_get_collection_names_with_opts (db, NULL, &error);
-
-   for (name = names; *name; name++) {
-      if (!strcmp (*name, collection_name)) {
-         found = true;
-      }
-
-      bson_free (*name);
+   if (!names) {
+      test_error ("expected error checking if collection '%s' exists: %s",
+                  collection_name,
+                  error.message);
    }
 
-   bson_free (names);
+   for (i = 0; names && names[i] != NULL; i++) {
+      if (!strcmp (names[i], collection_name)) {
+         found = true;
+      }
+   }
+
    mongoc_database_destroy (db);
+   bson_strfreev (names);
 
    return found;
 }
@@ -2156,6 +2160,7 @@ json_test_operation (json_test_ctx_t *ctx,
          mongoc_client_t *client;
 
          client = mongoc_client_new_from_uri (ctx->client->uri);
+         test_framework_set_ssl_opts (client);
          activate_fail_point (
             client, session->server_id, operation, "arguments.failPoint");
 
@@ -2181,6 +2186,7 @@ json_test_operation (json_test_ctx_t *ctx,
          bool exists;
 
          client = mongoc_client_new_from_uri (ctx->client->uri);
+         test_framework_set_ssl_opts (client);
          exists = collection_exists (client, operation);
          mongoc_client_destroy (client);
 
@@ -2190,6 +2196,7 @@ json_test_operation (json_test_ctx_t *ctx,
          bool exists;
 
          client = mongoc_client_new_from_uri (ctx->client->uri);
+         test_framework_set_ssl_opts (client);
          exists = collection_exists (client, operation);
          mongoc_client_destroy (client);
 
@@ -2199,6 +2206,7 @@ json_test_operation (json_test_ctx_t *ctx,
          bool exists;
 
          client = mongoc_client_new_from_uri (ctx->client->uri);
+         test_framework_set_ssl_opts (client);
          exists = index_exists (client, operation);
          mongoc_client_destroy (client);
 
@@ -2208,6 +2216,7 @@ json_test_operation (json_test_ctx_t *ctx,
          bool exists;
 
          client = mongoc_client_new_from_uri (ctx->client->uri);
+         test_framework_set_ssl_opts (client);
          exists = index_exists (client, operation);
          mongoc_client_destroy (client);
 
