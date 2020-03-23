@@ -94,9 +94,7 @@ _mongoc_stream_tls_openssl_destroy (mongoc_stream_t *stream)
    SSL_CTX_free (openssl->ctx);
    openssl->ctx = NULL;
 
-   if (openssl->ocsp_opts)
-       bson_free ((char *) openssl->ocsp_opts->host);
-   bson_free (openssl->ocsp_opts);
+   mongoc_openssl_ocsp_opt_destroy (openssl->ocsp_opts);
    openssl->ocsp_opts = NULL;
 
    bson_free (openssl);
@@ -566,12 +564,20 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
    if (BIO_do_handshake (openssl->bio) == 1) {
 #if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
       X509 *peer = NULL;
-      peer = SSL_get_peer_certificate (ssl);
 
-      if (tls->ssl_opts.allow_invalid_hostname ||
-         X509_check_host (peer, host, 0, 0, NULL) == 1 ||
-         X509_check_ip_asc (peer, host, 0) == 1) {
+      if (tls->ssl_opts.allow_invalid_hostname) {
          RETURN (true);
+      }
+
+      peer = SSL_get_peer_certificate (ssl);
+      if (peer && (X509_check_host (peer, host, 0, 0, NULL) == 1 ||
+          X509_check_ip_asc (peer, host, 0) == 1)) {
+         X509_free (peer);
+         RETURN (true);
+      }
+
+      if (peer) {
+         X509_free (peer);
       }
 #else
       if (_mongoc_openssl_check_cert (
@@ -733,14 +739,15 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
 #ifdef MONGOC_ENABLE_OCSP
    } else {
       if (!SSL_CTX_set_tlsext_status_type (ssl_ctx, TLSEXT_STATUSTYPE_ocsp)) {
+         MONGOC_ERROR ("cannot enable OCSP status request extension");
          SSL_CTX_free (ssl_ctx);
          RETURN (NULL);
       }
 
-      ocsp_opts = bson_malloc(sizeof(mongoc_openssl_ocsp_opt_t));
+      ocsp_opts = bson_malloc (sizeof (mongoc_openssl_ocsp_opt_t));
       ocsp_opts->allow_invalid_hostname = opt->allow_invalid_hostname;
       ocsp_opts->weak_cert_validation = opt->weak_cert_validation;
-      ocsp_opts->host = bson_strdup(host);
+      ocsp_opts->host = bson_strdup (host);
 
       SSL_CTX_set_tlsext_status_arg (ssl_ctx, ocsp_opts);
       SSL_CTX_set_tlsext_status_cb (ssl_ctx, _mongoc_ocsp_tlsext_status_cb);
@@ -755,12 +762,14 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
 
    bio_ssl = BIO_new_ssl (ssl_ctx, client);
    if (!bio_ssl) {
+      mongoc_openssl_ocsp_opt_destroy (ocsp_opts);
       SSL_CTX_free (ssl_ctx);
       RETURN (NULL);
    }
    meth = mongoc_stream_tls_openssl_bio_meth_new ();
    bio_mongoc_shim = BIO_new (meth);
    if (!bio_mongoc_shim) {
+      mongoc_openssl_ocsp_opt_destroy (ocsp_opts);
       BIO_free_all (bio_ssl);
       BIO_meth_free (meth);
       RETURN (NULL);
@@ -808,6 +817,19 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
    mongoc_counter_streams_active_inc ();
 
    RETURN ((mongoc_stream_t *) tls);
+}
+
+void
+mongoc_openssl_ocsp_opt_destroy (void *ocsp_opt)
+{
+   mongoc_openssl_ocsp_opt_t *casted;
+
+   if (!ocsp_opt) {
+      return;
+   }
+   casted = (mongoc_openssl_ocsp_opt_t *) ocsp_opt;
+   bson_free (casted->host);
+   bson_free (ocsp_opt);
 }
 
 #endif /* MONGOC_ENABLE_SSL_OPENSSL */

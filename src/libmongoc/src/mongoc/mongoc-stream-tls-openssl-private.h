@@ -25,10 +25,13 @@
 BSON_BEGIN_DECLS
 
 typedef struct {
-    const char *host;
-    bool allow_invalid_hostname;
-    bool weak_cert_validation;
+   char *host;
+   bool allow_invalid_hostname;
+   bool weak_cert_validation;
 } mongoc_openssl_ocsp_opt_t;
+
+void
+mongoc_openssl_ocsp_opt_destroy (void *ocsp_opt);
 
 /**
  * mongoc_stream_tls_openssl_t:
