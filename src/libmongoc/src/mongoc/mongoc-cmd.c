@@ -786,7 +786,7 @@ _is_retryable_read (const mongoc_cmd_parts_t *parts,
 
 bool
 mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
-                           const mongoc_server_stream_t *server_stream,
+                           mongoc_server_stream_t *server_stream,
                            bson_error_t *error)
 {
    mongoc_server_description_type_t server_type;

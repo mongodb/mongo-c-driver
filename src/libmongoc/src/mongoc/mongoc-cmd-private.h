@@ -58,7 +58,7 @@ typedef struct _mongoc_cmd_t {
    const uint8_t *payload;
    int32_t payload_size;
    const char *payload_identifier;
-   const mongoc_server_stream_t *server_stream;
+   mongoc_server_stream_t *server_stream;
    int64_t operation_id;
    mongoc_client_session_t *session;
    bool is_acknowledged;
@@ -123,7 +123,7 @@ mongoc_cmd_parts_append_read_write (mongoc_cmd_parts_t *parts,
 
 bool
 mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
-                           const mongoc_server_stream_t *server_stream,
+                           mongoc_server_stream_t *server_stream,
                            bson_error_t *error);
 
 bool

@@ -497,6 +497,55 @@ test_mock_end_sessions_pooled (void)
    _test_mock_end_sessions (true);
 }
 
+/* Test for CDRIVER-3587 - Do not reuse server stream that becomes invalid on
+ * failure to end session */
+static void
+test_mock_end_sessions_server_disconnect (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   bson_error_t error;
+   mongoc_client_session_t *session[12000];
+   future_t *future;
+   uint16_t i;
+
+   server = mock_mongos_new (WIRE_VERSION_OP_MSG);
+   mock_server_run (server);
+
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   for (i = 0; i < 12000; i++) {
+      session[i] = mongoc_client_start_session (client, NULL, &error);
+      ASSERT_OR_PRINT (session[i], error);
+   }
+
+   /* Simulate server failure or network failure.  Destroy the mock server here
+    * rather than at the end of the test so that the 'endSessions' commands fail
+    * to reach the mock server. */
+   mock_server_destroy (server);
+
+   /* The below calls to mongoc_client_session_destroy () will produce a warning
+    * regarding the inability to send the 'endSessions' command. */
+   capture_logs (true);
+
+   for (i = 0; i < 12000; i++) {
+      mongoc_client_session_destroy (session[i]);
+   }
+
+   /* The above loop will add each session back to the session pool.  If
+    * CDRIVER-3587 has not been fixed, the mongoc_client_destroy () call below
+    * will create 'endSessions' commands which will be sent but fail to reach
+    * the server; the associated server stream will not be correctly
+    * invalidated.  Subsequent reuse of the stream, as in the attempt to send
+    * the second batch of 10,000 during the attempt to destroy the client, will
+    * trigger a segfault. */
+
+   future = future_client_destroy (client);
+
+   future_wait (future);
+   future_destroy (future);
+}
+
 typedef struct {
    int started_calls;
    int succeeded_calls;
@@ -2686,6 +2735,10 @@ test_session_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Session/end/mock/pooled",
                                 test_mock_end_sessions_pooled,
+                                test_framework_skip_if_no_crypto);
+   TestSuite_AddMockServerTest (suite,
+                                "/Session/end/mock/disconnected",
+                                test_mock_end_sessions_server_disconnect,
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/Session/end/single",

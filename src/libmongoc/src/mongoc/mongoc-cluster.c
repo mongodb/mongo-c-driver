@@ -2895,7 +2895,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
    mongoc_rpc_t rpc;
    int32_t msg_len;
    bool ok;
-   const mongoc_server_stream_t *server_stream;
+   mongoc_server_stream_t *server_stream;
 
    server_stream = cmd->server_stream;
    if (!cmd->command_name) {
@@ -2974,6 +2974,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       RUN_CMD_ERR_DECORATE;
       mongoc_cluster_disconnect_node (
          cluster, server_stream->sd->id, true, error);
+      server_stream->stream = NULL;
       bson_free (output);
       network_error_reply (reply, cmd);
       _mongoc_buffer_destroy (&buffer);
@@ -2988,6 +2989,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
          RUN_CMD_ERR_DECORATE;
          mongoc_cluster_disconnect_node (
             cluster, server_stream->sd->id, true, error);
+         server_stream->stream = NULL;
          bson_free (output);
          network_error_reply (reply, cmd);
          _mongoc_buffer_destroy (&buffer);
@@ -3006,6 +3008,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
             server_stream->sd->max_msg_size);
          mongoc_cluster_disconnect_node (
             cluster, server_stream->sd->id, true, error);
+         server_stream->stream = NULL;
          bson_free (output);
          network_error_reply (reply, cmd);
          _mongoc_buffer_destroy (&buffer);
@@ -3021,6 +3024,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
          RUN_CMD_ERR_DECORATE;
          mongoc_cluster_disconnect_node (
             cluster, server_stream->sd->id, true, error);
+         server_stream->stream = NULL;
          bson_free (output);
          network_error_reply (reply, cmd);
          _mongoc_buffer_destroy (&buffer);
@@ -3048,6 +3052,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
                          "Could not decompress message from server");
             mongoc_cluster_disconnect_node (
                cluster, server_stream->sd->id, true, error);
+            server_stream->stream = NULL;
             bson_free (output);
             network_error_reply (reply, cmd);
             _mongoc_buffer_destroy (&buffer);
