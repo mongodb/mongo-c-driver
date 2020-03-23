@@ -422,7 +422,7 @@ mongoc_secure_channel_setup_crl (
       MONGOC_WARNING ("Can't determine opt->crl_file length");
       return false;
    }
-   str = (LPWSTR) bson_malloc0 (chars);
+   str = (LPWSTR) bson_malloc0 (chars * sizeof (*str));
    MultiByteToWideChar (CP_ACP, 0, opt->crl_file, -1, str, chars);
 
 
