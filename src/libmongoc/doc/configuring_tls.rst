@@ -90,12 +90,24 @@ When compiled against OpenSSL, the driver will attempt to load the system defaul
 
 Setting ``tlsDisableOCSPEndpointCheck`` and ``tlsDisableCertificateRevocationCheck`` has no effect.
 
+The Online Certificate Status Protocol (OCSP) is partially supported (see `RFC 6960 <https://tools.ietf.org/html/rfc6960>`_). Support requires OpenSSL 1.1.0 and has the following behavior:
+
+- Stapled OCSP responses are validated on certificates presented by the server.
+- Server certificates with a Must-Staple extension (see `RFC 7633 <https://tools.ietf.org/html/rfc7633>`_) are required to have stapled responses.
+- When a ``crl_file`` is set with :symbol:`mongoc_ssl_opt_t`, and the ``crl_file`` revokes the server's certificate, the certificate is considered revoked (even if the certificate has a valid stapled OCSP response)
+
 LibreSSL / libtls
 `````````````````
 
 The MongoDB C Driver supports LibreSSL through the use of OpenSSL compatibility checks when configured to compile against ``openssl``. It also supports the new ``libtls`` library when configured to build against ``libressl``.
 
 Setting ``tlsDisableOCSPEndpointCheck`` and ``tlsDisableCertificateRevocationCheck`` has no effect.
+
+The Online Certificate Status Protocol (OCSP) is partially supported (see `RFC 6960 <https://tools.ietf.org/html/rfc6960>`_).
+
+- Stapled OCSP responses are validated on certificates presented by the server.
+- The Must-Staple extension (see `RFC 7633 <https://tools.ietf.org/html/rfc7633>`_) is ignored. Connection may continue if a Must-Staple certificate is presented with no stapled response (unless the client receives a revoked response from an OCSP responder).
+- Connection will continue if a Must-Staple certificate is presented without a stapled response and the OCSP responder is down.
 
 Native TLS Support on Windows (Secure Channel)
 ``````````````````````````````````````````````
@@ -114,6 +126,13 @@ Setting ``tlsDisableOCSPEndpointCheck`` has no effect.
 
 Setting ``tlsAllowInvalidHostnames`` additionally consider certificates with no revocation mechanisms specified (CRL / OCSP) a non-error.
 
+The Online Certificate Status Protocol (OCSP) is partially supported (see `RFC 6960 <https://tools.ietf.org/html/rfc6960>`_).
+
+- Stapled OCSP responses are validated on certificates presented by the server.
+- The Must-Staple extension (see `RFC 7633 <https://tools.ietf.org/html/rfc7633>`_) is ignored. Connection may continue if a Must-Staple certificate is presented with no stapled response (unless the client receives a revoked response from an OCSP responder).
+- When a ``crl_file`` is set with :symbol:`mongoc_ssl_opt_t`, and the ``crl_file`` revokes the server's certificate, the OCSP response takes precedence. E.g. if the server presents a certificate with a valid stapled OCSP response, the certificate is considered valid even if the ``crl_file`` marks it as revoked.
+- Connection will continue if a Must-Staple certificate is presented without a stapled response and the OCSP responder is down.
+
 .. _Secure Transport:
 
 Native TLS Support on macOS / Darwin (Secure Transport)
@@ -126,3 +145,9 @@ When compiled against Secure Transport, the ``ca_dir`` option of a :symbol:`mong
 When ``tlsCAFile`` is set, the driver will only allow server certificates issued by the authority (or authorities) provided. When no ``tlsCAFile`` is set, the driver will use the Certificate Authorities in the currently unlocked keychains.
 
 Setting ``tlsDisableOCSPEndpointCheck`` and ``tlsDisableCertificateRevocationCheck`` has no effect.
+
+The Online Certificate Status Protocol (OCSP) is partially supported (see `RFC 6960 <https://tools.ietf.org/html/rfc6960>`_).
+
+- Stapled OCSP responses are validated on certificates presented by the server.
+- The Must-Staple extension (see `RFC 7633 <https://tools.ietf.org/html/rfc7633>`_) is ignored. Connection may continue if a Must-Staple certificate is presented with no stapled response (unless the client receives a revoked response from an OCSP responder).
+- Connection will continue if a Must-Staple certificate is presented without a stapled response and the OCSP responder is down.
