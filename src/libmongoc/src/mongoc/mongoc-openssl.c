@@ -470,22 +470,100 @@ _get_issuer (X509 *cert, STACK_OF (X509) * chain)
          issuer = candidate;
       }
    }
-   return issuer;
+   RETURN (issuer);
 }
 
 #define ERR_STR (ERR_error_string (ERR_get_error (), NULL))
 
+OCSP_RESPONSE *
+_contact_ocsp_responder (OCSP_CERTID *id, X509 *peer)
+{
+   STACK_OF (OPENSSL_STRING) *url_stack = NULL;
+   OPENSSL_STRING url = NULL, host = NULL, path = NULL, port = NULL;
+   OCSP_REQUEST *req = NULL;
+   OCSP_RESPONSE *resp = NULL;
+   BIO *bio = NULL;
+   int i, ssl;
+
+   url_stack = X509_get1_ocsp (peer);
+   for (i = 0; i < sk_OPENSSL_STRING_num (url_stack) && !resp; i++) {
+      url = sk_OPENSSL_STRING_value (url_stack, i);
+      MONGOC_DEBUG ("Contacting OCSP responder '%s'", url);
+
+      /* splits the given url into its host, port and path components */
+      if (!OCSP_parse_url (url, &host, &port, &path, &ssl)) {
+         MONGOC_DEBUG ("Could not parse URL");
+         GOTO (retry);
+      }
+
+      if (!(req = OCSP_REQUEST_new ())) {
+         MONGOC_DEBUG ("Could not create new OCSP request");
+         GOTO (retry);
+      }
+
+      /* add the cert ID to the OCSP request object */
+      if (!id || !OCSP_request_add0_id (req, OCSP_CERTID_dup (id))) {
+         MONGOC_DEBUG ("Could not add cert ID to the OCSP request object");
+         GOTO (retry);
+      }
+
+      /* add nonce to OCSP request object */
+      if (!OCSP_request_add1_nonce (req, 0 /* use random nonce */, -1)) {
+         MONGOC_DEBUG ("Could not add nonce to OCSP request object");
+         GOTO (retry);
+      }
+
+      if (!(bio = BIO_new_connect (host))) {
+         MONGOC_DEBUG ("Could not create new BIO object");
+         GOTO (retry);
+      }
+
+      BIO_set_conn_port (bio, port);
+      if (BIO_do_connect (bio) <= 0) {
+         MONGOC_DEBUG ("Could not connect to url '%s'", url);
+         GOTO (retry);
+      }
+
+      if (!(resp = OCSP_sendreq_bio (bio, path, req))) {
+         MONGOC_DEBUG (
+            "Could not perform an OCSP request for url '%s'. Error: %s",
+            url,
+            ERR_STR);
+      }
+   retry:
+      if (bio)
+         BIO_free_all (bio);
+      if (host)
+         OPENSSL_free (host);
+      if (port)
+         OPENSSL_free (port);
+      if (path)
+         OPENSSL_free (path);
+      if (req)
+         OCSP_REQUEST_free (req);
+   }
+
+   if (url_stack)
+      X509_email_free (url_stack);
+   RETURN (resp);
+}
+
+#define SOFT_FAIL(...)                              \
+   ((stapled_response) ? MONGOC_ERROR (__VA_ARGS__) \
+                       : MONGOC_DEBUG (__VA_ARGS__))
+
 int
 _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
 {
-   const int ERROR = -1, FAILURE = 0, SUCCESS = 1;
+   enum { ERROR = -1, REVOKED, SUCCESS } ret;
+   bool stapled_response = true;
    OCSP_RESPONSE *resp = NULL;
    OCSP_BASICRESP *basic = NULL;
    X509_STORE *store = NULL;
    X509 *peer = NULL, *issuer = NULL;
    STACK_OF (X509) *cert_chain = NULL;
    const unsigned char *r = NULL;
-   int cert_status, reason, len, status, ret;
+   int cert_status, reason, len, status;
    OCSP_CERTID *id = NULL;
    mongoc_openssl_ocsp_opt_t *opts = (mongoc_openssl_ocsp_opt_t *) arg;
    ASN1_GENERALIZEDTIME *produced_at = NULL, *this_update = NULL,
@@ -496,59 +574,80 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
    }
 
    if (!(peer = SSL_get_peer_certificate (ssl))) {
-      MONGOC_ERROR ("No certificate was presented by the peer: %s", ERR_STR);
+      MONGOC_ERROR ("No certificate was presented by the peer");
       ret = ERROR;
-      goto done;
+      GOTO (done);
+   }
+
+   /* Get a STACK_OF(X509) certs forming the cert chain of the peer, including
+    * the peer's cert */
+   if (!(cert_chain = SSL_get0_verified_chain (ssl))) {
+      MONGOC_ERROR ("No certificate was presented by the peer");
+      ret = REVOKED;
+      GOTO (done);
+   }
+
+   if (!(issuer = _get_issuer (peer, cert_chain))) {
+      MONGOC_ERROR ("Could not get issuer from peer cert");
+      ret = ERROR;
+      GOTO (done);
+   }
+
+   if (!(id = OCSP_cert_to_id (NULL /* SHA1 */, peer, issuer))) {
+      MONGOC_ERROR ("Could not obtain a valid OCSP_CERTID for peer");
+      ret = ERROR;
+      GOTO (done);
    }
 
    /* Get the stapled OCSP response returned by the server */
    len = SSL_get_tlsext_status_ocsp_resp (ssl, &r);
-   if (!r) {
+   stapled_response = !!r;
+   if (stapled_response) {
+      /* obtain an OCSP_RESPONSE object from the OCSP response */
+      if (!d2i_OCSP_RESPONSE (&resp, &r, len)) {
+         MONGOC_ERROR ("Failed to parse OCSP response");
+         ret = ERROR;
+         GOTO (done);
+      }
+   } else {
+      MONGOC_DEBUG ("Server does not contain a stapled response");
       bool must_staple = X509_get_ext_d2i (peer, NID_tlsfeature, 0, 0) != NULL;
       if (must_staple) {
-         MONGOC_ERROR ("Server must contain a stapled response: %s", ERR_STR);
-         ret = FAILURE;
-         goto done;
+         MONGOC_ERROR ("Server must contain a stapled response");
+         ret = REVOKED;
+         GOTO (done);
       }
-      ret = SUCCESS; // TODO: contact OCSP responder
-      goto done;
+
+      if (!(resp = _contact_ocsp_responder (id, peer))) {
+         MONGOC_DEBUG ("Soft-fail: No OCSP responder could be reached");
+         ret = SUCCESS;
+         GOTO (done);
+      }
    }
 
-   /* obtain an OCSP_RESPONSE object from the OCSP response */
-   if (!d2i_OCSP_RESPONSE (&resp, &r, len)) {
-      MONGOC_ERROR ("Failed to parse OCSP response: %s", ERR_STR);
-      ret = ERROR;
-      goto done;
-   }
-
+   MONGOC_DEBUG ("Validating OCSP response");
    /* Validate the OCSP response status of the OCSP_RESPONSE object */
    status = OCSP_response_status (resp);
    if (status != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
-      MONGOC_ERROR ("OCSP response error %d %s",
-                    status,
-                    OCSP_response_status_str (status));
+      SOFT_FAIL ("OCSP response error %d %s",
+                 status,
+                 OCSP_response_status_str (status));
       ret = ERROR;
-      goto done;
+      GOTO (done);
    }
+
+   MONGOC_DEBUG ("OCSP response status successful");
 
    /* Get the OCSP_BASICRESP structure contained in OCSP_RESPONSE object for the
     * peer cert */
    basic = OCSP_response_get1_basic (resp);
    if (!basic) {
-      MONGOC_ERROR ("Could not find BasicOCSPResponse: %s", ERR_STR);
+      SOFT_FAIL ("Could not find BasicOCSPResponse: %s", ERR_STR);
       ret = ERROR;
-      goto done;
+      GOTO (done);
    }
 
    store = SSL_CTX_get_cert_store (SSL_get_SSL_CTX (ssl));
-
-   /* Get a STACK_OF(X509) certs forming the cert chain of the peer, including
-    * the peer's cert */
-   if (!(cert_chain = SSL_get0_verified_chain (ssl))) {
-      MONGOC_ERROR ("No certificate was presented by the peer: %s", ERR_STR);
-      ret = ERROR;
-      goto done;
-   }
 
    /*
     * checks that the basic response message is correctly signed and that the
@@ -560,22 +659,9 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
     * validation path via the untrusted cert chain.
     */
    if (SUCCESS != OCSP_basic_verify (basic, cert_chain, store, 0)) {
-      MONGOC_ERROR ("OCSP response failed verification: %s", ERR_STR);
+      SOFT_FAIL ("OCSP response failed verification: %s", ERR_STR);
       ret = ERROR;
-      goto done;
-   }
-
-   if (!(issuer = _get_issuer (peer, cert_chain))) {
-      MONGOC_ERROR ("Could not get issuer from peer cert");
-      ret = ERROR;
-      goto done;
-   }
-
-   if (!(id = OCSP_cert_to_id (NULL /* SHA1 */, peer, issuer))) {
-      MONGOC_ERROR ("Could not obtain a valid OCSP_CERTID for peer: %s",
-                    ERR_STR);
-      ret = ERROR;
-      goto done;
+      GOTO (done);
    }
 
    /* searches the basic response for an OCSP response for the given cert ID */
@@ -586,30 +672,32 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
                                &produced_at,
                                &this_update,
                                &next_update)) {
-      MONGOC_ERROR ("No OCSP response found for the peer certificate: %s",
-                    ERR_STR);
+      SOFT_FAIL ("No OCSP response found for the peer certificate");
       ret = ERROR;
-      goto done;
+      GOTO (done);
    }
 
    /* checks the validity of this_update and next_update values */
    if (!OCSP_check_validity (this_update, next_update, 0L, -1L)) {
-      MONGOC_ERROR ("OCSP response has expired: %s", ERR_STR);
+      SOFT_FAIL ("OCSP response has expired: %s", ERR_STR);
       ret = ERROR;
-      goto done;
+      GOTO (done);
    }
 
    switch (cert_status) {
    case V_OCSP_CERTSTATUS_GOOD:
+      MONGOC_DEBUG ("OCSP Certificate Status: Good");
       /* TODO: cache response */
       break;
 
    case V_OCSP_CERTSTATUS_REVOKED:
-      MONGOC_ERROR ("OCSP Certificate Status: Revoked. Reason %d", reason);
-      ret = FAILURE;
-      goto done;
+      MONGOC_ERROR ("OCSP Certificate Status: Revoked. Reason: %s",
+                    OCSP_crl_reason_str (reason));
+      ret = REVOKED;
+      GOTO (done);
 
-   default: /* V_OCSP_CERTSTATUS_UNKNOWN */
+   default:
+      MONGOC_DEBUG ("OCSP Certificate Status: Unknown");
       break;
    }
 
@@ -617,23 +705,24 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
    if (!opts->allow_invalid_hostname &&
        X509_check_host (peer, opts->host, 0, 0, NULL) != SUCCESS &&
        X509_check_ip_asc (peer, opts->host, 0) != SUCCESS) {
-      ret = FAILURE;
-      goto done;
+      ret = REVOKED;
+      GOTO (done);
    }
 
    ret = SUCCESS;
 done:
+   if (ret == ERROR && !stapled_response) {
+      ret = SUCCESS;
+   }
    if (basic)
       OCSP_BASICRESP_free (basic);
    if (resp)
       OCSP_RESPONSE_free (resp);
    if (id)
-       OCSP_CERTID_free (id);
+      OCSP_CERTID_free (id);
    if (peer)
-       X509_free (peer);
-   if (issuer)
-       X509_free (issuer);
-   return ret;
+      X509_free (peer);
+   RETURN (ret);
 }
 #endif
 
