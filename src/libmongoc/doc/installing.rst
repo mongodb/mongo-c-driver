@@ -17,9 +17,9 @@ The MongoDB C Driver is `continuously tested <https://evergreen.mongodb.com/wate
 - RHEL 6.7, 7.0, 7.1, 7.2
 - Ubuntu 16.04, 18.04
 - Clang 3.4, 3.5, 3.7, 3.8
-- GCC 4.6, 4.8, 4.9, 5.4, 6.3
+- GCC 4.8, 4.9, 5.4, 6.3
 - MinGW-W64
-- Visual Studio 2010, 2013, 2015
+- Visual Studio 2013, 2015, 2017
 - x86, x86_64, ARM (aarch64), Power8 (ppc64le), zSeries (s390x)
 
 Install libmongoc with a Package Manager
