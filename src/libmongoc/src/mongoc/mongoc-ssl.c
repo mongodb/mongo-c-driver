@@ -114,9 +114,9 @@ _mongoc_ssl_opts_from_uri (mongoc_ssl_opt_t *ssl_opt,
    ssl_opt->internal = internal;
    internal->tls_disable_certificate_revocation_check =
       mongoc_uri_get_option_as_bool (
-         uri, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK, insecure);
+         uri, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK, false);
    internal->tls_disable_ocsp_endpoint_check = mongoc_uri_get_option_as_bool (
-      uri, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK, insecure);
+      uri, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK, false);
 }
 
 void

@@ -8,6 +8,7 @@
 #include "ssl-test.h"
 #include "TestSuite.h"
 #include "test-libmongoc.h"
+#include "test-conveniences.h"
 
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
    !defined(MONGOC_ENABLE_SSL_LIBRESSL)
@@ -388,6 +389,31 @@ test_mongoc_tls_trust_dir (void)
 #endif /* !MONGOC_ENABLE_SSL_SECURE_CHANNEL && !MONGOC_ENABLE_SSL_LIBRESSL */
 
 void
+test_mongoc_tls_insecure_nowarning (void)
+{
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+
+   if (!test_framework_get_ssl ()) {
+      return;
+   }
+   uri = test_framework_get_uri ();
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_TLSINSECURE, true);
+   client = mongoc_client_new_from_uri (uri);
+
+   capture_logs (true);
+   mongoc_client_command_simple (client,
+                                 "admin",
+                                 tmp_bson ("{'ping': 1}"),
+                                 NULL /* read prefs */,
+                                 NULL /* reply */,
+                                 NULL /* error */);
+   ASSERT_NO_CAPTURED_LOGS ("has no effect");
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+}
+
+void
 test_stream_tls_install (TestSuite *suite)
 {
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
@@ -418,5 +444,8 @@ test_stream_tls_install (TestSuite *suite)
    defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10000000L
    TestSuite_Add (suite, "/TLS/trust_dir", test_mongoc_tls_trust_dir);
 #endif
+
+   TestSuite_AddLive (
+      suite, "/TLS/insecure_nowarning", test_mongoc_tls_insecure_nowarning);
 #endif
 }
