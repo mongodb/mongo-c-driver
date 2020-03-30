@@ -2064,6 +2064,46 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
 }
 
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_cluster_stream_valid --
+ *
+ *       Internal function to determine if @server_stream is valid and
+ *       associated with the given cluster.
+ *
+ * Returns:
+ *       true if @server_stream is not NULL, hasn't been freed or changed;
+ *       otherwise false.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+bool
+mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
+                             mongoc_server_stream_t *server_stream)
+{
+   mongoc_server_stream_t *tmp_stream;
+   bool ret = true;
+
+   BSON_ASSERT (cluster);
+
+   if (!server_stream) {
+      return false;
+   }
+
+   tmp_stream = mongoc_cluster_stream_for_server (
+      cluster, server_stream->sd->id, false, NULL, NULL, NULL);
+   if (!tmp_stream || tmp_stream->stream != server_stream->stream) {
+      /* stream was freed, or has changed. */
+      ret = false;
+   }
+
+   mongoc_server_stream_cleanup (tmp_stream);
+
+   return ret;
+}
+
 mongoc_server_stream_t *
 _mongoc_cluster_create_server_stream (mongoc_topology_t *topology,
                                       uint32_t server_id,

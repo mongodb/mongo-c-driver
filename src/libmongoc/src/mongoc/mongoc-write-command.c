@@ -857,7 +857,8 @@ again:
 
       if (!ret) {
          result->failed = true;
-         if (bson_empty (&reply)) {
+         if (bson_empty (&reply) ||
+             !mongoc_cluster_stream_valid (&client->cluster, server_stream)) {
             /* assembling failed, or a network error running the command */
             result->must_stop = true;
          }

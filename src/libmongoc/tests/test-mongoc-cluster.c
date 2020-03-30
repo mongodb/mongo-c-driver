@@ -398,6 +398,81 @@ test_write_command_disconnect (void *ctx)
 }
 
 
+/* Test for CDRIVER-3306 - Do not assume non-empty server reply implies stream
+ * is still valid */
+static void
+test_cluster_command_notmaster (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_t *doc;
+   uint32_t i;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   bson_t reply;
+
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   /* server is "recovering": not master, not secondary */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'maxWireVersion': %d,"
+                              " 'ismaster': false,"
+                              " 'secondary': false,"
+                              " 'setName': 'rs',"
+                              " 'hosts': ['%s']}",
+                              WIRE_VERSION_OP_MSG - 1,
+                              mock_server_get_host_and_port (server));
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
+
+   client = mongoc_client_new_from_uri (uri);
+
+   collection = mongoc_client_get_collection (client, "db", "test");
+   /* use an unordered bulk write, so it attempts to continue on error */
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson("{'ordered': false}"));
+   /* Set a "hint" aka "server id" to force the write to be directed to the
+    * non-primary */
+   mongoc_bulk_operation_set_hint (bulk, 1);
+   doc = tmp_bson("{'foo': 1}");
+   /* Have enough inserts to ensure some batch splits */
+   for (i = 0; i < 10001; i++) {
+      mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
+   }
+   /* If CDRIVER-3306 is still present, then this operation will trigger a
+    * segfault; once the below non-empty reply is received from the mock
+    * server, the stream will be invalidated but the non-empty reply will be
+    * interpreted as meaning it is OK to proceed with the other operations */
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   request = mock_server_receives_request (server);
+   mock_server_replies_simple (
+      request, "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }");
+   ASSERT (future_wait (future));
+
+   mongoc_client_destroy (client);
+   mongoc_collection_destroy (collection);
+   mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&reply);
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+
+}
+
+
 typedef struct {
    int calls;
    bson_t *cluster_time;
@@ -1793,6 +1868,9 @@ test_cluster_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/command/timeout/pooled",
                                 test_cluster_command_timeout_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Cluster/command/notmaster",
+                                test_cluster_command_notmaster);
    TestSuite_AddFull (suite,
                       "/Cluster/write_command/disconnect",
                       test_write_command_disconnect,
