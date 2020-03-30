@@ -51,6 +51,7 @@ struct _mongoc_bulk_write_flags_t {
    bool has_multi_write;
    bool has_array_filters;
    bool has_update_hint;
+   bool has_delete_hint;
 };
 
 

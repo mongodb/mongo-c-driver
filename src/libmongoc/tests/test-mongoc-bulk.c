@@ -25,6 +25,11 @@ typedef bool (*update_with_opts_fn) (mongoc_bulk_operation_t *bulk,
                                      const bson_t *opts,
                                      bson_error_t *error);
 
+typedef bool (*remove_with_opts_fn) (mongoc_bulk_operation_t *bulk,
+                                     const bson_t *selector,
+                                     const bson_t *opts,
+                                     bson_error_t *error);
+
 /*--------------------------------------------------------------------------
  *
  * assert_error_count --
@@ -1059,59 +1064,6 @@ test_update_arrayfilters_unsupported (void *ctx)
 
 
 static void
-test_update_hint_unsupported (void *ctx)
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   mongoc_bulk_operation_t *bulk;
-   bson_error_t err;
-   bool ret;
-   int i;
-
-   update_with_opts_fn fns[] = {
-      mongoc_bulk_operation_update_one_with_opts,
-      mongoc_bulk_operation_update_many_with_opts,
-      mongoc_bulk_operation_replace_one_with_opts,
-   };
-
-   client = test_framework_client_new ();
-   collection = get_test_collection (client, "test_update_hint_err");
-
-   for (i = 0; i < 3; i++) {
-      bson_t *document, *opts;
-
-      if (fns[i] == mongoc_bulk_operation_replace_one_with_opts) {
-         document = tmp_bson ("{'x': 2}");
-         opts = tmp_bson ("{'hint': {'_id': 1}}");
-      } else {
-         document = tmp_bson ("{'$set': {'x': 2}}");
-         opts = tmp_bson ("{'hint': '_id_'}");
-      }
-
-      bulk =
-         mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
-      ret = fns[i](bulk, tmp_bson ("{'_id': 1}"), document, opts, &err);
-
-      /* adding the operation to the bulk succeeds */
-      ASSERT_OR_PRINT (ret, err);
-
-      ret = mongoc_bulk_operation_execute (bulk, NULL, &err) > 0;
-      BSON_ASSERT (!ret);
-      ASSERT_ERROR_CONTAINS (
-         err,
-         MONGOC_ERROR_COMMAND,
-         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-         "The selected server does not support hint for update");
-
-      mongoc_bulk_operation_destroy (bulk);
-   }
-
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-}
-
-
-static void
 test_update_hint_validate (void)
 {
    mongoc_client_t *client;
@@ -1144,6 +1096,47 @@ test_update_hint_validate (void)
       bulk =
          mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
       ret = fns[i](bulk, tmp_bson ("{'_id': 1}"), document, opts, &err);
+
+      BSON_ASSERT (!ret);
+      ASSERT_ERROR_CONTAINS (err,
+                             MONGOC_ERROR_COMMAND,
+                             MONGOC_ERROR_COMMAND_INVALID_ARG,
+                             "The hint option must be a string or document");
+
+      mongoc_bulk_operation_destroy (bulk);
+   }
+
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_delete_hint_validate (void)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   bson_error_t err;
+   bool ret;
+   int i;
+
+   remove_with_opts_fn fns[] = {
+      mongoc_bulk_operation_remove_one_with_opts,
+      mongoc_bulk_operation_remove_many_with_opts,
+   };
+
+   client = test_framework_client_new ();
+   collection = get_test_collection (client, "test_delete_hint_err");
+
+   for (i = 0; i < 2; i++) {
+      bson_t *opts;
+
+      opts = tmp_bson ("{'hint': []}");
+
+      bulk =
+         mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+      ret = fns[i](bulk, tmp_bson ("{'_id': 1}"), opts, &err);
 
       BSON_ASSERT (!ret);
       ASSERT_ERROR_CONTAINS (err,
@@ -4842,14 +4835,10 @@ test_bulk_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_more_than_5);
-   TestSuite_AddFull (suite,
-                      "/BulkOperation/update/hint/unsupported",
-                      test_update_hint_unsupported,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_more_than_7);
    TestSuite_AddLive (
       suite, "/BulkOperation/update/hint/validate", test_update_hint_validate);
+   TestSuite_AddLive (
+      suite, "/BulkOperation/delete/hint/validate", test_delete_hint_validate);
    TestSuite_AddLive (
       suite, "/BulkOperation/replace_one_ordered", test_replace_one_ordered);
    TestSuite_AddLive (suite,

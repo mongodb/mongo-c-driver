@@ -2318,9 +2318,8 @@ static bool
 _mongoc_delete_one_or_many (mongoc_collection_t *collection,
                             bool multi,
                             const bson_t *selector,
-                            mongoc_crud_opts_t *crud,
+                            mongoc_delete_opts_t *delete_opts,
                             const bson_t *cmd_opts,
-                            const bson_t *collation,
                             bson_t *opts,
                             bson_t *reply,
                             bson_error_t *error)
@@ -2338,8 +2337,12 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
    _mongoc_write_result_init (&result);
    bson_append_int32 (opts, "limit", 5, multi ? 0 : 1);
 
-   if (!bson_empty (collation)) {
-      bson_append_document (opts, "collation", 9, collation);
+   if (!bson_empty (&delete_opts->collation)) {
+      bson_append_document (opts, "collation", 9, &delete_opts->collation);
+   }
+
+   if (delete_opts->hint.value_type) {
+      bson_append_value (opts, "hint", 4, &delete_opts->hint);
    }
 
    _mongoc_write_command_init_delete_idl (
@@ -2350,17 +2353,20 @@ _mongoc_delete_one_or_many (mongoc_collection_t *collection,
       ++collection->client->cluster.operation_id);
 
    command.flags.has_multi_write = multi;
-   if (!bson_empty (collation)) {
+   if (!bson_empty (&delete_opts->collation)) {
       command.flags.has_collation = true;
+   }
+   if (delete_opts->hint.value_type) {
+      command.flags.has_delete_hint = true;
    }
 
    _mongoc_collection_write_command_execute_idl (
-      &command, collection, crud, &result);
+      &command, collection, &delete_opts->crud, &result);
 
    /* set field described in CRUD spec for the DeleteResult */
    ret = MONGOC_WRITE_RESULT_COMPLETE (&result,
                                        collection->client->error_api_version,
-                                       crud->writeConcern,
+                                       delete_opts->crud.writeConcern,
                                        /* no error domain override */
                                        (mongoc_error_domain_t) 0,
                                        reply,
@@ -2399,9 +2405,8 @@ mongoc_collection_delete_one (mongoc_collection_t *collection,
    ret = _mongoc_delete_one_or_many (collection,
                                      false /* multi */,
                                      selector,
-                                     &delete_one_opts.crud,
+                                     &delete_one_opts.delete,
                                      &delete_one_opts.extra,
-                                     &delete_one_opts.collation,
                                      &limit,
                                      reply,
                                      error);
@@ -2438,9 +2443,8 @@ mongoc_collection_delete_many (mongoc_collection_t *collection,
    ret = _mongoc_delete_one_or_many (collection,
                                      true /* multi */,
                                      selector,
-                                     &delete_many_opts.crud,
+                                     &delete_many_opts.delete,
                                      &delete_many_opts.extra,
-                                     &delete_many_opts.collation,
                                      &limit,
                                      reply,
                                      error);
@@ -3031,6 +3035,7 @@ mongoc_collection_find_and_modify_with_opts (
    mongoc_server_stream_t *server_stream = NULL;
    mongoc_server_stream_t *retry_server_stream = NULL;
    mongoc_find_and_modify_appended_opts_t appended_opts;
+   mongoc_write_concern_t *write_concern = NULL;
 
    ENTRY;
 
@@ -3059,15 +3064,6 @@ mongoc_collection_find_and_modify_with_opts (
    if (!server_stream) {
       bson_concat (reply_ptr, &ss_reply);
       bson_destroy (&ss_reply);
-      GOTO (done);
-   }
-
-   if (appended_opts.hint.value_type &&
-       server_stream->sd->max_wire_version < WIRE_VERSION_4_2) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                      "selected server does not support hint on findAndModify");
       GOTO (done);
    }
 
@@ -3120,16 +3116,49 @@ mongoc_collection_find_and_modify_with_opts (
    }
 
    if (appended_opts.writeConcern) {
-      if (!mongoc_cmd_parts_set_write_concern (
-             &parts,
-             appended_opts.writeConcern,
-             server_stream->sd->max_wire_version,
-             error)) {
+      if (_mongoc_client_session_in_txn (parts.assembled.session)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Cannot set write concern after starting transaction");
          GOTO (done);
+      }
+
+      write_concern = appended_opts.writeConcern;
+   }
+
+   if (!write_concern) {
+      if (server_stream->sd->max_wire_version >=
+             WIRE_VERSION_FAM_WRITE_CONCERN &&
+          (mongoc_write_concern_is_acknowledged (collection->write_concern) ||
+           !_mongoc_client_session_in_txn (parts.assembled.session))) {
+         if (!mongoc_write_concern_is_valid (collection->write_concern)) {
+            bson_set_error (error,
+                            MONGOC_ERROR_COMMAND,
+                            MONGOC_ERROR_COMMAND_INVALID_ARG,
+                            "The write concern is invalid.");
+            GOTO (done);
+         }
+
+         write_concern = collection->write_concern;
       }
    }
 
    if (appended_opts.hint.value_type) {
+      int max_wire_version =
+         mongoc_write_concern_is_acknowledged (write_concern)
+            ? WIRE_VERSION_FIND_AND_MODIFY_HINT_SERVER_SIDE_ERROR
+            : WIRE_VERSION_FIND_AND_MODIFY_HINT;
+
+      if (server_stream->sd->max_wire_version < max_wire_version) {
+         bson_set_error (
+            error,
+            MONGOC_ERROR_COMMAND,
+            MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+            "selected server does not support hint on findAndModify");
+         GOTO (done);
+      }
+
       bson_append_value (&parts.extra, "hint", 4, &appended_opts.hint);
    }
 
@@ -3143,36 +3172,11 @@ mongoc_collection_find_and_modify_with_opts (
       }
    }
 
-   if (_mongoc_client_session_in_txn (parts.assembled.session) &&
-       appended_opts.writeConcern) {
-      bson_set_error (error,
-                      MONGOC_ERROR_COMMAND,
-                      MONGOC_ERROR_COMMAND_INVALID_ARG,
-                      "Cannot set write concern after starting transaction");
+   /* An empty write concern amounts to a no-op, so there's no need to guard
+    * against it. */
+   if (!mongoc_cmd_parts_set_write_concern (
+          &parts, write_concern, server_stream->sd->max_wire_version, error)) {
       GOTO (done);
-   }
-
-   if (!appended_opts.writeConcern) {
-      if (server_stream->sd->max_wire_version >=
-          WIRE_VERSION_FAM_WRITE_CONCERN) {
-         if (!mongoc_write_concern_is_valid (collection->write_concern)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The write concern is invalid.");
-            GOTO (done);
-         }
-
-         if (mongoc_write_concern_is_acknowledged (collection->write_concern)) {
-            if (!mongoc_cmd_parts_set_write_concern (
-                   &parts,
-                   collection->write_concern,
-                   server_stream->sd->max_wire_version,
-                   error)) {
-               GOTO (done);
-            }
-         }
-      }
    }
 
    parts.assembled.operation_id = ++cluster->operation_id;

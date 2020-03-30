@@ -6106,14 +6106,15 @@ _test_update_hint (int wire, bool is_replace, bool is_multi, const char *hint)
                 NULL,
                 &error);
 
-   if (wire >= WIRE_VERSION_UPDATE_HINT) {
-      request = mock_server_receives_msg (
-         server,
-         0,
-         tmp_bson ("{'update': 'collection'}"),
-         tmp_bson ("{'q': {}, 'u': {}, 'hint': %s %s }",
-                   hint,
-                   is_multi ? ", 'multi': true" : ""));
+   if (wire >= WIRE_VERSION_HINT_SERVER_SIDE_ERROR) {
+      char *command = bson_strdup_printf ("{'q': {}, 'u': {}, 'hint': %s %s }",
+                                          hint,
+                                          is_multi ? ", 'multi': true" : "");
+
+      request = mock_server_receives_command (
+         server, "db", MONGOC_QUERY_NONE, "{'update': 'collection'}", command);
+
+      bson_free (command);
       mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
       ASSERT_OR_PRINT (future_get_bool (future), error);
       request_destroy (request);
@@ -6135,21 +6136,33 @@ _test_update_hint (int wire, bool is_replace, bool is_multi, const char *hint)
 static void
 test_update_hint (void)
 {
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT, false, false, "'_id_'");
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT, false, true, "'_id_'");
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT, true, false, "'_id_'");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, false, false, "'_id_'");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, false, true, "'_id_'");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, true, false, "'_id_'");
 
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, false, false, "'_id_'");
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, false, true, "'_id_'");
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, true, false, "'_id_'");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, false, false, "'_id_'");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, false, true, "'_id_'");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, true, false, "'_id_'");
 
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT, false, false, "{'_id': 1}");
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT, false, true, "{'_id': 1}");
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT, true, false, "{'_id': 1}");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, false, false, "{'_id': 1}");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, false, true, "{'_id': 1}");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR, true, false, "{'_id': 1}");
 
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, false, false, "{'_id': 1}");
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, false, true, "{'_id': 1}");
-   _test_update_hint (WIRE_VERSION_UPDATE_HINT - 1, true, false, "{'_id': 1}");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, false, false, "{'_id': 1}");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, false, true, "{'_id': 1}");
+   _test_update_hint (
+      WIRE_VERSION_HINT_SERVER_SIDE_ERROR - 1, true, false, "{'_id': 1}");
 }
 
 static void

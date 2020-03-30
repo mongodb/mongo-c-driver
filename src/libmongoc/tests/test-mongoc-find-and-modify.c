@@ -577,9 +577,11 @@ test_find_and_modify_hint (void)
    mongoc_find_and_modify_opts_set_update (opts, tmp_bson ("{}"));
    ret = mongoc_collection_find_and_modify_with_opts (
       coll, tmp_bson ("{}"), opts, NULL /* reply */, &error);
-   if (test_framework_max_wire_version_at_least (WIRE_VERSION_4_4)) {
+   if (test_framework_max_wire_version_at_least (
+          WIRE_VERSION_FIND_AND_MODIFY_HINT)) {
       ASSERT_OR_PRINT (ret, error);
-   } else if (test_framework_max_wire_version_at_least (WIRE_VERSION_4_2)) {
+   } else if (test_framework_max_wire_version_at_least (
+                 WIRE_VERSION_FIND_AND_MODIFY_HINT_SERVER_SIDE_ERROR)) {
       BSON_ASSERT (!ret);
       BSON_ASSERT (error.domain == MONGOC_ERROR_SERVER);
       /* server error. */

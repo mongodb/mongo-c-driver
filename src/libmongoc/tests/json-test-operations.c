@@ -309,9 +309,13 @@ get_result (const bson_t *test, const bson_t *operation, bson_value_t *value)
       return false;
    }
 
-   op_name = bson_lookup_utf8 (operation, "name");
-   convert_spec_result (op_name, &pre_conversion, value);
+   if (value) {
+      op_name = bson_lookup_utf8 (operation, "name");
+      convert_spec_result (op_name, &pre_conversion, value);
+   }
+
    bson_value_destroy (&pre_conversion);
+
    return true;
 }
 
@@ -969,10 +973,12 @@ find_and_modify (mongoc_collection_t *collection,
     * Or:
     *   { ok: 1, value: null}
     */
-   if (r) {
-      bson_lookup_value (reply, "value", &value);
-   } else {
-      value_init_from_doc (&value, reply);
+   if (get_result (test, operation, NULL)) {
+      if (r) {
+         bson_lookup_value (reply, "value", &value);
+      } else {
+         value_init_from_doc (&value, reply);
+      }
    }
 
    check_result (test, operation, r, &value, &error);
