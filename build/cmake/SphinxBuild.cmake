@@ -40,7 +40,7 @@ function (sphinx_build_html target_name doc_dir)
       ${CMAKE_COMMAND} -E env
       "PYTHONDONTWRITEBYTECODE=1"
       ${SPHINX_EXECUTABLE}
-         -j ${NPROCS} -qEW -b html
+         -qEW -b html
          -c "${CMAKE_CURRENT_SOURCE_DIR}"
          "${CMAKE_CURRENT_SOURCE_DIR}"
          "${SPHINX_HTML_DIR}"
@@ -133,7 +133,7 @@ function (sphinx_build_man target_name)
       ${CMAKE_COMMAND} -E env
       "PYTHONDONTWRITEBYTECODE=1"
       ${SPHINX_EXECUTABLE}
-         -j ${NPROCS} -qEW -b man
+         -qEW -b man
          -c "${CMAKE_CURRENT_SOURCE_DIR}"
          "${CMAKE_CURRENT_SOURCE_DIR}"
          "${SPHINX_MAN_DIR}"
