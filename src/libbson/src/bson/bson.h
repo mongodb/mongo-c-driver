@@ -450,7 +450,7 @@ BSON_EXPORT (int)
 bson_compare (const bson_t *bson, const bson_t *other);
 
 /*
- * bson_compare:
+ * bson_equal:
  * @bson: A bson_t.
  * @other: A bson_t.
  *
