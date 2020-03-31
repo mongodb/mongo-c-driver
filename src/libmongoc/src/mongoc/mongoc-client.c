@@ -2964,7 +2964,7 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
 
          mongoc_cmd_parts_cleanup (&parts);
 
-         if (!stream->stream) {
+         if (!mongoc_cluster_stream_valid (cluster, stream)) {
             /* The stream was invalidated as a result of a network error, so we
              * stop sending commands. */
             break;
