@@ -2136,11 +2136,6 @@ test_insert_with_opts_validate (void)
 typedef void (*remove_fn) (mongoc_bulk_operation_t *bulk,
                            const bson_t *selector);
 
-typedef bool (*remove_with_opts_fn) (mongoc_bulk_operation_t *bulk,
-                                     const bson_t *selector,
-                                     const bson_t *opts,
-                                     bson_error_t *error);
-
 typedef struct {
    remove_fn remove;
    remove_with_opts_fn remove_with_opts;
