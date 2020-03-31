@@ -625,10 +625,12 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
 
          if (!ret) {
             result->failed = true;
-            /* Conservatively set must_stop to true. Per CDRIVER-3305 we
-             * shouldn't stop for unordered bulk writes, but also need to check
-             * if the server stream was invalidated per CDRIVER-3306. */
-            result->must_stop = true;
+            /* Stop for ordered bulk writes or when the server stream has been
+             * properly invalidated (e.g., due to a network error). */
+            if (command->flags.ordered || !mongoc_cluster_stream_valid (
+                                             &client->cluster, server_stream)) {
+               result->must_stop = true;
+            }
          }
 
          /* Result merge needs to know the absolute index for a document

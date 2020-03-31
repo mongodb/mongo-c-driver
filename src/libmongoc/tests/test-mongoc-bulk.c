@@ -2945,6 +2945,79 @@ test_write_concern_write_command_unordered_multi_err (void)
 }
 
 
+/* Test for CDRIVER-3305 - Continue unordered bulk writes on error */
+static void
+test_unordered_bulk_writes_with_error (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_bulk_operation_t *bulk;
+   uint32_t i;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   bson_t reply;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   /* server is "recovering": not master, not secondary */
+   mock_server_auto_ismaster (server,
+                              "{'ok': 1,"
+                              " 'maxWireVersion': %d,"
+                              " 'maxWriteBatchSize': 1,"
+                              " 'ismaster': true,"
+                              " 'secondary': false,"
+                              " 'setName': 'rs',"
+                              " 'hosts': ['%s']}",
+                              WIRE_VERSION_OP_MSG,
+                              mock_server_get_host_and_port (server));
+
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   /* disable retryable writes, so we move to the next operation on error */
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, false);
+
+   client = mongoc_client_new_from_uri (uri);
+
+   collection = mongoc_client_get_collection (client, "db", "test");
+   /* use an unordered bulk write; we expect to continue on error */
+   bulk = mongoc_collection_create_bulk_operation_with_opts (
+      collection, tmp_bson("{'ordered': false}"));
+   /* maxWriteBatchSize is set to 1; with 2 inserts we get a batch split */
+   for (i = 0; i < 2; i++) {
+      mongoc_bulk_operation_insert_with_opts (
+         bulk, tmp_bson("{'_id': %d}", i), NULL, &error);
+   }
+   future = future_bulk_operation_execute (bulk, &reply, &error);
+
+   request = mock_server_receives_request (server);
+   BSON_ASSERT (request);
+   mock_server_replies_simple (
+      request, "{ 'errmsg': 'random error', 'ok': 0 }");
+   request_destroy (request);
+   /* should receive a second request */
+   request = mock_server_receives_request (server);
+   /* a failure of this assertion means that the client did not continue with
+    * the next write operation; it stopped permaturely */
+   BSON_ASSERT (request);
+   mock_server_replies_simple (
+      request, "{ 'errmsg': 'random error', 'ok': 0 }");
+   request_destroy (request);
+   ASSERT (future_wait (future));
+
+   mongoc_client_destroy (client);
+   mongoc_collection_destroy (collection);
+   mongoc_bulk_operation_destroy (bulk);
+   bson_destroy (&reply);
+   future_destroy (future);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+
+}
+
+
 static void
 _test_write_concern_err_api (int32_t error_api_version)
 {
@@ -4899,6 +4972,10 @@ test_bulk_install (TestSuite *suite)
       suite,
       "/BulkOperation/write_concern/write_command/unordered/multi_err",
       test_write_concern_write_command_unordered_multi_err);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/BulkOperation/writes/unordered/error",
+      test_unordered_bulk_writes_with_error);
    TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/error/write_command/v1",
