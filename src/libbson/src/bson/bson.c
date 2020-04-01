@@ -105,7 +105,7 @@ static const uint8_t gZero;
  *       a malloc based buffer.
  *
  * Returns:
- *       true if successful; otherwise false indicating INT_MAX overflow.
+ *       true if successful; otherwise false indicating BSON_MAX_SIZE overflow.
  *
  * Side effects:
  *       None.
@@ -127,7 +127,7 @@ _bson_impl_inline_grow (bson_impl_inline_t *impl, /* IN */
 
    req = bson_next_power_of_two (impl->len + size);
 
-   if (req <= INT32_MAX) {
+   if (req <= BSON_MAX_SIZE) {
       data = bson_malloc (req);
 
       memcpy (data, impl->data, impl->len);
@@ -161,7 +161,7 @@ _bson_impl_inline_grow (bson_impl_inline_t *impl, /* IN */
  *       based buffers.
  *
  * Returns:
- *       true if successful; otherwise false indicating INT_MAX overflow.
+ *       true if successful; otherwise false indicating BSON_MAX_SIZE overflow.
  *
  * Side effects:
  *       None.
@@ -187,7 +187,7 @@ _bson_impl_alloc_grow (bson_impl_alloc_t *impl, /* IN */
 
    req = bson_next_power_of_two (req);
 
-   if ((req <= INT32_MAX) && impl->realloc) {
+   if ((req <= BSON_MAX_SIZE) && impl->realloc) {
       *impl->buf = impl->realloc (*impl->buf, req, impl->realloc_func_ctx);
       *impl->buflen = req;
       return true;
@@ -303,7 +303,7 @@ _bson_encode_length (bson_t *bson) /* IN */
  *
  * Returns:
  *       true if the bytes were appended successfully.
- *       false if it bson would overflow INT_MAX.
+ *       false if it bson would overflow BSON_MAX_SIZE.
  *
  * Side effects:
  *       None.
@@ -379,7 +379,7 @@ _bson_append_va (bson_t *bson,              /* IN */
  *       @first_data: First buffer.
  *
  * Returns:
- *       true if successful; otherwise false indicating INT_MAX overflow.
+ *       true if successful; otherwise false indicating BSON_MAX_SIZE overflow.
  *
  * Side effects:
  *       None.
@@ -433,7 +433,7 @@ _bson_append (bson_t *bson,              /* IN */
  *       @key_type MUST be either BSON_TYPE_DOCUMENT or BSON_TYPE_ARRAY.
  *
  * Returns:
- *       true if successful; otherwise false indicating INT_MAX overflow.
+ *       true if successful; otherwise false indicating BSON_MAX_SIZE overflow.
  *
  * Side effects:
  *       @child is initialized if true is returned.
@@ -696,7 +696,7 @@ bson_append_document_begin (bson_t *bson,    /* IN */
  *       function, if true is returned.
  *
  * Returns:
- *       true if successful; otherwise false indicating INT_MAX overflow.
+ *       true if successful; otherwise false indicating BSON_MAX_SIZE overflow.
  *
  * Side effects:
  *       @child is destroyed and invalid after calling this function.
@@ -726,7 +726,7 @@ bson_append_document_end (bson_t *bson,  /* IN */
  *       since few buffers need to be malloced.
  *
  * Returns:
- *       true if successful; otherwise false indicating INT_MAX overflow.
+ *       true if successful; otherwise false indicating BSON_MAX_SIZE overflow.
  *
  * Side effects:
  *       None.
@@ -2006,7 +2006,7 @@ bson_init_static (bson_t *bson, const uint8_t *data, size_t length)
    BSON_ASSERT (bson);
    BSON_ASSERT (data);
 
-   if ((length < 5) || (length > INT_MAX)) {
+   if ((length < 5) || (length > BSON_MAX_SIZE)) {
       return false;
    }
 
@@ -2066,7 +2066,7 @@ bson_sized_new (size_t size)
    bson_impl_alloc_t *impl_a;
    bson_t *b;
 
-   BSON_ASSERT (size <= INT32_MAX);
+   BSON_ASSERT (size <= BSON_MAX_SIZE);
 
    b = bson_malloc (sizeof *b);
    impl_a = (bson_impl_alloc_t *) b;
@@ -2105,7 +2105,7 @@ bson_new_from_data (const uint8_t *data, size_t length)
 
    BSON_ASSERT (data);
 
-   if ((length < 5) || (length > INT_MAX) || data[length - 1]) {
+   if ((length < 5) || (length > BSON_MAX_SIZE) || data[length - 1]) {
       return NULL;
    }
 
@@ -2152,7 +2152,7 @@ bson_new_from_buffer (uint8_t **buf,
       memcpy (*buf, &len_le, sizeof (len_le));
       (*buf)[4] = '\0';
    } else {
-      if ((*buf_len < 5) || (*buf_len > INT_MAX)) {
+      if ((*buf_len < 5) || (*buf_len > BSON_MAX_SIZE)) {
          bson_free (bson);
          return NULL;
       }
