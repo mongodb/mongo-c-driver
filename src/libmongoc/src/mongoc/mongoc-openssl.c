@@ -552,10 +552,13 @@ _contact_ocsp_responder (OCSP_CERTID *id, X509 *peer)
    ((stapled_response) ? MONGOC_ERROR (__VA_ARGS__) \
                        : MONGOC_DEBUG (__VA_ARGS__))
 
+#define X509_CHECK_SUCCESS 1
+#define OCSP_VERIFY_SUCCESS 1
+
 int
 _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
 {
-   enum { ERROR = -1, REVOKED, SUCCESS } ret;
+   enum { OCSP_CB_ERROR = -1, OCSP_CB_REVOKED, OCSP_CB_SUCCESS } ret;
    bool stapled_response = true;
    OCSP_RESPONSE *resp = NULL;
    OCSP_BASICRESP *basic = NULL;
@@ -570,12 +573,12 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
                         *next_update = NULL;
 
    if (opts->weak_cert_validation) {
-      return SUCCESS;
+      return OCSP_CB_SUCCESS;
    }
 
    if (!(peer = SSL_get_peer_certificate (ssl))) {
       MONGOC_ERROR ("No certificate was presented by the peer");
-      ret = ERROR;
+      ret = OCSP_CB_ERROR;
       GOTO (done);
    }
 
@@ -583,19 +586,19 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
     * the peer's cert */
    if (!(cert_chain = SSL_get0_verified_chain (ssl))) {
       MONGOC_ERROR ("No certificate was presented by the peer");
-      ret = REVOKED;
+      ret = OCSP_CB_REVOKED;
       GOTO (done);
    }
 
    if (!(issuer = _get_issuer (peer, cert_chain))) {
       MONGOC_ERROR ("Could not get issuer from peer cert");
-      ret = ERROR;
+      ret = OCSP_CB_ERROR;
       GOTO (done);
    }
 
    if (!(id = OCSP_cert_to_id (NULL /* SHA1 */, peer, issuer))) {
       MONGOC_ERROR ("Could not obtain a valid OCSP_CERTID for peer");
-      ret = ERROR;
+      ret = OCSP_CB_ERROR;
       GOTO (done);
    }
 
@@ -606,7 +609,7 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
       /* obtain an OCSP_RESPONSE object from the OCSP response */
       if (!d2i_OCSP_RESPONSE (&resp, &r, len)) {
          MONGOC_ERROR ("Failed to parse OCSP response");
-         ret = ERROR;
+         ret = OCSP_CB_ERROR;
          GOTO (done);
       }
    } else {
@@ -614,13 +617,13 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
       bool must_staple = X509_get_ext_d2i (peer, NID_tlsfeature, 0, 0) != NULL;
       if (must_staple) {
          MONGOC_ERROR ("Server must contain a stapled response");
-         ret = REVOKED;
+         ret = OCSP_CB_REVOKED;
          GOTO (done);
       }
 
       if (!(resp = _contact_ocsp_responder (id, peer))) {
          MONGOC_DEBUG ("Soft-fail: No OCSP responder could be reached");
-         ret = SUCCESS;
+         ret = OCSP_CB_SUCCESS;
          GOTO (done);
       }
    }
@@ -632,7 +635,7 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
       SOFT_FAIL ("OCSP response error %d %s",
                  status,
                  OCSP_response_status_str (status));
-      ret = ERROR;
+      ret = OCSP_CB_ERROR;
       GOTO (done);
    }
 
@@ -643,7 +646,7 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
    basic = OCSP_response_get1_basic (resp);
    if (!basic) {
       SOFT_FAIL ("Could not find BasicOCSPResponse: %s", ERR_STR);
-      ret = ERROR;
+      ret = OCSP_CB_ERROR;
       GOTO (done);
    }
 
@@ -658,9 +661,9 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
     * 3. Finally, the function validates the signer cert, constructing the
     * validation path via the untrusted cert chain.
     */
-   if (SUCCESS != OCSP_basic_verify (basic, cert_chain, store, 0)) {
+   if (OCSP_basic_verify (basic, cert_chain, store, 0) != OCSP_VERIFY_SUCCESS) {
       SOFT_FAIL ("OCSP response failed verification: %s", ERR_STR);
-      ret = ERROR;
+      ret = OCSP_CB_ERROR;
       GOTO (done);
    }
 
@@ -673,14 +676,14 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
                                &this_update,
                                &next_update)) {
       SOFT_FAIL ("No OCSP response found for the peer certificate");
-      ret = ERROR;
+      ret = OCSP_CB_ERROR;
       GOTO (done);
    }
 
    /* checks the validity of this_update and next_update values */
    if (!OCSP_check_validity (this_update, next_update, 0L, -1L)) {
       SOFT_FAIL ("OCSP response has expired: %s", ERR_STR);
-      ret = ERROR;
+      ret = OCSP_CB_ERROR;
       GOTO (done);
    }
 
@@ -693,7 +696,7 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
    case V_OCSP_CERTSTATUS_REVOKED:
       MONGOC_ERROR ("OCSP Certificate Status: Revoked. Reason: %s",
                     OCSP_crl_reason_str (reason));
-      ret = REVOKED;
+      ret = OCSP_CB_REVOKED;
       GOTO (done);
 
    default:
@@ -703,16 +706,16 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
 
    /* Validate hostname matches cert */
    if (!opts->allow_invalid_hostname &&
-       X509_check_host (peer, opts->host, 0, 0, NULL) != SUCCESS &&
-       X509_check_ip_asc (peer, opts->host, 0) != SUCCESS) {
-      ret = REVOKED;
+       X509_check_host (peer, opts->host, 0, 0, NULL) != X509_CHECK_SUCCESS &&
+       X509_check_ip_asc (peer, opts->host, 0) != X509_CHECK_SUCCESS) {
+      ret = OCSP_CB_REVOKED;
       GOTO (done);
    }
 
-   ret = SUCCESS;
+   ret = OCSP_CB_SUCCESS;
 done:
-   if (ret == ERROR && !stapled_response) {
-      ret = SUCCESS;
+   if (ret == OCSP_CB_ERROR && !stapled_response) {
+      ret = OCSP_CB_SUCCESS;
    }
    if (basic)
       OCSP_BASICRESP_free (basic);
