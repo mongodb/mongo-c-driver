@@ -703,6 +703,14 @@ mongoc_uri_bson_append_or_replace_key (bson_t *options,
 
 
 bool
+mongoc_uri_has_option (const mongoc_uri_t *uri, const char *key)
+{
+   bson_iter_t iter;
+
+   return bson_iter_init_find_case (&iter, &uri->options, key);
+}
+
+bool
 mongoc_uri_option_is_int32 (const char *key)
 {
    return mongoc_uri_option_is_int64 (key) ||
@@ -731,6 +739,7 @@ bool
 mongoc_uri_option_is_bool (const char *key)
 {
    return !strcasecmp (key, MONGOC_URI_CANONICALIZEHOSTNAME) ||
+          !strcasecmp (key, MONGOC_URI_DIRECTCONNECTION) ||
           !strcasecmp (key, MONGOC_URI_JOURNAL) ||
           !strcasecmp (key, MONGOC_URI_RETRYREADS) ||
           !strcasecmp (key, MONGOC_URI_RETRYWRITES) ||
@@ -1391,6 +1400,41 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri,
 }
 
 static bool
+mongoc_uri_finalize_directconnection (mongoc_uri_t *uri, bson_error_t *error)
+{
+   bool directconnection = false;
+
+   directconnection =
+      mongoc_uri_get_option_as_bool (uri, MONGOC_URI_DIRECTCONNECTION, false);
+   if (!directconnection) {
+      return true;
+   }
+
+   /* URI options spec: "The driver MUST report an error if the
+    * directConnection=true URI option is specified with an SRV URI, because
+    * the URI may resolve to multiple hosts. The driver MUST allow specifying
+    * directConnection=false URI option with an SRV URI." */
+   if (uri->is_srv) {
+      MONGOC_URI_ERROR (
+         error, "%s", "SRV URI not allowed with directConnection option");
+      return false;
+   }
+
+   /* URI options spec: "The driver MUST report an error if the
+    * directConnection=true URI option is specified with multiple seeds." */
+   if (uri->hosts && uri->hosts->next) {
+      MONGOC_URI_ERROR (
+         error,
+         "%s",
+         "Multiple seeds not allowed with directConnection option");
+      return false;
+   }
+
+   return true;
+
+}
+
+static bool
 mongoc_uri_parse_before_slash (mongoc_uri_t *uri,
                                const char *before_slash,
                                bson_error_t *error)
@@ -1499,6 +1543,10 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 
    require_auth = uri->username != NULL;
    if (!mongoc_uri_finalize_auth (uri, error, require_auth)) {
+      goto error;
+   }
+
+   if (!mongoc_uri_finalize_directconnection (uri, error)) {
       goto error;
    }
 

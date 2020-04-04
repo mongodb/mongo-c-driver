@@ -174,6 +174,7 @@ MONGOC_URI_HEARTBEATFREQUENCYMS            heartbeatfrequencyms              The
 MONGOC_URI_SERVERSELECTIONTIMEOUTMS        serverselectiontimeoutms          A timeout in milliseconds to block for server selection before throwing an exception. The default is 30,0000ms (30 seconds).
 MONGOC_URI_SERVERSELECTIONTRYONCE          serverselectiontryonce            If "true", the driver scans the topology exactly once after server selection fails, then either selects a server or returns an error. If it is false, then the driver repeatedly searches for a suitable server for up to ``serverSelectionTimeoutMS`` milliseconds (pausing a half second between attempts). The default for ``serverSelectionTryOnce`` is "false" for pooled clients, otherwise "true". Pooled clients ignore serverSelectionTryOnce; they signal the thread to rescan the topology every half-second until serverSelectionTimeoutMS expires.
 MONGOC_URI_SOCKETCHECKINTERVALMS           socketcheckintervalms             Only applies to single threaded clients. If a socket has not been used within this time, its connection is checked with a quick "isMaster" call before it is used again. Defaults to 5,000ms (5 seconds).
+MONGOC_URI_DIRECTCONNECTION                directconnection                  If "true", the driver connects to a single server directly and will not monitor additional servers.  If "false", the driver connects based on the presence and value of the ``replicaSet`` option.
 ========================================== ================================= =========================================================================================================================================================================================================================
 
 Setting any of the \*TimeoutMS options above to ``0`` will be interpreted as "use the default value".
@@ -303,6 +304,7 @@ MONGOC_URI_SLAVEOK                         slaveok                           Whe
     mongoc_uri_get_tls
     mongoc_uri_get_username
     mongoc_uri_get_write_concern
+    mongoc_uri_has_option
     mongoc_uri_new
     mongoc_uri_new_for_host_port
     mongoc_uri_new_with_error

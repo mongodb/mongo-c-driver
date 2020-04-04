@@ -210,6 +210,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    uint32_t id;
    const mongoc_host_list_t *hl;
    mongoc_rr_data_t rr_data;
+   bool has_directconnection;
+   bool directconnection;
 
    BSON_ASSERT (uri);
 
@@ -328,12 +330,35 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    /*
     * Set topology type from URI:
-    *   - if we've got a replicaSet name, initialize to RS_NO_PRIMARY
-    *   - otherwise, if the seed list has a single host, initialize to SINGLE
+    *   + if directConnection=true
+    *     - whether or not we have a replicaSet name, initialize to SINGLE
+    *     (directConnect with SRV or multiple hosts triggers a URI parse error)
+    *   + if directConnection=false
+    *     - if we've got a replicaSet name, initialize to RS_NO_PRIMARY
+    *     - otherwise, initialize to UNKNOWN
+    *   + if directConnection was not specified in the URI (old behavior)
+    *     - if we've got a replicaSet name, initialize to RS_NO_PRIMARY
+    *     - otherwise, if the seed list has a single host, initialize to SINGLE
     *   - everything else gets initialized to UNKNOWN
     */
+   has_directconnection = mongoc_uri_has_option (
+      uri, MONGOC_URI_DIRECTCONNECTION);
+   directconnection = has_directconnection &&
+      mongoc_uri_get_option_as_bool (uri, MONGOC_URI_DIRECTCONNECTION, false);
    hl = mongoc_uri_get_hosts (topology->uri);
-   if (mongoc_uri_get_replica_set (topology->uri)) {
+   if (service && !has_directconnection) {
+      init_type = MONGOC_TOPOLOGY_UNKNOWN;
+   } else if (has_directconnection) {
+      if (directconnection) {
+         init_type = MONGOC_TOPOLOGY_SINGLE;
+      } else {
+         if (mongoc_uri_get_replica_set (topology->uri)) {
+            init_type = MONGOC_TOPOLOGY_RS_NO_PRIMARY;
+         } else {
+            init_type = MONGOC_TOPOLOGY_UNKNOWN;
+         }
+      }
+   } else if (mongoc_uri_get_replica_set (topology->uri)) {
       init_type = MONGOC_TOPOLOGY_RS_NO_PRIMARY;
    } else {
       if (hl && hl->next) {

@@ -224,8 +224,224 @@ test_all_spec_tests (TestSuite *suite)
    install_json_test_suite (suite, resolved, &test_sdam_cb);
 }
 
+static void
+test_topology_discovery (void *ctx)
+{
+   char *host_and_port;
+   char *replset_name;
+   char *uri_str;
+   char *uri_str_auth;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *prefs;
+   mongoc_server_description_t *sd_secondary;
+   mongoc_host_list_t *hl_secondary;
+   mongoc_collection_t *collection;
+   bson_t doc = BSON_INITIALIZER;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   host_and_port = test_framework_get_host_and_port ();
+   replset_name = test_framework_replset_name ();
+   uri_str = test_framework_get_uri_str ();
+
+   client = mongoc_client_new (uri_str);
+   test_framework_set_ssl_opts (client);
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   sd_secondary = mongoc_client_select_server (client,
+                                     false, /* for reads */
+                                     prefs,
+                                     &error);
+   ASSERT_OR_PRINT (sd_secondary, error);
+   hl_secondary = mongoc_server_description_host (sd_secondary);
+
+   /* Scenario: given a replica set deployment with a secondary, where HOST is
+    * the address of the secondary, create a MongoClient using
+    * ``mongodb://HOST/?directConnection=false`` as the URI.
+    * Attempt a write to a collection.
+    *
+    * Outcome: Verify that the write succeeded. */
+   bson_free (uri_str);
+   uri_str = bson_strdup_printf (
+      "mongodb://%s/?directConnection=false", hl_secondary->host_and_port);
+   uri_str_auth = test_framework_add_user_password_from_env (uri_str);
+
+   mongoc_client_destroy (client);
+   client = mongoc_client_new (uri_str_auth);
+   test_framework_set_ssl_opts (client);
+   collection = get_test_collection (client, "sdam_dc_test");
+   BSON_APPEND_UTF8 (&doc, "hello", "world");
+   r = mongoc_collection_insert_one (collection, &doc, NULL, &reply, &error);
+   ASSERT_OR_PRINT (r, error);
+   ASSERT_CMPINT32 (bson_lookup_int32 (&reply, "insertedCount"), ==, 1);
+
+   bson_destroy (&reply);
+   bson_destroy (&doc);
+   mongoc_server_description_destroy (sd_secondary);
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_free (uri_str_auth);
+   bson_free (uri_str);
+   bson_free (replset_name);
+   bson_free (host_and_port);
+
+}
+
+static void
+test_direct_connection (void *ctx)
+{
+   char *host_and_port;
+   char *replset_name;
+   char *uri_str;
+   char *uri_str_auth;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *prefs;
+   mongoc_server_description_t *sd_secondary;
+   mongoc_host_list_t *hl_secondary;
+   mongoc_collection_t *collection;
+   bson_t doc = BSON_INITIALIZER;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   host_and_port = test_framework_get_host_and_port ();
+   replset_name = test_framework_replset_name ();
+   uri_str = test_framework_get_uri_str ();
+
+   client = mongoc_client_new (uri_str);
+   test_framework_set_ssl_opts (client);
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   sd_secondary = mongoc_client_select_server (client,
+                                     false, /* for reads */
+                                     prefs,
+                                     &error);
+   ASSERT_OR_PRINT (sd_secondary, error);
+   hl_secondary = mongoc_server_description_host (sd_secondary);
+
+   /* Scenario: given a replica set deployment with a secondary, where HOST is
+    * the address of the secondary, create a MongoClient using
+    * ``mongodb://HOST/?directConnection=true`` as the URI.
+    * Attempt a write to a collection.
+    *
+    * Outcome: Verify that the write failed with a NotMaster error. */
+   bson_free (uri_str);
+   uri_str = bson_strdup_printf (
+      "mongodb://%s/?directConnection=true", hl_secondary->host_and_port);
+   uri_str_auth = test_framework_add_user_password_from_env (uri_str);
+
+   mongoc_client_destroy (client);
+   client = mongoc_client_new (uri_str_auth);
+   test_framework_set_ssl_opts (client);
+   collection = get_test_collection (client, "sdam_dc_test");
+   BSON_APPEND_UTF8 (&doc, "hello", "world");
+   r = mongoc_collection_insert_one (collection, &doc, NULL, &reply, &error);
+   ASSERT_OR_PRINT (!r, error);
+   ASSERT (strstr (error.message, "not master"));
+
+   bson_destroy (&reply);
+   bson_destroy (&doc);
+   mongoc_server_description_destroy (sd_secondary);
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_free (uri_str_auth);
+   bson_free (uri_str);
+   bson_free (replset_name);
+   bson_free (host_and_port);
+
+}
+
+static void
+test_existing_behavior (void *ctx)
+{
+   char *host_and_port;
+   char *replset_name;
+   char *uri_str;
+   char *uri_str_auth;
+   mongoc_client_t *client;
+   mongoc_read_prefs_t *prefs;
+   mongoc_server_description_t *sd_secondary;
+   mongoc_host_list_t *hl_secondary;
+   mongoc_collection_t *collection;
+   bson_t doc = BSON_INITIALIZER;
+   bson_t reply;
+   bson_error_t error;
+   bool r;
+
+   host_and_port = test_framework_get_host_and_port ();
+   replset_name = test_framework_replset_name ();
+   uri_str = test_framework_get_uri_str ();
+
+   client = mongoc_client_new (uri_str);
+   test_framework_set_ssl_opts (client);
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   sd_secondary = mongoc_client_select_server (client,
+                                     false, /* for reads */
+                                     prefs,
+                                     &error);
+   ASSERT_OR_PRINT (sd_secondary, error);
+   hl_secondary = mongoc_server_description_host (sd_secondary);
+
+   /* Scenario: given a replica set deployment with a secondary, where HOST is
+    * the address of the secondary, create a MongoClient using
+    * ``mongodb://HOST/`` as the URI.
+    * Attempt a write to a collection.
+    *
+    * Outcome: Verify that the write succeeded or failed depending on existing
+    * driver behavior with respect to the starting topology. */
+   bson_free (uri_str);
+   uri_str = bson_strdup_printf (
+      "mongodb://%s/", hl_secondary->host_and_port);
+   uri_str_auth = test_framework_add_user_password_from_env (uri_str);
+
+   mongoc_client_destroy (client);
+   client = mongoc_client_new (uri_str_auth);
+   test_framework_set_ssl_opts (client);
+   collection = get_test_collection (client, "sdam_dc_test");
+   BSON_APPEND_UTF8 (&doc, "hello", "world");
+   r = mongoc_collection_insert_one (collection, &doc, NULL, &reply, &error);
+   ASSERT_OR_PRINT (!r, error);
+   ASSERT (strstr (error.message, "not master"));
+
+   bson_destroy (&reply);
+   bson_destroy (&doc);
+   mongoc_server_description_destroy (sd_secondary);
+   mongoc_read_prefs_destroy (prefs);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_free (uri_str_auth);
+   bson_free (uri_str);
+   bson_free (replset_name);
+   bson_free (host_and_port);
+
+}
+
 void
 test_sdam_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
+   TestSuite_AddFull (
+      suite,
+      "/server_discovery_and_monitoring/topology/discovery",
+      test_topology_discovery,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_not_replset);
+   TestSuite_AddFull (
+      suite,
+      "/server_discovery_and_monitoring/directconnection",
+      test_direct_connection,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_not_replset);
+   TestSuite_AddFull (
+      suite,
+      "/server_discovery_and_monitoring/existing/behavior",
+      test_existing_behavior,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_not_replset);
 }

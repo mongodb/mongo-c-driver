@@ -40,6 +40,7 @@
 #define MONGOC_URI_CANONICALIZEHOSTNAME "canonicalizehostname"
 #define MONGOC_URI_CONNECTTIMEOUTMS "connecttimeoutms"
 #define MONGOC_URI_COMPRESSORS "compressors"
+#define MONGOC_URI_DIRECTCONNECTION "directconnection"
 #define MONGOC_URI_GSSAPISERVICENAME "gssapiservicename"
 #define MONGOC_URI_HEARTBEATFREQUENCYMS "heartbeatfrequencyms"
 #define MONGOC_URI_JOURNAL "journal"
@@ -119,6 +120,8 @@ MONGOC_EXPORT (const char *)
 mongoc_uri_get_password (const mongoc_uri_t *uri);
 MONGOC_EXPORT (bool)
 mongoc_uri_set_password (mongoc_uri_t *uri, const char *password);
+MONGOC_EXPORT (bool)
+mongoc_uri_has_option (const mongoc_uri_t *uri, const char *key);
 MONGOC_EXPORT (bool)
 mongoc_uri_option_is_int32 (const char *key);
 MONGOC_EXPORT (bool)
