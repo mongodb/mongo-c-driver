@@ -196,6 +196,18 @@
          abort ();                                         \
       }                                                    \
    } while (0)
+       
+/* Used for asserting parameters to provide a more precise error message */
+#define BSON_ASSERT_PARAM(param)                                                   \
+   do {                                                                            \
+      if ((BSON_LIKELY (param == NULL))) {                                         \
+         fprintf (stderr,                                                          \
+                  "The parameter: %s, in function %s, cannot be NULL\n", \
+                  #param,                                                          \
+                  BSON_FUNC);                                                      \
+         abort ();                                                                 \
+      }                                                                            \
+   } while (0)      
 
 /* obsolete macros, preserved for compatibility */
 #define BSON_STATIC_ASSERT(s) BSON_STATIC_ASSERT_ (s, __LINE__)
