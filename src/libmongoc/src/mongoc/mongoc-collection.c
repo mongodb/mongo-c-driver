@@ -172,9 +172,9 @@ _mongoc_collection_new (mongoc_client_t *client,
 
    ENTRY;
 
-   BSON_ASSERT_PARAM_PARAM (client);
-   BSON_ASSERT_PARAM_PARAM (db);
-   BSON_ASSERT_PARAM_PARAM (collection);
+   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (db);
+   BSON_ASSERT_PARAM (collection);
 
    col = (mongoc_collection_t *) bson_malloc0 (sizeof *col);
    col->client = client;
