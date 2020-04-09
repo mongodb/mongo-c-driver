@@ -1,3 +1,41 @@
+mongo-c-driver 1.17.0 beta
+==========================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.0 beta release.
+
+Features:
+
+  * Support the MONGODB-AWS authentication mechanism.
+  * Support the Online Certificate Status Protocol (OCSP) for OpenSSL 1.1.0+, Secure Transport, and Secure Channel.
+  * Support the "hint" option in operations using the update, replace, delete, and findAndModify commands.
+  * Improve behavior for retryable writes.
+  * Improve resuming behavior of change streams on server errors.
+  * Remove an extra round trip for SCRAM authentication.
+  * Remove restriction of 255 character collection namespaces.
+
+Bug fixes:
+
+  * Fix possible use of invalidated streams during an unordered OP_QUERY bulk write, and when ending many pooled sessions at client destruction.
+  * Fix a crash when setting the crl_file TLS option for Secure Channel.
+  * Avoid emitting duplicate ServerChanged events when no change is observed during monitoring.
+  * Properly handle large SASL messages instead of erroring.
+
+Notes:
+
+  * Deprecated "lib" prefixed artifacts are no longer produced when building on Windows.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Roberto C. Sánchez
+  * Andreas Braun
+  * Clyde Bazile
+  * Jeremy Mikola
+  * Sara Golemon
+
+-- Kevin Albertson
+
+
 mongo-c-driver 1.16.1
 =====================
 
