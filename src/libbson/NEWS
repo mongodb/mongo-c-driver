@@ -1,3 +1,25 @@
+libbson 1.17.0 beta
+===================
+
+It is my pleasure to announce libbson 1.17.0 beta.
+
+Features:
+
+  * Add the cmake option ENABLE_PIC to build static libraries with position independent code.
+
+Notes:
+
+  * Deprecated "lib" prefixed artifacts are no longer produced when building on Windows.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Roberto C. Sánchez
+  * Kevin Albertson
+  * Jeroen Ooms
+
+-- Kevin Albertson
+
+
 libbson 1.16.1
 ==============
 
