@@ -232,6 +232,8 @@ extern void
 test_server_description_install (TestSuite *suite);
 extern void
 test_aws_install (TestSuite *suite);
+extern void
+test_streamable_ismaster_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2503,6 +2505,7 @@ main (int argc, char *argv[])
    test_client_side_encryption_install (&suite);
    test_server_description_install (&suite);
    test_aws_install (&suite);
+   test_streamable_ismaster_install (&suite);
 
    ret = TestSuite_Run (&suite);
 

@@ -47,6 +47,7 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
    bson_destroy (&sd->arbiters);
    bson_destroy (&sd->tags);
    bson_destroy (&sd->compressors);
+   bson_destroy (&sd->topology_version);
 }
 
 /* Reset fields inside this sd, but keep same id, host information, and RTT,
@@ -79,12 +80,14 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    bson_destroy (&sd->arbiters);
    bson_destroy (&sd->tags);
    bson_destroy (&sd->compressors);
+   bson_destroy (&sd->topology_version);
 
    bson_init (&sd->hosts);
    bson_init (&sd->passives);
    bson_init (&sd->arbiters);
    bson_init (&sd->tags);
    bson_init (&sd->compressors);
+   bson_init (&sd->topology_version);
 
    sd->me = NULL;
    sd->current_primary = NULL;
@@ -133,6 +136,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    bson_init (&sd->arbiters);
    bson_init (&sd->tags);
    bson_init (&sd->compressors);
+   bson_init (&sd->topology_version);
 
    mongoc_server_description_reset (sd);
 
@@ -664,6 +668,13 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
          bson_iter_array (&iter, &len, &bytes);
          bson_destroy (&sd->compressors);
          BSON_ASSERT (bson_init_static (&sd->compressors, bytes, len));
+      } else if (strcmp ("topologyVersion", bson_iter_key (&iter)) == 0) {
+         if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+            goto failure;
+         }
+         bson_iter_document (&iter, &len, &bytes);
+         bson_destroy (&sd->topology_version);
+         bson_init_static (&sd->topology_version, bytes, len);
       }
    }
 
@@ -738,6 +749,7 @@ mongoc_server_description_new_copy (
    bson_init (&copy->arbiters);
    bson_init (&copy->tags);
    bson_init (&copy->compressors);
+   bson_init (&copy->topology_version);
 
    if (description->has_is_master) {
       /* calls mongoc_server_description_reset */
@@ -1103,4 +1115,58 @@ _mongoc_server_description_equal (mongoc_server_description_t *sd1,
    }
 
    return true;
+}
+
+int
+mongoc_server_description_topology_version_cmp (const bson_t *tv1,
+                                                const bson_t *tv2)
+{
+   const bson_oid_t *pid1;
+   const bson_oid_t *pid2;
+   int64_t counter1;
+   int64_t counter2;
+   bson_iter_t iter;
+
+   BSON_ASSERT (tv1);
+   BSON_ASSERT (tv2);
+
+   if (bson_empty (tv1) || bson_empty (tv2)) {
+      return -1;
+   }
+
+   if (!bson_iter_init_find (&iter, tv1, "processId") ||
+       !BSON_ITER_HOLDS_OID (&iter)) {
+      return -1;
+   }
+   pid1 = bson_iter_oid (&iter);
+
+   if (!bson_iter_init_find (&iter, tv2, "processId") ||
+       !BSON_ITER_HOLDS_OID (&iter)) {
+      return -1;
+   }
+   pid2 = bson_iter_oid (&iter);
+
+   if (0 != bson_oid_compare (pid1, pid2)) {
+      /* Assume greater. */
+      return -1;
+   }
+
+   if (!bson_iter_init_find (&iter, tv1, "counter") ||
+       !BSON_ITER_HOLDS_INT (&iter)) {
+      return -1;
+   }
+   counter1 = bson_iter_as_int64 (&iter);
+
+   if (!bson_iter_init_find (&iter, tv2, "counter") ||
+       !BSON_ITER_HOLDS_INT (&iter)) {
+      return -1;
+   }
+   counter2 = bson_iter_as_int64 (&iter);
+
+   if (counter1 < counter2) {
+      return -1;
+   } else if (counter1 > counter2) {
+      return 1;
+   }
+   return 0;
 }
