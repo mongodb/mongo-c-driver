@@ -1903,8 +1903,8 @@ _mongoc_topology_description_check_compatible (
  * mongoc_topology_description_handle_ismaster --
  *
  *      Handle an ismaster. This is called by the background SDAM process,
- *      and by client when invalidating servers. If there was an error
- *      calling ismaster, pass it in as @error.
+ *      and by client when performing a handshake or invalidating servers.
+ *      If there was an error calling ismaster, pass it in as @error.
  *
  *      NOTE: this method should only be called while holding the mutex on
  *      the owning topology object.
@@ -1923,6 +1923,7 @@ mongoc_topology_description_handle_ismaster (
    mongoc_topology_description_t *prev_td = NULL;
    mongoc_server_description_t *prev_sd = NULL;
    mongoc_server_description_t *sd;
+   bson_iter_t iter;
    /* sd_changed is set if the server description meaningfully changed AND
     * callbacks are registered. */
    bool sd_changed = false;
@@ -1938,6 +1939,22 @@ mongoc_topology_description_handle_ismaster (
    if (topology->apm_callbacks.topology_changed) {
       prev_td = bson_malloc0 (sizeof (mongoc_topology_description_t));
       _mongoc_topology_description_copy_to (topology, prev_td);
+   }
+
+   if (ismaster_response &&
+       bson_iter_init_find (&iter, ismaster_response, "topologyVersion") &&
+       BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      bson_t incoming_topology_version;
+      const uint8_t *bytes;
+      uint32_t len;
+
+      bson_iter_document (&iter, &len, &bytes);
+      bson_init_static (&incoming_topology_version, bytes, len);
+
+      if (mongoc_server_description_topology_version_cmp (
+             &sd->topology_version, &incoming_topology_version) == 1) {
+         return;
+      }
    }
 
    if (topology->apm_callbacks.topology_changed ||
@@ -1991,9 +2008,7 @@ mongoc_topology_description_handle_ismaster (
       bson_free (prev_td);
    }
 
-   if (prev_sd) {
-      mongoc_server_description_destroy (prev_sd);
-   }
+   mongoc_server_description_destroy (prev_sd);
 }
 
 /*
