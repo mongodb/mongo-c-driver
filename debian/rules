@@ -17,6 +17,13 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 # package maintainers to append LDFLAGS
 export DEB_LDFLAGS_MAINT_APPEND := -lpthread
 
+ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
+	echo "Found 'nodoc' in 'DEB_BUILD_OPTIONS'; not building documentation"
+	DOCS=ON
+else
+	DOCS=OFF
+endif
+
 # main packaging script based on dh7 syntax
 %:
 	dh $@
@@ -26,8 +33,8 @@ override_dh_auto_configure:
 	-DBUILD_VERSION=$(DEB_VERSION_UPSTREAM) \
 	-DENABLE_MONGOC=ON \
 	-DENABLE_BSON=ON \
-	-DENABLE_MAN_PAGES=ON \
-	-DENABLE_HTML_DOCS=ON \
+	-DENABLE_MAN_PAGES=$(DOCS) \
+	-DENABLE_HTML_DOCS=$(DOCS) \
 	-DENABLE_MAINTAINER_FLAGS=ON \
 	-DENABLE_TESTS=OFF \
 	-DENABLE_ZLIB=SYSTEM
