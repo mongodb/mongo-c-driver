@@ -54,7 +54,7 @@ from typing import Callable, Tuple, Optional
 from asn1crypto import x509, keys, core, ocsp
 from asn1crypto.ocsp import OCSPRequest, OCSPResponse
 from oscrypto import asymmetric
-from bottle import Bottle, HTTPResponse, request
+from flask import Flask, request, Response
 
 __version__ = '0.10.2'
 __version_info__ = (0, 10, 2)
@@ -403,7 +403,7 @@ class OCSPResponseBuilder(object):
         signature_bytes = sign_func(responder_private_key, response_data.dump(), self._hash_algo)
 
         certs = None
-        if self._certificate_issuer:
+        if self._certificate_issuer and getattr(self._certificate_issuer.public_key, self._key_hash_algo) != responder_key_hash:
             certs = [responder_certificate]
 
         return ocsp.OCSPResponse({
@@ -414,7 +414,7 @@ class OCSPResponseBuilder(object):
                     'tbs_response_data': response_data,
                     'signature_algorithm': {'algorithm': signature_algorithm_id},
                     'signature': signature_bytes,
-                    'certs': certs
+                    'certs': certs,
                 }
             }
         })
@@ -448,10 +448,11 @@ class CertificateStatus(enum.Enum):
 FAULT_REVOKED = "revoked"
 FAULT_UNKNOWN = "unknown"
 
+app = Flask(__name__)
 class OCSPResponder:
 
     def __init__(self, issuer_cert: str, responder_cert: str, responder_key: str,
-                       fault: str = None, next_update_days: int = 7):
+                       fault: str, next_update_seconds: int):
         """
         Create a new OCSPResponder instance.
 
@@ -465,8 +466,8 @@ class OCSPResponder:
             depending on the status - a revocation datetime.
         :param cert_retrieve_func: A function that - given a certificate serial -
             will return the corresponding certificate as a string.
-        :param next_update_days: The ``nextUpdate`` value that will be written
-            into the response. Default: 7 days.
+        :param next_update_seconds: The ``nextUpdate`` value that will be written
+            into the response. Default: 9 hours.
 
         """
         # Certs and keys
@@ -475,48 +476,15 @@ class OCSPResponder:
         self._responder_key = asymmetric.load_private_key(responder_key)
 
         # Next update
-        self._next_update_days = next_update_days
+        self._next_update_seconds = next_update_seconds
 
         self._fault = fault
-
-        # Bottle
-        self._app = Bottle()
-
-        # Initialize routing
-        self._route()
-
-    def _route(self):
-        self._app.get('/', callback=self._handle_root)
-        self._app.get('/status/<request_data>', callback=self._handle_get)
-        self._app.post('/status/', callback=self._handle_post)
-
-    def _handle_root(self):
-        return 'ocsp-responder'
-
-    def _handle_get(self, request_data):
-        """
-        An OCSP GET request contains the DER-in-base64 encoded OCSP request in the
-        HTTP request URL.
-        """
-        print ("Hello!")
-        der = base64.b64decode(request_data)
-        ocsp_request = self._parse_ocsp_request(der)
-        return self._build_http_response(ocsp_request)
-
-    def _handle_post(self):
-        """
-        An OCSP POST request contains the DER encoded OCSP request in the HTTP
-        request body.
-        """
-        der = request.body.read()
-        ocsp_request = self._parse_ocsp_request(der)
-        return self._build_http_response(ocsp_request)
 
     def _fail(self, status: ResponseStatus) -> OCSPResponse:
         builder = OCSPResponseBuilder(response_status=status.value)
         return builder.build()
 
-    def _parse_ocsp_request(self, request_der: bytes) -> OCSPRequest:
+    def parse_ocsp_request(self, request_der: bytes) -> OCSPRequest:
         """
         Parse the request bytes, return an ``OCSPRequest`` instance.
         """
@@ -597,18 +565,50 @@ class OCSPResponder:
 
         # Set next update date
         now = datetime.now(timezone.utc)
-        builder.next_update = (now + timedelta(days=self._next_update_days)).replace(microsecond=0)
+        builder.next_update = (now + timedelta(seconds=self._next_update_seconds)).replace(microsecond=0)
 
         return builder.build(self._responder_key, self._responder_cert)
 
-    def _build_http_response(self, request_der: bytes) -> HTTPResponse:
+    def build_http_response(self, request_der: bytes) -> Response:
+        global app
         response_der = self._build_ocsp_response(request_der).dump()
-        return HTTPResponse(
-            status=200,
-            body=response_der,
-            content_type='application/ocsp-response',
-        )
+        resp = app.make_response((response_der, 200))
+        resp.headers['content_type'] = 'application/ocsp-response'
+        return resp
 
-    def serve(self, port=8080, debug=False):
-        logger.info('Launching %sserver on port %d', 'debug' if debug else '', port)
-        self._app.run(port=port, debug=debug)
+
+responder = None
+
+def init_responder(issuer_cert: str, responder_cert: str, responder_key: str, fault: str, next_update_seconds: int):
+    global responder
+    responder = OCSPResponder(issuer_cert=issuer_cert, responder_cert=responder_cert, responder_key=responder_key, fault=fault, next_update_seconds=next_update_seconds)
+
+def init(port=8080, debug=False):
+    logger.info('Launching %sserver on port %d', 'debug' if debug else '', port)
+    app.run(port=port, debug=debug)
+
+@app.route('/', methods=['GET'])
+def _handle_root():
+    return 'ocsp-responder'
+
+@app.route('/status/', defaults={'u_path': ''}, methods=['GET'])
+@app.route('/status/<path:u_path>', methods=['GET'])
+def _handle_get(u_path):
+    global responder
+    """
+    An OCSP GET request contains the DER-in-base64 encoded OCSP request in the
+    HTTP request URL.
+    """
+    der = base64.b64decode(u_path)
+    ocsp_request = responder.parse_ocsp_request(der)
+    return responder.build_http_response(ocsp_request)
+
+@app.route('/status', methods=['POST'])
+def _handle_post():
+    global responder
+    """
+    An OCSP POST request contains the DER encoded OCSP request in the HTTP
+    request body.
+    """
+    ocsp_request = responder.parse_ocsp_request(request.data)
+    return responder.build_http_response(ocsp_request)

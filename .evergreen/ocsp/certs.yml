@@ -44,7 +44,7 @@ certs:
     subjectAltName:
       DNS: localhost
       IP: 127.0.0.1
-    authorityInfoAccess: 'OCSP;URI:http://localhost:9001/power/level/,OCSP;URI:http://localhost:8100/status/'
+    authorityInfoAccess: 'OCSP;URI:http://localhost:9001/power/level,OCSP;URI:http://localhost:8100/status'
     subjectKeyIdentifier: hash
     keyUsage: [digitalSignature, keyEncipherment]
     extendedKeyUsage: [serverAuth, clientAuth]
@@ -65,7 +65,7 @@ certs:
     subjectAltName:
       DNS: localhost
       IP: 127.0.0.1
-    authorityInfoAccess: 'OCSP;URI:http://localhost:9001/power/level/,OCSP;URI:http://localhost:8100/status/'
+    authorityInfoAccess: 'OCSP;URI:http://localhost:9001/power/level,OCSP;URI:http://localhost:8100/status'
     mustStaple: true
     subjectKeyIdentifier: hash
     keyUsage: [digitalSignature, keyEncipherment]
@@ -98,15 +98,19 @@ certs:
 - name: 'ecdsa-ca-ocsp.pem'
   description: Root of ECDSA tree for OCSP testing
   Issuer: self
+  tags: [ecdsa]
 
 - name: 'ecdsa-server-ocsp.pem'
   description: ECDSA server certificate w/OCSP
   Issuer: 'ecdsa-ca-ocsp.pem'
+  tags: [ecdsa, ocsp]
 
 - name: 'ecdsa-server-ocsp-mustStaple.pem'
   description: ECDSA server certificate w/OCSP + must-staple
   Issuer: 'ecdsa-ca-ocsp.pem'
+  tags: [ecdsa, ocsp, must-staple]
 
 - name: 'ecdsa-ocsp-responder.crt'
   description: ECDSA certificate and key for OCSP responder
   Issuer: 'ecdsa-ca-ocsp.pem'
+  tags: [ecdsa, ocsp, responder ]
