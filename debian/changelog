@@ -1,6 +1,7 @@
 mongo-c-driver (1.16.1-2) UNRELEASED; urgency=medium
 
   * Add libmongoc-dev dependency on libzstd-dev
+  * Allow skipping build of documentation, i.e., DEB_BUILD_OPTIONS="nodoc"
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Mon, 30 Mar 2020 13:29:39 -0400
 
