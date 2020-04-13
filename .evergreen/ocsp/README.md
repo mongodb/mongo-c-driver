@@ -1,13 +1,13 @@
 # Generating Test Certificates
 
 The test certificates here were generating using a fork of the server
-team's [`mkcert.py`]
-(https://github.com/mongodb/mongo/blob/master/jstests/ssl/x509/mkcert.py)
+team's 
+[`mkcert.py`](https://github.com/mongodb/mongo/blob/master/jstests/ssl/x509/mkcert.py)
 tool.
 
 In order to generate a fresh set of certificates, clone this branch of
-a fork of the [`mongo` repository]
-(https://github.com/vincentkam/mongo/tree/mkcert-ecdsa) and
+a fork of the 
+[`mongo` repository](https://github.com/vincentkam/mongo/tree/mkcert-ecdsa) and
 run the following command from the root of the `mongo` repository:
 
 `python3 jstests/ssl/x509/mkcert.py --config ../drivers-evergreen-tools/.evergreen/ocsp/certs.yml`

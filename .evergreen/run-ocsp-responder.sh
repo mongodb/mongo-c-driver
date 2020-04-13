@@ -87,7 +87,12 @@ if [ -n "$RESPONDER_REQUIRED" ]; then
             /opt/mongodbtoolchain/v3/bin/python3 -m venv ./venv_ocsp
             PYTHON="$(pwd)/venv_ocsp/bin/python"
         fi
-        $PYTHON -m pip install oscrypto bottle asn1crypto
+
+        REQUIREMENTS="requirements.txt"
+        if [ ! -f "$REQUIREMENTS" ]; then
+           curl https://raw.githubusercontent.com/mongodb-labs/drivers-evergreen-tools/master/.evergreen/ocsp/mock-ocsp-responder-requirements.txt -o $REQUIREMENTS
+        fi
+        $PYTHON -m pip install -r $REQUIREMENTS
     fi
     cd "$CDRIVER_ROOT/.evergreen/ocsp/$CERT_TYPE"
     if [ "$RESPONDER_REQUIRED" = "invalid" ]; then
