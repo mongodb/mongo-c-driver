@@ -874,7 +874,7 @@ match_bson_with_ctx (const bson_t *doc, const bson_t *pattern, match_ctx_t *ctx)
    bool is_type_operator;
    bool exists;
    bool empty;
-   bson_type_t bson_type;
+   bson_type_t bson_type = (bson_type_t) 0;
    bool found;
    bson_iter_t doc_iter;
    bson_value_t doc_value;

@@ -40,18 +40,22 @@ bson_contains_iter (const bson_t *haystack, bson_iter_t *needle)
    }
    case BSON_TYPE_BOOL:
       ASSERT (bson_iter_as_bool (needle) == bson_iter_as_bool (&iter));
-      return bson_contains_iter (haystack, needle);
+      bson_contains_iter (haystack, needle);
+      return;
    case BSON_TYPE_UTF8:
       ASSERT (0 ==
               strcmp (bson_iter_utf8 (needle, 0), bson_iter_utf8 (&iter, 0)));
-      return bson_contains_iter (haystack, needle);
+      bson_contains_iter (haystack, needle);
+      return;
    case BSON_TYPE_DOUBLE:
       ASSERT (bson_iter_double (needle) == bson_iter_double (&iter));
-      return bson_contains_iter (haystack, needle);
+      bson_contains_iter (haystack, needle);
+      return;
    case BSON_TYPE_INT64:
    case BSON_TYPE_INT32:
       ASSERT (bson_iter_as_int64 (needle) == bson_iter_as_int64 (&iter));
-      return bson_contains_iter (haystack, needle);
+      bson_contains_iter (haystack, needle);
+      return;
    default:
       ASSERT (false);
       return;

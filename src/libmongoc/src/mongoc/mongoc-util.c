@@ -50,7 +50,7 @@ _mongoc_rand_simple (unsigned int *seed)
 
    err = rand_s (&ret);
    if (0 != err) {
-      MONGOC_ERROR ("rand_s failed: %");
+      MONGOC_ERROR ("rand_s failed: %s", strerror(err));
    }
 
    return (int) ret;

@@ -55,7 +55,7 @@ BSON_BEGIN_DECLS
 #define bson_once(o, c) InitOnceExecuteOnce (o, c, NULL, NULL)
 #define bson_once_t INIT_ONCE
 #define bson_thread_create(_t, _f, _d) \
-   (!(*(_t) = CreateThread (NULL, 0, (void *) _f, _d, 0, NULL)))
+   (!(*(_t) = CreateThread (NULL, 0, (LPTHREAD_START_ROUTINE) (_f), _d, 0, NULL)))
 #define bson_thread_join(_n) WaitForSingleObject ((_n), INFINITE)
 #define bson_thread_t HANDLE
 #endif

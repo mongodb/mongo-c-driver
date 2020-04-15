@@ -146,7 +146,7 @@ bson_get_monotonic_time (void)
    int64_t nanosec = gethrtime ();
    return (nanosec / 1000UL);
 #else
-#warning "Monotonic clock is not yet supported on your platform."
+#pragma message "Monotonic clock is not yet supported on your platform."
    struct timeval tv;
 
    bson_gettimeofday (&tv);

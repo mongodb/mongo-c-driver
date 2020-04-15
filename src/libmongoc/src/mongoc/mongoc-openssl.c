@@ -560,6 +560,7 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
 {
    enum { OCSP_CB_ERROR = -1, OCSP_CB_REVOKED, OCSP_CB_SUCCESS } ret;
    bool stapled_response = true;
+   bool must_staple;
    OCSP_RESPONSE *resp = NULL;
    OCSP_BASICRESP *basic = NULL;
    X509_STORE *store = NULL;
@@ -614,7 +615,7 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
       }
    } else {
       MONGOC_DEBUG ("Server does not contain a stapled response");
-      bool must_staple = X509_get_ext_d2i (peer, NID_tlsfeature, 0, 0) != NULL;
+      must_staple = X509_get_ext_d2i (peer, NID_tlsfeature, 0, 0) != NULL;
       if (must_staple) {
          MONGOC_ERROR ("Server must contain a stapled response");
          ret = OCSP_CB_REVOKED;

@@ -420,8 +420,8 @@ gen_collection_name (const char *str)
 {
    return bson_strdup_printf ("%s_%u_%u",
                               str,
-                              (unsigned) bson_get_monotonic_time (),
-                              (unsigned) gettestpid ());
+                              (uint32_t) bson_get_monotonic_time (),
+                              (uint32_t) gettestpid ());
 }
 
 

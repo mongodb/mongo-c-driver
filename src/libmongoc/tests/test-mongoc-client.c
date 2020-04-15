@@ -2295,7 +2295,7 @@ _test_mongoc_client_ssl_opts (bool pooled)
    bson_free (uri_str_auth);
    bson_free (uri_str);
    bson_free (host_and_port);
-};
+}
 
 
 static void
@@ -3929,6 +3929,8 @@ test_client_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/Client/ssl_opts_padding_not_null/single",
                   test_ssl_opts_padding_not_null);
+   TestSuite_AddLive (suite, "/Client/ssl_hang", test_client_buildinfo_hang);
+
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
    defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    TestSuite_AddMockServerTest (suite,
@@ -3941,8 +3943,6 @@ test_client_install (TestSuite *suite)
       suite, "/Client/ssl/reconnect/single", test_ssl_reconnect_single);
    TestSuite_AddMockServerTest (
       suite, "/Client/ssl/reconnect/pooled", test_ssl_reconnect_pooled);
-
-   TestSuite_AddLive (suite, "/Client/ssl_hang", test_client_buildinfo_hang);
 
 #endif
 #else

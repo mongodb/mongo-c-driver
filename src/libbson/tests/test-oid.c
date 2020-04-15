@@ -330,6 +330,7 @@ test_bson_oid_init_with_threads (void)
 {
    bson_context_t *context;
    int i;
+   int r;
 
    {
       bson_context_flags_t flags = BSON_CONTEXT_NONE;
@@ -342,7 +343,8 @@ test_bson_oid_init_with_threads (void)
 
       for (i = 0; i < N_THREADS; i++) {
          contexts[i] = bson_context_new (flags);
-         bson_thread_create (&threads[i], oid_worker, contexts[i]);
+         r = bson_thread_create (&threads[i], oid_worker, contexts[i]);
+         BSON_ASSERT (r == 0);
       }
 
       for (i = 0; i < N_THREADS; i++) {
@@ -363,11 +365,13 @@ test_bson_oid_init_with_threads (void)
       context = bson_context_new (BSON_CONTEXT_THREAD_SAFE);
 
       for (i = 0; i < N_THREADS; i++) {
-         bson_thread_create (&threads[i], oid_worker, context);
+         r = bson_thread_create (&threads[i], oid_worker, context);
+         BSON_ASSERT (r == 0);
       }
 
       for (i = 0; i < N_THREADS; i++) {
-         bson_thread_join (threads[i]);
+         r = bson_thread_join (threads[i]);
+         BSON_ASSERT (r == 0);
       }
 
       bson_context_destroy (context);
@@ -395,6 +399,10 @@ test_bson_oid_counter_overflow (void)
 }
 
 
+#ifndef _WIN32
+#include <sys/wait.h>
+
+
 typedef struct {
    uint32_t timestamp; /* timestamp */
    uint64_t rand;      /* only really 5 bytes */
@@ -419,10 +427,6 @@ _parse_oid (bson_oid_t *oid, _parsed_oid_t *out)
    memcpy (&out->counter, oid->bytes + 8, 4);
    out->counter = BSON_UINT32_FROM_BE (out->counter) & 0x00FFFFFF;
 }
-
-
-#ifndef _WIN32
-#include <sys/wait.h>
 
 
 /* Only test where fork() is available. Does not exercise platform specific

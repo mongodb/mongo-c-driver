@@ -15,6 +15,16 @@
 #define MONGOC_LOG_DOMAIN "session-test"
 
 
+/*
+ * Prevent failing on pedantic GCC warning: "ISO C forbids conversion of
+ * function pointer to object pointer type.
+ */
+#if __GNUC__ > 6
+#pragma GCC diagnostic warning "-Wpedantic"
+#else
+#pragma GCC diagnostic warning "-pedantic"
+#endif
+
 static void
 test_session_opts_clone (void)
 {

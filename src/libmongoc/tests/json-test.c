@@ -467,9 +467,9 @@ assemble_path (const char *parent_path,
    BSON_ASSERT (path_len + name_len + 1 < MAX_TEST_NAME_LENGTH);
 
    memset (dst, '\0', MAX_TEST_NAME_LENGTH * sizeof (char));
-   strncat (dst, parent_path, path_len);
-   strncat (dst, "/", 1);
-   strncat (dst, child_name, name_len);
+   strcat (dst, parent_path);
+   strcat (dst, "/");
+   strcat (dst, child_name);
 
    for (p = dst; *p; ++p) {
       if (*p == '\\') {

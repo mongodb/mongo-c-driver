@@ -38,11 +38,7 @@ BSON_BEGIN_DECLS
    atomic_add_64_nv ((volatile uint64_t *) p, (v))
 #elif defined(_WIN32)
 /* MSVC/MinGW */
-#define bson_atomic_int_add(p, v) \
-   (InterlockedExchangeAdd ((volatile LONG *) (p), (LONG) (v)) + (LONG) (v))
-#define bson_atomic_int64_add(p, v)                                        \
-   (InterlockedExchangeAdd64 ((volatile LONGLONG *) (p), (LONGLONG) (v)) + \
-    (LONGLONG) (v))
+#define __BSON_NEED_ATOMIC_WINDOWS
 #else
 #ifdef BSON_HAVE_ATOMIC_32_ADD_AND_FETCH
 #define bson_atomic_int_add(p, v) __sync_add_and_fetch ((p), (v))
@@ -72,6 +68,16 @@ BSON_EXPORT (int32_t)
 bson_atomic_int_add (volatile int32_t *p, int32_t n);
 #endif
 #ifdef __BSON_NEED_ATOMIC_64
+BSON_EXPORT (int64_t)
+bson_atomic_int64_add (volatile int64_t *p, int64_t n);
+#endif
+/*
+ * The logic above is such that __BSON_NEED_ATOMIC_WINDOWS should only be
+ * defined if neither __BSON_NEED_ATOMIC_32 nor __BSON_NEED_ATOMIC_64 are.
+ */
+#ifdef __BSON_NEED_ATOMIC_WINDOWS
+BSON_EXPORT (int32_t)
+bson_atomic_int_add (volatile int32_t *p, int32_t n);
 BSON_EXPORT (int64_t)
 bson_atomic_int64_add (volatile int64_t *p, int64_t n);
 #endif

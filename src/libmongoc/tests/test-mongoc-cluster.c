@@ -1763,6 +1763,7 @@ _test_cmd_on_unknown_serverid (bool pooled)
       test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
    } else {
+      pool = NULL;
       client = mongoc_client_new_from_uri (uri);
       test_framework_set_ssl_opts (client);
    }

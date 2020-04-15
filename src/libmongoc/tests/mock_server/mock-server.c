@@ -319,6 +319,7 @@ mock_server_run (mock_server_t *server)
    int optval;
    uint16_t bound_port;
    size_t bind_addr_len = 0;
+   int r;
 
    MONGOC_INFO ("Starting mock server on port %d.", server->port);
    ssock = mongoc_socket_new (
@@ -382,7 +383,8 @@ mock_server_run (mock_server_t *server)
       bound_port);
    server->uri = mongoc_uri_new (server->uri_str);
 
-   bson_thread_create (&server->main_thread, main_thread, (void *) server);
+   r = bson_thread_create (&server->main_thread, main_thread, (void *) server);
+   BSON_ASSERT (r == 0);
    while (!server->running) {
       mongoc_cond_wait (&server->cond, &server->mutex);
    }
@@ -1550,6 +1552,7 @@ main_thread (void *data)
    bson_thread_t thread;
    mongoc_array_t worker_threads;
    size_t i;
+   int r;
 
    bson_mutex_lock (&server->mutex);
    server->running = true;
@@ -1597,7 +1600,8 @@ main_thread (void *data)
          closure->port = port;
 
          bson_mutex_lock (&server->mutex);
-         bson_thread_create (&thread, worker_thread, closure);
+         r = bson_thread_create (&thread, worker_thread, closure);
+         BSON_ASSERT (r == 0);
          _mongoc_array_append_val (&server->worker_threads, thread);
          bson_mutex_unlock (&server->mutex);
       }

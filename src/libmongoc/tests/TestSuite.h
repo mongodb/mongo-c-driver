@@ -535,9 +535,12 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
       }                                                               \
    } while (0)
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 #define gettestpid _getpid
 #else
+#ifdef __MINGW32__
+#include <process.h>
+#endif
 #define gettestpid getpid
 #endif
 
