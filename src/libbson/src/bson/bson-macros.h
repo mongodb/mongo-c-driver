@@ -200,7 +200,7 @@
 /* Used for asserting parameters to provide a more precise error message */
 #define BSON_ASSERT_PARAM(param)                                                   \
    do {                                                                            \
-      if ((BSON_UNLIKELY (param == NULL))) {                                         \
+      if ((BSON_UNLIKELY (param == NULL))) {                                       \
          fprintf (stderr,                                                          \
                   "The parameter: %s, in function %s, cannot be NULL\n",           \
                   #param,                                                          \
