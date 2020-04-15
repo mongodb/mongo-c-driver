@@ -2689,7 +2689,11 @@ _mongoc_client_set_apm_callbacks_private (mongoc_client_t *client,
    }
 
    client->apm_context = context;
-   mongoc_topology_set_apm_callbacks (client->topology, callbacks, context);
+
+   /* A client pool sets APM callbacks for the entire pool. */
+   if (client->topology->single_threaded) {
+      mongoc_topology_set_apm_callbacks (client->topology, callbacks, context);
+   }
 
    return true;
 }
