@@ -1145,4 +1145,7 @@ fail:
    return ret;
 }
 
+#else
+/* ensure the translation unit is not empty */
+extern int no_mongoc_client_side_encryption;
 #endif /* MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION */

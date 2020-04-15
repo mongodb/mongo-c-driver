@@ -435,4 +435,7 @@ _mongoc_linux_distro_scanner_get_distro (char **name, char **version)
    RETURN (false);
 }
 
+#else
+/* ensure the translation unit is not empty */
+extern int mongoc_os_is_not_linux;
 #endif

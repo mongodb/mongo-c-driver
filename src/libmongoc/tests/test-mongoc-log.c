@@ -177,7 +177,7 @@ test_mongoc_log_trace_disabled (void *context)
    mongoc_log_set_handler (log_func, &data);
 
    TRACE ("%s", "Conscript reporting!");
-   ASSERT_CMPINT (data.log_level, ==, (mongoc_log_level_t) -1);
+   ASSERT_CMPUINT (data.log_level, ==, (mongoc_log_level_t) -1);
 
    restore_state (&old_state);
 }

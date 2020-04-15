@@ -107,7 +107,7 @@ _mongoc_stream_tls_secure_channel_destroy (mongoc_stream_t *stream)
     * Shutting Down an Schannel Connection
     */
 
-   TRACE ("shutting down SSL/TLS connection");
+   TRACE ("shutting down SSL/TLS connection", NULL);
 
    if (secure_channel->cred && secure_channel->ctxt) {
       SecBufferDesc BuffDesc;
@@ -125,7 +125,7 @@ _mongoc_stream_tls_secure_channel_destroy (mongoc_stream_t *stream)
          ApplyControlToken (&secure_channel->ctxt->ctxt_handle, &BuffDesc);
 
       if (sspi_status != SEC_E_OK) {
-         MONGOC_ERROR ("ApplyControlToken failure: %d", sspi_status);
+         MONGOC_ERROR ("ApplyControlToken failure: %ld", sspi_status);
       }
 
       /* setup output buffer */
@@ -164,7 +164,7 @@ _mongoc_stream_tls_secure_channel_destroy (mongoc_stream_t *stream)
 
    /* free SSPI Schannel API security context handle */
    if (secure_channel->ctxt) {
-      TRACE ("clear security context handle");
+      TRACE ("clear security context handle", NULL);
       DeleteSecurityContext (&secure_channel->ctxt->ctxt_handle);
       bson_free (secure_channel->ctxt);
    }
@@ -173,7 +173,7 @@ _mongoc_stream_tls_secure_channel_destroy (mongoc_stream_t *stream)
    if (secure_channel->cred) {
       /* decrement the reference counter of the credential/session handle */
       /* if the handle was not cached and the refcount is zero */
-      TRACE ("clear credential handle");
+      TRACE ("clear credential handle", NULL);
       FreeCredentialsHandle (&secure_channel->cred->cred_handle);
       bson_free (secure_channel->cred);
    }
@@ -371,7 +371,7 @@ _mongoc_stream_tls_secure_channel_writev (mongoc_stream_t *stream,
    BSON_ASSERT (secure_channel);
    ENTRY;
 
-   TRACE ("Trying to write to the server");
+   TRACE ("Trying to write to the server", NULL);
    tls->timeout_msec = timeout_msec;
 
    TRACE ("count: %d, 0th: %lu", iovcnt, iov[0].iov_len);
@@ -491,8 +491,6 @@ _mongoc_stream_tls_secure_channel_decrypt (
 {
    size_t size = 0;
    size_t remaining;
-   ssize_t nread = -1;
-   bool done = false;
    SecBuffer inbuf[4];
    SecBufferDesc inbuf_desc;
    SECURITY_STATUS sspi_status = SEC_E_OK;
@@ -589,7 +587,7 @@ _mongoc_stream_tls_secure_channel_decrypt (
 
          /* check if server wants to renegotiate the connection context */
          if (sspi_status == SEC_I_RENEGOTIATE) {
-            TRACE ("remote party requests renegotiation");
+            TRACE ("remote party requests renegotiation", NULL);
          }
          /* check if the server closed the connection */
          else if (sspi_status == SEC_I_CONTEXT_EXPIRED) {
@@ -599,11 +597,11 @@ _mongoc_stream_tls_secure_channel_decrypt (
 
             if (!secure_channel->recv_connection_closed) {
                secure_channel->recv_connection_closed = true;
-               TRACE ("server closed the connection");
+               TRACE ("server closed the connection", NULL);
             }
          }
       } else if (sspi_status == SEC_E_INCOMPLETE_MESSAGE) {
-         TRACE ("failed to decrypt data, need more data");
+         TRACE ("failed to decrypt data, need more data", NULL);
       } else {
          TRACE ("failed to read data from server: %d", sspi_status);
          secure_channel->recv_unrecoverable_err = true;
@@ -641,7 +639,7 @@ _mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
     */
 
    if (secure_channel->decdata_offset) {
-      TRACE ("decrypted data is already available");
+      TRACE ("decrypted data is already available", NULL);
       return _mongoc_stream_tls_secure_channel_debuf (secure_channel, buf, len);
    }
 
@@ -656,17 +654,17 @@ _mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
 
    /* keep these checks separated, for more detailed tracing */
    if (secure_channel->recv_unrecoverable_err) {
-      TRACE ("an unrecoverable error occurred in a prior call");
+      TRACE ("an unrecoverable error occurred in a prior call", NULL);
       return -1;
    }
 
    if (secure_channel->recv_sspi_close_notify) {
-      TRACE ("server indicated shutdown in a prior call");
+      TRACE ("server indicated shutdown in a prior call", NULL);
       return -1;
    }
 
    if (secure_channel->recv_connection_closed) {
-      TRACE ("connection closed");
+      TRACE ("connection closed", NULL);
       return -1;
    }
 
@@ -681,7 +679,7 @@ _mongoc_stream_tls_secure_channel_read (mongoc_stream_t *stream,
 
    if (!nread) {
       if (MONGOC_ERRNO_IS_AGAIN (errno)) {
-         TRACE ("Try again");
+         TRACE ("Try again", NULL);
          return 0;
       } else {
          secure_channel->recv_connection_closed = true;
@@ -838,11 +836,11 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
 
 
       if (mongoc_secure_channel_handshake_step_1 (tls, (char *) host)) {
-         TRACE ("Step#1 Worked!\n\n");
+         TRACE ("Step#1 Worked!\n\n", NULL);
          *events = POLLIN;
          RETURN (false);
       } else {
-         TRACE ("Step#1 FAILED!");
+         TRACE ("Step#1 FAILED!", NULL);
       }
 
       break;
@@ -859,7 +857,7 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
          }
          RETURN (false);
       } else {
-         TRACE ("Step#2 FAILED!");
+         TRACE ("Step#2 FAILED!", NULL);
       }
 
       break;
@@ -867,20 +865,22 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
    case ssl_connect_3:
 
       if (mongoc_secure_channel_handshake_step_3 (tls, (char *) host)) {
-         TRACE ("Step#3 Worked!\n\n");
+         TRACE ("Step#3 Worked!\n\n", NULL);
          *events = POLLIN | POLLOUT;
          RETURN (false);
       } else {
-         TRACE ("Step#3 FAILED!");
+         TRACE ("Step#3 FAILED!", NULL);
       }
 
       break;
 
    case ssl_connect_done:
-      TRACE ("Connect DONE!");
+      TRACE ("Connect DONE!", NULL);
       /* reset our connection state machine */
       secure_channel->connecting_state = ssl_connect_1;
       RETURN (true);
+      break;
+   default: /* do nothing */
       break;
    }
 
@@ -961,7 +961,7 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    tls->timeout_msec = -1;
    tls->base_stream = base_stream;
 
-   TRACE ("SSL/TLS connection with endpoint AcquireCredentialsHandle");
+   TRACE ("SSL/TLS connection with endpoint AcquireCredentialsHandle", NULL);
 
    /* setup Schannel API options */
    memset (&schannel_cred, 0, sizeof (schannel_cred));
@@ -978,15 +978,15 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
       schannel_cred.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION |
                                SCH_CRED_IGNORE_NO_REVOCATION_CHECK |
                                SCH_CRED_IGNORE_REVOCATION_OFFLINE;
-      TRACE ("disabled server certificate checks");
+      TRACE ("disabled server certificate checks", NULL);
    } else if (_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
       schannel_cred.dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK |
                                SCH_CRED_IGNORE_REVOCATION_OFFLINE;
-      TRACE ("disabled server certificate revocation checks");
+      TRACE ("disabled server certificate revocation checks", NULL);
    } else {
       schannel_cred.dwFlags |=
          SCH_CRED_AUTO_CRED_VALIDATION | SCH_CRED_REVOCATION_CHECK_CHAIN;
-      TRACE ("enabled server certificate checks");
+      TRACE ("enabled server certificate checks", NULL);
    }
 
    if (opt->allow_invalid_hostname) {
@@ -1047,8 +1047,8 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
                      NULL);
       MONGOC_ERROR (
          "Failed to initialize security context, error code: 0x%04X%04X: '%s'",
-         (sspi_status >> 16) & 0xffff,
-         sspi_status & 0xffff,
+         (unsigned int) (sspi_status >> 16) & 0xffff,
+         (unsigned int) sspi_status & 0xffff,
          msg);
       LocalFree (msg);
       RETURN (NULL);

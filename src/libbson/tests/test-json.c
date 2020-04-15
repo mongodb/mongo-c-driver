@@ -746,7 +746,7 @@ test_bson_corrupt_binary (void)
    bson_free (buf);
 }
 
-#ifndef BSON_HAVE_RAND_R
+#if !defined(BSON_HAVE_RAND_R) && !defined(_WIN32)
 static int
 rand_r (unsigned int *seed)
 {

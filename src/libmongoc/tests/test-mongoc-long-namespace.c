@@ -24,6 +24,16 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 
+/*
+ * Prevent failing on pedantic GCC warning: "ISO C forbids conversion of
+ * function pointer to object pointer type.
+ */
+#if __GNUC__ > 6
+#pragma GCC diagnostic warning "-Wpedantic"
+#else
+#pragma GCC diagnostic warning "-pedantic"
+#endif
+
 typedef struct {
    char *ns;
    char *ns_coll;

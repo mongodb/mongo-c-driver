@@ -1181,11 +1181,13 @@ test_tailable_timeout_single (void)
 
 
 #ifndef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
+#ifndef MONGOC_ENABLE_SSL_SECURE_CHANNEL
 static void
 test_tailable_timeout_pooled (void)
 {
    _test_tailable_timeout (true);
 }
+#endif
 #endif
 
 

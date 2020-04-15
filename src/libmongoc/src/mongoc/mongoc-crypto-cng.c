@@ -41,7 +41,7 @@ mongoc_crypto_cng_init (void)
    status = BCryptOpenAlgorithmProvider (
       &_sha1_hash_algo, BCRYPT_SHA1_ALGORITHM, NULL, 0);
    if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptOpenAlgorithmProvider(SHA1): %x", status);
+      MONGOC_ERROR ("BCryptOpenAlgorithmProvider(SHA1): %ld", status);
    }
 
    _sha1_hmac_algo = 0;
@@ -50,14 +50,14 @@ mongoc_crypto_cng_init (void)
                                          NULL,
                                          BCRYPT_ALG_HANDLE_HMAC_FLAG);
    if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptOpenAlgorithmProvider(SHA1 HMAC): %x", status);
+      MONGOC_ERROR ("BCryptOpenAlgorithmProvider(SHA1 HMAC): %ld", status);
    }
 
    _sha256_hash_algo = 0;
    status = BCryptOpenAlgorithmProvider (
       &_sha256_hash_algo, BCRYPT_SHA256_ALGORITHM, NULL, 0);
    if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptOpenAlgorithmProvider(SHA256): %x", status);
+      MONGOC_ERROR ("BCryptOpenAlgorithmProvider(SHA256): %ld", status);
    }
 
    _sha256_hmac_algo = 0;
@@ -66,7 +66,7 @@ mongoc_crypto_cng_init (void)
                                          NULL,
                                          BCRYPT_ALG_HANDLE_HMAC_FLAG);
    if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptOpenAlgorithmProvider(SHA256 HMAC): %x", status);
+      MONGOC_ERROR ("BCryptOpenAlgorithmProvider(SHA256 HMAC): %ld", status);
    }
 }
 
@@ -89,13 +89,13 @@ mongoc_crypto_cng_cleanup (void)
 
 bool
 _mongoc_crypto_cng_hmac_or_hash (BCRYPT_ALG_HANDLE algorithm,
-                                 void *key,
+                                 const void *key,
                                  size_t key_length,
                                  void *data,
                                  size_t data_length,
                                  void *output)
 {
-   char *hash_object_buffer = 0;
+   unsigned char *hash_object_buffer = 0;
    ULONG hash_object_length = 0;
    BCRYPT_HASH_HANDLE hash = 0;
    ULONG mac_length = 0;
@@ -105,25 +105,25 @@ _mongoc_crypto_cng_hmac_or_hash (BCRYPT_ALG_HANDLE algorithm,
 
    status = BCryptGetProperty (algorithm,
                                BCRYPT_OBJECT_LENGTH,
-                               (char *) &hash_object_length,
+                               (unsigned char *) &hash_object_length,
                                sizeof hash_object_length,
                                &noop,
                                0);
 
    if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptGetProperty(): OBJECT_LENGTH %x", status);
+      MONGOC_ERROR ("BCryptGetProperty(): OBJECT_LENGTH %ld", status);
       return false;
    }
 
    status = BCryptGetProperty (algorithm,
                                BCRYPT_HASH_LENGTH,
-                               (char *) &mac_length,
+                               (unsigned char *) &mac_length,
                                sizeof mac_length,
                                &noop,
                                0);
 
    if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptGetProperty(): HASH_LENGTH %x", status);
+      MONGOC_ERROR ("BCryptGetProperty(): HASH_LENGTH %ld", status);
       return false;
    }
 
@@ -133,24 +133,24 @@ _mongoc_crypto_cng_hmac_or_hash (BCRYPT_ALG_HANDLE algorithm,
                               &hash,
                               hash_object_buffer,
                               hash_object_length,
-                              key,
+                              (PUCHAR) key,
                               (ULONG) key_length,
                               0);
 
    if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptCreateHash(): %x", status);
+      MONGOC_ERROR ("BCryptCreateHash(): %ld", status);
       goto cleanup;
    }
 
    status = BCryptHashData (hash, data, (ULONG) data_length, 0);
    if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptHashData(): %x", status);
+      MONGOC_ERROR ("BCryptHashData(): %ld", status);
       goto cleanup;
    }
 
    status = BCryptFinishHash (hash, output, mac_length, 0);
    if (!NT_SUCCESS (status)) {
-      MONGOC_ERROR ("BCryptFinishHash(): %x", status);
+      MONGOC_ERROR ("BCryptFinishHash(): %ld", status);
       goto cleanup;
    }
 
@@ -173,14 +173,12 @@ mongoc_crypto_cng_hmac_sha1 (mongoc_crypto_t *crypto,
                              int data_len,
                              unsigned char *hmac_out)
 {
-   NTSTATUS status = STATUS_UNSUCCESSFUL;
-
    if (!_sha1_hmac_algo) {
       return;
    }
 
    _mongoc_crypto_cng_hmac_or_hash (
-      _sha1_hmac_algo, key, key_len, data, data_len, hmac_out);
+      _sha1_hmac_algo, key, key_len, (void *) data, data_len, hmac_out);
 }
 
 bool
@@ -189,7 +187,6 @@ mongoc_crypto_cng_sha1 (mongoc_crypto_t *crypto,
                         const size_t input_len,
                         unsigned char *hash_out)
 {
-   NTSTATUS status = STATUS_UNSUCCESSFUL;
    bool res;
 
    if (!_sha1_hash_algo) {
@@ -197,7 +194,7 @@ mongoc_crypto_cng_sha1 (mongoc_crypto_t *crypto,
    }
 
    res = _mongoc_crypto_cng_hmac_or_hash (
-      _sha1_hash_algo, NULL, 0, input, input_len, hash_out);
+      _sha1_hash_algo, NULL, 0, (void *) input, input_len, hash_out);
    return res;
 }
 
@@ -209,14 +206,12 @@ mongoc_crypto_cng_hmac_sha256 (mongoc_crypto_t *crypto,
                                int data_len,
                                unsigned char *hmac_out)
 {
-   NTSTATUS status = STATUS_UNSUCCESSFUL;
-
    if (!_sha256_hmac_algo) {
       return;
    }
 
    _mongoc_crypto_cng_hmac_or_hash (
-      _sha256_hmac_algo, key, key_len, data, data_len, hmac_out);
+      _sha256_hmac_algo, key, key_len, (void *) data, data_len, hmac_out);
 }
 
 bool
@@ -225,7 +220,6 @@ mongoc_crypto_cng_sha256 (mongoc_crypto_t *crypto,
                           const size_t input_len,
                           unsigned char *hash_out)
 {
-   NTSTATUS status = STATUS_UNSUCCESSFUL;
    bool res;
 
    if (!_sha256_hash_algo) {
@@ -233,7 +227,7 @@ mongoc_crypto_cng_sha256 (mongoc_crypto_t *crypto,
    }
 
    res = _mongoc_crypto_cng_hmac_or_hash (
-      _sha256_hash_algo, NULL, 0, input, input_len, hash_out);
+      _sha256_hash_algo, NULL, 0, (void *) input, input_len, hash_out);
    return res;
 }
 #endif

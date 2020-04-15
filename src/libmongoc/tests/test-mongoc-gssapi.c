@@ -112,6 +112,7 @@ main (void)
    struct closure_t closure = {0};
    int i;
    bson_thread_t threads[NTHREADS];
+   int r;
 
    mongoc_init ();
 
@@ -134,8 +135,9 @@ main (void)
    closure.pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < NTHREADS; i++) {
-      bson_thread_create (
+      r = bson_thread_create (
          &threads[i], gssapi_kerberos_worker, (void *) &closure);
+      BSON_ASSERT (r == 0);
    }
 
    for (i = 0; i < NTHREADS; i++) {

@@ -295,7 +295,9 @@ _testcase_run (he_testcase_t *testcase)
    mongoc_topology_scanner_t *ts = testcase->state.ts;
    mongoc_topology_scanner_node_t *node;
    he_testcase_expected_t *expected = &testcase->expected;
+#ifndef _WIN32
    uint64_t duration_ms;
+#endif
    mongoc_async_cmd_t *iter;
 
    gCurrentTestCase = testcase;
@@ -314,13 +316,14 @@ _testcase_run (he_testcase_t *testcase)
 
    mongoc_topology_scanner_work (ts);
 
-   duration_ms = (bson_get_monotonic_time () - testcase->state.start) / (1000);
-
 #ifndef _WIN32
    /* Note: do not check time on Windows. Windows waits 1 second before refusing
     * connection to unused ports:
     * https://support.microsoft.com/en-us/help/175523/info-winsock-tcp-connection-performance-to-unused-ports
     */
+
+   duration_ms = (bson_get_monotonic_time () - testcase->state.start) / (1000);
+
    if (!test_suite_valgrind ()) {
       bool within_expected_duration =
          duration_ms >= expected->duration_min_ms &&

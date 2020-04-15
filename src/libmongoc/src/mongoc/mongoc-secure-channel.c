@@ -54,9 +54,6 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    LPBYTE blob_private = NULL;
    PCCERT_CONTEXT cert = NULL;
    DWORD blob_private_len = 0;
-   HCERTSTORE cert_store = NULL;
-   DWORD encrypted_cert_len = 0;
-   LPBYTE encrypted_cert = NULL;
    DWORD encrypted_private_len = 0;
    LPBYTE encrypted_private = NULL;
 
@@ -119,7 +116,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    if (!cert) {
       MONGOC_ERROR ("Failed to extract public key from '%s'. Error 0x%.8X",
                     filename,
-                    GetLastError ());
+                    (unsigned int) GetLastError ());
       goto fail;
    }
 
@@ -135,7 +132,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
                             NULL);                     /* pdwFlags */
    if (!success) {
       MONGOC_ERROR ("Failed to convert base64 private key. Error 0x%.8X",
-                    GetLastError ());
+                    (unsigned int) GetLastError ());
       goto fail;
    }
 
@@ -149,7 +146,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
                                    NULL);
    if (!success) {
       MONGOC_ERROR ("Failed to convert base64 private key. Error 0x%.8X",
-                    GetLastError ());
+                    (unsigned int) GetLastError ());
       goto fail;
    }
 
@@ -175,8 +172,9 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
                      (LPTSTR) &msg,
                      0,
                      NULL);
-      MONGOC_ERROR (
-         "Failed to parse private key. %s (0x%.8X)", msg, GetLastError ());
+      MONGOC_ERROR ("Failed to parse private key. %s (0x%.8X)",
+                    msg,
+                    (unsigned int) GetLastError ());
       LocalFree (msg);
       goto fail;
    }
@@ -192,7 +190,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
                                   &blob_private_len);
    if (!success) {
       MONGOC_ERROR ("Failed to parse private key. Error 0x%.8X",
-                    GetLastError ());
+                    (unsigned int) GetLastError ());
       goto fail;
    }
 
@@ -205,7 +203,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
                                   CRYPT_VERIFYCONTEXT); /* dwFlags */
    if (!success) {
       MONGOC_ERROR ("CryptAcquireContext failed with error 0x%.8X",
-                    GetLastError ());
+                    (unsigned int) GetLastError ());
       goto fail;
    }
 
@@ -219,7 +217,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
                              &hKey);           /* phKey, OUT */
    if (!success) {
       MONGOC_ERROR ("CryptImportKey for private key failed with error 0x%.8X",
-                    GetLastError ());
+                    (unsigned int) GetLastError ());
       goto fail;
    }
 
@@ -236,7 +234,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
    }
 
    MONGOC_ERROR ("Can't associate private key with public key: 0x%.8X",
-                 GetLastError ());
+                 (unsigned int) GetLastError ());
 
 fail:
    SecureZeroMemory (pem, pem_length);
@@ -338,7 +336,7 @@ mongoc_secure_channel_setup_ca (
    /*printf ("%s\n", pem_key);*/
 
    if (!pem_key) {
-      MONGOC_WARNING ("Couldn't find certificate in '%d'", opt->ca_file);
+      MONGOC_WARNING ("Couldn't find certificate in '%s'", opt->ca_file);
       return false;
    }
 
@@ -350,7 +348,7 @@ mongoc_secure_channel_setup_ca (
                               NULL,
                               NULL)) {
       MONGOC_ERROR ("Failed to convert BASE64 public key. Error 0x%.8X",
-                    GetLastError ());
+                    (unsigned int) GetLastError ());
       return false;
    }
 
@@ -363,7 +361,7 @@ mongoc_secure_channel_setup_ca (
                               NULL,
                               NULL)) {
       MONGOC_ERROR ("Failed to convert BASE64 public key. Error 0x%.8X",
-                    GetLastError ());
+                    (unsigned int) GetLastError ());
       return false;
    }
 
@@ -614,7 +612,7 @@ mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls,
       );
 
    if (sspi_status != SEC_I_CONTINUE_NEEDED) {
-      MONGOC_ERROR ("initial InitializeSecurityContext failed: %d",
+      MONGOC_ERROR ("initial InitializeSecurityContext failed: %ld",
                     sspi_status);
       return false;
    }
@@ -856,8 +854,8 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
                            NULL);
             MONGOC_ERROR ("Failed to initialize security context, error code: "
                           "0x%04X%04X: %s",
-                          (sspi_status >> 16) & 0xffff,
-                          sspi_status & 0xffff,
+                          (unsigned int) (sspi_status >> 16) & 0xffff,
+                          (unsigned int) sspi_status & 0xffff,
                           msg);
             LocalFree (msg);
          }

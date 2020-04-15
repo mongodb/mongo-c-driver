@@ -41,6 +41,15 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 
+/*
+ * Prevent failing on pedantic GCC warning: "ISO C forbids conversion of
+ * function pointer to object pointer type.
+ */
+#if __GNUC__ > 6
+#pragma GCC diagnostic warning "-Wpedantic"
+#else
+#pragma GCC diagnostic warning "-pedantic"
+#endif
 
 static bson_once_t once = BSON_ONCE_INIT;
 static bson_mutex_t gTestMutex;
@@ -415,7 +424,7 @@ TestSuite_RunFuncInChild (TestSuite *suite, /* IN */
                        NULL,  /* Use parent's starting directory */
                        &si,
                        &pi)) {
-      test_error ("CreateProcess failed (%d).", GetLastError ());
+      test_error ("CreateProcess failed (%ld).", GetLastError ());
       bson_free (cmdline);
 
       return -1;

@@ -71,3 +71,25 @@ bson_atomic_int64_add (volatile int64_t *p, int64_t n)
    return ret;
 }
 #endif
+
+
+/*
+ * The logic in the header is such that __BSON_NEED_ATOMIC_WINDOWS should only
+ * be defined if neither __BSON_NEED_ATOMIC_32 nor __BSON_NEED_ATOMIC_64 are.
+ */
+
+
+#ifdef __BSON_NEED_ATOMIC_WINDOWS
+int32_t
+bson_atomic_int_add (volatile int32_t *p, int32_t n)
+{
+   return InterlockedExchangeAdd (p, n) + n;
+}
+
+
+int64_t
+bson_atomic_int64_add (volatile int64_t *p, int64_t n)
+{
+   return InterlockedExchangeAdd (p, n) + n;
+}
+#endif
