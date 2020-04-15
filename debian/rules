@@ -17,11 +17,11 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 # package maintainers to append LDFLAGS
 export DEB_LDFLAGS_MAINT_APPEND := -lpthread
 
-ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
+ifneq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
 	echo "Found 'nodoc' in 'DEB_BUILD_OPTIONS'; not building documentation"
-	DOCS=ON
-else
 	DOCS=OFF
+else
+	DOCS=ON
 endif
 
 # main packaging script based on dh7 syntax
