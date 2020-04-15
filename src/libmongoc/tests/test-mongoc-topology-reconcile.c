@@ -155,7 +155,9 @@ _test_topology_reconcile_rs (bool pooled)
       server0, 6, true, true, server0); /* server1 absent */
 
    BSON_ASSERT (selects_server (client, tag_read_prefs, server0));
+   bson_mutex_lock (&client->topology->mutex);
    BSON_ASSERT (!client->topology->stale);
+   bson_mutex_unlock (&client->topology->mutex);
 
    if (!pooled) {
       ASSERT_CMPINT (1, ==, debug_stream_stats.n_failed);

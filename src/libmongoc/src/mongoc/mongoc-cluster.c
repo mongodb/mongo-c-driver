@@ -492,7 +492,9 @@ handle_not_master_error (mongoc_cluster_t *cluster,
           * immediate check of the server."
           * Instead of requesting a check of the one server, request a scan
           * to all servers (to find the new primary). */
+         bson_mutex_lock (&topology->mutex);
          _mongoc_topology_request_scan (topology);
+         bson_mutex_unlock (&topology->mutex);
       }
    }
 }
