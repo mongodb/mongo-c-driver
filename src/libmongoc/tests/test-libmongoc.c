@@ -242,6 +242,10 @@ extern void
 test_aws_install (TestSuite *suite);
 extern void
 test_streamable_ismaster_install (TestSuite *suite);
+#ifdef MONGOC_ENABLE_OCSP_OPENSSL
+extern void
+test_ocsp_cache_install(TestSuite *suite);
+#endif
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2619,6 +2623,9 @@ main (int argc, char *argv[])
    test_server_description_install (&suite);
    test_aws_install (&suite);
    test_streamable_ismaster_install (&suite);
+#ifdef MONGOC_ENABLE_OCSP_OPENSSL
+   test_ocsp_cache_install (&suite);
+#endif
 
    ret = TestSuite_Run (&suite);
 

@@ -39,6 +39,9 @@
 #include "kms_message/kms_message.h"
 #endif
 
+#ifdef MONGOC_ENABLE_OCSP_OPENSSL
+#include "mongoc-ocsp-cache-private.h"
+#endif
 
 #ifndef MONGOC_NO_AUTOMATIC_GLOBALS
 #pragma message( \
@@ -140,6 +143,10 @@ static BSON_ONCE_FUN (_mongoc_do_init)
    kms_message_init ();
 #endif
 
+#if defined(MONGOC_ENABLE_OCSP_OPENSSL)
+  _mongoc_ocsp_cache_init ();
+#endif
+
    BSON_ONCE_RETURN;
 }
 
@@ -179,6 +186,10 @@ static BSON_ONCE_FUN (_mongoc_do_cleanup)
 
 #if defined(MONGOC_ENABLE_MONGODB_AWS_AUTH)
    kms_message_cleanup ();
+#endif
+
+#if defined(MONGOC_ENABLE_OCSP_OPENSSL)
+   _mongoc_ocsp_cache_cleanup ();
 #endif
 
    BSON_ONCE_RETURN;

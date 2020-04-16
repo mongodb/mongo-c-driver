@@ -122,6 +122,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-matcher-op-private.h
    mongoc-matcher-private.h
    mongoc-memcmp-private.h
+   mongoc-ocsp-cache-private.h
    mongoc-openssl-private.h
    mongoc-opts-private.h
    mongoc-opts-helpers-private.h
@@ -211,6 +212,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-matcher.c
    mongoc-memcmp.c
    mongoc-cmd.c
+   mongoc-ocsp-cache.c
    mongoc-opts.c
    mongoc-opts-helpers.c
    mongoc-queue.c

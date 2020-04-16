@@ -738,7 +738,7 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
        * Set a callback to get the SNI, if provided */
       SSL_CTX_set_tlsext_servername_callback (ssl_ctx,
                                               _mongoc_stream_tls_openssl_sni);
-#ifdef MONGOC_ENABLE_OCSP
+#ifdef MONGOC_ENABLE_OCSP_OPENSSL
    } else if (!opt->weak_cert_validation &&
               !_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
       if (!SSL_CTX_set_tlsext_status_type (ssl_ctx, TLSEXT_STATUSTYPE_ocsp)) {
