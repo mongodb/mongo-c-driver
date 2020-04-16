@@ -481,6 +481,12 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       }
 
       tls_stream = _get_stream (endpoint, sockettimeout, error);
+#ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
+      /* Retry once with schannel as a workaround for CDRIVER-3566. */
+      if (!tls_stream) {
+         tls_stream = _get_stream (endpoint, sockettimeout, error);
+      }
+#endif
       if (!tls_stream) {
          goto fail;
       }
