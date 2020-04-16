@@ -55,7 +55,7 @@ _mongoc_buffer_init (mongoc_buffer_t *buffer,
                      bson_realloc_func realloc_func,
                      void *realloc_data)
 {
-   BSON_ASSERT (buffer);
+   BSON_ASSERT_PARAM (buffer);
    BSON_ASSERT (buflen || !buf);
 
    if (!realloc_func) {
@@ -89,7 +89,7 @@ _mongoc_buffer_init (mongoc_buffer_t *buffer,
 void
 _mongoc_buffer_destroy (mongoc_buffer_t *buffer)
 {
-   BSON_ASSERT (buffer);
+   BSON_ASSERT_PARAM (buffer);
 
    if (buffer->data && buffer->realloc_func) {
       buffer->realloc_func (buffer->data, 0, buffer->realloc_data);
@@ -111,7 +111,7 @@ _mongoc_buffer_destroy (mongoc_buffer_t *buffer)
 void
 _mongoc_buffer_clear (mongoc_buffer_t *buffer, bool zero)
 {
-   BSON_ASSERT (buffer);
+   BSON_ASSERT_PARAM (buffer);
 
    if (zero) {
       memset (buffer->data, 0, buffer->datalen);
@@ -130,7 +130,7 @@ _mongoc_buffer_append (mongoc_buffer_t *buffer,
 
    ENTRY;
 
-   BSON_ASSERT (buffer);
+   BSON_ASSERT_PARAM (buffer);
    BSON_ASSERT (data_size);
 
    BSON_ASSERT (buffer->datalen);
@@ -186,8 +186,8 @@ _mongoc_buffer_append_from_stream (mongoc_buffer_t *buffer,
 
    ENTRY;
 
-   BSON_ASSERT (buffer);
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (buffer);
+   BSON_ASSERT_PARAM (stream);
    BSON_ASSERT (size);
 
    BSON_ASSERT (buffer->datalen);
@@ -249,8 +249,8 @@ _mongoc_buffer_fill (mongoc_buffer_t *buffer,
 
    ENTRY;
 
-   BSON_ASSERT (buffer);
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (buffer);
+   BSON_ASSERT_PARAM (stream);
 
    BSON_ASSERT (buffer->data);
    BSON_ASSERT (buffer->datalen);
@@ -325,8 +325,8 @@ _mongoc_buffer_try_append_from_stream (mongoc_buffer_t *buffer,
 
    ENTRY;
 
-   BSON_ASSERT (buffer);
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (buffer);
+   BSON_ASSERT_PARAM (stream);
    BSON_ASSERT (size);
 
    BSON_ASSERT (buffer->datalen);

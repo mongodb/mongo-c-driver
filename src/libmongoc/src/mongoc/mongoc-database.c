@@ -65,8 +65,8 @@ _mongoc_database_new (mongoc_client_t *client,
 
    ENTRY;
 
-   BSON_ASSERT (client);
-   BSON_ASSERT (name);
+   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (name);
 
    db = (mongoc_database_t *) bson_malloc0 (sizeof *db);
    db->client = client;
@@ -170,7 +170,7 @@ mongoc_database_copy (mongoc_database_t *database)
 {
    ENTRY;
 
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    RETURN (_mongoc_database_new (database->client,
                                  database->name,
@@ -192,8 +192,8 @@ mongoc_database_command (mongoc_database_t *database,
    char *ns;
    mongoc_cursor_t *cursor;
 
-   BSON_ASSERT (database);
-   BSON_ASSERT (command);
+   BSON_ASSERT_PARAM (database);
+   BSON_ASSERT_PARAM (command);
 
    ns = bson_strdup_printf ("%s.$cmd", database->name);
 
@@ -219,8 +219,8 @@ mongoc_database_command_simple (mongoc_database_t *database,
                                 bson_t *reply,
                                 bson_error_t *error)
 {
-   BSON_ASSERT (database);
-   BSON_ASSERT (command);
+   BSON_ASSERT_PARAM (database);
+   BSON_ASSERT_PARAM (command);
 
    /* Server Selection Spec: "The generic command method has a default read
     * preference of mode 'primary'. The generic command method MUST ignore any
@@ -370,7 +370,7 @@ mongoc_database_drop_with_opts (mongoc_database_t *database,
    bool ret;
    bson_t cmd;
 
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    bson_init (&cmd);
    bson_append_int32 (&cmd, "dropDatabase", 12, 1);
@@ -403,8 +403,8 @@ mongoc_database_remove_user (mongoc_database_t *database,
 
    ENTRY;
 
-   BSON_ASSERT (database);
-   BSON_ASSERT (username);
+   BSON_ASSERT_PARAM (database);
+   BSON_ASSERT_PARAM (username);
 
    bson_init (&cmd);
    BSON_APPEND_UTF8 (&cmd, "dropUser", username);
@@ -424,7 +424,7 @@ mongoc_database_remove_all_users (mongoc_database_t *database,
 
    ENTRY;
 
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    bson_init (&cmd);
    BSON_APPEND_INT32 (&cmd, "dropAllUsersFromDatabase", 1);
@@ -463,8 +463,8 @@ mongoc_database_add_user (mongoc_database_t *database,
 
    ENTRY;
 
-   BSON_ASSERT (database);
-   BSON_ASSERT (username);
+   BSON_ASSERT_PARAM (database);
+   BSON_ASSERT_PARAM (username);
 
    bson_init (&cmd);
    BSON_APPEND_UTF8 (&cmd, "createUser", username);
@@ -507,7 +507,7 @@ mongoc_database_add_user (mongoc_database_t *database,
 const mongoc_read_prefs_t *
 mongoc_database_get_read_prefs (const mongoc_database_t *database) /* IN */
 {
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
    return database->read_prefs;
 }
 
@@ -532,7 +532,7 @@ void
 mongoc_database_set_read_prefs (mongoc_database_t *database,
                                 const mongoc_read_prefs_t *read_prefs)
 {
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    if (database->read_prefs) {
       mongoc_read_prefs_destroy (database->read_prefs);
@@ -564,7 +564,7 @@ mongoc_database_set_read_prefs (mongoc_database_t *database,
 const mongoc_read_concern_t *
 mongoc_database_get_read_concern (const mongoc_database_t *database)
 {
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    return database->read_concern;
 }
@@ -590,7 +590,7 @@ void
 mongoc_database_set_read_concern (mongoc_database_t *database,
                                   const mongoc_read_concern_t *read_concern)
 {
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    if (database->read_concern) {
       mongoc_read_concern_destroy (database->read_concern);
@@ -622,7 +622,7 @@ mongoc_database_set_read_concern (mongoc_database_t *database,
 const mongoc_write_concern_t *
 mongoc_database_get_write_concern (const mongoc_database_t *database)
 {
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    return database->write_concern;
 }
@@ -648,7 +648,7 @@ void
 mongoc_database_set_write_concern (mongoc_database_t *database,
                                    const mongoc_write_concern_t *write_concern)
 {
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    if (database->write_concern) {
       mongoc_write_concern_destroy (database->write_concern);
@@ -693,8 +693,8 @@ mongoc_database_has_collection (mongoc_database_t *database,
 
    ENTRY;
 
-   BSON_ASSERT (database);
-   BSON_ASSERT (name);
+   BSON_ASSERT_PARAM (database);
+   BSON_ASSERT_PARAM (name);
 
    if (error) {
       memset (error, 0, sizeof *error);
@@ -735,7 +735,7 @@ mongoc_database_find_collections (mongoc_database_t *database,
    bson_t opts = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
 
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    if (filter) {
       if (!BSON_APPEND_DOCUMENT (&opts, "filter", filter)) {
@@ -769,7 +769,7 @@ mongoc_database_find_collections_with_opts (mongoc_database_t *database,
    mongoc_cursor_t *cursor;
    bson_t cmd = BSON_INITIALIZER;
 
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    BSON_APPEND_INT32 (&cmd, "listCollections", 1);
 
@@ -809,7 +809,7 @@ mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
    const bson_t *doc;
    char **ret;
 
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    if (opts) {
       bson_copy_to (opts, &opts_copy);
@@ -865,8 +865,8 @@ mongoc_database_create_collection (mongoc_database_t *database,
    bson_t cmd;
    bool capped = false;
 
-   BSON_ASSERT (database);
-   BSON_ASSERT (name);
+   BSON_ASSERT_PARAM (database);
+   BSON_ASSERT_PARAM (name);
 
    if (strchr (name, '$')) {
       bson_set_error (error,
@@ -1001,8 +1001,8 @@ mongoc_collection_t *
 mongoc_database_get_collection (mongoc_database_t *database,
                                 const char *collection)
 {
-   BSON_ASSERT (database);
-   BSON_ASSERT (collection);
+   BSON_ASSERT_PARAM (database);
+   BSON_ASSERT_PARAM (collection);
 
    return _mongoc_collection_new (database->client,
                                   database->name,
@@ -1016,7 +1016,7 @@ mongoc_database_get_collection (mongoc_database_t *database,
 const char *
 mongoc_database_get_name (mongoc_database_t *database)
 {
-   BSON_ASSERT (database);
+   BSON_ASSERT_PARAM (database);
 
    return database->name;
 }

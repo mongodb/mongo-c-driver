@@ -54,7 +54,7 @@ mongoc_stream_close (mongoc_stream_t *stream)
 
    ENTRY;
 
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (stream);
 
    BSON_ASSERT (stream->close);
 
@@ -79,7 +79,7 @@ mongoc_stream_failed (mongoc_stream_t *stream)
 {
    ENTRY;
 
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (stream);
 
    if (stream->failed) {
       stream->failed (stream);
@@ -126,7 +126,7 @@ mongoc_stream_destroy (mongoc_stream_t *stream)
 int
 mongoc_stream_flush (mongoc_stream_t *stream)
 {
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (stream);
    return stream->flush (stream);
 }
 
@@ -151,8 +151,8 @@ mongoc_stream_writev (mongoc_stream_t *stream,
 
    ENTRY;
 
-   BSON_ASSERT (stream);
-   BSON_ASSERT (iov);
+   BSON_ASSERT_PARAM (stream);
+   BSON_ASSERT_PARAM (iov);
    BSON_ASSERT (iovcnt);
 
    BSON_ASSERT (stream->writev);
@@ -189,8 +189,8 @@ mongoc_stream_write (mongoc_stream_t *stream,
 
    ENTRY;
 
-   BSON_ASSERT (stream);
-   BSON_ASSERT (buf);
+   BSON_ASSERT_PARAM (stream);
+   BSON_ASSERT_PARAM (buf);
 
    iov.iov_base = buf;
    iov.iov_len = count;
@@ -228,8 +228,8 @@ mongoc_stream_readv (mongoc_stream_t *stream,
 
    ENTRY;
 
-   BSON_ASSERT (stream);
-   BSON_ASSERT (iov);
+   BSON_ASSERT_PARAM (stream);
+   BSON_ASSERT_PARAM (iov);
    BSON_ASSERT (iovcnt);
 
    BSON_ASSERT (stream->readv);
@@ -270,8 +270,8 @@ mongoc_stream_read (mongoc_stream_t *stream,
 
    ENTRY;
 
-   BSON_ASSERT (stream);
-   BSON_ASSERT (buf);
+   BSON_ASSERT_PARAM (stream);
+   BSON_ASSERT_PARAM (buf);
 
    iov.iov_base = buf;
    iov.iov_len = count;
@@ -291,7 +291,7 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
                           void *optval,
                           mongoc_socklen_t optlen)
 {
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (stream);
 
    if (stream->setsockopt) {
       return stream->setsockopt (stream, level, optname, optval, optlen);
@@ -304,7 +304,7 @@ mongoc_stream_setsockopt (mongoc_stream_t *stream,
 mongoc_stream_t *
 mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
 {
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (stream);
 
    if (stream->get_base_stream) {
       return stream->get_base_stream (stream);
@@ -317,7 +317,7 @@ mongoc_stream_get_base_stream (mongoc_stream_t *stream) /* IN */
 mongoc_stream_t *
 mongoc_stream_get_root_stream (mongoc_stream_t *stream)
 {
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (stream);
 
    while (stream->get_base_stream) {
       stream = stream->get_base_stream (stream);
@@ -329,7 +329,7 @@ mongoc_stream_get_root_stream (mongoc_stream_t *stream)
 mongoc_stream_t *
 mongoc_stream_get_tls_stream (mongoc_stream_t *stream) /* IN */
 {
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (stream);
 
    for (; stream && stream->type != MONGOC_STREAM_TLS;
         stream = stream->get_base_stream (stream))
@@ -405,7 +405,7 @@ mongoc_stream_timed_out (mongoc_stream_t *stream)
 {
    ENTRY;
 
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (stream);
 
    /* for e.g. a file stream there is no timed_out function */
    RETURN (stream->timed_out && stream->timed_out (stream));
@@ -416,7 +416,7 @@ mongoc_stream_should_retry (mongoc_stream_t *stream)
 {
    ENTRY;
 
-   BSON_ASSERT (stream);
+   BSON_ASSERT_PARAM (stream);
 
    /* for e.g. a file stream there is no should_retry function */
    RETURN (stream->should_retry && stream->should_retry (stream));
