@@ -38,6 +38,10 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 
+#ifdef MONGOC_ENABLE_OCSP_OPENSSL
+#include "mongoc-ocsp-cache-private.h"
+#endif
+
 #ifdef _WIN32
 #include <wincrypt.h>
 #endif
@@ -453,7 +457,7 @@ _mongoc_openssl_setup_pem_file (SSL_CTX *ctx,
    return 1;
 }
 
-#ifdef MONGOC_ENABLE_OCSP
+#ifdef MONGOC_ENABLE_OCSP_OPENSSL
 
 static X509 *
 _get_issuer (X509 *cert, STACK_OF (X509) * chain)
@@ -603,6 +607,11 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
       GOTO (done);
    }
 
+   if (_mongoc_ocsp_cache_get_status (
+          id, &cert_status, &reason, &this_update, &next_update)) {
+      GOTO (validate);
+   }
+
    /* Get the stapled OCSP response returned by the server */
    len = SSL_get_tlsext_status_ocsp_resp (ssl, &r);
    stapled_response = !!r;
@@ -688,16 +697,20 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
       GOTO (done);
    }
 
+validate:
    switch (cert_status) {
    case V_OCSP_CERTSTATUS_GOOD:
       MONGOC_DEBUG ("OCSP Certificate Status: Good");
-      /* TODO: cache response */
+      _mongoc_ocsp_cache_set_resp (
+         id, cert_status, reason, this_update, next_update);
       break;
 
    case V_OCSP_CERTSTATUS_REVOKED:
       MONGOC_ERROR ("OCSP Certificate Status: Revoked. Reason: %s",
                     OCSP_crl_reason_str (reason));
       ret = OCSP_CB_REVOKED;
+      _mongoc_ocsp_cache_set_resp (
+         id, cert_status, reason, this_update, next_update);
       GOTO (done);
 
    default:

@@ -26,9 +26,9 @@
 
 #include "mongoc-ssl.h"
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(OPENSSL_NO_OCSP) && \
+#if (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(OPENSSL_NO_OCSP) && \
    !defined(LIBRESSL_VERSION_NUMBER)
-#define MONGOC_ENABLE_OCSP
+#define MONGOC_ENABLE_OCSP_OPENSSL
 #endif
 
 
@@ -47,7 +47,7 @@ _mongoc_openssl_init (void);
 void
 _mongoc_openssl_cleanup (void);
 
-#ifdef MONGOC_ENABLE_OCSP
+#ifdef MONGOC_ENABLE_OCSP_OPENSSL
 int
 _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg);
 #endif
