@@ -57,6 +57,16 @@ mongoc_uri_t *
 _mongoc_uri_copy_and_replace_host_list (const mongoc_uri_t *original,
                                         const char *host);
 
+bool
+mongoc_uri_init_with_srv_host_list (mongoc_uri_t *uri,
+                                    mongoc_host_list_t *hosts,
+                                    bson_error_t *error);
+
+bool
+mongoc_uri_validate_srv_result (const mongoc_uri_t *uri,
+                                const char *host,
+                                bson_error_t *error);
+
 BSON_END_DECLS
 
 

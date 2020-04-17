@@ -105,37 +105,40 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
 
 typedef bool (*mongoc_rr_callback_t) (const char *service,
                                       PDNS_RECORD pdns,
-                                      mongoc_uri_t *uri,
                                       mongoc_rr_data_t *rr_data,
                                       bson_error_t *error);
 
 static bool
 srv_callback (const char *service,
               PDNS_RECORD pdns,
-              mongoc_uri_t *uri,
               mongoc_rr_data_t *rr_data,
               bson_error_t *error)
 {
+   mongoc_host_list_t new_host;
+
    if (rr_data && rr_data->hosts) {
       _mongoc_host_list_remove_host (
          &(rr_data->hosts), pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort);
    }
 
-   return mongoc_uri_upsert_host (
-      uri, pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort, error);
+   if (!_mongoc_host_list_from_hostport_with_err (
+          &new_host, pdns->Data.SRV.pNameTarget, pdns->Data.SRV.wPort, error)) {
+      return false;
+   }
+   _mongoc_host_list_upsert (&rr_data->hosts, &new_host);
+
+   return true;
 }
 
 /* rr_data is unused, but here to match srv_callback signature */
 static bool
 txt_callback (const char *service,
               PDNS_RECORD pdns,
-              mongoc_uri_t *uri,
               mongoc_rr_data_t *rr_data,
               bson_error_t *error)
 {
    DWORD i;
    bson_string_t *txt;
-   bool r;
 
    txt = bson_string_new (NULL);
 
@@ -143,10 +146,10 @@ txt_callback (const char *service,
       bson_string_append (txt, pdns->Data.TXT.pStringArray[i]);
    }
 
-   r = mongoc_uri_parse_options (uri, txt->str, true /* from_dns */, error);
+   rr_data->txt_record_opts = bson_strdup (txt->str);
    bson_string_free (txt, true);
 
-   return r;
+   return true;
 }
 
 /*
@@ -155,19 +158,21 @@ txt_callback (const char *service,
  * _mongoc_get_rr_dnsapi --
  *
  *       Fetch SRV or TXT resource records using the Windows DNS API and
- *       update @uri.
+ *       put results in @rr_data.
  *
  * Returns:
  *       Success or failure.
  *
  *       For an SRV lookup, returns false if there is any error.
  *
- *       For TXT lookup, ignores any error fetching the resource record, but
- *       returns false if the resource record is found and there is an error
- *       reading its contents as URI options.
+ *       For TXT lookup, ignores any error fetching the resource record and
+ *       always returns true.
  *
  * Side effects:
  *       @error is set if there is a failure.
+ *       @rr_data->hosts may be set if querying SRV. Caller must destroy.
+ *       @rr_data->txt_record_opts may be set if querying TXT. Caller must
+ *       free.
  *
  *--------------------------------------------------------------------------
  */
@@ -175,7 +180,6 @@ txt_callback (const char *service,
 static bool
 _mongoc_get_rr_dnsapi (const char *service,
                        mongoc_rr_type_t rr_type,
-                       mongoc_uri_t *uri,
                        mongoc_rr_data_t *rr_data,
                        bson_error_t *error)
 {
@@ -238,7 +242,6 @@ _mongoc_get_rr_dnsapi (const char *service,
       DNS_ERROR ("No %s records for \"%s\"", rr_type_name, service);
    }
 
-   dns_success = true;
    i = 0;
 
    do {
@@ -258,7 +261,7 @@ _mongoc_get_rr_dnsapi (const char *service,
             }
          }
 
-         if (!callback (service, pdns, uri, rr_data, error)) {
+         if (!callback (service, pdns, rr_data, error)) {
             callback_success = false;
             GOTO (done);
          }
@@ -269,9 +272,12 @@ _mongoc_get_rr_dnsapi (const char *service,
       pdns = pdns->pNext;
    } while (pdns);
 
-   if (rr_data) {
-      rr_data->count = i;
+
+   rr_data->count = i;
+   if (i == 0) {
+      DNS_ERROR ("No matching %s records for \"%s\"", rr_type_name, service);
    }
+   dns_success = true;
 
 done:
    if (pdns) {
@@ -290,7 +296,6 @@ done:
 typedef bool (*mongoc_rr_callback_t) (const char *service,
                                       ns_msg *ns_answer,
                                       ns_rr *rr,
-                                      mongoc_uri_t *uri,
                                       mongoc_rr_data_t *rr_data,
                                       bson_error_t *error);
 
@@ -298,7 +303,6 @@ static bool
 srv_callback (const char *service,
               ns_msg *ns_answer,
               ns_rr *rr,
-              mongoc_uri_t *uri,
               mongoc_rr_data_t *rr_data,
               bson_error_t *error)
 {
@@ -307,6 +311,7 @@ srv_callback (const char *service,
    uint16_t port;
    int size;
    bool ret = false;
+   mongoc_host_list_t new_host;
 
    data = ns_rr_rdata (*rr);
    /* memcpy the network endian port before converting to host endian. we cannot
@@ -326,21 +331,20 @@ srv_callback (const char *service,
                  strerror (h_errno));
    }
 
-   if (rr_data && rr_data->hosts) {
-      _mongoc_host_list_remove_host (&(rr_data->hosts), name, port);
+   if (!_mongoc_host_list_from_hostport_with_err (
+          &new_host, name, port, error)) {
+      GOTO (done);
    }
-   ret = mongoc_uri_upsert_host (uri, name, port, error);
-
+   _mongoc_host_list_upsert (&rr_data->hosts, &new_host);
+   ret = true;
 done:
    return ret;
 }
 
-/* rr_data is unused, but here to match srv_callback signature */
 static bool
 txt_callback (const char *service,
               ns_msg *ns_answer,
               ns_rr *rr,
-              mongoc_uri_t *uri,
               mongoc_rr_data_t *rr_data,
               bson_error_t *error)
 {
@@ -349,7 +353,7 @@ txt_callback (const char *service,
    bson_string_t *txt;
    uint16_t pos, total;
    uint8_t len;
-   bool r = false;
+   bool ret = false;
 
    total = (uint16_t) ns_rr_rdlen (*rr);
    if (total < 1 || total > 255) {
@@ -370,11 +374,12 @@ txt_callback (const char *service,
       pos += len;
    }
 
-   r = mongoc_uri_parse_options (uri, txt->str, true /* from_dns */, error);
+   rr_data->txt_record_opts = bson_strdup (txt->str);
    bson_string_free (txt, true);
+   ret = true;
 
 done:
-   return r;
+   return ret;
 }
 
 /*
@@ -382,19 +387,22 @@ done:
  *
  * _mongoc_get_rr_search --
  *
- *       Fetch SRV or TXT resource records using libresolv and update @uri.
+ *       Fetch SRV or TXT resource records using libresolv and put results in
+ *       @rr_data.
  *
  * Returns:
  *       Success or failure.
  *
  *       For an SRV lookup, returns false if there is any error.
  *
- *       For TXT lookup, ignores any error fetching the resource record, but
- *       returns false if the resource record is found and there is an error
- *       reading its contents as URI options.
+ *       For TXT lookup, ignores any error fetching the resource record and
+ *       always returns true.
  *
  * Side effects:
  *       @error is set if there is a failure.
+ *       @rr_data->hosts may be set if querying SRV. Caller must destroy.
+ *       @rr_data->txt_record_opts may be set if querying TXT. Caller must
+ *       free.
  *
  *--------------------------------------------------------------------------
  */
@@ -402,7 +410,6 @@ done:
 static bool
 _mongoc_get_rr_search (const char *service,
                        mongoc_rr_type_t rr_type,
-                       mongoc_uri_t *uri,
                        mongoc_rr_data_t *rr_data,
                        bson_error_t *error)
 {
@@ -421,6 +428,7 @@ _mongoc_get_rr_search (const char *service,
    ns_rr resource_record;
    bool dns_success;
    bool callback_success = true;
+   int num_matching_records;
 
    ENTRY;
 
@@ -477,18 +485,9 @@ _mongoc_get_rr_search (const char *service,
       DNS_ERROR ("No %s records for \"%s\"", rr_type_name, service);
    }
 
-   if (rr_data) {
-      rr_data->count = n;
-   }
-
+   rr_data->count = n;
+   num_matching_records = 0;
    for (i = 0; i < n; i++) {
-      if (i > 0 && rr_type == MONGOC_RR_TXT) {
-         /* Initial DNS Seedlist Discovery Spec: a client "MUST raise an error
-          * when multiple TXT records are encountered". */
-         callback_success = false;
-         DNS_ERROR ("Multiple TXT records for \"%s\"", service);
-      }
-
       if (ns_parserr (&ns_answer, ns_s_an, i, &resource_record)) {
          DNS_ERROR ("Invalid record %d of %s answer for \"%s\": \"%s\"",
                     i,
@@ -496,6 +495,27 @@ _mongoc_get_rr_search (const char *service,
                     service,
                     strerror (h_errno));
       }
+
+      /* Skip records that don't match the ones we requested. CDRIVER-3628 shows
+       * that we can receive records that were not requested. */
+      if (rr_type == MONGOC_RR_TXT) {
+         if (ns_rr_type (resource_record) != ns_t_txt) {
+            continue;
+         }
+      } else if (rr_type == MONGOC_RR_SRV) {
+         if (ns_rr_type (resource_record) != ns_t_srv) {
+            continue;
+         }
+      }
+
+      if (num_matching_records > 0 && rr_type == MONGOC_RR_TXT) {
+         /* Initial DNS Seedlist Discovery Spec: a client "MUST raise an error
+          * when multiple TXT records are encountered". */
+         callback_success = false;
+         DNS_ERROR ("Multiple TXT records for \"%s\"", service);
+      }
+
+      num_matching_records++;
 
       if (rr_data) {
          uint32_t ttl;
@@ -506,11 +526,14 @@ _mongoc_get_rr_search (const char *service,
          }
       }
 
-      if (!callback (
-             service, &ns_answer, &resource_record, uri, rr_data, error)) {
+      if (!callback (service, &ns_answer, &resource_record, rr_data, error)) {
          callback_success = false;
          GOTO (done);
       }
+   }
+
+   if (num_matching_records == 0) {
+      DNS_ERROR ("No matching %s records for \"%s\"", rr_type_name, service);
    }
 
    dns_success = true;
@@ -535,14 +558,22 @@ done:
  *
  * _mongoc_client_get_rr --
  *
- *       Fetch an SRV or TXT resource record and update @uri. See RFCs 1464
- *       and 2782, and MongoDB's Initial DNS Seedlist Discovery Spec.
+ *       Fetch an SRV or TXT resource record and update put results in
+ *       @rr_data.
+ * 
+ *       See RFCs 1464 and 2782, MongoDB's "Initial DNS Seedlist Discovery"
+ *       spec, and MongoDB's "Polling SRV Records for Mongos Discovery"
+ *       spec.
  *
  * Returns:
  *       Success or failure.
  *
  * Side effects:
- *       @error is set if there is a failure.
+ *       @error is set if there is a failure. Errors fetching TXT are
+ *       ignored.
+ *       @rr_data->hosts may be set if querying SRV. Caller must destroy.
+ *       @rr_data->txt_record_opts may be set if querying TXT. Caller must
+ *       free.
  *
  *--------------------------------------------------------------------------
  */
@@ -550,14 +581,13 @@ done:
 bool
 _mongoc_client_get_rr (const char *service,
                        mongoc_rr_type_t rr_type,
-                       mongoc_uri_t *uri,
                        mongoc_rr_data_t *rr_data,
                        bson_error_t *error)
 {
 #ifdef MONGOC_HAVE_DNSAPI
-   return _mongoc_get_rr_dnsapi (service, rr_type, uri, rr_data, error);
+   return _mongoc_get_rr_dnsapi (service, rr_type, rr_data, error);
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
-   return _mongoc_get_rr_search (service, rr_type, uri, rr_data, error);
+   return _mongoc_get_rr_search (service, rr_type, rr_data, error);
 #else
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,

@@ -254,8 +254,9 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    if (!mongoc_uri_get_hosts (client->uri)) {
       ASSERT (!mongoc_uri_get_hosts (client->topology->uri));
    } else {
-      _mongoc_host_list_equal (mongoc_uri_get_hosts (client->uri),
-                               mongoc_uri_get_hosts (client->topology->uri));
+      _mongoc_host_list_compare_one (
+         mongoc_uri_get_hosts (client->uri),
+         mongoc_uri_get_hosts (client->topology->uri));
    }
 
    if (pooled) {
@@ -330,6 +331,147 @@ test_all_spec_tests (TestSuite *suite)
                                        test_framework_skip_if_no_crypto);
 }
 
+extern bool
+mongoc_topology_apply_scanned_srv_hosts (mongoc_uri_t *uri,
+                                         mongoc_topology_description_t *td,
+                                         mongoc_host_list_t *hosts,
+                                         bson_error_t *error);
+
+static mongoc_host_list_t *
+make_hosts (char *first_host, ...)
+{
+   va_list va;
+   mongoc_host_list_t *hosts = NULL;
+   mongoc_host_list_t host;
+   char *host_str;
+
+   _mongoc_host_list_from_string (&host, first_host);
+   _mongoc_host_list_upsert (&hosts, &host);
+
+   va_start (va, first_host);
+   while ((host_str = va_arg (va, char *))) {
+      _mongoc_host_list_from_string (&host, host_str);
+      _mongoc_host_list_upsert (&hosts, &host);
+   }
+   va_end (va);
+   return hosts;
+}
+
+#define MAKE_HOSTS(...) make_hosts (__VA_ARGS__, NULL)
+
+static void
+check_topology_description (mongoc_topology_description_t *td,
+                            mongoc_host_list_t *hosts)
+{
+   int nhosts = 0;
+   mongoc_host_list_t *host;
+
+   for (host = hosts; host; host = host->next) {
+      uint32_t server_count;
+
+      nhosts++;
+      /* Check that "host" is already in the topology description by upserting
+       * it, and ensuring that the number of servers remains constant. */
+      server_count = td->servers->items_len;
+      BSON_ASSERT (mongoc_topology_description_add_server (
+         td, host->host_and_port, NULL));
+      if (server_count != td->servers->items_len) {
+         test_error ("topology description did not have host: %s",
+                     host->host_and_port);
+      }
+   }
+
+   if (nhosts != td->servers->items_len) {
+      test_error ("topology description had extra hosts");
+   }
+}
+
+static void
+test_srv_polling_mocked (void *unused)
+{
+   mongoc_uri_t *uri;
+   mongoc_topology_description_t td;
+   bson_error_t error;
+   mongoc_host_list_t *hosts;
+   mongoc_host_list_t *expected;
+   bool ret;
+
+   mongoc_topology_description_init (&td, 0);
+   uri = mongoc_uri_new ("mongodb+srv://server.test.com/?tls=true");
+   capture_logs (true);
+
+   hosts = MAKE_HOSTS ("a.test.com", "b.test.com");
+   expected = MAKE_HOSTS ("a.test.com", "b.test.com");
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, hosts, &error);
+   ASSERT_OR_PRINT (ret, error);
+   check_topology_description (&td, expected);
+   _mongoc_host_list_destroy_all (expected);
+   _mongoc_host_list_destroy_all (hosts);
+   ASSERT_NO_CAPTURED_LOGS ("topology");
+
+   /* Add an extra host. */
+   hosts = MAKE_HOSTS ("x.test.com", "a.test.com", "y.test.com", "b.test.com");
+   expected =
+      MAKE_HOSTS ("x.test.com", "a.test.com", "y.test.com", "b.test.com");
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, hosts, &error);
+   ASSERT_OR_PRINT (ret, error);
+   check_topology_description (&td, expected);
+   _mongoc_host_list_destroy_all (expected);
+   _mongoc_host_list_destroy_all (hosts);
+   ASSERT_NO_CAPTURED_LOGS ("topology");
+
+   /* Remove all but one host. */
+   hosts = MAKE_HOSTS ("x.test.com");
+   expected = MAKE_HOSTS ("x.test.com");
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, hosts, &error);
+   ASSERT_OR_PRINT (ret, error);
+   check_topology_description (&td, expected);
+   _mongoc_host_list_destroy_all (expected);
+   _mongoc_host_list_destroy_all (hosts);
+   ASSERT_NO_CAPTURED_LOGS ("topology");
+
+   /* Add one valid and one invalid. Invalid should skip, warning should be
+    * logged. */
+   hosts = MAKE_HOSTS ("x.test.com", "y.test.com", "bad.wrongdomain.com");
+   expected = MAKE_HOSTS ("x.test.com", "y.test.com");
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, hosts, &error);
+   ASSERT_OR_PRINT (ret, error);
+   check_topology_description (&td, expected);
+   _mongoc_host_list_destroy_all (expected);
+   _mongoc_host_list_destroy_all (hosts);
+   ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_ERROR, "Invalid host");
+
+   /* An empty host list returns false but does NOT change topology description
+    */
+   expected = MAKE_HOSTS ("x.test.com", "y.test.com");
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, NULL, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "SRV response did not contain any valid hosts");
+   check_topology_description (&td, expected);
+   _mongoc_host_list_destroy_all (expected);
+   ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_ERROR, "Invalid host");
+
+   /* All invalid hosts returns false but does NOT change topology description
+    */
+   hosts = MAKE_HOSTS ("bad1.wrongdomain.com", "bad2.wrongdomain.com");
+   expected = MAKE_HOSTS ("x.test.com", "y.test.com");
+   ret = mongoc_topology_apply_scanned_srv_hosts (uri, &td, NULL, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "SRV response did not contain any valid hosts");
+   check_topology_description (&td, expected);
+   _mongoc_host_list_destroy_all (expected);
+   _mongoc_host_list_destroy_all (hosts);
+   ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_ERROR, "Invalid host");
+
+   mongoc_topology_description_destroy (&td);
+   mongoc_uri_destroy (uri);
+}
 
 void
 test_dns_install (TestSuite *suite)
@@ -341,4 +483,6 @@ test_dns_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (
+      suite, "/srv_polling/mocked", test_srv_polling_mocked, NULL, NULL, NULL);
 }

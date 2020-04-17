@@ -134,8 +134,10 @@ valid_hostname (const char *s)
 }
 
 
-static bool
-validate_srv_result (mongoc_uri_t *uri, const char *host, bson_error_t *error)
+bool
+mongoc_uri_validate_srv_result (const mongoc_uri_t *uri,
+                                const char *host,
+                                bson_error_t *error)
 {
    const char *service;
    const char *service_root;
@@ -164,14 +166,14 @@ validate_srv_result (mongoc_uri_t *uri, const char *host, bson_error_t *error)
    return true;
 }
 
-/* upsert @host into @uri's host list. Side effect: modifies host->next when
- * inserting. */
+/* copy and upsert @host into @uri's host list. */
 static bool
 _upsert_into_host_list (mongoc_uri_t *uri,
                         mongoc_host_list_t *host,
                         bson_error_t *error)
 {
-   if (uri->is_srv && !validate_srv_result (uri, host->host, error)) {
+   if (uri->is_srv &&
+       !mongoc_uri_validate_srv_result (uri, host->host, error)) {
       return false;
    }
 
@@ -1055,7 +1057,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
             }
 
             if (!_mongoc_uri_set_option_as_int64_with_error (
-                  uri, canon, v_int64, error)) {
+                   uri, canon, v_int64, error)) {
                return false;
             }
          } else {
@@ -1068,7 +1070,7 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
             }
 
             if (!_mongoc_uri_set_option_as_int32_with_error (
-                  uri, canon, v_int, error)) {
+                   uri, canon, v_int, error)) {
                return false;
             }
          } else {
@@ -1093,24 +1095,25 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
             } else if (0 == strcasecmp (value, "false")) {
                bval = false;
             } else if ((0 == strcmp (value, "1")) ||
-                     (0 == strcasecmp (value, "yes")) ||
-                     (0 == strcasecmp (value, "y")) ||
-                     (0 == strcasecmp (value, "t"))) {
+                       (0 == strcasecmp (value, "yes")) ||
+                       (0 == strcasecmp (value, "y")) ||
+                       (0 == strcasecmp (value, "t"))) {
                MONGOC_WARNING ("Deprecated boolean value for \"%s\": \"%s\", "
-                              "please update to \"%s=true\"",
-                              key,
-                              value,
-                              key);
+                               "please update to \"%s=true\"",
+                               key,
+                               value,
+                               key);
                bval = true;
             } else if ((0 == strcasecmp (value, "0")) ||
-                     (0 == strcasecmp (value, "-1")) ||
-                     (0 == strcmp (value, "no")) || (0 == strcmp (value, "n")) ||
-                     (0 == strcmp (value, "f"))) {
+                       (0 == strcasecmp (value, "-1")) ||
+                       (0 == strcmp (value, "no")) ||
+                       (0 == strcmp (value, "n")) ||
+                       (0 == strcmp (value, "f"))) {
                MONGOC_WARNING ("Deprecated boolean value for \"%s\": \"%s\", "
-                              "please update to \"%s=false\"",
-                              key,
-                              value,
-                              key);
+                               "please update to \"%s=false\"",
+                               key,
+                               value,
+                               key);
                bval = false;
             } else {
                goto UNSUPPORTED_VALUE;
@@ -1431,7 +1434,6 @@ mongoc_uri_finalize_directconnection (mongoc_uri_t *uri, bson_error_t *error)
    }
 
    return true;
-
 }
 
 static bool
@@ -3036,4 +3038,23 @@ _mongoc_uri_copy_and_replace_host_list (const mongoc_uri_t *original,
    uri->hosts = bson_malloc0 (sizeof (mongoc_host_list_t));
    _mongoc_host_list_from_string (uri->hosts, host);
    return uri;
+}
+
+bool
+mongoc_uri_init_with_srv_host_list (mongoc_uri_t *uri,
+                                    mongoc_host_list_t *host_list,
+                                    bson_error_t *error)
+{
+   mongoc_host_list_t *host;
+
+   BSON_ASSERT (uri->is_srv);
+   BSON_ASSERT (!uri->hosts);
+
+   LL_FOREACH (host_list, host) {
+      if (!mongoc_uri_upsert_host_and_port (uri, host->host_and_port, error)) {
+         return false;
+      }
+   }
+
+   return true;
 }
