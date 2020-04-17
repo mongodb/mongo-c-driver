@@ -148,16 +148,16 @@ typedef struct _mongoc_rr_data_t {
    /* Set to lowest TTL found when polling SRV records. */
    uint32_t min_ttl;
 
-   /* Initialized with copy of uri->hosts prior to polling.
-    * Any remaining records after DNS query are no longer active.
-    */
+   /* Set to the resulting host list when polling SRV records */
    mongoc_host_list_t *hosts;
+
+   /* Set to the TXT record when polling for TXT */
+   char *txt_record_opts;
 } mongoc_rr_data_t;
 
 bool
 _mongoc_client_get_rr (const char *service,
                        mongoc_rr_type_t rr_type,
-                       mongoc_uri_t *uri,
                        mongoc_rr_data_t *rr_data,
                        bson_error_t *error);
 

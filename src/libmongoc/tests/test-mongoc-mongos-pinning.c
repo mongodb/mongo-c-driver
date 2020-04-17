@@ -66,7 +66,8 @@ test_new_transaction_unpins (void *ctx)
    ASSERT_OR_PRINT (session != NULL, error);
 
    opts = bson_new ();
-   ASSERT_OR_PRINT (mongoc_client_session_append (session, opts, &error), error);
+   ASSERT_OR_PRINT (mongoc_client_session_append (session, opts, &error),
+                    error);
 
    /* Under one transaction, insert a document. */
    ASSERT_OR_PRINT (
@@ -143,7 +144,8 @@ test_non_transaction_unpins (void *ctx)
    ASSERT_OR_PRINT (session != NULL, error);
 
    opts = bson_new ();
-   ASSERT_OR_PRINT (mongoc_client_session_append (session, opts, &error), error);
+   ASSERT_OR_PRINT (mongoc_client_session_append (session, opts, &error),
+                    error);
 
    /* Under one transaction, insert a document. */
    ASSERT_OR_PRINT (

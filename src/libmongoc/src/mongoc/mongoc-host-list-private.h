@@ -32,11 +32,10 @@ _mongoc_host_list_push (const char *host,
 
 void
 _mongoc_host_list_upsert (mongoc_host_list_t **list,
-                          mongoc_host_list_t *new_host);
+                          const mongoc_host_list_t *new_host);
 
 mongoc_host_list_t *
-_mongoc_host_list_copy (const mongoc_host_list_t *src,
-                        mongoc_host_list_t *next);
+_mongoc_host_list_copy_all (const mongoc_host_list_t *src);
 
 bool
 _mongoc_host_list_from_string (mongoc_host_list_t *host_list,
@@ -57,8 +56,8 @@ int
 _mongoc_host_list_length (mongoc_host_list_t *list);
 
 bool
-_mongoc_host_list_equal (const mongoc_host_list_t *host_a,
-                         const mongoc_host_list_t *host_b);
+_mongoc_host_list_compare_one (const mongoc_host_list_t *host_a,
+                               const mongoc_host_list_t *host_b);
 
 void
 _mongoc_host_list_remove_host (mongoc_host_list_t **phosts,
@@ -67,6 +66,10 @@ _mongoc_host_list_remove_host (mongoc_host_list_t **phosts,
 
 void
 _mongoc_host_list_destroy_all (mongoc_host_list_t *host);
+
+bool
+_mongoc_host_list_contains_one (mongoc_host_list_t *host_list,
+                                mongoc_host_list_t *host);
 
 BSON_END_DECLS
 

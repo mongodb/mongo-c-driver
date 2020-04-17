@@ -48,6 +48,12 @@ struct _mongoc_client_pool_t;
 
 typedef struct _mongoc_topology_t {
    mongoc_topology_description_t description;
+   /* topology->uri is initialized as a copy of the client/pool's URI.
+    * For a "mongodb+srv://" URI, topology->uri is then updated in
+    * mongoc_topology_new() after initial seedlist discovery.
+    * Afterwards, it remains read-only and may be read outside of the topology
+    * mutex.
+    */
    mongoc_uri_t *uri;
    mongoc_topology_scanner_t *scanner;
    bool server_selection_try_once;

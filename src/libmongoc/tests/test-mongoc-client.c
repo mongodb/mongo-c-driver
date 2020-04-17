@@ -2383,8 +2383,8 @@ _test_mongoc_client_get_description (bool pooled)
    sd = mongoc_client_get_server_description (client, server_id);
    ASSERT (sd);
    mongoc_cursor_get_host (cursor, &host);
-   ASSERT (
-      _mongoc_host_list_equal (&host, mongoc_server_description_host (sd)));
+   ASSERT (_mongoc_host_list_compare_one (&host,
+                                          mongoc_server_description_host (sd)));
 
    mongoc_server_description_destroy (sd);
    mongoc_cursor_destroy (cursor);

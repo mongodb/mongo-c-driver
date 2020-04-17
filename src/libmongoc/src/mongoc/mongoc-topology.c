@@ -214,6 +214,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    bool directconnection;
 
    BSON_ASSERT (uri);
+   topology_valid = false;
 
 #ifndef MONGOC_ENABLE_CRYPTO
    if (mongoc_uri_get_option_as_bool (
@@ -301,7 +302,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       }
    }
 
-   topology_valid = true;
    service = mongoc_uri_get_service (uri);
    if (service) {
       memset (&rr_data, 0, sizeof (mongoc_rr_data_t));
@@ -310,22 +310,43 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
       if (!_mongoc_client_get_rr (prefixed_service,
                                   MONGOC_RR_SRV,
-                                  topology->uri,
                                   &rr_data,
-                                  &topology->scanner->error) ||
-          !_mongoc_client_get_rr (service,
-                                  MONGOC_RR_TXT,
-                                  topology->uri,
-                                  NULL,
                                   &topology->scanner->error)) {
-         topology_valid = false;
-      } else {
-         topology->last_srv_scan = bson_get_monotonic_time ();
-         topology->rescanSRVIntervalMS = BSON_MAX (
-            rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
+         GOTO (srv_fail);
       }
 
+      /* Failure to find TXT records will not return an error (since it is only
+       * for options). But _mongoc_client_get_rr may return an error if
+       * there is more than one TXT record returned. */
+      if (!_mongoc_client_get_rr (
+             service, MONGOC_RR_TXT, &rr_data, &topology->scanner->error)) {
+         GOTO (srv_fail);
+      }
+
+      /* Use rr_data to update the topology's URI. */
+      if (rr_data.txt_record_opts &&
+          !mongoc_uri_parse_options (topology->uri,
+                                     rr_data.txt_record_opts,
+                                     true /* from_dns */,
+                                     &topology->scanner->error)) {
+         GOTO (srv_fail);
+      }
+
+      if (!mongoc_uri_init_with_srv_host_list (
+             topology->uri, rr_data.hosts, &topology->scanner->error)) {
+         GOTO (srv_fail);
+      }
+
+      topology->last_srv_scan = bson_get_monotonic_time ();
+      topology->rescanSRVIntervalMS = BSON_MAX (
+         rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
+
+      topology_valid = true;
+   srv_fail:
+      bson_free (rr_data.txt_record_opts);
       bson_free (prefixed_service);
+   } else {
+      topology_valid = true;
    }
 
    /*
@@ -341,9 +362,10 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
     *     - otherwise, if the seed list has a single host, initialize to SINGLE
     *   - everything else gets initialized to UNKNOWN
     */
-   has_directconnection = mongoc_uri_has_option (
-      uri, MONGOC_URI_DIRECTCONNECTION);
-   directconnection = has_directconnection &&
+   has_directconnection =
+      mongoc_uri_has_option (uri, MONGOC_URI_DIRECTCONNECTION);
+   directconnection =
+      has_directconnection &&
       mongoc_uri_get_option_as_bool (uri, MONGOC_URI_DIRECTCONNECTION, false);
    hl = mongoc_uri_get_hosts (topology->uri);
    if (service && !has_directconnection) {
@@ -498,6 +520,45 @@ _mongoc_topology_clear_session_pool (mongoc_topology_t *topology)
    topology->session_pool = NULL;
 }
 
+/* Returns false if none of the hosts were valid. */
+bool
+mongoc_topology_apply_scanned_srv_hosts (mongoc_uri_t *uri,
+                                         mongoc_topology_description_t *td,
+                                         mongoc_host_list_t *hosts,
+                                         bson_error_t *error)
+{
+   mongoc_host_list_t *host;
+   mongoc_host_list_t *valid_hosts = NULL;
+   bool had_valid_hosts = false;
+
+   /* Validate that the hosts have a matching domain.
+   * If validation fails, log it.
+   * If no valid hosts remain, do not update the topology description.
+   */
+   LL_FOREACH (hosts, host) {
+      if (mongoc_uri_validate_srv_result (uri, host->host, error)) {
+         _mongoc_host_list_upsert (&valid_hosts, host);
+      } else {
+         MONGOC_ERROR ("Invalid host returned by SRV: %s", host->host_and_port);
+         /* Continue on, there may still be valid hosts returned. */
+      }
+   }
+
+   if (valid_hosts) {
+      /* Reconcile with the topology description. Newly found servers will start
+       * getting monitored and are eligible to be used by clients. */
+      mongoc_topology_description_reconcile (td, valid_hosts);
+      had_valid_hosts = true;
+   } else {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                      "SRV response did not contain any valid hosts");
+   }
+
+   _mongoc_host_list_destroy_all (valid_hosts);
+   return had_valid_hosts;
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -514,7 +575,6 @@ static void
 mongoc_topology_rescan_srv (mongoc_topology_t *topology)
 {
    mongoc_rr_data_t rr_data = {0};
-   mongoc_host_list_t *h = NULL;
    const char *service;
    char *prefixed_service = NULL;
    int64_t scan_time;
@@ -538,17 +598,14 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    }
 
    /* Go forth and query... */
-   rr_data.hosts =
-      _mongoc_host_list_copy (mongoc_uri_get_hosts (topology->uri), NULL);
-
    prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
    if (!_mongoc_client_get_rr (prefixed_service,
                                MONGOC_RR_SRV,
-                               topology->uri,
                                &rr_data,
                                &topology->scanner->error)) {
       /* Failed querying, soldier on and try again next time. */
       topology->rescanSRVIntervalMS = topology->description.heartbeat_msec;
+      MONGOC_ERROR ("SRV polling error: %s", topology->scanner->error.message);
       GOTO (done);
    }
 
@@ -556,8 +613,13 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    topology->rescanSRVIntervalMS = BSON_MAX (
       rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
 
-   if (rr_data.count == 0) {
-      /* Special case when DNS returns zero records successfully.
+   if (!mongoc_topology_apply_scanned_srv_hosts (topology->uri,
+                                                 &topology->description,
+                                                 rr_data.hosts,
+                                                 &topology->scanner->error)) {
+      MONGOC_ERROR ("%s", topology->scanner->error.message);
+      /* Special case when DNS returns zero records successfully or no valid
+       * hosts exist.
        * Leave the toplogy alone and perform another scan at the next interval
        * rather than removing all records and having nothing to connect to.
        * For no verified hosts drivers "MUST temporarily set rescanSRVIntervalMS
@@ -566,17 +628,6 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
        */
       topology->rescanSRVIntervalMS = topology->description.heartbeat_msec;
       GOTO (done);
-   }
-
-   /* rr_data.hosts was initialized to the current set of known hosts
-    * on entry, and mongoc_client_get_rr will have stripped it down to
-    * only include hosts which were NOT included in the most recent query.
-    * Remove those hosts and we're left with only active servers.
-    */
-   for (h = rr_data.hosts; h; h = rr_data.hosts) {
-      rr_data.hosts = h->next;
-      mongoc_uri_remove_host (topology->uri, h->host, h->port);
-      bson_free (h);
    }
 
 done:

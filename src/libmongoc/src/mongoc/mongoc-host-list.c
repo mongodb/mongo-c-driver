@@ -62,7 +62,7 @@ _mongoc_host_list_find_host_and_port (mongoc_host_list_t *hosts,
    {
       BSON_ASSERT (iter);
 
-      if (strcmp (iter->host_and_port, host_and_port) == 0) {
+      if (strcasecmp (iter->host_and_port, host_and_port) == 0) {
          return iter;
       }
    }
@@ -75,21 +75,20 @@ _mongoc_host_list_find_host_and_port (mongoc_host_list_t *hosts,
  *
  * _mongoc_host_list_upsert --
  *
- *       If new_host is not already in list, add it to the end of list.
+ *       If new_host is not already in list, copy and add it to the end of list.
+ *       If *list == NULL, then it will be set to a new host.
  *
  * Returns:
  *       Nothing.
- *
- * Side effects:
- *       Modifies new_host->next when inserting.
  *
  *--------------------------------------------------------------------------
  */
 void
 _mongoc_host_list_upsert (mongoc_host_list_t **list,
-                          mongoc_host_list_t *new_host)
+                          const mongoc_host_list_t *new_host)
 {
    mongoc_host_list_t *link = NULL;
+   mongoc_host_list_t *next_link = NULL;
 
    BSON_ASSERT (list);
    if (!new_host) {
@@ -103,34 +102,32 @@ _mongoc_host_list_upsert (mongoc_host_list_t **list,
       LL_APPEND (*list, link);
    } else {
       /* Make sure linking is preserved when copying data into final. */
-      new_host->next = link->next;
+      next_link = link->next;
    }
 
    memcpy (link, new_host, sizeof (mongoc_host_list_t));
+   link->next = next_link;
 }
 
 
-/* Duplicates the elements of {src}, creating a new chain,
- * optionally prepended to an existing chain {next}.
- *
- * Note that as a side-effect of the implementation,
- * this reverses the order of src's copy in the destination.
+/* Duplicates a host list.
  */
 mongoc_host_list_t *
-_mongoc_host_list_copy (const mongoc_host_list_t *src, mongoc_host_list_t *next)
+_mongoc_host_list_copy_all (const mongoc_host_list_t *src)
 {
-   mongoc_host_list_t *h = NULL;
+   mongoc_host_list_t *tail = NULL;
    const mongoc_host_list_t *src_iter;
+   mongoc_host_list_t *head = NULL;
 
    LL_FOREACH (src, src_iter)
    {
-      h = bson_malloc0 (sizeof (mongoc_host_list_t));
-      memcpy (h, src_iter, sizeof (mongoc_host_list_t));
+      tail = bson_malloc0 (sizeof (mongoc_host_list_t));
+      memcpy (tail, src_iter, sizeof (mongoc_host_list_t));
 
-      LL_PREPEND (next, h);
+      LL_PREPEND (head, tail);
    }
 
-   return h;
+   return head;
 }
 
 int
@@ -151,7 +148,7 @@ _mongoc_host_list_length (mongoc_host_list_t *list)
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_host_list_equal --
+ * _mongoc_host_list_compare_one --
  *
  *       Check two hosts have the same domain (case-insensitive), port,
  *       and address family.
@@ -162,11 +159,19 @@ _mongoc_host_list_length (mongoc_host_list_t *list)
  *--------------------------------------------------------------------------
  */
 bool
-_mongoc_host_list_equal (const mongoc_host_list_t *host_a,
-                         const mongoc_host_list_t *host_b)
+_mongoc_host_list_compare_one (const mongoc_host_list_t *host_a,
+                               const mongoc_host_list_t *host_b)
 {
-   return (!strcasecmp (host_a->host_and_port, host_b->host_and_port) &&
+   return (0 == strcasecmp (host_a->host_and_port, host_b->host_and_port) &&
            host_a->family == host_b->family);
+}
+
+bool
+_mongoc_host_list_contains_one (mongoc_host_list_t *host_list,
+                                mongoc_host_list_t *host)
+{
+   return NULL !=
+          _mongoc_host_list_find_host_and_port (host_list, host->host_and_port);
 }
 
 

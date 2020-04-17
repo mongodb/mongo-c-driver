@@ -24,6 +24,8 @@
 #include "mongoc-set-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-thread-private.h"
+#include "mongoc-host-list-private.h"
+#include "utlist.h"
 
 
 static bool
@@ -2183,4 +2185,46 @@ mongoc_topology_description_get_servers (
    }
 
    return sds;
+}
+
+typedef struct {
+   mongoc_host_list_t *host_list;
+   mongoc_topology_description_t *td;
+} _remove_if_not_in_host_list_ctx_t;
+
+bool
+_remove_if_not_in_host_list_cb (void *sd_void, void *ctx_void)
+{
+   _remove_if_not_in_host_list_ctx_t *ctx;
+   mongoc_topology_description_t *td;
+   mongoc_server_description_t *sd;
+   mongoc_host_list_t *host_list;
+
+   ctx = ctx_void;
+   sd = sd_void;
+   host_list = ctx->host_list;
+   td = ctx->td;
+
+   if (_mongoc_host_list_contains_one (host_list, &sd->host)) {
+      return true;
+   }
+   _mongoc_topology_description_remove_server (td, sd);
+   return true;
+}
+
+void
+mongoc_topology_description_reconcile (mongoc_topology_description_t *td,
+                                       mongoc_host_list_t *host_list)
+{
+   mongoc_host_list_t *host;
+   _remove_if_not_in_host_list_ctx_t ctx;
+
+   LL_FOREACH(host_list, host) {
+      /* "add" is really an "upsert" */
+      mongoc_topology_description_add_server (td, host->host_and_port, NULL);
+   }
+
+   ctx.host_list = host_list;
+   ctx.td = td;
+   mongoc_set_for_each (td->servers, _remove_if_not_in_host_list_cb, &ctx);
 }

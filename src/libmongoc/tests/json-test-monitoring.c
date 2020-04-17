@@ -64,7 +64,7 @@ assert_host_in_uri (const mongoc_host_list_t *host, const mongoc_uri_t *uri)
 
    hosts = mongoc_uri_get_hosts (uri);
    while (hosts) {
-      if (_mongoc_host_list_equal (hosts, host)) {
+      if (_mongoc_host_list_compare_one (hosts, host)) {
          return;
       }
 

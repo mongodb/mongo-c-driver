@@ -427,7 +427,7 @@ mongoc_topology_scanner_has_node_for_host (mongoc_topology_scanner_t *ts,
 
    DL_FOREACH_SAFE (ts->nodes, ele, tmp)
    {
-      if (_mongoc_host_list_equal (&ele->host, host)) {
+      if (_mongoc_host_list_compare_one (&ele->host, host)) {
          return true;
       }
    }
