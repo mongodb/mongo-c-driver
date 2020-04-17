@@ -37,7 +37,7 @@ _before_test (json_test_ctx_t *ctx, const bson_t *test)
 
    if (bson_iter_init_find (&iter, ctx->config->scenario, "key_vault_data")) {
       keyvault_coll =
-         mongoc_client_get_collection (client, "admin", "datakeys");
+         mongoc_client_get_collection (client, "keyvault", "datakeys");
 
       /* Drop and recreate, inserting data. */
       ret = mongoc_collection_drop (keyvault_coll, &error);
@@ -244,9 +244,9 @@ test_bson_size_limits_and_batch_splitting (void *unused)
          client, "db", cmd, NULL /* read prefs */, NULL /* reply */, &error),
       error);
 
-   /* Drop and create the key vault collection, admin.datakeys. */
+   /* Drop and create the key vault collection, keyvault.datakeys. */
    mongoc_collection_destroy (coll);
-   coll = mongoc_client_get_collection (client, "admin", "datakeys");
+   coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
    (void) mongoc_collection_drop (coll, NULL);
    datakey = get_bson_from_json_file (
       "./src/libmongoc/tests/client_side_encryption_prose/limits-key.json");
@@ -266,7 +266,7 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    opts = mongoc_auto_encryption_opts_new ();
    _check_bypass (opts);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
-      opts, "admin", "datakeys");
+      opts, "keyvault", "datakeys");
    mongoc_auto_encryption_opts_set_kms_providers (opts, kms_providers);
 
    ASSERT_OR_PRINT (mongoc_client_enable_auto_encryption (client, opts, &error),
@@ -452,8 +452,8 @@ test_datakey_and_double_encryption_creating_and_using (
       tmp_bson ("{'insert': 'datakeys', 'writeConcern': { 'w': 'majority' } }"),
       false));
 
-   /* Use client to run a find on admin.datakeys */
-   coll = mongoc_client_get_collection (client, "admin", "datakeys");
+   /* Use client to run a find on keyvault.datakeys */
+   coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
    bson_init (&filter);
    BSON_APPEND_VALUE (&filter, "_id", &keyid);
    cursor = mongoc_collection_find_with_opts (
@@ -577,8 +577,8 @@ test_datakey_and_double_encryption (void *unused)
       callbacks, _datakey_and_double_encryption_command_started);
    mongoc_client_set_apm_callbacks (client, callbacks, &test_ctx);
 
-   /* Using client, drop the collections admin.datakeys and db.coll. */
-   coll = mongoc_client_get_collection (client, "admin", "datakeys");
+   /* Using client, drop the collections keyvault.datakeys and db.coll. */
+   coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
    (void) mongoc_collection_drop (coll, NULL);
    mongoc_collection_destroy (coll);
    coll = mongoc_client_get_collection (client, "db", "coll");
@@ -593,7 +593,7 @@ test_datakey_and_double_encryption (void *unused)
    mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                   kms_providers);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
-      auto_encryption_opts, "admin", "datakeys");
+      auto_encryption_opts, "keyvault", "datakeys");
    schema_map = get_bson_from_json_file (
       "./src/libmongoc/tests/client_side_encryption_prose/"
       "datakey-and-double-encryption-schemamap.json");
@@ -610,7 +610,7 @@ test_datakey_and_double_encryption (void *unused)
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
                                                     kms_providers);
    mongoc_client_encryption_opts_set_keyvault_namespace (
-      client_encryption_opts, "admin", "datakeys");
+      client_encryption_opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
                                                       client);
    client_encryption =
@@ -663,15 +663,15 @@ _test_key_vault (bool with_external_key_vault)
    client_external = mongoc_client_new_from_uri (external_uri);
    test_framework_set_ssl_opts (client_external);
 
-   /* Using client, drop the collections admin.datakeys and db.coll. */
+   /* Using client, drop the collections keyvault.datakeys and db.coll. */
    client = test_framework_client_new ();
    coll = mongoc_client_get_collection (client, "db", "coll");
    (void) mongoc_collection_drop (coll, NULL);
    mongoc_collection_destroy (coll);
-   coll = mongoc_client_get_collection (client, "admin", "datakeys");
+   coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
    (void) mongoc_collection_drop (coll, NULL);
 
-   /* Insert the document external-key.json into ``admin.datakeys``. */
+   /* Insert the document external-key.json into ``keyvault.datakeys``. */
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_wmajority (wc, 1000);
    mongoc_collection_set_write_concern (coll, wc);
@@ -695,7 +695,7 @@ _test_key_vault (bool with_external_key_vault)
    mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                   kms_providers);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
-      auto_encryption_opts, "admin", "datakeys");
+      auto_encryption_opts, "keyvault", "datakeys");
    mongoc_auto_encryption_opts_set_schema_map (auto_encryption_opts,
                                                schema_map);
    if (with_external_key_vault) {
@@ -711,7 +711,7 @@ _test_key_vault (bool with_external_key_vault)
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
                                                     kms_providers);
    mongoc_client_encryption_opts_set_keyvault_namespace (
-      client_encryption_opts, "admin", "datakeys");
+      client_encryption_opts, "keyvault", "datakeys");
    if (with_external_key_vault) {
       mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
                                                          client_external);
@@ -819,7 +819,7 @@ test_views_are_prohibited (void *unused)
    mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                   kms_providers);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
-      auto_encryption_opts, "admin", "datakeys");
+      auto_encryption_opts, "keyvault", "datakeys");
    ASSERT_OR_PRINT (mongoc_client_enable_auto_encryption (
                        client_encrypted, auto_encryption_opts, &error),
                     error);
@@ -863,7 +863,7 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
                                                     kms_providers);
    mongoc_client_encryption_opts_set_keyvault_namespace (
-      client_encryption_opts, "admin", "datakeys");
+      client_encryption_opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
                                                       keyvault_client);
    client_encryption =
@@ -1274,10 +1274,10 @@ _test_corpus (bool local_schema)
       ASSERT_OR_PRINT (res, error);
    }
 
-   /* Drop the collection admin.datakeys. Insert the documents
+   /* Drop the collection keyvault.datakeys. Insert the documents
     * corpus/corpus-key-local.json and corpus-key-aws.json */
    mongoc_collection_destroy (coll);
-   coll = mongoc_client_get_collection (client, "admin", "datakeys");
+   coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
    (void) mongoc_collection_drop (coll, NULL);
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_wmajority (wc, 1000);
@@ -1304,7 +1304,7 @@ _test_corpus (bool local_schema)
    mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                   kms_providers);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
-      auto_encryption_opts, "admin", "datakeys");
+      auto_encryption_opts, "keyvault", "datakeys");
    res = mongoc_client_enable_auto_encryption (
       client_encrypted, auto_encryption_opts, &error);
    ASSERT_OR_PRINT (res, error);
@@ -1314,7 +1314,7 @@ _test_corpus (bool local_schema)
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
                                                     kms_providers);
    mongoc_client_encryption_opts_set_keyvault_namespace (
-      client_encryption_opts, "admin", "datakeys");
+      client_encryption_opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
                                                       client);
    client_encryption =
@@ -1780,7 +1780,7 @@ test_malformed_explicit (void *unused)
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
                                                     kms_providers);
    mongoc_client_encryption_opts_set_keyvault_namespace (
-      client_encryption_opts, "admin", "datakeys");
+      client_encryption_opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
                                                       client);
    client_encryption =
@@ -1813,7 +1813,7 @@ _check_mongocryptd_not_spawned (void)
       "mongodb://localhost:27021/db?serverSelectionTimeoutMS=1000");
    cmd = BCON_NEW ("ismaster", BCON_INT32 (1));
    ret = mongoc_client_command_simple (
-      client, "admin", cmd, NULL /* read prefs */, NULL /* reply */, &error);
+      client, "keyvault", cmd, NULL /* read prefs */, NULL /* reply */, &error);
    BSON_ASSERT (!ret);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
@@ -1842,7 +1842,7 @@ test_bypass_spawning_via_mongocryptdBypassSpawn (void *unused)
    mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                   kms_providers);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
-      auto_encryption_opts, "admin", "datakeys");
+      auto_encryption_opts, "keyvault", "datakeys");
    schema = get_bson_from_json_file ("./src/libmongoc/tests/"
                                      "client_side_encryption_prose/external/"
                                      "external-schema.json");
@@ -1907,7 +1907,7 @@ test_bypass_spawning_via_bypassAutoEncryption (void *unused)
    mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                   kms_providers);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
-      auto_encryption_opts, "admin", "datakeys");
+      auto_encryption_opts, "keyvault", "datakeys");
    mongoc_auto_encryption_opts_set_bypass_auto_encryption (auto_encryption_opts,
                                                            true);
 

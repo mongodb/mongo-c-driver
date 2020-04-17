@@ -110,7 +110,7 @@
               "filter": {
                 "name": "datakeys"
               },
-              "$db": "admin"
+              "$db": "keyvault"
             },
             "command_name": "listCollections"
           }
@@ -140,7 +140,10 @@
                   }
                 ]
               },
-              "$db": "admin"
+              "$db": "keyvault",
+              "readConcern": {
+                "level": "majority"
+              }
             },
             "command_name": "find"
           }
@@ -258,7 +261,7 @@
               "filter": {
                 "name": "datakeys"
               },
-              "$db": "admin"
+              "$db": "keyvault"
             },
             "command_name": "listCollections"
           }
@@ -288,7 +291,10 @@
                   }
                 ]
               },
-              "$db": "admin"
+              "$db": "keyvault",
+              "readConcern": {
+                "level": "majority"
+              }
             },
             "command_name": "find"
           }
@@ -406,7 +412,7 @@
               "filter": {
                 "name": "datakeys"
               },
-              "$db": "admin"
+              "$db": "keyvault"
             },
             "command_name": "listCollections"
           }
@@ -436,7 +442,10 @@
                   }
                 ]
               },
-              "$db": "admin"
+              "$db": "keyvault",
+              "readConcern": {
+                "level": "majority"
+              }
             },
             "command_name": "find"
           }
@@ -654,7 +663,7 @@
               "filter": {
                 "name": "datakeys"
               },
-              "$db": "admin"
+              "$db": "keyvault"
             },
             "command_name": "listCollections"
           }
@@ -684,7 +693,10 @@
                   }
                 ]
               },
-              "$db": "admin"
+              "$db": "keyvault",
+              "readConcern": {
+                "level": "majority"
+              }
             },
             "command_name": "find"
           }
@@ -802,7 +814,7 @@
               "filter": {
                 "name": "datakeys"
               },
-              "$db": "admin"
+              "$db": "keyvault"
             },
             "command_name": "listCollections"
           }
@@ -832,7 +844,10 @@
                   }
                 ]
               },
-              "$db": "admin"
+              "$db": "keyvault",
+              "readConcern": {
+                "level": "majority"
+              }
             },
             "command_name": "find"
           }
@@ -1049,7 +1064,7 @@
               "filter": {
                 "name": "datakeys"
               },
-              "$db": "admin"
+              "$db": "keyvault"
             },
             "command_name": "listCollections"
           }
@@ -1079,7 +1094,10 @@
                   }
                 ]
               },
-              "$db": "admin"
+              "$db": "keyvault",
+              "readConcern": {
+                "level": "majority"
+              }
             },
             "command_name": "find"
           }
@@ -1203,7 +1221,7 @@
               "filter": {
                 "name": "datakeys"
               },
-              "$db": "admin"
+              "$db": "keyvault"
             },
             "command_name": "listCollections"
           }
@@ -1233,7 +1251,10 @@
                   }
                 ]
               },
-              "$db": "admin"
+              "$db": "keyvault",
+              "readConcern": {
+                "level": "majority"
+              }
             },
             "command_name": "find"
           }
@@ -1355,7 +1376,7 @@
               "filter": {
                 "name": "datakeys"
               },
-              "$db": "admin"
+              "$db": "keyvault"
             },
             "command_name": "listCollections"
           }
@@ -1385,7 +1406,10 @@
                   }
                 ]
               },
-              "$db": "admin"
+              "$db": "keyvault",
+              "readConcern": {
+                "level": "majority"
+              }
             },
             "command_name": "find"
           }

@@ -148,8 +148,14 @@
                 "name": "deleteOne",
                 "arguments": {
                   "filter": {
-                    "encrypted_string": "string1",
-                    "_id": 2
+                    "$and": [
+                      {
+                        "encrypted_string": "string1"
+                      },
+                      {
+                        "_id": 2
+                      }
+                    ]
                   }
                 }
               }
@@ -179,7 +185,7 @@
               "filter": {
                 "name": "datakeys"
               },
-              "$db": "admin"
+              "$db": "keyvault"
             },
             "command_name": "listCollections"
           }
@@ -209,7 +215,10 @@
                   }
                 ]
               },
-              "$db": "admin"
+              "$db": "keyvault",
+              "readConcern": {
+                "level": "majority"
+              }
             },
             "command_name": "find"
           }

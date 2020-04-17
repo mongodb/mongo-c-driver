@@ -1357,9 +1357,9 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_free (coll_name);
    } else {
       /* "If ``autoEncryptOpts`` does not include ``keyVaultNamespace``, default
-       * it to ``admin.datakeys``" */
+       * it to ``keyvault.datakeys``" */
       mongoc_auto_encryption_opts_set_keyvault_namespace (
-         auto_encryption_opts, "admin", "datakeys");
+         auto_encryption_opts, "keyvault", "datakeys");
    }
 
    if (bson_iter_init_find (&iter, &opts, "extra")) {
