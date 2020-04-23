@@ -22,8 +22,7 @@ get_node (mongoc_topology_t *topology, const char *host_and_port)
    mongoc_topology_scanner_t *ts;
    mongoc_topology_scanner_node_t *node;
    mongoc_topology_scanner_node_t *sought = NULL;
-
-   bson_mutex_lock (&topology->mutex);
+   BSON_ASSERT (topology->single_threaded);
 
    ts = topology->scanner;
 
@@ -34,8 +33,6 @@ get_node (mongoc_topology_t *topology, const char *host_and_port)
          break;
       }
    }
-
-   bson_mutex_unlock (&topology->mutex);
 
    return sought;
 }
@@ -140,8 +137,10 @@ _test_topology_reconcile_rs (bool pooled)
     * server0 is selected, server1 is discovered and added to scanner.
     */
    BSON_ASSERT (selects_server (client, secondary_read_prefs, server0));
-   BSON_ASSERT (
-      get_node (client->topology, mock_server_get_host_and_port (server1)));
+   if (!pooled) {
+      BSON_ASSERT (
+         get_node (client->topology, mock_server_get_host_and_port (server1)));
+   }
 
    /*
     * select again with mode "primary": server1 is selected.
@@ -283,15 +282,7 @@ _test_topology_reconcile_sharded (bool pooled)
    ASSERT_CMPSTR (sd->host.host_and_port,
                   mock_server_get_host_and_port (mongos));
 
-   if (pooled) {
-      /* wait a second for scanner thread to remove secondary */
-      int64_t start = bson_get_monotonic_time ();
-      while (get_node (client->topology,
-                       mock_server_get_host_and_port (secondary))) {
-         ASSERT_CMPTIME ((int) (bson_get_monotonic_time () - start),
-                         (int) 1000000);
-      }
-   } else {
+   if (!pooled) {
       BSON_ASSERT (!get_node (client->topology,
                               mock_server_get_host_and_port (secondary)));
    }
@@ -456,13 +447,12 @@ test_topology_reconcile_from_handshake (void *ctx)
  * mode for good measure.
  */
 static void
-_test_topology_reconcile_retire (bool pooled)
+test_topology_reconcile_retire_single (void)
 {
    mock_server_t *secondary;
    mock_server_t *primary;
    char *uri_str;
    mongoc_uri_t *uri;
-   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    mongoc_topology_t *topology;
    mongoc_read_prefs_t *primary_read_prefs;
@@ -491,14 +481,9 @@ _test_topology_reconcile_retire (bool pooled)
 
    uri = mongoc_uri_new (uri_str);
 
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      topology = _mongoc_client_pool_get_topology (pool);
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new (uri_str);
-      topology = client->topology;
-   }
+   client = mongoc_client_new (uri_str);
+   topology = client->topology;
+
 
    /* step 1: discover both replica set members */
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
@@ -536,13 +521,11 @@ _test_topology_reconcile_retire (bool pooled)
    /* server removed from topology description. in pooled mode, the scanner node
     * is untouched, in single mode mongoc_cluster_fetch_stream_single scans and
     * updates topology */
-   node = get_node (topology, mock_server_get_host_and_port (secondary));
-   if (pooled) {
-      BSON_ASSERT (node);
-      BSON_ASSERT (!node->retired);
-   } else {
-      BSON_ASSERT (!node);
-   }
+
+
+   BSON_ASSERT (
+      !get_node (topology, mock_server_get_host_and_port (secondary)));
+
 
    /* step 7: trigger a scan by selecting with an unsatisfiable read preference.
     * should not crash with BSON_ASSERT. */
@@ -551,15 +534,12 @@ _test_topology_reconcile_retire (bool pooled)
    BSON_ASSERT (
       !mongoc_client_select_server (client, false, tag_read_prefs, NULL));
 
+
    BSON_ASSERT (
       !get_node (topology, mock_server_get_host_and_port (secondary)));
 
-   if (pooled) {
-      mongoc_client_pool_push (pool, client);
-      mongoc_client_pool_destroy (pool);
-   } else {
-      mongoc_client_destroy (client);
-   }
+   mongoc_client_destroy (client);
+
 
    future_destroy (future);
    mock_server_destroy (primary);
@@ -569,20 +549,6 @@ _test_topology_reconcile_retire (bool pooled)
    mongoc_read_prefs_destroy (tag_read_prefs);
    mongoc_uri_destroy (uri);
    bson_free (uri_str);
-}
-
-
-static void
-test_topology_reconcile_retire_single (void)
-{
-   _test_topology_reconcile_retire (false);
-}
-
-
-static void
-test_topology_reconcile_retire_pooled (void)
-{
-   _test_topology_reconcile_retire (true);
 }
 
 
@@ -602,13 +568,12 @@ test_topology_reconcile_retire_pooled (void)
  * test that in step 5 the new node has no new async_cmd_t
  */
 static void
-_test_topology_reconcile_add (bool pooled)
+test_topology_reconcile_add_single (void)
 {
    mock_server_t *secondary;
    mock_server_t *primary;
    char *uri_str;
    mongoc_uri_t *uri;
-   mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    mongoc_topology_t *topology;
    mongoc_read_prefs_t *primary_read_prefs;
@@ -636,14 +601,8 @@ _test_topology_reconcile_add (bool pooled)
 
    uri = mongoc_uri_new (uri_str);
 
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      topology = _mongoc_client_pool_get_topology (pool);
-      client = mongoc_client_pool_pop (pool);
-   } else {
-      client = mongoc_client_new (uri_str);
-      topology = client->topology;
-   }
+   client = mongoc_client_new (uri_str);
+   topology = client->topology;
 
    /* step 1: discover primary */
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
@@ -674,22 +633,14 @@ _test_topology_reconcile_add (bool pooled)
       topology, mock_server_get_host_and_port (secondary)));
 
    node = get_node (topology, mock_server_get_host_and_port (secondary));
-   if (pooled) {
-      /* no asymc_cmd_t is created, since we're not in the scanner loop */
-      BSON_ASSERT (!topology->scanner->async->cmds);
-      BSON_ASSERT (!node);
-   } else {
-      /* in single mode the client completes a scan inline and frees all cmds */
-      BSON_ASSERT (!topology->scanner->async->cmds);
-      BSON_ASSERT (node);
-   }
 
-   if (pooled) {
-      mongoc_client_pool_push (pool, client);
-      mongoc_client_pool_destroy (pool);
-   } else {
-      mongoc_client_destroy (client);
-   }
+   /* in single mode the client completes a scan inline and frees all cmds */
+   BSON_ASSERT (!topology->scanner->async->cmds);
+   BSON_ASSERT (node);
+
+
+   mongoc_client_destroy (client);
+
 
    future_destroy (future);
    mock_server_destroy (primary);
@@ -697,20 +648,6 @@ _test_topology_reconcile_add (bool pooled)
    mongoc_read_prefs_destroy (primary_read_prefs);
    mongoc_uri_destroy (uri);
    bson_free (uri_str);
-}
-
-
-static void
-test_topology_reconcile_add_single (void)
-{
-   _test_topology_reconcile_add (false);
-}
-
-
-static void
-test_topology_reconcile_add_pooled (void)
-{
-   _test_topology_reconcile_add (true);
 }
 
 
@@ -738,16 +675,8 @@ test_topology_reconcile_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest (suite,
-                                "/TOPOLOGY/reconcile/retire/pooled",
-                                test_topology_reconcile_retire_pooled,
-                                test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/reconcile/retire/single",
                                 test_topology_reconcile_retire_single,
-                                test_framework_skip_if_slow);
-   TestSuite_AddMockServerTest (suite,
-                                "/TOPOLOGY/reconcile/add/pooled",
-                                test_topology_reconcile_add_pooled,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/reconcile/add/single",

@@ -412,6 +412,9 @@ log_handler (mongoc_log_level_t log_level,
       if (!suite->silent) {
          mongoc_log_default_handler (log_level, log_domain, message, NULL);
       }
+   } else if (log_level == MONGOC_LOG_LEVEL_DEBUG &&
+              test_suite_debug_output ()) {
+      mongoc_log_default_handler (log_level, log_domain, message, NULL);
    }
 }
 
@@ -2403,16 +2406,17 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
    /* Initialize stack walking. */
    char exception_string[128];
    bson_snprintf (exception_string,
-                  sizeof(exception_string),
+                  sizeof (exception_string),
                   (exception_code == EXCEPTION_ACCESS_VIOLATION)
-                  ? "(access violation)"
-                  : "0x%08X", exception_code);
+                     ? "(access violation)"
+                     : "0x%08X",
+                  exception_code);
 
    char address_string[32];
-   bson_snprintf(address_string,
-                 sizeof(address_string),
-                 "0x%p",
-                 pExceptionInfo->ExceptionRecord->ExceptionAddress);
+   bson_snprintf (address_string,
+                  sizeof (address_string),
+                  "0x%p",
+                  pExceptionInfo->ExceptionRecord->ExceptionAddress);
 
    fprintf (stderr,
             "exception '%s' at '%s', terminating\n",

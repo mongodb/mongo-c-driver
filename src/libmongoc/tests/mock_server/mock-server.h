@@ -216,7 +216,9 @@ rs_response_to_ismaster (mock_server_t *server,
                          int has_tags,
                          ...);
 
-#define RS_RESPONSE_TO_ISMASTER(server, primary, has_tags, ...) \
-   rs_response_to_ismaster (server, primary, has_tags, __VA_ARGS__, NULL)
+#define RS_RESPONSE_TO_ISMASTER(                     \
+   server, max_wire_version, primary, has_tags, ...) \
+   rs_response_to_ismaster (                         \
+      server, max_wire_version, primary, has_tags, __VA_ARGS__, NULL)
 
 #endif /* MOCK_SERVER_H */

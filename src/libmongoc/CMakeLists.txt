@@ -541,6 +541,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-upload.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-background-monitoring.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-scanner.c
