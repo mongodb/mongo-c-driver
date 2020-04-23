@@ -157,6 +157,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-topology-description-apm-private.h
    mongoc-topology-description-private.h
    mongoc-topology-private.h
+   mongoc-topology-background-monitoring-private.h
    mongoc-topology-scanner-private.h
    mongoc-trace-private.h
    mongoc-uri-private.h
@@ -172,6 +173,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-array.c
    mongoc-async.c
    mongoc-async-cmd.c
+   mongoc-topology-background-monitoring.c
    mongoc-buffer.c
    mongoc-bulk-operation.c
    mongoc-change-stream.c

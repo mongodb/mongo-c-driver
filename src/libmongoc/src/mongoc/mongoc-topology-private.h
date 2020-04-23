@@ -40,10 +40,10 @@
 typedef enum {
    MONGOC_TOPOLOGY_SCANNER_OFF,
    MONGOC_TOPOLOGY_SCANNER_BG_RUNNING,
-   MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN,
-   MONGOC_TOPOLOGY_SCANNER_SINGLE_THREADED,
+   MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN
 } mongoc_topology_scanner_state_t;
 
+struct _mongoc_background_monitor_t;
 struct _mongoc_client_pool_t;
 
 typedef struct _mongoc_topology_t {
@@ -67,16 +67,16 @@ typedef struct _mongoc_topology_t {
 
    /* Minimum of SRV record TTLs, but no lower than 60 seconds.
     * May be zero for non-SRV/non-MongoS topology. */
-   int64_t rescanSRVIntervalMS;
-   int64_t last_srv_scan;
+   int64_t srv_polling_rescan_interval_ms;
+   int64_t srv_polling_last_scan_ms;
+   /* For multi-threaded, srv polling occurs in a separate thread. */
+   bson_thread_t srv_polling_thread;
+   mongoc_cond_t srv_polling_cond;
 
    bson_mutex_t mutex;
    mongoc_cond_t cond_client;
-   mongoc_cond_t cond_server;
-   bson_thread_t thread;
-
    mongoc_topology_scanner_state_t scanner_state;
-   bool scan_requested;
+
    bool single_threaded;
    bool stale;
 
@@ -98,6 +98,11 @@ typedef struct _mongoc_topology_t {
    char *mongocryptd_spawn_path;
    bson_t *mongocryptd_spawn_args;
 #endif
+
+   /* For background monitoring. */
+   mongoc_set_t *server_monitors;
+   bson_mutex_t apm_mutex;
+
 } mongoc_topology_t;
 
 mongoc_topology_t *
@@ -161,12 +166,6 @@ mongoc_topology_description_type_t
 _mongoc_topology_get_type (mongoc_topology_t *topology);
 
 bool
-_mongoc_topology_start_background_scanner (mongoc_topology_t *topology);
-
-void
-_mongoc_topology_background_thread_stop (mongoc_topology_t *topology);
-
-bool
 _mongoc_topology_set_appname (mongoc_topology_t *topology, const char *appname);
 
 void
@@ -218,4 +217,6 @@ void
 _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
                                         uint32_t server_id);
 
+void
+mongoc_topology_rescan_srv (mongoc_topology_t *topology);
 #endif

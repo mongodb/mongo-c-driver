@@ -250,6 +250,8 @@ test_ocsp_cache_install (TestSuite *suite);
 #endif
 extern void
 test_interrupt_install (TestSuite *suite);
+extern void
+test_monitoring_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -421,6 +423,9 @@ log_handler (mongoc_log_level_t log_level,
       if (!suite->silent) {
          mongoc_log_default_handler (log_level, log_domain, message, NULL);
       }
+   } else if (log_level == MONGOC_LOG_LEVEL_DEBUG &&
+              test_suite_debug_output ()) {
+      mongoc_log_default_handler (log_level, log_domain, message, NULL);
    }
 }
 
@@ -2634,6 +2639,8 @@ main (int argc, char *argv[])
    test_ocsp_cache_install (&suite);
 #endif
    test_interrupt_install (&suite);
+   test_monitoring_install (&suite);
+
    ret = TestSuite_Run (&suite);
 
    TestSuite_Destroy (&suite);
