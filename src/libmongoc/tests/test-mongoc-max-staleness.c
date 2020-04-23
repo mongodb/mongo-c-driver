@@ -160,6 +160,49 @@ test_mongos_max_staleness_read_pref (void)
    request_destroy (request);
    future_destroy (future);
 
+   /* with readPreference mode secondaryPreferred and no maxStalenessSeconds,
+    * readPreference MUST NOT be sent. */
+   mongoc_read_prefs_set_mode (prefs, MONGOC_READ_SECONDARY_PREFERRED);
+   mongoc_read_prefs_set_max_staleness_seconds (prefs, MONGOC_NO_MAX_STALENESS);
+   mongoc_collection_set_read_prefs (collection, prefs);
+
+   future = future_collection_count (
+      collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_SLAVE_OK,
+      "{'$readPreference': {'$exists': false}}",
+      NULL);
+
+   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
+
+   request_destroy (request);
+   future_destroy (future);
+
+   /* CDRIVER-3633:
+    * with readPreference mode secondaryPreferred and maxStalenessSeconds set,
+    * readPreference MUST be sent. */
+   mongoc_read_prefs_set_max_staleness_seconds (prefs, 1);
+   mongoc_collection_set_read_prefs (collection, prefs);
+
+   future = future_collection_count (
+      collection, MONGOC_QUERY_NONE, NULL, 0, 0, NULL, &error);
+   request = mock_server_receives_command (
+      server,
+      "db",
+      MONGOC_QUERY_SLAVE_OK,
+      "{'$readPreference': "
+      " {'mode': 'secondaryPreferred', 'maxStalenessSeconds': 1}}",
+      NULL);
+
+   mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
+   ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
+
+   request_destroy (request);
+   future_destroy (future);
+
    mongoc_read_prefs_destroy (prefs);
    mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);

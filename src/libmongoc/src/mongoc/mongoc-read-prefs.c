@@ -200,10 +200,13 @@ _apply_read_preferences_mongos (
    const bson_t *tags = NULL;
    bson_t child;
    const char *mode_str;
-   int64_t max_staleness_seconds;
+   int64_t max_staleness_seconds = MONGOC_NO_MAX_STALENESS;
 
    mode = mongoc_read_prefs_get_mode (read_prefs);
    if (read_prefs) {
+      max_staleness_seconds =
+         mongoc_read_prefs_get_max_staleness_seconds (read_prefs);
+
       tags = mongoc_read_prefs_get_tags (read_prefs);
    }
 
@@ -220,13 +223,14 @@ _apply_read_preferences_mongos (
     *
     * For mode 'secondaryPreferred', drivers MUST set the slaveOK wire protocol
     *   flag. If the read preference contains a non-empty tag_sets parameter,
-    *   drivers MUST use $readPreference; otherwise, drivers MUST NOT use
-    *   $readPreference
+    *   or maxStalenessSeconds is a positive integer, drivers MUST use
+    *   $readPreference; otherwise, drivers MUST NOT use $readPreference
     *
     * For mode 'nearest', drivers MUST set the slaveOK wire protocol flag and
     *   MUST also use $readPreference
     */
-   if (mode == MONGOC_READ_SECONDARY_PREFERRED && bson_empty0 (tags)) {
+   if (mode == MONGOC_READ_SECONDARY_PREFERRED &&
+       (bson_empty0 (tags) && max_staleness_seconds <= 0)) {
       result->flags |= MONGOC_QUERY_SLAVE_OK;
 
    } else if (mode != MONGOC_READ_PRIMARY) {
@@ -255,9 +259,6 @@ _apply_read_preferences_mongos (
       if (!bson_empty0 (tags)) {
          bson_append_array (&child, "tags", 4, tags);
       }
-
-      max_staleness_seconds =
-         mongoc_read_prefs_get_max_staleness_seconds (read_prefs);
 
       if (max_staleness_seconds != MONGOC_NO_MAX_STALENESS) {
          bson_append_int64 (
