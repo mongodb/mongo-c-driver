@@ -400,10 +400,12 @@ _mongoc_cmd_parts_add_read_prefs (bson_t *query,
    const char *mode_str;
    const bson_t *tags;
    int64_t stale;
+   const bson_t *hedge;
 
    mode_str = _mongoc_read_mode_as_str (mongoc_read_prefs_get_mode (prefs));
    tags = mongoc_read_prefs_get_tags (prefs);
    stale = mongoc_read_prefs_get_max_staleness_seconds (prefs);
+   hedge = mongoc_read_prefs_get_hedge (prefs);
 
    bson_append_document_begin (query, "$readPreference", 15, &child);
    bson_append_utf8 (&child, "mode", 4, mode_str, -1);
@@ -413,6 +415,10 @@ _mongoc_cmd_parts_add_read_prefs (bson_t *query,
 
    if (stale != MONGOC_NO_MAX_STALENESS) {
       bson_append_int64 (&child, "maxStalenessSeconds", 19, stale);
+   }
+
+   if (!bson_empty0 (hedge)) {
+      bson_append_document (&child, "hedge", 5, hedge);
    }
 
    bson_append_document_end (query, &child);
@@ -441,6 +447,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
    mongoc_read_mode_t mode;
    const bson_t *tags = NULL;
    int64_t max_staleness_seconds = MONGOC_NO_MAX_STALENESS;
+   const bson_t *hedge = NULL;
    bool add_read_prefs = false;
    bson_t query;
    bson_iter_t dollar_query;
@@ -456,6 +463,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
          mongoc_read_prefs_get_max_staleness_seconds (parts->read_prefs);
 
       tags = mongoc_read_prefs_get_tags (parts->read_prefs);
+      hedge = mongoc_read_prefs_get_hedge (parts->read_prefs);
    }
 
    /* Server Selection Spec says:
@@ -471,8 +479,9 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
     *
     * For mode 'secondaryPreferred', drivers MUST set the slaveOK wire protocol
     *   flag. If the read preference contains a non-empty tag_sets parameter,
-    *   or maxStalenessSeconds is a positive integer, drivers MUST use
-    *   $readPreference; otherwise, drivers MUST NOT use $readPreference
+    *   maxStalenessSeconds is a positive integer, or the hedge parameter is
+    *   non-empty, drivers MUST use $readPreference; otherwise, drivers MUST NOT
+    *   use $readPreference
     *
     * For mode 'nearest', drivers MUST set the slaveOK wire protocol flag and
     *   MUST also use $readPreference
@@ -481,7 +490,8 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
    case MONGOC_READ_PRIMARY:
       break;
    case MONGOC_READ_SECONDARY_PREFERRED:
-      if (!bson_empty0 (tags) || max_staleness_seconds > 0) {
+      if (!bson_empty0 (tags) || max_staleness_seconds > 0 ||
+          !bson_empty0 (hedge)) {
          add_read_prefs = true;
       }
       parts->assembled.query_flags |= MONGOC_QUERY_SLAVE_OK;

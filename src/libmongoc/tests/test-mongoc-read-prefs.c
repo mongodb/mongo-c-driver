@@ -840,6 +840,67 @@ test_read_prefs_mongos_max_staleness (void)
    mock_server_destroy (server);
 }
 
+/* CDRIVER-3583 - support for server hedged reads */
+static void
+test_read_prefs_mongos_hedged_reads (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t hedge_doc = BSON_INITIALIZER;
+   mongoc_read_prefs_t *prefs;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   future_t *future;
+   request_t *request;
+
+   server = mock_mongos_new (WIRE_VERSION_HEDGED_READS);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   collection = mongoc_client_get_collection (client, "test", "test");
+
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
+   bson_append_bool (&hedge_doc, "enabled", 7, true);
+
+   mongoc_read_prefs_set_hedge (prefs, &hedge_doc);
+
+   /* exhaust cursor is required so the driver downgrades the OP_QUERY find
+    * command to an OP_QUERY legacy find */
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
+   future = future_cursor_next (cursor, &doc);
+   request = mock_server_receives_query (
+      server,
+      "test.test",
+      MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SLAVE_OK,
+      0,
+      0,
+      "{'$query': {'a': 1},"
+      " '$readPreference': {'mode': 'secondaryPreferred',"
+      "                     'hedge': {'enabled': true}}}",
+      "{}");
+
+   mock_server_replies_to_find (request,
+                                MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SLAVE_OK,
+                                0,
+                                1,
+                                "test.test",
+                                "{}",
+                                false);
+
+   /* mongoc_cursor_next returned true */
+   BSON_ASSERT (future_get_bool (future));
+
+   request_destroy (request);
+   future_destroy (future);
+   mongoc_cursor_destroy (cursor);
+   mongoc_read_prefs_destroy (prefs);
+   bson_destroy (&hedge_doc);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
 /* test that we add readConcern only inside $query, not outside it too */
 static void
 test_mongos_read_concern (void)
@@ -1060,6 +1121,9 @@ test_read_prefs_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/ReadPrefs/mongos/maxStaleness",
                                 test_read_prefs_mongos_max_staleness);
+   TestSuite_AddMockServerTest (suite,
+                                "/ReadPrefs/mongos/hedgedReads",
+                                test_read_prefs_mongos_hedged_reads);
    TestSuite_AddMockServerTest (
       suite, "/ReadPrefs/mongos/readConcern", test_mongos_read_concern);
    TestSuite_AddMockServerTest (

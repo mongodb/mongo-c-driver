@@ -888,6 +888,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-handshake.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-hedged-reads.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-list.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-log.c

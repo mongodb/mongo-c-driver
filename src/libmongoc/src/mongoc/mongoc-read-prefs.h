@@ -66,6 +66,10 @@ mongoc_read_prefs_get_max_staleness_seconds (
 MONGOC_EXPORT (void)
 mongoc_read_prefs_set_max_staleness_seconds (mongoc_read_prefs_t *read_prefs,
                                              int64_t max_staleness_seconds);
+MONGOC_EXPORT (const bson_t *)
+mongoc_read_prefs_get_hedge (const mongoc_read_prefs_t *read_prefs);
+MONGOC_EXPORT (void)
+mongoc_read_prefs_set_hedge (mongoc_read_prefs_t *read_prefs, const bson_t *hedge);
 MONGOC_EXPORT (bool)
 mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs);
 
