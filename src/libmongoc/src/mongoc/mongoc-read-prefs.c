@@ -29,6 +29,7 @@ mongoc_read_prefs_new (mongoc_read_mode_t mode)
    read_prefs->mode = mode;
    bson_init (&read_prefs->tags);
    read_prefs->max_staleness_seconds = MONGOC_NO_MAX_STALENESS;
+   bson_init (&read_prefs->hedge);
 
    return read_prefs;
 }
@@ -117,17 +118,43 @@ mongoc_read_prefs_set_max_staleness_seconds (mongoc_read_prefs_t *read_prefs,
 }
 
 
+const bson_t *
+mongoc_read_prefs_get_hedge (const mongoc_read_prefs_t *read_prefs)
+{
+   BSON_ASSERT (read_prefs);
+
+   return &read_prefs->hedge;
+}
+
+
+void
+mongoc_read_prefs_set_hedge (mongoc_read_prefs_t *read_prefs,
+                             const bson_t *hedge)
+{
+   BSON_ASSERT (read_prefs);
+
+   bson_destroy (&read_prefs->hedge);
+
+   if (hedge) {
+      bson_copy_to (hedge, &read_prefs->hedge);
+   } else {
+      bson_init (&read_prefs->hedge);
+   }
+}
+
+
 bool
 mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
 {
    BSON_ASSERT (read_prefs);
 
    /*
-    * Tags or maxStalenessSeconds are not supported with PRIMARY mode.
+    * Tags, maxStalenessSeconds, and hedge are not supported with PRIMARY mode.
     */
    if (read_prefs->mode == MONGOC_READ_PRIMARY) {
       if (!bson_empty (&read_prefs->tags) ||
-          read_prefs->max_staleness_seconds != MONGOC_NO_MAX_STALENESS) {
+          read_prefs->max_staleness_seconds != MONGOC_NO_MAX_STALENESS ||
+          !bson_empty (&read_prefs->hedge)) {
          return false;
       }
    }
@@ -146,6 +173,7 @@ mongoc_read_prefs_destroy (mongoc_read_prefs_t *read_prefs)
 {
    if (read_prefs) {
       bson_destroy (&read_prefs->tags);
+      bson_destroy (&read_prefs->hedge);
       bson_free (read_prefs);
    }
 }
@@ -161,6 +189,8 @@ mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
       bson_destroy (&ret->tags);
       bson_copy_to (&read_prefs->tags, &ret->tags);
       ret->max_staleness_seconds = read_prefs->max_staleness_seconds;
+      bson_destroy (&ret->hedge);
+      bson_copy_to (&read_prefs->hedge, &ret->hedge);
    }
 
    return ret;
@@ -201,6 +231,7 @@ _apply_read_preferences_mongos (
    bson_t child;
    const char *mode_str;
    int64_t max_staleness_seconds = MONGOC_NO_MAX_STALENESS;
+   const bson_t *hedge = NULL;
 
    mode = mongoc_read_prefs_get_mode (read_prefs);
    if (read_prefs) {
@@ -208,6 +239,7 @@ _apply_read_preferences_mongos (
          mongoc_read_prefs_get_max_staleness_seconds (read_prefs);
 
       tags = mongoc_read_prefs_get_tags (read_prefs);
+      hedge = mongoc_read_prefs_get_hedge (read_prefs);
    }
 
    /* Server Selection Spec says:
@@ -223,14 +255,15 @@ _apply_read_preferences_mongos (
     *
     * For mode 'secondaryPreferred', drivers MUST set the slaveOK wire protocol
     *   flag. If the read preference contains a non-empty tag_sets parameter,
-    *   or maxStalenessSeconds is a positive integer, drivers MUST use
-    *   $readPreference; otherwise, drivers MUST NOT use $readPreference
+    *   maxStalenessSeconds is a positive integer, or the hedge parameter is
+    *   non-empty, drivers MUST use $readPreference; otherwise, drivers MUST NOT
+    *   use $readPreference
     *
     * For mode 'nearest', drivers MUST set the slaveOK wire protocol flag and
     *   MUST also use $readPreference
     */
    if (mode == MONGOC_READ_SECONDARY_PREFERRED &&
-       (bson_empty0 (tags) && max_staleness_seconds <= 0)) {
+       (bson_empty0 (tags) && max_staleness_seconds <= 0 && bson_empty0 (hedge))) {
       result->flags |= MONGOC_QUERY_SLAVE_OK;
 
    } else if (mode != MONGOC_READ_PRIMARY) {
@@ -263,6 +296,10 @@ _apply_read_preferences_mongos (
       if (max_staleness_seconds != MONGOC_NO_MAX_STALENESS) {
          bson_append_int64 (
             &child, "maxStalenessSeconds", 19, max_staleness_seconds);
+      }
+
+      if (!bson_empty0 (hedge)) {
+         bson_append_document (&child, "hedge", 5, hedge);
       }
 
       bson_append_document_end (result->assembled_query, &child);

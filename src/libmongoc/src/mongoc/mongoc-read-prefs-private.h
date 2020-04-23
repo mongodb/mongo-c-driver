@@ -31,6 +31,7 @@ struct _mongoc_read_prefs_t {
    mongoc_read_mode_t mode;
    bson_t tags;
    int64_t max_staleness_seconds;
+   bson_t hedge;
 };
 
 
