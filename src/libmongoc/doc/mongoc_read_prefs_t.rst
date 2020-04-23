@@ -8,9 +8,9 @@ A read preference abstraction
 Synopsis
 --------
 
-:symbol:`mongoc_read_prefs_t` provides an abstraction on top of the MongoDB connection read preferences. It allows for hinting to the driver which nodes in a replica set should be accessed first.
+:symbol:`mongoc_read_prefs_t` provides an abstraction on top of the MongoDB connection read preferences. It allows for hinting to the driver which nodes in a replica set should be accessed first and how.
 
-You can specify a read preference mode on connection objects, database objects, collection objects, or per-operation.  Generally, it makes the most sense to stick with the global default, ``MONGOC_READ_PRIMARY``.  All of the other modes come with caveats that won't be covered in great detail here.
+You can specify a read preference mode on connection objects, database objects, collection objects, or per-operation.  Generally, it makes the most sense to stick with the global default mode, ``MONGOC_READ_PRIMARY``.  All of the other modes come with caveats that won't be covered in great detail here.
 
 Read Modes
 ----------
@@ -30,7 +30,7 @@ Tag Sets
 
 Tag sets allow you to specify custom read preferences and write concerns so that your application can target operations to specific members.
 
-Custom read preferences and write concerns evaluate tags sets in different ways: read preferences consider the value of a tag when selecting a member to read from. while write concerns ignore the value of a tag to when selecting a member except to consider whether or not the value is unique.
+Custom read preferences and write concerns evaluate tags sets in different ways: read preferences consider the value of a tag when selecting a member to read from, while write concerns ignore the value of a tag when selecting a member, except to consider whether or not the value is unique.
 
 You can specify tag sets with the following read preference modes:
 
@@ -39,7 +39,7 @@ You can specify tag sets with the following read preference modes:
 * secondaryPreferred
 * nearest
 
-Tags are not compatible with ``MONGOC_READ_PRIMARY`` and, in general, only apply when selecting a secondary member of a set for a read operation. However, the nearest read mode, when combined with a tag set will select the nearest member that matches the specified tag set, which may be a primary or secondary.
+Tags are not compatible with ``MONGOC_READ_PRIMARY`` and, in general, only apply when selecting a secondary member of a set for a read operation. However, the nearest read mode, when combined with a tag set, will select the nearest member that matches the specified tag set, which may be a primary or secondary.
 
 Tag sets are represented as a comma-separated list of colon-separated key-value
 pairs when provided as a connection string, e.g. `dc:ny,rack:1`.
@@ -50,8 +50,7 @@ To specify a list of tag sets, using multiple readPreferenceTags, e.g.
 
    readPreferenceTags=dc:ny,rack:1;readPreferenceTags=dc:ny;readPreferenceTags=
 
-Note the empty value for the last one, which means match any secondary as a
-last resort.
+Note the empty value for the last one, which means "match any secondary as a last resort".
 
 Order matters when using multiple readPreferenceTags.
 
