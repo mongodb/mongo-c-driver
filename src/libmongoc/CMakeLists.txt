@@ -542,6 +542,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-upload.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-background-monitoring.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-scanner.c
@@ -870,6 +871,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-array.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-async.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-aws.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-background-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-buffer.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-bulk.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-change-stream.c

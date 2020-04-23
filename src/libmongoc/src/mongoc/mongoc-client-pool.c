@@ -25,6 +25,7 @@
 #include "mongoc-queue-private.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-topology-private.h"
+#include "mongoc-topology-background-monitoring-private.h"
 #include "mongoc-trace-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
@@ -218,9 +219,10 @@ mongoc_client_pool_destroy (mongoc_client_pool_t *pool)
 static void
 _start_scanner_if_needed (mongoc_client_pool_t *pool)
 {
-   if (!_mongoc_topology_start_background_scanner (pool->topology)) {
-      MONGOC_ERROR ("Background scanner did not start!");
-      abort ();
+   if (!pool->topology->single_threaded) {
+      bson_mutex_lock (&pool->topology->mutex);
+      _mongoc_topology_background_monitoring_start (pool->topology);
+      bson_mutex_unlock (&pool->topology->mutex);
    }
 }
 

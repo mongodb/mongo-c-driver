@@ -815,7 +815,7 @@ _test_heartbeat_fails_dns (bool pooled)
 
    context_init (&context);
    uri = mongoc_uri_new (
-      "mongodb://doesntexist.foobar/?serverSelectionTimeoutMS=1000");
+      "mongodb://doesntexist.foobar/?serverSelectionTimeoutMS=3000");
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
       pool_set_heartbeat_event_callbacks (pool, &context);

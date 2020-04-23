@@ -114,7 +114,7 @@ BSON_BEGIN_DECLS
                   BSON_FUNC,                                     \
                   __LINE__,                                      \
                   #_n,                                           \
-                  _iov,                                          \
+                  (void *) _iov,                                 \
                   (int) _iovcnt);                                \
       mongoc_log_trace_iovec (MONGOC_LOG_DOMAIN, _iov, _iovcnt); \
    } while (0)
