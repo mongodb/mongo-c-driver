@@ -27,8 +27,7 @@
  *    5. reads a byte
  *    7. hangs up
  */
-static void *
-ssl_error_server (void *ptr)
+static BSON_THREAD_FUN (ssl_error_server, ptr)
 {
    ssl_test_data_t *data = (ssl_test_data_t *) ptr;
 
@@ -104,7 +103,7 @@ ssl_error_server (void *ptr)
    mongoc_stream_destroy (ssl_stream);
    mongoc_socket_destroy (listen_sock);
 
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 
@@ -119,8 +118,7 @@ ssl_error_server (void *ptr)
  *    5. confirms that the server hangs up promptly
  *    6. shuts down
  */
-static void *
-ssl_hangup_client (void *ptr)
+static BSON_THREAD_FUN (ssl_hangup_client, ptr)
 {
    ssl_test_data_t *data = (ssl_test_data_t *) ptr;
    mongoc_stream_t *sock_stream;
@@ -178,7 +176,7 @@ ssl_hangup_client (void *ptr)
    BSON_ASSERT (r == -1);
    mongoc_stream_destroy (ssl_stream);
    data->client_result->result = SSL_TEST_SUCCESS;
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 static void
@@ -206,14 +204,14 @@ test_mongoc_tls_hangup (void)
    bson_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
 
-   r = bson_thread_create (threads, &ssl_error_server, &data);
+   r = COMMON_PREFIX (thread_create) (threads, &ssl_error_server, &data);
    BSON_ASSERT (r == 0);
 
-   r = bson_thread_create (threads + 1, &ssl_hangup_client, &data);
+   r = COMMON_PREFIX (thread_create) (threads + 1, &ssl_hangup_client, &data);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
-      r = bson_thread_join (threads[i]);
+      r = COMMON_PREFIX (thread_join) (threads[i]);
       BSON_ASSERT (r == 0);
    }
 
@@ -236,8 +234,7 @@ test_mongoc_tls_hangup (void)
  *    5. confirms that it times out
  *    6. shuts down
  */
-static void *
-handshake_stall_client (void *ptr)
+static BSON_THREAD_FUN (handshake_stall_client, ptr)
 {
    ssl_test_data_t *data = (ssl_test_data_t *) ptr;
    char *uri_str;
@@ -296,7 +293,7 @@ handshake_stall_client (void *ptr)
    mongoc_client_destroy (client);
    bson_free (uri_str);
 
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 
@@ -330,14 +327,15 @@ test_mongoc_tls_handshake_stall (void)
    bson_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
 
-   r = bson_thread_create (threads, &ssl_error_server, &data);
+   r = COMMON_PREFIX (thread_create) (threads, &ssl_error_server, &data);
    BSON_ASSERT (r == 0);
 
-   r = bson_thread_create (threads + 1, &handshake_stall_client, &data);
+   r = COMMON_PREFIX (thread_create) (
+      threads + 1, &handshake_stall_client, &data);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
-      r = bson_thread_join (threads[i]);
+      r = COMMON_PREFIX (thread_join) (threads[i]);
       BSON_ASSERT (r == 0);
    }
 

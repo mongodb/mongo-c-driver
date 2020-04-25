@@ -552,6 +552,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-concern.c
    ${PROJECT_SOURCE_DIR}/../../src/common/common-b64.c
    ${PROJECT_SOURCE_DIR}/../../src/common/common-md5.c
+   ${PROJECT_SOURCE_DIR}/../../src/common/common-thread.c
 )
 
 set (HEADERS
@@ -787,6 +788,8 @@ function (mongoc_add_test test use_shared)
       if (NOT MSVC)
          # We've tests that test our deprecated api. MSVC 2013 will complain about invalid flag
          set_source_files_properties (${ARGN} PROPERTIES COMPILE_FLAGS -Wno-deprecated-declarations)
+      else ()
+         target_link_libraries (${test} DbgHelp.dll)
       endif ()
       target_include_directories (${test} PRIVATE ${PROJECT_SOURCE_DIR}/tests)
       target_compile_definitions (${test} PUBLIC "MONGOC_COMPILATION" PUBLIC "BSON_COMPILATION")
@@ -948,7 +951,7 @@ if (MONGOC_ENABLE_SASL_CYRUS)
 endif ()
 
 mongoc_add_test (test-libmongoc FALSE ${test-libmongoc-sources})
-mongoc_add_test (test-mongoc-gssapi TRUE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
+mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gssapi.c)
 
 if (ENABLE_TESTS)
    enable_testing ()

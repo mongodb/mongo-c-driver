@@ -39,10 +39,13 @@ BSON_BEGIN_DECLS
 #define bson_mutex_unlock pthread_mutex_unlock
 #define bson_once pthread_once
 #define bson_once_t pthread_once_t
-#define bson_thread_create(_t, _f, _d) pthread_create ((_t), NULL, (_f), (_d))
-#define bson_thread_join(_n) pthread_join ((_n), NULL)
 #define bson_thread_t pthread_t
+#define BSON_THREAD_FUN(_function_name, _arg_name) \
+   void *(_function_name) (void *(_arg_name))
+#define BSON_THREAD_FUN_TYPE(_function_name) void *(*(_function_name)) (void *)
+#define BSON_THREAD_RETURN return NULL
 #else
+#include <process.h>
 #define BSON_ONCE_FUN(n) \
    BOOL CALLBACK n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c)
 #define BSON_ONCE_INIT INIT_ONCE_STATIC_INIT
@@ -54,11 +57,21 @@ BSON_BEGIN_DECLS
 #define bson_mutex_unlock LeaveCriticalSection
 #define bson_once(o, c) InitOnceExecuteOnce (o, c, NULL, NULL)
 #define bson_once_t INIT_ONCE
-#define bson_thread_create(_t, _f, _d) \
-   (!(*(_t) = CreateThread (NULL, 0, (LPTHREAD_START_ROUTINE) (_f), _d, 0, NULL)))
-#define bson_thread_join(_n) WaitForSingleObject ((_n), INFINITE)
 #define bson_thread_t HANDLE
+#define BSON_THREAD_FUN(_function_name, _arg_name) \
+   unsigned(__stdcall _function_name) (void *(_arg_name))
+#define BSON_THREAD_FUN_TYPE(_function_name) \
+   unsigned(__stdcall * _function_name) (void *)
+#define BSON_THREAD_RETURN return
 #endif
+
+/* Functions that require definitions get the common prefix (_mongoc for
+ * libmongoc or _bson for libbson) to avoid duplicate symbols when linking both
+ * libbson and libmongoc statically. */
+int COMMON_PREFIX (thread_join) (bson_thread_t thread);
+int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
+                                   BSON_THREAD_FUN_TYPE (func),
+                                   void *arg);
 
 BSON_END_DECLS
 

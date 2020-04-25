@@ -34,6 +34,10 @@
 #include <strings.h>
 #endif
 
+#if defined(_MSC_VER) && defined(_WIN64)
+#include <errhandlingapi.h>
+#include <DbgHelp.h>
+#endif
 /* libbson */
 
 
@@ -1917,9 +1921,9 @@ int
 test_framework_skip_if_windows (void)
 {
 #ifdef _WIN32
-   return false;
+   return 0;
 #else
-   return true;
+   return 1;
 #endif
 }
 
@@ -2378,12 +2382,115 @@ test_framework_skip_if_time_sensitive (void)
 
 static char MONGOC_TEST_UNIQUE[32];
 
+#if defined(_MSC_VER) && defined(_WIN64)
+LONG WINAPI
+windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
+{
+   HANDLE process = GetCurrentProcess ();
+
+   fprintf (stderr, "entering windows exception handler\n");
+   SymInitialize (process, NULL, TRUE);
+
+   /* Shamelessly stolen from https://stackoverflow.com/a/28115589 */
+
+   /* StackWalk64() may modify context record passed to it, so we will
+    use a copy.
+    */
+   CONTEXT context_record = *pExceptionInfo->ContextRecord;
+   DWORD exception_code = pExceptionInfo->ExceptionRecord->ExceptionCode;
+   /* Initialize stack walking. */
+   char exception_string[128];
+   bson_snprintf (exception_string,
+                  sizeof(exception_string),
+                  (exception_code == EXCEPTION_ACCESS_VIOLATION)
+                  ? "(access violation)"
+                  : "0x%08X", exception_code);
+
+   char address_string[32];
+   bson_snprintf(address_string,
+                 sizeof(address_string),
+                 "0x%p",
+                 pExceptionInfo->ExceptionRecord->ExceptionAddress);
+
+   fprintf (stderr,
+            "exception '%s' at '%s', terminating\n",
+            exception_string,
+            address_string);
+
+   STACKFRAME64 stack_frame;
+   memset (&stack_frame, 0, sizeof (stack_frame));
+#if defined(_WIN64)
+   int machine_type = IMAGE_FILE_MACHINE_AMD64;
+   stack_frame.AddrPC.Offset = context_record.Rip;
+   stack_frame.AddrFrame.Offset = context_record.Rbp;
+   stack_frame.AddrStack.Offset = context_record.Rsp;
+#else
+   int machine_type = IMAGE_FILE_MACHINE_I386;
+   stack_frame.AddrPC.Offset = context_record.Eip;
+   stack_frame.AddrFrame.Offset = context_record.Ebp;
+   stack_frame.AddrStack.Offset = context_record.Esp;
+#endif
+   stack_frame.AddrPC.Mode = AddrModeFlat;
+   stack_frame.AddrFrame.Mode = AddrModeFlat;
+   stack_frame.AddrStack.Mode = AddrModeFlat;
+
+   SYMBOL_INFO *symbol;
+   symbol = calloc (sizeof (SYMBOL_INFO) + 256, 1);
+   symbol->MaxNameLen = 255;
+   symbol->SizeOfStruct = sizeof (SYMBOL_INFO);
+
+   fprintf (stderr, "begin stack trace\n");
+   while (StackWalk64 (machine_type,
+                       GetCurrentProcess (),
+                       GetCurrentThread (),
+                       &stack_frame,
+                       &context_record,
+                       NULL,
+                       &SymFunctionTableAccess64,
+                       &SymGetModuleBase64,
+                       NULL)) {
+      DWORD64 displacement = 0;
+
+      if (SymFromAddr (process,
+                       (DWORD64) stack_frame.AddrPC.Offset,
+                       &displacement,
+                       symbol)) {
+         IMAGEHLP_MODULE64 moduleInfo;
+         memset (&moduleInfo, 0, sizeof (moduleInfo));
+         moduleInfo.SizeOfStruct = sizeof (moduleInfo);
+
+         if (SymGetModuleInfo64 (process, symbol->ModBase, &moduleInfo))
+            fprintf (stderr, "%s : ", moduleInfo.ModuleName);
+
+         fprintf (stderr, "%s", symbol->Name);
+      }
+
+      IMAGEHLP_LINE line;
+      line.SizeOfStruct = sizeof (IMAGEHLP_LINE);
+
+      DWORD offset_ln = 0;
+      if (SymGetLineFromAddr (
+             process, (DWORD64) stack_frame.AddrPC.Offset, &offset_ln, &line)) {
+         fprintf (stderr, " %s:%d ", line.FileName, line.LineNumber);
+      }
+
+      fprintf (stderr, "\n");
+   }
+   fprintf (stderr, "end stack trace\n");
+   fflush (stderr);
+   return EXCEPTION_EXECUTE_HANDLER;
+}
+#endif
+
 int
 main (int argc, char *argv[])
 {
    TestSuite suite;
    int ret;
 
+#if defined(_MSC_VER) && defined(_WIN64)
+   SetUnhandledExceptionFilter (windows_exception_handler);
+#endif
    mongoc_init ();
 
    bson_snprintf (MONGOC_TEST_UNIQUE,
