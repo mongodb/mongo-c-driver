@@ -56,8 +56,7 @@ static const char *gTestOidsFail[] = {"                        ",
                                       "00187263123ghh21382812a8",
                                       NULL};
 
-static void *
-oid_worker (void *data)
+BSON_THREAD_FUN (oid_worker, data)
 {
    bson_context_t *context = data;
    bson_oid_t oid;
@@ -72,7 +71,7 @@ oid_worker (void *data)
       bson_oid_copy (&oid, &oid2);
    }
 
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 static void
@@ -343,12 +342,13 @@ test_bson_oid_init_with_threads (void)
 
       for (i = 0; i < N_THREADS; i++) {
          contexts[i] = bson_context_new (flags);
-         r = bson_thread_create (&threads[i], oid_worker, contexts[i]);
+         r = COMMON_PREFIX (thread_create) (
+            &threads[i], oid_worker, contexts[i]);
          BSON_ASSERT (r == 0);
       }
 
       for (i = 0; i < N_THREADS; i++) {
-         bson_thread_join (threads[i]);
+         COMMON_PREFIX (thread_join) (threads[i]);
       }
 
       for (i = 0; i < N_THREADS; i++) {
@@ -365,12 +365,12 @@ test_bson_oid_init_with_threads (void)
       context = bson_context_new (BSON_CONTEXT_THREAD_SAFE);
 
       for (i = 0; i < N_THREADS; i++) {
-         r = bson_thread_create (&threads[i], oid_worker, context);
+         r = COMMON_PREFIX (thread_create) (&threads[i], oid_worker, context);
          BSON_ASSERT (r == 0);
       }
 
       for (i = 0; i < N_THREADS; i++) {
-         r = bson_thread_join (threads[i]);
+         r = COMMON_PREFIX (thread_join) (threads[i]);
          BSON_ASSERT (r == 0);
       }
 

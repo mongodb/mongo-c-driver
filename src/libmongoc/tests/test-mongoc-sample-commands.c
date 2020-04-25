@@ -2480,8 +2480,8 @@ typedef struct {
 } change_stream_ctx_t;
 
 
-static void *
-insert_docs (void *p)
+static 
+BSON_THREAD_FUN (insert_docs, p)
 {
    change_stream_ctx_t *ctx = (change_stream_ctx_t *) p;
    bson_t doc = BSON_INITIALIZER;
@@ -2496,13 +2496,14 @@ insert_docs (void *p)
       if (ctx->done) {
          bson_destroy (&doc);
          bson_mutex_unlock (&ctx->lock);
-         return 0;
+         BSON_THREAD_RETURN;
       }
 
       bson_mutex_unlock (&ctx->lock);
       _mongoc_usleep (100 * 1000);  /* 100 ms */
    }
    bson_destroy (&doc);
+   BSON_THREAD_RETURN;
 }
 
 
@@ -2527,7 +2528,7 @@ test_sample_change_stream_command (sample_command_fn_t fn,
          client, db->name, "inventory");
       ctx.done = false;
 
-      r = bson_thread_create (&thread, insert_docs, (void *) &ctx);
+      r = COMMON_PREFIX (thread_create) (&thread, insert_docs, (void *) &ctx);
       ASSERT_OR_PRINT_ERRNO (r == 0, r);
 
       capture_logs (true);
@@ -2537,7 +2538,7 @@ test_sample_change_stream_command (sample_command_fn_t fn,
       bson_mutex_lock (&ctx.lock);
       ctx.done = true;
       bson_mutex_unlock (&ctx.lock);
-      bson_thread_join (thread);
+      COMMON_PREFIX (thread_join) (thread);
 
       mongoc_collection_destroy (ctx.collection);
       mongoc_client_destroy (client);

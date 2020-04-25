@@ -8,6 +8,7 @@ set (src_common_DIST_noinst_hs
 set (src_common_DIST_cs
    common-b64.c
    common-md5.c
+   common-thread.c
 )
 
 set_dist_list (src_common_DIST

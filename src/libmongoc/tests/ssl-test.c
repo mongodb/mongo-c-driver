@@ -30,8 +30,7 @@
  *    7. echoes it back to the client
  *    8. shuts down
  */
-static void *
-ssl_test_server (void *ptr)
+static BSON_THREAD_FUN (ssl_test_server, ptr)
 {
    ssl_test_data_t *data = (ssl_test_data_t *) ptr;
 
@@ -99,7 +98,7 @@ ssl_test_server (void *ptr)
       mongoc_stream_destroy (sock_stream);
       mongoc_socket_destroy (listen_sock);
 
-      return NULL;
+      BSON_THREAD_RETURN;
    }
    BSON_ASSERT (ssl_stream);
 
@@ -119,7 +118,7 @@ ssl_test_server (void *ptr)
       mongoc_socket_destroy (listen_sock);
       mongoc_stream_destroy (ssl_stream);
 
-      return NULL;
+      BSON_THREAD_RETURN;
    }
 
    r = mongoc_stream_readv (ssl_stream, &iov, 1, 4, TIMEOUT);
@@ -132,7 +131,7 @@ ssl_test_server (void *ptr)
       mongoc_stream_destroy (ssl_stream);
       mongoc_socket_destroy (listen_sock);
 
-      return NULL;
+      BSON_THREAD_RETURN;
    }
 
    BSON_ASSERT (r == 4);
@@ -150,7 +149,7 @@ ssl_test_server (void *ptr)
 
    data->server_result->result = SSL_TEST_SUCCESS;
 
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 /** this function is meant to be run from ssl_test as a child thread
@@ -165,8 +164,7 @@ ssl_test_server (void *ptr)
  *    7. confirms that its the same as what was written
  *    8. shuts down
  */
-static void *
-ssl_test_client (void *ptr)
+static BSON_THREAD_FUN (ssl_test_client, ptr)
 {
    ssl_test_data_t *data = (ssl_test_data_t *) ptr;
    mongoc_stream_t *sock_stream;
@@ -228,7 +226,7 @@ ssl_test_client (void *ptr)
 
       mongoc_stream_destroy (sock_stream);
 
-      return NULL;
+      BSON_THREAD_RETURN;
    }
    BSON_ASSERT (ssl_stream);
 
@@ -243,7 +241,7 @@ ssl_test_client (void *ptr)
       MONGOC_ERROR ("ERRORED (line: %d): %s\n", __LINE__, error.message);
 
       mongoc_stream_destroy (ssl_stream);
-      return NULL;
+      BSON_THREAD_RETURN;
    }
 
    len = 4 * NUM_IOVECS;
@@ -278,7 +276,7 @@ ssl_test_client (void *ptr)
 
    data->client_result->result = SSL_TEST_SUCCESS;
 
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 
@@ -309,14 +307,14 @@ ssl_test (mongoc_ssl_opt_t *client,
    bson_mutex_init (&data.cond_mutex);
    mongoc_cond_init (&data.cond);
 
-   r = bson_thread_create (threads, &ssl_test_server, &data);
+   r = COMMON_PREFIX (thread_create) (threads, &ssl_test_server, &data);
    BSON_ASSERT (r == 0);
 
-   r = bson_thread_create (threads + 1, &ssl_test_client, &data);
+   r = COMMON_PREFIX (thread_create) (threads + 1, &ssl_test_client, &data);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
-      r = bson_thread_join (threads[i]);
+      r = COMMON_PREFIX (thread_join) (threads[i]);
       BSON_ASSERT (r == 0);
    }
 

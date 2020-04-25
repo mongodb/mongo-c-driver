@@ -25,7 +25,7 @@ future_t *future_new (future_value_type_t return_type, int argc);
 future_value_t *future_get_param (future_t *future, int i);
 
 void future_start (future_t *future,
-                   void *(*start_routine)(void *));
+                   BSON_THREAD_FUN_TYPE (start_routine));
 
 void future_resolve (future_t *future, future_value_t return_value);
 

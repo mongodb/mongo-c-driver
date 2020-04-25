@@ -517,9 +517,9 @@ future_get_param (future_t *future, int i)
 
 void
 future_start (future_t *future,
-              void *(*start_routine)(void *))
+              BSON_THREAD_FUN_TYPE (start_routine))
 {
-   int r = bson_thread_create (&future->thread,
+   int r = COMMON_PREFIX (thread_create) (&future->thread,
                                start_routine,
                                (void *) future);
 
@@ -560,7 +560,7 @@ future_wait_max (future_t *future, int64_t timeout_ms)
       future->awaited = true;
 
       /* free memory */
-      bson_thread_join (future->thread);
+      COMMON_PREFIX (thread_join) (future->thread);
    }
 
    return resolved;

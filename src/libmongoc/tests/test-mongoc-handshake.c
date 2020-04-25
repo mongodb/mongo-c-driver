@@ -797,8 +797,7 @@ test_handshake_platform_config ()
 }
 
 /* Called by a single thread in test_mongoc_handshake_race_condition */
-static void *
-handshake_append_worker (void *data)
+static BSON_THREAD_FUN (handshake_append_worker, data)
 {
    const char *driver_name = "php driver";
    const char *driver_version = "version abc";
@@ -806,7 +805,7 @@ handshake_append_worker (void *data)
 
    mongoc_handshake_data_append (driver_name, driver_version, platform);
 
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 /* Run 1000 iterations of mongoc_handshake_data_append() using 4 threads */
@@ -820,12 +819,12 @@ test_mongoc_handshake_race_condition (void)
       _reset_handshake ();
 
       for (j = 0; j < 4; ++j) {
-         BSON_ASSERT (
-            !bson_thread_create (&threads[j], &handshake_append_worker, NULL));
+         BSON_ASSERT (!COMMON_PREFIX (thread_create) (
+            &threads[j], &handshake_append_worker, NULL));
       }
 
       for (j = 0; j < 4; ++j) {
-         bson_thread_join (threads[j]);
+         COMMON_PREFIX (thread_join) (threads[j]);
       }
    }
 

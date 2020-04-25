@@ -19,8 +19,8 @@
 #include "future-functions.h"
 
 {% for F in future_functions %}
-static void *
-background_{{ F.name }} (void *data)
+static
+BSON_THREAD_FUN (background_{{ F.name }}, data)
 {
    future_t *future = (future_t *) data;
    future_value_t return_value;
@@ -38,7 +38,7 @@ background_{{ F.name }} (void *data)
 {% endif %}
    future_resolve (future, return_value);
 
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 {% endfor %}
 

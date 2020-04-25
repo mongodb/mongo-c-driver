@@ -533,7 +533,7 @@ test_datakey_and_double_encryption_creating_and_using (
     * exactly match the value of encrypted. */
    BSON_ASSERT (encrypted_via_altname.value_type == BSON_TYPE_BINARY);
    BSON_ASSERT (encrypted_via_altname.value.v_binary.subtype ==
-                   BSON_SUBTYPE_ENCRYPTED);
+                BSON_SUBTYPE_ENCRYPTED);
    BSON_ASSERT (encrypted_via_altname.value.v_binary.data_len ==
                 encrypted.value.v_binary.data_len);
    BSON_ASSERT (0 == memcmp (encrypted_via_altname.value.v_binary.data,
@@ -1636,8 +1636,7 @@ test_invalid_single_and_pool_mismatches (void *unused)
    mongoc_auto_encryption_opts_destroy (opts);
 }
 
-static void *
-_worker_thread (void *client_ptr)
+static BSON_THREAD_FUN (_worker_thread, client_ptr)
 {
    mongoc_client_t *client_encrypted;
    mongoc_collection_t *coll;
@@ -1664,7 +1663,7 @@ _worker_thread (void *client_ptr)
    mongoc_collection_destroy (coll);
    bson_destroy (&filter);
    bson_destroy (to_insert);
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 static void
@@ -1728,14 +1727,14 @@ _test_multi_threaded (bool external_key_vault)
    client1 = mongoc_client_pool_pop (pool);
    client2 = mongoc_client_pool_pop (pool);
 
-   r = bson_thread_create (threads, _worker_thread, client1);
+   r = COMMON_PREFIX (thread_create) (threads, _worker_thread, client1);
    BSON_ASSERT (r == 0);
 
-   r = bson_thread_create (threads + 1, _worker_thread, client2);
+   r = COMMON_PREFIX (thread_create) (threads + 1, _worker_thread, client2);
    BSON_ASSERT (r == 0);
 
    for (i = 0; i < 2; i++) {
-      r = bson_thread_join (threads[i]);
+      r = COMMON_PREFIX (thread_join) (threads[i]);
       BSON_ASSERT (r == 0);
    }
 

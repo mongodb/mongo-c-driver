@@ -54,8 +54,7 @@ struct closure_t {
 };
 
 
-static void *
-gssapi_kerberos_worker (void *data)
+static BSON_THREAD_FUN (gssapi_kerberos_worker, data)
 {
    struct closure_t *closure = (struct closure_t *) data;
    mongoc_client_pool_t *pool = closure->pool;
@@ -98,7 +97,7 @@ gssapi_kerberos_worker (void *data)
    closure->finished++;
    bson_mutex_unlock (&closure->mutex);
 
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 
@@ -135,13 +134,13 @@ main (void)
    closure.pool = mongoc_client_pool_new (uri);
 
    for (i = 0; i < NTHREADS; i++) {
-      r = bson_thread_create (
+      r = COMMON_PREFIX (thread_create) (
          &threads[i], gssapi_kerberos_worker, (void *) &closure);
       BSON_ASSERT (r == 0);
    }
 
    for (i = 0; i < NTHREADS; i++) {
-      bson_thread_join (threads[i]);
+      COMMON_PREFIX (thread_join) (threads[i]);
    }
 
    bson_mutex_lock (&closure.mutex);
