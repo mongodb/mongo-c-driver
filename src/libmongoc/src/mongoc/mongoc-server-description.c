@@ -652,8 +652,6 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
          }
 
          sd->last_write_date_ms = bson_iter_date_time (&child);
-      } else if (strcmp ("idleWritePeriodMillis", bson_iter_key (&iter)) == 0) {
-         sd->last_write_date_ms = bson_iter_as_int64 (&iter);
       } else if (strcmp ("compression", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_ARRAY (&iter))
             goto failure;
