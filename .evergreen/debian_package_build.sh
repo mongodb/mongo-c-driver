@@ -9,6 +9,14 @@
 set -o xtrace
 set -o errexit
 
+on_exit () {
+  if [ -e ./unstable-chroot/debootstrap/debootstrap.log ]; then
+    echo "Dumping debootstrap.log"
+    cat ./unstable-chroot/debootstrap/debootstrap.log
+  fi
+}
+trap on_exit EXIT
+
 if [ "${IS_PATCH}" = "true" ]; then
   git diff HEAD -- . ':!debian' > ../upstream.patch
   git diff HEAD -- debian > ../debian.patch
