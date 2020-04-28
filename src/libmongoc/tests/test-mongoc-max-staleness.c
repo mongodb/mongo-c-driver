@@ -197,16 +197,17 @@ _test_last_write_date (bool pooled)
       collection, tmp_bson ("{}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
-   _mongoc_usleep (2000 * 1000);
-   s0 = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, &error);
+   _mongoc_usleep (1000 * 1000);
+   s0 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, NULL, &error);
    ASSERT_OR_PRINT (s0, error);
 
+   _mongoc_usleep (1000 * 1000);
    r = mongoc_collection_insert_one (
       collection, tmp_bson ("{}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
-   _mongoc_usleep (2000 * 1000);
-   s1 = mongoc_topology_select (client->topology, MONGOC_SS_READ, NULL, &error);
+   _mongoc_usleep (1000 * 1000);
+   s1 = mongoc_topology_select (client->topology, MONGOC_SS_WRITE, NULL, &error);
    ASSERT_OR_PRINT (s1, error);
    ASSERT_CMPINT64 (s1->last_write_date_ms, !=, (int64_t) -1);
 
