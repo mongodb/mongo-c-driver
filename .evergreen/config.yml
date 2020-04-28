@@ -13148,10 +13148,6 @@ buildvariants:
   - debug-compile-valgrind
   - debug-compile-no-counters
   - compile-tracing
-  - debian-package-build
-  - name: rpm-package-build
-    distros:
-    - rhel80-test
   - link-with-cmake
   - link-with-cmake-deprecated
   - abi-compliance-check
@@ -13775,3 +13771,13 @@ buildvariants:
   - name: .ocsp-winssl
     distros:
     - windows-64-vs2017-test
+  batchtime: 20160
+- name: packaging
+  display_name: Linux Distro Packaging
+  run_on: ubuntu1604-test
+  tasks:
+  - debian-package-build
+  - name: rpm-package-build
+    distros:
+    - rhel80-test
+  batchtime: 1440

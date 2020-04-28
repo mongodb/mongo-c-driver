@@ -24,6 +24,10 @@ mobile_flags = (
     ' -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY'
 )
 
+# Returns minutes for batchtime.
+def days(n):
+    return n * 24 * 60
+
 all_variants = [
     Variant('releng',
             '**Release Archive Creator',
@@ -37,9 +41,6 @@ all_variants = [
              'debug-compile-valgrind',
              'debug-compile-no-counters',
              'compile-tracing',
-             'debian-package-build',
-             OD([('name', 'rpm-package-build'),
-                 ('distros', ['rhel80-test'])]),
              'link-with-cmake',
              'link-with-cmake-deprecated',
              'abi-compliance-check',
@@ -448,7 +449,7 @@ all_variants = [
              '.4.2 .openssl !.nosasl .server',
              '.4.0 .openssl !.nosasl .server'],
             {'CC': 'gcc'},
-            batchtime=1440),
+            batchtime=days(1)),
     Variant('power8-ubuntu1604',
             'Power8 (ppc64le) (Ubuntu 16.04)',
             'ubuntu1604-power8-test',
@@ -462,7 +463,7 @@ all_variants = [
              '.4.0 .openssl !.nosasl .server',
              'test-dns-openssl'],
             {'CC': 'gcc'},
-            batchtime=1440),
+            batchtime=days(1)),
     Variant('power8-ubuntu1804',
             'Power8 (ppc64le) (Ubuntu 18.04)',
             'ubuntu1804-power8-test',
@@ -475,7 +476,7 @@ all_variants = [
              '.4.2 .openssl !.nosasl .server',
              'test-dns-openssl'],
             {'CC': 'gcc'},
-            batchtime=1440),
+            batchtime=days(1)),
     Variant('arm-ubuntu1604',
             '*ARM (aarch64) (Ubuntu 16.04)',
             'ubuntu1604-arm64-large',
@@ -494,7 +495,7 @@ all_variants = [
              '.4.0 .openssl !.nosasl .server',
              'test-dns-openssl'],
             {'CC': 'gcc'},
-            batchtime=1440),
+            batchtime=days(1)),
     Variant('zseries-rhel72',
             '*zSeries',
             'rhel72-zseries-test',
@@ -510,7 +511,7 @@ all_variants = [
              '.4.2 .openssl !.nosasl .server',
              '.4.0 .openssl !.nosasl .server'],
             {'CC': 'gcc'},
-            batchtime=1440),
+            batchtime=days(1)),
     # Note, do not use Ubuntu 16.04 for valgrind, as the system valgrind
     # has a bug with OpenSSL (https://bugs.launchpad.net/ubuntu/+source/valgrind/+bug/1574437)
     Variant('valgrind-ubuntu',
@@ -521,7 +522,7 @@ all_variants = [
              '.debug-compile .special .valgrind',
              '.test-valgrind !.3.0 !.3.2 !.3.4 !.3.6'],
             {'CC': 'gcc'},
-            batchtime=10080),
+            batchtime=days(7)),
     Variant('valgrind-ubuntu-1404',
             'Valgrind Tests - MongoDB (pre 4.0) (Ubuntu 14.04)',
             'ubuntu1404-build',
@@ -533,14 +534,14 @@ all_variants = [
              '.test-valgrind .3.4',
              '.test-valgrind .3.6'],
             {'CC': 'gcc'},
-            batchtime=10080),
+            batchtime=days(7)),
     Variant('asan-ubuntu',
             'ASAN Tests (Ubuntu 16.04)',
             'ubuntu1604-test',
             ['.debug-compile .asan-clang',
              '.test-asan !.3.0'],
             {'CC': 'clang'},
-            batchtime=1440),
+            batchtime=days(1)),
     # There is no MongoDB 3.0 with SSL available on Ubuntu post 14.04. And MongoDB 4.2 not supported on Ubuntu 14.04.
     # So have one variant for ASAN to test against MongoDB 3.0.
     Variant('asan-ubuntu-ubuntu1404',
@@ -550,7 +551,7 @@ all_variants = [
             ['.debug-compile .asan-clang !.client-side-encryption',
              '.test-asan .3.0'],
             {'CC': 'clang'},
-            batchtime=1440),
+            batchtime=days(1)),
     Variant ('clang60ubuntu', 'clang 6.0 (Ubuntu 18.04)', 'ubuntu1804-test', [
         'debug-compile-aws',
         'test-aws-openssl-regular',
@@ -569,7 +570,7 @@ all_variants = [
         'test-latest-replica-set-auth-sasl-openssl'
         ],
         { 'CC': 'gcc' },
-        batchtime=1440),
+        batchtime=days(1)),
     Variant ('ocsp', 'OCSP tests', 'ubuntu1804-test', [
         OD([('name', 'debug-compile-nosasl-openssl'), ('distros', ['ubuntu1804-test'])]),
         #OD([('name', 'debug-compile-nosasl-darwinssl'), ('distros', ['macos-1014'])]),
@@ -577,5 +578,9 @@ all_variants = [
         OD([('name', '.ocsp-openssl'), ('distros', ['ubuntu1804-test'])]),
         #OD([('name', '.ocsp-darwinssl'), ('distros', ['macos-1014'])]),
         OD([('name', '.ocsp-winssl'), ('distros', ['windows-64-vs2017-test'])])
-    ])
+    ], {}, batchtime=days(14)),
+    Variant ('packaging', 'Linux Distro Packaging', 'ubuntu1604-test', [
+        'debian-package-build',
+        OD([('name', 'rpm-package-build'), ('distros', ['rhel80-test'])]),
+    ], {}, batchtime=days(1))
 ]
