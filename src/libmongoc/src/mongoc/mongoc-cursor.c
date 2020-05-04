@@ -607,8 +607,8 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       if (cursor->state != DONE) {
          /* The only way to stop an exhaust cursor is to kill the connection
             */
-         mongoc_cluster_disconnect_node (
-            &cursor->client->cluster, cursor->server_id, false, NULL);
+         mongoc_cluster_disconnect_node (&cursor->client->cluster,
+                                         cursor->server_id);
       }
    } else if (cursor->client_generation == cursor->client->generation) {
       if (cursor->cursor_id) {

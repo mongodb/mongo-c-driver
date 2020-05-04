@@ -28,28 +28,24 @@ skip_if_mongos (void)
 }
 
 
-static int64_t
-get_timestamp (mongoc_client_t *client, mongoc_cursor_t *cursor)
+static uint32_t
+get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
 {
    uint32_t server_id;
+   uint32_t generation;
+   mongoc_server_description_t *sd;
+   bson_error_t error;
 
    server_id = mongoc_cursor_get_hint (cursor);
 
-   if (client->topology->single_threaded) {
-      mongoc_topology_scanner_node_t *scanner_node;
+   bson_mutex_lock (&client->topology->mutex);
+   sd = mongoc_topology_description_server_by_id (
+      &client->topology->description, server_id, &error);
+   ASSERT_OR_PRINT (sd, error);
+   generation = sd->generation;
+   bson_mutex_unlock (&client->topology->mutex);
 
-      scanner_node = mongoc_topology_scanner_get_node (
-         client->topology->scanner, server_id);
-
-      return scanner_node->timestamp;
-   } else {
-      mongoc_cluster_node_t *cluster_node;
-
-      cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (
-         client->cluster.nodes, server_id);
-
-      return cluster_node->timestamp;
-   }
+   return generation;
 }
 
 
@@ -72,7 +68,7 @@ test_exhaust_cursor (bool pooled)
    uint32_t server_id;
    bson_error_t error;
    bson_oid_t oid;
-   int64_t timestamp1;
+   int64_t generation1;
 
    if (pooled) {
       pool = test_framework_client_pool_new ();
@@ -137,8 +133,8 @@ test_exhaust_cursor (bool pooled)
       BSON_ASSERT (cursor->in_exhaust);
       BSON_ASSERT (client->in_exhaust);
 
-      /* destroy the cursor, make sure a disconnect happened */
-      timestamp1 = get_timestamp (client, cursor);
+      /* destroy the cursor, make sure the connection pool was not cleared */
+      generation1 = get_generation (client, cursor);
       mongoc_cursor_destroy (cursor);
       BSON_ASSERT (!client->in_exhaust);
    }
@@ -160,7 +156,7 @@ test_exhaust_cursor (bool pooled)
       }
       BSON_ASSERT (r);
       BSON_ASSERT (doc);
-      ASSERT_CMPINT64 (timestamp1, <, get_timestamp (client, cursor2));
+      ASSERT_CMPINT64 (generation1, ==, get_generation (client, cursor2));
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next (cursor2, &doc);

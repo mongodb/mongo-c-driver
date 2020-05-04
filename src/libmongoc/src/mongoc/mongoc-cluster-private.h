@@ -43,14 +43,14 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_cluster_node_t {
    mongoc_stream_t *stream;
    char *connection_address;
+   uint32_t generation;
 
+   /* TODO CDRIVER-3653, these fields are unused. */
    int32_t max_wire_version;
    int32_t min_wire_version;
    int32_t max_write_batch_size;
    int32_t max_bson_obj_size;
    int32_t max_msg_size;
-
-   int64_t timestamp;
 } mongoc_cluster_node_t;
 
 typedef struct _mongoc_cluster_t {
@@ -79,10 +79,7 @@ void
 mongoc_cluster_destroy (mongoc_cluster_t *cluster);
 
 void
-mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster,
-                                uint32_t id,
-                                bool invalidate,
-                                const bson_error_t *why);
+mongoc_cluster_disconnect_node (mongoc_cluster_t *cluster, uint32_t id);
 
 int32_t
 mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster);

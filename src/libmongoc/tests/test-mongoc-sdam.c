@@ -61,6 +61,30 @@ _topology_has_description (mongoc_topology_description_t *topology,
          }
 
          ASSERT_CMPOID (&sd->election_id, &expected_oid);
+      } else if (strcmp ("topologyVersion", bson_iter_key (&server_iter)) ==
+                 0) {
+         bson_t expected_topology_version;
+
+         if (BSON_ITER_HOLDS_NULL (&server_iter)) {
+            bson_init (&expected_topology_version);
+         } else {
+            ASSERT (BSON_ITER_HOLDS_DOCUMENT (&server_iter));
+            bson_lookup_doc (
+               server, "topologyVersion", &expected_topology_version);
+         }
+
+         assert_match_bson (
+            &sd->topology_version, &expected_topology_version, false);
+         bson_destroy (&expected_topology_version);
+      } else if (strcmp ("pool", bson_iter_key (&server_iter)) == 0) {
+         bson_iter_t iter;
+         uint32_t expected_generation;
+
+         BSON_ASSERT (bson_iter_recurse (&server_iter, &iter));
+         BSON_ASSERT (bson_iter_find (&iter, "generation") &&
+                      BSON_ITER_HOLDS_INT32 (&iter));
+         expected_generation = bson_iter_int32 (&iter);
+         ASSERT_CMPINT32 (expected_generation, ==, sd->generation);
       } else {
          fprintf (
             stderr, "ERROR: unparsed field %s\n", bson_iter_key (&server_iter));
@@ -107,7 +131,7 @@ test_sdam_cb (bson_t *test)
    while (bson_iter_next (&phase_iter)) {
       bson_iter_bson (&phase_iter, &phase);
 
-      process_sdam_test_ismaster_responses (&phase, td);
+      process_sdam_test_ismaster_responses (&phase, client->topology);
 
       /* parse out "outcome" and validate */
       BSON_ASSERT (bson_iter_init_find (&phase_field_iter, &phase, "outcome"));
@@ -218,6 +242,10 @@ test_all_spec_tests (TestSuite *suite)
       realpath (JSON_DIR "/server_discovery_and_monitoring/sharded", resolved));
    install_json_test_suite (suite, resolved, &test_sdam_cb);
 
+   ASSERT (
+      realpath (JSON_DIR "/server_discovery_and_monitoring/errors", resolved));
+   install_json_test_suite (suite, resolved, &test_sdam_cb);
+
    /* Tests not in official Server Discovery And Monitoring Spec */
    ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/supplemental",
                      resolved));
@@ -249,9 +277,9 @@ test_topology_discovery (void *ctx)
    test_framework_set_ssl_opts (client);
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    sd_secondary = mongoc_client_select_server (client,
-                                     false, /* for reads */
-                                     prefs,
-                                     &error);
+                                               false, /* for reads */
+                                               prefs,
+                                               &error);
    ASSERT_OR_PRINT (sd_secondary, error);
    hl_secondary = mongoc_server_description_host (sd_secondary);
 
@@ -262,8 +290,8 @@ test_topology_discovery (void *ctx)
     *
     * Outcome: Verify that the write succeeded. */
    bson_free (uri_str);
-   uri_str = bson_strdup_printf (
-      "mongodb://%s/?directConnection=false", hl_secondary->host_and_port);
+   uri_str = bson_strdup_printf ("mongodb://%s/?directConnection=false",
+                                 hl_secondary->host_and_port);
    uri_str_auth = test_framework_add_user_password_from_env (uri_str);
 
    mongoc_client_destroy (client);
@@ -314,9 +342,9 @@ test_direct_connection (void *ctx)
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    sd_secondary = mongoc_client_select_server (client,
-                                     false, /* for reads */
-                                     prefs,
-                                     &error);
+                                               false, /* for reads */
+                                               prefs,
+                                               &error);
    ASSERT_OR_PRINT (sd_secondary, error);
    hl_secondary = mongoc_server_description_host (sd_secondary);
 
@@ -327,8 +355,8 @@ test_direct_connection (void *ctx)
     *
     * Outcome: Verify that the write failed with a NotMaster error. */
    bson_free (uri_str);
-   uri_str = bson_strdup_printf (
-      "mongodb://%s/?directConnection=true", hl_secondary->host_and_port);
+   uri_str = bson_strdup_printf ("mongodb://%s/?directConnection=true",
+                                 hl_secondary->host_and_port);
    uri_str_auth = test_framework_add_user_password_from_env (uri_str);
 
    mongoc_client_destroy (client);
@@ -379,9 +407,9 @@ test_existing_behavior (void *ctx)
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    sd_secondary = mongoc_client_select_server (client,
-                                     false, /* for reads */
-                                     prefs,
-                                     &error);
+                                               false, /* for reads */
+                                               prefs,
+                                               &error);
    ASSERT_OR_PRINT (sd_secondary, error);
    hl_secondary = mongoc_server_description_host (sd_secondary);
 
@@ -393,8 +421,7 @@ test_existing_behavior (void *ctx)
     * Outcome: Verify that the write succeeded or failed depending on existing
     * driver behavior with respect to the starting topology. */
    bson_free (uri_str);
-   uri_str = bson_strdup_printf (
-      "mongodb://%s/", hl_secondary->host_and_port);
+   uri_str = bson_strdup_printf ("mongodb://%s/", hl_secondary->host_and_port);
    uri_str_auth = test_framework_add_user_password_from_env (uri_str);
 
    mongoc_client_destroy (client);
@@ -423,25 +450,22 @@ void
 test_sdam_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_AddFull (
-      suite,
-      "/server_discovery_and_monitoring/topology/discovery",
-      test_topology_discovery,
-      NULL /* dtor */,
-      NULL /* ctx */,
-      test_framework_skip_if_not_replset);
-   TestSuite_AddFull (
-      suite,
-      "/server_discovery_and_monitoring/directconnection",
-      test_direct_connection,
-      NULL /* dtor */,
-      NULL /* ctx */,
-      test_framework_skip_if_not_replset);
-   TestSuite_AddFull (
-      suite,
-      "/server_discovery_and_monitoring/existing/behavior",
-      test_existing_behavior,
-      NULL /* dtor */,
-      NULL /* ctx */,
-      test_framework_skip_if_not_replset);
+   TestSuite_AddFull (suite,
+                      "/server_discovery_and_monitoring/topology/discovery",
+                      test_topology_discovery,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_not_replset);
+   TestSuite_AddFull (suite,
+                      "/server_discovery_and_monitoring/directconnection",
+                      test_direct_connection,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_not_replset);
+   TestSuite_AddFull (suite,
+                      "/server_discovery_and_monitoring/existing/behavior",
+                      test_existing_behavior,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_not_replset);
 }

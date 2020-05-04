@@ -438,20 +438,17 @@ test_invalid_cluster_node (void *ctx)
 {
    mongoc_client_pool_t *pool;
    mongoc_cluster_node_t *cluster_node;
-   mongoc_topology_scanner_node_t *scanner_node;
    bson_error_t error;
    mongoc_client_t *client;
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
-   int64_t scanner_node_ts;
    uint32_t id;
+   mongoc_server_description_t *sd;
 
    /* use client pool, this test is only valid when multi-threaded */
    pool = test_framework_client_pool_new ();
    client = mongoc_client_pool_pop (pool);
    cluster = &client->cluster;
-
-   _mongoc_usleep (100 * 1000);
 
    /* load stream into cluster */
    server_stream = mongoc_cluster_stream_for_reads (
@@ -465,24 +462,23 @@ test_invalid_cluster_node (void *ctx)
    BSON_ASSERT (cluster_node->stream);
 
    bson_mutex_lock (&client->topology->mutex);
-   scanner_node =
-      mongoc_topology_scanner_get_node (client->topology->scanner, id);
-   BSON_ASSERT (scanner_node);
-   ASSERT_CMPINT64 (cluster_node->timestamp, >, scanner_node->timestamp);
+   sd = mongoc_topology_description_server_by_id (
+      &client->topology->description, id, &error);
+   ASSERT_OR_PRINT (sd, error);
+   /* Both generations match, and are the first generation. */
+   ASSERT_CMPINT32 (cluster_node->generation, ==, 0);
+   ASSERT_CMPINT32 (sd->generation, ==, 0);
 
-   /* update the scanner node's timestamp */
-   _mongoc_usleep (1000 * 1000);
-   scanner_node_ts = scanner_node->timestamp = bson_get_monotonic_time ();
-   ASSERT_CMPINT64 (cluster_node->timestamp, <, scanner_node_ts);
-   _mongoc_usleep (1000 * 1000);
+   /* update the server's generation, simulating a connection pool clearing */
+   sd->generation++;
    bson_mutex_unlock (&client->topology->mutex);
 
-   /* cluster discards node and creates new one */
+   /* cluster discards node and creates new one with the current generation */
    server_stream = mongoc_cluster_stream_for_server (
       &client->cluster, id, true, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (cluster->nodes, id);
-   ASSERT_CMPINT64 (cluster_node->timestamp, >, scanner_node_ts);
+   ASSERT_CMPINT64 (cluster_node->generation, ==, 1);
 
    mongoc_server_stream_cleanup (server_stream);
    mongoc_client_pool_push (pool, client);
@@ -492,7 +488,6 @@ test_invalid_cluster_node (void *ctx)
 static void
 test_max_wire_version_race_condition (void *ctx)
 {
-   mongoc_topology_scanner_node_t *scanner_node;
    mongoc_server_description_t *sd;
    mongoc_database_t *database;
    mongoc_client_pool_t *pool;
@@ -529,14 +524,12 @@ test_max_wire_version_race_condition (void *ctx)
    id = server_stream->sd->id;
    mongoc_server_stream_cleanup (server_stream);
 
-   /* "disconnect": invalidate timestamp and reset server description */
-   scanner_node =
-      mongoc_topology_scanner_get_node (client->topology->scanner, id);
-   BSON_ASSERT (scanner_node);
-   scanner_node->timestamp = bson_get_monotonic_time ();
+   /* "disconnect": increment generation and reset server description */
+
    sd = (mongoc_server_description_t *) mongoc_set_get (
       client->topology->description.servers, id);
    BSON_ASSERT (sd);
+   sd->generation++;
    mongoc_server_description_reset (sd);
 
    /* new stream, ensure that we can still auth with cached wire version */
@@ -1013,8 +1006,7 @@ _test_server_removed_during_handshake (bool pooled)
                               mock_server_get_host_and_port (server));
 
    /* pretend to close a connection. does NOT affect server description yet */
-   mongoc_cluster_disconnect_node (
-      &client->cluster, 1, false /* invalidate */, NULL);
+   mongoc_cluster_disconnect_node (&client->cluster, 1);
    sd = mongoc_client_get_server_description (client, 1);
    /* still primary */
    ASSERT_CMPINT ((int) MONGOC_SERVER_RS_PRIMARY, ==, sd->type);
@@ -1666,8 +1658,7 @@ test_cluster_time_updated_during_handshake ()
                               cluster_time);
 
    /* remove the node from the cluster to trigger an ismaster handshake. */
-   mongoc_cluster_disconnect_node (
-      &client->cluster, 1, false /* invalidate */, NULL);
+   mongoc_cluster_disconnect_node (&client->cluster, 1);
 
    /* opens new stream and does an ismaster handshake (in pooled mode only). */
    r = mongoc_client_command_simple (

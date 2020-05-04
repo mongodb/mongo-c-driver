@@ -6,6 +6,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
+#include "mongoc/mongoc-error-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -133,6 +134,41 @@ test_has_label (void)
    BSON_ASSERT (!mongoc_error_has_label (tmp_bson ("{}"), "foo"));
 }
 
+static void
+test_state_change (void)
+{
+   bson_error_t error;
+   uint32_t not_master_codes[] = {10107, 13435};
+   uint32_t node_is_recovering_codes[] = {11600, 11602, 13436, 189, 91};
+   uint32_t shutdown_codes[] = {11600, 91};
+   int i;
+
+   memset (&error, 0, sizeof (bson_error_t));
+
+   for (i = 0; i < sizeof (not_master_codes) / sizeof (uint32_t); i++) {
+      error.code = not_master_codes[i];
+      BSON_ASSERT (_mongoc_error_is_not_master (&error));
+      BSON_ASSERT (_mongoc_error_is_state_change (&error));
+   }
+   for (i = 0; i < sizeof (node_is_recovering_codes) / sizeof (uint32_t); i++) {
+      error.code = node_is_recovering_codes[i];
+      BSON_ASSERT (_mongoc_error_is_state_change (&error));
+   }
+   for (i = 0; i < sizeof (shutdown_codes) / sizeof (uint32_t); i++) {
+      error.code = shutdown_codes[i];
+      BSON_ASSERT (_mongoc_error_is_shutdown (&error));
+   }
+
+   error.code = 123;
+   bson_strncpy (error.message, "... not master ...", sizeof (error.message));
+   BSON_ASSERT (_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (_mongoc_error_is_state_change (&error));
+
+   bson_strncpy (
+      error.message, "... node is recovering ...", sizeof (error.message));
+   BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (_mongoc_error_is_state_change (&error));
+}
 
 void
 test_error_install (TestSuite *suite)
@@ -148,4 +184,5 @@ test_error_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/Error/command/v2", test_command_error_v2);
    TestSuite_Add (suite, "/Error/has_label", test_has_label);
+   TestSuite_Add (suite, "/Error/state_change", test_state_change);
 }

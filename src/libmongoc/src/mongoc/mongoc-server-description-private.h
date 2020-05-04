@@ -97,6 +97,17 @@ struct _mongoc_server_description_t {
 
    bson_t compressors;
    bson_t topology_version;
+   /*
+   The generation is incremented every time connections to this server should be
+   invalidated.
+   This happens when:
+   1. a monitor receives a network error
+   2. an app thread receives any network error before completing a handshake
+   3. an app thread receives a non-timeout network error after the handshake
+   4. an app thread receives a "not master" or "node is recovering" error in a
+   pre-4.2 server.
+   */
+   uint32_t generation;
 };
 
 void
@@ -163,5 +174,9 @@ _mongoc_server_description_equal (mongoc_server_description_t *sd1,
 int
 mongoc_server_description_topology_version_cmp (const bson_t *tv1,
                                                 const bson_t *tv2);
+
+void
+mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
+                                                const bson_t *tv);
 
 #endif

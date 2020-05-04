@@ -68,7 +68,7 @@ server_description_by_hostname (mongoc_topology_description_t *topology,
 
 void
 process_sdam_test_ismaster_responses (bson_t *phase,
-                                      mongoc_topology_description_t *td);
+                                      mongoc_topology_t *topology);
 
 void
 test_server_selection_logic_cb (bson_t *test);

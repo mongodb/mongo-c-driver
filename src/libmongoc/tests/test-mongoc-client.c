@@ -519,8 +519,7 @@ test_mongoc_client_authenticate_cached (bool pooled)
       mongoc_cursor_destroy (cursor);
 
       if (pooled) {
-         mongoc_cluster_disconnect_node (
-            &client->cluster, server_id, false /* invalidate */, NULL);
+         mongoc_cluster_disconnect_node (&client->cluster, server_id);
       } else {
          scanner_node = mongoc_topology_scanner_get_node (
             client->topology->scanner, server_id);
@@ -3369,7 +3368,7 @@ _test_null_error_pointer (bool pooled)
    /* disconnect */
    mock_server_destroy (server);
    if (pooled) {
-      mongoc_cluster_disconnect_node (&client->cluster, 1, false, NULL);
+      mongoc_cluster_disconnect_node (&client->cluster, 1);
    } else {
       mongoc_topology_scanner_node_t *scanner_node;
 

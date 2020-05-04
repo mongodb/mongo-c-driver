@@ -43,4 +43,16 @@ _mongoc_write_error_handle_labels (bool cmd_ret,
                                    bson_t *reply,
                                    int32_t server_max_wire_version);
 
+bool
+_mongoc_error_is_shutdown (bson_error_t *error);
+
+bool
+_mongoc_error_is_not_master (bson_error_t *error);
+
+bool
+_mongoc_error_is_state_change (bson_error_t *error);
+
+bool
+_mongoc_error_is_network (const bson_error_t *error);
+
 BSON_END_DECLS

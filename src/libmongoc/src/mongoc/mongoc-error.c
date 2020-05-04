@@ -112,9 +112,7 @@ _mongoc_write_error_handle_labels (bool cmd_ret,
    bson_error_t error;
 
    /* check for a client error. */
-   if (!cmd_ret && (cmd_err->domain == MONGOC_ERROR_STREAM ||
-                    (cmd_err->domain == MONGOC_ERROR_PROTOCOL &&
-                     cmd_err->code == MONGOC_ERROR_PROTOCOL_INVALID_REPLY))) {
+   if (!cmd_ret && _mongoc_error_is_network (cmd_err)) {
       /* Retryable writes spec: When the driver encounters a network error
        * communicating with any server version that supports retryable
        * writes, it MUST add a RetryableWriteError label to that error. */
@@ -162,7 +160,7 @@ _mongoc_read_error_get_type (bool cmd_ret,
    bson_error_t error;
 
    /* check for a client error. */
-   if (!cmd_ret && cmd_err && cmd_err->domain == MONGOC_ERROR_STREAM) {
+   if (!cmd_ret && cmd_err && _mongoc_error_is_network (cmd_err)) {
       /* Retryable reads spec: "considered retryable if [...] any network
        * exception (e.g. socket timeout or error) */
       return MONGOC_READ_ERR_RETRY;
@@ -225,4 +223,72 @@ _mongoc_error_copy_labels_and_upsert (const bson_t *src,
    }
 
    bson_append_array_end (dst, &dst_labels);
+}
+
+/* Defined in SDAM spec under "Application Errors".
+ * @error should have been obtained from a command reply, e.g. with
+ * _mongoc_cmd_check_ok.
+ */
+bool
+_mongoc_error_is_shutdown (bson_error_t *error)
+{
+   switch (error->code) {
+   case 11600: /* InterruptedAtShutdown */
+   case 91:    /* ShutdownInProgress */
+      return true;
+   default:
+      return false;
+   }
+}
+
+bool
+_mongoc_error_is_not_master (bson_error_t *error)
+{
+   switch (error->code) {
+   case 10107: /* NotMaster */
+   case 13435: /* NotMasterNoSlaveOk */
+      return true;
+   default:
+      return NULL != strstr (error->message, "not master");
+   }
+}
+
+static bool
+_error_is_recovering (bson_error_t *error)
+{
+   switch (error->code) {
+   case 11600: /* InterruptedAtShutdown */
+   case 11602: /* InterruptedDueToReplStateChange */
+   case 13436: /* NotMasterOrSecondary */
+   case 189:   /* PrimarySteppedDown */
+   case 91:    /* ShutdownInProgress */
+      return true;
+   default:
+      return NULL != strstr (error->message, "not master or secondary") ||
+             NULL != strstr (error->message, "node is recovering");
+   }
+}
+
+bool
+_mongoc_error_is_state_change (bson_error_t *error)
+{
+   return _error_is_recovering (error) || _mongoc_error_is_not_master (error);
+}
+
+bool
+_mongoc_error_is_network (const bson_error_t *error)
+{
+   if (!error) {
+      return false;
+   }
+   if (error->domain == MONGOC_ERROR_STREAM) {
+      return true;
+   }
+
+   if (error->domain == MONGOC_ERROR_PROTOCOL &&
+       error->code == MONGOC_ERROR_PROTOCOL_INVALID_REPLY) {
+      return true;
+   }
+
+   return false;
 }
