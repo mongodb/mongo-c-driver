@@ -489,8 +489,7 @@ test_sdam_monitoring_cb (bson_t *test)
          bson_reinit (&context.events);
          context.n_events = 0;
       }
-      process_sdam_test_ismaster_responses (&phase,
-                                            &client->topology->description);
+      process_sdam_test_ismaster_responses (&phase, client->topology);
 
       /* parse out "outcome" and validate */
       BSON_ASSERT (bson_iter_init_find (&phase_field_iter, &phase, "outcome"));

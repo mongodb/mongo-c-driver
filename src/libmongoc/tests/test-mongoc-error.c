@@ -6,6 +6,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "mock_server/mock-server.h"
+#include "mongoc/mongoc-error-private.h"
 
 
 #undef MONGOC_LOG_DOMAIN
@@ -133,6 +134,83 @@ test_has_label (void)
    BSON_ASSERT (!mongoc_error_has_label (tmp_bson ("{}"), "foo"));
 }
 
+static void
+test_state_change_helper (uint32_t domain, bool expect_error)
+{
+   bson_error_t error;
+   mongoc_server_err_t not_master_codes[] = {
+      MONGOC_SERVER_ERR_NOTMASTER, MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK};
+   mongoc_server_err_t node_is_recovering_codes[] = {
+      MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN,
+      MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE,
+      MONGOC_SERVER_ERR_NOTMASTERORSECONDARY,
+      MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN,
+      MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS};
+   mongoc_server_err_t shutdown_codes[] = {
+      MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN,
+      MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS};
+   int i;
+
+   MONGOC_DEBUG ("Checking domain = %d", domain);
+
+   memset (&error, 0, sizeof (bson_error_t));
+   error.domain = domain;
+
+   for (i = 0; i < sizeof (not_master_codes) / sizeof (mongoc_server_err_t);
+        i++) {
+      error.code = not_master_codes[i];
+      BSON_ASSERT (expect_error == _mongoc_error_is_not_master (&error));
+      BSON_ASSERT (!_mongoc_error_is_recovering (&error));
+      BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
+      BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
+   }
+   for (i = 0;
+        i < sizeof (node_is_recovering_codes) / sizeof (mongoc_server_err_t);
+        i++) {
+      error.code = node_is_recovering_codes[i];
+      BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+      BSON_ASSERT (expect_error == _mongoc_error_is_recovering (&error));
+      BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
+   }
+   for (i = 0; i < sizeof (shutdown_codes) / sizeof (mongoc_server_err_t);
+        i++) {
+      error.code = shutdown_codes[i];
+      BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+      /* Shutdown errors are a subset of recovering errors. */
+      BSON_ASSERT (expect_error == _mongoc_error_is_recovering (&error));
+      BSON_ASSERT (expect_error == _mongoc_error_is_shutdown (&error));
+      BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
+   }
+
+   error.code = 123;
+   bson_strncpy (error.message, "... not master ...", sizeof (error.message));
+   BSON_ASSERT (expect_error == _mongoc_error_is_not_master (&error));
+   BSON_ASSERT (!_mongoc_error_is_recovering (&error));
+   BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
+   BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
+
+   bson_strncpy (
+      error.message, "... node is recovering ...", sizeof (error.message));
+   BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (expect_error == _mongoc_error_is_recovering (&error));
+   BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
+   BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
+
+   bson_strncpy (
+      error.message, "... not master or secondary ...", sizeof (error.message));
+   BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (expect_error == _mongoc_error_is_recovering (&error));
+   BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
+   BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
+}
+
+static void
+test_state_change (void)
+{
+   test_state_change_helper (MONGOC_ERROR_SERVER, true);
+   test_state_change_helper (MONGOC_ERROR_WRITE_CONCERN, true);
+   test_state_change_helper (MONGOC_ERROR_QUERY, false);
+}
 
 void
 test_error_install (TestSuite *suite)
@@ -148,4 +226,5 @@ test_error_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/Error/command/v2", test_command_error_v2);
    TestSuite_Add (suite, "/Error/has_label", test_has_label);
+   TestSuite_Add (suite, "/Error/state_change", test_state_change);
 }

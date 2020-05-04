@@ -29,6 +29,7 @@
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-trace-private.h"
+#include "mongoc-error-private.h"
 
 #include "utlist.h"
 
@@ -155,6 +156,13 @@ _mongoc_topology_scanner_cb (uint32_t id,
    bson_mutex_lock (&topology->mutex);
    sd = mongoc_topology_description_server_by_id (
       &topology->description, id, NULL);
+
+   if (!ismaster_response) {
+      /* Server monitoring: When a server check fails due to a network error
+       * (including a network timeout), the client MUST clear its connection
+       * pool for the server */
+      _mongoc_topology_clear_connection_pool (topology, id);
+   }
 
    /* Server Discovery and Monitoring Spec: "Once a server is connected, the
     * client MUST change its type to Unknown only after it has retried the
@@ -1228,38 +1236,6 @@ _mongoc_topology_update_last_used (mongoc_topology_t *topology,
    }
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_topology_server_timestamp --
- *
- *      Return the topology's scanner's timestamp for the given server,
- *      or -1 if there is no scanner node for the given server.
- *
- *      NOTE: this method uses @topology's mutex.
- *
- * Returns:
- *      Timestamp, or -1
- *
- *--------------------------------------------------------------------------
- */
-int64_t
-mongoc_topology_server_timestamp (mongoc_topology_t *topology, uint32_t id)
-{
-   mongoc_topology_scanner_node_t *node;
-   int64_t timestamp = -1;
-
-   bson_mutex_lock (&topology->mutex);
-
-   node = mongoc_topology_scanner_get_node (topology->scanner, id);
-   if (node) {
-      timestamp = node->timestamp;
-   }
-
-   bson_mutex_unlock (&topology->mutex);
-
-   return timestamp;
-}
 
 /*
  *--------------------------------------------------------------------------
@@ -1735,4 +1711,163 @@ _mongoc_topology_bypass_cooldown (mongoc_topology_t *topology)
 {
    BSON_ASSERT (topology->single_threaded);
    topology->scanner->bypass_cooldown = true;
+}
+
+static void
+_find_topology_version (const bson_t *reply, bson_t *topology_version)
+{
+   bson_iter_t iter;
+   const uint8_t *bytes;
+   uint32_t len;
+
+   if (!bson_iter_init_find (&iter, reply, "topologyVersion") ||
+       !BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      bson_init (topology_version);
+      return;
+   }
+   bson_iter_document (&iter, &len, &bytes);
+   bson_init_static (topology_version, bytes, len);
+}
+
+
+/* "Clears" the connection pool by incrementing the generation.
+ *
+ * Pooled clients with open connections will discover the invalidation
+ * the next time they fetch a stream to the server.
+ *
+ * Caller must lock topology->mutex. */
+void
+_mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
+                                        uint32_t server_id)
+{
+   mongoc_server_description_t *sd;
+   bson_error_t error;
+
+   sd = mongoc_topology_description_server_by_id (
+      &topology->description, server_id, &error);
+   if (!sd) {
+      /* Server removed, ignore and ignore error. */
+      return;
+   }
+   TRACE ("clearing pool for server: %s", sd->host.host_and_port);
+   sd->generation++;
+}
+
+
+/* Handle an error from an app connection.
+ *
+ * This can be a network error or "not master" / "node is recovering" error.
+ * Caller must lock topology->mutex.
+ * Returns true if pool was cleared.
+ */
+bool
+_mongoc_topology_handle_app_error (mongoc_topology_t *topology,
+                                   uint32_t server_id,
+                                   bool handshake_complete,
+                                   _mongoc_sdam_app_error_type_t type,
+                                   const bson_t *reply,
+                                   const bson_error_t *why,
+                                   uint32_t max_wire_version,
+                                   uint32_t generation)
+{
+   bson_error_t server_selection_error;
+   mongoc_server_description_t *sd;
+   bool pool_cleared;
+
+   pool_cleared = false;
+   sd = mongoc_topology_description_server_by_id (
+      &topology->description, server_id, &server_selection_error);
+   if (!sd) {
+      /* The server was already removed from the topology. Ignore error. */
+      return false;
+   }
+
+   if (generation < sd->generation) {
+      /* This is a stale connection. Ignore. */
+      return false;
+   }
+
+   if (type == MONGOC_SDAM_APP_ERROR_NETWORK) {
+      /* Mark server as unknown. */
+      mongoc_topology_description_invalidate_server (
+         &topology->description, server_id, why);
+      _mongoc_topology_clear_connection_pool (topology, server_id);
+      pool_cleared = true;
+   } else if (type == MONGOC_SDAM_APP_ERROR_TIMEOUT) {
+      if (handshake_complete) {
+         /* Timeout errors after handshake are ok, do nothing. */
+         return false;
+      }
+      /* Mark server as unknown. */
+      mongoc_topology_description_invalidate_server (
+         &topology->description, server_id, why);
+      _mongoc_topology_clear_connection_pool (topology, server_id);
+      pool_cleared = true;
+   } else if (type == MONGOC_SDAM_APP_ERROR_COMMAND) {
+      bson_error_t cmd_error;
+      bson_t incoming_topology_version;
+
+      if (_mongoc_cmd_check_ok_no_wce (
+             reply, MONGOC_ERROR_API_VERSION_2, &cmd_error)) {
+         /* No error. */
+         return false;
+      }
+
+      if (!_mongoc_error_is_state_change (&cmd_error)) {
+         /* Not a "not master" or "node is recovering" error. */
+         return false;
+      }
+
+      /* Check if the error is "stale", i.e. the topologyVersion refers to an
+      * older
+      * version of the server than we have stored in the topology description.
+      */
+      _find_topology_version (reply, &incoming_topology_version);
+      if (mongoc_server_description_topology_version_cmp (
+             &sd->topology_version, &incoming_topology_version) >= 0) {
+         /* The server description is greater or equal, ignore the error. */
+         bson_destroy (&incoming_topology_version);
+         return false;
+      }
+      /* Overwrite the topology version. */
+      mongoc_server_description_set_topology_version (
+         sd, &incoming_topology_version);
+      bson_destroy (&incoming_topology_version);
+
+      /* SDAM: When handling a "not master" or "node is recovering" error, the
+       * client MUST clear the server's connection pool if and only if the error
+       * is "node is shutting down" or the error originated from server version
+       * < 4.2.
+       */
+      if (max_wire_version <= WIRE_VERSION_4_0 ||
+          _mongoc_error_is_shutdown (&cmd_error)) {
+         _mongoc_topology_clear_connection_pool (topology, server_id);
+         pool_cleared = true;
+      }
+
+      /* SDAM: When the client sees a "not master" or "node is recovering" error
+       * and the error's topologyVersion is strictly greater than the current
+       * ServerDescription's topologyVersion it MUST replace the server's
+       * description with a ServerDescription of type Unknown. */
+      mongoc_topology_description_invalidate_server (
+         &topology->description, server_id, &cmd_error);
+
+      if (topology->single_threaded) {
+         /* SDAM: For single-threaded clients, in the case of a "not master" or
+          * "node is shutting down" error, the client MUST mark the topology as
+          * "stale"
+          */
+         if (_mongoc_error_is_not_master (&cmd_error)) {
+            topology->stale = true;
+         }
+      } else {
+         /* SDAM Spec: "Multi-threaded and asynchronous clients MUST request an
+          * immediate check of the server."
+          * Instead of requesting a check of the one server, request a scan
+          * to all servers (to find the new primary).
+          */
+         _mongoc_topology_request_scan (topology);
+      }
+   }
+   return pool_cleared;
 }
