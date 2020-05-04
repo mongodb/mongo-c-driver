@@ -89,6 +89,23 @@ BSON_BEGIN_DECLS
                   (int) _l);                              \
       mongoc_log_trace_bytes (MONGOC_LOG_DOMAIN, _b, _l); \
    } while (0)
+#define DUMP_BSON(_bson)                                            \
+   do {                                                             \
+      char *_bson_str;                                              \
+      if (_bson) {                                                  \
+         _bson_str = bson_as_canonical_extended_json (_bson, NULL); \
+      } else {                                                      \
+         _bson_str = bson_strdup ("<NULL>");                        \
+      }                                                             \
+      mongoc_log (MONGOC_LOG_LEVEL_TRACE,                           \
+                  MONGOC_LOG_DOMAIN,                                \
+                  "TRACE: %s():%d %s = %s",                         \
+                  BSON_FUNC,                                        \
+                  __LINE__,                                         \
+                  #_bson,                                           \
+                  _bson_str);                                       \
+      bson_free (_bson_str);                                        \
+   } while (0)
 #define DUMP_IOVEC(_n, _iov, _iovcnt)                            \
    do {                                                          \
       mongoc_log (MONGOC_LOG_LEVEL_TRACE,                        \
@@ -109,6 +126,7 @@ BSON_BEGIN_DECLS
 #define GOTO(label) goto label
 #define DUMP_BYTES(_n, _b, _l)
 #define DUMP_IOVEC(_n, _iov, _iovcnt)
+#define DUMP_BSON(_bson)
 #endif
 
 

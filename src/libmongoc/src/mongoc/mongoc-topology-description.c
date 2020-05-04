@@ -1964,9 +1964,41 @@ mongoc_topology_description_handle_ismaster (
       prev_sd = mongoc_server_description_new_copy (sd);
    }
 
+   DUMP_BSON (ismaster_response);
    /* pass the current error in */
    mongoc_server_description_handle_ismaster (
       sd, ismaster_response, rtt_msec, error);
+
+   /* if the user specified a set_name in the connection string
+    * and they are in topology type single, check that the set name
+    * matches. */
+   if (topology->set_name && topology->type == MONGOC_TOPOLOGY_SINGLE) {
+      bool wrong_set_name = false;
+      bson_error_t set_name_err = {0};
+
+      if (!sd->set_name) {
+         wrong_set_name = true;
+         bson_set_error (&set_name_err,
+                         MONGOC_ERROR_SERVER_SELECTION,
+                         MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                         "no reported set name, but expected '%s'",
+                         topology->set_name);
+      } else if (0 != strcmp (sd->set_name, topology->set_name)) {
+         wrong_set_name = true;
+         bson_set_error (&set_name_err,
+                         MONGOC_ERROR_SERVER_SELECTION,
+                         MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                         "reported set name '%s' does not match '%s'",
+                         sd->set_name,
+                         topology->set_name);
+      }
+
+      if (wrong_set_name) {
+         /* Replace with unknown. */
+         TRACE ("wrong set name", NULL);
+         mongoc_server_description_handle_ismaster (sd, NULL, 0, &set_name_err);
+      }
+   }
 
    mongoc_topology_description_update_cluster_time (topology,
                                                     ismaster_response);
@@ -1980,12 +2012,12 @@ mongoc_topology_description_handle_ismaster (
    }
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
-      TRACE ("Transitioning to %s for %s",
+      TRACE ("Topology description %s handling server description %s",
              _mongoc_topology_description_type (topology),
              mongoc_server_description_type (sd));
       gSDAMTransitionTable[sd->type][topology->type](topology, sd);
    } else {
-      TRACE ("No transition entry to %s for %s",
+      TRACE ("Topology description %s ignoring server description %s",
              _mongoc_topology_description_type (topology),
              mongoc_server_description_type (sd));
    }
