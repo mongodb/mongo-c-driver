@@ -28,30 +28,44 @@ skip_if_mongos (void)
 }
 
 
-static int64_t
-get_timestamp (mongoc_client_t *client, mongoc_cursor_t *cursor)
+static uint32_t
+get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
 {
    uint32_t server_id;
+   uint32_t generation;
+   mongoc_server_description_t *sd;
+   bson_error_t error;
 
    server_id = mongoc_cursor_get_hint (cursor);
 
-   if (client->topology->single_threaded) {
-      mongoc_topology_scanner_node_t *scanner_node;
+   bson_mutex_lock (&client->topology->mutex);
+   sd = mongoc_topology_description_server_by_id (
+      &client->topology->description, server_id, &error);
+   ASSERT_OR_PRINT (sd, error);
+   generation = sd->generation;
+   bson_mutex_unlock (&client->topology->mutex);
 
-      scanner_node = mongoc_topology_scanner_get_node (
-         client->topology->scanner, server_id);
-
-      return scanner_node->timestamp;
-   } else {
-      mongoc_cluster_node_t *cluster_node;
-
-      cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (
-         client->cluster.nodes, server_id);
-
-      return cluster_node->timestamp;
-   }
+   return generation;
 }
 
+static uint32_t
+get_connection_count (mongoc_client_t *client)
+{
+   bson_error_t error;
+   bson_t cmd = BSON_INITIALIZER;
+   bson_t reply;
+   bool res;
+   int conns;
+
+   BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
+   res = mongoc_client_command_simple (client, "admin", &cmd, NULL, &reply, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   conns = bson_lookup_int32 (&reply, "connections.totalCreated");
+   bson_destroy (&cmd);
+   bson_destroy (&reply);
+   return conns;
+}
 
 static void
 test_exhaust_cursor (bool pooled)
@@ -72,8 +86,12 @@ test_exhaust_cursor (bool pooled)
    uint32_t server_id;
    bson_error_t error;
    bson_oid_t oid;
-   int64_t timestamp1;
+   int64_t generation1;
+   uint32_t connection_count1;
+   mongoc_client_t *audit_client;
+   bool can_check_connection_count;
 
+   can_check_connection_count = test_framework_max_wire_version_at_least (5);
    if (pooled) {
       pool = test_framework_client_pool_new ();
       client = mongoc_client_pool_pop (pool);
@@ -81,6 +99,9 @@ test_exhaust_cursor (bool pooled)
       client = test_framework_client_new ();
    }
    BSON_ASSERT (client);
+
+   /* Use a separate client to count connections. */
+   audit_client = test_framework_client_new ();
 
    collection = get_test_collection (client, "test_exhaust_cursor");
    BSON_ASSERT (collection);
@@ -137,14 +158,15 @@ test_exhaust_cursor (bool pooled)
       BSON_ASSERT (cursor->in_exhaust);
       BSON_ASSERT (client->in_exhaust);
 
-      /* destroy the cursor, make sure a disconnect happened */
-      timestamp1 = get_timestamp (client, cursor);
+      /* destroy the cursor, make sure the connection pool was not cleared */
+      generation1 = get_generation (client, cursor);
+      /* Getting the connection count requires a new enough server. */
+      if (can_check_connection_count) {
+         connection_count1 = get_connection_count (audit_client);
+      }
       mongoc_cursor_destroy (cursor);
       BSON_ASSERT (!client->in_exhaust);
    }
-
-   /* ensure even a 1 ms-resolution clock advances significantly */
-   _mongoc_usleep (1000 * 1000);
 
    /* Grab a new exhaust cursor, then verify that reading from that cursor
     * (putting the client into exhaust), breaks a mid-stream read from a
@@ -160,7 +182,12 @@ test_exhaust_cursor (bool pooled)
       }
       BSON_ASSERT (r);
       BSON_ASSERT (doc);
-      ASSERT_CMPINT64 (timestamp1, <, get_timestamp (client, cursor2));
+      /* The pool was not cleared. */
+      ASSERT_CMPINT64 (generation1, ==, get_generation (client, cursor2));
+      /* But a new connection was made. */
+      if (can_check_connection_count) {
+         ASSERT_CMPINT32 (connection_count1 + 1, ==, get_connection_count (audit_client));
+      }
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next (cursor2, &doc);
@@ -256,6 +283,7 @@ test_exhaust_cursor (bool pooled)
    } else {
       mongoc_client_destroy (client);
    }
+   mongoc_client_destroy (audit_client);
 }
 
 static void

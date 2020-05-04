@@ -969,7 +969,6 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
    }
 
    node->has_auth = false;
-   node->timestamp = bson_get_monotonic_time ();
 }
 
 /*

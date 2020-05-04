@@ -50,8 +50,8 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
    bson_destroy (&sd->topology_version);
 }
 
-/* Reset fields inside this sd, but keep same id, host information, and RTT,
-   and leave ismaster in empty inited state */
+/* Reset fields inside this sd, but keep same id, host information, RTT,
+   generation, topology version, and leave ismaster in empty inited state */
 void
 mongoc_server_description_reset (mongoc_server_description_t *sd)
 {
@@ -80,14 +80,12 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    bson_destroy (&sd->arbiters);
    bson_destroy (&sd->tags);
    bson_destroy (&sd->compressors);
-   bson_destroy (&sd->topology_version);
 
    bson_init (&sd->hosts);
    bson_init (&sd->passives);
    bson_init (&sd->arbiters);
    bson_init (&sd->tags);
    bson_init (&sd->compressors);
-   bson_init (&sd->topology_version);
 
    sd->me = NULL;
    sd->current_primary = NULL;
@@ -537,6 +535,10 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
       ismaster_response, &sd->last_is_master, "speculativeAuthenticate", NULL);
    sd->has_is_master = true;
 
+   /* Only reinitialize the topology version if we have an ismaster response.
+    * Resetting a server description should not effect the topology version. */
+   bson_reinit (&sd->topology_version);
+
    BSON_ASSERT (bson_iter_init (&iter, &sd->last_is_master));
 
    while (bson_iter_next (&iter)) {
@@ -669,12 +671,17 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
          bson_destroy (&sd->compressors);
          BSON_ASSERT (bson_init_static (&sd->compressors, bytes, len));
       } else if (strcmp ("topologyVersion", bson_iter_key (&iter)) == 0) {
+         bson_t incoming_topology_version;
+
          if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
             goto failure;
          }
+
          bson_iter_document (&iter, &len, &bytes);
-         bson_destroy (&sd->topology_version);
-         bson_init_static (&sd->topology_version, bytes, len);
+         bson_init_static (&incoming_topology_version, bytes, len);
+         mongoc_server_description_set_topology_version (
+            sd, &incoming_topology_version);
+         bson_destroy (&incoming_topology_version);
       }
    }
 
@@ -749,7 +756,7 @@ mongoc_server_description_new_copy (
    bson_init (&copy->arbiters);
    bson_init (&copy->tags);
    bson_init (&copy->compressors);
-   bson_init (&copy->topology_version);
+   bson_copy_to (&description->topology_version, &copy->topology_version);
 
    if (description->has_is_master) {
       /* calls mongoc_server_description_reset */
@@ -764,6 +771,8 @@ mongoc_server_description_new_copy (
 
    /* Preserve the error */
    memcpy (&copy->error, &description->error, sizeof copy->error);
+
+   copy->generation = description->generation;
    return copy;
 }
 
@@ -1169,4 +1178,13 @@ mongoc_server_description_topology_version_cmp (const bson_t *tv1,
       return 1;
    }
    return 0;
+}
+
+void
+mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
+                                                const bson_t *tv)
+{
+   BSON_ASSERT (tv);
+   bson_destroy (&sd->topology_version);
+   bson_copy_to (tv, &sd->topology_version);
 }

@@ -51,7 +51,6 @@ typedef struct mongoc_topology_scanner_node {
    /* after scanning, this is set to the successful stream if one exists. */
    mongoc_stream_t *stream;
 
-   int64_t timestamp;
    int64_t last_used;
    int64_t last_failed;
    bool has_auth;

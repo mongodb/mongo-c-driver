@@ -176,47 +176,150 @@ server_description_by_hostname (mongoc_topology_description_t *topology,
  */
 void
 process_sdam_test_ismaster_responses (bson_t *phase,
-                                      mongoc_topology_description_t *td)
+                                      mongoc_topology_t *topology)
 {
+   mongoc_topology_description_t *td;
    mongoc_server_description_t *sd;
-   bson_t ismasters;
-   bson_t ismaster;
-   bson_t response;
    bson_iter_t phase_field_iter;
-   bson_iter_t ismaster_iter;
-   bson_iter_t ismaster_field_iter;
    const char *hostname;
 
+   td = &topology->description;
+   if (bson_iter_init_find (&phase_field_iter, phase, "description")) {
+      const char *description;
+
+      description = bson_iter_utf8 (&phase_field_iter, NULL);
+      MONGOC_DEBUG ("phase: %s", description);
+   }
    /* grab ismaster responses out and feed them to topology */
-   BSON_ASSERT (bson_iter_init_find (&phase_field_iter, phase, "responses"));
-   bson_iter_bson (&phase_field_iter, &ismasters);
-   bson_iter_init (&ismaster_iter, &ismasters);
+   if (bson_iter_init_find (&phase_field_iter, phase, "responses")) {
+      bson_t ismasters;
+      bson_t ismaster;
+      bson_t response;
+      bson_iter_t ismaster_iter;
+      bson_iter_t ismaster_field_iter;
 
-   while (bson_iter_next (&ismaster_iter)) {
-      bson_iter_bson (&ismaster_iter, &ismaster);
+      bson_iter_bson (&phase_field_iter, &ismasters);
+      bson_iter_init (&ismaster_iter, &ismasters);
 
-      bson_iter_init_find (&ismaster_field_iter, &ismaster, "0");
-      hostname = bson_iter_utf8 (&ismaster_field_iter, NULL);
-      sd = server_description_by_hostname (td, hostname);
+      while (bson_iter_next (&ismaster_iter)) {
+         bson_iter_bson (&ismaster_iter, &ismaster);
 
-      /* if server has been removed from topology, skip */
-      if (!sd) {
-         continue;
+         bson_iter_init_find (&ismaster_field_iter, &ismaster, "0");
+         hostname = bson_iter_utf8 (&ismaster_field_iter, NULL);
+         sd = server_description_by_hostname (td, hostname);
+
+         /* if server has been removed from topology, skip */
+         if (!sd) {
+            continue;
+         }
+
+         bson_iter_init_find (&ismaster_field_iter, &ismaster, "1");
+         bson_iter_bson (&ismaster_field_iter, &response);
+
+         /* send ismaster through the topology description's handler */
+         capture_logs (true);
+         mongoc_topology_description_handle_ismaster (
+            td, sd->id, &response, 1, NULL);
+         if (td->servers->items_len == 0) {
+            ASSERT_CAPTURED_LOG ("topology",
+                                 MONGOC_LOG_LEVEL_WARNING,
+                                 "Last server removed from topology");
+         }
+         capture_logs (false);
       }
+   } else if (bson_iter_init_find (
+                 &phase_field_iter, phase, "applicationErrors")) {
+      bson_t app_errors;
+      bson_iter_t app_error_iter;
+      bson_t app_error;
+      bson_iter_t app_error_field_iter;
 
-      bson_iter_init_find (&ismaster_field_iter, &ismaster, "1");
-      bson_iter_bson (&ismaster_field_iter, &response);
+      bson_iter_bson (&phase_field_iter, &app_errors);
+      bson_iter_init (&app_error_iter, &app_errors);
 
-      /* send ismaster through the topology description's handler */
-      capture_logs (true);
-      mongoc_topology_description_handle_ismaster (
-         td, sd->id, &response, 1, NULL);
-      if (td->servers->items_len == 0) {
-         ASSERT_CAPTURED_LOG ("topology",
-                              MONGOC_LOG_LEVEL_WARNING,
-                              "Last server removed from topology");
+      while (bson_iter_next (&app_error_iter)) {
+         uint32_t generation = 0;
+         uint32_t max_wire_version = 0;
+         const char *when_str;
+         bool handshake_complete = false;
+         const char *type_str;
+         _mongoc_sdam_app_error_type_t type = 0;
+         bson_t response;
+         bson_error_t err;
+
+         bson_iter_bson (&app_error_iter, &app_error);
+
+         bson_iter_init_find (&app_error_field_iter, &app_error, "address");
+         hostname = bson_iter_utf8 (&app_error_field_iter, NULL);
+         sd = server_description_by_hostname (td, hostname);
+
+         /* if server has been removed from topology, skip */
+         if (!sd) {
+            continue;
+         }
+
+         if (bson_iter_init_find (
+                &app_error_field_iter, &app_error, "generation")) {
+            BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&app_error_field_iter));
+            generation = bson_iter_int32 (&app_error_field_iter);
+         } else {
+            /* Default to the current generation. */
+            generation = sd->generation;
+         }
+
+         BSON_ASSERT (bson_iter_init_find (
+            &app_error_field_iter, &app_error, "maxWireVersion"));
+         BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&app_error_field_iter));
+         max_wire_version = bson_iter_int32 (&app_error_field_iter);
+
+         BSON_ASSERT (
+            bson_iter_init_find (&app_error_field_iter, &app_error, "when"));
+         BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&app_error_field_iter));
+         when_str = bson_iter_utf8 (&app_error_field_iter, 0);
+         if (0 == strcmp (when_str, "beforeHandshakeCompletes")) {
+            handshake_complete = false;
+         } else if (0 == strcmp (when_str, "afterHandshakeCompletes")) {
+            handshake_complete = true;
+         } else {
+            test_error ("unexpected 'when' value: %s", when_str);
+         }
+
+         BSON_ASSERT (
+            bson_iter_init_find (&app_error_field_iter, &app_error, "type"));
+         BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&app_error_field_iter));
+         type_str = bson_iter_utf8 (&app_error_field_iter, 0);
+         if (0 == strcmp (type_str, "command")) {
+            type = MONGOC_SDAM_APP_ERROR_COMMAND;
+         } else if (0 == strcmp (type_str, "network")) {
+            type = MONGOC_SDAM_APP_ERROR_NETWORK;
+         } else if (0 == strcmp (type_str, "timeout")) {
+            type = MONGOC_SDAM_APP_ERROR_TIMEOUT;
+         } else {
+            test_error ("unexpected 'type' value: %s", type_str);
+         }
+
+         if (MONGOC_SDAM_APP_ERROR_COMMAND == type) {
+            BSON_ASSERT (bson_iter_init_find (
+               &app_error_field_iter, &app_error, "response"));
+            BSON_ASSERT (BSON_ITER_HOLDS_DOCUMENT (&app_error_field_iter));
+            bson_iter_bson (&app_error_field_iter, &response);
+         }
+
+         memset (&err, 0, sizeof (bson_error_t));
+         bson_mutex_lock (&topology->mutex);
+         _mongoc_topology_handle_app_error (topology,
+                                            sd->id,
+                                            handshake_complete,
+                                            type,
+                                            &response,
+                                            &err,
+                                            max_wire_version,
+                                            generation);
+         bson_mutex_unlock (&topology->mutex);
       }
-      capture_logs (false);
+   } else {
+      test_error (
+         "test does not have 'responses' or 'applicationErrors' array");
    }
 }
 

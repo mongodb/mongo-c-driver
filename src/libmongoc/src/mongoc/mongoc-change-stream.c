@@ -22,6 +22,7 @@
 #include "mongoc-cursor-private.h"
 #include "mongoc-database-private.h"
 #include "mongoc-error.h"
+#include "mongoc-error-private.h"
 
 #define CHANGE_STREAM_ERR(_str)         \
    bson_set_error (&stream->err,        \
@@ -51,24 +52,24 @@ _is_resumable_error (mongoc_change_stream_t *stream, const bson_t *reply)
    }
 
    switch (error.code) {
-   case 6:     /* HostUnreachable */
-   case 7:     /* HostNotFound */
-   case 89:    /* NetworkTimeout */
-   case 91:    /* ShutdownInProgress */
-   case 189:   /* PrimarySteppedDown */
-   case 262:   /* ExceededTimeLimit */
-   case 9001:  /* SocketException */
-   case 10107: /* NotMaster */
-   case 11600: /* InterruptedAtShutdown */
-   case 11602: /* InterruptedDueToReplStateChange */
-   case 13435: /* NotMasterNoSlaveOk */
-   case 13436: /* NotMasterOrSecondary */
-   case 63:    /* StaleShardVersion */
-   case 150:   /* StaleEpoch */
-   case 13388: /* StaleConfig */
-   case 234:   /* RetryChangeStream */
-   case 133:   /* FailedToSatisfyReadPreference */
-   case 216:   /* ElectionInProgress */
+   case MONGOC_SERVER_ERR_HOSTUNREACHABLE:
+   case MONGOC_SERVER_ERR_HOSTNOTFOUND:
+   case MONGOC_SERVER_ERR_NETWORKTIMEOUT:
+   case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
+   case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
+   case MONGOC_SERVER_ERR_EXCEEDEDTIMELIMIT:
+   case MONGOC_SERVER_ERR_SOCKETEXCEPTION:
+   case MONGOC_SERVER_ERR_NOTMASTER:
+   case MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN:
+   case MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE:
+   case MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK:
+   case MONGOC_SERVER_ERR_NOTMASTERORSECONDARY:
+   case MONGOC_SERVER_ERR_STALESHARDVERSION:
+   case MONGOC_SERVER_ERR_STALEEPOCH:
+   case MONGOC_SERVER_ERR_STALECONFIG:
+   case MONGOC_SERVER_ERR_RETRYCHANGESTREAM:
+   case MONGOC_SERVER_ERR_FAILEDTOSATISFYREADPREFERENCE:
+   case MONGOC_SERVER_ERR_ELECTIONINPROGRESS:
       return true;
    default:
       return false;
