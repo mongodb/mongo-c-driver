@@ -871,6 +871,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-side-encryption.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cluster.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cmd.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find-with-opts.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection-find.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-collection.c
