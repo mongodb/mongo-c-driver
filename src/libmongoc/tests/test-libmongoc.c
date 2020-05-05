@@ -105,6 +105,8 @@ test_client_hedged_reads_install (TestSuite *suite);
 extern void
 test_client_pool_install (TestSuite *suite);
 extern void
+test_client_cmd_install (TestSuite *suite);
+extern void
 test_cluster_install (TestSuite *suite);
 extern void
 test_collection_install (TestSuite *suite);
@@ -2545,6 +2547,7 @@ main (int argc, char *argv[])
    test_client_max_staleness_install (&suite);
    test_client_hedged_reads_install (&suite);
    test_client_pool_install (&suite);
+   test_client_cmd_install (&suite);
    test_write_command_install (&suite);
    test_bulk_install (&suite);
    test_cluster_install (&suite);
