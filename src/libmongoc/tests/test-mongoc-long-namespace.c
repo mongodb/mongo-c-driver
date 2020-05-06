@@ -115,7 +115,7 @@ test_fixture_init (test_fixture_t *test_fixture,
    /* Drop 'coll'. */
    ret = mongoc_collection_drop (test_fixture->coll, &error);
    /* ignore a 'ns not found' error */
-   if (!ret && 0 != strcmp (error.message, "ns not found")) {
+   if (!ret && NULL == strstr (error.message, "ns not found")) {
       /* unexpected error. */
       test_error ("unexpected error: %s\n", error.message);
    }

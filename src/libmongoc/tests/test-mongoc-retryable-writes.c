@@ -147,7 +147,7 @@ test_command_with_opts (void *ctx)
    collection = get_test_collection (client, "retryable_writes");
 
    if (!mongoc_collection_drop (collection, &error)) {
-      if (strcmp (error.message, "ns not found")) {
+      if (NULL == strstr (error.message, "ns not found")) {
          /* an error besides ns not found */
          ASSERT_OR_PRINT (false, error);
       }

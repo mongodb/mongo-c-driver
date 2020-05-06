@@ -37,7 +37,7 @@ _setup_test_with_client (mongoc_client_t *client)
    /* Drop the "step-down.step-down" collection and re-create it */
    coll = mongoc_client_get_collection (client, "step-down", "step-down");
    if (!mongoc_collection_drop (coll, &error)) {
-      if (strcmp (error.message, "ns not found")) {
+      if (NULL == strstr (error.message, "ns not found")) {
          ASSERT_OR_PRINT (false, error);
       }
    }
