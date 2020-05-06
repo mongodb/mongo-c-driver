@@ -37,7 +37,6 @@ test_client_cmd_options (void)
    mongoc_client_t *client;
    mongoc_read_concern_t * rc;
    bson_t opts;
-   bson_t* cmd;
    future_t *future;
    request_t *request;
    bson_error_t error;
@@ -51,10 +50,14 @@ test_client_cmd_options (void)
    bson_init (&opts);
    mongoc_read_concern_append (rc, &opts);
 
-   cmd = tmp_bson ("{'ping': 1, '$db': 'db'}");
-
    future = future_client_command_with_opts (
-      client, "db", cmd, NULL, &opts, NULL, &error);
+      client,
+      "db",
+      tmp_bson ("{'ping': 1, '$db': 'db'}"),
+      NULL,
+      &opts,
+      NULL,
+      &error);
 
    request = mock_server_receives_msg (
       server,
@@ -69,7 +72,6 @@ test_client_cmd_options (void)
 
    bson_destroy (&opts);
    mongoc_read_concern_destroy (rc);
-   bson_destroy (cmd);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }
