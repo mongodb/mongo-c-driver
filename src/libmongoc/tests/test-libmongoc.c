@@ -101,6 +101,8 @@ test_client_hedged_reads_install (TestSuite *suite);
 extern void
 test_client_pool_install (TestSuite *suite);
 extern void
+test_client_cmd_install (TestSuite *suite);
+extern void
 test_cluster_install (TestSuite *suite);
 extern void
 test_collection_install (TestSuite *suite);

@@ -65,7 +65,7 @@ test_client_cmd_options (void)
       tmp_bson ("{'readConcern': { '$exists': true }}"));
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
-   ASSERT_OR_PRINT (1 == future_get_bool (future), error);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
 
    request_destroy (request);
    future_destroy (future);
