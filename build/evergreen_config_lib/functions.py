@@ -26,13 +26,12 @@ all_functions = OD([
             ('params', OD([
                 ('directory', 'mongoc'),
             ]))]),
-        OD([('command', 'git.apply_patch'),
-            ('params', OD([
-                ('directory', 'mongoc'),
-            ]))]),
         shell_mongoc(r'''
         if [ "${is_patch}" = "true" ]; then
-           VERSION=$(git describe --abbrev=7 --match='1.*')-patch-${version_id}
+           # TODO: CDRIVER-3573 do not hardcode the version for patch builds.
+           VERSION_CURRENT="1.17.0-pre"
+           echo $VERSION_CURRENT > "VERSION_CURRENT"
+           VERSION=$VERSION_CURRENT-patch-${version_id}
         else
            VERSION=latest
         fi
