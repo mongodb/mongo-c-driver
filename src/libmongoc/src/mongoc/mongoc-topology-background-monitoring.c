@@ -57,8 +57,8 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
       sleep_duration_ms = scan_due_ms - now_ms;
 
       if (sleep_duration_ms > 0) {
-         MONGOC_DEBUG ("srv polling thread sleeping for %" PRId64 "ms",
-                       sleep_duration_ms);
+         TRACE ("srv polling thread sleeping for %" PRId64 "ms",
+                sleep_duration_ms);
       }
 
       /* If shutting down, stop. */
@@ -409,6 +409,7 @@ _server_monitor_regular_ismaster (mongoc_server_monitor_t *server_monitor)
                                       &error);
          }
          if (!server_monitor->stream) {
+            TRACE ("sm (%d) failed to connect", server_monitor->server_id);
             _server_monitor_heartbeat_failed (server_monitor, &error, rtt_us);
             continue;
          }
@@ -438,6 +439,9 @@ _server_monitor_regular_ismaster (mongoc_server_monitor_t *server_monitor)
       bson_destroy (&reply);
       _server_monitor_heartbeat_started (server_monitor);
       ret = _server_monitor_cmd_send (server_monitor, &cmd, &reply, &error);
+      if (!ret) {
+         TRACE ("sm (%d) error = %s", server_monitor->server_id, error.message);
+      }
       /* Must mark scan_requested as "delivered" before updating the topology
        * description, not after. Otherwise, we could miss a scan request in
        * server selection. We need to uphold the invariant: if a scan is
