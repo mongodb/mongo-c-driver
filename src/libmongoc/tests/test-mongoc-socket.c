@@ -28,8 +28,7 @@ typedef struct {
 } socket_test_data_t;
 
 
-static void *
-socket_test_server (void *data_)
+static BSON_THREAD_FUN (socket_test_server, data_)
 {
    socket_test_data_t *data = (socket_test_data_t *) data_;
    struct sockaddr_in server_addr = {0};
@@ -97,12 +96,11 @@ socket_test_server (void *data_)
 
    mongoc_socket_destroy (listen_sock);
 
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 
-static void *
-socket_test_client (void *data_)
+static BSON_THREAD_FUN (socket_test_client, data_)
 {
    socket_test_data_t *data = (socket_test_data_t *) data_;
    int64_t start;
@@ -173,7 +171,7 @@ socket_test_client (void *data_)
 
    mongoc_stream_destroy (stream);
 
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 
