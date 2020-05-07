@@ -1142,7 +1142,7 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
  * _mongoc_cluster_auth_node_plain --
  *
  *       Perform SASL PLAIN authentication for @node. We do this manually
- *       instead of using the SASL module because its rather simplistic.
+ *       instead of using the SASL module because it is rather simplistic.
  *
  * Returns:
  *       true if successful; otherwise false and error is set.
