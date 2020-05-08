@@ -158,7 +158,10 @@ test_exhaust_cursor (bool pooled)
 
       /* destroy the cursor, make sure the connection pool was not cleared */
       generation1 = get_generation (client, cursor);
-      connection_count1 = get_connection_count (audit_client);
+      /* Getting the connection count requires a new enough server. */
+      if (test_framework_max_wire_version_at_least (5)) {
+         connection_count1 = get_connection_count (audit_client);
+      }
       mongoc_cursor_destroy (cursor);
       BSON_ASSERT (!client->in_exhaust);
    }
@@ -180,7 +183,9 @@ test_exhaust_cursor (bool pooled)
       /* The pool was not cleared. */
       ASSERT_CMPINT64 (generation1, ==, get_generation (client, cursor2));
       /* But a new connection was made. */
-      ASSERT_CMPINT32 (connection_count1 + 1, ==, get_connection_count (audit_client));
+      if (test_framework_max_wire_version_at_least (5)) {
+         ASSERT_CMPINT32 (connection_count1 + 1, ==, get_connection_count (audit_client));
+      }
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next (cursor2, &doc);
@@ -276,6 +281,7 @@ test_exhaust_cursor (bool pooled)
    } else {
       mongoc_client_destroy (client);
    }
+   mongoc_client_destroy (audit_client);
 }
 
 static void

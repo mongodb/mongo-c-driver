@@ -1654,7 +1654,7 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream,
 
    node->stream = stream;
    node->connection_address = bson_strdup (connection_address);
-   node->pool_generation = generation;
+   node->generation = generation;
 
    node->max_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
    node->min_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
@@ -2147,7 +2147,7 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
       BSON_ASSERT (cluster_node->stream);
 
       if (!has_server_description ||
-          cluster_node->pool_generation < generation) {
+          cluster_node->generation < generation) {
          /* Since the stream was created, connections to this server were
           * invalidated.
           * This may have happened if:
