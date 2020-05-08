@@ -48,26 +48,23 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
    return generation;
 }
 
-static void *
-get_stream_address (mongoc_client_t *client, mongoc_cursor_t *cursor)
+static uint32_t
+get_connection_count (mongoc_client_t *client)
 {
-   uint32_t server_id;
+   bson_error_t error;
+   bson_t cmd = BSON_INITIALIZER;
+   bson_t reply;
+   bool res;
+   int conns;
 
-   server_id = cursor->server_id;
-   if (client->topology->single_threaded) {
-      mongoc_topology_scanner_node_t *scanner_node;
+   BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
+   res = mongoc_client_command_simple (client, "admin", &cmd, NULL, &reply, &error);
+   ASSERT_OR_PRINT (res, error);
 
-      scanner_node = mongoc_topology_scanner_get_node (
-         client->topology->scanner, server_id);
-
-      return scanner_node->stream;
-   } else {
-      mongoc_cluster_node_t *cluster_node;
-
-      cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (
-         client->cluster.nodes, server_id);
-      return cluster_node->stream;
-   }
+   conns = bson_lookup_int32 (&reply, "connections.totalCreated");
+   bson_destroy (&cmd);
+   bson_destroy (&reply);
+   return conns;
 }
 
 static void
@@ -90,7 +87,8 @@ test_exhaust_cursor (bool pooled)
    bson_error_t error;
    bson_oid_t oid;
    int64_t generation1;
-   void *stream_address1;
+   uint32_t connection_count1;
+   mongoc_client_t *audit_client;
 
    if (pooled) {
       pool = test_framework_client_pool_new ();
@@ -99,6 +97,9 @@ test_exhaust_cursor (bool pooled)
       client = test_framework_client_new ();
    }
    BSON_ASSERT (client);
+
+   /* Use a separate client to count connections. */
+   audit_client = test_framework_client_new ();
 
    collection = get_test_collection (client, "test_exhaust_cursor");
    BSON_ASSERT (collection);
@@ -157,7 +158,7 @@ test_exhaust_cursor (bool pooled)
 
       /* destroy the cursor, make sure the connection pool was not cleared */
       generation1 = get_generation (client, cursor);
-      stream_address1 = get_stream_address (client, cursor);
+      connection_count1 = get_connection_count (audit_client);
       mongoc_cursor_destroy (cursor);
       BSON_ASSERT (!client->in_exhaust);
    }
@@ -179,7 +180,7 @@ test_exhaust_cursor (bool pooled)
       /* The pool was not cleared. */
       ASSERT_CMPINT64 (generation1, ==, get_generation (client, cursor2));
       /* But a new connection was made. */
-      BSON_ASSERT (stream_address1 != get_stream_address (client, cursor2));
+      ASSERT_CMPINT32 (connection_count1 + 1, ==, get_connection_count (audit_client));
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next (cursor2, &doc);
