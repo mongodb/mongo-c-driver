@@ -50,7 +50,7 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
    bson_destroy (&sd->topology_version);
 }
 
-/* Reset fields inside this sd, but keep same id, host information, and RTT,
+/* Reset fields inside this sd, but keep same id, host information, RTT,
    generation, and leave ismaster in empty inited state */
 void
 mongoc_server_description_reset (mongoc_server_description_t *sd)
@@ -535,8 +535,7 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
 
    /* Only reinitialize the topology version if we have an ismaster response.
     * Resetting a server description should not effect the topology version. */
-   bson_destroy (&sd->topology_version);
-   bson_init (&sd->topology_version);
+   bson_reinit (&sd->topology_version);
 
    BSON_ASSERT (bson_iter_init (&iter, &sd->last_is_master));
 
@@ -670,20 +669,21 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
          bson_destroy (&sd->compressors);
          BSON_ASSERT (bson_init_static (&sd->compressors, bytes, len));
       } else if (strcmp ("topologyVersion", bson_iter_key (&iter)) == 0) {
-         if (!BSON_ITER_HOLDS_DOCUMENT (&iter) &&
-             !BSON_ITER_HOLDS_NULL (&iter)) {
+         bson_t incoming_topology_version;
+
+         if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
             goto failure;
          }
 
-         bson_destroy (&sd->topology_version);
          if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-            bson_t temp;
             bson_iter_document (&iter, &len, &bytes);
-            bson_init_static (&temp, bytes, len);
-            bson_copy_to (&temp, &sd->topology_version);
+            bson_init_static (&incoming_topology_version, bytes, len);
          } else {
-            bson_init (&sd->topology_version);
+            bson_init (&incoming_topology_version);
          }
+         mongoc_server_description_set_topology_version (
+            sd, &incoming_topology_version);
+         bson_destroy (&incoming_topology_version);
       }
    }
 
@@ -1186,6 +1186,7 @@ void
 mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
                                                 const bson_t *tv)
 {
+   BSON_ASSERT (tv);
    bson_destroy (&sd->topology_version);
    bson_copy_to (tv, &sd->topology_version);
 }

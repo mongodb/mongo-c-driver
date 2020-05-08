@@ -212,8 +212,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    const bson_t *reply,
                                    const bson_error_t *why,
                                    uint32_t max_wire_version,
-                                   uint32_t generation,
-                                   uint32_t error_api_version);
+                                   uint32_t generation);
 
 void
 _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,

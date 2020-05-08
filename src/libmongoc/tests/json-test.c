@@ -313,8 +313,7 @@ process_sdam_test_ismaster_responses (bson_t *phase,
                                             &response,
                                             &err,
                                             max_wire_version,
-                                            generation,
-                                            MONGOC_ERROR_API_VERSION_2);
+                                            generation);
       }
    } else {
       test_error (

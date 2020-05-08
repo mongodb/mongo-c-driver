@@ -466,7 +466,7 @@ test_invalid_cluster_node (void *ctx)
       &client->topology->description, id, &error);
    ASSERT_OR_PRINT (sd, error);
    /* Both generations match, and are the first generation. */
-   ASSERT_CMPINT32 (cluster_node->generation, ==, 0);
+   ASSERT_CMPINT32 (cluster_node->pool_generation, ==, 0);
    ASSERT_CMPINT32 (sd->generation, ==, 0);
 
    /* update the server's generation, simulating a connection pool clearing */
@@ -478,7 +478,7 @@ test_invalid_cluster_node (void *ctx)
       &client->cluster, id, true, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_stream, error);
    cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (cluster->nodes, id);
-   ASSERT_CMPINT64 (cluster_node->generation, ==, 1);
+   ASSERT_CMPINT64 (cluster_node->pool_generation, ==, 1);
 
    mongoc_server_stream_cleanup (server_stream);
    mongoc_client_pool_push (pool, client);

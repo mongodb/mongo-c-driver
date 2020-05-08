@@ -48,6 +48,27 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
    return generation;
 }
 
+static void *
+get_stream_address (mongoc_client_t *client, mongoc_cursor_t *cursor)
+{
+   uint32_t server_id;
+
+   server_id = cursor->server_id;
+   if (client->topology->single_threaded) {
+      mongoc_topology_scanner_node_t *scanner_node;
+
+      scanner_node = mongoc_topology_scanner_get_node (
+         client->topology->scanner, server_id);
+
+      return scanner_node->stream;
+   } else {
+      mongoc_cluster_node_t *cluster_node;
+
+      cluster_node = (mongoc_cluster_node_t *) mongoc_set_get (
+         client->cluster.nodes, server_id);
+      return cluster_node->stream;
+   }
+}
 
 static void
 test_exhaust_cursor (bool pooled)
@@ -69,6 +90,7 @@ test_exhaust_cursor (bool pooled)
    bson_error_t error;
    bson_oid_t oid;
    int64_t generation1;
+   void *stream_address1;
 
    if (pooled) {
       pool = test_framework_client_pool_new ();
@@ -135,12 +157,10 @@ test_exhaust_cursor (bool pooled)
 
       /* destroy the cursor, make sure the connection pool was not cleared */
       generation1 = get_generation (client, cursor);
+      stream_address1 = get_stream_address (client, cursor);
       mongoc_cursor_destroy (cursor);
       BSON_ASSERT (!client->in_exhaust);
    }
-
-   /* ensure even a 1 ms-resolution clock advances significantly */
-   _mongoc_usleep (1000 * 1000);
 
    /* Grab a new exhaust cursor, then verify that reading from that cursor
     * (putting the client into exhaust), breaks a mid-stream read from a
@@ -156,7 +176,10 @@ test_exhaust_cursor (bool pooled)
       }
       BSON_ASSERT (r);
       BSON_ASSERT (doc);
+      /* The pool was not cleared. */
       ASSERT_CMPINT64 (generation1, ==, get_generation (client, cursor2));
+      /* But a new connection was made. */
+      BSON_ASSERT (stream_address1 != get_stream_address (client, cursor2));
 
       for (i = 0; i < 5; i++) {
          r = mongoc_cursor_next (cursor2, &doc);

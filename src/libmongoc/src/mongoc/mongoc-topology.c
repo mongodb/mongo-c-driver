@@ -1678,10 +1678,10 @@ _find_topology_version (const bson_t *reply, bson_t *topology_version)
 
 
 /* "Clears" the connection pool by incrementing the generation.
- * 
+ *
  * Pooled clients with open connections will discover the invalidation
  * the next time they fetch a stream to the server.
- * 
+ *
  * Caller must lock topology->mutex. */
 void
 _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
@@ -1715,8 +1715,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    const bson_t *reply,
                                    const bson_error_t *why,
                                    uint32_t max_wire_version,
-                                   uint32_t generation,
-                                   uint32_t error_api_version)
+                                   uint32_t generation)
 {
    bson_error_t server_selection_error;
    mongoc_server_description_t *sd;
@@ -1757,7 +1756,8 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       bson_error_t cmd_error;
       bson_t incoming_topology_version;
 
-      if (_mongoc_cmd_check_ok_no_wce (reply, error_api_version, &cmd_error)) {
+      if (_mongoc_cmd_check_ok_no_wce (
+             reply, MONGOC_ERROR_API_VERSION_2, &cmd_error)) {
          /* No error. */
          return false;
       }
@@ -1783,39 +1783,38 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
          sd, &incoming_topology_version);
       bson_destroy (&incoming_topology_version);
 
-      /* Server Discovery and Monitoring Spec: "When the client sees a 'not
-         * master' or 'node is recovering' error it MUST replace the server's
-         * description with a default ServerDescription of type Unknown."
-         *
-         * The client MUST clear its connection pool for the server
-         * if the server is 4.0 or earlier, and MUST NOT clear its connection
-         * pool for the server if the server is 4.2 or later. */
+      /* SDAM: When handling a "not master" or "node is recovering" error, the
+       * client MUST clear the server's connection pool if and only if the error
+       * is "node is shutting down" or the error originated from server version
+       * < 4.2.
+       */
       if (max_wire_version <= WIRE_VERSION_4_0 ||
           _mongoc_error_is_shutdown (&cmd_error)) {
          _mongoc_topology_clear_connection_pool (topology, server_id);
          pool_cleared = true;
       }
 
+      /* SDAM: When the client sees a "not master" or "node is recovering" error
+       * and the error's topologyVersion is strictly greater than the current
+       * ServerDescription's topologyVersion it MUST replace the server's
+       * description with a ServerDescription of type Unknown. */
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, &cmd_error);
 
       if (topology->single_threaded) {
-         /* SDAM Spec: "For single-threaded clients, in the case of a 'not
-            * master' error, the client MUST check the server immediately... For
-          * a
-            * 'node is recovering' error, single-threaded clients MUST NOT check
-            * the server, as an immediate server check is unlikely to find a
-            * usable server."
-            * Instead of an immediate check, mark the topology as stale so the
-            * next command scans all servers (to find the new primary). */
+         /* SDAM: For single-threaded clients, in the case of a "not master" or
+          * "node is shutting down" error, the client MUST mark the topology as
+          * "stale"
+          */
          if (_mongoc_error_is_not_master (&cmd_error)) {
             topology->stale = true;
          }
       } else {
          /* SDAM Spec: "Multi-threaded and asynchronous clients MUST request an
-            * immediate check of the server."
-            * Instead of requesting a check of the one server, request a scan
-            * to all servers (to find the new primary). */
+          * immediate check of the server."
+          * Instead of requesting a check of the one server, request a scan
+          * to all servers (to find the new primary).
+          */
          _mongoc_topology_request_scan (topology);
       }
    }

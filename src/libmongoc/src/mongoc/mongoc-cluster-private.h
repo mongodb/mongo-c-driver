@@ -43,7 +43,7 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_cluster_node_t {
    mongoc_stream_t *stream;
    char *connection_address;
-   uint32_t generation;
+   uint32_t pool_generation;
 
    /* TODO CDRIVER-3653, these fields are unused. */
    int32_t max_wire_version;

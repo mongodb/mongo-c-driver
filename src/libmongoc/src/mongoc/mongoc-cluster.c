@@ -116,8 +116,7 @@ _handle_not_master_error (mongoc_cluster_t *cluster,
                                           reply,
                                           NULL,
                                           server_stream->sd->max_wire_version,
-                                          server_stream->sd->generation,
-                                          cluster->client->error_api_version)) {
+                                          server_stream->sd->generation)) {
       mongoc_cluster_disconnect_node (cluster, server_id);
    }
    bson_mutex_unlock (&cluster->client->topology->mutex);
@@ -152,8 +151,7 @@ _handle_network_error (mongoc_cluster_t *cluster,
                                       NULL,
                                       why,
                                       server_stream->sd->max_wire_version,
-                                      server_stream->sd->generation,
-                                      cluster->client->error_api_version);
+                                      server_stream->sd->generation);
    /* Always disconnect the current connection on network error. */
    mongoc_cluster_disconnect_node (cluster, server_id);
 
@@ -1656,7 +1654,7 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream,
 
    node->stream = stream;
    node->connection_address = bson_strdup (connection_address);
-   node->generation = generation;
+   node->pool_generation = generation;
 
    node->max_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
    node->min_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
@@ -1848,23 +1846,22 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
    }
 
    if (!server_stream) {
-      /* TODO CDRIVER-3654. A null server stream could due to multiple reasons:
+      /* TODO CDRIVER-3654. A null server stream could be due to:
        * 1. Network error during handshake.
        * 2. Failure to retrieve server description (if it was removed from
        * topology).
        * 3. Auth error during handshake.
-       * Only (1) should mark the server unknown and cause a pool clearing if
-       * the error generation is equal to the server's generation.
+       * Only (1) should mark the server unknown and clear the pool.
        * Network errors should be checked at a lower layer than this, when an
        * operation on a stream fails.
        */
-      if (_mongoc_error_is_network (err_ptr)) {
-         mongoc_topology_invalidate_server (topology, server_id, err_ptr);
-         mongoc_cluster_disconnect_node (cluster, server_id);
-         _mongoc_bson_init_with_transient_txn_error (cs, reply);
-      } else {
-         _mongoc_bson_init_if_set (reply);
-      }
+
+      mongoc_topology_invalidate_server (topology, server_id, err_ptr);
+      mongoc_cluster_disconnect_node (cluster, server_id);
+      bson_mutex_lock (&topology->mutex);
+      _mongoc_topology_clear_connection_pool (topology, server_id);
+      bson_mutex_unlock (&topology->mutex);
+      _mongoc_bson_init_with_transient_txn_error (cs, reply);
    }
 
    RETURN (server_stream);
@@ -2056,26 +2053,24 @@ bool
 mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
                              mongoc_server_stream_t *server_stream)
 {
-   mongoc_server_stream_t *tmp_stream;
+   mongoc_server_stream_t *tmp_stream = NULL;
    mongoc_topology_t *topology;
    mongoc_server_description_t *sd;
-   bool ret = true;
+   bool ret = false;
    bson_error_t error;
 
    BSON_ASSERT (cluster);
 
    if (!server_stream) {
-      return false;
+      goto done;
    }
 
    tmp_stream = mongoc_cluster_stream_for_server (
       cluster, server_stream->sd->id, false, NULL, NULL, NULL);
    if (!tmp_stream || tmp_stream->stream != server_stream->stream) {
       /* stream was freed, or has changed. */
-      ret = false;
+      goto done;
    }
-
-   mongoc_server_stream_cleanup (tmp_stream);
 
    topology = cluster->client->topology;
    bson_mutex_lock (&topology->mutex);
@@ -2083,9 +2078,14 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
       &topology->description, server_stream->sd->id, &error);
    if (!sd || server_stream->sd->generation < sd->generation) {
       /* No server description, or the pool has been cleared. */
-      ret = false;
+      bson_mutex_unlock (&topology->mutex);
+      goto done;
    }
    bson_mutex_unlock (&topology->mutex);
+
+   ret = true;
+done:
+   mongoc_server_stream_cleanup (tmp_stream);
    return ret;
 }
 
@@ -2127,7 +2127,7 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
    mongoc_stream_t *stream;
    mongoc_cluster_node_t *cluster_node;
    mongoc_server_description_t *sd;
-   bool has_server_description;
+   bool has_server_description = false;
    uint32_t generation = 0;
 
    cluster_node =
@@ -2135,7 +2135,6 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
 
    topology = cluster->client->topology;
    bson_mutex_lock (&topology->mutex);
-   has_server_description = false;
    sd = mongoc_topology_description_server_by_id (
       &topology->description, server_id, error);
    if (sd) {
@@ -2148,15 +2147,14 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
       BSON_ASSERT (cluster_node->stream);
 
       if (!has_server_description ||
-          cluster_node->generation < sd->generation) {
+          cluster_node->pool_generation < generation) {
          /* Since the stream was created, connections to this server were
           * invalidated.
           * This may have happened if:
           * - A background scan removed the server description.
-          * - A network error, a "not master" error occurred on an app
-          * connection.
+          * - A network error or a "not master"/"node is recovering" error
+          *   occurred on an app connection.
           * - A network error occurred on the monitor connection.
-          * may have "cleared the connection pool", incrementing the generation
           */
          mongoc_cluster_disconnect_node (cluster, server_id);
       } else {

@@ -232,6 +232,10 @@ _mongoc_error_copy_labels_and_upsert (const bson_t *src,
 bool
 _mongoc_error_is_shutdown (bson_error_t *error)
 {
+   if (error->domain != MONGOC_ERROR_SERVER &&
+       error->domain != MONGOC_ERROR_WRITE_CONCERN) {
+      return false;
+   }
    switch (error->code) {
    case 11600: /* InterruptedAtShutdown */
    case 91:    /* ShutdownInProgress */
@@ -244,6 +248,10 @@ _mongoc_error_is_shutdown (bson_error_t *error)
 bool
 _mongoc_error_is_not_master (bson_error_t *error)
 {
+   if (error->domain != MONGOC_ERROR_SERVER &&
+       error->domain != MONGOC_ERROR_WRITE_CONCERN) {
+      return false;
+   }
    switch (error->code) {
    case 10107: /* NotMaster */
    case 13435: /* NotMasterNoSlaveOk */
@@ -256,6 +264,10 @@ _mongoc_error_is_not_master (bson_error_t *error)
 static bool
 _error_is_recovering (bson_error_t *error)
 {
+   if (error->domain != MONGOC_ERROR_SERVER &&
+       error->domain != MONGOC_ERROR_WRITE_CONCERN) {
+      return false;
+   }
    switch (error->code) {
    case 11600: /* InterruptedAtShutdown */
    case 11602: /* InterruptedDueToReplStateChange */
@@ -269,6 +281,7 @@ _error_is_recovering (bson_error_t *error)
    }
 }
 
+/* Assumes @error was parsed as an API V2 error. */
 bool
 _mongoc_error_is_state_change (bson_error_t *error)
 {

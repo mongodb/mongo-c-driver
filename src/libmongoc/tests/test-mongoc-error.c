@@ -135,7 +135,7 @@ test_has_label (void)
 }
 
 static void
-test_state_change (void)
+test_state_change_helper (uint32_t domain, bool expect_error)
 {
    bson_error_t error;
    uint32_t not_master_codes[] = {10107, 13435};
@@ -143,31 +143,42 @@ test_state_change (void)
    uint32_t shutdown_codes[] = {11600, 91};
    int i;
 
+   MONGOC_DEBUG ("Checking domain = %d", domain);
+
    memset (&error, 0, sizeof (bson_error_t));
+   error.domain = domain;
 
    for (i = 0; i < sizeof (not_master_codes) / sizeof (uint32_t); i++) {
       error.code = not_master_codes[i];
-      BSON_ASSERT (_mongoc_error_is_not_master (&error));
-      BSON_ASSERT (_mongoc_error_is_state_change (&error));
+      BSON_ASSERT (expect_error == _mongoc_error_is_not_master (&error));
+      BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
    }
    for (i = 0; i < sizeof (node_is_recovering_codes) / sizeof (uint32_t); i++) {
       error.code = node_is_recovering_codes[i];
-      BSON_ASSERT (_mongoc_error_is_state_change (&error));
+      BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
    }
    for (i = 0; i < sizeof (shutdown_codes) / sizeof (uint32_t); i++) {
       error.code = shutdown_codes[i];
-      BSON_ASSERT (_mongoc_error_is_shutdown (&error));
+      BSON_ASSERT (expect_error == _mongoc_error_is_shutdown (&error));
    }
 
    error.code = 123;
    bson_strncpy (error.message, "... not master ...", sizeof (error.message));
-   BSON_ASSERT (_mongoc_error_is_not_master (&error));
-   BSON_ASSERT (_mongoc_error_is_state_change (&error));
+   BSON_ASSERT (expect_error == _mongoc_error_is_not_master (&error));
+   BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
 
    bson_strncpy (
       error.message, "... node is recovering ...", sizeof (error.message));
    BSON_ASSERT (!_mongoc_error_is_not_master (&error));
-   BSON_ASSERT (_mongoc_error_is_state_change (&error));
+   BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
+}
+
+static void
+test_state_change (void)
+{
+   test_state_change_helper (MONGOC_ERROR_SERVER, true);
+   test_state_change_helper (MONGOC_ERROR_WRITE_CONCERN, true);
+   test_state_change_helper (MONGOC_ERROR_QUERY, false);
 }
 
 void
