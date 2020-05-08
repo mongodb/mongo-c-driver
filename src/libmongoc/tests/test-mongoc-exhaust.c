@@ -89,7 +89,9 @@ test_exhaust_cursor (bool pooled)
    int64_t generation1;
    uint32_t connection_count1;
    mongoc_client_t *audit_client;
+   bool can_check_connection_count;
 
+   can_check_connection_count = test_framework_max_wire_version_at_least (5);
    if (pooled) {
       pool = test_framework_client_pool_new ();
       client = mongoc_client_pool_pop (pool);
@@ -159,7 +161,7 @@ test_exhaust_cursor (bool pooled)
       /* destroy the cursor, make sure the connection pool was not cleared */
       generation1 = get_generation (client, cursor);
       /* Getting the connection count requires a new enough server. */
-      if (test_framework_max_wire_version_at_least (5)) {
+      if (can_check_connection_count) {
          connection_count1 = get_connection_count (audit_client);
       }
       mongoc_cursor_destroy (cursor);
@@ -183,7 +185,7 @@ test_exhaust_cursor (bool pooled)
       /* The pool was not cleared. */
       ASSERT_CMPINT64 (generation1, ==, get_generation (client, cursor2));
       /* But a new connection was made. */
-      if (test_framework_max_wire_version_at_least (5)) {
+      if (can_check_connection_count) {
          ASSERT_CMPINT32 (connection_count1 + 1, ==, get_connection_count (audit_client));
       }
 
