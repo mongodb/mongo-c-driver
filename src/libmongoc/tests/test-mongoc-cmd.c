@@ -35,7 +35,7 @@ test_client_cmd_options (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;
-   mongoc_read_concern_t * rc;
+   mongoc_read_concern_t *rc;
    bson_t opts;
    future_t *future;
    request_t *request;
@@ -50,14 +50,14 @@ test_client_cmd_options (void)
    bson_init (&opts);
    mongoc_read_concern_append (rc, &opts);
 
-   future = future_client_command_with_opts (
-      client,
-      "db",
-      tmp_bson ("{'ping': 1, '$db': 'db'}"),
-      NULL,
-      &opts,
-      NULL,
-      &error);
+   future =
+      future_client_command_with_opts (client,
+                                       "db",
+                                       tmp_bson ("{'ping': 1, '$db': 'db'}"),
+                                       NULL,
+                                       &opts,
+                                       NULL,
+                                       &error);
 
    request = mock_server_receives_msg (
       server,
@@ -80,7 +80,6 @@ test_client_cmd_options (void)
 void
 test_client_cmd_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (suite,
-                                "/Client/cmd/options",
-                                test_client_cmd_options);
+   TestSuite_AddMockServerTest (
+      suite, "/Client/cmd/options", test_client_cmd_options);
 }
