@@ -244,8 +244,10 @@ extern void
 test_streamable_ismaster_install (TestSuite *suite);
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
 extern void
-test_ocsp_cache_install(TestSuite *suite);
+test_ocsp_cache_install (TestSuite *suite);
 #endif
+extern void
+test_interrupt_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2407,16 +2409,17 @@ windows_exception_handler (EXCEPTION_POINTERS *pExceptionInfo)
    /* Initialize stack walking. */
    char exception_string[128];
    bson_snprintf (exception_string,
-                  sizeof(exception_string),
+                  sizeof (exception_string),
                   (exception_code == EXCEPTION_ACCESS_VIOLATION)
-                  ? "(access violation)"
-                  : "0x%08X", exception_code);
+                     ? "(access violation)"
+                     : "0x%08X",
+                  exception_code);
 
    char address_string[32];
-   bson_snprintf(address_string,
-                 sizeof(address_string),
-                 "0x%p",
-                 pExceptionInfo->ExceptionRecord->ExceptionAddress);
+   bson_snprintf (address_string,
+                  sizeof (address_string),
+                  "0x%p",
+                  pExceptionInfo->ExceptionRecord->ExceptionAddress);
 
    fprintf (stderr,
             "exception '%s' at '%s', terminating\n",
@@ -2626,7 +2629,7 @@ main (int argc, char *argv[])
 #ifdef MONGOC_ENABLE_OCSP_OPENSSL
    test_ocsp_cache_install (&suite);
 #endif
-
+   test_interrupt_install (&suite);
    ret = TestSuite_Run (&suite);
 
    TestSuite_Destroy (&suite);
