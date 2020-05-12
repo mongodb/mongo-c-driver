@@ -56,6 +56,7 @@ typedef_list = [
     typedef("size_t", None),
     typedef("ssize_t", None),
     typedef("uint32_t", None),
+    typedef("void_ptr",  "void *"),
 
     # Const fundamental.
     typedef("const_char_ptr", "const char *"),
