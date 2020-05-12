@@ -66,6 +66,9 @@ future_get_ssize_t (future_t *future);
 uint32_t
 future_get_uint32_t (future_t *future);
 
+void_ptr
+future_get_void_ptr (future_t *future);
+
 const_char_ptr
 future_get_const_char_ptr (future_t *future);
 

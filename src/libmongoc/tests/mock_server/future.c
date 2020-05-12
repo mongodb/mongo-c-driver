@@ -121,6 +121,18 @@ future_get_uint32_t (future_t *future)
    abort ();
 }
 
+void_ptr
+future_get_void_ptr (future_t *future)
+{
+   if (future_wait (future)) {
+      return future_value_get_void_ptr (&future->return_value);
+   }
+
+   fprintf (stderr, "%s timed out\n", BSON_FUNC);
+   fflush (stderr);
+   abort ();
+}
+
 const_char_ptr
 future_get_const_char_ptr (future_t *future)
 {

@@ -100,14 +100,14 @@ _mongoc_socket_setflags (int sd)
 #else
    int flags;
 
-   flags = fcntl (sd, F_GETFL, sd);
+   flags = fcntl (sd, F_GETFL);
 
    if (-1 == fcntl (sd, F_SETFL, (flags | O_NONBLOCK))) {
       return false;
    }
 
 #ifdef FD_CLOEXEC
-   flags = fcntl (sd, F_GETFD, sd);
+   flags = fcntl (sd, F_GETFD);
    if (-1 == fcntl (sd, F_SETFD, (flags | FD_CLOEXEC))) {
       return false;
    }

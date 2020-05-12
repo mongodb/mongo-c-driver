@@ -141,6 +141,20 @@ future_value_get_uint32_t (future_value_t *future_value)
 }
 
 void
+future_value_set_void_ptr (future_value_t *future_value, void_ptr value)
+{
+   future_value->type = future_value_void_ptr_type;
+   future_value->value.void_ptr_value = value;
+}
+
+void_ptr
+future_value_get_void_ptr (future_value_t *future_value)
+{
+   BSON_ASSERT (future_value->type == future_value_void_ptr_type);
+   return future_value->value.void_ptr_value;
+}
+
+void
 future_value_set_const_char_ptr (future_value_t *future_value, const_char_ptr value)
 {
    future_value->type = future_value_const_char_ptr_type;
