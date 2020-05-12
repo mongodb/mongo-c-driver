@@ -37,8 +37,11 @@ test_all_spec_tests (TestSuite *suite)
 
    test_framework_resolve_path (JSON_DIR "/crud", resolved);
 
-   install_json_test_suite_with_check (
-      suite, resolved, &test_crud_cb, test_framework_skip_if_no_sessions);
+   install_json_test_suite_with_check (suite,
+                                       resolved,
+                                       &test_crud_cb,
+                                       test_framework_skip_if_no_crypto,
+                                       TestSuite_CheckLive);
 
    /* Read/write concern spec tests use the same format. */
    test_framework_resolve_path (JSON_DIR "/read_write_concern/operation",
