@@ -1330,3 +1330,42 @@ _mongoc_rpc_check_ok (mongoc_rpc_t *rpc,
 
    RETURN (true);
 }
+
+/* If rpc is OP_COMPRESSED, decompress it into buffer.
+ *
+ * Assumes rpc is still in network little-endian representation (i.e.
+ * _mongoc_rpc_swab_to_le has not been called).
+ * Returns true if rpc is not OP_COMPRESSED (and is a no-op) or if decompression
+ * succeeds.
+ * Return false and sets error otherwise.
+ */
+bool
+_mongoc_rpc_decompress_if_necessary (mongoc_rpc_t *rpc,
+                                     mongoc_buffer_t *buffer /* IN/OUT */,
+                                     bson_error_t *error /* OUT */)
+{
+   uint8_t *buf = NULL;
+   size_t len;
+
+   if (BSON_UINT32_FROM_LE (rpc->header.opcode) != MONGOC_OPCODE_COMPRESSED) {
+      return true;
+   }
+
+   len = BSON_UINT32_FROM_LE (rpc->compressed.uncompressed_size) +
+         sizeof (mongoc_rpc_header_t);
+
+   buf = bson_malloc0 (len);
+   if (!_mongoc_rpc_decompress (rpc, buf, len)) {
+      bson_free (buf);
+      bson_set_error (error,
+                      MONGOC_ERROR_PROTOCOL,
+                      MONGOC_ERROR_PROTOCOL_INVALID_REPLY,
+                      "Could not decompress server reply");
+      return false;
+   }
+
+   _mongoc_buffer_destroy (buffer);
+   _mongoc_buffer_init (buffer, buf, len, NULL, NULL);
+
+   return true;
+}

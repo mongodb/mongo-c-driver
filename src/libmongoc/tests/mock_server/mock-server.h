@@ -19,6 +19,7 @@
 
 #include <bson/bson.h>
 
+#include "mongoc/mongoc-flags-private.h"
 #include "mongoc/mongoc-uri.h"
 
 #ifdef MONGOC_ENABLE_SSL
@@ -198,6 +199,11 @@ mock_server_replies_to_find (request_t *request,
                              const char *ns,
                              const char *reply_json,
                              bool is_command);
+
+void
+mock_server_replies_opmsg (request_t *request,
+                           mongoc_op_msg_flags_t flags,
+                           const bson_t *doc);
 
 void
 mock_server_reply_multi (request_t *request,

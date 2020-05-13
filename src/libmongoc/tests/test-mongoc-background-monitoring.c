@@ -16,12 +16,13 @@
 
 #include "mock_server/mock-server.h"
 #include "mongoc/mongoc.h"
+#include "mongoc/mongoc-client-pool-private.h"
 #include "mongoc/mongoc-client-private.h"
-#include "mongoc/mongoc-topology-private.h"
+#include "mongoc/mongoc-server-description-private.h"
 #include "mongoc/mongoc-topology-background-monitoring-private.h"
 #include "mongoc/mongoc-topology-description-private.h"
-#include "mongoc/mongoc-server-description-private.h"
-#include "mongoc/mongoc-client-pool-private.h"
+#include "mongoc/mongoc-topology-private.h"
+#include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 
@@ -34,11 +35,13 @@ typedef struct {
    uint32_t n_server_changed;
    mongoc_topology_description_type_t td_type;
    mongoc_server_description_type_t sd_type;
+   bool awaited;
 } tf_observations_t;
 
 typedef enum {
    TF_FAST_HEARTBEAT = 1 << 0,
-   TF_FAST_MIN_HEARTBEAT = 1 << 1
+   TF_FAST_MIN_HEARTBEAT = 1 << 1,
+   TF_AUTO_RESPOND_POLLING_ISMASTER = 1 << 2
 } tf_flags_t;
 
 typedef struct {
@@ -69,11 +72,8 @@ tf_dump (test_fixture_t *tf)
    printf ("== End dump ==\n");
 }
 
-void
-tf_log (test_fixture_t *tf, const char *format, ...) BSON_GNUC_PRINTF (2, 3);
-
-void
-tf_log (test_fixture_t *tf, const char *format, ...)
+void BSON_GNUC_PRINTF (2, 3)
+   tf_log (test_fixture_t *tf, const char *format, ...)
 {
    va_list ap;
    char *str;
@@ -117,7 +117,11 @@ _heartbeat_started (const mongoc_apm_server_heartbeat_started_t *event)
       event);
    bson_mutex_lock (&tf->mutex);
    tf->observations->n_heartbeat_started++;
-   TF_LOG (tf, "heartbeat started");
+   tf->observations->awaited =
+      mongoc_apm_server_heartbeat_started_get_awaited (event);
+   TF_LOG (tf,
+           "%s heartbeat started",
+           tf->observations->awaited ? "awaitable" : "polling");
    mongoc_cond_broadcast (&tf->cond);
    bson_mutex_unlock (&tf->mutex);
 }
@@ -131,7 +135,11 @@ _heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
       event);
    bson_mutex_lock (&tf->mutex);
    tf->observations->n_heartbeat_succeeded++;
-   TF_LOG (tf, "heartbeat succeeded");
+   tf->observations->awaited =
+      mongoc_apm_server_heartbeat_succeeded_get_awaited (event);
+   TF_LOG (tf,
+           "%s heartbeat succeeded",
+           tf->observations->awaited ? "awaitable" : "polling");
    mongoc_cond_broadcast (&tf->cond);
    bson_mutex_unlock (&tf->mutex);
 }
@@ -144,8 +152,12 @@ _heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
    tf =
       (test_fixture_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
    bson_mutex_lock (&tf->mutex);
-   TF_LOG (tf, "heartbeat failed");
    tf->observations->n_heartbeat_failed++;
+   tf->observations->awaited =
+      mongoc_apm_server_heartbeat_failed_get_awaited (event);
+   TF_LOG (tf,
+           "%s heartbeat failed",
+           tf->observations->awaited ? "awaitable" : "polling");
    mongoc_cond_broadcast (&tf->cond);
    bson_mutex_unlock (&tf->mutex);
 }
@@ -154,17 +166,44 @@ static void
 _server_changed (const mongoc_apm_server_changed_t *event)
 {
    test_fixture_t *tf;
+   const mongoc_server_description_t *old_sd;
    const mongoc_server_description_t *new_sd;
 
    tf = (test_fixture_t *) mongoc_apm_server_changed_get_context (event);
+   old_sd = mongoc_apm_server_changed_get_previous_description (event);
    new_sd = mongoc_apm_server_changed_get_new_description (event);
    bson_mutex_lock (&tf->mutex);
-   TF_LOG (tf, "server changed");
+   TF_LOG (tf,
+           "server changed %s => %s",
+           mongoc_server_description_type (old_sd),
+           mongoc_server_description_type (new_sd));
    tf->observations->sd_type = new_sd->type;
    tf->observations->n_server_changed++;
    mongoc_cond_broadcast (&tf->cond);
    bson_mutex_unlock (&tf->mutex);
 }
+
+#define TV \
+   "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
+
+bool
+auto_respond_polling_ismaster (request_t *request, void *ctx)
+{
+   if (0 == strcmp (request->command_name, "isMaster")) {
+      const bson_t *doc;
+
+      doc = request_get_doc ((request), 0);
+      if (!bson_has_field (doc, "topologyVersion")) {
+         mock_server_replies_simple (request,
+                                     "{'ok': 1, 'topologyVersion': " TV " }");
+         request_destroy (request);
+         return true;
+      }
+   }
+   return false;
+}
+
+#define FAST_HEARTBEAT_MS 10
 
 test_fixture_t *
 tf_new (tf_flags_t flags)
@@ -192,13 +231,19 @@ tf_new (tf_flags_t flags)
 
    if (flags & TF_FAST_HEARTBEAT) {
       _mongoc_client_pool_get_topology (tf->pool)->description.heartbeat_msec =
-         10;
+         FAST_HEARTBEAT_MS;
       /* A fast heartbeat implies a fast min heartbeat. */
       flags |= TF_FAST_MIN_HEARTBEAT;
    }
+
    if (flags & TF_FAST_MIN_HEARTBEAT) {
       _mongoc_client_pool_get_topology (tf->pool)
-         ->min_heartbeat_frequency_msec = 10;
+         ->min_heartbeat_frequency_msec = FAST_HEARTBEAT_MS;
+   }
+
+   if (flags & TF_AUTO_RESPOND_POLLING_ISMASTER) {
+      mock_server_autoresponds (
+         tf->server, auto_respond_polling_ismaster, NULL, NULL);
    }
    tf->flags = flags;
    tf->logs = bson_string_new ("");
@@ -253,7 +298,11 @@ tf_destroy (test_fixture_t *tf)
       bson_mutex_unlock (&_tf->mutex);                     \
    } while (0);
 
-#define WAIT _mongoc_usleep (10 * 1000);
+/* Wait for two periods of the faster heartbeat.
+ * Used to make observations that a scan doesn't occur when a test fixture is
+ * configured with a faster heartbeat.
+ */
+#define WAIT_TWO_MIN_HEARTBEAT_MS _mongoc_usleep (2 * FAST_HEARTBEAT_MS * 1000);
 
 static void
 _signal_shutdown (test_fixture_t *tf)
@@ -296,6 +345,16 @@ _request_scan (test_fixture_t *tf)
    bson_mutex_unlock (&tf->client->topology->mutex);
 }
 
+static void
+_request_cancel (test_fixture_t *tf)
+{
+   bson_mutex_lock (&tf->client->topology->mutex);
+   /* Assume server id is 1. */
+   _mongoc_topology_background_monitoring_cancel_check (tf->client->topology,
+                                                        1);
+   bson_mutex_unlock (&tf->client->topology->mutex);
+}
+
 void
 test_connect_succeeds (void)
 {
@@ -304,13 +363,15 @@ test_connect_succeeds (void)
 
    tf = tf_new (0);
    request = mock_server_receives_ismaster (tf->server);
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_ok_and_destroys (request);
 
-   OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 1);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
    OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   OBSERVE (tf, !tf->observations->awaited);
 
    tf_destroy (tf);
 }
@@ -323,17 +384,20 @@ test_connect_hangup (void)
 
    tf = tf_new (0);
    request = mock_server_receives_ismaster (tf->server);
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
+   OBSERVE (tf, !tf->observations->awaited);
    mock_server_hangs_up (request);
    request_destroy (request);
 
-   OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 1);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 0);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
-   OBSERVE_SOON (tf, tf->observations->n_server_changed == 0);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
+   OBSERVE (tf, !tf->observations->awaited);
 
    /* No retry occurs since the server was never discovered. */
-   WAIT;
+   WAIT_TWO_MIN_HEARTBEAT_MS;
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    tf_destroy (tf);
 }
@@ -347,18 +411,18 @@ test_connect_badreply (void)
    tf = tf_new (0);
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_simple (request, "{'ok': 0}");
    request_destroy (request);
 
-   OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 1);
-   /* Still considered a successful heartbeat. */
-   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
-   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
-   OBSERVE_SOON (tf, tf->observations->n_server_changed == 0);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 0);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   /* Expect a ServerDescriptionChanged event, since it now has an error. */
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
 
    /* No retry occurs since the server was never discovered. */
-   WAIT;
+   WAIT_TWO_MIN_HEARTBEAT_MS;
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    tf_destroy (tf);
 }
@@ -372,6 +436,7 @@ test_connect_shutdown (void)
    tf = tf_new (0);
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 1);
    /* Before the server replies, signal the server monitor to shutdown. */
    _signal_shutdown (tf);
 
@@ -380,7 +445,6 @@ test_connect_shutdown (void)
    mock_server_replies_ok_and_destroys (request);
 
    /* Heartbeat succeeds, but server description is not updated. */
-   OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 1);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
    OBSERVE_SOON (tf, tf->observations->n_server_changed == 0);
@@ -404,7 +468,7 @@ test_connect_requestscan (void)
 
    /* Because the request occurred during the scan, no subsequent scan occurs.
     */
-   WAIT;
+   WAIT_TWO_MIN_HEARTBEAT_MS;
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    OBSERVE (tf, tf->observations->n_heartbeat_succeeded == 1);
    OBSERVE (tf, tf->observations->n_heartbeat_failed == 0);
@@ -420,11 +484,12 @@ test_retry_succeeds (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_FAST_HEARTBEAT);
+   tf = tf_new (TF_FAST_MIN_HEARTBEAT);
 
    /* Initial discovery occurs. */
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_ok_and_destroys (request);
 
    /* Heartbeat succeeds, but server description is not updated. */
@@ -432,20 +497,25 @@ test_retry_succeeds (void)
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
 
-   /* The next ismaster occurs (due to fast heartbeat). */
+   /* Request a scan to speed things up. */
+   _request_scan (tf);
+
+   /* The next ismaster occurs. */
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    mock_server_hangs_up (request);
    request_destroy (request);
 
-   /* Server is still standalone. */
+   /* Server is marked as unknown, but not for long. Next scan is immediate. */
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
-   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
 
    /* Retry occurs. */
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 3);
    mock_server_replies_ok_and_destroys (request);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
@@ -460,11 +530,12 @@ test_retry_hangup (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_FAST_HEARTBEAT);
+   tf = tf_new (TF_FAST_MIN_HEARTBEAT);
 
    /* Initial discovery occurs. */
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_ok_and_destroys (request);
 
    /* Heartbeat succeeds, but server description is not updated. */
@@ -472,20 +543,25 @@ test_retry_hangup (void)
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
 
+   /* Request a scan to speed things up. */
+   _request_scan (tf);
+
    /* The next ismaster occurs (due to fast heartbeat). */
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    mock_server_hangs_up (request);
    request_destroy (request);
 
-   /* Server is still standalone. */
+   /* Server is marked as unknown. Next scan is immediate. */
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
-   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
 
    /* Retry occurs. */
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 3);
    mock_server_hangs_up (request);
    request_destroy (request);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
@@ -501,11 +577,12 @@ test_retry_badreply (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_FAST_HEARTBEAT);
+   tf = tf_new (TF_FAST_MIN_HEARTBEAT);
 
    /* Initial discovery occurs. */
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_ok_and_destroys (request);
 
    /* Heartbeat succeeds, but server description is not updated. */
@@ -513,25 +590,30 @@ test_retry_badreply (void)
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
 
-   /* The next ismaster occurs (due to fast heartbeat). */
+   /* Request a scan to speed things up. */
+   _request_scan (tf);
+
+   /* The next ismaster occurs. */
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    mock_server_hangs_up (request);
    request_destroy (request);
 
-   /* Server is still standalone. */
+   /* Server is marked unknown. Next scan is immediate. */
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
-   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
 
    /* Retry occurs. */
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 3);
    mock_server_replies_simple (request, "{'ok': 0}");
    request_destroy (request);
-   /* Heartbeat succeeds, but server description is unknown. */
-   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
-   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   /* Heartbeat fails. */
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 2);
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
 
    tf_destroy (tf);
@@ -548,6 +630,7 @@ test_retry_shutdown (void)
    /* Initial discovery occurs. */
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_ok_and_destroys (request);
 
    /* Heartbeat succeeds, but server description is not updated. */
@@ -558,11 +641,12 @@ test_retry_shutdown (void)
    /* The next ismaster occurs (due to fast heartbeat). */
    request = mock_server_receives_ismaster (tf->server);
    OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    _signal_shutdown (tf);
    mock_server_replies_ok_and_destroys (request);
 
    /* No retry occurs. */
-   WAIT;
+   WAIT_TWO_MIN_HEARTBEAT_MS;
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE (tf, tf->observations->n_heartbeat_failed == 0);
@@ -571,6 +655,7 @@ test_retry_shutdown (void)
    tf_destroy (tf);
 }
 
+/* Test a server monitor being added and removed repeatedly. */
 static void
 test_flip_flop (void)
 {
@@ -600,16 +685,440 @@ test_repeated_requestscan (void)
    request_t *request;
    int i;
 
+   /* Multiple repeated requests before an ismaster completes should not cause a
+    * subsequent scan. */
    tf = tf_new (TF_FAST_MIN_HEARTBEAT);
-
-   for (i = 1; i < 100; i++) {
-      request = mock_server_receives_ismaster (tf->server);
-      OBSERVE (tf, request);
-      mock_server_replies_ok_and_destroys (request);
-      OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == i);
-      OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == i);
+   for (i = 0; i < 10; i++) {
       _request_scan (tf);
    }
+   request = mock_server_receives_ismaster (tf->server);
+   OBSERVE (tf, request);
+   for (i = 0; i < 10; i++) {
+      _request_scan (tf);
+   }
+   WAIT_TWO_MIN_HEARTBEAT_MS;
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
+   mock_server_replies_ok_and_destroys (request);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
+
+   tf_destroy (tf);
+}
+
+static void
+test_sleep_after_scan (void)
+{
+   test_fixture_t *tf;
+   request_t *request;
+
+   /* After handling a scan request */
+   tf = tf_new (TF_FAST_MIN_HEARTBEAT);
+   _request_scan (tf);
+   request = mock_server_receives_ismaster (tf->server);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
+   mock_server_replies_ok_and_destroys (request);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
+   WAIT_TWO_MIN_HEARTBEAT_MS;
+   /* No subsequent command send. */
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
+   tf_destroy (tf);
+}
+
+static void
+test_streaming_succeeds (void)
+{
+   test_fixture_t *tf;
+   request_t *request;
+
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   OBSERVE (tf, tf->observations->awaited);
+   mock_server_replies_ok_and_destroys (request);
+
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 2);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   OBSERVE (tf, tf->observations->awaited);
+
+   tf_destroy (tf);
+}
+
+static void
+test_streaming_hangup (void)
+{
+   test_fixture_t *tf;
+   request_t *request;
+
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   OBSERVE (tf, tf->observations->awaited);
+   mock_server_hangs_up (request);
+   request_destroy (request);
+
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   /* Due to network error, server monitor immediately proceeds and performs
+    * handshake. */
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   /* Because of the transition to Unknown, then back to Standalone, three
+    * server changed events occurred. */
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 3);
+   tf_destroy (tf);
+}
+
+static void
+test_streaming_badreply (void)
+{
+   test_fixture_t *tf;
+   request_t *request;
+
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   mock_server_replies_simple (request, "{'ok': 0}");
+   request_destroy (request);
+
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 2);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
+
+   /* Request an immediate scan to trigger the next polling ismaster. */
+   _request_scan (tf);
+   /* The auto responder will handle the polling ismaster. */
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 3);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+
+   tf_destroy (tf);
+}
+
+static void
+test_streaming_shutdown (void)
+{
+   test_fixture_t *tf;
+   request_t *request;
+
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER | TF_FAST_HEARTBEAT);
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   _signal_shutdown (tf);
+   /* This should cancel the ismaster immediately. */
+   WAIT_TWO_MIN_HEARTBEAT_MS;
+   /* No further ismaster commands should be sent. */
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   request_destroy (request);
+   tf_destroy (tf);
+}
+
+static void
+test_streaming_cancel (void)
+{
+   test_fixture_t *tf;
+   request_t *request;
+
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   _request_cancel (tf);
+
+   /* This should cancel the ismaster immediately. */
+   request_destroy (request);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
+   /* The cancellation closes the connection and waits before creating a new
+    * connection. Check that no new heartbeat was started. */
+   WAIT_TWO_MIN_HEARTBEAT_MS;
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   _request_scan (tf);
+   /* The handshake will be handled by the auto responder. */
+
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 4);
+   mock_server_replies_ok_and_destroys (request);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 3);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 2);
+   tf_destroy (tf);
+}
+
+static void
+test_moretocome_succeeds (void)
+{
+   test_fixture_t *tf;
+   request_t *request;
+
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   OBSERVE (tf, tf->observations->awaited);
+   mock_server_replies_opmsg (
+      request,
+      MONGOC_MSG_MORE_TO_COME,
+      tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   OBSERVE (tf, tf->observations->awaited);
+
+   /* Server monitor is still streaming replies. */
+   mock_server_replies_opmsg (
+      request,
+      MONGOC_MSG_MORE_TO_COME,
+      tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 3);
+   OBSERVE (tf, tf->observations->awaited);
+   /* Reply with no moretocome flag. */
+   mock_server_replies_opmsg (
+      request,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 4);
+   OBSERVE (tf, tf->observations->awaited);
+   request_destroy (request);
+   /* Server monitor immediately sends awaitable ismaster. */
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 5);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 4);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   OBSERVE (tf, tf->observations->awaited);
+   request_destroy (request);
+   tf_destroy (tf);
+}
+
+static void
+test_moretocome_hangup (void)
+{
+   test_fixture_t *tf;
+   request_t *request;
+
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   OBSERVE (tf, tf->observations->awaited);
+   mock_server_replies_opmsg (
+      request,
+      MONGOC_MSG_MORE_TO_COME,
+      tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   OBSERVE (tf, tf->observations->awaited);
+
+   /* Server monitor is still streaming replies. */
+   mock_server_hangs_up (request);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   /* Due to network error, server monitor immediately proceeds and performs
+    * handshake. */
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 3);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   /* Because of the transition to Unknown, then back to Standalone, three
+    * server changed events occurred. */
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 3);
+   request_destroy (request);
+   tf_destroy (tf);
+}
+
+static void
+test_moretocome_badreply (void)
+{
+   test_fixture_t *tf;
+   request_t *request;
+
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   mock_server_replies_opmsg (
+      request,
+      MONGOC_MSG_MORE_TO_COME,
+      tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+
+   /* Server monitor is still streaming replies. */
+   mock_server_replies_simple (request, "{'ok': 0}");
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 2);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
+
+   /* Server monitor sleeps for next poll. Request an immediate scan. */
+   _request_scan (tf);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 3);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 3);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   request_destroy (request);
+   tf_destroy (tf);
+}
+
+static void
+test_moretocome_shutdown (void)
+{
+   test_fixture_t *tf;
+   request_t *request;
+
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER | TF_FAST_HEARTBEAT);
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   mock_server_replies_opmsg (
+      request,
+      MONGOC_MSG_MORE_TO_COME,
+      tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+
+   /* Server monitor is still streaming replies. It may be reading, or it may be
+    * processing the last reply. Requesting shutdown cancels. */
+   _signal_shutdown (tf);
+
+   WAIT_TWO_MIN_HEARTBEAT_MS;
+   /* No further heartbeats are attempted. */
+   OBSERVE (tf, tf->observations->n_heartbeat_succeeded == 2);
+   request_destroy (request);
+
+   tf_destroy (tf);
+}
+
+static void
+test_moretocome_cancel (void)
+{
+   test_fixture_t *tf;
+   request_t *request;
+
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
+   mock_server_replies_opmsg (
+      request,
+      MONGOC_MSG_MORE_TO_COME,
+      tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+
+   /* Server monitor is still streaming replies. */
+   _request_cancel (tf);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   request_destroy (request);
+
+   /* The cancellation closes the connection and waits before creating a new
+    * connection. Check that no new heartbeat was started. */
+   WAIT_TWO_MIN_HEARTBEAT_MS;
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 3);
+   _request_scan (tf);
+   /* The handshake will be handled by the auto responder. */
+
+   /* Cancelling creates a new connection. */
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 4);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 3);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+
+   /* Server monitor sends a fresh awaitable ismaster. */
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 5);
+   mock_server_replies_opmsg (
+      request,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 4);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   request_destroy (request);
+
+   /* Since the reply did not include moretocome, server monitor sends another.
+    */
+   request = mock_server_receives_msg (
+      tf->server,
+      MONGOC_MSG_EXHAUST_ALLOWED,
+      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+   OBSERVE (tf, request);
+   OBSERVE (tf, tf->observations->n_heartbeat_started == 6);
+   mock_server_replies_opmsg (
+      request,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'ok': 1, 'topologyVersion': " TV "}"));
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 5);
+   OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
+   OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
+   OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
+   request_destroy (request);
 
    tf_destroy (tf);
 }
@@ -619,31 +1128,68 @@ test_monitoring_install (TestSuite *suite)
 {
    /* Tests for initial connection. */
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor/connect/succeeds", test_connect_succeeds);
+      suite, "/server_monitor_thread/connect/succeeds", test_connect_succeeds);
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor/connect/hangup", test_connect_hangup);
+      suite, "/server_monitor_thread/connect/hangup", test_connect_hangup);
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor/connect/badreply", test_connect_badreply);
+      suite, "/server_monitor_thread/connect/badreply", test_connect_badreply);
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor/connect/shutdown", test_connect_shutdown);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor/connect/requestscan", test_connect_requestscan);
+      suite, "/server_monitor_thread/connect/shutdown", test_connect_shutdown);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/connect/requestscan",
+                                test_connect_requestscan);
 
    /* Tests for retry. */
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor/retry/succeeds", test_retry_succeeds);
+      suite, "/server_monitor_thread/retry/succeeds", test_retry_succeeds);
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor/retry/hangup", test_retry_hangup);
+      suite, "/server_monitor_thread/retry/hangup", test_retry_hangup);
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor/retry/badreply", test_retry_badreply);
+      suite, "/server_monitor_thread/retry/badreply", test_retry_badreply);
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor/retry/shutdown", test_retry_shutdown);
+      suite, "/server_monitor_thread/retry/shutdown", test_retry_shutdown);
+
+   /* Tests for streaming. */
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/streaming/succeeds",
+                                test_streaming_succeeds);
+   TestSuite_AddMockServerTest (
+      suite, "/server_monitor_thread/streaming/hangup", test_streaming_hangup);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/streaming/badreply",
+                                test_streaming_badreply);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/streaming/shutdown",
+                                test_streaming_shutdown);
+   TestSuite_AddMockServerTest (
+      suite, "/server_monitor_thread/streaming/cancel", test_streaming_cancel);
+
+   /* Tests for moretocome. */
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/moretocome/succeeds",
+                                test_moretocome_succeeds);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/moretocome/hangup",
+                                test_moretocome_hangup);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/moretocome/badreply",
+                                test_moretocome_badreply);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/moretocome/shutdown",
+                                test_moretocome_shutdown);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/moretocome/cancel",
+                                test_moretocome_cancel);
 
    /* Test flip flopping. */
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor/flip_flop", test_flip_flop);
+      suite, "/server_monitor_thread/flip_flop", test_flip_flop);
 
    /* Test repeated scan requests. */
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/repeated_requestscan",
+                                test_repeated_requestscan);
+
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor/repeated_requestscan", test_repeated_requestscan);
+      suite, "/server_monitor_thread/sleep_after_scan", test_sleep_after_scan);
 }

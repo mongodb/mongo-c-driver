@@ -256,6 +256,8 @@ else
    }
 fi
 
+export MONGOC_TEST_SERVER_LOG=stdout
+
 # Write stderr to error.log and to console. Turn off tracing to avoid spurious
 # log messages that CHECK_LOG considers failures.
 mkfifo pipe || true

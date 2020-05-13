@@ -3,6 +3,7 @@
 
 #include "mongoc/mongoc-client-private.h"
 #include "mongoc/mongoc-client-pool-private.h"
+#include "mongoc/mongoc-topology-background-monitoring-private.h"
 #include "mongoc/mongoc-uri-private.h"
 
 #include "mock_server/mock-server.h"
@@ -128,6 +129,7 @@ test_get_max_msg_size (void)
       future = future_cursor_next (cursor, &doc);                       \
       request = mock_server_receives_query (                            \
          server, "test.test", MONGOC_QUERY_SLAVE_OK, 0, 0, "{}", NULL); \
+      BSON_ASSERT (request);                                            \
       client_port_variable = request_get_client_port (request);         \
    } while (0)
 
@@ -145,7 +147,6 @@ static void
 _test_cluster_node_disconnect (bool pooled)
 {
    mock_server_t *server;
-   const int32_t socket_timeout_ms = 100;
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
@@ -167,7 +168,6 @@ _test_cluster_node_disconnect (bool pooled)
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", socket_timeout_ms);
 
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
@@ -441,11 +441,11 @@ test_cluster_command_notmaster (void)
    collection = mongoc_client_get_collection (client, "db", "test");
    /* use an unordered bulk write, so it attempts to continue on error */
    bulk = mongoc_collection_create_bulk_operation_with_opts (
-      collection, tmp_bson("{'ordered': false}"));
+      collection, tmp_bson ("{'ordered': false}"));
    /* Set a "hint" aka "server id" to force the write to be directed to the
     * non-primary */
    mongoc_bulk_operation_set_hint (bulk, 1);
-   doc = tmp_bson("{'foo': 1}");
+   doc = tmp_bson ("{'foo': 1}");
    /* Have enough inserts to ensure some batch splits */
    for (i = 0; i < 10001; i++) {
       mongoc_bulk_operation_insert_with_opts (bulk, doc, NULL, &error);
@@ -469,7 +469,6 @@ test_cluster_command_notmaster (void)
    future_destroy (future);
    mongoc_uri_destroy (uri);
    mock_server_destroy (server);
-
 }
 
 
@@ -1759,7 +1758,7 @@ _test_cmd_on_unknown_serverid (bool pooled)
    uri = test_framework_get_uri ();
    /* Set a high heartbeatFrequencyMS so subsequent topology scans do not
     * interfere with the test. */
-   mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
 
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
@@ -1791,7 +1790,8 @@ _test_cmd_on_unknown_serverid (bool pooled)
    ASSERT_OR_PRINT (ret, error);
 
    /* Invalidate the server, giving it the server type MONGOC_SERVER_UNKNOWN */
-   bson_set_error (&error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
+   bson_set_error (
+      &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
    mongoc_topology_invalidate_server (client->topology, 1, &error);
    memset (&error, 0, sizeof (error));
 
@@ -1806,10 +1806,8 @@ _test_cmd_on_unknown_serverid (bool pooled)
                                                       &error);
    BSON_ASSERT (!ret);
    if (!pooled) {
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_STREAM,
-                             MONGOC_ERROR_STREAM_CONNECT,
-                             "invalidated")
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated")
    } else {
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
@@ -1872,9 +1870,8 @@ test_cluster_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/command/timeout/pooled",
                                 test_cluster_command_timeout_pooled);
-   TestSuite_AddMockServerTest (suite,
-                                "/Cluster/command/notmaster",
-                                test_cluster_command_notmaster);
+   TestSuite_AddMockServerTest (
+      suite, "/Cluster/command/notmaster", test_cluster_command_notmaster);
    TestSuite_AddFull (suite,
                       "/Cluster/write_command/disconnect",
                       test_write_command_disconnect,

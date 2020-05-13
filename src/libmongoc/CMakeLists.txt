@@ -531,6 +531,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-description.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-stream.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-session.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-monitor.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-set.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-socket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-buffered.c

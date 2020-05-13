@@ -726,6 +726,8 @@ post:
 - func: upload mo artifacts
 - func: upload test results
 - func: cleanup
+timeout:
+- func: backtrace
 tasks:
 - name: check-headers
   commands:

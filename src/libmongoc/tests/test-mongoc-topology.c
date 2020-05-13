@@ -58,11 +58,11 @@ checks_cmp (checks_t *checks, const char *metric, char cmp, int expected)
    bson_mutex_unlock (&checks->mutex);
 
    if (cmp == '=') {
-      return expected == actual;
+      return actual == expected;
    } else if (cmp == '>') {
-      return expected > actual;
+      return actual > expected;
    } else if (cmp == '<') {
-      return expected < actual;
+      return actual < expected;
    } else {
       test_error ("unknown comparison: %c", cmp);
    }
@@ -1470,7 +1470,6 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
    future_t *future;
    request_t *request;
    bson_error_t error;
-   int i;
    int64_t t;
 
    checks_init (&checks);
@@ -1496,15 +1495,18 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
                                   " 'hosts': ['%s']}",
                                   mock_server_get_host_and_port (server));
 
+   /* As soon as the client is popped, background monitoring starts. */
+   request = mock_server_receives_ismaster (server);
+   mock_server_replies_simple (request, ismaster);
+   request_destroy (request);
+
    /* start a {foo: 1} command, handshake normally */
    future = future_command (client, &error);
 
-   /* one ismaster from the scanner, another to handshake the connection */
-   for (i = 0; i < 2; i++) {
-      request = mock_server_receives_ismaster (server);
-      mock_server_replies_simple (request, ismaster);
-      request_destroy (request);
-   }
+   /* Another ismaster to handshake the connection */
+   request = mock_server_receives_ismaster (server);
+   mock_server_replies_simple (request, ismaster);
+   request_destroy (request);
 
    /* the {foo: 1} command finishes */
    receives_command (server, future);
@@ -1521,14 +1523,18 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
    /* retry immediately (for testing, "immediately" means less than 250ms */
    request = mock_server_receives_ismaster (server);
    ASSERT_CMPINT64 (bson_get_monotonic_time () - t, <, (int64_t) 250 * 1000);
-   /* Since connection was established successfully, the server description is
-    * not marked as Unknown until after a failed retry attempt. */
-   BSON_ASSERT (has_known_server (client));
+   /* The server is marked as Unknown, but immediately rescanned. This behavior
+    * comes from the server monitoring spec:
+    * "To handle the case that the server is truly down, the monitor makes the
+    * server unselectable by marking it Unknown. To handle the case of a
+    * transient network glitch or restart, the monitor immediately runs the next
+    * check without waiting".
+    */
+   BSON_ASSERT (!has_known_server (client));
    if (n_failures == 2) {
       if (hangup) {
          mock_server_hangs_up (request);
       }
-      WAIT_UNTIL (!has_known_server (client));
    } else {
       mock_server_replies_simple (request, ismaster);
       WAIT_UNTIL (has_known_server (client));
@@ -2065,13 +2071,15 @@ test_request_scan_on_error ()
    /* with a "not master" error code but a "node is recovery" message, it is
     * considered a "node is recovering" error */
    TEST_SINGLE ("{'ok': 0, 'code': 10107, 'errmsg': 'node is recovering'}",
-              false /* should_scan */,
-              true /* should_mark_unknown */,
-              "node is recovering");
+                false /* should_scan */,
+                true /* should_mark_unknown */,
+                "node is recovering");
+   /* with a "not master" error code but a "node is recovery" message, it is
+    * considered a "node is recovering" error */
    TEST_POOLED ("{'ok': 0, 'code': 10107, 'errmsg': 'node is recovering'}",
-              true /* should_scan */,
-              true /* should_mark_unknown */,
-              "node is recovering");
+                true /* should_scan */,
+                true /* should_mark_unknown */,
+                "node is recovering");
    /* write concern errors are also checked. */
    TEST_BOTH ("{'ok': 1, 'writeConcernError': { 'errmsg': 'not master' }}",
               true, /* should_scan */
@@ -2129,7 +2137,7 @@ test_slow_server_pooled (void)
    ismaster_secondary = bson_strdup_printf (
       "%s, 'ismaster': false, 'secondary': true }", ismaster_common);
 
-   /* Primary response immediately, but secondary does not. */
+   /* Primary responds immediately, but secondary does not. */
    mock_server_auto_ismaster (primary, ismaster_primary);
 
    uri = mongoc_uri_copy (mock_server_get_uri (primary));
@@ -2169,7 +2177,7 @@ test_slow_server_pooled (void)
                           "expired");
    BSON_ASSERT (!ret);
 
-   /* Set up an auto responder so future ismasters on the secondary does not
+   /* Set up an auto responder so future ismasters on the secondary do not
     * block until connectTimeoutMS. Otherwise, the shutdown sequence will be
     * blocked for connectTimeoutMS. */
    mock_server_auto_ismaster (secondary, ismaster_secondary);
