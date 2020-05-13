@@ -25,6 +25,7 @@
 #include "mongoc-counters-private.h"
 #include "mongoc-config.h"
 #include "mongoc-error.h"
+#include "mongoc-flags-private.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-log.h"
 #include "mongoc-cluster-sasl-private.h"
@@ -42,6 +43,7 @@
 #include "mongoc-stream-tls.h"
 #include "mongoc-thread-private.h"
 #include "mongoc-topology-private.h"
+#include "mongoc-topology-background-monitoring-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-write-concern-private.h"
@@ -61,22 +63,6 @@
 #define CHECK_CLOSED_DURATION_MSEC 1000
 
 #define IS_NOT_COMMAND(_name) (!!strcasecmp (cmd->command_name, _name))
-
-/**
- * mongoc_op_msg_flags_t:
- * @MONGOC_MSG_CHECKSUM_PRESENT: The message ends with 4 bytes containing a
- * CRC-32C checksum.
- * @MONGOC_MSG_MORE_TO_COME: If set to 0, wait for a server response. If set to
- * 1, do not expect a server response.
- * @MONGOC_MSG_EXHAUST_ALLOWED: If set, allows multiple replies to this request
- * using the moreToCome bit.
- */
-typedef enum {
-   MONGOC_MSG_NONE = 0,
-   MONGOC_MSG_CHECKSUM_PRESENT = 1 << 0,
-   MONGOC_MSG_MORE_TO_COME = 1 << 1,
-   MONGOC_EXHAUST_ALLOWED = 1 << 16,
-} mongoc_op_msg_flags_t;
 
 static mongoc_server_stream_t *
 mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
@@ -2238,13 +2224,18 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
        * 3. Auth error during handshake.
        * Only (1) should mark the server unknown and clear the pool.
        * Network errors should be checked at a lower layer than this, when an
-       * operation on a stream fails.
+       * operation on a stream fails, and should take the connection generation
+       * into account.
        */
 
       mongoc_topology_invalidate_server (topology, server_id, err_ptr);
       mongoc_cluster_disconnect_node (cluster, server_id);
       bson_mutex_lock (&topology->mutex);
       _mongoc_topology_clear_connection_pool (topology, server_id);
+      if (!topology->single_threaded) {
+         _mongoc_topology_background_monitoring_cancel_check (topology,
+                                                              server_id);
+      }
       bson_mutex_unlock (&topology->mutex);
       _mongoc_bson_init_with_transient_txn_error (cs, reply);
    }

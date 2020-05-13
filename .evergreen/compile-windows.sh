@@ -132,4 +132,6 @@ if [ "$SKIP_MOCK_TESTS" = "ON" ]; then
    exit 0
 fi
 
+export MONGOC_TEST_SERVER_LOG=stdout
+
 "$TEST_PATH" --no-fork -d -F test-results.json

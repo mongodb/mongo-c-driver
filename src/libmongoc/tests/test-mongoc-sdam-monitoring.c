@@ -693,6 +693,10 @@ _test_heartbeat_events (bool pooled, bool succeeded)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 400);
 
+   /* The start time should be before scanning is started (before the call to
+    * mongoc_client_pool_pop for pooled) */
+   start = bson_get_monotonic_time ();
+
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
       pool_set_heartbeat_event_callbacks (pool, &context);
@@ -701,8 +705,6 @@ _test_heartbeat_events (bool pooled, bool succeeded)
       client = mongoc_client_new_from_uri (uri);
       client_set_heartbeat_event_callbacks (client, &context);
    }
-
-   start = bson_get_monotonic_time ();
 
    /* trigger "ismaster" handshake */
    future = future_client_command_simple (
@@ -827,6 +829,9 @@ _test_heartbeat_fails_dns (bool pooled)
    size_t i;
 
    context_init (&context);
+   /* Track time before scanning starts (which is triggered by popping the first
+    * client for a client pool). */
+   start = bson_get_monotonic_time ();
    uri = mongoc_uri_new (
       "mongodb://doesntexist.foobar/?serverSelectionTimeoutMS=3000");
    if (pooled) {
@@ -838,17 +843,17 @@ _test_heartbeat_fails_dns (bool pooled)
       client_set_heartbeat_event_callbacks (client, &context);
    }
 
-   start = bson_get_monotonic_time ();
-
    /* trigger "ismaster" handshake */
    r = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
+   /* This should result in either a DNS failure or connection failure depending
+    * on the network. We assert the domain/code but not the message string. */
    ASSERT (!r);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "Failed to resolve");
+                          "");
 
    duration = bson_get_monotonic_time () - start;
 

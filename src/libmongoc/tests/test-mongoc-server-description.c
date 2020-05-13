@@ -106,10 +106,6 @@ test_server_description_equal (void)
    sd2.connection_address = "host2:5678";
    BSON_ASSERT (_mongoc_server_description_equal (&sd1, &sd2));
 
-   /* "error" differs, still considered equal. */
-   bson_set_error (&sd1.error, MONGOC_ERROR_SERVER, 123, "some error");
-   BSON_ASSERT (_mongoc_server_description_equal (&sd1, &sd2));
-
    /* "roundTripTime" differs, still considered equal. */
    sd1.round_trip_time_msec = 1234;
    BSON_ASSERT (_mongoc_server_description_equal (&sd1, &sd2));
@@ -119,6 +115,10 @@ test_server_description_equal (void)
     * check. */
    bson_reinit (&sd1.last_is_master);
    BSON_ASSERT (_mongoc_server_description_equal (&sd1, &sd2));
+
+   /* "error" differs, considered unequal. */
+   bson_set_error (&sd1.error, MONGOC_ERROR_SERVER, 123, "some error");
+   BSON_ASSERT (!_mongoc_server_description_equal (&sd1, &sd2));
 
    /* "type" differs, considered unequal. */
    reset_basic_sd (&sd1);
@@ -216,6 +216,12 @@ test_server_description_equal (void)
    BSON_APPEND_UTF8 (&sd1.compressors, "0", "zstd");
    BSON_ASSERT (_mongoc_server_description_equal (&sd1, &sd2));
 
+   /* "topologyVersion" differs, considered unequal. */
+   reset_basic_sd (&sd1);
+   reset_basic_sd (&sd2);
+   BCON_APPEND (&sd1.topology_version, "x", BCON_INT32 (1));
+   BSON_ASSERT (!_mongoc_server_description_equal (&sd1, &sd2));
+
    mongoc_server_description_cleanup (&sd1);
    mongoc_server_description_cleanup (&sd2);
 }
@@ -257,6 +263,40 @@ test_server_description_msg_without_isdbgrid (void)
    mongoc_server_description_cleanup (&sd);
 }
 
+static void
+test_server_description_ignores_rtt (void)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error;
+   bson_t ismaster;
+
+   bson_init (&ismaster);
+   BCON_APPEND (&ismaster, "ismaster", BCON_BOOL (true));
+
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   /* Initially, the RTT is MONGOC_RTT_UNSET. */
+   ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, MONGOC_RTT_UNSET);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+   /* If MONGOC_RTT_UNSET is passed as the RTT, it remains MONGOC_RTT_UNSET. */
+   mongoc_server_description_handle_ismaster (
+      &sd, &ismaster, MONGOC_RTT_UNSET, &error);
+   ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, MONGOC_RTT_UNSET);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+   /* The first real RTT overwrites the stored RTT. */
+   mongoc_server_description_handle_ismaster (&sd, &ismaster, 10, &error);
+   ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, 10);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+   /* But subsequent MONGOC_RTT_UNSET values do not effect it. */
+   mongoc_server_description_handle_ismaster (
+      &sd, &ismaster, MONGOC_RTT_UNSET, &error);
+   ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, 10);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+
+   mongoc_server_description_cleanup (&sd);
+   bson_destroy (&ismaster);
+}
+
 void
 test_server_description_install (TestSuite *suite)
 {
@@ -265,4 +305,7 @@ test_server_description_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/server_description/msg_without_isdbgrid",
                   test_server_description_msg_without_isdbgrid);
+   TestSuite_Add (suite,
+                  "/server_description/ignores_unset_rtt",
+                  test_server_description_ignores_rtt);
 }

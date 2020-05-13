@@ -31,6 +31,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-error-private.h"
 #include "mongoc-topology-background-monitoring-private.h"
+#include "mongoc-read-prefs-private.h"
 
 #include "utlist.h"
 
@@ -327,6 +328,13 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    if (service) {
       memset (&rr_data, 0, sizeof (mongoc_rr_data_t));
 
+      /* Initialize the last scan time and interval. Even if the initial DNS
+       * lookup fails, SRV polling will still start when background monitoring
+       * starts. */
+      topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;
+      topology->srv_polling_rescan_interval_ms =
+         MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS;
+
       /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
       prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
       if (!_mongoc_client_get_rr (prefixed_service,
@@ -416,11 +424,13 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    if (!topology->single_threaded) {
       topology->server_monitors = mongoc_set_new (1, NULL, NULL);
+      topology->rtt_monitors = mongoc_set_new (1, NULL, NULL);
       bson_mutex_init (&topology->apm_mutex);
       mongoc_cond_init (&topology->srv_polling_cond);
    }
 
    if (!topology_valid) {
+      TRACE ("%s", "topology invalid");
       /* add no nodes */
       return topology;
    }
@@ -508,6 +518,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
       bson_mutex_unlock (&topology->mutex);
       BSON_ASSERT (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF);
       mongoc_set_destroy (topology->server_monitors);
+      mongoc_set_destroy (topology->rtt_monitors);
       bson_mutex_destroy (&topology->apm_mutex);
       mongoc_cond_destroy (&topology->srv_polling_cond);
    }
@@ -1035,12 +1046,17 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
          &topology->description, optype, read_prefs, local_threshold_ms);
 
       if (!selected_server) {
+         TRACE (
+            "server selection requesting an immediate scan, want %s",
+            _mongoc_read_mode_as_str (mongoc_read_prefs_get_mode (read_prefs)));
          _mongoc_topology_request_scan (topology);
 
+         TRACE ("server selection about to wait for %" PRId64 "ms",
+                (expire_at - loop_start) / 1000);
          r = mongoc_cond_timedwait (&topology->cond_client,
                                     &topology->mutex,
                                     (expire_at - loop_start) / 1000);
-
+         TRACE ("%s", "server selection awake");
          _topology_collect_errors (topology, &scanner_error);
 
          bson_mutex_unlock (&topology->mutex);
@@ -1619,6 +1635,10 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
          &topology->description, server_id, why);
       _mongoc_topology_clear_connection_pool (topology, server_id);
       pool_cleared = true;
+      if (!topology->single_threaded) {
+         _mongoc_topology_background_monitoring_cancel_check (topology,
+                                                              server_id);
+      }
    } else if (type == MONGOC_SDAM_APP_ERROR_TIMEOUT) {
       if (handshake_complete) {
          /* Timeout errors after handshake are ok, do nothing. */
@@ -1629,6 +1649,10 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
          &topology->description, server_id, why);
       _mongoc_topology_clear_connection_pool (topology, server_id);
       pool_cleared = true;
+      if (!topology->single_threaded) {
+         _mongoc_topology_background_monitoring_cancel_check (topology,
+                                                              server_id);
+      }
    } else if (type == MONGOC_SDAM_APP_ERROR_COMMAND) {
       bson_error_t cmd_error;
       bson_t incoming_topology_version;

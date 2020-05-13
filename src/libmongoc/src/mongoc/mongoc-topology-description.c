@@ -1132,7 +1132,7 @@ mongoc_topology_description_invalidate_server (
    BSON_ASSERT (error);
 
    /* send NULL ismaster reply */
-   mongoc_topology_description_handle_ismaster (topology, id, NULL, 0, error);
+   mongoc_topology_description_handle_ismaster (topology, id, NULL, MONGOC_RTT_UNSET, error);
 }
 
 /*
@@ -1955,6 +1955,7 @@ mongoc_topology_description_handle_ismaster (
 
       if (mongoc_server_description_topology_version_cmp (
              &sd->topology_version, &incoming_topology_version) == 1) {
+         TRACE ("%s", "topology version is strictly less. Skipping.");
          return;
       }
    }
@@ -1999,7 +2000,8 @@ mongoc_topology_description_handle_ismaster (
       if (wrong_set_name) {
          /* Replace with unknown. */
          TRACE ("%s", "wrong set name");
-         mongoc_server_description_handle_ismaster (sd, NULL, 0, &set_name_err);
+         mongoc_server_description_handle_ismaster (
+            sd, NULL, MONGOC_RTT_UNSET, &set_name_err);
       }
    }
 
@@ -2220,7 +2222,8 @@ mongoc_topology_description_reconcile (mongoc_topology_description_t *td,
    mongoc_host_list_t *host;
    _remove_if_not_in_host_list_ctx_t ctx;
 
-   LL_FOREACH(host_list, host) {
+   LL_FOREACH (host_list, host)
+   {
       /* "add" is really an "upsert" */
       mongoc_topology_description_add_server (td, host->host_and_port, NULL);
    }

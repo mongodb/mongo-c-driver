@@ -42,6 +42,8 @@
 /* represent a server or topology with no replica set config version */
 #define MONGOC_NO_SET_VERSION -1
 
+#define MONGOC_RTT_UNSET -1
+
 typedef enum {
    MONGOC_SERVER_UNKNOWN,
    MONGOC_SERVER_STANDALONE,

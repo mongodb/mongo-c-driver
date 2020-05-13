@@ -61,6 +61,9 @@ config = OD([
         OD([('func', 'upload test results')]),
         OD([('func', 'cleanup')]),
     ]),
+    ('timeout', [
+        OD([('func', 'backtrace')])
+    ]),
     ('tasks', all_tasks),
     ('buildvariants', all_variants),
 ])

@@ -957,13 +957,8 @@ _mongoc_client_recv (mongoc_client_t *client,
    BSON_ASSERT (buffer);
    BSON_ASSERT (server_stream);
 
-   if (!mongoc_cluster_try_recv (
-          &client->cluster, rpc, buffer, server_stream, error)) {
-      mongoc_topology_invalidate_server (
-         client->topology, server_stream->sd->id, error);
-      return false;
-   }
-   return true;
+   return mongoc_cluster_try_recv (
+      &client->cluster, rpc, buffer, server_stream, error);
 }
 
 
