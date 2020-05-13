@@ -3751,6 +3751,67 @@ test_ssl_opts_padding_not_null (void)
 }
 #endif
 
+static void
+test_mongoc_client_recv_network_error (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   mongoc_server_description_t *sd;
+   int generation;
+   mongoc_rpc_t rpc;
+   mongoc_buffer_t buffer;
+   mongoc_server_stream_t *stream;
+
+   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+
+   future = future_client_command_simple (client,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+   request = mock_server_receives_request (server);
+   mock_server_replies_ok_and_destroys (request);
+   future_wait (future);
+   future_destroy (future);
+
+   /* The server should be a standalone. */
+   sd = mongoc_topology_server_by_id (client->topology, 1, &error);
+   ASSERT_OR_PRINT (sd, error);
+   generation = sd->generation;
+   BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
+   mongoc_server_description_destroy (sd);
+   mock_server_destroy (server);
+
+   /* A network error when calling _mongoc_client_recv should mark the server
+    * unknown and increment the generation. */
+   _mongoc_buffer_init (&buffer,
+                        NULL /* initial buffer */,
+                        0 /* initial length */,
+                        NULL /* realloc fn */,
+                        NULL /* realloc ctx */);
+   memset (&rpc, 0, sizeof (mongoc_rpc_t));
+   stream = mongoc_cluster_stream_for_server (
+      &client->cluster, 1, false, NULL, NULL, &error);
+   ASSERT_OR_PRINT (stream, error);
+   BSON_ASSERT (!_mongoc_client_recv (client, &rpc, &buffer, stream, &error));
+
+   sd = mongoc_topology_server_by_id (client->topology, 1, &error);
+   ASSERT_OR_PRINT (sd, error);
+   ASSERT_CMPINT (sd->generation, ==, generation + 1);
+   BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
+
+   mongoc_server_description_destroy (sd);
+   mongoc_client_destroy (client);
+   _mongoc_buffer_destroy (&buffer);
+   mongoc_server_stream_cleanup (stream);
+}
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -4027,4 +4088,7 @@ test_client_install (TestSuite *suite)
                       test_framework_skip_if_slow);
    TestSuite_Add (suite, "/Client/get_database", test_get_database);
    TestSuite_Add (suite, "/Client/invalid_server_id", test_invalid_server_id);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/recv_network_error",
+                                test_mongoc_client_recv_network_error);
 }

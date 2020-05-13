@@ -243,7 +243,7 @@ _mongoc_error_copy_labels_and_upsert (const bson_t *src,
 bool
 _mongoc_error_is_shutdown (bson_error_t *error)
 {
-   if (!_mongoc_error_is_server(error)) {
+   if (!_mongoc_error_is_server (error)) {
       return false;
    }
    switch (error->code) {
@@ -258,7 +258,7 @@ _mongoc_error_is_shutdown (bson_error_t *error)
 bool
 _mongoc_error_is_not_master (bson_error_t *error)
 {
-   if (!_mongoc_error_is_server(error)) {
+   if (!_mongoc_error_is_server (error)) {
       return false;
    }
 
@@ -277,7 +277,7 @@ _mongoc_error_is_not_master (bson_error_t *error)
 bool
 _mongoc_error_is_recovering (bson_error_t *error)
 {
-   if (!_mongoc_error_is_server(error)) {
+   if (!_mongoc_error_is_server (error)) {
       return false;
    }
    switch (error->code) {

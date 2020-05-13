@@ -105,6 +105,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-errno-private.h
    mongoc-error-private.h
    mongoc-find-and-modify-private.h
+   mongoc-flags-private.h
    mongoc-gridfs-bucket-file-private.h
    mongoc-gridfs-bucket-private.h
    mongoc-gridfs-file-list-private.h
@@ -140,6 +141,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-secure-transport-private.h
    mongoc-server-description-private.h
    mongoc-server-stream-private.h
+   mongoc-server-monitor-private.h
    mongoc-set-private.h
    mongoc-socket-private.h
    mongoc-ssl-private.h
@@ -227,6 +229,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-server-stream.c
    mongoc-client-session.c
    mongoc-set.c
+   mongoc-server-monitor.c
    mongoc-socket.c
    mongoc-stream.c
    mongoc-stream-buffered.c

@@ -72,9 +72,7 @@ struct _autoresponder_handle_t {
    int id;
 };
 
-typedef enum {
-   REPLY, HANGUP, RESET
-} reply_type_t;
+typedef enum { REPLY, HANGUP, RESET } reply_type_t;
 
 
 typedef struct {
@@ -86,6 +84,7 @@ typedef struct {
    uint16_t client_port;
    mongoc_opcode_t request_opcode;
    mongoc_query_flags_t query_flags;
+   mongoc_op_msg_flags_t opmsg_flags;
    int32_t response_to;
 } reply_t;
 
@@ -1336,6 +1335,32 @@ mock_server_replies_simple (request_t *request, const char *docs_json)
    mock_server_replies (request, MONGOC_REPLY_NONE, 0, 0, 1, docs_json);
 }
 
+/* To specify additional flags for OP_MSG replies. */
+void
+mock_server_replies_opmsg (request_t *request,
+                           mongoc_op_msg_flags_t flags,
+                           const bson_t *doc)
+{
+   reply_t *reply;
+
+   BSON_ASSERT (request);
+
+   reply = bson_malloc0 (sizeof (reply_t));
+
+   reply->opmsg_flags = flags;
+   reply->n_docs = 1;
+   reply->docs = bson_malloc0 (sizeof (bson_t));
+   bson_copy_to (doc, &reply->docs[0]);
+
+   reply->cursor_id = 0;
+   reply->client_port = request_get_client_port (request);
+   reply->request_opcode = MONGOC_OPCODE_MSG;
+   reply->response_to = request->request_rpc.header.request_id;
+
+   q_put (request->replies, reply);
+}
+
+
 /*--------------------------------------------------------------------------
  *
  * mock_server_replies_ok_and_destroys --
@@ -1449,6 +1474,10 @@ mock_server_destroy (mock_server_t *server)
    autoresponder_handle_t *handle;
    int64_t deadline = bson_get_monotonic_time () + 10 * 1000 * 1000;
    request_t *request;
+
+   if (!server) {
+      return;
+   }
 
    bson_mutex_lock (&server->mutex);
    if (server->running) {
@@ -1856,7 +1885,8 @@ _mock_server_reply_with_stream (mock_server_t *server,
       no_linger.l_linger = 0;
 
       /* send RST packet to client */
-      mongoc_stream_setsockopt (client, SOL_SOCKET, SO_LINGER, &no_linger, sizeof no_linger);
+      mongoc_stream_setsockopt (
+         client, SOL_SOCKET, SO_LINGER, &no_linger, sizeof no_linger);
 
       mongoc_stream_close (client);
       return;
@@ -1911,6 +1941,7 @@ _mock_server_reply_with_stream (mock_server_t *server,
    if (is_op_msg) {
       r.header.opcode = MONGOC_OPCODE_MSG;
       r.msg.n_sections = 1;
+      r.msg.flags = reply->opmsg_flags;
       /* we don't yet implement payload type 1, a document stream */
       r.msg.sections[0].payload_type = 0;
       r.msg.sections[0].payload.bson_document = buf;

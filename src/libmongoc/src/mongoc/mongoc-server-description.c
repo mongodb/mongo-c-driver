@@ -120,7 +120,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
 
    sd->id = id;
    sd->type = MONGOC_SERVER_UNKNOWN;
-   sd->round_trip_time_msec = -1;
+   sd->round_trip_time_msec = MONGOC_RTT_UNSET;
 
    if (!_mongoc_host_list_from_string (&sd->host, address)) {
       MONGOC_WARNING ("Failed to parse uri for %s", address);
@@ -457,13 +457,18 @@ mongoc_server_description_set_election_id (
  * Side effects:
  *       None.
  *
+ * If rtt_msec is MONGOC_RTT_UNSET, the value is not updated.
+ *
  *-------------------------------------------------------------------------
  */
 void
 mongoc_server_description_update_rtt (mongoc_server_description_t *server,
                                       int64_t rtt_msec)
 {
-   if (server->round_trip_time_msec == -1) {
+   if (rtt_msec == MONGOC_RTT_UNSET) {
+      return;
+   }
+   if (server->round_trip_time_msec == MONGOC_RTT_UNSET) {
       server->round_trip_time_msec = rtt_msec;
    } else {
       server->round_trip_time_msec = (int64_t) (
@@ -487,7 +492,7 @@ _mongoc_server_description_set_error (mongoc_server_description_t *sd,
 
    /* Server Discovery and Monitoring Spec: if the server type changes from a
     * known type to Unknown its RTT is set to null. */
-   sd->round_trip_time_msec = -1;
+   sd->round_trip_time_msec = MONGOC_RTT_UNSET;
 }
 
 
@@ -549,6 +554,9 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
              * domain will be overwritten. */
             (void) _mongoc_cmd_check_ok (
                ismaster_response, MONGOC_ERROR_API_VERSION_2, &sd->error);
+            /* TODO CDRIVER-3696: this is an existing bug. If this is handling
+             * an ismaster reply that is NOT from a handshake, this should not
+             * be considered an auth error. */
             /* ismaster response returned ok: 0. According to auth spec: "If the
              * isMaster of the MongoDB Handshake fails with an error, drivers
              * MUST treat this an authentication error." */
@@ -718,7 +726,7 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
 
 failure:
    sd->type = MONGOC_SERVER_UNKNOWN;
-   sd->round_trip_time_msec = -1;
+   sd->round_trip_time_msec = MONGOC_RTT_UNSET;
 
    EXIT;
 }
@@ -747,7 +755,7 @@ mongoc_server_description_new_copy (
    copy->id = description->id;
    copy->opened = description->opened;
    memcpy (&copy->host, &description->host, sizeof (copy->host));
-   copy->round_trip_time_msec = -1;
+   copy->round_trip_time_msec = MONGOC_RTT_UNSET;
 
    copy->connection_address = copy->host.host_and_port;
    bson_init (&copy->last_is_master);
@@ -1120,6 +1128,14 @@ _mongoc_server_description_equal (mongoc_server_description_t *sd1,
    }
 
    if (sd1->session_timeout_minutes != sd2->session_timeout_minutes) {
+      return false;
+   }
+
+   if (0 != memcmp (&sd1->error, &sd2->error, sizeof (bson_error_t))) {
+      return false;
+   }
+
+   if (!bson_equal (&sd1->topology_version, &sd2->topology_version)) {
       return false;
    }
 

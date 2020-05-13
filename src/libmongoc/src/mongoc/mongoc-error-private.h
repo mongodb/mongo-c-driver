@@ -24,7 +24,7 @@ BSON_BEGIN_DECLS
 typedef enum {
    MONGOC_READ_ERR_NONE,
    MONGOC_READ_ERR_OTHER,
-   MONGOC_READ_ERR_RETRY,
+   MONGOC_READ_ERR_RETRY
 } mongoc_read_err_type_t;
 
 /* Server error codes libmongoc cares about. Compare with:

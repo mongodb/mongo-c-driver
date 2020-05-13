@@ -2624,10 +2624,13 @@ _test_session_dirty_helper (bool retry_succeeds)
       ASSERT_OR_PRINT (ret, error);
    } else {
       BSON_ASSERT (!ret);
-      ASSERT_ERROR_CONTAINS (
-         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "socket error");
    }
-   /* Regardless of whether the retry succeeded, the session should be marked dirty */
+   /* Regardless of whether the retry succeeded, the session should be marked
+    * dirty */
    BSON_ASSERT (session->server_session->dirty);
 
    CDL_COUNT (client->topology->session_pool, next, pooled_session_count_pre);
@@ -2772,14 +2775,16 @@ test_session_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_6);
+                      test_framework_skip_if_max_wire_version_less_than_6,
+                      test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Session/end/many/pooled",
                       test_end_sessions_many_pooled,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto,
-                      test_framework_skip_if_max_wire_version_less_than_6);
+                      test_framework_skip_if_max_wire_version_less_than_6,
+                      test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Session/advance_cluster_time",
                       test_session_advance_cluster_time,
@@ -3013,13 +3018,14 @@ test_session_install (TestSuite *suite)
                                        test_sessions_spec_cb,
                                        test_framework_skip_if_no_sessions);
 
-   TestSuite_AddFull (suite,
-                      "/Session/dirty",
-                      test_session_dirty,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_sessions,
-                      test_framework_skip_if_no_failpoint,
-                      /* Tests with retryable writes, requires non-standalone. */
-                      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/Session/dirty",
+      test_session_dirty,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_sessions,
+      test_framework_skip_if_no_failpoint,
+      /* Tests with retryable writes, requires non-standalone. */
+      test_framework_skip_if_single);
 }

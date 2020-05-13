@@ -176,6 +176,11 @@ _mongoc_rpc_compress (struct _mongoc_cluster_t *cluster,
                       mongoc_rpc_t *rpc_le,
                       bson_error_t *error);
 
+bool
+_mongoc_rpc_decompress_if_necessary (mongoc_rpc_t *rpc,
+                                     mongoc_buffer_t *buffer,
+                                     bson_error_t *error);
+
 BSON_END_DECLS
 
 

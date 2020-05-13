@@ -101,8 +101,8 @@ typedef struct _mongoc_topology_t {
 
    /* For background monitoring. */
    mongoc_set_t *server_monitors;
+   mongoc_set_t *rtt_monitors;
    bson_mutex_t apm_mutex;
-
 } mongoc_topology_t;
 
 mongoc_topology_t *
@@ -146,6 +146,12 @@ _mongoc_topology_host_by_id (mongoc_topology_t *topology,
                              uint32_t id,
                              bson_error_t *error);
 
+/* TODO: Try to remove this function when CDRIVER-3654 is complete.
+ * It is only called when an application thread needs to mark a server Unknown.
+ * But an application error is also tied to other behavior, and should also
+ * consider the connection generation. This logic is captured in
+ * _mongoc_topology_handle_app_error. This should not be called directly
+ */
 void
 mongoc_topology_invalidate_server (mongoc_topology_t *topology,
                                    uint32_t id,

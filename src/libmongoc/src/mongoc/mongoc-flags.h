@@ -142,7 +142,6 @@ typedef enum {
 
 #define MONGOC_UPDATE_NO_VALIDATE (1U << 31)
 
-
 BSON_END_DECLS
 
 

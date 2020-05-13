@@ -87,6 +87,8 @@ check_mongocryptd() {
    fi
 }
 
+export MONGOC_TEST_MONITORING_VERBOSE=on
+
 case "$OS" in
    cygwin*)
       export PATH=$PATH:/cygdrive/c/mongodb/bin:/cygdrive/c/libmongocrypt/bin
