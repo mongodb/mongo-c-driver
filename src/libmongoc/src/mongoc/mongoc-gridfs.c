@@ -50,23 +50,23 @@ static bool
 _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs, bson_error_t *error)
 {
    bson_t keys;
-   mongoc_index_opt_t opt;
+   bson_t opts;
    bool r;
 
    ENTRY;
 
+   bson_init (&opts);
+   BSON_APPEND_BOOL (&opts, "unique", true);
+
    bson_init (&keys);
 
-   bson_append_int32 (&keys, "files_id", -1, 1);
-   bson_append_int32 (&keys, "n", -1, 1);
+   BSON_APPEND_INT32 (&keys, "files_id", 1);
+   BSON_APPEND_INT32 (&keys, "n", 1);
 
-   mongoc_index_opt_init (&opt);
-   opt.unique = 1;
+   r = _mongoc_collection_create_index_if_not_exists (
+      gridfs->chunks, &keys, &opts, error);
 
-   BEGIN_IGNORE_DEPRECATIONS
-   r = mongoc_collection_create_index (gridfs->chunks, &keys, &opt, error);
-   END_IGNORE_DEPRECATIONS
-
+   bson_destroy (&opts);
    bson_destroy (&keys);
 
    if (!r) {
@@ -75,13 +75,12 @@ _mongoc_gridfs_ensure_index (mongoc_gridfs_t *gridfs, bson_error_t *error)
 
    bson_init (&keys);
 
-   bson_append_int32 (&keys, "filename", -1, 1);
-   bson_append_int32 (&keys, "uploadDate", -1, 1);
-   opt.unique = 0;
+   BSON_APPEND_INT32 (&keys, "filename", 1);
+   BSON_APPEND_INT32 (&keys, "uploadDate", 1);
 
-   BEGIN_IGNORE_DEPRECATIONS
-   r = mongoc_collection_create_index (gridfs->files, &keys, &opt, error);
-   END_IGNORE_DEPRECATIONS
+   r = _mongoc_collection_create_index_if_not_exists (
+      gridfs->files, &keys, NULL, error);
+
    bson_destroy (&keys);
 
    if (!r) {

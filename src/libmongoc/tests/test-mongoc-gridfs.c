@@ -78,7 +78,9 @@ _check_index (mongoc_collection_t *collection, const char *index_json)
 
 
 static mongoc_gridfs_t *
-_get_gridfs (mock_server_t *server, mongoc_client_t *client)
+_get_gridfs (mock_server_t *server,
+             mongoc_client_t *client,
+             mongoc_query_flags_t flags)
 {
    future_t *future;
    bson_error_t error;
@@ -87,10 +89,27 @@ _get_gridfs (mock_server_t *server, mongoc_client_t *client)
 
    /* gridfs ensures two indexes */
    future = future_client_get_gridfs (client, "db", NULL, &error);
+
+   request = mock_server_receives_command (
+      server, "db", flags, "{'listIndexes': 'fs.chunks'}");
+   mock_server_replies_simple (
+      request,
+      "{ 'ok' : 0, 'errmsg' : 'ns does not exist: db.fs.chunks', 'code' : 26, "
+      "'codeName' : 'NamespaceNotFound' }");
+   request_destroy (request);
+
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_NONE, "{'createIndexes': 'fs.chunks'}");
 
    mock_server_replies_ok_and_destroys (request);
+
+   request = mock_server_receives_command (
+      server, "db", flags, "{'listIndexes': 'fs.files'}");
+   mock_server_replies_simple (
+      request,
+      "{ 'ok' : 0, 'errmsg' : 'ns does not exist: db.fs.files', 'code' : 26, "
+      "'codeName' : 'NamespaceNotFound' }");
+   request_destroy (request);
 
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_NONE, "{'createIndexes': 'fs.files'}");
@@ -107,7 +126,7 @@ _get_gridfs (mock_server_t *server, mongoc_client_t *client)
 
 
 static void
-test_create (void)
+_test_create (bson_t *create_index_cmd)
 {
    mongoc_gridfs_t *gridfs;
    mongoc_gridfs_file_t *file;
@@ -123,6 +142,20 @@ test_create (void)
    chunks = mongoc_client_get_collection (client, "test", "foo.chunks");
    mongoc_collection_drop (files, NULL);
    mongoc_collection_drop (chunks, NULL);
+
+   if (create_index_cmd) {
+      bool r;
+      mongoc_database_t *db;
+
+      db = mongoc_client_get_database (client, "test");
+
+      r = mongoc_database_write_command_with_opts (
+         db, create_index_cmd, NULL, NULL, &error);
+
+      ASSERT_OR_PRINT (r, error);
+
+      mongoc_database_destroy (db);
+   }
 
    ASSERT_OR_PRINT (
       (gridfs = mongoc_client_get_gridfs (client, "test", "foo", &error)),
@@ -144,6 +177,38 @@ test_create (void)
    mongoc_collection_destroy (chunks);
    mongoc_collection_destroy (files);
    mongoc_client_destroy (client);
+}
+
+
+static void
+test_create (void)
+{
+   _test_create (NULL);
+
+   /* Test files index with float and same options */
+   _test_create (
+      tmp_bson ("{'createIndexes': '%s',"
+                " 'indexes': [{'key': {'filename': 1.0, 'uploadDate': 1}, "
+                "'name': 'filename_1_uploadDate_1'}]}",
+                "foo.files"));
+
+   /* Files index with float and different options */
+   _test_create (tmp_bson ("{'createIndexes': '%s',"
+                           " 'indexes': [{'key': {'filename': 1.0, "
+                           "'uploadDate': 1}, 'name': 'different_name'}]}",
+                           "foo.files"));
+
+   /* Chunks index with float and same options */
+   _test_create (tmp_bson ("{'createIndexes': '%s',"
+                           " 'indexes': [{'key': {'files_id': 1.0, 'n': 1}, "
+                           "'name': 'files_id_1_n_1', 'unique': true}]}",
+                           "foo.chunks"));
+
+   /* Chunks index with float and different options */
+   _test_create (tmp_bson ("{'createIndexes': '%s',"
+                           " 'indexes': [{'key': {'files_id': 1.0, 'n': 1}, "
+                           "'name': 'different_name', 'unique': true}]}",
+                           "foo.chunks"));
 }
 
 
@@ -358,7 +423,7 @@ test_find_one_with_opts_limit (void)
    client = mongoc_client_new_from_uri (mock_server_get_uri (server));
    mongoc_client_set_error_api (client, 2);
 
-   gridfs = _get_gridfs (server, client);
+   gridfs = _get_gridfs (server, client, MONGOC_QUERY_SLAVE_OK);
 
    future =
       future_gridfs_find_one_with_opts (gridfs, tmp_bson ("{}"), NULL, &error);
@@ -1349,7 +1414,7 @@ test_inherit_client_config (void)
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_client_set_read_prefs (client, secondary_pref);
 
-   gridfs = _get_gridfs (server, client);
+   gridfs = _get_gridfs (server, client, MONGOC_QUERY_NONE);
 
    /* test read prefs and read concern */
    future = future_gridfs_find_one (gridfs, tmp_bson ("{}"), &error);
@@ -1428,6 +1493,15 @@ responder (request_t *request, void *data)
 {
    if (!strcasecmp (request->command_name, "createIndexes")) {
       mock_server_replies_ok_and_destroys (request);
+      return true;
+   }
+
+   if (!strcasecmp (request->command_name, "listIndexes")) {
+      mock_server_replies_simple (request,
+                                  "{ 'ok' : 0, 'errmsg' : 'ns does not exist: "
+                                  "db.fs.chunks', 'code' : 26, "
+                                  "'codeName' : 'NamespaceNotFound' }");
+      request_destroy (request);
       return true;
    }
 

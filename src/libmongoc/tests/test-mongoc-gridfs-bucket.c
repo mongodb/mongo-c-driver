@@ -64,8 +64,30 @@ test_create_bucket (void)
    mongoc_client_destroy (client);
 }
 
+static int
+_get_index_count (mongoc_collection_t *collection)
+{
+   mongoc_cursor_t *cursor;
+   bson_error_t error = {0};
+   int n;
+   const bson_t *info;
+
+   cursor = mongoc_collection_find_indexes (collection, &error);
+   ASSERT_OR_PRINT (0 == error.code, error);
+
+   n = 0;
+
+   while (mongoc_cursor_next (cursor, &info)) {
+      n++;
+   }
+
+   mongoc_cursor_destroy (cursor);
+
+   return n;
+}
+
 void
-test_upload_and_download (void)
+_test_upload_and_download (bson_t *create_index_cmd)
 {
    mongoc_gridfs_bucket_t *gridfs;
    mongoc_stream_t *upload_stream;
@@ -93,6 +115,14 @@ test_upload_and_download (void)
 
    ASSERT (db);
 
+   if (create_index_cmd) {
+      bson_error_t error;
+
+      ASSERT_OR_PRINT (mongoc_database_write_command_with_opts (
+                          db, create_index_cmd, NULL, NULL, &error),
+                       error);
+   }
+
    opts = bson_new ();
    BSON_APPEND_INT32 (opts, "chunkSizeBytes", 10);
 
@@ -104,7 +134,10 @@ test_upload_and_download (void)
    ASSERT (upload_stream);
 
    /* write str to gridfs. */
-   mongoc_stream_write (upload_stream, (void *) str, strlen (str), 0);
+   ASSERT_CMPINT (
+      mongoc_stream_write (upload_stream, (void *) str, strlen (str), 0),
+      ==,
+      strlen (str));
    mongoc_stream_destroy (upload_stream);
 
    /* download str into the buffer from gridfs. */
@@ -115,6 +148,9 @@ test_upload_and_download (void)
    /* compare. */
    ASSERT (strcmp (buf, str) == 0);
 
+   ASSERT_CMPINT (_get_index_count (gridfs->files), ==, 2);
+   ASSERT_CMPINT (_get_index_count (gridfs->chunks), ==, 2);
+
    bson_destroy (opts);
    mongoc_stream_destroy (download_stream);
    mongoc_gridfs_bucket_destroy (gridfs);
@@ -122,6 +158,39 @@ test_upload_and_download (void)
    mongoc_client_destroy (client);
 }
 
+void
+test_upload_and_download (void)
+{
+   _test_upload_and_download (NULL);
+
+   /* Test files index with float and same options */
+   _test_upload_and_download (
+      tmp_bson ("{'createIndexes': '%s',"
+                " 'indexes': [{'key': {'filename': 1.0, 'uploadDate': 1}, "
+                "'name': 'filename_1_uploadDate_1'}]}",
+                "fs.files"));
+
+   /* Files index with float and different options */
+   _test_upload_and_download (
+      tmp_bson ("{'createIndexes': '%s',"
+                " 'indexes': [{'key': {'filename': 1.0, 'uploadDate': 1}, "
+                "'name': 'different_name'}]}",
+                "fs.files"));
+
+   /* Chunks index with float and same options */
+   _test_upload_and_download (
+      tmp_bson ("{'createIndexes': '%s',"
+                " 'indexes': [{'key': {'files_id': 1.0, 'n': 1}, 'name': "
+                "'files_id_1_n_1', 'unique': true}]}",
+                "fs.chunks"));
+
+   /* Chunks index with float and different options */
+   _test_upload_and_download (
+      tmp_bson ("{'createIndexes': '%s',"
+                " 'indexes': [{'key': {'files_id': 1.0, 'n': 1}, 'name': "
+                "'different_name', 'unique': true}]}",
+                "fs.chunks"));
+}
 
 bool
 hex_to_bytes (const char *hex_str,

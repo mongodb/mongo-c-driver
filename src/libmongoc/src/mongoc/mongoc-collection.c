@@ -1161,6 +1161,150 @@ mongoc_collection_create_index (mongoc_collection_t *collection,
    return ret;
 }
 
+static bool
+_mongoc_collection_index_keys_equal (const bson_t *expected,
+                                     const bson_t *actual)
+{
+   bson_iter_t iter_expected;
+   bson_iter_t iter_actual;
+
+   bson_iter_init (&iter_expected, expected);
+   bson_iter_init (&iter_actual, actual);
+
+   while (bson_iter_next (&iter_expected)) {
+      /* If the key document has fewer items than expected, indexes are unequal
+       */
+      if (!bson_iter_next (&iter_actual)) {
+         return false;
+      }
+
+      /* If key order does not match, indexes are unequal */
+      if (strcmp (bson_iter_key (&iter_expected),
+                  bson_iter_key (&iter_actual)) != 0) {
+         return false;
+      }
+
+      if (BSON_ITER_HOLDS_NUMBER (&iter_expected) &&
+          BSON_ITER_HOLDS_NUMBER (&iter_actual)) {
+         if (bson_iter_as_int64 (&iter_expected) !=
+             bson_iter_as_int64 (&iter_actual)) {
+            return false;
+         }
+      } else if (BSON_ITER_HOLDS_UTF8 (&iter_expected) &&
+                 BSON_ITER_HOLDS_UTF8 (&iter_actual)) {
+         if (strcmp (bson_iter_utf8 (&iter_expected, NULL),
+                     bson_iter_utf8 (&iter_actual, NULL)) != 0) {
+            return false;
+         }
+      } else {
+         return false;
+      }
+   }
+
+   /* If our expected document is exhausted, make sure there are no extra keys
+    * in the actual key document */
+   if (bson_iter_next (&iter_actual)) {
+      return false;
+   }
+
+   return true;
+}
+
+bool
+_mongoc_collection_create_index_if_not_exists (mongoc_collection_t *collection,
+                                               const bson_t *keys,
+                                               const bson_t *opts,
+                                               bson_error_t *error)
+{
+   mongoc_cursor_t *cursor;
+   bool index_exists;
+   bool r = false;
+   const bson_t *doc;
+   bson_iter_t iter;
+   bson_t inner_doc;
+   uint32_t data_len;
+   const uint8_t *data;
+   bson_t index;
+   bson_t command;
+
+   BSON_ASSERT (collection);
+   BSON_ASSERT (keys);
+
+   cursor = mongoc_collection_find_indexes_with_opts (collection, NULL);
+
+   index_exists = false;
+
+   while (mongoc_cursor_next (cursor, &doc) && !index_exists) {
+      r = bson_iter_init_find (&iter, doc, "key");
+      if (!r) {
+         continue;
+      }
+
+      bson_iter_document (&iter, &data_len, &data);
+      bson_init_static (&inner_doc, data, data_len);
+
+      if (_mongoc_collection_index_keys_equal (keys, &inner_doc)) {
+         index_exists = true;
+      }
+
+      bson_destroy (&inner_doc);
+   }
+
+   if (mongoc_cursor_error (cursor, error)) {
+      mongoc_cursor_destroy (cursor);
+      return false;
+   }
+
+   mongoc_cursor_destroy (cursor);
+
+   if (index_exists) {
+      return true;
+   }
+
+   if (opts) {
+      bson_copy_to (opts, &index);
+   } else {
+      bson_init (&index);
+   }
+
+   BSON_APPEND_DOCUMENT (&index, "key", keys);
+
+   if (!bson_has_field (&index, "name")) {
+      char *alloc_name = mongoc_collection_keys_to_index_string (keys);
+
+      if (!alloc_name) {
+         bson_set_error (
+            error,
+            MONGOC_ERROR_BSON,
+            MONGOC_ERROR_BSON_INVALID,
+            "Cannot generate index name from invalid `keys` argument");
+         GOTO (done);
+      }
+
+      BSON_APPEND_UTF8 (&index, "name", alloc_name);
+
+      bson_free (alloc_name);
+   }
+
+   bson_init (&command);
+   BCON_APPEND (&command,
+                "createIndexes",
+                BCON_UTF8 (mongoc_collection_get_name (collection)),
+                "indexes",
+                "[",
+                BCON_DOCUMENT (&index),
+                "]");
+
+   r = mongoc_collection_write_command_with_opts (
+      collection, &command, NULL, NULL, error);
+
+done:
+   bson_destroy (&index);
+   bson_destroy (&command);
+
+   return r;
+}
+
 bool
 mongoc_collection_create_index_with_opts (mongoc_collection_t *collection,
                                           const bson_t *keys,
