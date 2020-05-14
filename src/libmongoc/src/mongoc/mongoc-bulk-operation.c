@@ -440,6 +440,7 @@ _mongoc_bulk_operation_update_append (
       last = &_mongoc_array_index (
          &bulk->commands, mongoc_write_command_t, bulk->commands.len - 1);
       if (last->type == MONGOC_WRITE_COMMAND_UPDATE) {
+         last->flags.has_array_filters |= has_array_filters;
          last->flags.has_collation |= has_collation;
          last->flags.has_update_hint |= has_update_hint;
          last->flags.has_multi_write |= update_opts->multi;
