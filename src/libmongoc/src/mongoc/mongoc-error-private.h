@@ -27,6 +27,30 @@ typedef enum {
    MONGOC_READ_ERR_RETRY,
 } mongoc_read_err_type_t;
 
+/* Server error codes libmongoc cares about. Compare with:
+ * https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.yml
+ */
+typedef enum {
+   MONGOC_SERVER_ERR_HOSTUNREACHABLE = 6,
+   MONGOC_SERVER_ERR_HOSTNOTFOUND = 7,
+   MONGOC_SERVER_ERR_STALESHARDVERSION = 63,
+   MONGOC_SERVER_ERR_NETWORKTIMEOUT = 89,
+   MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS = 91,
+   MONGOC_SERVER_ERR_FAILEDTOSATISFYREADPREFERENCE = 133,
+   MONGOC_SERVER_ERR_STALEEPOCH = 150,
+   MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN = 189,
+   MONGOC_SERVER_ERR_ELECTIONINPROGRESS = 216,
+   MONGOC_SERVER_ERR_RETRYCHANGESTREAM = 234,
+   MONGOC_SERVER_ERR_EXCEEDEDTIMELIMIT = 262,
+   MONGOC_SERVER_ERR_SOCKETEXCEPTION = 9001,
+   MONGOC_SERVER_ERR_NOTMASTER = 10107,
+   MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN = 11600,
+   MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE = 11602,
+   MONGOC_SERVER_ERR_STALECONFIG = 13388,
+   MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK = 13435,
+   MONGOC_SERVER_ERR_NOTMASTERORSECONDARY = 13436
+} mongoc_server_err_t;
+
 mongoc_read_err_type_t
 _mongoc_read_error_get_type (bool cmd_ret,
                              const bson_error_t *cmd_err,
@@ -45,6 +69,9 @@ _mongoc_write_error_handle_labels (bool cmd_ret,
 
 bool
 _mongoc_error_is_shutdown (bson_error_t *error);
+
+bool
+_mongoc_error_is_recovering (bson_error_t *error);
 
 bool
 _mongoc_error_is_not_master (bson_error_t *error);

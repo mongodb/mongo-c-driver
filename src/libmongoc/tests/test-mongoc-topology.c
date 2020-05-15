@@ -1929,10 +1929,22 @@ test_request_scan_on_error ()
                 false /* should_scan */,
                 true /* should_mark_unknown */,
                 "node is recovering");
+   /* Test that "not master or secondary" is considered a "node is recovering"
+    * error, not a "not master" error. */
+   TEST_SINGLE ("{'ok': 0, 'errmsg': 'not master or secondary'}",
+                false /* should_scan */,
+                true /* should_mark_unknown */,
+                "not master or secondary");
    TEST_POOLED ("{'ok': 0, 'errmsg': 'node is recovering'}",
                 true /* should_scan */,
                 true /* should_mark_unknown */,
                 "node is recovering");
+   /* Test that "not master or secondary" is considered a "node is recovering"
+    * error, not a "not master" error. */
+   TEST_POOLED ("{'ok': 0, 'errmsg': 'not master or secondary'}",
+                true /* should_scan */,
+                true /* should_mark_unknown */,
+                "not master or secondary");
    TEST_BOTH ("{'ok': 0, 'errmsg': 'random error'}",
               false /* should_scan */,
               false /* should_mark_unknown */,
@@ -1958,10 +1970,10 @@ test_request_scan_on_error ()
                 true /* should_scan */,
                 true /* should_mark_unknown */,
                 NULL /* server_err */);
-   /* with a "not master" error code but a "node is recovery" message, the error
-    * code takes precedence */
+   /* with a "not master" error code but a "node is recovery" message, it is
+    * considered a "node is recovering" error */
    TEST_BOTH ("{'ok': 0, 'code': 10107, 'errmsg': 'node is recovering'}",
-              true /* should_scan */,
+              false /* should_scan */,
               true /* should_mark_unknown */,
               "node is recovering");
    /* write concern errors are also checked. */

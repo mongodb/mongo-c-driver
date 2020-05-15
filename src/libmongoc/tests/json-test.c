@@ -241,7 +241,7 @@ process_sdam_test_ismaster_responses (bson_t *phase,
          uint32_t generation = 0;
          uint32_t max_wire_version = 0;
          const char *when_str;
-         _mongoc_sdam_app_error_when_t when = 0;
+         bool handshake_complete = false;
          const char *type_str;
          _mongoc_sdam_app_error_type_t type = 0;
          bson_t response;
@@ -277,9 +277,9 @@ process_sdam_test_ismaster_responses (bson_t *phase,
          BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&app_error_field_iter));
          when_str = bson_iter_utf8 (&app_error_field_iter, 0);
          if (0 == strcmp (when_str, "beforeHandshakeCompletes")) {
-            when = MONGOC_SDAM_APP_ERROR_BEFORE_HANDSHAKE;
+            handshake_complete = false;
          } else if (0 == strcmp (when_str, "afterHandshakeCompletes")) {
-            when = MONGOC_SDAM_APP_ERROR_AFTER_HANDSHAKE;
+            handshake_complete = true;
          } else {
             test_error ("unexpected 'when' value: %s", when_str);
          }
@@ -306,14 +306,16 @@ process_sdam_test_ismaster_responses (bson_t *phase,
          }
 
          memset (&err, 0, sizeof (bson_error_t));
+         bson_mutex_lock (&topology->mutex);
          _mongoc_topology_handle_app_error (topology,
                                             sd->id,
-                                            when,
+                                            handshake_complete,
                                             type,
                                             &response,
                                             &err,
                                             max_wire_version,
                                             generation);
+         bson_mutex_unlock (&topology->mutex);
       }
    } else {
       test_error (

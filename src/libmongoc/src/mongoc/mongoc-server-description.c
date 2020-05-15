@@ -51,7 +51,7 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
 }
 
 /* Reset fields inside this sd, but keep same id, host information, RTT,
-   generation, and leave ismaster in empty inited state */
+   generation, topology version, and leave ismaster in empty inited state */
 void
 mongoc_server_description_reset (mongoc_server_description_t *sd)
 {
@@ -675,12 +675,8 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
             goto failure;
          }
 
-         if (BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-            bson_iter_document (&iter, &len, &bytes);
-            bson_init_static (&incoming_topology_version, bytes, len);
-         } else {
-            bson_init (&incoming_topology_version);
-         }
+         bson_iter_document (&iter, &len, &bytes);
+         bson_init_static (&incoming_topology_version, bytes, len);
          mongoc_server_description_set_topology_version (
             sd, &incoming_topology_version);
          bson_destroy (&incoming_topology_version);

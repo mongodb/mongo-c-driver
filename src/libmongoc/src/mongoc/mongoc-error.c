@@ -63,18 +63,18 @@ static bool
 _mongoc_write_error_is_retryable (bson_error_t *error)
 {
    switch (error->code) {
-   case 6:     /* HostUnreachable */
-   case 7:     /* HostNotFound */
-   case 89:    /* NetworkTimeout */
-   case 91:    /* ShutdownInProgress */
-   case 189:   /* PrimarySteppedDown */
-   case 262:   /* ExceededTimeLimit */
-   case 9001:  /* SocketException */
-   case 10107: /* NotMaster */
-   case 11600: /* InterruptedAtShutdown */
-   case 11602: /* InterruptedDueToReplStateChange */
-   case 13435: /* NotMasterNoSlaveOk */
-   case 13436: /* NotMasterOrSecondary */
+   case MONGOC_SERVER_ERR_HOSTUNREACHABLE:
+   case MONGOC_SERVER_ERR_HOSTNOTFOUND:
+   case MONGOC_SERVER_ERR_NETWORKTIMEOUT:
+   case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
+   case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
+   case MONGOC_SERVER_ERR_EXCEEDEDTIMELIMIT:
+   case MONGOC_SERVER_ERR_SOCKETEXCEPTION:
+   case MONGOC_SERVER_ERR_NOTMASTER:
+   case MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN:
+   case MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE:
+   case MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK:
+   case MONGOC_SERVER_ERR_NOTMASTERORSECONDARY:
       return true;
    default:
       if (strstr (error->message, "not master") ||
@@ -173,17 +173,17 @@ _mongoc_read_error_get_type (bool cmd_ret,
    }
 
    switch (error.code) {
-   case 11600: /* InterruptedAtShutdown */
-   case 11602: /* InterruptedDueToReplStateChange */
-   case 10107: /* NotMaster */
-   case 13435: /* NotMasterNoSlaveOk */
-   case 13436: /* NotMasterOrSecondary */
-   case 189:   /* PrimarySteppedDown */
-   case 91:    /* ShutdownInProgress */
-   case 7:     /* HostNotFound */
-   case 6:     /* HostUnreachable */
-   case 89:    /* NetworkTimeout */
-   case 9001:  /* SocketException */
+   case MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN:
+   case MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE:
+   case MONGOC_SERVER_ERR_NOTMASTER:
+   case MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK:
+   case MONGOC_SERVER_ERR_NOTMASTERORSECONDARY:
+   case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
+   case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
+   case MONGOC_SERVER_ERR_HOSTNOTFOUND:
+   case MONGOC_SERVER_ERR_HOSTUNREACHABLE:
+   case MONGOC_SERVER_ERR_NETWORKTIMEOUT:
+   case MONGOC_SERVER_ERR_SOCKETEXCEPTION:
       return MONGOC_READ_ERR_RETRY;
    default:
       if (strstr (error.message, "not master") ||
@@ -252,28 +252,32 @@ _mongoc_error_is_not_master (bson_error_t *error)
        error->domain != MONGOC_ERROR_WRITE_CONCERN) {
       return false;
    }
+
+   if (_mongoc_error_is_recovering (error)) {
+      return false;
+   }
    switch (error->code) {
-   case 10107: /* NotMaster */
-   case 13435: /* NotMasterNoSlaveOk */
+   case MONGOC_SERVER_ERR_NOTMASTER:
+   case MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK:
       return true;
    default:
       return NULL != strstr (error->message, "not master");
    }
 }
 
-static bool
-_error_is_recovering (bson_error_t *error)
+bool
+_mongoc_error_is_recovering (bson_error_t *error)
 {
    if (error->domain != MONGOC_ERROR_SERVER &&
        error->domain != MONGOC_ERROR_WRITE_CONCERN) {
       return false;
    }
    switch (error->code) {
-   case 11600: /* InterruptedAtShutdown */
-   case 11602: /* InterruptedDueToReplStateChange */
-   case 13436: /* NotMasterOrSecondary */
-   case 189:   /* PrimarySteppedDown */
-   case 91:    /* ShutdownInProgress */
+   case MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN:
+   case MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE:
+   case MONGOC_SERVER_ERR_NOTMASTERORSECONDARY:
+   case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
+   case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
       return true;
    default:
       return NULL != strstr (error->message, "not master or secondary") ||
@@ -285,7 +289,8 @@ _error_is_recovering (bson_error_t *error)
 bool
 _mongoc_error_is_state_change (bson_error_t *error)
 {
-   return _error_is_recovering (error) || _mongoc_error_is_not_master (error);
+   return _mongoc_error_is_recovering (error) ||
+          _mongoc_error_is_not_master (error);
 }
 
 bool

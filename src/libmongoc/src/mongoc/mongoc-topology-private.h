@@ -192,12 +192,6 @@ _mongoc_topology_request_scan (mongoc_topology_t *topology);
 void
 _mongoc_topology_bypass_cooldown (mongoc_topology_t *topology);
 
-
-typedef enum {
-   MONGOC_SDAM_APP_ERROR_BEFORE_HANDSHAKE,
-   MONGOC_SDAM_APP_ERROR_AFTER_HANDSHAKE
-} _mongoc_sdam_app_error_when_t;
-
 typedef enum {
    MONGOC_SDAM_APP_ERROR_COMMAND,
    MONGOC_SDAM_APP_ERROR_NETWORK,
@@ -207,7 +201,7 @@ typedef enum {
 bool
 _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    uint32_t server_id,
-                                   _mongoc_sdam_app_error_when_t when,
+                                   bool handshake_complete,
                                    _mongoc_sdam_app_error_type_t type,
                                    const bson_t *reply,
                                    const bson_error_t *why,

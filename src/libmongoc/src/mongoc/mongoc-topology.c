@@ -1710,7 +1710,7 @@ _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
 bool
 _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    uint32_t server_id,
-                                   _mongoc_sdam_app_error_when_t when,
+                                   bool handshake_complete,
                                    _mongoc_sdam_app_error_type_t type,
                                    const bson_t *reply,
                                    const bson_error_t *why,
@@ -1738,18 +1738,16 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       /* Mark server as unknown. */
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, why);
-      /* Clear connection pool */
       _mongoc_topology_clear_connection_pool (topology, server_id);
       pool_cleared = true;
    } else if (type == MONGOC_SDAM_APP_ERROR_TIMEOUT) {
-      if (when == MONGOC_SDAM_APP_ERROR_AFTER_HANDSHAKE) {
-         /* Nothing to do. */
+      if (handshake_complete) {
+         /* Timeout errors after handshake are ok, do nothing. */
          return false;
       }
       /* Mark server as unknown. */
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, why);
-      /* Clear connection pool */
       _mongoc_topology_clear_connection_pool (topology, server_id);
       pool_cleared = true;
    } else if (type == MONGOC_SDAM_APP_ERROR_COMMAND) {
