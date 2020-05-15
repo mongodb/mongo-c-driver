@@ -28,10 +28,17 @@
  */
 struct _mongoc_interrupt_t {
    bson_mutex_t mutex;
-   int pipe_fds[2];
 
-   mongoc_socket_t *read_socket;
-   mongoc_socket_t *write_socket;
+   union {
+      /* For POSIX */
+      int pipe_fds[2];
+
+      /* For Windows */
+      struct {
+         mongoc_socket_t *read;
+         mongoc_socket_t *write;
+      } socket_pair;
+   } impl;
 
    mongoc_stream_t *stream;
 };
@@ -102,26 +109,26 @@ _mongoc_interrupt_new (uint32_t timeout_ms)
       GOTO (fail);
    }
 
-   interrupt->read_socket =
+   interrupt->impl.socket_pair.read =
       mongoc_socket_new (server_addr.ss_family, SOCK_STREAM, 0);
-   if (!interrupt->read_socket) {
+   if (!interrupt->impl.socket_pair.read) {
       MONGOC_ERROR ("socket creation failed");
       GOTO (fail);
    }
 
    /* Begin non-blocking connect. */
    ret = mongoc_socket_connect (
-      interrupt->read_socket, (struct sockaddr *) &server_addr, sock_len, 0);
+      interrupt->impl.socket_pair.read, (struct sockaddr *) &server_addr, sock_len, 0);
    if (ret == -1 &&
-       !MONGOC_ERRNO_IS_AGAIN (mongoc_socket_errno (interrupt->read_socket))) {
+       !MONGOC_ERRNO_IS_AGAIN (mongoc_socket_errno (interrupt->impl.socket_pair.read))) {
       _log_errno ("connect failed",
-                  mongoc_socket_errno (interrupt->read_socket));
+                  mongoc_socket_errno (interrupt->impl.socket_pair.read));
       GOTO (fail);
    }
 
-   interrupt->write_socket = mongoc_socket_accept (
+   interrupt->impl.socket_pair.write = mongoc_socket_accept (
       listen_socket, bson_get_monotonic_time () + timeout_ms * 1000);
-   if (!interrupt->write_socket) {
+   if (!interrupt->impl.socket_pair.write) {
       _log_errno ("accept failed", mongoc_socket_errno (listen_socket));
       GOTO (fail);
    }
@@ -129,7 +136,7 @@ _mongoc_interrupt_new (uint32_t timeout_ms)
    /* Create an unowned socket. interrupt_socket has 0 for the pid, so it will
     * be considered unowned. */
    interrupt_socket = bson_malloc0 (sizeof (mongoc_socket_t));
-   interrupt_socket->sd = interrupt->read_socket->sd;
+   interrupt_socket->sd = interrupt->impl.socket_pair.read->sd;
    /* Creating the stream takes ownership of the mongoc_socket_t. */
    interrupt->stream = mongoc_stream_socket_new (interrupt_socket);
    success = true;
@@ -149,8 +156,8 @@ _mongoc_interrupt_destroy (mongoc_interrupt_t *interrupt)
       return;
    }
 
-   mongoc_socket_destroy (interrupt->read_socket);
-   mongoc_socket_destroy (interrupt->write_socket);
+   mongoc_socket_destroy (interrupt->impl.socket_pair.read);
+   mongoc_socket_destroy (interrupt->impl.socket_pair.write);
    mongoc_stream_destroy (interrupt->stream);
    bson_mutex_destroy (&interrupt->mutex);
    bson_free (interrupt);
@@ -162,14 +169,14 @@ _mongoc_interrupt_flush (mongoc_interrupt_t *interrupt)
    uint8_t buf[1];
    while (true) {
       if (-1 == mongoc_socket_recv (
-                   interrupt->read_socket, buf, sizeof (buf), 0, 0)) {
+                   interrupt->impl.socket_pair.read, buf, sizeof (buf), 0, 0)) {
          if (MONGOC_ERRNO_IS_AGAIN (errno)) {
             /* Nothing left to read. */
             break;
          } else {
             /* Unexpected error. */
             _log_errno ("interrupt recv failed",
-                        mongoc_socket_errno (interrupt->read_socket));
+                        mongoc_socket_errno (interrupt->impl.socket_pair.read));
             return false;
          }
       }
@@ -181,10 +188,10 @@ bool
 _mongoc_interrupt_interrupt (mongoc_interrupt_t *interrupt)
 {
    bson_mutex_lock (&interrupt->mutex);
-   if (mongoc_socket_send (interrupt->write_socket, "!", 1, 0) == -1 &&
+   if (mongoc_socket_send (interrupt->impl.socket_pair.write, "!", 1, 0) == -1 &&
        !MONGOC_ERRNO_IS_AGAIN (errno)) {
       _log_errno ("interrupt send failed",
-                  mongoc_socket_errno (interrupt->write_socket));
+                  mongoc_socket_errno (interrupt->impl.socket_pair.write));
       bson_mutex_unlock (&interrupt->mutex);
       return false;
    }
@@ -228,21 +235,21 @@ _mongoc_interrupt_new (uint32_t timeout_ms)
    interrupt = (mongoc_interrupt_t *) bson_malloc0 (sizeof *interrupt);
    bson_mutex_init (&interrupt->mutex);
 
-   if (0 != pipe (interrupt->pipe_fds)) {
+   if (0 != pipe (interrupt->impl.pipe_fds)) {
       _log_errno ("pipe creation failed", errno);
       GOTO (fail);
    }
 
    /* Make the pipe non-blocking and close-on-exec. */
-   if (!_set_pipe_flags (interrupt->pipe_fds[0]) ||
-       !_set_pipe_flags (interrupt->pipe_fds[1])) {
+   if (!_set_pipe_flags (interrupt->impl.pipe_fds[0]) ||
+       !_set_pipe_flags (interrupt->impl.pipe_fds[1])) {
       _log_errno ("unable to configure pipes", errno);
    }
 
    /* Create an unowned socket. interrupt_socket has 0 for the pid, so it will
     * be considered unowned. */
    interrupt_socket = bson_malloc0 (sizeof (mongoc_socket_t));
-   interrupt_socket->sd = interrupt->pipe_fds[0];
+   interrupt_socket->sd = interrupt->impl.pipe_fds[0];
    /* Creating the stream takes ownership of the mongoc_socket_t. */
    interrupt->stream = mongoc_stream_socket_new (interrupt_socket);
 
@@ -260,10 +267,10 @@ _mongoc_interrupt_flush (mongoc_interrupt_t *interrupt)
 {
    char c;
    while (true) {
-      if (read (interrupt->pipe_fds[0], &c, 1) == -1) {
+      if (read (interrupt->impl.pipe_fds[0], &c, 1) == -1) {
          if (MONGOC_ERRNO_IS_AGAIN (errno)) {
             /* Nothing left to read. */
-            break;
+            return true;
          } else {
             /* Unexpected error. */
             MONGOC_ERROR ("failed to read from pipe: %d", errno);
@@ -271,14 +278,15 @@ _mongoc_interrupt_flush (mongoc_interrupt_t *interrupt)
          }
       }
    }
-   return true;
+   /* Should never be reached. */
+   BSON_ASSERT (false);
 }
 
 bool
 _mongoc_interrupt_interrupt (mongoc_interrupt_t *interrupt)
 {
    bson_mutex_lock (&interrupt->mutex);
-   if (write (interrupt->pipe_fds[1], "!", 1) == -1 &&
+   if (write (interrupt->impl.pipe_fds[1], "!", 1) == -1 &&
        !MONGOC_ERRNO_IS_AGAIN (errno)) {
       MONGOC_ERROR ("failed to write to pipe: %d", errno);
       bson_mutex_unlock (&interrupt->mutex);
@@ -295,11 +303,11 @@ _mongoc_interrupt_destroy (mongoc_interrupt_t *interrupt)
       return;
    }
    bson_mutex_destroy (&interrupt->mutex);
-   if (interrupt->pipe_fds[0]) {
-      close (interrupt->pipe_fds[0]);
+   if (interrupt->impl.pipe_fds[0]) {
+      close (interrupt->impl.pipe_fds[0]);
    }
-   if (interrupt->pipe_fds[1]) {
-      close (interrupt->pipe_fds[1]);
+   if (interrupt->impl.pipe_fds[1]) {
+      close (interrupt->impl.pipe_fds[1]);
    }
    mongoc_stream_destroy (interrupt->stream);
    bson_free (interrupt);
