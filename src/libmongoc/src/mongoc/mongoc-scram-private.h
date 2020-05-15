@@ -50,7 +50,6 @@ typedef struct _mongoc_scram_cache_t {
 } mongoc_scram_cache_t;
 
 typedef struct _mongoc_scram_t {
-   bool done;
    int step;
    char *user;
    char *pass;
