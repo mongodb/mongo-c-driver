@@ -897,7 +897,7 @@ class AWSTestTask(MatrixTask):
 all_tasks = chain(all_tasks, AWSTestTask.matrix())
 
 class OCSPTask(MatrixTask):
-    axes = OD([('test', ['test_1', 'test_2', 'test_3', 'test_4', 'soft_fail_test', 'malicious_server_test_1', 'malicious_server_test_2']),
+    axes = OD([('test', ['test_1', 'test_2', 'test_3', 'test_4', 'soft_fail_test', 'malicious_server_test_1', 'malicious_server_test_2', 'cache']),
                ('delegate', ['delegate', 'nodelegate']),
                ('cert', ['rsa', 'ecdsa']),
                ('ssl', ['openssl', 'darwinssl', 'winssl'])])
@@ -920,7 +920,7 @@ class OCSPTask(MatrixTask):
             func('fetch build', BUILD_NAME=self.depends_on['name']))
 
         stapling = 'mustStaple'
-        if self.test in [ 'test_3', 'test_4', 'soft_fail_test']:
+        if self.test in [ 'test_3', 'test_4', 'soft_fail_test', 'cache']:
             stapling = 'disableStapling'
         if self.test in [ 'malicious_server_test_1', 'malicious_server_test_2' ]:
             stapling = 'mustStaple-disableStapling'
@@ -928,9 +928,12 @@ class OCSPTask(MatrixTask):
         orchestration_file = '%s-basic-tls-ocsp-%s' % (self.cert, stapling)
         orchestration = bootstrap(TOPOLOGY='server', SSL='ssl', OCSP='on', ORCHESTRATION_FILE=orchestration_file)
 
-        commands.append(shell_mongoc('TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s sh .evergreen/run-ocsp-responder.sh' % (self.test.upper(), self.cert, 'on' if self.delegate == 'delegate' else 'off')))
+        commands.append(shell_mongoc('TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s sh .evergreen/run-ocsp-responder.sh' % ('TEST_4' if self.test == 'cache' else self.test.upper(), self.cert, 'on' if self.delegate == 'delegate' else 'off')))
         commands.append(orchestration)
-        commands.append(shell_mongoc('TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
+        if self.test == 'cache':
+            commands.append(shell_mongoc('CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
+        else:
+            commands.append(shell_mongoc('TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
 
         return task
 
@@ -948,11 +951,11 @@ class OCSPTask(MatrixTask):
 
         # OCSP stapling is not supported on macOS or Windows.
         if self.ssl == 'darwinssl' or self.ssl == 'winssl':
-            prohibit (self.test in ['test_1', 'test_2'])
+            prohibit (self.test in ['test_1', 'test_2', 'cache'])
 
-        if self.test == 'soft_fail_test' or self.test == 'malicious_server_test_2':
+        if self.test == 'soft_fail_test' or self.test == 'malicious_server_test_2' or self.test == 'cache':
             prohibit(self.delegate == 'delegate')
-        
+
         # Until OCSP is supported in OpenSSL, skip tests that expect to be revoked.
         if self.ssl == 'openssl':
             prohibit (self.test in ['test_2', 'test_4', 'malicious_server_test_1', 'malicious_server_test_2'])
