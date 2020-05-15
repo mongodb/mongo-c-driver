@@ -185,6 +185,8 @@ test_opts_install (TestSuite *suite);
 extern void
 test_socket_install (TestSuite *suite);
 extern void
+test_speculative_auth_install (TestSuite *suite);
+extern void
 test_stream_install (TestSuite *suite);
 extern void
 test_thread_install (TestSuite *suite);
@@ -2597,6 +2599,7 @@ main (int argc, char *argv[])
    test_server_selection_errors_install (&suite);
    test_session_install (&suite);
    test_set_install (&suite);
+   test_speculative_auth_install (&suite);
    test_stream_install (&suite);
    test_thread_install (&suite);
    test_topology_install (&suite);

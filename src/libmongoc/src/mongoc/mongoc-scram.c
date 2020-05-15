@@ -193,6 +193,8 @@ _mongoc_scram_destroy (mongoc_scram_t *scram)
    if (scram->cache) {
       _mongoc_scram_cache_destroy (scram->cache);
    }
+
+   memset (scram, 0, sizeof *scram);
 }
 
 

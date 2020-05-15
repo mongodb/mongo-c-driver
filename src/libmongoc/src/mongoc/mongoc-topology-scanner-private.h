@@ -27,10 +27,9 @@
 #include "mongoc-handshake-private.h"
 #include "mongoc-host-list.h"
 #include "mongoc-apm-private.h"
-
-#ifdef MONGOC_ENABLE_SSL
+#include "mongoc-scram-private.h"
 #include "mongoc-ssl.h"
-#endif
+#include "mongoc-crypto-private.h"
 
 BSON_BEGIN_DECLS
 
@@ -77,6 +76,8 @@ typedef struct mongoc_topology_scanner_node {
     * node. */
    mongoc_handshake_sasl_supported_mechs_t sasl_supported_mechs;
    bool negotiated_sasl_supported_mechs;
+   bson_t speculative_auth_response;
+   mongoc_scram_t scram;
 } mongoc_topology_scanner_node_t;
 
 typedef struct mongoc_topology_scanner {
@@ -108,6 +109,7 @@ typedef struct mongoc_topology_scanner {
    /* only used by single-threaded clients to negotiate auth mechanisms. */
    bool negotiate_sasl_supported_mechs;
    bool bypass_cooldown;
+   bool speculative_authentication;
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *
@@ -173,6 +175,22 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 
 mongoc_topology_scanner_node_t *
 mongoc_topology_scanner_get_node (mongoc_topology_scanner_t *ts, uint32_t id);
+
+void
+_mongoc_topology_scanner_add_speculative_authentication (
+   bson_t *cmd,
+   const mongoc_uri_t *uri,
+   const mongoc_ssl_opt_t *ssl_opts,
+   mongoc_scram_cache_t *scram_cache,
+   mongoc_scram_t *scram /* OUT */);
+
+void
+_mongoc_topology_scanner_parse_speculative_authentication (
+   const bson_t *ismaster, bson_t *speculative_authenticate);
+
+const char *
+_mongoc_topology_scanner_get_speculative_auth_mechanism (
+   const mongoc_uri_t *uri);
 
 const bson_t *
 _mongoc_topology_scanner_get_ismaster (mongoc_topology_scanner_t *ts);

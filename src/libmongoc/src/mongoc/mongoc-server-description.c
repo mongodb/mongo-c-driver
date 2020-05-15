@@ -532,7 +532,9 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
    }
 
    bson_destroy (&sd->last_is_master);
-   bson_copy_to (ismaster_response, &sd->last_is_master);
+   bson_init (&sd->last_is_master);
+   bson_copy_to_excluding_noinit (
+      ismaster_response, &sd->last_is_master, "speculativeAuthenticate", NULL);
    sd->has_is_master = true;
 
    BSON_ASSERT (bson_iter_init (&iter, &sd->last_is_master));

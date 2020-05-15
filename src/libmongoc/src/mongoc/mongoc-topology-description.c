@@ -1968,6 +1968,7 @@ mongoc_topology_description_handle_ismaster (
 
    DUMP_BSON (ismaster_response);
    /* pass the current error in */
+
    mongoc_server_description_handle_ismaster (
       sd, ismaster_response, rtt_msec, error);
 
