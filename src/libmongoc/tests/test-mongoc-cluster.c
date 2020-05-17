@@ -583,6 +583,9 @@ _test_cluster_time (bool pooled, command_fn_t command)
       mongoc_client_pool_set_apm_callbacks (
          pool, callbacks, &cluster_time_test);
       client = mongoc_client_pool_pop (pool);
+      /* CDRIVER-3596 - prevent client discovery of the pool interfering with
+       * the test operations. */
+      _mongoc_usleep (5000 * 1000); /* 5 s */
    } else {
       client = test_framework_client_new ();
       mongoc_client_set_apm_callbacks (client, callbacks, &cluster_time_test);
