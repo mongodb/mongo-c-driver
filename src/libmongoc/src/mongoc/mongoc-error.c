@@ -77,10 +77,6 @@ _mongoc_write_error_is_retryable (bson_error_t *error)
    case MONGOC_SERVER_ERR_NOTMASTERORSECONDARY:
       return true;
    default:
-      if (strstr (error->message, "not master") ||
-          strstr (error->message, "node is recovering")) {
-         return true;
-      }
       return false;
    }
 }
