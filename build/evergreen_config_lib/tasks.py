@@ -928,7 +928,10 @@ class OCSPTask(MatrixTask):
         orchestration_file = '%s-basic-tls-ocsp-%s' % (self.cert, stapling)
         orchestration = bootstrap(TOPOLOGY='server', SSL='ssl', OCSP='on', ORCHESTRATION_FILE=orchestration_file)
 
-        commands.append(shell_mongoc('TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s sh .evergreen/run-ocsp-responder.sh' % ('TEST_4' if self.test == 'cache' else self.test.upper(), self.cert, 'on' if self.delegate == 'delegate' else 'off')))
+        # The cache test expects a revoked response from an OCSP responder, exactly like TEST_4.
+        test_column = 'TEST_4' if self.test == 'cache' else self.test.upper()
+
+        commands.append(shell_mongoc('TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s sh .evergreen/run-ocsp-responder.sh' % (test_column, self.cert, 'on' if self.delegate == 'delegate' else 'off')))
         commands.append(orchestration)
         if self.test == 'cache':
             commands.append(shell_mongoc('CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))

@@ -84,6 +84,7 @@ main (int argc, char *argv[])
    raise (SIGSTOP);
    ASSERT (ping () == EXIT_FAILURE);
 
+  mongoc_cleanup ();
 #endif
    return EXIT_SUCCESS;
 }
