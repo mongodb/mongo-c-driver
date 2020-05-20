@@ -21,3 +21,4 @@ mongoc-stat
 mongoc-tail
 test-libmongoc
 test-mongoc-gssapi
+test-mongoc-cache
