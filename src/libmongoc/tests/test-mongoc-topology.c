@@ -1825,8 +1825,8 @@ _test_request_scan_on_error (bool pooled,
          /* a scan is requested immediately. wait for the scan to finish. */
          WAIT_UNTIL (_get_last_scan (client) > last_scan);
       } else {
-         /* wait a short while to make sure no scan occurs. */
-         _mongoc_usleep (10 * 1000);
+         /* wait for minHeartbeatFrequencyMS + a short while to assert no scan occurs. */
+         _mongoc_usleep ((minHBMS + 100) * 1000);
       }
    } else {
       /* a single threaded client may mark the topology as stale. if a scan
@@ -1972,8 +1972,12 @@ test_request_scan_on_error ()
                 NULL /* server_err */);
    /* with a "not master" error code but a "node is recovery" message, it is
     * considered a "node is recovering" error */
-   TEST_BOTH ("{'ok': 0, 'code': 10107, 'errmsg': 'node is recovering'}",
+   TEST_SINGLE ("{'ok': 0, 'code': 10107, 'errmsg': 'node is recovering'}",
               false /* should_scan */,
+              true /* should_mark_unknown */,
+              "node is recovering");
+   TEST_POOLED ("{'ok': 0, 'code': 10107, 'errmsg': 'node is recovering'}",
+              true /* should_scan */,
               true /* should_mark_unknown */,
               "node is recovering");
    /* write concern errors are also checked. */
