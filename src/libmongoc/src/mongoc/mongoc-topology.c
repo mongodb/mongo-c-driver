@@ -1562,8 +1562,6 @@ _mongoc_topology_bypass_cooldown (mongoc_topology_t *topology)
 /* Called from application threads
  * Caller must hold topology lock.
  * Locks topology description mutex to copy out server description errors.
- * CLEANUP: this has nothing to do with background monitoring. Move to
- * mongoc-topology.c.
  * For single-threaded monitoring, the topology scanner may include errors for
  * servers that were removed from the topology.
  */

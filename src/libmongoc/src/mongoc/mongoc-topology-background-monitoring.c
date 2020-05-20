@@ -116,14 +116,16 @@ typedef struct {
 static void
 _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor)
 {
-   if (server_monitor->apm_callbacks.server_heartbeat_started) {
-      mongoc_apm_server_heartbeat_started_t event;
-      event.host = &server_monitor->host;
-      event.context = server_monitor->apm_context;
-      bson_mutex_lock (&server_monitor->topology->apm_mutex);
-      server_monitor->apm_callbacks.server_heartbeat_started (&event);
-      bson_mutex_unlock (&server_monitor->topology->apm_mutex);
+   mongoc_apm_server_heartbeat_started_t event;
+   if (!server_monitor->apm_callbacks.server_heartbeat_started) {
+      return;
    }
+
+   event.host = &server_monitor->host;
+   event.context = server_monitor->apm_context;
+   bson_mutex_lock (&server_monitor->topology->apm_mutex);
+   server_monitor->apm_callbacks.server_heartbeat_started (&event);
+   bson_mutex_unlock (&server_monitor->topology->apm_mutex);
 }
 
 /* Called only from server monitor thread.
@@ -135,16 +137,18 @@ _server_monitor_heartbeat_succeeded (mongoc_server_monitor_t *server_monitor,
                                      const bson_t *reply,
                                      int64_t duration_usec)
 {
-   if (server_monitor->apm_callbacks.server_heartbeat_succeeded) {
-      mongoc_apm_server_heartbeat_succeeded_t event;
-      event.host = &server_monitor->host;
-      event.context = server_monitor->apm_context;
-      event.reply = reply;
-      event.duration_usec = duration_usec;
-      bson_mutex_lock (&server_monitor->topology->apm_mutex);
-      server_monitor->apm_callbacks.server_heartbeat_succeeded (&event);
-      bson_mutex_unlock (&server_monitor->topology->apm_mutex);
+   mongoc_apm_server_heartbeat_succeeded_t event;
+
+   if (!server_monitor->apm_callbacks.server_heartbeat_succeeded) {
+      return;
    }
+   event.host = &server_monitor->host;
+   event.context = server_monitor->apm_context;
+   event.reply = reply;
+   event.duration_usec = duration_usec;
+   bson_mutex_lock (&server_monitor->topology->apm_mutex);
+   server_monitor->apm_callbacks.server_heartbeat_succeeded (&event);
+   bson_mutex_unlock (&server_monitor->topology->apm_mutex);
 }
 
 /* Called only from server monitor thread.
@@ -156,16 +160,19 @@ _server_monitor_heartbeat_failed (mongoc_server_monitor_t *server_monitor,
                                   const bson_error_t *error,
                                   int64_t duration_usec)
 {
-   if (server_monitor->apm_callbacks.server_heartbeat_failed) {
-      mongoc_apm_server_heartbeat_failed_t event;
-      event.host = &server_monitor->host;
-      event.context = server_monitor->apm_context;
-      event.error = error;
-      event.duration_usec = duration_usec;
-      bson_mutex_lock (&server_monitor->topology->apm_mutex);
-      server_monitor->apm_callbacks.server_heartbeat_failed (&event);
-      bson_mutex_unlock (&server_monitor->topology->apm_mutex);
+   mongoc_apm_server_heartbeat_failed_t event;
+
+   if (!server_monitor->apm_callbacks.server_heartbeat_failed) {
+      return;
    }
+
+   event.host = &server_monitor->host;
+   event.context = server_monitor->apm_context;
+   event.error = error;
+   event.duration_usec = duration_usec;
+   bson_mutex_lock (&server_monitor->topology->apm_mutex);
+   server_monitor->apm_callbacks.server_heartbeat_failed (&event);
+   bson_mutex_unlock (&server_monitor->topology->apm_mutex);
 }
 
 static bool
@@ -626,8 +633,8 @@ _background_monitor_reconcile_server_monitor (mongoc_topology_t *topology,
       topology->min_heartbeat_frequency_msec;
    server_monitor->connect_timeout_ms = topology->connect_timeout_msec;
    server_monitor->uri = mongoc_uri_copy (topology->uri);
-/* TODO: Do not retrieve ssl opts from topology scanner. They should be stored
- * somewhere else. */
+/* TODO: CDRIVER-3682 Do not retrieve ssl opts from topology scanner. They
+ * should be stored somewhere else. */
 #ifdef MONGOC_ENABLE_SSL
    if (topology->scanner->ssl_opts) {
       server_monitor->ssl_opts = bson_malloc0 (sizeof (mongoc_ssl_opt_t));
@@ -789,11 +796,11 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
 
    BSON_ASSERT (!topology->single_threaded);
 
-   if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
-      topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN;
-   } else {
+   if (topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       return;
    }
+
+   topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN;
 
    is_srv_polling = NULL != mongoc_uri_get_service (topology->uri);
    /* Signal SRV polling to shut down (if it is started). */
