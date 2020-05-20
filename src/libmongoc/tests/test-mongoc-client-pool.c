@@ -42,6 +42,32 @@ test_mongoc_client_pool_try_pop (void)
 }
 
 static void
+test_mongoc_client_pool_pop_timeout (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   int64_t start;
+   int64_t duration_usec;
+
+   uri = mongoc_uri_new (
+      "mongodb://127.0.0.1/?maxpoolsize=1&waitqueuetimeoutms=2000");
+   pool = mongoc_client_pool_new (uri);
+   client = mongoc_client_pool_pop (pool);
+   BSON_ASSERT (client);
+   start = bson_get_monotonic_time ();
+   BSON_ASSERT (!mongoc_client_pool_pop (pool));
+   duration_usec = bson_get_monotonic_time () - start;
+   /* There is a possibility that the wait is a few milliseconds short.  The
+    * assertion is structured like this since the timeout is a rough lower bound
+    * and some test environments (e.g., valgrind) might slow things down. */
+   BSON_ASSERT (duration_usec / 1000 >= 1990);
+   mongoc_client_pool_push (pool, client);
+   mongoc_uri_destroy (uri);
+   mongoc_client_pool_destroy (pool);
+}
+
+static void
 test_mongoc_client_pool_min_size_zero (void)
 {
    mongoc_client_pool_t *pool;
@@ -341,6 +367,9 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_Add (suite, "/ClientPool/basic", test_mongoc_client_pool_basic);
    TestSuite_Add (
       suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
+   TestSuite_Add (suite,
+                  "/ClientPool/try_pop_timeout",
+                  test_mongoc_client_pool_pop_timeout);
    TestSuite_Add (suite,
                   "/ClientPool/min_size_zero",
                   test_mongoc_client_pool_min_size_zero);

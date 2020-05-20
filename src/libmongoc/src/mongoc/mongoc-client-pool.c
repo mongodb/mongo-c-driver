@@ -248,11 +248,15 @@ mongoc_client_t *
 mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 {
    mongoc_client_t *client;
+   int32_t wait_queue_timeout_ms;
+   int r;
 
    ENTRY;
 
    BSON_ASSERT (pool);
 
+   wait_queue_timeout_ms = mongoc_uri_get_option_as_int32 (
+      pool->uri, MONGOC_URI_WAITQUEUETIMEOUTMS, -1);
    bson_mutex_lock (&pool->mutex);
 
 again:
@@ -262,7 +266,16 @@ again:
          _initialize_new_client (pool, client);
          pool->size++;
       } else {
-         mongoc_cond_wait (&pool->cond, &pool->mutex);
+         if (wait_queue_timeout_ms > 0) {
+            r = mongoc_cond_timedwait (
+               &pool->cond, &pool->mutex, wait_queue_timeout_ms);
+            if (mongo_cond_ret_is_timedout (r)) {
+               bson_mutex_unlock (&pool->mutex);
+               RETURN (NULL);
+            }
+         } else {
+            mongoc_cond_wait (&pool->cond, &pool->mutex);
+         }
          GOTO (again);
       }
    }
