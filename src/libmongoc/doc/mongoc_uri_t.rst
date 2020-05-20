@@ -193,7 +193,7 @@ MONGOC_URI_MAXPOOLSIZE                     maxpoolsize                       The
 MONGOC_URI_MINPOOLSIZE                     minpoolsize                       Deprecated. This option's behavior does not match its name, and its actual behavior will likely hurt performance.
 MONGOC_URI_MAXIDLETIMEMS                   maxidletimems                     Not implemented.
 MONGOC_URI_WAITQUEUEMULTIPLE               waitqueuemultiple                 Not implemented.
-MONGOC_URI_WAITQUEUETIMEOUTMS              waitqueuetimeoutms                Not implemented.
+MONGOC_URI_WAITQUEUETIMEOUTMS              waitqueuetimeoutms                The maximum time to wait for a client to become available from the pool.
 ========================================== ================================= =========================================================================================================================================================================================================================
 
 .. _mongoc_uri_t_write_concern_options:

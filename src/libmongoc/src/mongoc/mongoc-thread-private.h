@@ -49,6 +49,10 @@ mongoc_cond_timedwait (pthread_cond_t *cond,
 
    return pthread_cond_timedwait (cond, mutex, &to);
 }
+static BSON_INLINE bool
+mongo_cond_ret_is_timedout (int ret) {
+   return ret == ETIMEDOUT;
+}
 #define mongoc_cond_destroy pthread_cond_destroy
 #else
 #define mongoc_cond_t CONDITION_VARIABLE
@@ -72,6 +76,10 @@ mongoc_cond_timedwait (mongoc_cond_t *cond,
          return EINVAL;
       }
    }
+}
+static BSON_INLINE bool
+mongo_cond_ret_is_timedout (int ret) {
+   return ret == WSAETIMEDOUT;
 }
 #define mongoc_cond_signal WakeConditionVariable
 #define mongoc_cond_broadcast WakeAllConditionVariable

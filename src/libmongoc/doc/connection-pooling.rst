@@ -51,4 +51,23 @@ When the driver is in pooled mode, your program's operations are unblocked as so
 
 The pool opens one connection per server for monitoring, and each client opens its own connection to each server it uses for application operations. The background thread re-scans the server topology roughly every 10 seconds. This interval is configurable with ``heartbeatFrequencyMS`` in the connection string. (See :symbol:`mongoc_uri_t`.)
 
+The connection string can also specify ``waitQueueTimeoutMS`` to limit the time that :symbol:`mongoc_client_pool_pop` will wait for a client from the pool.  (See :symbol:`mongoc_uri_t`.)  If ``waitQueueTimeoutMS`` is specified, then it is necessary to confirm that a client was actually returned:
+
+.. code-block:: c
+
+  mongoc_uri_t *uri = mongoc_uri_new (
+     "mongodb://hostA,hostB/?replicaSet=my_rs&waitQueueTimeoutMS=1000");
+
+  mongoc_client_pool_t *pool = mongoc_client_pool_new (uri);
+
+  mongoc_client_t *client = mongoc_client_pool_pop (pool);
+
+  if (client) {
+     /* use the client for operations ... */
+
+     mongoc_client_pool_push (pool, client);
+  } else {
+     /* take appropriate action for a timeout */
+  }
+
 See :ref:`connection_pool_options` to configure pool size and behavior, and see :symbol:`mongoc_client_pool_t` for an extended example of a multi-threaded program that uses the driver in pooled mode.
