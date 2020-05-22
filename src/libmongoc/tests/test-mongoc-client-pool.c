@@ -368,7 +368,7 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
    TestSuite_Add (suite,
-                  "/ClientPool/try_pop_timeout",
+                  "/ClientPool/pop_timeout",
                   test_mongoc_client_pool_pop_timeout);
    TestSuite_Add (suite,
                   "/ClientPool/min_size_zero",
