@@ -1839,6 +1839,10 @@ _mock_server_reply_with_stream (mock_server_t *server,
    uint8_t *ptr;
    size_t len;
    bool is_op_msg;
+   mongoc_reply_flags_t flags = reply->flags;
+   const bson_t *docs = reply->docs;
+   int n_docs = reply->n_docs;
+   int64_t cursor_id = reply->cursor_id;
 
    if (reply->type == HANGUP) {
       mongoc_stream_close (client);
@@ -1854,10 +1858,6 @@ _mock_server_reply_with_stream (mock_server_t *server,
       mongoc_stream_close (client);
       return;
    }
-   mongoc_reply_flags_t flags = reply->flags;
-   const bson_t *docs = reply->docs;
-   int n_docs = reply->n_docs;
-   int64_t cursor_id = reply->cursor_id;
 
    docs_json = bson_string_new ("");
    for (i = 0; i < n_docs; i++) {
