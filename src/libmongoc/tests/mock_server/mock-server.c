@@ -72,7 +72,9 @@ struct _autoresponder_handle_t {
    int id;
 };
 
-typedef enum { REPLY, HANGUP, RESET } reply_type_t;
+typedef enum {
+   REPLY, HANGUP, RESET
+} reply_type_t;
 
 
 typedef struct {
