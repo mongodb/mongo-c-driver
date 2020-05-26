@@ -99,7 +99,7 @@ test_rs_failover (void)
    request =
       mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
-   mock_server_replies_simple (request, "{'ok': 0, 'errmsg': 'not master'}");
+   mock_server_replies_simple (request, "{'ok': 0, 'code': 10107, 'errmsg': 'not master'}");
    request_destroy (request);
 
    request =
