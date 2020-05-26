@@ -73,6 +73,10 @@ _mongoc_error_is_server (bson_error_t *error)
 static bool
 _mongoc_write_error_is_retryable (bson_error_t *error)
 {
+   if (!_mongoc_error_is_server (error)) {
+      return false;
+   }
+
    switch (error->code) {
    case MONGOC_SERVER_ERR_HOSTUNREACHABLE:
    case MONGOC_SERVER_ERR_HOSTNOTFOUND:
