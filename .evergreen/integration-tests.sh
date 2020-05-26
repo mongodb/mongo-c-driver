@@ -97,13 +97,6 @@ case "$OS" in
          PYTHON=python
       fi
 
-      PYTHON_MAJ=$(python -c 'import sys; print (sys.version_info[0])')
-      PYTHON_MIN=$(python -c 'import sys; print (sys.version_info[1])')
-      if [ "$PYTHON_MAJ" -ge "3" -a "$PYTHON_MIN" -ge "8" ]; then
-         # mongo-orchestration currently does not run with python 3.8 per PYTHON-2067. Explicitly use python 2.
-         PYTHON=python2
-      fi
-
       $PYTHON -m virtualenv venv
       cd venv
       . bin/activate
