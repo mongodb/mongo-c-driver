@@ -125,6 +125,7 @@ struct _mongoc_apm_topology_closed_t {
 struct _mongoc_apm_server_heartbeat_started_t {
    const mongoc_host_list_t *host;
    void *context;
+   bool awaited;
 };
 
 struct _mongoc_apm_server_heartbeat_succeeded_t {
@@ -132,6 +133,7 @@ struct _mongoc_apm_server_heartbeat_succeeded_t {
    const bson_t *reply;
    const mongoc_host_list_t *host;
    void *context;
+   bool awaited;
 };
 
 struct _mongoc_apm_server_heartbeat_failed_t {
@@ -139,6 +141,7 @@ struct _mongoc_apm_server_heartbeat_failed_t {
    const bson_error_t *error;
    const mongoc_host_list_t *host;
    void *context;
+   bool awaited;
 };
 
 void

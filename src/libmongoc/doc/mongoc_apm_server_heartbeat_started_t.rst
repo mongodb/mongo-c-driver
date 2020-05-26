@@ -24,6 +24,7 @@ See Also
     :titlesonly:
     :maxdepth: 1
 
+    mongoc_apm_server_heartbeat_started_get_awaited
     mongoc_apm_server_heartbeat_started_get_context
     mongoc_apm_server_heartbeat_started_get_host
 
