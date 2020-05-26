@@ -60,8 +60,23 @@ mongoc_error_has_label (const bson_t *reply, const char *label)
 }
 
 static bool
+_mongoc_error_is_server (bson_error_t *error)
+{
+   if (!error) {
+      return false;
+   }
+
+   return error->domain == MONGOC_ERROR_SERVER ||
+          error->domain == MONGOC_ERROR_WRITE_CONCERN;
+}
+
+static bool
 _mongoc_write_error_is_retryable (bson_error_t *error)
 {
+   if (!_mongoc_error_is_server (error)) {
+      return false;
+   }
+
    switch (error->code) {
    case MONGOC_SERVER_ERR_HOSTUNREACHABLE:
    case MONGOC_SERVER_ERR_HOSTNOTFOUND:
@@ -77,10 +92,6 @@ _mongoc_write_error_is_retryable (bson_error_t *error)
    case MONGOC_SERVER_ERR_NOTMASTERORSECONDARY:
       return true;
    default:
-      if (strstr (error->message, "not master") ||
-          strstr (error->message, "node is recovering")) {
-         return true;
-      }
       return false;
    }
 }
@@ -232,8 +243,7 @@ _mongoc_error_copy_labels_and_upsert (const bson_t *src,
 bool
 _mongoc_error_is_shutdown (bson_error_t *error)
 {
-   if (error->domain != MONGOC_ERROR_SERVER &&
-       error->domain != MONGOC_ERROR_WRITE_CONCERN) {
+   if (!_mongoc_error_is_server(error)) {
       return false;
    }
    switch (error->code) {
@@ -248,8 +258,7 @@ _mongoc_error_is_shutdown (bson_error_t *error)
 bool
 _mongoc_error_is_not_master (bson_error_t *error)
 {
-   if (error->domain != MONGOC_ERROR_SERVER &&
-       error->domain != MONGOC_ERROR_WRITE_CONCERN) {
+   if (!_mongoc_error_is_server(error)) {
       return false;
    }
 
@@ -268,8 +277,7 @@ _mongoc_error_is_not_master (bson_error_t *error)
 bool
 _mongoc_error_is_recovering (bson_error_t *error)
 {
-   if (error->domain != MONGOC_ERROR_SERVER &&
-       error->domain != MONGOC_ERROR_WRITE_CONCERN) {
+   if (!_mongoc_error_is_server(error)) {
       return false;
    }
    switch (error->code) {
