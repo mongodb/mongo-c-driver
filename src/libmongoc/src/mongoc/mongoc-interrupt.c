@@ -30,7 +30,8 @@ struct _mongoc_interrupt_t {
    bson_mutex_t mutex;
 
    union {
-      /* For POSIX */
+      /* For POSIX. pipe_fds[0] is the read end and pipe_fds[1] is the write
+       * end. */
       int pipe_fds[2];
 
       /* For Windows */
@@ -117,10 +118,13 @@ _mongoc_interrupt_new (uint32_t timeout_ms)
    }
 
    /* Begin non-blocking connect. */
-   ret = mongoc_socket_connect (
-      interrupt->impl.socket_pair.read, (struct sockaddr *) &server_addr, sock_len, 0);
+   ret = mongoc_socket_connect (interrupt->impl.socket_pair.read,
+                                (struct sockaddr *) &server_addr,
+                                sock_len,
+                                0);
    if (ret == -1 &&
-       !MONGOC_ERRNO_IS_AGAIN (mongoc_socket_errno (interrupt->impl.socket_pair.read))) {
+       !MONGOC_ERRNO_IS_AGAIN (
+          mongoc_socket_errno (interrupt->impl.socket_pair.read))) {
       _log_errno ("connect failed",
                   mongoc_socket_errno (interrupt->impl.socket_pair.read));
       GOTO (fail);
@@ -156,10 +160,10 @@ _mongoc_interrupt_destroy (mongoc_interrupt_t *interrupt)
       return;
    }
 
+   bson_mutex_destroy (&interrupt->mutex);
    mongoc_socket_destroy (interrupt->impl.socket_pair.read);
    mongoc_socket_destroy (interrupt->impl.socket_pair.write);
    mongoc_stream_destroy (interrupt->stream);
-   bson_mutex_destroy (&interrupt->mutex);
    bson_free (interrupt);
 }
 
@@ -172,7 +176,7 @@ _mongoc_interrupt_flush (mongoc_interrupt_t *interrupt)
                    interrupt->impl.socket_pair.read, buf, sizeof (buf), 0, 0)) {
          if (MONGOC_ERRNO_IS_AGAIN (errno)) {
             /* Nothing left to read. */
-            break;
+            return true;
          } else {
             /* Unexpected error. */
             _log_errno ("interrupt recv failed",
@@ -181,14 +185,16 @@ _mongoc_interrupt_flush (mongoc_interrupt_t *interrupt)
          }
       }
    }
-   return true;
+   /* Should never be reached. */
+   BSON_ASSERT (false);
 }
 
 bool
 _mongoc_interrupt_interrupt (mongoc_interrupt_t *interrupt)
 {
    bson_mutex_lock (&interrupt->mutex);
-   if (mongoc_socket_send (interrupt->impl.socket_pair.write, "!", 1, 0) == -1 &&
+   if (mongoc_socket_send (interrupt->impl.socket_pair.write, "!", 1, 0) ==
+          -1 &&
        !MONGOC_ERRNO_IS_AGAIN (errno)) {
       _log_errno ("interrupt send failed",
                   mongoc_socket_errno (interrupt->impl.socket_pair.write));
@@ -208,14 +214,14 @@ _set_pipe_flags (int pipe_fd)
 {
    int flags;
 
-   flags = fcntl (pipe_fd, F_GETFL, pipe_fd);
+   flags = fcntl (pipe_fd, F_GETFL);
 
    if (-1 == fcntl (pipe_fd, F_SETFL, (flags | O_NONBLOCK))) {
       return false;
    }
 
 #ifdef FD_CLOEXEC
-   flags = fcntl (pipe_fd, F_GETFD, pipe_fd);
+   flags = fcntl (pipe_fd, F_GETFD);
    if (-1 == fcntl (pipe_fd, F_SETFD, (flags | FD_CLOEXEC))) {
       return false;
    }
