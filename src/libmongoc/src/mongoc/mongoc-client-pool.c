@@ -249,8 +249,8 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 {
    mongoc_client_t *client;
    int32_t wait_queue_timeout_ms;
-   int32_t expire_at_ms = -1;
-   int32_t now_ms;
+   int64_t expire_at_ms = -1;
+   int64_t now_ms;
    int r;
 
    ENTRY;
