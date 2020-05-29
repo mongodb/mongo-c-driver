@@ -72,8 +72,13 @@ struct _autoresponder_handle_t {
    int id;
 };
 
+typedef enum {
+   REPLY, HANGUP, RESET
+} reply_type_t;
+
 
 typedef struct {
+   reply_type_t type;
    mongoc_reply_flags_t flags;
    bson_t *docs;
    int n_docs;
@@ -1218,12 +1223,14 @@ mock_server_receives_kill_cursors (mock_server_t *server, int64_t cursor_id)
 void
 mock_server_hangs_up (request_t *request)
 {
+   reply_t *reply;
    test_suite_mock_server_log ("%5.2f  %hu <- %hu \thang up!",
                                mock_server_get_uptime_sec (request->server),
                                request->client_port,
                                request_get_server_port (request));
-
-   mongoc_stream_close (request->client);
+   reply = bson_malloc0 (sizeof (reply_t));
+   reply->type = HANGUP;
+   q_put (request->replies, reply);
 }
 
 
@@ -1245,20 +1252,15 @@ mock_server_hangs_up (request_t *request)
 void
 mock_server_resets (request_t *request)
 {
-   struct linger no_linger;
-   no_linger.l_onoff = 1;
-   no_linger.l_linger = 0;
-
+   reply_t *reply;
    test_suite_mock_server_log ("%5.2f  %hu <- %hu \treset!",
                                mock_server_get_uptime_sec (request->server),
                                request->client_port,
                                request_get_server_port (request));
 
-   /* send RST packet to client */
-   mongoc_stream_setsockopt (
-      request->client, SOL_SOCKET, SO_LINGER, &no_linger, sizeof no_linger);
-
-   mongoc_stream_close (request->client);
+   reply = bson_malloc0 (sizeof (reply_t));
+   reply->type = RESET;
+   q_put (request->replies, reply);
 }
 
 
@@ -1330,7 +1332,6 @@ mock_server_replies_simple (request_t *request, const char *docs_json)
 {
    mock_server_replies (request, MONGOC_REPLY_NONE, 0, 0, 1, docs_json);
 }
-
 
 /*--------------------------------------------------------------------------
  *
@@ -1801,6 +1802,7 @@ mock_server_reply_multi (request_t *request,
 
    reply = bson_malloc0 (sizeof (reply_t));
 
+   reply->type = REPLY;
    reply->flags = flags;
    reply->n_docs = n_docs;
    reply->docs = bson_malloc0 (n_docs * sizeof (bson_t));
@@ -1837,11 +1839,25 @@ _mock_server_reply_with_stream (mock_server_t *server,
    uint8_t *ptr;
    size_t len;
    bool is_op_msg;
-
    mongoc_reply_flags_t flags = reply->flags;
    const bson_t *docs = reply->docs;
    int n_docs = reply->n_docs;
    int64_t cursor_id = reply->cursor_id;
+
+   if (reply->type == HANGUP) {
+      mongoc_stream_close (client);
+      return;
+   } else if (reply->type == RESET) {
+      struct linger no_linger;
+      no_linger.l_onoff = 1;
+      no_linger.l_linger = 0;
+
+      /* send RST packet to client */
+      mongoc_stream_setsockopt (client, SOL_SOCKET, SO_LINGER, &no_linger, sizeof no_linger);
+
+      mongoc_stream_close (client);
+      return;
+   }
 
    docs_json = bson_string_new ("");
    for (i = 0; i < n_docs; i++) {
