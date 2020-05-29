@@ -144,6 +144,8 @@ To add a "readConcern", construct a :symbol:`mongoc_read_concern_t` with :symbol
 For some options like "collation", the driver returns an error if the server version is too old to support the feature.
 Any fields in ``opts`` that are not listed here are passed to the server unmodified.
 
+``allowDiskUse`` is only supported in MongoDB 4.4+.
+
 Deprecated Options
 ------------------
 
