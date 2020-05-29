@@ -628,10 +628,8 @@ if (NOT ENABLE_SSL STREQUAL OFF)
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.c
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl-bio.c
          ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-openssl.c
+         ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ocsp-cache.c
       )
-      if (OPENSSL_VERSION GREATER 1.1.1 OR OPENSSL_VERSION EQUAL 1.1.1)
-         set (SOURCES ${SOURCES} ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ocsp-cache.c)
-      endif()
       set (SSL_LIBRARIES ${OPENSSL_LIBRARIES})
       include_directories (${OPENSSL_INCLUDE_DIR})
       if (WIN32)
@@ -948,10 +946,8 @@ if (MONGOC_ENABLE_SSL)
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-tls-error.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-tls.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-x509.c
+      ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ocsp-cache.c
    )
-   if (OPENSSL_VERSION GREATER 1.1.1 OR OPENSSL_VERSION EQUAL 1.1.1)
-      set (test-libmongoc-sources ${test-libmongoc-sources} ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ocsp-cache.c)
-   endif()
 endif ()
 
 if (MONGOC_ENABLE_SASL_CYRUS)

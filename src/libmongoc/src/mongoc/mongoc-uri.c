@@ -2414,7 +2414,13 @@ mongoc_uri_get_tls (const mongoc_uri_t *uri) /* IN */
        bson_iter_init_find_case (
           &iter, &uri->options, MONGOC_URI_TLSINSECURE) ||
        bson_iter_init_find_case (
-          &iter, &uri->options, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD)) {
+          &iter, &uri->options, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD) ||
+       bson_iter_init_find_case (
+          &iter, &uri->options, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK) ||
+       bson_iter_init_find_case (
+          &iter,
+          &uri->options,
+          MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK)) {
       return true;
    }
 
@@ -3050,7 +3056,8 @@ mongoc_uri_init_with_srv_host_list (mongoc_uri_t *uri,
    BSON_ASSERT (uri->is_srv);
    BSON_ASSERT (!uri->hosts);
 
-   LL_FOREACH (host_list, host) {
+   LL_FOREACH (host_list, host)
+   {
       if (!mongoc_uri_upsert_host_and_port (uri, host->host_and_port, error)) {
          return false;
       }

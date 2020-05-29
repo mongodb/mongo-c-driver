@@ -38,6 +38,10 @@
 #include <errhandlingapi.h>
 #include <DbgHelp.h>
 #endif
+
+#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#include "mongoc/mongoc-openssl-private.h"
+#endif
 /* libbson */
 
 
@@ -244,7 +248,7 @@ extern void
 test_aws_install (TestSuite *suite);
 extern void
 test_streamable_ismaster_install (TestSuite *suite);
-#ifdef MONGOC_ENABLE_OCSP_OPENSSL
+#if defined(MONGOC_ENABLE_OCSP_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10101000L
 extern void
 test_ocsp_cache_install (TestSuite *suite);
 #endif
@@ -2629,7 +2633,7 @@ main (int argc, char *argv[])
    test_server_description_install (&suite);
    test_aws_install (&suite);
    test_streamable_ismaster_install (&suite);
-#ifdef MONGOC_ENABLE_OCSP_OPENSSL
+#if defined(MONGOC_ENABLE_OCSP_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10101000L
    test_ocsp_cache_install (&suite);
 #endif
    test_interrupt_install (&suite);

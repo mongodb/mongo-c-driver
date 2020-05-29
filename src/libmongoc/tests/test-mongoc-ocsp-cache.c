@@ -18,7 +18,7 @@
 
 #include "mongoc/mongoc-ocsp-cache-private.h"
 
-#ifdef MONGOC_ENABLE_OCSP_OPENSSL
+#if defined(MONGOC_ENABLE_OCSP_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10101000L
 #include <openssl/pem.h>
 
 static OCSP_CERTID *
@@ -187,16 +187,15 @@ test_mongoc_cache_remove_expired_cert (void)
    CLEAR_CACHE;
 }
 
-#endif
-
 void
 test_ocsp_cache_install (TestSuite *suite)
 {
-#ifdef MONGOC_ENABLE_OCSP_OPENSSL
    TestSuite_Add (suite, "/OCSPCache/insert", test_mongoc_cache_insert);
    TestSuite_Add (suite, "/OCSPCache/update", test_mongoc_cache_update);
    TestSuite_Add (suite,
                   "/OCSPCache/remove_expired_cert",
                   test_mongoc_cache_remove_expired_cert);
-#endif
 }
+#else
+extern int no_mongoc_ocsp;
+#endif /* MONGOC_ENABLE_OCSP_OPENSSL */

@@ -31,14 +31,15 @@ from evergreen_config_lib import shell_mongoc
 class CompileTask(NamedTask):
     def __init__(self, task_name, tags=None, config='debug',
                  compression='default', continue_on_err=False,
-                 extra_commands=None, depends_on=None,
-                 extra_script=None, **kwargs):
+                 suffix_commands=None, depends_on=None,
+                 extra_script=None, prefix_commands=None, **kwargs):
         super(CompileTask, self).__init__(task_name=task_name,
                                           depends_on=depends_on,
                                           tags=tags,
                                           **kwargs)
 
-        self.extra_commands = extra_commands or []
+        self.suffix_commands = suffix_commands or []
+        self.prefix_commands = prefix_commands or []
         if extra_script:
             self.extra_script = "\n" + extra_script
         else:
@@ -65,6 +66,8 @@ class CompileTask(NamedTask):
     def to_dict(self):
         task = super(CompileTask, self).to_dict()
 
+        task['commands'].extend(self.prefix_commands)
+
         script = ''
         for opt, value in sorted(self.compile_sh_opt.items()):
             script += 'export %s="%s"\n' % (opt, value)
@@ -73,7 +76,7 @@ class CompileTask(NamedTask):
             self.extra_script
         task['commands'].append(shell_mongoc(script))
         task['commands'].append(func('upload build'))
-        task['commands'].extend(self.extra_commands)
+        task['commands'].extend(self.suffix_commands)
         return task
 
 
@@ -135,7 +138,7 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
 
 
 class LinkTask(NamedTask):
-    def __init__(self, task_name, extra_commands, orchestration=True, **kwargs):
+    def __init__(self, task_name, suffix_commands, orchestration=True, **kwargs):
         if orchestration == 'ssl':
             bootstrap_commands = [bootstrap(SSL=1)]
         elif orchestration:
@@ -147,7 +150,7 @@ class LinkTask(NamedTask):
             task_name=task_name,
             depends_on=OD([('name', 'make-release-archive'),
                            ('variant', 'releng')]),
-            commands=bootstrap_commands + extra_commands,
+            commands=bootstrap_commands + suffix_commands,
             **kwargs)
 
 
@@ -201,7 +204,7 @@ all_tasks = [
     SpecialTask('debug-compile-coverage',
                 tags=['debug-compile', 'coverage'],
                 COVERAGE='ON',
-                extra_commands=[func('upload coverage')]),
+                suffix_commands=[func('upload coverage')]),
     CompileTask('debug-compile-no-counters',
                 tags=['debug-compile', 'no-counters'],
                 ENABLE_SHM_COUNTERS='OFF'),
@@ -244,7 +247,7 @@ all_tasks = [
                 continue_on_err=True,
                 ANALYZE='ON',
                 CC='clang',
-                extra_commands=[
+                suffix_commands=[
                     func('upload scan artifacts'),
                     shell_mongoc('''
                         if find scan -name \*.html | grep -q html; then
@@ -300,70 +303,70 @@ all_tasks = [
                 tags=['debug-compile'],
                 SRV='OFF'),
     LinkTask('link-with-cmake',
-             extra_commands=[
+             suffix_commands=[
                  func('link sample program', BUILD_SAMPLE_WITH_CMAKE=1)]),
     LinkTask('link-with-cmake-ssl',
-             extra_commands=[
+             suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
                       ENABLE_SSL=1)]),
     LinkTask('link-with-cmake-snappy',
-             extra_commands=[
+             suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
                       ENABLE_SNAPPY=1)]),
     LinkTask('link-with-cmake-mac',
-             extra_commands=[
+             suffix_commands=[
                  func('link sample program', BUILD_SAMPLE_WITH_CMAKE=1)]),
     LinkTask('link-with-cmake-deprecated',
-             extra_commands=[
+             suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
                       BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1)]),
     LinkTask('link-with-cmake-ssl-deprecated',
-             extra_commands=[
+             suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
                       BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1,
                       ENABLE_SSL=1)]),
     LinkTask('link-with-cmake-snappy-deprecated',
-             extra_commands=[
+             suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
                       BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1,
                       ENABLE_SNAPPY=1)]),
     LinkTask('link-with-cmake-mac-deprecated',
-             extra_commands=[
+             suffix_commands=[
                  func('link sample program',
                       BUILD_SAMPLE_WITH_CMAKE=1,
                       BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=1)]),
     LinkTask('link-with-cmake-windows',
-             extra_commands=[func('link sample program MSVC')]),
+             suffix_commands=[func('link sample program MSVC')]),
     LinkTask('link-with-cmake-windows-ssl',
-             extra_commands=[func('link sample program MSVC', ENABLE_SSL=1)],
+             suffix_commands=[func('link sample program MSVC', ENABLE_SSL=1)],
              orchestration='ssl'),
     LinkTask('link-with-cmake-windows-snappy',
-             extra_commands=[
+             suffix_commands=[
                  func('link sample program MSVC', ENABLE_SNAPPY=1)]),
     LinkTask('link-with-cmake-mingw',
-             extra_commands=[func('link sample program mingw')]),
+             suffix_commands=[func('link sample program mingw')]),
     LinkTask('link-with-pkg-config',
-             extra_commands=[func('link sample program')]),
+             suffix_commands=[func('link sample program')]),
     LinkTask('link-with-pkg-config-mac',
-             extra_commands=[func('link sample program')]),
+             suffix_commands=[func('link sample program')]),
     LinkTask('link-with-pkg-config-ssl',
-             extra_commands=[func('link sample program', ENABLE_SSL=1)]),
+             suffix_commands=[func('link sample program', ENABLE_SSL=1)]),
     LinkTask('link-with-bson',
-             extra_commands=[func('link sample program bson')],
+             suffix_commands=[func('link sample program bson')],
              orchestration=False),
     LinkTask('link-with-bson-mac',
-             extra_commands=[func('link sample program bson')],
+             suffix_commands=[func('link sample program bson')],
              orchestration=False),
     LinkTask('link-with-bson-windows',
-             extra_commands=[func('link sample program MSVC bson')],
+             suffix_commands=[func('link sample program MSVC bson')],
              orchestration=False),
     LinkTask('link-with-bson-mingw',
-             extra_commands=[func('link sample program mingw bson')],
+             suffix_commands=[func('link sample program mingw bson')],
              orchestration=False),
     NamedTask('debian-package-build',
               commands=[
@@ -408,7 +411,10 @@ all_tasks = [
     CompileWithClientSideEncryption('debug-compile-sasl-winssl-cse', tags=[
                                     'debug-compile', 'sasl', 'winssl'], SASL="AUTO", SSL="WINDOWS"),
     CompileWithClientSideEncryptionAsan('debug-compile-asan-openssl-cse', tags=[
-                                        'debug-compile', 'asan-clang'], SSL="OPENSSL")
+                                        'debug-compile', 'asan-clang'], SSL="OPENSSL"),
+    CompileTask ('debug-compile-nosasl-openssl-1.0.1',
+        prefix_commands=[func("install ssl", SSL="openssl-1.0.1u")],
+        CFLAGS="-Wno-redundant-decls", SSL="OPENSSL", SASL="OFF")
 ]
 
 
@@ -667,11 +673,11 @@ all_tasks = chain(all_tasks, CompressionTask.matrix())
 
 class SpecialIntegrationTask(NamedTask):
     def __init__(self, task_name, depends_on='debug-compile-sasl-openssl',
-                 extra_commands=None, uri=None,
+                 suffix_commands=None, uri=None,
                  tags=None, version='latest', topology='server'):
         commands = [func('fetch build', BUILD_NAME=depends_on),
                     bootstrap(VERSION=version, TOPOLOGY=topology),
-                    run_tests(uri)] + (extra_commands or [])
+                    run_tests(uri)] + (suffix_commands or [])
         super(SpecialIntegrationTask, self).__init__(task_name,
                                                      commands=commands,
                                                      depends_on=depends_on,
@@ -824,7 +830,7 @@ all_tasks = chain(all_tasks, [
     SSLTask('openssl-1.0.2', 'l'),
     SSLTask('openssl-1.1.0', 'f'),
     SSLTask('libressl-2.5', '.2', require_tls12=True),
-    SSLTask('libressl-3.0', '.2', require_tls12=True, enable_ssl="AUTO"),
+    SSLTask('libressl-3.0', '.2', require_tls12=True, enable_ssl="AUTO", cflags="-Wno-redundant-decls"),
     SSLTask('libressl-3.0', '.2', require_tls12=True),
 ])
 
@@ -900,7 +906,7 @@ class OCSPTask(MatrixTask):
     axes = OD([('test', ['test_1', 'test_2', 'test_3', 'test_4', 'soft_fail_test', 'malicious_server_test_1', 'malicious_server_test_2', 'cache']),
                ('delegate', ['delegate', 'nodelegate']),
                ('cert', ['rsa', 'ecdsa']),
-               ('ssl', ['openssl', 'darwinssl', 'winssl'])])
+               ('ssl', ['openssl', 'openssl-1.0.1', 'darwinssl', 'winssl'])])
 
     name_prefix = 'test-ocsp'
 
@@ -942,11 +948,9 @@ class OCSPTask(MatrixTask):
 
     # Testing in OCSP has a lot of exceptions.
     def _check_allowed(self):
-        # Current latest macOS does not support the disableStapling failpoint.
-        # There are no tests that can run on macOS in current evergreen configuration.
         if self.ssl == 'darwinssl':
-            # TODO: remove this when macOS latest download is updated
-            prohibit (True)
+            # Secure Transport quietly ignores a must-staple certificate with no stapled response.
+            prohibit (self.test == 'malicious_server_test_2')
 
         # ECDSA certs can't be loaded (in the PEM format they're stored) on Windows/macOS. Skip them.
         if self.ssl == 'darwinssl' or self.ssl == 'winssl':
@@ -959,9 +963,6 @@ class OCSPTask(MatrixTask):
         if self.test == 'soft_fail_test' or self.test == 'malicious_server_test_2' or self.test == 'cache':
             prohibit(self.delegate == 'delegate')
 
-        # Until OCSP is supported in OpenSSL, skip tests that expect to be revoked.
-        if self.ssl == 'openssl':
-            prohibit (self.test in ['test_2', 'test_4', 'malicious_server_test_1', 'malicious_server_test_2'])
 
 
 all_tasks = chain(all_tasks, OCSPTask.matrix())
