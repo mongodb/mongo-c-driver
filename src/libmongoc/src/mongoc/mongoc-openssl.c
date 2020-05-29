@@ -588,13 +588,15 @@ const STACK_OF (X509_EXTENSION) * _get_extensions (const X509 *cert)
 
 #define TLSFEATURE_STATUS_REQUEST 5
 
-/* Parse just enough of a DER encoded data to check if a SEQUENCE of INTEGER
+/* Check a tlsfeature extension contents for a status_request.
+ *
+ * Parse just enough of a DER encoded data to check if a SEQUENCE of INTEGER
  * contains the status_request extension (5). There are only five tlsfeature
  * extension types, so this only handles the case that the sequence's length is
  * representable in one byte, and that each integer is representable in one
  * byte. */
-static bool
-_sequence_has_status_request (const uint8_t *data, int length)
+bool
+_mongoc_tlsfeature_has_status_request (const uint8_t *data, int length)
 {
    int i;
 
@@ -607,7 +609,7 @@ _sequence_has_status_request (const uint8_t *data, int length)
 
    for (i = 2; i < length; i += 3) {
       /* Expect an integer, representable in one byte. */
-      if (length < i + 3 || data[i] != 0x02 || data[i + 1] >= 127) {
+      if (length < i + 3 || data[i] != 0x02 || data[i + 1] != 1) {
          MONGOC_ERROR ("malformed tlsfeature extension integer");
          return false;
       }
@@ -645,8 +647,8 @@ _get_must_staple (X509 *cert)
    ext_data = X509_EXTENSION_get_data (ext);
 
    /* Data is a DER encoded sequence of integers. */
-   return _sequence_has_status_request (ASN1_STRING_get0_data (ext_data),
-                                        ASN1_STRING_length (ext_data));
+   return _mongoc_tlsfeature_has_status_request (
+      ASN1_STRING_get0_data (ext_data), ASN1_STRING_length (ext_data));
 }
 
 #define ERR_STR (ERR_error_string (ERR_get_error (), NULL))

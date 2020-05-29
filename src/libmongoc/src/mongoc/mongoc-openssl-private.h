@@ -53,6 +53,8 @@ int
 _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts);
 #endif
 
+bool
+_mongoc_tlsfeature_has_status_request (const uint8_t *data, int length);
 
 BSON_END_DECLS
 
