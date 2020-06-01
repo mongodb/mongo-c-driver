@@ -359,7 +359,7 @@ mongoc_socket_poll (mongoc_socket_poll_t *sds, /* IN */
 
 /* https://jira.mongodb.org/browse/CDRIVER-2176 */
 #define MONGODB_KEEPALIVEINTVL 10
-#define MONGODB_KEEPIDLE 300
+#define MONGODB_KEEPIDLE 120
 #define MONGODB_KEEPALIVECNT 9
 
 #ifdef _WIN32
