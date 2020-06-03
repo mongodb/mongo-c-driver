@@ -238,6 +238,9 @@ mongoc_apm_server_heartbeat_started_get_host (
 MONGOC_EXPORT (void *)
 mongoc_apm_server_heartbeat_started_get_context (
    const mongoc_apm_server_heartbeat_started_t *event);
+MONGOC_EXPORT (bool)
+mongoc_apm_server_heartbeat_started_get_awaited (
+   const mongoc_apm_server_heartbeat_started_t *event);
 
 /* heartbeat-succeeded event fields */
 
@@ -253,6 +256,9 @@ mongoc_apm_server_heartbeat_succeeded_get_host (
 MONGOC_EXPORT (void *)
 mongoc_apm_server_heartbeat_succeeded_get_context (
    const mongoc_apm_server_heartbeat_succeeded_t *event);
+MONGOC_EXPORT (bool)
+mongoc_apm_server_heartbeat_succeeded_get_awaited (
+   const mongoc_apm_server_heartbeat_succeeded_t *event);
 
 /* heartbeat-failed event fields */
 
@@ -267,6 +273,9 @@ mongoc_apm_server_heartbeat_failed_get_host (
    const mongoc_apm_server_heartbeat_failed_t *event);
 MONGOC_EXPORT (void *)
 mongoc_apm_server_heartbeat_failed_get_context (
+   const mongoc_apm_server_heartbeat_failed_t *event);
+MONGOC_EXPORT (bool)
+mongoc_apm_server_heartbeat_failed_get_awaited (
    const mongoc_apm_server_heartbeat_failed_t *event);
 
 

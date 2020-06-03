@@ -570,6 +570,13 @@ mongoc_apm_server_heartbeat_started_get_context (
    return event->context;
 }
 
+bool
+mongoc_apm_server_heartbeat_started_get_awaited (
+   const mongoc_apm_server_heartbeat_started_t *event)
+{
+   return event->awaited;
+}
+
 
 /* heartbeat-succeeded event fields */
 
@@ -602,6 +609,13 @@ mongoc_apm_server_heartbeat_succeeded_get_context (
    const mongoc_apm_server_heartbeat_succeeded_t *event)
 {
    return event->context;
+}
+
+bool
+mongoc_apm_server_heartbeat_succeeded_get_awaited (
+   const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   return event->awaited;
 }
 
 
@@ -638,6 +652,12 @@ mongoc_apm_server_heartbeat_failed_get_context (
    return event->context;
 }
 
+bool
+mongoc_apm_server_heartbeat_failed_get_awaited (
+   const mongoc_apm_server_heartbeat_failed_t *event)
+{
+   return event->awaited;
+}
 
 /*
  * registering callbacks

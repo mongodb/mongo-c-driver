@@ -1205,6 +1205,7 @@ _mongoc_topology_scanner_monitor_heartbeat_started (
       mongoc_apm_server_heartbeat_started_t event;
       event.host = host;
       event.context = ts->apm_context;
+      event.awaited = false;
       ts->apm_callbacks.server_heartbeat_started (&event);
    }
 }
@@ -1229,6 +1230,7 @@ _mongoc_topology_scanner_monitor_heartbeat_succeeded (
       event.context = ts->apm_context;
       event.reply = reply;
       event.duration_usec = duration_usec;
+      event.awaited = false;
       ts->apm_callbacks.server_heartbeat_succeeded (&event);
 
       bson_destroy (&ismaster_redacted);
@@ -1249,6 +1251,7 @@ _mongoc_topology_scanner_monitor_heartbeat_failed (
       event.context = ts->apm_context;
       event.error = error;
       event.duration_usec = duration_usec;
+      event.awaited = false;
       ts->apm_callbacks.server_heartbeat_failed (&event);
    }
 }
