@@ -22,7 +22,7 @@ Parameters
 Returns
 -------
 
-The pointer passed with :symbol:`mongoc_client_set_apm_callbacks` or :symbol:`mongoc_client_pool_set_apm_callbacks`.
+A bool indicating whether the heartbeat event came from an awaitable isMaster.
 
 See Also
 --------
