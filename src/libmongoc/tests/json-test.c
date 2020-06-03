@@ -1504,37 +1504,6 @@ _in_blacklist (const bson_t *test, char **blacklist, uint32_t blacklist_len)
 
    return false;
 }
-static bool
-_should_skip_due_to_server_39704 (const bson_t *test)
-{
-   char *blacklist[] = {
-      "only first countDocuments includes readConcern",
-      "only first find includes readConcern",
-      "only first aggregate includes readConcern",
-      "only first distinct includes readConcern",
-      "only first runCommand includes readConcern",
-      "transaction options inherited from defaultTransactionOptions",
-      "startTransaction options override defaults",
-      "defaultTransactionOptions override client options",
-      "readConcern snapshot in startTransaction options",
-      "withTransaction inherits transaction options from "
-      "defaultTransactionOptions",
-      "withTransaction explicit transaction options",
-      "withTransaction explicit transaction options override "
-      "defaultTransactionOptions",
-      "withTransaction explicit transaction options override client options"};
-
-   /* Only an issue for sharded clusters. */
-   if (!test_framework_is_mongos ()) {
-      return false;
-   }
-
-   if (_in_blacklist (test, blacklist, sizeof (blacklist) / sizeof (char *))) {
-      return true;
-   }
-
-   return false;
-}
 
 static bool
 _should_skip_due_to_unsupported_operation (const bson_t *test)
@@ -1629,14 +1598,6 @@ run_json_general_test (const json_test_config_t *config)
                   " - %s SKIPPED, reason: %s\n",
                   description,
                   bson_lookup_utf8 (&test, "skipReason"));
-         continue;
-      }
-
-      if (_should_skip_due_to_server_39704 (&test)) {
-         fprintf (stderr,
-                  " - %s SKIPPED, reason: SERVER-39704 causes sharded tests to "
-                  "fail when using readConcern: snapshot\n",
-                  description);
          continue;
       }
 
