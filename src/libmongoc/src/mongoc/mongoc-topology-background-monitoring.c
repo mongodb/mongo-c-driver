@@ -128,6 +128,7 @@ _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor)
 
    event.host = &server_monitor->host;
    event.context = server_monitor->apm_context;
+   event.awaited = false;
    bson_mutex_lock (&server_monitor->topology->apm_mutex);
    server_monitor->apm_callbacks.server_heartbeat_started (&event);
    bson_mutex_unlock (&server_monitor->topology->apm_mutex);
@@ -151,6 +152,7 @@ _server_monitor_heartbeat_succeeded (mongoc_server_monitor_t *server_monitor,
    event.context = server_monitor->apm_context;
    event.reply = reply;
    event.duration_usec = duration_usec;
+   event.awaited = false;
    bson_mutex_lock (&server_monitor->topology->apm_mutex);
    server_monitor->apm_callbacks.server_heartbeat_succeeded (&event);
    bson_mutex_unlock (&server_monitor->topology->apm_mutex);
@@ -175,6 +177,7 @@ _server_monitor_heartbeat_failed (mongoc_server_monitor_t *server_monitor,
    event.context = server_monitor->apm_context;
    event.error = error;
    event.duration_usec = duration_usec;
+   event.awaited = false;
    bson_mutex_lock (&server_monitor->topology->apm_mutex);
    server_monitor->apm_callbacks.server_heartbeat_failed (&event);
    bson_mutex_unlock (&server_monitor->topology->apm_mutex);
