@@ -251,7 +251,7 @@ all_tasks = [
                           exit 123
                         fi''')]),
     CompileTask('compile-tracing',
-                TRACING='ON'),
+                TRACING='ON', CFLAGS='-Werror -Wno-cast-align'),
     CompileTask('release-compile',
                 config='release',
                 depends_on=OD([('name', 'make-release-archive'),

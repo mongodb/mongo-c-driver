@@ -40,7 +40,7 @@ checks_cleanup (checks_t *checks)
 static bool
 checks_cmp (checks_t *checks, const char *metric, char cmp, int expected)
 {
-   int actual;
+   int actual = 0;
 
    bson_mutex_lock (&checks->mutex);
    if (0 == strcmp (metric, "n_started")) {

@@ -55,6 +55,9 @@ _log_callback (mongocrypt_log_level_t mongocrypt_log_level,
    case MONGOCRYPT_LOG_LEVEL_TRACE:
       log_level = MONGOC_LOG_LEVEL_TRACE;
       break;
+   default:
+      log_level = MONGOC_LOG_LEVEL_CRITICAL;
+      break;
    }
 
    mongoc_log (log_level, MONGOC_LOG_DOMAIN, "%s", message);
