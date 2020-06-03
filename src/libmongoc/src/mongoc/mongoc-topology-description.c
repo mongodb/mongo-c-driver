@@ -1998,7 +1998,7 @@ mongoc_topology_description_handle_ismaster (
 
       if (wrong_set_name) {
          /* Replace with unknown. */
-         TRACE ("wrong set name", NULL);
+         TRACE ("%s", "wrong set name");
          mongoc_server_description_handle_ismaster (sd, NULL, 0, &set_name_err);
       }
    }

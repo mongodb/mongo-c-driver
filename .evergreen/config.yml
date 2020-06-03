@@ -1165,6 +1165,7 @@ tasks:
       script: |-
         set -o errexit
         set -o xtrace
+        export CFLAGS="-Werror -Wno-cast-align"
         export DEBUG="ON"
         export TRACING="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh

@@ -637,7 +637,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
       return;
    }
 
-   TRACE ("Polling for SRV records", NULL);
+   TRACE ("%s", "Polling for SRV records");
 
    /* Go forth and query... */
    prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
