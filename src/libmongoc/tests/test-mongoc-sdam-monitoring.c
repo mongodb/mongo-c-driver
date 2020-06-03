@@ -313,12 +313,16 @@ server_heartbeat_started (const mongoc_apm_server_heartbeat_started_t *event)
 
    ctx = (context_t *) mongoc_apm_server_heartbeat_started_get_context (event);
    host = mongoc_apm_server_heartbeat_started_get_host (event);
-   context_append (ctx,
-                   BCON_NEW ("heartbeat_started_event",
-                             "{",
-                             "host",
-                             BCON_UTF8 (host->host_and_port),
-                             "}"));
+   context_append (
+      ctx,
+      BCON_NEW (
+         "heartbeat_started_event",
+         "{",
+         "host",
+         BCON_UTF8 (host->host_and_port),
+         "awaited",
+         BCON_BOOL (mongoc_apm_server_heartbeat_started_get_awaited (event)),
+         "}"));
 }
 
 static void
@@ -332,12 +336,16 @@ server_heartbeat_succeeded (
    ctx =
       (context_t *) mongoc_apm_server_heartbeat_succeeded_get_context (event);
    host = mongoc_apm_server_heartbeat_succeeded_get_host (event);
-   context_append (ctx,
-                   BCON_NEW ("heartbeat_succeeded_event",
-                             "{",
-                             "host",
-                             BCON_UTF8 (host->host_and_port),
-                             "}"));
+   context_append (
+      ctx,
+      BCON_NEW (
+         "heartbeat_succeeded_event",
+         "{",
+         "host",
+         BCON_UTF8 (host->host_and_port),
+         "awaited",
+         BCON_BOOL (mongoc_apm_server_heartbeat_succeeded_get_awaited (event)),
+         "}"));
 
    duration = mongoc_apm_server_heartbeat_succeeded_get_duration (event);
    _mongoc_array_append_val (&ctx->heartbeat_succeeded_durations, duration);
@@ -352,12 +360,16 @@ server_heartbeat_failed (const mongoc_apm_server_heartbeat_failed_t *event)
 
    ctx = (context_t *) mongoc_apm_server_heartbeat_failed_get_context (event);
    host = mongoc_apm_server_heartbeat_failed_get_host (event);
-   context_append (ctx,
-                   BCON_NEW ("heartbeat_failed_event",
-                             "{",
-                             "host",
-                             BCON_UTF8 (host->host_and_port),
-                             "}"));
+   context_append (
+      ctx,
+      BCON_NEW (
+         "heartbeat_failed_event",
+         "{",
+         "host",
+         BCON_UTF8 (host->host_and_port),
+         "awaited",
+         BCON_BOOL (mongoc_apm_server_heartbeat_failed_get_awaited (event)),
+         "}"));
 
    duration = mongoc_apm_server_heartbeat_failed_get_duration (event);
    _mongoc_array_append_val (&ctx->heartbeat_failed_durations, duration);
@@ -746,15 +758,16 @@ _test_heartbeat_events (bool pooled, bool succeeded)
    if (succeeded) {
       durations = &context.heartbeat_succeeded_durations;
       expected_json = bson_strdup_printf (
-         "{'0': {'heartbeat_started_event': {'host': '%s'}},"
-         " '1': {'heartbeat_succeeded_event': {'host': '%s'}}}",
+         "{'0': {'heartbeat_started_event': {'host': '%s', 'awaited': false}},"
+         " '1': {'heartbeat_succeeded_event': {'host': '%s', 'awaited': "
+         "false}}}",
          mock_server_get_host_and_port (server),
          mock_server_get_host_and_port (server));
    } else {
       durations = &context.heartbeat_failed_durations;
       expected_json = bson_strdup_printf (
-         "{'0': {'heartbeat_started_event': {'host': '%s'}},"
-         " '1': {'heartbeat_failed_event': {'host': '%s'}}}",
+         "{'0': {'heartbeat_started_event': {'host': '%s', 'awaited': false}},"
+         " '1': {'heartbeat_failed_event': {'host': '%s', 'awaited': false}}}",
          mock_server_get_host_and_port (server),
          mock_server_get_host_and_port (server));
    }
