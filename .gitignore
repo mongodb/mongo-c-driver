@@ -4,6 +4,7 @@
 *.gcno
 *.gz
 *.o
+*.lo
 *.pc
 *.so
 *.so.*
