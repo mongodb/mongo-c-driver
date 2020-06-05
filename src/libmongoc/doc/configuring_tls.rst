@@ -88,9 +88,10 @@ Ensure your system's OpenSSL is a recent version (at least 1.0.1), or install a 
 
 When compiled against OpenSSL, the driver will attempt to load the system default certificate store, as configured by the distribution. That can be overridden by setting the ``tlsCAFile`` URI option or with the fields ``ca_file`` and ``ca_dir`` in the :symbol:`mongoc_ssl_opt_t`.
 
-Setting ``tlsDisableOCSPEndpointCheck`` and ``tlsDisableCertificateRevocationCheck`` has no effect.
+Setting ``tlsDisableCertificateRevocationCheck`` disables OCSP revocation checking.
+Setting ``tlsDisableOCSPEndpointCheck`` disables OCSP responders from being contacted when OCSP revocation checking is enabled, and a server presents a certificate without stapled OCSP response.
 
-The Online Certificate Status Protocol (OCSP) is partially supported (see `RFC 6960 <https://tools.ietf.org/html/rfc6960>`_). Support requires OpenSSL 1.1.0 and has the following behavior:
+The Online Certificate Status Protocol (OCSP) is partially supported (see `RFC 6960 <https://tools.ietf.org/html/rfc6960>`_). Support requires OpenSSL 1.0.1 and has the following behavior:
 
 - Stapled OCSP responses are validated on certificates presented by the server.
 - Server certificates with a Must-Staple extension (see `RFC 7633 <https://tools.ietf.org/html/rfc7633>`_) are required to have stapled responses.

@@ -28,6 +28,7 @@ typedef struct {
    char *host;
    bool allow_invalid_hostname;
    bool weak_cert_validation;
+   bool disable_endpoint_check;
 } mongoc_openssl_ocsp_opt_t;
 
 void

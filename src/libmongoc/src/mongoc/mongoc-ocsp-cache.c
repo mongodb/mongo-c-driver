@@ -80,6 +80,26 @@ update_entry (cache_entry_list_t *entry,
    entry->cert_status = cert_status;
    entry->reason = reason;
 }
+
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+static int
+_cmp_time (ASN1_TIME *a, ASN1_TIME *b)
+{
+   return ASN1_TIME_compare (a, b);
+}
+#else
+static int
+_cmp_time (ASN1_TIME *a, ASN1_TIME *b)
+{
+   /* For older OpenSSL, always report that "a" is before "b". I.e. do not
+    * replace the entry.
+    * If a driver would accept a stapled OCSP response and that response has a
+    * later nextUpdate than the response already in the cache, drivers SHOULD
+    * replace the older entry in the cache with the fresher response. */
+   return -1;
+}
+#endif
+
 void
 _mongoc_ocsp_cache_set_resp (OCSP_CERTID *id,
                              int cert_status,
@@ -96,8 +116,7 @@ _mongoc_ocsp_cache_set_resp (OCSP_CERTID *id,
       entry->id = OCSP_CERTID_dup (id);
       LL_APPEND (cache, entry);
       update_entry (entry, cert_status, reason, this_update, next_update);
-   } else if (next_update &&
-              ASN1_TIME_compare (next_update, entry->next_update) == 1) {
+   } else if (next_update && _cmp_time (next_update, entry->next_update) == 1) {
       update_entry (entry, cert_status, reason, this_update, next_update);
    } else {
       /* Do nothing; our next_update is at a later date */
