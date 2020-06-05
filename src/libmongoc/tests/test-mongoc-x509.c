@@ -27,7 +27,7 @@ test_extract_subject (void)
 }
 #endif
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#ifdef MONGOC_ENABLE_OCSP_OPENSSL
 /* Test parsing a DER encoded tlsfeature extension contents for the
  * status_request (value 5). This is a SEQUENCE of INTEGER. libmongoc assumes
  * this is a sequence of one byte integers. */
@@ -84,7 +84,7 @@ test_tlsfeature_parsing (void)
    /* An integer with length > 1. Parsing fails. */
    _expect_malformed ("\x30\x03\x02\x02\x05\x05", 6);
 }
-#endif
+#endif /* MONGOC_ENABLE_OCSP_OPENSSL */
 
 void
 test_x509_install (TestSuite *suite)
@@ -93,7 +93,7 @@ test_x509_install (TestSuite *suite)
    TestSuite_Add (suite, "/X509/extract_subject", test_extract_subject);
 #endif
 
-#ifdef MONGOC_ENABLE_SSL_OPENSSL
+#ifdef MONGOC_ENABLE_OCSP_OPENSSL
    TestSuite_Add (suite, "/X509/tlsfeature_parsing", test_tlsfeature_parsing);
 #endif
 }
