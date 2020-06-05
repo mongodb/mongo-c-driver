@@ -58,6 +58,8 @@ _mongoc_openssl_thread_cleanup (void);
 #define ASN1_STRING_get0_data ASN1_STRING_data
 #endif
 
+static int tlsfeature_nid;
+
 /**
  * _mongoc_openssl_init:
  *
@@ -83,6 +85,14 @@ _mongoc_openssl_init (void)
    if (!ctx) {
       MONGOC_ERROR ("Failed to initialize OpenSSL.");
    }
+
+#ifdef NID_tlsfeature
+   tlsfeature_nid = NID_tlsfeature;
+#else
+   /* TLS versions before 1.1.0 did not define the TLS Feature extension. */
+   tlsfeature_nid =
+      OBJ_create ("1.3.6.1.5.5.7.1.24", "tlsfeature", "TLS Feature");
+#endif
 
    SSL_CTX_free (ctx);
 }
@@ -183,6 +193,31 @@ _mongoc_openssl_import_cert_stores (SSL_CTX *context)
 }
 #endif
 
+#if OPENSSL_VERSION_NUMBER > 0x10002000L
+bool
+_mongoc_openssl_check_peer_hostname (SSL *ssl,
+                                     const char *host,
+                                     bool allow_invalid_hostname)
+{
+   X509 *peer = NULL;
+
+   if (allow_invalid_hostname) {
+      return true;
+   }
+
+   peer = SSL_get_peer_certificate (ssl);
+   if (peer && (X509_check_host (peer, host, 0, 0, NULL) == 1 ||
+                X509_check_ip_asc (peer, host, 0) == 1)) {
+      X509_free (peer);
+      return true;
+   }
+
+   if (peer) {
+      X509_free (peer);
+   }
+   return false;
+}
+#else
 /** mongoc_openssl_hostcheck
  *
  * rfc 6125 match a given hostname against a given pattern
@@ -250,9 +285,9 @@ _mongoc_openssl_hostcheck (const char *pattern, const char *hostname)
 /** check if a provided cert matches a passed hostname
  */
 bool
-_mongoc_openssl_check_cert (SSL *ssl,
-                            const char *host,
-                            bool allow_invalid_hostname)
+_mongoc_openssl_check_peer_hostname (SSL *ssl,
+                                     const char *host,
+                                     bool allow_invalid_hostname)
 {
    X509 *peer;
    X509_NAME *subject_name;
@@ -392,6 +427,7 @@ _mongoc_openssl_check_cert (SSL *ssl,
    X509_free (peer);
    RETURN (r);
 }
+#endif /* OPENSSL_VERSION_NUMBER */
 
 
 static bool
@@ -477,6 +513,144 @@ _get_issuer (X509 *cert, STACK_OF (X509) * chain)
    RETURN (issuer);
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+/* OpenSSL 1.1.0+ has conveniences that we polyfill in older OpenSSL versions.
+ */
+
+STACK_OF (X509) * _get_verified_chain (SSL *ssl)
+{
+   return SSL_get0_verified_chain (ssl);
+}
+
+void _free_verified_chain (STACK_OF (X509) * verified_chain)
+{
+   /* _get_verified_chain does not return a copy. Do nothing. */
+   return;
+}
+
+const STACK_OF (X509_EXTENSION) * _get_extensions (const X509 *cert)
+{
+   return X509_get0_extensions (cert);
+}
+
+#else
+/* Polyfill functionality for pre 1.1.0 OpenSSL */
+
+STACK_OF (X509) * _get_verified_chain (SSL *ssl)
+{
+   X509_STORE *store = NULL;
+   X509 *peer = NULL;
+   STACK_OF (X509) *peer_chain = NULL;
+   X509_STORE_CTX *store_ctx = NULL;
+   STACK_OF (X509) *verified_chain = NULL;
+
+   /* Get the certificate the server presented. */
+   peer = SSL_get_peer_certificate (ssl);
+   /* Get the chain of certificates the server presented. This is not a verified
+    * chain. */
+   peer_chain = SSL_get_peer_cert_chain (ssl);
+   store = SSL_CTX_get_cert_store (SSL_get_SSL_CTX (ssl));
+   store_ctx = X509_STORE_CTX_new ();
+   if (!X509_STORE_CTX_init (store_ctx, store, peer, peer_chain)) {
+      MONGOC_ERROR ("failed to initialize X509 store");
+      goto fail;
+   }
+
+   if (X509_verify_cert (store_ctx) <= 0) {
+      MONGOC_ERROR ("failed to obtain verified chain");
+      goto fail;
+   }
+
+   verified_chain = X509_STORE_CTX_get1_chain (store_ctx);
+
+fail:
+   X509_free (peer);
+   X509_STORE_CTX_free (store_ctx);
+   return verified_chain;
+}
+
+/* On OpenSSL < 1.1.0, this chain isn't attached to the SSL session, so we need
+ * it to dispose of itself. */
+void _free_verified_chain (STACK_OF (X509) * verified_chain)
+{
+   if (!verified_chain) {
+      return;
+   }
+   sk_X509_pop_free (verified_chain, X509_free);
+}
+
+const STACK_OF (X509_EXTENSION) * _get_extensions (const X509 *cert)
+{
+   return cert->cert_info->extensions;
+}
+#endif /* OPENSSL_VERSION_NUMBER */
+
+
+#define TLSFEATURE_STATUS_REQUEST 5
+
+/* Check a tlsfeature extension contents for a status_request.
+ *
+ * Parse just enough of a DER encoded data to check if a SEQUENCE of INTEGER
+ * contains the status_request extension (5). There are only five tlsfeature
+ * extension types, so this only handles the case that the sequence's length is
+ * representable in one byte, and that each integer is representable in one
+ * byte. */
+bool
+_mongoc_tlsfeature_has_status_request (const uint8_t *data, int length)
+{
+   int i;
+
+   /* Expect a sequence type, with a sequence length representable in one byte.
+    */
+   if (length < 3 || data[0] != 0x30 || data[1] >= 127) {
+      MONGOC_ERROR ("malformed tlsfeature extension sequence");
+      return false;
+   }
+
+   for (i = 2; i < length; i += 3) {
+      /* Expect an integer, representable in one byte. */
+      if (length < i + 3 || data[i] != 0x02 || data[i + 1] != 1) {
+         MONGOC_ERROR ("malformed tlsfeature extension integer");
+         return false;
+      }
+
+      if (data[i + 2] == TLSFEATURE_STATUS_REQUEST) {
+         TRACE ("%s", "found status request in tlsfeature extension");
+         return true;
+      }
+   }
+   return false;
+}
+
+/* Check that the certificate has a tlsfeature extension with status_request. */
+bool
+_get_must_staple (X509 *cert)
+{
+   const STACK_OF (X509_EXTENSION) *exts = NULL;
+   X509_EXTENSION *ext;
+   ASN1_STRING *ext_data;
+   int idx;
+
+   exts = _get_extensions (cert);
+   if (!exts) {
+      TRACE ("%s", "certificate extensions not found");
+      return false;
+   }
+
+   idx = X509v3_get_ext_by_NID (exts, tlsfeature_nid, -1);
+   if (-1 == idx) {
+      TRACE ("%s", "tlsfeature extension not found");
+      return false;
+   }
+
+   ext = sk_X509_EXTENSION_value (exts, idx);
+   ext_data = X509_EXTENSION_get_data (ext);
+
+   /* Data is a DER encoded sequence of integers. */
+   return _mongoc_tlsfeature_has_status_request (
+      ASN1_STRING_get0_data (ext_data), ASN1_STRING_length (ext_data));
+}
+
 #define ERR_STR (ERR_error_string (ERR_get_error (), NULL))
 
 OCSP_RESPONSE *
@@ -492,7 +666,7 @@ _contact_ocsp_responder (OCSP_CERTID *id, X509 *peer)
    url_stack = X509_get1_ocsp (peer);
    for (i = 0; i < sk_OPENSSL_STRING_num (url_stack) && !resp; i++) {
       url = sk_OPENSSL_STRING_value (url_stack, i);
-      MONGOC_DEBUG ("Contacting OCSP responder '%s'", url);
+      TRACE ("Contacting OCSP responder '%s'", url);
 
       /* splits the given url into its host, port and path components */
       if (!OCSP_parse_url (url, &host, &port, &path, &ssl)) {
@@ -560,7 +734,7 @@ _contact_ocsp_responder (OCSP_CERTID *id, X509 *peer)
 #define OCSP_VERIFY_SUCCESS 1
 
 int
-_mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
+_mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
 {
    enum { OCSP_CB_ERROR = -1, OCSP_CB_REVOKED, OCSP_CB_SUCCESS } ret;
    bool stapled_response = true;
@@ -570,10 +744,9 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
    X509_STORE *store = NULL;
    X509 *peer = NULL, *issuer = NULL;
    STACK_OF (X509) *cert_chain = NULL;
-   const unsigned char *r = NULL;
+   const unsigned char *resp_data = NULL;
    int cert_status, reason, len, status;
    OCSP_CERTID *id = NULL;
-   mongoc_openssl_ocsp_opt_t *opts = (mongoc_openssl_ocsp_opt_t *) arg;
    ASN1_GENERALIZEDTIME *produced_at = NULL, *this_update = NULL,
                         *next_update = NULL;
 
@@ -589,8 +762,8 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
 
    /* Get a STACK_OF(X509) certs forming the cert chain of the peer, including
     * the peer's cert */
-   if (!(cert_chain = SSL_get0_verified_chain (ssl))) {
-      MONGOC_ERROR ("No certificate was presented by the peer");
+   if (!(cert_chain = _get_verified_chain (ssl))) {
+      MONGOC_ERROR ("Unable to obtain verified chain");
       ret = OCSP_CB_REVOKED;
       GOTO (done);
    }
@@ -613,32 +786,33 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
    }
 
    /* Get the stapled OCSP response returned by the server */
-   len = SSL_get_tlsext_status_ocsp_resp (ssl, &r);
-   stapled_response = !!r;
+   len = SSL_get_tlsext_status_ocsp_resp (ssl, &resp_data);
+   stapled_response = !!resp_data;
    if (stapled_response) {
       /* obtain an OCSP_RESPONSE object from the OCSP response */
-      if (!d2i_OCSP_RESPONSE (&resp, &r, len)) {
+      if (!d2i_OCSP_RESPONSE (&resp, &resp_data, len)) {
          MONGOC_ERROR ("Failed to parse OCSP response");
          ret = OCSP_CB_ERROR;
          GOTO (done);
       }
    } else {
-      MONGOC_DEBUG ("Server does not contain a stapled response");
-      must_staple = X509_get_ext_d2i (peer, NID_tlsfeature, 0, 0) != NULL;
+      TRACE ("%s", "Server does not contain a stapled response");
+      must_staple = _get_must_staple (peer);
       if (must_staple) {
          MONGOC_ERROR ("Server must contain a stapled response");
          ret = OCSP_CB_REVOKED;
          GOTO (done);
       }
 
-      if (!(resp = _contact_ocsp_responder (id, peer))) {
+      if (opts->disable_endpoint_check ||
+          !(resp = _contact_ocsp_responder (id, peer))) {
          MONGOC_DEBUG ("Soft-fail: No OCSP responder could be reached");
          ret = OCSP_CB_SUCCESS;
          GOTO (done);
       }
    }
 
-   MONGOC_DEBUG ("Validating OCSP response");
+   TRACE ("%s", "Validating OCSP response");
    /* Validate the OCSP response status of the OCSP_RESPONSE object */
    status = OCSP_response_status (resp);
    if (status != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
@@ -649,7 +823,7 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
       GOTO (done);
    }
 
-   MONGOC_DEBUG ("OCSP response status successful");
+   TRACE ("%s", "OCSP response status successful");
 
    /* Get the OCSP_BASICRESP structure contained in OCSP_RESPONSE object for the
     * peer cert */
@@ -700,7 +874,7 @@ _mongoc_ocsp_tlsext_status_cb (SSL *ssl, void *arg)
 validate:
    switch (cert_status) {
    case V_OCSP_CERTSTATUS_GOOD:
-      MONGOC_DEBUG ("OCSP Certificate Status: Good");
+      TRACE ("%s", "OCSP Certificate Status: Good");
       _mongoc_ocsp_cache_set_resp (
          id, cert_status, reason, this_update, next_update);
       break;
@@ -719,9 +893,8 @@ validate:
    }
 
    /* Validate hostname matches cert */
-   if (!opts->allow_invalid_hostname &&
-       X509_check_host (peer, opts->host, 0, 0, NULL) != X509_CHECK_SUCCESS &&
-       X509_check_ip_asc (peer, opts->host, 0) != X509_CHECK_SUCCESS) {
+   if (!_mongoc_openssl_check_peer_hostname (
+          ssl, opts->host, opts->allow_invalid_hostname)) {
       ret = OCSP_CB_REVOKED;
       GOTO (done);
    }
@@ -739,9 +912,12 @@ done:
       OCSP_CERTID_free (id);
    if (peer)
       X509_free (peer);
+   if (cert_chain)
+      _free_verified_chain (cert_chain);
    RETURN (ret);
 }
-#endif
+
+#endif /* MONGOC_ENABLE_OCSP_OPENSSL */
 
 /**
  * _mongoc_openssl_ctx_new:

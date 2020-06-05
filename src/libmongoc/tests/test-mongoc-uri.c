@@ -2693,7 +2693,10 @@ test_one_tls_option_enables_tls ()
                          MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD "=file.pem",
                          MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE "=file.pem",
                          MONGOC_URI_SSLALLOWINVALIDCERTIFICATES "=true",
-                         MONGOC_URI_SSLALLOWINVALIDHOSTNAMES "=true"};
+                         MONGOC_URI_SSLALLOWINVALIDHOSTNAMES "=true",
+                         MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK "=true",
+                         MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK
+                         "=true"};
    int i;
 
    for (i = 0; i < sizeof (opts) / sizeof (opts[0]); i++) {
