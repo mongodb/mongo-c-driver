@@ -1002,6 +1002,8 @@ test_mongoc_uri_compressors (void)
 
    uri = mongoc_uri_new ("mongodb://localhost/");
 
+   ASSERT (bson_empty (mongoc_uri_get_compressors (uri)));
+
 #ifdef MONGOC_ENABLE_COMPRESSION_SNAPPY
    capture_logs (true);
    mongoc_uri_set_compressors (uri, "snappy,unknown");
