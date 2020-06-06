@@ -18,7 +18,6 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export DEB_LDFLAGS_MAINT_APPEND := -lpthread
 
 ifneq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
-	echo "Found 'nodoc' in 'DEB_BUILD_OPTIONS'; not building documentation"
 	DOCS=OFF
 else
 	DOCS=ON
@@ -29,6 +28,7 @@ endif
 	dh $@
 
 override_dh_auto_configure:
+	[ "$(DOCS)" = "ON" ] || echo "Found 'nodoc' in 'DEB_BUILD_OPTIONS'; not building documentation"
 	dh_auto_configure -- \
 	-DBUILD_VERSION=$(DEB_VERSION_UPSTREAM) \
 	-DENABLE_MONGOC=ON \
