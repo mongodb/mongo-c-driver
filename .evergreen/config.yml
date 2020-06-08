@@ -1989,6 +1989,144 @@ tasks:
       AUTH: noauth
       SSL: nossl
       VALGRIND: 'on'
+- name: test-valgrind-4.4-server-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'on'
+- name: test-valgrind-4.4-server-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'on'
+- name: test-valgrind-4.4-replica-set-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'on'
+- name: test-valgrind-4.4-replica-set-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'on'
+- name: test-valgrind-4.4-sharded-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'on'
+- name: test-valgrind-4.4-sharded-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - test-valgrind
+  exec_timeout_secs: 14400
+  depends_on:
+    name: debug-compile-valgrind
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-valgrind
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'on'
 - name: test-valgrind-4.2-server-auth-nosasl-openssl
   tags:
   - '4.2'
@@ -2980,6 +3118,169 @@ tasks:
       AUTH: noauth
       SSL: nossl
       VALGRIND: 'off'
+- name: test-asan-4.4-server-auth-nosasl-openssl-cse
+  tags:
+  - '4.4'
+  - client-side-encryption
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-asan-4.4-server-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-asan-4.4-server-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+- name: test-asan-4.4-replica-set-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-asan-4.4-replica-set-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+- name: test-asan-4.4-sharded-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-asan-4.4-sharded-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
 - name: test-asan-4.2-server-auth-nosasl-openssl-cse
   tags:
   - '4.2'
@@ -3946,6 +4247,126 @@ tasks:
       SSL: nossl
       TOPOLOGY: sharded_cluster
       VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-4.4-server-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-4.4-server-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-4.4-replica-set-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-4.4-replica-set-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-4.4-sharded-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+  - func: update codecov.io
+- name: test-coverage-4.4-sharded-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - test-coverage
+  exec_timeout_secs: 3600
+  commands:
+  - func: debug-compile-coverage-notest-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
   - func: run tests
     vars:
       ASAN: 'off'
@@ -5829,6 +6250,1143 @@ tasks:
       SSL: nossl
       TOPOLOGY: sharded_cluster
       VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+- name: test-4.4-server-auth-sasl-openssl-cse
+  tags:
+  - '4.4'
+  - auth
+  - client-side-encryption
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-server-auth-sasl-openssl
+  tags:
+  - '4.4'
+  - auth
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-server-auth-sasl-darwinssl-cse
+  tags:
+  - '4.4'
+  - auth
+  - client-side-encryption
+  - darwinssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-server-auth-sasl-darwinssl
+  tags:
+  - '4.4'
+  - auth
+  - darwinssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-server-auth-sasl-winssl-cse
+  tags:
+  - '4.4'
+  - auth
+  - client-side-encryption
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-server-auth-sasl-winssl
+  tags:
+  - '4.4'
+  - auth
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-server-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - auth
+  - nosasl
+  - openssl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-server-auth-nosasl-darwinssl
+  tags:
+  - '4.4'
+  - auth
+  - darwinssl
+  - nosasl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-server-auth-nosasl-winssl
+  tags:
+  - '4.4'
+  - auth
+  - nosasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-sasl-openssl-cse
+  tags:
+  - '4.4'
+  - client-side-encryption
+  - noauth
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-sasl-openssl
+  tags:
+  - '4.4'
+  - noauth
+  - openssl
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-sasl-darwinssl-cse
+  tags:
+  - '4.4'
+  - client-side-encryption
+  - darwinssl
+  - noauth
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-sasl-darwinssl
+  tags:
+  - '4.4'
+  - darwinssl
+  - noauth
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-sasl-winssl-cse
+  tags:
+  - '4.4'
+  - client-side-encryption
+  - noauth
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-sasl-winssl
+  tags:
+  - '4.4'
+  - noauth
+  - sasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-nosasl-openssl
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - openssl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-nosasl-darwinssl
+  tags:
+  - '4.4'
+  - darwinssl
+  - noauth
+  - nosasl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-nosasl-winssl
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - server
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - nossl
+  - server
+  depends_on:
+    name: debug-compile-nosasl-nossl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-auth-sasl-openssl
+  tags:
+  - '4.4'
+  - auth
+  - openssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-auth-sasl-darwinssl
+  tags:
+  - '4.4'
+  - auth
+  - darwinssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-auth-sasl-winssl
+  tags:
+  - '4.4'
+  - auth
+  - replica_set
+  - sasl
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - auth
+  - nosasl
+  - openssl
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-auth-nosasl-darwinssl
+  tags:
+  - '4.4'
+  - auth
+  - darwinssl
+  - nosasl
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-auth-nosasl-winssl
+  tags:
+  - '4.4'
+  - auth
+  - nosasl
+  - replica_set
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-noauth-sasl-openssl
+  tags:
+  - '4.4'
+  - noauth
+  - openssl
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-noauth-sasl-darwinssl
+  tags:
+  - '4.4'
+  - darwinssl
+  - noauth
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-noauth-sasl-winssl
+  tags:
+  - '4.4'
+  - noauth
+  - replica_set
+  - sasl
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-noauth-nosasl-openssl
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - openssl
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-noauth-nosasl-darwinssl
+  tags:
+  - '4.4'
+  - darwinssl
+  - noauth
+  - nosasl
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-noauth-nosasl-winssl
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - replica_set
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - nossl
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-nossl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: nossl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-auth-sasl-openssl
+  tags:
+  - '4.4'
+  - auth
+  - openssl
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-auth-sasl-darwinssl
+  tags:
+  - '4.4'
+  - auth
+  - darwinssl
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-auth-sasl-winssl
+  tags:
+  - '4.4'
+  - auth
+  - sasl
+  - sharded_cluster
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - auth
+  - nosasl
+  - openssl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-auth-nosasl-darwinssl
+  tags:
+  - '4.4'
+  - auth
+  - darwinssl
+  - nosasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: darwinssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-auth-nosasl-winssl
+  tags:
+  - '4.4'
+  - auth
+  - nosasl
+  - sharded_cluster
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: winssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-noauth-sasl-openssl
+  tags:
+  - '4.4'
+  - noauth
+  - openssl
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-noauth-sasl-darwinssl
+  tags:
+  - '4.4'
+  - darwinssl
+  - noauth
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-noauth-sasl-winssl
+  tags:
+  - '4.4'
+  - noauth
+  - sasl
+  - sharded_cluster
+  - winssl
+  depends_on:
+    name: debug-compile-sasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-noauth-nosasl-openssl
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - openssl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-noauth-nosasl-darwinssl
+  tags:
+  - '4.4'
+  - darwinssl
+  - noauth
+  - nosasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: darwinssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: darwinssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-noauth-nosasl-winssl
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - sharded_cluster
+  - winssl
+  depends_on:
+    name: debug-compile-nosasl-winssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-winssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: winssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: winssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-noauth-nosasl-nossl
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - nossl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-nossl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-nossl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
   - func: run tests
     vars:
       ASAN: 'off'
