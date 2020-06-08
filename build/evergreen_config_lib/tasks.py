@@ -26,7 +26,7 @@ from evergreen_config_generator.functions import (
 from evergreen_config_generator.tasks import (
     both_or_neither, FuncTask, MatrixTask, NamedTask, prohibit, require, Task)
 from evergreen_config_lib import shell_mongoc
-
+from pkg_resources import parse_version
 
 class CompileTask(NamedTask):
     def __init__(self, task_name, tags=None, config='debug',
@@ -422,7 +422,7 @@ class IntegrationTask(MatrixTask):
     axes = OD([('valgrind', ['valgrind', False]),
                ('asan', ['asan', False]),
                ('coverage', ['coverage', False]),
-               ('version', ['latest', '4.2', '4.0',
+               ('version', ['latest', '4.4', '4.2', '4.0',
                             '3.6', '3.4', '3.2', '3.0']),
                ('topology', ['server', 'replica_set', 'sharded_cluster']),
                ('auth', [True, False]),
@@ -557,7 +557,7 @@ class IntegrationTask(MatrixTask):
                 prohibit(self.ssl)
 
         if self.cse:
-            require(self.version == 'latest' or self.version == "4.2")
+            require(self.version == 'latest' or parse_version(self.version) >= parse_version("4.2"))
             require(self.topology == 'server')
             if not self.asan:
                 # limit to SASL=AUTO to reduce redundant tasks.
