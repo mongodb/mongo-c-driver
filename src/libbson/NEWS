@@ -1,3 +1,25 @@
+libbson 1.17.0 beta2
+====================
+
+It is my pleasure to announce libbson 1.17.0 beta2.
+
+Features:
+
+  * Fix pedantic compiler warnings.
+  * Improve assertion error messages.
+
+Bug fixes:
+  * Fix possible int32 overflow when comparing and constructing large bson_t's.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Richard Donkin
+  * Roberto C. Sánchez
+  * Josh Weinstein
+  * Kevin Albertson
+
+-- Kevin Albertson
+
 libbson 1.17.0 beta
 ===================
 

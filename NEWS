@@ -1,3 +1,32 @@
+mongo-c-driver 1.17.0 beta2
+===========================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.0 beta2 release.
+
+Features:
+
+  * Support Online Certificate Status Protocol (OCSP) response caching.
+  * Support configuring hedged reads in read preferences.
+  * Reduce the number of round trips necessary for SCRAM and X509 authentication.
+  * Monitor servers in parallel when using a mongoc_client_pool_t instead of doing serial scans.
+  * Support OCSP on older versions of OpenSSL (1.0.1+).
+
+Bug fixes:
+
+  * Fix behavior of a SecondaryPreferred read preference for exhaust cursor operations against a sharded cluster. Prior to the fix, a nonzero maxStalenessSeconds would not trigger sending the read preference.
+  * Fix SRV polling. Prior to the fix, SRV polling did not properly apply newly discovered results.
+  * Fix checks for existing GridFS indexes to handle indexes created by the MongoDB shell.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Roberto C. Sánchez
+  * Andreas Braun
+  * Clyde Bazile
+  * Josh Weinstein
+
+-- Kevin Albertson
+
 mongo-c-driver 1.17.0 beta
 ==========================
 
