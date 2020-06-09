@@ -23,8 +23,13 @@ functions:
       script: |-
         set -o errexit
         set -o xtrace
-        if [ "${is_patch}" = "true" ]; then
-           # TODO: CDRIVER-3573 do not hardcode the version for patch builds.
+        # TODO: CDRIVER-3573 do not hardcode the version.
+        if [ "${project}" != "mongoc-c-driver" ]; then
+           # This is an older branch, like r1.17
+           VERSION_CURRENT="1.17.0-pre"
+           echo $VERSION_CURRENT > "VERSION_CURRENT"
+           VERSION=$VERSION_CURRENT-${version_id}
+        elif [ "${is_patch}" = "true" ]; then
            VERSION_CURRENT="1.17.0-pre"
            echo $VERSION_CURRENT > "VERSION_CURRENT"
            VERSION=$VERSION_CURRENT-patch-${version_id}
