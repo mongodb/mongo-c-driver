@@ -14026,7 +14026,7 @@ tasks:
         $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
   - func: upload build
-- name: test-aws-openssl-regular
+- name: test-aws-openssl-regular-latest
   depends_on:
     name: debug-compile-aws
   commands:
@@ -14042,7 +14042,23 @@ tasks:
   - func: run aws tests
     vars:
       TESTCASE: REGULAR
-- name: test-aws-openssl-ec2
+- name: test-aws-openssl-regular-4.4
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run aws tests
+    vars:
+      TESTCASE: REGULAR
+- name: test-aws-openssl-ec2-latest
   depends_on:
     name: debug-compile-aws
   commands:
@@ -14058,7 +14074,23 @@ tasks:
   - func: run aws tests
     vars:
       TESTCASE: EC2
-- name: test-aws-openssl-ecs
+- name: test-aws-openssl-ec2-4.4
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run aws tests
+    vars:
+      TESTCASE: EC2
+- name: test-aws-openssl-ecs-latest
   depends_on:
     name: debug-compile-aws
   commands:
@@ -14074,7 +14106,23 @@ tasks:
   - func: run aws tests
     vars:
       TESTCASE: ECS
-- name: test-aws-openssl-lambda
+- name: test-aws-openssl-ecs-4.4
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run aws tests
+    vars:
+      TESTCASE: ECS
+- name: test-aws-openssl-lambda-latest
   depends_on:
     name: debug-compile-aws
   commands:
@@ -14090,7 +14138,23 @@ tasks:
   - func: run aws tests
     vars:
       TESTCASE: LAMBDA
-- name: test-aws-openssl-assume_role
+- name: test-aws-openssl-lambda-4.4
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run aws tests
+    vars:
+      TESTCASE: LAMBDA
+- name: test-aws-openssl-assume_role-latest
   depends_on:
     name: debug-compile-aws
   commands:
@@ -14103,6 +14167,22 @@ tasks:
       ORCHESTRATION_FILE: auth-aws
       TOPOLOGY: server
       VERSION: latest
+  - func: run aws tests
+    vars:
+      TESTCASE: ASSUME_ROLE
+- name: test-aws-openssl-assume_role-4.4
+  depends_on:
+    name: debug-compile-aws
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-aws
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: auth-aws
+      TOPOLOGY: server
+      VERSION: '4.4'
   - func: run aws tests
     vars:
       TESTCASE: ASSUME_ROLE
@@ -16727,7 +16807,8 @@ buildvariants:
   - debug-compile-lto
   - debug-compile-lto-thin
   - debug-compile-aws
-  - test-aws-openssl-regular
+  - test-aws-openssl-regular-4.4
+  - test-aws-openssl-regular-latest
 - name: windows-2017-32
   display_name: Windows (i386) (VS 2017)
   expansions:
@@ -16759,7 +16840,8 @@ buildvariants:
   - test-dns-winssl
   - test-dns-auth-winssl
   - debug-compile-aws
-  - test-aws-openssl-regular
+  - test-aws-openssl-regular-4.4
+  - test-aws-openssl-regular-latest
 - name: windows-2015
   display_name: Windows (VS 2015)
   expansions:
@@ -16988,11 +17070,16 @@ buildvariants:
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-aws
-  - test-aws-openssl-regular
-  - test-aws-openssl-ec2
-  - test-aws-openssl-ecs
-  - test-aws-openssl-assume_role
-  - test-aws-openssl-lambda
+  - test-aws-openssl-regular-latest
+  - test-aws-openssl-ec2-latest
+  - test-aws-openssl-ecs-latest
+  - test-aws-openssl-assume_role-latest
+  - test-aws-openssl-lambda-latest
+  - test-aws-openssl-regular-4.4
+  - test-aws-openssl-ec2-4.4
+  - test-aws-openssl-ecs-4.4
+  - test-aws-openssl-assume_role-4.4
+  - test-aws-openssl-lambda-4.4
 - name: rhel62
   display_name: RHEL 6.2
   expansions:
