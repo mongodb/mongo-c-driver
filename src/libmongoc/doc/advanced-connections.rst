@@ -178,7 +178,7 @@ Option         Description                                           Value
 ============== ===================================================== ======================
 SO_KEEPALIVE   TCP Keep Alive                                        Enabled
 -------------- ----------------------------------------------------- ----------------------
-TCP_KEEPIDLE   How long a connection needs to remain idle before TCP 300 seconds
+TCP_KEEPIDLE   How long a connection needs to remain idle before TCP 120 seconds
                starts sending keepalive probes
 -------------- ----------------------------------------------------- ----------------------
 TCP_KEEPINTVL  The time in seconds between TCP probes                10 seconds
