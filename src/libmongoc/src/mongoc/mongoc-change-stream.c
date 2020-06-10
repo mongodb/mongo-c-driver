@@ -69,7 +69,6 @@ _is_resumable_error (mongoc_change_stream_t *stream, const bson_t *reply)
    case MONGOC_SERVER_ERR_STALECONFIG:
    case MONGOC_SERVER_ERR_RETRYCHANGESTREAM:
    case MONGOC_SERVER_ERR_FAILEDTOSATISFYREADPREFERENCE:
-   case MONGOC_SERVER_ERR_ELECTIONINPROGRESS:
       return true;
    default:
       return false;
