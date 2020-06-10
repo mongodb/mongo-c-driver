@@ -321,7 +321,8 @@ all_variants = [
              'debug-compile-lto',
              'debug-compile-lto-thin',
              'debug-compile-aws',
-             'test-aws-openssl-regular'
+             'test-aws-openssl-regular-4.4',
+             'test-aws-openssl-regular-latest'
              ],
             {'CC': 'clang'}),
     Variant ('windows-2017-32',
@@ -351,7 +352,8 @@ all_variants = [
              'test-dns-winssl',
              'test-dns-auth-winssl',
              'debug-compile-aws',
-             'test-aws-openssl-regular'
+             'test-aws-openssl-regular-4.4',
+             'test-aws-openssl-regular-latest'
              ],
              {'CC': 'Visual Studio 15 2017 Win64'}),
     Variant('windows-2015',
@@ -554,11 +556,16 @@ all_variants = [
             batchtime=days(1)),
     Variant ('clang60ubuntu', 'clang 6.0 (Ubuntu 18.04)', 'ubuntu1804-test', [
         'debug-compile-aws',
-        'test-aws-openssl-regular',
-        'test-aws-openssl-ec2',
-        'test-aws-openssl-ecs',
-        'test-aws-openssl-assume_role',
-        'test-aws-openssl-lambda'
+        'test-aws-openssl-regular-latest',
+        'test-aws-openssl-ec2-latest',
+        'test-aws-openssl-ecs-latest',
+        'test-aws-openssl-assume_role-latest',
+        'test-aws-openssl-lambda-latest',
+        'test-aws-openssl-regular-4.4',
+        'test-aws-openssl-ec2-4.4',
+        'test-aws-openssl-ecs-4.4',
+        'test-aws-openssl-assume_role-4.4',
+        'test-aws-openssl-lambda-4.4'
     ], {'CC': 'clang'}),
     Variant('rhel62',
         'RHEL 6.2',

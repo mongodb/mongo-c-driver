@@ -28,6 +28,7 @@ from evergreen_config_generator.tasks import (
 from evergreen_config_lib import shell_mongoc
 from pkg_resources import parse_version
 
+
 class CompileTask(NamedTask):
     def __init__(self, task_name, tags=None, config='debug',
                  compression='default', continue_on_err=False,
@@ -73,7 +74,7 @@ class CompileTask(NamedTask):
             script += 'export %s="%s"\n' % (opt, value)
 
         script += "CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh" + \
-            self.extra_script
+                  self.extra_script
         task['commands'].append(shell_mongoc(script))
         task['commands'].append(func('upload build'))
         task['commands'].extend(self.suffix_commands)
@@ -102,7 +103,7 @@ class CompileWithClientSideEncryption(CompileTask):
                                        EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON",
                                        **kwargs).to_dict()
         extra_script = "rm CMakeCache.txt\n" + \
-            compile_with_cse["commands"][0]["params"]["script"]
+                       compile_with_cse["commands"][0]["params"]["script"]
 
         # Skip running mock server tests, because those were already run in the non-CSE build.
         super(CompileWithClientSideEncryption, self).__init__(*args, CFLAGS="-fPIC",
@@ -123,7 +124,7 @@ class CompileWithClientSideEncryptionAsan(CompileTask):
                                        PATH='/usr/lib/llvm-3.8/bin:$PATH',
                                        **kwargs).to_dict()
         extra_script = "rm CMakeCache.txt\n" + \
-            compile_with_cse["commands"][0]["params"]["script"]
+                       compile_with_cse["commands"][0]["params"]["script"]
 
         # Skip running mock server tests, because those were already run in the non-CSE build.
         super(CompileWithClientSideEncryptionAsan, self).__init__(*args,
@@ -156,7 +157,8 @@ class LinkTask(NamedTask):
 
 all_tasks = [
     NamedTask('check-headers',
-              commands=[shell_mongoc('sh ./.evergreen/check-public-decls.sh'), shell_mongoc('python ./.evergreen/check-preludes.py .')]),
+              commands=[shell_mongoc('sh ./.evergreen/check-public-decls.sh'),
+                        shell_mongoc('python ./.evergreen/check-preludes.py .')]),
     FuncTask('make-release-archive',
              'release archive', 'upload docs', 'upload man pages',
              'upload release', 'upload build'),
@@ -405,16 +407,16 @@ all_tasks = [
     CompileTask('debug-compile-with-warnings',
                 CFLAGS='-Werror -Wno-cast-align'),
     CompileWithClientSideEncryption('debug-compile-sasl-openssl-cse', tags=[
-                                    'debug-compile', 'sasl', 'openssl'], SASL="AUTO", SSL="OPENSSL"),
+        'debug-compile', 'sasl', 'openssl'], SASL="AUTO", SSL="OPENSSL"),
     CompileWithClientSideEncryption('debug-compile-sasl-darwinssl-cse', tags=[
-                                    'debug-compile', 'sasl', 'darwinssl'], SASL="AUTO", SSL="DARWIN"),
+        'debug-compile', 'sasl', 'darwinssl'], SASL="AUTO", SSL="DARWIN"),
     CompileWithClientSideEncryption('debug-compile-sasl-winssl-cse', tags=[
-                                    'debug-compile', 'sasl', 'winssl'], SASL="AUTO", SSL="WINDOWS"),
+        'debug-compile', 'sasl', 'winssl'], SASL="AUTO", SSL="WINDOWS"),
     CompileWithClientSideEncryptionAsan('debug-compile-asan-openssl-cse', tags=[
-                                        'debug-compile', 'asan-clang'], SSL="OPENSSL"),
-    CompileTask ('debug-compile-nosasl-openssl-1.0.1',
-        prefix_commands=[func("install ssl", SSL="openssl-1.0.1u")],
-        CFLAGS="-Wno-redundant-decls", SSL="OPENSSL", SASL="OFF")
+        'debug-compile', 'asan-clang'], SSL="OPENSSL"),
+    CompileTask('debug-compile-nosasl-openssl-1.0.1',
+                prefix_commands=[func("install ssl", SSL="openssl-1.0.1u")],
+                CFLAGS="-Wno-redundant-decls", SSL="OPENSSL", SASL="OFF")
 ]
 
 
@@ -883,8 +885,10 @@ aws_compile_task = NamedTask('debug-compile-aws', commands=[shell_mongoc('''
 
 all_tasks = chain(all_tasks, [aws_compile_task])
 
+
 class AWSTestTask(MatrixTask):
-    axes = OD([('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role'])])
+    axes = OD([('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role']),
+               ('version', ['latest', '4.4'])])
 
     name_prefix = 'test-aws-openssl'
 
@@ -893,17 +897,20 @@ class AWSTestTask(MatrixTask):
         self.add_dependency('debug-compile-aws')
         self.commands.extend([
             func('fetch build', BUILD_NAME=self.depends_on['name']),
-            bootstrap(AUTH="auth", ORCHESTRATION_FILE="auth-aws", VERSION="latest", TOPOLOGY="server"),
+            bootstrap(AUTH="auth", ORCHESTRATION_FILE="auth-aws", VERSION=self.version, TOPOLOGY="server"),
             func('run aws tests', TESTCASE=self.testcase.upper())])
 
     @property
     def name(self):
-        return '-'.join([self.name_prefix, self.testcase])
+        return '-'.join([self.name_prefix, self.testcase, self.version])
+
 
 all_tasks = chain(all_tasks, AWSTestTask.matrix())
 
+
 class OCSPTask(MatrixTask):
-    axes = OD([('test', ['test_1', 'test_2', 'test_3', 'test_4', 'soft_fail_test', 'malicious_server_test_1', 'malicious_server_test_2', 'cache']),
+    axes = OD([('test', ['test_1', 'test_2', 'test_3', 'test_4', 'soft_fail_test', 'malicious_server_test_1',
+                         'malicious_server_test_2', 'cache']),
                ('delegate', ['delegate', 'nodelegate']),
                ('cert', ['rsa', 'ecdsa']),
                ('ssl', ['openssl', 'openssl-1.0.1', 'darwinssl', 'winssl'])])
@@ -917,7 +924,8 @@ class OCSPTask(MatrixTask):
 
     @property
     def name(self):
-        return 'ocsp-' + self.display('ssl') + '-' + self.display('test') + '-' + self.display('cert') + '-' + self.display ('delegate')
+        return 'ocsp-' + self.display('ssl') + '-' + self.display('test') + '-' + self.display(
+            'cert') + '-' + self.display('delegate')
 
     def to_dict(self):
         task = super(MatrixTask, self).to_dict()
@@ -926,9 +934,9 @@ class OCSPTask(MatrixTask):
             func('fetch build', BUILD_NAME=self.depends_on['name']))
 
         stapling = 'mustStaple'
-        if self.test in [ 'test_3', 'test_4', 'soft_fail_test', 'cache']:
+        if self.test in ['test_3', 'test_4', 'soft_fail_test', 'cache']:
             stapling = 'disableStapling'
-        if self.test in [ 'malicious_server_test_1', 'malicious_server_test_2' ]:
+        if self.test in ['malicious_server_test_1', 'malicious_server_test_2']:
             stapling = 'mustStaple-disableStapling'
 
         orchestration_file = '%s-basic-tls-ocsp-%s' % (self.cert, stapling)
@@ -937,12 +945,15 @@ class OCSPTask(MatrixTask):
         # The cache test expects a revoked response from an OCSP responder, exactly like TEST_4.
         test_column = 'TEST_4' if self.test == 'cache' else self.test.upper()
 
-        commands.append(shell_mongoc('TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s sh .evergreen/run-ocsp-responder.sh' % (test_column, self.cert, 'on' if self.delegate == 'delegate' else 'off')))
+        commands.append(shell_mongoc(
+            'TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s sh .evergreen/run-ocsp-responder.sh' % (
+            test_column, self.cert, 'on' if self.delegate == 'delegate' else 'off')))
         commands.append(orchestration)
         if self.test == 'cache':
             commands.append(shell_mongoc('CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
         else:
-            commands.append(shell_mongoc('TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
+            commands.append(shell_mongoc(
+                'TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
 
         return task
 
@@ -950,22 +961,20 @@ class OCSPTask(MatrixTask):
     def _check_allowed(self):
         if self.ssl == 'darwinssl':
             # Secure Transport quietly ignores a must-staple certificate with no stapled response.
-            prohibit (self.test == 'malicious_server_test_2')
+            prohibit(self.test == 'malicious_server_test_2')
 
         # ECDSA certs can't be loaded (in the PEM format they're stored) on Windows/macOS. Skip them.
         if self.ssl == 'darwinssl' or self.ssl == 'winssl':
-            prohibit (self.cert == 'ecdsa')
+            prohibit(self.cert == 'ecdsa')
 
         # OCSP stapling is not supported on macOS or Windows.
         if self.ssl == 'darwinssl' or self.ssl == 'winssl':
-            prohibit (self.test in ['test_1', 'test_2', 'cache'])
+            prohibit(self.test in ['test_1', 'test_2', 'cache'])
 
         if self.test == 'soft_fail_test' or self.test == 'malicious_server_test_2' or self.test == 'cache':
             prohibit(self.delegate == 'delegate')
 
 
-
 all_tasks = chain(all_tasks, OCSPTask.matrix())
-
 
 all_tasks = list(all_tasks)
