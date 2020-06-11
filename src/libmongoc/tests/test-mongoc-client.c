@@ -2411,20 +2411,18 @@ test_mongoc_client_get_description_pooled (void)
    _test_mongoc_client_get_description (true);
 }
 
-
 static void
-test_mongoc_client_descriptions (void)
+test_mongoc_client_descriptions_single (void)
 {
    mongoc_client_t *client;
-   mongoc_client_pool_t *pool;
    mongoc_server_description_t **sds;
    size_t n, expected_n;
    bson_error_t error;
    bool r;
    bson_t *ping = tmp_bson ("{'ping': 1}");
-   int64_t start;
 
    expected_n = test_framework_server_count ();
+   n = 0;
 
    /*
     * single-threaded
@@ -2444,6 +2442,19 @@ test_mongoc_client_descriptions (void)
 
    mongoc_server_descriptions_destroy_all (sds, n);
    mongoc_client_destroy (client);
+}
+
+static void
+test_mongoc_client_descriptions_pooled (void *unused)
+{
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool;
+   mongoc_server_description_t **sds;
+   size_t n, expected_n;
+   int64_t start;
+
+   expected_n = test_framework_server_count ();
+   n = 0;
 
    /*
     * pooled
@@ -3969,8 +3980,16 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Client/get_description/pooled",
                       test_mongoc_client_get_description_pooled);
-   TestSuite_AddLive (
-      suite, "/Client/descriptions", test_mongoc_client_descriptions);
+   TestSuite_AddLive (suite,
+                      "/Client/descriptions/single",
+                      test_mongoc_client_descriptions_single);
+   TestSuite_AddFull (suite,
+                      "/Client/descriptions/pooled",
+                      test_mongoc_client_descriptions_pooled,
+                      NULL,
+                      NULL,
+                      TestSuite_CheckLive,
+                      test_framework_skip_due_to_cdriver3708);
    TestSuite_AddLive (suite,
                       "/Client/select_server/single",
                       test_mongoc_client_select_server_single);
