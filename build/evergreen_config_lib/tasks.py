@@ -573,7 +573,8 @@ all_tasks = chain(all_tasks, IntegrationTask.matrix())
 
 
 class DNSTask(MatrixTask):
-    axes = OD([('auth', [False, True]),
+    # TODO: CDRIVER-3708, change [False] back to [False, True] to test with auth again.
+    axes = OD([('auth', [False]),
                ('ssl', ['openssl', 'winssl', 'darwinssl'])])
 
     name_prefix = 'test-dns'
