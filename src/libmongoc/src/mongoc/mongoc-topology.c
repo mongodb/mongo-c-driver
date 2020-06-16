@@ -34,8 +34,6 @@
 
 #include "utlist.h"
 
-#define SESSION_NEVER_USED (-1)
-
 static void
 _topology_collect_errors (mongoc_topology_t *topology, bson_error_t *error_out);
 

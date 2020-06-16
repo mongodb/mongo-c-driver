@@ -13,7 +13,6 @@
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "session-test"
-#define SESSION_NEVER_USED (-1)
 
 /*
  * Prevent failing on pedantic GCC/clang warning: "ISO C forbids conversion of
@@ -781,6 +780,13 @@ _test_end_sessions_many (bool pooled)
     */
    for (i = 0; i < sizeof sessions / sizeof (mongoc_client_session_t *); i++) {
       sessions[i] = mongoc_client_start_session (client, NULL, &error);
+      mongoc_client_command_with_opts (client,
+                                       "admin",
+                                       tmp_bson ("{'ping': 1}"),
+                                       NULL,
+                                       &sessions[i]->server_session->lsid,
+                                       NULL,
+                                       &error);
       ASSERT_OR_PRINT (sessions[i], error);
    }
 
@@ -793,11 +799,13 @@ _test_end_sessions_many (bool pooled)
    /*
     * sessions were ended on the server, ten thousand at a time
     */
-   ASSERT_CMPINT (test.started_calls, ==, 1);
-   ASSERT_CMPINT (test.succeeded_calls, ==, 1);
+   ASSERT_CMPINT (test.started_calls, ==, 2);
+   ASSERT_CMPINT (test.succeeded_calls, ==, 2);
 
    endsessions_test_get_ended_lsids (&test, 0, &ended_lsids);
-   ASSERT_CMPINT (bson_count_keys (&ended_lsids), ==, 1);
+   ASSERT_CMPINT (bson_count_keys (&ended_lsids), ==, 10000);
+   endsessions_test_get_ended_lsids (&test, 1, &ended_lsids);
+   ASSERT_CMPINT (bson_count_keys (&ended_lsids), ==, 2);
 
    endsessions_test_cleanup (&test);
 }
@@ -1211,6 +1219,9 @@ check_session_returned (session_test_t *test, const bson_t *lsid)
       }
    }
 
+   /* Server session will only be returned to the pool if it has
+    * been used. It is expected behavior for found to be false if
+    * ss->last_used_usec == SESSION_NEVER_USED */
    if (!found && ss && ss->last_used_usec != SESSION_NEVER_USED) {
       fprintf (stderr,
                "server session %s not returned to pool\n",
@@ -2220,10 +2231,15 @@ test_cursor_implicit_session (void *ctx)
    ASSERT_POOL_SIZE (topology, 0);
    ASSERT_SESSIONS_MATCH (&test->sent_lsid, &find_lsid);
 
-   /* push a new server session into the pool */
+   /* push a new server session into the pool.  server session is only pushed
+    * if it is used.  therefore mark session as used prior to
+    * destroying session.  it isn't possible to use the server session
+    * to send a command because all messages must use the same lsid (for this
+    * test). */
+   cs->server_session->last_used_usec = INT64_MAX;
    mongoc_client_session_destroy (cs);
-   ASSERT_POOL_SIZE (topology, 0);
-   /*ASSERT_SESSIONS_DIFFER (&find_lsid, &topology->session_pool->lsid);*/
+   ASSERT_POOL_SIZE (topology, 1);
+   ASSERT_SESSIONS_DIFFER (&find_lsid, &topology->session_pool->lsid);
 
    /* "getMore" uses the same lsid as "find" did */
    bson_reinit (&test->sent_lsid);
@@ -2233,7 +2249,7 @@ test_cursor_implicit_session (void *ctx)
 
    /* lsid returned after last batch, doesn't wait for mongoc_cursor_destroy */
    check_session_returned (test, &find_lsid);
-   ASSERT_POOL_SIZE (topology, 1);
+   ASSERT_POOL_SIZE (topology, 2);
 
    bson_destroy (&find_lsid);
    mongoc_cursor_destroy (cursor);
@@ -2265,10 +2281,16 @@ test_change_stream_implicit_session (void *ctx)
    ASSERT_POOL_SIZE (topology, 0);
    BSON_ASSERT (change_stream->implicit_session);
 
-   /* does not push a server session because session is unused */
+
+   /* push a new server session into the pool.  server session is only pushed
+    * if it is used.  therefore mark session as used prior to
+    * destroying session.  it isn't possible to use the server session
+    * to send a command because all messages must use the same lsid (for this
+    * test). */
+   cs->server_session->last_used_usec = INT64_MAX;
    mongoc_client_session_destroy (cs);
-   ASSERT_POOL_SIZE (topology, 0);
-   /* ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &topology->session_pool->lsid); */
+   ASSERT_POOL_SIZE (topology, 1);
+   ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &topology->session_pool->lsid);
 
    /* "getMore" uses the same lsid as "aggregate" did */
    bson_reinit (&test->sent_lsid);
@@ -2622,10 +2644,13 @@ _test_session_dirty_helper (bool retry_succeeds)
       ASSERT_OR_PRINT (ret, error);
    } else {
       BSON_ASSERT (!ret);
-      ASSERT_ERROR_CONTAINS (
-         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_STREAM,
+                             MONGOC_ERROR_STREAM_SOCKET,
+                             "socket error");
    }
-   /* Regardless of whether the retry succeeded, the session should be marked dirty */
+   /* Regardless of whether the retry succeeded, the session should be marked
+    * dirty */
    BSON_ASSERT (session->server_session->dirty);
 
    CDL_COUNT (client->topology->session_pool, next, pooled_session_count_pre);
@@ -3011,13 +3036,14 @@ test_session_install (TestSuite *suite)
                                        test_sessions_spec_cb,
                                        test_framework_skip_if_no_sessions);
 
-   TestSuite_AddFull (suite,
-                      "/Session/dirty",
-                      test_session_dirty,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_no_sessions,
-                      test_framework_skip_if_no_failpoint,
-                      /* Tests with retryable writes, requires non-standalone. */
-                      test_framework_skip_if_single);
+   TestSuite_AddFull (
+      suite,
+      "/Session/dirty",
+      test_session_dirty,
+      NULL /* dtor */,
+      NULL /* ctx */,
+      test_framework_skip_if_no_sessions,
+      test_framework_skip_if_no_failpoint,
+      /* Tests with retryable writes, requires non-standalone. */
+      test_framework_skip_if_single);
 }

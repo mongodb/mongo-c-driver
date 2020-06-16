@@ -361,33 +361,48 @@ test_client_pool_destroy_without_pushing (void)
    bson_destroy (cmd);
 }
 
-/* tests that creating and destroying session is ok */
+static void
+command_started_cb (const mongoc_apm_command_started_t *event)
+{
+   int *count;
+
+   if (strcmp (mongoc_apm_command_started_get_command_name (event),
+               "endSessions") != 0) {
+      return;
+   }
+
+   count = (int *) mongoc_apm_command_started_get_context (event);
+   count++;
+}
+
+/* tests that creating and destroying an unused session
+ * in pooled mode does not result in an error log */
 static void
 test_client_pool_create_unused_session (void)
 {
    mongoc_client_t *client;
    mongoc_client_pool_t *pool;
-   mongoc_uri_t *uri;
    mongoc_client_session_t *session;
-
+   mongoc_apm_callbacks_t *callbacks;
    bson_error_t error;
+   int count = 0;
 
    capture_logs (true);
 
-   uri = mongoc_uri_new_with_error ("mongodb://127.0.0.1/", &error);
-   ASSERT_NO_CAPTURED_LOGS (error.message);
-
-   pool = mongoc_client_pool_new (uri);
+   callbacks = mongoc_apm_callbacks_new ();
+   pool = test_framework_client_pool_new ();
    client = mongoc_client_pool_pop (pool);
    session = mongoc_client_start_session (client, NULL, &error);
-   ASSERT_NO_CAPTURED_LOGS (error.message);
+
+   mongoc_apm_set_command_started_cb (callbacks, command_started_cb);
+   mongoc_client_pool_set_apm_callbacks (pool, callbacks, &count);
 
    mongoc_client_session_destroy (session);
-   ASSERT_NO_CAPTURED_LOGS (error.message);
    mongoc_client_pool_push (pool, client);
-   ASSERT_NO_CAPTURED_LOGS (error.message);
    mongoc_client_pool_destroy (pool);
-   ASSERT_NO_CAPTURED_LOGS (error.message);
+   mongoc_apm_callbacks_destroy (callbacks);
+   ASSERT_CMPINT (count, ==, 0);
+   ASSERT_NO_CAPTURED_LOGS ("mongoc_client_pool_destroy");
 }
 
 void
