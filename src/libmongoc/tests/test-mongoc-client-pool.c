@@ -361,15 +361,41 @@ test_client_pool_destroy_without_pushing (void)
    bson_destroy (cmd);
 }
 
+/* tests that creating and destroying session is ok */
+static void
+test_mongoc_client_pool_create_unused_session (void)
+{
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool;
+   mongoc_uri_t *uri;
+   mongoc_client_session_t *session;
+
+   bson_error_t error;
+
+   capture_logs (true);
+
+   uri = mongoc_uri_new_with_error ("mongodb://127.0.0.1/", &error);
+   ASSERT_NO_CAPTURED_LOGS (error.message);
+
+   pool = mongoc_client_pool_new (uri);
+   client = mongoc_client_pool_pop (pool);
+   session = mongoc_client_start_session (client, NULL, &error);
+   ASSERT_NO_CAPTURED_LOGS (error.message);
+
+   mongoc_client_session_destroy (session);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   ASSERT_NO_CAPTURED_LOGS (error.message);
+}
+
 void
 test_client_pool_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/ClientPool/basic", test_mongoc_client_pool_basic);
    TestSuite_Add (
       suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
-   TestSuite_Add (suite,
-                  "/ClientPool/pop_timeout",
-                  test_mongoc_client_pool_pop_timeout);
+   TestSuite_Add (
+      suite, "/ClientPool/pop_timeout", test_mongoc_client_pool_pop_timeout);
    TestSuite_Add (suite,
                   "/ClientPool/min_size_zero",
                   test_mongoc_client_pool_min_size_zero);
@@ -384,9 +410,14 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
 
+   TestSuite_Add (suite,
+                  "/ClientPool/create_unused_session",
+                  test_mongoc_client_pool_create_unused_session);
 #ifndef MONGOC_ENABLE_SSL
    TestSuite_Add (
       suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);
 #endif
-   TestSuite_AddLive (suite, "/ClientPool/destroy_without_push", test_client_pool_destroy_without_pushing);
+   TestSuite_AddLive (suite,
+                      "/ClientPool/destroy_without_push",
+                      test_client_pool_destroy_without_pushing);
 }
