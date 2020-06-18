@@ -363,7 +363,7 @@ test_client_pool_destroy_without_pushing (void)
 
 /* tests that creating and destroying session is ok */
 static void
-test_mongoc_client_pool_create_unused_session (void)
+test_client_pool_create_unused_session (void)
 {
    mongoc_client_t *client;
    mongoc_client_pool_t *pool;
@@ -383,7 +383,9 @@ test_mongoc_client_pool_create_unused_session (void)
    ASSERT_NO_CAPTURED_LOGS (error.message);
 
    mongoc_client_session_destroy (session);
+   ASSERT_NO_CAPTURED_LOGS (error.message);
    mongoc_client_pool_push (pool, client);
+   ASSERT_NO_CAPTURED_LOGS (error.message);
    mongoc_client_pool_destroy (pool);
    ASSERT_NO_CAPTURED_LOGS (error.message);
 }
@@ -411,8 +413,8 @@ test_client_pool_install (TestSuite *suite)
       suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
 
    TestSuite_Add (suite,
-                  "/ClientPool/create_unused_session",
-                  test_mongoc_client_pool_create_unused_session);
+                  "/ClientPool/create_client_pool_unused_session",
+                  test_client_pool_create_unused_session);
 #ifndef MONGOC_ENABLE_SSL
    TestSuite_Add (
       suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);

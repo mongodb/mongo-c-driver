@@ -13,7 +13,7 @@
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "session-test"
-
+#define SESSION_NEVER_USED (-1)
 
 /*
  * Prevent failing on pedantic GCC/clang warning: "ISO C forbids conversion of
@@ -793,12 +793,10 @@ _test_end_sessions_many (bool pooled)
    /*
     * sessions were ended on the server, ten thousand at a time
     */
-   ASSERT_CMPINT (test.started_calls, ==, 2);
-   ASSERT_CMPINT (test.succeeded_calls, ==, 2);
+   ASSERT_CMPINT (test.started_calls, ==, 1);
+   ASSERT_CMPINT (test.succeeded_calls, ==, 1);
 
    endsessions_test_get_ended_lsids (&test, 0, &ended_lsids);
-   ASSERT_CMPINT (bson_count_keys (&ended_lsids), ==, 10000);
-   endsessions_test_get_ended_lsids (&test, 1, &ended_lsids);
    ASSERT_CMPINT (bson_count_keys (&ended_lsids), ==, 1);
 
    endsessions_test_cleanup (&test);
@@ -1213,7 +1211,7 @@ check_session_returned (session_test_t *test, const bson_t *lsid)
       }
    }
 
-   if (!found) {
+   if (!found && ss && ss->last_used_usec != SESSION_NEVER_USED) {
       fprintf (stderr,
                "server session %s not returned to pool\n",
                bson_as_json (lsid, NULL));
@@ -2224,8 +2222,8 @@ test_cursor_implicit_session (void *ctx)
 
    /* push a new server session into the pool */
    mongoc_client_session_destroy (cs);
-   ASSERT_POOL_SIZE (topology, 1);
-   ASSERT_SESSIONS_DIFFER (&find_lsid, &topology->session_pool->lsid);
+   ASSERT_POOL_SIZE (topology, 0);
+   /*ASSERT_SESSIONS_DIFFER (&find_lsid, &topology->session_pool->lsid);*/
 
    /* "getMore" uses the same lsid as "find" did */
    bson_reinit (&test->sent_lsid);
@@ -2235,7 +2233,7 @@ test_cursor_implicit_session (void *ctx)
 
    /* lsid returned after last batch, doesn't wait for mongoc_cursor_destroy */
    check_session_returned (test, &find_lsid);
-   ASSERT_POOL_SIZE (topology, 2);
+   ASSERT_POOL_SIZE (topology, 1);
 
    bson_destroy (&find_lsid);
    mongoc_cursor_destroy (cursor);
@@ -2267,10 +2265,10 @@ test_change_stream_implicit_session (void *ctx)
    ASSERT_POOL_SIZE (topology, 0);
    BSON_ASSERT (change_stream->implicit_session);
 
-   /* push a new server session into the pool */
+   /* does not push a server session because session is unused */
    mongoc_client_session_destroy (cs);
-   ASSERT_POOL_SIZE (topology, 1);
-   ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &topology->session_pool->lsid);
+   ASSERT_POOL_SIZE (topology, 0);
+   /* ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &topology->session_pool->lsid); */
 
    /* "getMore" uses the same lsid as "aggregate" did */
    bson_reinit (&test->sent_lsid);

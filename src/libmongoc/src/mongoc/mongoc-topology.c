@@ -34,6 +34,8 @@
 
 #include "utlist.h"
 
+#define SESSION_NEVER_USED (-1)
+
 static void
 _topology_collect_errors (mongoc_topology_t *topology, bson_error_t *error_out);
 
@@ -1450,7 +1452,14 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
       /* silences clang scan-build */
       BSON_ASSERT (!topology->session_pool || (topology->session_pool->next &&
                                                topology->session_pool->prev));
-      CDL_PREPEND (topology->session_pool, server_session);
+
+      /* add server session (lsid) to session pool to be reused only if the
+       * server session has been used (the server is aware of the session) */
+      if (server_session->last_used_usec == SESSION_NEVER_USED) {
+         _mongoc_server_session_destroy (server_session);
+      } else {
+         CDL_PREPEND (topology->session_pool, server_session);
+      }
    }
 
    bson_mutex_unlock (&topology->mutex);
