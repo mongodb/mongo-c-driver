@@ -50,12 +50,12 @@ $TAR xf ../../mongoc.tar.gz -C . --strip-components=1
 if [ "$LINK_STATIC" ]; then
   # Our CMake system builds shared and static by default.
   $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF -DENABLE_BSON=ON .
-  make
-  make install
+  $CMAKE --build .
+  $CMAKE --build . --target install
 else
   $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DENABLE_TESTS=OFF -DENABLE_BSON=ON -DENABLE_STATIC=OFF .
-  make
-  make install
+  $CMAKE --build .
+  $CMAKE --build . --target install
 
   set +o xtrace
 
@@ -161,7 +161,7 @@ if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
 
   cd $EXAMPLE_DIR
   $CMAKE -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake .
-  make
+  $CMAKE --build .
 else
   # Test our pkg-config file.
   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig
