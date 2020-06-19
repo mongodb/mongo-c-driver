@@ -21,8 +21,6 @@ set INSTALL_DIR=%CD%\install-dir
 rmdir /S /Q %INSTALL_DIR%
 mkdir %INSTALL_DIR%
 
-set PATH=%PATH%;"c:\Program Files (x86)\MSBuild\14.0\Bin"
-set PATH=%PATH%;"c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin"
 set PATH=%PATH%;%INSTALL_DIR%\bin
 
 cd %BUILD_DIR%
@@ -30,12 +28,12 @@ cd %BUILD_DIR%
 
 rem Build libmongoc, with flags that the downstream R driver mongolite uses
 %CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-std=c99 -pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake -DENABLE_BSON=ON -DENABLE_STATIC=ON .
-%CMAKE_MAKE_PROGRAM%
+%CMAKE% --build .
 if errorlevel 1 (
    exit /B 1
 )
 
-%CMAKE_MAKE_PROGRAM% install
+%CMAKE% --build . --target install
 if errorlevel 1 (
    exit /B 1
 )
