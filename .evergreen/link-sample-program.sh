@@ -83,8 +83,8 @@ fi
 
 
 $CMAKE -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake $SSL_CMAKE_OPTION $SNAPPY_CMAKE_OPTION $STATIC_CMAKE_OPTION -DENABLE_BSON=ON -DENABLE_ZSTD=$ZSTD .
-make
-make install
+$CMAKE --build .
+$CMAKE --build . --target install
 
 ls -l $INSTALL_DIR/lib
 
@@ -201,7 +201,7 @@ if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
 
   cd $EXAMPLE_DIR
   $CMAKE -DCMAKE_PREFIX_PATH=$INSTALL_DIR/lib/cmake .
-  make
+  $CMAKE --build .
 else
   # Test our pkg-config file.
   export PKG_CONFIG_PATH=$INSTALL_DIR/lib/pkgconfig

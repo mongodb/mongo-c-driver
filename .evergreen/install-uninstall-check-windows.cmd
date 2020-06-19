@@ -27,8 +27,6 @@ mkdir %BUILD_DIR%
 rmdir /S /Q %INSTALL_DIR%
 mkdir %INSTALL_DIR%
 
-set PATH=%PATH%;"c:\Program Files (x86)\MSBuild\14.0\Bin"
-set PATH=%PATH%;"c:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin"
 set PATH=%PATH%;%INSTALL_DIR%\bin
 
 cd %BUILD_DIR%
@@ -46,11 +44,11 @@ if "%BSON_ONLY%"=="1" (
 echo.%CC%| findstr /I "gcc">Nul && (
   rem Build libmongoc, with flags that the downstream R driver mongolite uses
   %CMAKE% -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=%CMAKE_MAKE_PROGRAM% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CFLAGS="-std=c99 -pedantic" -DCMAKE_PREFIX_PATH=%INSTALL_DIR%\lib\cmake %BSON_ONLY_OPTION% .
-  %CMAKE_MAKE_PROGRAM%
+  %CMAKE% --build .
   if errorlevel 1 (
      exit /B 1
   )
-  %CMAKE_MAKE_PROGRAM% install
+  %CMAKE% --build . --target install
   if errorlevel 1 (
      exit /B 1
   )
@@ -79,17 +77,17 @@ echo.%CC%| findstr /I "gcc">Nul && (
 
   dir %INSTALL_DIR%\share\mongo-c-driver
 
-  %CMAKE_MAKE_PROGRAM% uninstall
+  %CMAKE% --build . --target uninstall
   if errorlevel 1 (
      exit /B 1
   )
 ) || (
   %CMAKE% -G "%CC%" "-DCMAKE_INSTALL_PREFIX=%INSTALL_DIR%" "-DCMAKE_BUILD_TYPE=Debug" %BSON_ONLY_OPTION% .
-  MSBuild.exe /m ALL_BUILD.vcxproj
+  %CMAKE% --build . --config Debug
   if errorlevel 1 (
      exit /B 1
   )
-  MSBuild.exe /m INSTALL.vcxproj
+  %CMAKE% --build . --config Debug --target install
   if errorlevel 1 (
      exit /B 1
   )
@@ -118,7 +116,7 @@ echo.%CC%| findstr /I "gcc">Nul && (
 
   dir %INSTALL_DIR%\share\mongo-c-driver
 
-  MSBuild.exe /m generate_uninstall\uninstall.vcxproj
+  %CMAKE% --build . --target uninstall
   if errorlevel 1 (
      exit /B 1
   )
