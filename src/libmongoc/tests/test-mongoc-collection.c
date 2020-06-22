@@ -2621,6 +2621,18 @@ test_estimated_document_count (void)
    ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
    ASSERT_MATCH (&reply, server_reply);
 
+   future_destroy (future);
+
+   /* CDRIVER-3612: ensure that an explicit session triggers a client error */
+   future = future_collection_estimated_document_count (
+      collection, tmp_bson ("{'sessionId': 123}"), NULL, &reply, &error);
+
+   ASSERT (-1 == future_get_int64_t (future));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Collection count must not specify explicit session");
+
    bson_destroy (&reply);
    request_destroy (request);
    future_destroy (future);
