@@ -810,6 +810,14 @@ mongoc_collection_estimated_document_count (
 
    BSON_ASSERT_PARAM (coll);
 
+   if (opts && bson_has_field (opts, "sessionId")) {
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Collection count must not specify explicit session");
+      GOTO (done);
+   }
+
    reply_ptr = reply ? reply : &reply_local;
    bson_append_utf8 (&cmd, "count", 5, coll->collection, coll->collectionlen);
 
@@ -832,6 +840,7 @@ mongoc_collection_estimated_document_count (
       }
    }
 
+done:
    if (!reply) {
       bson_destroy (&reply_local);
    }

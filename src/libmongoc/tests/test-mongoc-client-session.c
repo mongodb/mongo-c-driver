@@ -1627,6 +1627,15 @@ run_session_test_bulk_operation (void *ctx)
 
 
 static void
+run_count_test (session_test_fn_t test_fn)
+{
+   /* CDRIVER-3612: mongoc_collection_estimated_document_count does not support
+    * explicit sessions */
+   _test_implicit_session_lsid (test_fn);
+}
+
+
+static void
 insert_10_docs (session_test_t *test)
 {
    mongoc_bulk_operation_t *bulk;
@@ -2846,7 +2855,13 @@ test_session_install (TestSuite *suite)
    add_session_test (
       suite, "/Session/read_write_cmd", test_read_write_cmd, true);
    add_session_test (suite, "/Session/db_cmd", test_db_cmd, false);
-   add_session_test (suite, "/Session/count", test_count, true);
+   TestSuite_AddFull (suite,
+                      "/Session/count",
+                      (void *) run_count_test,
+                      NULL,
+                      (void *) test_count,
+                      test_framework_skip_if_no_cluster_time,
+                      test_framework_skip_if_no_crypto);
    add_session_test (suite, "/Session/cursor", test_cursor, true);
    add_session_test (suite, "/Session/drop", test_drop, false);
    add_session_test (suite, "/Session/drop_index", test_drop_index, false);
