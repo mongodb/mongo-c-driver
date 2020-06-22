@@ -5,6 +5,13 @@ mongo-c-driver (1.16.1-2) UNRELEASED; urgency=medium
 
  -- Roberto C. Sanchez <roberto@connexer.com>  Mon, 30 Mar 2020 13:29:39 -0400
 
+mongo-c-driver (1.16.1-1.1) unstable; urgency=high
+
+  * Non-maintainer upload.
+  * Backport fix for FTBFS with Sphinx 2.4. (Closes: #955114)
+
+ -- Adrian Bunk <bunk@debian.org>  Thu, 18 Jun 2020 18:02:18 +0300
+
 mongo-c-driver (1.16.1-1) unstable; urgency=medium
 
   * New upstream release
