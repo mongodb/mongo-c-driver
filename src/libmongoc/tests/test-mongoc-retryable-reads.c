@@ -16,8 +16,19 @@ retryable_reads_test_run_operation (json_test_ctx_t *ctx,
 {
    bool *explicit_session = (bool *) ctx->config->ctx;
    bson_t reply;
+   bson_iter_t iter;
+   const char *op_name;
+   uint32_t op_len;
    bool res;
 
+   bson_iter_init_find (&iter, operation, "name");
+   op_name = bson_iter_utf8 (&iter, &op_len);
+   if (strcmp (op_name, "estimatedDocumentCount") == 0 ||
+       strcmp (op_name, "count") == 0) {
+      /* CDRIVER-3612: mongoc_collection_estimated_document_count does not
+       * support explicit sessions */
+      *explicit_session = false;
+   }
    res = json_test_operation (ctx,
                               test,
                               operation,
