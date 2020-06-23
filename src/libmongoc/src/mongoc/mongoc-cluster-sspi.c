@@ -266,8 +266,9 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 
       tmpstr = bson_iter_utf8 (&iter, &buflen);
       bson_free (buf);
-      buf = bson_malloc (sizeof (SEC_CHAR) * buflen);
+      buf = bson_malloc (sizeof (SEC_CHAR) * (buflen + 1));
       memcpy (buf, tmpstr, buflen);
+      buf[buflen] = (SEC_CHAR) 0;
 
       bson_destroy (&reply);
    }
