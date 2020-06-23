@@ -3988,8 +3988,7 @@ test_client_install (TestSuite *suite)
                       test_mongoc_client_descriptions_pooled,
                       NULL,
                       NULL,
-                      TestSuite_CheckLive,
-                      test_framework_skip_due_to_cdriver3708);
+                      TestSuite_CheckLive);
    TestSuite_AddLive (suite,
                       "/Client/select_server/single",
                       test_mongoc_client_select_server_single);

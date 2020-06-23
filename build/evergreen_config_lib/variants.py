@@ -290,8 +290,8 @@ all_variants = [
              'retry-true-latest-server',
              '.4.2 .openssl !.nosasl .server',
              '.4.0 .openssl !.nosasl .server',
-             'test-dns-openssl'
-             # 'test-dns-auth-openssl' TODO CDRIVER-3708 add this back
+             'test-dns-openssl',
+             'test-dns-auth-openssl'
              ],
             {'CC': 'gcc'}),
     Variant('darwin',
@@ -318,7 +318,7 @@ all_variants = [
              '.3.2 .darwinssl !.nosasl .server',
              '.3.2 .nossl',
              'test-dns-darwinssl',
-             # 'test-dns-auth-darwinssl', TODO CDRIVER-3708 add this back
+             'test-dns-auth-darwinssl',
              'debug-compile-lto',
              'debug-compile-lto-thin',
              'debug-compile-aws',
@@ -351,7 +351,7 @@ all_variants = [
              '.nosasl .latest .nossl',
              '.sspi .latest',
              'test-dns-winssl',
-             # 'test-dns-auth-winssl', TODO CDRIVER-3708 add this back
+             'test-dns-auth-winssl',
              'debug-compile-aws',
              'test-aws-openssl-regular-4.4',
              'test-aws-openssl-regular-latest'
