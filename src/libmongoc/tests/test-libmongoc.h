@@ -219,7 +219,4 @@ test_framework_skip_if_no_aws (void);
 int
 test_framework_skip_if_no_setenv (void);
 
-int
-test_framework_skip_due_to_cdriver3708 (void);
-
 #endif
