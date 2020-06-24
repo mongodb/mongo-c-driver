@@ -378,7 +378,7 @@ command_started_cb (const mongoc_apm_command_started_t *event)
 /* tests that creating and destroying an unused session
  * in pooled mode does not result in an error log */
 static void
-test_client_pool_create_unused_session (void)
+test_client_pool_create_unused_session (void *context)
 {
    mongoc_client_t *client;
    mongoc_client_pool_t *pool;
@@ -427,9 +427,12 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
 
-   TestSuite_Add (suite,
-                  "/ClientPool/create_client_pool_unused_session",
-                  test_client_pool_create_unused_session);
+   TestSuite_AddFull (suite,
+                      "/ClientPool/create_client_pool_unused_session",
+                      test_client_pool_create_unused_session,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_sessions);
 #ifndef MONGOC_ENABLE_SSL
    TestSuite_Add (
       suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);
