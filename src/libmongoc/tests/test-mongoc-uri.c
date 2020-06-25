@@ -2720,6 +2720,22 @@ test_one_tls_option_enables_tls ()
    }
 }
 
+static void
+test_casing_options ()
+{
+   mongoc_uri_t* uri;
+   bson_error_t error;
+   capture_logs(true);
+
+   uri = mongoc_uri_new("mongodb://localhost:27017/");
+   mongoc_uri_set_option_as_bool (uri, "TLS", true);
+   mongoc_uri_parse_options(uri, "ssl=false", false, &error);
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "conflicts");
+
+   mongoc_uri_destroy(uri);
+}
+
 void
 test_uri_install (TestSuite *suite)
 {
@@ -2753,4 +2769,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/Uri/one_tls_option_enables_tls",
                   test_one_tls_option_enables_tls);
+   TestSuite_Add(suite, "/Uri/options_casing", test_casing_options);
 }

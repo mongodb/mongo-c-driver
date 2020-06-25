@@ -123,6 +123,14 @@ count_dots (const char *s)
    return n;
 }
 
+/* return a lowercased string.  must be freed */
+static char *
+lowercase_const_str(const char *key)
+{
+   char *ret = bson_strdup(key);
+   mongoc_lowercase(key, ret);
+   return ret;
+}
 
 /* at least one character, and does not start with dot */
 static bool
@@ -2573,6 +2581,7 @@ _mongoc_uri_set_option_as_int32_with_error (mongoc_uri_t *uri,
    const char *option;
    const bson_t *options;
    bson_iter_t iter;
+   char *option_lowercase = NULL;
 
    option = mongoc_uri_canonicalize_option (option_orig);
    /* Server Discovery and Monitoring Spec: "the driver MUST NOT permit users
@@ -2611,14 +2620,16 @@ _mongoc_uri_set_option_as_int32_with_error (mongoc_uri_t *uri,
          return false;
       }
    }
-
-   if (!bson_append_int32 (&uri->options, option, -1, value)) {
+   option_lowercase = lowercase_const_str(option);
+   if (!bson_append_int32 (&uri->options, option_lowercase, -1, value)) {
+      bson_free(option_lowercase);
       MONGOC_URI_ERROR (
          error, "Failed to set URI option \"%s\" to %d", option_orig, value);
 
       return false;
    }
 
+   bson_free(option_lowercase);
    return true;
 }
 
@@ -2645,6 +2656,7 @@ _mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
    const char *option;
    const bson_t *options;
    bson_iter_t iter;
+   char *lowercase_option = NULL;
 
    option = mongoc_uri_canonicalize_option (option_orig);
    if ((options = mongoc_uri_get_options (uri)) &&
@@ -2657,7 +2669,9 @@ _mongoc_uri_set_option_as_int32 (mongoc_uri_t *uri,
       }
    }
 
-   bson_append_int32 (&uri->options, option, -1, value);
+   lowercase_option = lowercase_const_str(option);
+   bson_append_int32 (&uri->options, lowercase_option, -1, value);
+   bson_free(lowercase_option);
    return true;
 }
 
@@ -2795,6 +2809,7 @@ _mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri,
    const char *option;
    const bson_t *options;
    bson_iter_t iter;
+   char *lowercase_option = NULL;
 
    option = mongoc_uri_canonicalize_option (option_orig);
 
@@ -2814,7 +2829,9 @@ _mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri,
       }
    }
 
-   if (!bson_append_int64 (&uri->options, option, -1, value)) {
+   lowercase_option = lowercase_const_str(option);
+   if (!bson_append_int64 (&uri->options, lowercase_option, -1, value)) {
+      bson_free(lowercase_option);
       MONGOC_URI_ERROR (error,
                         "Failed to set URI option \"%s\" to %" PRId64,
                         option_orig,
@@ -2822,7 +2839,7 @@ _mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri,
 
       return false;
    }
-
+   bson_free(lowercase_option);
    return true;
 }
 
@@ -2893,6 +2910,7 @@ mongoc_uri_set_option_as_bool (mongoc_uri_t *uri,
                                bool value)
 {
    const char *option;
+   char *option_lowercase;
    const bson_t *options;
    bson_iter_t iter;
 
@@ -2912,8 +2930,9 @@ mongoc_uri_set_option_as_bool (mongoc_uri_t *uri,
          return false;
       }
    }
-
-   bson_append_bool (&uri->options, option, -1, value);
+   option_lowercase = lowercase_const_str(option);
+   bson_append_bool (&uri->options, option_lowercase, -1, value);
+   bson_free(option_lowercase);
    return true;
 }
 
@@ -2989,6 +3008,7 @@ mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri,
 {
    const char *option;
    size_t len;
+   char *lowercase_option = NULL;
 
    option = mongoc_uri_canonicalize_option (option_orig);
    BSON_ASSERT (option);
@@ -3005,7 +3025,9 @@ mongoc_uri_set_option_as_utf8 (mongoc_uri_t *uri,
    if (!bson_strcasecmp (option, MONGOC_URI_APPNAME)) {
       return mongoc_uri_set_appname (uri, value);
    } else {
-      mongoc_uri_bson_append_or_replace_key (&uri->options, option, value);
+      lowercase_option = lowercase_const_str(option);
+      mongoc_uri_bson_append_or_replace_key (&uri->options, lowercase_option, value);
+      bson_free(lowercase_option);
    }
 
    return true;
