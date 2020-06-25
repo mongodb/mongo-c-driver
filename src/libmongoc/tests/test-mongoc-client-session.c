@@ -762,19 +762,24 @@ static void
 send_ping (mongoc_client_t *client, mongoc_client_session_t *client_session)
 {
    bson_t ping_cmd = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
    bson_error_t error;
    bool ret;
 
    BCON_APPEND (&ping_cmd, "ping", BCON_INT32 (1));
 
+   ret = mongoc_client_session_append (client_session, &opts, &error);
+   ASSERT_OR_PRINT(ret, error);
+
    ret = mongoc_client_command_with_opts (client,
                                           "admin",
                                           &ping_cmd,
                                           NULL,
-                                          &client_session->server_session->lsid,
+                                          &opts,
                                           NULL,
                                           &error);
    ASSERT_OR_PRINT (ret, error);
+   bson_destroy(&opts);
    bson_destroy (&ping_cmd);
 }
 
@@ -820,7 +825,7 @@ _test_end_sessions_many (bool pooled)
    endsessions_test_get_ended_lsids (&test, 0, &ended_lsids);
    ASSERT_CMPINT (bson_count_keys (&ended_lsids), ==, 10000);
    endsessions_test_get_ended_lsids (&test, 1, &ended_lsids);
-   ASSERT_CMPINT (bson_count_keys (&ended_lsids), ==, 2);
+   ASSERT_CMPINT (bson_count_keys (&ended_lsids), ==, 1);
 
    endsessions_test_cleanup (&test);
 }
