@@ -1076,6 +1076,11 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
+   if (!server_stream) {
+      bson_destroy (&command);
+      bson_destroy (&reply);
+      RETURN (false);
+   }
 
    if (!mongoc_cluster_run_command_parts (
           cluster, server_stream, &parts, &reply, error)) {
@@ -1205,6 +1210,12 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
+   if (!server_stream) {
+      bson_destroy (&b);
+      bson_destroy (&reply);
+      return false;
+   }
+
    ret = mongoc_cluster_run_command_parts (
       cluster, server_stream, &parts, &reply, error);
    mongoc_server_stream_cleanup (server_stream);
@@ -1313,6 +1324,12 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
+   if (!server_stream) {
+      bson_destroy (&cmd);
+      bson_destroy (&reply);
+      return false;
+   }
+
    ret = mongoc_cluster_run_command_parts (
       cluster, server_stream, &parts, &reply, error);
    mongoc_server_stream_cleanup (server_stream);
@@ -1443,7 +1460,11 @@ _mongoc_cluster_run_scram_command (mongoc_cluster_t *cluster,
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, server_id, stream, error);
-   BSON_ASSERT (server_stream);
+   if (!server_stream) {
+      bson_destroy (reply);
+      return false;
+   }
+
    if (!mongoc_cluster_run_command_parts (
           cluster, server_stream, &parts, reply, error)) {
       mongoc_server_stream_cleanup (server_stream);
@@ -3030,6 +3051,10 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
       parts.prohibit_lsid = true;
       server_stream = _mongoc_cluster_create_server_stream (
          cluster->client->topology, server_id, stream, &error);
+      if (!server_stream) {
+         bson_destroy (&command);
+         return false;
+      }
       r = mongoc_cluster_run_command_parts (
          cluster, server_stream, &parts, NULL, &error);
 
