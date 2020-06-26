@@ -2725,7 +2725,6 @@ test_casing_options ()
 {
    mongoc_uri_t* uri;
    bson_error_t error;
-   capture_logs(true);
 
    uri = mongoc_uri_new("mongodb://localhost:27017/");
    mongoc_uri_set_option_as_bool (uri, "TLS", true);
