@@ -31,6 +31,9 @@ void
 set_apm_callbacks (json_test_ctx_t *ctx, mongoc_client_t *client);
 
 void
+set_apm_callbacks_pooled (json_test_ctx_t *ctx, mongoc_client_pool_t *pool);
+
+void
 check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations);
 
 #endif
