@@ -5,6 +5,7 @@
 #include "json-test.h"
 
 #include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-topology-private.h"
 #include "test-libmongoc.h"
 
 #ifdef BSON_HAVE_STRINGS_H
@@ -215,6 +216,224 @@ test_sdam_cb (bson_t *test)
    mongoc_client_destroy (client);
 }
 
+/* Initialize a test context to run one SDAM integration test file.
+ *
+ * Do not use json_test_ctx_init to initialize a context. It sends commands to
+ * check for sessions support. That interferes with failpoints set on isMaster.
+ */
+static void
+sdam_json_test_ctx_init (json_test_ctx_t *ctx,
+                         const json_test_config_t *config,
+                         mongoc_client_pool_t *pool)
+{
+   const char *db_name;
+   const char *coll_name;
+
+   memset (ctx, 0, sizeof (*ctx));
+   ctx->config = config;
+   bson_init (&ctx->events);
+   ctx->acknowledged = true;
+   ctx->verbose = test_framework_getenv_bool ("MONGOC_TEST_MONITORING_VERBOSE");
+   bson_init (&ctx->lsids[0]);
+   bson_init (&ctx->lsids[1]);
+   bson_mutex_init (&ctx->mutex);
+
+   /* Pop a client, which starts topology scanning. */
+   ctx->client = mongoc_client_pool_pop (pool);
+   ctx->test_framework_uri = mongoc_uri_copy (ctx->client->uri);
+   db_name = bson_lookup_utf8 (ctx->config->scenario, "database_name");
+   coll_name = bson_lookup_utf8 (ctx->config->scenario, "collection_name");
+   ctx->db = mongoc_client_get_database (ctx->client, db_name);
+   ctx->collection = mongoc_database_get_collection (ctx->db, coll_name);
+}
+
+static void
+sdam_json_test_ctx_cleanup (json_test_ctx_t *ctx)
+{
+   mongoc_collection_destroy (ctx->collection);
+   mongoc_database_destroy (ctx->db);
+   bson_destroy (&ctx->lsids[0]);
+   bson_destroy (&ctx->lsids[1]);
+   bson_destroy (&ctx->events);
+   mongoc_uri_destroy (ctx->test_framework_uri);
+   bson_destroy (ctx->sent_lsids[0]);
+   bson_destroy (ctx->sent_lsids[1]);
+   bson_mutex_destroy (&ctx->mutex);
+}
+
+static bool
+sdam_integration_operation_cb (json_test_ctx_t *ctx,
+                               const bson_t *test,
+                               const bson_t *operation)
+{
+   bson_t reply;
+   bool res;
+
+   res =
+      json_test_operation (ctx, test, operation, ctx->collection, NULL, &reply);
+
+   bson_destroy (&reply);
+
+   return res;
+}
+
+/* Try to get a completely clean slate by disabling failpoints on all servers.
+ */
+static void
+deactivate_failpoints_on_all_servers (mongoc_client_t *client)
+{
+   int i;
+   uint32_t server_id;
+   mongoc_set_t *servers;
+   bson_t cmd;
+   bson_error_t error;
+
+   bson_init (&cmd);
+   BCON_APPEND (&cmd, "configureFailPoint", "failCommand", "mode", "off");
+
+   servers = client->topology->description.servers;
+
+   for (i = 0; i < servers->items_len; i++) {
+      bool ret;
+
+      server_id = servers->items[i].id;
+      ret = mongoc_client_command_simple_with_server_id (client,
+                                                         "admin",
+                                                         &cmd,
+                                                         NULL /* read prefs */,
+                                                         server_id,
+                                                         NULL /* reply */,
+                                                         &error);
+      if (!ret) {
+         MONGOC_DEBUG ("error disabling failpoint: %s", error.message);
+      }
+   }
+
+   bson_destroy (&cmd);
+}
+
+static void
+run_one_integration_test (json_test_config_t *config, bson_t *test)
+{
+   json_test_ctx_t ctx;
+   json_test_ctx_t thread_ctx[2];
+   bson_error_t error;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *setup_client;
+   const char *db_name;
+   const char *coll_name;
+   mongoc_uri_t *uri;
+
+   MONGOC_DEBUG ("running test: %s", bson_lookup_utf8 (test, "description"));
+
+   uri = test_framework_get_uri ();
+   if (bson_has_field (test, "clientOptions")) {
+      bson_t client_opts;
+
+      bson_lookup_doc (test, "clientOptions", &client_opts);
+      set_uri_opts_from_bson (uri, &client_opts);
+   }
+
+
+   db_name = bson_lookup_utf8 (config->scenario, "database_name");
+   coll_name = bson_lookup_utf8 (config->scenario, "collection_name");
+
+   /* SDAM integration tests require streamable ismaster support, which is only
+    * available for a client pool. */
+   pool = mongoc_client_pool_new (uri);
+   mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
+   test_framework_set_pool_ssl_opts (pool);
+
+   setup_client = test_framework_client_new ();
+   /* Disable failpoints that may have been enabled in a previous test run. */
+   deactivate_failpoints_on_all_servers (setup_client);
+   mongoc_client_command_simple (setup_client,
+                                 "admin",
+                                 tmp_bson ("{'killAllSessions': []}"),
+                                 NULL,
+                                 NULL,
+                                 &error);
+
+   insert_data (db_name, coll_name, config->scenario);
+
+   if (bson_has_field (test, "failPoint")) {
+      activate_fail_point (setup_client, 0, test, "failPoint");
+   }
+
+   /* Listen for events before topology scanning starts. Some tests
+    * check the result of the first ismaster command. But popping a client
+    * starts topology scanning. */
+   set_apm_callbacks_pooled (&ctx, pool);
+
+   sdam_json_test_ctx_init (&ctx, config, pool);
+
+   /* Set up test contexts for worker threads, which may be used by tests that
+    * have "startThread" operations. These get the same APM event callbacks,
+    * which are protected with a mutex. */
+   sdam_json_test_ctx_init (&thread_ctx[0], config, pool);
+   sdam_json_test_ctx_init (&thread_ctx[1], config, pool);
+   ctx.worker_threads[0] = worker_thread_new (&thread_ctx[0]);
+   ctx.worker_threads[1] = worker_thread_new (&thread_ctx[1]);
+
+   json_test_operations (&ctx, test);
+
+   if (bson_has_field (test, "expectations")) {
+      bson_t expectations;
+
+      bson_lookup_doc (test, "expectations", &expectations);
+      check_json_apm_events (&ctx, &expectations);
+   }
+
+   if (bson_has_field (test, "outcome.collection")) {
+      mongoc_collection_t *outcome_coll;
+      outcome_coll = mongoc_client_get_collection (
+         setup_client,
+         mongoc_database_get_name (ctx.db),
+         mongoc_collection_get_name (ctx.collection));
+      check_outcome_collection (outcome_coll, test);
+      mongoc_collection_destroy (outcome_coll);
+   }
+
+   deactivate_failpoints_on_all_servers (setup_client);
+   worker_thread_destroy (ctx.worker_threads[0]);
+   worker_thread_destroy (ctx.worker_threads[1]);
+   mongoc_client_pool_push (pool, ctx.client);
+   mongoc_client_pool_push (pool, thread_ctx[0].client);
+   mongoc_client_pool_push (pool, thread_ctx[1].client);
+   mongoc_client_pool_destroy (pool);
+   mongoc_client_destroy (setup_client);
+   sdam_json_test_ctx_cleanup (&ctx);
+   sdam_json_test_ctx_cleanup (&thread_ctx[0]);
+   sdam_json_test_ctx_cleanup (&thread_ctx[1]);
+   mongoc_uri_destroy (uri);
+}
+
+static void
+test_sdam_integration_cb (bson_t *scenario)
+{
+   json_test_config_t config = JSON_TEST_CONFIG_INIT;
+   bson_iter_t tests_iter;
+
+   config.run_operation_cb = sdam_integration_operation_cb;
+   config.scenario = scenario;
+   config.command_started_events_only = true;
+
+   if (!check_scenario_version (scenario)) {
+      return;
+   }
+
+   ASSERT (bson_iter_init_find (&tests_iter, scenario, "tests"));
+   ASSERT (bson_iter_recurse (&tests_iter, &tests_iter));
+
+   while (bson_iter_next (&tests_iter)) {
+      bson_t test;
+
+      ASSERT (BSON_ITER_HOLDS_DOCUMENT (&tests_iter));
+      bson_iter_bson (&tests_iter, &test);
+      run_one_integration_test (&config, &test);
+   }
+}
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -250,6 +469,17 @@ test_all_spec_tests (TestSuite *suite)
    ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/supplemental",
                      resolved));
    install_json_test_suite (suite, resolved, &test_sdam_cb);
+
+   /* Integration tests. */
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/integration",
+                     resolved));
+   /* The integration tests configure retryable writes, which requires crypto.
+    */
+   install_json_test_suite_with_check (suite,
+                                       resolved,
+                                       &test_sdam_integration_cb,
+                                       TestSuite_CheckLive,
+                                       test_framework_skip_if_no_crypto);
 }
 
 static void
@@ -313,7 +543,6 @@ test_topology_discovery (void *ctx)
    bson_free (uri_str);
    bson_free (replset_name);
    bson_free (host_and_port);
-
 }
 
 static void
@@ -378,7 +607,6 @@ test_direct_connection (void *ctx)
    bson_free (uri_str);
    bson_free (replset_name);
    bson_free (host_and_port);
-
 }
 
 static void
@@ -443,7 +671,145 @@ test_existing_behavior (void *ctx)
    bson_free (uri_str);
    bson_free (replset_name);
    bson_free (host_and_port);
+}
 
+typedef struct {
+   uint32_t n_heartbeat_succeeded;
+} prose_test_ctx_t;
+
+static void
+heartbeat_succeeded (const mongoc_apm_server_heartbeat_succeeded_t *event)
+{
+   prose_test_ctx_t *ctx;
+
+   ctx =
+      (prose_test_ctx_t *) mongoc_apm_server_heartbeat_succeeded_get_context (
+         event);
+   ctx->n_heartbeat_succeeded++;
+/* The reported duration may be 0 on Windows due to poor clock resolution.
+ * bson_get_monotonic_time () uses GetTickCount64. MS docs say:
+ * "GetTickCount64 function is limited to the resolution of the system timer,
+ * which is typically in the range of 10 milliseconds to 16 milliseconds"
+ */
+#ifndef _WIN32
+   BSON_ASSERT (mongoc_apm_server_heartbeat_succeeded_get_duration (event) > 0);
+#endif
+}
+
+#define RTT_TEST_TIMEOUT_SEC 60
+#define RTT_TEST_INITIAL_SLEEP_SEC 2
+#define RTT_TEST_TICK_MS 10
+
+static void
+test_prose_rtt (void *unused)
+{
+   /* Since this tests RTT tracking in the streaming protocol, this test
+    * requires a client pool. */
+   mongoc_client_pool_t *pool;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_error_t error;
+   const bson_t *doc;
+   mongoc_cursor_t *cursor;
+   mongoc_apm_callbacks_t *callbacks;
+   prose_test_ctx_t ctx;
+   bson_t cmd;
+   bool ret;
+   int64_t start_us;
+   bool satisfied;
+   int64_t rtt = 0;
+
+   uri = test_framework_get_uri ();
+   mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "streamingRttTest");
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks,
+                                                 heartbeat_succeeded);
+   pool = mongoc_client_pool_new (uri);
+   test_framework_set_pool_ssl_opts (pool);
+   memset (&ctx, 0, sizeof (prose_test_ctx_t));
+   mongoc_client_pool_set_apm_callbacks (pool, callbacks, &ctx);
+   client = mongoc_client_pool_pop (pool);
+
+   /* Run a find command for the server to be discovered. */
+   coll = get_test_collection (client, "streamingRttTest");
+   cursor = mongoc_collection_find_with_opts (
+      coll, tmp_bson ("{}"), NULL /* opts */, NULL /* read prefs */);
+   mongoc_cursor_next (cursor, &doc);
+
+   /* Sleep for RTT_TEST_INITIAL_SLEEP_SEC seconds to allow multiple heartbeats
+    * to succeed. */
+   _mongoc_usleep (RTT_TEST_INITIAL_SLEEP_SEC * 1000 * 1000);
+
+   /* Set a failpoint to make isMaster commands take longer. */
+   bson_init (&cmd);
+   BCON_APPEND (&cmd, "configureFailPoint", "failCommand");
+   BCON_APPEND (&cmd, "mode", "{", "times", BCON_INT32 (1000), "}");
+   BCON_APPEND (&cmd,
+                "data",
+                "{",
+                "failCommands",
+                "[",
+                "isMaster",
+                "]",
+                "blockConnection",
+                BCON_BOOL (true),
+                "blockTimeMS",
+                BCON_INT32 (500),
+                "appName",
+                "streamingRttTest",
+                "}");
+   ret = mongoc_client_command_simple (
+      client, "admin", &cmd, NULL /* read prefs. */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   /* Wait for the server's RTT to exceed 250ms. If this does not happen for
+    * RTT_TEST_TIMEOUT_SEC seconds, consider it a failure. */
+   satisfied = false;
+   start_us = bson_get_monotonic_time ();
+   while (!satisfied &&
+          bson_get_monotonic_time () <
+             start_us + RTT_TEST_TIMEOUT_SEC * 1000 * 1000) {
+      mongoc_server_description_t *sd;
+
+      sd = mongoc_client_select_server (
+         client, true, NULL /* read prefs */, &error);
+      ASSERT_OR_PRINT (sd, error);
+      rtt = mongoc_server_description_round_trip_time (sd);
+      if (rtt > 250) {
+         satisfied = true;
+      }
+      mongoc_server_description_destroy (sd);
+      _mongoc_usleep (RTT_TEST_TICK_MS * 1000);
+   }
+
+   if (!satisfied) {
+      test_error ("After %d seconds, the latest observed RTT was only %" PRId64,
+                  RTT_TEST_TIMEOUT_SEC,
+                  rtt);
+   }
+
+   /* Disable the failpoint. */
+   bson_reinit (&cmd);
+   BCON_APPEND (&cmd, "configureFailPoint", "failCommand");
+   BCON_APPEND (&cmd, "mode", "off");
+   ret = mongoc_client_command_simple (
+      client, "admin", &cmd, NULL /* read prefs. */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   bson_destroy (&cmd);
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (coll);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+   mongoc_apm_callbacks_destroy (callbacks);
+
+   /* Make this assertion after destroying the pool, to avoid reading while the
+    * monitor thread is writing. */
+   BSON_ASSERT (ctx.n_heartbeat_succeeded > 0);
 }
 
 void
@@ -468,4 +834,10 @@ test_sdam_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_not_replset);
+   TestSuite_AddFull (suite,
+                      "/server_discovery_and_monitoring/prose/rtt",
+                      test_prose_rtt,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_max_wire_version_less_than_9);
 }

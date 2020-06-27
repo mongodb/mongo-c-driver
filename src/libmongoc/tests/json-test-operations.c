@@ -50,6 +50,118 @@ session_from_name (json_test_ctx_t *ctx, const char *session_name)
    }
 }
 
+static json_test_worker_thread_t *
+thread_from_name (json_test_ctx_t *ctx, const char *thread_name)
+{
+   json_test_worker_thread_t *wt = NULL;
+   BSON_ASSERT (thread_name);
+
+   if (!strcmp (thread_name, "thread1")) {
+      wt = ctx->worker_threads[0];
+   } else if (!strcmp (thread_name, "thread2")) {
+      wt = ctx->worker_threads[1];
+   } else {
+      test_error ("Unrecognized thread name: %s", thread_name);
+   }
+   if (!wt) {
+      test_error ("Test runner did not create worker threads");
+   }
+   return wt;
+}
+
+json_test_worker_thread_t *
+worker_thread_new (json_test_ctx_t *ctx)
+{
+   json_test_worker_thread_t *wt;
+
+   wt = bson_malloc0 (sizeof (json_test_worker_thread_t));
+   wt->ctx = ctx;
+   /* Note: thread safety of the queue is a bit redundant since the worker
+    * thread locks around it. */
+   wt->queue = q_new ();
+   bson_mutex_init (&wt->mutex);
+   mongoc_cond_init (&wt->cond);
+   return wt;
+}
+
+void
+worker_thread_destroy (json_test_worker_thread_t *wt)
+{
+   q_destroy (wt->queue);
+   bson_mutex_destroy (&wt->mutex);
+   mongoc_cond_destroy (&wt->cond);
+   bson_free (wt);
+}
+
+#define WORKER_THREAD_WAIT_TIMEOUT_MS 10 * 1000
+
+static BSON_THREAD_FUN (json_test_worker_thread_run, wt_void)
+{
+   json_test_worker_thread_t *wt;
+   bson_t *op = NULL;
+   bool shutdown = false;
+
+   wt = wt_void;
+
+   while (true) {
+      /* Wait for a new item in the queue or shutdown. */
+      bson_mutex_lock (&wt->mutex);
+      op = (bson_t *) q_get_nowait (wt->queue);
+      shutdown = wt->shutdown_requested;
+      while (!op && !shutdown) {
+         mongoc_cond_timedwait (
+            &wt->cond, &wt->mutex, WORKER_THREAD_WAIT_TIMEOUT_MS);
+         shutdown = wt->shutdown_requested;
+         op = q_get_nowait (wt->queue);
+      }
+      bson_mutex_unlock (&wt->mutex);
+
+      if (op) {
+         bson_t reply;
+
+         json_test_operation (wt->ctx,
+                              wt->ctx->config->scenario,
+                              op,
+                              wt->ctx->collection,
+                              NULL /* session */,
+                              &reply);
+         bson_destroy (op);
+         op = NULL;
+         bson_destroy (&reply);
+      } else if (shutdown) {
+         /* If there are no queued operations and shutdown was requested, exit
+          * thread. */
+         break;
+      }
+   }
+   BSON_THREAD_RETURN;
+}
+
+static void
+start_thread (json_test_worker_thread_t *wt)
+{
+   wt->shutdown_requested = false;
+   COMMON_PREFIX (thread_create) (&wt->thread, json_test_worker_thread_run, wt);
+}
+
+static void
+run_on_thread (json_test_worker_thread_t *wt, bson_t *op)
+{
+   bson_mutex_lock (&wt->mutex);
+   q_put (wt->queue, bson_copy (op));
+   mongoc_cond_broadcast (&wt->cond);
+   bson_mutex_unlock (&wt->mutex);
+}
+
+static void
+wait_for_thread (json_test_worker_thread_t *wt)
+{
+   bson_mutex_lock (&wt->mutex);
+   wt->shutdown_requested = true;
+   mongoc_cond_broadcast (&wt->cond);
+   bson_mutex_unlock (&wt->mutex);
+   COMMON_PREFIX (thread_join) (wt->thread);
+}
 
 void
 json_test_ctx_init (json_test_ctx_t *ctx,
@@ -106,6 +218,7 @@ json_test_ctx_init (json_test_ctx_t *ctx,
          bson_free (session_opts_path);
       }
    }
+   bson_mutex_init (&ctx->mutex);
 }
 
 
@@ -136,6 +249,7 @@ json_test_ctx_cleanup (json_test_ctx_t *ctx)
    mongoc_uri_destroy (ctx->test_framework_uri);
    bson_destroy (ctx->sent_lsids[0]);
    bson_destroy (ctx->sent_lsids[1]);
+   bson_mutex_destroy (&ctx->mutex);
 }
 
 
@@ -1990,6 +2104,156 @@ index_exists (mongoc_client_t *client, const bson_t *operation)
    return found;
 }
 
+static uint32_t
+_get_total_pool_cleared_event (json_test_ctx_t *ctx)
+{
+   mongoc_topology_description_t *td;
+   uint32_t i;
+   uint32_t total = 0;
+
+   /* Go get total generation counts. */
+   bson_mutex_lock (&ctx->client->topology->mutex);
+   td = &ctx->client->topology->description;
+   for (i = 0; i < td->servers->items_len; i++) {
+      mongoc_server_description_t *sd;
+
+      sd = mongoc_set_get_item (td->servers, i);
+      total += sd->generation;
+   }
+   bson_mutex_unlock (&ctx->client->topology->mutex);
+   return total;
+}
+
+#define WAIT_FOR_EVENT_TIMEOUT_MS 10 * 1000
+#define WAIT_FOR_EVENT_TICK_MS 10
+
+static void
+wait_for_event (json_test_ctx_t *ctx, const bson_t *operation)
+{
+   const char *event_name;
+   int64_t count;
+   uint64_t expires_us;
+   bool satisfied = false;
+   int64_t measured = 0;
+   int64_t total = 0;
+
+   event_name = bson_lookup_utf8 (operation, "arguments.event");
+   count = bson_lookup_int32 (operation, "arguments.count");
+   expires_us = bson_get_monotonic_time () + WAIT_FOR_EVENT_TIMEOUT_MS * 1000;
+   while (!satisfied && bson_get_monotonic_time () < expires_us) {
+      int64_t diff;
+
+      if (0 == strcmp (event_name, "ServerMarkedUnknownEvent")) {
+         bson_mutex_lock (&ctx->mutex);
+         measured = ctx->measured_ServerMarkedUnknownEvent;
+         total = ctx->total_ServerMarkedUnknownEvent;
+         diff = total - measured;
+         if (diff >= count) {
+            /* "count" events were accounted for in the test. There may be more
+             * later. */
+            ctx->measured_ServerMarkedUnknownEvent += count;
+            satisfied = true;
+         }
+         bson_mutex_unlock (&ctx->mutex);
+      } else if (0 == strcmp (event_name, "PoolClearedEvent")) {
+         /* Do *NOT* lock ctx->mutex while calling
+          * _get_total_pool_cleared_event, which locks the topology mutex.
+          * This could create a deadlock situation.
+          * A monitor may be updating the topology description, calling an APM
+          * callback: topology->mutex => ctx->mutex
+          */
+         total = _get_total_pool_cleared_event (ctx);
+         bson_mutex_lock (&ctx->mutex);
+         measured = ctx->measured_PoolClearedEvent;
+         diff = total - measured;
+         if (diff >= count) {
+            /* "count" events were accounted for in the test. There may be more
+             * later. */
+            ctx->measured_PoolClearedEvent += count;
+            satisfied = true;
+         }
+         bson_mutex_unlock (&ctx->mutex);
+      } else {
+         test_error ("Unknown event: %s", event_name);
+      }
+      if (!satisfied) {
+         _mongoc_usleep (WAIT_FOR_EVENT_TICK_MS * 1000);
+      }
+   }
+   if (!satisfied) {
+      test_error ("did not see enough %s events after 10s. %d total occurred. "
+                  "%d accounted for. But %d more expected",
+                  event_name,
+                  (int) total,
+                  (int) measured,
+                  (int) count);
+   }
+}
+
+static void
+wait_for_primary_change (json_test_ctx_t *ctx, const bson_t *operation)
+{
+   uint64_t expires_us;
+   bool satisfied = false;
+   int64_t measured = 0;
+   int64_t total = 0;
+   uint32_t timeout_ms;
+
+   timeout_ms = bson_lookup_int32 (operation, "arguments.timeoutMS");
+   expires_us = bson_get_monotonic_time () + timeout_ms * 1000;
+   while (!satisfied && bson_get_monotonic_time () < expires_us) {
+      int64_t diff;
+
+      bson_mutex_lock (&ctx->mutex);
+
+      total = ctx->total_PrimaryChangedEvent;
+      measured = ctx->measured_PrimaryChangedEvent;
+      diff = total - measured;
+      if (diff >= 1) {
+         /* 1 event accounted for. There may be more later. */
+         ctx->measured_PrimaryChangedEvent++;
+         satisfied = true;
+      }
+
+      bson_mutex_unlock (&ctx->mutex);
+      if (!satisfied) {
+         _mongoc_usleep (10 * 1000);
+      }
+   }
+   if (!satisfied) {
+      test_error (
+         "did not see any primary change events after %dms. %d total occurred. "
+         "%d accounted for.",
+         timeout_ms,
+         (int) total,
+         (int) measured);
+   }
+}
+
+static void
+assert_event_count (json_test_ctx_t *ctx, const bson_t *operation)
+{
+   const char *event_name;
+   uint32_t count;
+   uint32_t total = 0;
+
+   event_name = bson_lookup_utf8 (operation, "arguments.event");
+   count = bson_lookup_int32 (operation, "arguments.count");
+
+   if (0 == strcmp (event_name, "ServerMarkedUnknownEvent")) {
+      total = ctx->total_ServerMarkedUnknownEvent;
+   } else if (0 == strcmp (event_name, "PoolClearedEvent")) {
+      total = _get_total_pool_cleared_event (ctx);
+   } else {
+      test_error ("Unknown event: %s", event_name);
+   }
+   if (count != total) {
+      test_error ("event count %s mismatched. Expected %d, but have %d",
+                  event_name,
+                  count,
+                  total);
+   }
+}
 
 static bool
 op_error (const bson_t *operation)
@@ -2227,8 +2491,66 @@ json_test_operation (json_test_ctx_t *ctx,
          mongoc_client_destroy (client);
 
          BSON_ASSERT (!exists);
+      } else if (!strcmp (op_name, "waitForEvent")) {
+         wait_for_event (ctx, operation);
+      } else if (!strcmp (op_name, "assertEventCount")) {
+         assert_event_count (ctx, operation);
+      } else if (!strcmp (op_name, "configureFailPoint")) {
+         mongoc_client_t *client;
+
+         client = mongoc_client_new_from_uri (ctx->client->uri);
+         test_framework_set_ssl_opts (client);
+         activate_fail_point (
+            client, 0 /* primary */, operation, "arguments.failPoint");
+
+         mongoc_client_destroy (client);
+      } else if (!strcmp (op_name, "wait")) {
+         _mongoc_usleep (bson_lookup_int32 (operation, "arguments.ms") * 1000);
+      } else if (!strcmp (op_name, "recordPrimary")) {
+         /* It doesn't matter who the primary is. We just want to assert in
+          * tests later that the primary changed x times after this operation.
+          */
+         bson_mutex_lock (&ctx->mutex);
+         ctx->measured_PrimaryChangedEvent = ctx->total_PrimaryChangedEvent;
+         bson_mutex_unlock (&ctx->mutex);
+      } else if (!strcmp (op_name, "runAdminCommand")) {
+         mongoc_client_t *client;
+         mongoc_database_t *admin_db;
+
+         client = mongoc_client_new_from_uri (ctx->client->uri);
+         test_framework_set_ssl_opts (client);
+         admin_db = mongoc_client_get_database (client, "admin");
+         bson_destroy (reply);
+         res = command (admin_db, test, operation, session, NULL, reply);
+         if (!res) {
+            test_error ("admin command failed: %s", bson_as_json (reply, NULL));
+         }
+         mongoc_database_destroy (admin_db);
+         mongoc_client_destroy (client);
+      } else if (!strcmp (op_name, "waitForPrimaryChange")) {
+         wait_for_primary_change (ctx, operation);
+      } else if (!strcmp (op_name, "startThread")) {
+         json_test_worker_thread_t *wt;
+
+         wt = thread_from_name (ctx,
+                                bson_lookup_utf8 (operation, "arguments.name"));
+         start_thread (wt);
+      } else if (!strcmp (op_name, "waitForThread")) {
+         json_test_worker_thread_t *wt;
+
+         wt = thread_from_name (ctx,
+                                bson_lookup_utf8 (operation, "arguments.name"));
+         wait_for_thread (wt);
+      } else if (!strcmp (op_name, "runOnThread")) {
+         json_test_worker_thread_t *wt;
+         bson_t op;
+
+         bson_lookup_doc (operation, "arguments.operation", &op);
+         wt = thread_from_name (ctx,
+                                bson_lookup_utf8 (operation, "arguments.name"));
+         run_on_thread (wt, &op);
       } else {
-         test_error ("unrecognized session operation name %s", op_name);
+         test_error ("unrecognized testRunner operation name %s", op_name);
       }
    } else if (!strcmp (obj_name, "client")) {
       if (!strcmp (op_name, "listDatabases")) {
@@ -2286,8 +2608,11 @@ one_operation (json_test_ctx_t *ctx,
 
    op_name = bson_lookup_utf8 (operation, "name");
    if (ctx->verbose) {
-      printf ("     %s\n", op_name);
-      fflush (stdout);
+      char *op_str;
+
+      op_str = bson_as_json (operation, NULL);
+      MONGOC_DEBUG ("     running operation %s : %s\n", op_name, op_str);
+      bson_free (op_str);
    }
 
    if (bson_has_field (operation, "arguments.writeConcern")) {

@@ -815,7 +815,7 @@ check_version_info (const bson_t *scenario, bool print_reason)
    return true;
 }
 
-static bool
+bool
 check_scenario_version (const bson_t *scenario)
 {
    /* version info can be nested inside "runOn" array */
@@ -1036,7 +1036,7 @@ _insert_data (mongoc_collection_t *collection, bson_t *documents)
 
 
 /* insert the documents in a spec test scenario's "data" array */
-static void
+void
 insert_data (const char *db_name,
              const char *collection_name,
              const bson_t *scenario)
@@ -1167,7 +1167,7 @@ execute_test (const json_test_config_t *config,
 
    /* Select a primary for testing */
    server_id = mongoc_topology_select_server_id (
-      collection->client->topology, MONGOC_SS_WRITE, NULL, &error);
+      client->topology, MONGOC_SS_WRITE, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
    json_test_ctx_init (&ctx, test, client, db, collection, config);
@@ -1180,8 +1180,7 @@ execute_test (const json_test_config_t *config,
       activate_fail_point (client, server_id, test, "failPoint");
    }
 
-   set_apm_callbacks (&ctx, collection->client);
-
+   set_apm_callbacks (&ctx, client);
    json_test_operations (&ctx, test);
 
    if (config->after_test_cb) {
@@ -1220,7 +1219,9 @@ execute_test (const json_test_config_t *config,
       mongoc_client_destroy (outcome_client);
    }
 
-   mongoc_client_set_apm_callbacks (collection->client, NULL, NULL);
+
+   mongoc_client_set_apm_callbacks (client, NULL, NULL);
+
    json_test_ctx_cleanup (&ctx);
 
    if (!_mongoc_cse_is_enabled (client)) {
@@ -1246,13 +1247,22 @@ activate_fail_point (mongoc_client_t *client,
    bool r;
 
    BSON_ASSERT (client);
-   BSON_ASSERT (server_id);
 
    bson_lookup_doc (test, key, &command);
 
    ASSERT_CMPSTR (_mongoc_get_command_name (&command), "configureFailPoint");
-   r = mongoc_client_command_simple_with_server_id (
-      client, "admin", &command, NULL, server_id, NULL, &error);
+   if (server_id) {
+      r = mongoc_client_command_simple_with_server_id (
+         client, "admin", &command, NULL, server_id, NULL, &error);
+   } else {
+      /* Use default "primary" read preference. */
+      r = mongoc_client_command_simple (client,
+                                        "admin",
+                                        &command,
+                                        NULL /* read prefs */,
+                                        NULL /* reply */,
+                                        &error);
+   }
    ASSERT_OR_PRINT (r, error);
 }
 
@@ -1274,8 +1284,13 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
    bool r;
    bson_error_t error;
 
-   sd = mongoc_client_get_server_description (client, server_id);
-   BSON_ASSERT (sd);
+   if (server_id) {
+      sd = mongoc_client_get_server_description (client, server_id);
+      BSON_ASSERT (sd);
+   } else {
+      sd = mongoc_client_select_server (client, false, NULL, &error);
+      ASSERT_OR_PRINT (sd, error);
+   }
 
    if (sd->type == MONGOC_SERVER_RS_PRIMARY &&
        sd->max_wire_version >= WIRE_VERSION_RETRY_WRITES) {
@@ -1284,14 +1299,14 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
                    " 'mode': 'off'}");
 
       r = mongoc_client_command_simple_with_server_id (
-         client, "admin", command, NULL, server_id, NULL, &error);
+         client, "admin", command, NULL, sd->id, NULL, &error);
       ASSERT_OR_PRINT (r, error);
 
       command = tmp_bson ("{'configureFailPoint': 'failCommand',"
                           " 'mode': 'off'}");
 
       r = mongoc_client_command_simple_with_server_id (
-         client, "admin", command, NULL, server_id, NULL, &error);
+         client, "admin", command, NULL, sd->id, NULL, &error);
 
       /* ignore error from servers that predate "failCommand" fail point */
       if (!r && !strstr (error.message, "failCommand not found")) {
@@ -1304,7 +1319,7 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
       command = tmp_bson ("{'configureFailPoint': "
                           "'failGetMoreAfterCursorCheckout', 'mode': 'off'}");
       r = mongoc_client_command_simple_with_server_id (
-         client, "admin", command, NULL, server_id, NULL, &error);
+         client, "admin", command, NULL, sd->id, NULL, &error);
       ASSERT_OR_PRINT (r, error);
    }
 
@@ -1312,15 +1327,17 @@ deactivate_fail_points (mongoc_client_t *client, uint32_t server_id)
 }
 
 
-static void
+void
 set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
 {
    bson_iter_t iter;
 
    BSON_ASSERT (bson_iter_init (&iter, opts));
    while (bson_iter_next (&iter)) {
+      const char *key = bson_iter_key (&iter);
+
       /* can't use bson_lookup_write_concern etc. with clientOptions format */
-      if (!strcmp (bson_iter_key (&iter), "w")) {
+      if (!strcmp (key, "w")) {
          mongoc_write_concern_t *wc = mongoc_write_concern_new ();
          if (BSON_ITER_HOLDS_UTF8 (&iter)) {
             mongoc_write_concern_set_wtag (wc, bson_iter_utf8 (&iter, NULL));
@@ -1334,35 +1351,32 @@ set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts)
 
          mongoc_uri_set_write_concern (uri, wc);
          mongoc_write_concern_destroy (wc);
-      } else if (!strcmp (bson_iter_key (&iter), "readConcernLevel")) {
+      } else if (!strcmp (key, "readConcernLevel")) {
          mongoc_read_concern_t *rc = mongoc_read_concern_new ();
          mongoc_read_concern_set_level (rc, bson_iter_utf8 (&iter, NULL));
          mongoc_uri_set_read_concern (uri, rc);
          mongoc_read_concern_destroy (rc);
-      } else if (!strcmp (bson_iter_key (&iter), "readPreference")) {
+      } else if (!strcmp (key, "readPreference")) {
          mongoc_read_prefs_t *read_prefs = mongoc_read_prefs_new (
             read_mode_from_test (bson_iter_utf8 (&iter, NULL)));
          mongoc_uri_set_read_prefs_t (uri, read_prefs);
          mongoc_read_prefs_destroy (read_prefs);
-      } else if (!strcmp (bson_iter_key (&iter), "retryWrites")) {
-         mongoc_uri_set_option_as_bool (
-            uri, "retryWrites", bson_iter_bool (&iter));
-      } else if (!strcmp (bson_iter_key (&iter), "heartbeatFrequencyMS")) {
-         mongoc_uri_set_option_as_int32 (
-            uri, "heartbeatFrequencyMS", bson_iter_int32 (&iter));
-      } else if (!strcmp (bson_iter_key (&iter), "retryReads")) {
-         mongoc_uri_set_option_as_bool (
-            uri, "retryReads", bson_iter_bool (&iter));
-      } else if (!strcmp (bson_iter_key (&iter), "autoEncryptOpts")) {
+      } else if (!strcmp (key, "autoEncryptOpts")) {
          /* Auto encrypt options are set on constructed client, not in URI. */
-      } else if (!strcmp (bson_iter_key (&iter), "writeConcern")) {
+      } else if (!strcmp (key, "writeConcern")) {
          mongoc_write_concern_t *wc =
             bson_lookup_write_concern (opts, "writeConcern");
          mongoc_uri_set_write_concern (uri, wc);
          mongoc_write_concern_destroy (wc);
+      } else if (mongoc_uri_option_is_bool (key)) {
+         mongoc_uri_set_option_as_bool (uri, key, bson_iter_bool (&iter));
+      } else if (mongoc_uri_option_is_int32 (key)) {
+         mongoc_uri_set_option_as_int32 (uri, key, bson_iter_int32 (&iter));
+      } else if (mongoc_uri_option_is_utf8 (key)) {
+         mongoc_uri_set_option_as_utf8 (uri, key, bson_iter_utf8 (&iter, NULL));
       } else {
          MONGOC_ERROR ("Unsupported clientOptions field \"%s\" in %s",
-                       bson_iter_key (&iter),
+                       key,
                        bson_as_json (opts, NULL));
          abort ();
       }
@@ -1635,7 +1649,7 @@ run_json_general_test (const json_test_config_t *config)
       }
 
       client = mongoc_client_new_from_uri (uri);
-      mongoc_client_set_error_api (client, 2);
+      mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
       test_framework_set_ssl_opts (client);
       /* reconnect right away, if a fail point causes a disconnect */
       client->topology->min_heartbeat_frequency_msec = 0;
