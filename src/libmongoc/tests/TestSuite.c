@@ -943,6 +943,7 @@ int
 TestSuite_Run (TestSuite *suite) /* IN */
 {
    int failures = 0;
+   int64_t start_us;
 
    if (suite->flags & TEST_HELPTEXT) {
       TestSuite_PrintHelp (suite);
@@ -963,6 +964,7 @@ TestSuite_Run (TestSuite *suite) /* IN */
       }
    }
 
+   start_us = bson_get_monotonic_time ();
    if (suite->tests) {
       if (suite->testname) {
          failures += TestSuite_RunNamed (suite, suite->testname);
@@ -975,6 +977,8 @@ TestSuite_Run (TestSuite *suite) /* IN */
          TestSuite_PrintJsonFooter (suite->outfile);
       }
    }
+   MONGOC_DEBUG ("Duration of all tests (s): %" PRId64,
+                 (bson_get_monotonic_time () - start_us) / (1000 * 1000));
 
    return failures;
 }

@@ -15,6 +15,7 @@
  */
 
 
+#include "mongoc/mongoc-client-private.h"
 #include "mongoc/mongoc-config.h"
 #include "mongoc/mongoc-collection-private.h"
 #include "mongoc/mongoc-host-list-private.h"
@@ -85,18 +86,21 @@ started_cb (const mongoc_apm_command_started_t *event)
 {
    json_test_ctx_t *ctx =
       (json_test_ctx_t *) mongoc_apm_command_started_get_context (event);
-   char *cmd_json;
    bson_t *events = &ctx->events;
    char str[16];
    const char *key;
    bson_t *new_event;
 
    if (ctx->verbose) {
+      char *cmd_json;
+
       cmd_json = bson_as_canonical_extended_json (event->command, NULL);
       printf ("%s\n", cmd_json);
       fflush (stdout);
       bson_free (cmd_json);
    }
+
+   bson_mutex_lock (&ctx->mutex);
 
    /* Track the last two lsid's */
    if (bson_has_field (event->command, "lsid")) {
@@ -132,6 +136,7 @@ started_cb (const mongoc_apm_command_started_t *event)
    ctx->n_events++;
 
    bson_destroy (new_event);
+   bson_mutex_unlock (&ctx->mutex);
 }
 
 
@@ -140,16 +145,20 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 {
    json_test_ctx_t *ctx =
       (json_test_ctx_t *) mongoc_apm_command_succeeded_get_context (event);
-   char *reply_json;
    char str[16];
    const char *key;
    bson_t *new_event;
 
    if (ctx->verbose) {
+      char *reply_json;
+
       reply_json = bson_as_canonical_extended_json (event->reply, NULL);
-      printf ("\t\t<-- %s\n", reply_json);
-      fflush (stdout);
+      MONGOC_DEBUG ("<-- COMMAND SUCCEEDED: %s\n", reply_json);
       bson_free (reply_json);
+   }
+
+   if (ctx->config->command_started_events_only) {
+      return;
    }
 
    BSON_ASSERT (mongoc_apm_command_succeeded_get_request_id (event) > 0);
@@ -165,12 +174,14 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
                          BCON_INT64 (event->operation_id),
                          "}");
 
+   bson_mutex_lock (&ctx->mutex);
    bson_uint32_to_string (ctx->n_events, &key, str, sizeof str);
    BSON_APPEND_DOCUMENT (&ctx->events, key, new_event);
 
    ctx->n_events++;
 
    bson_destroy (new_event);
+   bson_mutex_unlock (&ctx->mutex);
 }
 
 
@@ -179,15 +190,23 @@ failed_cb (const mongoc_apm_command_failed_t *event)
 {
    json_test_ctx_t *ctx =
       (json_test_ctx_t *) mongoc_apm_command_failed_get_context (event);
-   bson_t reply = BSON_INITIALIZER;
    char str[16];
    const char *key;
    bson_t *new_event;
 
    if (ctx->verbose) {
-      printf (
-         "\t\t<-- %s FAILED: %s\n", event->command_name, event->error->message);
-      fflush (stdout);
+      char *reply_json;
+
+      reply_json = bson_as_canonical_extended_json (event->reply, NULL);
+      MONGOC_DEBUG ("<-- %s COMMAND FAILED: %s\nREPLY: %s\n",
+                    event->command_name,
+                    event->error->message,
+                    reply_json);
+      bson_free (reply_json);
+   }
+
+   if (ctx->config->command_started_events_only) {
+      return;
    }
 
    BSON_ASSERT (mongoc_apm_command_failed_get_request_id (event) > 0);
@@ -202,15 +221,44 @@ failed_cb (const mongoc_apm_command_failed_t *event)
                          BCON_INT64 (event->operation_id),
                          "}");
 
+   bson_mutex_lock (&ctx->mutex);
    bson_uint32_to_string (ctx->n_events, &key, str, sizeof str);
    BSON_APPEND_DOCUMENT (&ctx->events, key, new_event);
 
    ctx->n_events++;
 
    bson_destroy (new_event);
-   bson_destroy (&reply);
+   bson_mutex_unlock (&ctx->mutex);
 }
 
+static void
+server_changed_cb (const mongoc_apm_server_changed_t *event)
+{
+   json_test_ctx_t *ctx;
+   const mongoc_server_description_t *sd;
+   const mongoc_server_description_t *prev_sd;
+
+   ctx = mongoc_apm_server_changed_get_context (event);
+   sd = mongoc_apm_server_changed_get_new_description (event);
+   prev_sd = mongoc_apm_server_changed_get_previous_description (event);
+   if (ctx->verbose) {
+      MONGOC_DEBUG ("SERVER CHANGED: (%s) %s --> %s\n",
+                    sd->host.host_and_port,
+                    mongoc_server_description_type (prev_sd),
+                    mongoc_server_description_type (sd));
+   }
+
+   bson_mutex_lock (&ctx->mutex);
+   if (sd->type == MONGOC_SERVER_UNKNOWN) {
+      ctx->total_ServerMarkedUnknownEvent++;
+   }
+   if (sd->type == MONGOC_SERVER_RS_PRIMARY &&
+       !_mongoc_host_list_compare_one (&sd->host, &ctx->primary_host)) {
+      ctx->total_PrimaryChangedEvent++;
+      memcpy (&ctx->primary_host, &sd->host, sizeof (mongoc_host_list_t));
+   }
+   bson_mutex_unlock (&ctx->mutex);
+}
 
 void
 set_apm_callbacks (json_test_ctx_t *ctx, mongoc_client_t *client)
@@ -219,13 +267,27 @@ set_apm_callbacks (json_test_ctx_t *ctx, mongoc_client_t *client)
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, started_cb);
+   /* Even if test only checks command started events (i.e.
+    * command_started_events_only is set on test config), set callbacks for the
+    * benefit of logging. */
+   mongoc_apm_set_command_succeeded_cb (callbacks, succeeded_cb);
+   mongoc_apm_set_command_failed_cb (callbacks, failed_cb);
+   mongoc_client_set_apm_callbacks (ctx->client, callbacks, ctx);
 
-   if (!ctx->config->command_started_events_only) {
-      mongoc_apm_set_command_succeeded_cb (callbacks, succeeded_cb);
-      mongoc_apm_set_command_failed_cb (callbacks, failed_cb);
-   }
+   mongoc_apm_callbacks_destroy (callbacks);
+}
 
-   mongoc_client_set_apm_callbacks (client, callbacks, ctx);
+void
+set_apm_callbacks_pooled (json_test_ctx_t *ctx, mongoc_client_pool_t *pool)
+{
+   mongoc_apm_callbacks_t *callbacks;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, started_cb);
+   mongoc_apm_set_server_changed_cb (callbacks, server_changed_cb);
+   mongoc_apm_set_command_succeeded_cb (callbacks, succeeded_cb);
+   mongoc_apm_set_command_failed_cb (callbacks, failed_cb);
+   mongoc_client_pool_set_apm_callbacks (pool, callbacks, ctx);
    mongoc_apm_callbacks_destroy (callbacks);
 }
 

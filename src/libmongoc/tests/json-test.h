@@ -105,4 +105,18 @@ install_json_test_suite (TestSuite *suite,
 #define install_json_test_suite_with_check(_suite, _dir_path, ...) \
    _install_json_test_suite_with_check (_suite, _dir_path, __VA_ARGS__, NULL)
 
+void
+set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts);
+
+void
+insert_data (const char *db_name,
+             const char *collection_name,
+             const bson_t *scenario);
+
+bool
+check_scenario_version (const bson_t *scenario);
+
+void
+check_outcome_collection (mongoc_collection_t *collection, bson_t *test);
+
 #endif

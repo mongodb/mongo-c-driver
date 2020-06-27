@@ -395,13 +395,14 @@ _server_monitor_poll_with_interrupt (mongoc_server_monitor_t *server_monitor,
    const int32_t monitor_tick_ms = 500;
    int64_t timeleft_ms;
 
-   MONITOR_LOG (server_monitor,
-                "_server_monitor_poll_with_interrupt expire_at_ms: %" PRIu64,
-                expire_at_ms);
    while ((timeleft_ms = expire_at_ms - _now_ms ()) > 0) {
       ssize_t ret;
       mongoc_stream_poll_t poller[1];
 
+      MONITOR_LOG (server_monitor,
+                   "_server_monitor_poll_with_interrupt expires in: %" PRIu64
+                   "ms",
+                   timeleft_ms);
       poller[0].stream = server_monitor->stream;
       poller[0].events =
          POLLIN; /* POLLERR and POLLHUP are added in mongoc_socket_poll. */
