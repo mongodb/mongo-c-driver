@@ -27,6 +27,16 @@ int COMMON_PREFIX (thread_join) (bson_thread_t thread)
 {
    return pthread_join (thread, NULL);
 }
+
+bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex)
+{
+   if (pthread_mutex_trylock (mutex) == 0) {
+      bson_mutex_unlock (mutex);
+      return false;
+   }
+   return true;
+}
+
 #else
 int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
                                    BSON_THREAD_FUN_TYPE (func),
