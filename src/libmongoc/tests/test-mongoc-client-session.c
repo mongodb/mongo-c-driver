@@ -14,7 +14,6 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "session-test"
 
-
 /*
  * Prevent failing on pedantic GCC/clang warning: "ISO C forbids conversion of
  * function pointer to object pointer type."
@@ -757,6 +756,32 @@ test_end_sessions_pooled (void *ctx)
    _test_end_sessions (true);
 }
 
+/* Sends ping to server via client_session.  useful for marking
+ * server_sessions as used so that they are pushed back to the session pool */
+static void
+send_ping (mongoc_client_t *client, mongoc_client_session_t *client_session)
+{
+   bson_t ping_cmd = BSON_INITIALIZER;
+   bson_t opts = BSON_INITIALIZER;
+   bson_error_t error;
+   bool ret;
+
+   BCON_APPEND (&ping_cmd, "ping", BCON_INT32 (1));
+
+   ret = mongoc_client_session_append (client_session, &opts, &error);
+   ASSERT_OR_PRINT(ret, error);
+
+   ret = mongoc_client_command_with_opts (client,
+                                          "admin",
+                                          &ping_cmd,
+                                          NULL,
+                                          &opts,
+                                          NULL,
+                                          &error);
+   ASSERT_OR_PRINT (ret, error);
+   bson_destroy(&opts);
+   bson_destroy (&ping_cmd);
+}
 
 static void
 _test_end_sessions_many (bool pooled)
@@ -782,6 +807,7 @@ _test_end_sessions_many (bool pooled)
    for (i = 0; i < sizeof sessions / sizeof (mongoc_client_session_t *); i++) {
       sessions[i] = mongoc_client_start_session (client, NULL, &error);
       ASSERT_OR_PRINT (sessions[i], error);
+      send_ping (client, sessions[i]);
    }
 
    for (i = 0; i < sizeof sessions / sizeof (mongoc_client_session_t *); i++) {
@@ -1213,7 +1239,10 @@ check_session_returned (session_test_t *test, const bson_t *lsid)
       }
    }
 
-   if (!found) {
+   /* Server session will only be returned to the pool if it has
+    * been used. It is expected behavior for found to be false if
+    * ss->last_used_usec == SESSION_NEVER_USED */
+   if (!found && ss && ss->last_used_usec != SESSION_NEVER_USED) {
       fprintf (stderr,
                "server session %s not returned to pool\n",
                bson_as_json (lsid, NULL));
@@ -2222,7 +2251,11 @@ test_cursor_implicit_session (void *ctx)
    ASSERT_POOL_SIZE (topology, 0);
    ASSERT_SESSIONS_MATCH (&test->sent_lsid, &find_lsid);
 
-   /* push a new server session into the pool */
+   /* push a new server session into the pool.  server session is only pushed
+    * if it is used.  therefore mark session as used prior to
+    * destroying session by sending a ping */
+   bson_reinit (&test->sent_lsid);
+   send_ping (test->client, cs);
    mongoc_client_session_destroy (cs);
    ASSERT_POOL_SIZE (topology, 1);
    ASSERT_SESSIONS_DIFFER (&find_lsid, &topology->session_pool->lsid);
@@ -2267,7 +2300,12 @@ test_change_stream_implicit_session (void *ctx)
    ASSERT_POOL_SIZE (topology, 0);
    BSON_ASSERT (change_stream->implicit_session);
 
-   /* push a new server session into the pool */
+
+   /* push a new server session into the pool.  server session is only pushed
+    * if it is used.  therefore mark session as used prior to
+    * destroying session by sending a ping */
+   bson_reinit (&test->sent_lsid);
+   send_ping (test->client, cs);
    mongoc_client_session_destroy (cs);
    ASSERT_POOL_SIZE (topology, 1);
    ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &topology->session_pool->lsid);

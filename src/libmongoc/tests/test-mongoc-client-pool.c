@@ -361,15 +361,58 @@ test_client_pool_destroy_without_pushing (void)
    bson_destroy (cmd);
 }
 
+static void
+command_started_cb (const mongoc_apm_command_started_t *event)
+{
+   int *count;
+
+   if (strcmp (mongoc_apm_command_started_get_command_name (event),
+               "endSessions") != 0) {
+      return;
+   }
+
+   count = (int *) mongoc_apm_command_started_get_context (event);
+   count++;
+}
+
+/* tests that creating and destroying an unused session
+ * in pooled mode does not result in an error log */
+static void
+test_client_pool_create_unused_session (void *context)
+{
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool;
+   mongoc_client_session_t *session;
+   mongoc_apm_callbacks_t *callbacks;
+   bson_error_t error;
+   int count = 0;
+
+   capture_logs (true);
+
+   callbacks = mongoc_apm_callbacks_new ();
+   pool = test_framework_client_pool_new ();
+   client = mongoc_client_pool_pop (pool);
+   session = mongoc_client_start_session (client, NULL, &error);
+
+   mongoc_apm_set_command_started_cb (callbacks, command_started_cb);
+   mongoc_client_pool_set_apm_callbacks (pool, callbacks, &count);
+
+   mongoc_client_session_destroy (session);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mongoc_apm_callbacks_destroy (callbacks);
+   ASSERT_CMPINT (count, ==, 0);
+   ASSERT_NO_CAPTURED_LOGS ("mongoc_client_pool_destroy");
+}
+
 void
 test_client_pool_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/ClientPool/basic", test_mongoc_client_pool_basic);
    TestSuite_Add (
       suite, "/ClientPool/try_pop", test_mongoc_client_pool_try_pop);
-   TestSuite_Add (suite,
-                  "/ClientPool/pop_timeout",
-                  test_mongoc_client_pool_pop_timeout);
+   TestSuite_Add (
+      suite, "/ClientPool/pop_timeout", test_mongoc_client_pool_pop_timeout);
    TestSuite_Add (suite,
                   "/ClientPool/min_size_zero",
                   test_mongoc_client_pool_min_size_zero);
@@ -384,9 +427,17 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/ClientPool/handshake", test_mongoc_client_pool_handshake);
 
+   TestSuite_AddFull (suite,
+                      "/ClientPool/create_client_pool_unused_session",
+                      test_client_pool_create_unused_session,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_sessions);
 #ifndef MONGOC_ENABLE_SSL
    TestSuite_Add (
       suite, "/ClientPool/ssl_disabled", test_mongoc_client_pool_ssl_disabled);
 #endif
-   TestSuite_AddLive (suite, "/ClientPool/destroy_without_push", test_client_pool_destroy_without_pushing);
+   TestSuite_AddLive (suite,
+                      "/ClientPool/destroy_without_push",
+                      test_client_pool_destroy_without_pushing);
 }
