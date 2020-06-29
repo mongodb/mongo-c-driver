@@ -24,8 +24,6 @@
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-error-private.h"
 
-#define SESSION_NEVER_USED (-1)
-
 #define WITH_TXN_TIMEOUT_MS (120 * 1000)
 
 static void
