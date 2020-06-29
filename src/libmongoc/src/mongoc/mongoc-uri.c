@@ -1127,6 +1127,11 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
             }
 
             if (!mongoc_uri_set_option_as_bool (uri, canon, bval)) {
+               bson_set_error (error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
+                               "Failed to set %s to %d",
+                               canon, bval);
                return false;
             }
          } else {
