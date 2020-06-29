@@ -29,11 +29,20 @@
 #define mongoc_cond_t pthread_cond_t
 #define mongoc_cond_broadcast pthread_cond_broadcast
 #define mongoc_cond_init(_n) pthread_cond_init ((_n), NULL)
+
+#ifndef MONGOC_ENABLE_TESTING
 #define mongoc_cond_wait pthread_cond_wait
+#else
+#define mongoc_cond_wait(cond, mutex)                    \
+   do {                                                  \
+      pthread_cond_wait (cond, &(mutex)->wrapped_mutex); \
+   } while (0);
+#endif
+
 #define mongoc_cond_signal pthread_cond_signal
 static BSON_INLINE int
 mongoc_cond_timedwait (pthread_cond_t *cond,
-                       pthread_mutex_t *mutex,
+                       bson_mutex_t *mutex,
                        int64_t timeout_msec)
 {
    struct timespec to;
@@ -47,10 +56,15 @@ mongoc_cond_timedwait (pthread_cond_t *cond,
    to.tv_sec = msec / 1000;
    to.tv_nsec = (msec % 1000) * 1000 * 1000;
 
+#ifndef MONGOC_ENABLE_TESTING
    return pthread_cond_timedwait (cond, mutex, &to);
+#else
+   return pthread_cond_timedwait (cond, &mutex->wrapped_mutex, &to);
+#endif
 }
 static BSON_INLINE bool
-mongo_cond_ret_is_timedout (int ret) {
+mongo_cond_ret_is_timedout (int ret)
+{
    return ret == ETIMEDOUT;
 }
 #define mongoc_cond_destroy pthread_cond_destroy
@@ -78,7 +92,8 @@ mongoc_cond_timedwait (mongoc_cond_t *cond,
    }
 }
 static BSON_INLINE bool
-mongo_cond_ret_is_timedout (int ret) {
+mongo_cond_ret_is_timedout (int ret)
+{
    return ret == WSAETIMEDOUT;
 }
 #define mongoc_cond_signal WakeConditionVariable

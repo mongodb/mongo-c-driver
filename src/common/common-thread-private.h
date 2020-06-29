@@ -29,14 +29,10 @@ BSON_BEGIN_DECLS
 
 #if defined(BSON_OS_UNIX)
 #include <pthread.h>
+
 #define BSON_ONCE_FUN(n) void n (void)
 #define BSON_ONCE_RETURN return
 #define BSON_ONCE_INIT PTHREAD_ONCE_INIT
-#define bson_mutex_destroy pthread_mutex_destroy
-#define bson_mutex_init(_n) pthread_mutex_init ((_n), NULL)
-#define bson_mutex_lock pthread_mutex_lock
-#define bson_mutex_t pthread_mutex_t
-#define bson_mutex_unlock pthread_mutex_unlock
 #define bson_once pthread_once
 #define bson_once_t pthread_once_t
 #define bson_thread_t pthread_t
@@ -44,6 +40,52 @@ BSON_BEGIN_DECLS
    void *(_function_name) (void *(_arg_name))
 #define BSON_THREAD_FUN_TYPE(_function_name) void *(*(_function_name)) (void *)
 #define BSON_THREAD_RETURN return NULL
+
+/* this macro can be defined as a as a preprocessor option
+ * with -DMONGOC_ENABLE_TESTING.  it's purpose is to allow for functions
+ * that require a mutex to be locked on entry to assert that the mutex
+ * is truly locked.
+ * this can prevent bugs where a caller forgets to lock the mutex. */
+
+#ifndef MONGOC_ENABLE_TESTING
+
+#define bson_mutex_destroy pthread_mutex_destroy
+#define bson_mutex_init(_n) pthread_mutex_init ((_n), NULL)
+#define bson_mutex_lock pthread_mutex_lock
+#define bson_mutex_t pthread_mutex_t
+#define bson_mutex_unlock pthread_mutex_unlock
+
+#else
+typedef struct {
+   bool locked_by_curr_thread;
+   pthread_mutex_t wrapped_mutex;
+} bson_mutex_t;
+
+#define bson_mutex_destroy(mutex)                      \
+   do {                                                \
+      pthread_mutex_destroy (&(mutex)->wrapped_mutex); \
+   } while (0);
+
+#define bson_mutex_init(mutex)                            \
+   do {                                                   \
+      pthread_mutex_init (&(mutex)->wrapped_mutex, NULL); \
+      (mutex)->locked_by_curr_thread = false;             \
+   } while (0);
+
+#define bson_mutex_lock(mutex)                      \
+   do {                                             \
+      pthread_mutex_lock (&(mutex)->wrapped_mutex); \
+      (mutex)->locked_by_curr_thread = true;        \
+   } while (0);
+
+#define bson_mutex_unlock(mutex)                      \
+   do {                                               \
+      pthread_mutex_unlock (&(mutex)->wrapped_mutex); \
+      (mutex)->locked_by_curr_thread = false;         \
+   } while (0);
+
+#endif
+
 #else
 #include <process.h>
 #define BSON_ONCE_FUN(n) \
