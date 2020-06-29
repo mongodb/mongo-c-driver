@@ -73,7 +73,7 @@ int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
                                    BSON_THREAD_FUN_TYPE (func),
                                    void *arg);
 
-bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t* mutex);
+bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex);
 
 BSON_END_DECLS
 

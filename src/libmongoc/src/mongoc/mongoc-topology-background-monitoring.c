@@ -272,6 +272,9 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    int i;
    bool is_srv_polling;
 
+   /* Test only assert. Is a noop unless -DMONGOC_ENABLE_TESTING is passed */
+   MONGOC_TEST_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
+
    BSON_ASSERT (!topology->single_threaded);
 
    if (topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
