@@ -127,18 +127,10 @@ if [ "TEST_1" = "$TEST_COLUMN" ]; then
 elif [ "TEST_2" = "$TEST_COLUMN" ]; then
     expect_failure
 elif [ "TEST_3" = "$TEST_COLUMN" ]; then
-    # Window does not soft-fail by default, users can disable revocation checking.
-    if [ "$OS" = "WINDOWS" ]; then
-	   MONGODB_URI="$MONGODB_URI&tlsDisableCertificateRevocationCheck=true"
-	fi
     expect_success
 elif [ "TEST_4" = "$TEST_COLUMN" ]; then
     expect_failure
 elif [ "SOFT_FAIL_TEST" = "$TEST_COLUMN" ]; then
-    # Window does not soft-fail by default, users can disable revocation checking.
-    if [ "$OS" = "WINDOWS" ]; then
-	   MONGODB_URI="$MONGODB_URI&tlsDisableCertificateRevocationCheck=true"
-	fi
     expect_success
 elif [ "MALICIOUS_SERVER_TEST_1" = "$TEST_COLUMN" ]; then
     expect_failure
