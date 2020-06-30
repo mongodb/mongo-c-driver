@@ -820,9 +820,7 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
             break;
          case CRYPT_E_NO_REVOCATION_CHECK:
             MONGOC_ERROR ("SSL Certification verification failed: certificate "
-                          "does not include revocation check. Set "
-                          "tlsDisableCertificateRevocationCheck to disable "
-                          "revocation checking");
+                          "does not include revocation check.");
             break;
 
          case SEC_E_INSUFFICIENT_MEMORY:

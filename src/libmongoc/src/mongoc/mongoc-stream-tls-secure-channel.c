@@ -974,15 +974,15 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    schannel_cred.dwFlags = SCH_USE_STRONG_CRYPTO;
 #endif
 
+   /* By default, enable soft failing.
+    * A certificate with no revocation check is a soft failure. */
+   schannel_cred.dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
+   /* An offline OCSP responder / CRL distribution list is a soft failure. */
+   schannel_cred.dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
+
    if (opt->weak_cert_validation) {
-      schannel_cred.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION |
-                               SCH_CRED_IGNORE_NO_REVOCATION_CHECK |
-                               SCH_CRED_IGNORE_REVOCATION_OFFLINE;
+      schannel_cred.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
       TRACE ("%s", "disabled server certificate checks");
-   } else if (_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
-      schannel_cred.dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK |
-                               SCH_CRED_IGNORE_REVOCATION_OFFLINE;
-      TRACE ("%s", "disabled server certificate revocation checks");
    } else {
       schannel_cred.dwFlags |=
          SCH_CRED_AUTO_CRED_VALIDATION | SCH_CRED_REVOCATION_CHECK_CHAIN;
@@ -990,8 +990,7 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    }
 
    if (opt->allow_invalid_hostname) {
-      schannel_cred.dwFlags |=
-         SCH_CRED_NO_SERVERNAME_CHECK | SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
+      schannel_cred.dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
    }
 
    if (opt->ca_file) {
@@ -1062,6 +1061,11 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    if (_mongoc_ssl_opts_disable_ocsp_endpoint_check (opt)) {
       MONGOC_ERROR ("Setting tlsDisableOCSPEndpointCheck has no effect when "
                     "built against Secure Channel");
+   }
+
+   if (_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
+      MONGOC_ERROR ("Setting tlsDisableCertificateRevocationCheck has no "
+                    "effect when built Secure Channel");
    }
 
    mongoc_counter_streams_active_inc ();
