@@ -913,7 +913,8 @@ class OCSPTask(MatrixTask):
                          'malicious_server_test_2', 'cache']),
                ('delegate', ['delegate', 'nodelegate']),
                ('cert', ['rsa', 'ecdsa']),
-               ('ssl', ['openssl', 'openssl-1.0.1', 'darwinssl', 'winssl'])])
+               ('ssl', ['openssl', 'openssl-1.0.1', 'darwinssl', 'winssl']),
+               ('version', ['latest', '4.4'])])
 
     name_prefix = 'test-ocsp'
 
@@ -925,7 +926,7 @@ class OCSPTask(MatrixTask):
     @property
     def name(self):
         return 'ocsp-' + self.display('ssl') + '-' + self.display('test') + '-' + self.display(
-            'cert') + '-' + self.display('delegate')
+            'cert') + '-' + self.display('delegate') + '-' + self.display('version')
 
     def to_dict(self):
         task = super(MatrixTask, self).to_dict()
@@ -940,7 +941,7 @@ class OCSPTask(MatrixTask):
             stapling = 'mustStaple-disableStapling'
 
         orchestration_file = '%s-basic-tls-ocsp-%s' % (self.cert, stapling)
-        orchestration = bootstrap(TOPOLOGY='server', SSL='ssl', OCSP='on', ORCHESTRATION_FILE=orchestration_file)
+        orchestration = bootstrap(VERSION=self.version, TOPOLOGY='server', SSL='ssl', OCSP='on', ORCHESTRATION_FILE=orchestration_file)
 
         # The cache test expects a revoked response from an OCSP responder, exactly like TEST_4.
         test_column = 'TEST_4' if self.test == 'cache' else self.test.upper()
