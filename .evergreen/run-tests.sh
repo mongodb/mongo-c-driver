@@ -13,6 +13,7 @@ DNS=${DNS:-nodns}
 # AddressSanitizer configuration
 export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
 export ASAN_SYMBOLIZER_PATH="/opt/mongodbtoolchain/v3/bin/llvm-symbolizer"
+export TSAN_OPTIONS="suppressions=./.tsan-suppressions"
 
 echo "COMPRESSORS='${COMPRESSORS}' CC='${CC}' AUTH=${AUTH} SSL=${SSL} URI=${URI} IPV4_ONLY=${IPV4_ONLY} VALGRIND=${VALGRIND} MONGOC_TEST_URI=${MONGOC_TEST_URI}"
 

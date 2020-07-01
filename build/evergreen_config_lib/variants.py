@@ -592,5 +592,11 @@ all_variants = [
     Variant ('packaging', 'Linux Distro Packaging', 'ubuntu1604-test', [
         'debian-package-build',
         OD([('name', 'rpm-package-build'), ('distros', ['rhel80-test'])]),
-    ], {}, batchtime=days(1))
+    ], {}, batchtime=days(1)),
+    Variant('tsan-ubuntu',
+        'Thread Sanitizer (TSAN) Tests (Ubuntu 16.04)',
+        'ubuntu1604-small',
+        ['.tsan'],
+        {'CC': '/opt/mongodbtoolchain/v3/bin/clang'},
+        batchtime=days(7))
 ]
