@@ -1858,6 +1858,26 @@ tasks:
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
+- name: debug-compile-tsan-openssl
+  tags:
+  - special
+  - tsan
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-fsanitize=thread -fno-omit-frame-pointer"
+        export CHECK_LOG="ON"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF"
+        export SSL="OPENSSL"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - func: upload build
 - name: test-valgrind-latest-server-auth-nosasl-openssl
   tags:
   - latest
@@ -4140,6 +4160,930 @@ tasks:
       ASAN: 'on'
       AUTH: noauth
       SSL: nossl
+      VALGRIND: 'off'
+- name: test-tsan-latest-server-auth-nosasl-openssl
+  tags:
+  - latest
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-latest-server-noauth-nosasl-openssl
+  tags:
+  - latest
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-latest-replica-set-auth-nosasl-openssl
+  tags:
+  - latest
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-latest-replica-set-noauth-nosasl-openssl
+  tags:
+  - latest
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-latest-sharded-auth-nosasl-openssl
+  tags:
+  - latest
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-latest-sharded-noauth-nosasl-openssl
+  tags:
+  - latest
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.4-server-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.4-server-noauth-nosasl-openssl
+  tags:
+  - '4.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.4-replica-set-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.4-replica-set-noauth-nosasl-openssl
+  tags:
+  - '4.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.4-sharded-auth-nosasl-openssl
+  tags:
+  - '4.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.4-sharded-noauth-nosasl-openssl
+  tags:
+  - '4.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.2-server-auth-nosasl-openssl
+  tags:
+  - '4.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.2-server-noauth-nosasl-openssl
+  tags:
+  - '4.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.2-replica-set-auth-nosasl-openssl
+  tags:
+  - '4.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.2-replica-set-noauth-nosasl-openssl
+  tags:
+  - '4.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.2-sharded-auth-nosasl-openssl
+  tags:
+  - '4.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.2-sharded-noauth-nosasl-openssl
+  tags:
+  - '4.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.0-server-auth-nosasl-openssl
+  tags:
+  - '4.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.0-server-noauth-nosasl-openssl
+  tags:
+  - '4.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.0-replica-set-auth-nosasl-openssl
+  tags:
+  - '4.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.0-replica-set-noauth-nosasl-openssl
+  tags:
+  - '4.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.0-sharded-auth-nosasl-openssl
+  tags:
+  - '4.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-4.0-sharded-noauth-nosasl-openssl
+  tags:
+  - '4.0'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.6-server-auth-nosasl-openssl
+  tags:
+  - '3.6'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.6-server-noauth-nosasl-openssl
+  tags:
+  - '3.6'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.6-replica-set-auth-nosasl-openssl
+  tags:
+  - '3.6'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.6-replica-set-noauth-nosasl-openssl
+  tags:
+  - '3.6'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.6-sharded-auth-nosasl-openssl
+  tags:
+  - '3.6'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.6-sharded-noauth-nosasl-openssl
+  tags:
+  - '3.6'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.4-server-auth-nosasl-openssl
+  tags:
+  - '3.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.4-server-noauth-nosasl-openssl
+  tags:
+  - '3.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.4-replica-set-auth-nosasl-openssl
+  tags:
+  - '3.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.4-replica-set-noauth-nosasl-openssl
+  tags:
+  - '3.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.4-sharded-auth-nosasl-openssl
+  tags:
+  - '3.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.4-sharded-noauth-nosasl-openssl
+  tags:
+  - '3.4'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.2-server-auth-nosasl-openssl
+  tags:
+  - '3.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.2-server-noauth-nosasl-openssl
+  tags:
+  - '3.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: server
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.2-replica-set-auth-nosasl-openssl
+  tags:
+  - '3.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.2-replica-set-noauth-nosasl-openssl
+  tags:
+  - '3.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: replica_set
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.2-sharded-auth-nosasl-openssl
+  tags:
+  - '3.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl
+      VALGRIND: 'off'
+- name: test-tsan-3.2-sharded-noauth-nosasl-openssl
+  tags:
+  - '3.2'
+  - tsan
+  depends_on:
+    name: debug-compile-tsan-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-tsan-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl
       VALGRIND: 'off'
 - name: test-coverage-latest-server-auth-nosasl-openssl
   tags:
@@ -14025,6 +14969,7 @@ tasks:
         set -o xtrace
         # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
         . .evergreen/find-cmake.sh
+        export CC=${CC}
         $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
   - func: upload build
@@ -19423,3 +20368,11 @@ buildvariants:
     distros:
     - rhel80-test
   batchtime: 1440
+- name: tsan-ubuntu
+  display_name: Thread Sanitizer (TSAN) Tests (Ubuntu 16.04)
+  expansions:
+    CC: /opt/mongodbtoolchain/v3/bin/clang
+  run_on: ubuntu1604-small
+  tasks:
+  - .tsan
+  batchtime: 10080

@@ -416,13 +416,18 @@ all_tasks = [
         'debug-compile', 'asan-clang'], SSL="OPENSSL"),
     CompileTask('debug-compile-nosasl-openssl-1.0.1',
                 prefix_commands=[func("install ssl", SSL="openssl-1.0.1u")],
-                CFLAGS="-Wno-redundant-decls", SSL="OPENSSL", SASL="OFF")
+                CFLAGS="-Wno-redundant-decls", SSL="OPENSSL", SASL="OFF"),
+    SpecialTask('debug-compile-tsan-openssl',
+                tags=['tsan'],
+                CFLAGS='-fsanitize=thread -fno-omit-frame-pointer',
+                CHECK_LOG='ON',
+                SSL='OPENSSL',
+                EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF')
 ]
-
 
 class IntegrationTask(MatrixTask):
     axes = OD([('valgrind', ['valgrind', False]),
-               ('asan', ['asan', False]),
+               ('sanitizer', ['asan', 'tsan', False]),
                ('coverage', ['coverage', False]),
                ('version', ['latest', '4.4', '4.2', '4.0',
                             '3.6', '3.4', '3.2', '3.0']),
@@ -442,9 +447,12 @@ class IntegrationTask(MatrixTask):
             self.add_tags('test-coverage')
             self.add_tags(self.version)
             self.options['exec_timeout_secs'] = 3600
-        elif self.asan:
+        elif self.sanitizer == "asan":
             self.add_tags('test-asan', self.version)
             self.options['exec_timeout_secs'] = 3600
+        elif self.sanitizer == "tsan":
+            self.add_tags('tsan')
+            self.add_tags(self.version)
         else:
             self.add_tags(self.topology,
                           self.version,
@@ -458,14 +466,16 @@ class IntegrationTask(MatrixTask):
         # Coverage tasks use a build function instead of depending on a task.
         if self.valgrind:
             self.add_dependency('debug-compile-valgrind')
-        elif self.asan and self.ssl and self.cse:
+        elif self.sanitizer == "asan" and self.ssl and self.cse:
             self.add_dependency('debug-compile-asan-%s-cse' % (
                 self.display('ssl'),))
-        elif self.asan and self.ssl:
+        elif self.sanitizer == "asan" and self.ssl:
             self.add_dependency('debug-compile-asan-clang-%s' % (
                 self.display('ssl'),))
-        elif self.asan:
+        elif self.sanitizer == "asan":
             self.add_dependency('debug-compile-asan-clang')
+        elif self.sanitizer == 'tsan' and self.ssl:
+            self.add_dependency('debug-compile-tsan-%s' % self.display('ssl'))
         elif self.cse:
             self.add_dependency('debug-compile-%s-%s-cse' %
                                 (self.display('sasl'), self.display('ssl')))
@@ -505,7 +515,7 @@ class IntegrationTask(MatrixTask):
         if self.cse:
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
         commands.append(run_tests(VALGRIND=self.on_off('valgrind'),
-                                  ASAN=self.on_off('asan'),
+                                  ASAN='on' if self.sanitizer == 'asan' else 'off',
                                   AUTH=self.display('auth'),
                                   SSL=self.display('ssl'),
                                   **extra))
@@ -515,9 +525,17 @@ class IntegrationTask(MatrixTask):
         return task
 
     def _check_allowed(self):
+        if self.sanitizer == 'tsan':
+            require (self.ssl == 'openssl')
+            prohibit (self.sasl)
+            prohibit (self.valgrind)
+            prohibit (self.coverage)
+            prohibit (self.cse)
+            prohibit (self.version == "3.0")
+
         if self.valgrind:
             prohibit(self.cse)
-            prohibit(self.asan)
+            prohibit(self.sanitizer)
             prohibit(self.sasl)
             require(self.ssl in ('openssl', False))
             prohibit(self.coverage)
@@ -548,7 +566,7 @@ class IntegrationTask(MatrixTask):
             else:
                 prohibit(self.ssl)
 
-        if self.asan:
+        if self.sanitizer == "asan":
             prohibit(self.sasl)
             prohibit(self.coverage)
 
@@ -561,7 +579,7 @@ class IntegrationTask(MatrixTask):
         if self.cse:
             require(self.version == 'latest' or parse_version(self.version) >= parse_version("4.2"))
             require(self.topology == 'server')
-            if not self.asan:
+            if self.sanitizer != "asan":
                 # limit to SASL=AUTO to reduce redundant tasks.
                 require(self.sasl)
                 require(self.sasl != 'sspi')
@@ -879,6 +897,7 @@ all_tasks = chain(all_tasks, IPTask.matrix())
 aws_compile_task = NamedTask('debug-compile-aws', commands=[shell_mongoc('''
         # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
         . .evergreen/find-cmake.sh
+        export CC=${CC}
         $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
 '''), func('upload build')])
