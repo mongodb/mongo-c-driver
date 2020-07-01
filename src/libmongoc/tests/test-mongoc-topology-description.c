@@ -19,13 +19,16 @@ _test_has_readable_writable_server (bool pooled)
    mongoc_read_prefs_t *prefs;
    bool r;
    bson_error_t error;
+   mongoc_topology_t *topology;
 
    if (pooled) {
       pool = test_framework_client_pool_new ();
-      td = &_mongoc_client_pool_get_topology (pool)->description;
+      topology = _mongoc_client_pool_get_topology (pool);
+      td = &topology->description;
    } else {
       client = test_framework_client_new ();
       td = &client->topology->description;
+      topology = client->topology;
    }
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -45,15 +48,21 @@ _test_has_readable_writable_server (bool pooled)
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
+   bson_mutex_lock (&topology->mutex);
    ASSERT (mongoc_topology_description_has_writable_server (td));
    ASSERT (mongoc_topology_description_has_readable_server (td, NULL));
+   bson_mutex_unlock (&topology->mutex);
 
    if (test_framework_is_replset ()) {
       /* prefs still don't match any server */
+      bson_mutex_lock (&topology->mutex);
       ASSERT (!mongoc_topology_description_has_readable_server (td, prefs));
+      bson_mutex_unlock (&topology->mutex);
    } else {
       /* topology type single ignores read preference */
+      bson_mutex_lock (&topology->mutex);
       ASSERT (mongoc_topology_description_has_readable_server (td, prefs));
+      bson_mutex_unlock (&topology->mutex);
    }
 
    mongoc_read_prefs_destroy (prefs);
