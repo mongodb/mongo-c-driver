@@ -1050,7 +1050,7 @@ tasks:
         set -o errexit
         set -o xtrace
         export CC="clang-3.8"
-        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK -DMONGOC_ENABLE_TESTING"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
@@ -1096,7 +1096,7 @@ tasks:
         set -o errexit
         set -o xtrace
         export CC="clang-3.8"
-        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK -DMONGOC_ENABLE_TESTING"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
@@ -1120,7 +1120,7 @@ tasks:
         set -o errexit
         set -o xtrace
         export CC="clang-3.8"
-        export CFLAGS="-fsanitize=undefined -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fsanitize=undefined -fno-omit-frame-pointer -DBSON_MEMCHECK -DMONGOC_ENABLE_TESTING"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
@@ -1819,7 +1819,7 @@ tasks:
       script: |-
         set -o errexit
         set -o xtrace
-        export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK -DMONGOC_ENABLE_TESTING"
         export CHECK_LOG="ON"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF -DENABLE_EXTRA_ALIGNMENT=OFF"
@@ -1830,7 +1830,7 @@ tasks:
         rm CMakeCache.txt
         set -o errexit
         set -o xtrace
-        export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
+        export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK -DMONGOC_ENABLE_TESTING"
         export CHECK_LOG="ON"
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
@@ -14712,7 +14712,7 @@ tasks:
       script: |-
         set -o errexit
         set -o xtrace
-        VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
+        VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK -DMONGOC_ENABLE_TESTING' sh .evergreen/compile.sh
   - func: run auth tests
     vars:
       valgrind: 'true'
