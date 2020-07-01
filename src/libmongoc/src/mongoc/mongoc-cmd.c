@@ -116,6 +116,7 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
    uint32_t len;
    const uint8_t *data;
    bson_t read_concern;
+   const char *to_append;
 
    ENTRY;
 
@@ -184,7 +185,13 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
          continue;
       }
 
-      if (!bson_append_iter (&parts->extra, bson_iter_key (iter), -1, iter)) {
+      to_append = bson_iter_key (iter);
+      if (!bson_append_iter (&parts->extra, to_append, -1, iter)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Failed to append \"%s\" to create command.",
+                         to_append);
          RETURN (false);
       }
    }
