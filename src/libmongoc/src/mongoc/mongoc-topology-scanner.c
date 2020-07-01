@@ -903,6 +903,10 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
                            0 /* delay */);
       RETURN (true);
    }
+   bson_set_error (error,
+                   MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_CONNECT,
+                   "Failed to create TLS stream");
    RETURN (false);
 #endif
 }

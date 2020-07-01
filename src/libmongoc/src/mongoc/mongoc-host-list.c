@@ -236,15 +236,31 @@ _mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_,
       /* if present, the port should immediately follow after ] */
       sport = strchr (close_bracket, ':');
       if (sport > close_bracket + 1) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "If present, port should immediately follow the \"]\""
+                         "in an IPv6 address"
+                         );
          return false;
       }
 
       /* otherwise ] should be the last char. */
       if (!sport && *(close_bracket + 1) != '\0') {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "If port is not supplied, \"[\" should be the last"
+                         "character");
          return false;
       }
 
       if (*address != '[') {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Missing matching bracket \"[\""
+                         );
          return false;
       }
 
@@ -259,10 +275,20 @@ _mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_,
    if (sport) {
       if (sport == address) {
          /* bad address like ":27017" */
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Bad address, \":\" should not be first character"
+                        );
          return false;
       }
 
       if (!mongoc_parse_port (&port, sport + 1)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Port could not be parsed"
+                        );
          return false;
       }
 
