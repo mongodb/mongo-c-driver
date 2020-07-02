@@ -28,7 +28,7 @@ all_functions = OD([
             ]))]),
         shell_mongoc(r'''
         # TODO: CDRIVER-3573 do not hardcode the version.
-        if [ "${project}" != "mongoc-c-driver" ]; then
+        if [ "${project}" != "mongo-c-driver" ]; then
            # This is an older branch, like r1.17
            VERSION_CURRENT="1.17.0-pre"
            echo $VERSION_CURRENT > "VERSION_CURRENT"
