@@ -8,7 +8,7 @@
 #            Variables                #
 #######################################
 
-c_driver_variables:
+variables:
 
   ## Task list
   benchmark_compile: &benchmark_compile
@@ -20,6 +20,8 @@ c_driver_variables:
   mongo_download_url_prefixes:
     mongo_v32: &mongo_v32
       mongo_url: "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.2.10.tgz"
+    mongo_v44: &mongo_v44
+      mongo_url: "http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel62-v4.4-latest.tgz"
 
   ## Common sets of CFLAGS
   cflags:
@@ -35,7 +37,8 @@ c_driver_variables:
           set -o verbose
           . "./.evergreen/find-cmake.sh"
 
-          $CMAKE -DENABLE_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=mongoc . && make -j8 && make install
+          # Disable zstd. centos6-perf does not have libzstd installed.
+          $CMAKE -DENABLE_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -DENABLE_ZSTD=OFF -DCMAKE_INSTALL_PREFIX=mongoc . && make -j8 && make install
           git clone git@github.com:mongodb/mongo-c-driver-performance.git
           cd mongo-c-driver-performance
           $CMAKE -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=../mongoc . && make -j8
@@ -270,6 +273,16 @@ buildvariants:
   expansions:
     <<: *cflags_64
     <<: *mongo_v32
+    <<: *benchmark_common
+  run_on:
+     - centos6-perf
+  tasks: *benchmark_tests
+
+- name: c-driver-benchmark-mongo44
+  display_name: "C Driver Benchmark Mongo 4.4"
+  expansions:
+    <<: *cflags_64
+    <<: *mongo_v44
     <<: *benchmark_common
   run_on:
      - centos6-perf
