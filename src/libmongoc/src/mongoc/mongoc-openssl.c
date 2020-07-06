@@ -658,7 +658,8 @@ _contact_ocsp_responder (OCSP_CERTID *id, X509 *peer)
 {
    STACK_OF (OPENSSL_STRING) *url_stack = NULL;
    OPENSSL_STRING url = NULL, host = NULL, path = NULL, port = NULL;
-   OCSP_REQUEST *req = NULL;
+   OCSP_REQUEST *req;
+   OCSP_REQ_CTX *sendreq_ctx = NULL;
    OCSP_RESPONSE *resp = NULL;
    BIO *bio = NULL;
    int i, ssl;
@@ -702,12 +703,39 @@ _contact_ocsp_responder (OCSP_CERTID *id, X509 *peer)
          GOTO (retry);
       }
 
-      if (!(resp = OCSP_sendreq_bio (bio, path, req))) {
-         MONGOC_DEBUG (
-            "Could not perform an OCSP request for url '%s'. Error: %s",
-            url,
-            ERR_STR);
+      /* Leave OCSP request NULL, set it onto the request context after setting
+       * the host header. */
+      sendreq_ctx =
+         OCSP_sendreq_new (bio, path, NULL /* OCSP request */, 0 /* maxline */);
+      if (host) {
+         if (0 == OCSP_REQ_CTX_add1_header (sendreq_ctx, "Host", host)) {
+            MONGOC_DEBUG ("Could not set OCSP request header for host: %s",
+                          host);
+            GOTO (retry);
+         }
       }
+
+      if (0 == OCSP_REQ_CTX_set1_req (sendreq_ctx, req)) {
+         MONGOC_DEBUG ("Could not set OCSP request");
+         GOTO (retry);
+      }
+
+      do {
+         int ret = OCSP_sendreq_nbio (&resp, sendreq_ctx);
+         if (ret == 1) {
+            /* Success. */
+            break;
+         } else if (ret == -1 && BIO_should_retry (bio)) {
+            /* Non-blocking write not finished, repeat. */
+            continue;
+         } else {
+            MONGOC_DEBUG ("Could not send OCSP request for url '%s'. Error: %s",
+                          url,
+                          ERR_STR);
+            GOTO (retry);
+         }
+      } while (true);
+
    retry:
       if (bio)
          BIO_free_all (bio);
@@ -719,6 +747,8 @@ _contact_ocsp_responder (OCSP_CERTID *id, X509 *peer)
          OPENSSL_free (path);
       if (req)
          OCSP_REQUEST_free (req);
+      if (sendreq_ctx)
+         OCSP_REQ_CTX_free (sendreq_ctx);
    }
 
    if (url_stack)

@@ -92,6 +92,7 @@ expect_failure () {
     echo "Should fail:"
     if $MONGOC_PING $MONGODB_URI >output.txt 2>&1; then
         echo "Unexpected - succeeded but it should not have"
+        cat output.txt
         exit 1
     else
         echo "failed as expected"
