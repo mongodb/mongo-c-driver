@@ -719,7 +719,6 @@ done:
 static void
 mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
 {
-   bson_mutex_unlock (&topology->mutex);
    /* Test only assert. Is a noop unless -DMONGOC_ENABLE_TESTING is passed */
    MONGOC_TEST_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
