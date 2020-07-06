@@ -15,6 +15,7 @@
  */
 
 #include "common-prelude.h"
+#include "common-config.h"
 
 #ifndef COMMON_THREAD_PRIVATE_H
 #define COMMON_THREAD_PRIVATE_H

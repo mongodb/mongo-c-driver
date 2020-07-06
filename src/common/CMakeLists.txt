@@ -1,3 +1,16 @@
+
+set (MONGOC_ENABLE_TESTING 0)
+
+if (ENABLE_TESTING)
+    set (MONGOC_ENABLE_TESTING 1)
+    unset (ENABLE_TESTING CACHE)
+endif ()
+
+configure_file (
+        "${PROJECT_SOURCE_DIR}/src/common/common-config.h.in"
+        "${PROJECT_SOURCE_DIR}/src/common/common-config.h"
+)
+
 set (src_common_DIST_noinst_hs
    common-b64-private.h
    common-md5-private.h

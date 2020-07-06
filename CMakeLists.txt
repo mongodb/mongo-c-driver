@@ -61,6 +61,7 @@ option (ENABLE_PIC
    "Enables building of position independent code for static library components."
    ON
 )
+option (ENABLE_TESTING "Turn on mutex lock asserts" OFF)
 
 project (mongo-c-driver C)
 
