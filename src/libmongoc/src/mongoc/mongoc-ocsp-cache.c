@@ -174,10 +174,8 @@ _mongoc_ocsp_cache_get_status (OCSP_CERTID *id,
 
    *cert_status = entry->cert_status;
    *reason = entry->reason;
-   *this_update =
-      ASN1_item_dup (ASN1_ITEM_rptr (ASN1_TIME), entry->this_update);
-   *next_update =
-      ASN1_item_dup (ASN1_ITEM_rptr (ASN1_TIME), entry->next_update);
+   *this_update = entry->this_update;
+   *next_update = entry->next_update;
 
    ret = true;
 done:
