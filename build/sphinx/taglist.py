@@ -24,7 +24,10 @@ THE SOFTWARE.
 """
 
 from docutils import nodes, utils
-from sphinx.environment import NoUri
+try:
+    from sphinx.environment import NoUri
+except ImportError:
+    from sphinx.errors import NoUri
 try:
     from sphinx.util.compat import Directive
 except ImportError:
