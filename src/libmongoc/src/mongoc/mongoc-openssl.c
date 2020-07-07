@@ -874,8 +874,12 @@ _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
     * 2. Next, the function verifies the signature of the basic response.
     * 3. Finally, the function validates the signer cert, constructing the
     * validation path via the untrusted cert chain.
+    *
+    * cert_chain has already been verified. Use OCSP_TRUSTOTHER so the signer
+    * certificate can be considered verified if it is in cert_chain.
     */
-   if (OCSP_basic_verify (basic, cert_chain, store, 0) != OCSP_VERIFY_SUCCESS) {
+   if (OCSP_basic_verify (basic, cert_chain, store, OCSP_TRUSTOTHER) !=
+       OCSP_VERIFY_SUCCESS) {
       SOFT_FAIL ("OCSP response failed verification: %s", ERR_STR);
       ret = OCSP_CB_ERROR;
       GOTO (done);
