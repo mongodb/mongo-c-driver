@@ -658,7 +658,7 @@ _contact_ocsp_responder (OCSP_CERTID *id, X509 *peer)
 {
    STACK_OF (OPENSSL_STRING) *url_stack = NULL;
    OPENSSL_STRING url = NULL, host = NULL, path = NULL, port = NULL;
-   OCSP_REQUEST *req;
+   OCSP_REQUEST *req = NULL;
    OCSP_REQ_CTX *sendreq_ctx = NULL;
    OCSP_RESPONSE *resp = NULL;
    BIO *bio = NULL;

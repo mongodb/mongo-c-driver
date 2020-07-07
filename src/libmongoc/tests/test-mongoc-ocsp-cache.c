@@ -60,23 +60,23 @@ create_cert_id (long serial)
 static void
 test_mongoc_cache_insert (void)
 {
-   ASN1_GENERALIZEDTIME *this_update, *next_update;
+   ASN1_GENERALIZEDTIME *this_update_in, *next_update_in;
+   ASN1_GENERALIZEDTIME *this_update_out, *next_update_out;
    int i, size = 5, status = V_OCSP_CERTSTATUS_GOOD,
           reason = OCSP_REVOKED_STATUS_NOSTATUS;
 
    CLEAR_CACHE;
 
-   next_update = ASN1_GENERALIZEDTIME_set (NULL, time (NULL) + 999);
-   this_update = ASN1_GENERALIZEDTIME_set (NULL, time (NULL));
+   next_update_in = ASN1_GENERALIZEDTIME_set (NULL, time (NULL) + 999);
+   this_update_in = ASN1_GENERALIZEDTIME_set (NULL, time (NULL));
    for (i = 0; i < size; i++) {
-      ASN1_GENERALIZEDTIME *thisupd, *nextupd;
       int s, r;
       OCSP_CERTID *id = create_cert_id (i);
 
-      BSON_ASSERT (
-         !_mongoc_ocsp_cache_get_status (id, &s, &r, &thisupd, &nextupd));
+      BSON_ASSERT (!_mongoc_ocsp_cache_get_status (
+         id, &s, &r, &this_update_out, &next_update_out));
       _mongoc_ocsp_cache_set_resp (
-         id, status, reason, this_update, next_update);
+         id, status, reason, this_update_in, next_update_in);
 
       OCSP_CERTID_free (id);
    }
@@ -84,105 +84,97 @@ test_mongoc_cache_insert (void)
    BSON_ASSERT (_mongoc_ocsp_cache_length () == size);
 
    for (i = 0; i < size; i++) {
-      ASN1_GENERALIZEDTIME *thisupd, *nextupd;
       OCSP_CERTID *id = create_cert_id (i);
       int s, r;
 
-      BSON_ASSERT (
-         _mongoc_ocsp_cache_get_status (id, &s, &r, &thisupd, &nextupd));
+      BSON_ASSERT (_mongoc_ocsp_cache_get_status (
+         id, &s, &r, &this_update_out, &next_update_out));
 
       BSON_ASSERT (status == s);
       BSON_ASSERT (reason == r);
-      ASSERT_TIME_EQUAL (next_update, nextupd);
-      ASSERT_TIME_EQUAL (this_update, thisupd);
+      ASSERT_TIME_EQUAL (next_update_in, next_update_out);
+      ASSERT_TIME_EQUAL (this_update_in, this_update_out);
 
-      ASN1_GENERALIZEDTIME_free (thisupd);
-      ASN1_GENERALIZEDTIME_free (nextupd);
       OCSP_CERTID_free (id);
    }
 
-   ASN1_GENERALIZEDTIME_free (next_update);
-   ASN1_GENERALIZEDTIME_free (this_update);
    CLEAR_CACHE;
+   ASN1_GENERALIZEDTIME_free (this_update_in);
+   ASN1_GENERALIZEDTIME_free (next_update_in);
 }
 
 static void
 test_mongoc_cache_update (void)
 {
    OCSP_CERTID *id;
-   ASN1_GENERALIZEDTIME *next_update, *nextupd, *thisupd;
+   ASN1_GENERALIZEDTIME *next_update_in, *next_update_out, *this_update_out;
    int status, reason;
 
    CLEAR_CACHE;
 
-   next_update = ASN1_GENERALIZEDTIME_set (NULL, time (NULL));
+   next_update_in = ASN1_GENERALIZEDTIME_set (NULL, time (NULL));
    id = create_cert_id (1);
 
    _mongoc_ocsp_cache_set_resp (
-      id, V_OCSP_CERTSTATUS_GOOD, 0, NULL, next_update);
+      id, V_OCSP_CERTSTATUS_GOOD, 0, NULL, next_update_in);
    BSON_ASSERT (_mongoc_ocsp_cache_length () == 1);
 
-   BSON_ASSERT (
-      _mongoc_ocsp_cache_get_status (id, &status, &reason, &thisupd, &nextupd));
+   BSON_ASSERT (_mongoc_ocsp_cache_get_status (
+      id, &status, &reason, &this_update_out, &next_update_out));
    BSON_ASSERT (status == V_OCSP_CERTSTATUS_GOOD);
 
-   ASN1_GENERALIZEDTIME_free (next_update);
-   next_update = ASN1_GENERALIZEDTIME_set (
+   ASN1_GENERALIZEDTIME_free (next_update_in);
+   next_update_in = ASN1_GENERALIZEDTIME_set (
       NULL, time (NULL) + 999 /* some time in the future */);
 
    _mongoc_ocsp_cache_set_resp (
-      id, V_OCSP_CERTSTATUS_REVOKED, 0, NULL, next_update);
+      id, V_OCSP_CERTSTATUS_REVOKED, 0, NULL, next_update_in);
    BSON_ASSERT (_mongoc_ocsp_cache_length () == 1);
 
-   ASN1_GENERALIZEDTIME_free (nextupd);
-   ASN1_GENERALIZEDTIME_free (thisupd);
-   BSON_ASSERT (
-      _mongoc_ocsp_cache_get_status (id, &status, &reason, &thisupd, &nextupd));
+   BSON_ASSERT (_mongoc_ocsp_cache_get_status (
+      id, &status, &reason, &this_update_out, &next_update_out));
    BSON_ASSERT (status == V_OCSP_CERTSTATUS_REVOKED);
 
-   ASN1_GENERALIZEDTIME_free (next_update);
-   next_update = ASN1_GENERALIZEDTIME_set (
+   ASN1_GENERALIZEDTIME_free (next_update_in);
+   next_update_in = ASN1_GENERALIZEDTIME_set (
       NULL, time (NULL) - 999 /* some time in the past */);
 
    _mongoc_ocsp_cache_set_resp (
-      id, V_OCSP_CERTSTATUS_GOOD, 0, NULL, next_update);
+      id, V_OCSP_CERTSTATUS_GOOD, 0, NULL, next_update_in);
    BSON_ASSERT (_mongoc_ocsp_cache_length () == 1);
 
-   ASN1_GENERALIZEDTIME_free (nextupd);
-   ASN1_GENERALIZEDTIME_free (thisupd);
-   BSON_ASSERT (
-      _mongoc_ocsp_cache_get_status (id, &status, &reason, &thisupd, &nextupd));
+   BSON_ASSERT (_mongoc_ocsp_cache_get_status (
+      id, &status, &reason, &this_update_out, &next_update_out));
    BSON_ASSERT (status == V_OCSP_CERTSTATUS_REVOKED);
 
    CLEAR_CACHE;
 
-   ASN1_GENERALIZEDTIME_free (nextupd);
-   ASN1_GENERALIZEDTIME_free (thisupd);
-   ASN1_GENERALIZEDTIME_free (next_update);
+   ASN1_GENERALIZEDTIME_free (next_update_in);
    OCSP_CERTID_free (id);
 }
 
 static void
 test_mongoc_cache_remove_expired_cert (void)
 {
-   ASN1_GENERALIZEDTIME *this_update, *next_update;
+   ASN1_GENERALIZEDTIME *this_update_in, *next_update_in;
    int status = V_OCSP_CERTSTATUS_GOOD, reason = OCSP_REVOKED_STATUS_NOSTATUS;
    OCSP_CERTID *id = create_cert_id (1);
 
    CLEAR_CACHE;
 
-   next_update = ASN1_GENERALIZEDTIME_set (NULL, time (NULL) - 1);
-   this_update = ASN1_GENERALIZEDTIME_set (NULL, time (NULL) - 999);
+   next_update_in = ASN1_GENERALIZEDTIME_set (NULL, time (NULL) - 1);
+   this_update_in = ASN1_GENERALIZEDTIME_set (NULL, time (NULL) - 999);
 
-   _mongoc_ocsp_cache_set_resp (id, status, reason, this_update, next_update);
+   _mongoc_ocsp_cache_set_resp (
+      id, status, reason, this_update_in, next_update_in);
 
    BSON_ASSERT (_mongoc_ocsp_cache_length () == 1);
    BSON_ASSERT (!_mongoc_ocsp_cache_get_status (id, NULL, NULL, NULL, NULL));
    BSON_ASSERT (_mongoc_ocsp_cache_length () == 0);
 
    OCSP_CERTID_free (id);
-   ASN1_GENERALIZEDTIME_free (next_update);
-   ASN1_GENERALIZEDTIME_free (this_update);
+   ASN1_GENERALIZEDTIME_free (next_update_in);
+   ASN1_GENERALIZEDTIME_free (this_update_in);
 
    CLEAR_CACHE;
 }
