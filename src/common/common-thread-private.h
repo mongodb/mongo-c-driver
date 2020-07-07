@@ -58,8 +58,9 @@ BSON_BEGIN_DECLS
 
 #else
 typedef struct {
-   bool locked_by_curr_thread;
+   pthread_t lock_owner;
    pthread_mutex_t wrapped_mutex;
+   bool valid_tid;
 } bson_mutex_t;
 
 #define bson_mutex_destroy(mutex)                      \
@@ -70,19 +71,20 @@ typedef struct {
 #define bson_mutex_init(mutex)                            \
    do {                                                   \
       pthread_mutex_init (&(mutex)->wrapped_mutex, NULL); \
-      (mutex)->locked_by_curr_thread = false;             \
+      (mutex)->valid_tid = false;                         \
    } while (0);
 
 #define bson_mutex_lock(mutex)                      \
    do {                                             \
       pthread_mutex_lock (&(mutex)->wrapped_mutex); \
-      (mutex)->locked_by_curr_thread = true;        \
+      (mutex)->lock_owner = pthread_self ();        \
+      (mutex)->valid_tid = true;                    \
    } while (0);
 
 #define bson_mutex_unlock(mutex)                      \
    do {                                               \
       pthread_mutex_unlock (&(mutex)->wrapped_mutex); \
-      (mutex)->locked_by_curr_thread = false;         \
+      (mutex)->valid_tid = false;                     \
    } while (0);
 
 #endif
@@ -116,7 +118,9 @@ int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
                                    BSON_THREAD_FUN_TYPE (func),
                                    void *arg);
 
+#ifdef MONGOC_ENABLE_TESTING
 bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex);
+#endif
 
 BSON_END_DECLS
 

@@ -28,16 +28,13 @@ int COMMON_PREFIX (thread_join) (bson_thread_t thread)
    return pthread_join (thread, NULL);
 }
 
+#ifdef MONGOC_ENABLE_TESTING
 bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex)
 {
-#ifdef MONGOC_ENABLE_TESTING
-   return mutex->locked_by_curr_thread;
-#else
-   /* is noop in this case */
-   return true;
-#endif
+   return (bool)(mutex->valid_tid &&
+                 pthread_equal (pthread_self (), mutex->lock_owner));
 }
-
+#endif
 
 #else
 int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
