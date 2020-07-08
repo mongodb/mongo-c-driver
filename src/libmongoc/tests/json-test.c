@@ -1099,7 +1099,7 @@ DONE:
 }
 
 
-static void
+void
 check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
 {
    bson_t data;
@@ -1108,6 +1108,7 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
    mongoc_cursor_t *cursor;
    bson_t query = BSON_INITIALIZER;
    mongoc_read_prefs_t *prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
+   bson_t opts = BSON_INITIALIZER;
 
    bson_lookup_doc (test, "outcome.collection.data", &data);
    ASSERT (bson_iter_init (&iter, &data));
@@ -1121,7 +1122,9 @@ check_outcome_collection (mongoc_collection_t *collection, bson_t *test)
       mongoc_collection_set_read_concern (collection, rc);
    }
 
-   cursor = mongoc_collection_find_with_opts (collection, &query, NULL, prefs);
+   BCON_APPEND (&opts, "sort", "{", "_id", BCON_INT32 (1), "}");
+   cursor = mongoc_collection_find_with_opts (collection, &query, &opts, prefs);
+   bson_destroy (&opts);
 
    while (bson_iter_next (&iter)) {
       bson_t expected_doc;
