@@ -8,7 +8,7 @@ endif ()
 
 configure_file (
         "${PROJECT_SOURCE_DIR}/src/common/common-config.h.in"
-        "${PROJECT_SOURCE_DIR}/src/common/common-config.h"
+        "${PROJECT_BINARY_DIR}/src/common/common-config.h"
 )
 
 set (src_common_DIST_noinst_hs
@@ -16,6 +16,7 @@ set (src_common_DIST_noinst_hs
    common-md5-private.h
    common-prelude.h
    common-thread-private.h
+   common-config.h
 )
 
 set (src_common_DIST_cs
