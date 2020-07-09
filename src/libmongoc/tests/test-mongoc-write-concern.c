@@ -83,7 +83,8 @@ test_write_concern_basic (void)
    mongoc_write_concern_set_wtimeout (write_concern, 0);
    ASSERT (!mongoc_write_concern_get_wtimeout (write_concern));
    mongoc_write_concern_set_wtimeout_int64 (write_concern, INT64_MAX);
-   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == INT64_MAX);
+   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) ==
+           INT64_MAX);
    mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_DEFAULT);
    ASSERT (mongoc_write_concern_get_w (write_concern) ==
            MONGOC_WRITE_CONCERN_W_DEFAULT);
@@ -595,10 +596,147 @@ test_write_concern_wtimeout_preserved (void)
    ASSERT (bson_iter_next (&child));
    ASSERT_CMPSTR (bson_iter_key (&child), "wtimeout");
    ASSERT_CMPINT64 (bson_iter_int64 (&child), ==, INT64_MAX);
-   
+
    mongoc_write_concern_destroy (write_concern);
 }
 
+/* callback that records write concern for commands */
+static void
+write_concern_count (const mongoc_apm_command_started_t *event)
+{
+   const bson_t *command = mongoc_apm_command_started_get_command (event);
+   bson_iter_t iter, iter_rec;
+
+   if (bson_iter_init (&iter, command)) {
+      int *sent_collection_w =
+         (int *) mongoc_apm_command_started_get_context (event);
+      if (bson_iter_find_descendant (&iter, "writeConcern.w", &iter_rec)) {
+         *sent_collection_w = bson_iter_int32 (&iter_rec);
+      } else {
+         *sent_collection_w = 1; /* no write concern sent. default used */
+      }
+   }
+}
+
+/* tests that unacknowledged write concerns are inherited from the
+ * collection in fam with options.  Addresses concerns from CDRIVER-3595 */
+void
+test_write_concern_inheritance_fam (void)
+{
+   mongoc_find_and_modify_opts_t *opts;
+   bson_t *update;
+   bson_error_t error;
+   bson_t query = BSON_INITIALIZER;
+   mongoc_write_concern_t *wc;
+   bool success;
+   int sent_w = -1;
+   mongoc_apm_callbacks_t *callbacks;
+   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_collection_t *collection =
+      mongoc_client_get_collection (client, "db", "collection");
+
+   BSON_APPEND_UTF8 (&query, "test", "test");
+   update = bson_new ();
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, write_concern_count);
+   mongoc_client_set_apm_callbacks (client, callbacks, (void *) &sent_w);
+
+   opts = mongoc_find_and_modify_opts_new ();
+   mongoc_find_and_modify_opts_set_update (opts, update);
+
+   wc = mongoc_write_concern_new ();
+
+   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+   mongoc_collection_set_write_concern (collection, wc);
+
+   success = mongoc_collection_find_and_modify_with_opts (
+      collection, &query, opts, NULL, &error);
+
+   BSON_ASSERT (success);
+   BSON_ASSERT (sent_w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+
+   mongoc_write_concern_destroy (wc);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (update);
+   bson_destroy (&query);
+   mongoc_find_and_modify_opts_destroy (opts);
+}
+
+/* tests that in fam operations, with a transaction in progress,
+ * write concerns are not inherited from collections.  Adresses concerns
+ * in CDRIVER-3595 */
+void
+test_write_concern_inheritance_fam_txn (void)
+{
+   mongoc_find_and_modify_opts_t *opts;
+   bson_t *update;
+   bson_t *session_id;
+   bson_error_t error;
+   bson_t query = BSON_INITIALIZER;
+   mongoc_write_concern_t *wc;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_client_session_t *session;
+   mongoc_apm_callbacks_t *callbacks;
+   int sent_w = -1;
+   bool success;
+   bson_t reply;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, write_concern_count);
+   mongoc_client_set_apm_callbacks (client, callbacks, (void *) &sent_w);
+
+   session = mongoc_client_start_session (client, NULL, &error);
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 2);
+   mongoc_collection_set_write_concern (collection, wc);
+
+   BSON_APPEND_UTF8 (&query, "firstname", "Zlatan");
+   update = bson_new ();
+
+   session_id = bson_new ();
+   mongoc_client_session_append (session, session_id, &error);
+   mongoc_client_session_start_transaction (session, NULL, &error);
+
+   opts = mongoc_find_and_modify_opts_new ();
+   mongoc_find_and_modify_opts_append (opts, session_id);
+   mongoc_find_and_modify_opts_set_update (opts, update);
+
+   mongoc_collection_find_and_modify_with_opts (
+      collection, &query, opts, &reply, &error);
+   /* check that the sent write concern is 1 (not inherited) */
+   BSON_ASSERT (sent_w == 1);
+
+   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+   mongoc_collection_set_write_concern (collection, wc);
+
+   sent_w = -1;
+   success = mongoc_collection_find_and_modify_with_opts (
+      collection, &query, opts, &reply, &error);
+   /* check that the sent write concern is 1 (not inherited) */
+   ASSERT_OR_PRINT (success, error);
+   BSON_ASSERT (sent_w == 1);
+
+   success = mongoc_client_session_commit_transaction (session, NULL, NULL);
+   BSON_ASSERT (success);
+
+   mongoc_write_concern_destroy (wc);
+   mongoc_client_session_destroy (session);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (update);
+   bson_destroy (&query);
+   bson_destroy (session_id);
+   mongoc_find_and_modify_opts_destroy (opts);
+}
 
 void
 test_write_concern_install (TestSuite *suite)
@@ -630,4 +768,9 @@ test_write_concern_install (TestSuite *suite)
       suite, "/WriteConcern/prohibited", test_write_concern_prohibited);
    TestSuite_AddLive (
       suite, "/WriteConcern/unacknowledged", test_write_concern_unacknowledged);
+   TestSuite_AddLive (
+      suite, "/WriteConcern/inherited_fam", test_write_concern_inheritance_fam);
+   TestSuite_AddLive (suite,
+                      "/WriteConcern/inherited_fam_txn",
+                      test_write_concern_inheritance_fam_txn);
 }

@@ -881,7 +881,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       }
 
       if (cs && _mongoc_client_session_in_txn (cs)) {
-         if (!IS_PREF_PRIMARY (cs->txn.opts.read_prefs) && !parts->is_write_command) {
+         if (!IS_PREF_PRIMARY (cs->txn.opts.read_prefs) &&
+             !parts->is_write_command) {
             bson_set_error (error,
                             MONGOC_ERROR_TRANSACTION,
                             MONGOC_ERROR_TRANSACTION_INVALID_STATE,
@@ -988,6 +989,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          }
       }
 
+      /* if transaction is in progress do not inherit write concern */
       if (parts->assembled.is_txn_finish ||
           !_mongoc_client_session_in_txn (cs)) {
          _mongoc_cmd_parts_add_write_concern (parts);

@@ -3278,13 +3278,10 @@ mongoc_collection_find_and_modify_with_opts (
       }
 
       write_concern = appended_opts.writeConcern;
-   }
-
-   if (!write_concern) {
+   } else if (!write_concern) {
       if (server_stream->sd->max_wire_version >=
              WIRE_VERSION_FAM_WRITE_CONCERN &&
-          (mongoc_write_concern_is_acknowledged (collection->write_concern) ||
-           !_mongoc_client_session_in_txn (parts.assembled.session))) {
+          !_mongoc_client_session_in_txn (parts.assembled.session)) {
          if (!mongoc_write_concern_is_valid (collection->write_concern)) {
             bson_set_error (error,
                             MONGOC_ERROR_COMMAND,
