@@ -897,7 +897,7 @@ all_tasks = chain(all_tasks, IPTask.matrix())
 aws_compile_task = NamedTask('debug-compile-aws', commands=[shell_mongoc('''
         # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
         . .evergreen/find-cmake.sh
-        export CC=${CC}
+        export CC='${CC}'
         $CMAKE -DENABLE_SASL=OFF -DENABLE_SNAPPY=OFF -DENABLE_ZSTD=OFF -DENABLE_CLIENT_SIDE_ENCRYPTION=OFF .
         $CMAKE --build . --target mongoc-ping
 '''), func('upload build')])
