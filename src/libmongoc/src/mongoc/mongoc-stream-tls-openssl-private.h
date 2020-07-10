@@ -29,6 +29,9 @@ typedef struct {
    bool allow_invalid_hostname;
    bool weak_cert_validation;
    bool disable_endpoint_check;
+   /* If reaching out to an OCSP responder requires TLS,
+    * use the same TLS options that the user provided. */
+   mongoc_ssl_opt_t ssl_opts;
 } mongoc_openssl_ocsp_opt_t;
 
 void

@@ -116,6 +116,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-handshake-os-private.h
    mongoc-handshake-private.h
    mongoc-host-list-private.h
+   mongoc-http-private.h
    mongoc-interrupt-private.h
    mongoc-libressl-private.h
    mongoc-linux-distro-scanner-private.h
@@ -210,6 +211,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-gridfs-file-page.c
    mongoc-gridfs-file-list.c
    mongoc-handshake.c
+   mongoc-http.c
    mongoc-index.c
    mongoc-linux-distro-scanner.c
    mongoc-list.c

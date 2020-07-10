@@ -786,12 +786,13 @@ mongoc_stream_tls_openssl_new (mongoc_stream_t *base_stream,
          RETURN (NULL);
       }
 
-      ocsp_opts = bson_malloc (sizeof (mongoc_openssl_ocsp_opt_t));
+      ocsp_opts = bson_malloc0 (sizeof (mongoc_openssl_ocsp_opt_t));
       ocsp_opts->allow_invalid_hostname = opt->allow_invalid_hostname;
       ocsp_opts->weak_cert_validation = opt->weak_cert_validation;
       ocsp_opts->disable_endpoint_check =
          _mongoc_ssl_opts_disable_ocsp_endpoint_check (opt);
       ocsp_opts->host = bson_strdup (host);
+      _mongoc_ssl_opts_copy_to (opt, &ocsp_opts->ssl_opts, true);
    }
 #endif /* MONGOC_ENABLE_OCSP_OPENSSL */
 
@@ -836,6 +837,7 @@ mongoc_openssl_ocsp_opt_destroy (void *ocsp_opt)
    }
    casted = (mongoc_openssl_ocsp_opt_t *) ocsp_opt;
    bson_free (casted->host);
+   _mongoc_ssl_opts_cleanup (&casted->ssl_opts, true);
    bson_free (ocsp_opt);
 }
 
