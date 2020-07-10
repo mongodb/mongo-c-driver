@@ -29,7 +29,7 @@ if [ "$AUTH" != "noauth" ]; then
 fi
 
 if [ "$SSL" != "nossl" ]; then
-   export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION="on"
+   export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION="off"
    export MONGOC_TEST_SSL_PEM_FILE="src/libmongoc/tests/x509gen/client.pem"
    sudo cp src/libmongoc/tests/x509gen/ca.pem /usr/local/share/ca-certificates/cdriver.crt || true
    if [ -f /usr/local/share/ca-certificates/cdriver.crt ]; then
