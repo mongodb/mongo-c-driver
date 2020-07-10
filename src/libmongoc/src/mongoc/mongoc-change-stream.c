@@ -47,6 +47,10 @@ _is_resumable_error (mongoc_change_stream_t *stream, const bson_t *reply)
       return true;
    }
 
+   if (error.code == MONGOC_SERVER_ERR_CURSOR_NOT_FOUND) {
+      return true;
+   }
+
    if (stream->max_wire_version >= WIRE_VERSION_4_4) {
       return mongoc_error_has_label (reply, "ResumableChangeStreamError");
    }
