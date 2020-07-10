@@ -2,6 +2,10 @@
 #include <mongoc/mongoc-client-pool-private.h>
 #include "mongoc/mongoc.h"
 #include "mongoc/mongoc-host-list-private.h"
+#ifdef MONGOC_ENABLE_SSL
+#include "mongoc/mongoc-ssl.h"
+#include "mongoc/mongoc-ssl-private.h"
+#endif
 #include "mongoc/mongoc-thread-private.h"
 #include "mongoc/mongoc-uri-private.h"
 
@@ -172,6 +176,9 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    mongoc_apm_callbacks_t *callbacks;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
+#ifdef MONGOC_ENABLE_SSL
+   mongoc_ssl_opt_t ssl_opts;
+#endif
    int n_hosts;
    bson_error_t error;
    bool r;
@@ -204,6 +211,11 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    /* suppress "cannot override URI option" messages */
    capture_logs (true);
 
+#ifdef MONGOC_ENABLE_SSL
+   ssl_opts = *test_framework_get_ssl_opts ();
+   ssl_opts.allow_invalid_hostname = true;
+#endif
+
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
 
@@ -213,15 +225,27 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       BSON_ASSERT (
          mongoc_uri_get_tls (_mongoc_client_pool_get_topology (pool)->uri) ==
          expect_ssl);
+#ifdef MONGOC_ENABLE_SSL
+      mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
+#else
       test_framework_set_pool_ssl_opts (pool);
+#endif
       mongoc_client_pool_set_apm_callbacks (pool, callbacks, &ctx);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = mongoc_client_new_from_uri (uri);
       BSON_ASSERT (mongoc_uri_get_tls (client->uri) == expect_ssl);
+#ifdef MONGOC_ENABLE_SSL
+      mongoc_client_set_ssl_opts (client, &ssl_opts);
+#else
       test_framework_set_ssl_opts (client);
+#endif
       mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
    }
+
+#ifdef MONGOC_ENABLE_SSL
+   BSON_ASSERT (client->ssl_opts.allow_invalid_hostname);
+#endif
 
    n_hosts = hosts_count (test);
 
