@@ -70,7 +70,7 @@ By default, libmongoc will attempt to find a supported TLS library and enable TL
 
 - ``AUTO`` the default behavior. Link to the system's native TLS library, or attempt to find OpenSSL.
 - ``DARWIN`` link to Secure Transport, the native TLS library on macOS.
-- ``WINDOWS`` link to Secure Channel, the native TLS on Windows.
+- ``WINDOWS`` link to Secure Channel, the native TLS library on Windows.
 - ``OPENSSL`` link to OpenSSL (libssl). An optional install path may be specified with ``OPENSSL_ROOT``.
 - ``LIBRESSL`` link to LibreSSL's libtls. (LibreSSL's compatible libssl may be linked to by setting ``OPENSSL``).
 - ``OFF`` disable TLS support.
@@ -119,11 +119,13 @@ When compiled against the Windows native libraries, the ``ca_dir`` option of a :
 
 Encrypted PEM files (e.g., setting ``tlsCertificateKeyPassword``) are also not supported, and will result in error when attempting to load them.
 
-When ``tlsCAFile`` is set, the driver will only allow server certificates issued by the authority (or authorities) provided. When no ``tlsCAFile`` is set, the driver will look up the Certificate Authority using the ``System Local Machine Root`` certificate store to confirm the provided certificate or the ``Current user certificate store`` if the ``System Local Machine Root`` certificate store is unavailable.
+When ``tlsCAFile`` is set, the driver will only allow server certificates issued by the authority (or authorities) provided. When no ``tlsCAFile`` is set, the driver will look up the Certificate Authority using the ``System Local Machine Root`` certificate store to confirm the provided certificate.
 
 When ``crl_file`` is set with :symbol:`mongoc_ssl_opt_t`, the driver will import the revocation list to the ``System Local Machine Root`` certificate store.
 
-Setting ``tlsDisableOCSPEndpointCheck`` and ``tlsDisableCertificateRevocationCheck`` has no effect.
+Setting ``tlsDisableCertificateRevocationCheck`` disables certificate revocation checking.
+
+Setting ``tlsDisableOCSPEndpointCheck`` has no effect.
 
 The Online Certificate Status Protocol (OCSP) is partially supported (see `RFC 6960 <https://tools.ietf.org/html/rfc6960>`_).
 
