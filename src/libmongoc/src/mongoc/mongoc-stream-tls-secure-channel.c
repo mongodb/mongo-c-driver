@@ -979,13 +979,15 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    schannel_cred.dwFlags |= SCH_CRED_IGNORE_NO_REVOCATION_CHECK;
    /* An offline OCSP responder / CRL distribution list is a soft failure. */
    schannel_cred.dwFlags |= SCH_CRED_IGNORE_REVOCATION_OFFLINE;
-
    if (opt->weak_cert_validation) {
       schannel_cred.dwFlags |= SCH_CRED_MANUAL_CRED_VALIDATION;
       TRACE ("%s", "disabled server certificate checks");
    } else {
-      schannel_cred.dwFlags |=
-         SCH_CRED_AUTO_CRED_VALIDATION | SCH_CRED_REVOCATION_CHECK_CHAIN;
+      schannel_cred.dwFlags |= SCH_CRED_AUTO_CRED_VALIDATION;
+      if (!_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
+         schannel_cred.dwFlags |= SCH_CRED_REVOCATION_CHECK_CHAIN;
+         TRACE ("%s", "enabled server certificate revocation checks");
+      }
       TRACE ("%s", "enabled server certificate checks");
    }
 
@@ -1061,11 +1063,6 @@ mongoc_stream_tls_secure_channel_new (mongoc_stream_t *base_stream,
    if (_mongoc_ssl_opts_disable_ocsp_endpoint_check (opt)) {
       MONGOC_ERROR ("Setting tlsDisableOCSPEndpointCheck has no effect when "
                     "built against Secure Channel");
-   }
-
-   if (_mongoc_ssl_opts_disable_certificate_revocation_check (opt)) {
-      MONGOC_ERROR ("Setting tlsDisableCertificateRevocationCheck has no "
-                    "effect when built Secure Channel");
    }
 
    mongoc_counter_streams_active_inc ();
