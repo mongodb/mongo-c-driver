@@ -669,7 +669,7 @@ test_write_concern_inheritance_fam (void)
  * write concerns are not inherited from collections.  Adresses concerns
  * in CDRIVER-3595 */
 void
-test_write_concern_inheritance_fam_txn (void)
+test_write_concern_inheritance_fam_txn (void *context)
 {
    mongoc_find_and_modify_opts_t *opts;
    bson_t *update;
@@ -701,6 +701,7 @@ test_write_concern_inheritance_fam_txn (void)
    BSON_APPEND_UTF8 (&query, "firstname", "Zlatan");
    update = bson_new ();
 
+   ASSERT_OR_PRINT (session, error);
    session_id = bson_new ();
    mongoc_client_session_append (session, session_id, &error);
    mongoc_client_session_start_transaction (session, NULL, &error);
@@ -713,6 +714,7 @@ test_write_concern_inheritance_fam_txn (void)
       collection, &query, opts, &reply, &error);
    /* check that the sent write concern is 1 (not inherited) */
    BSON_ASSERT (sent_w == 1);
+   bson_destroy (&reply);
 
    mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
    mongoc_collection_set_write_concern (collection, wc);
@@ -735,6 +737,7 @@ test_write_concern_inheritance_fam_txn (void)
    bson_destroy (update);
    bson_destroy (&query);
    bson_destroy (session_id);
+   bson_destroy (&reply);
    mongoc_find_and_modify_opts_destroy (opts);
 }
 
@@ -770,7 +773,11 @@ test_write_concern_install (TestSuite *suite)
       suite, "/WriteConcern/unacknowledged", test_write_concern_unacknowledged);
    TestSuite_AddLive (
       suite, "/WriteConcern/inherited_fam", test_write_concern_inheritance_fam);
-   TestSuite_AddLive (suite,
+   TestSuite_AddFull (suite,
                       "/WriteConcern/inherited_fam_txn",
-                      test_write_concern_inheritance_fam_txn);
+                      test_write_concern_inheritance_fam_txn,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_txns);
 }
