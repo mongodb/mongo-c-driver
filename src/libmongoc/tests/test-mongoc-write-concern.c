@@ -621,7 +621,7 @@ write_concern_count (const mongoc_apm_command_started_t *event)
 /* tests that unacknowledged write concerns are inherited from the
  * collection in fam with options.  Addresses concerns from CDRIVER-3595 */
 void
-test_write_concern_inheritance_fam (void)
+test_write_concern_inheritance_fam (void *context)
 {
    mongoc_find_and_modify_opts_t *opts;
    bson_t *update;
@@ -771,13 +771,17 @@ test_write_concern_install (TestSuite *suite)
       suite, "/WriteConcern/prohibited", test_write_concern_prohibited);
    TestSuite_AddLive (
       suite, "/WriteConcern/unacknowledged", test_write_concern_unacknowledged);
-   TestSuite_AddLive (
-      suite, "/WriteConcern/inherited_fam", test_write_concern_inheritance_fam);
+   TestSuite_AddFull (suite,
+                      "/WriteConcern/inherited_fam",
+                      test_write_concern_inheritance_fam,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddFull (suite,
                       "/WriteConcern/inherited_fam_txn",
                       test_write_concern_inheritance_fam_txn,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
+                      NULL,
+                      NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_txns);
 }
