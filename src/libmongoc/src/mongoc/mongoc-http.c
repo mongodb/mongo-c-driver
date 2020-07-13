@@ -62,6 +62,7 @@ _mongoc_http_send (mongoc_http_request_t *req,
    mongoc_buffer_t http_response_buf;
    char *http_response_str;
    char *ptr;
+   const char *header_delimiter = "\r\n\r\n";
 
    memset (res, 0, sizeof (*res));
    _mongoc_buffer_init (&http_response_buf, NULL, 0, NULL, NULL);
@@ -180,7 +181,7 @@ _mongoc_http_send (mongoc_http_request_t *req,
    http_response_str = (char *) http_response_buf.data;
 
    /* Find the end of the headers. */
-   ptr = strstr (http_response_str, "\r\n\r\n");
+   ptr = strstr (http_response_str, header_delimiter);
    if (NULL == ptr) {
       bson_set_error (
          error,
@@ -192,10 +193,11 @@ _mongoc_http_send (mongoc_http_request_t *req,
 
    res->headers_len = ptr - http_response_str;
    res->headers = bson_strndup (http_response_str, res->headers_len);
-   res->body_len = http_response_buf.len - res->headers_len - 4;
+   res->body_len =
+      http_response_buf.len - res->headers_len - strlen (header_delimiter);
    /* Add a NULL character in case caller assumes NULL terminated. */
    res->body = bson_malloc0 (res->body_len + 1);
-   memcpy (res->body, ptr + 4, res->body_len);
+   memcpy (res->body, ptr + strlen (header_delimiter), res->body_len);
    ret = true;
 
 fail:

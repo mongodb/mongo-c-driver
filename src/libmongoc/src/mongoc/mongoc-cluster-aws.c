@@ -126,7 +126,6 @@ fail:
 }
 
 
-#define MONGOC_AWS_SOCKET_TIMEOUT 10000
 /*
  * Send an HTTP request and get a response.
  * On success, returns true.
