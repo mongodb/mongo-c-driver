@@ -183,6 +183,21 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
       } else if (BSON_ITER_IS_KEY (iter, "serverId") ||
                  BSON_ITER_IS_KEY (iter, "maxAwaitTimeMS")) {
          continue;
+      } else if (BSON_ITER_IS_KEY (iter, "commitQuorum")) {
+         bool is_create_indexes;
+
+         is_create_indexes =
+            (0 == strcasecmp ("createIndexes",
+                              _mongoc_get_command_name (parts->body)));
+         if (is_create_indexes &&
+             max_wire_version < WIRE_VERSION_COMMIT_QUORUM) {
+            bson_set_error (
+               error,
+               MONGOC_ERROR_COMMAND,
+               MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
+               "The selected server does not support commitQuorum");
+            RETURN (false);
+         }
       }
 
       to_append = bson_iter_key (iter);
@@ -326,6 +341,8 @@ mongoc_cmd_parts_append_read_write (mongoc_cmd_parts_t *parts,
                                     int max_wire_version,
                                     bson_error_t *error)
 {
+   bson_iter_t iter;
+
    ENTRY;
 
    /* not yet assembled */
@@ -363,6 +380,18 @@ mongoc_cmd_parts_append_read_write (mongoc_cmd_parts_t *parts,
    if (rw_opts->client_session) {
       BSON_ASSERT (!parts->assembled.session);
       parts->assembled.session = rw_opts->client_session;
+   }
+
+   if (bson_iter_init_find (&iter, &rw_opts->extra, "commitQuorum")) {
+      bool is_create_indexes;
+
+      is_create_indexes =
+         (0 ==
+          strcasecmp ("createIndexes", _mongoc_get_command_name (parts->body)));
+      if (is_create_indexes && max_wire_version < WIRE_VERSION_COMMIT_QUORUM) {
+         OPTS_ERR (PROTOCOL_BAD_WIRE_VERSION,
+                   "The selected server does not support commitQuorum");
+      }
    }
 
    if (!bson_concat (&parts->extra, &rw_opts->extra)) {
@@ -881,7 +910,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       }
 
       if (cs && _mongoc_client_session_in_txn (cs)) {
-         if (!IS_PREF_PRIMARY (cs->txn.opts.read_prefs) && !parts->is_write_command) {
+         if (!IS_PREF_PRIMARY (cs->txn.opts.read_prefs) &&
+             !parts->is_write_command) {
             bson_set_error (error,
                             MONGOC_ERROR_TRANSACTION,
                             MONGOC_ERROR_TRANSACTION_INVALID_STATE,
