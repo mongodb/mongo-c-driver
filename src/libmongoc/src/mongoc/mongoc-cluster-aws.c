@@ -25,6 +25,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-uri-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-http-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "aws_auth"
@@ -145,88 +146,35 @@ _send_http_request (const char *ip,
                     char **http_response_headers,
                     bson_error_t *error)
 {
-   mongoc_stream_t *stream = NULL;
-   mongoc_host_list_t host_list;
-   bool ret = false;
-   mongoc_iovec_t iovec;
-   uint8_t buf[512];
-   ssize_t bytes_read;
+   mongoc_http_request_t req;
+   mongoc_http_response_t res;
    const int socket_timeout_ms = 10000;
-   char *http_request = NULL;
-   bson_string_t *http_response = NULL;
-   char *ptr;
-   bool need_slash;
+   bool ret;
 
    *http_response_body = NULL;
    *http_response_headers = NULL;
+   _mongoc_http_request_init (&req);
+   _mongoc_http_response_init (&res);
 
-   if (!_mongoc_host_list_from_hostport_with_err (
-          &host_list, ip, port, error)) {
-      goto fail;
+   req.host = ip;
+   req.port = port;
+   req.method = method;
+   req.path = path;
+   req.extra_headers = headers;
+   ret = _mongoc_http_send (&req,
+                            socket_timeout_ms,
+                            false /* use_tls */,
+                            NULL /* ssl_opts */,
+                            &res,
+                            error);
+
+   if (ret) {
+      *http_response_headers = bson_strndup (res.headers, res.headers_len);
+      *http_response_body = (char *) bson_malloc0 (res.body_len + 1);
+      memcpy (*http_response_body, res.body, res.body_len);
    }
 
-   stream = mongoc_client_connect_tcp (socket_timeout_ms, &host_list, error);
-   if (!stream) {
-      goto fail;
-   }
-
-   if (strstr (path, "/") == path) {
-      need_slash = false;
-   } else {
-      need_slash = true;
-   }
-
-   /* Always add 'Host: <domain>' header. */
-   http_request = bson_strdup_printf (
-      "%s %s%s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n%s\r\n",
-      method,
-      need_slash ? "/" : "",
-      path,
-      ip,
-      headers);
-   iovec.iov_base = http_request;
-   iovec.iov_len = strlen (http_request);
-
-   if (!_mongoc_stream_writev_full (
-          stream, &iovec, 1, socket_timeout_ms, error)) {
-      goto fail;
-   }
-
-   /* If timeout == 0, you'll get EAGAIN errors. */
-   http_response = bson_string_new (NULL);
-   memset (buf, 0, sizeof (buf));
-   /* leave at least one byte out of buffer to leave it null terminated. */
-   while ((bytes_read = mongoc_stream_read (
-              stream, buf, (sizeof buf) - 1, 0, socket_timeout_ms)) > 0) {
-      bson_string_append (http_response, (const char *) buf);
-      memset (buf, 0, sizeof (buf));
-   }
-
-   if (bytes_read < 0) {
-      char errmsg_buf[BSON_ERROR_BUFFER_SIZE];
-      char *errmsg;
-
-      errmsg = bson_strerror_r (errno, errmsg_buf, sizeof errmsg_buf);
-      AUTH_ERROR_AND_FAIL ("error occurred reading stream: %s", errmsg);
-   }
-
-   /* Find the body. */
-   ptr = strstr (http_response->str, "\r\n\r\n");
-   if (NULL == ptr) {
-      AUTH_ERROR_AND_FAIL ("error occurred reading response, body not found");
-   }
-
-   *http_response_headers =
-      bson_strndup (http_response->str, ptr - http_response->str);
-   *http_response_body = bson_strdup (ptr + 4);
-
-   ret = true;
-fail:
-   mongoc_stream_destroy (stream);
-   bson_free (http_request);
-   if (http_response) {
-      bson_string_free (http_response, true);
-   }
+   _mongoc_http_response_cleanup (&res);
    return ret;
 }
 
