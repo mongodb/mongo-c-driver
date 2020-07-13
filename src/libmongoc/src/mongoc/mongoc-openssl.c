@@ -29,6 +29,7 @@
 
 #include <string.h>
 
+#include "mongoc-http-private.h"
 #include "mongoc-init.h"
 #include "mongoc-openssl-private.h"
 #include "mongoc-socket.h"
@@ -652,20 +653,32 @@ _get_must_staple (X509 *cert)
 }
 
 #define ERR_STR (ERR_error_string (ERR_get_error (), NULL))
+#define MONGOC_OCSP_REQUEST_TIMEOUT_MS 5000
 
-OCSP_RESPONSE *
-_contact_ocsp_responder (OCSP_CERTID *id, X509 *peer)
+static OCSP_RESPONSE *
+_contact_ocsp_responder (OCSP_CERTID *id,
+                         X509 *peer,
+                         mongoc_ssl_opt_t *ssl_opts,
+                         int *ocsp_uri_count)
 {
    STACK_OF (OPENSSL_STRING) *url_stack = NULL;
    OPENSSL_STRING url = NULL, host = NULL, path = NULL, port = NULL;
    OCSP_REQUEST *req = NULL;
-   OCSP_REQ_CTX *sendreq_ctx = NULL;
+   const unsigned char *resp_data;
    OCSP_RESPONSE *resp = NULL;
-   BIO *bio = NULL;
    int i, ssl;
 
    url_stack = X509_get1_ocsp (peer);
-   for (i = 0; i < sk_OPENSSL_STRING_num (url_stack) && !resp; i++) {
+   *ocsp_uri_count = sk_OPENSSL_STRING_num (url_stack);
+   for (i = 0; i < *ocsp_uri_count && !resp; i++) {
+      unsigned char *request_der = NULL;
+      int request_der_len;
+      mongoc_http_request_t http_req;
+      mongoc_http_response_t http_res;
+      bson_error_t error;
+
+      _mongoc_http_request_init (&http_req);
+      _mongoc_http_response_init (&http_res);
       url = sk_OPENSSL_STRING_value (url_stack, i);
       TRACE ("Contacting OCSP responder '%s'", url);
 
@@ -692,53 +705,39 @@ _contact_ocsp_responder (OCSP_CERTID *id, X509 *peer)
          GOTO (retry);
       }
 
-      if (!(bio = BIO_new_connect (host))) {
-         MONGOC_DEBUG ("Could not create new BIO object");
+      request_der_len = i2d_OCSP_REQUEST (req, &request_der);
+      if (request_der_len < 0) {
+         MONGOC_DEBUG ("Could not encode OCSP request");
          GOTO (retry);
       }
 
-      BIO_set_conn_port (bio, port);
-      if (BIO_do_connect (bio) <= 0) {
-         MONGOC_DEBUG ("Could not connect to url '%s'", url);
+      http_req.method = "POST";
+      http_req.extra_headers = "Content-Type: application/ocsp-request\r\n";
+      http_req.host = host;
+      http_req.path = path;
+      http_req.port = (int) bson_ascii_strtoll (port, NULL, 10);
+      http_req.body = (const char *) request_der;
+      http_req.body_len = request_der_len;
+      if (!_mongoc_http_send (&http_req,
+                              MONGOC_OCSP_REQUEST_TIMEOUT_MS,
+                              ssl != 0,
+                              ssl_opts,
+                              &http_res,
+                              &error)) {
+         MONGOC_DEBUG ("Could not send HTTP request: %s", error.message);
          GOTO (retry);
       }
 
-      /* Leave OCSP request NULL, set it onto the request context after setting
-       * the host header. */
-      sendreq_ctx =
-         OCSP_sendreq_new (bio, path, NULL /* OCSP request */, 0 /* maxline */);
-      if (host) {
-         if (0 == OCSP_REQ_CTX_add1_header (sendreq_ctx, "Host", host)) {
-            MONGOC_DEBUG ("Could not set OCSP request header for host: %s",
-                          host);
-            GOTO (retry);
-         }
-      }
+      resp_data = (const unsigned char *) http_res.body;
 
-      if (0 == OCSP_REQ_CTX_set1_req (sendreq_ctx, req)) {
-         MONGOC_DEBUG ("Could not set OCSP request");
+      if (http_res.body_len == 0 ||
+          !d2i_OCSP_RESPONSE (&resp, &resp_data, http_res.body_len)) {
+         MONGOC_DEBUG ("Could not parse OCSP response from HTTP response");
+         MONGOC_DEBUG ("Response headers: %s", http_res.headers);
          GOTO (retry);
       }
-
-      do {
-         int ret = OCSP_sendreq_nbio (&resp, sendreq_ctx);
-         if (ret == 1) {
-            /* Success. */
-            break;
-         } else if (ret == -1 && BIO_should_retry (bio)) {
-            /* Non-blocking write not finished, repeat. */
-            continue;
-         } else {
-            MONGOC_DEBUG ("Could not send OCSP request for url '%s'. Error: %s",
-                          url,
-                          ERR_STR);
-            GOTO (retry);
-         }
-      } while (true);
 
    retry:
-      if (bio)
-         BIO_free_all (bio);
       if (host)
          OPENSSL_free (host);
       if (port)
@@ -747,8 +746,9 @@ _contact_ocsp_responder (OCSP_CERTID *id, X509 *peer)
          OPENSSL_free (path);
       if (req)
          OCSP_REQUEST_free (req);
-      if (sendreq_ctx)
-         OCSP_REQ_CTX_free (sendreq_ctx);
+      if (request_der)
+         OPENSSL_free (request_der);
+      _mongoc_http_response_cleanup (&http_res);
    }
 
    if (url_stack)
@@ -779,6 +779,7 @@ _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
    OCSP_CERTID *id = NULL;
    ASN1_GENERALIZEDTIME *produced_at = NULL, *this_update = NULL,
                         *next_update = NULL;
+   int ocsp_uri_count = 0;
 
    if (opts->weak_cert_validation) {
       return OCSP_CB_SUCCESS;
@@ -835,8 +836,13 @@ _mongoc_ocsp_tlsext_status (SSL *ssl, mongoc_openssl_ocsp_opt_t *opts)
       }
 
       if (opts->disable_endpoint_check ||
-          !(resp = _contact_ocsp_responder (id, peer))) {
-         MONGOC_DEBUG ("Soft-fail: No OCSP responder could be reached");
+          !(resp = _contact_ocsp_responder (
+               id, peer, &opts->ssl_opts, &ocsp_uri_count))) {
+         if (ocsp_uri_count > 0) {
+            /* Only log a soft failure if there were OCSP responders listed in
+             * the certificate. */
+            MONGOC_DEBUG ("Soft-fail: No OCSP responder could be reached");
+         }
          ret = OCSP_CB_SUCCESS;
          GOTO (done);
       }

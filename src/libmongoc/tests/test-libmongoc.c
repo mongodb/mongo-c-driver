@@ -256,6 +256,8 @@ extern void
 test_interrupt_install (TestSuite *suite);
 extern void
 test_monitoring_install (TestSuite *suite);
+extern void
+test_http_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2658,6 +2660,7 @@ main (int argc, char *argv[])
 #endif
    test_interrupt_install (&suite);
    test_monitoring_install (&suite);
+   test_http_install (&suite);
 
    ret = TestSuite_Run (&suite);
 
