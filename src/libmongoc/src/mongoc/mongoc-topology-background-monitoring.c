@@ -205,7 +205,7 @@ _mongoc_topology_background_monitoring_reconcile (mongoc_topology_t *topology)
    mongoc_set_t *server_descriptions;
    int i;
 
-   MONGOC_TEST_ASSERT ( COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
+   MONGOC_TEST_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
    td = &topology->description;
    server_descriptions = td->servers;
 
@@ -275,7 +275,8 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    int i;
    bool is_srv_polling;
 
-   /* Test only assert. Is a noop unless -DMONGOC_ENABLE_TESTING is passed */
+   /* Test only assert. Is a noop unless -DMONGOC_ENABLE_TESTING=ON is set
+    * during configuration */
    MONGOC_TEST_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
    BSON_ASSERT (!topology->single_threaded);

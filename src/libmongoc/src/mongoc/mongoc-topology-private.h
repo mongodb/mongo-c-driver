@@ -38,9 +38,9 @@
 #define MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS 60000
 
 /*
- * Compile with -DMONGOC_ENABLE_TESTING to enable test only code
+ * configure with option -DENABLE_TESTING=ON
  */
-#ifdef MONGOC_ENABLE_TESTING
+#if defined(MONGOC_ENABLE_TESTING) && defined(BSON_OS_UNIX)
 #define MONGOC_TEST_ASSERT(statement) BSON_ASSERT (statement)
 #else
 #define MONGOC_TEST_ASSERT(statement) ((void) 0)

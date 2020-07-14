@@ -56,10 +56,10 @@ mongoc_cond_timedwait (pthread_cond_t *cond,
    to.tv_sec = msec / 1000;
    to.tv_nsec = (msec % 1000) * 1000 * 1000;
 
-#ifndef MONGOC_ENABLE_TESTING
-   return pthread_cond_timedwait (cond, mutex, &to);
-#else
+#if defined(MONGOC_ENABLE_TESTING) && defined(BSON_OS_UNIX)
    return pthread_cond_timedwait (cond, &mutex->wrapped_mutex, &to);
+#else
+   return pthread_cond_timedwait (cond, mutex, &to);
 #endif
 }
 static BSON_INLINE bool

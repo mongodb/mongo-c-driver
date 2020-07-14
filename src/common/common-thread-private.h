@@ -42,10 +42,10 @@ BSON_BEGIN_DECLS
 #define BSON_THREAD_FUN_TYPE(_function_name) void *(*(_function_name)) (void *)
 #define BSON_THREAD_RETURN return NULL
 
-/* this macro can be defined as a as a preprocessor option
- * with -DMONGOC_ENABLE_TESTING.  it's purpose is to allow for functions
+/* this macro can be defined as a as a build configuration option
+ * with -DENABLE_TESTING=ON.  it's purpose is to allow for functions
  * that require a mutex to be locked on entry to assert that the mutex
- * is truly locked.
+ * is actually locked.
  * this can prevent bugs where a caller forgets to lock the mutex. */
 
 #ifndef MONGOC_ENABLE_TESTING
@@ -95,11 +95,19 @@ typedef struct {
    BOOL CALLBACK n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c)
 #define BSON_ONCE_INIT INIT_ONCE_STATIC_INIT
 #define BSON_ONCE_RETURN return true
+<<<<<<< HEAD
+=======
+
+>>>>>>> CDRIVER-3702 remove windows support
 #define bson_mutex_destroy DeleteCriticalSection
 #define bson_mutex_init InitializeCriticalSection
 #define bson_mutex_lock EnterCriticalSection
 #define bson_mutex_t CRITICAL_SECTION
 #define bson_mutex_unlock LeaveCriticalSection
+<<<<<<< HEAD
+=======
+
+>>>>>>> CDRIVER-3702 remove windows support
 #define bson_once(o, c) InitOnceExecuteOnce (o, c, NULL, NULL)
 #define bson_once_t INIT_ONCE
 #define bson_thread_t HANDLE
@@ -118,7 +126,7 @@ int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
                                    BSON_THREAD_FUN_TYPE (func),
                                    void *arg);
 
-#ifdef MONGOC_ENABLE_TESTING
+#if defined(MONGOC_ENABLE_TESTING) && defined(BSON_OS_UNIX)
 bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex);
 #endif
 
