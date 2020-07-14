@@ -184,6 +184,10 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
                  BSON_ITER_IS_KEY (iter, "maxAwaitTimeMS")) {
          continue;
       } else if (BSON_ITER_IS_KEY (iter, "commitQuorum")) {
+         /* An unfortunate necessity. Users must perform index creation through
+          * generic command helpers. The createIndexes command must be checked
+          * for the commitQuorum option, since MongoDB pre-4.4 servers may
+          * quietly ignore the option. */
          bool is_create_indexes;
 
          is_create_indexes =
@@ -383,6 +387,10 @@ mongoc_cmd_parts_append_read_write (mongoc_cmd_parts_t *parts,
    }
 
    if (bson_iter_init_find (&iter, &rw_opts->extra, "commitQuorum")) {
+      /* An unfortunate necessity. Users must perform index creation through
+       * generic command helpers. The createIndexes command must be checked for
+       * the commitQuorum option, since MongoDB pre-4.4 servers may quietly
+       * ignore the option. */
       bool is_create_indexes;
 
       is_create_indexes =
