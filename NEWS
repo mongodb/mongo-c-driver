@@ -1,3 +1,28 @@
+mongo-c-driver 1.17.0 rc0
+=========================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.0 rc0 release.
+This release adds support for MongoDB 4.4 servers.
+
+Features:
+
+  * Support streamable server monitoring to reduce recovery time when the server topology changes.
+  * Support tlsDisableCertificateRevocationCheck when built with Secure Channel.
+
+Bug fixes:
+
+  * Fix criteria for resumable errors in change streams.
+  * Fix rare crashes when server is invalidated during authentication.
+  * Improve behavior when reaching out to OCSP responders for certificate revocation checking.
+  * Reject client session for mongoc_collection_estimated_document_count.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Andrew Witten
+  * Roberto C. Sánchez
+  * Clyde Bazile
+
 mongo-c-driver 1.17.0 beta2
 ===========================
 
