@@ -677,7 +677,7 @@ test_write_concern_inheritance_fam_txn (void *context)
       BSON_ASSERT (success);
    } else {
       /* assert that write concern is inherited. In this case the lsid
-       * is not passed. This failure case is tested later. */
+       * is not passed. */
       ASSERT_OR_PRINT (success, error);
       BSON_ASSERT (success);
       BSON_ASSERT (sent_w == 2);
