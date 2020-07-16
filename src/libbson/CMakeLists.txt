@@ -158,8 +158,9 @@ include_directories ("${PROJECT_BINARY_DIR}/src/bson")
 include_directories ("${PROJECT_SOURCE_DIR}/src")
 add_definitions (-DCOMMON_PREFIX_=_bson_common)
 include_directories ("${PROJECT_SOURCE_DIR}/../../src/common")
-include_directories ("${PROJECT_BINARY_DIR}/src")
-include_directories ("${PROJECT_BINARY_DIR}/src/common")
+
+include_directories ("${PROJECT_SOURCE_DIR}/src")
+include_directories ("${PROJECT_SOURCE_DIR}/src/common")
 
 if (APPLE)
    cmake_policy (SET CMP0042 OLD)
