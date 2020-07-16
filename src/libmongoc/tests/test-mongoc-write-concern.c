@@ -662,12 +662,14 @@ test_write_concern_inheritance_fam_txn (bool in_session, bool in_txn)
    if (in_session) {
       session = mongoc_client_start_session (client, NULL, &error);
       ASSERT_OR_PRINT (session, error);
-      mongoc_client_session_append (session, session_id, &error);
+      success = mongoc_client_session_append (session, session_id, &error);
+      ASSERT_OR_PRINT (success, error);
       mongoc_find_and_modify_opts_append (opts, session_id);
    }
    if (in_txn) {
       BSON_ASSERT (in_session);
-      mongoc_client_session_start_transaction (session, NULL, &error);
+      success = mongoc_client_session_start_transaction (session, NULL, &error);
+      ASSERT_OR_PRINT (success, error);
    }
 
    mongoc_find_and_modify_opts_set_update (opts, update);
@@ -696,8 +698,8 @@ test_write_concern_inheritance_fam_txn (bool in_session, bool in_txn)
    if (in_txn) {
       /* check that the sent write concern is not inherited */
       BSON_ASSERT (sent_w == MONGOC_WRITE_CONCERN_W_DEFAULT);
-      success = mongoc_client_session_commit_transaction (session, NULL, NULL);
-      BSON_ASSERT (success);
+      success = mongoc_client_session_commit_transaction (session, NULL, &error);
+      ASSERT_OR_PRINT (success, error);
    } else if (!in_session) {
       /* assert that write concern is inherited */
       BSON_ASSERT (success);
@@ -722,19 +724,19 @@ test_write_concern_inheritance_fam_txn (bool in_session, bool in_txn)
 }
 
 static void
-test_fam_no_session_no_txn ()
+test_fam_no_session_no_txn (void *unused)
 {
    test_write_concern_inheritance_fam_txn (false, false);
 }
 
 static void
-test_fam_session_no_txn ()
+test_fam_session_no_txn (void *unused)
 {
    test_write_concern_inheritance_fam_txn (true, false);
 }
 
 static void
-test_fam_session_txn ()
+test_fam_session_txn (void *unused)
 {
    test_write_concern_inheritance_fam_txn (true, true);
 }
