@@ -83,6 +83,7 @@ _mongoc_client_pool_set_internal_tls_opts (
 {
    bson_mutex_lock (&pool->mutex);
    if (!pool->ssl_opts_set) {
+      bson_mutex_unlock (&pool->mutex);
       return;
    }
    pool->ssl_opts.internal = bson_malloc (sizeof (_mongoc_internal_tls_opts_t));
