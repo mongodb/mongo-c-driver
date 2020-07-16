@@ -16,7 +16,7 @@ set (src_common_DIST_noinst_hs
    common-md5-private.h
    common-prelude.h
    common-thread-private.h
-   common-config.h
+   common-config.h.in
 )
 
 set (src_common_DIST_cs
