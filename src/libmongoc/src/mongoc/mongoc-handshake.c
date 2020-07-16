@@ -480,6 +480,7 @@ _append_platform_field (bson_t *doc, const char *platform)
                             4);
 
    if (max_platform_str_size <= 0) {
+      bson_string_free (combined_platform, true);
       return;
    }
 
