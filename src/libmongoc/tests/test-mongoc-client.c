@@ -3812,65 +3812,6 @@ test_mongoc_client_recv_network_error (void)
    mongoc_server_stream_cleanup (stream);
 }
 
-static void
-test_commit_quorum (void *unused)
-{
-   mongoc_client_t *client;
-   bson_error_t error;
-   char *db_name;
-   bson_t create_indexes_cmd = BSON_INITIALIZER;
-   bson_t keys = BSON_INITIALIZER;
-   char *index_name;
-   bson_t opts = BSON_INITIALIZER;
-   bool res;
-   int64_t max_wire_version;
-
-   client = test_framework_client_new ();
-   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
-   db_name = gen_collection_name ("commit_quorum");
-
-   BCON_APPEND (&keys, "x", BCON_INT32 (1));
-   index_name = mongoc_collection_keys_to_index_string (&keys);
-
-   BCON_APPEND (&create_indexes_cmd,
-                "createIndexes",
-                "coll",
-                "indexes",
-                "[",
-                "{",
-                "key",
-                BCON_DOCUMENT (&keys),
-                "name",
-                BCON_UTF8 (index_name),
-                "}",
-                "]");
-
-   BCON_APPEND (&opts, "commitQuorum", BCON_INT32 (1));
-
-   res = mongoc_client_write_command_with_opts (
-      client, db_name, &create_indexes_cmd, &opts, NULL /* reply */, &error);
-
-   test_framework_get_max_wire_version (&max_wire_version);
-
-   if (max_wire_version < WIRE_VERSION_COMMIT_QUORUM) {
-      ASSERT_ERROR_CONTAINS (
-         error,
-         MONGOC_ERROR_COMMAND,
-         MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-         "The selected server does not support commitQuorum");
-      BSON_ASSERT (!res);
-   } else {
-      ASSERT_OR_PRINT (res, error);
-   }
-
-   bson_destroy (&opts);
-   bson_free (index_name);
-   bson_free (db_name);
-   mongoc_client_destroy (client);
-   bson_destroy (&create_indexes_cmd);
-   bson_destroy (&keys);
-}
-
 void
 test_client_install (TestSuite *suite)
 {
@@ -4150,10 +4091,4 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Client/recv_network_error",
                                 test_mongoc_client_recv_network_error);
-   TestSuite_AddFull (suite,
-                      "/Client/commit_quorum",
-                      test_commit_quorum,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_not_replset);
 }
