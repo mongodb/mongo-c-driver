@@ -429,6 +429,7 @@ _mongoc_get_rr_search (const char *service,
    bool dns_success;
    bool callback_success = true;
    int num_matching_records;
+   uint32_t ttl;
 
    ENTRY;
 
@@ -517,13 +518,9 @@ _mongoc_get_rr_search (const char *service,
 
       num_matching_records++;
 
-      if (rr_data) {
-         uint32_t ttl;
-
-         ttl = ns_rr_ttl (resource_record);
-         if ((i == 0) || (ttl < rr_data->min_ttl)) {
-            rr_data->min_ttl = ttl;
-         }
+      ttl = ns_rr_ttl (resource_record);
+      if ((i == 0) || (ttl < rr_data->min_ttl)) {
+         rr_data->min_ttl = ttl;
       }
 
       if (!callback (service, &ns_answer, &resource_record, rr_data, error)) {
@@ -584,6 +581,8 @@ _mongoc_client_get_rr (const char *service,
                        mongoc_rr_data_t *rr_data,
                        bson_error_t *error)
 {
+   BSON_ASSERT (rr_data);
+
 #ifdef MONGOC_HAVE_DNSAPI
    return _mongoc_get_rr_dnsapi (service, rr_type, rr_data, error);
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
