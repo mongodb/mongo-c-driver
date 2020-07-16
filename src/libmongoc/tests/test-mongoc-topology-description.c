@@ -149,6 +149,64 @@ test_get_servers (void)
    mongoc_uri_destroy (uri);
 }
 
+#define TV_1 \
+   "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
+#define TV_2 \
+   "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 2 }"
+
+void
+_topology_changed (const mongoc_apm_topology_changed_t *event)
+{
+   int *num_calls;
+
+   num_calls = (int *) mongoc_apm_topology_changed_get_context (event);
+   (*num_calls)++;
+}
+
+/* Regression test for CDRIVER-3753. */
+static void
+test_topology_version_equal (void)
+{
+   mongoc_uri_t *uri;
+   mongoc_topology_t *topology;
+   mongoc_topology_description_t *td;
+   mongoc_server_description_t *sd;
+   mongoc_apm_callbacks_t *callbacks;
+   int num_calls = 0;
+
+   uri = mongoc_uri_new ("mongodb://host");
+   topology = mongoc_topology_new (uri, true /* single-threaded */);
+   td = &topology->description;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_topology_changed_cb (callbacks, _topology_changed);
+   mongoc_topology_set_apm_callbacks (topology, callbacks, &num_calls);
+
+   sd = _sd_for_host (td, "host");
+   mongoc_topology_description_handle_ismaster (
+      td,
+      sd->id,
+      tmp_bson ("{'ok': 1, 'topologyVersion': " TV_2 " }"),
+      100,
+      NULL);
+
+   ASSERT_CMPINT (num_calls, ==, 1);
+
+   /* The subsequent ismaster has a topologyVersion that compares less, so the
+    * ismaster skips. */
+   mongoc_topology_description_handle_ismaster (
+      td,
+      sd->id,
+      tmp_bson ("{'ok': 1, 'topologyVersion': " TV_1 " }"),
+      100,
+      NULL);
+
+   ASSERT_CMPINT (num_calls, ==, 1);
+
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_topology_destroy (topology);
+   mongoc_uri_destroy (uri);
+}
 
 void
 test_topology_description_install (TestSuite *suite)
@@ -160,4 +218,7 @@ test_topology_description_install (TestSuite *suite)
                       "/TopologyDescription/readable_writable/pooled",
                       test_has_readable_writable_server_pooled);
    TestSuite_Add (suite, "/TopologyDescription/get_servers", test_get_servers);
+   TestSuite_Add (suite,
+                  "/TopologyDescription/topology_version_equal",
+                  test_topology_version_equal);
 }

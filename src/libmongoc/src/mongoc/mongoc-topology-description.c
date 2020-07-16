@@ -1956,6 +1956,10 @@ mongoc_topology_description_handle_ismaster (
       if (mongoc_server_description_topology_version_cmp (
              &sd->topology_version, &incoming_topology_version) == 1) {
          TRACE ("%s", "topology version is strictly less. Skipping.");
+         if (prev_td) {
+            mongoc_topology_description_destroy (prev_td);
+            bson_free (prev_td);
+         }
          return;
       }
    }
