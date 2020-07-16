@@ -315,6 +315,7 @@ _obtain_creds_from_ecs (_mongoc_aws_credentials_t *creds, bson_error_t *error)
 
    relative_ecs_uri = _mongoc_getenv ("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI");
    if (!relative_ecs_uri || strlen (relative_ecs_uri) == 0) {
+      bson_free (relative_ecs_uri);
       return true;
    }
 
