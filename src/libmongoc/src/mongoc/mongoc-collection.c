@@ -3278,8 +3278,9 @@ mongoc_collection_find_and_modify_with_opts (
       }
 
       write_concern = appended_opts.writeConcern;
-   } else if (!write_concern) {
-      if (server_stream->sd->max_wire_version >=
+   }
+   /* inherit write concern from collection if not in transaction */
+   else if (server_stream->sd->max_wire_version >=
              WIRE_VERSION_FAM_WRITE_CONCERN &&
           !_mongoc_client_session_in_txn (parts.assembled.session)) {
          if (!mongoc_write_concern_is_valid (collection->write_concern)) {
@@ -3291,7 +3292,7 @@ mongoc_collection_find_and_modify_with_opts (
          }
 
          write_concern = collection->write_concern;
-      }
+
    }
 
    if (appended_opts.hint.value_type) {
