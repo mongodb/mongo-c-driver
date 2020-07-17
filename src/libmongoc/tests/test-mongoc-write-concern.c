@@ -83,7 +83,8 @@ test_write_concern_basic (void)
    mongoc_write_concern_set_wtimeout (write_concern, 0);
    ASSERT (!mongoc_write_concern_get_wtimeout (write_concern));
    mongoc_write_concern_set_wtimeout_int64 (write_concern, INT64_MAX);
-   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) == INT64_MAX);
+   ASSERT (mongoc_write_concern_get_wtimeout_int64 (write_concern) ==
+           INT64_MAX);
    mongoc_write_concern_set_w (write_concern, MONGOC_WRITE_CONCERN_W_DEFAULT);
    ASSERT (mongoc_write_concern_get_w (write_concern) ==
            MONGOC_WRITE_CONCERN_W_DEFAULT);
@@ -595,10 +596,150 @@ test_write_concern_wtimeout_preserved (void)
    ASSERT (bson_iter_next (&child));
    ASSERT_CMPSTR (bson_iter_key (&child), "wtimeout");
    ASSERT_CMPINT64 (bson_iter_int64 (&child), ==, INT64_MAX);
-   
+
    mongoc_write_concern_destroy (write_concern);
 }
 
+/* callback that records write concern for commands */
+static void
+write_concern_count (const mongoc_apm_command_started_t *event)
+{
+   const bson_t *command = mongoc_apm_command_started_get_command (event);
+   bson_iter_t iter, iter_rec;
+
+   if (bson_iter_init (&iter, command)) {
+      int *sent_collection_w =
+         (int *) mongoc_apm_command_started_get_context (event);
+      if (bson_iter_find_descendant (&iter, "writeConcern.w", &iter_rec)) {
+         *sent_collection_w = bson_iter_int32 (&iter_rec);
+      } else {
+         *sent_collection_w = MONGOC_WRITE_CONCERN_W_DEFAULT; /* no write
+                                                                 concern sent.
+                                                                 default used */
+      }
+   }
+}
+
+/* Addresses concerns brought up in CDRIVER-3595. This function comprises
+ * three tests. The first tests that with no txn in progress, wc is inherited
+ * from collection.  The second tests that with a txn in progress, no
+ * wc is inherited from collection, unacknowledged or acknowledged.
+ * The third tests that an attempt to send an lsid with an
+ * unacknowledged wc fails (where wc is inherited from collection).
+ * All commands are fam commands. */
+static void
+test_write_concern_inheritance_fam_txn (bool in_session, bool in_txn)
+{
+   mongoc_find_and_modify_opts_t *opts = NULL;
+   bson_t *update;
+   bson_t *session_id;
+   bson_error_t error;
+   bson_t query = BSON_INITIALIZER;
+   mongoc_write_concern_t *wc;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   mongoc_client_session_t *session = NULL;
+   mongoc_apm_callbacks_t *callbacks;
+   int sent_w = MONGOC_WRITE_CONCERN_W_DEFAULT;
+   bool success;
+
+   client = test_framework_client_new ();
+   collection = mongoc_client_get_collection (client, "db", "collection");
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, write_concern_count);
+   mongoc_client_set_apm_callbacks (client, callbacks, (void *) &sent_w);
+
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 1);
+   mongoc_collection_set_write_concern (collection, wc);
+
+   BSON_APPEND_UTF8 (&query, "firstname", "Zlatan");
+   update = bson_new ();
+   session_id = bson_new ();
+   opts = mongoc_find_and_modify_opts_new ();
+
+   if (in_session) {
+      session = mongoc_client_start_session (client, NULL, &error);
+      ASSERT_OR_PRINT (session, error);
+      success = mongoc_client_session_append (session, session_id, &error);
+      ASSERT_OR_PRINT (success, error);
+      mongoc_find_and_modify_opts_append (opts, session_id);
+   }
+   if (in_txn) {
+      BSON_ASSERT (in_session);
+      success = mongoc_client_session_start_transaction (session, NULL, &error);
+      ASSERT_OR_PRINT (success, error);
+   }
+
+   mongoc_find_and_modify_opts_set_update (opts, update);
+   success = mongoc_collection_find_and_modify_with_opts (
+      collection, &query, opts, NULL, &error);
+
+   if (in_txn) {
+      /* check that the sent write concern is not inherited */
+      BSON_ASSERT (sent_w == MONGOC_WRITE_CONCERN_W_DEFAULT);
+      BSON_ASSERT (success);
+   } else {
+      /* assert that write concern is inherited. Two tests reach this
+       * code.  No txn in progress. */
+      ASSERT_OR_PRINT (success, error);
+      BSON_ASSERT (success);
+      BSON_ASSERT (sent_w == 1);
+   }
+
+   mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+   mongoc_collection_set_write_concern (collection, wc);
+
+   sent_w = MONGOC_WRITE_CONCERN_W_DEFAULT;
+   success = mongoc_collection_find_and_modify_with_opts (
+      collection, &query, opts, NULL, &error);
+
+   if (in_txn) {
+      /* check that the sent write concern is not inherited */
+      BSON_ASSERT (sent_w == MONGOC_WRITE_CONCERN_W_DEFAULT);
+      success = mongoc_client_session_commit_transaction (session, NULL, &error);
+      ASSERT_OR_PRINT (success, error);
+   } else if (!in_session) {
+      /* assert that write concern is inherited */
+      BSON_ASSERT (success);
+      BSON_ASSERT (sent_w == MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED);
+   } else {
+      /* case where lsid is sent with unacknowledged write concern */
+      BSON_ASSERT (!success);
+      ASSERT_CONTAINS (error.message,
+                       "Cannot use client session with "
+                       "unacknowledged command");
+   }
+
+   mongoc_write_concern_destroy (wc);
+   mongoc_client_session_destroy (session);
+   mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   bson_destroy (update);
+   bson_destroy (&query);
+   bson_destroy (session_id);
+   mongoc_find_and_modify_opts_destroy (opts);
+}
+
+static void
+test_fam_no_session_no_txn (void *unused)
+{
+   test_write_concern_inheritance_fam_txn (false, false);
+}
+
+static void
+test_fam_session_no_txn (void *unused)
+{
+   test_write_concern_inheritance_fam_txn (true, false);
+}
+
+static void
+test_fam_session_txn (void *unused)
+{
+   test_write_concern_inheritance_fam_txn (true, true);
+}
 
 void
 test_write_concern_install (TestSuite *suite)
@@ -630,4 +771,25 @@ test_write_concern_install (TestSuite *suite)
       suite, "/WriteConcern/prohibited", test_write_concern_prohibited);
    TestSuite_AddLive (
       suite, "/WriteConcern/unacknowledged", test_write_concern_unacknowledged);
+   TestSuite_AddFull (suite,
+                      "/WriteConcern/inherited_fam",
+                      test_fam_no_session_no_txn,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_less_than_4);
+   TestSuite_AddFull (suite,
+                      "/WriteConcern/inherited_fam_session_no_txn",
+                      test_fam_session_no_txn,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_txns);
+   TestSuite_AddFull (suite,
+                      "/WriteConcern/inherited_fam_txn",
+                      test_fam_session_txn,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_txns);
+
 }
