@@ -405,6 +405,70 @@ test_client_pool_create_unused_session (void *context)
    ASSERT_NO_CAPTURED_LOGS ("mongoc_client_pool_destroy");
 }
 
+
+/* Tests case where thread is blocked waiting for a client to be pushed back
+ * into the client pool.  Specifically this tests that the program terminates.
+ * Addresses CDRIVER-3757 */
+
+typedef struct pool_timeout {
+   mongoc_client_pool_t *pool;
+   bson_mutex_t mutex;
+   mongoc_cond_t cond;
+   int nleft;
+} pool_timeout_args_t;
+
+static void *
+worker (void *arg)
+{
+   pool_timeout_args_t *args = arg;
+   mongoc_client_t *client = mongoc_client_pool_pop (args->pool);
+   BSON_ASSERT (client);
+   sleep (1);
+   mongoc_client_pool_push (args->pool, client);
+   bson_mutex_lock (&args->mutex);
+   /* notify main thread that current thread has terminated */
+   args->nleft--;
+   mongoc_cond_signal (&args->cond);
+   bson_mutex_unlock (&args->mutex);
+   return NULL;
+}
+
+static void
+test_client_pool_max_pool_size_exceeded (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_uri_t *uri;
+   pthread_t thread1, thread2;
+   pool_timeout_args_t *args = bson_malloc0 (sizeof (pool_timeout_args_t));
+   int wait_time = 4*1000; /* 4000 msec = 4 sec */
+   int ret;
+
+   uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1");
+   pool = mongoc_client_pool_new (uri);
+   args->pool = pool;
+   args->nleft = 2;
+   bson_mutex_init (&args->mutex);
+   mongoc_cond_init (&args->cond);
+
+   pthread_create (&thread1, NULL, worker, args);
+   pthread_create (&thread2, NULL, worker, args);
+
+   bson_mutex_lock (&args->mutex);
+   while (args->nleft > 0) {
+      ret = mongoc_cond_timedwait (&args->cond, &args->mutex, wait_time);
+      /* ret non-zero indicates an error (a timeout) */
+      BSON_ASSERT (!ret);
+   }
+   bson_mutex_unlock (&args->mutex);
+
+   pthread_join (thread1, NULL);
+   pthread_join (thread2, NULL);
+
+   mongoc_uri_destroy (uri);
+   mongoc_client_pool_destroy (pool);
+   free (args);
+}
+
 void
 test_client_pool_install (TestSuite *suite)
 {
@@ -440,4 +504,7 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/ClientPool/destroy_without_push",
                       test_client_pool_destroy_without_pushing);
+   TestSuite_AddLive (suite,
+                      "/ClientPool/max_pool_size_exceeded",
+                      test_client_pool_max_pool_size_exceeded);
 }
