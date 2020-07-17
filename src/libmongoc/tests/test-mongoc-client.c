@@ -2101,20 +2101,46 @@ _test_mongoc_client_ipv6 (bool pooled)
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
+#if (defined(__APPLE__) || defined(_WIN32)) && defined(MONGOC_ENABLE_SSL)
+   mongoc_ssl_opt_t ssl_opts;
+#endif
    bson_error_t error;
 
    uri_str = test_framework_add_user_password_from_env ("mongodb://[::1]/");
    uri = mongoc_uri_new (uri_str);
    BSON_ASSERT (uri);
 
+#if (defined(__APPLE__) || defined(_WIN32)) && defined(MONGOC_ENABLE_SSL)
+   /* This is necessary because macOS & Windows seem to treat [::1] as not
+    * matching the hostname "0:0:0:0:0:0:0:1", which results in a certificate
+    * trust failure.  This behavior has been captured in CDRIVER-3765 (macOS)
+    * and CDRIVER-3766 (Windows).  When those are fixed, the code in this
+    * function should be restored to its previous state without the use of
+    * ssl_opts.allow_invalid_hostname. */
+   ssl_opts = *test_framework_get_ssl_opts ();
+   ssl_opts.allow_invalid_hostname = true;
+#endif
+
    if (pooled) {
       pool = mongoc_client_pool_new (uri);
+#if (defined(__APPLE__) || defined(_WIN32)) && defined(MONGOC_ENABLE_SSL)
+      mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
+#else
       test_framework_set_pool_ssl_opts (pool);
+#endif
       client = mongoc_client_pool_pop (pool);
    } else {
       client = mongoc_client_new_from_uri (uri);
+#if (defined(__APPLE__) || defined(_WIN32)) && defined(MONGOC_ENABLE_SSL)
+      mongoc_client_set_ssl_opts (client, &ssl_opts);
+#else
       test_framework_set_ssl_opts (client);
+#endif
    }
+
+#if (defined(__APPLE__) || defined(_WIN32)) && defined(MONGOC_ENABLE_SSL)
+   BSON_ASSERT (client->ssl_opts.allow_invalid_hostname);
+#endif
 
    ASSERT_OR_PRINT (
       mongoc_client_read_command_with_opts (
