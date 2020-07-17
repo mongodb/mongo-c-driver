@@ -409,7 +409,7 @@ test_client_pool_create_unused_session (void *context)
 /* Tests case where thread is blocked waiting for a client to be pushed back
  * into the client pool.  Specifically this tests that the program terminates.
  * Addresses CDRIVER-3757 */
-
+#ifdef BSON_OS_UNIX
 typedef struct pool_timeout {
    mongoc_client_pool_t *pool;
    bson_mutex_t mutex;
@@ -468,7 +468,7 @@ test_client_pool_max_pool_size_exceeded (void)
    mongoc_client_pool_destroy (pool);
    free (args);
 }
-
+#endif
 void
 test_client_pool_install (TestSuite *suite)
 {
@@ -504,7 +504,9 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/ClientPool/destroy_without_push",
                       test_client_pool_destroy_without_pushing);
+#ifdef BSON_OS_UNIX
    TestSuite_AddLive (suite,
                       "/ClientPool/max_pool_size_exceeded",
                       test_client_pool_max_pool_size_exceeded);
+#endif
 }
