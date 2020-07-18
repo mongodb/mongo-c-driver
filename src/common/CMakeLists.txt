@@ -3,7 +3,6 @@ set (MONGOC_ENABLE_TESTING 0)
 
 if (ENABLE_TESTING)
     set (MONGOC_ENABLE_TESTING 1)
-    unset (ENABLE_TESTING CACHE)
 endif ()
 
 configure_file (
