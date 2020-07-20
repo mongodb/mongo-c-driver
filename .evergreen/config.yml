@@ -14712,7 +14712,7 @@ tasks:
       script: |-
         set -o errexit
         set -o xtrace
-        VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK -DMONGOC_ENABLE_TESTING' sh .evergreen/compile.sh
+        VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
   - func: run auth tests
     vars:
       valgrind: 'true'
