@@ -227,9 +227,6 @@ set (CMAKE_MACOSX_RPATH ON)
 # silence a CMake 3.11 warning that the old behavior is deprecated.
 cmake_policy (SET CMP0042 NEW)
 
-include_directories ("${PROJECT_BINARY_DIR}/src")
-include_directories ("${PROJECT_BINARY_DIR}/src/common")
-
 if (NOT USING_SYSTEM_BSON)
    message ("  -- Using bundled libbson")
 
