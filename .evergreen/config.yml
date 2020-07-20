@@ -891,6 +891,7 @@ tasks:
         set -o errexit
         set -o xtrace
         export DEBUG="ON"
+        export SSL="OFF"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-lto
