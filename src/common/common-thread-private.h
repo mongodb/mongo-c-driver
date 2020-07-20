@@ -96,19 +96,11 @@ typedef struct {
    BOOL CALLBACK n (PINIT_ONCE _ignored_a, PVOID _ignored_b, PVOID *_ignored_c)
 #define BSON_ONCE_INIT INIT_ONCE_STATIC_INIT
 #define BSON_ONCE_RETURN return true
-<<<<<<< HEAD
-=======
-
->>>>>>> CDRIVER-3702 remove windows support
 #define bson_mutex_destroy DeleteCriticalSection
 #define bson_mutex_init InitializeCriticalSection
 #define bson_mutex_lock EnterCriticalSection
 #define bson_mutex_t CRITICAL_SECTION
 #define bson_mutex_unlock LeaveCriticalSection
-<<<<<<< HEAD
-=======
-
->>>>>>> CDRIVER-3702 remove windows support
 #define bson_once(o, c) InitOnceExecuteOnce (o, c, NULL, NULL)
 #define bson_once_t INIT_ONCE
 #define bson_thread_t HANDLE

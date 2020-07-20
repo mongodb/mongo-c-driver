@@ -30,13 +30,11 @@
 #define mongoc_cond_broadcast pthread_cond_broadcast
 #define mongoc_cond_init(_n) pthread_cond_init ((_n), NULL)
 
-#ifndef MONGOC_ENABLE_TESTING
-#define mongoc_cond_wait pthread_cond_wait
+#if defined(MONGOC_ENABLE_TESTING)
+#define mongoc_cond_wait(cond, mutex)  \
+   pthread_cond_wait (cond, &(mutex)->wrapped_mutex);
 #else
-#define mongoc_cond_wait(cond, mutex)                    \
-   do {                                                  \
-      pthread_cond_wait (cond, &(mutex)->wrapped_mutex); \
-   } while (0);
+#define mongoc_cond_wait pthread_cond_wait
 #endif
 
 #define mongoc_cond_signal pthread_cond_signal
