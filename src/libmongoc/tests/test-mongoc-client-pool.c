@@ -409,7 +409,6 @@ test_client_pool_create_unused_session (void *context)
 /* Tests case where thread is blocked waiting for a client to be pushed back
  * into the client pool.  Specifically this tests that the program terminates.
  * Addresses CDRIVER-3757 */
-#ifdef BSON_OS_UNIX
 typedef struct pool_timeout {
    mongoc_client_pool_t *pool;
    bson_mutex_t mutex;
@@ -417,13 +416,12 @@ typedef struct pool_timeout {
    int nleft;
 } pool_timeout_args_t;
 
-static void *
-worker (void *arg)
+static BSON_THREAD_FUN (worker, arg)
 {
    pool_timeout_args_t *args = arg;
    mongoc_client_t *client = mongoc_client_pool_pop (args->pool);
    BSON_ASSERT (client);
-   sleep (1);
+   _mongoc_usleep (10);
    mongoc_client_pool_push (args->pool, client);
    bson_mutex_lock (&args->mutex);
    /* notify main thread that current thread has terminated */
@@ -438,9 +436,9 @@ test_client_pool_max_pool_size_exceeded (void)
 {
    mongoc_client_pool_t *pool;
    mongoc_uri_t *uri;
-   pthread_t thread1, thread2;
+   bson_thread_t thread1, thread2;
    pool_timeout_args_t *args = bson_malloc0 (sizeof (pool_timeout_args_t));
-   int wait_time = 4*1000; /* 4000 msec = 4 sec */
+   int wait_time = 2000; /* 2000 msec = 2 sec */
    int ret;
 
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1");
@@ -450,8 +448,8 @@ test_client_pool_max_pool_size_exceeded (void)
    bson_mutex_init (&args->mutex);
    mongoc_cond_init (&args->cond);
 
-   pthread_create (&thread1, NULL, worker, args);
-   pthread_create (&thread2, NULL, worker, args);
+   COMMON_PREFIX (thread_create) (&thread1, worker, args);
+   COMMON_PREFIX (thread_create) (&thread2, worker, args);
 
    bson_mutex_lock (&args->mutex);
    while (args->nleft > 0) {
@@ -461,14 +459,14 @@ test_client_pool_max_pool_size_exceeded (void)
    }
    bson_mutex_unlock (&args->mutex);
 
-   pthread_join (thread1, NULL);
-   pthread_join (thread2, NULL);
+   COMMON_PREFIX (thread_join) (thread1);
+   COMMON_PREFIX (thread_join) (thread2);
 
    mongoc_uri_destroy (uri);
    mongoc_client_pool_destroy (pool);
-   free (args);
+   bson_free (args);
 }
-#endif
+
 void
 test_client_pool_install (TestSuite *suite)
 {
@@ -504,9 +502,7 @@ test_client_pool_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/ClientPool/destroy_without_push",
                       test_client_pool_destroy_without_pushing);
-#ifdef BSON_OS_UNIX
    TestSuite_AddLive (suite,
                       "/ClientPool/max_pool_size_exceeded",
                       test_client_pool_max_pool_size_exceeded);
-#endif
 }
