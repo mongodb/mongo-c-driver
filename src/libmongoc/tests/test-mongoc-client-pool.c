@@ -438,7 +438,7 @@ test_client_pool_max_pool_size_exceeded (void)
    mongoc_uri_t *uri;
    bson_thread_t thread1, thread2;
    pool_timeout_args_t *args = bson_malloc0 (sizeof (pool_timeout_args_t));
-   int wait_time = 2000; /* 2000 msec = 2 sec */
+   int wait_time = 4000; /* 4000 msec = 4 sec */
    int ret;
 
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1");
