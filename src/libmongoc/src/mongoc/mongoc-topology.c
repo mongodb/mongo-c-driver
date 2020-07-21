@@ -629,7 +629,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    int64_t scan_time_ms;
    bool ret;
 
-   /* Test only assert. Is a noop unless config flag -DENABLE_TESTING=ON is
+   /* Test only assert. Is a noop unless config flag -DENABLE_TEST_ASSERTIONS=ON is
     * passed */
    MONGOC_TEST_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
@@ -720,7 +720,7 @@ done:
 static void
 mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
 {
-   /* Test only assert. Is a noop unless -DENABLE_TESTING=ON is passed at
+   /* Test only assert. Is a noop unless -DENABLE_TEST_ASSERTIONS=ON is passed at
     * configure time */
    MONGOC_TEST_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 

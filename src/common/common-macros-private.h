@@ -1,8 +1,11 @@
+
+#include "common-prelude.h"
+
 #ifndef MONGO_C_DRIVER_COMMON_MACROS_H
 #define MONGO_C_DRIVER_COMMON_MACROS_H
 
 /*
- * configure with option -DENABLE_TESTING=ON
+ * configure with option -DENABLE_TEST_ASSERTIONS=ON
  */
 #if defined (MONGOC_ENABLE_TESTING) && defined (BSON_OS_UNIX)
 #define MONGOC_TEST_ASSERT(statement) BSON_ASSERT (statement)

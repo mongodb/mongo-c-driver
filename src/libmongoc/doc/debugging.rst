@@ -104,3 +104,9 @@ If you see "bson command installed by lldb_bson" at the beginning of your LLDB s
 
 .. _PyMongo: https://pypi.python.org/pypi/pymongo
 .. _install pip: https://pip.pypa.io/en/stable/installing/#installing-with-get-pip-py)
+
+Test assertions
+---------------
+
+To enable assertions that a mutex is locked upon entering functions that require the caller to lock the mutex, configure
+with ``-DENABLE_TEST_ASSERTIONS=ON``.  ``MONGOC_TEST_ASSERT`` is a noop if ``-DENABLE_TEST_ASSERTIONS=OFF``.

@@ -275,7 +275,7 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    int i;
    bool is_srv_polling;
 
-   /* Test only assert. Is a noop unless -DMONGOC_ENABLE_TESTING=ON is set
+   /* Test only assert. Is a noop unless -DENABLE_TEST_ASSERTIONS=ON is set
     * during configuration */
    MONGOC_TEST_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 

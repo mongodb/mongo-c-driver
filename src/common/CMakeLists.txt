@@ -1,7 +1,7 @@
 
 set (MONGOC_ENABLE_TESTING 0)
 
-if (ENABLE_TESTING)
+if (ENABLE_TEST_ASSERTIONS)
     set (MONGOC_ENABLE_TESTING 1)
 endif ()
 
@@ -16,7 +16,7 @@ set (src_common_DIST_noinst_hs
    common-prelude.h
    common-thread-private.h
    common-config.h.in
-   common-macros.h
+   common-macros-private.h
 )
 
 set (src_common_DIST_cs

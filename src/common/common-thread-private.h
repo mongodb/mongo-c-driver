@@ -16,7 +16,7 @@
 
 #include "common-prelude.h"
 #include "common-config.h"
-#include "common-macros.h"
+#include "common-macros-private.h"
 
 #ifndef COMMON_THREAD_PRIVATE_H
 #define COMMON_THREAD_PRIVATE_H
@@ -44,7 +44,7 @@ BSON_BEGIN_DECLS
 #define BSON_THREAD_RETURN return NULL
 
 /* this macro can be defined as a as a build configuration option
- * with -DENABLE_TESTING=ON.  its purpose is to allow for functions
+ * with -DENABLE_TEST_ASSERTIONS=ON.  its purpose is to allow for functions
  * that require a mutex to be locked on entry to assert that the mutex
  * is actually locked.
  * this can prevent bugs where a caller forgets to lock the mutex. */
@@ -84,8 +84,8 @@ typedef struct {
 
 #define bson_mutex_unlock(mutex)                      \
    do {                                               \
-      pthread_mutex_unlock (&(mutex)->wrapped_mutex); \
       (mutex)->valid_tid = false;                     \
+      pthread_mutex_unlock (&(mutex)->wrapped_mutex); \
    } while (0);
 
 #endif
