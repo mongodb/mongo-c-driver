@@ -227,6 +227,8 @@ set (CMAKE_MACOSX_RPATH ON)
 # silence a CMake 3.11 warning that the old behavior is deprecated.
 cmake_policy (SET CMP0042 NEW)
 
+add_subdirectory (src/common)
+
 if (NOT USING_SYSTEM_BSON)
    message ("  -- Using bundled libbson")
 
@@ -246,8 +248,6 @@ endif ()
 add_definitions (-D_GNU_SOURCE)
 add_definitions (-D_BSD_SOURCE)
 add_definitions (-D_DEFAULT_SOURCE)
-
-add_subdirectory (src)
 
 if (ENABLE_MONGOC)
 
@@ -365,6 +365,7 @@ if (ENABLE_MONGOC)
    add_subdirectory (build)
    # sub-directory 'doc' was already included above
    add_subdirectory (orchestration_configs)
+   add_subdirectory (src)
    # 'src/libbson' was already included, so 'src' will not include it directly
    # 'src/kms-message' was already included if appropriate
    # 'src/libmongoc' was already included, so 'src' will not include it directly
