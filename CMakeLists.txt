@@ -247,6 +247,8 @@ add_definitions (-D_GNU_SOURCE)
 add_definitions (-D_BSD_SOURCE)
 add_definitions (-D_DEFAULT_SOURCE)
 
+add_subdirectory (src)
+
 if (ENABLE_MONGOC)
 
    if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC_BUILD)
@@ -363,7 +365,6 @@ if (ENABLE_MONGOC)
    add_subdirectory (build)
    # sub-directory 'doc' was already included above
    add_subdirectory (orchestration_configs)
-   add_subdirectory (src)
    # 'src/libbson' was already included, so 'src' will not include it directly
    # 'src/kms-message' was already included if appropriate
    # 'src/libmongoc' was already included, so 'src' will not include it directly
