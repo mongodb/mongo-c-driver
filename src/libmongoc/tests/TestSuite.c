@@ -38,6 +38,7 @@
 #include <windows.h>
 #endif
 
+#include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 
@@ -594,7 +595,9 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
 #endif
 
       srand (test->seed);
+      test_conveniences_init ();
       test->func (test->ctx);
+      test_conveniences_cleanup ();
    } else {
       status = TestSuite_RunFuncInChild (suite, test);
    }

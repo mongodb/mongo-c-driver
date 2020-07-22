@@ -43,22 +43,21 @@ static char *gHugeString;
 static size_t gHugeStringLength;
 static char *gFourMBString;
 
-static void
-test_conveniences_cleanup ();
 
-
-static void
+void
 test_conveniences_init ()
 {
    if (!gConveniencesInitialized) {
       _mongoc_array_init (&gTmpBsonArray, sizeof (bson_t *));
       atexit (test_conveniences_cleanup);
       gConveniencesInitialized = true;
+      gHugeString = NULL;
+      gFourMBString = NULL;
    }
 }
 
 
-static void
+void
 test_conveniences_cleanup ()
 {
    int i;
@@ -71,9 +70,11 @@ test_conveniences_cleanup ()
       }
 
       _mongoc_array_destroy (&gTmpBsonArray);
-   }
 
-   bson_free (gHugeString);
+      bson_free (gHugeString);
+      bson_free (gFourMBString);
+      gConveniencesInitialized = false;
+   }
 }
 
 
@@ -1552,6 +1553,8 @@ init_huge_string (mongoc_client_t *client)
 
    BSON_ASSERT (client);
 
+   test_conveniences_init ();
+
    if (!gHugeString) {
       max_bson_size = mongoc_cluster_get_max_bson_obj_size (&client->cluster);
       BSON_ASSERT (max_bson_size > 0);
@@ -1583,6 +1586,8 @@ huge_string_length (mongoc_client_t *client)
 static void
 init_four_mb_string ()
 {
+   test_conveniences_init ();
+
    if (!gFourMBString) {
       gFourMBString = (char *) bson_malloc (FOUR_MB + 1);
       BSON_ASSERT (gFourMBString);
