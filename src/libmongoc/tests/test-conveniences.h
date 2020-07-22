@@ -23,6 +23,19 @@
 #include "mongoc/mongoc-read-prefs-private.h"
 #include "mongoc/mongoc-client-private.h"
 
+/* Initialize global test convenience structures.
+ * Safe to call repeatedly, or after calling test_conveniences_cleanup().
+ */
+void
+test_conveniences_init ();
+
+/* Tear down global test conveniences.
+ * Safe to call repeatedly.
+ * Called automatically at process exit.
+ */
+void
+test_conveniences_cleanup ();
+
 bson_t *
 tmp_bson (const char *json, ...);
 
