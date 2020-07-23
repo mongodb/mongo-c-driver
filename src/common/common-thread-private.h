@@ -44,7 +44,7 @@ BSON_BEGIN_DECLS
 #define BSON_THREAD_RETURN return NULL
 
 /* this macro can be defined as a as a build configuration option
- * with -DENABLE_TEST_ASSERTIONS=ON.  its purpose is to allow for functions
+ * with -DENABLE_DEBUG_ASSERTIONS=ON.  its purpose is to allow for functions
  * that require a mutex to be locked on entry to assert that the mutex
  * is actually locked.
  * this can prevent bugs where a caller forgets to lock the mutex. */

@@ -135,7 +135,7 @@ if [ "$RELEASE" = "ON" ]; then
    $TAR xf ../mongoc.tar.gz -C build-dir --strip-components=1
    cd build-dir
 else
-  CONFIGURE_FLAGS="${CONFIGURE_FLAGS} -DENABLE_TEST_ASSERTIONS=ON"
+  CONFIGURE_FLAGS="${CONFIGURE_FLAGS} -DENABLE_DEBUG_ASSERTIONS=ON"
 fi
 
 if [ "$SRV" = "OFF" ]; then
