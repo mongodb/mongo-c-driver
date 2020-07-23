@@ -479,7 +479,8 @@ test_all_spec_tests (TestSuite *suite)
                                        resolved,
                                        &test_sdam_integration_cb,
                                        TestSuite_CheckLive,
-                                       test_framework_skip_if_no_crypto);
+                                       test_framework_skip_if_no_crypto,
+                                       test_framework_skip_if_slow);
 }
 
 static void
