@@ -106,6 +106,6 @@ If you see "bson command installed by lldb_bson" at the beginning of your LLDB s
 .. _install pip: https://pip.pypa.io/en/stable/installing/#installing-with-get-pip-py)
 
 Debug assertions
----------------
+----------------
 
-To enable runtime test assertions, configure with ``-DENABLE_DEBUG_ASSERTIONS=ON``.
+To enable runtime debug assertions, configure with ``-DENABLE_DEBUG_ASSERTIONS=ON``.
