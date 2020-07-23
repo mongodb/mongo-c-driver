@@ -12,9 +12,9 @@ if (ENABLE_MAINTAINER_FLAGS AND NOT MSVC AND NOT MONGOC_MAINTAINER_FLAGS_SET)
 
    foreach (MAINTAINER_FLAG ${MAINTAINER_FLAGS})
       # Avoid useless "Performing Test FLAG_OK" message.
-      set (MESSAGES_ENABLED 0)
+      set (CMAKE_REQUIRED_QUIET 1)
       check_c_compiler_flag ("${MAINTAINER_FLAG}" FLAG_OK)
-      set (MESSAGES_ENABLED 1)
+      set (CMAKE_REQUIRED_QUIET 0)
       if (FLAG_OK)
          message (STATUS "C compiler accepts ${MAINTAINER_FLAG}")
          set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${MAINTAINER_FLAG}")
