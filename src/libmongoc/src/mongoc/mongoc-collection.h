@@ -351,6 +351,57 @@ mongoc_collection_estimated_document_count (
    bson_t *reply,
    bson_error_t *error);
 
+
+typedef enum {
+   MONGOC_INDEX_BACKGROUND,
+   MONGOC_INDEX_NAME,
+   MONGOC_INDEX_UNIQUE,
+   MONGOC_INDEX_PARTIAL_FILTER_EXPRESSION,
+   MONGOC_INDEX_SPARSE,
+   MONGOC_INDEX_EXPIRE_AFTER_SECONDS,
+   MONGOC_INDEX_HIDDEN,
+   MONGOC_INDEX_STORAGE_ENGINE,
+   MONGOC_INDEX_WEIGHTS,
+   MONGOC_INDEX_DEFAULT_LANGUAGE,
+   MONGOC_INDEX_LANGUAGE_OVERRIDE,
+   MONGOC_INDEX_TEXT_INDEX_VERSION,
+   MONGOC_INDEX_BITS,
+   MONGOC_INDEX_TWO_D_SPHERE_INDEX_VERSION,
+   MONGOC_INDEX_MIN,
+   MONGOC_INDEX_MAX,
+   MONGOC_INDEX_BUCKET_SIZE,
+   MONGOC_INDEX_COLLATION,
+   MONGOC_INDEX_WILDCARD_PROJECTION,
+} mongoc_set_index_opt_t;
+
+
+typedef struct _mongoc_index_model_t mongoc_index_model_t;
+
+MONGOC_EXPORT (bool)
+mongoc_collection_create_index_with_commit_quorum (
+   mongoc_collection_t *collection,
+   mongoc_index_model_t **indexes,
+   size_t num_indexes,
+   bson_t *opts,
+   bson_error_t *error);
+
+MONGOC_EXPORT (mongoc_index_model_t *)
+mongoc_index_model_new (void);
+
+MONGOC_EXPORT (void)
+mongoc_index_model_destroy (mongoc_index_model_t *);
+
+MONGOC_EXPORT (void)
+mongoc_index_model_destroy (mongoc_index_model_t *);
+
+MONGOC_EXPORT (void)
+mongoc_index_model_set_opt (mongoc_index_model_t *,
+                            void *,
+                            mongoc_set_index_opt_t);
+
+MONGOC_EXPORT (void)
+mongoc_index_model_set_key (mongoc_index_model_t *, bson_t *);
+
 BSON_END_DECLS
 
 

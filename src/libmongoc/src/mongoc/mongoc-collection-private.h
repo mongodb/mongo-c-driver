@@ -39,6 +39,10 @@ struct _mongoc_collection_t {
    bson_t *gle;
 };
 
+struct _mongoc_index_model_t {
+   bson_t *key;
+   mongoc_index_opt_t opts;
+};
 
 mongoc_collection_t *
 _mongoc_collection_new (mongoc_client_t *client,
