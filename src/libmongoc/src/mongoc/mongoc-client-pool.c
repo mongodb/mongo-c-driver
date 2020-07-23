@@ -117,6 +117,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 
    pool = (mongoc_client_pool_t *) bson_malloc0 (sizeof *pool);
    bson_mutex_init (&pool->mutex);
+   mongoc_cond_init (&pool->cond);
    _mongoc_queue_init (&pool->queue);
    pool->uri = mongoc_uri_copy (uri);
    pool->min_pool_size = 0;
