@@ -392,9 +392,6 @@ MONGOC_EXPORT (void)
 mongoc_index_model_destroy (mongoc_index_model_t *);
 
 MONGOC_EXPORT (void)
-mongoc_index_model_destroy (mongoc_index_model_t *);
-
-MONGOC_EXPORT (void)
 mongoc_index_model_set_opt (mongoc_index_model_t *,
                             void *,
                             mongoc_set_index_opt_t);
