@@ -428,7 +428,7 @@ static BSON_THREAD_FUN (worker, arg)
    args->nleft--;
    mongoc_cond_signal (&args->cond);
    bson_mutex_unlock (&args->mutex);
-   return NULL;
+   BSON_THREAD_RETURN;
 }
 
 static void
