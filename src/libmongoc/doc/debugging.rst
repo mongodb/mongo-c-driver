@@ -109,4 +109,3 @@ Test assertions
 ---------------
 
 To enable runtime test assertions, configure with ``-DENABLE_TEST_ASSERTIONS=ON``.
-``MONGOC_TEST_ASSERT`` is a noop if ``-DENABLE_TEST_ASSERTIONS=OFF``.

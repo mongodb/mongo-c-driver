@@ -134,8 +134,10 @@ _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor,
                                    bool awaited)
 {
    mongoc_apm_server_heartbeat_started_t event;
-   MONGOC_TEST_ASSERT(!COMMON_PREFIX (mutex_is_locked) (&server_monitor->topology->apm_mutex));
-   MONGOC_TEST_ASSERT(!COMMON_PREFIX (mutex_is_locked) (&server_monitor->topology->mutex));
+   MONGOC_DEBUG_ASSERT (
+      !COMMON_PREFIX (mutex_is_locked) (&server_monitor->topology->apm_mutex));
+   MONGOC_DEBUG_ASSERT (
+      !COMMON_PREFIX (mutex_is_locked) (&server_monitor->topology->mutex));
 
    if (!server_monitor->apm_callbacks.server_heartbeat_started) {
       return;
@@ -685,7 +687,7 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
                            mongoc_server_description_t *init_description)
 {
    mongoc_server_monitor_t *server_monitor;
-   MONGOC_TEST_ASSERT (COMMON_PREFIX (mutex_is_locked (&topology->mutex)));
+   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked (&topology->mutex)));
 
    server_monitor = bson_malloc0 (sizeof (*server_monitor));
    server_monitor->description =

@@ -61,7 +61,7 @@ option (ENABLE_PIC
    "Enables building of position independent code for static library components."
    ON
 )
-option (ENABLE_TEST_ASSERTIONS "Turn on mutex lock asserts" OFF)
+option (ENABLE_DEBUG_ASSERTIONS "Turn on runtime test assertions" OFF)
 
 project (mongo-c-driver C)
 

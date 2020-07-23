@@ -49,7 +49,7 @@ BSON_BEGIN_DECLS
  * is actually locked.
  * this can prevent bugs where a caller forgets to lock the mutex. */
 
-#ifndef MONGOC_ENABLE_TESTING
+#ifndef MONGOC_ENABLE_DEBUG_ASSERTIONS
 
 #define bson_mutex_destroy pthread_mutex_destroy
 #define bson_mutex_init(_n) pthread_mutex_init ((_n), NULL)
@@ -119,7 +119,7 @@ int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
                                    BSON_THREAD_FUN_TYPE (func),
                                    void *arg);
 
-#if defined(MONGOC_ENABLE_TESTING) && defined(BSON_OS_UNIX)
+#if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS) && defined(BSON_OS_UNIX)
 bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex);
 #endif
 

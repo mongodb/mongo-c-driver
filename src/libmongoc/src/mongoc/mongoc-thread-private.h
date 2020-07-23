@@ -30,8 +30,8 @@
 #define mongoc_cond_broadcast pthread_cond_broadcast
 #define mongoc_cond_init(_n) pthread_cond_init ((_n), NULL)
 
-#if defined(MONGOC_ENABLE_TESTING)
-#define mongoc_cond_wait(cond, mutex)  \
+#if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS)
+#define mongoc_cond_wait(cond, mutex) \
    pthread_cond_wait (cond, &(mutex)->wrapped_mutex);
 #else
 #define mongoc_cond_wait pthread_cond_wait
@@ -54,7 +54,7 @@ mongoc_cond_timedwait (pthread_cond_t *cond,
    to.tv_sec = msec / 1000;
    to.tv_nsec = (msec % 1000) * 1000 * 1000;
 
-#if defined(MONGOC_ENABLE_TESTING) && defined(BSON_OS_UNIX)
+#if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS) && defined(BSON_OS_UNIX)
    return pthread_cond_timedwait (cond, &mutex->wrapped_mutex, &to);
 #else
    return pthread_cond_timedwait (cond, mutex, &to);
