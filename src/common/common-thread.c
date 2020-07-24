@@ -27,6 +27,15 @@ int COMMON_PREFIX (thread_join) (bson_thread_t thread)
 {
    return pthread_join (thread, NULL);
 }
+
+#if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS) && defined(BSON_OS_UNIX)
+bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex)
+{
+   return mutex->valid_tid &&
+          pthread_equal (pthread_self (), mutex->lock_owner);
+}
+#endif
+
 #else
 int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
                                    BSON_THREAD_FUN_TYPE (func),

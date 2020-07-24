@@ -103,7 +103,7 @@ if [ "$RELEASE" ]; then
    TEST_PATH="./src/libmongoc/RelWithDebInfo/test-libmongoc.exe"
    export PATH=$PATH:`pwd`/src/libbson/RelWithDebInfo:`pwd`/src/libmongoc/RelWithDebInfo:`pwd`/install-dir/bin
 else
-   CONFIGURE_FLAGS="$CONFIGURE_FLAGS"
+   CONFIGURE_FLAGS="${CONFIGURE_FLAGS} -DENABLE_DEBUG_ASSERTIONS=ON"
    BUILD_CONFIG="Debug"
    TEST_PATH="./src/libmongoc/Debug/test-libmongoc.exe"
    export PATH=$PATH:`pwd`/src/libbson/Debug:`pwd`/src/libmongoc/Debug:`pwd`/install-dir/bin

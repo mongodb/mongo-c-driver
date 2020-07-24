@@ -15,6 +15,8 @@
  */
 
 #include "common-prelude.h"
+#include "common-config.h"
+#include "common-macros-private.h"
 
 #ifndef COMMON_THREAD_PRIVATE_H
 #define COMMON_THREAD_PRIVATE_H
@@ -29,14 +31,10 @@ BSON_BEGIN_DECLS
 
 #if defined(BSON_OS_UNIX)
 #include <pthread.h>
+
 #define BSON_ONCE_FUN(n) void n (void)
 #define BSON_ONCE_RETURN return
 #define BSON_ONCE_INIT PTHREAD_ONCE_INIT
-#define bson_mutex_destroy pthread_mutex_destroy
-#define bson_mutex_init(_n) pthread_mutex_init ((_n), NULL)
-#define bson_mutex_lock pthread_mutex_lock
-#define bson_mutex_t pthread_mutex_t
-#define bson_mutex_unlock pthread_mutex_unlock
 #define bson_once pthread_once
 #define bson_once_t pthread_once_t
 #define bson_thread_t pthread_t
@@ -44,6 +42,54 @@ BSON_BEGIN_DECLS
    void *(_function_name) (void *(_arg_name))
 #define BSON_THREAD_FUN_TYPE(_function_name) void *(*(_function_name)) (void *)
 #define BSON_THREAD_RETURN return NULL
+
+/* this macro can be defined as a as a build configuration option
+ * with -DENABLE_DEBUG_ASSERTIONS=ON.  its purpose is to allow for functions
+ * that require a mutex to be locked on entry to assert that the mutex
+ * is actually locked.
+ * this can prevent bugs where a caller forgets to lock the mutex. */
+
+#ifndef MONGOC_ENABLE_DEBUG_ASSERTIONS
+
+#define bson_mutex_destroy pthread_mutex_destroy
+#define bson_mutex_init(_n) pthread_mutex_init ((_n), NULL)
+#define bson_mutex_lock pthread_mutex_lock
+#define bson_mutex_t pthread_mutex_t
+#define bson_mutex_unlock pthread_mutex_unlock
+
+#else
+typedef struct {
+   pthread_t lock_owner;
+   pthread_mutex_t wrapped_mutex;
+   bool valid_tid;
+} bson_mutex_t;
+
+#define bson_mutex_destroy(mutex)                      \
+   do {                                                \
+      pthread_mutex_destroy (&(mutex)->wrapped_mutex); \
+   } while (0);
+
+#define bson_mutex_init(mutex)                            \
+   do {                                                   \
+      pthread_mutex_init (&(mutex)->wrapped_mutex, NULL); \
+      (mutex)->valid_tid = false;                         \
+   } while (0);
+
+#define bson_mutex_lock(mutex)                      \
+   do {                                             \
+      pthread_mutex_lock (&(mutex)->wrapped_mutex); \
+      (mutex)->lock_owner = pthread_self ();        \
+      (mutex)->valid_tid = true;                    \
+   } while (0);
+
+#define bson_mutex_unlock(mutex)                      \
+   do {                                               \
+      (mutex)->valid_tid = false;                     \
+      pthread_mutex_unlock (&(mutex)->wrapped_mutex); \
+   } while (0);
+
+#endif
+
 #else
 #include <process.h>
 #define BSON_ONCE_FUN(n) \
@@ -72,6 +118,10 @@ int COMMON_PREFIX (thread_join) (bson_thread_t thread);
 int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
                                    BSON_THREAD_FUN_TYPE (func),
                                    void *arg);
+
+#if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS) && defined(BSON_OS_UNIX)
+bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex);
+#endif
 
 BSON_END_DECLS
 

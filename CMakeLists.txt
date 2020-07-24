@@ -53,6 +53,7 @@ option (ENABLE_PIC
    "Enables building of position independent code for static library components."
    ON
 )
+option (ENABLE_DEBUG_ASSERTIONS "Turn on runtime debug assertions" OFF)
 
 project (mongo-c-driver C)
 
@@ -217,6 +218,8 @@ set (CMAKE_MACOSX_RPATH ON)
 # Enable a CMake 3.0+ policy that sets CMAKE_MACOSX_RPATH by default, and
 # silence a CMake 3.11 warning that the old behavior is deprecated.
 cmake_policy (SET CMP0042 NEW)
+
+add_subdirectory (src/common)
 
 if (NOT USING_SYSTEM_BSON)
    message ("  -- Using bundled libbson")

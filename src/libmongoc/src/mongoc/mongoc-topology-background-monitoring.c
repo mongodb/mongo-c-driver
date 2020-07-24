@@ -89,6 +89,7 @@ _background_monitor_reconcile_server_monitor (mongoc_topology_t *topology,
    mongoc_set_t *server_monitors;
    mongoc_server_monitor_t *server_monitor;
 
+   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
    server_monitors = topology->server_monitors;
    server_monitor = mongoc_set_get (server_monitors, sd->id);
 
@@ -125,6 +126,7 @@ void
 _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
 {
    BSON_ASSERT (!topology->single_threaded);
+   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
    if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       return;
@@ -203,6 +205,7 @@ _mongoc_topology_background_monitoring_reconcile (mongoc_topology_t *topology)
    mongoc_set_t *server_descriptions;
    int i;
 
+   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
    td = &topology->description;
    server_descriptions = td->servers;
 
@@ -271,6 +274,8 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    mongoc_server_monitor_t *server_monitor;
    int i;
    bool is_srv_polling;
+
+   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
    BSON_ASSERT (!topology->single_threaded);
 
