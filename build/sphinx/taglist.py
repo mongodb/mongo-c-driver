@@ -25,9 +25,9 @@ THE SOFTWARE.
 
 from docutils import nodes, utils
 try:
-    from sphinx.environment import NoUri
-except ImportError:
     from sphinx.errors import NoUri
+except ImportError:
+    from sphinx.environment import NoUri
 try:
     from sphinx.util.compat import Directive
 except ImportError:
