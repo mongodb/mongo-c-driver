@@ -28,15 +28,13 @@ all_functions = OD([
             ]))]),
         shell_mongoc(r'''
         # TODO: CDRIVER-3573 do not hardcode the version.
-        if [ "${project}" != "mongo-c-driver" ]; then
-           # This is an older branch, like r1.17
-           VERSION_CURRENT="1.17.0-pre"
+        if [ -n "${github_pr_number}" ]; then
+           # This is a GitHub PR, probably branched from master
+           VERSION_CURRENT="1.18.0"
            echo $VERSION_CURRENT > "VERSION_CURRENT"
            VERSION=$VERSION_CURRENT-${version_id}
         elif [ "${is_patch}" = "true" ]; then
-           VERSION_CURRENT="1.17.0-pre"
-           echo $VERSION_CURRENT > "VERSION_CURRENT"
-           VERSION=$VERSION_CURRENT-patch-${version_id}
+           VERSION=$(git describe --abbrev=7 --match='1.*')-patch-${version_id}
         else
            VERSION=latest
         fi
