@@ -1,3 +1,27 @@
+libbson 1.17.0
+==============
+
+It is my pleasure to announce libbson 1.17.0.
+
+Features:
+
+  * Add the cmake option ENABLE_PIC to build static libraries with position independent code.
+
+Bug fixes:
+
+  * Fix possible int32 overflow when comparing and constructing large bson_t's.
+  * Fix pedantic compiler warnings.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Richard Donkin
+  * Roberto C. Sánchez
+  * Josh Weinstein
+
+-- Kevin Albertson
+
+
 libbson 1.17.0 rc0
 ==================
 
@@ -19,6 +43,7 @@ Features:
   * Improve assertion error messages.
 
 Bug fixes:
+
   * Fix possible int32 overflow when comparing and constructing large bson_t's.
 
 Thanks to everyone who contributed to the development of this release.
