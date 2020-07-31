@@ -1,12 +1,13 @@
-mongo-c-driver (1.16.1-2) UNRELEASED; urgency=medium
+mongo-c-driver (1.17.0-1) UNRELEASED; urgency=medium
 
+  * New upstream release
   * Acknowledge NMU; thanks to Adrian Bunk
     + Drop 0001-CDRIVER-3594-build-Sphinx-docs-without-parallelism.patch;
       already fixed in commit 214c433997ffbed6f36e2ba46218c5beb30a6107
   * Add libmongoc-dev dependency on libzstd-dev
   * Allow skipping build of documentation, i.e., DEB_BUILD_OPTIONS="nodoc"
 
- -- Roberto C. Sanchez <roberto@connexer.com>  Mon, 22 Jun 2020 08:50:14 -0400
+ -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 31 Jul 2020 10:20:36 -0400
 
 mongo-c-driver (1.16.1-1.1) unstable; urgency=high
 
