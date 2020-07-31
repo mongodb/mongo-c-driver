@@ -57,6 +57,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
    for (;;) {
       mongoc_cmd_parts_init (
          &parts, cluster->client, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
+      parts.prohibit_lsid = true;
 
       /* If this is the first step, input buffer is NULL. */
       bson_free (outbuf);
