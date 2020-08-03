@@ -28,7 +28,7 @@ Parameters
 
 .. include:: includes/generic-opts.txt
 
-For a list of all options, see `the MongoDB Manual entry on the listCollections command <http://docs.mongodb.org/manual/reference/command/listCollections/>`_.
+For a list of all options, see `the MongoDB Manual entry on the listCollections command <https://docs.mongodb.org/manual/reference/command/listCollections/>`_.
 
 Errors
 ------

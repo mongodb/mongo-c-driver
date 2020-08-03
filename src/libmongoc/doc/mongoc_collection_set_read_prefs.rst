@@ -25,5 +25,5 @@ Sets the default read preferences to use for operations on ``collection`` not sp
 
 The global default is MONGOC_READ_PRIMARY: if the client is connected to a replica set it reads from the primary, otherwise it reads from the current MongoDB server.
 
-Please see the MongoDB website for a description of `Read Preferences <http://docs.mongodb.org/manual/core/read-preference/>`_.
+Please see the MongoDB website for a description of `Read Preferences <https://docs.mongodb.org/manual/core/read-preference/>`_.
 

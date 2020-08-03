@@ -47,7 +47,7 @@ Description
 
 This function shall execute a count query on the underlying 'collection'. The bson 'query' is not validated, simply passed along as appropriate to the server.  As such, compatibility and errors should be validated in the appropriate server documentation.
 
-For more information, see the `query reference <http://docs.mongodb.org/manual/reference/operator/query/>`_ at the MongoDB website.
+For more information, see the `query reference <https://docs.mongodb.org/manual/reference/operator/query/>`_ at the MongoDB website.
 
 The :symbol:`mongoc_read_concern_t` specified on the :symbol:`mongoc_collection_t` will be used, if any. If ``read_prefs`` is NULL, the collection's read preferences are used.
 

@@ -19,7 +19,7 @@ Synopsis
 Description
 -----------
 
-The :symbol:`bson_oid_t` structure contains the 12-byte ObjectId notation defined by the `BSON ObjectID specification <http://docs.mongodb.org/manual/reference/object-id/>`_.
+The :symbol:`bson_oid_t` structure contains the 12-byte ObjectId notation defined by the `BSON ObjectID specification <https://docs.mongodb.org/manual/reference/object-id/>`_.
 
 ObjectId is a 12-byte BSON type, constructed using:
 
