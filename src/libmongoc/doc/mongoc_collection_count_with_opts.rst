@@ -55,7 +55,7 @@ The :symbol:`mongoc_read_concern_t` specified on the :symbol:`mongoc_collection_
 
 In addition to the standard functionality available from mongoc_collection_count, this function allows the user to add arbitrary extra keys to the count.  This pass through enables features such as hinting for counts.
 
-For more information, see the `query reference <http://docs.mongodb.org/manual/reference/operator/query/>`_ at the MongoDB website.
+For more information, see the `query reference <https://docs.mongodb.org/manual/reference/operator/query/>`_ at the MongoDB website.
 
 .. include:: includes/retryable-read.txt
 

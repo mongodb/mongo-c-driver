@@ -784,7 +784,7 @@ Executing Commands
 
 The driver provides helper functions for executing MongoDB commands on client, database and collection structures. These functions return :doc:`cursors <mongoc_cursor_t>`; the ``_simple`` variants return booleans indicating success or failure.
 
-This example executes the `collStats <http://docs.mongodb.org/manual/reference/command/collStats/>`_ command against the collection "mycoll" in database "mydb".
+This example executes the `collStats <https://docs.mongodb.org/manual/reference/command/collStats/>`_ command against the collection "mycoll" in database "mydb".
 
 .. code-block:: c
 

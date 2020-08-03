@@ -15,7 +15,7 @@ Description
 
 ``mongoc_uri_t`` provides an abstraction on top of the MongoDB connection URI format. It provides standardized parsing as well as convenience methods for extracting useful information such as replica hosts or authorization information.
 
-See `Connection String URI Reference <http://docs.mongodb.org/manual/reference/connection-string/>`_ on the MongoDB website for more information.
+See `Connection String URI Reference <https://docs.mongodb.org/manual/reference/connection-string/>`_ on the MongoDB website for more information.
 
 Format
 ------

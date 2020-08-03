@@ -10,7 +10,7 @@ For an example of connecting to a simple standalone server, see the :ref:`Tutori
 Connecting to a Replica Set
 ---------------------------
 
-Connecting to a `replica set <http://docs.mongodb.org/manual/replication/>`_ is much like connecting to a standalone MongoDB server. Simply specify the replica set name using the ``?replicaSet=myreplset`` URI option.
+Connecting to a `replica set <https://docs.mongodb.org/manual/replication/>`_ is much like connecting to a standalone MongoDB server. Simply specify the replica set name using the ``?replicaSet=myreplset`` URI option.
 
 .. code-block:: c
 
@@ -47,7 +47,7 @@ Connecting to a `replica set <http://docs.mongodb.org/manual/replication/>`_ is 
 Connecting to a Sharded Cluster
 -------------------------------
 
-To connect to a `sharded cluster <http://docs.mongodb.org/manual/sharding/>`_, specify the ``mongos`` nodes the client should connect to. The C Driver will automatically detect that it has connected to a ``mongos`` sharding server.
+To connect to a `sharded cluster <https://docs.mongodb.org/manual/sharding/>`_, specify the ``mongos`` nodes the client should connect to. The C Driver will automatically detect that it has connected to a ``mongos`` sharding server.
 
 If more than one hostname is specified, a seed list will be created to attempt failover between the ``mongos`` instances.
 

@@ -23,7 +23,7 @@ Exceptions to this principle are the generic command functions:
 
 These generic command functions do not automatically apply a write concern, and they do not check the server response for a write concern error or write concern timeout.
 
-See `Write Concern <http://docs.mongodb.org/manual/core/write-concern/>`_ on the MongoDB website for more information.
+See `Write Concern <https://docs.mongodb.org/manual/core/write-concern/>`_ on the MongoDB website for more information.
 
 Write Concern Levels
 --------------------

@@ -18,7 +18,7 @@ The global default is to read from the replica set primary.
 
 It is a programming error to call this function on a client from a :symbol:`mongoc_client_pool_t`. For pooled clients, set the read preferences with the :ref:`MongoDB URI <mongoc_uri_t_read_prefs_options>` instead.
 
-Please see the MongoDB website for a description of `Read Preferences <http://docs.mongodb.org/manual/core/read-preference/>`_.
+Please see the MongoDB website for a description of `Read Preferences <https://docs.mongodb.org/manual/core/read-preference/>`_.
 
 Parameters
 ----------

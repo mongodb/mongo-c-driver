@@ -21,5 +21,5 @@ Parameters
 Description
 -----------
 
-Sets the read preference mode. See the MongoDB website for more information on `Read Preferences <http://docs.mongodb.org/manual/core/read-preference/>`_.
+Sets the read preference mode. See the MongoDB website for more information on `Read Preferences <https://docs.mongodb.org/manual/core/read-preference/>`_.
 

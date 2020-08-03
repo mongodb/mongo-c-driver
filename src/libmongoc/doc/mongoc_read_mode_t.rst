@@ -23,5 +23,5 @@ Description
 
 This enum describes how reads should be dispatched. The default is MONGOC_READ_PRIMARY.
 
-Please see the MongoDB website for a description of `Read Preferences <http://docs.mongodb.org/manual/core/read-preference/>`_.
+Please see the MongoDB website for a description of `Read Preferences <https://docs.mongodb.org/manual/core/read-preference/>`_.
 
