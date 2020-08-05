@@ -1,8 +1,5 @@
 cmake_minimum_required (VERSION 3.1)
 
-# Used in MaintainerFlags.cmake to silence errors while testing configs.
-set (MESSAGES_ENABLED 1)
-
 set (ENABLE_SSL AUTO CACHE STRING
    "Enable TLS connections and SCRAM-SHA-1 authentication. Options are
    \"DARWIN\" to use Apple's Secure Transport, \"WINDOWS\" to use Windows
