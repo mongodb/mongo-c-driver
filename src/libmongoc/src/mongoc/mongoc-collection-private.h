@@ -39,34 +39,6 @@ struct _mongoc_collection_t {
    bson_t *gle;
 };
 
-struct _mongoc_index_options_t {
-   bool background;
-   char *name;
-   bool unique;
-   bson_t *partial_filter_expression;
-   bool sparse;
-   int expire_after_seconds;
-   bool hidden;
-   bson_t *storage_engine;
-   bson_t *weights;
-   char *default_language;
-   char *anguage_override;
-   int text_index_version;
-   int bits;
-   int two_d_sphere_index_version;
-   int index_min;
-   int index_max;
-   int bucket_size;
-   bson_t *collation;
-   bson_t *wildcard_projection;
-};
-
-
-struct _mongoc_index_model_t {
-   bson_t *key;
-   char *name;
-   mongoc_index_options_t *opts;
-};
 
 mongoc_collection_t *
 _mongoc_collection_new (mongoc_client_t *client,

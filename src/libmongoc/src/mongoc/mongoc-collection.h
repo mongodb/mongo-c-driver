@@ -352,28 +352,24 @@ mongoc_collection_estimated_document_count (
    bson_error_t *error);
 
 
-
-
-typedef struct _mongoc_index_model_t mongoc_index_model_t;
-typedef struct _mongoc_index_options_t mongoc_index_options_t;
-
 MONGOC_EXPORT (bool)
 mongoc_collection_create_indexes (
    mongoc_collection_t *collection,
-   const mongoc_index_model_t **indexes,
+   const bson_t **indexes,
    size_t num_indexes,
    const bson_t *create_indexes_opts,
-   char **index_names, /* out parameter, populated with index names */
-   int *num_indexes_created, /* out parameter contained length of index_names */
+   char **index_names,
+   /* out parameter, populated with index names. This return value is derived
+    * only from the input arguments, and not from the server response. */
+   int *num_indexes_names, /* out parameter contained length of index_names */
    bson_t *reply,
    bson_error_t *error);
 
-MONGOC_EXPORT (mongoc_index_model_t *)
-mongoc_index_model_new (const bson_t *key, const bson_t *index_opts);
-
-MONGOC_EXPORT (void)
-mongoc_index_model_destroy (mongoc_index_model_t *index_model);
-
+MONGOC_EXPORT (bson_t *)
+mongoc_collection_create_index_model (
+   bson_t *key,
+   bson_t *opts,
+   bson_error_t *error);
 
 BSON_END_DECLS
 
