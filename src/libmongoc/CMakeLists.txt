@@ -464,14 +464,6 @@ if (ENABLE_APPLE_FRAMEWORK)
    )
 endif ()
 
-include_directories ("${PROJECT_BINARY_DIR}/src")
-include_directories ("${PROJECT_BINARY_DIR}/src/mongoc")
-include_directories ("${PROJECT_SOURCE_DIR}/src")
-add_definitions (-DCOMMON_PREFIX_=_mongoc_common)
-include_directories ("${PROJECT_SOURCE_DIR}/../../src/common")
-include_directories ("${PROJECT_BINARY_DIR}/../../src")
-include_directories ("${PROJECT_BINARY_DIR}/../../src/common")
-
 set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-aggregate.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-apm.c
@@ -742,7 +734,20 @@ if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    endif ()
 
 endif ()
-target_compile_definitions (mongoc_shared PRIVATE MONGOC_COMPILATION ${KMS_MSG_DEFINITIONS})
+target_compile_definitions (mongoc_shared PRIVATE MONGOC_COMPILATION ${KMS_MSG_DEFINITIONS} COMMON_PREFIX_=_mongoc_common)
+# Several directories in the source and build trees contain headers we would like
+# include via relative reference, but they all end up in the same install path
+target_include_directories (
+   mongoc_shared
+   PUBLIC
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+)
 
 set_target_properties (mongoc_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (mongoc_shared PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-${MONGOC_API_VERSION}")
@@ -762,7 +767,20 @@ if (MONGOC_ENABLE_STATIC_BUILD)
    endif ()
    target_compile_definitions (mongoc_static
       PUBLIC MONGOC_STATIC ${BSON_STATIC_PUBLIC_DEFINITIONS}
-      PRIVATE MONGOC_COMPILATION ${KMS_MSG_DEFINITIONS}
+      PRIVATE MONGOC_COMPILATION ${KMS_MSG_DEFINITIONS} COMMON_PREFIX_=_mongoc_common
+   )
+   # Several directories in the source and build trees contain headers we would like
+   # include via relative reference, but they all end up in the same install path
+   target_include_directories (
+      mongoc_static
+      PUBLIC
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/mongoc>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/mongoc>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
    )
    set_target_properties (mongoc_static PROPERTIES VERSION 0.0.0)
    set_target_properties (mongoc_static PROPERTIES OUTPUT_NAME "${MONGOC_OUTPUT_BASENAME}-static-${MONGOC_API_VERSION}")
@@ -799,7 +817,7 @@ function (mongoc_add_test test use_shared)
          target_link_libraries (${test} DbgHelp.dll)
       endif ()
       target_include_directories (${test} PRIVATE ${PROJECT_SOURCE_DIR}/tests)
-      target_compile_definitions (${test} PUBLIC "MONGOC_COMPILATION" PUBLIC "BSON_COMPILATION")
+      target_compile_definitions (${test} PUBLIC "MONGOC_COMPILATION" PUBLIC "BSON_COMPILATION" "COMMON_PREFIX_=_mongoc_common")
       if (${use_shared})
          target_link_libraries (${test} mongoc_shared ${LIBRARIES})
          target_include_directories (${test} PRIVATE ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})
