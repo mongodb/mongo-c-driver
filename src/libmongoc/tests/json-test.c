@@ -1194,11 +1194,17 @@ execute_test (const json_test_config_t *config,
 
    if (bson_has_field (test, "expectations")) {
       bson_t expectations;
+      bson_iter_t iter;
 
-      bson_lookup_doc (test, "expectations", &expectations);
-      check_json_apm_events (&ctx, &expectations);
-      if (config->events_check_cb) {
-         config->events_check_cb (&ctx.events);
+      if (bson_iter_init_find (&iter, test, "expectations")) {
+         /* If 'expectations' is explicitly null, skip the check. */
+         if (!BSON_ITER_HOLDS_NULL (&iter)) {
+            bson_iter_bson (&iter, &expectations);
+            check_json_apm_events (&ctx, &expectations);
+            if (config->events_check_cb) {
+               config->events_check_cb (&ctx.events);
+            }
+         }
       }
    }
 
