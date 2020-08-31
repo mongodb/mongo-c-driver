@@ -150,18 +150,6 @@ if (ENABLE_APPLE_FRAMEWORK)
    )
 endif ()
 
-include_directories ("${PROJECT_BINARY_DIR}/src")
-# For the generated files, like bson-config.h, add src/bson to the include path
-# so it can be included relatively when building, like #include "bson-config.h"
-# But when installed, all libbson headers will be in the same directory.
-include_directories ("${PROJECT_BINARY_DIR}/src/bson")
-include_directories ("${PROJECT_SOURCE_DIR}/src")
-add_definitions (-DCOMMON_PREFIX_=_bson_common)
-include_directories ("${PROJECT_SOURCE_DIR}/../../src/common")
-
-include_directories ("${PROJECT_BINARY_DIR}/../../src")
-include_directories ("${PROJECT_BINARY_DIR}/../../src/common")
-
 
 if (APPLE)
    cmake_policy (SET CMP0042 OLD)
@@ -236,8 +224,25 @@ set (HEADERS_FORWARDING
 
 add_library (bson_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set (CMAKE_CXX_VISIBILITY_PRESET hidden)
-target_compile_definitions (bson_shared PRIVATE BSON_COMPILATION JSONSL_PARSE_NAN)
-target_include_directories (bson_shared INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src/bson>)
+target_compile_definitions (bson_shared
+   PRIVATE
+      BSON_COMPILATION
+      JSONSL_PARSE_NAN
+      COMMON_PREFIX_=_bson_common
+)
+# Several directories in the source and build trees contain headers we would like
+# include via relative reference, but they all end up in the same install path
+target_include_directories (
+   bson_shared
+   PUBLIC
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/bson>
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/bson>
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
+      $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+)
 set_target_properties (bson_shared PROPERTIES VERSION 0.0.0 SOVERSION 0)
 set_target_properties (bson_shared PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-${BSON_API_VERSION}")
 
@@ -280,14 +285,30 @@ endif ()
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (bson_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    target_compile_definitions (bson_static
-      PUBLIC BSON_STATIC
-      PRIVATE BSON_COMPILATION JSONSL_PARSE_NAN
+      PUBLIC
+         BSON_STATIC
+      PRIVATE
+         BSON_COMPILATION
+         JSONSL_PARSE_NAN
+         COMMON_PREFIX_=_bson_common
    )
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (bson_static PUBLIC -fPIC)
       message ("Adding -fPIC to compilation of bson_static components")
    endif ()
-   target_include_directories (bson_static INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src> $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/src/bson>)
+   # Several directories in the source and build trees contain headers we would like
+   # include via relative reference, but they all end up in the same install path
+   target_include_directories (
+      bson_static
+      PUBLIC
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/src/bson>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/bson>
+         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/../../src/common>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src>
+         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/../../src/common>
+   )
    set_target_properties (bson_static PROPERTIES VERSION 0.0.0)
    set_target_properties (bson_static PROPERTIES OUTPUT_NAME "${BSON_OUTPUT_BASENAME}-static-${BSON_API_VERSION}")
    # We use CMAKE_THREAD_LIBS_INIT rather than Threads::Threads here because the
