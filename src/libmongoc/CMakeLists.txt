@@ -734,7 +734,12 @@ if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    endif ()
 
 endif ()
-target_compile_definitions (mongoc_shared PRIVATE MONGOC_COMPILATION ${KMS_MSG_DEFINITIONS} COMMON_PREFIX_=_mongoc_common)
+target_compile_definitions (mongoc_shared
+   PRIVATE
+      MONGOC_COMPILATION
+      ${KMS_MSG_DEFINITIONS}
+      COMMON_PREFIX_=_mongoc_common
+)
 # Several directories in the source and build trees contain headers we would like
 # include via relative reference, but they all end up in the same install path
 target_include_directories (
@@ -766,8 +771,13 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
    endif ()
    target_compile_definitions (mongoc_static
-      PUBLIC MONGOC_STATIC ${BSON_STATIC_PUBLIC_DEFINITIONS}
-      PRIVATE MONGOC_COMPILATION ${KMS_MSG_DEFINITIONS} COMMON_PREFIX_=_mongoc_common
+      PUBLIC
+         MONGOC_STATIC
+         ${BSON_STATIC_PUBLIC_DEFINITIONS}
+      PRIVATE
+         MONGOC_COMPILATION
+         ${KMS_MSG_DEFINITIONS}
+         COMMON_PREFIX_=_mongoc_common
    )
    # Several directories in the source and build trees contain headers we would like
    # include via relative reference, but they all end up in the same install path
@@ -817,7 +827,12 @@ function (mongoc_add_test test use_shared)
          target_link_libraries (${test} DbgHelp.dll)
       endif ()
       target_include_directories (${test} PRIVATE ${PROJECT_SOURCE_DIR}/tests)
-      target_compile_definitions (${test} PUBLIC "MONGOC_COMPILATION" PUBLIC "BSON_COMPILATION" "COMMON_PREFIX_=_mongoc_common")
+      target_compile_definitions (${test}
+         PUBLIC
+            "MONGOC_COMPILATION"
+            "BSON_COMPILATION"
+            "COMMON_PREFIX_=_mongoc_common"
+      )
       if (${use_shared})
          target_link_libraries (${test} mongoc_shared ${LIBRARIES})
          target_include_directories (${test} PRIVATE ${BSON_INCLUDE_DIRS} ${MONGOC_INTERNAL_INCLUDE_DIRS})

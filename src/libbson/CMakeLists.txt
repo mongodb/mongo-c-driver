@@ -224,7 +224,12 @@ set (HEADERS_FORWARDING
 
 add_library (bson_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set (CMAKE_CXX_VISIBILITY_PRESET hidden)
-target_compile_definitions (bson_shared PRIVATE BSON_COMPILATION JSONSL_PARSE_NAN COMMON_PREFIX_=_bson_common)
+target_compile_definitions (bson_shared
+   PRIVATE
+      BSON_COMPILATION
+      JSONSL_PARSE_NAN
+      COMMON_PREFIX_=_bson_common
+)
 # Several directories in the source and build trees contain headers we would like
 # include via relative reference, but they all end up in the same install path
 target_include_directories (
@@ -280,8 +285,12 @@ endif ()
 if (MONGOC_ENABLE_STATIC_BUILD)
    add_library (bson_static STATIC ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
    target_compile_definitions (bson_static
-      PUBLIC BSON_STATIC
-      PRIVATE BSON_COMPILATION JSONSL_PARSE_NAN COMMON_PREFIX_=_bson_common
+      PUBLIC
+         BSON_STATIC
+      PRIVATE
+         BSON_COMPILATION
+         JSONSL_PARSE_NAN
+         COMMON_PREFIX_=_bson_common
    )
    if (NOT WIN32 AND ENABLE_PIC)
       target_compile_options (bson_static PUBLIC -fPIC)
