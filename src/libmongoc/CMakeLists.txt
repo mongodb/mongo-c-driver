@@ -728,9 +728,9 @@ target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECT
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
    if (APPLE)
-      set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,-unexported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/../../build/cmake/libmongoc-hidden-symbols.txt")
+      set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,-unexported_symbols_list,\"${CMAKE_CURRENT_SOURCE_DIR}/../../build/cmake/libmongoc-hidden-symbols.txt\"")
    elseif (UNIX)
-      set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/../../build/cmake/libmongoc-hidden-symbols.map")
+      set_target_properties (mongoc_shared PROPERTIES LINK_FLAGS "-Wl,--version-script=\"${CMAKE_CURRENT_SOURCE_DIR}/../../build/cmake/libmongoc-hidden-symbols.map\"")
    endif ()
 
 endif ()
