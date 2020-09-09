@@ -28,13 +28,11 @@ all_functions = OD([
             ]))]),
         shell_mongoc(r'''
         # TODO: CDRIVER-3573 do not hardcode the version.
-        if [ -n "${github_pr_number}" ]; then
-           # This is a GitHub PR, probably branched from master
+        if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
+           # This is a GitHub PR or patch build, probably branched from master
            VERSION_CURRENT="1.18.0"
            echo $VERSION_CURRENT > "VERSION_CURRENT"
            VERSION=$VERSION_CURRENT-${version_id}
-        elif [ "${is_patch}" = "true" ]; then
-           VERSION=$(git describe --abbrev=7 --match='1.*')-patch-${version_id}
         else
            VERSION=latest
         fi
