@@ -55,6 +55,7 @@
 #include "mongoc-handshake-private.h"
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-error-private.h"
+#include "mongoc-structured-log-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"
@@ -531,6 +532,9 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
          goto fail_no_events;
       }
    }
+
+   // @todo Provide explicit session
+   mongoc_structured_log_command_started(cmd, request_id, false);
 
    if (callbacks->started) {
       mongoc_apm_command_started_init_with_cmd (
