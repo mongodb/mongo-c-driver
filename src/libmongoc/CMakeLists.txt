@@ -647,6 +647,7 @@ set (MONGOC_SOURCES
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-download.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs-upload.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-timeout.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-background-monitoring.c
@@ -761,6 +762,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-file.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-uri.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
