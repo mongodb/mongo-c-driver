@@ -533,8 +533,8 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       }
    }
 
-   // @todo Provide explicit session
-   mongoc_structured_log_command_started(cmd, request_id, false);
+   // @todo Provide explicit session and connection IDs
+   mongoc_structured_log_command_started (cmd, request_id, 0, 0, false);
 
    if (callbacks->started) {
       mongoc_apm_command_started_init_with_cmd (
