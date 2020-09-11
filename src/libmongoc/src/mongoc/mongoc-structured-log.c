@@ -83,8 +83,6 @@ mongoc_structured_log_entry_get_context (mongoc_structured_log_entry_t *entry)
       entry->build_context(entry->context, entry->context_data);
    }
 
-   entry->context_data = NULL;
-
    return entry->context;
 }
 
