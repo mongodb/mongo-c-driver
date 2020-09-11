@@ -26,7 +26,6 @@
 #endif
 #include <stdarg.h>
 #include <time.h>
-#include <syslog.h>
 
 #include "mongoc-structured-log.h"
 #include "mongoc-structured-log-private.h"
@@ -191,47 +190,16 @@ mongoc_structured_log_command_started (mongoc_cmd_t *cmd,
    );
 }
 
-static int
-_mongoc_structured_log_convert_level (mongoc_structured_log_level_t level)
-{
-   switch (level)
-   {
-   case MONGOC_STRUCTURED_LOG_LEVEL_TRACE:
-   case MONGOC_STRUCTURED_LOG_LEVEL_DEBUG:
-      return LOG_DEBUG;
-
-   case MONGOC_STRUCTURED_LOG_LEVEL_INFO:
-      return LOG_INFO;
-
-   case MONGOC_STRUCTURED_LOG_LEVEL_NOTICE:
-      return LOG_NOTICE;
-
-   case MONGOC_STRUCTURED_LOG_LEVEL_WARNING:
-      return LOG_WARNING;
-
-   case MONGOC_STRUCTURED_LOG_LEVEL_ERROR:
-      return LOG_ERR;
-
-   case MONGOC_STRUCTURED_LOG_LEVEL_CRITICAL:
-      return LOG_CRIT;
-
-   case MONGOC_STRUCTURED_LOG_LEVEL_ALERT:
-      return LOG_ALERT;
-
-   case MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY:
-      return LOG_EMERG;
-
-   default:
-      return LOG_ERR;
-   }
-}
-
 void
 mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, void *user_data)
 {
    char *message = bson_as_json (mongoc_structured_log_entry_get_context (entry), NULL);
 
-   syslog (_mongoc_structured_log_convert_level (mongoc_structured_log_entry_get_level (entry)), "%s", message);
+   fprintf (stderr,
+            "Structured log: %d, %d, %s",
+            mongoc_structured_log_entry_get_level (entry),
+            mongoc_structured_log_entry_get_component (entry),
+            message);
 
    bson_free (message);
 }
