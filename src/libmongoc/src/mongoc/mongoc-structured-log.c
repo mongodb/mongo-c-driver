@@ -56,7 +56,7 @@ mongoc_structured_log_entry_init (mongoc_structured_log_entry_t *entry,
    entry->message = message;
    entry->build_context = build_context;
    entry->context_data = context_data;
-   entry->context = BCON_NEW("message", BCON_UTF8 (message));
+   entry->context = BCON_NEW ("message", BCON_UTF8 (message));
    entry->context_built = false;
 }
 
@@ -70,7 +70,7 @@ const bson_t*
 mongoc_structured_log_entry_get_context (mongoc_structured_log_entry_t *entry)
 {
    if (!entry->context_built && entry->build_context) {
-      entry->build_context(entry->context, entry->context_data);
+      entry->build_context (entry->context, entry->context_data);
       entry->context_built = true;
    }
 
@@ -126,7 +126,7 @@ mongoc_structured_log (mongoc_structured_log_level_t level,
 }
 
 static void
-mongoc_log_structured_build_command_context(bson_t *context, va_list *context_data)
+mongoc_log_structured_build_command_context (bson_t *context, va_list *context_data)
 {
    mongoc_cmd_t *cmd = va_arg (*context_data, mongoc_cmd_t*);
    uint32_t request_id = va_arg (*context_data, uint32_t);
@@ -134,26 +134,26 @@ mongoc_log_structured_build_command_context(bson_t *context, va_list *context_da
    uint32_t server_connection_id = va_arg (*context_data, uint32_t);
    bool explicit_session = !!va_arg (*context_data, int);
 
-   char* cmd_json = bson_as_canonical_extended_json(cmd->command, NULL);
+   char* cmd_json = bson_as_canonical_extended_json (cmd->command, NULL);
 
-   BCON_APPEND(
+   BCON_APPEND (
       context,
       "command",
-      BCON_UTF8(cmd_json),
+      BCON_UTF8 (cmd_json),
       "databaseName",
-      BCON_UTF8(cmd->db_name),
+      BCON_UTF8 (cmd->db_name),
       "commandName",
-      BCON_UTF8(cmd->command_name),
+      BCON_UTF8 (cmd->command_name),
       "requestId",
       BCON_INT32 (request_id),
       "operationId",
-      BCON_INT64(cmd->operation_id),
+      BCON_INT64 (cmd->operation_id),
       "driverConnectionId",
       BCON_INT32 (driver_connection_id),
       "serverConnectionId",
       BCON_INT32 (server_connection_id),
       "explicitSession",
-      BCON_BOOL(explicit_session)
+      BCON_BOOL (explicit_session)
    );
 
    bson_free (cmd_json);
