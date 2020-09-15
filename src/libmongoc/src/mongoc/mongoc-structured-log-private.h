@@ -30,6 +30,7 @@ struct _mongoc_structured_log_entry_t {
    mongoc_structured_log_build_context_t build_context;
    va_list *context_data;
    bson_t *context;
+   bool context_built;
 };
 
 void

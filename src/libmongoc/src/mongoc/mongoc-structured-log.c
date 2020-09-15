@@ -56,31 +56,22 @@ mongoc_structured_log_entry_init (mongoc_structured_log_entry_t *entry,
    entry->message = message;
    entry->build_context = build_context;
    entry->context_data = context_data;
-   entry->context = NULL;
+   entry->context = BCON_NEW("message", BCON_UTF8 (message));
+   entry->context_built = false;
 }
 
 static void
 mongoc_structured_log_entry_destroy (mongoc_structured_log_entry_t *entry)
 {
-   if (entry->context) {
-      bson_free (entry->context);
-   }
+   bson_free (entry->context);
 }
 
 const bson_t*
 mongoc_structured_log_entry_get_context (mongoc_structured_log_entry_t *entry)
 {
-   if (entry->context) {
-      return entry->context;
-   }
-
-   entry->context = BCON_NEW(
-      "message",
-      BCON_UTF8(entry->message)
-   );
-
-   if (entry->build_context) {
+   if (!entry->context_built && entry->build_context) {
       entry->build_context(entry->context, entry->context_data);
+      entry->context_built = true;
    }
 
    return entry->context;
