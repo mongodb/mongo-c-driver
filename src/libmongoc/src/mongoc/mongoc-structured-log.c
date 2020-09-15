@@ -67,7 +67,7 @@ mongoc_structured_log_entry_destroy (mongoc_structured_log_entry_t *entry)
    }
 }
 
-bson_t*
+const bson_t*
 mongoc_structured_log_entry_get_context (mongoc_structured_log_entry_t *entry)
 {
    if (entry->context) {
@@ -87,13 +87,13 @@ mongoc_structured_log_entry_get_context (mongoc_structured_log_entry_t *entry)
 }
 
 mongoc_structured_log_level_t
-mongoc_structured_log_entry_get_level (mongoc_structured_log_entry_t *entry)
+mongoc_structured_log_entry_get_level (const mongoc_structured_log_entry_t *entry)
 {
    return entry->level;
 }
 
 mongoc_structured_log_component_t
-mongoc_structured_log_entry_get_component (mongoc_structured_log_entry_t *entry)
+mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry)
 {
    return entry->component;
 }
