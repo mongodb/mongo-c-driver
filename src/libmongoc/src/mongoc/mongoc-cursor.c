@@ -29,6 +29,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-aggregate-private.h"
+#include "mongoc-structured-log-command-private.h"
 
 #include <common-bson-dsl-private.h>
 #include <common-cmp-private.h>
@@ -644,12 +645,16 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
    ENTRY;
 
    client = cursor->client;
+   db = bson_strndup (cursor->ns, cursor->dblen);
+
+   // @todo Provide missing arguments
+   mongoc_structured_log_command_started (cmd, cmd_name, db, cursor->operation_id, client->cluster.request_id, 0, 0, false);
+
    if (!client->apm_callbacks.started) {
       /* successful */
+      bson_free (db);
       RETURN (true);
    }
-
-   db = bson_strndup (cursor->ns, cursor->dblen);
 
    mongoc_apm_command_started_init (&event,
                                     cmd,
@@ -710,10 +715,6 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
 
    client = cursor->client;
 
-   if (!client->apm_callbacks.succeeded) {
-      EXIT;
-   }
-
    /* we sent OP_QUERY/OP_GETMORE, fake a reply to find/getMore command:
     * {ok: 1, cursor: {id: 17, ns: "...", first/nextBatch: [ ... docs ... ]}}
     */
@@ -729,6 +730,22 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
    char *db = bson_strndup (cursor->ns, cursor->dblen);
 
    bson_destroy (&docs_array);
+
+   // @todo Provide missing arguments
+   mongoc_structured_log_command_success (
+      cmd_name,
+      cursor->operation_id,
+      &reply,
+      duration,
+      client->cluster.request_id,
+      0,
+      0,
+      false);
+
+   if (!client->apm_callbacks.succeeded) {
+      bson_destroy (&reply);
+      EXIT;
+   }
 
    mongoc_apm_command_succeeded_init (&event,
                                       duration,
@@ -767,15 +784,27 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
 
    client = cursor->client;
 
-   if (!client->apm_callbacks.failed) {
-      EXIT;
-   }
-
    /* we sent OP_QUERY/OP_GETMORE, fake a reply to find/getMore command:
     * {ok: 0}
     */
    bsonBuildDecl (reply, kv ("ok", int32 (0)));
    char *db = bson_strndup (cursor->ns, cursor->dblen);
+
+   // @todo Provide missing arguments
+   mongoc_structured_log_command_failure (
+      cmd_name,
+      cursor->operation_id,
+      &reply,
+      &cursor->error,
+      client->cluster.request_id,
+      0,
+      0,
+      false);
+
+   if (!client->apm_callbacks.failed) {
+      bson_destroy (&reply);
+      EXIT;
+   }
 
    mongoc_apm_command_failed_init (&event,
                                    duration,

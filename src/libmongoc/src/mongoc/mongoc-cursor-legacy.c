@@ -32,6 +32,7 @@
 #include "mongoc-write-concern-private.h"
 #include "mongoc-read-prefs-private.h"
 #include "mongoc-rpc-private.h"
+#include "mongoc-structured-log-command-private.h"
 
 #include <common-bson-dsl-private.h>
 
@@ -46,14 +47,19 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
    ENTRY;
 
    client = cursor->client;
+   _mongoc_cursor_prepare_getmore_command (cursor, &doc);
+   db = bson_strndup (cursor->ns, cursor->dblen);
+
+   // @todo Provide missing arguments
+   mongoc_structured_log_command_started (&doc, "getMore", db, cursor->operation_id, client->cluster.request_id, 0, 0, false);
+
    if (!client->apm_callbacks.started) {
       /* successful */
+      bson_destroy (&doc);
+      bson_free (db);
       RETURN (true);
    }
 
-   _mongoc_cursor_prepare_getmore_command (cursor, &doc);
-
-   db = bson_strndup (cursor->ns, cursor->dblen);
    mongoc_apm_command_started_init (&event,
                                     &doc,
                                     db,
@@ -89,10 +95,6 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
    ENTRY;
 
    client = cursor->client;
-   if (!client->apm_callbacks.started) {
-      /* successful */
-      RETURN (true);
-   }
 
    bson_init (&doc);
    db = bson_strndup (cursor->ns, cursor->dblen);
