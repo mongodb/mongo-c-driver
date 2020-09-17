@@ -533,8 +533,8 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       }
    }
 
-   // @todo Provide explicit session and connection IDs
-   mongoc_structured_log_command_started (cmd, request_id, 0, 0, false);
+   // @todo Provide missing arguments
+   mongoc_structured_log_command_started (cmd->command, cmd->command_name, cmd->db_name, cmd->operation_id, request_id, 0, 0, false);
 
    if (callbacks->started) {
       mongoc_apm_command_started_init_with_cmd (
@@ -563,8 +563,10 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       }
    }
 
-   if (retval && callbacks->succeeded) {
+   if (retval) {
       bson_t fake_reply = BSON_INITIALIZER;
+      int64_t duration = bson_get_monotonic_time() - started;
+
       /*
        * Unacknowledged writes must provide a CommandSucceededEvent with an
        * {ok: 1} reply.
@@ -573,35 +575,64 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       if (!cmd->is_acknowledged) {
          bson_append_int32 (&fake_reply, "ok", 2, 1);
       }
-      mongoc_apm_command_succeeded_init (&succeeded_event,
-                                         bson_get_monotonic_time () - started,
-                                         cmd->is_acknowledged ? reply
-                                                              : &fake_reply,
+
+      // @todo Provide missing arguments
+      mongoc_structured_log_command_success (
+         cmd->command_name,
+         cmd->operation_id,
+         cmd->is_acknowledged ? reply : &fake_reply,
+         duration,
+         request_id,
+         0,
+         0,
+         false);
+
+      if (callbacks->succeeded) {
+         mongoc_apm_command_succeeded_init (
+            &succeeded_event,
+            duration,
+            cmd->is_acknowledged ? reply : &fake_reply,
+            cmd->command_name,
+            request_id,
+            cmd->operation_id,
+            &server_stream->sd->host,
+            server_id,
+            cluster->client->apm_context);
+
+         callbacks->succeeded (&succeeded_event);
+         mongoc_apm_command_succeeded_cleanup (&succeeded_event);
+      }
+
+      bson_destroy (&fake_reply);
+   } else {
+      int64_t duration = bson_get_monotonic_time() - started;
+
+      // @todo Provide missing arguments
+      mongoc_structured_log_command_failure (
+         cmd->command_name,
+         cmd->operation_id,
+         reply,
+         error,
+         cluster->request_id,
+         0,
+         0,
+         false);
+
+      if (callbacks->failed) {
+         mongoc_apm_command_failed_init (&failed_event,
+                                         duration,
                                          cmd->command_name,
+                                         error,
+                                         reply,
                                          request_id,
                                          cmd->operation_id,
                                          &server_stream->sd->host,
                                          server_id,
                                          cluster->client->apm_context);
 
-      callbacks->succeeded (&succeeded_event);
-      mongoc_apm_command_succeeded_cleanup (&succeeded_event);
-      bson_destroy (&fake_reply);
-   }
-   if (!retval && callbacks->failed) {
-      mongoc_apm_command_failed_init (&failed_event,
-                                      bson_get_monotonic_time () - started,
-                                      cmd->command_name,
-                                      error,
-                                      reply,
-                                      request_id,
-                                      cmd->operation_id,
-                                      &server_stream->sd->host,
-                                      server_id,
-                                      cluster->client->apm_context);
-
-      callbacks->failed (&failed_event);
-      mongoc_apm_command_failed_cleanup (&failed_event);
+         callbacks->failed (&failed_event);
+         mongoc_apm_command_failed_cleanup (&failed_event);
+      }
    }
 
    _handle_not_master_error (cluster, server_stream, reply);

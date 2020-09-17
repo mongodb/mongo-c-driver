@@ -19,6 +19,7 @@
 #include "mongoc-write-command-legacy-private.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-util-private.h"
+#include "mongoc-structured-log-command-private.h"
 
 static void
 _mongoc_monitor_legacy_write (mongoc_client_t *client,
@@ -34,10 +35,6 @@ _mongoc_monitor_legacy_write (mongoc_client_t *client,
 
    ENTRY;
 
-   if (!client->apm_callbacks.started) {
-      EXIT;
-   }
-
    bson_init (&doc);
    _mongoc_write_command_init (&doc, command, collection);
    BSON_APPEND_DOCUMENT_BEGIN (&doc, "writeConcern", &wc);
@@ -45,6 +42,22 @@ _mongoc_monitor_legacy_write (mongoc_client_t *client,
    bson_append_document_end (&doc, &wc);
 
    _append_array_from_command (command, &doc);
+
+   // @todo Provide missing arguments
+   mongoc_structured_log_command_started (
+      &doc,
+      _mongoc_command_type_to_name (command->type),
+      db,
+      command->operation_id,
+      request_id,
+      0,
+      0,
+      false);
+
+   if (!client->apm_callbacks.started) {
+      bson_destroy (&doc);
+      EXIT;
+   }
 
    mongoc_apm_command_started_init (
       &event,
@@ -82,10 +95,6 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t *client,
 
    ENTRY;
 
-   if (!client->apm_callbacks.succeeded) {
-      EXIT;
-   }
-
    bson_init (&doc);
    /*
     * Unacknowledged writes must provide a CommandSucceededEvent with a { ok: 1
@@ -94,6 +103,22 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t *client,
     */
    bson_append_int32 (&doc, "ok", 2, 1);
    bson_append_int32 (&doc, "n", 1, (int32_t) command->n_documents);
+
+   // @todo Provide missing arguments
+   mongoc_structured_log_command_success (
+      _mongoc_command_type_to_name (command->type),
+      command->operation_id,
+      &doc,
+      duration,
+      request_id,
+      0,
+      0,
+      false);
+
+   if (!client->apm_callbacks.succeeded) {
+      bson_destroy (&doc);
+      EXIT;
+   }
 
    mongoc_apm_command_succeeded_init (
       &event,
