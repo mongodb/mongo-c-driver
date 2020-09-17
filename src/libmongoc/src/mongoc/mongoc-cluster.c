@@ -55,7 +55,7 @@
 #include "mongoc-handshake-private.h"
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-error-private.h"
-#include "mongoc-structured-log-private.h"
+#include "mongoc-structured-log-command-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "cluster"

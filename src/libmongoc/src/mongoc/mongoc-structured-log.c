@@ -44,37 +44,25 @@ static BSON_ONCE_FUN (_mongoc_ensure_mutex_once)
 }
 
 static void
-mongoc_structured_log_entry_init (mongoc_structured_log_entry_t *entry,
-                                  mongoc_structured_log_level_t level,
-                                  mongoc_structured_log_component_t component,
-                                  const char *message,
-                                  mongoc_structured_log_build_context_t build_context,
-                                  va_list *context_data)
-{
-   entry->level = level;
-   entry->component = component;
-   entry->message = message;
-   entry->build_context = build_context;
-   entry->context_data = context_data;
-   entry->context = BCON_NEW ("message", BCON_UTF8 (message));
-   entry->context_built = false;
-}
-
-static void
 mongoc_structured_log_entry_destroy (mongoc_structured_log_entry_t *entry)
 {
-   bson_free (entry->context);
+   if (entry->structured_message) {
+      bson_free (entry->structured_message);
+   }
 }
 
 const bson_t*
 mongoc_structured_log_entry_get_context (mongoc_structured_log_entry_t *entry)
 {
-   if (!entry->context_built && entry->build_context) {
-      entry->build_context (entry->context, entry->context_data);
-      entry->context_built = true;
+   if (!entry->structured_message) {
+      entry->structured_message = BCON_NEW ("message", BCON_UTF8 (entry->message));
+
+      if (entry->build_message_func) {
+         entry->build_message_func (entry);
+      }
    }
 
-   return entry->context;
+   return entry->structured_message;
 }
 
 mongoc_structured_log_level_t
@@ -104,79 +92,27 @@ void
 mongoc_structured_log (mongoc_structured_log_level_t level,
                        mongoc_structured_log_component_t component,
                        const char *message,
-                       mongoc_structured_log_build_context_t build_context,
-                       ...)
+                       mongoc_structured_log_build_message_t build_message_func,
+                       void *structured_message_data)
 {
-   va_list context_data;
-   mongoc_structured_log_entry_t entry;
+   mongoc_structured_log_entry_t entry = {
+      level,
+      component,
+      message,
+      NULL,
+      build_message_func,
+      structured_message_data,
+   };
 
    if (!gStructuredLogger) {
       return;
    }
-
-   va_start (context_data, build_context);
-   mongoc_structured_log_entry_init (&entry, level, component, message, build_context, &context_data);
 
    bson_mutex_lock (&gStructuredLogMutex);
    gStructuredLogger (&entry, gStructuredLoggerData);
    bson_mutex_unlock (&gStructuredLogMutex);
 
    mongoc_structured_log_entry_destroy (&entry);
-   va_end (context_data);
-}
-
-static void
-mongoc_log_structured_build_command_context (bson_t *context, va_list *context_data)
-{
-   mongoc_cmd_t *cmd = va_arg (*context_data, mongoc_cmd_t*);
-   uint32_t request_id = va_arg (*context_data, uint32_t);
-   uint32_t driver_connection_id = va_arg (*context_data, uint32_t);
-   uint32_t server_connection_id = va_arg (*context_data, uint32_t);
-   bool explicit_session = !!va_arg (*context_data, int);
-
-   char* cmd_json = bson_as_canonical_extended_json (cmd->command, NULL);
-
-   BCON_APPEND (
-      context,
-      "command",
-      BCON_UTF8 (cmd_json),
-      "databaseName",
-      BCON_UTF8 (cmd->db_name),
-      "commandName",
-      BCON_UTF8 (cmd->command_name),
-      "requestId",
-      BCON_INT32 (request_id),
-      "operationId",
-      BCON_INT64 (cmd->operation_id),
-      "driverConnectionId",
-      BCON_INT32 (driver_connection_id),
-      "serverConnectionId",
-      BCON_INT32 (server_connection_id),
-      "explicitSession",
-      BCON_BOOL (explicit_session)
-   );
-
-   bson_free (cmd_json);
-}
-
-void
-mongoc_structured_log_command_started (mongoc_cmd_t *cmd,
-                                       uint32_t request_id,
-                                       uint32_t driver_connection_id,
-                                       uint32_t server_connection_id,
-                                       bool explicit_session)
-{
-   mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_INFO,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Command started",
-      mongoc_log_structured_build_command_context,
-      cmd,
-      request_id,
-      driver_connection_id,
-      server_connection_id,
-      explicit_session
-   );
 }
 
 void
