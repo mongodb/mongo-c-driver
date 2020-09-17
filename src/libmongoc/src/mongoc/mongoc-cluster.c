@@ -56,7 +56,7 @@
 #include "mongoc-handshake-private.h"
 #include "mongoc-cluster-aws-private.h"
 #include "mongoc-error-private.h"
-#include "mongoc-structured-log-private.h"
+#include "mongoc-structured-log-command-private.h"
 
 #include <common-bson-dsl-private.h>
 #include <common-cmp-private.h>

@@ -17,36 +17,29 @@
 #include "mongoc-prelude.h"
 #include "mongoc-structured-log.h"
 #include "mongoc-cmd-private.h"
+#include "mongoc-structured-log-command-private.h"
 
 #ifndef MONGOC_STRUCTRURED_LOG_PRIVATE_H
 #define MONGOC_STRUCTRURED_LOG_PRIVATE_H
 
-typedef void (*mongoc_structured_log_build_context_t) (bson_t *context, va_list *context_data);
+typedef void (*mongoc_structured_log_build_message_t) (mongoc_structured_log_entry_t *entry);
 
 struct _mongoc_structured_log_entry_t {
    mongoc_structured_log_level_t level;
    mongoc_structured_log_component_t component;
    const char* message;
-   mongoc_structured_log_build_context_t build_context;
-   va_list *context_data;
-   bson_t *context;
-   bool context_built;
+   bson_t *structured_message;
+   mongoc_structured_log_build_message_t build_message_func;
+   union {
+      _mongoc_structured_log_command_t *command;
+   };
 };
 
 void
 mongoc_structured_log (mongoc_structured_log_level_t level,
                        mongoc_structured_log_component_t component,
                        const char *message,
-                       mongoc_structured_log_build_context_t build_context,
-                       ...);
-
-void
-mongoc_structured_log_command_started (mongoc_cmd_t *cmd,
-                                       uint32_t request_id,
-                                       uint32_t driver_connection_id,
-                                       uint32_t server_connection_id,
-                                       bool explicit_session);
-
-#define MONGOC_STRUCTURED_LOG_COMMAND_STARTED()
+                       mongoc_structured_log_build_message_t build_message_func,
+                       void *structured_message_data);
 
 #endif /* MONGOC_STRUCTURED_LOG_PRIVATE_H */
