@@ -49,17 +49,47 @@ typedef struct _mongoc_structured_log_entry_t mongoc_structured_log_entry_t;
 typedef void (*mongoc_structured_log_func_t) (
    mongoc_structured_log_entry_t *entry, void *user_data);
 
+/**
+ * mongoc_structured_log_set_handler:
+ * @log_func: A function to handle structured messages.
+ * @user_data: User data for @log_func.
+ *
+ * Sets the function to be called to handle structured log messages.
+ */
 MONGOC_EXPORT (void)
 mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func,
                                    void *user_data);
 
+/**
+ * mongoc_structured_log_entry_get_message:
+ * @entry: A log entry to extract the message from
+ *
+ * Returns the structured message as a bson_t pointer.
+ *
+ * When this function is called, the message is lazily generated if it hasn't
+ * already been generated. Note that it is not safe to call this method outside
+ * of a log handler, as the data needed to assemble the message may have been
+ * freed already.
+ */
 MONGOC_EXPORT (const bson_t *)
 mongoc_structured_log_entry_get_message (mongoc_structured_log_entry_t *entry);
 
+/**
+ * mongoc_structured_log_entry_get_level:
+ * @entry: A log entry to read the level from
+ *
+ * Returns the severity level of the structured log entry
+ */
 MONGOC_EXPORT (mongoc_structured_log_level_t)
 mongoc_structured_log_entry_get_level (
    const mongoc_structured_log_entry_t *entry);
 
+/**
+ * mongoc_structured_log_entry_get_component:
+ * @entry: A log entry to read the component from
+ *
+ * Returns the component of the structured log entry
+ */
 MONGOC_EXPORT (mongoc_structured_log_component_t)
 mongoc_structured_log_entry_get_component (
    const mongoc_structured_log_entry_t *entry);
