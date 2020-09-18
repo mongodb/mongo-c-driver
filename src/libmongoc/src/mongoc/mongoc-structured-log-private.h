@@ -42,4 +42,7 @@ mongoc_structured_log (mongoc_structured_log_level_t level,
                        mongoc_structured_log_build_message_t build_message_func,
                        void *structured_message_data);
 
+void
+_mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data);
+
 #endif /* MONGOC_STRUCTURED_LOG_PRIVATE_H */
