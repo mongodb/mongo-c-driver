@@ -31,6 +31,9 @@
 #include "mongoc-structured-log-private.h"
 #include "mongoc-thread-private.h"
 
+static void
+mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, void *user_data);
+
 static bson_once_t once = BSON_ONCE_INIT;
 static bson_mutex_t gStructuredLogMutex;
 static mongoc_structured_log_func_t gStructuredLogger = mongoc_structured_log_default_handler;
@@ -115,7 +118,7 @@ mongoc_structured_log (mongoc_structured_log_level_t level,
    mongoc_structured_log_entry_destroy (&entry);
 }
 
-void
+static void
 mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, void *user_data)
 {
    char *message = bson_as_json (mongoc_structured_log_entry_get_context (entry), NULL);

@@ -61,9 +61,6 @@ mongoc_structured_log_entry_get_level (const mongoc_structured_log_entry_t *entr
 MONGOC_EXPORT (mongoc_structured_log_component_t)
 mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry);
 
-MONGOC_EXPORT (void)
-mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, void *user_data);
-
 BSON_END_DECLS
 
 #endif /* MONGOC_STRUCTURED_LOG_H */
