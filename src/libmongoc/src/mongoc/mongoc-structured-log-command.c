@@ -31,31 +31,31 @@
 #include "mongoc-structured-log-command-private.h"
 
 static void
-_mongoc_log_structured_append_command_data (mongoc_structured_log_entry_t *entry)
+_mongoc_log_structured_append_command_data (
+   mongoc_structured_log_entry_t *entry)
 {
    _mongoc_structured_log_command_t *log_command = entry->command;
 
-   BCON_APPEND (
-      entry->structured_message,
-      "commandName",
-      BCON_UTF8 (log_command->command_name),
-      "requestId",
-      BCON_INT32 (log_command->request_id),
-      "operationId",
-      BCON_INT64 (log_command->operation_id),
-      "driverConnectionId",
-      BCON_INT32 (log_command->driver_connection_id),
-      "serverConnectionId",
-      BCON_INT32 (log_command->server_connection_id),
-      "explicitSession",
-      BCON_BOOL (log_command->explicit_session)
-   );
+   BCON_APPEND (entry->structured_message,
+                "commandName",
+                BCON_UTF8 (log_command->command_name),
+                "requestId",
+                BCON_INT32 (log_command->request_id),
+                "operationId",
+                BCON_INT64 (log_command->operation_id),
+                "driverConnectionId",
+                BCON_INT32 (log_command->driver_connection_id),
+                "serverConnectionId",
+                BCON_INT32 (log_command->server_connection_id),
+                "explicitSession",
+                BCON_BOOL (log_command->explicit_session));
 }
 
 static void
-mongoc_log_structured_build_command_started_message (mongoc_structured_log_entry_t *entry)
+mongoc_log_structured_build_command_started_message (
+   mongoc_structured_log_entry_t *entry)
 {
-   char* cmd_json;
+   char *cmd_json;
    _mongoc_structured_log_command_t *log_command = entry->command;
 
    BSON_ASSERT (entry->component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
@@ -64,21 +64,20 @@ mongoc_log_structured_build_command_started_message (mongoc_structured_log_entry
 
    _mongoc_log_structured_append_command_data (entry);
 
-   BCON_APPEND (
-      entry->structured_message,
-      "databaseName",
-      BCON_UTF8 (log_command->db_name),
-      "command",
-      BCON_UTF8 (cmd_json)
-   );
+   BCON_APPEND (entry->structured_message,
+                "databaseName",
+                BCON_UTF8 (log_command->db_name),
+                "command",
+                BCON_UTF8 (cmd_json));
 
    bson_free (cmd_json);
 }
 
 static void
-mongoc_log_structured_build_command_succeeded_message (mongoc_structured_log_entry_t *entry)
+mongoc_log_structured_build_command_succeeded_message (
+   mongoc_structured_log_entry_t *entry)
 {
-   char* reply_json;
+   char *reply_json;
    _mongoc_structured_log_command_t *log_command = entry->command;
 
    BSON_ASSERT (entry->component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
@@ -87,21 +86,20 @@ mongoc_log_structured_build_command_succeeded_message (mongoc_structured_log_ent
 
    _mongoc_log_structured_append_command_data (entry);
 
-   BCON_APPEND (
-      entry->structured_message,
-      "duration",
-      BCON_INT64 (log_command->duration),
-      "reply",
-      BCON_UTF8 (reply_json)
-      );
+   BCON_APPEND (entry->structured_message,
+                "duration",
+                BCON_INT64 (log_command->duration),
+                "reply",
+                BCON_UTF8 (reply_json));
 
    bson_free (reply_json);
 }
 
 static void
-mongoc_log_structured_build_command_failed_message (mongoc_structured_log_entry_t *entry)
+mongoc_log_structured_build_command_failed_message (
+   mongoc_structured_log_entry_t *entry)
 {
-   char* reply_json;
+   char *reply_json;
    _mongoc_structured_log_command_t *log_command = entry->command;
 
    BSON_ASSERT (entry->component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
@@ -110,16 +108,12 @@ mongoc_log_structured_build_command_failed_message (mongoc_structured_log_entry_
 
    _mongoc_log_structured_append_command_data (entry);
 
-   BCON_APPEND (
-      entry->structured_message,
-      "reply",
-      BCON_UTF8 (reply_json));
+   BCON_APPEND (entry->structured_message, "reply", BCON_UTF8 (reply_json));
 
    if (log_command->error) {
-      BCON_APPEND (
-         entry->structured_message,
-         "failure",
-         BCON_UTF8 (log_command->error->message));
+      BCON_APPEND (entry->structured_message,
+                   "failure",
+                   BCON_UTF8 (log_command->error->message));
    }
 
    bson_free (reply_json);
@@ -146,13 +140,11 @@ mongoc_structured_log_command_started (const bson_t *command,
       .explicit_session = explicit_session,
    };
 
-   mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_INFO,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Command started",
-      mongoc_log_structured_build_command_started_message,
-      &command_log
-   );
+   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+                          "Command started",
+                          mongoc_log_structured_build_command_started_message,
+                          &command_log);
 }
 
 void
@@ -176,13 +168,11 @@ mongoc_structured_log_command_success (const char *command_name,
       .explicit_session = explicit_session,
    };
 
-   mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_INFO,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Command succeeded",
-      mongoc_log_structured_build_command_succeeded_message,
-      &command_log
-   );
+   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+                          "Command succeeded",
+                          mongoc_log_structured_build_command_succeeded_message,
+                          &command_log);
 }
 
 void
@@ -206,11 +196,9 @@ mongoc_structured_log_command_failure (const char *command_name,
       .explicit_session = explicit_session,
    };
 
-   mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_INFO,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Command succeeded",
-      mongoc_log_structured_build_command_failed_message,
-      &command_log
-   );
+   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_INFO,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+                          "Command succeeded",
+                          mongoc_log_structured_build_command_failed_message,
+                          &command_log);
 }

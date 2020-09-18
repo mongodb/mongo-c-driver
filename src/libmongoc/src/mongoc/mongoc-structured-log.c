@@ -32,11 +32,13 @@
 #include "mongoc-thread-private.h"
 
 static void
-mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, void *user_data);
+mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry,
+                                       void *user_data);
 
 static bson_once_t once = BSON_ONCE_INIT;
 static bson_mutex_t gStructuredLogMutex;
-static mongoc_structured_log_func_t gStructuredLogger = mongoc_structured_log_default_handler;
+static mongoc_structured_log_func_t gStructuredLogger =
+   mongoc_structured_log_default_handler;
 static void *gStructuredLoggerData;
 
 static BSON_ONCE_FUN (_mongoc_ensure_mutex_once)
@@ -54,11 +56,12 @@ mongoc_structured_log_entry_destroy (mongoc_structured_log_entry_t *entry)
    }
 }
 
-const bson_t*
+const bson_t *
 mongoc_structured_log_entry_get_message (mongoc_structured_log_entry_t *entry)
 {
    if (!entry->structured_message) {
-      entry->structured_message = BCON_NEW ("message", BCON_UTF8 (entry->message));
+      entry->structured_message =
+         BCON_NEW ("message", BCON_UTF8 (entry->message));
 
       if (entry->build_message_func) {
          entry->build_message_func (entry);
@@ -69,19 +72,22 @@ mongoc_structured_log_entry_get_message (mongoc_structured_log_entry_t *entry)
 }
 
 mongoc_structured_log_level_t
-mongoc_structured_log_entry_get_level (const mongoc_structured_log_entry_t *entry)
+mongoc_structured_log_entry_get_level (
+   const mongoc_structured_log_entry_t *entry)
 {
    return entry->level;
 }
 
 mongoc_structured_log_component_t
-mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry)
+mongoc_structured_log_entry_get_component (
+   const mongoc_structured_log_entry_t *entry)
 {
    return entry->component;
 }
 
 void
-mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data)
+mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func,
+                                   void *user_data)
 {
    bson_once (&once, &_mongoc_ensure_mutex_once);
 
@@ -119,9 +125,11 @@ mongoc_structured_log (mongoc_structured_log_level_t level,
 }
 
 static void
-mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, void *user_data)
+mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry,
+                                       void *user_data)
 {
-   char *message = bson_as_json (mongoc_structured_log_entry_get_message (entry), NULL);
+   char *message =
+      bson_as_json (mongoc_structured_log_entry_get_message (entry), NULL);
 
    fprintf (stderr,
             "Structured log: %d, %d, %s\n",
@@ -134,7 +142,8 @@ mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, voi
 
 /* just for testing */
 void
-_mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data)
+_mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func,
+                                    void **user_data)
 {
    *log_func = gStructuredLogger;
    *user_data = gStructuredLoggerData;

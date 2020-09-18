@@ -45,7 +45,7 @@ restore_state (const struct structured_log_state *state)
 static void
 structured_log_func (mongoc_structured_log_entry_t *entry, void *user_data)
 {
-   struct log_assumption *assumption = (struct log_assumption*) user_data;
+   struct log_assumption *assumption = (struct log_assumption *) user_data;
 
    assumption->calls++;
 
@@ -53,7 +53,8 @@ structured_log_func (mongoc_structured_log_entry_t *entry, void *user_data)
 
    ASSERT_CMPINT (entry->level, ==, assumption->expected_entry.level);
    ASSERT_CMPINT (entry->component, ==, assumption->expected_entry.component);
-   ASSERT (bson_equal (mongoc_structured_log_entry_get_message (entry), assumption->expected_entry.structured_message));
+   ASSERT (bson_equal (mongoc_structured_log_entry_get_message (entry),
+                       assumption->expected_entry.structured_message));
 }
 
 void
@@ -61,12 +62,14 @@ test_plain_log_entry ()
 {
    struct structured_log_state old_state;
    struct log_assumption assumption = {
-      .expected_entry = {
-         .level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
-         .component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-         .message = "Plain log entry",
-         .structured_message = BCON_NEW ("message", BCON_UTF8 ("Plain log entry")),
-      },
+      .expected_entry =
+         {
+            .level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+            .component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+            .message = "Plain log entry",
+            .structured_message =
+               BCON_NEW ("message", BCON_UTF8 ("Plain log entry")),
+         },
       .expected_calls = 1,
       .calls = 0,
    };
@@ -75,12 +78,11 @@ test_plain_log_entry ()
 
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
 
-   mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Plain log entry",
-      NULL,
-      NULL);
+   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+                          "Plain log entry",
+                          NULL,
+                          NULL);
 
    ASSERT_CMPINT (assumption.calls, =, 1);
 
@@ -98,15 +100,16 @@ test_log_entry_with_extra_data ()
 {
    struct structured_log_state old_state;
    struct log_assumption assumption = {
-      .expected_entry = {
-         .level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
-         .component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-         .message = "Plain log entry",
-         .structured_message = BCON_NEW (
-            "message", BCON_UTF8 ("Plain log entry"),
-            "extra", BCON_INT32 (1)
-         ),
-      },
+      .expected_entry =
+         {
+            .level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+            .component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+            .message = "Plain log entry",
+            .structured_message = BCON_NEW ("message",
+                                            BCON_UTF8 ("Plain log entry"),
+                                            "extra",
+                                            BCON_INT32 (1)),
+         },
       .expected_calls = 1,
       .calls = 0,
    };
@@ -115,12 +118,11 @@ test_log_entry_with_extra_data ()
 
    mongoc_structured_log_set_handler (structured_log_func, &assumption);
 
-   mongoc_structured_log (
-      MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
-      MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-      "Plain log entry",
-      _test_append_extra_data,
-      NULL);
+   mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+                          MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+                          "Plain log entry",
+                          _test_append_extra_data,
+                          NULL);
 
    ASSERT_CMPINT (assumption.calls, =, 1);
 
@@ -131,5 +133,6 @@ void
 test_structured_log_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/Structured_Log/plain", test_plain_log_entry);
-   TestSuite_Add (suite, "/Structured_Log/with_extra_data", test_log_entry_with_extra_data);
+   TestSuite_Add (
+      suite, "/Structured_Log/with_extra_data", test_log_entry_with_extra_data);
 }
