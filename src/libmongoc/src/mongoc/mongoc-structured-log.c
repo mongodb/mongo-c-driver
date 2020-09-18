@@ -55,7 +55,7 @@ mongoc_structured_log_entry_destroy (mongoc_structured_log_entry_t *entry)
 }
 
 const bson_t*
-mongoc_structured_log_entry_get_context (mongoc_structured_log_entry_t *entry)
+mongoc_structured_log_entry_get_message (mongoc_structured_log_entry_t *entry)
 {
    if (!entry->structured_message) {
       entry->structured_message = BCON_NEW ("message", BCON_UTF8 (entry->message));
@@ -121,7 +121,7 @@ mongoc_structured_log (mongoc_structured_log_level_t level,
 static void
 mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, void *user_data)
 {
-   char *message = bson_as_json (mongoc_structured_log_entry_get_context (entry), NULL);
+   char *message = bson_as_json (mongoc_structured_log_entry_get_message (entry), NULL);
 
    fprintf (stderr,
             "Structured log: %d, %d, %s\n",
