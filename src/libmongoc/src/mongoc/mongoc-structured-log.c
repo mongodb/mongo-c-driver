@@ -131,3 +131,11 @@ mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry, voi
 
    bson_free (message);
 }
+
+/* just for testing */
+void
+_mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data)
+{
+   *log_func = gStructuredLogger;
+   *user_data = gStructuredLoggerData;
+}

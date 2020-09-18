@@ -147,6 +147,8 @@ test_list_install (TestSuite *suite);
 extern void
 test_log_install (TestSuite *suite);
 extern void
+test_structured_log_install (TestSuite *suite);
+extern void
 test_matcher_install (TestSuite *suite);
 extern void
 test_mongos_pinning_install (TestSuite *suite);
@@ -2603,6 +2605,7 @@ main (int argc, char *argv[])
    test_linux_distro_scanner_install (&suite);
    test_list_install (&suite);
    test_log_install (&suite);
+   test_structured_log_install (&suite);
    test_long_namespace_install (&suite);
    test_matcher_install (&suite);
    test_mongos_pinning_install (&suite);

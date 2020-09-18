@@ -967,6 +967,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-speculative-auth.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-streamable-ismaster.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-thread.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-description.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-reconcile.c
