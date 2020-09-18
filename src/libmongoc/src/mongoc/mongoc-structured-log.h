@@ -46,20 +46,23 @@ typedef enum {
 
 typedef struct _mongoc_structured_log_entry_t mongoc_structured_log_entry_t;
 
-typedef void (*mongoc_structured_log_func_t) (mongoc_structured_log_entry_t *entry,
-                                              void *user_data);
+typedef void (*mongoc_structured_log_func_t) (
+   mongoc_structured_log_entry_t *entry, void *user_data);
 
 MONGOC_EXPORT (void)
-mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func, void *user_data);
+mongoc_structured_log_set_handler (mongoc_structured_log_func_t log_func,
+                                   void *user_data);
 
-MONGOC_EXPORT (const bson_t*)
+MONGOC_EXPORT (const bson_t *)
 mongoc_structured_log_entry_get_message (mongoc_structured_log_entry_t *entry);
 
 MONGOC_EXPORT (mongoc_structured_log_level_t)
-mongoc_structured_log_entry_get_level (const mongoc_structured_log_entry_t *entry);
+mongoc_structured_log_entry_get_level (
+   const mongoc_structured_log_entry_t *entry);
 
 MONGOC_EXPORT (mongoc_structured_log_component_t)
-mongoc_structured_log_entry_get_component (const mongoc_structured_log_entry_t *entry);
+mongoc_structured_log_entry_get_component (
+   const mongoc_structured_log_entry_t *entry);
 
 BSON_END_DECLS
 

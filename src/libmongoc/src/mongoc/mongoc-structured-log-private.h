@@ -22,12 +22,13 @@
 #ifndef MONGOC_STRUCTRURED_LOG_PRIVATE_H
 #define MONGOC_STRUCTRURED_LOG_PRIVATE_H
 
-typedef void (*mongoc_structured_log_build_message_t) (mongoc_structured_log_entry_t *entry);
+typedef void (*mongoc_structured_log_build_message_t) (
+   mongoc_structured_log_entry_t *entry);
 
 struct _mongoc_structured_log_entry_t {
    mongoc_structured_log_level_t level;
    mongoc_structured_log_component_t component;
-   const char* message;
+   const char *message;
    bson_t *structured_message;
    mongoc_structured_log_build_message_t build_message_func;
    union {
@@ -43,6 +44,7 @@ mongoc_structured_log (mongoc_structured_log_level_t level,
                        void *structured_message_data);
 
 void
-_mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func, void **user_data);
+_mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func,
+                                    void **user_data);
 
 #endif /* MONGOC_STRUCTURED_LOG_PRIVATE_H */
