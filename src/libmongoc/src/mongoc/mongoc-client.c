@@ -64,6 +64,7 @@
 #include "mongoc-cmd-private.h"
 #include "mongoc-opts-private.h"
 #include "mongoc-structured-log-command-private.h"
+#include "mongoc-structured-log-connection-private.h"
 #endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
@@ -1122,6 +1123,8 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
       _mongoc_client_set_internal_tls_opts (client, &internal_tls_opts);
    }
 #endif
+
+   mongoc_structured_log_connection_client_created ();
 
    mongoc_counter_clients_active_inc ();
 
