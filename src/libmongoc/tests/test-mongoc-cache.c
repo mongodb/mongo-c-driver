@@ -21,9 +21,11 @@
 #include <mongoc/mongoc.h>
 #include <stdio.h>
 #include <signal.h>
-#include <bits/signum.h>
 #include "TestSuite.h"
 
+#ifndef SIGSTOP
+#define SIGSTOP 19
+#endif
 static char *ca_file;
 
 static int
