@@ -157,6 +157,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-stream-gridfs-download-private.h
    mongoc-stream-gridfs-upload-private.h
    mongoc-structured-log-command-private.h
+   mongoc-structured-log-connection-private.h
    mongoc-structured-log-private.h
    mongoc-thread-private.h
    mongoc-topology-description-apm-private.h

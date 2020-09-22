@@ -539,6 +539,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log-command.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-structured-log-connection.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-background-monitoring.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
