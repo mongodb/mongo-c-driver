@@ -40,6 +40,7 @@ static bson_mutex_t gStructuredLogMutex;
 static mongoc_structured_log_func_t gStructuredLogger =
    mongoc_structured_log_default_handler;
 static void *gStructuredLoggerData;
+static FILE *log_stream;
 
 static BSON_ONCE_FUN (_mongoc_ensure_mutex_once)
 {
@@ -124,14 +125,92 @@ mongoc_structured_log (mongoc_structured_log_level_t level,
    mongoc_structured_log_entry_destroy (&entry);
 }
 
+static mongoc_structured_log_level_t
+_mongoc_structured_log_get_log_level_from_env (const char *variable)
+{
+   const char* level = getenv (variable);
+
+   if (!level) {
+      return MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL;
+   } else if (!strcasecmp (level, "trace")) {
+      return MONGOC_STRUCTURED_LOG_LEVEL_TRACE;
+   } else if (!strcasecmp (level, "debug")) {
+      return MONGOC_STRUCTURED_LOG_LEVEL_DEBUG;
+   } else if (!strcasecmp (level, "info")) {
+      return MONGOC_STRUCTURED_LOG_LEVEL_INFO;
+   } else if (!strcasecmp (level, "notice")) {
+      return MONGOC_STRUCTURED_LOG_LEVEL_NOTICE;
+   } else if (!strcasecmp (level, "warn")) {
+      return MONGOC_STRUCTURED_LOG_LEVEL_WARNING;
+   } else if (!strcasecmp (level, "error")) {
+      return MONGOC_STRUCTURED_LOG_LEVEL_ERROR;
+   } else if (!strcasecmp (level, "critical")) {
+      return MONGOC_STRUCTURED_LOG_LEVEL_CRITICAL;
+   } else if (!strcasecmp (level, "alert")) {
+      return MONGOC_STRUCTURED_LOG_LEVEL_ALERT;
+   } else if (!strcasecmp (level, "emergency")) {
+      return MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY;
+   } else {
+      MONGOC_ERROR ("Invalid log level %s read for variable %s", level, variable);
+      exit (EXIT_FAILURE);
+   }
+}
+
+static mongoc_structured_log_level_t
+_mongoc_structured_log_get_log_level (mongoc_structured_log_component_t component)
+{
+   switch (component) {
+   case MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND:
+      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_COMMAND");
+   case MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION:
+      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_CONNECTION");
+   case MONGOC_STRUCTURED_LOG_COMPONENT_SDAM:
+      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_SDAM");
+   case MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION:
+      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_SERVER_SELECTION");
+   default:
+      MONGOC_ERROR ("Requesting log level for unsupported component %d", component);
+      exit (EXIT_FAILURE);
+   }
+}
+
+static void
+_mongoc_structured_log_initialize_stream ()
+{
+   const char* log_target = getenv("MONGODB_LOGGING_PATH");
+   bool log_to_stderr = !log_target || !strcmp (log_target, "stderr");
+
+   log_stream = log_to_stderr ? stderr : fopen (log_target, "a");
+   if (!log_stream) {
+      MONGOC_ERROR ("Cannot open log file %s for writing", log_target);
+      exit (EXIT_FAILURE);
+   }
+}
+
+static FILE*
+_mongoc_structured_log_get_stream ()
+{
+   if (!log_stream) {
+      _mongoc_structured_log_initialize_stream ();
+   }
+
+   return log_stream;
+}
+
 static void
 mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry,
                                        void *user_data)
 {
+   mongoc_structured_log_level_t log_level = _mongoc_structured_log_get_log_level (mongoc_structured_log_entry_get_component (entry));
+
+   if (log_level < mongoc_structured_log_entry_get_level (entry)) {
+      return;
+   }
+
    char *message =
       bson_as_json (mongoc_structured_log_entry_get_message (entry), NULL);
 
-   fprintf (stderr,
+   fprintf (_mongoc_structured_log_get_stream (),
             "Structured log: %d, %d, %s\n",
             mongoc_structured_log_entry_get_level (entry),
             mongoc_structured_log_entry_get_component (entry),
