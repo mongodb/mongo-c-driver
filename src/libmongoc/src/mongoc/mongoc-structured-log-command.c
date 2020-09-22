@@ -198,7 +198,7 @@ mongoc_structured_log_command_failure (const char *command_name,
 
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_INFO,
                           MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-                          "Command succeeded",
+                          "Command failed",
                           mongoc_log_structured_build_command_failed_message,
                           &command_log);
 }
