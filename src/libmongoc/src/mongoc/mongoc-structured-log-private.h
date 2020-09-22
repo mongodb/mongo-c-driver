@@ -22,6 +22,8 @@
 #ifndef MONGOC_STRUCTRURED_LOG_PRIVATE_H
 #define MONGOC_STRUCTRURED_LOG_PRIVATE_H
 
+#define MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL MONGOC_STRUCTURED_LOG_LEVEL_WARNING;
+
 typedef void (*mongoc_structured_log_build_message_t) (
    mongoc_structured_log_entry_t *entry);
 
