@@ -51,7 +51,14 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
    db = bson_strndup (cursor->ns, cursor->dblen);
 
    // @todo Provide missing arguments
-   mongoc_structured_log_command_started (&doc, "getMore", db, cursor->operation_id, client->cluster.request_id, 0, 0, false);
+   mongoc_structured_log_command_started (&doc,
+                                          "getMore",
+                                          db,
+                                          cursor->operation_id,
+                                          client->cluster.request_id,
+                                          0,
+                                          0,
+                                          false);
 
    if (!client->apm_callbacks.started) {
       /* successful */

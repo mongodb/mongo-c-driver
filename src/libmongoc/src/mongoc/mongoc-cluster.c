@@ -534,7 +534,14 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    }
 
    // @todo Provide missing arguments
-   mongoc_structured_log_command_started (cmd->command, cmd->command_name, cmd->db_name, cmd->operation_id, request_id, 0, 0, false);
+   mongoc_structured_log_command_started (cmd->command,
+                                          cmd->command_name,
+                                          cmd->db_name,
+                                          cmd->operation_id,
+                                          request_id,
+                                          0,
+                                          0,
+                                          false);
 
    if (callbacks->started) {
       mongoc_apm_command_started_init_with_cmd (
@@ -548,7 +555,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
 
    if (retval) {
       bson_t fake_reply = BSON_INITIALIZER;
-      int64_t duration = bson_get_monotonic_time() - started;
+      int64_t duration = bson_get_monotonic_time () - started;
 
       /*
        * Unacknowledged writes must provide a CommandSucceededEvent with an
@@ -560,15 +567,15 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
       }
 
       // @todo Provide missing arguments
-      mongoc_structured_log_command_success (
-         cmd->command_name,
-         cmd->operation_id,
-         cmd->is_acknowledged ? reply : &fake_reply,
-         duration,
-         request_id,
-         0,
-         0,
-         false);
+      mongoc_structured_log_command_success (cmd->command_name,
+                                             cmd->operation_id,
+                                             cmd->is_acknowledged ? reply
+                                                                  : &fake_reply,
+                                             duration,
+                                             request_id,
+                                             0,
+                                             0,
+                                             false);
 
       if (callbacks->succeeded) {
          mongoc_apm_command_succeeded_init (&succeeded_event,
@@ -591,18 +598,17 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
 
       bson_destroy (&fake_reply);
    } else {
-      int64_t duration = bson_get_monotonic_time() - started;
+      int64_t duration = bson_get_monotonic_time () - started;
 
       // @todo Provide missing arguments
-      mongoc_structured_log_command_failure (
-         cmd->command_name,
-         cmd->operation_id,
-         reply,
-         error,
-         cluster->request_id,
-         0,
-         0,
-         false);
+      mongoc_structured_log_command_failure (cmd->command_name,
+                                             cmd->operation_id,
+                                             reply,
+                                             error,
+                                             cluster->request_id,
+                                             0,
+                                             0,
+                                             false);
 
       if (callbacks->failed) {
          mongoc_apm_command_failed_init (&failed_event,

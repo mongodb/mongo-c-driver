@@ -128,7 +128,7 @@ mongoc_structured_log (mongoc_structured_log_level_t level,
 static mongoc_structured_log_level_t
 _mongoc_structured_log_get_log_level_from_env (const char *variable)
 {
-   const char* level = getenv (variable);
+   const char *level = getenv (variable);
 
    if (!level) {
       return MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL;
@@ -151,25 +151,32 @@ _mongoc_structured_log_get_log_level_from_env (const char *variable)
    } else if (!strcasecmp (level, "emergency")) {
       return MONGOC_STRUCTURED_LOG_LEVEL_EMERGENCY;
    } else {
-      MONGOC_ERROR ("Invalid log level %s read for variable %s", level, variable);
+      MONGOC_ERROR (
+         "Invalid log level %s read for variable %s", level, variable);
       exit (EXIT_FAILURE);
    }
 }
 
 static mongoc_structured_log_level_t
-_mongoc_structured_log_get_log_level (mongoc_structured_log_component_t component)
+_mongoc_structured_log_get_log_level (
+   mongoc_structured_log_component_t component)
 {
    switch (component) {
    case MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND:
-      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_COMMAND");
+      return _mongoc_structured_log_get_log_level_from_env (
+         "MONGODB_LOGGING_COMMAND");
    case MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION:
-      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_CONNECTION");
+      return _mongoc_structured_log_get_log_level_from_env (
+         "MONGODB_LOGGING_CONNECTION");
    case MONGOC_STRUCTURED_LOG_COMPONENT_SDAM:
-      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_SDAM");
+      return _mongoc_structured_log_get_log_level_from_env (
+         "MONGODB_LOGGING_SDAM");
    case MONGOC_STRUCTURED_LOG_COMPONENT_SERVER_SELECTION:
-      return _mongoc_structured_log_get_log_level_from_env ("MONGODB_LOGGING_SERVER_SELECTION");
+      return _mongoc_structured_log_get_log_level_from_env (
+         "MONGODB_LOGGING_SERVER_SELECTION");
    default:
-      MONGOC_ERROR ("Requesting log level for unsupported component %d", component);
+      MONGOC_ERROR ("Requesting log level for unsupported component %d",
+                    component);
       exit (EXIT_FAILURE);
    }
 }
@@ -177,7 +184,7 @@ _mongoc_structured_log_get_log_level (mongoc_structured_log_component_t componen
 static void
 _mongoc_structured_log_initialize_stream ()
 {
-   const char* log_target = getenv("MONGODB_LOGGING_PATH");
+   const char *log_target = getenv ("MONGODB_LOGGING_PATH");
    bool log_to_stderr = !log_target || !strcmp (log_target, "stderr");
 
    log_stream = log_to_stderr ? stderr : fopen (log_target, "a");
@@ -187,7 +194,7 @@ _mongoc_structured_log_initialize_stream ()
    }
 }
 
-static FILE*
+static FILE *
 _mongoc_structured_log_get_stream ()
 {
    if (!log_stream) {
@@ -201,7 +208,9 @@ static void
 mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry,
                                        void *user_data)
 {
-   mongoc_structured_log_level_t log_level = _mongoc_structured_log_get_log_level (mongoc_structured_log_entry_get_component (entry));
+   mongoc_structured_log_level_t log_level =
+      _mongoc_structured_log_get_log_level (
+         mongoc_structured_log_entry_get_component (entry));
 
    if (log_level < mongoc_structured_log_entry_get_level (entry)) {
       return;
