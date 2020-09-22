@@ -25,7 +25,7 @@
 
 #ifndef SIGSTOP
 #define SIGSTOP 19
-
+#endif
 static char *ca_file;
 
 static int
