@@ -95,13 +95,10 @@ _mongoc_cursor_monitor_legacy_query (mongoc_cursor_t *cursor,
                                      mongoc_server_stream_t *server_stream)
 {
    bson_t doc;
-   mongoc_client_t *client;
    char *db;
    bool r;
 
    ENTRY;
-
-   client = cursor->client;
 
    bson_init (&doc);
    db = bson_strndup (cursor->ns, cursor->dblen);
