@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-
-#if defined(__linux__)
-#include <sys/syscall.h>
-#elif defined(_WIN32)
-#include <process.h>
-#elif defined(__FreeBSD__)
-#include <sys/thr.h>
-#else
-#include <unistd.h>
-#endif
-#include <stdarg.h>
-#include <time.h>
-
 #include "mongoc-structured-log.h"
 #include "mongoc-structured-log-private.h"
 #include "mongoc-thread-private.h"
+#include "mongoc-util-private.h"
 
 static void
 mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry,
@@ -53,7 +41,7 @@ static void
 mongoc_structured_log_entry_destroy (mongoc_structured_log_entry_t *entry)
 {
    if (entry->structured_message) {
-      bson_free (entry->structured_message);
+      bson_destroy (entry->structured_message);
    }
 }
 
@@ -114,11 +102,14 @@ mongoc_structured_log (mongoc_structured_log_level_t level,
       structured_message_data,
    };
 
+   bson_once (&once, &_mongoc_ensure_mutex_once);
+   bson_mutex_lock (&gStructuredLogMutex);
+
    if (!gStructuredLogger) {
+      bson_mutex_unlock (&gStructuredLogMutex);
       return;
    }
 
-   bson_mutex_lock (&gStructuredLogMutex);
    gStructuredLogger (&entry, gStructuredLoggerData);
    bson_mutex_unlock (&gStructuredLogMutex);
 
