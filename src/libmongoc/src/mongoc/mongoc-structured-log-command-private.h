@@ -15,11 +15,12 @@
  */
 
 #include "mongoc-prelude.h"
+
+#ifndef MONGOC_STRUCTURED_LOG_COMMAND_PRIVATE_H
+#define MONGOC_STRUCTURED_LOG_COMMAND_PRIVATE_H
+
 #include "mongoc-structured-log.h"
 #include "mongoc-cmd-private.h"
-
-#ifndef MONGOC_STRUCTRURED_LOG_COMMAND_PRIVATE_H
-#define MONGOC_STRUCTRURED_LOG_COMMAND_PRIVATE_H
 
 typedef struct {
    const char *command_name;

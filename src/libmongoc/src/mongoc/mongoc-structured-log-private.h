@@ -15,12 +15,13 @@
  */
 
 #include "mongoc-prelude.h"
+
+#ifndef MONGOC_STRUCTURED_LOG_PRIVATE_H
+#define MONGOC_STRUCTURED_LOG_PRIVATE_H
+
 #include "mongoc-structured-log.h"
 #include "mongoc-cmd-private.h"
 #include "mongoc-structured-log-command-private.h"
-
-#ifndef MONGOC_STRUCTRURED_LOG_PRIVATE_H
-#define MONGOC_STRUCTRURED_LOG_PRIVATE_H
 
 #define MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL MONGOC_STRUCTURED_LOG_LEVEL_WARNING;
 

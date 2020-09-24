@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-
-#if defined(__linux__)
-#include <sys/syscall.h>
-#elif defined(_WIN32)
-#include <process.h>
-#elif defined(__FreeBSD__)
-#include <sys/thr.h>
-#else
-#include <unistd.h>
-#endif
-#include <time.h>
-
 #include "mongoc-structured-log-private.h"
 
 void
-mongoc_structured_log_connection_client_created ()
+mongoc_structured_log_connection_client_created (void)
 {
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_DEBUG,
                           MONGOC_STRUCTURED_LOG_COMPONENT_CONNECTION,

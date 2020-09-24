@@ -14,18 +14,6 @@
  * limitations under the License.
  */
 
-
-#if defined(__linux__)
-#include <sys/syscall.h>
-#elif defined(_WIN32)
-#include <process.h>
-#elif defined(__FreeBSD__)
-#include <sys/thr.h>
-#else
-#include <unistd.h>
-#endif
-#include <time.h>
-
 #include "mongoc-structured-log.h"
 #include "mongoc-structured-log-private.h"
 #include "mongoc-structured-log-command-private.h"
@@ -130,14 +118,17 @@ mongoc_structured_log_command_started (const bson_t *command,
                                        bool explicit_session)
 {
    _mongoc_structured_log_command_t command_log = {
-      .command = command,
-      .command_name = command_name,
-      .db_name = db_name,
-      .operation_id = operation_id,
-      .request_id = request_id,
-      .driver_connection_id = driver_connection_id,
-      .server_connection_id = server_connection_id,
-      .explicit_session = explicit_session,
+      command_name,
+      db_name,
+      command,
+      NULL,
+      NULL,
+      0,
+      operation_id,
+      request_id,
+      driver_connection_id,
+      server_connection_id,
+      explicit_session,
    };
 
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_INFO,
@@ -158,14 +149,17 @@ mongoc_structured_log_command_success (const char *command_name,
                                        bool explicit_session)
 {
    _mongoc_structured_log_command_t command_log = {
-      .command_name = command_name,
-      .operation_id = operation_id,
-      .reply = reply,
-      .duration = duration,
-      .request_id = request_id,
-      .driver_connection_id = driver_connection_id,
-      .server_connection_id = server_connection_id,
-      .explicit_session = explicit_session,
+      command_name,
+      NULL,
+      NULL,
+      reply,
+      NULL,
+      duration,
+      operation_id,
+      request_id,
+      driver_connection_id,
+      server_connection_id,
+      explicit_session,
    };
 
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_INFO,
@@ -186,14 +180,17 @@ mongoc_structured_log_command_failure (const char *command_name,
                                        bool explicit_session)
 {
    _mongoc_structured_log_command_t command_log = {
-      .command_name = command_name,
-      .operation_id = operation_id,
-      .reply = reply,
-      .error = error,
-      .request_id = request_id,
-      .driver_connection_id = driver_connection_id,
-      .server_connection_id = server_connection_id,
-      .explicit_session = explicit_session,
+      command_name,
+      NULL,
+      NULL,
+      reply,
+      error,
+      0,
+      operation_id,
+      request_id,
+      driver_connection_id,
+      server_connection_id,
+      explicit_session,
    };
 
    mongoc_structured_log (MONGOC_STRUCTURED_LOG_LEVEL_INFO,
