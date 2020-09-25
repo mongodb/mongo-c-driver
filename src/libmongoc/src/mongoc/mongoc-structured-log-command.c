@@ -152,6 +152,38 @@ mongoc_structured_log_command_started (const bson_t *command,
 }
 
 void
+mongoc_structured_log_command_started_with_cmd (const mongoc_cmd_t *cmd,
+                                                uint32_t request_id,
+                                                uint32_t driver_connection_id,
+                                                uint32_t server_connection_id,
+                                                bool explicit_session)
+{
+   // Discard const modifier, we promise we won't modify this
+   bson_t *command = (bson_t *) cmd->command;
+   bool command_owned = false;
+
+   if (cmd->payload && !cmd->payload_size) {
+      command = bson_copy (cmd->command);
+      command_owned = true;
+
+      _mongoc_cmd_append_payload_as_array (cmd, command);
+   }
+
+   mongoc_structured_log_command_started (command,
+                                          cmd->command_name,
+                                          cmd->db_name,
+                                          cmd->operation_id,
+                                          request_id,
+                                          driver_connection_id,
+                                          server_connection_id,
+                                          explicit_session);
+
+   if (command_owned) {
+      bson_destroy (command);
+   }
+}
+
+void
 mongoc_structured_log_command_success (const char *command_name,
                                        int64_t operation_id,
                                        const bson_t *reply,
