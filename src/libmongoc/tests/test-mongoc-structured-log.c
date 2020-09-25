@@ -85,6 +85,8 @@ test_plain_log_entry ()
    ASSERT_CMPINT (assumption.calls, =, 1);
 
    restore_state (&old_state);
+
+   bson_destroy (assumption.expected_entry.structured_message);
 }
 
 void
@@ -124,6 +126,8 @@ test_log_entry_with_extra_data ()
    ASSERT_CMPINT (assumption.calls, =, 1);
 
    restore_state (&old_state);
+
+   bson_destroy (assumption.expected_entry.structured_message);
 }
 
 void
