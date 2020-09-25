@@ -57,14 +57,14 @@
 #include "mongoc-change-stream-private.h"
 #include "mongoc-client-session-private.h"
 #include "mongoc-cursor-private.h"
+#include "mongoc-structured-log-command-private.h"
+#include "mongoc-structured-log-connection-private.h"
 
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-stream-tls.h"
 #include "mongoc-ssl-private.h"
 #include "mongoc-cmd-private.h"
 #include "mongoc-opts-private.h"
-#include "mongoc-structured-log-command-private.h"
-#include "mongoc-structured-log-connection-private.h"
 #endif
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10100000L
