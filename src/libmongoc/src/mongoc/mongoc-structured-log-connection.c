@@ -24,5 +24,4 @@ mongoc_structured_log_connection_client_created (void)
                           "Client created",
                           NULL,
                           NULL);
-
 }
