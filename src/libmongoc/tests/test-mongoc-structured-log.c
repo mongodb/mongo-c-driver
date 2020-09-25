@@ -129,7 +129,7 @@ test_log_entry_with_extra_data ()
 void
 test_structured_log_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Structured_Log/plain", test_plain_log_entry);
+   TestSuite_Add (suite, "/structured_log/plain", test_plain_log_entry);
    TestSuite_Add (
-      suite, "/Structured_Log/with_extra_data", test_log_entry_with_extra_data);
+      suite, "/structured_log/with_extra_data", test_log_entry_with_extra_data);
 }
