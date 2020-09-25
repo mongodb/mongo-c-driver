@@ -201,6 +201,7 @@ static void
 mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry,
                                        void *user_data)
 {
+   char *message;
    mongoc_structured_log_level_t log_level =
       _mongoc_structured_log_get_log_level (
          mongoc_structured_log_entry_get_component (entry));
@@ -209,7 +210,7 @@ mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry,
       return;
    }
 
-   char *message =
+   message =
       bson_as_json (mongoc_structured_log_entry_get_message (entry), NULL);
 
    fprintf (_mongoc_structured_log_get_stream (),
