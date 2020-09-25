@@ -53,7 +53,9 @@ mongoc_structured_log_entry_get_message (mongoc_structured_log_entry_t *entry)
          BCON_NEW ("message", BCON_UTF8 (entry->message));
 
       if (entry->build_message_func) {
-         entry->build_message_func (entry);
+         entry->build_message_func (entry->component,
+                                    entry->structured_log_data,
+                                    entry->structured_message);
       }
    }
 

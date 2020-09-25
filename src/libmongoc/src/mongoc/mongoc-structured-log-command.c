@@ -20,11 +20,12 @@
 
 static void
 _mongoc_log_structured_append_command_data (
-   mongoc_structured_log_entry_t *entry)
+   void *structured_log_data, bson_t *structured_message /* OUT */)
 {
-   _mongoc_structured_log_command_t *log_command = entry->command;
+   _mongoc_structured_log_command_t *log_command =
+      (_mongoc_structured_log_command_t *) structured_log_data;
 
-   BCON_APPEND (entry->structured_message,
+   BCON_APPEND (structured_message,
                 "commandName",
                 BCON_UTF8 (log_command->command_name),
                 "requestId",
@@ -41,18 +42,22 @@ _mongoc_log_structured_append_command_data (
 
 static void
 mongoc_log_structured_build_command_started_message (
-   mongoc_structured_log_entry_t *entry)
+   mongoc_structured_log_component_t component,
+   void *structured_log_data,
+   bson_t *structured_message /* OUT */)
 {
    char *cmd_json;
-   _mongoc_structured_log_command_t *log_command = entry->command;
+   _mongoc_structured_log_command_t *log_command =
+      (_mongoc_structured_log_command_t *) structured_log_data;
 
-   BSON_ASSERT (entry->component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
+   BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
    cmd_json = bson_as_canonical_extended_json (log_command->command, NULL);
 
-   _mongoc_log_structured_append_command_data (entry);
+   _mongoc_log_structured_append_command_data (structured_log_data,
+                                               structured_message);
 
-   BCON_APPEND (entry->structured_message,
+   BCON_APPEND (structured_message,
                 "databaseName",
                 BCON_UTF8 (log_command->db_name),
                 "command",
@@ -63,18 +68,22 @@ mongoc_log_structured_build_command_started_message (
 
 static void
 mongoc_log_structured_build_command_succeeded_message (
-   mongoc_structured_log_entry_t *entry)
+   mongoc_structured_log_component_t component,
+   void *structured_log_data,
+   bson_t *structured_message /* OUT */)
 {
    char *reply_json;
-   _mongoc_structured_log_command_t *log_command = entry->command;
+   _mongoc_structured_log_command_t *log_command =
+      (_mongoc_structured_log_command_t *) structured_log_data;
 
-   BSON_ASSERT (entry->component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
+   BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
    reply_json = bson_as_canonical_extended_json (log_command->reply, NULL);
 
-   _mongoc_log_structured_append_command_data (entry);
+   _mongoc_log_structured_append_command_data (structured_log_data,
+                                               structured_message);
 
-   BCON_APPEND (entry->structured_message,
+   BCON_APPEND (structured_message,
                 "duration",
                 BCON_INT64 (log_command->duration),
                 "reply",
@@ -85,21 +94,25 @@ mongoc_log_structured_build_command_succeeded_message (
 
 static void
 mongoc_log_structured_build_command_failed_message (
-   mongoc_structured_log_entry_t *entry)
+   mongoc_structured_log_component_t component,
+   void *structured_log_data,
+   bson_t *structured_message /* OUT */)
 {
    char *reply_json;
-   _mongoc_structured_log_command_t *log_command = entry->command;
+   _mongoc_structured_log_command_t *log_command =
+      (_mongoc_structured_log_command_t *) structured_log_data;
 
-   BSON_ASSERT (entry->component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
+   BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
    reply_json = bson_as_canonical_extended_json (log_command->reply, NULL);
 
-   _mongoc_log_structured_append_command_data (entry);
+   _mongoc_log_structured_append_command_data (structured_log_data,
+                                               structured_message);
 
-   BCON_APPEND (entry->structured_message, "reply", BCON_UTF8 (reply_json));
+   BCON_APPEND (structured_message, "reply", BCON_UTF8 (reply_json));
 
    if (log_command->error) {
-      BCON_APPEND (entry->structured_message,
+      BCON_APPEND (structured_message,
                    "failure",
                    BCON_UTF8 (log_command->error->message));
    }

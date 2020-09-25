@@ -62,16 +62,14 @@ test_plain_log_entry ()
 {
    struct structured_log_state old_state;
    struct log_assumption assumption = {
-      .expected_entry =
-         {
-            .level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
-            .component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-            .message = "Plain log entry",
-            .structured_message =
-               BCON_NEW ("message", BCON_UTF8 ("Plain log entry")),
-         },
-      .expected_calls = 1,
-      .calls = 0,
+      {
+         MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+         MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+         "Plain log entry",
+         BCON_NEW ("message", BCON_UTF8 ("Plain log entry")),
+      },
+      1,
+      0,
    };
 
    save_state (&old_state);
@@ -90,9 +88,9 @@ test_plain_log_entry ()
 }
 
 void
-_test_append_extra_data (mongoc_structured_log_entry_t *entry)
+_test_append_extra_data (mongoc_structured_log_component_t component, void *structured_log_data, bson_t *structured_message /* OUT */)
 {
-   BCON_APPEND (entry->structured_message, "extra", BCON_INT32 (1));
+   BCON_APPEND (structured_message, "extra", BCON_INT32 (1));
 }
 
 void
@@ -100,18 +98,17 @@ test_log_entry_with_extra_data ()
 {
    struct structured_log_state old_state;
    struct log_assumption assumption = {
-      .expected_entry =
-         {
-            .level = MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
-            .component = MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
-            .message = "Plain log entry",
-            .structured_message = BCON_NEW ("message",
-                                            BCON_UTF8 ("Plain log entry"),
-                                            "extra",
-                                            BCON_INT32 (1)),
-         },
-      .expected_calls = 1,
-      .calls = 0,
+      {
+         MONGOC_STRUCTURED_LOG_LEVEL_WARNING,
+         MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND,
+         "Plain log entry",
+         BCON_NEW ("message",
+                   BCON_UTF8 ("Plain log entry"),
+                   "extra",
+                   BCON_INT32 (1)),
+      },
+      1,
+      0,
    };
 
    save_state (&old_state);

@@ -26,7 +26,9 @@
 #define MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL MONGOC_STRUCTURED_LOG_LEVEL_WARNING;
 
 typedef void (*mongoc_structured_log_build_message_t) (
-   mongoc_structured_log_entry_t *entry);
+   mongoc_structured_log_component_t component,
+   void *structured_log_data,
+   bson_t *structured_message /* OUT */);
 
 struct _mongoc_structured_log_entry_t {
    mongoc_structured_log_level_t level;
@@ -34,9 +36,7 @@ struct _mongoc_structured_log_entry_t {
    const char *message;
    bson_t *structured_message;
    mongoc_structured_log_build_message_t build_message_func;
-   union {
-      _mongoc_structured_log_command_t *command;
-   };
+   void *structured_log_data;
 };
 
 void
