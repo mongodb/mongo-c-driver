@@ -534,14 +534,11 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    }
 
    // @todo Provide missing arguments
-   mongoc_structured_log_command_started (cmd->command,
-                                          cmd->command_name,
-                                          cmd->db_name,
-                                          cmd->operation_id,
-                                          request_id,
-                                          0,
-                                          0,
-                                          false);
+   mongoc_structured_log_command_started_with_cmd (cmd,
+                                                   request_id,
+                                                   0,
+                                                   0,
+                                                   false);
 
    if (callbacks->started) {
       mongoc_apm_command_started_init_with_cmd (
