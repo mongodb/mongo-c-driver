@@ -50,7 +50,7 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
    _mongoc_cursor_prepare_getmore_command (cursor, &doc);
    db = bson_strndup (cursor->ns, cursor->dblen);
 
-   // @todo Provide missing arguments
+   /* @todo Provide missing arguments */
    mongoc_structured_log_command_started (&doc,
                                           "getMore",
                                           db,
