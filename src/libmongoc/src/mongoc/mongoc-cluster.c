@@ -533,7 +533,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       }
    }
 
-   // @todo Provide missing arguments
+   /* @todo Provide missing arguments */
    mongoc_structured_log_command_started_with_cmd (cmd,
                                                    request_id,
                                                    0,
@@ -580,7 +580,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
          bson_append_int32 (&fake_reply, "ok", 2, 1);
       }
 
-      // @todo Provide missing arguments
+      /* @todo Provide missing arguments */
       mongoc_structured_log_command_success (cmd->command_name,
                                              cmd->operation_id,
                                              cmd->is_acknowledged ? reply
@@ -611,7 +611,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    } else {
       int64_t duration = bson_get_monotonic_time () - started;
 
-      // @todo Provide missing arguments
+      /* @todo Provide missing arguments */
       mongoc_structured_log_command_failure (cmd->command_name,
                                              cmd->operation_id,
                                              reply,

@@ -2327,7 +2327,7 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
    bson_init (&doc);
    _mongoc_client_prepare_killcursors_command (cursor_id, collection, &doc);
 
-   // @todo Provide missing arguments
+   /* @todo Provide missing arguments */
    mongoc_structured_log_command_started (
       &doc, "killCursors", db, operation_id, cluster->request_id, 0, 0, false);
 
@@ -2378,7 +2378,7 @@ _mongoc_client_monitor_op_killcursors_succeeded (
    bson_append_int64 (&cursors_unknown, "0", 1, cursor_id);
    bson_append_array_end (&doc, &cursors_unknown);
 
-   // @todo Provide missing arguments
+   /* @todo Provide missing arguments */
    mongoc_structured_log_command_success ("killCursors",
                                           operation_id,
                                           &doc,
@@ -2430,7 +2430,7 @@ _mongoc_client_monitor_op_killcursors_failed (
    bson_init (&doc);
    bson_append_int32 (&doc, "ok", 2, 0);
 
-   // @todo Provide missing arguments
+   /* @todo Provide missing arguments */
    mongoc_structured_log_command_failure ("killCursors",
                                           operation_id,
                                           &doc,

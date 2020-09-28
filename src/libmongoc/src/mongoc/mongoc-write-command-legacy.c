@@ -43,7 +43,7 @@ _mongoc_monitor_legacy_write (mongoc_client_t *client,
 
    _append_array_from_command (command, &doc);
 
-   // @todo Provide missing arguments
+   /* @todo Provide missing arguments */
    mongoc_structured_log_command_started (
       &doc,
       _mongoc_command_type_to_name (command->type),
@@ -104,7 +104,7 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t *client,
    bson_append_int32 (&doc, "ok", 2, 1);
    bson_append_int32 (&doc, "n", 1, (int32_t) command->n_documents);
 
-   // @todo Provide missing arguments
+   /* @todo Provide missing arguments */
    mongoc_structured_log_command_success (
       _mongoc_command_type_to_name (command->type),
       command->operation_id,

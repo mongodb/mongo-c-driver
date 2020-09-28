@@ -699,7 +699,7 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
    client = cursor->client;
    db = bson_strndup (cursor->ns, cursor->dblen);
 
-   // @todo Provide missing arguments
+   /* @todo Provide missing arguments */
    mongoc_structured_log_command_started (cmd,
                                           cmd_name,
                                           db,
@@ -791,7 +791,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
    bson_append_document_end (&reply, &reply_cursor);
    bson_destroy (&docs_array);
 
-   // @todo Provide missing arguments
+   /* @todo Provide missing arguments */
    mongoc_structured_log_command_success (cmd_name,
                                           cursor->operation_id,
                                           &reply,
@@ -845,7 +845,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
    bson_init (&reply);
    bson_append_int32 (&reply, "ok", 2, 0);
 
-   // @todo Provide missing arguments
+   /* @todo Provide missing arguments */
    mongoc_structured_log_command_failure (cmd_name,
                                           cursor->operation_id,
                                           &reply,
