@@ -158,7 +158,7 @@ mongoc_structured_log_command_started_with_cmd (const mongoc_cmd_t *cmd,
                                                 uint32_t server_connection_id,
                                                 bool explicit_session)
 {
-   // Discard const modifier, we promise we won't modify this
+   /* Discard const modifier, we promise we won't modify this */
    bson_t *command = (bson_t *) cmd->command;
    bool command_owned = false;
 
