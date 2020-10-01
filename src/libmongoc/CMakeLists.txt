@@ -55,6 +55,7 @@ configure_file (
    "${CMAKE_BINARY_DIR}/src/zlib-1.2.11/zconf.h"
    COPYONLY
 )
+set (ZLIB_INCLUDE_DIRS "")
 if (ENABLE_ZLIB MATCHES "SYSTEM|AUTO")
    message (STATUS "Searching for zlib CMake packages")
    include (FindZLIB)
@@ -74,13 +75,12 @@ if (ENABLE_ZLIB MATCHES "SYSTEM|AUTO")
    endif ()
 endif ()
 
-set (PRIVATE_ZLIB_INCLUDES "")
 if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
    message (STATUS "Enabling zlib compression (bundled)")
    set (SOURCES ${SOURCES} ${ZLIB_SOURCES})
    set (
-      PRIVATE_ZLIB_INCLUDES
+      ZLIB_INCLUDE_DIRS
       "${SOURCE_DIR}/src/zlib-1.2.11"
       "${CMAKE_BINARY_DIR}/src/zlib-1.2.11"
    )
@@ -729,7 +729,7 @@ add_library (mongoc_shared SHARED ${SOURCES} ${HEADERS} ${HEADERS_FORWARDING})
 set_target_properties (mongoc_shared PROPERTIES CMAKE_CXX_VISIBILITY_PRESET hidden)
 target_link_libraries (mongoc_shared PRIVATE ${LIBRARIES} PUBLIC ${BSON_LIBRARIES})
 target_include_directories (mongoc_shared BEFORE PUBLIC ${MONGOC_INTERNAL_INCLUDE_DIRS})
-target_include_directories (mongoc_shared PRIVATE ${PRIVATE_ZLIB_INCLUDES})
+target_include_directories (mongoc_shared PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_include_directories (mongoc_shared PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
 if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
    target_include_directories (mongoc_shared PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
@@ -753,7 +753,7 @@ if (MONGOC_ENABLE_STATIC_BUILD)
       message ("Adding -fPIC to compilation of mongoc_static components")
    endif ()
    target_include_directories (mongoc_static BEFORE PUBLIC ${MONGOC_INTERNAL_INCLUDE_DIRS})
-   target_include_directories (mongoc_static PRIVATE ${PRIVATE_ZLIB_INCLUDES})
+   target_include_directories (mongoc_static PRIVATE ${ZLIB_INCLUDE_DIRS})
    target_include_directories (mongoc_static PRIVATE ${LIBMONGOCRYPT_INCLUDE_DIRECTORIES})
    if (MONGOC_ENABLE_MONGODB_AWS_AUTH)
       target_include_directories (mongoc_static PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../kms-message/src")
