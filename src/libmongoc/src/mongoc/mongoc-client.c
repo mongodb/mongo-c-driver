@@ -411,6 +411,7 @@ static bool
 _mongoc_get_rr_search (const char *service,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
+                       size_t initial_buffer_size,
                        bson_error_t *error)
 {
 #ifdef MONGOC_HAVE_RES_NSEARCH
@@ -418,7 +419,7 @@ _mongoc_get_rr_search (const char *service,
 #endif
    int size = 0;
    unsigned char *search_buf = NULL;
-   size_t buffer_size = 1024;
+   size_t buffer_size = initial_buffer_size;
    ns_msg ns_answer;
    int n;
    int i;
@@ -474,7 +475,7 @@ _mongoc_get_rr_search (const char *service,
                     service,
                     strerror (h_errno));
       }
-   } while (size > buffer_size);
+   } while (size >= buffer_size);
 
    if (ns_initparse (search_buf, size, &ns_answer)) {
       DNS_ERROR ("Invalid %s answer for \"%s\"", rr_type_name, service);
@@ -582,12 +583,14 @@ bool
 _mongoc_client_get_rr (const char *service,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
+                       size_t initial_buffer_size,
                        bson_error_t *error)
 {
 #ifdef MONGOC_HAVE_DNSAPI
    return _mongoc_get_rr_dnsapi (service, rr_type, rr_data, error);
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
-   return _mongoc_get_rr_search (service, rr_type, rr_data, error);
+   return _mongoc_get_rr_search (
+      service, rr_type, rr_data, initial_buffer_size, error);
 #else
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,

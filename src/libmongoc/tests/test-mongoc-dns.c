@@ -473,6 +473,30 @@ test_srv_polling_mocked (void *unused)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_small_initial_buffer (void *unused)
+{
+   mongoc_rr_type_t rr_type = MONGOC_RR_SRV;
+   mongoc_rr_data_t rr_data;
+   bson_error_t error;
+   /* Size needs to be large enough to fit DNS answer header to not error, but
+    * smaller than SRV response to test. The SRV response is 155 bytes. This can
+    * be determined with: dig -t SRV _mongodb._tcp.test1.test.build.10gen.cc */
+   size_t small_buffer_size = 30;
+
+   memset (&rr_data, 0, sizeof (rr_data));
+   ASSERT_OR_PRINT (
+      _mongoc_client_get_rr ("_mongodb._tcp.test1.test.build.10gen.cc",
+                             rr_type,
+                             &rr_data,
+                             small_buffer_size,
+                             &error),
+      error);
+   ASSERT_CMPINT (rr_data.count, ==, 2);
+   bson_free (rr_data.txt_record_opts);
+   _mongoc_host_list_destroy_all (rr_data.hosts);
+}
+
 void
 test_dns_install (TestSuite *suite)
 {
@@ -485,4 +509,10 @@ test_dns_install (TestSuite *suite)
                       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (
       suite, "/srv_polling/mocked", test_srv_polling_mocked, NULL, NULL, NULL);
+   TestSuite_AddFull (suite,
+                      "/initial_dns_seedlist_discovery/small_initial_buffer",
+                      test_small_initial_buffer,
+                      NULL,
+                      NULL,
+                      test_dns_check);
 }
