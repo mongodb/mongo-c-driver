@@ -340,6 +340,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       if (!_mongoc_client_get_rr (prefixed_service,
                                   MONGOC_RR_SRV,
                                   &rr_data,
+                                  MONGOC_RR_DEFAULT_BUFFER_SIZE,
                                   &topology->scanner->error)) {
          GOTO (srv_fail);
       }
@@ -347,8 +348,11 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       /* Failure to find TXT records will not return an error (since it is only
        * for options). But _mongoc_client_get_rr may return an error if
        * there is more than one TXT record returned. */
-      if (!_mongoc_client_get_rr (
-             service, MONGOC_RR_TXT, &rr_data, &topology->scanner->error)) {
+      if (!_mongoc_client_get_rr (service,
+                                  MONGOC_RR_TXT,
+                                  &rr_data,
+                                  MONGOC_RR_DEFAULT_BUFFER_SIZE,
+                                  &topology->scanner->error)) {
          GOTO (srv_fail);
       }
 
@@ -658,8 +662,11 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    /* Unlock topology mutex during scan so it does not hold up other operations.
     */
    bson_mutex_unlock (&topology->mutex);
-   ret = _mongoc_client_get_rr (
-      prefixed_service, MONGOC_RR_SRV, &rr_data, &topology->scanner->error);
+   ret = _mongoc_client_get_rr (prefixed_service,
+                                MONGOC_RR_SRV,
+                                &rr_data,
+                                MONGOC_RR_DEFAULT_BUFFER_SIZE,
+                                &topology->scanner->error);
    bson_mutex_lock (&topology->mutex);
 
    topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;

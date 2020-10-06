@@ -155,10 +155,12 @@ typedef struct _mongoc_rr_data_t {
    char *txt_record_opts;
 } mongoc_rr_data_t;
 
+#define MONGOC_RR_DEFAULT_BUFFER_SIZE 1024
 bool
 _mongoc_client_get_rr (const char *service,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
+                       size_t initial_buffer_size,
                        bson_error_t *error);
 
 mongoc_client_t *
