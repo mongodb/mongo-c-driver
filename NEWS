@@ -1,3 +1,62 @@
+mongo-c-driver 1.17.1
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.1.
+
+Bug fixes:
+
+  * Fix SRV/TXT record lookup for DNS records exceeding 1024 bytes.
+
+-- Kevin Albertson
+
+
+mongo-c-driver 1.17.0
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.0 release.
+This release adds support for MongoDB 4.4 servers.
+
+Features:
+
+  * Support streamable server monitoring to reduce recovery time when the server topology changes.
+  * Support the MONGODB-AWS authentication mechanism.
+  * Support Online Certificate Status Protocol (OCSP).
+  * Support configuring hedged reads in read preferences.
+  * Reduce the number of round trips necessary for SCRAM and X509 authentication.
+  * Monitor servers in parallel when using a mongoc_client_pool_t instead of doing serial scans.
+  * Support the "hint" option in operations using the update, replace, delete, and findAndModify commands.
+  * Improve behavior for retryable writes.
+  * Improve resuming behavior of change streams on server errors.
+  * Remove restriction of 255 character collection namespaces.
+
+Bug fixes:
+
+  * Fix criteria for resumable errors in change streams.
+  * Fix rare crashes when server is invalidated during authentication.
+  * Reject client session for mongoc_collection_estimated_document_count.
+  * Fix behavior of a SecondaryPreferred read preference for exhaust cursor operations against a sharded cluster. Prior to the fix, a nonzero maxStalenessSeconds would not trigger sending the read preference.
+  * Fix SRV polling. Prior to the fix, SRV polling did not properly apply newly discovered results.
+  * Fix checks for existing GridFS indexes to handle indexes created by the MongoDB shell.
+  * Fix possible use of invalidated streams during an unordered OP_QUERY bulk write, and when ending many pooled sessions at client destruction.
+  * Fix a crash when setting the crl_file TLS option for Secure Channel.
+  * Avoid emitting duplicate ServerChanged events when no change is observed during monitoring.
+  * Properly handle large SASL messages instead of erroring.
+
+Notes:
+
+  * Deprecated "lib" prefixed artifacts are no longer produced when building on Windows.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Roberto C. Sánchez
+  * Andrew Witten
+  * Andreas Braun
+  * Clyde Bazile
+  * Josh Weinstein
+
+-- Kevin Albertson
+
 mongo-c-driver 1.17.0 rc0
 =========================
 
@@ -22,6 +81,8 @@ Thanks to everyone who contributed to the development of this release.
   * Andrew Witten
   * Roberto C. Sánchez
   * Clyde Bazile
+
+-- Kevin Albertson
 
 mongo-c-driver 1.17.0 beta2
 ===========================
@@ -51,6 +112,7 @@ Thanks to everyone who contributed to the development of this release.
   * Josh Weinstein
 
 -- Kevin Albertson
+
 
 mongo-c-driver 1.17.0 beta
 ==========================
