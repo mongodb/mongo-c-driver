@@ -705,7 +705,7 @@ _mongoc_cursor_monitor_command (mongoc_cursor_t *cursor,
                                           db,
                                           cursor->operation_id,
                                           client->cluster.request_id,
-                                          0,
+                                          &server_stream->sd->host,
                                           0,
                                           false);
 
@@ -797,7 +797,7 @@ _mongoc_cursor_monitor_succeeded (mongoc_cursor_t *cursor,
                                           &reply,
                                           duration,
                                           client->cluster.request_id,
-                                          0,
+                                          &stream->sd->host,
                                           0,
                                           false);
 
@@ -851,7 +851,7 @@ _mongoc_cursor_monitor_failed (mongoc_cursor_t *cursor,
                                           &reply,
                                           &cursor->error,
                                           client->cluster.request_id,
-                                          0,
+                                          &stream->sd->host,
                                           0,
                                           false);
 

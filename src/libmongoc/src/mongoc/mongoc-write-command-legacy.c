@@ -50,7 +50,7 @@ _mongoc_monitor_legacy_write (mongoc_client_t *client,
       db,
       command->operation_id,
       request_id,
-      0,
+      &stream->sd->host,
       0,
       false);
 
@@ -111,7 +111,7 @@ _mongoc_monitor_legacy_write_succeeded (mongoc_client_t *client,
       &doc,
       duration,
       request_id,
-      0,
+      &stream->sd->host,
       0,
       false);
 
