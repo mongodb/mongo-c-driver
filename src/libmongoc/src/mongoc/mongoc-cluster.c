@@ -534,11 +534,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
    }
 
    /* @todo Provide missing arguments */
-   mongoc_structured_log_command_started_with_cmd (cmd,
-                                                   request_id,
-                                                   0,
-                                                   0,
-                                                   false);
+   mongoc_structured_log_command_started_with_cmd (cmd, request_id, 0, false);
 
    if (callbacks->started) {
       mongoc_apm_command_started_init_with_cmd (
@@ -570,7 +566,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
                                                                   : &fake_reply,
                                              duration,
                                              request_id,
-                                             0,
+                                             &server_stream->sd->host,
                                              0,
                                              false);
 
@@ -603,7 +599,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster, mongoc_cmd_t *c
                                              reply,
                                              error,
                                              cluster->request_id,
-                                             0,
+                                             &server_stream->sd->host,
                                              0,
                                              false);
 

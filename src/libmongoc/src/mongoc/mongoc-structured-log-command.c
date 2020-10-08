@@ -32,8 +32,21 @@ _mongoc_log_structured_append_command_data (
                 BCON_INT32 (log_command->request_id),
                 "operationId",
                 BCON_INT64 (log_command->operation_id),
-                "driverConnectionId",
-                BCON_INT32 (log_command->driver_connection_id),
+                "serverHostname",
+                BCON_UTF8 (log_command->host->host),
+                "serverResolvedIPAddress",
+                BCON_UTF8 (log_command->server_resolved_ip),
+                "serverPort",
+                BCON_INT32 (log_command->host->port));
+
+   // Append client port only if it was provided
+   if (log_command->client_port) {
+      BCON_APPEND (structured_message,
+                   "clientPort",
+                   BCON_INT32 (log_command->client_port));
+   }
+
+   BCON_APPEND (structured_message,
                 "serverConnectionId",
                 BCON_INT32 (log_command->server_connection_id),
                 "explicitSession",
@@ -52,6 +65,7 @@ mongoc_log_structured_build_command_started_message (
 
    BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
+   /* @todo Use MONGODB_MAX_DOCUMENT_LENGTH */
    cmd_json = bson_as_canonical_extended_json (log_command->command, NULL);
 
    _mongoc_log_structured_append_command_data (structured_log_data,
@@ -78,6 +92,7 @@ mongoc_log_structured_build_command_succeeded_message (
 
    BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
+   /* @todo Use MONGODB_MAX_DOCUMENT_LENGTH */
    reply_json = bson_as_canonical_extended_json (log_command->reply, NULL);
 
    _mongoc_log_structured_append_command_data (structured_log_data,
@@ -104,6 +119,7 @@ mongoc_log_structured_build_command_failed_message (
 
    BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
+   /* @todo Use MONGODB_MAX_DOCUMENT_LENGTH */
    reply_json = bson_as_canonical_extended_json (log_command->reply, NULL);
 
    _mongoc_log_structured_append_command_data (structured_log_data,
@@ -126,7 +142,7 @@ mongoc_structured_log_command_started (const bson_t *command,
                                        const char *db_name,
                                        int64_t operation_id,
                                        uint32_t request_id,
-                                       uint32_t driver_connection_id,
+                                       const mongoc_host_list_t *host,
                                        uint32_t server_connection_id,
                                        bool explicit_session)
 {
@@ -139,7 +155,9 @@ mongoc_structured_log_command_started (const bson_t *command,
       0,
       operation_id,
       request_id,
-      driver_connection_id,
+      host,
+      NULL,
+      0,
       server_connection_id,
       explicit_session,
    };
@@ -154,7 +172,6 @@ mongoc_structured_log_command_started (const bson_t *command,
 void
 mongoc_structured_log_command_started_with_cmd (const mongoc_cmd_t *cmd,
                                                 uint32_t request_id,
-                                                uint32_t driver_connection_id,
                                                 uint32_t server_connection_id,
                                                 bool explicit_session)
 {
@@ -174,7 +191,7 @@ mongoc_structured_log_command_started_with_cmd (const mongoc_cmd_t *cmd,
                                           cmd->db_name,
                                           cmd->operation_id,
                                           request_id,
-                                          driver_connection_id,
+                                          &cmd->server_stream->sd->host,
                                           server_connection_id,
                                           explicit_session);
 
@@ -189,7 +206,7 @@ mongoc_structured_log_command_success (const char *command_name,
                                        const bson_t *reply,
                                        uint64_t duration,
                                        uint32_t request_id,
-                                       uint32_t driver_connection_id,
+                                       const mongoc_host_list_t *host,
                                        uint32_t server_connection_id,
                                        bool explicit_session)
 {
@@ -202,7 +219,9 @@ mongoc_structured_log_command_success (const char *command_name,
       duration,
       operation_id,
       request_id,
-      driver_connection_id,
+      host,
+      NULL,
+      0,
       server_connection_id,
       explicit_session,
    };
@@ -220,7 +239,7 @@ mongoc_structured_log_command_failure (const char *command_name,
                                        const bson_t *reply,
                                        const bson_error_t *error,
                                        uint32_t request_id,
-                                       uint32_t driver_connection_id,
+                                       const mongoc_host_list_t *host,
                                        uint32_t server_connection_id,
                                        bool explicit_session)
 {
@@ -233,7 +252,9 @@ mongoc_structured_log_command_failure (const char *command_name,
       0,
       operation_id,
       request_id,
-      driver_connection_id,
+      host,
+      NULL,
+      0,
       server_connection_id,
       explicit_session,
    };

@@ -56,7 +56,7 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor, mongoc_server_s
                                           db,
                                           cursor->operation_id,
                                           client->cluster.request_id,
-                                          0,
+                                          &server_stream->sd->host,
                                           0,
                                           false);
 
