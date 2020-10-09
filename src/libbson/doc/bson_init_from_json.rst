@@ -41,5 +41,5 @@ Returns ``true`` if valid JSON was parsed, otherwise ``false`` and ``error`` is 
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: create-bson json
+  .. include:: includes/seealso/create-bson.txt
+  .. include:: includes/seealso/json.txt

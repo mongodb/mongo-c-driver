@@ -28,5 +28,4 @@ Returns true if the transaction was aborted. Returns ``false`` and sets ``error`
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: session
+  .. include:: includes/seealso/session.txt

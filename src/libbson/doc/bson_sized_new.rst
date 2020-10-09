@@ -28,5 +28,4 @@ A newly allocated :symbol:`bson_t` that should be freed with :symbol:`bson_destr
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: create-bson
+  .. include:: includes/seealso/create-bson.txt

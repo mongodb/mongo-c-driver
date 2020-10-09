@@ -43,5 +43,4 @@ The following example demonstrates how to use :ref:`error labels <error_labels>`
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: session
+  .. include:: includes/seealso/session.txt

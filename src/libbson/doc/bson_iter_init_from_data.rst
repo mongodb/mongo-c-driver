@@ -52,5 +52,4 @@ Example
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: iter-init
+  .. include:: includes/seealso/iter-init.txt

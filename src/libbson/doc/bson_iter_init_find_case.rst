@@ -27,5 +27,4 @@ This function is identical to ``bson_iter_init() && bson_iter_find_case()``.
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: iter-init
+  .. include:: includes/seealso/iter-init.txt

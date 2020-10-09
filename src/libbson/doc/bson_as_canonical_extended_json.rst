@@ -45,7 +45,6 @@ Example
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: bson-as-json
+  .. include:: includes/seealso/bson-as-json.txt
 
 .. _MongoDB Extended JSON format: https://github.com/mongodb/specifications/blob/master/source/extended-json.rst

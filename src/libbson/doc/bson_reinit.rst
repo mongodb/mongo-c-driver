@@ -25,5 +25,4 @@ If the :symbol:`bson_t` structure contains a malloc()'d buffer, it may be reused
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: create-bson
+  .. include:: includes/seealso/create-bson.txt

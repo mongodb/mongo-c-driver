@@ -25,5 +25,4 @@ See the example code for :symbol:`mongoc_session_opts_set_causal_consistency`.
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: session
+  .. include:: includes/seealso/session.txt

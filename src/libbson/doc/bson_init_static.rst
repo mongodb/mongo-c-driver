@@ -32,5 +32,4 @@ Returns ``true`` if :symbol:`bson_t` was successfully initialized, otherwise ``f
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: create-bson
+  .. include:: includes/seealso/create-bson.txt
