@@ -15,5 +15,4 @@ Create a :symbol:`mongoc_transaction_opt_t` to configure multi-document transact
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: session
+  .. include:: includes/seealso/session.txt

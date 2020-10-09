@@ -29,6 +29,5 @@ This function is identical to ``(bson_iter_init() && bson_iter_find_w_len())``.
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: iter-init
+  .. include:: includes/seealso/iter-init.txt
 

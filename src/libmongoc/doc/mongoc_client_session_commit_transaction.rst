@@ -32,5 +32,4 @@ If a ``reply`` is supplied, it is always initialized and must be freed with :sym
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: session
+  .. include:: includes/seealso/session.txt

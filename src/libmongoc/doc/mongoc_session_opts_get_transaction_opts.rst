@@ -25,6 +25,5 @@ A newly allocated :symbol:`mongoc_transaction_opt_t` that should be freed with :
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: session
+  .. include:: includes/seealso/session.txt
 

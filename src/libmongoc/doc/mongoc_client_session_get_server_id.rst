@@ -25,6 +25,5 @@ A server ID or ``0`` if this :symbol:`mongoc_client_session_t` is not pinned.
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: session
+  .. include:: includes/seealso/session.txt
 

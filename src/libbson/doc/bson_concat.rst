@@ -29,5 +29,4 @@ Returns ``true`` if successful; ``false`` if the operation would overflow the ma
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: create-bson
+  .. include:: includes/seealso/create-bson.txt

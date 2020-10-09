@@ -108,5 +108,4 @@ Use ``bson_reserve_buffer`` to write a function that takes a :symbol:`bson_t` po
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: create-bson
+  .. include:: includes/seealso/create-bson.txt

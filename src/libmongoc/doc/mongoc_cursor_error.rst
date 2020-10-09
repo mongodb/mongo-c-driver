@@ -34,5 +34,4 @@ false if no error has occurred, otherwise true and error is set.
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: cursor-error
+  .. include:: includes/seealso/cursor-error.txt
