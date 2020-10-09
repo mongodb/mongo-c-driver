@@ -38,5 +38,4 @@ A newly-allocated :symbol:`bson_t` on success, or NULL.
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: create-bson
+  .. include:: includes/seealso/create-bson.txt

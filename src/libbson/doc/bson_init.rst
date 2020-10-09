@@ -23,5 +23,4 @@ The :symbol:`bson_init()` function shall initialize a :symbol:`bson_t` that is p
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: create-bson
+  .. include:: includes/seealso/create-bson.txt

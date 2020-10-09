@@ -35,5 +35,5 @@ A newly allocated :symbol:`bson_t` if successful, otherwise NULL and ``error`` i
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: create-bson json
+  .. include:: includes/seealso/create-bson.txt
+  .. include:: includes/seealso/json.txt

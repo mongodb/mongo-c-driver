@@ -40,10 +40,6 @@ Files: debian/*
 Copyright: 2015-2018 MongoDB, Inc.
 License: Apache-2.0
 
-Files: build/sphinx/taglist.py src/libbson/doc/taglist.py
-Copyright: 2007-2009 by the Sphinx team
-License: Expat
-
 Files: build/sphinx/readable/static/readable.css_t
 Copyright: 2013 by Ignacy Sokolowski
 License: Expat

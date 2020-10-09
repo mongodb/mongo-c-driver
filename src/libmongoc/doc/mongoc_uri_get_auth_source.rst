@@ -28,5 +28,4 @@ A string which should not be modified or freed if the ``authSource`` parameter i
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: authmechanism
+  .. include:: includes/seealso/authmechanism.txt

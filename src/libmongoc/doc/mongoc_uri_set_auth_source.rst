@@ -31,5 +31,4 @@ Returns false if the option cannot be set, for example if ``value`` is not valid
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: authmechanism
+  .. include:: includes/seealso/authmechanism.txt

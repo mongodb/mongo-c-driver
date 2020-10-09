@@ -25,5 +25,4 @@ A :symbol:`bson:bson_t` you must not modify or free. If the session has not been
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: session
+  .. include:: includes/seealso/session.txt

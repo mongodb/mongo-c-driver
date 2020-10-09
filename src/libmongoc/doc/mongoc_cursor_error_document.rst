@@ -133,5 +133,4 @@ On the other hand, if the client connects to the server successfully and attempt
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: cursor-error
+  .. include:: includes/seealso/cursor-error.txt

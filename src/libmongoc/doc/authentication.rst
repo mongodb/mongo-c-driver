@@ -253,5 +253,4 @@ If credentials are not passed in the URI or with environment variables, and the 
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: authmechanism
+  .. include:: includes/seealso/authmechanism.txt

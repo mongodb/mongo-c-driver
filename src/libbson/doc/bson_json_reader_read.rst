@@ -37,5 +37,4 @@ Returns
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: json
+  .. include:: includes/seealso/json.txt

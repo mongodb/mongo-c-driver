@@ -55,5 +55,4 @@ See Also
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: authmechanism
+  .. include:: includes/seealso/authmechanism.txt

@@ -67,5 +67,4 @@ Example
 
 .. only:: html
 
-  .. taglist:: See Also:
-    :tags: bson-as-json
+  .. include:: includes/seealso/bson-as-json.txt
