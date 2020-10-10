@@ -748,7 +748,7 @@ _bson_concat_array (bson_t *dest, const bson_t *src, bcon_append_ctx_t *ctx)
  * var_args stuff is already incredibly fragile to mistakes, and we have no way
  * of introspecting, so just don't screw it up).
  *
- * There are also a few STACK_* macros in here which manimpulate ctx that are
+ * There are also a few STACK_* macros in here which manipulate ctx that are
  * defined up top.
  * */
 void
@@ -836,7 +836,7 @@ bcon_append_ctx_va (bson_t *bson, bcon_append_ctx_t *ctx, va_list *ap)
  * var_args stuff is already incredibly fragile to mistakes, and we have no way
  * of introspecting, so just don't screw it up).
  *
- * There are also a few STACK_* macros in here which manimpulate ctx that are
+ * There are also a few STACK_* macros in here which manipulate ctx that are
  * defined up top.
  *
  * The function returns true if all tokens could be successfully matched, false
