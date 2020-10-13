@@ -31,11 +31,6 @@ Parameters
 
 .. include:: includes/bulk-update-many-opts.txt
 
-See Also
---------
-
-:symbol:`mongoc_bulk_operation_update_one_with_opts()`
-
 Errors
 ------
 
@@ -45,3 +40,8 @@ Returns
 -------
 
 Returns true on success, and false if there is a server or network error or if passed invalid arguments.
+
+.. seealso::
+
+  | :symbol:`mongoc_bulk_operation_update_one_with_opts()`
+

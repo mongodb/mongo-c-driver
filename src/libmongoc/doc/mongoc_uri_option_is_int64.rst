@@ -21,7 +21,7 @@ Description
 
 Returns true if the option is a known MongoDB URI option of 64-bit integer type. For example, "wTimeoutMS=100" is a valid 64-bit integer MongoDB URI option, so ``mongoc_uri_option_is_int64 ("wTimeoutMS")`` is true.
 
-See Also
---------
+.. seealso::
 
-* :symbol:`mongoc_uri_option_is_int32()`
+  | :symbol:`mongoc_uri_option_is_int32()`
+

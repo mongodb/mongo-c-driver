@@ -21,13 +21,12 @@ Description
 
 Fetches the length of the key for the current element observed by ``iter``. This is a constant time computation, and therefore faster than calling ``strlen()`` on a key returned by :symbol:`bson_iter_key()`.
 
-See Also
---------
-
-:symbol:`bson_iter_key()` to retrieve current key.
-
 Returns
 -------
 
 An integer representing the key length.
+
+.. seealso::
+
+  | :symbol:`bson_iter_key()` to retrieve current key.
 

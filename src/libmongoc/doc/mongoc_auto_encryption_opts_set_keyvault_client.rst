@@ -20,9 +20,11 @@ Parameters
 * ``opts``: A :symbol:`mongoc_auto_encryption_opts_t`.
 * ``client``: A :symbol:`mongoc_client_t` to use for key queries. This client should *not* have automatic encryption enabled, as it will only execute ``find`` commands against the key vault collection to retrieve keys for automatic encryption and decryption. This ``client`` MUST outlive any :symbol:`mongoc_client_t` which has been enabled to use it through :symbol:`mongoc_client_enable_auto_encryption()`.
 
-See also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_enable_auto_encryption()`
-* :symbol:`mongoc_auto_encryption_opts_set_keyvault_client_pool()`
-* The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+  | :symbol:`mongoc_client_enable_auto_encryption()`
+
+  | :symbol:`mongoc_auto_encryption_opts_set_keyvault_client_pool()`
+
+  | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+

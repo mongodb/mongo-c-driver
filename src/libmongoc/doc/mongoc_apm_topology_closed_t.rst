@@ -10,10 +10,9 @@ Synopsis
 
 An event notification sent when the driver stops monitoring a server topology and destroys its :symbol:`mongoc_topology_description_t`.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 
 .. only:: html
 

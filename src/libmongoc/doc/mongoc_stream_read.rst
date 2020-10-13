@@ -31,12 +31,11 @@ Returns
 
 The :symbol:`mongoc_stream_read` function returns the number of bytes read on success. It returns ``>= 0`` and ``< min_bytes`` when end-of-file is encountered and ``-1`` on failure. ``errno`` is set upon failure.
 
-See Also
---------
+.. seealso::
 
-:symbol:`mongoc_stream_readv()`
+  | :symbol:`mongoc_stream_readv()`
 
-:symbol:`mongoc_stream_write()`
+  | :symbol:`mongoc_stream_write()`
 
-:symbol:`mongoc_stream_writev()`
+  | :symbol:`mongoc_stream_writev()`
 

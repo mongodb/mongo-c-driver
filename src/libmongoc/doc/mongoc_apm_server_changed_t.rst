@@ -10,10 +10,9 @@ Synopsis
 
 An event notification sent when the driver observes a change in status of a server it is connected to.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 
 .. only:: html
 

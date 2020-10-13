@@ -10,7 +10,9 @@ Description
 
 Many C Driver functions report errors by returning ``false`` or -1 and filling out a :symbol:`bson:bson_error_t` structure with an error domain, error code, and message. Use ``domain`` to determine which subsystem generated the error, and ``code`` for the specific error. ``message`` is a human-readable error description.
 
-See also: :doc:`Handling Errors in libbson <bson:errors>`.
+.. seealso::
+
+  | :doc:`Handling Errors in libbson <bson:errors>`.
 
 +-----------------------------------------+---------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |Domain                                   | Code                                                                                                                            | Description                                                                                                                                                                                                                                                                                                                                |
@@ -163,10 +165,9 @@ To fix this flaw while preserving backward compatibility, the C Driver 1.4 intro
 
 The Error API Versions are defined with ``MONGOC_ERROR_API_VERSION_LEGACY`` and ``MONGOC_ERROR_API_VERSION_2``. Set the version with :symbol:`mongoc_client_set_error_api` or :symbol:`mongoc_client_pool_set_error_api`.
 
-See Also
---------
+.. seealso::
 
-`MongoDB Server Error Codes <https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err>`_
+  | `MongoDB Server Error Codes <https://github.com/mongodb/mongo/blob/master/src/mongo/base/error_codes.err>`_
 
 .. only:: html
 

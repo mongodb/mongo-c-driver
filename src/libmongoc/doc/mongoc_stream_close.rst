@@ -23,8 +23,7 @@ Returns
 
 ``0`` on success, otherwise ``-1`` and ``errno`` is set.
 
-See Also
---------
+.. seealso::
 
-:doc:`mongoc_stream_destroy() <mongoc_stream_destroy>`
+  | :doc:`mongoc_stream_destroy() <mongoc_stream_destroy>`
 

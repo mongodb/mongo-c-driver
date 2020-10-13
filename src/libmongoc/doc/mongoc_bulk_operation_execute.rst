@@ -28,11 +28,6 @@ Parameters
 * ``reply``: An uninitialized :symbol:`bson:bson_t`.
 * ``error``: An optional location for a :symbol:`bson_error_t <errors>` or ``NULL``.
 
-See Also
---------
-
-:symbol:`Bulk Write Operations <bulk>`
-
 Errors
 ------
 
@@ -47,5 +42,9 @@ A write concern timeout or write concern error is considered a failure.
 
 The ``reply`` document counts operations and collects error information. See :doc:`Bulk Write Operations <bulk>` for examples.
 
-See also :symbol:`mongoc_bulk_operation_get_hint`, which gets the id of the server used even if the operation failed.
+.. seealso::
+
+  | :symbol:`Bulk Write Operations <bulk>`
+
+  | :symbol:`mongoc_bulk_operation_get_hint`, which gets the id of the server used even if the operation failed.
 

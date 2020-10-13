@@ -18,8 +18,7 @@ Returns
 
 A new ``mongoc_apm_callbacks_t`` you must free with :symbol:`mongoc_apm_callbacks_destroy`.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

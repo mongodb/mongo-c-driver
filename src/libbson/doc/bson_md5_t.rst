@@ -23,7 +23,7 @@ Synopsis
 Description
 -----------
 
-bson_md5_t encapsulates an implementation of the MD5 algorithm.
+:symbol:`bson_md5_t` encapsulates an implementation of the MD5 algorithm.
 
 .. only:: html
 

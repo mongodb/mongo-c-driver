@@ -44,14 +44,16 @@ Then later, these saved values can be passed to
 :symbol:`bson_iter_init_from_data_at_offset()` to reconstruct the
 :symbol:`bson_iter_t` in constant time.
 
-See Also
---------
-
-* :symbol:`bson_iter_key_len()`
-* :symbol:`bson_iter_offset()`
-* :symbol:`bson_get_data()`
-
 Returns
 -------
 
 Returns true if the iter was successfully initialized.
+
+.. seealso::
+
+  | :symbol:`bson_iter_key_len()`
+
+  | :symbol:`bson_iter_offset()`
+
+  | :symbol:`bson_get_data()`
+

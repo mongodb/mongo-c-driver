@@ -37,10 +37,12 @@ To specify an explicit file id, use :symbol:`mongoc_gridfs_bucket_upload_from_st
 Reads from the ``source`` stream using :symbol:`mongoc_stream_read()` until the return value indicates end-of-file.
 The ``source`` stream is not closed after calling :symbol:`mongoc_gridfs_bucket_upload_from_stream()`; call :symbol:`mongoc_stream_close()` after.
 
-See Also
---------
-:symbol:`mongoc_stream_file_new` and :symbol:`mongoc_stream_file_new_for_path`, which can be used to create a source stream from a file.
-
 Returns
 -------
+
 True if the operation succeeded. False otherwise and sets ``error``.
+
+.. seealso::
+
+  | :symbol:`mongoc_stream_file_new` and :symbol:`mongoc_stream_file_new_for_path`, which can be used to create a source stream from a file.
+

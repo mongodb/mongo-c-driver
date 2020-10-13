@@ -30,8 +30,7 @@ Returns
 
 true if the cursor has locally-buffered documents, or if a round-trip to the server might fetch additional documents.
 
-See Also
---------
+.. seealso::
 
-:ref:`Tailable Cursor Example <cursors_tailable>`
+  | :ref:`Tailable Cursor Example <cursors_tailable>`
 

@@ -21,14 +21,14 @@ Description
 
 Aborts the upload of a GridFS upload stream.
 
-See Also
---------
-
-:symbol:`mongoc_gridfs_bucket_open_upload_stream`
-
-:symbol:`mongoc_gridfs_bucket_open_upload_stream_with_id()`
-
 Returns
 -------
 
 True on success. False otherwise, and sets an error on ``stream``.
+
+.. seealso::
+
+  | :symbol:`mongoc_gridfs_bucket_open_upload_stream`
+
+  | :symbol:`mongoc_gridfs_bucket_open_upload_stream_with_id()`
+

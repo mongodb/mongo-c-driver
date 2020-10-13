@@ -73,7 +73,7 @@ Examples
      bson_destroy (&opts);
   }
 
-See Also
---------
+.. seealso::
 
-:symbol:`mongoc_database_get_collection_names_with_opts()`
+  | :symbol:`mongoc_database_get_collection_names_with_opts()`
+

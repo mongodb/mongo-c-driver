@@ -31,8 +31,7 @@ Returns
 
 True if there is a known server matching ``prefs``.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

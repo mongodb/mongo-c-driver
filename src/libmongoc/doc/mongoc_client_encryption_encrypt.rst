@@ -34,9 +34,11 @@ Returns
 
 Returns ``true`` if successful. Returns ``false`` and sets ``error`` otherwise.
 
-See Also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_encryption_encrypt_opts_t`
-* :symbol:`mongoc_client_enable_auto_encryption()`
-* :symbol:`mongoc_client_encryption_decrypt()`
+  | :symbol:`mongoc_client_encryption_encrypt_opts_t`
+
+  | :symbol:`mongoc_client_enable_auto_encryption()`
+
+  | :symbol:`mongoc_client_encryption_decrypt()`
+

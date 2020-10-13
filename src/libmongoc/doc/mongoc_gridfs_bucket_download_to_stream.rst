@@ -32,10 +32,12 @@ The ``destination`` stream is not closed after calling :symbol:`mongoc_gridfs_bu
 
 .. include:: includes/retryable-read.txt
 
-See Also
---------
-:symbol:`mongoc_stream_file_new` and :symbol:`mongoc_stream_file_new_for_path`, which can be used to create a destination stream from a file.
-
 Returns
 -------
+
 True if the operation succeeded. False otherwise, and sets ``error``.
+
+.. seealso::
+
+  | :symbol:`mongoc_stream_file_new` and :symbol:`mongoc_stream_file_new_for_path`, which can be used to create a destination stream from a file.
+

@@ -13,11 +13,6 @@ Synopsis
 
 Used to set options for :symbol:`mongoc_client_encryption_encrypt()`.
 
-See also
---------
-
-* :symbol:`mongoc_client_encryption_encrypt()`
-
 .. only:: html
 
   Functions
@@ -32,3 +27,8 @@ See also
     mongoc_client_encryption_encrypt_opts_set_keyid
     mongoc_client_encryption_encrypt_opts_set_keyaltname
     mongoc_client_encryption_encrypt_opts_set_algorithm
+
+.. seealso::
+
+  | :symbol:`mongoc_client_encryption_encrypt()`
+

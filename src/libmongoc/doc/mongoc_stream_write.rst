@@ -29,12 +29,11 @@ Returns
 
 The :symbol:`mongoc_stream_write` function returns the number of bytes written on success. It returns ``-1`` and sets ``errno`` upon failure.
 
-See Also
---------
+.. seealso::
 
-:symbol:`mongoc_stream_read()`
+  | :symbol:`mongoc_stream_read()`
 
-:symbol:`mongoc_stream_readv()`
+  | :symbol:`mongoc_stream_readv()`
 
-:symbol:`mongoc_stream_writev()`
+  | :symbol:`mongoc_stream_writev()`
 

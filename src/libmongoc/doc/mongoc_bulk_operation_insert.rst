@@ -22,13 +22,12 @@ Parameters
 * ``bulk``: A :symbol:`mongoc_bulk_operation_t`.
 * ``document``: A :symbol:`bson:bson_t`.
 
-See Also
---------
-
-:doc:`bulk`
-
 Errors
 ------
 
 Errors are propagated via :symbol:`mongoc_bulk_operation_execute()`.
+
+.. seealso::
+
+  | :doc:`bulk`
 

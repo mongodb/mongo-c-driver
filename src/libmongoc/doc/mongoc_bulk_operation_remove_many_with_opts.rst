@@ -25,13 +25,6 @@ Parameters
 
 .. include:: includes/bulk-remove-many-opts.txt
 
-See Also
---------
-
-:symbol:`mongoc_bulk_operation_remove()`
-
-:symbol:`mongoc_bulk_operation_remove_one_with_opts()`
-
 Errors
 ------
 
@@ -41,4 +34,10 @@ Returns
 -------
 
 Returns true on success, and false if passed invalid arguments.
+
+.. seealso::
+
+  | :symbol:`mongoc_bulk_operation_remove()`
+
+  | :symbol:`mongoc_bulk_operation_remove_one_with_opts()`
 

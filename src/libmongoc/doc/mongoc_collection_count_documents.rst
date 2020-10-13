@@ -100,7 +100,7 @@ $expr requires MongoDB 3.6+
 .. _$center: https://docs.mongodb.com/manual/reference/operator/query/center/#op._S_center
 .. _$centerSphere: https://docs.mongodb.com/manual/reference/operator/query/centerSphere/#op._S_centerSphere
 
-See Also
---------
+.. seealso::
 
-:symbol:`mongoc_collection_estimated_document_count()`
+  | :symbol:`mongoc_collection_estimated_document_count()`
+

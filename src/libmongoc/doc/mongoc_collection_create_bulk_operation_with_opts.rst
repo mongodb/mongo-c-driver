@@ -29,13 +29,6 @@ This function shall begin a new bulk operation. After creating this you may call
 
 After calling :symbol:`mongoc_bulk_operation_execute()` the commands will be executed in as large as batches as reasonable by the client.
 
-See Also
---------
-
-:symbol:`Bulk Write Operations <bulk>`
-
-:symbol:`mongoc_bulk_operation_t`
-
 Errors
 ------
 
@@ -49,4 +42,10 @@ A newly allocated :symbol:`mongoc_bulk_operation_t` that should be freed with :s
 .. warning::
 
   Failure to handle the result of this function is a programming error.
+
+.. seealso::
+
+  | :symbol:`Bulk Write Operations <bulk>`
+
+  | :symbol:`mongoc_bulk_operation_t`
 

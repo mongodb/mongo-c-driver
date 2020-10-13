@@ -86,5 +86,7 @@ Let's compile and run this example against a replica set to see updates as they 
 
 The line of output is a sample from performing ``db.test.insert({})`` from the mongo shell on the replica set.
 
-See also :symbol:`mongoc_cursor_set_max_await_time_ms`.
+.. seealso::
+
+  | :symbol:`mongoc_cursor_set_max_await_time_ms`.
 

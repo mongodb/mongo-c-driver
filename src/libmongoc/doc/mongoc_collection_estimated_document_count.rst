@@ -74,7 +74,7 @@ Example
      }
   }
 
-See Also
---------
+.. seealso::
 
-:symbol:`mongoc_collection_count_documents()`
+  | :symbol:`mongoc_collection_count_documents()`
+

@@ -35,12 +35,6 @@ Example
    :language: c
    :caption: example-gridfs-bucket.c
 
-See also
---------
-
-- The `MongoDB GridFS specification <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_.
-- The non spec-compliant :symbol:`mongoc_gridfs_t`.
-
 .. only:: html
 
   Functions
@@ -62,3 +56,10 @@ See also
     mongoc_gridfs_bucket_stream_error
     mongoc_gridfs_bucket_upload_from_stream
     mongoc_gridfs_bucket_upload_from_stream_with_id
+
+.. seealso::
+
+  | The `MongoDB GridFS specification <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_.
+
+  | The non spec-compliant :symbol:`mongoc_gridfs_t`.
+

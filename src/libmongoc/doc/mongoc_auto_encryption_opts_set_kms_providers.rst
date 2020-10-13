@@ -38,8 +38,9 @@ The format for "local" is as follows:
       key: <96 byte BSON binary of subtype 0> // The master key used to encrypt/decrypt data keys.
    }
 
-See also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_enable_auto_encryption()`
-* The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+  | :symbol:`mongoc_client_enable_auto_encryption()`
+
+  | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+

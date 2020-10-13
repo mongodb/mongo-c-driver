@@ -29,7 +29,7 @@ Return
 
 Returns ``true`` for success and ``false`` on failure. If ``cb`` returns ``false`` then it should also set ``error``.
 
-See Also
---------
+.. seealso::
 
-:symbol:`mongoc_client_session_with_transaction`
+  | :symbol:`mongoc_client_session_with_transaction`
+

@@ -29,8 +29,7 @@ This is not applicable to all cursors. Calling :symbol:`mongoc_cursor_set_batch_
 
 Note: although ``max_await_time_ms`` is a uint32_t, it is possible to set it as a uint64_t through the options arguments in some cursor returning functions like :symbol:`mongoc_collection_find_with_opts()`.
 
-See Also
---------
+.. seealso::
 
-:ref:`Tailable Cursors. <cursors_tailable>`
+  | :ref:`Tailable Cursors. <cursors_tailable>`
 

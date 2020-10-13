@@ -21,8 +21,9 @@ Parameters
 * ``opts``: A :symbol:`mongoc_client_encryption_opts_t`.
 * ``client``: A :symbol:`mongoc_client_t` to use for key lookup and creation. This ``client`` MUST outlive any :symbol:`mongoc_client_encryption_t` configured to use it with :symbol:`mongoc_client_encryption_new()`.
 
-See also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_encryption_new()`
-* The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+  | :symbol:`mongoc_client_encryption_new()`
+
+  | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+

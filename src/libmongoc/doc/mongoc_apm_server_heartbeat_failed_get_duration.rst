@@ -24,8 +24,7 @@ Returns
 
 The event's duration.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

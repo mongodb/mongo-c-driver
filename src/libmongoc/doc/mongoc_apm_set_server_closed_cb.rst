@@ -23,8 +23,7 @@ Parameters
 * ``callbacks``: A :symbol:`mongoc_apm_callbacks_t`.
 * ``cb``: A function to call with a :symbol:`mongoc_apm_server_closed_t` whenever the driver stops monitoring a server and removes its :symbol:`mongoc_server_description_t`.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

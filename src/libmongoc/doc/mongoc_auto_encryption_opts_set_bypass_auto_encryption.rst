@@ -19,8 +19,9 @@ Parameters
 * ``opts``: The :symbol:`mongoc_auto_encryption_opts_t`
 * ``bypass_auto_encryption``: A boolean. If true, a :symbol:`mongoc_client_t` configured with :symbol:`mongoc_client_enable_auto_encryption()` will only perform automatic decryption (not encryption).
 
-See also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_enable_auto_encryption()`
-* The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+  | :symbol:`mongoc_client_enable_auto_encryption()`
+
+  | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+

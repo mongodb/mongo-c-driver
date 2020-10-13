@@ -33,7 +33,7 @@ Zero is considered "unset", so URIs can be constructed like so, and still accept
 
 If ``myvalue`` is non-zero it is the write concern timeout; if it is zero the driver uses the default timeout.
 
-See Also
---------
+.. seealso::
 
-* :symbol:`mongoc_uri_get_option_as_int32()`
+  | :symbol:`mongoc_uri_get_option_as_int32()`
+

@@ -32,14 +32,14 @@ Description
 Opens a stream for writing to a new file in GridFS for a specified file id.
 To have libmongoc generate an id, use :symbol:`mongoc_gridfs_bucket_open_upload_stream()`.
 
-See Also
---------
-
-:symbol:`mongoc_gridfs_bucket_open_upload_stream()`
-
-:symbol:`mongoc_gridfs_bucket_stream_error()`
-
 Returns
 -------
 
 A :symbol:`mongoc_stream_t` that can be written to or ``NULL`` on failure. Errors on this stream can be retrieved with :symbol:`mongoc_gridfs_bucket_stream_error`. After calling :symbol:`mongoc_stream_close` the file is completely written in GridFS.
+
+.. seealso::
+
+  | :symbol:`mongoc_gridfs_bucket_open_upload_stream()`
+
+  | :symbol:`mongoc_gridfs_bucket_stream_error()`
+

@@ -10,10 +10,9 @@ Synopsis
 
 An event notification sent when the driver begins executing an "isMaster" command to check the status of a server.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 
 .. only:: html
 

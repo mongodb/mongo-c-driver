@@ -25,14 +25,14 @@ Validates a BSON document by walking through the document and inspecting the key
 
 You can modify how the validation occurs through the use of the ``flags`` parameter, see :symbol:`bson_validate_with_error()` for details.
 
-See Also
---------
-:symbol:`bson_validate_with_error()`.
-
-:symbol:`bson_visitor_t` can be used for custom validation, :ref:`example_custom_validation`.
-
 Returns
 -------
 
 Returns true if ``bson`` is valid; otherwise false and ``offset`` is set to the byte offset where the error was detected.
+
+.. seealso::
+
+  | :symbol:`bson_validate_with_error()`.
+
+  | :symbol:`bson_visitor_t` can be used for custom validation, :ref:`example_custom_validation`.
 

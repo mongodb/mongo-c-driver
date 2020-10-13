@@ -31,8 +31,7 @@ Returns true on success. If any arguments are invalid, returns false and logs an
 
 .. include:: includes/mongoc_client_pool_call_once.txt
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

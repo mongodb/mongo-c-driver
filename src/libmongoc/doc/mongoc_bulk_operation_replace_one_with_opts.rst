@@ -31,13 +31,6 @@ Parameters
 
   ``document`` may not contain fields with keys containing ``.`` or ``$``.
 
-See Also
---------
-
-:symbol:`mongoc_bulk_operation_remove_many_with_opts()`
-
-:symbol:`mongoc_bulk_operation_insert()`
-
 Errors
 ------
 
@@ -47,4 +40,10 @@ Returns
 -------
 
 Returns true on success, and false if passed invalid arguments.
+
+.. seealso::
+
+  | :symbol:`mongoc_bulk_operation_remove_many_with_opts()`
+
+  | :symbol:`mongoc_bulk_operation_insert()`
 

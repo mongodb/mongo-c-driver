@@ -27,10 +27,9 @@ Returns
 
 ``0`` on success, ``-1`` on failure and ``errno`` is set.
 
-See Also
---------
+.. seealso::
 
-:doc:`mongoc_stream_buffered_new() <mongoc_stream_buffered_new>`.
+  | :doc:`mongoc_stream_buffered_new() <mongoc_stream_buffered_new>`.
 
-:doc:`mongoc_stream_cork() <mongoc_stream_cork>`.
+  | :doc:`mongoc_stream_cork() <mongoc_stream_cork>`.
 

@@ -36,10 +36,9 @@ This structure contains the options that may be used for tuning a GEO index.
     mongoc_index_opt_geo_get_default
     mongoc_index_opt_geo_init
 
-See Also
---------
+.. seealso::
 
-:doc:`mongoc_index_opt_t`
+  | :doc:`mongoc_index_opt_t`
 
-:doc:`mongoc_index_opt_wt_t`
+  | :doc:`mongoc_index_opt_wt_t`
 

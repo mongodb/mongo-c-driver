@@ -22,17 +22,16 @@ Parameters
 * ``bulk``: A :symbol:`mongoc_bulk_operation_t`.
 * ``selector``: A :symbol:`bson:bson_t`.
 
-See Also
---------
-
-:symbol:`mongoc_bulk_operation_remove_one()`
-
-:symbol:`mongoc_bulk_operation_remove_one_with_opts()`
-
-:symbol:`mongoc_bulk_operation_remove_many_with_opts()`
-
 Errors
 ------
 
 Errors are propagated via :symbol:`mongoc_bulk_operation_execute()`.
+
+.. seealso::
+
+  | :symbol:`mongoc_bulk_operation_remove_one()`
+
+  | :symbol:`mongoc_bulk_operation_remove_one_with_opts()`
+
+  | :symbol:`mongoc_bulk_operation_remove_many_with_opts()`
 

@@ -20,10 +20,9 @@ After adding all of the write operations to the ``mongoc_bulk_operation_t``, cal
 
   It is only valid to call :symbol:`mongoc_bulk_operation_execute()` once. The ``mongoc_bulk_operation_t`` must be destroyed afterwards.
 
-See Also
---------
+.. seealso::
 
-:symbol:`Bulk Write Operations <bulk>`
+  | :symbol:`Bulk Write Operations <bulk>`
 
 .. only:: html
 

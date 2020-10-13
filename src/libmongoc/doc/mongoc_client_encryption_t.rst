@@ -23,14 +23,6 @@ Lifecycle
 
 The key vault client, configured via :symbol:`mongoc_client_encryption_opts_set_keyvault_client()`, must outlive the :symbol:`mongoc_client_encryption_t`.
 
-See also
---------
-
-* :symbol:`mongoc_client_enable_auto_encryption()`
-* :symbol:`mongoc_client_pool_enable_auto_encryption()`
-* The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>` for libmongoc
-* The MongoDB Manual for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_
-
 .. only:: html
 
   Functions
@@ -45,3 +37,14 @@ See also
     mongoc_client_encryption_create_datakey
     mongoc_client_encryption_encrypt
     mongoc_client_encryption_decrypt
+
+.. seealso::
+
+  | :symbol:`mongoc_client_enable_auto_encryption()`
+
+  | :symbol:`mongoc_client_pool_enable_auto_encryption()`
+
+  | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>` for libmongoc
+
+  | The MongoDB Manual for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_
+
