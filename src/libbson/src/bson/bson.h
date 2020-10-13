@@ -493,6 +493,31 @@ bson_validate_with_error (const bson_t *bson,
 
 
 /**
+ * bson_as_json_with_opts:
+ * @bson: A bson_t.
+ * @length: A location for the string length, or NULL.
+ * @opts: A bson_t_json_opts_t defining options for the conversion
+ *
+ * Creates a new string containing @bson in the selected JSON format,
+ * conforming to the MongoDB Extended JSON Spec:
+ *
+ * github.com/mongodb/specifications/blob/master/source/extended-json.rst
+ *
+ * The caller is responsible for freeing the resulting string. If @length is
+ * non-NULL, then the length of the resulting string will be placed in @length.
+ *
+ * See http://docs.mongodb.org/manual/reference/mongodb-extended-json/ for
+ * more information on extended JSON.
+ *
+ * Returns: A newly allocated string that should be freed with bson_free().
+ */
+BSON_EXPORT (char *)
+bson_as_json_with_opts (const bson_t *bson,
+                        size_t *length,
+                        const bson_json_opts_t *opts);
+
+
+/**
  * bson_as_canonical_extended_json:
  * @bson: A bson_t.
  * @length: A location for the string length, or NULL.

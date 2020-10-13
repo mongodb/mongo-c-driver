@@ -44,13 +44,6 @@ typedef enum {
 } bson_validate_phase_t;
 
 
-typedef enum {
-   BSON_JSON_MODE_LEGACY,
-   BSON_JSON_MODE_CANONICAL,
-   BSON_JSON_MODE_RELAXED,
-} bson_json_mode_t;
-
-
 /*
  * Structures.
  */
@@ -69,6 +62,8 @@ typedef struct {
    uint32_t depth;
    bson_string_t *str;
    bson_json_mode_t mode;
+   int32_t max_len;
+   bool max_len_reached;
 } bson_json_state_t;
 
 
@@ -88,7 +83,8 @@ _bson_as_json_visit_document (const bson_iter_t *iter,
 static char *
 _bson_as_json_visit_all (const bson_t *bson,
                          size_t *length,
-                         bson_json_mode_t mode);
+                         bson_json_mode_t mode,
+                         int32_t max_len);
 
 /*
  * Globals.
@@ -2583,7 +2579,7 @@ _bson_as_json_visit_int64 (const bson_iter_t *iter,
 
    if (state->mode == BSON_JSON_MODE_CANONICAL) {
       bson_string_append_printf (
-         state->str, "{ \"$numberLong\" : \"%" PRId64 "\"}", v_int64);
+         state->str, "{ \"$numberLong\" : \"%" PRId64 "\" }", v_int64);
    } else {
       bson_string_append_printf (state->str, "%" PRId64, v_int64);
    }
@@ -2715,8 +2711,8 @@ _bson_as_json_visit_binary (const bson_iter_t *iter,
 
    b64_len = COMMON_PREFIX (bson_b64_ntop_calculate_target_size (v_binary_len));
    b64 = bson_malloc0 (b64_len);
-   BSON_ASSERT (
-      COMMON_PREFIX (bson_b64_ntop (v_binary, v_binary_len, b64, b64_len) != -1));
+   BSON_ASSERT (COMMON_PREFIX (
+      bson_b64_ntop (v_binary, v_binary_len, b64, b64_len) != -1));
 
    if (state->mode == BSON_JSON_MODE_CANONICAL ||
        state->mode == BSON_JSON_MODE_RELAXED) {
@@ -2922,6 +2918,10 @@ _bson_as_json_visit_before (const bson_iter_t *iter,
    bson_json_state_t *state = data;
    char *escaped;
 
+   if (state->max_len_reached) {
+      return true;
+   }
+
    if (state->count) {
       bson_string_append (state->str, ", ");
    }
@@ -2939,6 +2939,30 @@ _bson_as_json_visit_before (const bson_iter_t *iter,
    }
 
    state->count++;
+
+   return false;
+}
+
+
+static bool
+_bson_as_json_visit_after (const bson_iter_t *iter, const char *key, void *data)
+{
+   bson_json_state_t *state = data;
+
+   if (state->max_len == BSON_MAX_LEN_UNLIMITED) {
+      return false;
+   }
+
+   if (state->str->len >= state->max_len) {
+      state->max_len_reached = true;
+
+      if (state->str->len > state->max_len) {
+         /* Truncate string to maximum length */
+         bson_string_truncate (state->str, state->max_len);
+      }
+
+      return true;
+   }
 
    return false;
 }
@@ -3018,27 +3042,33 @@ _bson_as_json_visit_codewscope (const bson_iter_t *iter,
    bson_json_state_t *state = data;
    char *code_escaped;
    char *scope;
+   int32_t max_scope_len = BSON_MAX_LEN_UNLIMITED;
 
    code_escaped = bson_utf8_escape_for_json (v_code, v_code_len);
    if (!code_escaped) {
       return true;
    }
 
-   /* Encode scope with the same mode */
-   scope = _bson_as_json_visit_all (v_scope, NULL, state->mode);
-
-   if (!scope) {
-      bson_free (code_escaped);
-      return true;
-   }
-
    bson_string_append (state->str, "{ \"$code\" : \"");
    bson_string_append (state->str, code_escaped);
    bson_string_append (state->str, "\", \"$scope\" : ");
+
+   bson_free (code_escaped);
+
+   /* Encode scope with the same mode */
+   if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
+      max_scope_len = BSON_MAX (0, state->max_len - state->str->len);
+   }
+
+   scope = _bson_as_json_visit_all (v_scope, NULL, state->mode, max_scope_len);
+
+   if (!scope) {
+      return true;
+   }
+
    bson_string_append (state->str, scope);
    bson_string_append (state->str, " }");
 
-   bson_free (code_escaped);
    bson_free (scope);
 
    return false;
@@ -3046,7 +3076,7 @@ _bson_as_json_visit_codewscope (const bson_iter_t *iter,
 
 
 static const bson_visitor_t bson_as_json_visitors = {
-   _bson_as_json_visit_before,     NULL, /* visit_after */
+   _bson_as_json_visit_before,     _bson_as_json_visit_after,
    _bson_as_json_visit_corrupt,    _bson_as_json_visit_double,
    _bson_as_json_visit_utf8,       _bson_as_json_visit_document,
    _bson_as_json_visit_array,      _bson_as_json_visit_binary,
@@ -3081,9 +3111,24 @@ _bson_as_json_visit_document (const bson_iter_t *iter,
       child_state.str = bson_string_new ("{ ");
       child_state.depth = state->depth + 1;
       child_state.mode = state->mode;
+      child_state.max_len = BSON_MAX_LEN_UNLIMITED;
+      if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
+         child_state.max_len = BSON_MAX (0, state->max_len - state->str->len);
+      }
+
+      child_state.max_len_reached = child_state.max_len == 0;
+
       if (bson_iter_visit_all (&child, &bson_as_json_visitors, &child_state)) {
+         if (child_state.max_len_reached) {
+            bson_string_append (state->str, child_state.str->str);
+         }
+
          bson_string_free (child_state.str, true);
-         return true;
+
+         /* If max_len was reached, we return a success state to ensure that
+          * VISIT_AFTER is still called
+          */
+         return !child_state.max_len_reached;
       }
 
       bson_string_append (child_state.str, " }");
@@ -3114,9 +3159,24 @@ _bson_as_json_visit_array (const bson_iter_t *iter,
       child_state.str = bson_string_new ("[ ");
       child_state.depth = state->depth + 1;
       child_state.mode = state->mode;
+      child_state.max_len = BSON_MAX_LEN_UNLIMITED;
+      if (state->max_len != BSON_MAX_LEN_UNLIMITED) {
+         child_state.max_len = BSON_MAX (0, state->max_len - state->str->len);
+      }
+
+      child_state.max_len_reached = child_state.max_len == 0;
+
       if (bson_iter_visit_all (&child, &bson_as_json_visitors, &child_state)) {
+         if (child_state.max_len_reached) {
+            bson_string_append (state->str, child_state.str->str);
+         }
+
          bson_string_free (child_state.str, true);
-         return true;
+
+         /* If max_len was reached, we return a success state to ensure that
+          * VISIT_AFTER is still called
+          */
+         return !child_state.max_len_reached;
       }
 
       bson_string_append (child_state.str, " ]");
@@ -3131,7 +3191,8 @@ _bson_as_json_visit_array (const bson_iter_t *iter,
 static char *
 _bson_as_json_visit_all (const bson_t *bson,
                          size_t *length,
-                         bson_json_mode_t mode)
+                         bson_json_mode_t mode,
+                         int32_t max_len)
 {
    bson_json_state_t state;
    bson_iter_t iter;
@@ -3161,9 +3222,12 @@ _bson_as_json_visit_all (const bson_t *bson,
    state.depth = 0;
    state.err_offset = &err_offset;
    state.mode = mode;
+   state.max_len = max_len;
+   state.max_len_reached = false;
 
-   if (bson_iter_visit_all (&iter, &bson_as_json_visitors, &state) ||
-       err_offset != -1) {
+   if ((bson_iter_visit_all (&iter, &bson_as_json_visitors, &state) ||
+        err_offset != -1) &&
+       !state.max_len_reached) {
       /*
        * We were prematurely exited due to corruption or failed visitor.
        */
@@ -3174,7 +3238,9 @@ _bson_as_json_visit_all (const bson_t *bson,
       return NULL;
    }
 
-   bson_string_append (state.str, " }");
+   if (!state.max_len_reached) {
+      bson_string_append (state.str, " }");
+   }
 
    if (length) {
       *length = state.str->len;
@@ -3185,23 +3251,38 @@ _bson_as_json_visit_all (const bson_t *bson,
 
 
 char *
+bson_as_json_with_opts (const bson_t *bson,
+                        size_t *length,
+                        const bson_json_opts_t *opts)
+{
+   return _bson_as_json_visit_all (bson, length, opts->mode, opts->max_len);
+}
+
+
+char *
 bson_as_canonical_extended_json (const bson_t *bson, size_t *length)
 {
-   return _bson_as_json_visit_all (bson, length, BSON_JSON_MODE_CANONICAL);
+   const bson_json_opts_t opts = {BSON_JSON_MODE_CANONICAL,
+                                  BSON_MAX_LEN_UNLIMITED};
+   return bson_as_json_with_opts (bson, length, &opts);
 }
 
 
 char *
 bson_as_json (const bson_t *bson, size_t *length)
 {
-   return _bson_as_json_visit_all (bson, length, BSON_JSON_MODE_LEGACY);
+   const bson_json_opts_t opts = {BSON_JSON_MODE_LEGACY,
+                                  BSON_MAX_LEN_UNLIMITED};
+   return bson_as_json_with_opts (bson, length, &opts);
 }
 
 
 char *
 bson_as_relaxed_extended_json (const bson_t *bson, size_t *length)
 {
-   return _bson_as_json_visit_all (bson, length, BSON_JSON_MODE_RELAXED);
+   const bson_json_opts_t opts = {BSON_JSON_MODE_RELAXED,
+                                  BSON_MAX_LEN_UNLIMITED};
+   return bson_as_json_with_opts (bson, length, &opts);
 }
 
 
@@ -3236,9 +3317,12 @@ bson_array_as_json (const bson_t *bson, size_t *length)
    state.depth = 0;
    state.err_offset = &err_offset;
    state.mode = BSON_JSON_MODE_LEGACY;
+   state.max_len = BSON_MAX_LEN_UNLIMITED;
+   state.max_len_reached = false;
 
-   if (bson_iter_visit_all (&iter, &bson_as_json_visitors, &state) ||
-       err_offset != -1) {
+   if ((bson_iter_visit_all (&iter, &bson_as_json_visitors, &state) ||
+        err_offset != -1) &&
+       !state.max_len_reached) {
       /*
        * We were prematurely exited due to corruption or failed visitor.
        */
@@ -3249,7 +3333,9 @@ bson_array_as_json (const bson_t *bson, size_t *length)
       return NULL;
    }
 
-   bson_string_append (state.str, " ]");
+   if (!state.max_len_reached) {
+      bson_string_append (state.str, " ]");
+   }
 
    if (length) {
       *length = state.str->len;
