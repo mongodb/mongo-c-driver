@@ -65,8 +65,7 @@ mongoc_log_structured_build_command_started_message (
 
    BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
-   /* @todo Use MONGODB_MAX_DOCUMENT_LENGTH */
-   cmd_json = bson_as_canonical_extended_json (log_command->command, NULL);
+   cmd_json = mongoc_structured_log_document_to_json (log_command->command);
 
    _mongoc_log_structured_append_command_data (structured_log_data,
                                                structured_message);
@@ -92,8 +91,7 @@ mongoc_log_structured_build_command_succeeded_message (
 
    BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
-   /* @todo Use MONGODB_MAX_DOCUMENT_LENGTH */
-   reply_json = bson_as_canonical_extended_json (log_command->reply, NULL);
+   reply_json = mongoc_structured_log_document_to_json (log_command->reply);
 
    _mongoc_log_structured_append_command_data (structured_log_data,
                                                structured_message);
@@ -119,8 +117,7 @@ mongoc_log_structured_build_command_failed_message (
 
    BSON_ASSERT (component == MONGOC_STRUCTURED_LOG_COMPONENT_COMMAND);
 
-   /* @todo Use MONGODB_MAX_DOCUMENT_LENGTH */
-   reply_json = bson_as_canonical_extended_json (log_command->reply, NULL);
+   reply_json = mongoc_structured_log_document_to_json (log_command->reply);
 
    _mongoc_log_structured_append_command_data (structured_log_data,
                                                structured_message);
