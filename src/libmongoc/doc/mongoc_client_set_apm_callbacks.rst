@@ -29,8 +29,7 @@ Returns
 
 Returns true on success. If any arguments are invalid, returns false and logs an error.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

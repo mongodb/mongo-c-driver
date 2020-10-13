@@ -30,10 +30,9 @@ Parameters
 
   ``document`` *must only* contain fields whose key starts with ``$``. See the update document specification for more details.
 
-See Also
---------
+.. seealso::
 
-:symbol:`mongoc_bulk_operation_update()`
+  | :symbol:`mongoc_bulk_operation_update()`
 
-:symbol:`mongoc_bulk_operation_update_one_with_opts()`
+  | :symbol:`mongoc_bulk_operation_update_one_with_opts()`
 

@@ -38,15 +38,6 @@ To update multiple documents see :symbol:`mongoc_collection_update_many`.
 
 If you pass a non-NULL ``reply``, it is filled out with fields  ``matchedCount``, ``modifiedCount``, and optionally ``upsertedId`` if applicable. If there is a server error then ``reply`` contains either a "writeErrors" array with one subdocument or a "writeConcernErrors" array. The reply must be freed with :symbol:`bson:bson_destroy`.
 
-See Also
---------
-
-`MongoDB update command documentation <https://docs.mongodb.com/master/reference/command/update/>`_ for more information on the update options.
-
-:symbol:`mongoc_collection_update_many`
-
-:symbol:`mongoc_collection_replace_one`
-
 Errors
 ------
 
@@ -64,3 +55,12 @@ Example
 .. literalinclude:: ../examples/example-update.c
    :language: c
    :caption: example-update.c
+
+.. seealso::
+
+  | `MongoDB update command documentation <https://docs.mongodb.com/master/reference/command/update/>`_ for more information on the update options.
+
+  | :symbol:`mongoc_collection_update_many`
+
+  | :symbol:`mongoc_collection_replace_one`
+

@@ -34,9 +34,10 @@ Parameters
 
 Returns
 -------
+
 Returns ``true`` if successful. Returns ``false`` and sets ``error`` otherwise.
 
-See Also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_encryption_datakey_opts_t`
+  | :symbol:`mongoc_client_encryption_datakey_opts_t`
+

@@ -46,11 +46,11 @@ Example
    :language: c
    :caption: example-gridfs.c
 
-See also
---------
+.. seealso::
 
-- The `MongoDB GridFS specification <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_.
-- The spec-compliant :symbol:`mongoc_gridfs_bucket_t`.
+  | The `MongoDB GridFS specification <https://github.com/mongodb/specifications/blob/master/source/gridfs/gridfs-spec.rst>`_.
+
+  | The spec-compliant :symbol:`mongoc_gridfs_bucket_t`.
 
 .. only:: html
 

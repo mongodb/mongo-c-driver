@@ -33,10 +33,9 @@ This structure contains the options that may be used for tuning a WiredTiger spe
     mongoc_index_opt_wt_get_default
     mongoc_index_opt_wt_init
 
-See Also
---------
+.. seealso::
 
-:doc:`mongoc_index_opt_t`
+  | :doc:`mongoc_index_opt_t`
 
-:doc:`mongoc_index_opt_geo_t`
+  | :doc:`mongoc_index_opt_geo_t`
 

@@ -15,10 +15,9 @@ Description
 
 ``mongoc_stream_buffered_t`` should be considered a subclass of :symbol:`mongoc_stream_t`. It performs buffering on an underlying stream.
 
-See Also
---------
+.. seealso::
 
-:doc:`mongoc_stream_buffered_new() <mongoc_stream_buffered_new>`
+  | :doc:`mongoc_stream_buffered_new() <mongoc_stream_buffered_new>`
 
-:doc:`mongoc_stream_destroy() <mongoc_stream_destroy>`
+  | :doc:`mongoc_stream_destroy() <mongoc_stream_destroy>`
 

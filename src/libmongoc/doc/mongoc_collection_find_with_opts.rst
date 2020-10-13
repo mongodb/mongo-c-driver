@@ -151,11 +151,9 @@ Deprecated Options
 
 The ``snapshot`` boolean option is removed in MongoDB 4.0. The ``maxScan`` option, a non-negative int64, is deprecated in MongoDB 4.0 and will be removed in a future MongoDB version. The ``oplogReplay`` boolean option is deprecated in MongoDB 4.4. All of these options are supported by the C Driver with older MongoDB versions.
 
-See Also
---------
+.. seealso::
 
-`The "find" command`_ in the MongoDB Manual. All options listed there are supported by the C Driver.
-For MongoDB servers before 3.2, or for exhaust queries, the driver transparently converts the query to a legacy OP_QUERY message.
+  | `The "find" command`_ in the MongoDB Manual. All options listed there are supported by the C Driver.  For MongoDB servers before 3.2, or for exhaust queries, the driver transparently converts the query to a legacy OP_QUERY message.
 
 .. _the "find" command: https://docs.mongodb.org/master/reference/command/find/
 
@@ -174,8 +172,7 @@ With MongoDB before 3.2, a query with option ``$explain: true`` returns informat
 
   mongoc_collection_command_simple (collection, command, NULL, &reply, &error);
 
-See Also
---------
+.. seealso::
 
-`The "explain" command <https://docs.mongodb.org/master/reference/command/explain/>`_ in the MongoDB Manual.
+  | `The "explain" command <https://docs.mongodb.org/master/reference/command/explain/>`_ in the MongoDB Manual.
 

@@ -23,8 +23,7 @@ Parameters
 * ``callbacks``: A :symbol:`mongoc_apm_callbacks_t`.
 * ``cb``: A function to call with a :symbol:`mongoc_apm_server_changed_t` whenever the driver observes a change in status of a server it is connected to.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

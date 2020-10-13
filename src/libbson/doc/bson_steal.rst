@@ -70,10 +70,12 @@ For example, if you have a higher-level structure that wraps a :symbol:`bson_t`,
      bson_wrapper_destroy (wrapper);
   }
 
-See also :symbol:`bson_destroy_with_steal`, a lower-level function that returns the raw contents of a :symbol:`bson_t`.
-
 Returns
 -------
 
 Returns ``true`` if ``src`` was successfully moved to ``dst``, ``false`` if ``src`` is invalid, or was statically initialized, or another error occurred.
+
+.. seealso::
+
+  | :symbol:`bson_destroy_with_steal`, a lower-level function that returns the raw contents of a :symbol:`bson_t`.
 

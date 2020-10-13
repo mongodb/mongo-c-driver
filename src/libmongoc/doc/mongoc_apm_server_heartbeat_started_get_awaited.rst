@@ -24,8 +24,7 @@ Returns
 
 A bool indicating whether the heartbeat event came from an awaitable isMaster.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

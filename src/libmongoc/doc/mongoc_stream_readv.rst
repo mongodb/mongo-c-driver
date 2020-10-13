@@ -31,12 +31,11 @@ Returns
 
 ``>= 0`` on success, ``-1`` on failure and ``errno`` is set.
 
-See Also
---------
+.. seealso::
 
-:symbol:`mongoc_stream_read()`
+  | :symbol:`mongoc_stream_read()`
 
-:symbol:`mongoc_stream_write()`
+  | :symbol:`mongoc_stream_write()`
 
-:symbol:`mongoc_stream_writev()`
+  | :symbol:`mongoc_stream_writev()`
 

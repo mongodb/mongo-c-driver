@@ -30,13 +30,12 @@ Parameters
 
   ``document`` may not contain fields with keys containing ``.`` or ``$``.
 
-See Also
---------
-
-:symbol:`mongoc_bulk_operation_replace_one_with_opts()`
-
 Errors
 ------
 
 Errors are propagated via :symbol:`mongoc_bulk_operation_execute()`.
+
+.. seealso::
+
+  | :symbol:`mongoc_bulk_operation_replace_one_with_opts()`
 

@@ -133,10 +133,9 @@ Other $-options       ``$<option name>``  ``<option name>``
 
 Most applications should use the OP_QUERY syntax, with "$query", "$orderby", and so on, and rely on the driver to convert to the new syntax if needed.
 
-See Also
---------
+.. seealso::
 
-`The "find" command <https://docs.mongodb.org/master/reference/command/find/>`_ in the MongoDB Manual.
+  | `The "find" command <https://docs.mongodb.org/master/reference/command/find/>`_ in the MongoDB Manual.
 
 The "explain" command
 ---------------------
@@ -158,8 +157,7 @@ With MongoDB before 3.2, a query with option ``$explain: true`` returns informat
                       "}");
   mongoc_collection_command_simple (collection, command, NULL, &reply, &error);
 
-See Also
---------
+.. seealso::
 
-`The "explain" command <https://docs.mongodb.org/master/reference/command/explain/>`_ in the MongoDB Manual.
+  | `The "explain" command <https://docs.mongodb.org/master/reference/command/explain/>`_ in the MongoDB Manual.
 

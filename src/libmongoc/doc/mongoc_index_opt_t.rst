@@ -87,10 +87,9 @@ Example
     mongoc_index_opt_get_default
     mongoc_index_opt_init
 
-See Also
---------
+.. seealso::
 
-:doc:`mongoc_index_opt_geo_t`
+  | :doc:`mongoc_index_opt_geo_t`
 
-:doc:`mongoc_index_opt_wt_t`
+  | :doc:`mongoc_index_opt_wt_t`
 

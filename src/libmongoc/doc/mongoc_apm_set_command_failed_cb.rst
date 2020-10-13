@@ -23,8 +23,7 @@ Parameters
 * ``callbacks``: A :symbol:`mongoc_apm_callbacks_t`.
 * ``cb``: A function to call with a :symbol:`mongoc_apm_command_failed_t` whenever a MongoDB operation fails.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

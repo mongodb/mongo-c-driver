@@ -21,13 +21,12 @@ Description
 
 Fetches the key for the current element observed by ``iter``.
 
-See Also
---------
-
-:symbol:`bson_iter_key_len()` to retrieve the length of the key in constant time.
-
 Returns
 -------
 
 A string which should not be modified or freed.
+
+.. seealso::
+
+  | :symbol:`bson_iter_key_len()` to retrieve the length of the key in constant time.
 

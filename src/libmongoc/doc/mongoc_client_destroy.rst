@@ -20,7 +20,6 @@ Parameters
 
 * ``client``: A :symbol:`mongoc_client_t`.
 
-See Also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_pool_push()` to push a multi-threaded client back onto a pool.
+  | :symbol:`mongoc_client_pool_push()` to push a multi-threaded client back onto a pool.

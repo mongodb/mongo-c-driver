@@ -29,8 +29,7 @@ An event notification sent when the driver fails to execute a MongoDB command.
     mongoc_apm_command_failed_get_request_id
     mongoc_apm_command_failed_get_server_id
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

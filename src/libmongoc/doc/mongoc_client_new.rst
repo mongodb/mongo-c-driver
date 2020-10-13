@@ -23,8 +23,7 @@ Returns
 
 A newly allocated :symbol:`mongoc_client_t` if the URI parsed successfully, otherwise ``NULL``.
 
-See Also
---------
+.. seealso::
 
-:symbol:`mongoc_client_new_from_uri()`
+  | :symbol:`mongoc_client_new_from_uri()`
 

@@ -21,13 +21,12 @@ Description
 
 Fetches the offset for the current element observed by ``iter``.
 
-See Also
---------
-
-:symbol:`bson_iter_init_from_data_at_offset()` to use this offset to reconstruct a :symbol:`bson_iter_t` in constant time.
-
 Returns
 -------
 
 An unsigned integer representing the offset in the BSON data of the current element.
+
+.. seealso::
+
+  | :symbol:`bson_iter_init_from_data_at_offset()` to use this offset to reconstruct a :symbol:`bson_iter_t` in constant time.
 

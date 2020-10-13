@@ -23,16 +23,16 @@ Description
 
 Retrieves an error for a GridFS stream if one exists.
 
-See Also
---------
-
-:symbol:`mongoc_gridfs_bucket_open_upload_stream`
-
-:symbol:`mongoc_gridfs_bucket_open_upload_stream_with_id()`
-
-:symbol:`mongoc_gridfs_bucket_open_download_stream`
-
 Returns
 -------
 
 True if an error occurred on the stream and sets ``error``. False otherwise.
+
+.. seealso::
+
+  | :symbol:`mongoc_gridfs_bucket_open_upload_stream`
+
+  | :symbol:`mongoc_gridfs_bucket_open_upload_stream_with_id()`
+
+  | :symbol:`mongoc_gridfs_bucket_open_download_stream`
+

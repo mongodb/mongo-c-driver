@@ -10,10 +10,9 @@ Synopsis
 
 An event notification sent when the driver stops monitoring a server and removes its :symbol:`mongoc_server_description_t`.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 
 .. only:: html
 

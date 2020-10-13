@@ -23,7 +23,7 @@ Parameters
 * ``keyaltnames``: An array of strings.
 * ``keyaltnames_count``: The number of strings in ``keyaltnames``.
 
-See Also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_encryption_encrypt_opts_set_keyaltname`
+  | :symbol:`mongoc_client_encryption_encrypt_opts_set_keyaltname`
+

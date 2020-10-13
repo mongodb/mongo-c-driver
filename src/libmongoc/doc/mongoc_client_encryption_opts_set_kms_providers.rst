@@ -38,8 +38,9 @@ The format for "local" is as follows:
    }
 
 
-See also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_encryption_new()`
-* The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+  | :symbol:`mongoc_client_encryption_new()`
+
+  | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+

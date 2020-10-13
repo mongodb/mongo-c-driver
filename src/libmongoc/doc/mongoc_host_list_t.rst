@@ -22,8 +22,7 @@ Description
 
 The host and port of a MongoDB server. Can be part of a linked list: for example the return value of :symbol:`mongoc_uri_get_hosts` when multiple hosts are provided in the MongoDB URI.
 
-See Also
---------
+.. seealso::
 
-:symbol:`mongoc_uri_get_hosts` and :symbol:`mongoc_cursor_get_host`.
+  | :symbol:`mongoc_uri_get_hosts` and :symbol:`mongoc_cursor_get_host`.
 

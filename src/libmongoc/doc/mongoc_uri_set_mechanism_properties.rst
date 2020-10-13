@@ -48,11 +48,7 @@ Example
 
   bson_destroy (&props);
 
-See Also
---------
-
-:ref:`GSSAPI (Kerberos) Authentication <authentication_kerberos>` and :symbol:`mongoc_uri_get_mechanism_properties`
-
 .. only:: html
 
   .. include:: includes/seealso/authmechanism.txt
+

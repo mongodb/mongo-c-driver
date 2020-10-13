@@ -31,11 +31,6 @@ Parameters
 
   ``document`` *must only* contain fields whose key starts with ``$``. See the update document specification for more details.
 
-See Also
---------
-
-:symbol:`mongoc_bulk_operation_update_many_with_opts()`
-
 Errors
 ------
 
@@ -45,3 +40,8 @@ Returns
 -------
 
 Returns true on success, and false if there is a server or network error or if passed invalid arguments.
+
+.. seealso::
+
+  | :symbol:`mongoc_bulk_operation_update_many_with_opts()`
+

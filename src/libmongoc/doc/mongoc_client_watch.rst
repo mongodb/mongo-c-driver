@@ -37,14 +37,16 @@ Parameters
 
 Returns
 -------
+
 A newly allocated :symbol:`mongoc_change_stream_t` which must be freed with
 :symbol:`mongoc_change_stream_destroy` when no longer in use. The returned
 :symbol:`mongoc_change_stream_t` is never ``NULL``. If there is an error, it can
 be retrieved with :symbol:`mongoc_change_stream_error_document`, and subsequent
 calls to :symbol:`mongoc_change_stream_next` will return ``false``.
 
-See Also
---------
-:doc:`mongoc_database_watch`
+.. seealso::
 
-:doc:`mongoc_collection_watch`
+  | :doc:`mongoc_database_watch`
+
+  | :doc:`mongoc_collection_watch`
+

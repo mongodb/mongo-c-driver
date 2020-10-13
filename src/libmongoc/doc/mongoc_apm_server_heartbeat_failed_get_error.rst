@@ -20,8 +20,7 @@ Parameters
 * ``event``: A :symbol:`mongoc_apm_server_heartbeat_failed_t`.
 * ``error``: A :symbol:`bson:bson_error_t` to receive the event's error info.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

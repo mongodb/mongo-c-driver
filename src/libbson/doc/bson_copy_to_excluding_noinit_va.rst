@@ -29,7 +29,7 @@ The :symbol:`bson_copy_to_excluding_noinit_va()` function shall copy all fields 
 
 This method works the same way as :symbol:`bson_copy_to_excluding_noinit`, except it takes a va_list. This method does not call :symbol:`bson_init` on ``dst``.
 
-See Also
---------
+.. seealso::
 
-:symbol:`bson_copy_to_excluding_noinit`
+  | :symbol:`bson_copy_to_excluding_noinit`
+

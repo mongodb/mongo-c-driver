@@ -23,8 +23,7 @@ Parameters
 * ``callbacks``: A :symbol:`mongoc_apm_callbacks_t`.
 * ``cb``: A function to call with a :symbol:`mongoc_apm_command_started_t` whenever the driver begins a MongoDB operation.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

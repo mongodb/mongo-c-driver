@@ -12,11 +12,6 @@ Synopsis
 
 Used to set options for :symbol:`mongoc_client_encryption_new()`.
 
-See also
---------
-
-* :symbol:`mongoc_client_encryption_new()`
-
 .. only:: html
 
   Functions
@@ -31,3 +26,8 @@ See also
     mongoc_client_encryption_opts_set_keyvault_client
     mongoc_client_encryption_opts_set_keyvault_namespace
     mongoc_client_encryption_opts_set_kms_providers
+
+.. seealso::
+
+  | :symbol:`mongoc_client_encryption_new()`
+

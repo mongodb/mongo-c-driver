@@ -23,8 +23,7 @@ Parameters
 * ``callbacks``: A :symbol:`mongoc_apm_callbacks_t`.
 * ``cb``: A function to call with a :symbol:`mongoc_apm_server_heartbeat_failed_t` whenever the driver fails to send an "isMaster" command to check the status of a server.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

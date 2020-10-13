@@ -23,7 +23,7 @@ Description
 
 Will bypass document validation for all operations part of this :doc:`bulk <mongoc_bulk_operation_t>`.
 
-See Also
---------
+.. seealso::
 
-:ref:`bulk_operation_bypassing_document_validation`
+  | :ref:`bulk_operation_bypassing_document_validation`
+

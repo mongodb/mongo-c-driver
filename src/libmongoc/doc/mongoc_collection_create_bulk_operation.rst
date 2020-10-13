@@ -42,13 +42,6 @@ If ``ordered`` is not true, then the bulk operation will attempt to continue pro
 
 ``write_concern`` contains the write concern for all operations in the bulk operation. If ``NULL``, the collection's write concern is used. The global default is acknowledged writes: MONGOC_WRITE_CONCERN_W_DEFAULT.
 
-See Also
---------
-
-:symbol:`Bulk Write Operations <bulk>`
-
-:symbol:`mongoc_bulk_operation_t`
-
 Errors
 ------
 
@@ -62,4 +55,10 @@ A newly allocated :symbol:`mongoc_bulk_operation_t` that should be freed with :s
 .. warning::
 
   Failure to handle the result of this function is a programming error.
+
+.. seealso::
+
+  | :symbol:`Bulk Write Operations <bulk>`
+
+  :symbol:`mongoc_bulk_operation_t`
 

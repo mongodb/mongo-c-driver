@@ -25,12 +25,12 @@ Description
 
 Opens a stream for reading a file from GridFS.
 
-See Also
---------
-
-:symbol:`mongoc_gridfs_bucket_stream_error()`
-
 Returns
 -------
 
 A :symbol:`mongoc_stream_t` that can be read from or ``NULL`` on failure. Errors on this stream can be retrieved with :symbol:`mongoc_gridfs_bucket_stream_error()`.
+
+.. seealso::
+
+  | :symbol:`mongoc_gridfs_bucket_stream_error()`
+

@@ -21,8 +21,9 @@ Parameters
 * ``db``: A ``const char *`` representing the database name of the key vault collection.
 * ``coll``: A ``const char *`` representing the collection name of the key vault collection.
 
-See also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_enable_auto_encryption()`
-* The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+  | :symbol:`mongoc_client_enable_auto_encryption()`
+
+  | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>`
+

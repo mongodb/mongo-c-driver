@@ -35,7 +35,7 @@ If ``myvalue`` is non-zero it is the connection timeout; if it is zero the drive
 
 When reading an option that is an int64, this function will return the value as ``int32_t``. If the value is outside the range of a 32-bit integer, a warning will be emitted and ``fallback`` is returned instead.
 
-See Also
---------
+.. seealso::
 
-* :symbol:`mongoc_uri_get_option_as_int64()`
+  | :symbol:`mongoc_uri_get_option_as_int64()`
+

@@ -54,9 +54,7 @@ This code produces the output:
 
   { "SERVICE_NAME" : "other", "CANONICALIZE_HOST_NAME" : "true" }
 
-See Also
---------
-
 .. only:: html
 
   .. include:: includes/seealso/authmechanism.txt
+

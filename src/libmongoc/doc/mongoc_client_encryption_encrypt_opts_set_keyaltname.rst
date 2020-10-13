@@ -20,8 +20,9 @@ Parameters
 * ``opts``: A :symbol:`mongoc_client_encryption_encrypt_opts_t`
 * ``keyaltname``: A string identifying a data key by alternate name.
 
-See Also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_encryption_encrypt_opts_set_keyid`
-* :symbol:`mongoc_client_encryption_datakey_opts_set_keyaltnames`
+  | :symbol:`mongoc_client_encryption_encrypt_opts_set_keyid`
+
+  | :symbol:`mongoc_client_encryption_datakey_opts_set_keyaltnames`
+

@@ -23,7 +23,7 @@ Parameters
 * ``bulk``: A :symbol:`mongoc_bulk_operation_t`.
 * ``client_session``: A :symbol:`mongoc_client_session_t`. Must be derived from the same :symbol:`mongoc_client_t` as ``bulk``.
 
-See Also
---------
+.. seealso::
 
-* :symbol:`mongoc_client_start_session()`
+  | :symbol:`mongoc_client_start_session()`
+

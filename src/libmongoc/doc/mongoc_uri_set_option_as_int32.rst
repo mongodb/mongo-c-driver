@@ -34,7 +34,7 @@ Returns
 
 True if successfully set (the named option is a known option of type int32 or int64).
 
-See Also
---------
+.. seealso::
 
-* :symbol:`mongoc_uri_set_option_as_int64()`
+  | :symbol:`mongoc_uri_set_option_as_int64()`
+

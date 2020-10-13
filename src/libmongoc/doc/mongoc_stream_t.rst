@@ -43,13 +43,13 @@ There are a number of built in stream types that come with mongoc. The default c
     mongoc_stream_write
     mongoc_stream_writev
 
-See Also
---------
+.. seealso::
 
-:doc:`mongoc_stream_buffered_t`
+  | :doc:`mongoc_stream_buffered_t`
 
-:doc:`mongoc_stream_file_t`
+  | :doc:`mongoc_stream_file_t`
 
-:doc:`mongoc_stream_socket_t`
+  | :doc:`mongoc_stream_socket_t`
 
-:doc:`mongoc_stream_tls_t`
+  | :doc:`mongoc_stream_tls_t`
+

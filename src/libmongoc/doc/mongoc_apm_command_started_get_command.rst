@@ -24,8 +24,7 @@ Returns
 
 A :symbol:`bson:bson_t` that should not be modified or freed.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 

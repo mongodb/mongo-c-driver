@@ -10,10 +10,9 @@ Synopsis
 
 An event notification sent when the driver adds a :symbol:`mongoc_server_description_t` for a new server it was not monitoring before.
 
-See Also
---------
+.. seealso::
 
-:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
+  | :doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`
 
 .. only:: html
 

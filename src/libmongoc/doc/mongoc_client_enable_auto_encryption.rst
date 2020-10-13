@@ -35,10 +35,13 @@ Returns
 
 True on success. False on error. On error, ``error`` is set.
 
-See also
---------
+.. seealso::
 
-* :symbol:`mongoc_auto_encryption_opts_t`
-* :symbol:`mongoc_client_pool_enable_auto_encryption()`
-* The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>` for libmongoc
-* The MongoDB Manual for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_
+  | :symbol:`mongoc_auto_encryption_opts_t`
+
+  | :symbol:`mongoc_client_pool_enable_auto_encryption()`
+
+  | The guide for :doc:`Using Client-Side Field Level Encryption <using_client_side_encryption>` for libmongoc
+
+  | The MongoDB Manual for `Client-Side Field Level Encryption <https://docs.mongodb.com/manual/core/security-client-side-encryption/>`_
+
