@@ -39,7 +39,7 @@ _mongoc_log_structured_append_command_data (
                 "serverPort",
                 BCON_INT32 (log_command->host->port));
 
-   // Append client port only if it was provided
+   /* Append client port only if it was provided */
    if (log_command->client_port) {
       BCON_APPEND (structured_message,
                    "clientPort",
