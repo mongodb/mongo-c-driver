@@ -94,6 +94,16 @@ MONGOC_EXPORT (mongoc_structured_log_component_t)
 mongoc_structured_log_entry_get_component (
    const mongoc_structured_log_entry_t *entry);
 
+/**
+ * mongoc_structured_log_document_to_json:
+ * @document: A BSON document to be serialized
+ *
+ * Returns the extended JSON representation of the given BSON document,
+ * respecting maximum logging length settings.
+ */
+MONGOC_EXPORT (char *)
+mongoc_structured_log_document_to_json (const bson_t *document);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_STRUCTURED_LOG_H */

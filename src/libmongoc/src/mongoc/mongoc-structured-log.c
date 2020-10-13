@@ -222,6 +222,30 @@ mongoc_structured_log_default_handler (mongoc_structured_log_entry_t *entry,
    bson_free (message);
 }
 
+static int32_t
+mongoc_structured_log_get_max_length (void)
+{
+   const char *max_length_str = getenv ("MONGODB_LOGGING_MAX_DOCUMENT_LENGTH");
+
+   if (!max_length_str) {
+      return MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH;
+   }
+
+   if (!strcmp (max_length_str, "unlimited")) {
+      return BSON_MAX_LEN_UNLIMITED;
+   }
+
+   return strtoul (max_length_str, NULL, 10);
+}
+
+char *
+mongoc_structured_log_document_to_json (const bson_t *document)
+{
+   bson_json_opts_t opts = {BSON_JSON_MODE_CANONICAL, mongoc_structured_log_get_max_length ()};
+
+   return bson_as_json_with_opts (document, NULL, &opts);
+}
+
 /* just for testing */
 void
 _mongoc_structured_log_get_handler (mongoc_structured_log_func_t *log_func,

@@ -24,6 +24,7 @@
 #include "mongoc-structured-log-command-private.h"
 
 #define MONGOC_STRUCTURED_LOG_DEFAULT_LEVEL MONGOC_STRUCTURED_LOG_LEVEL_WARNING;
+#define MONGOC_STRUCTURED_LOG_DEFAULT_MAX_DOCUMENT_LENGTH 1000;
 
 typedef void (*mongoc_structured_log_build_message_t) (
    mongoc_structured_log_component_t component,
