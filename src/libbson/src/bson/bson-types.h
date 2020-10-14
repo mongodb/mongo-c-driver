@@ -519,6 +519,40 @@ typedef struct _bson_error_t {
 } bson_error_t BSON_ALIGNED_END (8);
 
 
+/**
+ * BSON_MAX_LEN_UNLIMITED
+ *
+ * Denotes unlimited length limit when converting BSON to JSON.
+ */
+#define BSON_MAX_LEN_UNLIMITED -1
+
+/**
+ * bson_json_mode_t:
+ *
+ * This enumeration contains the different modes to serialize BSON into extended
+ * JSON.
+ */
+typedef enum {
+   BSON_JSON_MODE_LEGACY,
+   BSON_JSON_MODE_CANONICAL,
+   BSON_JSON_MODE_RELAXED,
+} bson_json_mode_t;
+
+/**
+ * bson_json_opts_t:
+ *
+ * This structure is used to pass options for serializing BSON into extended
+ * JSON to the respective serialization methods.
+ *
+ * max_len can be either a non-negative integer, or BSON_MAX_LEN_UNLIMITED to
+ * set no limit for serialization length.
+ */
+typedef struct {
+   bson_json_mode_t mode;
+   int32_t max_len;
+} bson_json_opts_t;
+
+
 BSON_STATIC_ASSERT2 (error_t, sizeof (bson_error_t) == 512);
 
 

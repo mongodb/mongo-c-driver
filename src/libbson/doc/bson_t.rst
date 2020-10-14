@@ -184,6 +184,7 @@ The :symbol:`bson_t` structure attempts to use an inline allocation within the s
     bson_array_as_json
     bson_as_canonical_extended_json
     bson_as_json
+    bson_as_json_with_opts
     bson_as_relaxed_extended_json
     bson_compare
     bson_concat
@@ -201,6 +202,8 @@ The :symbol:`bson_t` structure attempts to use an inline allocation within the s
     bson_init
     bson_init_from_json
     bson_init_static
+    bson_json_mode_t
+    bson_json_opts_t
     bson_new
     bson_new_from_buffer
     bson_new_from_data
