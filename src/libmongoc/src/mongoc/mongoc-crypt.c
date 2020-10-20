@@ -671,7 +671,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    _mongoc_crypt_t *crypt;
    mongocrypt_binary_t *local_masterkey_bin = NULL;
    mongocrypt_binary_t *schema_map_bin = NULL;
-   bson_iter_t iter;
+   mongocrypt_binary_t *kms_providers_bin = NULL;
    bool success = false;
 
    /* Create the handle to libmongocrypt. */
@@ -681,71 +681,11 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    mongocrypt_setopt_log_handler (
       crypt->handle, _log_callback, NULL /* context */);
 
-   /* Take options from the kms_providers map. */
-   if (bson_iter_init_find (&iter, kms_providers, "aws")) {
-      bson_iter_t subiter;
-      const char *aws_access_key_id = NULL;
-      uint32_t aws_access_key_id_len = 0;
-      const char *aws_secret_access_key = NULL;
-      uint32_t aws_secret_access_key_len = 0;
-
-      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                         "Expected document for KMS provider 'aws'");
-         goto fail;
-      }
-
-      BSON_ASSERT (bson_iter_recurse (&iter, &subiter));
-      if (bson_iter_find (&subiter, "accessKeyId")) {
-         aws_access_key_id = bson_iter_utf8 (&subiter, &aws_access_key_id_len);
-      }
-
-      BSON_ASSERT (bson_iter_recurse (&iter, &subiter));
-      if (bson_iter_find (&subiter, "secretAccessKey")) {
-         aws_secret_access_key =
-            bson_iter_utf8 (&subiter, &aws_secret_access_key_len);
-      }
-
-      /* libmongocrypt returns error if options are NULL. */
-      if (!mongocrypt_setopt_kms_provider_aws (crypt->handle,
-                                               aws_access_key_id,
-                                               aws_access_key_id_len,
-                                               aws_secret_access_key,
-                                               aws_secret_access_key_len)) {
-         _crypt_check_error (crypt->handle, error, true);
-         goto fail;
-      }
-   }
-
-   if (bson_iter_init_find (&iter, kms_providers, "local")) {
-      bson_iter_t subiter;
-
-      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                         "Expected document for KMS provider 'local'");
-         goto fail;
-      }
-
-      bson_iter_recurse (&iter, &subiter);
-      if (bson_iter_find (&subiter, "key")) {
-         uint32_t key_len;
-         const uint8_t *key_data;
-
-         bson_iter_binary (&subiter, NULL /* subtype */, &key_len, &key_data);
-         local_masterkey_bin =
-            mongocrypt_binary_new_from_data ((uint8_t *) key_data, key_len);
-      }
-
-      /* libmongocrypt returns error if options are NULL. */
-      if (!mongocrypt_setopt_kms_provider_local (crypt->handle,
-                                                 local_masterkey_bin)) {
-         _crypt_check_error (crypt->handle, error, true);
-         goto fail;
-      }
+   kms_providers_bin = mongocrypt_binary_new_from_data (
+      (uint8_t *) bson_get_data (kms_providers), kms_providers->len);
+   if (!mongocrypt_setopt_kms_providers (crypt->handle, kms_providers_bin)) {
+      _crypt_check_error (crypt->handle, error, true);
+      goto fail;
    }
 
    if (schema_map) {
@@ -766,6 +706,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
 fail:
    mongocrypt_binary_destroy (local_masterkey_bin);
    mongocrypt_binary_destroy (schema_map_bin);
+   mongocrypt_binary_destroy (kms_providers_bin);
 
    if (!success) {
       _mongoc_crypt_destroy (crypt);
@@ -1054,6 +995,8 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
 {
    _state_machine_t *state_machine = NULL;
    bool ret = false;
+   bson_t masterkey_w_provider = BSON_INITIALIZER;
+   mongocrypt_binary_t *masterkey_w_provider_bin = NULL;
 
    bson_init (doc_out);
    state_machine = _state_machine_new ();
@@ -1063,51 +1006,19 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
       goto fail;
    }
 
-   if (0 == strcmp ("aws", kms_provider) && masterkey) {
-      bson_iter_t iter;
-      const char *region = NULL;
-      uint32_t region_len = 0;
-      const char *key = NULL;
-      uint32_t key_len = 0;
-
-      if (bson_iter_init_find (&iter, masterkey, "region") &&
-          BSON_ITER_HOLDS_UTF8 (&iter)) {
-         region = bson_iter_utf8 (&iter, &region_len);
-      }
-
-      if (bson_iter_init_find (&iter, masterkey, "key") &&
-          BSON_ITER_HOLDS_UTF8 (&iter)) {
-         key = bson_iter_utf8 (&iter, &key_len);
-      }
-
-      if (!mongocrypt_ctx_setopt_masterkey_aws (
-             state_machine->ctx, region, region_len, key, key_len)) {
-         _ctx_check_error (state_machine->ctx, error, true);
-         goto fail;
-      }
-
-      /* Check for optional endpoint */
-      if (bson_iter_init_find (&iter, masterkey, "endpoint") &&
-          BSON_ITER_HOLDS_UTF8 (&iter)) {
-         const char *endpoint = NULL;
-         uint32_t endpoint_len = 0;
-
-         endpoint = bson_iter_utf8 (&iter, &endpoint_len);
-         if (!mongocrypt_ctx_setopt_masterkey_aws_endpoint (
-                state_machine->ctx, endpoint, endpoint_len)) {
-            _ctx_check_error (state_machine->ctx, error, true);
-            goto fail;
-         }
-      }
+   BSON_APPEND_UTF8 (&masterkey_w_provider, "provider", kms_provider);
+   if (masterkey) {
+      bson_concat (&masterkey_w_provider, masterkey);
    }
+   masterkey_w_provider_bin = mongocrypt_binary_new_from_data (
+      (uint8_t *) bson_get_data (&masterkey_w_provider),
+      masterkey_w_provider.len);
 
-   if (0 == strcmp ("local", kms_provider)) {
-      if (!mongocrypt_ctx_setopt_masterkey_local (state_machine->ctx)) {
-         _ctx_check_error (state_machine->ctx, error, true);
-         goto fail;
-      }
+   if (!mongocrypt_ctx_setopt_key_encryption_key (state_machine->ctx,
+                                                  masterkey_w_provider_bin)) {
+      _ctx_check_error (state_machine->ctx, error, true);
+      goto fail;
    }
-
 
    if (keyaltnames) {
       int i;
@@ -1144,6 +1055,8 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
    ret = true;
 
 fail:
+   bson_destroy (&masterkey_w_provider);
+   mongocrypt_binary_destroy (masterkey_w_provider_bin);
    _state_machine_destroy (state_machine);
    return ret;
 }
