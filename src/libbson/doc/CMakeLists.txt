@@ -11,6 +11,7 @@ if (ENABLE_MAN_PAGES)
 endif ()
 
 add_subdirectory (html)
+add_subdirectory (includes)
 add_subdirectory (man)
 
 file (GLOB src_libbson_doc_DIST_rsts RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.rst)
@@ -29,6 +30,7 @@ set_local_dist (src_libbson_doc_DIST_local
 set (src_libbson_doc_DIST
    ${src_libbson_doc_DIST_local}
    ${src_libbson_doc_html_DIST}
+   ${src_libbson_doc_includes_DIST}
    ${src_libbson_doc_man_DIST}
    ${src_libbson_doc_mongoc_DIST}
    ${src_libbson_doc_mongoc-theme_DIST}
