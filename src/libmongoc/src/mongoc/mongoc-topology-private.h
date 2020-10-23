@@ -225,4 +225,7 @@ _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
 
 void
 mongoc_topology_rescan_srv (mongoc_topology_t *topology);
+
+bool
+mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
 #endif

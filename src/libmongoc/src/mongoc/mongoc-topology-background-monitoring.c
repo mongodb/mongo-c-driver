@@ -48,6 +48,12 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
       }
 
       /* This will check if a scan is due. */
+      if (!mongoc_topology_should_rescan_srv (topology)) {
+         TRACE ("%s\n", "topology ineligible for SRV polling, stopping");
+         bson_mutex_unlock (&topology->mutex);
+         break;
+      }
+
       mongoc_topology_rescan_srv (topology);
 
       /* Unlock and sleep until next scan is due, or until shutdown signalled.
