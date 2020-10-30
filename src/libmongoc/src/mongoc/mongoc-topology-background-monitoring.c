@@ -150,7 +150,7 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
    /* Reconcile to create the first server monitors. */
    _mongoc_topology_background_monitoring_reconcile (topology);
    /* Start SRV polling thread. */
-   if (mongoc_uri_get_service (topology->uri)) {
+   if (mongoc_topology_should_rescan_srv (topology)) {
       COMMON_PREFIX (thread_create)
       (&topology->srv_polling_thread, srv_polling_run, topology);
    }
