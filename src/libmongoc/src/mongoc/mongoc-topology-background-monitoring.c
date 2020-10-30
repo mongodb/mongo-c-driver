@@ -151,6 +151,7 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
    _mongoc_topology_background_monitoring_reconcile (topology);
    /* Start SRV polling thread. */
    if (mongoc_topology_should_rescan_srv (topology)) {
+      topology->is_srv_polling = true;
       COMMON_PREFIX (thread_create)
       (&topology->srv_polling_thread, srv_polling_run, topology);
    }
@@ -279,7 +280,6 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
 {
    mongoc_server_monitor_t *server_monitor;
    int i;
-   bool is_srv_polling;
 
    MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
@@ -292,9 +292,8 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN;
    TRACE ("%s", "background monitoring stopping");
 
-   is_srv_polling = NULL != mongoc_uri_get_service (topology->uri);
    /* Signal SRV polling to shut down (if it is started). */
-   if (is_srv_polling) {
+   if (topology->is_srv_polling) {
       mongoc_cond_signal (&topology->srv_polling_cond);
    }
 
@@ -331,7 +330,7 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    }
 
    /* Wait for SRV polling thread. */
-   if (is_srv_polling) {
+   if (topology->is_srv_polling) {
       COMMON_PREFIX (thread_join) (topology->srv_polling_thread);
    }
 
