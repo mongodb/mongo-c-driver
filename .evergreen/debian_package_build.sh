@@ -44,7 +44,7 @@ export DEBOOTSTRAP_DIR=`pwd`/debootstrap.git
 sudo -E ./debootstrap.git/debootstrap unstable ./unstable-chroot/ http://cdn-aws.deb.debian.org/debian
 cp -a mongoc ./unstable-chroot/tmp/
 sudo chroot ./unstable-chroot /bin/bash -c "(set -o xtrace && \
-  apt-get install -y build-essential git-buildpackage fakeroot debhelper cmake libssl-dev pkg-config python3-sphinx zlib1g-dev libicu-dev libsasl2-dev libsnappy-dev libzstd-dev && \
+  apt-get install -y build-essential git-buildpackage fakeroot debhelper cmake libssl-dev pkg-config python3-sphinx zlib1g-dev libicu-dev libsasl2-dev libsnappy-dev libzstd-dev libmongocrypt-dev && \
   cd /tmp/mongoc && \
   git clean -fdx && \
   git reset --hard HEAD && \
