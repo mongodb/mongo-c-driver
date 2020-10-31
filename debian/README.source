@@ -5,3 +5,25 @@ embedded copy of source code from another package, the upstream source is
 modified to remove the bundled zlib sources.  This is accomplished by using the
 --git-prebuild option of git-buildpackage to handle generation of the upstream
 tarball without the embedded code.  See debian/gbp.conf for details.
+
+================================================================================
+
+With the introduction of libmongocrypt to Debian (#968995), the mongo-c-driver
+package can now build libmongoc with Client-Side Field Level Encryption support.
+However, libmongocrypt requires libbson-dev in order to build.  To prevent an
+unresolvable Build-Depend cycle, the support for libmongocrypt in the
+mongo-c-driver source package can be disabled by building with the
+pkg.mongo-c-driver.no-libmongocrypt build profile.  Note that when this build
+profile is active that only libbson packages are created, as the build profile
+concept requires that "a binary package must contain the exact same content for
+all profiles with which it builds including no activated profile at all".
+(Consult https://wiki.debian.org/BuildProfileSpec for more information on how
+build profiles work in Debian.)
+
+When bootstrapping a new architecture or otherwise starting with a situation
+where neither the mongo-c-driver nor the libmongocrypt source packages have been
+built yet, first use the pkg.mongo-c-driver.no-libmongocrypt build profile to
+build the mongo-c-driver source package.  Once that is done the libmongocrypt
+source package can be built and once the libmongocrypt source package has been
+built then the mongo-c-driver source package can be built with no build profile
+to produce a complete set of libbson and libmongoc packages.

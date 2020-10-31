@@ -9,6 +9,7 @@ Build-Depends: debhelper (>= 11),
                libssl-dev,
                pkg-config,
                python3-sphinx,
+               libmongocrypt-dev <!pkg.mongo-c-driver.no-libmongocrypt>,
                zlib1g-dev,
                libicu-dev,
                libsasl2-dev,
@@ -23,8 +24,10 @@ Vcs-Browser: https://github.com/mongodb/mongo-c-driver/tree/master
 Package: libmongoc-dev
 Section: libdevel
 Architecture: any
+Build-Profiles: <!pkg.mongo-c-driver.no-libmongocrypt>
 Depends: libmongoc-1.0-0 (= ${binary:Version}),
          libbson-dev (= ${binary:Version}),
+         libmongocrypt-dev,
          libssl-dev,
          zlib1g-dev,
          libsnappy-dev,
@@ -40,6 +43,7 @@ Description: MongoDB C client library - dev files
 
 Package: libmongoc-1.0-0
 Architecture: any
+Build-Profiles: <!pkg.mongo-c-driver.no-libmongocrypt>
 Depends: ${misc:Depends},
          ${shlibs:Depends}
 Description: MongoDB C client library - runtime files
@@ -52,6 +56,7 @@ Description: MongoDB C client library - runtime files
 Package: libmongoc-doc
 Section: doc
 Architecture: all
+Build-Profiles: <!pkg.mongo-c-driver.no-libmongocrypt>
 Depends: ${misc:Depends}
 Description: MongoDB C client library - documentation
  libmongoc is the officially supported MongoDB client library for C
