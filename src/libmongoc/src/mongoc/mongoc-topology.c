@@ -616,9 +616,47 @@ mongoc_topology_apply_scanned_srv_hosts (mongoc_uri_t *uri,
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_topology_should_rescan_srv --
+ * 
+ *      Checks whether it is valid to rescan SRV records on the topology.
+ *      Namely, that the topology type is Sharded or Unknown, and that
+ *      the topology URI was configured with SRV.
+ * 
+ *      If this returns false, caller can stop scanning SRV records
+ *      and does not need to try again in the future.
+ * 
+ *      NOTE: this method expects @topology's mutex to be locked on entry.
+ *
+ * --------------------------------------------------------------------------
+ */
+bool
+mongoc_topology_should_rescan_srv (mongoc_topology_t *topology) {
+   const char *service;
+
+   service = mongoc_uri_get_service (topology->uri);
+   if (!service) {
+      /* Only rescan if we have a mongodb+srv:// URI. */
+      return false;
+   }
+
+   if ((topology->description.type != MONGOC_TOPOLOGY_SHARDED) &&
+       (topology->description.type != MONGOC_TOPOLOGY_UNKNOWN)) {
+      /* Only perform rescan for sharded topology. */
+      return false;
+   }
+
+   return true;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_topology_rescan_srv --
  *
  *      Queries SRV records for new hosts in a mongos cluster.
+ *      Caller must call mongoc_topology_should_rescan_srv before calling
+ *      to ensure preconditions are met (while holding @topology's mutex
+ *      for the duration of both calls).
  *
  *      NOTE: this method expects @topology's mutex to be locked on entry.
  *
@@ -633,18 +671,9 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    int64_t scan_time_ms;
    bool ret;
 
-   if ((topology->description.type != MONGOC_TOPOLOGY_SHARDED) &&
-       (topology->description.type != MONGOC_TOPOLOGY_UNKNOWN)) {
-      /* Only perform rescan for sharded topology. */
-      return;
-   }
+   BSON_ASSERT (mongoc_topology_should_rescan_srv (topology));
 
    service = mongoc_uri_get_service (topology->uri);
-   if (!service) {
-      /* Only rescan if we have a mongodb+srv:// URI. */
-      return;
-   }
-
    scan_time_ms = topology->srv_polling_last_scan_ms +
                   topology->srv_polling_rescan_interval_ms;
    if (bson_get_monotonic_time () / 1000 < scan_time_ms) {
@@ -723,8 +752,10 @@ done:
 static void
 mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
 {
-   /* Prior to scanning hosts, update the list of SRV hosts, if applicable. */
-   mongoc_topology_rescan_srv (topology);
+   if (mongoc_topology_should_rescan_srv (topology)) {
+      /* Prior to scanning hosts, update the list of SRV hosts, if applicable. */
+      mongoc_topology_rescan_srv (topology);
+   }
 
    /* since the last scan, members may be added or removed from the topology
     * description based on ismaster responses in connection handshakes, see
