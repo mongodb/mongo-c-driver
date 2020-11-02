@@ -84,6 +84,7 @@ typedef struct _mongoc_topology_t {
 
    /* Is client side encryption enabled? */
    bool cse_enabled;
+   bool is_srv_polling;
 
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
    _mongoc_crypt_t *crypt;
@@ -225,4 +226,7 @@ _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
 
 void
 mongoc_topology_rescan_srv (mongoc_topology_t *topology);
+
+bool
+mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
 #endif
