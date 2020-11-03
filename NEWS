@@ -1,3 +1,20 @@
+mongo-c-driver 1.17.2
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.2.
+
+Bug fixes:
+
+  * Stop the SRV polling thread when an SRV URI is used to connect to a deployment other than a sharded cluster.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Roberto C. Sánchez
+  * Kevin Albertson
+
+-- Kevin Albertson
+
+
 mongo-c-driver 1.17.1
 =====================
 
