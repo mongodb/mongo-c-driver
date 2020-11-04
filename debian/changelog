@@ -1,3 +1,11 @@
+mongo-c-driver (1.17.2-1) UNRELEASED; urgency=medium
+
+  * New upstream release (Closes: #971201)
+  * Build-Depend on libmongocrypt-dev to enable Client-Side Field Level
+    Encryption support
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Wed, 04 Nov 2020 08:09:00 -0500
+
 mongo-c-driver (1.17.0-1) unstable; urgency=medium
 
   * New upstream release
