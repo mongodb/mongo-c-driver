@@ -119,7 +119,4 @@ check_scenario_version (const bson_t *scenario);
 void
 check_outcome_collection (mongoc_collection_t *collection, bson_t *test);
 
-void
-make_kms_provider (bson_t *out);
-
 #endif
