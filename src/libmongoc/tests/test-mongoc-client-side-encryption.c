@@ -1199,6 +1199,7 @@ test_custom_endpoint (void *unused)
       client_encryption_invalid, "azure", datakey_opts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   BSON_ASSERT (!res);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
@@ -1240,6 +1241,7 @@ test_custom_endpoint (void *unused)
       client_encryption_invalid, "gcp", datakey_opts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   BSON_ASSERT (!res);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
@@ -1262,6 +1264,7 @@ test_custom_endpoint (void *unused)
       client_encryption, "gcp", datakey_opts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "Invalid KMS response");
+   BSON_ASSERT (!res);
 
    mongoc_client_encryption_datakey_opts_destroy (datakey_opts);
    mongoc_client_encryption_destroy (client_encryption);
