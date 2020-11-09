@@ -306,12 +306,12 @@ all_functions = OD([
           export MONGOC_TEST_AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key}"
           export MONGOC_TEST_AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id}"
 
-          export MONGOC_TEST_AZURE_TENANT_ID=${client_side_encryption_azure_tenant_id}
-          export MONGOC_TEST_AZURE_CLIENT_ID=${client_side_encryption_azure_client_id}
-          export MONGOC_TEST_AZURE_CLIENT_SECRET=${client_side_encryption_azure_client_secret}
+          export MONGOC_TEST_AZURE_TENANT_ID="${client_side_encryption_azure_tenant_id}"
+          export MONGOC_TEST_AZURE_CLIENT_ID="${client_side_encryption_azure_client_id}"
+          export MONGOC_TEST_AZURE_CLIENT_SECRET="${client_side_encryption_azure_client_secret}"
 
-          export MONGOC_TEST_GCP_EMAIL=${client_side_encryption_gcp_email}
-          export MONGOC_TEST_GCP_PRIVATEKEY=${client_side_encryption_gcp_privatekey}
+          export MONGOC_TEST_GCP_EMAIL="${client_side_encryption_gcp_email}"
+          export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
         fi
         set -o errexit
         set -o xtrace
