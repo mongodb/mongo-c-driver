@@ -5,7 +5,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
 #  CC              Which compiler to use
-#  SSL             OPENSSL, WINDOWS, or OFF
+#  SSL             OPENSSL, OPENSSL_STATIC, WINDOWS, or OFF
 #  SASL            AUTO, SSPI, CYRUS, or OFF
 #  SRV             Whether to enable SRV: ON or OFF
 #  RELEASE         Enable release-build MSVC flags (default: debug flags)
@@ -41,6 +41,9 @@ CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SASL=$SASL"
 case "$SSL" in
    OPENSSL)
       CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=OPENSSL"
+      ;;
+   OPENSSL_STATIC)
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=OPENSSL -DOPENSSL_USE_STATIC_LIBS=ON"
       ;;
    WINDOWS)
       CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SSL=WINDOWS"
