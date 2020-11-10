@@ -576,7 +576,7 @@ char *
 _mongoc_getenv (const char *name)
 {
 #ifdef _MSC_VER
-   char buf[1024];
+   char buf[2048];
    size_t buflen;
 
    if ((0 == getenv_s (&buflen, buf, sizeof buf, name)) && buflen) {

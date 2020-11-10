@@ -223,10 +223,23 @@ The mock server timeout threshold for future functions can be set with:
 
 This is useful for debugging, so future calls don't timeout when stepping through code.
 
-Tests of Client-Side Field Level Encryption require credentials to an AWS user which has list and read permissions to AWS KMS.
+Tests of Client-Side Field Level Encryption require credentials to external KMS providers.
+
+For AWS:
 
 * `MONGOC_TEST_AWS_SECRET_ACCESS_KEY=<string>`
 * `MONGOC_TEST_AWS_ACCESS_KEY_ID=<string>`
+
+An Azure:
+
+* `MONGOC_TEST_AZURE_TENANT_ID=<string>`
+* `MONGOC_TEST_AZURE_CLIENT_ID=<string>`
+* `MONGOC_TEST_AZURE_CLIENT_SECRET=<string>`
+
+For GCP:
+
+* `MONGOC_TEST_GCP_EMAIL=<string>`
+* `MONGOC_TEST_GCP_PRIVATEKEY=<string>`
 
 Tests of Client-Side Field Level Encryption spawn an extra process, "mongocryptd", by default. To bypass this spawning,
 start mongocryptd on port 27020 and set the following:
