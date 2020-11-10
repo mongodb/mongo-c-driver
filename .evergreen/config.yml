@@ -448,11 +448,9 @@ functions:
           echo "testing with CSE"
           export MONGOC_TEST_AWS_SECRET_ACCESS_KEY="${client_side_encryption_aws_secret_access_key}"
           export MONGOC_TEST_AWS_ACCESS_KEY_ID="${client_side_encryption_aws_access_key_id}"
-
           export MONGOC_TEST_AZURE_TENANT_ID="${client_side_encryption_azure_tenant_id}"
           export MONGOC_TEST_AZURE_CLIENT_ID="${client_side_encryption_azure_client_id}"
           export MONGOC_TEST_AZURE_CLIENT_SECRET="${client_side_encryption_azure_client_secret}"
-
           export MONGOC_TEST_GCP_EMAIL="${client_side_encryption_gcp_email}"
           export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
         fi
@@ -1215,6 +1213,24 @@ tasks:
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
+- name: debug-compile-nosasl-openssl-static
+  tags:
+  - debug-compile
+  - nosasl
+  - openssl-static
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export DEBUG="ON"
+        export SSL="OPENSSL_STATIC"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - func: upload build
 - name: debug-compile-nosasl-darwinssl
   tags:
   - darwinssl
@@ -1287,6 +1303,25 @@ tasks:
         export DEBUG="ON"
         export SASL="AUTO"
         export SSL="OPENSSL"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - func: upload build
+- name: debug-compile-sasl-openssl-static
+  tags:
+  - debug-compile
+  - openssl-static
+  - sasl
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export DEBUG="ON"
+        export SASL="AUTO"
+        export SSL="OPENSSL_STATIC"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-darwinssl
@@ -1363,6 +1398,25 @@ tasks:
         export DEBUG="ON"
         export SASL="SSPI"
         export SSL="OPENSSL"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - func: upload build
+- name: debug-compile-sspi-openssl-static
+  tags:
+  - debug-compile
+  - openssl-static
+  - sspi
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export DEBUG="ON"
+        export SASL="SSPI"
+        export SSL="OPENSSL_STATIC"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-rdtscp
@@ -1739,6 +1793,40 @@ tasks:
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
         export SASL="AUTO"
         export SSL="OPENSSL"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+  - func: upload build
+- name: debug-compile-sasl-openssl-static-cse
+  tags:
+  - client-side-encryption
+  - debug-compile
+  - openssl-static
+  - sasl
+  - special
+  commands:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-fPIC"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
+        export SASL="AUTO"
+        export SKIP_MOCK_TESTS="ON"
+        export SSL="OPENSSL_STATIC"
+        CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
+        rm CMakeCache.txt
+        set -o errexit
+        set -o xtrace
+        export CFLAGS="-fPIC"
+        export COMPILE_LIBMONGOCRYPT="ON"
+        export DEBUG="ON"
+        export EXTRA_CONFIGURE_FLAGS="-DENABLE_CLIENT_SIDE_ENCRYPTION=ON"
+        export SASL="AUTO"
+        export SSL="OPENSSL_STATIC"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
 - name: debug-compile-sasl-darwinssl-cse
@@ -6101,6 +6189,58 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-latest-server-auth-sasl-openssl-static-cse
+  tags:
+  - auth
+  - client-side-encryption
+  - latest
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-latest-server-auth-sasl-openssl-static
+  tags:
+  - auth
+  - latest
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-latest-server-auth-sasl-darwinssl-cse
   tags:
   - auth
@@ -6255,6 +6395,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-latest-server-auth-nosasl-openssl-static
+  tags:
+  - auth
+  - latest
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-latest-server-auth-nosasl-darwinssl
   tags:
   - auth
@@ -6356,6 +6521,58 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-latest-server-noauth-sasl-openssl-static-cse
+  tags:
+  - client-side-encryption
+  - latest
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-latest-server-noauth-sasl-openssl-static
+  tags:
+  - latest
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-latest-server-noauth-sasl-darwinssl-cse
   tags:
@@ -6486,6 +6703,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-latest-server-noauth-nosasl-openssl-static
+  tags:
+  - latest
+  - noauth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-latest-server-noauth-nosasl-darwinssl
   tags:
   - darwinssl
@@ -6586,6 +6828,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-latest-replica-set-auth-sasl-openssl-static
+  tags:
+  - auth
+  - latest
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-latest-replica-set-auth-sasl-darwinssl
   tags:
   - auth
@@ -6660,6 +6927,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-latest-replica-set-auth-nosasl-openssl-static
+  tags:
+  - auth
+  - latest
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-latest-replica-set-auth-nosasl-darwinssl
   tags:
@@ -6736,6 +7028,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-latest-replica-set-noauth-sasl-openssl-static
+  tags:
+  - latest
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-sasl-darwinssl
   tags:
   - darwinssl
@@ -6810,6 +7127,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-latest-replica-set-noauth-nosasl-openssl-static
+  tags:
+  - latest
+  - noauth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-latest-replica-set-noauth-nosasl-darwinssl
   tags:
@@ -6911,6 +7253,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-latest-sharded-auth-sasl-openssl-static
+  tags:
+  - auth
+  - latest
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-latest-sharded-auth-sasl-darwinssl
   tags:
   - auth
@@ -6985,6 +7352,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-latest-sharded-auth-nosasl-openssl-static
+  tags:
+  - auth
+  - latest
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-latest-sharded-auth-nosasl-darwinssl
   tags:
@@ -7061,6 +7453,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-latest-sharded-noauth-sasl-openssl-static
+  tags:
+  - latest
+  - noauth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-latest-sharded-noauth-sasl-darwinssl
   tags:
   - darwinssl
@@ -7135,6 +7552,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-latest-sharded-noauth-nosasl-openssl-static
+  tags:
+  - latest
+  - noauth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: latest
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-latest-sharded-noauth-nosasl-darwinssl
   tags:
@@ -7262,6 +7704,58 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-server-auth-sasl-openssl-static-cse
+  tags:
+  - '4.4'
+  - auth
+  - client-side-encryption
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-4.4-server-auth-sasl-openssl-static
+  tags:
+  - '4.4'
+  - auth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.4-server-auth-sasl-darwinssl-cse
   tags:
@@ -7392,6 +7886,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.4-server-auth-nosasl-openssl-static
+  tags:
+  - '4.4'
+  - auth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.4-server-auth-nosasl-darwinssl
   tags:
   - '4.4'
@@ -7493,6 +8012,58 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-sasl-openssl-static-cse
+  tags:
+  - '4.4'
+  - client-side-encryption
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-4.4-server-noauth-sasl-openssl-static
+  tags:
+  - '4.4'
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.4-server-noauth-sasl-darwinssl-cse
   tags:
@@ -7623,6 +8194,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.4-server-noauth-nosasl-openssl-static
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.4-server-noauth-nosasl-darwinssl
   tags:
   - '4.4'
@@ -7723,6 +8319,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.4-replica-set-auth-sasl-openssl-static
+  tags:
+  - '4.4'
+  - auth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.4-replica-set-auth-sasl-darwinssl
   tags:
   - '4.4'
@@ -7797,6 +8418,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-auth-nosasl-openssl-static
+  tags:
+  - '4.4'
+  - auth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.4-replica-set-auth-nosasl-darwinssl
   tags:
@@ -7873,6 +8519,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.4-replica-set-noauth-sasl-openssl-static
+  tags:
+  - '4.4'
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.4-replica-set-noauth-sasl-darwinssl
   tags:
   - '4.4'
@@ -7947,6 +8618,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-replica-set-noauth-nosasl-openssl-static
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.4-replica-set-noauth-nosasl-darwinssl
   tags:
@@ -8048,6 +8744,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.4-sharded-auth-sasl-openssl-static
+  tags:
+  - '4.4'
+  - auth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.4-sharded-auth-sasl-darwinssl
   tags:
   - '4.4'
@@ -8122,6 +8843,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-auth-nosasl-openssl-static
+  tags:
+  - '4.4'
+  - auth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.4-sharded-auth-nosasl-darwinssl
   tags:
@@ -8198,6 +8944,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.4-sharded-noauth-sasl-openssl-static
+  tags:
+  - '4.4'
+  - noauth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.4-sharded-noauth-sasl-darwinssl
   tags:
   - '4.4'
@@ -8272,6 +9043,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.4-sharded-noauth-nosasl-openssl-static
+  tags:
+  - '4.4'
+  - noauth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.4-sharded-noauth-nosasl-darwinssl
   tags:
@@ -8399,6 +9195,58 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.2-server-auth-sasl-openssl-static-cse
+  tags:
+  - '4.2'
+  - auth
+  - client-side-encryption
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-4.2-server-auth-sasl-openssl-static
+  tags:
+  - '4.2'
+  - auth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.2-server-auth-sasl-darwinssl-cse
   tags:
@@ -8529,6 +9377,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.2-server-auth-nosasl-openssl-static
+  tags:
+  - '4.2'
+  - auth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.2-server-auth-nosasl-darwinssl
   tags:
   - '4.2'
@@ -8630,6 +9503,58 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.2-server-noauth-sasl-openssl-static-cse
+  tags:
+  - '4.2'
+  - client-side-encryption
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static-cse
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static-cse
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      CLIENT_SIDE_ENCRYPTION: 'on'
+      SSL: openssl-static
+      VALGRIND: 'off'
+- name: test-4.2-server-noauth-sasl-openssl-static
+  tags:
+  - '4.2'
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.2-server-noauth-sasl-darwinssl-cse
   tags:
@@ -8760,6 +9685,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.2-server-noauth-nosasl-openssl-static
+  tags:
+  - '4.2'
+  - noauth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.2-server-noauth-nosasl-darwinssl
   tags:
   - '4.2'
@@ -8860,6 +9810,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.2-replica-set-auth-sasl-openssl-static
+  tags:
+  - '4.2'
+  - auth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.2-replica-set-auth-sasl-darwinssl
   tags:
   - '4.2'
@@ -8934,6 +9909,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.2-replica-set-auth-nosasl-openssl-static
+  tags:
+  - '4.2'
+  - auth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.2-replica-set-auth-nosasl-darwinssl
   tags:
@@ -9010,6 +10010,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.2-replica-set-noauth-sasl-openssl-static
+  tags:
+  - '4.2'
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.2-replica-set-noauth-sasl-darwinssl
   tags:
   - '4.2'
@@ -9084,6 +10109,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.2-replica-set-noauth-nosasl-openssl-static
+  tags:
+  - '4.2'
+  - noauth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.2-replica-set-noauth-nosasl-darwinssl
   tags:
@@ -9185,6 +10235,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.2-sharded-auth-sasl-openssl-static
+  tags:
+  - '4.2'
+  - auth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.2-sharded-auth-sasl-darwinssl
   tags:
   - '4.2'
@@ -9259,6 +10334,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.2-sharded-auth-nosasl-openssl-static
+  tags:
+  - '4.2'
+  - auth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.2-sharded-auth-nosasl-darwinssl
   tags:
@@ -9335,6 +10435,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.2-sharded-noauth-sasl-openssl-static
+  tags:
+  - '4.2'
+  - noauth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.2-sharded-noauth-sasl-darwinssl
   tags:
   - '4.2'
@@ -9409,6 +10534,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.2-sharded-noauth-nosasl-openssl-static
+  tags:
+  - '4.2'
+  - noauth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.2-sharded-noauth-nosasl-darwinssl
   tags:
@@ -9510,6 +10660,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.0-server-auth-sasl-openssl-static
+  tags:
+  - '4.0'
+  - auth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.0-server-auth-sasl-darwinssl
   tags:
   - '4.0'
@@ -9584,6 +10759,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.0-server-auth-nosasl-openssl-static
+  tags:
+  - '4.0'
+  - auth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.0-server-auth-nosasl-darwinssl
   tags:
@@ -9660,6 +10860,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.0-server-noauth-sasl-openssl-static
+  tags:
+  - '4.0'
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.0-server-noauth-sasl-darwinssl
   tags:
   - '4.0'
@@ -9734,6 +10959,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.0-server-noauth-nosasl-openssl-static
+  tags:
+  - '4.0'
+  - noauth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.0-server-noauth-nosasl-darwinssl
   tags:
@@ -9835,6 +11085,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.0-replica-set-auth-sasl-openssl-static
+  tags:
+  - '4.0'
+  - auth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.0-replica-set-auth-sasl-darwinssl
   tags:
   - '4.0'
@@ -9909,6 +11184,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.0-replica-set-auth-nosasl-openssl-static
+  tags:
+  - '4.0'
+  - auth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.0-replica-set-auth-nosasl-darwinssl
   tags:
@@ -9985,6 +11285,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.0-replica-set-noauth-sasl-openssl-static
+  tags:
+  - '4.0'
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.0-replica-set-noauth-sasl-darwinssl
   tags:
   - '4.0'
@@ -10059,6 +11384,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.0-replica-set-noauth-nosasl-openssl-static
+  tags:
+  - '4.0'
+  - noauth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.0-replica-set-noauth-nosasl-darwinssl
   tags:
@@ -10160,6 +11510,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.0-sharded-auth-sasl-openssl-static
+  tags:
+  - '4.0'
+  - auth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.0-sharded-auth-sasl-darwinssl
   tags:
   - '4.0'
@@ -10234,6 +11609,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.0-sharded-auth-nosasl-openssl-static
+  tags:
+  - '4.0'
+  - auth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.0-sharded-auth-nosasl-darwinssl
   tags:
@@ -10310,6 +11710,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-4.0-sharded-noauth-sasl-openssl-static
+  tags:
+  - '4.0'
+  - noauth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-4.0-sharded-noauth-sasl-darwinssl
   tags:
   - '4.0'
@@ -10384,6 +11809,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-4.0-sharded-noauth-nosasl-openssl-static
+  tags:
+  - '4.0'
+  - noauth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '4.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-4.0-sharded-noauth-nosasl-darwinssl
   tags:
@@ -10485,6 +11935,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.6-server-auth-sasl-openssl-static
+  tags:
+  - '3.6'
+  - auth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.6-server-auth-sasl-darwinssl
   tags:
   - '3.6'
@@ -10559,6 +12034,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.6-server-auth-nosasl-openssl-static
+  tags:
+  - '3.6'
+  - auth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.6-server-auth-nosasl-darwinssl
   tags:
@@ -10635,6 +12135,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.6-server-noauth-sasl-openssl-static
+  tags:
+  - '3.6'
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.6-server-noauth-sasl-darwinssl
   tags:
   - '3.6'
@@ -10709,6 +12234,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.6-server-noauth-nosasl-openssl-static
+  tags:
+  - '3.6'
+  - noauth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.6-server-noauth-nosasl-darwinssl
   tags:
@@ -10810,6 +12360,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.6-replica-set-auth-sasl-openssl-static
+  tags:
+  - '3.6'
+  - auth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.6-replica-set-auth-sasl-darwinssl
   tags:
   - '3.6'
@@ -10884,6 +12459,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.6-replica-set-auth-nosasl-openssl-static
+  tags:
+  - '3.6'
+  - auth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.6-replica-set-auth-nosasl-darwinssl
   tags:
@@ -10960,6 +12560,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.6-replica-set-noauth-sasl-openssl-static
+  tags:
+  - '3.6'
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.6-replica-set-noauth-sasl-darwinssl
   tags:
   - '3.6'
@@ -11034,6 +12659,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.6-replica-set-noauth-nosasl-openssl-static
+  tags:
+  - '3.6'
+  - noauth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.6-replica-set-noauth-nosasl-darwinssl
   tags:
@@ -11135,6 +12785,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.6-sharded-auth-sasl-openssl-static
+  tags:
+  - '3.6'
+  - auth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.6-sharded-auth-sasl-darwinssl
   tags:
   - '3.6'
@@ -11209,6 +12884,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.6-sharded-auth-nosasl-openssl-static
+  tags:
+  - '3.6'
+  - auth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.6-sharded-auth-nosasl-darwinssl
   tags:
@@ -11285,6 +12985,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.6-sharded-noauth-sasl-openssl-static
+  tags:
+  - '3.6'
+  - noauth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.6-sharded-noauth-sasl-darwinssl
   tags:
   - '3.6'
@@ -11359,6 +13084,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.6-sharded-noauth-nosasl-openssl-static
+  tags:
+  - '3.6'
+  - noauth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.6'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.6-sharded-noauth-nosasl-darwinssl
   tags:
@@ -11460,6 +13210,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.4-server-auth-sasl-openssl-static
+  tags:
+  - '3.4'
+  - auth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.4-server-auth-sasl-darwinssl
   tags:
   - '3.4'
@@ -11534,6 +13309,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.4-server-auth-nosasl-openssl-static
+  tags:
+  - '3.4'
+  - auth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.4-server-auth-nosasl-darwinssl
   tags:
@@ -11610,6 +13410,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.4-server-noauth-sasl-openssl-static
+  tags:
+  - '3.4'
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.4-server-noauth-sasl-darwinssl
   tags:
   - '3.4'
@@ -11684,6 +13509,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.4-server-noauth-nosasl-openssl-static
+  tags:
+  - '3.4'
+  - noauth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.4-server-noauth-nosasl-darwinssl
   tags:
@@ -11785,6 +13635,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.4-replica-set-auth-sasl-openssl-static
+  tags:
+  - '3.4'
+  - auth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.4-replica-set-auth-sasl-darwinssl
   tags:
   - '3.4'
@@ -11859,6 +13734,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.4-replica-set-auth-nosasl-openssl-static
+  tags:
+  - '3.4'
+  - auth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.4-replica-set-auth-nosasl-darwinssl
   tags:
@@ -11935,6 +13835,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.4-replica-set-noauth-sasl-openssl-static
+  tags:
+  - '3.4'
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.4-replica-set-noauth-sasl-darwinssl
   tags:
   - '3.4'
@@ -12009,6 +13934,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.4-replica-set-noauth-nosasl-openssl-static
+  tags:
+  - '3.4'
+  - noauth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.4-replica-set-noauth-nosasl-darwinssl
   tags:
@@ -12110,6 +14060,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.4-sharded-auth-sasl-openssl-static
+  tags:
+  - '3.4'
+  - auth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.4-sharded-auth-sasl-darwinssl
   tags:
   - '3.4'
@@ -12184,6 +14159,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.4-sharded-auth-nosasl-openssl-static
+  tags:
+  - '3.4'
+  - auth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.4-sharded-auth-nosasl-darwinssl
   tags:
@@ -12260,6 +14260,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.4-sharded-noauth-sasl-openssl-static
+  tags:
+  - '3.4'
+  - noauth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.4-sharded-noauth-sasl-darwinssl
   tags:
   - '3.4'
@@ -12334,6 +14359,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.4-sharded-noauth-nosasl-openssl-static
+  tags:
+  - '3.4'
+  - noauth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.4'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.4-sharded-noauth-nosasl-darwinssl
   tags:
@@ -12435,6 +14485,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.2-server-auth-sasl-openssl-static
+  tags:
+  - '3.2'
+  - auth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.2-server-auth-sasl-darwinssl
   tags:
   - '3.2'
@@ -12509,6 +14584,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.2-server-auth-nosasl-openssl-static
+  tags:
+  - '3.2'
+  - auth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.2-server-auth-nosasl-darwinssl
   tags:
@@ -12585,6 +14685,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.2-server-noauth-sasl-openssl-static
+  tags:
+  - '3.2'
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.2-server-noauth-sasl-darwinssl
   tags:
   - '3.2'
@@ -12659,6 +14784,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.2-server-noauth-nosasl-openssl-static
+  tags:
+  - '3.2'
+  - noauth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.2-server-noauth-nosasl-darwinssl
   tags:
@@ -12760,6 +14910,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.2-replica-set-auth-sasl-openssl-static
+  tags:
+  - '3.2'
+  - auth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.2-replica-set-auth-sasl-darwinssl
   tags:
   - '3.2'
@@ -12834,6 +15009,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.2-replica-set-auth-nosasl-openssl-static
+  tags:
+  - '3.2'
+  - auth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.2-replica-set-auth-nosasl-darwinssl
   tags:
@@ -12910,6 +15110,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.2-replica-set-noauth-sasl-openssl-static
+  tags:
+  - '3.2'
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.2-replica-set-noauth-sasl-darwinssl
   tags:
   - '3.2'
@@ -12984,6 +15209,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.2-replica-set-noauth-nosasl-openssl-static
+  tags:
+  - '3.2'
+  - noauth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.2-replica-set-noauth-nosasl-darwinssl
   tags:
@@ -13085,6 +15335,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.2-sharded-auth-sasl-openssl-static
+  tags:
+  - '3.2'
+  - auth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.2-sharded-auth-sasl-darwinssl
   tags:
   - '3.2'
@@ -13159,6 +15434,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.2-sharded-auth-nosasl-openssl-static
+  tags:
+  - '3.2'
+  - auth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.2-sharded-auth-nosasl-darwinssl
   tags:
@@ -13235,6 +15535,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.2-sharded-noauth-sasl-openssl-static
+  tags:
+  - '3.2'
+  - noauth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.2-sharded-noauth-sasl-darwinssl
   tags:
   - '3.2'
@@ -13309,6 +15634,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.2-sharded-noauth-nosasl-openssl-static
+  tags:
+  - '3.2'
+  - noauth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.2'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.2-sharded-noauth-nosasl-darwinssl
   tags:
@@ -13410,6 +15760,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.0-server-auth-sasl-openssl-static
+  tags:
+  - '3.0'
+  - auth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.0-server-auth-sasl-darwinssl
   tags:
   - '3.0'
@@ -13484,6 +15859,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.0-server-auth-nosasl-openssl-static
+  tags:
+  - '3.0'
+  - auth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.0-server-auth-nosasl-darwinssl
   tags:
@@ -13560,6 +15960,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.0-server-noauth-sasl-openssl-static
+  tags:
+  - '3.0'
+  - noauth
+  - openssl-static
+  - sasl
+  - server
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.0-server-noauth-sasl-darwinssl
   tags:
   - '3.0'
@@ -13634,6 +16059,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.0-server-noauth-nosasl-openssl-static
+  tags:
+  - '3.0'
+  - noauth
+  - nosasl
+  - openssl-static
+  - server
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: server
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.0-server-noauth-nosasl-darwinssl
   tags:
@@ -13735,6 +16185,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.0-replica-set-auth-sasl-openssl-static
+  tags:
+  - '3.0'
+  - auth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.0-replica-set-auth-sasl-darwinssl
   tags:
   - '3.0'
@@ -13809,6 +16284,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.0-replica-set-auth-nosasl-openssl-static
+  tags:
+  - '3.0'
+  - auth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.0-replica-set-auth-nosasl-darwinssl
   tags:
@@ -13885,6 +16385,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.0-replica-set-noauth-sasl-openssl-static
+  tags:
+  - '3.0'
+  - noauth
+  - openssl-static
+  - replica_set
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.0-replica-set-noauth-sasl-darwinssl
   tags:
   - '3.0'
@@ -13959,6 +16484,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.0-replica-set-noauth-nosasl-openssl-static
+  tags:
+  - '3.0'
+  - noauth
+  - nosasl
+  - openssl-static
+  - replica_set
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: replica_set
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.0-replica-set-noauth-nosasl-darwinssl
   tags:
@@ -14060,6 +16610,31 @@ tasks:
       AUTH: auth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.0-sharded-auth-sasl-openssl-static
+  tags:
+  - '3.0'
+  - auth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.0-sharded-auth-sasl-darwinssl
   tags:
   - '3.0'
@@ -14134,6 +16709,31 @@ tasks:
       ASAN: 'off'
       AUTH: auth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.0-sharded-auth-nosasl-openssl-static
+  tags:
+  - '3.0'
+  - auth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: auth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.0-sharded-auth-nosasl-darwinssl
   tags:
@@ -14210,6 +16810,31 @@ tasks:
       AUTH: noauth
       SSL: openssl
       VALGRIND: 'off'
+- name: test-3.0-sharded-noauth-sasl-openssl-static
+  tags:
+  - '3.0'
+  - noauth
+  - openssl-static
+  - sasl
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
+      VALGRIND: 'off'
 - name: test-3.0-sharded-noauth-sasl-darwinssl
   tags:
   - '3.0'
@@ -14284,6 +16909,31 @@ tasks:
       ASAN: 'off'
       AUTH: noauth
       SSL: openssl
+      VALGRIND: 'off'
+- name: test-3.0-sharded-noauth-nosasl-openssl-static
+  tags:
+  - '3.0'
+  - noauth
+  - nosasl
+  - openssl-static
+  - sharded_cluster
+  depends_on:
+    name: debug-compile-nosasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl-static
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: openssl-static
+      TOPOLOGY: sharded_cluster
+      VERSION: '3.0'
+  - func: run tests
+    vars:
+      ASAN: 'off'
+      AUTH: noauth
+      SSL: openssl-static
       VALGRIND: 'off'
 - name: test-3.0-sharded-noauth-nosasl-darwinssl
   tags:
@@ -14613,6 +17263,18 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
+  - func: run auth tests
+- name: authentication-tests-openssl-static
+  tags:
+  - authentication-tests
+  - openssl-static
+  - sasl
+  depends_on:
+    name: debug-compile-sasl-openssl-static
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl-static
   - func: run auth tests
 - name: authentication-tests-darwinssl
   tags:
@@ -19703,6 +22365,12 @@ buildvariants:
   - debug-compile-nosasl-nossl
   - .debug-compile .stdflags
   - .debug-compile !.sspi .openssl !.asan-clang
+  - name: debug-compile-sasl-openssl-static
+    distros:
+    - ubuntu1804-build
+  - name: debug-compile-nosasl-openssl-static
+    distros:
+    - ubuntu1804-build
   - .debug-compile !.sspi .nossl
   - debug-compile-valgrind
   - debug-compile-no-counters
@@ -19799,8 +22467,10 @@ buildvariants:
   - debug-compile-nosasl-nossl
   - .debug-compile .stdflags !.c89
   - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
   - .latest .openssl !.nosasl .server
+  - .latest .openssl-static !.nosasl .server
   - .latest .nossl
   - .4.4 .openssl !.nosasl .server
   - .4.2 .openssl !.nosasl .server
@@ -19952,8 +22622,10 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
   - .latest .openssl !.nosasl .server
+  - .latest .openssl-static !.nosasl .server
   - .latest .nossl
   - .4.4 .openssl !.nosasl .server
   - .4.2 .openssl !.nosasl .server
@@ -19966,8 +22638,10 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
   - .latest .openssl !.nosasl .server
+  - .latest .openssl-static !.nosasl .server
   - .latest .nossl
 - name: gcc54-i386
   display_name: GCC 5.4 (i386) (Ubuntu 16.04)
@@ -20054,7 +22728,7 @@ buildvariants:
   tasks:
   - .debug-compile .winssl .nosasl
   - .debug-compile !.sspi .nossl .nosasl
-  - .debug-compile .sspi !.openssl
+  - .debug-compile .sspi !.openssl !.openssl-static
   - .server .winssl .latest .nosasl
   - .latest .nossl .nosasl
   - .nosasl .latest .nossl
@@ -20068,7 +22742,7 @@ buildvariants:
   - .debug-compile .winssl
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
-  - .debug-compile .sspi
+  - .debug-compile .sspi !.openssl-static
   - .server .winssl .latest
   - .server .openssl .latest !.nosasl
   - .latest .nossl
@@ -20094,7 +22768,7 @@ buildvariants:
   - .debug-compile .winssl
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
-  - .debug-compile .sspi
+  - .debug-compile .sspi !.openssl-static
   - .authentication-tests .openssl !.sasl
   - .authentication-tests .winssl
   - .4.2 .winssl !.nosasl .server
@@ -20113,7 +22787,7 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-no-align
-  - .debug-compile .sspi !.openssl
+  - .debug-compile .sspi !.openssl !.openssl-static
   - .debug-compile .winssl .nosasl
   - .debug-compile !.sspi .nossl .nosasl
   - .authentication-tests .winssl
@@ -20131,7 +22805,7 @@ buildvariants:
   - .debug-compile .winssl !.client-side-encryption
   - .debug-compile !.sspi .openssl !.client-side-encryption
   - .debug-compile !.sspi .nossl
-  - .debug-compile .sspi !.client-side-encryption
+  - .debug-compile .sspi !.client-side-encryption !.openssl-static
   - .authentication-tests .openssl !.sasl
   - .authentication-tests .winssl
   - .4.2 .winssl !.nosasl .server !.client-side-encryption
@@ -20145,7 +22819,7 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - debug-compile-rdtscp
-  - .debug-compile .sspi !.openssl
+  - .debug-compile .sspi !.openssl !.openssl-static
   - .debug-compile .winssl .nosasl !.client-side-encryption
   - .debug-compile !.sspi .nossl .nosasl
   - .authentication-tests .winssl
@@ -20215,8 +22889,10 @@ buildvariants:
   - release-compile
   - debug-compile-nosasl-nossl
   - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
   - .latest .openssl !.nosasl .server
+  - .latest .openssl-static !.nosasl .server
   - .latest .nossl
   - .4.4 .openssl !.nosasl .server
   - .4.2 .openssl !.nosasl .server
@@ -20312,6 +22988,9 @@ buildvariants:
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-aws
+  - debug-compile-nosasl-openssl-static
+  - debug-compile-sasl-openssl-static
+  - debug-compile-sspi-openssl-static
   - test-aws-openssl-regular-latest
   - test-aws-openssl-ec2-latest
   - test-aws-openssl-ecs-latest
@@ -20339,6 +23018,9 @@ buildvariants:
   run_on: ubuntu1804-test
   tasks:
   - name: debug-compile-nosasl-openssl
+    distros:
+    - ubuntu1804-test
+  - name: debug-compile-nosasl-openssl-static
     distros:
     - ubuntu1804-test
   - name: debug-compile-nosasl-darwinssl

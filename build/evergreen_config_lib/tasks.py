@@ -265,6 +265,9 @@ all_tasks = [
     CompileTask('debug-compile-nosasl-openssl',
                 tags=['debug-compile', 'nosasl', 'openssl'],
                 SSL='OPENSSL'),
+    CompileTask('debug-compile-nosasl-openssl-static',
+                tags=['debug-compile', 'nosasl', 'openssl-static'],
+                SSL='OPENSSL_STATIC'),
     CompileTask('debug-compile-nosasl-darwinssl',
                 tags=['debug-compile', 'nosasl', 'darwinssl'],
                 SSL='DARWIN'),
@@ -279,6 +282,10 @@ all_tasks = [
                 tags=['debug-compile', 'sasl', 'openssl'],
                 SASL='AUTO',
                 SSL='OPENSSL'),
+    CompileTask('debug-compile-sasl-openssl-static',
+                tags=['debug-compile', 'sasl', 'openssl-static'],
+                SASL='AUTO',
+                SSL='OPENSSL_STATIC'),
     CompileTask('debug-compile-sasl-darwinssl',
                 tags=['debug-compile', 'sasl', 'darwinssl'],
                 SASL='AUTO',
@@ -296,6 +303,10 @@ all_tasks = [
                 tags=['debug-compile', 'sspi', 'openssl'],
                 SASL='SSPI',
                 SSL='OPENSSL'),
+    CompileTask('debug-compile-sspi-openssl-static',
+                tags=['debug-compile', 'sspi', 'openssl-static'],
+                SASL='SSPI',
+                SSL='OPENSSL_STATIC'),
     CompileTask('debug-compile-rdtscp',
                 ENABLE_RDTSCP='ON'),
     CompileTask('debug-compile-sspi-winssl',
@@ -409,6 +420,8 @@ all_tasks = [
                 CFLAGS='-Werror -Wno-cast-align'),
     CompileWithClientSideEncryption('debug-compile-sasl-openssl-cse', tags=[
         'debug-compile', 'sasl', 'openssl'], SASL="AUTO", SSL="OPENSSL"),
+    CompileWithClientSideEncryption('debug-compile-sasl-openssl-static-cse', tags=[
+        'debug-compile', 'sasl', 'openssl-static'], SASL="AUTO", SSL="OPENSSL_STATIC"),
     CompileWithClientSideEncryption('debug-compile-sasl-darwinssl-cse', tags=[
         'debug-compile', 'sasl', 'darwinssl'], SASL="AUTO", SSL="DARWIN"),
     CompileWithClientSideEncryption('debug-compile-sasl-winssl-cse', tags=[
@@ -435,7 +448,7 @@ class IntegrationTask(MatrixTask):
                ('topology', ['server', 'replica_set', 'sharded_cluster']),
                ('auth', [True, False]),
                ('sasl', ['sasl', 'sspi', False]),
-               ('ssl', ['openssl', 'darwinssl', 'winssl', False]),
+               ('ssl', ['openssl', 'openssl-static', 'darwinssl', 'winssl', False]),
                ('cse', [True, False])])
 
     def __init__(self, *args, **kwargs):
@@ -721,7 +734,7 @@ all_tasks = chain(all_tasks, [
 
 class AuthTask(MatrixTask):
     axes = OD([('sasl', ['sasl', 'sspi', False]),
-               ('ssl', ['openssl', 'darwinssl', 'winssl'])])
+               ('ssl', ['openssl', 'openssl-static', 'darwinssl', 'winssl'])])
 
     name_prefix = 'authentication-tests'
 
