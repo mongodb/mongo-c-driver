@@ -1893,7 +1893,7 @@ test_index_compound (void)
 }
 
 static void
-test_index_geo (void)
+test_index_geo (void *unused)
 {
    mongoc_server_description_t *description;
    mongoc_collection_t *collection;
@@ -6398,7 +6398,12 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/Collection/index/collation/wire5", test_index_with_collation_ok);
    TestSuite_AddLive (suite, "/Collection/index_compound", test_index_compound);
-   TestSuite_AddLive (suite, "/Collection/index_geo", test_index_geo);
+   TestSuite_AddFull (suite,
+                      "/Collection/index_geo",
+                      test_index_geo,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_max_wire_version_more_than_9);
    TestSuite_AddLive (suite, "/Collection/index_storage", test_index_storage);
    TestSuite_AddLive (suite, "/Collection/regex", test_regex);
    TestSuite_AddFull (suite,
