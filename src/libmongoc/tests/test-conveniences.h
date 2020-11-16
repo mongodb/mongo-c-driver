@@ -36,8 +36,17 @@ test_conveniences_init ();
 void
 test_conveniences_cleanup ();
 
+/* Return a bson_t representation from a single-quoted JSON string, with
+ * possible printf format directives.
+ * bson_t is freed automatically at test cleanup.
+ * E.g. tmp_bson ("{'key': %d}", 123); */
 bson_t *
 tmp_bson (const char *json, ...);
+
+/* Return a JSON string representation of BSON. String is freed automatically at
+ * test cleanup. */
+const char *
+tmp_json (const bson_t *bson);
 
 void
 bson_iter_bson (const bson_iter_t *iter, bson_t *bson);
@@ -213,5 +222,16 @@ match_err (match_ctx_t *ctx, const char *fmt, ...);
 
 void
 assert_wc_oob_error (bson_error_t *error);
+
+typedef struct {
+   int major;
+   int minor;
+   bool has_minor;
+   int patch;
+   bool has_patch;
+} semver_t;
+
+void
+semver_parse (const char *str, semver_t *out);
 
 #endif /* TEST_CONVENIENCES_H */
