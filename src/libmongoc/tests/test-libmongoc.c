@@ -237,6 +237,8 @@ test_counters_install (TestSuite *suite);
 extern void
 test_crud_install (TestSuite *suite);
 extern void
+test_mongohouse_install (TestSuite *suite);
+extern void
 test_apm_install (TestSuite *suite);
 extern void
 test_client_side_encryption_install (TestSuite *suite);
@@ -2154,6 +2156,15 @@ test_framework_skip_if_single (void)
 }
 
 int
+test_framework_skip_if_no_mongohouse (void)
+{
+   if (!getenv ("RUN_MONGOHOUSE_TESTS")) {
+      return 0;
+   }
+   return 1;
+}
+
+int
 test_framework_skip_if_mongos (void)
 {
    if (!TestSuite_CheckLive ()) {
@@ -2650,6 +2661,7 @@ main (int argc, char *argv[])
    test_happy_eyeballs_install (&suite);
    test_counters_install (&suite);
    test_crud_install (&suite);
+   test_mongohouse_install (&suite);
    test_apm_install (&suite);
    test_client_side_encryption_install (&suite);
    test_server_description_install (&suite);

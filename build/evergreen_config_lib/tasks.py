@@ -773,6 +773,13 @@ all_tasks = chain(all_tasks, [
         tags=['test-asan'],
         depends_on='debug-compile-asan-clang',
         commands=[func('run mock server tests', ASAN='on', SSL='ssl')]),
+    PostCompileTask(
+        'test-mongohouse',
+        tags=[],
+        depends_on='debug-compile-sasl-openssl',
+        commands=[func('build mongohouse'),
+                  func('run mongohouse'),
+                  func('test mongohouse')]),
     # Compile with a function, not a task: gcov files depend on the absolute
     # path of the executable, so we can't compile as a separate task.
     NamedTask(

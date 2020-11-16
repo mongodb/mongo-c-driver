@@ -1459,10 +1459,11 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
             test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
 
          if (!azure_tenant_id || !azure_client_id || !azure_client_secret) {
-            fprintf (stderr, "Set MONGOC_TEST_AZURE_TENANT_ID, "
-                             "MONGOC_TEST_AZURE_CLIENT_ID, and "
-                             "MONGOC_TEST_AZURE_CLIENT_SECRET to enable CSFLE "
-                             "tests.");
+            fprintf (stderr,
+                     "Set MONGOC_TEST_AZURE_TENANT_ID, "
+                     "MONGOC_TEST_AZURE_CLIENT_ID, and "
+                     "MONGOC_TEST_AZURE_CLIENT_SECRET to enable CSFLE "
+                     "tests.");
             abort ();
          }
 
@@ -1486,9 +1487,10 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          gcp_privatekey = test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
 
          if (!gcp_email || !gcp_privatekey) {
-            fprintf (stderr, "Set MONGOC_TEST_GCP_EMAIL and "
-                             "MONGOC_TEST_GCP_PRIVATEKEY to enable CSFLE "
-                             "tests.");
+            fprintf (stderr,
+                     "Set MONGOC_TEST_GCP_EMAIL and "
+                     "MONGOC_TEST_GCP_PRIVATEKEY to enable CSFLE "
+                     "tests.");
             abort ();
          }
 
@@ -1692,7 +1694,8 @@ run_json_general_test (const json_test_config_t *config)
 
       bson_free (selected_test);
 
-      uri = test_framework_get_uri ();
+      uri = (config->uri_str != NULL) ? mongoc_uri_new (config->uri_str)
+                                      : test_framework_get_uri ();
 
       /* If we are using multiple mongos, hardcode them in, for now, but keep
        * the other URI components (CDRIVER-3285) */
@@ -1734,9 +1737,11 @@ run_json_general_test (const json_test_config_t *config)
                                            NULL,
                                            &error);
 
-      /* expect "operation was interrupted", ignore "command not found" */
+      /* expect "operation was interrupted", ignore "command not found" or "is
+       * not supported" */
       if (!r && (error.domain != MONGOC_ERROR_SERVER ||
-                 (error.code != 11601 && error.code != 59))) {
+                 (error.code != 11601 && error.code != 59)) &&
+          (strstr (error.message, "is unsupported") == NULL)) {
          MONGOC_WARNING ("Error in killAllSessions: %s", error.message);
       }
 

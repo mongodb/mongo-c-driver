@@ -458,6 +458,48 @@ all_functions = OD([
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
         '''),
     )),
+    ('build mongohouse', Function(
+        shell_mongoc(r'''
+        set -o xtrace
+        if [ ! -d "drivers-evergreen-tools" ]; then
+           git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git
+        fi
+        cd drivers-evergreen-tools
+        export DRIVERS_TOOLS=$(pwd)
+
+        sh .evergreen/atlas_data_lake/build-mongohouse-local.sh
+        cd ../
+        '''),
+    )),
+    ('run mongohouse', Function(
+        shell_mongoc(r'''
+        set -o xtrace
+
+        cd drivers-evergreen-tools 
+        export DRIVERS_TOOLS=$(pwd)
+
+        sh .evergreen/atlas_data_lake/run-mongohouse-local.sh
+        ''', background=True),
+    )),
+    ('test mongohouse', Function(
+        shell_mongoc(r'''
+        set -o xtrace
+        echo "testing that mongohouse is running..."
+        ps aux | grep mongohouse
+
+        echo $(pwd)
+        echo $(ls)
+
+        ls > dir.txt
+        cat dir.txt
+        echo $(cat dir.txt)
+
+        export RUN_MONGOHOUSE_TESTS=true
+        ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d
+        unset RUN_MONGOHOUSE_TESTS
+
+        '''),
+    )),
     ('run aws tests', Function(
         shell_mongoc(r'''
         # Add AWS variables to a file.

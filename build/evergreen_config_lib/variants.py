@@ -592,6 +592,12 @@ all_variants = [
         ],
         { 'CC': 'gcc' },
         batchtime=days(1)),
+    Variant('mongohouse',
+        'Mongohouse Test',
+        'ubuntu1804-test',
+        ['debug-compile-sasl-openssl',
+         'test-mongohouse'],
+        {}),
     Variant ('ocsp', 'OCSP tests', 'ubuntu1804-test', [
         OD([('name', 'debug-compile-nosasl-openssl'), ('distros', ['ubuntu1804-test'])]),
         OD([('name', 'debug-compile-nosasl-darwinssl'), ('distros', ['macos-1014'])]),
