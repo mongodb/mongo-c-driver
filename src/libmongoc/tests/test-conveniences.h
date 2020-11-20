@@ -234,4 +234,9 @@ typedef struct {
 void
 semver_parse (const char *str, semver_t *out);
 
+void
+server_semver (semver_t *out);
+
+int semver_cmp (semver_t *a, semver_t *b);
+
 #endif /* TEST_CONVENIENCES_H */

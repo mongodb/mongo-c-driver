@@ -1865,6 +1865,7 @@ semver_parse (const char *str, semver_t *out)
 {
    char *dot;
 
+   memset (out, 0, sizeof (semver_t));
    out->major = (int) bson_ascii_strtoll (str, &dot, 10);
    if (*dot == '.') {
       dot++;
@@ -1877,4 +1878,49 @@ semver_parse (const char *str, semver_t *out)
    }
    out->has_patch = true;
    out->patch = (int) bson_ascii_strtoll (str, &dot, 10);
+}
+
+void
+server_semver (semver_t *out) {
+   mongoc_client_t *client;
+   bson_t reply;
+   bson_error_t error;
+   server_version_t ret = 0;
+   const char* server_version_str;
+
+   client = test_framework_client_new ();
+   ASSERT_OR_PRINT (
+      mongoc_client_command_simple (
+         client, "admin", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error),
+      error);
+
+   server_version_str = bson_lookup_utf8 (&reply, "version");
+   semver_parse (server_version_str, out);
+
+   bson_destroy (&reply);
+   mongoc_client_destroy (client);
+
+   return ret;
+}
+
+int semver_cmp (semver_t *a, semver_t *b) {
+   if (a->major < b->major) {
+      return -1;
+   } else if (a->major > b->major) {
+      return 1;
+   }
+
+   if (a->minor < b->minor) {
+      return -1;
+   } else if (a->minor > b->minor) {
+      return 1;
+   }
+
+   if (a->patch < b->patch) {
+      return -1;
+   } else if (a->patch > b->patch) {
+      return 1;
+   }
+
+   return 0;
 }
