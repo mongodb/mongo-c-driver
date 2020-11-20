@@ -1889,7 +1889,6 @@ server_semver (semver_t *out) {
    mongoc_client_t *client;
    bson_t reply;
    bson_error_t error;
-   server_version_t ret = 0;
    const char* server_version_str;
 
    client = test_framework_client_new ();
@@ -1903,8 +1902,6 @@ server_semver (semver_t *out) {
 
    bson_destroy (&reply);
    mongoc_client_destroy (client);
-
-   return ret;
 }
 
 int semver_cmp (semver_t *a, semver_t *b) {
