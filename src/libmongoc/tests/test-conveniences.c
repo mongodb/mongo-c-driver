@@ -1869,12 +1869,16 @@ semver_parse (const char *str, semver_t *out)
    out->major = (int) bson_ascii_strtoll (str, &dot, 10);
    if (*dot == '.') {
       dot++;
+   } else {
+      return;
    }
    out->has_minor = true;
    out->minor = (int) bson_ascii_strtoll (str, &dot, 10);
 
    if (*dot == '.') {
       dot++;
+   } else {
+      return;
    }
    out->has_patch = true;
    out->patch = (int) bson_ascii_strtoll (str, &dot, 10);
