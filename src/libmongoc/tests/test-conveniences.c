@@ -75,7 +75,7 @@ test_conveniences_cleanup ()
          char *str;
 
          str = _mongoc_array_index (&gTmpStringArray, char *, i);
-         bson_free (doc);
+         bson_free (str);
       }
 
       _mongoc_array_destroy (&gTmpBsonArray);
