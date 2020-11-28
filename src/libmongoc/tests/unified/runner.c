@@ -20,20 +20,152 @@
 #include "test-libmongoc.h"
 #include <signal.h>
 
+/* test_runner_t, test_file_t, and test_t model the types described in the "Test
+ * Runner Implementation" section of the Unified Test Format specification. */
+typedef struct {
+   mongoc_uri_t *uri;
+   mongoc_client_t *internal_client;
+   semver_t server_version;
+   /* topology_type may be: {single, replicaset, sharded, sharded-replicaset} */
+   const char *topology_type;
+} test_runner_t;
+
+typedef struct {
+   test_runner_t *test_runner;
+
+   const char *description;
+   semver_t schema_version;
+   bson_t *run_on_requirements;
+   bson_t *create_entities;
+   bson_t *initial_data;
+   bson_t *tests;
+} test_file_t;
+
+typedef struct {
+   test_file_t *test_file;
+
+   const char *description;
+   bson_t *run_on_requirements;
+   const char *skip_reason;
+   bson_t *operations;
+   bson_t *expect_events;
+   bson_t *outcome;
+} test_t;
+
 /* The test context is a global storing state for each test.
  * When an assertion fails, causing an abort signal, the test
  * context can be logged. */
 struct {
-   bson_t *test;
-   mongoc_uri_t *uri;
-   const char *description;
-   bson_t command_started_events;
-   bson_t command_succeeded_events;
-   bson_t command_failed_events;
-   mongoc_client_t *internal_client;
-   /* topology_type may be: {single, replicaset, sharded, sharded-replicaset} */
-   const char *topology_type;
-} test_ctx;
+   test_runner_t *test_runner;
+   test_file_t *test_file;
+   test_t *test;
+} test_diagnostics;
+
+static const char *
+get_topology_type (mongoc_client_t *client);
+
+static test_runner_t *
+test_runner_new (void)
+{
+   test_runner_t *test_runner;
+   char *uri_str;
+   bson_error_t error;
+
+   test_runner = bson_malloc0 (sizeof (test_runner_t));
+   /* Create an client for internal test operations (e.g. checking server
+    * version) */
+   if (test_framework_getenv ("MONGOC_TEST_URI") != NULL) {
+      uri_str = test_framework_getenv ("MONGOC_TEST_URI");
+   } else {
+      uri_str = bson_strdup ("mongodb://localhost:27017");
+   }
+
+   test_runner->uri = mongoc_uri_new_with_error (uri_str, &error);
+   ASSERT_OR_PRINT (test_runner->uri, error);
+   test_runner->internal_client = mongoc_client_new_from_uri (test_runner->uri);
+   bson_free (uri_str);
+
+   test_runner->topology_type = get_topology_type (test_runner->internal_client);
+   server_semver (test_runner->internal_client, &test_runner->server_version);
+
+   test_diagnostics.test_runner = test_runner;
+
+   return test_runner;
+}
+
+static void
+test_runner_destroy (test_runner_t *test_runner)
+{
+   test_diagnostics.test_runner = NULL;
+   mongoc_client_destroy (test_runner->internal_client);
+   mongoc_uri_destroy (test_runner->uri);
+   bson_free (test_runner);
+}
+
+static test_file_t *
+test_file_new (test_runner_t* test_runner, bson_t* bson) {
+   test_file_t *test_file;
+
+   test_file = bson_malloc0 (sizeof (test_file_t));
+   test_file->test_runner = test_runner;
+   test_file->description = bson_lookup_utf8 (bson, "description");
+
+   semver_parse (bson_lookup_utf8 (bson, "schemaVersion"), &test_file->schema_version);
+   if (bson_has_field (bson, "runOnRequirements")) {
+      test_file->run_on_requirements = bson_lookup_bson (bson, "runOnRequirements");
+   }
+   if (bson_has_field (bson, "createEntities")) {
+      test_file->create_entities = bson_lookup_bson (bson, "createEntities");
+   }
+   if (bson_has_field (bson, "initialData")) {
+      test_file->initial_data = bson_lookup_bson (bson, "initialData");
+   }
+   test_file->tests = bson_lookup_bson (bson, "tests");
+   test_diagnostics.test_file = test_file;
+   return test_file;
+}
+
+static void test_file_destroy (test_file_t *test_file) {
+   test_diagnostics.test_file = NULL;
+   bson_destroy (test_file->tests);
+   bson_destroy (test_file->initial_data);
+   bson_destroy (test_file->create_entities);
+   bson_destroy (test_file->run_on_requirements);
+   bson_free (test_file);
+}
+
+static test_t* test_new (test_file_t *test_file, bson_t* bson) {
+   test_t *test;
+
+   test = bson_malloc0 (sizeof (test_t));
+   test->test_file = test_file;
+   test->description = bson_lookup_utf8 (bson, "description");
+   if (bson_has_field (bson, "runOnRequirements")) {
+      test->run_on_requirements = bson_lookup_bson (bson, "runOnRequirements");
+   }
+   if (bson_has_field (bson, "skipReason")) {
+      test->skip_reason = bson_lookup_utf8 (bson, "skipReason");
+   }
+   test->operations = bson_lookup_bson (bson, "operations");
+   if (bson_has_field (bson, "expectEvents")) {
+      test->expect_events = bson_lookup_bson (bson, "expectEvents");
+   }
+   if (bson_has_field (bson, "outcome")) {
+      test->outcome = bson_lookup_bson (bson, "outcome");
+   }
+
+   test_diagnostics.test = test;
+   return test;
+}
+
+static void test_destroy (test_t *test) {
+   test_diagnostics.test = NULL;
+   bson_destroy (test->outcome);
+   bson_destroy (test->expect_events);
+   bson_destroy (test->operations);
+   bson_destroy (test->run_on_requirements);
+   bson_free (test);
+}
 
 static bool
 is_replset (bson_t *ismaster_reply)
@@ -121,65 +253,36 @@ get_topology_type (mongoc_client_t *client)
 }
 
 static void
-test_ctx_init (bson_t *test)
-{
-   bson_error_t error;
-   char *uri_str;
-
-   test_ctx.test = test;
-   test_ctx.description = bson_lookup_utf8 (test, "description");
-   bson_init (&test_ctx.command_started_events);
-   bson_init (&test_ctx.command_succeeded_events);
-   bson_init (&test_ctx.command_failed_events);
-
-   /* Create an client for internal test operations (e.g. checking server
-    * version) */
-   if (test_framework_getenv ("MONGOC_TEST_URI") != NULL) {
-      uri_str = test_framework_getenv ("MONGOC_TEST_URI");
-   } else {
-      uri_str = bson_strdup ("mongodb://localhost:27017");
-   }
-
-   test_ctx.uri = mongoc_uri_new_with_error (uri_str, &error);
-   ASSERT_OR_PRINT (test_ctx.uri, error);
-   test_ctx.internal_client = mongoc_client_new_from_uri (test_ctx.uri);
-   bson_free (uri_str);
-}
-
-static void
-test_ctx_cleanup ()
-{
-   mongoc_uri_destroy (test_ctx.uri);
-   mongoc_client_destroy (test_ctx.internal_client);
-   bson_destroy (&test_ctx.command_started_events);
-   bson_destroy (&test_ctx.command_succeeded_events);
-   bson_destroy (&test_ctx.command_failed_events);
-}
-
-static void
 handle_abort (int signo)
 {
-   printf ("Test aborting: '%s'\n", test_ctx.description);
-   printf ("URI: %s\n", mongoc_uri_get_string (test_ctx.uri));
-   printf ("Topology type: %s\n", test_ctx.topology_type);
-   printf ("command started events: %s\n",
-           tmp_json (&test_ctx.command_started_events));
-   printf ("command succeeded events: %s\n",
-           tmp_json (&test_ctx.command_succeeded_events));
-   printf ("command succeeded events: %s\n",
-           tmp_json (&test_ctx.command_failed_events));
+   MONGOC_ERROR ("Test aborting");
+   if (test_diagnostics.test_runner) {
+      MONGOC_ERROR ("URI: %s", mongoc_uri_get_string (test_diagnostics.test_runner->uri));
+   }
+   
+   if (test_diagnostics.test_file) {
+      MONGOC_ERROR ("Test file description: %s", test_diagnostics.test_file->description);
+   }
+
+   if (test_diagnostics.test) {
+      MONGOC_ERROR ("Test description: %s", test_diagnostics.test->description);
+   }
+}
+
+static void test_diagnostics_init (void) {
+   memset (&test_diagnostics, 0, sizeof (test_diagnostics));
+   signal (SIGABRT, handle_abort);
+}
+
+static void test_diagnostics_cleanup (void) {
+   signal (SIGABRT, SIG_DFL);
 }
 
 static void
-check_schema_version (void)
+check_schema_version (test_file_t *test_file)
 {
    const char *supported_version_strs[] = {"1.0"};
-   const char *test_version_str;
-   semver_t test_version;
    int i;
-
-   test_version_str = bson_lookup_utf8 (test_ctx.test, "schemaVersion");
-   semver_parse (test_version_str, &test_version);
 
    for (i = 0; i < sizeof (supported_version_strs) /
                       sizeof (supported_version_strs[0]);
@@ -187,19 +290,19 @@ check_schema_version (void)
       semver_t supported_version;
 
       semver_parse (supported_version_strs[i], &supported_version);
-      if (supported_version.major != test_version.major) {
+      if (supported_version.major != test_file->schema_version.major) {
          continue;
       }
       if (!supported_version.has_minor) {
          /* All minor versions for this major version are supported. */
          return;
       }
-      if (supported_version.minor >= test_version.minor) {
+      if (supported_version.minor >= test_file->schema_version.minor) {
          return;
       }
    }
 
-   test_error ("Unsupported schema version: %s", test_version_str);
+   test_error ("Unsupported schema version: %s", semver_to_string(&test_file->schema_version));
 }
 
 static bool
@@ -279,25 +382,13 @@ check_run_on_requirement (bson_t *run_on_requirement,
 }
 
 static void
-check_run_on_requirements (void)
+check_run_on_requirements (test_runner_t *test_runner, bson_t* run_on_requirements)
 {
-   bson_t run_on_requirements;
    bson_string_t *fail_reasons;
-   semver_t server_version;
    bool requirements_satisfied = false;
 
-   if (!bson_has_field (test_ctx.test, "runOnRequirements")) {
-      return;
-   }
-
-   /* Get the topology and version of the connected deployment. */
-   server_semver (test_ctx.internal_client, &server_version);
-   test_ctx.topology_type = get_topology_type (test_ctx.internal_client);
-
-   bson_lookup_doc (test_ctx.test, "runOnRequirements", &run_on_requirements);
-
    fail_reasons = bson_string_new ("");
-   BSON_FOREACH_BEGIN (&run_on_requirements, iter)
+   BSON_FOREACH_BEGIN (run_on_requirements, iter)
    {
       bson_t run_on_requirement;
       char *fail_reason;
@@ -305,8 +396,8 @@ check_run_on_requirements (void)
       bson_iter_bson (&iter, &run_on_requirement);
       fail_reason = NULL;
       if (check_run_on_requirement (&run_on_requirement,
-                                    test_ctx.topology_type,
-                                    &server_version,
+                                    test_runner->topology_type,
+                                    &test_runner->server_version,
                                     &fail_reason)) {
          requirements_satisfied = true;
          break;
@@ -328,15 +419,37 @@ check_run_on_requirements (void)
 }
 
 void
-run_one_test (bson_t *test)
+run_one_testfile (bson_t *bson)
 {
-   test_ctx_init (test);
-   MONGOC_DEBUG ("running test: %s", test_ctx.description);
-   signal (SIGABRT, handle_abort);
-   check_schema_version ();
-   check_run_on_requirements ();
-   signal (SIGABRT, SIG_DFL);
-   test_ctx_cleanup ();
+   test_runner_t *test_runner;
+   test_file_t *test_file;
+
+   test_diagnostics_init ();
+
+   test_runner = test_runner_new ();
+   test_file = test_file_new (test_runner, bson);
+
+   MONGOC_DEBUG ("running test: %s", test_file->description);
+
+   check_schema_version (test_file);
+   if (test_file->run_on_requirements) {
+      check_run_on_requirements (test_runner, test_file->run_on_requirements);
+   }
+
+   BSON_FOREACH_BEGIN (test_file->tests, test_iter) {
+      test_t *test;
+      bson_t test_bson;
+
+      bson_iter_bson (&test_iter, &test_bson);
+      test = test_new (test_file, &test_bson);
+      /* TODO: run operations in test. */
+      test_destroy (test);
+   }
+   BSON_FOREACH_END;
+
+   test_file_destroy (test_file);
+   test_runner_destroy (test_runner);
+   test_diagnostics_cleanup ();
 }
 
 void
@@ -348,7 +461,7 @@ test_install_unified (TestSuite *suite)
 
    install_json_test_suite_with_check (suite,
                                        resolved,
-                                       &run_one_test,
+                                       &run_one_testfile,
                                        TestSuite_CheckLive,
                                        test_framework_skip_if_no_crypto);
 }

@@ -86,6 +86,9 @@ value_init_from_doc (bson_value_t *value, const bson_t *doc);
 void
 bson_lookup_value (const bson_t *b, const char *key, bson_value_t *value);
 
+bson_t*
+bson_lookup_bson (const bson_t *b, const char *key);
+
 void
 bson_lookup_doc (const bson_t *b, const char *key, bson_t *doc);
 
@@ -234,7 +237,6 @@ typedef struct {
    bool has_minor;
    int patch;
    bool has_patch;
-   char *str;
 } semver_t;
 
 void

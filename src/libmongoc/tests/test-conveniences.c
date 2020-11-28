@@ -144,6 +144,7 @@ tmp_str (const char *format, ...)
    va_list args;
    char *str;
 
+   test_conveniences_init ();
    va_start (args, format);
    str = bson_strdupv_printf (format, args);
    va_end (args);
@@ -156,6 +157,8 @@ const char *
 tmp_json (const bson_t *bson)
 {
    char *str;
+
+   test_conveniences_init ();
 
    if (!bson) {
       return "(NULL)";
@@ -246,6 +249,19 @@ bson_lookup_value (const bson_t *b, const char *key, bson_value_t *value)
    bson_value_copy (bson_iter_value (&iter), value);
 }
 
+bson_t*
+bson_lookup_bson (const bson_t *b, const char *key) {
+   bson_iter_t iter;
+   bson_t tmp;
+
+   bson_lookup (b, key, &iter);
+   if (!BSON_ITER_HOLDS_DOCUMENT (&iter) && !BSON_ITER_HOLDS_ARRAY (&iter)) {
+      test_error ("Expected '%s' to resolve to BSON: %s", key, tmp_json (b));
+   }
+
+   bson_iter_bson (&iter, &tmp);
+   return bson_new_from_data (bson_get_data (&tmp), tmp.len);
+}
 
 /*--------------------------------------------------------------------------
  *
