@@ -6,7 +6,7 @@ Configuring TLS
 Configuration with URI options
 ------------------------------
 
-Enable TLS by including ``tls=true`` the URI.
+Enable TLS by including ``tls=true`` in the URI.
 
 .. code:: c
    
