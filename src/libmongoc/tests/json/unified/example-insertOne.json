@@ -3,7 +3,15 @@
   "schemaVersion": "1.0",
   "runOnRequirements": [
     {
-      "minServerVersion": "2.6"
+      "minServerVersion": "2.6",
+      "topologies": ["single"]
+    },
+    {
+      "maxServerVersion": "4.0"
+    },
+    {
+      "minServerVersion": "3.6",
+      "topologies": ["sharded"]
     }
   ],
   "createEntities": [

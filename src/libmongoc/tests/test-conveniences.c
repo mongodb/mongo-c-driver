@@ -137,6 +137,21 @@ tmp_bson (const char *json, ...)
    return doc;
 }
 
+MONGOC_PRINTF_FORMAT (1, 2)
+const char *
+tmp_str (const char *format, ...)
+{
+   va_list args;
+   char *str;
+
+   va_start (args, format);
+   str = bson_strdupv_printf (format, args);
+   va_end (args);
+
+   _mongoc_array_append_val (&gTmpStringArray, str);
+   return (const char *) str;
+}
+
 const char *
 tmp_json (const bson_t *bson)
 {
@@ -1873,7 +1888,7 @@ semver_parse (const char *str, semver_t *out)
       return;
    }
    out->has_minor = true;
-   out->minor = (int) bson_ascii_strtoll (str, &dot, 10);
+   out->minor = (int) bson_ascii_strtoll (dot, &dot, 10);
 
    if (*dot == '.') {
       dot++;
@@ -1881,17 +1896,16 @@ semver_parse (const char *str, semver_t *out)
       return;
    }
    out->has_patch = true;
-   out->patch = (int) bson_ascii_strtoll (str, &dot, 10);
+   out->patch = (int) bson_ascii_strtoll (dot, &dot, 10);
 }
 
 void
-server_semver (semver_t *out) {
-   mongoc_client_t *client;
+server_semver (mongoc_client_t *client, semver_t *out)
+{
    bson_t reply;
    bson_error_t error;
-   const char* server_version_str;
+   const char *server_version_str;
 
-   client = test_framework_client_new ();
    ASSERT_OR_PRINT (
       mongoc_client_command_simple (
          client, "admin", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error),
@@ -1901,10 +1915,11 @@ server_semver (semver_t *out) {
    semver_parse (server_version_str, out);
 
    bson_destroy (&reply);
-   mongoc_client_destroy (client);
 }
 
-int semver_cmp (semver_t *a, semver_t *b) {
+int
+semver_cmp (semver_t *a, semver_t *b)
+{
    if (a->major < b->major) {
       return -1;
    } else if (a->major > b->major) {
@@ -1924,4 +1939,10 @@ int semver_cmp (semver_t *a, semver_t *b) {
    }
 
    return 0;
+}
+
+const char *
+semver_to_string (semver_t *semver)
+{
+   return tmp_str ("%d.%d.%d", semver->major, semver->minor, semver->patch);
 }
