@@ -248,6 +248,9 @@ server_semver (mongoc_client_t *client, semver_t *out);
 int
 semver_cmp (semver_t *a, semver_t *b);
 
+int
+semver_cmp_str (semver_t *a, const char* str);
+
 const char *
 semver_to_string (semver_t *str);
 
@@ -268,9 +271,6 @@ semver_to_string (semver_t *str);
       bson_iter_t iter_varname;                 \
       bson_iter_init (&(iter_varname), (bson)); \
       while (bson_iter_next (&(iter_varname)))
-#define BSON_FOREACH_END \
-   }                     \
-   while (0)             \
-      ;
+#define BSON_FOREACH_END } while (0)
 
 #endif /* TEST_CONVENIENCES_H */

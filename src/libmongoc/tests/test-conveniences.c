@@ -1957,6 +1957,14 @@ semver_cmp (semver_t *a, semver_t *b)
    return 0;
 }
 
+int
+semver_cmp_str (semver_t *a, const char* str) {
+   semver_t b;
+
+   semver_parse (str, &b);
+   return semver_cmp (a, &b);
+}
+
 const char *
 semver_to_string (semver_t *semver)
 {

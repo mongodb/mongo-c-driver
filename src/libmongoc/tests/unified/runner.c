@@ -197,6 +197,12 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner)
    bool ret;
    bson_error_t error;
 
+   /* TODO: should I reimplement these checks using the test context? */
+   if (0 == test_framework_skip_if_no_txns ()) {
+      MONGOC_DEBUG ("Sessions not supported, not running killAllSessions");
+      return;
+   }
+
    kill_all_sessions_cmd = tmp_bson ("{'killAllSessions': []}");
    /* Run on each mongos. Target each server individually. */
    if (is_topology_type_sharded (test_runner->topology_type)) {
@@ -567,17 +573,143 @@ check_run_on_requirements (test_runner_t *test_runner,
 
    *reason = NULL;
    if (!requirements_satisfied) {
-      (*reason) = tmp_str ("runOnRequirements not satified:\n%s", fail_reasons->str);
+      (*reason) =
+         tmp_str ("runOnRequirements not satified:\n%s", fail_reasons->str);
    }
    bson_string_free (fail_reasons, true);
    return requirements_satisfied;
 }
 
+static bool
+test_setup_initial_data (test_t *test, bson_error_t *error)
+{
+   test_runner_t *test_runner;
+   test_file_t *test_file;
+
+   test_file = test->test_file;
+   test_runner = test_file->test_runner;
+
+   if (!test_file->initial_data) {
+      return true;
+   }
+
+   BSON_FOREACH_BEGIN (test_file->initial_data, initial_data_iter)
+   {
+      bson_t collection_data;
+      const char *collection_name;
+      const char *database_name;
+      bson_t *documents = NULL;
+      mongoc_database_t *db = NULL;
+      mongoc_collection_t *coll = NULL;
+      mongoc_bulk_operation_t *bulk_insert = NULL;
+      mongoc_write_concern_t *wc = NULL;
+      bson_t *wc_opts = NULL;
+      bson_t *drop_opts = NULL;
+      bool ret = false;
+
+      bson_iter_bson (&initial_data_iter, &collection_data);
+      database_name = bson_lookup_utf8 (&collection_data, "databaseName");
+      collection_name = bson_lookup_utf8 (&collection_data, "collectionName");
+
+      wc = mongoc_write_concern_new ();
+      mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
+      wc_opts = bson_new ();
+      mongoc_write_concern_append (wc, wc_opts);
+
+      /* Drop the collection. */
+      /* Check if the server supports majority write concern on 'drop'. */
+      if (semver_cmp_str (&test_runner->server_version, "3.4") >= 0) {
+         drop_opts = bson_new ();
+         mongoc_write_concern_append (wc, drop_opts);
+      }
+      coll = mongoc_client_get_collection (
+         test_runner->internal_client, database_name, collection_name);
+      if (!mongoc_collection_drop_with_opts (coll, drop_opts, error)) {
+         if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
+            /* This is not a "ns not found" error. Fail the test. */
+            goto loopexit;
+         }
+      }
+
+      /* Insert documents if specified. */
+      if (bson_has_field (&collection_data, "documents")) {
+         documents = bson_lookup_bson (&collection_data, "documents");
+         bulk_insert = mongoc_collection_create_bulk_operation_with_opts (
+            coll, wc_opts);
+
+         BSON_FOREACH_BEGIN (documents, documents_iter)
+         {
+            bson_t document;
+
+            bson_iter_bson (&documents_iter, &document);
+            mongoc_bulk_operation_insert (bulk_insert, &document);
+         }
+         BSON_FOREACH_END;
+
+         if (!mongoc_bulk_operation_execute (bulk_insert, NULL, error)) {
+            goto loopexit;
+         }
+      } else {
+         /* Just create the collection with a create command. */
+         db = mongoc_client_get_database (test_runner->internal_client, database_name);
+         if (!mongoc_database_create_collection (db, collection_name, wc_opts, error)) {
+            goto loopexit;
+         }
+      }
+
+      ret = true;
+
+   loopexit:
+      mongoc_bulk_operation_destroy (bulk_insert);
+      bson_destroy (wc_opts);
+      bson_destroy (drop_opts);
+      bson_destroy (documents);
+      mongoc_write_concern_destroy (wc);
+      mongoc_collection_destroy (coll);
+      if (!ret) {
+         return false;
+      }
+   }
+   BSON_FOREACH_END;
+   return true;
+}
+
 /* This returns an error on failure instead of asserting where possible.
- * This allows the test runner to perform server clean up even on failure (e.g. disable failpoints).
+ * This allows the test runner to perform server clean up even on failure (e.g.
+ * disable failpoints).
  */
 bool
-test_run (test_t *test, bson_error_t *out) {
+test_run (test_t *test, bson_error_t *error)
+{
+   test_runner_t *test_runner;
+   test_file_t *test_file;
+
+   test_file = test->test_file;
+   test_runner = test_file->test_runner;
+
+   if (test->skip_reason != NULL) {
+      MONGOC_DEBUG ("SKIPPING test '%s'. Reason: '%s'",
+                    test->description,
+                    test->skip_reason);
+      return true;
+   }
+
+   if (test->run_on_requirements) {
+      const char *reason;
+      if (!check_run_on_requirements (
+             test_runner, test->run_on_requirements, &reason)) {
+         MONGOC_DEBUG ("SKIPPING test '%s'. Reason: '%s'",
+                       test->description,
+                       test->skip_reason);
+         return true;
+      }
+   }
+
+   if (!test_setup_initial_data (test, error)) {
+      return false;
+   }
+
+
    return true;
 }
 
@@ -598,8 +730,11 @@ run_one_test_file (bson_t *bson)
    check_schema_version (test_file);
    if (test_file->run_on_requirements) {
       const char *reason;
-      if (!check_run_on_requirements (test_runner, test_file->run_on_requirements, &reason)) {
-         MONGOC_DEBUG ("SKIPPING test file (%s). Reason:\n%s", test_file->description, reason);
+      if (!check_run_on_requirements (
+             test_runner, test_file->run_on_requirements, &reason)) {
+         MONGOC_DEBUG ("SKIPPING test file (%s). Reason:\n%s",
+                       test_file->description,
+                       reason);
          goto done;
       }
    }
@@ -613,21 +748,6 @@ run_one_test_file (bson_t *bson)
 
       bson_iter_bson (&test_iter, &test_bson);
       test = test_new (test_file, &test_bson);
-      if (test->skip_reason != NULL) {
-         MONGOC_DEBUG ("SKIPPING test '%s'. Reason: '%s'", test->description, test->skip_reason);
-         test_destroy (test);
-         continue;
-      }
-
-      if (test->run_on_requirements) {
-         const char* reason;
-         if (!check_run_on_requirements (test_runner, test->run_on_requirements, &reason)) {
-            MONGOC_DEBUG ("SKIPPING test '%s'. Reason: '%s'", test->description, test->skip_reason);
-            test_destroy (test);
-            continue;
-         }
-      }
-
       test_ok = test_run (test, &error);
       /* TODO: clean up test file state. */
       if (!test_ok) {
