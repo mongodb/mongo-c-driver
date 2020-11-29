@@ -533,9 +533,10 @@ check_run_on_requirement (bson_t *run_on_requirement,
    return true;
 }
 
-static void
+static bool
 check_run_on_requirements (test_runner_t *test_runner,
-                           bson_t *run_on_requirements)
+                           bson_t *run_on_requirements,
+                           const char **reason)
 {
    bson_string_t *fail_reasons;
    bool requirements_satisfied = false;
@@ -564,15 +565,24 @@ check_run_on_requirements (test_runner_t *test_runner,
    }
    BSON_FOREACH_END;
 
+   *reason = NULL;
    if (!requirements_satisfied) {
-      test_error ("No runOnRequirements were satisfied:\n%s",
-                  fail_reasons->str);
+      (*reason) = tmp_str ("runOnRequirements not satified:\n%s", fail_reasons->str);
    }
    bson_string_free (fail_reasons, true);
+   return requirements_satisfied;
+}
+
+/* This returns an error on failure instead of asserting where possible.
+ * This allows the test runner to perform server clean up even on failure (e.g. disable failpoints).
+ */
+bool
+test_run (test_t *test, bson_error_t *out) {
+   return true;
 }
 
 void
-run_one_testfile (bson_t *bson)
+run_one_test_file (bson_t *bson)
 {
    test_runner_t *test_runner;
    test_file_t *test_file;
@@ -587,21 +597,47 @@ run_one_testfile (bson_t *bson)
 
    check_schema_version (test_file);
    if (test_file->run_on_requirements) {
-      check_run_on_requirements (test_runner, test_file->run_on_requirements);
+      const char *reason;
+      if (!check_run_on_requirements (test_runner, test_file->run_on_requirements, &reason)) {
+         MONGOC_DEBUG ("SKIPPING test file (%s). Reason:\n%s", test_file->description, reason);
+         goto done;
+      }
    }
 
    BSON_FOREACH_BEGIN (test_file->tests, test_iter)
    {
       test_t *test;
       bson_t test_bson;
+      bool test_ok;
+      bson_error_t error;
 
       bson_iter_bson (&test_iter, &test_bson);
       test = test_new (test_file, &test_bson);
-      /* TODO: run operations in test. */
+      if (test->skip_reason != NULL) {
+         MONGOC_DEBUG ("SKIPPING test '%s'. Reason: '%s'", test->description, test->skip_reason);
+         test_destroy (test);
+         continue;
+      }
+
+      if (test->run_on_requirements) {
+         const char* reason;
+         if (!check_run_on_requirements (test_runner, test->run_on_requirements, &reason)) {
+            MONGOC_DEBUG ("SKIPPING test '%s'. Reason: '%s'", test->description, test->skip_reason);
+            test_destroy (test);
+            continue;
+         }
+      }
+
+      test_ok = test_run (test, &error);
+      /* TODO: clean up test file state. */
+      if (!test_ok) {
+         test_error ("Test '%s' failed: %s", test->description, error.message);
+      }
       test_destroy (test);
    }
    BSON_FOREACH_END;
 
+done:
    test_file_destroy (test_file);
    test_runner_destroy (test_runner);
    test_diagnostics_cleanup ();
@@ -616,7 +652,7 @@ test_install_unified (TestSuite *suite)
 
    install_json_test_suite_with_check (suite,
                                        resolved,
-                                       &run_one_testfile,
+                                       &run_one_test_file,
                                        TestSuite_CheckLive,
                                        test_framework_skip_if_no_crypto);
 }
