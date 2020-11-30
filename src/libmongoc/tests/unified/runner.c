@@ -55,9 +55,9 @@ typedef struct {
    bson_t *outcome;
 } test_t;
 
-/* The test context is a global storing state for each test.
+/* test_diagnostics is a global storing current test state.
  * When an assertion fails, causing an abort signal, the test
- * context can be logged. */
+ * diagnostics are logged. */
 struct {
    test_runner_t *test_runner;
    test_file_t *test_file;
@@ -151,9 +151,9 @@ test_runner_destroy (test_runner_t *test_runner)
    bson_free (test_runner);
 }
 
-/* Run a "killAllSessions" command against a server.
- * Returns a 0 delimited array of all known servers that the test runner
- * is connected to.
+/* Returns an array of all known servers IDs that the test runner
+ * is connected to. The server IDs can be used to target commands to
+ * specific servers with mongoc_client_command_simple_with_server_id().
  */
 static void
 test_runner_get_all_server_ids (test_runner_t *test_runner, mongoc_array_t *out)
@@ -173,8 +173,7 @@ test_runner_get_all_server_ids (test_runner_t *test_runner, mongoc_array_t *out)
    _mongoc_array_copy (out, &test_runner->server_ids);
 }
 
-/*
- * Run killAllSessions against the primary or each mongos to terminate any
+/* Run killAllSessions against the primary or each mongos to terminate any
  * lingering open transactions.
  * See also: Spec section "Terminating Open Transactions"
  */
@@ -185,7 +184,6 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner)
    bool ret;
    bson_error_t error;
 
-   /* TODO: should I reimplement these checks using the test context? */
    if (0 == test_framework_skip_if_no_txns ()) {
       MONGOC_DEBUG ("Sessions not supported, not running killAllSessions");
       return;
@@ -201,6 +199,7 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner)
       test_runner_get_all_server_ids (test_runner, &server_ids);
       for (i = 0; i < server_ids.len; i++) {
          uint32_t server_id = _mongoc_array_index (&server_ids, uint32_t, i);
+
          ret = mongoc_client_command_simple_with_server_id (
             test_runner->internal_client,
             "admin",
@@ -634,7 +633,7 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
             goto loopexit;
          }
       } else {
-         /* Just create the collection with a create command. */
+         /* Test does not need data inserted, just create the collection. */
          db = mongoc_client_get_database (test_runner->internal_client, database_name);
          if (!mongoc_database_create_collection (db, collection_name, wc_opts, error)) {
             goto loopexit;
@@ -733,7 +732,6 @@ run_one_test_file (bson_t *bson)
       bson_iter_bson (&test_iter, &test_bson);
       test = test_new (test_file, &test_bson);
       test_ok = test_run (test, &error);
-      /* TODO: clean up test file state. */
       if (!test_ok) {
          test_error ("Test '%s' failed: %s", test->description, error.message);
       }
