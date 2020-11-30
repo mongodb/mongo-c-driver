@@ -25,7 +25,6 @@
 /* test_runner_t, test_file_t, and test_t model the types described in the "Test
  * Runner Implementation" section of the Unified Test Format specification. */
 typedef struct {
-   mongoc_uri_t *uri;
    mongoc_client_t *internal_client;
    semver_t server_version;
    /* topology_type may be "single", "replicaset", "sharded", or
@@ -121,24 +120,15 @@ static test_runner_t *
 test_runner_new (void)
 {
    test_runner_t *test_runner;
-   char *uri_str;
-   bson_error_t error;
    mongoc_apm_callbacks_t *callbacks;
 
    test_runner = bson_malloc0 (sizeof (test_runner_t));
    /* Create an client for internal test operations (e.g. checking server
     * version) */
-   uri_str = test_framework_getenv ("MONGOC_TEST_URI");
-   if (uri_str == NULL) {
-      uri_str = bson_strdup ("mongodb://localhost:27017");
-   }
-
-   test_runner->uri = mongoc_uri_new_with_error (uri_str, &error);
-   ASSERT_OR_PRINT (test_runner->uri, error);
    _mongoc_array_init (&test_runner->server_ids, sizeof (uint32_t));
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
-   test_runner->internal_client = mongoc_client_new_from_uri (test_runner->uri);
+   test_runner->internal_client = test_framework_client_new ();
    mongoc_client_set_apm_callbacks (
       test_runner->internal_client, callbacks, test_runner);
    mongoc_client_set_error_api (test_runner->internal_client,
@@ -149,7 +139,6 @@ test_runner_new (void)
    test_diagnostics.test_runner = test_runner;
 
    mongoc_apm_callbacks_destroy (callbacks);
-   bson_free (uri_str);
    return test_runner;
 }
 
@@ -159,7 +148,6 @@ test_runner_destroy (test_runner_t *test_runner)
    test_diagnostics.test_runner = NULL;
    mongoc_client_destroy (test_runner->internal_client);
    _mongoc_array_destroy (&test_runner->server_ids);
-   mongoc_uri_destroy (test_runner->uri);
    bson_free (test_runner);
 }
 
@@ -412,10 +400,6 @@ static void
 handle_abort (int signo)
 {
    MONGOC_ERROR ("Test aborting");
-   if (test_diagnostics.test_runner) {
-      MONGOC_ERROR ("URI: %s",
-                    mongoc_uri_get_string (test_diagnostics.test_runner->uri));
-   }
 
    if (test_diagnostics.test_file) {
       MONGOC_ERROR ("Test file description: %s",
