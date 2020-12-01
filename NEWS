@@ -1,3 +1,27 @@
+mongo-c-driver 1.17.3
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.3.
+
+Bug fixes:
+
+  * Do not send session ID on GSSAPI auth commands.
+  * Fix build against zlib when zlib is installed in non-standard location.
+  * Fix build when source directory path contains a space.
+  * Fix a platform-specific bug causing mongoc_client_pool_pop to block indefinitely if all clients are checked out.
+  * Fix a possible buffer overflow with hostnames resolving to IPv6 addresses on OpenSSL.
+
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Roberto C. Sánchez
+  * Kevin Albertson
+  * Andrew Witten
+  * gonzalo
+
+-- Kevin Albertson
+
+
 mongo-c-driver 1.17.2
 =====================
 
