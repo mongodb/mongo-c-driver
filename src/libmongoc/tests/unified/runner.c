@@ -83,11 +83,8 @@ is_topology_type_compatible (const char *test_topology_type,
    }
    /* If a requirement specifies a "sharded" topology and server is of type
     * "sharded-replicaset", that is also compatible. */
-   if (0 == strcmp (test_topology_type, "sharded") &&
-       is_topology_type_sharded (server_topology_type)) {
-      return true;
-   }
-   return false;
+   return 0 == strcmp (test_topology_type, "sharded") &&
+          is_topology_type_sharded (server_topology_type);
 }
 
 /* This callback tracks the set of server IDs for all connected servers.
@@ -114,41 +111,6 @@ on_topology_changed (const mongoc_apm_topology_changed_t *event)
       _mongoc_array_append_val (&test_runner->server_ids, server_id);
    }
    mongoc_server_descriptions_destroy_all (sds, sds_len);
-}
-
-static test_runner_t *
-test_runner_new (void)
-{
-   test_runner_t *test_runner;
-   mongoc_apm_callbacks_t *callbacks;
-
-   test_runner = bson_malloc0 (sizeof (test_runner_t));
-   /* Create an client for internal test operations (e.g. checking server
-    * version) */
-   _mongoc_array_init (&test_runner->server_ids, sizeof (uint32_t));
-   callbacks = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
-   test_runner->internal_client = test_framework_client_new ();
-   mongoc_client_set_apm_callbacks (
-      test_runner->internal_client, callbacks, test_runner);
-   mongoc_client_set_error_api (test_runner->internal_client,
-                                MONGOC_ERROR_API_VERSION_2);
-   test_runner->topology_type =
-      get_topology_type (test_runner->internal_client);
-   server_semver (test_runner->internal_client, &test_runner->server_version);
-   test_diagnostics.test_runner = test_runner;
-
-   mongoc_apm_callbacks_destroy (callbacks);
-   return test_runner;
-}
-
-static void
-test_runner_destroy (test_runner_t *test_runner)
-{
-   test_diagnostics.test_runner = NULL;
-   mongoc_client_destroy (test_runner->internal_client);
-   _mongoc_array_destroy (&test_runner->server_ids);
-   bson_free (test_runner);
 }
 
 /* Returns an array of all known servers IDs that the test runner
@@ -234,6 +196,43 @@ test_runner_terminate_open_transactions (test_runner_t *test_runner)
       test_error ("Unexpected error running killAllSessions on primary: %s",
                   error.message);
    }
+}
+
+static test_runner_t *
+test_runner_new (void)
+{
+   test_runner_t *test_runner;
+   mongoc_apm_callbacks_t *callbacks;
+
+   test_runner = bson_malloc0 (sizeof (test_runner_t));
+   /* Create an client for internal test operations (e.g. checking server
+    * version) */
+   _mongoc_array_init (&test_runner->server_ids, sizeof (uint32_t));
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
+   test_runner->internal_client = test_framework_client_new ();
+   mongoc_client_set_apm_callbacks (
+      test_runner->internal_client, callbacks, test_runner);
+   mongoc_client_set_error_api (test_runner->internal_client,
+                                MONGOC_ERROR_API_VERSION_2);
+   test_runner->topology_type =
+      get_topology_type (test_runner->internal_client);
+   server_semver (test_runner->internal_client, &test_runner->server_version);
+   test_diagnostics.test_runner = test_runner;
+
+   /* Terminate any possible open transactions. */
+   test_runner_terminate_open_transactions (test_runner);
+   mongoc_apm_callbacks_destroy (callbacks);
+   return test_runner;
+}
+
+static void
+test_runner_destroy (test_runner_t *test_runner)
+{
+   test_diagnostics.test_runner = NULL;
+   mongoc_client_destroy (test_runner->internal_client);
+   _mongoc_array_destroy (&test_runner->server_ids);
+   bson_free (test_runner);
 }
 
 static test_file_t *
@@ -457,14 +456,16 @@ check_run_on_requirement (bson_t *run_on_requirement,
                           semver_t *server_version,
                           char **fail_reason)
 {
-   BSON_FOREACH_BEGIN (run_on_requirement, reqiter)
+   bson_iter_t req_iter;
+
+   BSON_FOREACH (run_on_requirement, req_iter)
    {
-      const char *key = bson_iter_key (&reqiter);
+      const char *key = bson_iter_key (&req_iter);
 
       if (0 == strcmp (key, "minServerVersion")) {
          semver_t min_server_version;
 
-         semver_parse (bson_iter_utf8 (&reqiter, NULL), &min_server_version);
+         semver_parse (bson_iter_utf8 (&req_iter, NULL), &min_server_version);
          if (semver_cmp (server_version, &min_server_version) < 0) {
             *fail_reason = bson_strdup_printf (
                "Server version(%s) is lower than minServerVersion(%s)",
@@ -478,7 +479,7 @@ check_run_on_requirement (bson_t *run_on_requirement,
       if (0 == strcmp (key, "maxServerVersion")) {
          semver_t max_server_version;
 
-         semver_parse (bson_iter_utf8 (&reqiter, NULL), &max_server_version);
+         semver_parse (bson_iter_utf8 (&req_iter, NULL), &max_server_version);
          if (semver_cmp (server_version, &max_server_version) > 0) {
             *fail_reason = bson_strdup_printf (
                "Server version(%s) is higher than maxServerVersion (%s)",
@@ -492,9 +493,10 @@ check_run_on_requirement (bson_t *run_on_requirement,
       if (0 == strcmp (key, "topologies")) {
          bool found = false;
          bson_t topologies;
+         bson_iter_t topology_iter;
 
-         bson_iter_bson (&reqiter, &topologies);
-         BSON_FOREACH_BEGIN (&topologies, topology_iter)
+         bson_iter_bson (&req_iter, &topologies);
+         BSON_FOREACH (&topologies, topology_iter)
          {
             const char *test_topology_type =
                bson_iter_utf8 (&topology_iter, NULL);
@@ -504,7 +506,6 @@ check_run_on_requirement (bson_t *run_on_requirement,
                break;
             }
          }
-         BSON_FOREACH_END;
 
          if (!found) {
             *fail_reason = bson_strdup_printf (
@@ -518,7 +519,6 @@ check_run_on_requirement (bson_t *run_on_requirement,
 
       test_error ("Unexpected runOnRequirement field: %s", key);
    }
-   BSON_FOREACH_END;
    return true;
 }
 
@@ -529,9 +529,10 @@ check_run_on_requirements (test_runner_t *test_runner,
 {
    bson_string_t *fail_reasons;
    bool requirements_satisfied = false;
+   bson_iter_t iter;
 
    fail_reasons = bson_string_new ("");
-   BSON_FOREACH_BEGIN (run_on_requirements, iter)
+   BSON_FOREACH (run_on_requirements, iter)
    {
       bson_t run_on_requirement;
       char *fail_reason;
@@ -552,7 +553,6 @@ check_run_on_requirements (test_runner_t *test_runner,
                                  fail_reason);
       bson_free (fail_reason);
    }
-   BSON_FOREACH_END;
 
    *reason = NULL;
    if (!requirements_satisfied) {
@@ -568,6 +568,7 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
 {
    test_runner_t *test_runner;
    test_file_t *test_file;
+   bson_iter_t initial_data_iter;
 
    test_file = test->test_file;
    test_runner = test_file->test_runner;
@@ -576,7 +577,7 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       return true;
    }
 
-   BSON_FOREACH_BEGIN (test_file->initial_data, initial_data_iter)
+   BSON_FOREACH (test_file->initial_data, initial_data_iter)
    {
       bson_t collection_data;
       const char *collection_name;
@@ -608,7 +609,8 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       coll = mongoc_client_get_collection (
          test_runner->internal_client, database_name, collection_name);
       if (!mongoc_collection_drop_with_opts (coll, drop_opts, error)) {
-         if (error->code != 26 && (NULL == strstr (error->message, "ns not found"))) {
+         if (error->code != 26 &&
+             (NULL == strstr (error->message, "ns not found"))) {
             /* This is not a "ns not found" error. Fail the test. */
             goto loopexit;
          }
@@ -616,26 +618,29 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
 
       /* Insert documents if specified. */
       if (bson_has_field (&collection_data, "documents")) {
-         documents = bson_lookup_bson (&collection_data, "documents");
-         bulk_insert = mongoc_collection_create_bulk_operation_with_opts (
-            coll, wc_opts);
+         bson_iter_t documents_iter;
 
-         BSON_FOREACH_BEGIN (documents, documents_iter)
+         documents = bson_lookup_bson (&collection_data, "documents");
+         bulk_insert =
+            mongoc_collection_create_bulk_operation_with_opts (coll, wc_opts);
+
+         BSON_FOREACH (documents, documents_iter)
          {
             bson_t document;
 
             bson_iter_bson (&documents_iter, &document);
             mongoc_bulk_operation_insert (bulk_insert, &document);
          }
-         BSON_FOREACH_END;
 
          if (!mongoc_bulk_operation_execute (bulk_insert, NULL, error)) {
             goto loopexit;
          }
       } else {
          /* Test does not need data inserted, just create the collection. */
-         db = mongoc_client_get_database (test_runner->internal_client, database_name);
-         if (!mongoc_database_create_collection (db, collection_name, wc_opts, error)) {
+         db = mongoc_client_get_database (test_runner->internal_client,
+                                          database_name);
+         if (!mongoc_database_create_collection (
+                db, collection_name, wc_opts, error)) {
             goto loopexit;
          }
       }
@@ -653,7 +658,6 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
          return false;
       }
    }
-   BSON_FOREACH_END;
    return true;
 }
 
@@ -701,11 +705,11 @@ run_one_test_file (bson_t *bson)
 {
    test_runner_t *test_runner;
    test_file_t *test_file;
+   bson_iter_t test_iter;
 
    test_diagnostics_init ();
 
    test_runner = test_runner_new ();
-   test_runner_terminate_open_transactions (test_runner);
    test_file = test_file_new (test_runner, bson);
 
    MONGOC_DEBUG ("running test file: %s", test_file->description);
@@ -722,7 +726,7 @@ run_one_test_file (bson_t *bson)
       }
    }
 
-   BSON_FOREACH_BEGIN (test_file->tests, test_iter)
+   BSON_FOREACH (test_file->tests, test_iter)
    {
       test_t *test;
       bson_t test_bson;
@@ -737,7 +741,6 @@ run_one_test_file (bson_t *bson)
       }
       test_destroy (test);
    }
-   BSON_FOREACH_END;
 
 done:
    test_file_destroy (test_file);

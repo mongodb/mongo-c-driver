@@ -86,7 +86,7 @@ value_init_from_doc (bson_value_t *value, const bson_t *doc);
 void
 bson_lookup_value (const bson_t *b, const char *key, bson_value_t *value);
 
-bson_t*
+bson_t *
 bson_lookup_bson (const bson_t *b, const char *key);
 
 void
@@ -249,7 +249,7 @@ int
 semver_cmp (semver_t *a, semver_t *b);
 
 int
-semver_cmp_str (semver_t *a, const char* str);
+semver_cmp_str (semver_t *a, const char *str);
 
 const char *
 semver_to_string (semver_t *str);
@@ -258,19 +258,17 @@ semver_to_string (semver_t *str);
  *
  * Example of iterating and printing an array of BSON documents:
  *
+ * bson_iter_t iter;
  * bson_t *arr = my_func();
- * BSON_FOREACH_BEGIN (arr, iter) {
+ *
+ * BSON_FOREACH (arr, iter) {
  *    bson_t el;
  *    bson_iter_bson (&iter, &el);
  *    printf ("%d: %s", bson_iter_key (&iter), tmp_json (&el));
  * }
- * BSON_FOREACH_END;
  */
-#define BSON_FOREACH_BEGIN(bson, iter_varname)  \
-   do {                                         \
-      bson_iter_t iter_varname;                 \
-      bson_iter_init (&(iter_varname), (bson)); \
-      while (bson_iter_next (&(iter_varname)))
-#define BSON_FOREACH_END } while (0)
+#define BSON_FOREACH(bson, iter_varname)          \
+   for (bson_iter_init (&(iter_varname), (bson)); \
+        bson_iter_next (&(iter_varname));)
 
 #endif /* TEST_CONVENIENCES_H */
