@@ -271,4 +271,6 @@ semver_to_string (semver_t *str);
    for (bson_iter_init (&(iter_varname), (bson)); \
         bson_iter_next (&(iter_varname));)
 
+#define test_set_error(error, ...) bson_set_error (error, 1, 1, __VA_ARGS__)
+
 #endif /* TEST_CONVENIENCES_H */
