@@ -43,6 +43,11 @@ test_conveniences_cleanup ();
 bson_t *
 tmp_bson (const char *json, ...);
 
+/* Return a string, with possible printf format directives. String is
+ * automatically freed at test cleanup. */
+const char *
+tmp_str (const char *fmt, ...);
+
 /* Return a JSON string representation of BSON. String is freed automatically at
  * test cleanup. */
 const char *
@@ -80,6 +85,9 @@ value_init_from_doc (bson_value_t *value, const bson_t *doc);
 
 void
 bson_lookup_value (const bson_t *b, const char *key, bson_value_t *value);
+
+bson_t *
+bson_lookup_bson (const bson_t *b, const char *key);
 
 void
 bson_lookup_doc (const bson_t *b, const char *key, bson_t *doc);
@@ -235,8 +243,32 @@ void
 semver_parse (const char *str, semver_t *out);
 
 void
-server_semver (semver_t *out);
+server_semver (mongoc_client_t *client, semver_t *out);
 
-int semver_cmp (semver_t *a, semver_t *b);
+int
+semver_cmp (semver_t *a, semver_t *b);
+
+int
+semver_cmp_str (semver_t *a, const char *str);
+
+const char *
+semver_to_string (semver_t *str);
+
+/* Iterate over a BSON document or array.
+ *
+ * Example of iterating and printing an array of BSON documents:
+ *
+ * bson_iter_t iter;
+ * bson_t *arr = my_func();
+ *
+ * BSON_FOREACH (arr, iter) {
+ *    bson_t el;
+ *    bson_iter_bson (&iter, &el);
+ *    printf ("%d: %s", bson_iter_key (&iter), tmp_json (&el));
+ * }
+ */
+#define BSON_FOREACH(bson, iter_varname)          \
+   for (bson_iter_init (&(iter_varname), (bson)); \
+        bson_iter_next (&(iter_varname));)
 
 #endif /* TEST_CONVENIENCES_H */
