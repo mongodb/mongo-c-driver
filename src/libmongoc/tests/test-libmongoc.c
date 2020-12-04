@@ -262,6 +262,8 @@ extern void
 test_http_install (TestSuite *suite);
 extern void
 test_install_unified (TestSuite *suite);
+extern void
+test_timeout_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2676,6 +2678,7 @@ main (int argc, char *argv[])
    test_monitoring_install (&suite);
    test_http_install (&suite);
    test_install_unified (&suite);
+   test_timeout_install (&suite);
 
    ret = TestSuite_Run (&suite);
 
