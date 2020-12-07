@@ -47,7 +47,7 @@ information:
     - Examples: Windows 10 64-bit x86, Ubuntu 16.04 64-bit x86, macOS 10.13
 - C Compiler and version.
     - Examples: GCC 7.3.0, Visual Studio Community 2017, clang 3.9, XCode 9.3
-- The output of ``cmake``.
+- The output of any ``cmake``, ``make``, or other commands executed during the build.
 - The text of the error you encountered.
 
 Failure to include the relevant information will delay a useful response.
