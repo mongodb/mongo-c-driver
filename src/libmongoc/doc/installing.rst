@@ -319,6 +319,11 @@ The second way to uninstall is from within the build directory, assuming that it
 
 The second approach simply invokes the uninstall program referenced in the first approach.
 
+Dealing with Build Failures
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If your attempt to build the C driver fails, please see the `README <https://github.com/mongodb/mongo-c-driver#how-to-ask-for-help>` for instructions on requesting assistance.
+
 Additional Options for Integrators
 ----------------------------------
 
