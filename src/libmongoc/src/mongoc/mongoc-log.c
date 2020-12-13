@@ -21,6 +21,8 @@
 #include <process.h>
 #elif defined(__FreeBSD__)
 #include <sys/thr.h>
+#elif defined(__NetBSD__)
+#include <lwp.h>
 #else
 #include <unistd.h>
 #endif
@@ -179,6 +181,8 @@ mongoc_log_default_handler (mongoc_log_level_t log_level,
    pid = (int) tid;
 #elif defined(__OpenBSD__)
    pid = (int) getthrid ();
+#elif defined(__NetBSD__)
+   pid = (int) _lwp_self ();
 #else
    pid = (int) getpid ();
 #endif
