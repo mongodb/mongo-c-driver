@@ -42,12 +42,9 @@ typedef struct _json_test_config_t {
 } json_test_config_t;
 
 
-#define JSON_TEST_CONFIG_INIT                                        \
-   {                                                                 \
-      .ctx = NULL, .scenario = NULL, .before_test_cb = NULL,         \
-      .after_test_cb = NULL, .run_operation_cb = NULL,               \
-      .events_check_cb = NULL, .command_started_events_only = false, \
-      .command_monitoring_allow_subset = false, .uri_str = NULL      \
+#define JSON_TEST_CONFIG_INIT                                \
+   {                                                         \
+      NULL, NULL, NULL, NULL, NULL, NULL, false, false, NULL \
    }
 
 bson_t *

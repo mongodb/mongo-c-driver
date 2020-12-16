@@ -203,8 +203,6 @@ test_mongohouse_kill_cursors ()
    mongoc_cursor_t *cursor;
    _test_data_t test;
    mongoc_uri_t *uri;
-   bson_error_t error;
-   bson_t reply;
    bson_t query = BSON_INITIALIZER;
    const bson_t *doc;
 
