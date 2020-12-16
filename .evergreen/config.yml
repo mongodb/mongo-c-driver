@@ -671,6 +671,52 @@ functions:
         set -o xtrace
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
+  build mongohouse:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        set -o xtrace
+        if [ ! -d "drivers-evergreen-tools" ]; then
+           git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git
+        fi
+        cd drivers-evergreen-tools
+        export DRIVERS_TOOLS=$(pwd)
+        sh .evergreen/atlas_data_lake/build-mongohouse-local.sh
+        cd ../
+  run mongohouse:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      background: true
+      shell: bash
+      script: "set -o errexit\nset -o xtrace\nset -o xtrace\ncd drivers-evergreen-tools\
+        \ \nexport DRIVERS_TOOLS=$(pwd)\nsh .evergreen/atlas_data_lake/run-mongohouse-local.sh"
+  test mongohouse:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        set -o xtrace
+        echo "testing that mongohouse is running..."
+        ps aux | grep mongohouse
+        echo $(pwd)
+        echo $(ls)
+        ls > dir.txt
+        cat dir.txt
+        echo $(cat dir.txt)
+        export RUN_MONGOHOUSE_TESTS=true
+        ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d
+        unset RUN_MONGOHOUSE_TESTS
   run aws tests:
   - command: shell.exec
     type: test
@@ -17338,6 +17384,16 @@ tasks:
     vars:
       ASAN: 'on'
       SSL: ssl
+- name: test-mongohouse
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: build mongohouse
+  - func: run mongohouse
+  - func: test mongohouse
 - name: test-coverage-mock-server
   tags:
   - test-coverage
@@ -23013,6 +23069,12 @@ buildvariants:
   - test-latest-server-auth-sasl-openssl
   - test-latest-replica-set-auth-sasl-openssl
   batchtime: 1440
+- name: mongohouse
+  display_name: Mongohouse Test
+  run_on: ubuntu1804-test
+  tasks:
+  - debug-compile-sasl-openssl
+  - test-mongohouse
 - name: ocsp
   display_name: OCSP tests
   run_on: ubuntu1804-test

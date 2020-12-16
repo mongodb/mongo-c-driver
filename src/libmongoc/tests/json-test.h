@@ -38,11 +38,13 @@ typedef struct _json_test_config_t {
    json_test_events_check_cb_t events_check_cb;
    bool command_started_events_only;
    bool command_monitoring_allow_subset;
+   const char *uri_str;
 } json_test_config_t;
 
-#define JSON_TEST_CONFIG_INIT       \
-   {                                \
-      NULL, NULL, NULL, NULL, false \
+
+#define JSON_TEST_CONFIG_INIT                                \
+   {                                                         \
+      NULL, NULL, NULL, NULL, NULL, NULL, false, false, NULL \
    }
 
 bson_t *

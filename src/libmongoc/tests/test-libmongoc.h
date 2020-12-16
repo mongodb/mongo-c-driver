@@ -130,6 +130,8 @@ test_framework_skip_if_crypto (void);
 int
 test_framework_skip_if_no_crypto (void);
 int
+test_framework_skip_if_no_mongohouse (void);
+int
 test_framework_skip_if_mongos (void);
 int
 test_framework_skip_if_replset (void);
