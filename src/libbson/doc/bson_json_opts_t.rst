@@ -12,10 +12,14 @@ Synopsis
 
   #include <bson/bson.h>
 
-  typedef struct {
-     bson_json_mode_t mode;
-     int32_t max_len;
-  } bson_json_opts_t;
+  typedef struct _bson_json_opts_t bson_json_opts_t;
+
+  bson_json_opts_t *
+  bson_json_opts_new (bson_json_mode_t mode, int32_t max_len);
+
+  void
+  bson_json_opts_destroy (bson_json_opts_t *opts);
+
 
 Description
 -----------
@@ -31,3 +35,16 @@ The ``max_len`` member holds a maximum length for the resulting JSON string. Enc
   | :symbol:`bson_as_json_with_opts()`
 
 .. _MongoDB Extended JSON: https://github.com/mongodb/specifications/blob/master/source/extended-json.rst
+
+
+.. only:: html
+
+	  Functions
+	  ---------
+
+	  .. toctree::
+	     :titlesonly:
+	     :maxdepth: 1
+
+	     bson_json_opts_new
+	     bson_json_opts_destroy
