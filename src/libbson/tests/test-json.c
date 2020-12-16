@@ -3365,6 +3365,12 @@ test_bson_as_json_with_opts_all_types (void)
 
    run_bson_as_json_with_opts_tests (&b, BSON_JSON_MODE_RELAXED, full_relaxed);
    run_bson_as_json_with_opts_tests (&b, BSON_JSON_MODE_CANONICAL, full_canonical);
+
+   bson_free (full_canonical);
+   bson_free (full_relaxed);
+
+   bson_destroy (&b);
+   bson_destroy (&scope);
 }
 
 void
