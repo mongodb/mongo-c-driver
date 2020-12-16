@@ -79,7 +79,6 @@ bson_parser_entry_destroy (bson_parser_entry_t *entry, bool with_parsed_fields)
    bson_free (entry);
 }
 
-/* bson_parser_destroy destroys all parsed fields by default. */
 static void
 bson_parser_destroy_helper (bson_parser_t *parser, bool with_parsed_fields)
 {
@@ -107,6 +106,7 @@ bson_parser_destroy (bson_parser_t *parser)
    bson_parser_destroy_helper (parser, false);
 }
 
+/* This additionally destroys the destination of each parsed field. */
 void
 bson_parser_destroy_with_parsed_fields (bson_parser_t *parser)
 {
@@ -297,7 +297,7 @@ bson_parser_parse (bson_parser_t *parser, bson_t *in, bson_error_t *error)
                   }
                }
             }
-            /* Find one such alternate with a matching type. */
+
             if (!matching_entry) {
                test_set_error (
                   error,

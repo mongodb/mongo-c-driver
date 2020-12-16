@@ -15,20 +15,23 @@
  */
 
 #include "bson/bson.h"
+#include "mongoc-array-private.h"
+
+typedef struct _event_t {
+   char *type;
+   char *command_name;
+   bson_t *command;
+   bson_t *reply;
+   struct _event_t *next;
+} event_t;
 
 typedef struct _entity_t {
    char *id;
    char *type;
    void *value;
-   bson_t *uri_options;
-   bool *use_multiple_mongoses;
-   bson_t *observe_events;
    bson_t *ignore_command_monitoring_events;
-   char *client;
-   char *database_name;
-   char *database;
-   char *collection_name;
    struct _entity_t *next;
+   event_t *events;
 } entity_t;
 
 /* Operations on the entity map enforce:
@@ -45,6 +48,8 @@ entity_map_new ();
 void
 entity_map_destroy (entity_map_t *em);
 
+/* Creates an entry in the entity map based on what is specified in @bson.
+ */
 bool
 entity_map_create (entity_map_t *em, bson_t *bson, bson_error_t *error);
 
