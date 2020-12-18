@@ -2539,6 +2539,22 @@ _test_mongoc_client_select_server (bool pooled)
            !strcmp (server_type, "RSPrimary") ||
            !strcmp (server_type, "Mongos"));
 
+   /* Do not inherit read prefs from the client. */
+   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
+   mongoc_client_set_read_prefs (client, prefs);
+
+   mongoc_server_description_destroy (sd);
+   sd = mongoc_client_select_server (client,
+                                     true, /* for writes */
+                                     NULL,
+                                     &error);
+
+   ASSERT (sd);
+   server_type = mongoc_server_description_type (sd);
+   ASSERT (!strcmp (server_type, "Standalone") ||
+           !strcmp (server_type, "RSPrimary") ||
+           !strcmp (server_type, "Mongos"));
+
    mongoc_server_description_destroy (sd);
    sd = mongoc_client_select_server (client,
                                      false, /* for reads */
@@ -2552,7 +2568,6 @@ _test_mongoc_client_select_server (bool pooled)
            !strcmp (server_type, "Mongos"));
 
    mongoc_server_description_destroy (sd);
-   prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    sd = mongoc_client_select_server (client,
                                      false, /* for reads */
                                      prefs,
