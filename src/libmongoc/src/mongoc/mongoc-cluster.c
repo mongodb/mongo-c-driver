@@ -2299,7 +2299,6 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
    ENTRY;
 
    BSON_ASSERT (cluster);
-   BSON_ASSERT (server_id);
 
    if (cs && cs->server_id && cs->server_id != server_id) {
       _mongoc_bson_init_if_set (reply);
