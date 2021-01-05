@@ -271,6 +271,9 @@ semver_to_string (semver_t *str);
    for (bson_iter_init (&(iter_varname), (bson)); \
         bson_iter_next (&(iter_varname));)
 
-#define test_set_error(error, ...) bson_set_error (error, 1, 1, __VA_ARGS__)
+#define TEST_ERROR_DOMAIN 123456
+#define TEST_ERROR_CODE 654321
+#define test_set_error(error, ...) \
+   bson_set_error (error, TEST_ERROR_DOMAIN, TEST_ERROR_CODE, __VA_ARGS__)
 
 #endif /* TEST_CONVENIENCES_H */

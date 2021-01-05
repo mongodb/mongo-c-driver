@@ -994,6 +994,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/unified/bson-parser.c
    ${PROJECT_SOURCE_DIR}/tests/unified/entity-map.c
    ${PROJECT_SOURCE_DIR}/tests/unified/runner.c
+   ${PROJECT_SOURCE_DIR}/tests/unified/util.c
 )
 
 if (MONGOC_ENABLE_SSL)

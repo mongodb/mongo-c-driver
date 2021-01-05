@@ -47,6 +47,7 @@ bson_parser_new (void)
 void
 bson_parser_allow_extra (bson_parser_t *parser, bool val)
 {
+   BSON_ASSERT (parser);
    parser->allow_extra = val;
 }
 
@@ -122,7 +123,7 @@ bson_parser_add_entry (bson_parser_t *parser,
                        bool alternate)
 {
    bson_parser_entry_t *e;
-   bson_parser_entry_t *parent;
+   bson_parser_entry_t *match;
 
    e = bson_malloc0 (sizeof (*e));
    e->optional = optional;
@@ -130,32 +131,30 @@ bson_parser_add_entry (bson_parser_t *parser,
    e->out = out;
    e->key = bson_strdup (key);
 
-   if (alternate) {
-      /* There should already be an entry. Add this to the list of alternates.
-       */
-      LL_FOREACH (parser->entries, parent)
-      {
-         if (0 == strcmp (parent->key, key)) {
-            LL_PREPEND (parent->alternates, e);
-            return;
-         }
-      }
-      test_error ("Invalid parser configuration. Attempted to add alternative "
-                  "type for %s, but no type existed",
-                  key);
-   } else {
-      LL_FOREACH (parser->entries, parent)
-      {
-         if (0 == strcmp (parent->key, key)) {
-            test_error (
-               "Invalid parser configuration. Attempted to add duplicated type "
-               "for %s. If an alternate is desired, use *_alternate() helper",
-               key);
-         }
+   /* Check if an entry already exists for this key. */
+   LL_FOREACH (parser->entries, match)
+   {
+      if (0 == strcmp (match->key, key)) {
+         break;
       }
    }
 
-   LL_PREPEND (parser->entries, e);
+   if (alternate) {
+      if (match != NULL) {
+         LL_PREPEND (match->alternates, e);
+      } else {
+         /* Create a new entry. */
+         LL_PREPEND (parser->entries, e);
+      }
+   } else {
+      if (match != NULL) {
+         test_error (
+            "Invalid parser configuration. Attempted to add duplicated type "
+            "for %s. If an alternate is desired, use *_alternate() helper",
+            key);
+      }
+      LL_PREPEND (parser->entries, e);
+   }
 }
 
 void
@@ -257,6 +256,38 @@ bson_parser_bool_alternate (bson_parser_t *parser, const char *key, bool **out)
       parser, key, (void *) out, BSON_TYPE_BOOL, false, true);
 }
 
+void
+bson_parser_int (bson_parser_t *parser, const char *key, int64_t **out)
+{
+   *out = NULL;
+   bson_parser_add_entry (
+      parser, key, (void *) out, BSON_TYPE_INT32, false, false);
+   bson_parser_add_entry (
+      parser, key, (void *) out, BSON_TYPE_INT64, false, true);
+}
+
+void
+bson_parser_int_optional (bson_parser_t *parser, const char *key, int64_t **out)
+{
+   *out = NULL;
+   bson_parser_add_entry (
+      parser, key, (void *) out, BSON_TYPE_INT32, true, false);
+   bson_parser_add_entry (
+      parser, key, (void *) out, BSON_TYPE_INT64, true, true);
+}
+
+void
+bson_parser_int_alternate (bson_parser_t *parser,
+                           const char *key,
+                           int64_t **out)
+{
+   *out = NULL;
+   bson_parser_add_entry (
+      parser, key, (void *) out, BSON_TYPE_INT32, false, true);
+   bson_parser_add_entry (
+      parser, key, (void *) out, BSON_TYPE_INT64, false, true);
+}
+
 bool
 bson_parser_parse (bson_parser_t *parser, bson_t *in, bson_error_t *error)
 {
@@ -287,6 +318,10 @@ bson_parser_parse (bson_parser_t *parser, bson_t *in, bson_error_t *error)
 
                LL_FOREACH (entry->alternates, alternate)
                {
+                  if (alternate->alternates != NULL) {
+                     test_error ("Logic error: alternates should not be set.");
+                  }
+
                   bson_string_append_printf (
                      expected_types,
                      ",%s",

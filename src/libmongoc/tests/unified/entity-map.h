@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#ifndef UNIFIED_ENTITY_MAP_H
+#define UNIFIED_ENTITY_MAP_H
+
 #include "bson/bson.h"
 #include "mongoc-array-private.h"
 
@@ -56,3 +59,5 @@ entity_map_create (entity_map_t *em, bson_t *bson, bson_error_t *error);
 /* Returns NULL and sets @error if @id does not map to an entry. */
 entity_t *
 entity_map_get (entity_map_t *em, const char *id, bson_error_t *error);
+
+#endif /* UNIFIED_ENTITY_MAP_H */

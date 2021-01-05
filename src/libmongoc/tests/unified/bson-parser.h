@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#ifndef UNIFIED_BSON_PARSER_H
+#define UNIFIED_BSON_PARSER_H
+
 #include "bson/bson.h"
 
 /* bson_parser_t is a very simplified parser to parse BSON fields into C values.
@@ -27,13 +30,14 @@
  *
  * person_t person;
  * bson_parser_t *parser;
+ * bson_t *bson = bson_from_file();
  *
  * parser = bson_parser_new ();
  * bson_parser_utf8 (parser, "name", &person.name);
  * bson_parser_bool_optional (parser, "hasKids", &person.has_kids);
- * bson_parser_arr (parser, "jobHistory", &person.job_history);
- * bson_parser_doc_alternate (parser, "jobs", &person.job_history);
- * bson_parser_parse_or_assert (parser, &bson);
+ * bson_parser_array (parser, "jobs", &person.jobs);
+ * bson_parser_doc_alternate (parser, "jobs", &person.jobs);
+ * bson_parser_parse_or_assert (parser, bson);
  *
  * bson_parser_destroy_with_parsed_fields (parser);
  *
@@ -86,6 +90,14 @@ bson_parser_bool_optional (bson_parser_t *bp, const char *key, bool **out);
 void
 bson_parser_bool_alternate (bson_parser_t *bp, const char *key, bool **out);
 
+/* Accepts either int32 or int64 */
+void
+bson_parser_int (bson_parser_t *bp, const char *key, int64_t **out);
+void
+bson_parser_int_optional (bson_parser_t *bp, const char *key, int64_t **out);
+void
+bson_parser_int_alternate (bson_parser_t *bp, const char *key, int64_t **out);
+
 /* Attempt to parse @in into the fields that were registered. If parsing fails,
  * returns false and sets @error. */
 bool
@@ -94,3 +106,5 @@ bson_parser_parse (bson_parser_t *bp, bson_t *in, bson_error_t *error);
 /* Attempt to parse @in. If parsing fails, print an error and abort. */
 void
 bson_parser_parse_or_assert (bson_parser_t *bp, bson_t *in);
+
+#endif /* UNIFIED_BSON_PARSER_H */

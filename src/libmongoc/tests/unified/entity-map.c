@@ -21,6 +21,7 @@
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "utlist.h"
+#include "util.h"
 
 /* TODO: remove this include once CDRIVER-3285 is resolved. */
 #include "mongoc-uri-private.h"
@@ -225,6 +226,7 @@ entity_client_new (bson_t *bson, bson_error_t *error)
    bson_t *uri_options = NULL;
    bool *use_multiple_mongoses = NULL;
    bson_t *observe_events = NULL;
+   bson_t *server_api = NULL;
 
    entity = entity_new ("client");
    parser = bson_parser_new ();
@@ -236,9 +238,29 @@ entity_client_new (bson_t *bson, bson_error_t *error)
    bson_parser_array_optional (parser,
                                "ignoreCommandMonitoringEvents",
                                &entity->ignore_command_monitoring_events);
+   bson_parser_doc_optional (parser, "serverApi", &server_api);
 
    if (!bson_parser_parse (parser, bson, error)) {
       goto done;
+   }
+
+   if (server_api) {
+      bson_parser_t *sapi_parser = NULL;
+      char *version = NULL;
+      bool *strict = NULL;
+      bool *deprecation_errors = NULL;
+
+      sapi_parser = bson_parser_new ();
+      bson_parser_utf8 (sapi_parser, "version", &version);
+      bson_parser_bool_optional (sapi_parser, "strict", &strict);
+      bson_parser_bool_optional (
+         sapi_parser, "deprecationErrors", &deprecation_errors);
+      if (!bson_parser_parse (sapi_parser, server_api, error)) {
+         bson_parser_destroy_with_parsed_fields (sapi_parser);
+         goto done;
+      }
+      /* TODO: CDRIVER-3821 apply serverApi to client. */
+      bson_parser_destroy_with_parsed_fields (sapi_parser);
    }
 
    /* Build the client's URI. */
@@ -305,11 +327,79 @@ done:
    bson_destroy (uri_options);
    bson_free (use_multiple_mongoses);
    bson_destroy (observe_events);
+   bson_destroy (server_api);
    if (!ret) {
       entity_destroy (entity);
       return NULL;
    }
    return entity;
+}
+typedef struct {
+   mongoc_read_concern_t *rc;
+   mongoc_write_concern_t *wc;
+   mongoc_read_prefs_t *rp;
+} coll_or_db_opts_t;
+
+static coll_or_db_opts_t *
+coll_or_db_opts_new ()
+{
+   return bson_malloc0 (sizeof (coll_or_db_opts_t));
+}
+
+static void
+coll_or_db_opts_destroy (coll_or_db_opts_t *opts)
+{
+   if (!opts) {
+      return;
+   }
+   mongoc_read_concern_destroy (opts->rc);
+   mongoc_read_prefs_destroy (opts->rp);
+   mongoc_write_concern_destroy (opts->wc);
+   bson_free (opts);
+}
+
+static bool
+coll_or_db_opts_parse (coll_or_db_opts_t *opts, bson_t *in, bson_error_t *error)
+{
+   bson_parser_t *parser;
+   bson_t *rc_doc;
+   bson_t *rp_doc;
+   bson_t *wc_doc;
+   bool ret = false;
+
+   parser = bson_parser_new ();
+   bson_parser_doc_optional (parser, "readConcern", &rc_doc);
+   bson_parser_doc_optional (parser, "readPreference", &rp_doc);
+   bson_parser_doc_optional (parser, "writeConcern", &wc_doc);
+   if (!bson_parser_parse (parser, in, error)) {
+      goto done;
+   }
+
+   if (rc_doc) {
+      opts->rc = bson_to_read_concern (rc_doc, error);
+      if (!opts->rc) {
+         goto done;
+      }
+   }
+
+   if (rp_doc) {
+      opts->rp = bson_to_read_prefs (rp_doc, error);
+      if (!opts->rp) {
+         goto done;
+      }
+   }
+
+   if (wc_doc) {
+      opts->wc = bson_to_write_concern (wc_doc, error);
+      if (!opts->wc) {
+         goto done;
+      }
+   }
+
+   ret = true;
+done:
+   bson_parser_destroy_with_parsed_fields (parser);
+   return ret;
 }
 
 entity_t *
@@ -322,14 +412,18 @@ entity_database_new (entity_map_t *entity_map,
    const entity_t *client_entity;
    char *client_id = NULL;
    mongoc_client_t *client;
+   mongoc_database_t *db;
    char *database_name = NULL;
    bool ret = false;
+   bson_t *database_opts = NULL;
+   coll_or_db_opts_t *coll_or_db_opts = NULL;
 
    entity = entity_new ("database");
    parser = bson_parser_new ();
    bson_parser_utf8 (parser, "id", &entity->id);
    bson_parser_utf8 (parser, "client", &client_id);
    bson_parser_utf8 (parser, "databaseName", &database_name);
+   bson_parser_doc_optional (parser, "databaseOptions", &database_opts);
 
    if (!bson_parser_parse (parser, bson, error)) {
       goto done;
@@ -341,13 +435,32 @@ entity_database_new (entity_map_t *entity_map,
    }
 
    client = (mongoc_client_t *) client_entity->value;
-   entity->value = (void *) mongoc_client_get_database (client, database_name);
+   db = mongoc_client_get_database (client, database_name);
+   entity->value = (void *) db;
+
+   if (database_opts) {
+      coll_or_db_opts = coll_or_db_opts_new ();
+      if (!coll_or_db_opts_parse (coll_or_db_opts, database_opts, error)) {
+         goto done;
+      }
+      if (coll_or_db_opts->rc) {
+         mongoc_database_set_read_concern (db, coll_or_db_opts->rc);
+      }
+      if (coll_or_db_opts->rp) {
+         mongoc_database_set_read_prefs (db, coll_or_db_opts->rp);
+      }
+      if (coll_or_db_opts->rc) {
+         mongoc_database_set_write_concern (db, coll_or_db_opts->wc);
+      }
+   }
 
    ret = true;
 done:
    bson_free (client_id);
    bson_free (database_name);
    bson_parser_destroy (parser);
+   bson_destroy (database_opts);
+   coll_or_db_opts_destroy (coll_or_db_opts);
    if (!ret) {
       entity_destroy (entity);
       return NULL;
@@ -364,27 +477,52 @@ entity_collection_new (entity_map_t *entity_map,
    entity_t *entity;
    entity_t *database_entity;
    mongoc_database_t *database;
+   mongoc_collection_t *coll;
    bool ret = false;
    char *database_id = NULL;
    char *collection_name = NULL;
+   bson_t *collection_opts = NULL;
+   coll_or_db_opts_t *coll_or_db_opts = NULL;
 
    entity = entity_new ("collection");
    parser = bson_parser_new ();
    bson_parser_utf8 (parser, "id", &entity->id);
    bson_parser_utf8 (parser, "database", &database_id);
    bson_parser_utf8 (parser, "collectionName", &collection_name);
+   bson_parser_doc_optional (parser, "collectionOptions", &collection_opts);
    if (!bson_parser_parse (parser, bson, error)) {
       goto done;
    }
 
    database_entity = entity_map_get (entity_map, database_id, error);
+   if (!database_entity) {
+      goto done;
+   }
    database = (mongoc_database_t *) database_entity->value;
-   entity->value = mongoc_database_get_collection (database, collection_name);
+   coll = mongoc_database_get_collection (database, collection_name);
+   entity->value = (void *) coll;
+   if (collection_opts) {
+      coll_or_db_opts = coll_or_db_opts_new ();
+      if (!coll_or_db_opts_parse (coll_or_db_opts, collection_opts, error)) {
+         goto done;
+      }
+      if (coll_or_db_opts->rc) {
+         mongoc_collection_set_read_concern (coll, coll_or_db_opts->rc);
+      }
+      if (coll_or_db_opts->rp) {
+         mongoc_collection_set_read_prefs (coll, coll_or_db_opts->rp);
+      }
+      if (coll_or_db_opts->rc) {
+         mongoc_collection_set_write_concern (coll, coll_or_db_opts->wc);
+      }
+   }
    ret = true;
 done:
    bson_free (collection_name);
    bson_free (database_id);
    bson_parser_destroy (parser);
+   bson_destroy (collection_opts);
+   coll_or_db_opts_destroy (coll_or_db_opts);
    if (!ret) {
       entity_destroy (entity);
       return NULL;
@@ -437,13 +575,16 @@ entity_session_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    parser = bson_parser_new ();
    bson_parser_utf8 (parser, "id", &entity->id);
    bson_parser_utf8 (parser, "client", &client_id);
-   bson_parser_doc (parser, "sessionOptions", &session_opts_bson);
+   bson_parser_doc_optional (parser, "sessionOptions", &session_opts_bson);
    if (!bson_parser_parse (parser, bson, error)) {
       goto done;
    }
 
    client_entity = entity_map_get (entity_map, client_id, error);
    client = (mongoc_client_t *) client_entity->value;
+   if (!client) {
+      goto done;
+   }
    session_opts = session_opts_new (session_opts_bson, error);
    if (!session_opts) {
       goto done;
@@ -471,7 +612,10 @@ done:
  * referenced entities (e.g. client) are defined before any of their dependent
  * entities (e.g. database, session)."
  * If a test ever does break this pattern (flipping dependency order), that can
- * be solved by creating C objects lazily in entity_map_get.
+ * be solved by:
+ * - creating C objects lazily in entity_map_get.
+ * - creating entities in dependency order (all clients first, then databases,
+ *   etc.)
  * The current implementation here does the simple thing and creates the C
  * object immediately.
  */
@@ -548,28 +692,29 @@ entity_destroy (entity_t *entity)
    if (!entity) {
       return;
    }
-   if (entity->type) {
-      if (0 == strcmp ("client", entity->type)) {
-         mongoc_client_t *client;
 
-         client = (mongoc_client_t *) entity->value;
-         mongoc_client_destroy (client);
-      } else if (0 == strcmp ("database", entity->type)) {
-         mongoc_database_t *db;
+   BSON_ASSERT (entity->type);
 
-         db = (mongoc_database_t *) entity->value;
-         mongoc_database_destroy (db);
-      } else if (0 == strcmp ("collection", entity->type)) {
-         mongoc_collection_t *coll;
+   if (0 == strcmp ("client", entity->type)) {
+      mongoc_client_t *client;
 
-         coll = (mongoc_collection_t *) entity->value;
-         mongoc_collection_destroy (coll);
-      } else if (0 == strcmp ("session", entity->type)) {
-         mongoc_client_session_t *sess;
+      client = (mongoc_client_t *) entity->value;
+      mongoc_client_destroy (client);
+   } else if (0 == strcmp ("database", entity->type)) {
+      mongoc_database_t *db;
 
-         sess = (mongoc_client_session_t *) entity->value;
-         mongoc_client_session_destroy (sess);
-      }
+      db = (mongoc_database_t *) entity->value;
+      mongoc_database_destroy (db);
+   } else if (0 == strcmp ("collection", entity->type)) {
+      mongoc_collection_t *coll;
+
+      coll = (mongoc_collection_t *) entity->value;
+      mongoc_collection_destroy (coll);
+   } else if (0 == strcmp ("session", entity->type)) {
+      mongoc_client_session_t *sess;
+
+      sess = (mongoc_client_session_t *) entity->value;
+      mongoc_client_session_destroy (sess);
    }
 
    LL_FOREACH_SAFE (entity->events, event, tmp)
