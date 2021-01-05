@@ -84,15 +84,15 @@ done:
 
 /* Returns 0 on error. */
 static mongoc_read_mode_t string_to_read_mode (char* str, bson_error_t* error) {
-    if (0 == strcasecmp ("primary", str)) {
+    if (0 == bson_strcasecmp ("primary", str)) {
         return MONGOC_READ_PRIMARY;
-    } else if (0 == strcasecmp ("primarypreferred", str)) {
+    } else if (0 == bson_strcasecmp ("primarypreferred", str)) {
         return MONGOC_READ_PRIMARY_PREFERRED;
-    } else if (0 == strcasecmp ("secondary", str)) {
+    } else if (0 == bson_strcasecmp ("secondary", str)) {
         return MONGOC_READ_SECONDARY;
-    } else if (0 == strcasecmp ("secondarypreferred", str)) {
+    } else if (0 == bson_strcasecmp ("secondarypreferred", str)) {
         return MONGOC_READ_SECONDARY_PREFERRED;
-    } else if (0 == strcasecmp ("nearest", str)) {
+    } else if (0 == bson_strcasecmp ("nearest", str)) {
         return MONGOC_READ_NEAREST;
     }
 
