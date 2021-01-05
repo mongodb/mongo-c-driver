@@ -111,6 +111,7 @@ cmd_started_cb (const mongoc_apm_command_started_t *event)
    /* If the ns does not match, return without validating. */
    if (strcmp (test->cursor_ns, ns) != 0) {
       bson_mutex_unlock (&test->mutex);
+      bson_free (ns);
       return;
    }
 
