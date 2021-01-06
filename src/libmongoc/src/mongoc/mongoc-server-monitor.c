@@ -396,7 +396,7 @@ _server_monitor_poll_with_interrupt (mongoc_server_monitor_t *server_monitor,
 {
    /* How many milliseconds we should poll for on each tick.
     * On every tick, check whether the awaitable ismaster was cancelled. */
-   const int32_t monitor_tick_ms = 500;
+   const int32_t monitor_tick_ms = MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS;
    int64_t timeleft_ms;
 
    while ((timeleft_ms = expire_at_ms - _now_ms ()) > 0) {
