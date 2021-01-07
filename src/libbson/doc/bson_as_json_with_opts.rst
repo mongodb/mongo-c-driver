@@ -41,10 +41,11 @@ Example
 
 .. code-block:: c
 
-  bson_json_opts_t opts = { BSON_JSON_MODE_CANONICAL, BSON_MAX_LEN_UNLIMITED };
-  char *str = bson_as_json_with_opts (doc, NULL, &opts);
+  bson_json_opts_t *opts = bson_json_opts_new (BSON_JSON_MODE_CANONICAL, BSON_MAX_LEN_UNLIMITED);
+  char *str = bson_as_json_with_opts (doc, NULL, opts);
   printf ("%s\n", str);
   bson_free (str);
+  bson_json_opts_destroy (opts);
 
 
 .. only:: html

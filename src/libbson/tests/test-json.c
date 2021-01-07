@@ -3322,8 +3322,8 @@ test_bson_as_json_with_opts_decimal128 (void)
 static void
 test_bson_as_json_with_opts_all_types (void)
 {
-   const char *full_canonical;
-   const char *full_relaxed;
+   char *full_canonical;
+   char *full_relaxed;
    bson_oid_t oid;
    bson_decimal128_t decimal128;
    bson_t b;

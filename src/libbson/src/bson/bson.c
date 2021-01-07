@@ -3299,7 +3299,6 @@ bson_array_as_json (const bson_t *bson, size_t *length)
    bson_json_state_t state;
    bson_iter_t iter;
    ssize_t err_offset = -1;
-   int32_t remaining;
 
    BSON_ASSERT (bson);
 
@@ -3325,7 +3324,7 @@ bson_array_as_json (const bson_t *bson, size_t *length)
    state.depth = 0;
    state.err_offset = &err_offset;
    state.mode = BSON_JSON_MODE_LEGACY;
-   state.max_len = BSON_MAX_LEN_UNLIMITED; // TODO: how does the limit get here?
+   state.max_len = BSON_MAX_LEN_UNLIMITED;
    state.max_len_reached = false;
 
    if ((bson_iter_visit_all (&iter, &bson_as_json_visitors, &state) ||
@@ -3341,14 +3340,7 @@ bson_array_as_json (const bson_t *bson, size_t *length)
       return NULL;
    }
 
-   /* Append closing space and ] separately, in case we hit the max in between. */
-   remaining = state.max_len - state.str->len;
-   if (state.max_len == BSON_MAX_LEN_UNLIMITED ||
-       remaining > 1) {
-      bson_string_append (state.str, " ]");
-   } else if (remaining == 1) {
-      bson_string_append (state.str, " ");
-   }
+   bson_string_append (state.str, " ]");
 
    if (length) {
       *length = state.str->len;
