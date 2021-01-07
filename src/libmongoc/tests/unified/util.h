@@ -19,8 +19,11 @@
 
 #include "mongoc/mongoc.h"
 
-mongoc_write_concern_t * bson_to_write_concern (bson_t *bson, bson_error_t* error);
-mongoc_read_concern_t * bson_to_read_concern (bson_t *bson, bson_error_t* error);
-mongoc_read_prefs_t * bson_to_read_prefs (bson_t *bson, bson_error_t* error);
+mongoc_write_concern_t *
+bson_to_write_concern (bson_t *bson, bson_error_t *error);
+mongoc_read_concern_t *
+bson_to_read_concern (bson_t *bson, bson_error_t *error);
+mongoc_read_prefs_t *
+bson_to_read_prefs (bson_t *bson, bson_error_t *error);
 
 #endif /* UNIFIED_UTIL_H */

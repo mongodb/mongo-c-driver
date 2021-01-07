@@ -1459,10 +1459,11 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
             test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
 
          if (!azure_tenant_id || !azure_client_id || !azure_client_secret) {
-            fprintf (stderr, "Set MONGOC_TEST_AZURE_TENANT_ID, "
-                             "MONGOC_TEST_AZURE_CLIENT_ID, and "
-                             "MONGOC_TEST_AZURE_CLIENT_SECRET to enable CSFLE "
-                             "tests.");
+            fprintf (stderr,
+                     "Set MONGOC_TEST_AZURE_TENANT_ID, "
+                     "MONGOC_TEST_AZURE_CLIENT_ID, and "
+                     "MONGOC_TEST_AZURE_CLIENT_SECRET to enable CSFLE "
+                     "tests.");
             abort ();
          }
 
@@ -1486,9 +1487,10 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          gcp_privatekey = test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
 
          if (!gcp_email || !gcp_privatekey) {
-            fprintf (stderr, "Set MONGOC_TEST_GCP_EMAIL and "
-                             "MONGOC_TEST_GCP_PRIVATEKEY to enable CSFLE "
-                             "tests.");
+            fprintf (stderr,
+                     "Set MONGOC_TEST_GCP_EMAIL and "
+                     "MONGOC_TEST_GCP_PRIVATEKEY to enable CSFLE "
+                     "tests.");
             abort ();
          }
 

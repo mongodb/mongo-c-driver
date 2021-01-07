@@ -17,7 +17,6 @@
 #include "entity-map.h"
 
 #include "bson-parser.h"
-#include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "utlist.h"

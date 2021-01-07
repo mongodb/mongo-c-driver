@@ -291,7 +291,7 @@ test_new (test_file_t *test_file, bson_t *bson)
    bson_parser_array_optional (
       parser, "runOnRequirements", &test->run_on_requirements);
    bson_parser_utf8_optional (parser, "skipReason", &test->skip_reason);
-   bson_parser_array_optional (parser, "operations", &test->operations);
+   bson_parser_array (parser, "operations", &test->operations);
    bson_parser_array_optional (parser, "expectEvents", &test->expect_events);
    bson_parser_array_optional (parser, "outcome", &test->outcome);
    bson_parser_parse_or_assert (parser, bson);
@@ -603,7 +603,7 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       parser = bson_parser_new ();
       bson_parser_utf8 (parser, "databaseName", &database_name);
       bson_parser_utf8 (parser, "collectionName", &collection_name);
-      bson_parser_array_optional (parser, "documents", &documents);
+      bson_parser_array (parser, "documents", &documents);
       if (!bson_parser_parse (parser, &collection_data, error)) {
          goto loopexit;
       }
@@ -630,7 +630,7 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       }
 
       /* Insert documents if specified. */
-      if (documents) {
+      if (bson_count_keys (documents) > 0) {
          bson_iter_t documents_iter;
 
          bulk_insert =
