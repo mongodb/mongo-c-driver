@@ -734,14 +734,10 @@ entity_map_get (entity_map_t *entity_map, const char *id, bson_error_t *error)
    LL_FOREACH (entity_map->entities, entity)
    {
       if (0 == strcmp (entity->id, id)) {
-         break;
+         return entity;
       }
    }
 
-   if (NULL == entity) {
-      test_set_error (error, "Entity '%s' not found", id);
-      return NULL;
-   }
-
-   return entity;
+   test_set_error (error, "Entity '%s' not found", id);
+   return NULL;
 }
