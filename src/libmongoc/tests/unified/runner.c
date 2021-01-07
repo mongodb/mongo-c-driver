@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "bson-parser.h"
+#include "entity-map.h"
 #include "json-test.h"
 #include "TestSuite.h"
 #include "test-conveniences.h"
@@ -36,7 +38,7 @@ typedef struct {
 typedef struct {
    test_runner_t *test_runner;
 
-   const char *description;
+   char *description;
    semver_t schema_version;
    bson_t *run_on_requirements;
    bson_t *create_entities;
@@ -47,12 +49,13 @@ typedef struct {
 typedef struct {
    test_file_t *test_file;
 
-   const char *description;
+   char *description;
    bson_t *run_on_requirements;
-   const char *skip_reason;
+   char *skip_reason;
    bson_t *operations;
    bson_t *expect_events;
    bson_t *outcome;
+   entity_map_t *entity_map;
 } test_t;
 
 /* test_diagnostics is a global storing current test state.
@@ -239,24 +242,26 @@ static test_file_t *
 test_file_new (test_runner_t *test_runner, bson_t *bson)
 {
    test_file_t *test_file;
+   bson_parser_t *parser;
+   char *schema_version;
 
    test_file = bson_malloc0 (sizeof (test_file_t));
    test_file->test_runner = test_runner;
-   test_file->description = bson_lookup_utf8 (bson, "description");
 
-   semver_parse (bson_lookup_utf8 (bson, "schemaVersion"),
-                 &test_file->schema_version);
-   if (bson_has_field (bson, "runOnRequirements")) {
-      test_file->run_on_requirements =
-         bson_lookup_bson (bson, "runOnRequirements");
-   }
-   if (bson_has_field (bson, "createEntities")) {
-      test_file->create_entities = bson_lookup_bson (bson, "createEntities");
-   }
-   if (bson_has_field (bson, "initialData")) {
-      test_file->initial_data = bson_lookup_bson (bson, "initialData");
-   }
-   test_file->tests = bson_lookup_bson (bson, "tests");
+   parser = bson_parser_new ();
+   bson_parser_utf8 (parser, "description", &test_file->description);
+   bson_parser_utf8 (parser, "schemaVersion", &schema_version);
+   bson_parser_array_optional (
+      parser, "runOnRequirements", &test_file->run_on_requirements);
+   bson_parser_array_optional (
+      parser, "createEntities", &test_file->create_entities);
+   bson_parser_array_optional (parser, "initialData", &test_file->initial_data);
+   bson_parser_array (parser, "tests", &test_file->tests);
+   bson_parser_parse_or_assert (parser, bson);
+   bson_parser_destroy (parser);
+
+   semver_parse (schema_version, &test_file->schema_version);
+   bson_free (schema_version);
    test_diagnostics.test_file = test_file;
    return test_file;
 }
@@ -265,6 +270,7 @@ static void
 test_file_destroy (test_file_t *test_file)
 {
    test_diagnostics.test_file = NULL;
+   bson_free (test_file->description);
    bson_destroy (test_file->tests);
    bson_destroy (test_file->initial_data);
    bson_destroy (test_file->create_entities);
@@ -276,24 +282,22 @@ static test_t *
 test_new (test_file_t *test_file, bson_t *bson)
 {
    test_t *test;
+   bson_parser_t *parser;
 
    test = bson_malloc0 (sizeof (test_t));
    test->test_file = test_file;
-   test->description = bson_lookup_utf8 (bson, "description");
-   if (bson_has_field (bson, "runOnRequirements")) {
-      test->run_on_requirements = bson_lookup_bson (bson, "runOnRequirements");
-   }
-   if (bson_has_field (bson, "skipReason")) {
-      test->skip_reason = bson_lookup_utf8 (bson, "skipReason");
-   }
-   test->operations = bson_lookup_bson (bson, "operations");
-   if (bson_has_field (bson, "expectEvents")) {
-      test->expect_events = bson_lookup_bson (bson, "expectEvents");
-   }
-   if (bson_has_field (bson, "outcome")) {
-      test->outcome = bson_lookup_bson (bson, "outcome");
-   }
+   parser = bson_parser_new ();
+   bson_parser_utf8 (parser, "description", &test->description);
+   bson_parser_array_optional (
+      parser, "runOnRequirements", &test->run_on_requirements);
+   bson_parser_utf8_optional (parser, "skipReason", &test->skip_reason);
+   bson_parser_array (parser, "operations", &test->operations);
+   bson_parser_array_optional (parser, "expectEvents", &test->expect_events);
+   bson_parser_array_optional (parser, "outcome", &test->outcome);
+   bson_parser_parse_or_assert (parser, bson);
+   bson_parser_destroy (parser);
 
+   test->entity_map = entity_map_new ();
    test_diagnostics.test = test;
    return test;
 }
@@ -302,10 +306,13 @@ static void
 test_destroy (test_t *test)
 {
    test_diagnostics.test = NULL;
+   entity_map_destroy (test->entity_map);
    bson_destroy (test->outcome);
    bson_destroy (test->expect_events);
    bson_destroy (test->operations);
    bson_destroy (test->run_on_requirements);
+   bson_free (test->description);
+   bson_free (test->skip_reason);
    bson_free (test);
 }
 
@@ -579,9 +586,10 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
 
    BSON_FOREACH (test_file->initial_data, initial_data_iter)
    {
+      bson_parser_t *parser = NULL;
       bson_t collection_data;
-      const char *collection_name;
-      const char *database_name;
+      char *collection_name = NULL;
+      char *database_name = NULL;
       bson_t *documents = NULL;
       mongoc_database_t *db = NULL;
       mongoc_collection_t *coll = NULL;
@@ -592,8 +600,13 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       bool ret = false;
 
       bson_iter_bson (&initial_data_iter, &collection_data);
-      database_name = bson_lookup_utf8 (&collection_data, "databaseName");
-      collection_name = bson_lookup_utf8 (&collection_data, "collectionName");
+      parser = bson_parser_new ();
+      bson_parser_utf8 (parser, "databaseName", &database_name);
+      bson_parser_utf8 (parser, "collectionName", &collection_name);
+      bson_parser_array (parser, "documents", &documents);
+      if (!bson_parser_parse (parser, &collection_data, error)) {
+         goto loopexit;
+      }
 
       wc = mongoc_write_concern_new ();
       mongoc_write_concern_set_w (wc, MONGOC_WRITE_CONCERN_W_MAJORITY);
@@ -617,10 +630,9 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       }
 
       /* Insert documents if specified. */
-      if (bson_has_field (&collection_data, "documents")) {
+      if (bson_count_keys (documents) > 0) {
          bson_iter_t documents_iter;
 
-         documents = bson_lookup_bson (&collection_data, "documents");
          bulk_insert =
             mongoc_collection_create_bulk_operation_with_opts (coll, wc_opts);
 
@@ -654,7 +666,34 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
       bson_destroy (documents);
       mongoc_write_concern_destroy (wc);
       mongoc_collection_destroy (coll);
+      bson_free (database_name);
+      bson_free (collection_name);
+      bson_parser_destroy (parser);
       if (!ret) {
+         return false;
+      }
+   }
+   return true;
+}
+
+static bool
+test_create_entities (test_t *test, bson_error_t *error)
+{
+   test_file_t *test_file;
+   bson_iter_t iter;
+
+   test_file = test->test_file;
+
+   if (!test_file->create_entities) {
+      return true;
+   }
+
+   BSON_FOREACH (test_file->create_entities, iter)
+   {
+      bson_t entity_bson;
+
+      bson_iter_bson (&iter, &entity_bson);
+      if (!entity_map_create (test->entity_map, &entity_bson, error)) {
          return false;
       }
    }
@@ -696,6 +735,9 @@ test_run (test_t *test, bson_error_t *error)
       return false;
    }
 
+   if (!test_create_entities (test, error)) {
+      return false;
+   }
 
    return true;
 }

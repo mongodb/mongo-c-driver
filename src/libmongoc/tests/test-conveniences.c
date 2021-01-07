@@ -249,8 +249,9 @@ bson_lookup_value (const bson_t *b, const char *key, bson_value_t *value)
    bson_value_copy (bson_iter_value (&iter), value);
 }
 
-bson_t*
-bson_lookup_bson (const bson_t *b, const char *key) {
+bson_t *
+bson_lookup_bson (const bson_t *b, const char *key)
+{
    bson_iter_t iter;
    bson_t tmp;
 
@@ -1958,7 +1959,8 @@ semver_cmp (semver_t *a, semver_t *b)
 }
 
 int
-semver_cmp_str (semver_t *a, const char* str) {
+semver_cmp_str (semver_t *a, const char *str)
+{
    semver_t b;
 
    semver_parse (str, &b);
