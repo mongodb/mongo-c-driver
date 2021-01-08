@@ -80,7 +80,9 @@ mongoc_timeout_copy (const mongoc_timeout_t *timeout)
 {
    BSON_ASSERT (timeout);
 
-   mongoc_timeout_t *copy = mongoc_timeout_new ();
+   mongoc_timeout_t *copy = NULL;
+
+   copy = mongoc_timeout_new ();
    copy->timeout_ms = timeout->timeout_ms;
    copy->is_set = timeout->is_set;
 
