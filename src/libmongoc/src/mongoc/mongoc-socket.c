@@ -1020,7 +1020,7 @@ mongoc_socket_new (int domain,   /* IN */
       _mongoc_socket_setkeepalive (sd);
    }
 
-   /* Set SO_NISIGPIPE, to ignore SIGPIPE on writes for platforms where
+   /* Set SO_NOSIGPIPE, to ignore SIGPIPE on writes for platforms where
       setting MSG_NOSIGNAL on writes is not supported (primarily OSX). */
 #ifdef SO_NOSIGPIPE
    setsockopt(sd, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on));
