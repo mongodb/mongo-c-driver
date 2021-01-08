@@ -97,6 +97,17 @@ typedef enum {
  */
 typedef struct _bson_context_t bson_context_t;
 
+/**
+ * bson_json_opts_t:
+ *
+ * This structure is used to pass options for serializing BSON into extended
+ * JSON to the respective serialization methods.
+ *
+ * max_len can be either a non-negative integer, or BSON_MAX_LEN_UNLIMITED to
+ * set no limit for serialization length.
+ */
+typedef struct _bson_json_opts_t bson_json_opts_t;
+
 
 /**
  * bson_t:

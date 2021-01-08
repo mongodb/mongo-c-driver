@@ -23,6 +23,7 @@
 #include "bson.h"
 #include "bson-config.h"
 #include "bson-json.h"
+#include "bson-json-private.h"
 #include "bson-iso8601-private.h"
 
 #include "common-b64-private.h"
@@ -391,6 +392,25 @@ _noop (void)
       bson->bson_state = (_state);                                             \
    }
 
+
+
+bson_json_opts_t *
+bson_json_opts_new (bson_json_mode_t mode, int32_t max_len)
+{
+   bson_json_opts_t *opts;
+
+   opts = (bson_json_opts_t *) bson_malloc (sizeof *opts);
+   opts->mode = mode;
+   opts->max_len = max_len;
+
+   return opts;
+}
+
+void
+bson_json_opts_destroy (bson_json_opts_t *opts)
+{
+   bson_free (opts);
+}
 
 static void
 _bson_json_read_set_error (bson_json_reader_t *reader, const char *fmt, ...)
