@@ -993,6 +993,9 @@ mongoc_socket_new (int domain,   /* IN */
 #else
    int sd;
 #endif
+#ifdef SO_NOSIGPIPE
+   int on = 1;
+#endif
 
    ENTRY;
 
@@ -1016,6 +1019,12 @@ mongoc_socket_new (int domain,   /* IN */
       }
       _mongoc_socket_setkeepalive (sd);
    }
+
+   /* Set SO_NOSIGPIPE, to ignore SIGPIPE on writes for platforms where
+      setting MSG_NOSIGNAL on writes is not supported (primarily OSX). */
+#ifdef SO_NOSIGPIPE
+   setsockopt(sd, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on));
+#endif
 
    sock = (mongoc_socket_t *) bson_malloc0 (sizeof *sock);
    sock->sd = sd;
