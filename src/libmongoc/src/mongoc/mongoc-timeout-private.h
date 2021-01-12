@@ -45,4 +45,4 @@ mongoc_timeout_set_timeout_ms (mongoc_timeout_t *timeout, int64_t timeout_ms);
 bool
 mongoc_timeout_is_set (const mongoc_timeout_t *timeout);
 
-#endif // MONGOC_TIMEOUT_PRIVATE_H
+#endif /* MONGOC_TIMEOUT_PRIVATE_H */
