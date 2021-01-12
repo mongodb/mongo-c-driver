@@ -55,13 +55,7 @@ mongoc_timeout_set_timeout_ms (mongoc_timeout_t *timeout, int64_t timeout_ms)
 mongoc_timeout_t *
 mongoc_timeout_new ()
 {
-   mongoc_timeout_t *timeout;
-
-   timeout = (mongoc_timeout_t *) bson_malloc0 (sizeof *timeout);
-   timeout->timeout_ms = 0;
-   timeout->is_set = false;
-
-   return timeout;
+   return (mongoc_timeout_t *) bson_malloc0 (sizeof (mongoc_timeout_t));
 }
 
 mongoc_timeout_t *
