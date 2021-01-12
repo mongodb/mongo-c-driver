@@ -19,8 +19,6 @@
 
 #include <mongoc-timeout-private.h>
 
-const int DEFAULT_TIMEOUT = 0;
-
 void
 _test_mongoc_timeout_new_success (int64_t expected)
 {
@@ -71,7 +69,6 @@ _test_mongoc_timeout_set_failure (mongoc_timeout_t *timeout,
    clear_captured_logs ();
 
    BSON_ASSERT (!mongoc_timeout_is_set (timeout));
-   BSON_ASSERT (DEFAULT_TIMEOUT == mongoc_timeout_get_timeout_ms (timeout));
 }
 
 void
@@ -110,7 +107,6 @@ test_mongoc_timeout_get (void)
 
    BSON_ASSERT (timeout = mongoc_timeout_new ());
    BSON_ASSERT (!mongoc_timeout_is_set (timeout));
-   BSON_ASSERT (DEFAULT_TIMEOUT == mongoc_timeout_get_timeout_ms (timeout));
 
    expected = 1;
    mongoc_timeout_set_timeout_ms (timeout, expected);
@@ -128,10 +124,13 @@ _test_mongoc_timeout_copy (mongoc_timeout_t *expected)
    /* assert different memory addresses */
    BSON_ASSERT (expected != actual);
 
-   BSON_ASSERT (mongoc_timeout_get_timeout_ms (actual) ==
-                mongoc_timeout_get_timeout_ms (expected));
    BSON_ASSERT (mongoc_timeout_is_set (actual) ==
                 mongoc_timeout_is_set (expected));
+
+   if (mongoc_timeout_is_set (actual)) {
+      BSON_ASSERT (mongoc_timeout_get_timeout_ms (actual) ==
+                   mongoc_timeout_get_timeout_ms (expected));
+   }
 
    mongoc_timeout_destroy (actual);
 }

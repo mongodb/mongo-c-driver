@@ -26,6 +26,7 @@ int64_t
 mongoc_timeout_get_timeout_ms (const mongoc_timeout_t *timeout)
 {
    BSON_ASSERT (timeout);
+   BSON_ASSERT (timeout->is_set);
 
    return timeout->timeout_ms;
 }
