@@ -67,7 +67,7 @@ typedef enum {
    BSON_CONTEXT_DISABLE_HOST_CACHE = (1 << 1),
    BSON_CONTEXT_DISABLE_PID_CACHE = (1 << 2),
 #ifdef BSON_HAVE_SYSCALL_TID
-   BSON_CONTEXT_USE_TASK_ID = (1 << 3),
+   BSON_CONTEXT_USE_TASK_ID = (1 << 3)
 #endif
 } bson_context_flags_t;
 
