@@ -157,6 +157,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-stream-gridfs-download-private.h
    mongoc-stream-gridfs-upload-private.h
    mongoc-thread-private.h
+   mongoc-timeout-private.h
    mongoc-topology-description-apm-private.h
    mongoc-topology-description-private.h
    mongoc-topology-private.h
@@ -240,6 +241,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-stream-gridfs-download.c
    mongoc-stream-gridfs-upload.c
    mongoc-stream-socket.c
+   mongoc-timeout.c
    mongoc-topology.c
    mongoc-topology-description.c
    mongoc-topology-description-apm.c
