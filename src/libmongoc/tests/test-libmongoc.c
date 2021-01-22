@@ -2344,15 +2344,25 @@ test_framework_skip_if_no_client_side_encryption (void)
    char *aws_secret_access_key;
    char *aws_access_key_id;
    bool has_creds;
+   char *aws_temp_secret_access_key;
+   char *aws_temp_access_key_id;
+   char *aws_temp_session_token;
 
    aws_secret_access_key =
       test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
    aws_access_key_id = test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+   aws_temp_secret_access_key =
+      test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY");
+   aws_temp_access_key_id = test_framework_getenv ("MONGOC_TEST_TEMP_AWS_ACCESS_KEY_ID");
+   aws_temp_session_token = test_framework_getenv ("MONGOC_TEST_TEMP_SESSION_TOKEN");
 
    has_creds = (NULL != aws_secret_access_key) && (NULL != aws_access_key_id);
 
    bson_free (aws_secret_access_key);
    bson_free (aws_access_key_id);
+   bson_free (aws_temp_secret_access_key);
+bson_free (aws_temp_access_key_id);
+bson_free (aws_temp_session_token);
 
    if (has_creds) {
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION

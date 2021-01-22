@@ -1414,28 +1414,44 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       bson_t tmp;
 
       bson_iter_bson (&iter, &tmp);
-      bson_copy_to_excluding (
-         &tmp, &kms_providers, "aws", "azure", "gcp", "awsTemporary", "awsTemporaryNoSessionToken", NULL);
+      bson_copy_to_excluding (&tmp,
+                              &kms_providers,
+                              "aws",
+                              "azure",
+                              "gcp",
+                              "awsTemporary",
+                              "awsTemporaryNoSessionToken",
+                              NULL);
 
-      if (bson_has_field (&opts, "kmsProviders.awsTemporary") || bson_has_field (&opts, "kmsProviders.awsTemporaryNoSessionToken")) {
+      if (bson_has_field (&opts, "kmsProviders.awsTemporary") ||
+          bson_has_field (&opts, "kmsProviders.awsTemporaryNoSessionToken")) {
          char *temp_secret_access_key;
          char *temp_access_key_id;
          char *temp_session_token;
          bson_t *aws;
 
-         temp_secret_access_key = test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY");
-         temp_access_key_id = test_framework_getenv ("MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID");
-         temp_session_token = test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SESSION_TOKEN");
+         temp_secret_access_key =
+            test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY");
+         temp_access_key_id =
+            test_framework_getenv ("MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID");
+         temp_session_token =
+            test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SESSION_TOKEN");
 
 
-         if (!temp_secret_access_key || !temp_access_key_id || !temp_session_token) {
+         if (!temp_secret_access_key || !temp_access_key_id ||
+             !temp_session_token) {
             fprintf (stderr,
-                     "Set MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY, MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID, and MONGOC_TEST_AWS_TEMP_SESSION_TOKEN environment "
+                     "Set MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY, "
+                     "MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID, and "
+                     "MONGOC_TEST_AWS_TEMP_SESSION_TOKEN environment "
                      "variables to run Client Side Encryption tests.");
             abort ();
          }
 
-         aws = BCON_NEW ("secretAccessKey", temp_secret_access_key, "accessKeyId", temp_access_key_id);
+         aws = BCON_NEW ("secretAccessKey",
+                         temp_secret_access_key,
+                         "accessKeyId",
+                         temp_access_key_id);
 
          if (bson_has_field (&opts, "kmsProviders.awsTemporary")) {
             BSON_APPEND_UTF8 (aws, "sessionToken", temp_session_token);
