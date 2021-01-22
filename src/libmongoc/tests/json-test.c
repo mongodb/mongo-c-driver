@@ -1415,7 +1415,39 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 
       bson_iter_bson (&iter, &tmp);
       bson_copy_to_excluding (
-         &tmp, &kms_providers, "aws", "azure", "gcp", NULL);
+         &tmp, &kms_providers, "aws", "azure", "gcp", "awsTemporary", "awsTemporaryNoSessionToken", NULL);
+
+      if (bson_has_field (&opts, "kmsProviders.awsTemporary") || bson_has_field (&opts, "kmsProviders.awsTemporaryNoSessionToken")) {
+         char *temp_secret_access_key;
+         char *temp_access_key_id;
+         char *temp_session_token;
+         bson_t *aws;
+
+         temp_secret_access_key = test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY");
+         temp_access_key_id = test_framework_getenv ("MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID");
+         temp_session_token = test_framework_getenv ("MONGOC_TEST_AWS_TEMP_SESSION_TOKEN");
+
+
+         if (!temp_secret_access_key || !temp_access_key_id || !temp_session_token) {
+            fprintf (stderr,
+                     "Set MONGOC_TEST_AWS_TEMP_SECRET_ACCESS_KEY, MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID, and MONGOC_TEST_AWS_TEMP_SESSION_TOKEN environment "
+                     "variables to run Client Side Encryption tests.");
+            abort ();
+         }
+
+         aws = BCON_NEW ("secretAccessKey", temp_secret_access_key, "accessKeyId", temp_access_key_id);
+
+         if (bson_has_field (&opts, "kmsProviders.awsTemporary")) {
+            BSON_APPEND_UTF8 (aws, "sessionToken", temp_session_token);
+         }
+
+         BSON_APPEND_DOCUMENT (&kms_providers, "aws", aws);
+
+         bson_free (temp_secret_access_key);
+         bson_free (temp_access_key_id);
+         bson_free (temp_session_token);
+         bson_destroy (aws);
+      }
 
       /* AWS credentials are set from environment variables. */
       if (bson_has_field (&opts, "kmsProviders.aws")) {
