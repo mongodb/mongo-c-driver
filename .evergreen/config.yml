@@ -456,6 +456,9 @@ functions:
           # Get temporary credentials.
           sh .evergreen/set-virtualenv.sh
           pushd ./.evergreen/csfle
+          export AWS_ACCESS_KEY_ID=$MONGOC_TEST_AWS_ACCESS_KEY_ID
+          export AWS_SECRET_ACCESS_KEY=$MONGOC_TEST_AWS_SECRET_ACCESS_KEY
+          export AWS_DEFAULT_REGION=us-east-1
           . ./set-temp-creds.sh
           popd
           export MONGOC_TEST_AWS_TEMP_ACCESS_KEY_ID=$CSFLE_AWS_TEMP_ACCESS_KEY_ID
