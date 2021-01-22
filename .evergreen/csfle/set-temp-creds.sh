@@ -20,8 +20,8 @@
 
 set +o xtrace # Disable tracing.
 
-CREDS=$(python print-temp-creds.py)
 PYTHON=${PYTHON:-python}
+CREDS=$($PYTHON print-temp-creds.py)
 
 export CSFLE_AWS_TEMP_ACCESS_KEY_ID=$(echo $CREDS | awk '{print $1}')
 export CSFLE_AWS_TEMP_SECRET_ACCESS_KEY=$(echo $CREDS | awk '{print $2}')

@@ -314,7 +314,8 @@ all_functions = OD([
           export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
 
           # Get temporary credentials.
-          sh .evergreen/set-virtualenv.sh
+          . ./.evergreen/set-virtualenv.sh
+          $PYTHON -m pip install boto3
           pushd ./.evergreen/csfle
           export AWS_ACCESS_KEY_ID=$MONGOC_TEST_AWS_ACCESS_KEY_ID
           export AWS_SECRET_ACCESS_KEY=$MONGOC_TEST_AWS_SECRET_ACCESS_KEY
