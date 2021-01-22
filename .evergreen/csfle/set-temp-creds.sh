@@ -1,14 +1,24 @@
+# Obtains temporary AWS credentials for CSFLE testing.
+#
 # Run with a . to add environment variables to the current shell:
 # . ./set-temp-creds.sh
 #
-# After running the following variables are set:
+# Requires the python AWS SDK boto3. This can be installed with: pip install boto3
+#
+# Requires AWS credentials for CSFLE to obtain temporary credentials.
+# Those credentials can be passed through the following environment variables:
+#
+# export AWS_ACCESS_KEY_ID=...
+# export AWS_SECRET_ACCESS_KEY=...
+# export AWS_DEFAULT_REGION=us-east-1
+#
+# After running this script, the following shell variables are set:
 # - CSFLE_AWS_TEMP_ACCESS_KEY_ID
 # - CSFLE_AWS_TEMP_SECRET_ACCESS_KEY
 # - CSFLE_AWS_TEMP_SESSION_TOKEN
 #
 
 set +o xtrace # Disable tracing.
-# set -o errexit
 
 CREDS=$(python print-temp-creds.py)
 PYTHON=${PYTHON:-python}
