@@ -183,6 +183,9 @@ mongoc_client_session_append (const mongoc_client_session_t *client_session,
 MONGOC_EXPORT (void)
 mongoc_client_session_destroy (mongoc_client_session_t *session);
 
+MONGOC_EXPORT (bool)
+mongoc_client_session_get_dirty (mongoc_client_session_t *session);
+
 BSON_END_DECLS
 
 

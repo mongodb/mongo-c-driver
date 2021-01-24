@@ -1613,3 +1613,11 @@ _mongoc_client_session_pin (mongoc_client_session_t *session,
 
    session->server_id = server_id;
 }
+
+bool
+mongoc_client_session_get_dirty (mongoc_client_session_t *session)
+{
+   BSON_ASSERT_PARAM (session);
+
+   return session->server_session->dirty;
+}
