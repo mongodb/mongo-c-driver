@@ -627,8 +627,9 @@ _mongoc_write_opmsg (mongoc_write_command_t *command,
             result->failed = true;
             /* Stop for ordered bulk writes or when the server stream has been
              * properly invalidated (e.g., due to a network error). */
-            if (command->flags.ordered || !mongoc_cluster_stream_valid (
-                                             &client->cluster, server_stream)) {
+            if (command->flags.ordered ||
+                !mongoc_cluster_stream_valid (&client->cluster,
+                                              server_stream)) {
                result->must_stop = true;
             }
          }
@@ -1114,6 +1115,7 @@ _mongoc_write_result_init (mongoc_write_result_t *result) /* IN */
    bson_init (&result->writeConcernErrors);
    bson_init (&result->writeErrors);
    bson_init (&result->errorLabels);
+   bson_init (&result->command_error_fields);
 
    EXIT;
 }
@@ -1130,6 +1132,7 @@ _mongoc_write_result_destroy (mongoc_write_result_t *result)
    bson_destroy (&result->writeConcernErrors);
    bson_destroy (&result->writeErrors);
    bson_destroy (&result->errorLabels);
+   bson_destroy (&result->command_error_fields);
 
    EXIT;
 }
@@ -1225,6 +1228,9 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
    bson_iter_t ar;
    int32_t n_upserted = 0;
    int32_t affected = 0;
+   size_t i;
+   const char *command_error_fields[] = {
+      "code", "codeName", "errmsg" };
 
    ENTRY;
 
@@ -1325,6 +1331,19 @@ _mongoc_write_result_merge (mongoc_write_result_t *result,   /* IN */
    /* inefficient if there are ever large numbers: for each label in each err,
     * we linear-search result->errorLabels to see if it's included yet */
    _mongoc_bson_array_copy_labels_to (reply, &result->errorLabels);
+
+   /* if the entire write command failed (e.g. on an unrecognized option)
+    * copy the errmsg, codeName, and code */
+   bson_reinit (&result->command_error_fields);
+   for (i = 0;
+        i < sizeof (command_error_fields) / sizeof (command_error_fields[0]);
+        i++) {
+      if (bson_iter_init_find_case (&iter, reply, command_error_fields[i])) {
+         BSON_APPEND_VALUE (&result->command_error_fields,
+                            command_error_fields[i],
+                            bson_iter_value (&iter));
+      }
+   }
 
    EXIT;
 }
@@ -1509,6 +1528,11 @@ _mongoc_write_result_complete (
 
    if (bson && !bson_empty (&result->errorLabels)) {
       BSON_APPEND_ARRAY (bson, "errorLabels", &result->errorLabels);
+   }
+
+   /* copy any command error fields like "code", "codeName", "errmsg" */
+   if (bson) {
+      bson_concat (bson, &result->command_error_fields);
    }
 
    if (error) {

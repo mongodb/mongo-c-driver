@@ -88,6 +88,9 @@ typedef struct {
     * primary, this contains the server id of the newly selected primary. Only
     * applies to OP_MSG. Is left at 0 if no retry occurs. */
    uint32_t retry_server_id;
+   /* Store error fields from the entire command: "code", "errmsg", and
+    * "codeName" */
+   bson_t command_error_fields;
 } mongoc_write_result_t;
 
 
