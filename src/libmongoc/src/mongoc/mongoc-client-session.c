@@ -724,6 +724,7 @@ _mongoc_client_session_new (mongoc_client_t *client,
    ENTRY;
 
    BSON_ASSERT (client);
+   BSON_ASSERT (server_session);
 
    session = bson_malloc0 (sizeof (mongoc_client_session_t));
    session->client = client;
