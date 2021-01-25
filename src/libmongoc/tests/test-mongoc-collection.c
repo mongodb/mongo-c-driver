@@ -6350,6 +6350,59 @@ test_remove_multi (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_fam_no_error_on_retry (void *unused)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_error_t error = {0};
+   bool ret;
+   bson_t reply;
+   mongoc_find_and_modify_opts_t *opts;
+
+   client = test_framework_client_new ();
+   ret = mongoc_client_command_simple (
+      client,
+      "admin",
+      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': {'times': 1}, "
+                "'data': {'failCommands': ['findAndModify'], 'errorLabels': "
+                "['RetryableWriteError']}}"),
+      NULL,
+      &reply,
+      &error);
+
+   if (!ret) {
+      test_error ("configureFailPoint error: %s reply: %s",
+                  error.message,
+                  bson_as_canonical_extended_json (&reply, NULL));
+   }
+
+   coll = get_test_collection (client, BSON_FUNC);
+   opts = mongoc_find_and_modify_opts_new ();
+   mongoc_find_and_modify_opts_set_update (opts,
+                                           tmp_bson ("{'$set': {'x': 2}}"));
+   bson_destroy (&reply);
+   ret = mongoc_collection_find_and_modify_with_opts (
+      coll, tmp_bson ("{'x': 1}"), opts, &reply, &error);
+   if (!ret) {
+      test_error (
+         "findAndModify error: %s reply: %s", error.message, bson_as_canonical_extended_json (&reply, NULL));
+   }
+
+   if (error.code != 0 || error.domain != 0 ||
+       0 != strcmp (error.message, "")) {
+      test_error ("error set, but findAndModify succeeded: code=%" PRIu32
+                  " domain=%" PRIu32 " message=%s",
+                  error.code,
+                  error.domain,
+                  error.message);
+   }
+
+   bson_destroy (&reply);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mongoc_find_and_modify_opts_destroy (opts);
+}
 
 void
 test_collection_install (TestSuite *suite)
@@ -6594,4 +6647,11 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_not_replset);
+   TestSuite_AddFull (suite,
+                      "/Collection/fam/no_error_on_retry",
+                      test_fam_no_error_on_retry,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_failpoint,
+                      test_framework_skip_if_max_wire_version_more_than_9);
 }
