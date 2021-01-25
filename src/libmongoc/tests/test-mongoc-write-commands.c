@@ -634,6 +634,7 @@ _test_command_error (void *unused)
    bool ret;
    bson_t reply;
    bson_error_t error;
+   mongoc_bulk_operation_t *bulk;
 
    client = test_framework_client_new ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
@@ -651,8 +652,27 @@ _test_command_error (void *unused)
    BSON_ASSERT (bson_has_field (&reply, "errmsg"));
    ASSERT_CMPINT (123, ==, bson_lookup_int32 (&reply, "code"));
    _configure_failpoint (client, "'off'", "{}");
-
    bson_destroy (&reply);
+
+   /* Test a bulk write insert. */
+   bulk = mongoc_collection_create_bulk_operation_with_opts (coll, NULL);
+   ASSERT_OR_PRINT (mongoc_bulk_operation_insert_with_opts (
+                       bulk, tmp_bson ("{'x': 1}"), NULL, &error),
+                    error);
+   _configure_failpoint (client,
+                         "{'times': 2}",
+                         "{'failCommands': ['insert'], 'errorCode' : 123 }");
+   ret = mongoc_bulk_operation_execute (bulk, &reply, &error);
+   BSON_ASSERT (!ret);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_SERVER, 123, "");
+   BSON_ASSERT (bson_has_field (&reply, "code"));
+   BSON_ASSERT (bson_has_field (&reply, "codeName"));
+   BSON_ASSERT (bson_has_field (&reply, "errmsg"));
+   ASSERT_CMPINT (123, ==, bson_lookup_int32 (&reply, "code"));
+   _configure_failpoint (client, "'off'", "{}");
+   bson_destroy (&reply);
+   mongoc_bulk_operation_destroy (bulk);
+
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
 }
