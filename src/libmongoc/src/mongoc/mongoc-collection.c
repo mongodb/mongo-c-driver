@@ -3281,18 +3281,17 @@ mongoc_collection_find_and_modify_with_opts (
    }
    /* inherit write concern from collection if not in transaction */
    else if (server_stream->sd->max_wire_version >=
-             WIRE_VERSION_FAM_WRITE_CONCERN &&
-          !_mongoc_client_session_in_txn (parts.assembled.session)) {
-         if (!mongoc_write_concern_is_valid (collection->write_concern)) {
-            bson_set_error (error,
-                            MONGOC_ERROR_COMMAND,
-                            MONGOC_ERROR_COMMAND_INVALID_ARG,
-                            "The write concern is invalid.");
-            GOTO (done);
-         }
+               WIRE_VERSION_FAM_WRITE_CONCERN &&
+            !_mongoc_client_session_in_txn (parts.assembled.session)) {
+      if (!mongoc_write_concern_is_valid (collection->write_concern)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "The write concern is invalid.");
+         GOTO (done);
+      }
 
-         write_concern = collection->write_concern;
-
+      write_concern = collection->write_concern;
    }
 
    if (appended_opts.hint.value_type) {
@@ -3408,6 +3407,11 @@ retry:
 done:
    mongoc_server_stream_cleanup (server_stream);
    mongoc_server_stream_cleanup (retry_server_stream);
+
+   if (ret && error) {
+      /* if a retry succeeded, clear the initial error */
+      memset (error, 0, sizeof (bson_error_t));
+   }
    mongoc_cmd_parts_cleanup (&parts);
    bson_destroy (&command);
    if (&reply_local == reply_ptr) {
