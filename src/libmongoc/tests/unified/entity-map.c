@@ -16,7 +16,8 @@
 
 #include "entity-map.h"
 
-#include "bson-parser.h"
+#include "bsonutil/bson-parser.h"
+#include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "utlist.h"
@@ -360,44 +361,20 @@ coll_or_db_opts_destroy (coll_or_db_opts_t *opts)
 static bool
 coll_or_db_opts_parse (coll_or_db_opts_t *opts, bson_t *in, bson_error_t *error)
 {
-   bson_parser_t *parser;
-   bson_t *rc_doc;
-   bson_t *rp_doc;
-   bson_t *wc_doc;
+   bson_parser_t *parser = NULL;
    bool ret = false;
 
    parser = bson_parser_new ();
-   bson_parser_doc_optional (parser, "readConcern", &rc_doc);
-   bson_parser_doc_optional (parser, "readPreference", &rp_doc);
-   bson_parser_doc_optional (parser, "writeConcern", &wc_doc);
+   bson_parser_read_concern_optional (parser, "readConcern", &opts->rc);
+   bson_parser_read_prefs_optional (parser, "readPreference", &opts->rp);
+   bson_parser_write_concern_optional (parser, "writeConcern", &opts->wc);
    if (!bson_parser_parse (parser, in, error)) {
       goto done;
    }
 
-   if (rc_doc) {
-      opts->rc = bson_to_read_concern (rc_doc, error);
-      if (!opts->rc) {
-         goto done;
-      }
-   }
-
-   if (rp_doc) {
-      opts->rp = bson_to_read_prefs (rp_doc, error);
-      if (!opts->rp) {
-         goto done;
-      }
-   }
-
-   if (wc_doc) {
-      opts->wc = bson_to_write_concern (wc_doc, error);
-      if (!opts->wc) {
-         goto done;
-      }
-   }
-
    ret = true;
 done:
-   bson_parser_destroy_with_parsed_fields (parser);
+   bson_parser_destroy (parser);
    return ret;
 }
 

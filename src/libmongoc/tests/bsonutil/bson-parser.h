@@ -17,7 +17,9 @@
 #ifndef UNIFIED_BSON_PARSER_H
 #define UNIFIED_BSON_PARSER_H
 
+#include "mongoc/mongoc.h"
 #include "bson/bson.h"
+#include "bsonutil/bson-val.h"
 
 /* bson_parser_t is a very simplified parser to parse BSON fields into C values.
  * Example usage:
@@ -36,15 +38,13 @@
  * bson_parser_utf8 (parser, "name", &person.name);
  * bson_parser_bool_optional (parser, "hasKids", &person.has_kids);
  * bson_parser_array (parser, "jobs", &person.jobs);
- * bson_parser_doc_alternate (parser, "jobs", &person.jobs);
  * bson_parser_parse_or_assert (parser, bson);
  *
  * bson_parser_destroy_with_parsed_fields (parser);
  *
  * This parses a document like:
  * { "name": "Kevin", "hasKids": false, "jobs": [ "mongodb", "alk" ] }
- * "name" is required. "hasKids" is optional. "jobs" can alternately be a
- * document.
+ * "name" is required. "hasKids" is optional.
  */
 typedef struct _bson_parser_t bson_parser_t;
 
@@ -54,6 +54,10 @@ bson_parser_new (void);
 /* Permits extra fields to be ignored when parsing. */
 void
 bson_parser_allow_extra (bson_parser_t *bp, bool val);
+
+/* Return extra fields. */
+bson_t *
+bson_parser_get_extra (bson_parser_t *bp);
 
 void
 bson_parser_destroy (bson_parser_t *bp);
@@ -66,37 +70,59 @@ void
 bson_parser_utf8 (bson_parser_t *bp, const char *key, char **out);
 void
 bson_parser_utf8_optional (bson_parser_t *bp, const char *key, char **out);
-void
-bson_parser_utf8_alternate (bson_parser_t *bp, const char *key, char **out);
 
 void
 bson_parser_doc (bson_parser_t *bp, const char *key, bson_t **out);
 void
 bson_parser_doc_optional (bson_parser_t *bp, const char *key, bson_t **out);
-void
-bson_parser_doc_alternate (bson_parser_t *bp, const char *key, bson_t **out);
 
 void
 bson_parser_array (bson_parser_t *bp, const char *key, bson_t **out);
 void
 bson_parser_array_optional (bson_parser_t *bp, const char *key, bson_t **out);
-void
-bson_parser_array_alternate (bson_parser_t *bp, const char *key, bson_t **out);
 
 void
 bson_parser_bool (bson_parser_t *bp, const char *key, bool **out);
 void
 bson_parser_bool_optional (bson_parser_t *bp, const char *key, bool **out);
-void
-bson_parser_bool_alternate (bson_parser_t *bp, const char *key, bool **out);
 
 /* Accepts either int32 or int64 */
 void
 bson_parser_int (bson_parser_t *bp, const char *key, int64_t **out);
 void
 bson_parser_int_optional (bson_parser_t *bp, const char *key, int64_t **out);
+
 void
-bson_parser_int_alternate (bson_parser_t *bp, const char *key, int64_t **out);
+bson_parser_any (bson_parser_t *bp, const char *key, bson_val_t **out);
+void
+bson_parser_any_optional (bson_parser_t *bp, const char *key, bson_val_t **out);
+
+void
+bson_parser_write_concern (bson_parser_t *bp,
+                           const char *key,
+                           mongoc_write_concern_t **out);
+void
+bson_parser_write_concern_optional (bson_parser_t *bp,
+                                    const char *key,
+                                    mongoc_write_concern_t **out);
+
+void
+bson_parser_read_concern (bson_parser_t *bp,
+                          const char *key,
+                          mongoc_read_concern_t **out);
+void
+bson_parser_read_concern_optional (bson_parser_t *bp,
+                                   const char *key,
+                                   mongoc_read_concern_t **out);
+
+void
+bson_parser_read_prefs (bson_parser_t *bp,
+                        const char *key,
+                        mongoc_read_prefs_t **out);
+void
+bson_parser_read_prefs_optional (bson_parser_t *bp,
+                                 const char *key,
+                                 mongoc_read_prefs_t **out);
 
 /* Attempt to parse @in into the fields that were registered. If parsing fails,
  * returns false and sets @error. */

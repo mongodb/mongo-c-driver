@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "bson-parser.h"
+#include "bsonutil/bson-parser.h"
 #include "entity-map.h"
 #include "json-test.h"
 #include "TestSuite.h"

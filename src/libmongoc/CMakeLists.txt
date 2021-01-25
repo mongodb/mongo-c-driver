@@ -902,6 +902,9 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-utf8.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-value.c
    ${PROJECT_SOURCE_DIR}/../../src/libbson/tests/test-writer.c
+   ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-match.c
+   ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-parser.c
+   ${PROJECT_SOURCE_DIR}/tests/bsonutil/bson-val.c
    ${PROJECT_SOURCE_DIR}/tests/debug-stream.c
    ${PROJECT_SOURCE_DIR}/tests/json-test-monitoring.c
    ${PROJECT_SOURCE_DIR}/tests/json-test-operations.c
@@ -994,7 +997,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-concern.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
-   ${PROJECT_SOURCE_DIR}/tests/unified/bson-parser.c
    ${PROJECT_SOURCE_DIR}/tests/unified/entity-map.c
    ${PROJECT_SOURCE_DIR}/tests/unified/runner.c
    ${PROJECT_SOURCE_DIR}/tests/unified/util.c

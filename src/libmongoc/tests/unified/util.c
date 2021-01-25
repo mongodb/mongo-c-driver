@@ -16,137 +16,150 @@
 
 #include "util.h"
 
-#include "bson-parser.h"
 #include "test-conveniences.h"
+#include "TestSuite.h"
 
-mongoc_write_concern_t *
-bson_to_write_concern (bson_t *bson, bson_error_t *error)
+uint8_t *
+hex_to_bin (const char *hex, uint32_t *len)
 {
-   bson_parser_t *parser = NULL;
-   mongoc_write_concern_t *out = NULL;
-   bool *journal;
-   int64_t *w_int;
-   char *w_string;
-   int64_t *wtimeoutms;
+   int i;
+   int hex_len;
+   uint8_t *out;
 
-   parser = bson_parser_new ();
-   bson_parser_bool_optional (parser, "journal", &journal);
-   bson_parser_int_optional (parser, "w", &w_int);
-   bson_parser_utf8_alternate (parser, "w", &w_string);
-   bson_parser_int_optional (parser, "wTimeoutMS", &wtimeoutms);
-
-   if (!bson_parser_parse (parser, bson, error)) {
-      goto done;
+   hex_len = strlen (hex);
+   if (hex_len % 2 != 0) {
+      return NULL;
    }
 
-   out = mongoc_write_concern_new ();
-   if (journal) {
-      mongoc_write_concern_set_journal (out, *journal);
-   }
+   *len = hex_len / 2;
+   out = bson_malloc0 (*len);
 
-   if (w_int) {
-      mongoc_write_concern_set_w (out, (int32_t) *w_int);
-   }
+   for (i = 0; i < hex_len; i += 2) {
+      uint32_t hex_char;
 
-   if (w_string) {
-      BSON_ASSERT (0 == strcmp (w_string, "majority"));
-      mongoc_write_concern_set_wmajority (out, -1);
+      if (1 != sscanf (hex + i, "%2x", &hex_char)) {
+         bson_free (out);
+         return NULL;
+      }
+      out[i / 2] = (uint8_t) hex_char;
    }
-
-   if (wtimeoutms) {
-      mongoc_write_concern_set_wtimeout_int64 (out, *wtimeoutms);
-   }
-
-done:
-   bson_parser_destroy_with_parsed_fields (parser);
    return out;
 }
 
-mongoc_read_concern_t *
-bson_to_read_concern (bson_t *bson, bson_error_t *error)
+char *
+bin_to_hex (uint8_t *bin, uint32_t len)
 {
-   bson_parser_t *parser = NULL;
-   mongoc_read_concern_t *out = NULL;
-   char *level;
+   char *out = bson_malloc0 (2 * len + 1);
+   uint32_t i;
 
-   parser = bson_parser_new ();
-   bson_parser_utf8_optional (parser, "level", &level);
-
-   if (!bson_parser_parse (parser, bson, error)) {
-      goto done;
+   for (i = 0; i < len; i++) {
+      bson_snprintf (out + (2 * i), 2, "%02x", bin[i]);
    }
-
-   out = mongoc_read_concern_new ();
-   if (level) {
-      mongoc_read_concern_set_level (out, level);
-   }
-
-done:
-   bson_parser_destroy_with_parsed_fields (parser);
    return out;
 }
 
-/* Returns 0 on error. */
-static mongoc_read_mode_t
-string_to_read_mode (char *str, bson_error_t *error)
+static int
+cmp_key (const void *a, const void *b)
 {
-   if (0 == bson_strcasecmp ("primary", str)) {
-      return MONGOC_READ_PRIMARY;
-   } else if (0 == bson_strcasecmp ("primarypreferred", str)) {
-      return MONGOC_READ_PRIMARY_PREFERRED;
-   } else if (0 == bson_strcasecmp ("secondary", str)) {
-      return MONGOC_READ_SECONDARY;
-   } else if (0 == bson_strcasecmp ("secondarypreferred", str)) {
-      return MONGOC_READ_SECONDARY_PREFERRED;
-   } else if (0 == bson_strcasecmp ("nearest", str)) {
-      return MONGOC_READ_NEAREST;
-   }
-
-   test_set_error (error, "Invalid read mode: %s", str);
-   return 0;
+   return strcmp (*(const char **) a, *(const char **) b);
 }
 
-mongoc_read_prefs_t *
-bson_to_read_prefs (bson_t *bson, bson_error_t *error)
+bson_t *
+bson_copy_and_sort (bson_t *in)
 {
-   bson_parser_t *parser = NULL;
-   mongoc_read_prefs_t *out = NULL;
-   char *mode_string;
-   mongoc_read_mode_t read_mode;
-   bson_t *tag_sets;
-   int64_t *max_staleness_seconds;
-   bson_t *hedge;
+   bson_t *out = bson_new ();
+   bson_iter_t iter;
+   const char **keys;
+   int nkeys = bson_count_keys (in);
+   int i = 0;
 
-   parser = bson_parser_new ();
-   bson_parser_utf8 (parser, "mode", &mode_string);
-   bson_parser_array_optional (parser, "tagSets", &tag_sets);
-   bson_parser_int_optional (
-      parser, "maxStalenessSeconds", &max_staleness_seconds);
-   bson_parser_doc_optional (parser, "hedge", &hedge);
-
-   if (!bson_parser_parse (parser, bson, error)) {
-      goto done;
+   keys = bson_malloc0 (sizeof (const char *) * nkeys);
+   BSON_FOREACH (in, iter)
+   {
+      keys[i] = bson_iter_key (&iter);
+      i++;
    }
 
-   read_mode = string_to_read_mode (mode_string, error);
-   if (read_mode == 0) {
-      goto done;
+   qsort (keys, nkeys, sizeof (const char *), cmp_key);
+   for (i = 0; i < nkeys; i++) {
+      BSON_ASSERT (bson_iter_init_find (&iter, in, keys[i]));
+      BSON_APPEND_VALUE (out, keys[i], bson_iter_value (&iter));
    }
-
-   out = mongoc_read_prefs_new (read_mode);
-   if (tag_sets) {
-      mongoc_read_prefs_set_tags (out, tag_sets);
-   }
-
-   if (max_staleness_seconds) {
-      mongoc_read_prefs_set_max_staleness_seconds (out, *max_staleness_seconds);
-   }
-
-   if (hedge) {
-      mongoc_read_prefs_set_hedge (out, hedge);
-   }
-
-done:
-   bson_parser_destroy_with_parsed_fields (parser);
+   bson_free (keys);
    return out;
+}
+
+typedef struct {
+   const char *str;
+   bson_type_t type;
+} bson_string_and_type_t;
+
+/* List of aliases: https://docs.mongodb.com/manual/reference/bson-types/ */
+bson_string_and_type_t bson_type_map[] = {
+   {"double", BSON_TYPE_DOUBLE},
+   {"string", BSON_TYPE_UTF8},
+   {"object", BSON_TYPE_DOCUMENT},
+   {"array", BSON_TYPE_ARRAY},
+   {"binData", BSON_TYPE_BINARY},
+   {"undefined", BSON_TYPE_UNDEFINED},
+   {"objectId", BSON_TYPE_OID},
+   {"bool", BSON_TYPE_BOOL},
+   {"date", BSON_TYPE_DATE_TIME},
+   {"null", BSON_TYPE_NULL},
+   {"regex", BSON_TYPE_REGEX},
+   {"dbPointer", BSON_TYPE_DBPOINTER},
+   {"javascript", BSON_TYPE_CODE},
+   {"javascriptWithScope", BSON_TYPE_CODEWSCOPE},
+   {"int", BSON_TYPE_INT32},
+   {"timestamp", BSON_TYPE_TIMESTAMP},
+   {"long", BSON_TYPE_INT64},
+   {"decimal", BSON_TYPE_DECIMAL128},
+   {"minKey", BSON_TYPE_MINKEY},
+   {"maxKey", BSON_TYPE_MAXKEY},
+   {"eod", BSON_TYPE_EOD},
+};
+
+bson_type_t
+bson_type_from_string (const char *in)
+{
+   int i;
+   for (i = 0; i < sizeof (bson_type_map) / sizeof (bson_type_map[0]); i++) {
+      if (0 == strcmp (in, bson_type_map[i].str)) {
+         return bson_type_map[i].type;
+      }
+   }
+   test_error ("unrecognized type: %s\n", in);
+   return BSON_TYPE_EOD;
+}
+
+const char *
+bson_type_to_string (bson_type_t btype)
+{
+   int i;
+   for (i = 0; i < sizeof (bson_type_map) / sizeof (bson_type_map[0]); i++) {
+      if (btype == bson_type_map[i].type) {
+         return bson_type_map[i].str;
+      }
+   }
+   test_error ("unrecognized type: %d\n", (int) btype);
+   return "invalid";
+}
+
+static void
+test_copy_and_sort (void)
+{
+   bson_t *in = tmp_bson ("{'b': 1, 'a': 1, 'd': 1, 'c': 1}");
+   bson_t *expect = tmp_bson ("{'a': 1, 'b': 1, 'c': 1, 'd': 1}");
+   bson_t *out = bson_copy_and_sort (in);
+   if (!bson_equal (expect, out)) {
+      test_error ("expected: %s, got: %s", tmp_json (expect), tmp_json (out));
+   }
+   bson_destroy (out);
+}
+
+void
+test_bson_util_install (TestSuite *suite)
+{
+   TestSuite_Add (
+      suite, "/unified/selftest/util/copy_and_sort", test_copy_and_sort);
 }

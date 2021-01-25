@@ -23,6 +23,11 @@
 #include "mongoc/mongoc-read-prefs-private.h"
 #include "mongoc/mongoc-client-private.h"
 
+/* TODO: split this header up.
+ * Move bson_lookup_* functions under bsonutil.
+ * Move temporary helpers into a separate header.
+ */
+
 /* Initialize global test convenience structures.
  * Safe to call repeatedly, or after calling test_conveniences_cleanup().
  */
