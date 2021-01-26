@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef UNIFIED_BSON_PARSER_H
-#define UNIFIED_BSON_PARSER_H
+#ifndef BSONUTIL_BSON_PARSER_H
+#define BSONUTIL_BSON_PARSER_H
 
 #include "mongoc/mongoc.h"
 #include "bson/bson.h"
@@ -55,9 +55,9 @@ bson_parser_new (void);
 void
 bson_parser_allow_extra (bson_parser_t *bp, bool val);
 
-/* Return extra fields. */
-bson_t *
-bson_parser_get_extra (bson_parser_t *bp);
+/* Return extra fields a read-only bson_t. */
+const bson_t *
+bson_parser_get_extra (const bson_parser_t *bp);
 
 void
 bson_parser_destroy (bson_parser_t *bp);
@@ -98,31 +98,21 @@ void
 bson_parser_any_optional (bson_parser_t *bp, const char *key, bson_val_t **out);
 
 void
-bson_parser_write_concern (bson_parser_t *bp,
-                           const char *key,
-                           mongoc_write_concern_t **out);
+bson_parser_write_concern (bson_parser_t *bp, mongoc_write_concern_t **out);
 void
 bson_parser_write_concern_optional (bson_parser_t *bp,
-                                    const char *key,
                                     mongoc_write_concern_t **out);
 
 void
-bson_parser_read_concern (bson_parser_t *bp,
-                          const char *key,
-                          mongoc_read_concern_t **out);
+bson_parser_read_concern (bson_parser_t *bp, mongoc_read_concern_t **out);
 void
 bson_parser_read_concern_optional (bson_parser_t *bp,
-                                   const char *key,
                                    mongoc_read_concern_t **out);
 
 void
-bson_parser_read_prefs (bson_parser_t *bp,
-                        const char *key,
-                        mongoc_read_prefs_t **out);
+bson_parser_read_prefs (bson_parser_t *bp, mongoc_read_prefs_t **out);
 void
-bson_parser_read_prefs_optional (bson_parser_t *bp,
-                                 const char *key,
-                                 mongoc_read_prefs_t **out);
+bson_parser_read_prefs_optional (bson_parser_t *bp, mongoc_read_prefs_t **out);
 
 /* Attempt to parse @in into the fields that were registered. If parsing fails,
  * returns false and sets @error. */
@@ -133,4 +123,4 @@ bson_parser_parse (bson_parser_t *bp, bson_t *in, bson_error_t *error);
 void
 bson_parser_parse_or_assert (bson_parser_t *bp, bson_t *in);
 
-#endif /* UNIFIED_BSON_PARSER_H */
+#endif /* BSONUTIL_BSON_PARSER_H */

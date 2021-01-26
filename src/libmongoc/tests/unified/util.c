@@ -128,7 +128,7 @@ bson_type_from_string (const char *in)
          return bson_type_map[i].type;
       }
    }
-   test_error ("unrecognized type: %s\n", in);
+   test_error ("unrecognized type string: %s\n", in);
    return BSON_TYPE_EOD;
 }
 

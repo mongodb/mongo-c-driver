@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef UNIFIED_BSON_HELPERS_H
-#define UNIFIED_BSON_HELPERS_H
+#ifndef BSONUTIL_BSON_VAL_H
+#define BSONUTIL_BSON_VAL_H
 
 #include "bson/bson.h"
 
@@ -32,7 +32,7 @@ bson_val_t *
 bson_val_from_value (const bson_value_t *value);
 
 bson_val_t *
-bson_val_from_string (const char *single_quoted_json);
+bson_val_from_json (const char *single_quoted_json);
 
 bson_val_t *
 bson_val_from_iter (bson_iter_t *iter);
@@ -91,4 +91,4 @@ bson_val_to_json (bson_val_t *val);
 void
 bson_val_destroy (bson_val_t *val);
 
-#endif /* UNIFIED_BSON_HELPERS_H */
+#endif /* BSONUTIL_BSON_VAL_H */

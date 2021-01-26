@@ -543,6 +543,7 @@ test_match (void)
       {"int32 !=", "{'a': 1}", "{'a': 0}", false},
       {"$$exists", "{'a': {'$$exists': true}}", "{'a': 0}", true},
       {"$$exists fail", "{'a': {'$$exists': true}}", "{'b': 0}", false},
+      {"does not $$exists", "{'a': {'$$exists': false}}", "{'b': 0}", true},
       {"$$unsetOrMatches match",
        "{'a': {'$$unsetOrMatches': 1}}",
        "{'a': 1}",
@@ -554,6 +555,14 @@ test_match (void)
        false},
       {"$$type match", "{'a': {'$$type': 'string'}}", "{'a': 'abc'}", true},
       {"$$type mismatch", "{'a': {'$$type': 'string'}}", "{'a': 1}", false},
+      {"$$type array match",
+       "{'a': {'$$type': ['string', 'int']}}",
+       "{'a': 1}",
+       true},
+      {"$$type array mismatch",
+       "{'a': {'$$type': ['string', 'int']}}",
+       "{'a': 1.2}",
+       false},
       {"extra keys in root ok", "{'a': 1}", "{'a': 1, 'b': 2}", true},
       {"extra keys in subdoc not ok",
        "{'a': {'b': 1}}",
@@ -564,8 +573,8 @@ test_match (void)
    for (i = 0; i < sizeof (tests) / sizeof (testcase_t); i++) {
       testcase_t *test = tests + i;
       bson_error_t error;
-      bson_val_t *expected = bson_val_from_string (test->expected);
-      bson_val_t *actual = bson_val_from_string (test->actual);
+      bson_val_t *expected = bson_val_from_json (test->expected);
+      bson_val_t *actual = bson_val_from_json (test->actual);
       bool ret;
 
       ret = bson_match (expected, actual, &error);

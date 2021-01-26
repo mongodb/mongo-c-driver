@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef UNIFIED_BSON_MATCH_H
-#define UNIFIED_BSON_MATCH_H
+#ifndef BSONUTIL_BSON_MATCH_H
+#define BSONUTIL_BSON_MATCH_H
 
 #include "bsonutil/bson-val.h"
 

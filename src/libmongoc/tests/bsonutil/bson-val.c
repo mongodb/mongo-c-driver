@@ -22,8 +22,8 @@
 struct _bson_val_t {
    bson_value_t value;
    bson_type_t type;
-   bson_t *bson_view;
-   char *string_view;
+   bson_t *as_bson;
+   char *as_string;
 };
 
 bson_val_t *
@@ -37,8 +37,8 @@ bson_val_from_value (const bson_value_t *value)
    bson_value_copy (value, &val->value);
    if (value->value_type == BSON_TYPE_DOCUMENT ||
        value->value_type == BSON_TYPE_ARRAY) {
-      val->bson_view = bson_new_from_data (value->value.v_doc.data,
-                                           value->value.v_doc.data_len);
+      val->as_bson = bson_new_from_data (value->value.v_doc.data,
+                                         value->value.v_doc.data_len);
    }
    val->type = value->value_type;
 
@@ -46,14 +46,14 @@ bson_val_from_value (const bson_value_t *value)
    bson_append_value (&tmp, "v", 1, value);
    as_string = bson_as_canonical_extended_json (&tmp, NULL);
    /* This produces: { "v" : {...} }. Strip off the wrapping "v" and braces. */
-   val->string_view = bson_strndup (as_string + 7, strlen (as_string) - 9);
+   val->as_string = bson_strndup (as_string + 7, strlen (as_string) - 9);
    bson_free (as_string);
    bson_destroy (&tmp);
    return val;
 }
 
 bson_val_t *
-bson_val_from_string (const char *single_quoted_json)
+bson_val_from_json (const char *single_quoted_json)
 {
    bson_val_t *val = NULL;
    char *double_quoted = single_quotes_to_double (single_quoted_json);
@@ -159,8 +159,8 @@ bson_val_destroy (bson_val_t *val)
       return;
    }
 
-   bson_free (val->string_view);
-   bson_destroy (val->bson_view);
+   bson_free (val->as_string);
+   bson_destroy (val->as_bson);
    bson_value_destroy (&val->value);
    bson_free (val);
 }
@@ -223,7 +223,7 @@ bson_val_eq (bson_val_t *a, bson_val_t *b, bson_val_comparison_flags_t flags)
 
    /* All other cases, compare exact match by looking at canonical extended JSON
     * string representation. */
-   return 0 == strcmp (a->string_view, b->string_view);
+   return 0 == strcmp (a->as_string, b->as_string);
 }
 
 bson_type_t
@@ -239,7 +239,7 @@ bson_val_to_document (bson_val_t *val)
       test_error ("expected document, got: %s",
                   bson_type_to_string (val->type));
    }
-   return val->bson_view;
+   return val->as_bson;
 }
 bson_t *
 bson_val_to_array (bson_val_t *val)
@@ -247,7 +247,7 @@ bson_val_to_array (bson_val_t *val)
    if (val->type != BSON_TYPE_ARRAY) {
       test_error ("expected array, got: %s", bson_type_to_string (val->type));
    }
-   return val->bson_view;
+   return val->as_bson;
 }
 
 /* Either document or array. */
@@ -258,7 +258,7 @@ bson_val_to_bson (bson_val_t *val)
       test_error ("expected document or array, got: %s",
                   bson_type_to_string (val->type));
    }
-   return val->bson_view;
+   return val->as_bson;
 }
 
 uint8_t *
@@ -316,5 +316,5 @@ bson_val_to_json (bson_val_t *val)
       return "(NULL)";
    }
 
-   return val->string_view;
+   return val->as_string;
 }

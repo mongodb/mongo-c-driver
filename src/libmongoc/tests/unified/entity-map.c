@@ -365,9 +365,9 @@ coll_or_db_opts_parse (coll_or_db_opts_t *opts, bson_t *in, bson_error_t *error)
    bool ret = false;
 
    parser = bson_parser_new ();
-   bson_parser_read_concern_optional (parser, "readConcern", &opts->rc);
-   bson_parser_read_prefs_optional (parser, "readPreference", &opts->rp);
-   bson_parser_write_concern_optional (parser, "writeConcern", &opts->wc);
+   bson_parser_read_concern_optional (parser, &opts->rc);
+   bson_parser_read_prefs_optional (parser, &opts->rp);
+   bson_parser_write_concern_optional (parser, &opts->wc);
    if (!bson_parser_parse (parser, in, error)) {
       goto done;
    }

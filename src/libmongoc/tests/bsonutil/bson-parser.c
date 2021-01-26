@@ -228,8 +228,8 @@ bson_parser_allow_extra (bson_parser_t *parser, bool val)
    parser->allow_extra = val;
 }
 
-bson_t *
-bson_parser_get_extra (bson_parser_t *parser)
+const bson_t *
+bson_parser_get_extra (const bson_parser_t *parser)
 {
    BSON_ASSERT (parser);
    return parser->extra;
@@ -442,61 +442,53 @@ bson_parser_any_optional (bson_parser_t *bp, const char *key, bson_val_t **out)
 }
 
 void
-bson_parser_write_concern (bson_parser_t *bp,
-                           const char *key,
-                           mongoc_write_concern_t **out)
+bson_parser_write_concern (bson_parser_t *bp, mongoc_write_concern_t **out)
 {
    *out = NULL;
    bson_parser_add_entry (
-      bp, key, (void *) out, BSON_PARSER_WRITE_CONCERN, false);
+      bp, "writeConcern", (void *) out, BSON_PARSER_WRITE_CONCERN, false);
 }
 
 void
 bson_parser_write_concern_optional (bson_parser_t *bp,
-                                    const char *key,
                                     mongoc_write_concern_t **out)
 {
    *out = NULL;
    bson_parser_add_entry (
-      bp, key, (void *) out, BSON_PARSER_WRITE_CONCERN, true);
+      bp, "writeConcern", (void *) out, BSON_PARSER_WRITE_CONCERN, true);
 }
 
 void
-bson_parser_read_concern (bson_parser_t *bp,
-                          const char *key,
-                          mongoc_read_concern_t **out)
+bson_parser_read_concern (bson_parser_t *bp, mongoc_read_concern_t **out)
 {
    *out = NULL;
    bson_parser_add_entry (
-      bp, key, (void *) out, BSON_PARSER_READ_CONCERN, false);
+      bp, "readConcern", (void *) out, BSON_PARSER_READ_CONCERN, false);
 }
 
 void
 bson_parser_read_concern_optional (bson_parser_t *bp,
-                                   const char *key,
                                    mongoc_read_concern_t **out)
 {
    *out = NULL;
    bson_parser_add_entry (
-      bp, key, (void *) out, BSON_PARSER_READ_CONCERN, true);
+      bp, "readConcern", (void *) out, BSON_PARSER_READ_CONCERN, true);
 }
 
 void
-bson_parser_read_prefs (bson_parser_t *bp,
-                        const char *key,
-                        mongoc_read_prefs_t **out)
+bson_parser_read_prefs (bson_parser_t *bp, mongoc_read_prefs_t **out)
 {
    *out = NULL;
-   bson_parser_add_entry (bp, key, (void *) out, BSON_PARSER_READ_PREFS, false);
+   bson_parser_add_entry (
+      bp, "readPreference", (void *) out, BSON_PARSER_READ_PREFS, false);
 }
 
 void
-bson_parser_read_prefs_optional (bson_parser_t *bp,
-                                 const char *key,
-                                 mongoc_read_prefs_t **out)
+bson_parser_read_prefs_optional (bson_parser_t *bp, mongoc_read_prefs_t **out)
 {
    *out = NULL;
-   bson_parser_add_entry (bp, key, (void *) out, BSON_PARSER_READ_PREFS, true);
+   bson_parser_add_entry (
+      bp, "readPreference", (void *) out, BSON_PARSER_READ_PREFS, true);
 }
 
 void
