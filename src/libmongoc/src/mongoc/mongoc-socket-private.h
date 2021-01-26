@@ -39,6 +39,16 @@ mongoc_socket_accept_ex (mongoc_socket_t *sock,
                          int64_t expire_at,
                          uint16_t *port);
 
+mongoc_socket_t *
+mongoc_socket_new_bind_then_connect (int domain,
+				     int type,
+				     int protocol,
+				     const struct sockaddr *bind_addr,
+				     mongoc_socklen_t bind_addrlen,
+				     const struct sockaddr *connect_addr,
+				     mongoc_socklen_t connect_addrlen,
+				     int64_t expire_at);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_SOCKET_PRIVATE_H */

@@ -782,6 +782,77 @@ mongoc_socket_bind (mongoc_socket_t *sock,       /* IN */
 }
 
 
+mongoc_socket_t *
+mongoc_socket_new_bind_then_connect (int domain,
+				     int type,
+				     int protocol,
+				     const struct sockaddr *bind_addr,
+				     mongoc_socklen_t bind_addrlen,
+				     const struct sockaddr *connect_addr,
+				     mongoc_socklen_t connect_addrlen,
+				     int64_t expire_at)
+{
+   mongoc_socket_t *sock;
+   int reuse = 1;
+   int ret;
+
+   ENTRY;
+
+   BSON_ASSERT (bind_addr);
+   BSON_ASSERT (bind_addrlen);
+   BSON_ASSERT (connect_addr);
+   BSON_ASSERT (connect_addrlen);
+
+   while (true) {
+      // TODO this loop should not be infinite. Use expire_at ?
+
+      sock = mongoc_socket_new (domain, type, protocol);
+   
+      /* Allow bind-then-connect sockets to coexist with others bound to the same
+	 source address and source port by setting SO_REUSEADDR. */
+      ret = setsockopt (sock->sd, SOL_SOCKET, SO_REUSEADDR, (const char*) &reuse, sizeof(reuse));
+      if (!ret) {
+	 MONGOC_WARNING ("Failed to set SO_REUSEADDR");
+      }
+
+      ret = mongoc_socket_bind (sock, bind_addr, bind_addrlen);
+      if (!ret) {
+	 mongoc_socket_destroy (sock);
+	 break;
+      }
+
+      ret = mongoc_socket_connect (sock, connect_addr, connect_addrlen, expire_at);
+      if (!ret) {
+	 _mongoc_socket_capture_errno (sock);
+
+	 /* Sockets must have a unique tuple of
+	    { bind_ip, bind_port, connect_ip, connect_port }.
+
+	    When we bind(), with SO_REUSEADDR, the kernel picks a source port for us,
+	    and we may end up with the same bind_ip and bind_port as another outgoing
+	    socket. This is fine if either connect_ip or connect_addr is unique,
+	    but the OS doesn't check that information until we connect().
+
+	    To avoid spurious failure because of tuple collision, try the whole
+	    sequence again if we get EADDRNOTAVAIL. */
+	 if (sock->errno_ == EADDRNOTAVAIL) {
+	    mongoc_socket_destroy (sock);
+	    continue;
+	 }
+
+	 mongoc_socket_destroy (sock);
+	 break;
+      }
+
+      /* Success */
+      RETURN (sock);
+   }
+
+   _mongoc_socket_capture_errno (sock);
+   RETURN (NULL);
+}
+
+
 int
 mongoc_socket_close (mongoc_socket_t *sock) /* IN */
 {
