@@ -47,7 +47,7 @@ hex_to_bin (const char *hex, uint32_t *len)
 }
 
 char *
-bin_to_hex (uint8_t *bin, uint32_t len)
+bin_to_hex (const uint8_t *bin, uint32_t len)
 {
    char *out = bson_malloc0 (2 * len + 1);
    uint32_t i;
@@ -65,7 +65,7 @@ cmp_key (const void *a, const void *b)
 }
 
 bson_t *
-bson_copy_and_sort (bson_t *in)
+bson_copy_and_sort (const bson_t *in)
 {
    bson_t *out = bson_new ();
    bson_iter_t iter;

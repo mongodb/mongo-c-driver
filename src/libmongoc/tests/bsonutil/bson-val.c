@@ -72,13 +72,13 @@ bson_val_from_json (const char *single_quoted_json)
 }
 
 bson_val_t *
-bson_val_from_iter (bson_iter_t *iter)
+bson_val_from_iter (const bson_iter_t *iter)
 {
-   return bson_val_from_value (bson_iter_value (iter));
+   return bson_val_from_value (bson_iter_value ((bson_iter_t *) iter));
 }
 
 bson_val_t *
-bson_val_from_bson (bson_t *bson)
+bson_val_from_bson (const bson_t *bson)
 {
    bson_value_t value;
    bson_iter_t iter;
@@ -97,7 +97,7 @@ bson_val_from_bson (bson_t *bson)
 
 /* Always force to be an array. */
 bson_val_t *
-bson_val_from_array (bson_t *bson)
+bson_val_from_array (const bson_t *bson)
 {
    bson_value_t value;
 
@@ -110,7 +110,7 @@ bson_val_from_array (bson_t *bson)
 
 /* Always force to be an document. */
 bson_val_t *
-bson_val_from_doc (bson_t *bson)
+bson_val_from_doc (const bson_t *bson)
 {
    bson_value_t value;
 
@@ -132,19 +132,19 @@ bson_val_from_int64 (int64_t val)
 }
 
 bson_val_t *
-bson_val_from_bytes (uint8_t *bytes, uint32_t len)
+bson_val_from_bytes (const uint8_t *bytes, uint32_t len)
 {
    bson_value_t value;
 
    value.value_type = BSON_TYPE_BINARY;
    value.value.v_binary.subtype = BSON_SUBTYPE_BINARY;
-   value.value.v_binary.data = bytes;
+   value.value.v_binary.data = (uint8_t *) bytes;
    value.value.v_binary.data_len = len;
    return bson_val_from_value (&value);
 }
 
 bson_val_t *
-bson_val_copy (bson_val_t *val)
+bson_val_copy (const bson_val_t *val)
 {
    if (!val) {
       return NULL;
@@ -166,7 +166,9 @@ bson_val_destroy (bson_val_t *val)
 }
 
 bool
-bson_val_eq (bson_val_t *a, bson_val_t *b, bson_val_comparison_flags_t flags)
+bson_val_eq (const bson_val_t *a,
+             const bson_val_t *b,
+             bson_val_comparison_flags_t flags)
 {
    bson_type_t vtype;
 
@@ -227,13 +229,13 @@ bson_val_eq (bson_val_t *a, bson_val_t *b, bson_val_comparison_flags_t flags)
 }
 
 bson_type_t
-bson_val_type (bson_val_t *val)
+bson_val_type (const bson_val_t *val)
 {
    return val->type;
 }
 
-bson_t *
-bson_val_to_document (bson_val_t *val)
+const bson_t *
+bson_val_to_document (const bson_val_t *val)
 {
    if (val->type != BSON_TYPE_DOCUMENT) {
       test_error ("expected document, got: %s",
@@ -241,8 +243,9 @@ bson_val_to_document (bson_val_t *val)
    }
    return val->as_bson;
 }
-bson_t *
-bson_val_to_array (bson_val_t *val)
+
+const bson_t *
+bson_val_to_array (const bson_val_t *val)
 {
    if (val->type != BSON_TYPE_ARRAY) {
       test_error ("expected array, got: %s", bson_type_to_string (val->type));
@@ -251,8 +254,8 @@ bson_val_to_array (bson_val_t *val)
 }
 
 /* Either document or array. */
-bson_t *
-bson_val_to_bson (bson_val_t *val)
+const bson_t *
+bson_val_to_bson (const bson_val_t *val)
 {
    if (val->type != BSON_TYPE_ARRAY && val->type != BSON_TYPE_DOCUMENT) {
       test_error ("expected document or array, got: %s",
@@ -261,8 +264,8 @@ bson_val_to_bson (bson_val_t *val)
    return val->as_bson;
 }
 
-uint8_t *
-bson_val_to_binary (bson_val_t *val, uint32_t *len)
+const uint8_t *
+bson_val_to_binary (const bson_val_t *val, uint32_t *len)
 {
    if (val->type != BSON_TYPE_BINARY) {
       test_error ("expected binary, got: %s", bson_type_to_string (val->type));
@@ -271,28 +274,28 @@ bson_val_to_binary (bson_val_t *val, uint32_t *len)
    return val->value.value.v_binary.data;
 }
 
-bson_value_t *
-bson_val_to_value (bson_val_t *val)
+const bson_value_t *
+bson_val_to_value (const bson_val_t *val)
 {
    return (bson_value_t *) &val->value;
 }
 
-char *
-bson_val_to_utf8 (bson_val_t *val)
+const char *
+bson_val_to_utf8 (const bson_val_t *val)
 {
    BSON_ASSERT (val->type == BSON_TYPE_UTF8);
    return val->value.value.v_utf8.str;
 }
 
 bool
-bson_val_is_numeric (bson_val_t *val)
+bson_val_is_numeric (const bson_val_t *val)
 {
    return (val->type == BSON_TYPE_INT32 || val->type == BSON_TYPE_INT64 ||
            val->type == BSON_TYPE_DOUBLE);
 }
 
 int64_t
-bson_val_convert_int64 (bson_val_t *val)
+bson_val_convert_int64 (const bson_val_t *val)
 {
    if (val->type == BSON_TYPE_INT32) {
       return (int64_t) val->value.value.v_int32;
@@ -310,7 +313,7 @@ bson_val_convert_int64 (bson_val_t *val)
 }
 
 const char *
-bson_val_to_json (bson_val_t *val)
+bson_val_to_json (const bson_val_t *val)
 {
    if (!val) {
       return "(NULL)";

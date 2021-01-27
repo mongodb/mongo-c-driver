@@ -35,7 +35,7 @@ struct _bson_matcher_t {
    test_set_error (error, "match error at '%s': " format, path, __VA_ARGS__)
 
 static char *
-get_first_key (bson_t *bson)
+get_first_key (const bson_t *bson)
 {
    bson_iter_t iter;
 
@@ -48,7 +48,7 @@ get_first_key (bson_t *bson)
 }
 
 static bool
-is_special_match (bson_t *bson)
+is_special_match (const bson_t *bson)
 {
    char *first_key = get_first_key (bson);
    if (strstr (first_key, "$$") != first_key) {
@@ -63,10 +63,10 @@ is_special_match (bson_t *bson)
 /* implements $$exists */
 static bool
 special_exists (bson_matcher_t *matcher,
-                bson_t *assertion,
-                bson_val_t *actual,
+                const bson_t *assertion,
+                const bson_val_t *actual,
                 void *ctx,
-                char *path,
+                const char *path,
                 bson_error_t *error)
 {
    bool ret = false;
@@ -99,10 +99,10 @@ done:
 /* implements $$type */
 static bool
 special_type (bson_matcher_t *matcher,
-              bson_t *assertion,
-              bson_val_t *actual,
+              const bson_t *assertion,
+              const bson_val_t *actual,
               void *ctx,
-              char *path,
+              const char *path,
               bson_error_t *error)
 {
    bool ret = false;
@@ -165,10 +165,10 @@ done:
 /* implements $$unsetOrMatches */
 static bool
 special_unset_or_matches (bson_matcher_t *matcher,
-                          bson_t *assertion,
-                          bson_val_t *actual,
+                          const bson_t *assertion,
+                          const bson_val_t *actual,
                           void *ctx,
-                          char *path,
+                          const char *path,
                           bson_error_t *error)
 {
    bool ret = false;
@@ -197,16 +197,16 @@ done:
 /* implements $$matchesHexBytes */
 static bool
 special_matches_hex_bytes (bson_matcher_t *matcher,
-                           bson_t *assertion,
-                           bson_val_t *actual,
+                           const bson_t *assertion,
+                           const bson_val_t *actual,
                            void *ctx,
-                           char *path,
+                           const char *path,
                            bson_error_t *error)
 {
    bool ret = false;
    uint8_t *expected_bytes;
    uint32_t expected_bytes_len;
-   uint8_t *actual_bytes;
+   const uint8_t *actual_bytes;
    uint32_t actual_bytes_len;
    char *expected_bytes_string = NULL;
    char *actual_bytes_string = NULL;
@@ -269,9 +269,9 @@ done:
 
 static bool
 evaluate_special (bson_matcher_t *matcher,
-                  bson_t *assertion,
-                  bson_val_t *actual,
-                  char *path,
+                  const bson_t *assertion,
+                  const bson_val_t *actual,
+                  const char *path,
                   bson_error_t *error)
 {
    bson_iter_t iter;
@@ -312,7 +312,7 @@ bson_matcher_new ()
 /* Add a hook function for matching a special $$ operator */
 void
 bson_matcher_add_special (bson_matcher_t *matcher,
-                          char *keyword,
+                          const char *keyword,
                           special_fn special,
                           void *ctx)
 {
@@ -350,9 +350,9 @@ bson_matcher_destroy (bson_matcher_t *matcher)
 
 bool
 bson_matcher_match (bson_matcher_t *matcher,
-                    bson_val_t *expected,
-                    bson_val_t *actual,
-                    char *path,
+                    const bson_val_t *expected,
+                    const bson_val_t *actual,
+                    const char *path,
                     bson_error_t *error)
 {
    bool ret = false;
@@ -360,8 +360,8 @@ bson_matcher_match (bson_matcher_t *matcher,
 
    if (bson_val_type (expected) == BSON_TYPE_DOCUMENT) {
       bson_iter_t expected_iter;
-      bson_t *expected_bson = bson_val_to_document (expected);
-      bson_t *actual_bson = NULL;
+      const bson_t *expected_bson = bson_val_to_document (expected);
+      const bson_t *actual_bson = NULL;
 
       /* handle special operators (e.g. $$type) */
       if (is_special_match (expected_bson)) {
@@ -444,8 +444,8 @@ bson_matcher_match (bson_matcher_t *matcher,
 
    if (bson_val_type (expected) == BSON_TYPE_ARRAY) {
       bson_iter_t expected_iter;
-      bson_t *expected_bson = bson_val_to_array (expected);
-      bson_t *actual_bson = NULL;
+      const bson_t *expected_bson = bson_val_to_array (expected);
+      const bson_t *actual_bson = NULL;
       char *path_child = NULL;
 
       if (bson_val_type (actual) != BSON_TYPE_ARRAY) {
@@ -520,7 +520,9 @@ done:
 }
 
 bool
-bson_match (bson_val_t *expected, bson_val_t *actual, bson_error_t *error)
+bson_match (const bson_val_t *expected,
+            const bson_val_t *actual,
+            bson_error_t *error)
 {
    bson_matcher_t *matcher = bson_matcher_new ();
    bool matched = bson_matcher_match (matcher, expected, actual, "", error);
