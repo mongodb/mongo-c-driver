@@ -246,6 +246,12 @@ start mongocryptd on port 27020 and set the following:
 
 * `MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN=on`
 
+Specification tests may be filtered by their description:
+
+* `MONGOC_JSON_SUBTEST=<string>`
+
+This can be useful in debugging a specific test case in a spec test file with multiple tests.
+
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner

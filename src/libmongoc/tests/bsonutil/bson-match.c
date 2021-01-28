@@ -305,7 +305,7 @@ bson_matcher_new ()
    bson_matcher_add_special (
       matcher, "$$unsetOrMatches", special_unset_or_matches, NULL);
    bson_matcher_add_special (
-      matcher, "$$matches_hex_bytes", special_matches_hex_bytes, NULL);
+      matcher, "$$matchesHexBytes", special_matches_hex_bytes, NULL);
    return matcher;
 }
 

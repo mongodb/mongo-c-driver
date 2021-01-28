@@ -268,6 +268,8 @@ extern void
 test_bson_match_install (TestSuite *suite);
 extern void
 test_bson_util_install (TestSuite *suite);
+extern void
+test_result_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -1373,6 +1375,45 @@ test_framework_get_uri ()
    bson_free (test_uri_str);
 
    return uri;
+}
+
+bool
+test_framework_uri_apply_multi_mongos (mongoc_uri_t *uri,
+                                       bool use_multi,
+                                       bson_error_t *error)
+{
+   bool ret = false;
+
+   if (!test_framework_is_mongos ()) {
+      ret = true;
+      goto done;
+   }
+
+   /* TODO: Once CDRIVER-3285 is resolved, update this to no longer hardcode the
+    * hosts. */
+   if (use_multi) {
+      if (!mongoc_uri_upsert_host_and_port (uri, "localhost:27017", error)) {
+         goto done;
+      }
+      if (!mongoc_uri_upsert_host_and_port (uri, "localhost:27018", error)) {
+         goto done;
+      }
+   } else {
+      const mongoc_host_list_t *hosts;
+
+      hosts = mongoc_uri_get_hosts (uri);
+      if (hosts->next) {
+         test_set_error (error,
+                         "useMultiMongoses is false, so expected single "
+                         "host listed, but got: %s",
+                         mongoc_uri_get_string (uri));
+         goto done;
+      }
+   }
+
+   ret = true;
+done:
+   return ret;
 }
 
 
@@ -2685,6 +2726,7 @@ main (int argc, char *argv[])
    test_timeout_install (&suite);
    test_bson_match_install (&suite);
    test_bson_util_install (&suite);
+   test_result_install (&suite);
 
    ret = TestSuite_Run (&suite);
 

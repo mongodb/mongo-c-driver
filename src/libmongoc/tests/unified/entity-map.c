@@ -24,7 +24,13 @@
 #include "util.h"
 
 /* TODO: remove this include once CDRIVER-3285 is resolved. */
+#include "mongoc-client-private.h"
+#include "mongoc-topology-private.h"
 #include "mongoc-uri-private.h"
+
+/* TODO: use public API once CDRIVER-3130 is resolved. */
+#define REDUCED_HEARTBEAT_FREQUENCY_MS 500
+#define REDUCED_MIN_HEARTBEAT_FREQUENCY_MS 50
 
 static void
 entity_destroy (entity_t *entity);
@@ -52,7 +58,7 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
    bson_iter_t iter;
    bool ret = false;
    bool wcSet = false;
-   mongoc_write_concern_t *wc;
+   mongoc_write_concern_t *wc = NULL;
 
    /* There may be multiple URI options (w, wTimeoutMS, journal) for a write
     * concern. Parse all options before setting the write concern on the URI. */
@@ -65,7 +71,7 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
       key = bson_iter_key (&iter);
 
       if (0 == strcmp ("readConcernLevel", key)) {
-         mongoc_read_concern_t *rc;
+         mongoc_read_concern_t *rc = NULL;
 
          rc = mongoc_read_concern_new ();
          mongoc_read_concern_set_level (rc, bson_iter_utf8 (&iter, NULL));
@@ -101,7 +107,7 @@ done:
 event_t *
 event_new (char *type)
 {
-   event_t *event;
+   event_t *event = NULL;
 
    event = bson_malloc0 (sizeof (event_t));
    event->type = bson_strdup (type);
@@ -115,16 +121,18 @@ event_destroy (event_t *event)
       return;
    }
 
+   bson_free (event->command_name);
+   bson_free (event->database_name);
    bson_destroy (event->command);
    bson_destroy (event->reply);
    bson_free (event->type);
    bson_free (event);
 }
 
-entity_t *
-entity_new (char *type)
+static entity_t *
+entity_new (const char *type)
 {
-   entity_t *entity;
+   entity_t *entity = NULL;
    entity = bson_malloc0 (sizeof (entity_t));
    entity->type = bson_strdup (type);
    return entity;
@@ -156,15 +164,18 @@ should_ignore_event (entity_t *client_entity, event_t *event)
 static void
 command_started (const mongoc_apm_command_started_t *started)
 {
-   entity_t *entity;
-   event_t *event;
+   entity_t *entity = NULL;
+   event_t *event = NULL;
 
    entity = (entity_t *) mongoc_apm_command_started_get_context (started);
-   event = event_new ("commandStarted");
+   event = event_new ("commandStartedEvent");
    event->command =
       bson_copy (mongoc_apm_command_started_get_command (started));
    event->command_name =
       bson_strdup (mongoc_apm_command_started_get_command_name (started));
+
+   event->database_name =
+      bson_strdup (mongoc_apm_command_started_get_database_name (started));
 
    if (should_ignore_event (entity, event)) {
       event_destroy (event);
@@ -177,11 +188,11 @@ command_started (const mongoc_apm_command_started_t *started)
 static void
 command_failed (const mongoc_apm_command_failed_t *failed)
 {
-   entity_t *entity;
-   event_t *event;
+   entity_t *entity = NULL;
+   event_t *event = NULL;
 
    entity = (entity_t *) mongoc_apm_command_failed_get_context (failed);
-   event = event_new ("commandFailed");
+   event = event_new ("commandFailedEvent");
    event->reply = bson_copy (mongoc_apm_command_failed_get_reply (failed));
    event->command_name =
       bson_strdup (mongoc_apm_command_failed_get_command_name (failed));
@@ -196,11 +207,11 @@ command_failed (const mongoc_apm_command_failed_t *failed)
 static void
 command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
 {
-   entity_t *entity;
-   event_t *event;
+   entity_t *entity = NULL;
+   event_t *event = NULL;
 
    entity = (entity_t *) mongoc_apm_command_succeeded_get_context (succeeded);
-   event = event_new ("commandSucceeded");
+   event = event_new ("commandSucceededEvent");
    event->reply =
       bson_copy (mongoc_apm_command_succeeded_get_reply (succeeded));
    event->command_name =
@@ -214,11 +225,11 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
 }
 
 entity_t *
-entity_client_new (bson_t *bson, bson_error_t *error)
+entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
 {
-   bson_parser_t *parser;
-   entity_t *entity;
-   mongoc_client_t *client;
+   bson_parser_t *parser = NULL;
+   entity_t *entity = NULL;
+   mongoc_client_t *client = NULL;
    mongoc_uri_t *uri = NULL;
    bool ret = false;
    bson_iter_t iter;
@@ -227,6 +238,7 @@ entity_client_new (bson_t *bson, bson_error_t *error)
    bool *use_multiple_mongoses = NULL;
    bson_t *observe_events = NULL;
    bson_t *server_api = NULL;
+   bool can_reduce_heartbeat = false;
 
    entity = entity_new ("client");
    parser = bson_parser_new ();
@@ -265,27 +277,10 @@ entity_client_new (bson_t *bson, bson_error_t *error)
 
    /* Build the client's URI. */
    uri = test_framework_get_uri ();
-   if (use_multiple_mongoses && test_framework_is_mongos ()) {
-      /* TODO: Once CDRIVER-3285 is resolved, update this to no longer rely on
-       * the private URI API. */
-      if (*use_multiple_mongoses) {
-         if (!mongoc_uri_upsert_host_and_port (uri, "localhost:27017", error)) {
-            goto done;
-         }
-         if (!mongoc_uri_upsert_host_and_port (uri, "localhost:27018", error)) {
-            goto done;
-         }
-      } else {
-         const mongoc_host_list_t *hosts;
-
-         hosts = mongoc_uri_get_hosts (uri);
-         if (hosts->next) {
-            test_set_error (error,
-                            "useMultiMongoses is false, so expected single "
-                            "host listed, but got: %s",
-                            mongoc_uri_get_string (uri));
-            goto done;
-         }
+   if (use_multiple_mongoses) {
+      if (!test_framework_uri_apply_multi_mongos (
+             uri, *use_multiple_mongoses, error)) {
+         goto done;
       }
    }
 
@@ -296,9 +291,24 @@ entity_client_new (bson_t *bson, bson_error_t *error)
       }
    }
 
+   if (!mongoc_uri_has_option (uri, MONGOC_URI_HEARTBEATFREQUENCYMS)) {
+      can_reduce_heartbeat = true;
+   }
+
+   if (can_reduce_heartbeat && em->reduced_heartbeat) {
+      mongoc_uri_set_option_as_int32 (
+         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, REDUCED_HEARTBEAT_FREQUENCY_MS);
+   }
+
    client = mongoc_client_new_from_uri (uri);
+   test_framework_set_ssl_opts (client);
    entity->value = client;
    callbacks = mongoc_apm_callbacks_new ();
+
+   if (can_reduce_heartbeat) {
+      client->topology->min_heartbeat_frequency_msec =
+         REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
+   }
 
    if (observe_events) {
       BSON_FOREACH (observe_events, iter)
@@ -383,12 +393,12 @@ entity_database_new (entity_map_t *entity_map,
                      bson_t *bson,
                      bson_error_t *error)
 {
-   bson_parser_t *parser;
-   entity_t *entity;
+   bson_parser_t *parser = NULL;
+   entity_t *entity = NULL;
    const entity_t *client_entity;
    char *client_id = NULL;
-   mongoc_client_t *client;
-   mongoc_database_t *db;
+   mongoc_client_t *client = NULL;
+   mongoc_database_t *db = NULL;
    char *database_name = NULL;
    bool ret = false;
    bson_t *database_opts = NULL;
@@ -449,11 +459,11 @@ entity_collection_new (entity_map_t *entity_map,
                        bson_t *bson,
                        bson_error_t *error)
 {
-   bson_parser_t *parser;
-   entity_t *entity;
-   entity_t *database_entity;
-   mongoc_database_t *database;
-   mongoc_collection_t *coll;
+   bson_parser_t *parser = NULL;
+   entity_t *entity = NULL;
+   entity_t *database_entity = NULL;
+   mongoc_database_t *database = NULL;
+   mongoc_collection_t *coll = NULL;
    bool ret = false;
    char *database_id = NULL;
    char *collection_name = NULL;
@@ -511,12 +521,20 @@ session_opts_new (bson_t *bson, bson_error_t *error)
 {
    bool ret = false;
    mongoc_session_opt_t *opts = NULL;
-   bson_parser_t *parser;
+   bson_parser_t *bp = NULL;
+   bson_parser_t *bp_opts = NULL;
    bool *causal_consistency = NULL;
+   bson_t *default_transaction_opts = NULL;
+   mongoc_write_concern_t *wc = NULL;
+   mongoc_read_concern_t *rc = NULL;
+   mongoc_read_prefs_t *rp = NULL;
+   mongoc_transaction_opt_t *topts = NULL;
 
-   parser = bson_parser_new ();
-   bson_parser_bool_optional (parser, "causalConsistency", &causal_consistency);
-   if (!bson_parser_parse (parser, bson, error)) {
+   bp = bson_parser_new ();
+   bson_parser_bool_optional (bp, "causalConsistency", &causal_consistency);
+   bson_parser_doc_optional (
+      bp, "defaultTransactionOptions", &default_transaction_opts);
+   if (!bson_parser_parse (bp, bson, error)) {
       goto done;
    }
 
@@ -525,9 +543,37 @@ session_opts_new (bson_t *bson, bson_error_t *error)
       mongoc_session_opts_set_causal_consistency (opts, *causal_consistency);
    }
 
+   if (default_transaction_opts) {
+      bp_opts = bson_parser_new ();
+      topts = mongoc_transaction_opts_new ();
+
+      bson_parser_write_concern_optional (bp_opts, &wc);
+      bson_parser_read_concern_optional (bp_opts, &rc);
+      bson_parser_read_prefs_optional (bp_opts, &rp);
+      if (!bson_parser_parse (bp_opts, default_transaction_opts, error)) {
+         goto done;
+      }
+
+      if (wc) {
+         mongoc_transaction_opts_set_write_concern (topts, wc);
+      }
+
+      if (rc) {
+         mongoc_transaction_opts_set_read_concern (topts, rc);
+      }
+
+      if (rp) {
+         mongoc_transaction_opts_set_read_prefs (topts, rp);
+      }
+
+      mongoc_session_opts_set_default_transaction_opts (opts, topts);
+   }
+
+   ret = true;
 done:
-   bson_parser_destroy (parser);
-   bson_free (causal_consistency);
+   bson_parser_destroy_with_parsed_fields (bp);
+   bson_parser_destroy_with_parsed_fields (bp_opts);
+   mongoc_transaction_opts_destroy (topts);
    if (!ret) {
       mongoc_session_opts_destroy (opts);
       return NULL;
@@ -538,14 +584,15 @@ done:
 entity_t *
 entity_session_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
 {
-   bson_parser_t *parser;
-   entity_t *entity;
-   entity_t *client_entity;
-   mongoc_client_t *client;
+   bson_parser_t *parser = NULL;
+   entity_t *entity = NULL;
+   entity_t *client_entity = NULL;
+   mongoc_client_t *client = NULL;
    char *client_id = NULL;
    bson_t *session_opts_bson = NULL;
    mongoc_session_opt_t *session_opts = NULL;
    bool ret = false;
+   mongoc_client_session_t *session = NULL;
 
    entity = entity_new ("session");
    parser = bson_parser_new ();
@@ -557,24 +604,97 @@ entity_session_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    }
 
    client_entity = entity_map_get (entity_map, client_id, error);
+   if (!client_entity) {
+      goto done;
+   }
    client = (mongoc_client_t *) client_entity->value;
    if (!client) {
       goto done;
    }
-   session_opts = session_opts_new (session_opts_bson, error);
-   if (!session_opts) {
+   if (session_opts_bson) {
+      session_opts = session_opts_new (session_opts_bson, error);
+      if (!session_opts) {
+         goto done;
+      }
+   }
+   session = mongoc_client_start_session (client, session_opts, error);
+   if (!session) {
       goto done;
    }
-   entity->value = mongoc_client_start_session (client, session_opts, error);
-   if (!entity->value) {
-      goto done;
-   }
+   entity->value = session;
+   /* Ending a session destroys the session object.
+    * After a session is ended, match assertions may be made on the lsid.
+    * So the lsid is copied from the session object on creation. */
+   entity->lsid = bson_copy (mongoc_client_session_get_lsid (session));
    ret = true;
+
+   entity->session_client_id = bson_strdup (client_id);
 done:
    mongoc_session_opts_destroy (session_opts);
    bson_free (client_id);
    bson_destroy (session_opts_bson);
    bson_parser_destroy (parser);
+   if (!ret) {
+      entity_destroy (entity);
+      return NULL;
+   }
+   return entity;
+}
+
+entity_t *
+entity_bucket_new (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
+{
+   bson_parser_t *parser = NULL;
+   entity_t *entity = NULL;
+   mongoc_database_t *database = NULL;
+   char *database_id = NULL;
+   bool ret = false;
+   bson_t *bucket_opts_bson = NULL;
+   bson_parser_t *opts_parser = NULL;
+   mongoc_read_concern_t *rc = NULL;
+   mongoc_write_concern_t *wc = NULL;
+   bson_t *opts = NULL;
+
+   entity = entity_new ("bucket");
+   parser = bson_parser_new ();
+   bson_parser_utf8 (parser, "id", &entity->id);
+   bson_parser_utf8 (parser, "database", &database_id);
+   bson_parser_doc_optional (parser, "bucketOptions", &bucket_opts_bson);
+   if (!bson_parser_parse (parser, bson, error)) {
+      goto done;
+   }
+
+   database = entity_map_get_database (entity_map, database_id, error);
+   if (!database) {
+      goto done;
+   }
+
+   opts_parser = bson_parser_new ();
+   bson_parser_allow_extra (opts_parser, true);
+   bson_parser_read_concern_optional (opts_parser, &rc);
+   bson_parser_write_concern_optional (opts_parser, &wc);
+   opts = bson_new ();
+   bson_concat (opts, bson_parser_get_extra (opts_parser));
+   if (rc) {
+      mongoc_read_concern_append (rc, opts);
+   }
+   if (wc) {
+      mongoc_write_concern_append (wc, opts);
+   }
+
+   entity->value =
+      mongoc_gridfs_bucket_new (database, opts, NULL /* read prefs */, error);
+   if (!entity->value) {
+      goto done;
+   }
+
+   ret = true;
+done:
+   bson_free (database_id);
+   bson_destroy (bucket_opts_bson);
+   bson_parser_destroy (parser);
+   bson_parser_destroy_with_parsed_fields (opts_parser);
+   bson_destroy (opts);
    if (!ret) {
       entity_destroy (entity);
       return NULL;
@@ -602,7 +722,7 @@ entity_map_create (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    const char *entity_type;
    bson_t entity_bson;
    entity_t *entity = NULL;
-   entity_t *entity_iter;
+   entity_t *entity_iter = NULL;
    bool ret = false;
 
    bson_iter_init (&iter, bson);
@@ -622,13 +742,15 @@ entity_map_create (entity_map_t *entity_map, bson_t *bson, bson_error_t *error)
    }
 
    if (0 == strcmp (entity_type, "client")) {
-      entity = entity_client_new (&entity_bson, error);
+      entity = entity_client_new (entity_map, &entity_bson, error);
    } else if (0 == strcmp (entity_type, "database")) {
       entity = entity_database_new (entity_map, &entity_bson, error);
    } else if (0 == strcmp (entity_type, "collection")) {
       entity = entity_collection_new (entity_map, &entity_bson, error);
    } else if (0 == strcmp (entity_type, "session")) {
       entity = entity_session_new (entity_map, &entity_bson, error);
+   } else if (0 == strcmp (entity_type, "bucket")) {
+      entity = entity_bucket_new (entity_map, &entity_bson, error);
    } else {
       test_set_error (
          error, "Unknown entity type: %s: %s", entity_type, tmp_json (bson));
@@ -662,8 +784,8 @@ done:
 static void
 entity_destroy (entity_t *entity)
 {
-   event_t *event;
-   event_t *tmp;
+   event_t *event = NULL;
+   event_t *tmp = NULL;
 
    if (!entity) {
       return;
@@ -672,25 +794,42 @@ entity_destroy (entity_t *entity)
    BSON_ASSERT (entity->type);
 
    if (0 == strcmp ("client", entity->type)) {
-      mongoc_client_t *client;
+      mongoc_client_t *client = NULL;
 
       client = (mongoc_client_t *) entity->value;
       mongoc_client_destroy (client);
    } else if (0 == strcmp ("database", entity->type)) {
-      mongoc_database_t *db;
+      mongoc_database_t *db = NULL;
 
       db = (mongoc_database_t *) entity->value;
       mongoc_database_destroy (db);
    } else if (0 == strcmp ("collection", entity->type)) {
-      mongoc_collection_t *coll;
+      mongoc_collection_t *coll = NULL;
 
       coll = (mongoc_collection_t *) entity->value;
       mongoc_collection_destroy (coll);
    } else if (0 == strcmp ("session", entity->type)) {
-      mongoc_client_session_t *sess;
+      mongoc_client_session_t *sess = NULL;
 
       sess = (mongoc_client_session_t *) entity->value;
       mongoc_client_session_destroy (sess);
+   } else if (0 == strcmp ("changestream", entity->type)) {
+      mongoc_change_stream_t *changestream = NULL;
+
+      changestream = (mongoc_change_stream_t *) entity->value;
+      mongoc_change_stream_destroy (changestream);
+   } else if (0 == strcmp ("bson", entity->type)) {
+      bson_val_t *value = entity->value;
+
+      bson_val_destroy (value);
+   } else if (0 == strcmp ("bucket", entity->type)) {
+      mongoc_gridfs_bucket_t *bucket = entity->value;
+
+      mongoc_gridfs_bucket_destroy (bucket);
+   } else {
+      test_error ("Attempting to destroy unrecognized entity type: %s, id: %s",
+                  entity->type,
+                  entity->id);
    }
 
    LL_FOREACH_SAFE (entity->events, event, tmp)
@@ -701,13 +840,15 @@ entity_destroy (entity_t *entity)
    bson_destroy (entity->ignore_command_monitoring_events);
    bson_free (entity->type);
    bson_free (entity->id);
+   bson_destroy (entity->lsid);
+   bson_free (entity->session_client_id);
    bson_free (entity);
 }
 
 entity_t *
 entity_map_get (entity_map_t *entity_map, const char *id, bson_error_t *error)
 {
-   entity_t *entity;
+   entity_t *entity = NULL;
    LL_FOREACH (entity_map->entities, entity)
    {
       if (0 == strcmp (entity->id, id)) {
@@ -717,4 +858,385 @@ entity_map_get (entity_map_t *entity_map, const char *id, bson_error_t *error)
 
    test_set_error (error, "Entity '%s' not found", id);
    return NULL;
+}
+
+static entity_t *
+_entity_map_get_by_type (entity_map_t *entity_map,
+                         const char *id,
+                         const char *type,
+                         bson_error_t *error)
+{
+   entity_t *entity = NULL;
+
+   entity = entity_map_get (entity_map, id, error);
+   if (!entity) {
+      return NULL;
+   }
+
+   if (0 != strcmp (entity->type, type)) {
+      test_set_error (error,
+                      "Unexpected entity type. Expected: %s, got %s",
+                      type,
+                      entity->type);
+      return NULL;
+   }
+   return entity;
+}
+
+mongoc_client_t *
+entity_map_get_client (entity_map_t *entity_map,
+                       const char *id,
+                       bson_error_t *error)
+{
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "client", error);
+   if (!entity) {
+      return NULL;
+   }
+   return (mongoc_client_t *) entity->value;
+}
+
+mongoc_database_t *
+entity_map_get_database (entity_map_t *entity_map,
+                         const char *id,
+                         bson_error_t *error)
+{
+   entity_t *entity =
+      _entity_map_get_by_type (entity_map, id, "database", error);
+   if (!entity) {
+      return NULL;
+   }
+   return (mongoc_database_t *) entity->value;
+}
+
+mongoc_collection_t *
+entity_map_get_collection (entity_map_t *entity_map,
+                           const char *id,
+                           bson_error_t *error)
+{
+   entity_t *entity =
+      _entity_map_get_by_type (entity_map, id, "collection", error);
+   if (!entity) {
+      return NULL;
+   }
+   return (mongoc_collection_t *) entity->value;
+}
+
+mongoc_change_stream_t *
+entity_map_get_changestream (entity_map_t *entity_map,
+                             const char *id,
+                             bson_error_t *error)
+{
+   entity_t *entity =
+      _entity_map_get_by_type (entity_map, id, "changestream", error);
+   if (!entity) {
+      return NULL;
+   }
+   return (mongoc_change_stream_t *) entity->value;
+}
+
+bson_val_t *
+entity_map_get_bson (entity_map_t *entity_map,
+                     const char *id,
+                     bson_error_t *error)
+{
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "bson", error);
+   if (!entity) {
+      return NULL;
+   }
+   return (bson_val_t *) entity->value;
+}
+
+mongoc_client_session_t *
+entity_map_get_session (entity_map_t *entity_map,
+                        const char *id,
+                        bson_error_t *error)
+{
+   entity_t *entity =
+      _entity_map_get_by_type (entity_map, id, "session", error);
+   if (!entity) {
+      return NULL;
+   }
+   if (!entity->value) {
+      test_set_error (
+         error,
+         "entity: %s is an ended session that is no longer valid to use",
+         id);
+      return NULL;
+   }
+   return (mongoc_client_session_t *) entity->value;
+}
+
+static bson_t *
+entity_map_get_lsid (entity_map_t *em, char *session_id, bson_error_t *error)
+{
+   entity_t *entity = NULL;
+
+   entity = entity_map_get (em, session_id, error);
+   if (!entity) {
+      return false;
+   }
+   if (!entity->lsid) {
+      test_set_error (error,
+                      "entity %s of type %s does not have an lsid",
+                      session_id,
+                      entity->type);
+      return false;
+   }
+   return entity->lsid;
+}
+
+mongoc_gridfs_bucket_t *
+entity_map_get_bucket (entity_map_t *entity_map,
+                       const char *id,
+                       bson_error_t *error)
+{
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "bucket", error);
+   if (!entity) {
+      return NULL;
+   }
+   return (mongoc_gridfs_bucket_t *) entity->value;
+}
+
+static bool
+_entity_map_add (entity_map_t *em,
+                 const char *id,
+                 const char *type,
+                 void *value,
+                 bson_error_t *error)
+{
+   bson_error_t tmperr;
+   entity_t *entity = NULL;
+
+   if (NULL != entity_map_get (em, id, &tmperr)) {
+      test_set_error (error, "Attempting to overwrite entity: %s", id);
+      return false;
+   }
+
+   entity = entity_new (type);
+   entity->value = value;
+   entity->id = bson_strdup (id);
+   LL_PREPEND (em->entities, entity);
+   return true;
+}
+
+bool
+entity_map_add_changestream (entity_map_t *em,
+                             const char *id,
+                             mongoc_change_stream_t *changestream,
+                             bson_error_t *error)
+{
+   return _entity_map_add (
+      em, id, "changestream", (void *) changestream, error);
+}
+
+bool
+entity_map_add_bson (entity_map_t *em,
+                     const char *id,
+                     bson_val_t *val,
+                     bson_error_t *error)
+{
+   return _entity_map_add (em, id, "bson", (void *) bson_val_copy (val), error);
+}
+
+/* implement $$sessionLsid */
+static bool
+special_session_lsid (bson_matcher_t *matcher,
+                      const bson_t *assertion,
+                      const bson_val_t *actual,
+                      void *ctx,
+                      const char *path,
+                      bson_error_t *error)
+{
+   bool ret = false;
+   const char *id;
+   bson_val_t *session_val = NULL;
+   bson_t *lsid = NULL;
+   entity_map_t *em = (entity_map_t *) ctx;
+   bson_iter_t iter;
+
+   bson_iter_init (&iter, assertion);
+   bson_iter_next (&iter);
+
+   if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+      test_set_error (error,
+                      "unexpected $$sessionLsid does not contain utf8: %s",
+                      tmp_json (assertion));
+      goto done;
+   }
+
+   id = bson_iter_utf8 (&iter, NULL);
+   lsid = entity_map_get_lsid (em, (char *) id, error);
+   if (!lsid) {
+      goto done;
+   }
+
+   session_val = bson_val_from_bson (lsid);
+   if (!bson_matcher_match (matcher, session_val, actual, path, error)) {
+      goto done;
+   }
+
+
+   ret = true;
+done:
+   bson_val_destroy (session_val);
+   return ret;
+}
+
+/* implement $$matchesEntity */
+bool
+special_matches_entity (bson_matcher_t *matcher,
+                        const bson_t *assertion,
+                        const bson_val_t *actual,
+                        void *ctx,
+                        const char *path,
+                        bson_error_t *error)
+{
+   bool ret = false;
+   bson_iter_t iter;
+   const char *assertion_key;
+   entity_map_t *em = (entity_map_t *) ctx;
+   bson_val_t *entity_val = NULL;
+   const char *id;
+
+   bson_iter_init (&iter, assertion);
+   BSON_ASSERT (bson_iter_next (&iter));
+   assertion_key = bson_iter_key (&iter);
+
+   if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+      test_set_error (error,
+                      "unexpected $$matchesEntity does not contain utf8: %s",
+                      tmp_json (assertion));
+      goto done;
+   }
+
+   id = bson_iter_utf8 (&iter, NULL);
+   entity_val = entity_map_get_bson (em, id, error);
+   if (!entity_val) {
+      goto done;
+   }
+
+   if (!bson_matcher_match (matcher, entity_val, actual, path, error)) {
+      goto done;
+   }
+
+   ret = true;
+done:
+   return ret;
+}
+
+bool
+entity_map_match (entity_map_t *em,
+                  const bson_val_t *expected,
+                  const bson_val_t *actual,
+                  bson_error_t *error)
+{
+   bson_matcher_t *matcher;
+   bool ret;
+
+   matcher = bson_matcher_new ();
+   bson_matcher_add_special (
+      matcher, "$$sessionLsid", special_session_lsid, em);
+   bson_matcher_add_special (
+      matcher, "$$matchesEntity", special_matches_entity, em);
+   ret = bson_matcher_match (matcher, expected, actual, "", error);
+   bson_matcher_destroy (matcher);
+   return ret;
+}
+
+char *
+event_list_to_string (event_t *events)
+{
+   bson_string_t *str = NULL;
+   event_t *eiter = NULL;
+
+   str = bson_string_new ("");
+   LL_FOREACH (events, eiter)
+   {
+      bson_string_append_printf (str, "- %s:", eiter->type);
+      if (eiter->command_name) {
+         bson_string_append_printf (str, " cmd=%s", eiter->command_name);
+      }
+      if (eiter->database_name) {
+         bson_string_append_printf (str, " db=%s", eiter->database_name);
+      }
+      if (eiter->command) {
+         bson_string_append_printf (str, " sent %s", tmp_json (eiter->command));
+      }
+      if (eiter->reply) {
+         bson_string_append_printf (
+            str, " received %s", tmp_json (eiter->reply));
+      }
+      bson_string_append (str, "\n");
+   }
+   return bson_string_free (str, false);
+}
+
+
+bool
+entity_map_end_session (entity_map_t *em, char *session_id, bson_error_t *error)
+{
+   bool ret = false;
+   entity_t *entity = NULL;
+
+   entity = entity_map_get (em, session_id, error);
+   if (!entity) {
+      goto done;
+   }
+
+   if (0 != strcmp (entity->type, "session")) {
+      test_set_error (
+         error, "expected session for %s but got %s", session_id, entity->type);
+      goto done;
+   }
+
+   mongoc_client_session_destroy ((mongoc_client_session_t *) entity->value);
+   entity->value = NULL;
+   ret = true;
+done:
+   return ret;
+}
+
+char *
+entity_map_get_session_client_id (entity_map_t *em,
+                                  char *session_id,
+                                  bson_error_t *error)
+{
+   char *ret = NULL;
+   entity_t *entity = NULL;
+
+   entity = entity_map_get (em, session_id, error);
+   if (!entity) {
+      goto done;
+   }
+
+   if (0 != strcmp (entity->type, "session")) {
+      test_set_error (
+         error, "expected session for %s but got %s", session_id, entity->type);
+      goto done;
+   }
+
+   ret = entity->session_client_id;
+done:
+   return ret;
+}
+
+void
+entity_map_set_reduced_heartbeat (entity_map_t *em, bool val)
+{
+   em->reduced_heartbeat = val;
+}
+
+void
+entity_map_disable_event_listeners (entity_map_t *em)
+{
+   entity_t *eiter = NULL;
+
+   LL_FOREACH (em->entities, eiter)
+   {
+      if (0 == strcmp (eiter->type, "client")) {
+         mongoc_client_t *client = (mongoc_client_t *) eiter->value;
+
+         mongoc_client_set_apm_callbacks (client, NULL, NULL);
+      }
+   }
 }
