@@ -36,6 +36,7 @@
 #include "utlist.h"
 #include "TestSuite.h"
 #include "common-thread-private.h"
+#include <signal.h>
 
 typedef struct _msg_t {
    char *string;

@@ -22,7 +22,6 @@
 #include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
-#include <signal.h>
 #include "test-diagnostics.h"
 #include "utlist.h"
 #include "util.h"

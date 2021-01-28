@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef UNIFIED_TEST_ERROR_H
-#define UNIFIED_TEST_ERROR_H
+#ifndef UNIFIED_TEST_DIAGNOSTICS
+#define UNIFIED_TEST_DIAGNOSTICS
 
 #include "bson/bson.h"
 
@@ -44,4 +44,4 @@ test_diagnostics_reset (void);
 void
 test_diagnostics_abort (bson_error_t *error);
 
-#endif /* UNIFIED_TEST_ERROR_H */
+#endif /* UNIFIED_TEST_DIAGNOSTICS */
