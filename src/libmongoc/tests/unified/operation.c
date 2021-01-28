@@ -2193,6 +2193,8 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       goto done;
    }
 
+   /* Check for a "session" argument in all operations, it can be
+    * an argument for any operation. */
    if (op->arguments && bson_has_field (op->arguments, "session")) {
       bson_t copied;
       mongoc_client_session_t *session = NULL;

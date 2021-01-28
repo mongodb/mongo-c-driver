@@ -23,7 +23,8 @@
 #include "utlist.h"
 #include "util.h"
 
-/* TODO: use public API to reduce min heartbeat once CDRIVER-3130 is resolved. */
+/* TODO: use public API to reduce min heartbeat once CDRIVER-3130 is resolved.
+ */
 #include "mongoc-client-private.h"
 #include "mongoc-topology-private.h"
 
@@ -303,7 +304,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    entity->value = client;
    callbacks = mongoc_apm_callbacks_new ();
 
-   if (can_reduce_heartbeat) {
+   if (can_reduce_heartbeat && em->reduced_heartbeat) {
       client->topology->min_heartbeat_frequency_msec =
          REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
    }
