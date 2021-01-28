@@ -19,11 +19,19 @@
 
 #include "mongoc/mongoc.h"
 
-mongoc_write_concern_t *
-bson_to_write_concern (bson_t *bson, bson_error_t *error);
-mongoc_read_concern_t *
-bson_to_read_concern (bson_t *bson, bson_error_t *error);
-mongoc_read_prefs_t *
-bson_to_read_prefs (bson_t *bson, bson_error_t *error);
+uint8_t *
+hex_to_bin (const char *hex, uint32_t *len);
+
+char *
+bin_to_hex (const uint8_t *bin, uint32_t len);
+
+bson_t *
+bson_copy_and_sort (const bson_t *in);
+
+bson_type_t
+bson_type_from_string (const char *in);
+
+const char *
+bson_type_to_string (bson_type_t btype);
 
 #endif /* UNIFIED_UTIL_H */
