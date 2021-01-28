@@ -175,6 +175,11 @@ _mongoc_topology_get_type (mongoc_topology_t *topology);
 bool
 _mongoc_topology_set_appname (mongoc_topology_t *topology, const char *appname);
 
+bool
+mongoc_topology_set_bind_ip (mongoc_topology_t *topology,
+			     const char *ip,
+			     bson_error_t *error);
+
 void
 _mongoc_topology_update_cluster_time (mongoc_topology_t *topology,
                                       const bson_t *reply);

@@ -3080,3 +3080,22 @@ mongoc_client_enable_auto_encryption (mongoc_client_t *client,
    }
    return _mongoc_cse_client_enable_auto_encryption (client, opts, error);
 }
+
+bool
+mongoc_client_set_bind_ip (mongoc_client_t *client,
+			   const char *ip,
+			   bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (client);
+
+   if (!client->topology->single_threaded) {
+      bson_set_error (error,
+		      MONGOC_ERROR_CLIENT,
+		      MONGOC_ERROR_CLIENT_INVALID_IP_ARG,
+		      "Cannot set bind ip on a pooled client, "
+		      "use mongoc_client_pool_set_bind_ip");
+      return false;
+   }
+
+   return mongoc_topology_set_bind_ip (client->topology, ip, error);
+}

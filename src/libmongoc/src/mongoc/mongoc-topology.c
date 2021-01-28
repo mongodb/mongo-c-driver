@@ -1048,7 +1048,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
          if (selected_server) {
             return selected_server->id;
          }
-
+	 
          topology->stale = true;
 
          if (try_once) {
@@ -1772,6 +1772,49 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
    return pool_cleared;
 }
 
+bool
+mongoc_topology_set_bind_ip (mongoc_topology_t *topology,
+			     const char *ip,
+			     bson_error_t *error)
+{
+   struct in_addr addr;
+
+   BSON_ASSERT (topology);
+
+   if (inet_aton (ip, &addr) == 0) {
+      bson_set_error (error,
+		      MONGOC_ERROR_CLIENT,
+		      MONGOC_ERROR_CLIENT_INVALID_IP_ARG,
+		      "Invalid IP address");
+      return false;		      
+   }
+
+   bson_mutex_lock (&topology->scanner->ip_mutex);
+   if (topology->scanner->bind_ip) {
+      bson_free (topology->scanner->bind_ip);
+   }
+   
+   topology->scanner->bind_ip = (char *) bson_malloc0 (strlen(ip) + 1);
+   memcpy (topology->scanner->bind_ip, ip, strlen(ip));
+   bson_mutex_unlock (&topology->scanner->ip_mutex);
+
+   return true;
+
+}
+
+const char *
+mongoc_topology_get_bind_ip (mongoc_topology_t *topology)
+{
+   const char *ip;
+
+   bson_mutex_lock (&topology->scanner->ip_mutex);
+   ip = topology->scanner->bind_ip;
+   bson_mutex_unlock (&topology->scanner->ip_mutex);
+
+   // TODO: should this return a copy instead?
+   return ip;
+}
+
 /* Called from application threads
  * Caller must hold topology lock.
  * Locks topology description mutex to copy out server description errors.
@@ -1812,3 +1855,4 @@ _topology_collect_errors (mongoc_topology_t *topology, bson_error_t *error_out)
                  sizeof (error_out->message));
    bson_string_free (error_message, true);
 }
+

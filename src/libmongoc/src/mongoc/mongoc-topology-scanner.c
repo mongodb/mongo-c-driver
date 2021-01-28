@@ -361,6 +361,9 @@ mongoc_topology_scanner_new (
    /* may be overridden for testing. */
    ts->dns_cache_timeout_ms = DNS_CACHE_TIMEOUT_MS;
 
+   bson_mutex_init (&ts->ip_mutex);
+   ts->ip = NULL;
+
    return ts;
 }
 
@@ -401,6 +404,9 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
 
    /* This field can be set by a mongoc_client */
    bson_free ((char *) ts->appname);
+
+   bson_mutex_destroy (&ts->ip_mutex);
+   bson_free (ts->bind_ip);
 
    bson_free (ts);
 }
@@ -744,6 +750,50 @@ _mongoc_topology_scanner_node_setup_stream_for_tls (
    return stream;
 }
 
+bool
+mongoc_topology_set_bind_ip (mongoc_topology_t *topology,
+			     const char *ip,
+			     bson_error_t *error)
+{
+   struct in_addr addr;
+
+   BSON_ASSERT (topology);
+
+   if (inet_aton (ip, &addr) == 0) {
+      bson_set_error (error,
+		      MONGOC_ERROR_CLIENT,
+		      MONGOC_ERROR_CLIENT_INVALID_IP_ARG,
+		      "Invalid IP address");
+      return false;		      
+   }
+
+   bson_mutex_lock (&topology->scanner->ip_mutex);
+   if (topology->scanner->bind_ip) {
+      bson_free (topology->scanner->bind_ip);
+   }
+   
+   topology->scanner->bind_ip = (char *) bson_malloc0 (strlen(ip) + 1);
+   memcpy (topology->scanner->bind_ip, ip, strlen(ip));
+   bson_mutex_unlock (&topology->scanner->ip_mutex);
+
+   return true;
+
+}
+
+const char *
+mongoc_topology_scanner_get_bind_ip (mongoc_topology_scanner_t *scanner)
+{
+   const char *ip;
+
+   bson_mutex_lock (&scanner->ip_mutex);
+   ip = scanner->bind_ip;
+   bson_mutex_unlock (&scanner->ip_mutex);
+
+   // TODO: should this return a copy instead?
+   return ip;
+}
+
+
 /* attempt to create a new socket stream using this dns result. */
 mongoc_stream_t *
 _mongoc_topology_scanner_tcp_initiate (mongoc_async_cmd_t *acmd)
@@ -754,6 +804,10 @@ _mongoc_topology_scanner_tcp_initiate (mongoc_async_cmd_t *acmd)
    mongoc_socket_t *sock = NULL;
 
    BSON_ASSERT (acmd->dns_result);
+
+   // TODO: optionally bind-then-connect here.
+   if (
+   
    /* create a new non-blocking socket. */
    if (!(sock = mongoc_socket_new (
             res->ai_family, res->ai_socktype, res->ai_protocol))) {

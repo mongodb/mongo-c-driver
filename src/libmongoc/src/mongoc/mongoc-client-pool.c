@@ -506,3 +506,13 @@ mongoc_client_pool_enable_auto_encryption (mongoc_client_pool_t *pool,
    return _mongoc_cse_client_pool_enable_auto_encryption (
       pool->topology, opts, error);
 }
+
+bool
+mongoc_client_pool_set_bind_ip (mongoc_client_pool_t *pool,
+				const char *ip,
+				bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (pool);
+
+   return mongoc_topology_set_bind_ip (pool->topology, ip, error);
+}

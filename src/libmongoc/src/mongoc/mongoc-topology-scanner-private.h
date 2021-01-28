@@ -109,6 +109,9 @@ typedef struct mongoc_topology_scanner {
    bool negotiate_sasl_supported_mechs;
    bool bypass_cooldown;
    bool speculative_authentication;
+
+   bson_mutex_t ip_mutex;
+   char *bind_ip;
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *
@@ -160,6 +163,14 @@ mongoc_topology_scanner_work (mongoc_topology_scanner_t *ts);
 
 void
 _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts);
+
+bool
+mongoc_topology_scanner_set_bind_ip (mongoc_topology_scanner *ts,
+				     const char *ip,
+				     bson_error_t *error);
+
+const char*
+mongoc_topology_scanner_get_bind_ip (mongoc_topology_scanner *ts);
 
 void
 mongoc_topology_scanner_get_error (mongoc_topology_scanner_t *ts,
