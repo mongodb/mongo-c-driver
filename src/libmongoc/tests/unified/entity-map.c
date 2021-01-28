@@ -23,12 +23,10 @@
 #include "utlist.h"
 #include "util.h"
 
-/* TODO: remove this include once CDRIVER-3285 is resolved. */
+/* TODO: use public API to reduce min heartbeat once CDRIVER-3130 is resolved. */
 #include "mongoc-client-private.h"
 #include "mongoc-topology-private.h"
-#include "mongoc-uri-private.h"
 
-/* TODO: use public API once CDRIVER-3130 is resolved. */
 #define REDUCED_HEARTBEAT_FREQUENCY_MS 500
 #define REDUCED_MIN_HEARTBEAT_FREQUENCY_MS 50
 
@@ -1093,14 +1091,12 @@ special_matches_entity (bson_matcher_t *matcher,
 {
    bool ret = false;
    bson_iter_t iter;
-   const char *assertion_key;
    entity_map_t *em = (entity_map_t *) ctx;
    bson_val_t *entity_val = NULL;
    const char *id;
 
    bson_iter_init (&iter, assertion);
    BSON_ASSERT (bson_iter_next (&iter));
-   assertion_key = bson_iter_key (&iter);
 
    if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
       test_set_error (error,
