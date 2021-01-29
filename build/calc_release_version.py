@@ -156,28 +156,24 @@ def main():
                                 + release_branch_match.group('brname') + '"')
 
     else:
-        tags = check_output(['git', 'tag',
-                                        '--merged', 'HEAD',
-                                        '--list', '1.*'])
-        if len(tags) > 0:
-            sorted_tags = tags.splitlines()
-            sorted_tags.sort(key=LooseVersion)
-            release_tag_match = RELEASE_TAG_RE.match(sorted_tags[-1])
-            if release_tag_match:
-                version_new = {}
-                version_new['major'] = int(release_tag_match.group('vermaj'))
-                version_new['minor'] = int(release_tag_match.group('vermin'))
-                version_new['patch'] = int(release_tag_match.group('verpatch')) + 1
-                version_new['prerelease'] = prerelease_marker
-                new_version_loose = LooseVersion(str(version_new['major']) + '.' +
-                                                 str(version_new['minor']) + '.' +
-                                                 str(version_new['patch']) + '-' +
-                                                 version_new['prerelease'])
-                if new_version_loose > version_loose:
-                    version_loose = new_version_loose
-                    if DEBUG:
-                        print('Found new best version "' + str(version_loose) \
-                                + '" from tag "' + release_tag_match.group('ver') + '"')
+        tags = check_output (['git', 'describe', '--tags', '--match', '1.*', '--abbrev=0'])
+        tag = tags.splitlines()[-1]
+        release_tag_match = RELEASE_TAG_RE.match(tag)
+        if release_tag_match:
+            version_new = {}
+            version_new['major'] = int(release_tag_match.group('vermaj'))
+            version_new['minor'] = int(release_tag_match.group('vermin'))
+            version_new['patch'] = int(release_tag_match.group('verpatch')) + 1
+            version_new['prerelease'] = prerelease_marker
+            new_version_loose = LooseVersion(str(version_new['major']) + '.' +
+                                                str(version_new['minor']) + '.' +
+                                                str(version_new['patch']) + '-' +
+                                                version_new['prerelease'])
+            if new_version_loose > version_loose:
+                version_loose = new_version_loose
+                if DEBUG:
+                    print('Found new best version "' + str(version_loose) \
+                            + '" from tag "' + release_tag_match.group('ver') + '"')
 
     return str(version_loose)
 
