@@ -1,0 +1,20 @@
+name: compile-and-test-latest
+on: [push, pull_request]
+jobs:
+    compile:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - id: setup-mongodb
+              uses: mongodb-labs/drivers-evergreen-tools@master
+              # Set configuration
+              with:
+                version: latest
+                topology: replica_set
+            - run: |
+                mkdir cmake-build
+                cd cmake-build
+                cmake -DENABLE_MAINTAINER_FLAGS=ON ..
+                cmake --build . --target all
+                cd ..
+                ./cmake-build/src/libmongoc/test-libmongoc
