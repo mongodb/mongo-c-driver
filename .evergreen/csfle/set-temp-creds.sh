@@ -4,6 +4,8 @@
 # . ./set-temp-creds.sh
 #
 # Requires the python AWS SDK boto3. This can be installed with: pip install boto3
+# The path to python in a virtual environment may be passed with the PYTHON
+# environment variable.
 #
 # Requires AWS credentials for CSFLE to obtain temporary credentials.
 # Those credentials can be passed through the following environment variables:
@@ -20,8 +22,18 @@
 
 set +o xtrace # Disable tracing.
 
+get_creds() {
+    $PYTHON - "$@" << 'EOF'
+import boto3
+
+client = boto3.client("sts")
+credentials = client.get_session_token()["Credentials"]
+print (credentials["AccessKeyId"] + " " + credentials["SecretAccessKey"] + " " + credentials["SessionToken"])
+EOF
+}
+
 PYTHON=${PYTHON:-python}
-CREDS=$($PYTHON print-temp-creds.py)
+CREDS=$(get_creds)
 
 export CSFLE_AWS_TEMP_ACCESS_KEY_ID=$(echo $CREDS | awk '{print $1}')
 export CSFLE_AWS_TEMP_SECRET_ACCESS_KEY=$(echo $CREDS | awk '{print $2}')
