@@ -3792,6 +3792,31 @@ test_ssl_opts_padding_not_null (void)
 }
 #endif
 
+/* static void */
+/* test_mongoc_bind_ip (void) */
+/* { */
+/*    mongoc_stream_t *stream; */
+/*    mongoc_host_list_t *host; */
+/*    bson_error_t error; */
+
+/*    host = _mongoc_host_list_push ("localhost", 22000, AF_INET, NULL); */
+
+/*    // Test client listens on port 22000 */
+/*    for (int i = 0; i < 10; i++) { */
+/*       stream = mongoc_client_connect_tcp ("127.0.0.1", */
+/* 					  3000, */
+/* 					  host, */
+/* 					  &error); */
+/*       ASSERT_OR_PRINT (stream, error); */
+
+/*       mongoc_stream_destroy (stream); */
+
+/*       _mongoc_usleep (600 * 1000); */
+/*    } */
+
+/*    _mongoc_host_list_destroy_all (host); */
+/* } */
+
 static void
 test_mongoc_client_recv_network_error (void)
 {
@@ -4132,4 +4157,6 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Client/recv_network_error",
                                 test_mongoc_client_recv_network_error);
+
+   //TestSuite_Add (suite, "/Client/bind_ip", test_mongoc_bind_ip);
 }
