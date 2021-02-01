@@ -2583,7 +2583,7 @@ _bson_as_json_visit_int64 (const bson_iter_t *iter,
 
    if (state->mode == BSON_JSON_MODE_CANONICAL) {
       bson_string_append_printf (
-         state->str, "{ \"$numberLong\" : \"%" PRId64 "\"}", v_int64);
+         state->str, "{ \"$numberLong\" : \"%" PRId64 "\" }", v_int64);
    } else {
       bson_string_append_printf (state->str, "%" PRId64, v_int64);
    }
