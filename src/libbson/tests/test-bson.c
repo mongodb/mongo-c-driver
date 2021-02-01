@@ -2446,7 +2446,8 @@ test_bson_binary_null_handling (void)
 }
 
 static void
-test_bson_append_null_from_utf8_or_symbol (void) {
+test_bson_append_null_from_utf8_or_symbol (void)
+{
    bson_t bson;
    bson_iter_t iter;
 
@@ -2459,6 +2460,46 @@ test_bson_append_null_from_utf8_or_symbol (void) {
    BSON_ASSERT (bson_iter_next (&iter));
    BSON_ASSERT (BSON_ITER_HOLDS_NULL (&iter));
    bson_destroy (&bson);
+}
+
+static void
+test_bson_as_json_string (void)
+{
+   bson_t *all_types;
+   int i;
+   char *actual;
+   const char *expected =
+      "{ \"double\" : { \"$numberDouble\" : \"1.0\" }, \"string\" : "
+      "\"string_example\", \"document\" : { \"x\" : \"y\" }, \"document\" : [ "
+      "\"x\" ], \"binary\" : { \"$binary\" : { \"base64\": \"ZGF0YQ==\", "
+      "\"subType\" : \"00\" } }, \"undefined\" : { \"$undefined\" : true }, "
+      "\"oid\" : { \"$oid\" : \"000000000000000000000000\" }, \"bool\" : true, "
+      "\"datetime\" : { \"$date\" : { \"$numberLong\" : \"123\" } }, \"null\" "
+      ": null, \"regex\" : { \"$regularExpression\" : { \"pattern\" : \"a+\", "
+      "\"options\" : \"\" } }, \"dbpointer\" : { \"$dbPointer\" : { \"$ref\" : "
+      "\"collection\", \"$id\" : { \"$oid\" : \"000000000000000000000000\" } } "
+      "}, \"code\" : { \"$code\" : \"var x = 1;\" }, \"symbol\" : { "
+      "\"$symbol\" : \"symbol_example\" }, \"code\" : { \"$code\" : \"var x = "
+      "1;\" }, \"code_w_scope\" : { \"$code\" : \"var x = 1;\", \"$scope\" : { "
+      "} }, \"int32\" : { \"$numberInt\" : \"1\" }, \"timestamp\" : { "
+      "\"$timestamp\" : { \"t\" : 2, \"i\" : 3 } }, \"int64\" : { "
+      "\"$numberLong\" : \"4\" }, \"decimal128\" : { \"$numberDecimal\" : "
+      "\"1.23456789\" }, \"minkey\" : { \"$minKey\" : 1 }, \"maxkey\" : { "
+      "\"$maxKey\" : 1 }, \"\" : { \"$numberInt\" : \"-1\" } }";
+
+   all_types = bson_with_all_types ();
+   actual = bson_as_canonical_extended_json (all_types, NULL);
+
+   for (i = 0; i < strlen (expected); i++) {
+      if (expected[i] != actual[i]) {
+         test_error ("character mismatch at %d. Expected: %s, got %s",
+                     i,
+                     expected,
+                     actual);
+      }
+   }
+
+   bson_free (actual);
 }
 
 void
@@ -2555,5 +2596,8 @@ test_bson_install (TestSuite *suite)
                   test_bson_iter_init_from_data_at_offset);
    TestSuite_Add (
       suite, "/bson/value/null_handling", test_bson_binary_null_handling);
-   TestSuite_Add (suite, "/bson/append_null_from_utf8_or_symbol", test_bson_append_null_from_utf8_or_symbol);
+   TestSuite_Add (suite,
+                  "/bson/append_null_from_utf8_or_symbol",
+                  test_bson_append_null_from_utf8_or_symbol);
+   TestSuite_Add (suite, "/bson/as_json_string", test_bson_as_json_string);
 }
