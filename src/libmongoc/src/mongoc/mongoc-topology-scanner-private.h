@@ -22,6 +22,7 @@
 /* TODO: rename to TOPOLOGY scanner */
 
 #include <bson/bson.h>
+#include "common-thread-private.h"
 #include "mongoc-async-private.h"
 #include "mongoc-async-cmd-private.h"
 #include "mongoc-handshake-private.h"
@@ -165,12 +166,12 @@ void
 _mongoc_topology_scanner_finish (mongoc_topology_scanner_t *ts);
 
 bool
-mongoc_topology_scanner_set_bind_ip (mongoc_topology_scanner *ts,
+mongoc_topology_scanner_set_bind_ip (mongoc_topology_scanner_t *ts,
 				     const char *ip,
 				     bson_error_t *error);
 
 const char*
-mongoc_topology_scanner_get_bind_ip (mongoc_topology_scanner *ts);
+mongoc_topology_scanner_get_bind_ip (mongoc_topology_scanner_t *ts);
 
 void
 mongoc_topology_scanner_get_error (mongoc_topology_scanner_t *ts,

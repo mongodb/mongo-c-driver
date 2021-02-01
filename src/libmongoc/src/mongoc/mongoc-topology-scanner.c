@@ -20,6 +20,7 @@
 #include "mongoc-error.h"
 #include "mongoc-trace-private.h"
 #include "mongoc-topology-scanner-private.h"
+#include "mongoc-socket-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-stream-socket.h"
 
@@ -362,7 +363,7 @@ mongoc_topology_scanner_new (
    ts->dns_cache_timeout_ms = DNS_CACHE_TIMEOUT_MS;
 
    bson_mutex_init (&ts->ip_mutex);
-   ts->ip = NULL;
+   ts->bind_ip = NULL;
 
    return ts;
 }
@@ -751,13 +752,13 @@ _mongoc_topology_scanner_node_setup_stream_for_tls (
 }
 
 bool
-mongoc_topology_set_bind_ip (mongoc_topology_t *topology,
-			     const char *ip,
-			     bson_error_t *error)
+mongoc_topology_scanner_set_bind_ip (mongoc_topology_scanner_t *scanner,
+				     const char *ip,
+				     bson_error_t *error)
 {
    struct in_addr addr;
 
-   BSON_ASSERT (topology);
+   BSON_ASSERT (scanner);
 
    if (inet_aton (ip, &addr) == 0) {
       bson_set_error (error,
@@ -767,14 +768,14 @@ mongoc_topology_set_bind_ip (mongoc_topology_t *topology,
       return false;		      
    }
 
-   bson_mutex_lock (&topology->scanner->ip_mutex);
-   if (topology->scanner->bind_ip) {
-      bson_free (topology->scanner->bind_ip);
+   bson_mutex_lock (&scanner->ip_mutex);
+   if (scanner->bind_ip) {
+      bson_free (scanner->bind_ip);
    }
    
-   topology->scanner->bind_ip = (char *) bson_malloc0 (strlen(ip) + 1);
-   memcpy (topology->scanner->bind_ip, ip, strlen(ip));
-   bson_mutex_unlock (&topology->scanner->ip_mutex);
+   scanner->bind_ip = (char *) bson_malloc0 (strlen(ip) + 1);
+   memcpy (scanner->bind_ip, ip, strlen(ip));
+   bson_mutex_unlock (&scanner->ip_mutex);
 
    return true;
 
@@ -789,10 +790,9 @@ mongoc_topology_scanner_get_bind_ip (mongoc_topology_scanner_t *scanner)
    ip = scanner->bind_ip;
    bson_mutex_unlock (&scanner->ip_mutex);
 
-   // TODO: should this return a copy instead?
+   // TODO SAM: should this return a copy instead?
    return ip;
 }
-
 
 /* attempt to create a new socket stream using this dns result. */
 mongoc_stream_t *
@@ -802,20 +802,35 @@ _mongoc_topology_scanner_tcp_initiate (mongoc_async_cmd_t *acmd)
       (mongoc_topology_scanner_node_t *) acmd->data;
    struct addrinfo *res = acmd->dns_result;
    mongoc_socket_t *sock = NULL;
+   mongoc_topology_scanner_t *scanner = node->ts;
+   const char *bind_ip;
 
    BSON_ASSERT (acmd->dns_result);
 
-   // TODO: optionally bind-then-connect here.
-   if (
-   
-   /* create a new non-blocking socket. */
-   if (!(sock = mongoc_socket_new (
-            res->ai_family, res->ai_socktype, res->ai_protocol))) {
-      return NULL;
-   }
+   bind_ip = mongoc_topology_scanner_get_bind_ip (scanner);
+   if (bind_ip) {
+      /* bind-then-connect */
+      sock = mongoc_socket_new_bind_then_connect (res->ai_family,
+						  res->ai_socktype,
+						  res->ai_protocol,
+						  bind_ip,
+						  res->ai_addr,
+						  (mongoc_socklen_t) res->ai_addrlen,
+						  0);
 
-   (void) mongoc_socket_connect (
-      sock, res->ai_addr, (mongoc_socklen_t) res->ai_addrlen, 0);
+      if (!sock) {
+	 return NULL;
+      }
+   } else {   
+      /* create a new non-blocking socket. */
+      if (!(sock = mongoc_socket_new (
+				      res->ai_family, res->ai_socktype, res->ai_protocol))) {
+	 return NULL;
+      }
+
+      (void) mongoc_socket_connect (
+				    sock, res->ai_addr, (mongoc_socklen_t) res->ai_addrlen, 0);
+   }
 
    return _mongoc_topology_scanner_node_setup_stream_for_tls (
       node, mongoc_stream_socket_new (sock));

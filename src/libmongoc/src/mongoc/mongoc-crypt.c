@@ -402,7 +402,8 @@ fail:
 }
 
 static mongoc_stream_t *
-_get_stream (const char *endpoint,
+_get_stream (_state_machine_t *state_machine,
+	     const char *endpoint,
              int32_t connecttimeoutms,
              bson_error_t *error)
 {
@@ -412,6 +413,9 @@ _get_stream (const char *endpoint,
    mongoc_ssl_opt_t ssl_opts = {0};
    mongoc_host_list_t host;
    char *host_and_port = NULL;
+   const char *bind_ip;
+
+   BSON_ASSERT (state_machine);
 
    if (!strchr (endpoint, ':')) {
       host_and_port = bson_strdup_printf ("%s:443", endpoint);
@@ -423,7 +427,11 @@ _get_stream (const char *endpoint,
       goto fail;
    }
 
-   base_stream = mongoc_client_connect_tcp (connecttimeoutms, &host, error);
+   bind_ip = mongoc_topology_get_bind_ip (state_machine->mongocryptd_client->topology);
+   base_stream = mongoc_client_connect_tcp (bind_ip,
+					    connecttimeoutms,
+					    &host,
+					    error);
    if (!base_stream) {
       goto fail;
    }
@@ -483,12 +491,13 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
          goto fail;
       }
 
+      // TODO SAM here
       mongoc_stream_destroy (tls_stream);
-      tls_stream = _get_stream (endpoint, sockettimeout, error);
+      tls_stream = _get_stream (state_machine, endpoint, sockettimeout, error);
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
       /* Retry once with schannel as a workaround for CDRIVER-3566. */
       if (!tls_stream) {
-         tls_stream = _get_stream (endpoint, sockettimeout, error);
+         tls_stream = _get_stream (state_machine, endpoint, sockettimeout, error);
       }
 #endif
       if (!tls_stream) {

@@ -1777,42 +1777,17 @@ mongoc_topology_set_bind_ip (mongoc_topology_t *topology,
 			     const char *ip,
 			     bson_error_t *error)
 {
-   struct in_addr addr;
-
    BSON_ASSERT (topology);
 
-   if (inet_aton (ip, &addr) == 0) {
-      bson_set_error (error,
-		      MONGOC_ERROR_CLIENT,
-		      MONGOC_ERROR_CLIENT_INVALID_IP_ARG,
-		      "Invalid IP address");
-      return false;		      
-   }
-
-   bson_mutex_lock (&topology->scanner->ip_mutex);
-   if (topology->scanner->bind_ip) {
-      bson_free (topology->scanner->bind_ip);
-   }
-   
-   topology->scanner->bind_ip = (char *) bson_malloc0 (strlen(ip) + 1);
-   memcpy (topology->scanner->bind_ip, ip, strlen(ip));
-   bson_mutex_unlock (&topology->scanner->ip_mutex);
-
-   return true;
-
+   return mongoc_topology_scanner_set_bind_ip (topology->scanner, ip, error);
 }
 
 const char *
 mongoc_topology_get_bind_ip (mongoc_topology_t *topology)
 {
-   const char *ip;
+   BSON_ASSERT (topology);
 
-   bson_mutex_lock (&topology->scanner->ip_mutex);
-   ip = topology->scanner->bind_ip;
-   bson_mutex_unlock (&topology->scanner->ip_mutex);
-
-   // TODO: should this return a copy instead?
-   return ip;
+   return mongoc_topology_scanner_get_bind_ip (topology->scanner);
 }
 
 /* Called from application threads

@@ -180,6 +180,9 @@ mongoc_topology_set_bind_ip (mongoc_topology_t *topology,
 			     const char *ip,
 			     bson_error_t *error);
 
+const char*
+mongoc_topology_get_bind_ip (mongoc_topology_t *topology);
+
 void
 _mongoc_topology_update_cluster_time (mongoc_topology_t *topology,
                                       const bson_t *reply);

@@ -45,7 +45,7 @@
 #include "mongoc-error-private.h"
 #include "mongoc-log.h"
 #include "mongoc-queue-private.h"
-#include "mongoc-socket.h"
+#include "mongoc-socket-private.h"
 #include "mongoc-stream-buffered.h"
 #include "mongoc-stream-socket.h"
 #include "mongoc-thread-private.h"
@@ -622,7 +622,8 @@ _mongoc_client_get_rr (const char *service,
  */
 
 mongoc_stream_t *
-mongoc_client_connect_tcp (int32_t connecttimeoutms,
+mongoc_client_connect_tcp (const char *bind_ip,
+			   int32_t connecttimeoutms,
                            const mongoc_host_list_t *host,
                            bson_error_t *error)
 {
@@ -663,27 +664,38 @@ mongoc_client_connect_tcp (int32_t connecttimeoutms,
    mongoc_counter_dns_success_inc ();
 
    for (rp = result; rp; rp = rp->ai_next) {
-      /*
-       * Create a new non-blocking socket.
-       */
-      if (!(sock = mongoc_socket_new (
-               rp->ai_family, rp->ai_socktype, rp->ai_protocol))) {
-         continue;
-      }
-
-      /*
-       * Try to connect to the peer.
-       */
       expire_at = bson_get_monotonic_time () + (connecttimeoutms * 1000L);
-      if (0 !=
-          mongoc_socket_connect (
-             sock, rp->ai_addr, (mongoc_socklen_t) rp->ai_addrlen, expire_at)) {
-         mongoc_socket_destroy (sock);
-         sock = NULL;
-         continue;
-      }
 
-      break;
+      if (bind_ip != NULL) {
+	 sock = mongoc_socket_new_bind_then_connect (rp->ai_family,
+						     rp->ai_socktype,
+						     rp->ai_protocol,
+						     bind_ip,
+						     rp->ai_addr,
+						     (mongoc_socklen_t) rp->ai_addrlen,
+						     expire_at);
+      } else {
+	 /*
+	  * Create a new non-blocking socket.
+	  */
+	 if (!(sock = mongoc_socket_new (
+					 rp->ai_family, rp->ai_socktype, rp->ai_protocol))) {
+	    continue;
+	 }
+
+	 /*
+	  * Try to connect to the peer.
+	  */
+	 if (0 !=
+	     mongoc_socket_connect (
+				    sock, rp->ai_addr, (mongoc_socklen_t) rp->ai_addrlen, expire_at)) {
+	    mongoc_socket_destroy (sock);
+	    sock = NULL;
+	    continue;
+	 }
+
+	 break;
+      }
    }
 
    if (!sock) {
@@ -769,7 +781,8 @@ mongoc_client_connect_unix (const mongoc_host_list_t *host, bson_error_t *error)
 }
 
 mongoc_stream_t *
-mongoc_client_connect (bool buffered,
+mongoc_client_connect (const char *bind_ip,
+		       bool buffered,
                        bool use_ssl,
                        void *ssl_opts_void,
                        const mongoc_uri_t *uri,
@@ -801,9 +814,10 @@ mongoc_client_connect (bool buffered,
    case AF_INET6:
 #endif
    case AF_INET:
-      base_stream = mongoc_client_connect_tcp (connecttimeoutms, host, error);
+      base_stream = mongoc_client_connect_tcp (bind_ip, connecttimeoutms, host, error);
       break;
    case AF_UNIX:
+      // TODO SAM what about unix domain sockets?
       base_stream = mongoc_client_connect_unix (host, error);
       break;
    default:
@@ -884,16 +898,20 @@ mongoc_client_default_stream_initiator (const mongoc_uri_t *uri,
 {
    void *ssl_opts_void = NULL;
    bool use_ssl = false;
-#ifdef MONGOC_ENABLE_SSL
    mongoc_client_t *client = (mongoc_client_t *) user_data;
+   const char *bind_ip;
 
+#ifdef MONGOC_ENABLE_SSL
    use_ssl = client->use_ssl;
    ssl_opts_void = (void *) &client->ssl_opts;
-
 #endif
 
+   // TODO remove if tests pass with this on evg
+   BSON_ASSERT (client);
+   bind_ip = mongoc_topology_get_bind_ip (client->topology);
+
    return mongoc_client_connect (
-      true, use_ssl, ssl_opts_void, uri, host, error);
+      bind_ip, true, use_ssl, ssl_opts_void, uri, host, error);
 }
 
 /*

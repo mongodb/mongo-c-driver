@@ -106,7 +106,7 @@ test_interrupt (void)
    mock_server_run (server);
    uri = mock_server_get_uri (server);
    stream =
-      mongoc_client_connect_tcp (10000, mongoc_uri_get_hosts (uri), &error);
+      mongoc_client_connect_tcp (NULL, 10000, mongoc_uri_get_hosts (uri), &error);
    ASSERT_OR_PRINT (stream, error);
 
    bson_free (poller);

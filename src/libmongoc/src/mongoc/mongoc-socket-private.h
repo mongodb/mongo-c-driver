@@ -43,8 +43,7 @@ mongoc_socket_t *
 mongoc_socket_new_bind_then_connect (int domain,
 				     int type,
 				     int protocol,
-				     const struct sockaddr *bind_addr,
-				     mongoc_socklen_t bind_addrlen,
+				     const char *bind_ip,
 				     const struct sockaddr *connect_addr,
 				     mongoc_socklen_t connect_addrlen,
 				     int64_t expire_at);

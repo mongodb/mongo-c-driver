@@ -755,12 +755,16 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
                                     error);
    } else {
       void *ssl_opts_void = NULL;
+      const char *bind_ip;
 
 #ifdef MONGOC_ENABLE_SSL
       ssl_opts_void = server_monitor->ssl_opts;
 #endif
+
+      bind_ip = mongoc_topology_get_bind_ip (server_monitor->topology);
       server_monitor->stream =
-         mongoc_client_connect (false,
+         mongoc_client_connect (bind_ip,
+				false,
                                 ssl_opts_void != NULL,
                                 ssl_opts_void,
                                 server_monitor->uri,
