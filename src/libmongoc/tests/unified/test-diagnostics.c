@@ -32,7 +32,7 @@ typedef struct {
    bson_mutex_t mutex;
 } test_diagnostics_t;
 
-test_diagnostics_t diagnostics;
+static test_diagnostics_t diagnostics;
 
 static char *
 test_diagnostics_error_string (bson_error_t *error)
@@ -45,6 +45,7 @@ test_diagnostics_error_string (bson_error_t *error)
    str = bson_string_new ("****************************** BEGIN_MONGOC_ERROR "
                           "******************************\n");
 
+   bson_mutex_lock (&td->mutex);
    if (td->test_info) {
       bson_string_append (str, "test info:\n");
    }
@@ -67,6 +68,8 @@ test_diagnostics_error_string (bson_error_t *error)
       bson_string_append (str, "\n\n");
    }
 
+   bson_mutex_unlock (&td->mutex);
+
    if (error && error->code != 0) {
       bson_string_append_printf (str, "error: %s\n", error->message);
    }
@@ -74,6 +77,7 @@ test_diagnostics_error_string (bson_error_t *error)
    bson_string_append (str,
                        "******************************* END_MONGOC_ERROR "
                        "*******************************\n");
+
    return bson_string_free (str, false);
 }
 

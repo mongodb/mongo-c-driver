@@ -276,7 +276,12 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
 
    /* Build the client's URI. */
    uri = test_framework_get_uri ();
-   if (use_multiple_mongoses) {
+   /* Apply "useMultipleMongoses" rules to URI.
+    * If useMultipleMongoses is true, modify the connection string to add a
+    * host. If useMultipleMongoses is false, require that the connection string
+    * has one host. If useMultipleMongoses unspecified, make no assertion.
+    */
+   if (use_multiple_mongoses != NULL) {
       if (!test_framework_uri_apply_multi_mongos (
              uri, *use_multiple_mongoses, error)) {
          goto done;
@@ -972,14 +977,14 @@ entity_map_get_lsid (entity_map_t *em, char *session_id, bson_error_t *error)
 
    entity = entity_map_get (em, session_id, error);
    if (!entity) {
-      return false;
+      return NULL;
    }
    if (!entity->lsid) {
       test_set_error (error,
                       "entity %s of type %s does not have an lsid",
                       session_id,
                       entity->type);
-      return false;
+      return NULL;
    }
    return entity->lsid;
 }
