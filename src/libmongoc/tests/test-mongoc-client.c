@@ -2219,9 +2219,17 @@ test_mongoc_client_bind_ip (void)
 
    // Test an IPv4 address
    ASSERT_OR_PRINT (mongoc_client_set_bind_ip (client, "127.0.0.1", &error), error);
-   // Test an IPv6 address
-   //ASSERT_OR_PRINT (mongoc_client_set_bind_ip (client, "0:0:0:0:0:0:0:0", &error), error);
+   ASSERT_OR_PRINT (
+      mongoc_client_read_command_with_opts (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
+      error);
 
+   mongoc_client_destroy (client);
+   client = mongoc_client_new ("mongodb://localhost");
+   BSON_ASSERT (client);
+
+   // Test an IPv6 address
+   ASSERT_OR_PRINT (mongoc_client_set_bind_ip (client, "::1", &error), error);
    ASSERT_OR_PRINT (
       mongoc_client_read_command_with_opts (
          client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),

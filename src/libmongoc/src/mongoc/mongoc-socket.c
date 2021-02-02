@@ -793,9 +793,6 @@ mongoc_socket_new_bind_then_connect (int domain,
 {
    mongoc_socket_t *sock;
    struct sockaddr_in bind_addr;
-   struct in_addr addr;
-   //unsigned char buf[sizeof(struct in_addr)]
-   //   struct in_addr addr;
    int reuse = 1;
    int ret;
 
@@ -804,12 +801,6 @@ mongoc_socket_new_bind_then_connect (int domain,
    BSON_ASSERT (connect_addr);
    BSON_ASSERT (connect_addrlen);
 
-   if (inet_aton (bind_ip, &addr) == 0) {
-      MONGOC_WARNING ("Invalid bind IP: %s", bind_ip);
-      return NULL;
-   }
-
-   bind_addr.sin_addr = addr;
    bind_addr.sin_port = htons (0);
    
    if (inet_pton (AF_INET, bind_ip, &bind_addr.sin_addr) == 1) {
@@ -829,25 +820,13 @@ mongoc_socket_new_bind_then_connect (int domain,
       return NULL;
    }
 
-   //if (bind_addr.sin_family != domain) {
-   //   MONGOC_WARNING ("Custom bind IP does not match host address family");
-   //   return NULL;
-   //}
-
    fprintf (stderr, "passed-in family/domain is %d\n", domain);
    fprintf (stderr, "determined family is %d\n", bind_addr.sin_family);
-
-   //if (inet_pton (AF_INET, bind_ip, &bind_addr.sin_addr) < 1) {
-   //if (inet_pton (domain, bind_ip, &bind_addr.sin_addr) < 1) {
-   //MONGOC_WARNING ("Invalid bind address: %s", bind_ip);
-   //   return NULL;
-   //}
 
    // TODO SAM: this loop shouldn't be infinite. Use expire_at ? Num retries? One retry?
    while (true) {
 
       sock = mongoc_socket_new (domain, type, protocol);
-      //sock = mongoc_socket_new (domain, type, protocol);
       if (!sock) {
 	 fprintf (stderr, "Failed to run mongoc_socket_new: %s\n", strerror (errno));
 	 break;

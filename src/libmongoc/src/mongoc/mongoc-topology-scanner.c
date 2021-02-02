@@ -753,19 +753,21 @@ _mongoc_topology_scanner_node_setup_stream_for_tls (
 
 bool
 mongoc_topology_scanner_set_bind_ip (mongoc_topology_scanner_t *scanner,
-				     const char *ip,
+				     const char *bind_ip,
 				     bson_error_t *error)
 {
-   struct in_addr addr;
+   struct sockaddr_in bind_addr;
 
    BSON_ASSERT (scanner);
 
-   if (inet_pton (AF_INET, ip, &addr) == 0) {
+   // TODO Sam store the parsed bind_addr instead of string?
+   if (inet_pton (AF_INET, bind_ip, &bind_addr.sin_addr) != 1 && 
+       inet_pton (AF_INET6, bind_ip, &bind_addr.sin_addr) != 1) {
       bson_set_error (error,
 		      MONGOC_ERROR_CLIENT,
 		      MONGOC_ERROR_CLIENT_INVALID_IP_ARG,
 		      "Invalid IP address");
-      return false;		      
+      return false;
    }
 
    bson_mutex_lock (&scanner->ip_mutex);
@@ -773,8 +775,8 @@ mongoc_topology_scanner_set_bind_ip (mongoc_topology_scanner_t *scanner,
       bson_free (scanner->bind_ip);
    }
    
-   scanner->bind_ip = (char *) bson_malloc0 (strlen(ip) + 1);
-   memcpy (scanner->bind_ip, ip, strlen(ip));
+   scanner->bind_ip = (char *) bson_malloc0 (strlen(bind_ip) + 1);
+   memcpy (scanner->bind_ip, bind_ip, strlen(bind_ip));
    bson_mutex_unlock (&scanner->ip_mutex);
 
    return true;
