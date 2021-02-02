@@ -1486,13 +1486,11 @@ assert_session_dirty_helper (test_t *test,
       goto done;
    }
 
-   if (check_dirty) {
-      if (check_dirty != mongoc_client_session_get_dirty (op->session)) {
-         test_set_error (error,
-                         "expected session to%s be dirty but was not",
-                         check_dirty ? "" : "not");
-         goto done;
-      }
+   if (check_dirty != mongoc_client_session_get_dirty (op->session)) {
+      test_set_error (error,
+                        "expected session to%s be dirty but was not",
+                        check_dirty ? "" : " not");
+      goto done;
    }
 
    result_from_ok (result);
@@ -1605,7 +1603,7 @@ assert_lsid_on_last_two_commands (test_t *test,
    if (check_same != bson_equal (&a_lsid, &b_lsid)) {
       test_set_error (error,
                       "expected $lsid's to be%s equal, but got: %s and %s",
-                      check_same ? "" : "not",
+                      check_same ? "" : " not",
                       tmp_json (&a_lsid),
                       tmp_json (&b_lsid));
       goto done;
@@ -1719,7 +1717,6 @@ transaction_state_to_string (mongoc_transaction_state_t tstate)
    default:
       return "invalid";
    }
-   return "invalid";
 }
 
 static bool
