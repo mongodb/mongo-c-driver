@@ -1277,8 +1277,11 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
          mongoc_client_new_from_uri (mongocryptd_uri);
 
       /* mongocryptd_client gets a new topology, so set bind_ip */
-      mongoc_client_set_bind_address (client->topology->mongocryptd_client,
-				      mongoc_topology_get_bind_ip (client->topology));
+      if (!mongoc_client_set_bind_address (client->topology->mongocryptd_client,
+					   mongoc_topology_get_bind_ip (client->topology)
+					   error)) {
+	 GOTO (fail);
+      }
 
       if (!client->topology->mongocryptd_client) {
          bson_set_error (error,

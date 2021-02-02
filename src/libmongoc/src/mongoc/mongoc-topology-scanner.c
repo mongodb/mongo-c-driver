@@ -760,7 +760,7 @@ mongoc_topology_scanner_set_bind_ip (mongoc_topology_scanner_t *scanner,
 
    BSON_ASSERT (scanner);
 
-   if (inet_aton (ip, &addr) == 0) {
+   if (inet_pton (AF_INET, ip, &addr) == 0) {
       bson_set_error (error,
 		      MONGOC_ERROR_CLIENT,
 		      MONGOC_ERROR_CLIENT_INVALID_IP_ARG,

@@ -2195,6 +2195,51 @@ test_mongoc_client_unix_domain_socket (void *context)
    bson_free (uri_str);
 }
 
+static void
+test_mongoc_client_bind_ip (void)
+{
+   mongoc_client_t *client;
+   //mongoc_database_t *database;
+   //mongoc_cursor_t *cursor;
+   //bson_t *pipeline;
+   //const bson_t *doc;
+   bson_error_t error;
+
+   client = mongoc_client_new ("mongodb://localhost");
+   BSON_ASSERT (client);
+   ASSERT_OR_PRINT (
+      mongoc_client_read_command_with_opts (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
+      error);
+   mongoc_client_destroy (client);
+   fprintf (stderr, "ran sanity check ping\n");
+
+   client = mongoc_client_new ("mongodb://localhost");
+   BSON_ASSERT (client);
+
+   // Test an IPv4 address
+   ASSERT_OR_PRINT (mongoc_client_set_bind_ip (client, "127.0.0.1", &error), error);
+   // Test an IPv6 address
+   //ASSERT_OR_PRINT (mongoc_client_set_bind_ip (client, "0:0:0:0:0:0:0:0", &error), error);
+
+   ASSERT_OR_PRINT (
+      mongoc_client_read_command_with_opts (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL, &error),
+      error);
+
+   //database = mongoc_client_get_database (client, "test");
+   //pipeline = BCON_NEW ("pipeline", "[", "{", "$currentOp", "{", "}", "}", "]");
+   //cursor = mongoc_database_aggregate (database, pipeline, NULL, NULL);
+   //BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
+
+   //printf ("currentop: %s\n", bson_as_json (doc, NULL));
+
+   //mongoc_cursor_destroy (cursor);
+   //mongoc_database_destroy (database);
+   mongoc_client_destroy (client);
+   //bson_destroy (pipeline);
+}
+
 
 static void
 test_mongoc_client_mismatched_me (void)
@@ -4032,6 +4077,9 @@ test_client_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_uds);
+   TestSuite_AddLive (suite,
+		      "/Client/bind_ip",
+		      test_mongoc_client_bind_ip);		      
    TestSuite_AddMockServerTest (
       suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
 

@@ -71,6 +71,11 @@ MONGOC_EXPORT (bool)
 mongoc_client_pool_enable_auto_encryption (mongoc_client_pool_t *pool,
                                            mongoc_auto_encryption_opts_t *opts,
                                            bson_error_t *error);
+
+MONGOC_EXPORT (bool)
+mongoc_client_pool_set_bind_ip (mongoc_client_pool_t *pool,
+				const char *bind_ip,
+				bson_error_t *error);
 BSON_END_DECLS
 
 

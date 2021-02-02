@@ -3101,7 +3101,7 @@ mongoc_client_enable_auto_encryption (mongoc_client_t *client,
 
 bool
 mongoc_client_set_bind_ip (mongoc_client_t *client,
-			   const char *ip,
+			   const char *bind_ip,
 			   bson_error_t *error)
 {
    BSON_ASSERT_PARAM (client);
@@ -3115,5 +3115,5 @@ mongoc_client_set_bind_ip (mongoc_client_t *client,
       return false;
    }
 
-   return mongoc_topology_set_bind_ip (client->topology, ip, error);
+   return mongoc_topology_set_bind_ip (client->topology, bind_ip, error);
 }
