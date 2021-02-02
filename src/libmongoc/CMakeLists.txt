@@ -997,8 +997,11 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-concern.c
    ${PROJECT_SOURCE_DIR}/tests/TestSuite.c
+   ${PROJECT_SOURCE_DIR}/tests/unified/operation.c
    ${PROJECT_SOURCE_DIR}/tests/unified/entity-map.c
+   ${PROJECT_SOURCE_DIR}/tests/unified/result.c
    ${PROJECT_SOURCE_DIR}/tests/unified/runner.c
+   ${PROJECT_SOURCE_DIR}/tests/unified/test-diagnostics.c
    ${PROJECT_SOURCE_DIR}/tests/unified/util.c
 )
 
