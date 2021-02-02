@@ -1,3 +1,22 @@
+mongo-c-driver 1.17.4
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.4.
+
+Bug fixes:
+
+  * Fix crash on macOS on client pool shutdown.
+  * Fix spacing in extended JSON output for numberLong.
+  * Clear error in mongoc_collection_find_and_modify_with_opts on a successful retry.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Samantha Ritter
+
+-- Kevin Albertson
+
+
 mongo-c-driver 1.17.3
 =====================
 
