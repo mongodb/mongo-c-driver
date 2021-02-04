@@ -18,7 +18,10 @@ Synopsis
 Lifecycle
 ---------
 
-Clean up with :symbol:`mongoc_server_description_destroy()`.
+Clean up a ``mongoc_server_description_t`` with :symbol:`mongoc_server_description_destroy()` when necessary.
+
+Applications receive a temporary reference to a ``mongoc_server_description_t`` as a parameter to an SDAM Monitoring callback that must not be destroyed.
+:doc:`Introduction to Application Performance Monitoring <application-performance-monitoring>`.
 
 .. only:: html
 
