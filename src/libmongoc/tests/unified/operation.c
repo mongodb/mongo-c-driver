@@ -2049,6 +2049,8 @@ operation_with_transaction (test_t *test,
    mongoc_client_session_with_transaction (
       session, with_transaction_cb, topts, &tctx, &op_reply, &op_error);
 
+   result_from_val_and_reply (result, NULL, &op_reply, &op_error);
+
    ret = true;
 done:
    bson_parser_destroy_with_parsed_fields (bp);
