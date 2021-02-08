@@ -26,4 +26,4 @@ For portable, future-proof code, always call :symbol:`mongoc_init` and :symbol:`
 
 .. code-block:: none
 
-  cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=NO
+  cmake -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF
