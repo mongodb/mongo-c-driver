@@ -338,8 +338,11 @@ result_check (result_t *result,
    bson_val_t *error_expect_result;
 
    if (!expect_result && !expect_error) {
-      /* TODO: "create index on a non-existing collection" seems to assume no
-       * "expectResult" or "expectError" means no check. */
+      if (!result->ok) {
+         test_set_error (
+            error, "expected success, but got error: %s", result->error.message);
+         goto done;
+      }
       ret = true;
       goto done;
    }

@@ -732,6 +732,8 @@ test_setup_initial_data (test_t *test, bson_error_t *error)
             /* This is not a "ns not found" error. Fail the test. */
             goto loopexit;
          }
+         /* Clear an "ns not found" error. */
+         memset (error, 0, sizeof (bson_error_t));
       }
 
       /* Insert documents if specified. */
