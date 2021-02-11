@@ -91,8 +91,8 @@ For example, you could register a custom handler to suppress messages at INFO le
   int
   main (int argc, char *argv[])
   {
-     mongoc_init ();
      mongoc_log_set_handler (my_logger, NULL);
+     mongoc_init ();
 
      /* ... your code ...  */
 
