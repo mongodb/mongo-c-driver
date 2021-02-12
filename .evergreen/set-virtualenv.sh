@@ -12,7 +12,7 @@ esac
 
 if [ -e "/cygdrive/c/python/Python36/python" ]; then
     export SYSTEM_PYTHON="/cygdrive/c/python/Python36/python"
-elif [ -e " /opt/mongodbtoolchain/v3/bin/python3" ]; then
+elif [ -e "/opt/mongodbtoolchain/v3/bin/python3" ]; then
     export SYSTEM_PYTHON="/opt/mongodbtoolchain/v3/bin/python3"
 elif python3 --version >/dev/null 2>&1; then
     export SYSTEM_PYTHON=python3
