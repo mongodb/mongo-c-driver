@@ -59,7 +59,8 @@ _mongoc_database_new (mongoc_client_t *client,
                       const char *name,
                       const mongoc_read_prefs_t *read_prefs,
                       const mongoc_read_concern_t *read_concern,
-                      const mongoc_write_concern_t *write_concern)
+                      const mongoc_write_concern_t *write_concern,
+                      int64_t timeout_ms)
 {
    mongoc_database_t *db;
 
@@ -78,6 +79,7 @@ _mongoc_database_new (mongoc_client_t *client,
                                : mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    db->name = bson_strdup (name);
+   db->timeout_ms = timeout_ms;
 
    RETURN (db);
 }
@@ -176,7 +178,8 @@ mongoc_database_copy (mongoc_database_t *database)
                                  database->name,
                                  database->read_prefs,
                                  database->read_concern,
-                                 database->write_concern));
+                                 database->write_concern,
+                                 database->timeout_ms));
 }
 
 mongoc_cursor_t *
@@ -988,7 +991,8 @@ mongoc_database_create_collection (mongoc_database_t *database,
                                            name,
                                            database->read_prefs,
                                            database->read_concern,
-                                           database->write_concern);
+                                           database->write_concern,
+                                           database->timeout_ms);
    }
 
    bson_destroy (&cmd);
@@ -1009,7 +1013,8 @@ mongoc_database_get_collection (mongoc_database_t *database,
                                   collection,
                                   database->read_prefs,
                                   database->read_concern,
-                                  database->write_concern);
+                                  database->write_concern,
+                                  database->timeout_ms);
 }
 
 
@@ -1028,4 +1033,31 @@ mongoc_database_watch (const mongoc_database_t *db,
                        const bson_t *opts)
 {
    return _mongoc_change_stream_new_from_database (db, pipeline, opts);
+}
+
+bool
+mongoc_database_set_timeout_ms (mongoc_database_t *db,
+                                int64_t timeout_ms,
+                                bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (db);
+
+   if (timeout_ms < 0) {
+      bson_set_error (error,
+                      MONGOC_ERROR_TIMEOUT,
+                      MONGOC_ERROR_TIMEOUT_INVALID,
+                      "timeoutMS must be a non-negative integer");
+      return false;
+   }
+
+   db->timeout_ms = timeout_ms;
+   return true;
+}
+
+int64_t
+mongoc_database_get_timeout_ms (const mongoc_database_t *db)
+{
+   BSON_ASSERT_PARAM (db);
+
+   return db->timeout_ms;
 }
