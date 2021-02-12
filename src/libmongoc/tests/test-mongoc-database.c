@@ -1203,6 +1203,51 @@ test_get_default_database (void)
    mongoc_client_destroy (client);
 }
 
+static void
+test_timeout_ms (void)
+{
+   mongoc_client_t *client = mongoc_client_new ("mongodb://host/db_name");
+   mongoc_database_t *db = mongoc_client_get_default_database (client);
+   bool res;
+   bson_error_t error;
+
+   /* TODO CDRIVER-3850 no timeout MS returns client's timeout */
+   /* BSON_ASSERT (mongoc_client_set_timeout_ms (client, 10, &error));
+      ASSERT_CMPINT (mongoc_database_get_timeout_ms (db), ==,
+      mongoc_client_get_timeout_ms (client));*/
+
+   BSON_ASSERT (mongoc_database_get_timeout_ms (db) == MONGOC_TIMEOUTMS_UNSET);
+
+   /* negative timeouts are invalid */
+   res = mongoc_database_set_timeout_ms (db, -1, &error);
+   BSON_ASSERT (!res);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_TIMEOUT,
+                          MONGOC_ERROR_TIMEOUT_INVALID,
+                          "timeoutMS must be a non-negative integer");
+
+   /* successful timeouts */
+   ASSERT_OR_PRINT (mongoc_database_set_timeout_ms (db, 300, &error), error);
+   ASSERT_CMPINT (mongoc_database_get_timeout_ms (db), ==, 300);
+
+   ASSERT_OR_PRINT (mongoc_database_set_timeout_ms (db, 100, &error), error);
+   ASSERT_CMPINT (mongoc_database_get_timeout_ms (db), ==, 100);
+
+   ASSERT_OR_PRINT (mongoc_database_set_timeout_ms (db, 0, &error), error);
+   ASSERT_CMPINT (mongoc_database_get_timeout_ms (db), ==, 0);
+
+   BSON_ASSERT (mongoc_database_get_timeout_ms (db) != MONGOC_TIMEOUTMS_UNSET);
+
+   /* Integer limits */
+   ASSERT_OR_PRINT (mongoc_database_set_timeout_ms (db, INT64_MAX, &error),
+                    error);
+   ASSERT_CMPINT64 (mongoc_database_get_timeout_ms (db), ==, INT64_MAX);
+   BSON_ASSERT (!mongoc_database_set_timeout_ms (db, INT64_MIN, &error));
+
+   mongoc_database_destroy (db);
+   mongoc_client_destroy (client);
+}
+
 void
 test_database_install (TestSuite *suite)
 {
@@ -1255,4 +1300,5 @@ test_database_install (TestSuite *suite)
                                 test_get_collection_names_error);
    TestSuite_Add (
       suite, "/Database/get_default_database", test_get_default_database);
+   TestSuite_Add (suite, "/Database/timeout_ms", test_timeout_ms);
 }

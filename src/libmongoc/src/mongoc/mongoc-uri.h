@@ -33,6 +33,8 @@
 #define MONGOC_DEFAULT_PORT 27017
 #endif
 
+#define MONGOC_TIMEOUTMS_UNSET -1
+
 #define MONGOC_URI_APPNAME "appname"
 #define MONGOC_URI_AUTHMECHANISM "authmechanism"
 #define MONGOC_URI_AUTHMECHANISMPROPERTIES "authmechanismproperties"

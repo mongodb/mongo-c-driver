@@ -155,6 +155,13 @@ mongoc_database_watch (const mongoc_database_t *db,
                        const bson_t *pipeline,
                        const bson_t *opts);
 
+MONGOC_EXPORT (bool)
+mongoc_database_set_timeout_ms (mongoc_database_t *db,
+                                int64_t timeout_ms,
+                                bson_error_t *error);
+MONGOC_EXPORT (int64_t)
+mongoc_database_get_timeout_ms (const mongoc_database_t *db);
+
 BSON_END_DECLS
 
 

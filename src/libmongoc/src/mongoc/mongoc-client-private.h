@@ -122,6 +122,8 @@ struct _mongoc_client_t {
    mongoc_set_t *client_sessions;
    unsigned int csid_rand_seed;
 
+   int64_t timeout_ms;
+
    uint32_t generation;
 };
 

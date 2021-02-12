@@ -3854,6 +3854,23 @@ test_mongoc_client_recv_network_error (void)
 }
 
 void
+test_mongoc_client_timeout_ms (void)
+{
+   mongoc_client_t *client;
+
+   client = mongoc_client_new ("mongodb://localhost");
+
+   /* no timeout returns -1 */
+   BSON_ASSERT (mongoc_client_get_timeout_ms (client) ==
+                MONGOC_TIMEOUTMS_UNSET);
+
+   /* TODO CDRIVER-3850 implement additional tests once timeout can be set via
+    * URI */
+
+   mongoc_client_destroy (client);
+}
+
+void
 test_client_install (TestSuite *suite)
 {
    if (test_framework_getenv_bool ("MONGOC_CHECK_IPV6")) {
@@ -4132,4 +4149,5 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Client/recv_network_error",
                                 test_mongoc_client_recv_network_error);
+   TestSuite_Add (suite, "/Client/timeout_ms", test_mongoc_client_timeout_ms);
 }

@@ -35,6 +35,7 @@ struct _mongoc_database_t {
    mongoc_read_prefs_t *read_prefs;
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;
+   int64_t timeout_ms;
 };
 
 
@@ -43,7 +44,8 @@ _mongoc_database_new (mongoc_client_t *client,
                       const char *name,
                       const mongoc_read_prefs_t *read_prefs,
                       const mongoc_read_concern_t *read_concern,
-                      const mongoc_write_concern_t *write_concern);
+                      const mongoc_write_concern_t *write_concern,
+                      int64_t timeout_ms);
 
 BSON_END_DECLS
 
