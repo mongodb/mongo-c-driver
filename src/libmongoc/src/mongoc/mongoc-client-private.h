@@ -118,6 +118,8 @@ struct _mongoc_client_t {
    int32_t error_api_version;
    bool error_api_set;
 
+   mongoc_server_api_t *api;
+
    /* mongoc_client_session_t's in use, to look up lsids and clusterTimes */
    mongoc_set_t *client_sessions;
    unsigned int csid_rand_seed;

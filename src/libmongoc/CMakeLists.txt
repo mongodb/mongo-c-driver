@@ -534,6 +534,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-concern.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-prefs.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-rpc.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-api.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-description.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-stream.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-session.c
@@ -598,6 +599,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-prelude.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-api.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-session.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-socket.h
@@ -993,6 +995,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-usleep.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-util.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-version.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-versioned-api.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-with-transaction.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-commands.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-write-concern.c

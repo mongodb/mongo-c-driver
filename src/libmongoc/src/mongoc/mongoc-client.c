@@ -1208,6 +1208,7 @@ mongoc_client_destroy (mongoc_client_t *client)
       mongoc_cluster_destroy (&client->cluster);
       mongoc_uri_destroy (client->uri);
       mongoc_set_destroy (client->client_sessions);
+      mongoc_server_api_destroy (client->api);
 
 #ifdef MONGOC_ENABLE_SSL
       _mongoc_ssl_opts_cleanup (&client->ssl_opts, true);
@@ -3079,4 +3080,24 @@ mongoc_client_enable_auto_encryption (mongoc_client_t *client,
       return false;
    }
    return _mongoc_cse_client_enable_auto_encryption (client, opts, error);
+}
+
+bool
+mongoc_client_set_server_api (mongoc_client_t *client,
+                              const mongoc_server_api_t *api,
+                              bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (client);
+   BSON_ASSERT_PARAM (api);
+
+   if (client->api) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_API_ALREADY_SET,
+                      "Cannot set server api more than once per client");
+      return false;
+   }
+
+   client->api = mongoc_server_api_copy (api);
+   return true;
 }

@@ -351,7 +351,7 @@ result_check (result_t *result,
             error, "expected result, but got error: %s", result->error.message);
          goto done;
       }
-      if (!entity_map_match (em, expect_result, result->value, error)) {
+      if (!entity_map_match (em, expect_result, result->value, false, error)) {
          test_set_error (error,
                          "checking expectResult: %s",
                          bson_val_to_json (expect_result));
@@ -517,7 +517,7 @@ result_check (result_t *result,
             goto done;
          }
 
-         if (!bson_match (error_expect_result, result->value, error)) {
+         if (!bson_match (error_expect_result, result->value, true, error)) {
             test_diagnostics_error_info (
                "checking error.expectResult: %s",
                bson_val_to_json (error_expect_result));

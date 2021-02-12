@@ -45,6 +45,7 @@ set (src_libmongoc_src_mongoc_DIST_hs
    mongoc-rand.h
    mongoc-read-concern.h
    mongoc-read-prefs.h
+   mongoc-server-api.h
    mongoc-server-description.h
    mongoc-client-session.h
    mongoc-socket.h
@@ -140,6 +141,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-scram-private.h
    mongoc-secure-channel-private.h
    mongoc-secure-transport-private.h
+   mongoc-server-api-private.h
    mongoc-server-description-private.h
    mongoc-server-stream-private.h
    mongoc-server-monitor-private.h
@@ -228,6 +230,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-read-concern.c
    mongoc-read-prefs.c
    mongoc-rpc.c
+   mongoc-server-api.c
    mongoc-server-description.c
    mongoc-server-stream.c
    mongoc-client-session.c

@@ -184,7 +184,7 @@ special_unset_or_matches (bson_matcher_t *matcher,
       goto done;
    }
 
-   if (!bson_matcher_match (matcher, expected, actual, path, error)) {
+   if (!bson_matcher_match (matcher, expected, actual, path, false, error)) {
       goto done;
    }
 
@@ -353,6 +353,7 @@ bson_matcher_match (bson_matcher_t *matcher,
                     const bson_val_t *expected,
                     const bson_val_t *actual,
                     const char *path,
+                    bool allow_extra,
                     bson_error_t *error)
 {
    bool ret = false;
@@ -362,6 +363,8 @@ bson_matcher_match (bson_matcher_t *matcher,
       bson_iter_t expected_iter;
       const bson_t *expected_bson = bson_val_to_document (expected);
       const bson_t *actual_bson = NULL;
+      uint32_t expected_keys;
+      uint32_t actual_keys;
 
       /* handle special operators (e.g. $$type) */
       if (is_special_match (expected_bson)) {
@@ -418,8 +421,12 @@ bson_matcher_match (bson_matcher_t *matcher,
          }
 
          path_child = bson_strdup_printf ("%s.%s", path, key);
-         if (!bson_matcher_match (
-                matcher, expected_val, actual_val, path_child, error)) {
+         if (!bson_matcher_match (matcher,
+                                  expected_val,
+                                  actual_val,
+                                  path_child,
+                                  allow_extra,
+                                  error)) {
             bson_val_destroy (expected_val);
             bson_val_destroy (actual_val);
             bson_free (path_child);
@@ -430,11 +437,13 @@ bson_matcher_match (bson_matcher_t *matcher,
          bson_free (path_child);
       }
 
+      expected_keys = bson_count_keys (expected_bson);
+      actual_keys = bson_count_keys (actual_bson);
       if (!is_root) {
-         if (bson_count_keys (expected_bson) < bson_count_keys (actual_bson)) {
+         if (expected_keys < actual_keys && !allow_extra) {
             MATCH_ERR ("expected %" PRIu32 " keys in document, got: %" PRIu32,
-                       bson_count_keys (expected_bson),
-                       bson_count_keys (actual_bson));
+                       expected_keys,
+                       actual_keys);
             goto done;
          }
       }
@@ -447,6 +456,8 @@ bson_matcher_match (bson_matcher_t *matcher,
       const bson_t *expected_bson = bson_val_to_array (expected);
       const bson_t *actual_bson = NULL;
       char *path_child = NULL;
+      uint32_t expected_keys = bson_count_keys (expected_bson);
+      uint32_t actual_keys;
 
       if (bson_val_type (actual) != BSON_TYPE_ARRAY) {
          MATCH_ERR ("expected array, but got: %s",
@@ -455,11 +466,13 @@ bson_matcher_match (bson_matcher_t *matcher,
       }
 
       actual_bson = bson_val_to_array (actual);
-      if (bson_count_keys (expected_bson) != bson_count_keys (actual_bson)) {
+      actual_keys = bson_count_keys (actual_bson);
+      if ((expected_keys > actual_keys) ||
+          (expected_keys < actual_keys && !allow_extra)) {
          MATCH_ERR ("expected array of size %" PRIu32
                     ", but got array of size: %" PRIu32,
-                    bson_count_keys (expected_bson),
-                    bson_count_keys (actual_bson));
+                    expected_keys,
+                    actual_keys);
          goto done;
       }
 
@@ -481,8 +494,12 @@ bson_matcher_match (bson_matcher_t *matcher,
          actual_val = bson_val_from_iter (&actual_iter);
 
          path_child = bson_strdup_printf ("%s.%s", path, key);
-         if (!bson_matcher_match (
-                matcher, expected_val, actual_val, path_child, error)) {
+         if (!bson_matcher_match (matcher,
+                                  expected_val,
+                                  actual_val,
+                                  path_child,
+                                  allow_extra,
+                                  error)) {
             bson_val_destroy (expected_val);
             bson_val_destroy (actual_val);
             bson_free (path_child);
@@ -522,10 +539,12 @@ done:
 bool
 bson_match (const bson_val_t *expected,
             const bson_val_t *actual,
+            bool allow_extra,
             bson_error_t *error)
 {
    bson_matcher_t *matcher = bson_matcher_new ();
-   bool matched = bson_matcher_match (matcher, expected, actual, "", error);
+   bool matched =
+      bson_matcher_match (matcher, expected, actual, "", allow_extra, error);
    bson_matcher_destroy (matcher);
    return matched;
 }
@@ -579,7 +598,7 @@ test_match (void)
       bson_val_t *actual = bson_val_from_json (test->actual);
       bool ret;
 
-      ret = bson_match (expected, actual, &error);
+      ret = bson_match (expected, actual, false, &error);
       if (test->expect_match) {
          if (!ret) {
             test_error ("%s: did not match with error: %s, but should have",

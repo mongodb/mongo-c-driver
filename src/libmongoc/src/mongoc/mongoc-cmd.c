@@ -20,6 +20,7 @@
 #include "mongoc-trace-private.h"
 #include "mongoc-client-private.h"
 #include "mongoc-read-concern-private.h"
+#include "mongoc-server-api-private.h"
 #include "mongoc-write-concern-private.h"
 /* For strcasecmp on Windows */
 #include "mongoc-util-private.h"
@@ -83,7 +84,6 @@ mongoc_cmd_parts_set_session (mongoc_cmd_parts_t *parts,
 
    parts->assembled.session = cs;
 }
-
 
 /*
  *--------------------------------------------------------------------------
@@ -785,6 +785,29 @@ _is_retryable_read (const mongoc_cmd_parts_t *parts,
 }
 
 
+static bool
+_txn_in_progress (mongoc_cmd_parts_t *parts)
+{
+   mongoc_client_session_t *cs;
+
+   cs = parts->prohibit_lsid ? NULL : parts->assembled.session;
+   if (!cs) {
+      return false;
+   }
+
+   if (_mongoc_client_session_txn_in_progress (cs)) {
+      return true;
+   }
+
+   /* commitTransaction counts, too. */
+   if (parts->assembled.is_txn_finish) {
+      return true;
+   }
+
+   return false;
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -811,6 +834,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                            bson_error_t *error)
 {
    mongoc_server_description_type_t server_type;
+   mongoc_server_api_t *api;
    mongoc_client_session_t *cs;
    const bson_t *cluster_time = NULL;
    mongoc_read_prefs_t *prefs = NULL;
@@ -818,6 +842,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    bool is_get_more;
    const mongoc_read_prefs_t *prefs_ptr;
    bool ret = false;
+   bson_t api_doc;
 
    ENTRY;
 
@@ -970,6 +995,31 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          _mongoc_cmd_parts_ensure_copied (parts);
          bson_append_document (
             &parts->assembled_body, "$clusterTime", 12, cluster_time);
+      }
+
+      /* Add versioned server api, if it is set. Do not add api if we are
+         sending a getmore, or if we are in a transaction. */
+      if (parts->client->api) {
+         if (!is_get_more && !_txn_in_progress (parts)) {
+            api = parts->client->api;
+            const char *string_version =
+               mongoc_server_api_version_to_string (api->version);
+
+            bson_append_utf8 (
+               &parts->assembled_body, "apiVersion", -1, string_version, -1);
+
+            if (api->strict_set) {
+               bson_append_bool (
+                  &parts->assembled_body, "apiStrict", -1, api->strict);
+            }
+
+            if (api->deprecation_errors_set) {
+               bson_append_bool (&parts->assembled_body,
+                                 "apiDeprecationErrors",
+                                 -1,
+                                 api->deprecation_errors);
+            }
+         }
       }
 
       if (!is_get_more) {

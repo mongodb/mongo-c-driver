@@ -29,6 +29,7 @@
 
 #include <bson/bson.h>
 
+#include "mongoc-server-api.h"
 #include "mongoc-server-stream-private.h"
 #include "mongoc-read-prefs.h"
 #include "mongoc.h"
@@ -61,6 +62,7 @@ typedef struct _mongoc_cmd_t {
    mongoc_server_stream_t *server_stream;
    int64_t operation_id;
    mongoc_client_session_t *session;
+   mongoc_server_api_t *api;
    bool is_acknowledged;
    bool is_txn_finish;
 } mongoc_cmd_t;
@@ -83,6 +85,7 @@ typedef struct _mongoc_cmd_parts_t {
    bool is_retryable_write;
    bool has_temp_session;
    mongoc_client_t *client;
+   mongoc_server_api_t *api;
 } mongoc_cmd_parts_t;
 
 
@@ -96,6 +99,10 @@ mongoc_cmd_parts_init (mongoc_cmd_parts_t *op,
 void
 mongoc_cmd_parts_set_session (mongoc_cmd_parts_t *parts,
                               mongoc_client_session_t *cs);
+
+void
+mongoc_cmd_parts_set_server_api (mongoc_cmd_parts_t *parts,
+                                 mongoc_server_api_t *api);
 
 bool
 mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
@@ -137,7 +144,7 @@ _is_retryable_read (const mongoc_cmd_parts_t *parts,
                     const mongoc_server_stream_t *server_stream);
 
 void
-_mongoc_cmd_append_payload_as_array (const mongoc_cmd_t* cmd, bson_t *out);
+_mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out);
 
 BSON_END_DECLS
 
