@@ -238,6 +238,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    bson_t *observe_events = NULL;
    bson_t *server_api = NULL;
    bool can_reduce_heartbeat = false;
+   mongoc_server_api_t *api = NULL;
 
    entity = entity_new ("client");
    parser = bson_parser_new ();
@@ -260,6 +261,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
       char *version = NULL;
       bool *strict = NULL;
       bool *deprecation_errors = NULL;
+      mongoc_server_api_version_t api_version;
 
       sapi_parser = bson_parser_new ();
       bson_parser_utf8 (sapi_parser, "version", &version);
@@ -270,7 +272,19 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
          bson_parser_destroy_with_parsed_fields (sapi_parser);
          goto done;
       }
-      /* TODO: CDRIVER-3821 apply serverApi to client. */
+
+      BSON_ASSERT (
+         mongoc_server_api_version_from_string (version, &api_version));
+      api = mongoc_server_api_new (api_version);
+
+      if (strict) {
+         mongoc_server_api_strict (api, *strict);
+      }
+
+      if (deprecation_errors) {
+         mongoc_server_api_deprecation_errors (api, *deprecation_errors);
+      }
+
       bson_parser_destroy_with_parsed_fields (sapi_parser);
    }
 
@@ -309,6 +323,11 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    entity->value = client;
    callbacks = mongoc_apm_callbacks_new ();
 
+   if (api) {
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, error),
+                       (*error));
+   }
+
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
       client->topology->min_heartbeat_frequency_msec =
          REDUCED_MIN_HEARTBEAT_FREQUENCY_MS;
@@ -338,6 +357,7 @@ done:
    mongoc_uri_destroy (uri);
    bson_parser_destroy (parser);
    mongoc_apm_callbacks_destroy (callbacks);
+   mongoc_server_api_destroy (api);
    bson_destroy (uri_options);
    bson_free (use_multiple_mongoses);
    bson_destroy (observe_events);
@@ -1075,7 +1095,7 @@ special_session_lsid (bson_matcher_t *matcher,
    }
 
    session_val = bson_val_from_bson (lsid);
-   if (!bson_matcher_match (matcher, session_val, actual, path, error)) {
+   if (!bson_matcher_match (matcher, session_val, actual, path, false, error)) {
       goto done;
    }
 
@@ -1117,7 +1137,7 @@ special_matches_entity (bson_matcher_t *matcher,
       goto done;
    }
 
-   if (!bson_matcher_match (matcher, entity_val, actual, path, error)) {
+   if (!bson_matcher_match (matcher, entity_val, actual, path, false, error)) {
       goto done;
    }
 
@@ -1130,6 +1150,7 @@ bool
 entity_map_match (entity_map_t *em,
                   const bson_val_t *expected,
                   const bson_val_t *actual,
+                  bool allow_extra,
                   bson_error_t *error)
 {
    bson_matcher_t *matcher;
@@ -1140,7 +1161,7 @@ entity_map_match (entity_map_t *em,
       matcher, "$$sessionLsid", special_session_lsid, em);
    bson_matcher_add_special (
       matcher, "$$matchesEntity", special_matches_entity, em);
-   ret = bson_matcher_match (matcher, expected, actual, "", error);
+   ret = bson_matcher_match (matcher, expected, actual, "", allow_extra, error);
    bson_matcher_destroy (matcher);
    return ret;
 }

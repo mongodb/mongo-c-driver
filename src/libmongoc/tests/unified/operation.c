@@ -880,7 +880,7 @@ operation_find_one_and_update (test_t *test,
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
    bson_parser_doc (parser, "filter", &filter);
-   bson_parser_utf8 (parser, "returnDocument", &return_document);
+   bson_parser_utf8_optional (parser, "returnDocument", &return_document);
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
    }
@@ -891,9 +891,120 @@ operation_find_one_and_update (test_t *test,
    }
 
    opts = mongoc_find_and_modify_opts_new ();
-   if (0 == strcmp (return_document, "After")) {
+   if (return_document && 0 == strcmp (return_document, "After")) {
       flags |= MONGOC_FIND_AND_MODIFY_RETURN_NEW;
    }
+   mongoc_find_and_modify_opts_set_flags (opts, flags);
+   mongoc_find_and_modify_opts_append (opts, bson_parser_get_extra (parser));
+
+   bson_destroy (&op_reply);
+   mongoc_collection_find_and_modify_with_opts (
+      coll, filter, opts, &op_reply, &op_error);
+
+   if (bson_iter_init_find (&iter, &op_reply, "value")) {
+      val = bson_val_from_iter (&iter);
+   }
+   result_from_val_and_reply (result, val, &op_reply, &op_error);
+
+   ret = true;
+done:
+   bson_val_destroy (val);
+   bson_parser_destroy_with_parsed_fields (parser);
+   mongoc_find_and_modify_opts_destroy (opts);
+   bson_destroy (&op_reply);
+   return ret;
+}
+
+static bool
+operation_find_one_and_replace (test_t *test,
+                                operation_t *op,
+                                result_t *result,
+                                bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_collection_t *coll = NULL;
+   bson_parser_t *parser = NULL;
+   bson_t op_reply = BSON_INITIALIZER;
+   bson_error_t op_error = {0};
+   bson_t *filter = NULL;
+   bson_t *replacement = NULL;
+   char *return_document = NULL;
+   mongoc_find_and_modify_opts_t *opts = NULL;
+   mongoc_find_and_modify_flags_t flags = 0;
+   bson_val_t *val = NULL;
+   bson_iter_t iter;
+
+   parser = bson_parser_new ();
+   bson_parser_allow_extra (parser, true);
+   bson_parser_doc (parser, "filter", &filter);
+   bson_parser_doc (parser, "replacement", &replacement);
+   bson_parser_utf8_optional (parser, "returnDocument", &return_document);
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   }
+
+   coll = entity_map_get_collection (test->entity_map, op->object, error);
+   if (!coll) {
+      goto done;
+   }
+
+   opts = mongoc_find_and_modify_opts_new ();
+   if (return_document && 0 == strcmp (return_document, "After")) {
+      flags |= MONGOC_FIND_AND_MODIFY_RETURN_NEW;
+   }
+   mongoc_find_and_modify_opts_set_flags (opts, flags);
+   mongoc_find_and_modify_opts_append (opts, bson_parser_get_extra (parser));
+   mongoc_find_and_modify_opts_set_update (opts, replacement);
+
+   bson_destroy (&op_reply);
+   mongoc_collection_find_and_modify_with_opts (
+      coll, filter, opts, &op_reply, &op_error);
+
+   if (bson_iter_init_find (&iter, &op_reply, "value")) {
+      val = bson_val_from_iter (&iter);
+   }
+   result_from_val_and_reply (result, val, &op_reply, &op_error);
+
+   ret = true;
+done:
+   bson_val_destroy (val);
+   bson_parser_destroy_with_parsed_fields (parser);
+   mongoc_find_and_modify_opts_destroy (opts);
+   bson_destroy (&op_reply);
+   return ret;
+}
+
+static bool
+operation_find_one_and_delete (test_t *test,
+                               operation_t *op,
+                               result_t *result,
+                               bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_collection_t *coll = NULL;
+   bson_parser_t *parser = NULL;
+   bson_t op_reply = BSON_INITIALIZER;
+   bson_error_t op_error = {0};
+   bson_t *filter = NULL;
+   mongoc_find_and_modify_opts_t *opts = NULL;
+   mongoc_find_and_modify_flags_t flags = 0;
+   bson_val_t *val = NULL;
+   bson_iter_t iter;
+
+   parser = bson_parser_new ();
+   bson_parser_allow_extra (parser, true);
+   bson_parser_doc (parser, "filter", &filter);
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   }
+
+   coll = entity_map_get_collection (test->entity_map, op->object, error);
+   if (!coll) {
+      goto done;
+   }
+
+   opts = mongoc_find_and_modify_opts_new ();
+   flags |= MONGOC_FIND_AND_MODIFY_REMOVE;
    mongoc_find_and_modify_opts_set_flags (opts, flags);
    mongoc_find_and_modify_opts_append (opts, bson_parser_get_extra (parser));
 
@@ -1488,8 +1599,8 @@ assert_session_dirty_helper (test_t *test,
 
    if (check_dirty != mongoc_client_session_get_dirty (op->session)) {
       test_set_error (error,
-                        "expected session to%s be dirty but was not",
-                        check_dirty ? "" : " not");
+                      "expected session to%s be dirty but was not",
+                      check_dirty ? "" : " not");
       goto done;
    }
 
@@ -2143,6 +2254,8 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"distinct", operation_distinct},
       {"estimatedDocumentCount", operation_estimated_document_count},
       {"find", operation_find},
+      {"findOneAndDelete", operation_find_one_and_delete},
+      {"findOneAndReplace", operation_find_one_and_replace},
       {"findOneAndUpdate", operation_find_one_and_update},
       {"insertMany", operation_insert_many},
       {"insertOne", operation_insert_one},

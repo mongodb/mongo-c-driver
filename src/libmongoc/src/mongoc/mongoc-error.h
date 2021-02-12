@@ -49,7 +49,8 @@ typedef enum {
    MONGOC_ERROR_SERVER, /* Error API Version 2 only */
    MONGOC_ERROR_TRANSACTION,
    MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, /* An error coming from libmongocrypt */
-   MONGOC_ERROR_TIMEOUT
+   MONGOC_ERROR_TIMEOUT,
+   MONGOC_ERROR_POOL
 } mongoc_error_domain_t;
 
 
@@ -125,7 +126,11 @@ typedef enum {
    MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
    MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
 
-   MONGOC_ERROR_TIMEOUT_INVALID
+   MONGOC_ERROR_TIMEOUT_INVALID,
+
+   /* An error related to server version api */
+   MONGOC_ERROR_CLIENT_API_ALREADY_SET,
+   MONGOC_ERROR_POOL_API_ALREADY_SET
 } mongoc_error_code_t;
 
 MONGOC_EXPORT (bool)

@@ -22,6 +22,7 @@
 #include "entity-map.h"
 #include "mongoc/mongoc-array-private.h"
 #include "test-conveniences.h"
+#include "TestSuite.h"
 
 /* test_runner_t, test_file_t, and test_t model the types described in the "Test
  * Runner Implementation" section of the Unified Test Format specification. */
@@ -43,6 +44,7 @@ typedef struct {
    bson_t *run_on_requirements;
    bson_t *create_entities;
    bson_t *initial_data;
+   bson_t *yaml_anchors;
    bson_t *tests;
 } test_file_t;
 
@@ -66,5 +68,9 @@ register_failpoint (test_t *test,
                     char *failpoint,
                     char *client_id,
                     uint32_t server_id);
+
+/* Run a directory of test files through the unified test runner. */
+void
+run_unified_tests (TestSuite *suite, const char *path);
 
 #endif /* UNIFIED_RUNNER_H */

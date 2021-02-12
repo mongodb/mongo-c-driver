@@ -33,6 +33,8 @@ bson_val_from_value (const bson_value_t *value)
    bson_t tmp;
    char *as_string = NULL;
 
+   BSON_ASSERT (value);
+
    val = bson_malloc0 (sizeof (bson_val_t));
    bson_value_copy (value, &val->value);
    if (value->value_type == BSON_TYPE_DOCUMENT ||
@@ -45,9 +47,16 @@ bson_val_from_value (const bson_value_t *value)
    bson_init (&tmp);
    bson_append_value (&tmp, "v", 1, value);
    as_string = bson_as_canonical_extended_json (&tmp, NULL);
-   /* This produces: { "v" : {...} }. Strip off the wrapping "v" and braces. */
-   val->as_string = bson_strndup (as_string + 7, strlen (as_string) - 9);
-   bson_free (as_string);
+
+   if (!as_string) {
+      val->as_string = NULL;
+   } else {
+      /* This produces: { "v" : {...} }. Strip off the wrapping "v" and braces.
+       */
+      val->as_string = bson_strndup (as_string + 7, strlen (as_string) - 9);
+      bson_free (as_string);
+   }
+
    bson_destroy (&tmp);
    return val;
 }

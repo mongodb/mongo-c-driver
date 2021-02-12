@@ -19,7 +19,6 @@
 #include "json-test.h"
 #include "operation.h"
 #include "runner.h"
-#include "TestSuite.h"
 #include "test-conveniences.h"
 #include "test-libmongoc.h"
 #include "test-diagnostics.h"
@@ -359,6 +358,7 @@ test_file_new (test_runner_t *test_runner, bson_t *bson)
    bson_parser_array_optional (
       parser, "createEntities", &test_file->create_entities);
    bson_parser_array_optional (parser, "initialData", &test_file->initial_data);
+   bson_parser_doc_optional (parser, "_yamlAnchors", &test_file->yaml_anchors);
    bson_parser_array (parser, "tests", &test_file->tests);
    bson_parser_parse_or_assert (parser, bson);
    bson_parser_destroy (parser);
@@ -376,6 +376,7 @@ test_file_destroy (test_file_t *test_file)
    bson_destroy (test_file->initial_data);
    bson_destroy (test_file->create_entities);
    bson_destroy (test_file->run_on_requirements);
+   bson_destroy (test_file->yaml_anchors);
    bson_free (test_file);
 }
 
@@ -613,7 +614,7 @@ check_run_on_requirement (test_runner_t *test_runner,
          bson_iter_bson (&req_iter, &expected_params);
          expected_val = bson_val_from_bson (&expected_params);
          actual_val = bson_val_from_bson (test_runner->server_parameters);
-         matched = bson_match (expected_val, actual_val, &error);
+         matched = bson_match (expected_val, actual_val, false, &error);
          bson_val_destroy (actual_val);
          bson_val_destroy (expected_val);
          if (!matched) {
@@ -896,10 +897,19 @@ test_check_event (test_t *test,
    }
 
    if (expected_command) {
-      bson_val_t *expected_val = bson_val_from_bson (expected_command);
-      bson_val_t *actual_val = bson_val_from_bson (actual->command);
+      bson_val_t *expected_val;
+      bson_val_t *actual_val;
+
+      if (!actual || !actual->command) {
+         test_set_error (error, "Expected a value but got NULL");
+         goto done;
+      }
+
+      expected_val = bson_val_from_bson (expected_command);
+      actual_val = bson_val_from_bson (actual->command);
+
       if (!entity_map_match (
-             test->entity_map, expected_val, actual_val, error)) {
+             test->entity_map, expected_val, actual_val, true, error)) {
          bson_val_destroy (expected_val);
          bson_val_destroy (actual_val);
          goto done;
@@ -930,7 +940,7 @@ test_check_event (test_t *test,
       bson_val_t *expected_val = bson_val_from_bson (expected_reply);
       bson_val_t *actual_val = bson_val_from_bson (actual->reply);
       if (!entity_map_match (
-             test->entity_map, expected_val, actual_val, error)) {
+             test->entity_map, expected_val, actual_val, true, error)) {
          bson_val_destroy (expected_val);
          bson_val_destroy (actual_val);
          goto done;
@@ -1443,17 +1453,22 @@ done:
    test_diagnostics_cleanup ();
 }
 
-
 void
-test_install_unified (TestSuite *suite)
+run_unified_tests (TestSuite *suite, const char *path)
 {
    char resolved[PATH_MAX];
 
-   ASSERT (realpath (JSON_DIR "/unified", resolved));
+   ASSERT (realpath (path, resolved));
 
    install_json_test_suite_with_check (suite,
                                        resolved,
                                        &run_one_test_file,
                                        TestSuite_CheckLive,
                                        test_framework_skip_if_no_crypto);
+}
+
+void
+test_install_unified (TestSuite *suite)
+{
+   run_unified_tests (suite, JSON_DIR "/unified");
 }

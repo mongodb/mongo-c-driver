@@ -120,6 +120,7 @@ bool
 entity_map_match (entity_map_t *em,
                   const bson_val_t *expected,
                   const bson_val_t *actual,
+                  bool allow_extra,
                   bson_error_t *error);
 
 char *

@@ -31,6 +31,7 @@
 #include "mongoc-index.h"
 #include "mongoc-macros.h"
 #include "mongoc-read-prefs.h"
+#include "mongoc-server-api.h"
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc-ssl.h"
 #endif
@@ -270,6 +271,11 @@ mongoc_client_enable_auto_encryption (mongoc_client_t *client,
 
 MONGOC_EXPORT (int64_t)
 mongoc_client_get_timeout_ms (const mongoc_client_t *client);
+
+MONGOC_EXPORT (bool)
+mongoc_client_set_server_api (mongoc_client_t *client,
+                              const mongoc_server_api_t *api,
+                              bson_error_t *error);
 
 BSON_END_DECLS
 
