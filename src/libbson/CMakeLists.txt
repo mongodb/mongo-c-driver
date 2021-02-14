@@ -261,10 +261,17 @@ if (RT_LIBRARY)
    target_link_libraries (bson_shared PRIVATE ${RT_LIBRARY})
 endif ()
 
-find_library (M_LIBRARY m)
-if (M_LIBRARY)
-   target_link_libraries (bson_shared PRIVATE ${M_LIBRARY})
-   set (BSON_LIBRARIES ${BSON_LIBRARIES} ${M_LIBRARY})
+# On macOS Big Sur, libm resolves to the SDK's tbd file, like:
+# /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/libm.tbd
+# Not all consumers can easily link to a tbd file (notably golang will reject a tbd suffix by default)
+# macOS includes libm as part of libSystem (along with libc).
+# It does not need to be explicitly linked.
+if (!APPLE)
+   find_library (M_LIBRARY m)
+   if (M_LIBRARY)
+      target_link_libraries (bson_shared PRIVATE ${M_LIBRARY})
+      set (BSON_LIBRARIES ${BSON_LIBRARIES} ${M_LIBRARY})
+   endif ()
 endif ()
 
 set (THREADS_PREFER_PTHREAD_FLAG 1)
