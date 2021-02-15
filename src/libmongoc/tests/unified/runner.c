@@ -1361,8 +1361,6 @@ test_run (test_t *test, bson_error_t *error)
       goto done;
    }
 
-   // TODO SAM set up yaml Anchors
-
    if (!test_run_distinct_workaround (test, error)) {
       test_diagnostics_error_info ("%s", "sending distinct to each mongos");
       goto done;

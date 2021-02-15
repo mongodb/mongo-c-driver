@@ -21,13 +21,11 @@
 const char *
 mongoc_server_api_version_to_string (mongoc_server_api_version_t version)
 {
-   const char *out;
-
-   /* Until version numbers top 1000, this should be fine. After that point,
-      this method will need to be altered to hold memory for larger strings. */
-   bson_uint32_to_string (version, &out, NULL, 0);
-
-   return out;
+   if (version == MONGOC_SERVER_API_V1) {
+      return "1";
+   } else {
+      return NULL;
+   }
 }
 
 bool
@@ -54,7 +52,7 @@ mongoc_server_api_new (mongoc_server_api_version_t version)
 }
 
 mongoc_server_api_t *
-mongoc_server_api_copy (mongoc_server_api_t *api)
+mongoc_server_api_copy (const mongoc_server_api_t *api)
 {
    mongoc_server_api_t *copy;
 

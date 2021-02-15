@@ -11,7 +11,7 @@ Synopsis
   const char *
   mongoc_server_api_version_to_string (mongoc_server_api_version_t version);
 
-Returns the string representation of ``version``.
+Returns the string representation of ``version``, or NULL if ``version`` has no string representation.
 
 Parameters
 ----------
@@ -21,4 +21,4 @@ Parameters
 Returns
 -------
 
-Returns the string representation of ``version``.  The returned string should not be freed.
+Returns the string representation of ``version`` or NULL.  The returned string should not be freed.

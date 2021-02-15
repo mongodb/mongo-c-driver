@@ -40,7 +40,7 @@ MONGOC_EXPORT (mongoc_server_api_t *)
 mongoc_server_api_new (mongoc_server_api_version_t version);
 
 MONGOC_EXPORT (mongoc_server_api_t *)
-mongoc_server_api_copy (mongoc_server_api_t *api);
+mongoc_server_api_copy (const mongoc_server_api_t *api);
 
 MONGOC_EXPORT (void)
 mongoc_server_api_destroy (mongoc_server_api_t *api);

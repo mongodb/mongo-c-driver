@@ -17,7 +17,7 @@ Given a string ``version``, populates ``out`` with the equivalent :symbol:`mongo
 Paremeters
 ----------
 
-* ``version``: A string representing the version number.
+* ``version``: A string representing the version identifier.
 * ``out``: A pointer to a :symbol:`mongoc_server_api_version_t`.
 
 Returns
