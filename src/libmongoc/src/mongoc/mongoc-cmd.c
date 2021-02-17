@@ -841,8 +841,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    const char *cmd_name;
    bool is_get_more;
    const mongoc_read_prefs_t *prefs_ptr;
+   const char *string_version;
    bool ret = false;
-   bson_t api_doc;
 
    ENTRY;
 
@@ -1002,8 +1002,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       if (parts->client->api) {
          if (!is_get_more && !_txn_in_progress (parts)) {
             api = parts->client->api;
-            const char *string_version =
-               mongoc_server_api_version_to_string (api->version);
+            string_version = mongoc_server_api_version_to_string (api->version);
 
             bson_append_utf8 (
                &parts->assembled_body, "apiVersion", -1, string_version, -1);
