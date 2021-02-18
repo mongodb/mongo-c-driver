@@ -229,7 +229,7 @@ _get_rand (unsigned int *pseed)
    /* no rand_r on android either */
    result = rand ();
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || \
-   defined(__OpenBSD__)
+   defined(__OpenBSD__) || defined(__APPLE__)
    arc4random_buf (&result, sizeof (result));
 #else
    result = rand_r (pseed);
