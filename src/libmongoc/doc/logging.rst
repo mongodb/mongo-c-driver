@@ -65,6 +65,8 @@ To make logging a little less painful, various helper macros are provided. See t
 
   MONGOC_WARNING ("An error occurred: %s", strerror (errno));
 
+.. _custom_log_handlers:
+
 Custom Log Handlers
 -------------------
 
@@ -100,7 +102,7 @@ For example, you could register a custom handler to suppress messages at INFO le
      return 0;
   }
 
-Note that in the example above `mongoc_log_set_handler()` is called before ``mongoc_init()``.
+Note that in the example above ``mongoc_log_set_handler()`` is called before ``mongoc_init()``.
 Otherwise, some log traces could not be processed by the log handler.
 
 To restore the default handler:
