@@ -727,21 +727,23 @@ mongoc_uri_option_is_int32 (const char *key)
           !strcasecmp (key, MONGOC_URI_HEARTBEATFREQUENCYMS) ||
           !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_SOCKETCHECKINTERVALMS) ||
-          !strcasecmp (key, MONGOC_URI_SOCKETTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_LOCALTHRESHOLDMS) ||
           !strcasecmp (key, MONGOC_URI_MAXPOOLSIZE) ||
           !strcasecmp (key, MONGOC_URI_MAXSTALENESSSECONDS) ||
           !strcasecmp (key, MONGOC_URI_MINPOOLSIZE) ||
           !strcasecmp (key, MONGOC_URI_MAXIDLETIMEMS) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUEMULTIPLE) ||
+          !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) ||
+          /* deprecated options */
           !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
-          !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL);
+          !strcasecmp (key, MONGOC_URI_SOCKETTIMEOUTMS);
 }
 
 bool
 mongoc_uri_option_is_int64 (const char *key)
 {
-   return !strcasecmp (key, MONGOC_URI_WTIMEOUTMS);
+   return !strcasecmp (key, MONGOC_URI_WTIMEOUTMS) ||
+      !strcasecmp (key, MONGOC_URI_TIMEOUTMS);
 }
 
 bool
@@ -2816,6 +2818,16 @@ _mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri,
    char *option_lowercase = NULL;
 
    option = mongoc_uri_canonicalize_option (option_orig);
+
+   /* timeoutMS may not be a negative number. */
+   if (!bson_strcasecmp (option, MONGOC_URI_TIMEOUTMS) && value < 0 && value != -1) {
+      printf("checking value for timeoutMS in set_int64\n");
+      MONGOC_URI_ERROR (error,
+			"Invalid \"%s\" of %lld: must be a non-negative integer",
+			option_orig,
+			value);
+      return false;
+   }
 
    if ((options = mongoc_uri_get_options (uri)) &&
        bson_iter_init_find_case (&iter, options, option)) {
