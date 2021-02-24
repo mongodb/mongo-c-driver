@@ -727,21 +727,23 @@ mongoc_uri_option_is_int32 (const char *key)
           !strcasecmp (key, MONGOC_URI_HEARTBEATFREQUENCYMS) ||
           !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_SOCKETCHECKINTERVALMS) ||
-          !strcasecmp (key, MONGOC_URI_SOCKETTIMEOUTMS) ||
           !strcasecmp (key, MONGOC_URI_LOCALTHRESHOLDMS) ||
           !strcasecmp (key, MONGOC_URI_MAXPOOLSIZE) ||
           !strcasecmp (key, MONGOC_URI_MAXSTALENESSSECONDS) ||
           !strcasecmp (key, MONGOC_URI_MINPOOLSIZE) ||
           !strcasecmp (key, MONGOC_URI_MAXIDLETIMEMS) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUEMULTIPLE) ||
+          !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) ||
+          /* deprecated options */
           !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
-          !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL);
+          !strcasecmp (key, MONGOC_URI_SOCKETTIMEOUTMS);
 }
 
 bool
 mongoc_uri_option_is_int64 (const char *key)
 {
-   return !strcasecmp (key, MONGOC_URI_WTIMEOUTMS);
+   return !strcasecmp (key, MONGOC_URI_WTIMEOUTMS) ||
+          !strcasecmp (key, MONGOC_URI_TIMEOUTMS);
 }
 
 bool
@@ -1131,7 +1133,8 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
                                MONGOC_ERROR_COMMAND,
                                MONGOC_ERROR_COMMAND_INVALID_ARG,
                                "Failed to set %s to %d",
-                               canon, bval);
+                               canon,
+                               bval);
                return false;
             }
          } else {
@@ -2503,6 +2506,30 @@ mongoc_uri_get_option_as_int32 (const mongoc_uri_t *uri,
    return (int32_t) retval;
 }
 
+
+static void
+_mongoc_uri_warn_for_bad_int_option_combos (const mongoc_uri_t *uri,
+					    const char *option)
+{
+   /* Warn for deprecated option combinations */
+   if (!strcasecmp (option, MONGOC_URI_TIMEOUTMS)) {
+      if (mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WAITQUEUETIMEOUTMS, -1) > 0 ||
+	  mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_SOCKETTIMEOUTMS, -1) > 0 ||
+	  mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, -1) > 0) {
+	 MONGOC_WARNING ("Setting a deprecated timeout option %s in combination with timeoutMS", option);
+      }
+   }
+
+   if (!strcasecmp (option, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
+       !strcasecmp (option, MONGOC_URI_SOCKETTIMEOUTMS) ||
+       !strcasecmp (option, MONGOC_URI_WTIMEOUTMS)) {
+      if (mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_TIMEOUTMS, -1) > 0) {
+	 MONGOC_WARNING ("Setting a deprecated timeout option %s in combination with timeoutMS", option);
+      }
+   }
+}
+
+
 /*
  *--------------------------------------------------------------------------
  *
@@ -2624,6 +2651,9 @@ _mongoc_uri_set_option_as_int32_with_error (mongoc_uri_t *uri,
          return false;
       }
    }
+
+   _mongoc_uri_warn_for_bad_int_option_combos (uri, option);
+   
    option_lowercase = lowercase_str_new (option);
    if (!bson_append_int32 (&uri->options, option_lowercase, -1, value)) {
       bson_free (option_lowercase);
@@ -2817,6 +2847,16 @@ _mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri,
 
    option = mongoc_uri_canonicalize_option (option_orig);
 
+   /* timeoutMS may not be a negative number. */
+   if (!bson_strcasecmp (option, MONGOC_URI_TIMEOUTMS) && value < 0) {
+      MONGOC_URI_ERROR (
+         error,
+         "Invalid \"%s\" of %lld: must be a non-negative integer",
+         option_orig,
+         value);
+      return false;
+   }
+
    if ((options = mongoc_uri_get_options (uri)) &&
        bson_iter_init_find_case (&iter, options, option)) {
       if (BSON_ITER_HOLDS_INT64 (&iter)) {
@@ -2832,6 +2872,8 @@ _mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri,
          return false;
       }
    }
+
+   _mongoc_uri_warn_for_bad_int_option_combos (uri, option);
 
    option_lowercase = lowercase_str_new (option);
    if (!bson_append_int64 (&uri->options, option_lowercase, -1, value)) {

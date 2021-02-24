@@ -6407,7 +6407,7 @@ test_fam_no_error_on_retry (void *unused)
 static void
 test_timeout_ms (void)
 {
-   mongoc_client_t *client = mongoc_client_new ("mongodb://host/db_name");
+   mongoc_client_t *client = mongoc_client_new ("mongodb://localhost/?timeoutms=100");
    mongoc_database_t *db = NULL;
    mongoc_collection_t *coll =
       mongoc_client_get_collection (client, "db", "test");
@@ -6415,13 +6415,9 @@ test_timeout_ms (void)
    bool res;
    bson_error_t error;
 
-   /* TODO CDRIVER-3850 no timeout MS returns client's timeout */
-   /* BSON_ASSERT (mongoc_client_set_timeout_ms (client, 10, &error));
-      ASSERT_CMPINT (mongoc_collection_get_timeout_ms (coll), ==,
-      mongoc_client_get_timeout_ms (client)); */
-
-   BSON_ASSERT (mongoc_collection_get_timeout_ms (coll) ==
-                MONGOC_TIMEOUTMS_UNSET);
+   /* no timeoutMS returns client's timeoutMS */
+   ASSERT_CMPINT (mongoc_collection_get_timeout_ms (coll), ==,
+		  mongoc_client_get_timeout_ms (client));
 
    /* negative timeouts are invalid */
    res = mongoc_collection_set_timeout_ms (coll, -1, &error);

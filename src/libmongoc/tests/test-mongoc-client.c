@@ -3860,12 +3860,14 @@ test_mongoc_client_timeout_ms (void)
 
    client = mongoc_client_new ("mongodb://localhost");
 
-   /* no timeout returns -1 */
+   /* No timeout returns -1 */
    BSON_ASSERT (mongoc_client_get_timeout_ms (client) ==
                 MONGOC_TIMEOUTMS_UNSET);
+   mongoc_client_destroy (client);
 
-   /* TODO CDRIVER-3850 implement additional tests once timeout can be set via
-    * URI */
+   /* Client gets timeout through URI */
+   client = mongoc_client_new ("mongodb://localhost/?timeoutms=100");
+   BSON_ASSERT (mongoc_client_get_timeout_ms (client) == 100);
 
    mongoc_client_destroy (client);
 }
