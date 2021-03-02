@@ -1206,17 +1206,14 @@ test_get_default_database (void)
 static void
 test_timeout_ms (void)
 {
-   mongoc_client_t *client = mongoc_client_new ("mongodb://host/db_name");
-   mongoc_database_t *db = mongoc_client_get_default_database (client);
+   mongoc_client_t *client = mongoc_client_new ("mongodb://localhost/?timeoutms=100");
+   mongoc_database_t *db = mongoc_client_get_database (client, "test");
    bool res;
    bson_error_t error;
 
-   /* TODO CDRIVER-3850 no timeout MS returns client's timeout */
-   /* BSON_ASSERT (mongoc_client_set_timeout_ms (client, 10, &error));
-      ASSERT_CMPINT (mongoc_database_get_timeout_ms (db), ==,
-      mongoc_client_get_timeout_ms (client));*/
-
-   BSON_ASSERT (mongoc_database_get_timeout_ms (db) == MONGOC_TIMEOUTMS_UNSET);
+   /* no timeoutMS returns client's timeoutMS */
+   ASSERT_CMPINT (mongoc_database_get_timeout_ms (db), ==,
+		  mongoc_client_get_timeout_ms (client));
 
    /* negative timeouts are invalid */
    res = mongoc_database_set_timeout_ms (db, -1, &error);
