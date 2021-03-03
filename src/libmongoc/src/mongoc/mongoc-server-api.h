@@ -25,7 +25,7 @@
 
 BSON_BEGIN_DECLS
 
-typedef enum { MONGOC_SERVER_API_V1 = 1 } mongoc_server_api_version_t;
+typedef enum { MONGOC_SERVER_API_V1 } mongoc_server_api_version_t;
 
 typedef struct _mongoc_server_api_t mongoc_server_api_t;
 
