@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   mongoc_server_api_t *
-  mongoc_server_api_copy (mongoc_server_api_t *api);
+  mongoc_server_api_copy (const mongoc_server_api_t *api);
 
 Creates a deep copy of ``api``.
 
