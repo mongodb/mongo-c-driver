@@ -2716,34 +2716,6 @@ test_one_tls_option_enables_tls ()
    }
 }
 
-/* static void */
-/* _build_uri_string (char *buf, int pairs, ...) */
-/* { */
-/*    va_list args; */
-/*    char uri_str[256]; */
-/*    int i; */
-/*    int r; */
-
-/*    strcpy (uri_str, "mongodb://localhost/?"); */
-/*    for (i = 0; i < pairs; i++) { */
-/*       if (i == 0) { */
-/* 	 strcat (uri_str, "?"); */
-/*       } else { */
-/* 	 strcat (uri_str, "&"); */
-/*       } */
-
-/*       strcat (uri_str, "%s=%d"); */
-/*    } */
-
-/*    va_start (args, pairs); */
-/*    r = bson_snprintf (buf, sizeof (buf), uri_str, args); */
-/*    va_end (args); */
-
-/*    BSON_ASSERT (r < 1); */
-
-/*    fprintf (stderr, "%s\n", buf); */
-/* } */
-
 static void
 _create_uri_get_warning (const char *uri_str, const char *msg)
 {
