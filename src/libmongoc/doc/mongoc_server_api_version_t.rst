@@ -16,9 +16,9 @@ Supported API Versions
 The driver currently supports the following MongoDB API versions:
 
 ====================  ======================
-Enum value            MongoDB version number
+Enum value            MongoDB version string
 ====================  ======================
-MONGOC_SERVER_API_V1  1
+MONGOC_SERVER_API_V1  "1"
 ====================  ======================
 
 .. only:: html
