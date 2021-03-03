@@ -572,12 +572,14 @@ test_mongoc_uri_functions (void)
       uri, MONGOC_URI_CANONICALIZEHOSTNAME, true));
 
    client = mongoc_client_new_from_uri (uri);
-   mongoc_uri_destroy (uri);
 
    ASSERT (
       mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_JOURNAL, false));
    ASSERT (!mongoc_uri_get_option_as_bool (
       client->uri, MONGOC_URI_CANONICALIZEHOSTNAME, true));
+
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new ("mongodb://localhost/");
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (uri, "replicaset", "default"),
