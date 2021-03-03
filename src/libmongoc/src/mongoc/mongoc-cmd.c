@@ -795,16 +795,9 @@ _txn_in_progress (mongoc_cmd_parts_t *parts)
       return false;
    }
 
-   if (_mongoc_client_session_txn_in_progress (cs)) {
-      return true;
-   }
-
-   /* commitTransaction counts, too. */
-   if (parts->assembled.is_txn_finish) {
-      return true;
-   }
-
-   return false;
+   return _mongoc_client_session_txn_in_progress (cs)
+      /* commitTransaction counts as in progress, too. */
+      || parts->assembled.is_txn_finish);
 }
 
 
