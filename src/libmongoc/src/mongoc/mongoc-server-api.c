@@ -36,6 +36,7 @@ mongoc_server_api_version_from_string (const char *version,
    if (strcmp (version, "1") == 0) {
       *out = MONGOC_SERVER_API_V1;
       return true;
+   }
 
    return false;
 }
