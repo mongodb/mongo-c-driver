@@ -442,6 +442,25 @@ _apm_match_error_context (const bson_t *actual, const bson_t *expectations)
    bson_free (actual_str);
    bson_free (expectations_str);
 }
+
+bool skip_cse_list_collections(const bson_t *doc) {
+   // see CDRIVER-3856: Sharing a MongoClient for metadata lookup can lead to
+   // deadlock in drivers using automatic encryption
+   const char* val;
+
+   if (!bson_has_field(doc, "command_started_event.command.listCollections"))
+      return false;
+
+   if (!bson_has_field(doc, "command_started_event.command.$db"))
+      return false;
+
+   val = bson_lookup_utf8(doc, "command_started_event.command.$db");
+   if (0 != strcmp(val, "keyvault"))
+      return false;
+
+   return true;
+}
+
 /*
  *-----------------------------------------------------------------------
  *
@@ -520,16 +539,20 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
             /* if we allow matching only a subset of actual events, skip
              * non-matching ones */
             continue;
-         } else {
-            _apm_match_error_context (&ctx->events, expectations);
-            test_error ("could not match APM event\n"
-                        "\texpected: %s\n\n"
-                        "\tactual  : %s\n\n"
-                        "\terror   : %s\n\n",
-                        bson_as_canonical_extended_json (&expectation, NULL),
-                        bson_as_canonical_extended_json (&actual, NULL),
-                        match_ctx.errmsg);
          }
+
+         if (skip_cse_list_collections(&actual)) {
+            continue;
+         }
+
+         _apm_match_error_context (&ctx->events, expectations);
+         test_error ("could not match APM event\n"
+                     "\texpected: %s\n\n"
+                     "\tactual  : %s\n\n"
+                     "\terror   : %s\n\n",
+                     bson_as_canonical_extended_json (&expectation, NULL),
+                     bson_as_canonical_extended_json (&actual, NULL),
+                     match_ctx.errmsg);
       }
 
       if (!matched) {
