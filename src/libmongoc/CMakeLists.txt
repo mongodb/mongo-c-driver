@@ -122,6 +122,7 @@ if (NOT ENABLE_ZSTD STREQUAL OFF)
       set (MONGOC_ENABLE_COMPRESSION_ZSTD 1)
 
       include_directories (${ZSTD_INCLUDE_DIRS})
+      link_directories (${ZSTD_LIBRARY_DIRS})
       if (${CMAKE_VERSION} VERSION_LESS "3.12.0")
          set (MONGOC_ZSTD_LIBRARIES ${ZSTD_LIBRARIES})
       else ()

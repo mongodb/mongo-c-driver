@@ -2016,6 +2016,24 @@ tasks:
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
+- name: build-and-test-with-toolchain
+  commands:
+  - command: s3.get
+    params:
+      aws_key: '${toolchain_aws_key}'
+      aws_secret: '${toolchain_aws_secret}'
+      remote_file: 'mongo-c-toolchain/${distro_id}/mongo-c-toolchain.tar.gz'
+      bucket: mongo-c-toolchain
+      local_file: mongo-c-toolchain.tar.gz
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        sh ./.evergreen/build-and-test-with-toolchain.sh
 - name: test-valgrind-latest-server-auth-nosasl-openssl
   tags:
   - latest
@@ -22482,6 +22500,9 @@ buildvariants:
     distros:
     - windows-64-vs2017-test
   - debug-compile-with-warnings
+  - name: build-and-test-with-toolchain
+    distros:
+    - debian10-small
 - name: clang34ubuntu
   display_name: clang 3.4 (Ubuntu 14.04)
   expansions:
