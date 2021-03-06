@@ -18,6 +18,7 @@ set -o errexit  # Exit the script with error if any of the commands fail
 # Options for CMake:
 #       LIBBSON                 Build against bundled or external libbson
 #       EXTRA_CONFIGURE_FLAGS   Extra configure flags to use
+#       EXTRA_CMAKE_PREFIX_PATH Extra directories to search for libraries/packages
 #       ZLIB                    Build against bundled or external zlib, or none
 #       SNAPPY                  Build against Snappy, or none
 #       SSL                     Build against OpenSSL or native or none
@@ -71,6 +72,11 @@ fi
 # as an environment variable (e.g. to force 32bit)
 [ -z "$MARCH" ] && MARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 
+CMAKE_PREFIX_PATH="$INSTALL_DIR"
+if [ ! -z "$EXTRA_CMAKE_PREFIX_PATH" ]; then
+   CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH;$EXTRA_CMAKE_PREFIX_PATH"
+fi
+
 # Default CMake flags for debug builds and release builds.
 # CMAKE_SKIP_RPATH avoids hardcoding absolute paths to dependency libraries.
 DEBUG_AND_RELEASE_FLAGS="\
@@ -82,7 +88,7 @@ DEBUG_AND_RELEASE_FLAGS="\
    -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
    -DENABLE_TRACING=$TRACING \
    -DENABLE_RDTSCP=$RDTSCP \
-   -DCMAKE_PREFIX_PATH=$INSTALL_DIR \
+   -DCMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH \
    -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
    -DENABLE_SHM_COUNTERS=$ENABLE_SHM_COUNTERS \
 "
@@ -212,7 +218,7 @@ if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    git clone https://github.com/mongodb/libmongocrypt
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
-   $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DCMAKE_PREFIX_PATH="$INSTALL_DIR" ../
+   $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" ../
    make install
    cd ../../
    else

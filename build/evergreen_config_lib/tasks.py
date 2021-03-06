@@ -436,7 +436,20 @@ all_tasks = [
                 CFLAGS='-fsanitize=thread -fno-omit-frame-pointer',
                 CHECK_LOG='ON',
                 SSL='OPENSSL',
-                EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF')
+                EXTRA_CONFIGURE_FLAGS='-DENABLE_EXTRA_ALIGNMENT=OFF -DENABLE_SHM_COUNTERS=OFF'),
+    NamedTask('build-and-test-with-toolchain',
+              commands=[
+                  OD([('command', 's3.get'),
+                      ('params', OD([
+                          ('aws_key', '${toolchain_aws_key}'),
+                          ('aws_secret', '${toolchain_aws_secret}'),
+                          ('remote_file',
+                           'mongo-c-toolchain/${distro_id}/mongo-c-toolchain.tar.gz'),
+                          ('bucket', 'mongo-c-toolchain'),
+                          ('local_file', 'mongo-c-toolchain.tar.gz'),
+                      ]))]),
+                  shell_mongoc('sh ./.evergreen/build-and-test-with-toolchain.sh')
+                  ])
 ]
 
 class IntegrationTask(MatrixTask):
