@@ -20,7 +20,7 @@
 typedef struct _mongoc_timeout_t {
    bool is_set;
    int64_t timeout_ms;
-} mongoc_timeout_t;
+};
 
 int64_t
 mongoc_timeout_get_timeout_ms (const mongoc_timeout_t *timeout)
