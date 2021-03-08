@@ -47,7 +47,7 @@ _test_mongoc_server_api_setters (void)
 {
    mongoc_server_api_t *api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
 
-   BSON_ASSERT (api->version = MONGOC_SERVER_API_V1);
+   BSON_ASSERT (api->version == MONGOC_SERVER_API_V1);
    BSON_ASSERT (!api->strict_set);
    BSON_ASSERT (!api->deprecation_errors_set);
    BSON_ASSERT (!api->strict);
