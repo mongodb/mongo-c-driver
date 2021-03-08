@@ -447,7 +447,7 @@ bool
 skip_cse_list_collections (const bson_t *doc)
 {
    /* see CDRIVER-3856: Sharing a MongoClient for metadata lookup can lead to
-    * deadlock in drivers using automatic encryption */
+    * deadlock in drivers using automatic encryption. Since the C driver does not use a separate 'mongoc_client_t' for listCollections and finds on the key vault, we skip these checks. */
    const char *val;
 
    if (!bson_has_field (doc, "command_started_event.command.listCollections"))
