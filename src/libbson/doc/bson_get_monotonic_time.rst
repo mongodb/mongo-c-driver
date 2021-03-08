@@ -13,8 +13,7 @@ Synopsis
   int64_t
   bson_get_monotonic_time (void);
   int
-  bson_gettimeofday (struct timeval *tv,
-                     struct timezone *tz);
+  bson_gettimeofday (struct timeval *tv);
 
 Description
 -----------
