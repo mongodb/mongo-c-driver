@@ -406,8 +406,8 @@ apm_match_visitor (match_ctx_t *ctx,
       }
    } else if (strstr (ctx->path, "updates.")) {
       /* tests expect "multi: false" and "upsert: false" explicitly;
-      * we don't send them. fix when path is like "updates.0", "updates.1", ...
-      */
+       * we don't send them. fix when path is like "updates.0", "updates.1", ...
+       */
 
       if (!strcmp (key, "multi") && !bson_iter_bool (pattern_iter)) {
          return MATCH_ACTION_SKIP;
@@ -443,19 +443,21 @@ _apm_match_error_context (const bson_t *actual, const bson_t *expectations)
    bson_free (expectations_str);
 }
 
-bool skip_cse_list_collections(const bson_t *doc) {
-   // see CDRIVER-3856: Sharing a MongoClient for metadata lookup can lead to
-   // deadlock in drivers using automatic encryption
-   const char* val;
+bool
+skip_cse_list_collections (const bson_t *doc)
+{
+   /* see CDRIVER-3856: Sharing a MongoClient for metadata lookup can lead to
+    * deadlock in drivers using automatic encryption */
+   const char *val;
 
-   if (!bson_has_field(doc, "command_started_event.command.listCollections"))
+   if (!bson_has_field (doc, "command_started_event.command.listCollections"))
       return false;
 
-   if (!bson_has_field(doc, "command_started_event.command.$db"))
+   if (!bson_has_field (doc, "command_started_event.command.$db"))
       return false;
 
-   val = bson_lookup_utf8(doc, "command_started_event.command.$db");
-   if (0 != strcmp(val, "keyvault"))
+   val = bson_lookup_utf8 (doc, "command_started_event.command.$db");
+   if (0 != strcmp (val, "keyvault"))
       return false;
 
    return true;
@@ -541,7 +543,7 @@ check_json_apm_events (json_test_ctx_t *ctx, const bson_t *expectations)
             continue;
          }
 
-         if (skip_cse_list_collections(&actual)) {
+         if (skip_cse_list_collections (&actual)) {
             continue;
          }
 
