@@ -17,7 +17,7 @@
 #include "mongoc-timeout-private.h"
 #include "mongoc.h"
 
-typedef struct _mongoc_timeout_t {
+struct _mongoc_timeout_t {
    bool is_set;
    int64_t timeout_ms;
 };
