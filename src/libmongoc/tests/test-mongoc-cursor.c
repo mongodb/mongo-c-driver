@@ -45,6 +45,9 @@
 typedef mongoc_cursor_t *(*make_cursor_fn) (mongoc_collection_t *);
 
 static mongoc_cursor_t *
+_make_cmd_deprecated_cursor (mongoc_collection_t *coll);
+
+static mongoc_cursor_t *
 _make_array_cursor (mongoc_collection_t *coll);
 
 /* test that the host a cursor returns belongs to a server it connected to. */
@@ -150,8 +153,8 @@ _test_common_clone_w_concerns (void *ctx)
    mongoc_read_concern_destroy (cursor->read_concern);
    cursor->read_concern = read_concern;
    /* don't call mongoc_cursor_next (), since the test may run against a version
-   * of MongoDB that doesn't support read/write concerns, and we are only
-   * interested in testing if the clone process works. */
+    * of MongoDB that doesn't support read/write concerns, and we are only
+    * interested in testing if the clone process works. */
    cloned = mongoc_cursor_clone (cursor);
    /* test cloned read_concern. */
    ASSERT (!mongoc_read_concern_is_default (cloned->read_concern));
@@ -159,7 +162,8 @@ _test_common_clone_w_concerns (void *ctx)
                   MONGOC_READ_CONCERN_LEVEL_LOCAL);
    /* test cloned write_concern. */
    ASSERT (mongoc_write_concern_get_wmajority (cloned->write_concern));
-   ASSERT (mongoc_write_concern_get_wtimeout_int64 (cloned->write_concern) == 1000);
+   ASSERT (mongoc_write_concern_get_wtimeout_int64 (cloned->write_concern) ==
+           1000);
    ASSERT (mongoc_write_concern_get_w (cloned->write_concern) ==
            MONGOC_WRITE_CONCERN_W_MAJORITY);
    /* check generated bson in cloned cursor. */
@@ -305,8 +309,9 @@ _test_common_opts (void *ctx)
    BSON_ASSERT (mongoc_cursor_set_hint (cursor, sd->id));
    ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), ==, sd->id);
 
-   /* listDatabases prohibits limit and batchSize */
-   if ((make_cursor_fn) ctx != _make_array_cursor) {
+   /* listDatabases and isMaster prohibits limit and batchSize */
+   if ((make_cursor_fn) ctx != _make_array_cursor &&
+       (make_cursor_fn) ctx != _make_cmd_deprecated_cursor) {
       mongoc_cursor_set_batch_size (cursor, 1);
       ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 1);
       BSON_ASSERT (mongoc_cursor_set_limit (cursor, 2));
@@ -316,10 +321,11 @@ _test_common_opts (void *ctx)
    mongoc_cursor_set_max_await_time_ms (cursor, 3);
    ASSERT_CMPINT (mongoc_cursor_get_max_await_time_ms (cursor), ==, 3);
    /* prime the cursor. */
-   BSON_ASSERT (mongoc_cursor_next (cursor, &doc));
+   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), cursor->error);
    /* options should be unchanged. */
    ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), ==, sd->id);
-   if ((make_cursor_fn) ctx != _make_array_cursor) {
+   if ((make_cursor_fn) ctx != _make_array_cursor &&
+       (make_cursor_fn) ctx != _make_cmd_deprecated_cursor) {
       ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 1);
       ASSERT_CMPINT ((int) mongoc_cursor_get_limit (cursor), ==, 2);
       /* limit cannot be set again. */
