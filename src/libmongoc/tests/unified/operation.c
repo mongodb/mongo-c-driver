@@ -760,7 +760,9 @@ operation_distinct (test_t *test,
                         "key",
                         BCON_UTF8 (field_name),
                         "query",
-                        &filter);
+                        "{",
+                        &filter,
+                        "}");
    bson_concat (distinct, bson_parser_get_extra (parser));
 
    bson_destroy (&op_reply);
