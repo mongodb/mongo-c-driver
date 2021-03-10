@@ -22,11 +22,11 @@ const char *
 mongoc_server_api_version_to_string (mongoc_server_api_version_t version)
 {
    switch (version) {
-      case MONGOC_SERVER_API_V1:
-         return "1";
+   case MONGOC_SERVER_API_V1:
+      return "1";
+   default:
+      return NULL;
    }
-   
-   return NULL;
 }
 
 bool
