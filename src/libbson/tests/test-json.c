@@ -1075,13 +1075,12 @@ test_bson_json_read_legacy_regex (void)
    bson_destroy (&b);
 
    r = bson_init_from_json (&b, "{\"a\": {\"$regex\": \"abc\"}}", -1, &error);
-   BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          BSON_ERROR_JSON,
-                          BSON_JSON_ERROR_READ_INVALID_PARAM,
-                          "Missing \"$options\" after \"$regex\"");
+   ASSERT_OR_PRINT (r, error);
+   BCON_EXTRACT (&b, "a", BCONE_REGEX (pattern, flags));
+   ASSERT_CMPSTR (pattern, "abc");
+   ASSERT_CMPSTR (flags, "");
 
-   memset (&error, 0, sizeof error);
+   bson_destroy (&b);
 
    r = bson_init_from_json (&b, "{\"a\": {\"$options\": \"ix\"}}", -1, &error);
    BSON_ASSERT (!r);
@@ -1091,6 +1090,24 @@ test_bson_json_read_legacy_regex (void)
                           "Missing \"$regex\" after \"$options\"");
 }
 
+static void
+test_bson_json_read_regex_no_options (void)
+{
+   bson_t b;
+   bson_error_t error;
+   bool r;
+   const char *pattern;
+   const char *flags;
+
+   r = bson_init_from_json (
+      &b, "{\"a\": {\"$regularExpression\": { \"pattern\": \"abc\"}}}", -1, &error);
+   ASSERT_OR_PRINT (r, error);
+   BCON_EXTRACT (&b, "a", BCONE_REGEX (pattern, flags));
+   ASSERT_CMPSTR (pattern, "abc");
+   ASSERT_CMPSTR (flags, "");
+
+   bson_destroy (&b);
+}
 
 static void
 test_bson_json_read_regex_options_order (void)
@@ -3451,6 +3468,8 @@ test_json_install (TestSuite *suite)
       suite, "/bson/json/read/dbpointer", test_bson_json_read_dbpointer);
    TestSuite_Add (
       suite, "/bson/json/read/legacy_regex", test_bson_json_read_legacy_regex);
+   TestSuite_Add (
+      suite, "/bson/json/read/regex_no_options", test_bson_json_read_regex_no_options);
    TestSuite_Add (suite,
                   "/bson/json/read/regex_options_order",
                   test_bson_json_read_regex_options_order);
