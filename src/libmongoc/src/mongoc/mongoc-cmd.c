@@ -796,8 +796,8 @@ _txn_in_progress (mongoc_cmd_parts_t *parts)
    }
 
    return (_mongoc_client_session_txn_in_progress (cs)
-	   /* commitTransaction and abortTransaction count as in progress, too. */
-	   || parts->assembled.is_txn_finish);
+      /* commitTransaction and abortTransaction count as in progress, too. */
+      || parts->assembled.is_txn_finish);
 }
 
 
