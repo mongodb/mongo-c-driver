@@ -827,14 +827,12 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                            bson_error_t *error)
 {
    mongoc_server_description_type_t server_type;
-   mongoc_server_api_t *api;
    mongoc_client_session_t *cs;
    const bson_t *cluster_time = NULL;
    mongoc_read_prefs_t *prefs = NULL;
    const char *cmd_name;
    bool is_get_more;
    const mongoc_read_prefs_t *prefs_ptr;
-   const char *string_version;
    bool ret = false;
 
    ENTRY;
@@ -994,23 +992,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
          sending a getmore, or if we are in a transaction. */
       if (parts->client->api) {
          if (!is_get_more && !_txn_in_progress (parts)) {
-            api = parts->client->api;
-            string_version = mongoc_server_api_version_to_string (api->version);
-
-            bson_append_utf8 (
-               &parts->assembled_body, "apiVersion", -1, string_version, -1);
-
-            if (api->strict.is_set) {
-               bson_append_bool (
-				 &parts->assembled_body, "apiStrict", -1, api->strict.value);
-            }
-
-            if (api->deprecation_errors.is_set) {
-               bson_append_bool (&parts->assembled_body,
-                                 "apiDeprecationErrors",
-                                 -1,
-                                 api->deprecation_errors.value);
-            }
+            _mongoc_cmd_append_server_api (&parts->assembled_body,
+                                           parts->client->api);
          }
       }
 
@@ -1154,4 +1137,42 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
    }
 
    bson_append_array_end (out, &bson);
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * _mongoc_cmd_append_server_api --
+ *    Append versioned API fields to a mongoc_cmd_t
+ *
+ * Arguments:
+ *    cmd The mongoc_cmd_t, which will have versioned API fields added
+ *    api A mongoc_server_api_t holding server API information
+ *
+ * Pre-conditions:
+ *    - @api is initialized.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+_mongoc_cmd_append_server_api (bson_t *command_body,
+                               const mongoc_server_api_t *api)
+{
+   const char *string_version;
+
+   BSON_ASSERT (api);
+
+   string_version = mongoc_server_api_version_to_string (api->version);
+
+   bson_append_utf8 (command_body, "apiVersion", -1, string_version, -1);
+
+   if (api->strict.is_set) {
+      bson_append_bool (command_body, "apiStrict", -1, api->strict.value);
+   }
+
+   if (api->deprecation_errors.is_set) {
+      bson_append_bool (command_body,
+                        "apiDeprecationErrors",
+                        -1,
+                        api->deprecation_errors.value);
+   }
 }

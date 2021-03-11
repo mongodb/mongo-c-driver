@@ -529,5 +529,6 @@ mongoc_client_pool_set_server_api (mongoc_client_pool_t *pool,
    }
 
    pool->api = mongoc_server_api_copy (api);
+   _mongoc_topology_scanner_set_server_api (pool->topology->scanner, api);
    return true;
 }

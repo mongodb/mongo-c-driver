@@ -109,6 +109,8 @@ typedef struct mongoc_topology_scanner {
    bool negotiate_sasl_supported_mechs;
    bool bypass_cooldown;
    bool speculative_authentication;
+
+   mongoc_server_api_t *api;
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *
@@ -222,6 +224,10 @@ mongoc_topology_scanner_set_ssl_opts (mongoc_topology_scanner_t *ts,
 bool
 mongoc_topology_scanner_node_in_cooldown (mongoc_topology_scanner_node_t *node,
                                           int64_t when);
+
+void
+_mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
+                                         const mongoc_server_api_t *api);
 
 /* for testing. */
 mongoc_stream_t *
