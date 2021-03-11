@@ -1389,11 +1389,6 @@ _bson_json_read_append_regex (bson_json_reader_t *reader,    /* IN */
                                     "Missing \"$regex\" after \"$options\"");
          return;
       }
-      if (!data->regex.has_options) {
-         _bson_json_read_set_error (reader,
-                                    "Missing \"$options\" after \"$regex\"");
-         return;
-      }
    } else if (!data->regex.has_pattern) {
       _bson_json_read_set_error (
          reader, "Missing \"pattern\" after \"options\" in regular expression");
