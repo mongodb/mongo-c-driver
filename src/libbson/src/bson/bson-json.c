@@ -1393,6 +1393,10 @@ _bson_json_read_append_regex (bson_json_reader_t *reader,    /* IN */
       _bson_json_read_set_error (
          reader, "Missing \"pattern\" after \"options\" in regular expression");
       return;
+   } else if (!data->regex.has_options) {
+      _bson_json_read_set_error (
+         reader, "Missing \"options\" after \"pattern\" in regular expression");
+      return;
    }
 
    if (!bson_append_regex (STACK_BSON_CHILD,
