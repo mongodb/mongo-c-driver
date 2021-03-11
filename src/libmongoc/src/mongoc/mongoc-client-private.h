@@ -119,6 +119,7 @@ struct _mongoc_client_t {
    bool error_api_set;
 
    mongoc_server_api_t *api;
+   bool api_set;
 
    /* mongoc_client_session_t's in use, to look up lsids and clusterTimes */
    mongoc_set_t *client_sessions;

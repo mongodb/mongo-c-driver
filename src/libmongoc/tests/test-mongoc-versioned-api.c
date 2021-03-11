@@ -135,6 +135,43 @@ _test_mongoc_server_api_client_pool (void)
    mongoc_uri_destroy (uri);
 }
 
+static void
+_test_mongoc_server_api_client_pool_once (void)
+{
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_server_api_t *api;
+   bson_error_t error;
+
+   uri = mongoc_uri_new ("mongodb://localhost");
+   pool = mongoc_client_pool_new (uri);
+
+   api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
+
+   client = mongoc_client_pool_pop (pool);
+   BSON_ASSERT (!client->api);
+
+   /* Cannot change server API once a client has been popped. */
+   ASSERT (!mongoc_client_pool_set_server_api (pool, api, &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_POOL,
+      MONGOC_ERROR_POOL_API_TOO_LATE,
+      "Cannot set server api after a client has been created");
+
+   ASSERT (!mongoc_client_set_server_api (client, api, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_API_ALREADY_SET,
+                          "Cannot set server api more than once");
+
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mongoc_server_api_destroy (api);
+   mongoc_uri_destroy (uri);
+}
+
 void
 test_client_versioned_api_install (TestSuite *suite)
 {
@@ -144,6 +181,9 @@ test_client_versioned_api_install (TestSuite *suite)
       suite, "/VersionedApi/client", _test_mongoc_server_api_client);
    TestSuite_Add (
       suite, "/VersionedApi/client_pool", _test_mongoc_server_api_client_pool);
+   TestSuite_Add (suite,
+                  "/VersionedApi/client_pool_once",
+                  _test_mongoc_server_api_client_pool_once);
    TestSuite_Add (suite, "/VersionedApi/copy", _test_mongoc_server_api_copy);
    TestSuite_Add (
       suite, "/VersionedApi/setters", _test_mongoc_server_api_setters);

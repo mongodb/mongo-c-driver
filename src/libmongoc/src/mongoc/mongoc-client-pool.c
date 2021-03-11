@@ -245,6 +245,7 @@ _initialize_new_client (mongoc_client_pool_t *pool, mongoc_client_t *client)
       client, &pool->apm_callbacks, pool->apm_context);
 
    client->api = mongoc_server_api_copy (pool->api);
+   client->api_set = true;
 
 #ifdef MONGOC_ENABLE_SSL
    if (pool->ssl_opts_set) {
@@ -525,6 +526,14 @@ mongoc_client_pool_set_server_api (mongoc_client_pool_t *pool,
                       MONGOC_ERROR_POOL,
                       MONGOC_ERROR_POOL_API_ALREADY_SET,
                       "Cannot set server api more than once per pool");
+      return false;
+   }
+
+   if (mongoc_client_pool_get_size (pool)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_POOL,
+                      MONGOC_ERROR_POOL_API_TOO_LATE,
+                      "Cannot set server api after a client has been created");
       return false;
    }
 

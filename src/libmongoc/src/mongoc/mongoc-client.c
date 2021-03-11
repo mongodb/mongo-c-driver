@@ -3105,7 +3105,7 @@ mongoc_client_set_server_api (mongoc_client_t *client,
    BSON_ASSERT_PARAM (client);
    BSON_ASSERT_PARAM (api);
 
-   if (client->api) {
+   if (client->api_set) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_API_ALREADY_SET,
@@ -3114,6 +3114,7 @@ mongoc_client_set_server_api (mongoc_client_t *client,
    }
 
    client->api = mongoc_server_api_copy (api);
+   client->api_set = true;
    _mongoc_topology_scanner_set_server_api (client->topology->scanner, api);
    return true;
 }
