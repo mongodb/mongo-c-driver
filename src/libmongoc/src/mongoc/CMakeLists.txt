@@ -41,6 +41,7 @@ set (src_libmongoc_src_mongoc_DIST_hs
    mongoc-macros.h
    mongoc-matcher.h
    mongoc-opcode.h
+   mongoc-optional.h
    mongoc-prelude.h
    mongoc-rand.h
    mongoc-read-concern.h

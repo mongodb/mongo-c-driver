@@ -23,10 +23,8 @@
 
 struct _mongoc_server_api_t {
    mongoc_server_api_version_t version;
-   bool strict;
-   bool strict_set;
-   bool deprecation_errors;
-   bool deprecation_errors_set;
+   mongoc_optional_t *strict;
+   mongoc_optional_t *deprecation_errors;
 };
 
 #endif /* MONGOC_SERVER_API_PRIVATE_H */

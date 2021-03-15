@@ -48,6 +48,8 @@ mongoc_server_api_new (mongoc_server_api_version_t version)
 
    api = (mongoc_server_api_t *) bson_malloc0 (sizeof (mongoc_server_api_t));
    api->version = version;
+   api->strict = mongoc_optional_new ();
+   api->deprecation_errors = mongoc_optional_new ();
 
    return api;
 }
@@ -63,10 +65,8 @@ mongoc_server_api_copy (const mongoc_server_api_t *api)
 
    copy = (mongoc_server_api_t *) bson_malloc0 (sizeof (mongoc_server_api_t));
    copy->version = api->version;
-   copy->strict_set = api->strict_set;
-   copy->strict = api->strict;
-   copy->deprecation_errors_set = api->deprecation_errors_set;
-   copy->deprecation_errors = api->deprecation_errors;
+   copy->strict = mongoc_optional_copy (api->strict);
+   copy->deprecation_errors = mongoc_optional_copy (api->deprecation_errors);
 
    return copy;
 }
@@ -85,8 +85,7 @@ void
 mongoc_server_api_strict (mongoc_server_api_t *api, bool strict)
 {
    BSON_ASSERT (api);
-   api->strict = strict;
-   api->strict_set = true;
+   mongoc_optional_set_value (api->strict, strict);
 }
 
 void
@@ -94,6 +93,19 @@ mongoc_server_api_deprecation_errors (mongoc_server_api_t *api,
                                       bool deprecation_errors)
 {
    BSON_ASSERT (api);
-   api->deprecation_errors = deprecation_errors;
-   api->deprecation_errors_set = true;
+   mongoc_optional_set_value (api->deprecation_errors, deprecation_errors);
+}
+
+const mongoc_optional_t *
+mongoc_server_api_get_deprecation_errors (mongoc_server_api_t *api)
+{
+   BSON_ASSERT (api);
+   return api->deprecation_errors;
+}
+
+const mongoc_optional_t *
+mongo_server_api_get_strict (mongoc_server_api_t *api)
+{
+   BSON_ASSERT (api);
+   return api->strict;
 }
