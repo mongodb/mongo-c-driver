@@ -245,7 +245,6 @@ test_large_ismaster (void *ctx)
 {
    mongoc_async_t *async;
    mongoc_stream_t *sock_stream;
-   int i = 0;
    bson_t q = BSON_INITIALIZER;
    char buf[1024 * 1024];
 
