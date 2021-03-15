@@ -252,14 +252,13 @@ test_large_ismaster (void *ctx)
    mongoc_ssl_opt_t ssl_opts;
 #endif
 
-   /* Inflate the size of the isMaster message with other fields to ~1MB.
-    * mongod should ignore them, but this tests that CDRIVER-2483 is fixed.
+   /* Inflate the size of the isMaster message to ~1MB. This tests that
+    * CDRIVER-2483 is fixed. Mongod 4.9+ errors on unknown fields (see
+    * SERVER-53150) but appending additional "isMaster" commands seem to be OK.
     */
    BSON_ASSERT (bson_append_int32 (&q, "isMaster", 8, 1));
    while (q.len < 1024 * 1024) {
-      char buf[11];
-      bson_snprintf (buf, sizeof (buf), "key_%06d", i++);
-      BSON_APPEND_INT32 (&q, buf, 0);
+      BSON_APPEND_INT32 (&q, "isMaster", 1);
    }
 
    sock_stream = get_localhost_stream (test_framework_get_port ());
