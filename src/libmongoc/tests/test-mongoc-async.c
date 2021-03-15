@@ -247,7 +247,7 @@ test_large_ismaster (void *ctx)
    mongoc_stream_t *sock_stream;
    int i = 0;
    bson_t q = BSON_INITIALIZER;
-   char buf[size];
+   char buf[1024 * 1024];
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t ssl_opts;
