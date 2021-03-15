@@ -68,6 +68,7 @@
                 {
                     "name": "estimatedDocumentCount",
                     "object": "collection0",
+                    "arguments": {},
                     "expectResult": 3
                 }
             ],
@@ -164,6 +165,7 @@
                 {
                     "name": "estimatedDocumentCount",
                     "object": "collection1",
+                    "arguments": {},
                     "expectResult": 0
                 }
             ],
@@ -229,6 +231,7 @@
                 {
                     "name": "estimatedDocumentCount",
                     "object": "collection0",
+                    "arguments": {},
                     "expectError": {
                         "errorCode": 8
                     }
@@ -296,6 +299,7 @@
                 {
                     "name": "estimatedDocumentCount",
                     "object": "collection0",
+                    "arguments": {},
                     "expectError": {
                         "isError": true
                     }
@@ -344,6 +348,7 @@
                 {
                     "name": "estimatedDocumentCount",
                     "object": "collection0",
+                    "arguments": {},
                     "expectResult": 3
                 }
             ],
@@ -410,6 +415,7 @@
                 {
                     "name": "estimatedDocumentCount",
                     "object": "collection1",
+                    "arguments": {},
                     "expectResult": 0
                 }
             ],
@@ -472,6 +478,7 @@
                 {
                     "name": "estimatedDocumentCount",
                     "object": "collection0",
+                    "arguments": {},
                     "expectError": {
                         "errorCode": 8
                     }
@@ -536,6 +543,7 @@
                 {
                     "name": "estimatedDocumentCount",
                     "object": "collection0",
+                    "arguments": {},
                     "expectError": {
                         "isError": true
                     }
