@@ -258,7 +258,6 @@ test_large_ismaster (void *ctx)
     * fields (see SERVER-53150) we add a ~1MB comment.
     */
    BSON_ASSERT (bson_append_int32 (&q, "isMaster", 8, 1));
-   char buf[1024 * 1024];
    /* size of comment string = (1024 * 1024) - 1 (for null terminator) */
    bson_snprintf(buf, sizeof (buf), "%01048575d", 0);
    BSON_APPEND_UTF8(&q, "comment", buf);
