@@ -235,6 +235,7 @@ test_large_ismaster_helper (mongoc_async_cmd_t *acmd,
    }
    ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
+   ASSERT_HAS_FIELD(bson, "ismaster");
    BSON_ASSERT (bson_iter_init_find (&iter, bson, "ismaster"));
    BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
 }
