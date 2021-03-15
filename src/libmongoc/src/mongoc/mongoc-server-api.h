@@ -21,6 +21,7 @@
 
 #include <bson/bson.h>
 
+#include "mongoc-optional.h"
 #include "mongoc-macros.h"
 
 BSON_BEGIN_DECLS
@@ -51,6 +52,12 @@ mongoc_server_api_strict (mongoc_server_api_t *api, bool strict);
 MONGOC_EXPORT (void)
 mongoc_server_api_deprecation_errors (mongoc_server_api_t *api,
                                       bool deprecation_errors);
+
+MONGOC_EXPORT (const mongoc_optional_t *)
+mongoc_server_api_get_deprecation_errors (mongoc_server_api_t *api);
+
+MONGOC_EXPORT (const mongoc_optional_t *)
+mongo_server_api_get_strict (mongoc_server_api_t *api);
 
 BSON_END_DECLS
 

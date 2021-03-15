@@ -596,6 +596,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-macros.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-matcher.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-opcode.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-optional.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-prelude.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-concern.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-read-prefs.h
