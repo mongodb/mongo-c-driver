@@ -349,11 +349,6 @@ result_check (result_t *result,
 
    /* check result. */
    if (expect_result) {
-      if (!result->ok) {
-         test_set_error (
-            error, "expected result, but got error: %s", result->error.message);
-         goto done;
-      }
       if (!entity_map_match (em, expect_result, result->value, false, error)) {
          test_set_error (error,
                          "checking expectResult: %s",
