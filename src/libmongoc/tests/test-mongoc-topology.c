@@ -2053,7 +2053,7 @@ test_request_scan_on_error ()
               true /* should_scan */,
               true /* should_mark_unknown */,
               NULL /* server_err */);
-   /* for an unknown code, the message should still be checked. */
+   /* for an unknown code, the message should not be checked. */
    TEST_BOTH ("{'ok': 0, 'code': 12345, 'errmsg': 'not master'}",
               false /* should_scan */,
               false /* should_mark_unknown */,

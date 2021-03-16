@@ -185,7 +185,7 @@ test_state_change_helper (uint32_t domain, bool expect_error)
    }
 
    /* Fallback code that's used when no code was returned */
-   error.code = 17;
+   error.code = MONGOC_ERROR_QUERY_FAILURE;
    bson_strncpy (error.message, "... not master ...", sizeof (error.message));
    BSON_ASSERT (expect_error == _mongoc_error_is_not_master (&error));
    BSON_ASSERT (!_mongoc_error_is_recovering (&error));
