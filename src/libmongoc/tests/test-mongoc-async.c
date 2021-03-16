@@ -235,6 +235,7 @@ test_large_ismaster_helper (mongoc_async_cmd_t *acmd,
    }
    ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
+   ASSERT_HAS_FIELD(bson, "ismaster");
    BSON_ASSERT (bson_iter_init_find (&iter, bson, "ismaster"));
    BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
 }
@@ -244,22 +245,21 @@ test_large_ismaster (void *ctx)
 {
    mongoc_async_t *async;
    mongoc_stream_t *sock_stream;
-   int i = 0;
    bson_t q = BSON_INITIALIZER;
+   char buf[1024 * 1024];
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t ssl_opts;
 #endif
 
-   /* Inflate the size of the isMaster message with other fields to ~1MB.
-    * mongod should ignore them, but this tests that CDRIVER-2483 is fixed.
+   /* Inflate the size of the isMaster message to ~1MB. This tests that
+    * CDRIVER-2483 is fixed. Because mongod 4.9+ errors on unknown and duplicate
+    * fields (see SERVER-53150) we add a ~1MB comment.
     */
    BSON_ASSERT (bson_append_int32 (&q, "isMaster", 8, 1));
-   while (q.len < 1024 * 1024) {
-      char buf[11];
-      bson_snprintf (buf, sizeof (buf), "key_%06d", i++);
-      BSON_APPEND_INT32 (&q, buf, 0);
-   }
+   /* size of comment string = (1024 * 1024) - 1 (for null terminator) */
+   bson_snprintf(buf, sizeof (buf), "%01048575d", 0);
+   BSON_APPEND_UTF8(&q, "comment", buf);
 
    sock_stream = get_localhost_stream (test_framework_get_port ());
 

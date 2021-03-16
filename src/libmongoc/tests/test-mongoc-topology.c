@@ -2081,10 +2081,18 @@ test_request_scan_on_error ()
                 true /* should_mark_unknown */,
                 "node is recovering");
    /* write concern errors are also checked. */
-   TEST_BOTH ("{'ok': 1, 'writeConcernError': { 'errmsg': 'not master' }}",
-              true, /* should_scan */
-              true /* should_mark_unknown */,
-              "not master");
+   _test_request_scan_on_error (
+      1,
+      "{'ok': 1, 'writeConcernError': { 'errmsg': 'not master' }}",
+      1,
+      1,
+      "not master");
+   _test_request_scan_on_error (
+      0,
+      "{'ok': 1, 'writeConcernError': { 'errmsg': 'not master' }}",
+      1,
+      1,
+      "not master");
    TEST_BOTH ("{'ok': 1, 'writeConcernError': { 'code': 10107 }}",
               true, /* should_scan */
               true /* should_mark_unknown */,
