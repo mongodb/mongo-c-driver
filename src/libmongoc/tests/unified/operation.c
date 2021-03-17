@@ -724,6 +724,7 @@ operation_delete_many (test_t *test,
    ret = true;
 done:
    bson_parser_destroy_with_parsed_fields (parser);
+   bson_destroy (&op_reply);
    return ret;
 }
 
@@ -775,6 +776,7 @@ operation_distinct (test_t *test,
 done:
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (&op_reply);
+   bson_destroy (distinct);
    return ret;
 }
 
