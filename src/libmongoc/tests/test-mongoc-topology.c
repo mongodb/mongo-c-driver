@@ -2053,10 +2053,10 @@ test_request_scan_on_error ()
               true /* should_scan */,
               true /* should_mark_unknown */,
               NULL /* server_err */);
-   /* for an unknown code, the message should still be checked. */
+   /* for an unknown code, the message should not be checked. */
    TEST_BOTH ("{'ok': 0, 'code': 12345, 'errmsg': 'not master'}",
-              true /* should_scan */,
-              true /* should_mark_unknown */,
+              false /* should_scan */,
+              false /* should_mark_unknown */,
               "not master");
    /* check the error code for InterruptedAtShutdown, which behaves
     * much like a "node is recovering" error. */
@@ -2068,18 +2068,6 @@ test_request_scan_on_error ()
                 true /* should_scan */,
                 true /* should_mark_unknown */,
                 NULL /* server_err */);
-   /* with a "not master" error code but a "node is recovery" message, it is
-    * considered a "node is recovering" error */
-   TEST_SINGLE ("{'ok': 0, 'code': 10107, 'errmsg': 'node is recovering'}",
-                false /* should_scan */,
-                true /* should_mark_unknown */,
-                "node is recovering");
-   /* with a "not master" error code but a "node is recovery" message, it is
-    * considered a "node is recovering" error */
-   TEST_POOLED ("{'ok': 0, 'code': 10107, 'errmsg': 'node is recovering'}",
-                true /* should_scan */,
-                true /* should_mark_unknown */,
-                "node is recovering");
    /* write concern errors are also checked. */
    _test_request_scan_on_error (
       1,

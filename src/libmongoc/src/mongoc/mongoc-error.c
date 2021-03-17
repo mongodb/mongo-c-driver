@@ -268,9 +268,13 @@ _mongoc_error_is_not_master (bson_error_t *error)
    switch (error->code) {
    case MONGOC_SERVER_ERR_NOTMASTER:
    case MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK:
+   case MONGOC_SERVER_ERR_LEGACYNOTPRIMARY:
       return true;
-   default:
+      /* All errors where no code was found are marked as MONGOC_ERROR_QUERY_FAILURE */
+   case MONGOC_ERROR_QUERY_FAILURE:
       return NULL != strstr (error->message, "not master");
+   default:
+      return false;
    }
 }
 
@@ -287,9 +291,12 @@ _mongoc_error_is_recovering (bson_error_t *error)
    case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
    case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
       return true;
-   default:
+   /* All errors where no code was found are marked as MONGOC_ERROR_QUERY_FAILURE */
+   case MONGOC_ERROR_QUERY_FAILURE:
       return NULL != strstr (error->message, "not master or secondary") ||
              NULL != strstr (error->message, "node is recovering");
+   default:
+      return false;
    }
 }
 

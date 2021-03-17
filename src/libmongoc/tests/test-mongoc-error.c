@@ -139,7 +139,9 @@ test_state_change_helper (uint32_t domain, bool expect_error)
 {
    bson_error_t error;
    mongoc_server_err_t not_master_codes[] = {
-      MONGOC_SERVER_ERR_NOTMASTER, MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK};
+      MONGOC_SERVER_ERR_NOTMASTER,
+      MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK,
+      MONGOC_SERVER_ERR_LEGACYNOTPRIMARY};
    mongoc_server_err_t node_is_recovering_codes[] = {
       MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN,
       MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE,
@@ -182,7 +184,8 @@ test_state_change_helper (uint32_t domain, bool expect_error)
       BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
    }
 
-   error.code = 123;
+   /* Fallback code that's used when no code was returned */
+   error.code = MONGOC_ERROR_QUERY_FAILURE;
    bson_strncpy (error.message, "... not master ...", sizeof (error.message));
    BSON_ASSERT (expect_error == _mongoc_error_is_not_master (&error));
    BSON_ASSERT (!_mongoc_error_is_recovering (&error));
@@ -202,6 +205,27 @@ test_state_change_helper (uint32_t domain, bool expect_error)
    BSON_ASSERT (expect_error == _mongoc_error_is_recovering (&error));
    BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
    BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
+
+   error.code = 123;
+   bson_strncpy (error.message, "... not master ...", sizeof (error.message));
+   BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (!_mongoc_error_is_recovering (&error));
+   BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
+   BSON_ASSERT (!_mongoc_error_is_state_change (&error));
+
+   bson_strncpy (
+      error.message, "... node is recovering ...", sizeof (error.message));
+   BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (!_mongoc_error_is_recovering (&error));
+   BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
+   BSON_ASSERT (!_mongoc_error_is_state_change (&error));
+
+   bson_strncpy (
+      error.message, "... not master or secondary ...", sizeof (error.message));
+   BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (!_mongoc_error_is_recovering (&error));
+   BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
+   BSON_ASSERT (!_mongoc_error_is_state_change (&error));
 }
 
 static void
