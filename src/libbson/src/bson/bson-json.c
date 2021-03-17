@@ -853,7 +853,7 @@ _unhexlify_uuid (const char *uuid, uint8_t *out, size_t max)
       i += 2;
    }
 
-   return true;
+   return i == 32;
 }
 
 /* parse a value for "base64", "subType", legacy "$binary" or "$type", or
