@@ -24,7 +24,7 @@ mongoc_optional_init (mongoc_optional_t *opt)
 }
 
 bool
-mongoc_optional_set (mongoc_optional_t *opt)
+mongoc_optional_is_set (mongoc_optional_t *opt)
 {
    BSON_ASSERT (opt);
    return opt->is_set;
@@ -46,7 +46,8 @@ mongoc_optional_set_value (mongoc_optional_t *opt, bool val)
 }
 
 void
-mongoc_optional_copy (const mongoc_optional_t *source, mongoc_optional_t *copy) {
+mongoc_optional_copy (const mongoc_optional_t *source, mongoc_optional_t *copy)
+{
    copy->value = source->value;
    copy->is_set = source->is_set;
 }

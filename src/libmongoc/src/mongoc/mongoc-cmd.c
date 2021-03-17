@@ -1000,16 +1000,16 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
             bson_append_utf8 (
                &parts->assembled_body, "apiVersion", -1, string_version, -1);
 
-            if (api->strict_set) {
+            if (api->strict.is_set) {
                bson_append_bool (
-                  &parts->assembled_body, "apiStrict", -1, api->strict);
+				 &parts->assembled_body, "apiStrict", -1, api->strict.value);
             }
 
-            if (api->deprecation_errors_set) {
+            if (api->deprecation_errors.is_set) {
                bson_append_bool (&parts->assembled_body,
                                  "apiDeprecationErrors",
                                  -1,
-                                 api->deprecation_errors);
+                                 api->deprecation_errors.value);
             }
          }
       }
