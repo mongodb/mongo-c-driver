@@ -927,29 +927,30 @@ _bson_json_parse_binary_elem (bson_json_reader_t *reader,
 
       /* Validate the UUID and extract relevant portions */
       /* We can't use %x here as it allows +, -, and 0x prefixes */
+#ifdef _MSC_VER
       SSCANF (val_w_null,
               "%8c-%4c-%4c-%4c-%12c%n",
               &uuid[0],
-#ifdef _MSC_VER
               8,
-#endif
               &uuid[8],
-#ifdef _MSC_VER
               4,
-#endif
               &uuid[12],
-#ifdef _MSC_VER
               4,
-#endif
               &uuid[16],
-#ifdef _MSC_VER
               4,
-#endif
               &uuid[20],
-#ifdef _MSC_VER
               12,
-#endif
               &nread);
+#else
+      SSCANF (val_w_null,
+              "%8c-%4c-%4c-%4c-%12c%n",
+              &uuid[0],
+              &uuid[8],
+              &uuid[12],
+              &uuid[16],
+              &uuid[20],
+              &nread);
+#endif
 
       uuid[32] = '\0';
 
