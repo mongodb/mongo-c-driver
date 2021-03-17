@@ -225,6 +225,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-memcmp.c
    mongoc-cmd.c
    mongoc-ocsp-cache.c
+   mongoc-optional.c
    mongoc-opts.c
    mongoc-opts-helpers.c
    mongoc-queue.c

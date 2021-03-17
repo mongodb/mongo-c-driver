@@ -26,15 +26,15 @@
 BSON_BEGIN_DECLS
 
 typedef struct {
-    bool value;
-    bool is_set;
+   bool value;
+   bool is_set;
 } mongoc_optional_t;
 
 MONGOC_EXPORT (void)
 mongoc_optional_init (mongoc_optional_t *opt);
 
 MONGOC_EXPORT (bool)
-mongoc_optional_set (mongoc_optional_t *opt);
+mongoc_optional_is_set (mongoc_optional_t *opt);
 
 MONGOC_EXPORT (bool)
 mongoc_optional_value (mongoc_optional_t *opt);

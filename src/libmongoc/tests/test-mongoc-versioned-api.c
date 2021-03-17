@@ -33,10 +33,10 @@ _test_mongoc_server_api_copy (void)
    copy = mongoc_server_api_copy (api);
 
    BSON_ASSERT (api->version == copy->version);
-   BSON_ASSERT (!copy->strict);
-   BSON_ASSERT (copy->strict_set);
-   BSON_ASSERT (!copy->deprecation_errors);
-   BSON_ASSERT (!copy->deprecation_errors_set);
+   BSON_ASSERT (!copy->strict.value);
+   BSON_ASSERT (copy->strict.is_set);
+   BSON_ASSERT (!copy->deprecation_errors.value);
+   BSON_ASSERT (!copy->deprecation_errors.is_set);
 
    mongoc_server_api_destroy (api);
    mongoc_server_api_destroy (copy);
@@ -48,18 +48,18 @@ _test_mongoc_server_api_setters (void)
    mongoc_server_api_t *api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
 
    BSON_ASSERT (api->version == MONGOC_SERVER_API_V1);
-   BSON_ASSERT (!api->strict_set);
-   BSON_ASSERT (!api->deprecation_errors_set);
-   BSON_ASSERT (!api->strict);
-   BSON_ASSERT (!api->deprecation_errors);
+   BSON_ASSERT (!api->strict.is_set);
+   BSON_ASSERT (!api->deprecation_errors.is_set);
+   BSON_ASSERT (!api->strict.value);
+   BSON_ASSERT (!api->deprecation_errors.value);
 
    mongoc_server_api_strict (api, true);
-   BSON_ASSERT (api->strict_set);
-   BSON_ASSERT (api->strict);
+   BSON_ASSERT (api->strict.is_set);
+   BSON_ASSERT (api->strict.value);
 
    mongoc_server_api_deprecation_errors (api, false);
-   BSON_ASSERT (api->deprecation_errors_set);
-   BSON_ASSERT (!api->deprecation_errors);
+   BSON_ASSERT (api->deprecation_errors.is_set);
+   BSON_ASSERT (!api->deprecation_errors.value);
 
    mongoc_server_api_destroy (api);
 }
