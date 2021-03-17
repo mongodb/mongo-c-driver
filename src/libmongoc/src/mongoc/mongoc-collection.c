@@ -915,7 +915,6 @@ mongoc_collection_estimated_document_count (
           * https://github.com/mongodb/specifications/blob/master/source/crud/crud.rst#estimateddocumentcount
           */
          bson_set_error (error, 0, 0, "");
-         error = NULL;
          count = 0;
          GOTO (done);
       }
