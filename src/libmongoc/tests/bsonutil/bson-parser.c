@@ -638,30 +638,33 @@ bson_parser_parse (bson_parser_t *parser, bson_t *in, bson_error_t *error)
    bson_iter_t iter;
    bson_parser_entry_t *entry = NULL;
 
-   BSON_FOREACH (in, iter)
-   {
-      const char *key = bson_iter_key (&iter);
-      bson_parser_entry_t *matched = NULL;
-      /* Check for a corresponding entry. */
-      LL_FOREACH (parser->entries, entry)
+   /* Check that document is not null. */
+   if (in) {
+      BSON_FOREACH (in, iter)
       {
-         if (0 == strcmp (entry->key, key)) {
-            matched = entry;
-            break;
+         const char *key = bson_iter_key (&iter);
+         bson_parser_entry_t *matched = NULL;
+         /* Check for a corresponding entry. */
+         LL_FOREACH (parser->entries, entry)
+         {
+            if (0 == strcmp (entry->key, key)) {
+               matched = entry;
+               break;
+            }
          }
-      }
 
-      if (matched) {
-         if (!entry_marshal (entry, &iter, error)) {
+         if (matched) {
+            if (!entry_marshal (entry, &iter, error)) {
+               return false;
+            }
+            entry->set = true;
+         } else if (parser->allow_extra) {
+            BSON_APPEND_VALUE (parser->extra, key, bson_iter_value (&iter));
+         } else {
+            test_set_error (
+               error, "Extra field '%s' found parsing: %s", key, tmp_json (in));
             return false;
          }
-         entry->set = true;
-      } else if (parser->allow_extra) {
-         BSON_APPEND_VALUE (parser->extra, key, bson_iter_value (&iter));
-      } else {
-         test_set_error (
-            error, "Extra field '%s' found parsing: %s", key, tmp_json (in));
-         return false;
       }
    }
 
