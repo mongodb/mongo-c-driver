@@ -940,7 +940,6 @@ _bson_json_parse_binary_elem (bson_json_reader_t *reader,
       uuid[32] = '\0';
 
       if (nread != 36 || val_w_null[nread] != '\0') {
-         binary_len = 0;
          _bson_json_read_set_error (reader,
                                     "Invalid input string \"%s\", looking for "
                                     "a dash-separated UUID string",
@@ -953,7 +952,7 @@ _bson_json_parse_binary_elem (bson_json_reader_t *reader,
       _bson_json_buf_ensure (&bson->bson_type_buf[0], (size_t) binary_len + 1);
 
       if (!_unhexlify_uuid (
-             &uuid[0], bson->bson_type_buf[0].buf, (size_t) binary_len + 1)) {
+             &uuid[0], bson->bson_type_buf[0].buf, (size_t) binary_len)) {
          _bson_json_read_set_error (reader,
                                     "Invalid input string \"%s\", looking for "
                                     "a dash-separated UUID string",
