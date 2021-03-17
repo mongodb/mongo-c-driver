@@ -638,11 +638,7 @@ bson_parser_parse (bson_parser_t *parser, bson_t *in, bson_error_t *error)
    bson_iter_t iter;
    bson_parser_entry_t *entry = NULL;
 
-<<<<<<< HEAD
    /* Check that document is not null. */
-=======
-   /* Verify that key is not NULL. */
->>>>>>> Add null document check in bson parser
    if (in) {
       BSON_FOREACH (in, iter)
       {

@@ -826,24 +826,25 @@ _make_aggregate_for_edc (const mongoc_collection_t *coll, bson_t *out)
    int key = 0;
 
    bson_init (out);
-   bson_append_utf8 (
-      out, "aggregate", 9, coll->collection, coll->collectionlen);
-   bson_append_document_begin (out, "cursor", 6, &cursor_empty);
+   BSON_APPEND_UTF8 (out, "aggregate", coll->collection);
+   BSON_APPEND_DOCUMENT_BEGIN (out, "cursor", &cursor_empty);
    bson_append_document_end (out, &cursor_empty);
-   bson_append_array_begin (out, "pipeline", 8, &pipeline);
+   BSON_APPEND_ARRAY_BEGIN (out, "pipeline", &pipeline);
 
-   bson_append_document_begin (&pipeline, keys[key++], 1, &coll_stats_stage);
-   bson_append_document_begin (&coll_stats_stage, "$collStats", 10, &coll_stats_stage_doc);
-   bson_append_document_begin (&coll_stats_stage_doc, "count", 5, &empty);
+   BSON_APPEND_DOCUMENT_BEGIN (&pipeline, keys[key], &coll_stats_stage);
+   key++;
+   BSON_APPEND_DOCUMENT_BEGIN (
+      &coll_stats_stage, "$collStats", &coll_stats_stage_doc);
+   BSON_APPEND_DOCUMENT_BEGIN (&coll_stats_stage_doc, "count", &empty);
    bson_append_document_end (&coll_stats_stage_doc, &empty);
    bson_append_document_end (&coll_stats_stage, &coll_stats_stage_doc);
    bson_append_document_end (&pipeline, &coll_stats_stage);
 
-   bson_append_document_begin (&pipeline, keys[key], 1, &group_stage);
-   bson_append_document_begin (&group_stage, "$group", 6, &group_stage_doc);
-   bson_append_int32 (&group_stage_doc, "_id", 3, 1);
-   bson_append_document_begin (&group_stage_doc, "n", 1, &sum);
-   bson_append_utf8 (&sum, "$sum", 4, "$count", 6);
+   BSON_APPEND_DOCUMENT_BEGIN (&pipeline, keys[key], &group_stage);
+   BSON_APPEND_DOCUMENT_BEGIN (&group_stage, "$group", &group_stage_doc);
+   BSON_APPEND_INT32 (&group_stage_doc, "_id", 1);
+   BSON_APPEND_DOCUMENT_BEGIN (&group_stage_doc, "n", &sum);
+   BSON_APPEND_UTF8 (&sum, "$sum", "$count");
    bson_append_document_end (&group_stage_doc, &sum);
    bson_append_document_end (&group_stage, &group_stage_doc);
    bson_append_document_end (&pipeline, &group_stage);
@@ -885,19 +886,19 @@ mongoc_collection_estimated_document_count (
    if (server_stream->sd->max_wire_version < WIRE_VERSION_4_9) {
       /* On < 4.9, use actual count command for estimatedDocumentCount */
       bson_init (&cmd);
-      bson_append_utf8 (&cmd, "count", 5, coll->collection, coll->collectionlen);
+      BSON_APPEND_UTF8 (&cmd, "count", coll->collection);
       ret = _mongoc_client_command_with_opts (coll->client,
-                                             coll->db,
-                                             &cmd,
-                                             MONGOC_CMD_READ,
-                                             opts,
-                                             MONGOC_QUERY_NONE,
-                                             read_prefs,
-                                             coll->read_prefs,
-                                             coll->read_concern,
-                                             coll->write_concern,
-                                             reply_ptr,
-                                             error);
+                                              coll->db,
+                                              &cmd,
+                                              MONGOC_CMD_READ,
+                                              opts,
+                                              MONGOC_QUERY_NONE,
+                                              read_prefs,
+                                              coll->read_prefs,
+                                              coll->read_concern,
+                                              coll->write_concern,
+                                              reply_ptr,
+                                              error);
       if (ret) {
          if (bson_iter_init_find (&iter, reply_ptr, "n")) {
             count = bson_iter_as_int64 (&iter);
@@ -917,8 +918,9 @@ mongoc_collection_estimated_document_count (
          count = 0;
          GOTO (done);
       }
-      if (ret && bson_iter_init(&iter, reply_ptr)) {
-         if (bson_iter_find_descendant (&iter, "cursor.firstBatch.0.n", &iter)) {
+      if (ret && bson_iter_init (&iter, reply_ptr)) {
+         if (bson_iter_find_descendant (
+                &iter, "cursor.firstBatch.0.n", &iter)) {
             count = bson_iter_as_int64 (&iter);
          }
       }
@@ -3459,9 +3461,8 @@ retry:
       retry_server_stream = mongoc_cluster_stream_for_writes (
          cluster, parts.assembled.session, NULL /* reply */, &ignored_error);
 
-      if (retry_server_stream &&
-          retry_server_stream->sd->max_wire_version >=
-             WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
+                                    WIRE_VERSION_RETRY_WRITES) {
          parts.assembled.server_stream = retry_server_stream;
          GOTO (retry);
       }
