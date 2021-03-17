@@ -239,6 +239,7 @@ test_bson_corpus_parse_error (test_bson_parse_error_type_t *test)
 
    switch (test->bson_type) {
    case BSON_TYPE_EOD: /* top-level document to be parsed as JSON */
+   case BSON_TYPE_BINARY:
       ASSERT (!bson_new_from_json ((uint8_t *) test->str, test->str_len, NULL));
       break;
    case BSON_TYPE_DECIMAL128: {
@@ -251,7 +252,6 @@ test_bson_corpus_parse_error (test_bson_parse_error_type_t *test)
    case BSON_TYPE_UTF8:
    case BSON_TYPE_DOCUMENT:
    case BSON_TYPE_ARRAY:
-   case BSON_TYPE_BINARY:
    case BSON_TYPE_UNDEFINED:
    case BSON_TYPE_OID:
    case BSON_TYPE_BOOL:
