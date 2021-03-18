@@ -114,12 +114,22 @@ _add_ismaster (bson_t *cmd, const mongoc_server_api_t *api)
 }
 
 static void
-_reset_ismaster (mongoc_topology_scanner_t *ts)
+_init_ismaster (mongoc_topology_scanner_t *ts)
 {
    bson_init (&ts->ismaster_cmd);
-   _add_ismaster (&ts->ismaster_cmd, ts->api);
    bson_init (&ts->ismaster_cmd_with_handshake);
    bson_init (&ts->cluster_time);
+
+   _add_ismaster (&ts->ismaster_cmd, ts->api);
+}
+
+static void
+_reset_ismaster (mongoc_topology_scanner_t *ts)
+{
+   bson_reinit (&ts->ismaster_cmd);
+   bson_reinit (&ts->ismaster_cmd_with_handshake);
+
+   _add_ismaster (&ts->ismaster_cmd, ts->api);
 }
 
 const char *
@@ -370,7 +380,7 @@ mongoc_topology_scanner_new (
    /* may be overridden for testing. */
    ts->dns_cache_timeout_ms = DNS_CACHE_TIMEOUT_MS;
 
-   _reset_ismaster (ts);
+   _init_ismaster (ts);
 
    return ts;
 }
