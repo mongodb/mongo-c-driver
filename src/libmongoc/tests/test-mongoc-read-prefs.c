@@ -7,7 +7,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/mock-rs.h"
 #include "test-conveniences.h"
-
+#include "test-libmongoc.h"
 
 static bool
 _can_be_command (const char *query)
