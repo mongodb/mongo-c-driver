@@ -419,10 +419,7 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    bson_destroy (&ts->ismaster_cmd);
    bson_destroy (&ts->ismaster_cmd_with_handshake);
    bson_destroy (&ts->cluster_time);
-
-   if (ts->api) {
-      mongoc_server_api_destroy (ts->api);
-   }
+   mongoc_server_api_destroy (ts->api);
 
    /* This field can be set by a mongoc_client */
    bson_free ((char *) ts->appname);
@@ -1354,15 +1351,10 @@ void
 _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
                                          const mongoc_server_api_t *api)
 {
-   mongoc_server_api_t *prev_api;
-
+   BSON_ASSERT (ts);
    BSON_ASSERT (api);
 
-   prev_api = ts->api;
+   mongoc_server_api_destroy (ts->api);
    ts->api = mongoc_server_api_copy (api);
    _reset_ismaster (ts);
-
-   if (prev_api) {
-      mongoc_server_api_destroy (prev_api);
-   }
 }
