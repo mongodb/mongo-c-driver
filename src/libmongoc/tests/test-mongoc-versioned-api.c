@@ -126,8 +126,8 @@ _test_mongoc_server_api_client_pool (void)
    ASSERT (!mongoc_client_set_server_api (client, api, &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_API_ALREADY_SET,
-                          "Cannot set server api more than once");
+                          MONGOC_ERROR_CLIENT_API_FROM_POOL,
+                          "Cannot set server api on a client checked out from a pool");
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
@@ -163,8 +163,8 @@ _test_mongoc_server_api_client_pool_once (void)
    ASSERT (!mongoc_client_set_server_api (client, api, &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_API_ALREADY_SET,
-                          "Cannot set server api more than once");
+                          MONGOC_ERROR_CLIENT_API_FROM_POOL,
+                          "Cannot set server api on a client checked out from a pool");
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);

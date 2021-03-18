@@ -97,6 +97,7 @@ struct _mongoc_client_t {
    mongoc_uri_t *uri;
    mongoc_cluster_t cluster;
    bool in_exhaust;
+   bool is_pooled;
 
    mongoc_stream_initiator_t initiator;
    void *initiator_data;
@@ -119,7 +120,6 @@ struct _mongoc_client_t {
    bool error_api_set;
 
    mongoc_server_api_t *api;
-   bool api_set;
 
    /* mongoc_client_session_t's in use, to look up lsids and clusterTimes */
    mongoc_set_t *client_sessions;

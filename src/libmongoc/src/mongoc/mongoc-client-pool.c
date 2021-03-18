@@ -51,6 +51,7 @@ struct _mongoc_client_pool_t {
    int32_t error_api_version;
    bool error_api_set;
    mongoc_server_api_t *api;
+   bool client_initialized;
 };
 
 
@@ -240,12 +241,13 @@ _initialize_new_client (mongoc_client_pool_t *pool, mongoc_client_t *client)
       pool->topology->scanner->initiator,
       pool->topology->scanner->initiator_context);
 
+   pool->client_initialized = true;
+   client->is_pooled = true;
    client->error_api_version = pool->error_api_version;
    _mongoc_client_set_apm_callbacks_private (
       client, &pool->apm_callbacks, pool->apm_context);
 
    client->api = mongoc_server_api_copy (pool->api);
-   client->api_set = true;
 
 #ifdef MONGOC_ENABLE_SSL
    if (pool->ssl_opts_set) {
@@ -529,7 +531,7 @@ mongoc_client_pool_set_server_api (mongoc_client_pool_t *pool,
       return false;
    }
 
-   if (mongoc_client_pool_get_size (pool)) {
+   if (pool->client_initialized) {
       bson_set_error (error,
                       MONGOC_ERROR_POOL,
                       MONGOC_ERROR_POOL_API_TOO_LATE,
