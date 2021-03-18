@@ -21,7 +21,7 @@ test_create_bucket (void)
    bson_t *opts;
    char *dbname;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    dbname = gen_collection_name ("test");
@@ -103,7 +103,7 @@ _test_upload_and_download (bson_t *create_index_cmd)
 
    str = "This is a test sentence with multiple chunks.";
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    ASSERT (client);
 
@@ -815,7 +815,7 @@ test_gridfs_cb (bson_t *scenario)
 
    /* Make a gridfs on generated db */
    dbname = gen_collection_name ("test");
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    db = mongoc_client_get_database (client, dbname);
    gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
 
@@ -871,7 +871,7 @@ test_upload_error (void *ctx)
    bson_error_t error = {0};
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    db = mongoc_client_get_database (client, "test");
    gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
    source = mongoc_stream_file_new_for_path (
@@ -897,7 +897,7 @@ test_upload_error (void *ctx)
    uri = test_framework_get_uri ();
    mongoc_uri_set_username (uri, "fake_user");
    mongoc_uri_set_password (uri, "password");
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    test_framework_set_ssl_opts (client);
    mongoc_uri_destroy (uri);
 
@@ -930,7 +930,7 @@ test_find_w_session (void *ctx)
    mongoc_client_session_t *session;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    db = mongoc_client_get_database (client, "test");
    gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
    session = mongoc_client_start_session (client, NULL, &error);
@@ -964,7 +964,7 @@ test_gridfs_bucket_opts (void)
    bson_t *opts;
    char *bucket_name;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    db = mongoc_client_get_database (client, "test");
 
    /* check defaults. */

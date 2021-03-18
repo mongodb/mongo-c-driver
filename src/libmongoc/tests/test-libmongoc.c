@@ -1391,7 +1391,7 @@ test_framework_uri_apply_multi_mongos (mongoc_uri_t *uri,
       goto done;
    }
 
-   /* TODO: Once CDRIVER-3285 is resolved, update this to no longer hardcode the
+   /* TODO Once CDRIVER-3285 is resolved, update this to no longer hardcode the
     * hosts. */
    if (use_multi) {
       if (!mongoc_uri_upsert_host_and_port (uri, "localhost:27017", error)) {
@@ -1497,7 +1497,7 @@ test_framework_replset_member_count (void)
    bson_iter_t iter, array;
    size_t count = 0;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    r = mongoc_client_command_simple (client,
                                      "admin",
                                      tmp_bson ("{'replSetGetStatus': 1}"),
@@ -1623,7 +1623,7 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_client_new --
+ * test_framework_new_default_client --
  *
  *       Get a client connected to the test MongoDB topology.
  *
@@ -1636,7 +1636,7 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
  *--------------------------------------------------------------------------
  */
 mongoc_client_t *
-test_framework_client_new ()
+test_framework_new_default_client ()
 {
    char *test_uri_str = test_framework_get_uri_str ();
    mongoc_client_t *client = mongoc_client_new (test_uri_str);
@@ -1647,6 +1647,20 @@ test_framework_client_new ()
    bson_free (test_uri_str);
 
    return client;
+}
+
+mongoc_client_t *
+test_framework_client_new (const char *uri_str)
+{
+   /* TODO CDRIVER-3917 */
+   return mongoc_client_new (uri_str);
+}
+
+mongoc_client_t *
+test_framework_client_new_from_uri (const mongoc_uri_t *uri)
+{
+   /* TODO CDRIVER-3917 */
+   return mongoc_client_new_from_uri (uri);
 }
 
 
@@ -1711,7 +1725,7 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_client_pool_new --
+ * test_framework_new_default_client_pool --
  *
  *       Get a client pool connected to the test MongoDB topology.
  *
@@ -1724,7 +1738,7 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
  *--------------------------------------------------------------------------
  */
 mongoc_client_pool_t *
-test_framework_client_pool_new ()
+test_framework_new_default_client_pool ()
 {
    mongoc_uri_t *test_uri = test_framework_get_uri ();
    mongoc_client_pool_t *pool = mongoc_client_pool_new (test_uri);
@@ -1735,6 +1749,13 @@ test_framework_client_pool_new ()
    mongoc_uri_destroy (test_uri);
    BSON_ASSERT (pool);
    return pool;
+}
+
+mongoc_client_pool_t *
+test_framework_client_pool_new (const mongoc_uri_t *uri)
+{
+   /* TODO CDRIVER-3917 */
+   return mongoc_client_pool_new (uri);
 }
 
 #ifdef MONGOC_ENABLE_SSL
@@ -2116,7 +2137,7 @@ test_framework_get_server_version (void)
    bson_error_t error;
    server_version_t ret = 0;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT_OR_PRINT (
       mongoc_client_command_simple (
          client, "admin", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error),
@@ -2367,7 +2388,7 @@ test_framework_skip_if_no_failpoint (void)
       return 0;
    }
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    ret = mongoc_client_command_simple (
       client,

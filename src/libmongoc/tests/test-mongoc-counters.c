@@ -78,7 +78,7 @@ _client_new_disable_ss (bool use_compression)
       mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_COMPRESSORS, compressors);
       bson_free (compressors);
    }
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    test_framework_set_ssl_opts (client);
    sd = mongoc_client_select_server (client, true, NULL, &err);
    ASSERT_OR_PRINT (sd, err);
@@ -301,7 +301,7 @@ test_counters_clients (void)
    mongoc_uri_set_option_as_int32 (
       uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
    reset_all_counters ();
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    BSON_ASSERT (client);
    DIFF_AND_RESET (clients_active, ==, 1);
    DIFF_AND_RESET (clients_disposed, ==, 0);
@@ -313,7 +313,7 @@ test_counters_clients (void)
    DIFF_AND_RESET (client_pools_active, ==, 0);
    DIFF_AND_RESET (client_pools_disposed, ==, 0);
    /* check client pools. */
-   client_pool = mongoc_client_pool_new (uri);
+   client_pool = test_framework_client_pool_new (uri);
    BSON_ASSERT (client_pool);
    DIFF_AND_RESET (clients_active, ==, 0);
    DIFF_AND_RESET (clients_disposed, ==, 0);
@@ -477,7 +477,7 @@ test_counters_auth (void *ctx)
    mongoc_uri_set_option_as_int32 (
       uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 99999);
    reset_all_counters ();
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    test_framework_set_ssl_opts (client);
    BSON_ASSERT (client);
    ret = mongoc_client_command_simple (
@@ -500,14 +500,14 @@ test_counters_dns (void)
    mongoc_server_description_t *sd;
    bson_error_t err;
    reset_all_counters ();
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    sd = mongoc_client_select_server (client, false, NULL, &err);
    ASSERT_OR_PRINT (sd, err);
    DIFF_AND_RESET (dns_success, >, 0);
    DIFF_AND_RESET (dns_failure, ==, 0);
    mongoc_server_description_destroy (sd);
    mongoc_client_destroy (client);
-   client = mongoc_client_new ("mongodb://invalidhostname/");
+   client = test_framework_client_new ("mongodb://invalidhostname/");
    test_framework_set_ssl_opts (client);
    sd = mongoc_client_select_server (client, false, NULL, &err);
    ASSERT (!sd);
@@ -533,7 +533,7 @@ test_counters_streams_timeout ()
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 300);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    mongoc_uri_destroy (uri);
    sd = mongoc_client_select_server (client, true, NULL, &err);
    mongoc_server_description_destroy (sd);

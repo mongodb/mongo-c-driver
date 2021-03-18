@@ -30,7 +30,7 @@ test_aggregate_write_concern (void)
       support aggregate with writeConcern and $out/$merge */
    server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    database = mongoc_client_get_database (client, "agg");
 
    /* If we run an aggregate without a terminal stage,
@@ -98,7 +98,7 @@ test_aggregate_inherit_database (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    database = mongoc_client_get_database (client, "admin");
 
    pipeline = BCON_NEW ("pipeline",
@@ -253,7 +253,7 @@ test_create_with_write_concern (void *ctx)
    capture_logs (true);
    opts = bson_new ();
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
    mongoc_client_set_error_api (client, 2);
 
@@ -334,7 +334,7 @@ test_copy (void)
    mongoc_database_t *copy;
    mongoc_client_t *client;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    database = mongoc_client_get_database (client, "test");
@@ -362,7 +362,7 @@ test_has_collection (void)
    bson_oid_t oid;
    bson_t b;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    name = gen_collection_name ("has_collection");
@@ -403,7 +403,7 @@ test_command (void)
    bson_t cmd = BSON_INITIALIZER;
    bson_t reply;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    database = mongoc_client_get_database (client, "admin");
@@ -467,10 +467,11 @@ _test_db_command_read_prefs (bool simple, bool pooled)
    mock_server_run (server);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new (mock_server_get_uri (server));
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+      client =
+         test_framework_client_new_from_uri (mock_server_get_uri (server));
    }
 
    db = mongoc_client_get_database (client, "db");
@@ -593,7 +594,7 @@ test_drop (void)
    bool r;
 
    opts = bson_new ();
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
    mongoc_client_set_error_api (client, 2);
 
@@ -682,7 +683,7 @@ test_create_collection (void)
    char *dbname;
    char *name;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -739,7 +740,7 @@ test_get_collection_info (void)
    char *capped_name;
    char *noopts_name;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -823,7 +824,7 @@ test_get_collection_info_regex (void)
    const bson_t *doc;
    char *dbname;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    dbname = gen_collection_name ("test_get_collection_info_regex");
@@ -879,7 +880,7 @@ test_get_collection_info_with_opts_regex (void)
    const bson_t *doc;
    char *dbname;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    dbname = gen_collection_name ("test_get_collection_info_regex");
@@ -933,7 +934,7 @@ _test_get_collection_info_getmore ()
 
    server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    database = mongoc_client_get_database (client, "db");
    future =
       future_database_get_collection_names_with_opts (database, NULL, NULL);
@@ -992,7 +993,7 @@ test_get_collection (void)
    mongoc_read_prefs_t *read_prefs;
    mongoc_collection_t *collection;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    database = mongoc_client_get_database (client, "test");
@@ -1045,7 +1046,7 @@ test_get_collection_names (void)
    char *name5;
    const char *system_prefix = "system.";
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -1158,7 +1159,7 @@ test_get_collection_names_error (void)
                               "{'ismaster': true,"
                               " 'maxWireVersion': 3}");
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
 
    database = mongoc_client_get_database (client, "test");
    future =
@@ -1186,7 +1187,8 @@ static void
 test_get_default_database (void)
 {
    /* default database is "db_name" */
-   mongoc_client_t *client = mongoc_client_new ("mongodb://host/db_name");
+   mongoc_client_t *client =
+      test_framework_client_new ("mongodb://host/db_name");
    mongoc_database_t *db = mongoc_client_get_default_database (client);
 
    BSON_ASSERT (!strcmp ("db_name", mongoc_database_get_name (db)));
@@ -1195,7 +1197,7 @@ test_get_default_database (void)
    mongoc_client_destroy (client);
 
    /* no default database */
-   client = mongoc_client_new ("mongodb://host/");
+   client = test_framework_client_new ("mongodb://host/");
    db = mongoc_client_get_default_database (client);
 
    BSON_ASSERT (!db);
@@ -1206,7 +1208,8 @@ test_get_default_database (void)
 static void
 test_timeout_ms (void)
 {
-   mongoc_client_t *client = mongoc_client_new ("mongodb://host/db_name");
+   mongoc_client_t *client =
+      test_framework_client_new ("mongodb://host/db_name");
    mongoc_database_t *db = mongoc_client_get_default_database (client);
    bool res;
    bson_error_t error;

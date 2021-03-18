@@ -208,7 +208,7 @@ test_mongohouse_kill_cursors ()
    const bson_t *doc;
 
    uri = mongoc_uri_new (uri_str);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    BSON_ASSERT (client);
 
    test.cursor_ns = NULL;
@@ -261,7 +261,7 @@ _run_ping_test (const char *connection_string)
    bool res;
 
    uri = mongoc_uri_new (connection_string);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    BSON_ASSERT (client);
 
    res = mongoc_client_command_simple (

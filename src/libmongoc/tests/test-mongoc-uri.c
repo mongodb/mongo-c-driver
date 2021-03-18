@@ -542,7 +542,7 @@ test_mongoc_uri_functions (void)
    ASSERT_CMPSTR (mongoc_uri_get_database (uri),
                   "longer database that should work");
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    mongoc_uri_destroy (uri);
 
    ASSERT_CMPSTR (mongoc_uri_get_username (client->uri),
@@ -623,7 +623,7 @@ test_mongoc_uri_functions (void)
    /* tls isn't set, return out fallback */
    ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLS, true));
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    mongoc_uri_destroy (uri);
 
    ASSERT (
@@ -668,7 +668,7 @@ test_mongoc_uri_functions (void)
                      uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 0));
 
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    ASSERT_CMPINT (2, ==, client->cluster.sockettimeoutms);
    ASSERT_CMPINT (202, ==, client->cluster.socketcheckintervalms);
 
@@ -679,7 +679,7 @@ test_mongoc_uri_functions (void)
    uri = mongoc_uri_new ("mongodb://host/dbname0");
    ASSERT_CMPSTR (mongoc_uri_get_database (uri), "dbname0");
    mongoc_uri_set_database (uri, "dbname1");
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    db = mongoc_client_get_default_database (client);
    ASSERT_CMPSTR (mongoc_database_get_name (db), "dbname1");
 
@@ -924,11 +924,12 @@ test_mongoc_host_list_from_string (void)
                         "Could not parse address");
 
    capture_logs (true);
-   ASSERT (!_mongoc_host_list_from_string (&host_list, "[::1]extra_chars:27017"));
+   ASSERT (
+      !_mongoc_host_list_from_string (&host_list, "[::1]extra_chars:27017"));
    ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
                         MONGOC_LOG_LEVEL_ERROR,
                         "If present, port should immediately follow the \"]\""
-                           "in an IPv6 address");
+                        "in an IPv6 address");
 
    /* normal parsing, host and port are split, host is downcased */
    ASSERT (_mongoc_host_list_from_string (&host_list, "localHOST:27019"));
@@ -2730,16 +2731,18 @@ test_one_tls_option_enables_tls ()
 static void
 test_casing_options ()
 {
-   mongoc_uri_t* uri;
+   mongoc_uri_t *uri;
    bson_error_t error;
 
-   uri = mongoc_uri_new("mongodb://localhost:27017/");
+   uri = mongoc_uri_new ("mongodb://localhost:27017/");
    mongoc_uri_set_option_as_bool (uri, "TLS", true);
-   mongoc_uri_parse_options(uri, "ssl=false", false, &error);
-   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG,
+   mongoc_uri_parse_options (uri, "ssl=false", false, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "conflicts");
 
-   mongoc_uri_destroy(uri);
+   mongoc_uri_destroy (uri);
 }
 
 void
@@ -2775,5 +2778,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/Uri/one_tls_option_enables_tls",
                   test_one_tls_option_enables_tls);
-   TestSuite_Add(suite, "/Uri/options_casing", test_casing_options);
+   TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
 }

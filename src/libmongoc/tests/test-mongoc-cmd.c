@@ -43,7 +43,7 @@ test_client_cmd_options (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
 
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_MAJORITY);

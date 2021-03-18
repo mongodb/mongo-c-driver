@@ -217,7 +217,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
 #endif
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new (uri);
 
       /* before we set SSL on so that we can connect to the test replica set,
        * assert that the URI has SSL on by default, and SSL off if "ssl=false"
@@ -233,7 +233,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       mongoc_client_pool_set_apm_callbacks (pool, callbacks, &ctx);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri);
       BSON_ASSERT (mongoc_uri_get_tls (client->uri) == expect_ssl);
 #ifdef MONGOC_ENABLE_SSL
       mongoc_client_set_ssl_opts (client, &ssl_opts);
@@ -317,7 +317,7 @@ test_null_error_pointer (void *ctx)
 {
    mongoc_client_t *client;
 
-   client = mongoc_client_new ("mongodb+srv://doesntexist.example.com");
+   client = test_framework_client_new ("mongodb+srv://doesntexist.example.com");
    ASSERT (!mongoc_topology_select_server_id (client->topology,
                                               MONGOC_SS_READ,
                                               NULL /* read prefs */,

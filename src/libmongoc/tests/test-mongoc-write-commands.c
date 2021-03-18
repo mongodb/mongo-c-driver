@@ -31,7 +31,7 @@ test_split_insert (void)
    int i;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_split_insert");
@@ -108,7 +108,7 @@ test_invalid_write_concern (void)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_invalid_write_concern");
@@ -177,7 +177,7 @@ test_bypass_validation (void *context)
    int r;
    int i;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    dbname = gen_collection_name ("dbtest");
@@ -301,7 +301,7 @@ test_bypass_not_sent ()
    char *collname;
    char *dbname;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    /* set up command monitoring for started commands */
    callbacks = mongoc_apm_callbacks_new ();
@@ -411,7 +411,7 @@ test_split_opquery_with_options (void)
       docs[i] = BCON_NEW ("_id", BCON_INT64 (i));
    }
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    coll = mongoc_client_get_collection (client, "db", "coll");
 
    /* Add a write concern, to ensure that it is taken into account during
@@ -487,7 +487,7 @@ test_opmsg_disconnect_mid_batch_helper (int wire_version)
       docs[i] = BCON_NEW ("_id", BCON_INT64 (i));
    }
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "db", "coll");
 
@@ -544,7 +544,7 @@ test_w0_legacy_insert_many (void)
    docs[0] = BCON_NEW ("x", BCON_INT32 (1));
    docs[1] = BCON_NEW ("x", BCON_INT32 (2));
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    coll = mongoc_client_get_collection (client, "db", "coll");
 
    /* Add unacknowldged write concern */
@@ -602,7 +602,7 @@ _test_invalid_wc_server_error (void *unused)
    bson_t reply;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = get_test_collection (client, "server_wc_error");
 

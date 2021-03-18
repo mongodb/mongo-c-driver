@@ -53,7 +53,7 @@ test_session_no_crypto (void *ctx)
    mongoc_client_t *client;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (!mongoc_client_start_session (client, NULL, &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
@@ -87,10 +87,10 @@ _test_session_pool_lifo (bool pooled)
    bson_error_t error;
 
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = test_framework_new_default_client_pool ();
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
    }
 
    a = mongoc_client_start_session (client, NULL, &error);
@@ -167,10 +167,10 @@ _test_session_pool_timeout (bool pooled)
       (test_framework_session_timeout_minutes () - 1) * 60 * 1000 * 1000;
 
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = test_framework_new_default_client_pool ();
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
    }
 
    /*
@@ -267,10 +267,10 @@ _test_session_pool_reap (bool pooled)
       (test_framework_session_timeout_minutes () - 1) * 60 * 1000 * 1000;
 
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = test_framework_new_default_client_pool ();
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
    }
 
    /*
@@ -355,7 +355,7 @@ test_session_id_bad (void *ctx)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    for (bad_opt = bad_opts; *bad_opt; bad_opt++) {
       r = mongoc_client_read_command_with_opts (client,
                                                 "admin",
@@ -386,10 +386,10 @@ _test_session_supported (bool pooled)
    mongoc_client_session_t *session;
 
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = test_framework_new_default_client_pool ();
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
    }
 
    if (test_framework_session_timeout_minutes () == -1) {
@@ -446,10 +446,11 @@ _test_mock_end_sessions (bool pooled)
    mock_server_run (server);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new (mock_server_get_uri (server));
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+      client =
+         test_framework_client_new_from_uri (mock_server_get_uri (server));
    }
 
    session = mongoc_client_start_session (client, NULL, &error);
@@ -523,7 +524,7 @@ test_mock_end_sessions_server_disconnect (void)
    server = mock_mongos_new (WIRE_VERSION_OP_MSG);
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
 
    for (i = 0; i < 12000; i++) {
       session[i] = mongoc_client_start_session (client, NULL, &error);
@@ -610,13 +611,13 @@ endsessions_test_init (endsessions_test_t *test, bool pooled)
    mongoc_apm_set_command_succeeded_cb (callbacks, endsessions_succeeded_cb);
 
    if (pooled) {
-      test->pool = test_framework_client_pool_new ();
+      test->pool = test_framework_new_default_client_pool ();
       ASSERT (
          mongoc_client_pool_set_apm_callbacks (test->pool, callbacks, test));
       test->client = mongoc_client_pool_pop (test->pool);
    } else {
       test->pool = NULL;
-      test->client = test_framework_client_new ();
+      test->client = test_framework_new_default_client ();
       ASSERT (mongoc_client_set_apm_callbacks (test->client, callbacks, test));
    }
 
@@ -769,17 +770,12 @@ send_ping (mongoc_client_t *client, mongoc_client_session_t *client_session)
    BCON_APPEND (&ping_cmd, "ping", BCON_INT32 (1));
 
    ret = mongoc_client_session_append (client_session, &opts, &error);
-   ASSERT_OR_PRINT(ret, error);
-
-   ret = mongoc_client_command_with_opts (client,
-                                          "admin",
-                                          &ping_cmd,
-                                          NULL,
-                                          &opts,
-                                          NULL,
-                                          &error);
    ASSERT_OR_PRINT (ret, error);
-   bson_destroy(&opts);
+
+   ret = mongoc_client_command_with_opts (
+      client, "admin", &ping_cmd, NULL, &opts, NULL, &error);
+   ASSERT_OR_PRINT (ret, error);
+   bson_destroy (&opts);
    bson_destroy (&ping_cmd);
 }
 
@@ -877,7 +873,7 @@ test_session_advance_cluster_time (void *ctx)
    bson_error_t error;
    mongoc_client_session_t *cs;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    cs = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (cs, error);
    BSON_ASSERT (!mongoc_client_session_get_cluster_time (cs));
@@ -945,7 +941,7 @@ test_session_advance_operation_time (void *ctx)
    mongoc_client_session_t *cs;
    uint32_t t, i;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    cs = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (cs, error);
    mongoc_client_session_get_operation_time (cs, &t, &i);
@@ -1183,7 +1179,7 @@ session_test_new (session_test_correct_t correct_client,
    bson_init (&test->received_cluster_time);
    bson_init (&test->sent_lsid);
 
-   test->session_client = test_framework_client_new ();
+   test->session_client = test_framework_new_default_client ();
    mongoc_client_set_error_api (test->session_client, 2);
    test->session_db = mongoc_client_get_database (test->session_client, "db");
    test->session_collection =
@@ -1198,7 +1194,7 @@ session_test_new (session_test_correct_t correct_client,
    } else {
       /* test each function with a session from the correct client and a session
        * from the wrong client */
-      test->client = test_framework_client_new ();
+      test->client = test_framework_new_default_client ();
       mongoc_client_set_error_api (test->client, 2);
       test->wrong_cs = mongoc_client_start_session (test->client, NULL, &error);
       ASSERT_OR_PRINT (test->wrong_cs, error);
@@ -2619,7 +2615,7 @@ _test_session_dirty_helper (bool retry_succeeds)
 
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    test_framework_set_ssl_opts (client);
    session = mongoc_client_start_session (client, NULL /* opts */, &error);
    ASSERT_OR_PRINT (session, error);

@@ -66,7 +66,7 @@ test_find_and_modify_bypass (bool bypass)
    server = mock_server_new ();
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    ASSERT (client);
 
    collection =
@@ -161,7 +161,7 @@ test_find_and_modify_write_concern (int wire_version)
    server = mock_server_new ();
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    ASSERT (client);
 
    collection =
@@ -240,7 +240,7 @@ test_find_and_modify_write_concern_wire_32_failure (void *context)
    bool success;
    mongoc_write_concern_t *wc;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "writeFailure");
    wc = mongoc_write_concern_new ();
 
@@ -309,7 +309,7 @@ test_find_and_modify (void)
    bson_t reply;
    mongoc_find_and_modify_opts_t *opts;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    collection = get_test_collection (client, "test_find_and_modify");
@@ -387,7 +387,7 @@ test_find_and_modify_opts (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    opts = mongoc_find_and_modify_opts_new ();
@@ -440,7 +440,7 @@ test_find_and_modify_opts_write_concern (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_FAM_WRITE_CONCERN);
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    opts = mongoc_find_and_modify_opts_new ();
@@ -498,7 +498,7 @@ test_find_and_modify_collation (int wire)
    server = mock_server_with_autoismaster (wire);
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
 
 
@@ -569,7 +569,7 @@ test_find_and_modify_hint (void)
    bool ret;
 
    /* Test setting a hint as a string. Should fail on server < 4.2. */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = get_test_collection (client, "fam_hint");
    opts = mongoc_find_and_modify_opts_new ();

@@ -1051,7 +1051,7 @@ insert_data (const char *db_name,
    bson_t *majority = tmp_bson ("{'writeConcern': {'w': 'majority'}}");
 
    /* use a fresh client to prepare the collection */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    db = mongoc_client_get_database (client, db_name);
    collection = mongoc_database_get_collection (db, collection_name);
@@ -1210,7 +1210,7 @@ execute_test (const json_test_config_t *config,
 
    if (bson_has_field (test, "outcome.collection")) {
       /* Use a fresh client to check the outcome collection. */
-      outcome_client = test_framework_client_new ();
+      outcome_client = test_framework_new_default_client ();
       if (bson_has_field (test, "outcome.collection.name")) {
          outcome_coll = mongoc_client_get_collection (
             outcome_client,
