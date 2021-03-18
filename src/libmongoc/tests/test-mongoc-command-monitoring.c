@@ -133,7 +133,7 @@ test_get_error (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_failed_cb (callbacks, test_get_error_failed_cb);
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &error);
@@ -230,7 +230,7 @@ test_change_callbacks (void)
    inc_callbacks = increment_callbacks ();
    dec_callbacks = decrement_callbacks ();
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_apm_callbacks (client, inc_callbacks, &incremented);
 
    collection = get_test_collection (client, "test_change_callbacks");
@@ -281,7 +281,7 @@ test_reset_callbacks (void)
    inc_callbacks = increment_callbacks ();
    dec_callbacks = decrement_callbacks ();
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_reset_apm_callbacks");
 
    /* insert 200 docs so we have a couple batches */
@@ -353,7 +353,7 @@ _test_set_callbacks (bool pooled, bool try_pop)
    mongoc_apm_set_command_started_cb (callbacks, test_set_callbacks_cb);
 
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = test_framework_new_default_client_pool ();
       ASSERT (mongoc_client_pool_set_apm_callbacks (
          pool, callbacks, (void *) &n_calls));
       if (try_pop) {
@@ -362,7 +362,7 @@ _test_set_callbacks (bool pooled, bool try_pop)
          client = mongoc_client_pool_pop (pool);
       }
    } else {
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
       ASSERT (mongoc_client_set_apm_callbacks (
          client, callbacks, (void *) &n_calls));
    }
@@ -537,12 +537,12 @@ _test_bulk_operation_id (bool pooled, bool use_bulk_operation_new)
    mongoc_apm_set_command_failed_cb (callbacks, test_op_id_failed_cb);
 
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = test_framework_new_default_client_pool ();
       ASSERT (mongoc_client_pool_set_apm_callbacks (
          pool, callbacks, (void *) &test));
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
       ASSERT (
          mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
    }
@@ -664,12 +664,13 @@ _test_query_operation_id (bool pooled)
    mongoc_apm_set_command_failed_cb (callbacks, test_op_id_failed_cb);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new (mock_server_get_uri (server));
       ASSERT (mongoc_client_pool_set_apm_callbacks (
          pool, callbacks, (void *) &test));
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+      client =
+         test_framework_client_new_from_uri (mock_server_get_uri (server));
       ASSERT (
          mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
    }
@@ -863,7 +864,7 @@ test_client_cmd (void)
    const bson_t *reply;
 
    cmd_test_init (&test);
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    set_cmd_test_callbacks (client, (void *) &test);
    cursor = mongoc_client_command (client,
                                    "admin",
@@ -920,7 +921,7 @@ test_client_cmd_simple (void)
    bson_error_t error;
 
    cmd_test_init (&test);
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    set_cmd_test_callbacks (client, (void *) &test);
    r = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
@@ -968,7 +969,7 @@ test_client_cmd_op_ids (void)
    mongoc_apm_set_command_succeeded_cb (callbacks, test_op_id_succeeded_cb);
    mongoc_apm_set_command_failed_cb (callbacks, test_op_id_failed_cb);
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test);
 
    r = mongoc_client_command_simple (
@@ -1016,7 +1017,7 @@ test_killcursors_deprecated (void)
    bson_error_t error;
 
    cmd_test_init (&test);
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    /* connect */
    r = mongoc_client_command_simple (
@@ -1097,7 +1098,7 @@ test_command_failed_reply_mock (void)
    mongoc_apm_set_command_failed_cb (callbacks,
                                      command_failed_reply_command_failed_cb);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -1154,7 +1155,7 @@ test_command_failed_reply_hangup (void)
    mongoc_apm_set_command_failed_cb (callbacks,
                                      command_failed_reply_command_failed_cb);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db", "collection");

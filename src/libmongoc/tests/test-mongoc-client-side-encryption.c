@@ -29,7 +29,7 @@ _before_test (json_test_ctx_t *ctx, const bson_t *test)
    bson_t insert_opts;
 
    /* Insert data into the key vault. */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_wmajority (wc, 1000);
    bson_init (&insert_opts);
@@ -272,7 +272,7 @@ test_bson_size_limits_and_batch_splitting (void *unused)
 
    /* Drop and create db.coll configured with limits-schema.json */
    uri = test_framework_get_uri ();
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    test_framework_set_ssl_opts (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "db", "coll");
@@ -305,7 +305,7 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    test_framework_set_ssl_opts (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
 
@@ -486,9 +486,10 @@ test_datakey_and_double_encryption_creating_and_using (
                    "'keyName': 'key-name-csfle'}"));
    } else if (0 == strcmp (kms_provider, "gcp")) {
       mongoc_client_encryption_datakey_opts_set_masterkey (
-         opts, tmp_bson ("{'projectId': 'devprod-drivers','location': "
-                         "'global','keyRing': 'key-ring-csfle','keyName': "
-                         "'key-name-csfle'}"));
+         opts,
+         tmp_bson ("{'projectId': 'devprod-drivers','location': "
+                   "'global','keyRing': 'key-ring-csfle','keyName': "
+                   "'key-name-csfle'}"));
    }
 
    altname = bson_strdup_printf ("%s_altname", kms_provider);
@@ -628,7 +629,7 @@ test_datakey_and_double_encryption (void *unused)
    /* Test setup */
    /* Create a MongoClient without encryption enabled (referred to as client).
     * Enable command monitoring to listen for command_started events. */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (
       callbacks, _datakey_and_double_encryption_command_started);
@@ -657,7 +658,7 @@ test_datakey_and_double_encryption (void *unused)
    mongoc_auto_encryption_opts_set_schema_map (auto_encryption_opts,
                                                schema_map);
 
-   client_encrypted = test_framework_client_new ();
+   client_encrypted = test_framework_new_default_client ();
    ret = mongoc_client_enable_auto_encryption (
       client_encrypted, auto_encryption_opts, &error);
    ASSERT_OR_PRINT (ret, error);
@@ -721,11 +722,11 @@ _test_key_vault (bool with_external_key_vault)
    external_uri = test_framework_get_uri ();
    mongoc_uri_set_username (external_uri, "fake-user");
    mongoc_uri_set_password (external_uri, "fake-pwd");
-   client_external = mongoc_client_new_from_uri (external_uri);
+   client_external = test_framework_client_new_from_uri (external_uri);
    test_framework_set_ssl_opts (client_external);
 
    /* Using client, drop the collections keyvault.datakeys and db.coll. */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    coll = mongoc_client_get_collection (client, "db", "coll");
    (void) mongoc_collection_drop (coll, NULL);
    mongoc_collection_destroy (coll);
@@ -744,7 +745,7 @@ _test_key_vault (bool with_external_key_vault)
    mongoc_collection_destroy (coll);
 
    /* Create a MongoClient configured with auto encryption. */
-   client_encrypted = test_framework_client_new ();
+   client_encrypted = test_framework_new_default_client ();
    mongoc_client_set_error_api (client_encrypted, MONGOC_ERROR_API_VERSION_2);
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
    _check_bypass (auto_encryption_opts);
@@ -858,7 +859,7 @@ test_views_are_prohibited (void *unused)
    mongoc_auto_encryption_opts_t *auto_encryption_opts;
    bson_t *kms_providers;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    /* Using client, drop and create a view named db.view with an empty pipeline.
     * E.g. using the command { "create": "view", "viewOn": "coll" }. */
@@ -873,7 +874,7 @@ test_views_are_prohibited (void *unused)
       &error);
    ASSERT_OR_PRINT (res, error);
 
-   client_encrypted = test_framework_client_new ();
+   client_encrypted = test_framework_new_default_client ();
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
    _check_bypass (auto_encryption_opts);
    kms_providers = _make_kms_providers (false /* aws */, true /* local */);
@@ -1002,7 +1003,7 @@ test_custom_endpoint (void *unused)
    bson_value_t ciphertext;
    mongoc_client_encryption_encrypt_opts_t *encrypt_opts;
 
-   keyvault_client = test_framework_client_new ();
+   keyvault_client = test_framework_new_default_client ();
 
    datakey_opts = mongoc_client_encryption_datakey_opts_new ();
    test.value_type = BSON_TYPE_UTF8;
@@ -1526,7 +1527,7 @@ _test_corpus (bool local_schema)
    bson_t *schema_map;
 
    /* Create a MongoClient without encryption enabled */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    coll = mongoc_client_get_collection (client, "db", "coll");
    (void) mongoc_collection_drop (coll, NULL);
    schema = get_bson_from_json_file ("./src/libmongoc/tests/"
@@ -1571,7 +1572,7 @@ _test_corpus (bool local_schema)
                       "corpus/corpus-key-local.json");
 
    /* Create a MongoClient configured with auto encryption */
-   client_encrypted = test_framework_client_new ();
+   client_encrypted = test_framework_new_default_client ();
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
    mongoc_auto_encryption_opts_set_schema_map (auto_encryption_opts,
                                                schema_map);
@@ -1715,9 +1716,9 @@ _reset (mongoc_client_pool_t **pool,
       bson_error_t error;
 
       uri = test_framework_get_uri ();
-      *pool = mongoc_client_pool_new (uri);
+      *pool = test_framework_client_pool_new (uri);
       test_framework_set_pool_ssl_opts (*pool);
-      *singled_threaded_client = mongoc_client_new_from_uri (uri);
+      *singled_threaded_client = test_framework_client_new_from_uri (uri);
       test_framework_set_ssl_opts (*singled_threaded_client);
       *multi_threaded_client = mongoc_client_pool_pop (*pool);
       mongoc_uri_destroy (uri);
@@ -1963,9 +1964,9 @@ _test_multi_threaded (bool external_key_vault)
    int i;
 
    uri = test_framework_get_uri ();
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new (uri);
    test_framework_set_pool_ssl_opts (pool);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    test_framework_set_ssl_opts (client);
    opts = mongoc_auto_encryption_opts_new ();
 
@@ -2046,7 +2047,7 @@ test_malformed_explicit (void *unused)
    bson_error_t error;
 
    /* Create a MongoClient without encryption enabled */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    kms_providers = _make_kms_providers (false /* aws */, true /* local */);
 
    /* Create a ClientEncryption object */
@@ -2083,7 +2084,7 @@ _check_mongocryptd_not_spawned (void)
    bson_error_t error;
    bool ret;
 
-   client = mongoc_client_new (
+   client = test_framework_client_new (
       "mongodb://localhost:27021/db?serverSelectionTimeoutMS=1000");
    cmd = BCON_NEW ("ismaster", BCON_INT32 (1));
    ret = mongoc_client_command_simple (
@@ -2123,7 +2124,7 @@ test_bypass_spawning_via_mongocryptdBypassSpawn (void *unused)
    schema_map = BCON_NEW ("db.coll", BCON_DOCUMENT (schema));
 
    /* Create a MongoClient with encryption enabled */
-   client_encrypted = test_framework_client_new ();
+   client_encrypted = test_framework_new_default_client ();
    extra =
       BCON_NEW ("mongocryptdBypassSpawn",
                 BCON_BOOL (true),
@@ -2186,7 +2187,7 @@ test_bypass_spawning_via_bypassAutoEncryption (void *unused)
                                                            true);
 
    /* Create a MongoClient with encryption enabled */
-   client_encrypted = test_framework_client_new ();
+   client_encrypted = test_framework_new_default_client ();
    extra = BCON_NEW ("mongocryptdSpawnArgs",
                      "[",
                      "--pidfilepath=bypass-spawning-mongocryptd.pid",

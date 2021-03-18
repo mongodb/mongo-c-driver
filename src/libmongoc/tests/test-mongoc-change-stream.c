@@ -117,7 +117,7 @@ test_change_stream_pipeline (void)
    server = mock_server_with_autoismaster (5);
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    ASSERT (client);
 
    coll = mongoc_client_get_collection (client, "db", "coll");
@@ -236,7 +236,7 @@ static void
 test_change_stream_live_single_server (void *test_ctx)
 {
    /* Temporarily skip on arm64 until mongod tested against is updated */
-   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_collection_t *coll;
    bson_error_t error;
    mongoc_change_stream_t *stream;
@@ -332,7 +332,7 @@ test_change_stream_live_track_resume_token (void *test_ctx)
    bson_t doc0_rt, doc1_rt, doc2_rt;
    const bson_t *resume_token;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -463,7 +463,7 @@ test_change_stream_live_batch_size (void *test_ctx)
    bson_error_t err;
    uint32_t i;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -537,7 +537,7 @@ _test_resume_token_error (const char *id_projection)
    mongoc_write_concern_t *wc = mongoc_write_concern_new ();
    bson_t opts = BSON_INITIALIZER;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
 
@@ -617,7 +617,7 @@ _test_getmore_error (const char *server_reply,
 
    server = mock_server_with_autoismaster (5);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    coll = mongoc_client_get_collection (client, "db", "coll");
    future = future_collection_watch (coll, tmp_bson ("{}"), NULL);
    request = mock_server_receives_command (
@@ -749,7 +749,7 @@ test_change_stream_resumable_error (void)
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 100);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "db", "coll");
 
@@ -917,7 +917,7 @@ test_change_stream_options (void)
    server = mock_server_with_autoismaster (5);
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    ASSERT (client);
 
    coll = mongoc_client_get_collection (client, "db", "coll");
@@ -1000,7 +1000,7 @@ test_change_stream_options (void)
 static void
 test_change_stream_live_watch (void *test_ctx)
 {
-   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    bson_t *inserted_doc = tmp_bson ("{ 'x': 'y'}");
    const bson_t *next_doc = NULL;
    mongoc_collection_t *coll;
@@ -1088,7 +1088,7 @@ test_change_stream_live_read_prefs (void *test_ctx)
     */
 
    mongoc_read_prefs_t *prefs;
-   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
    mongoc_cursor_t *raw_cursor;
@@ -1152,7 +1152,8 @@ test_change_stream_server_selection_fails (void)
 {
    const bson_t *bson;
    bson_error_t err;
-   mongoc_client_t *client = mongoc_client_new ("mongodb://localhost:12345/");
+   mongoc_client_t *client =
+      test_framework_client_new ("mongodb://localhost:12345/");
    mongoc_collection_t *coll =
       mongoc_client_get_collection (client, "test", "test");
    mongoc_change_stream_t *cs =
@@ -1174,7 +1175,7 @@ test_change_stream_server_selection_fails (void)
 static void
 test_change_stream_next_after_error (void *test_ctx)
 {
-   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
    const bson_t *bson;
@@ -1219,7 +1220,7 @@ _accepts_array_started (const mongoc_apm_command_started_t *event)
 static void
 test_change_stream_accepts_array (void *test_ctx)
 {
-   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_apm_callbacks_t *callbacks = mongoc_apm_callbacks_new ();
    array_started_ctx_t ctx = {0};
    mongoc_collection_t *coll;
@@ -1296,7 +1297,7 @@ test_change_stream_accepts_array (void *test_ctx)
 void
 test_change_stream_start_at_operation_time (void *test_ctx)
 {
-   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
    const bson_t *doc;
@@ -1397,7 +1398,7 @@ _resume_at_optime_succeeded (const mongoc_apm_command_succeeded_t *event)
 static void
 test_change_stream_resume_at_optime (void *test_ctx)
 {
-   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
    const bson_t *doc;
@@ -1484,7 +1485,7 @@ _resume_with_post_batch_resume_token_succeeded (
 static void
 test_change_stream_resume_with_post_batch_resume_token (void *test_ctx)
 {
-   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
    const bson_t *doc;
@@ -1519,7 +1520,7 @@ test_change_stream_resume_with_post_batch_resume_token (void *test_ctx)
 void
 test_change_stream_database_watch (void *test_ctx)
 {
-   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_database_t *db;
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
@@ -1552,7 +1553,7 @@ test_change_stream_database_watch (void *test_ctx)
 void
 test_change_stream_client_watch (void *test_ctx)
 {
-   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
    const bson_t *doc;
@@ -1838,7 +1839,7 @@ _test_resume (const char *opts,
 
    server = mock_server_with_autoismaster (7);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "db", "coll");
    future = future_collection_watch (coll, tmp_bson ("{}"), tmp_bson (opts));
@@ -2098,7 +2099,7 @@ test_error_null_doc (void *ctx)
    const bson_t *error_doc =
       tmp_bson ("{}"); /* assign to a non-zero address. */
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    stream = mongoc_client_watch (client, tmp_bson ("{}"), NULL);
    /* error_doc starts as non-NULL. */
    BSON_ASSERT (error_doc);
@@ -2136,7 +2137,7 @@ prose_test_11 (void *ctx)
    const bson_t *resume_token;
    _data_change_stream_t *post_batch_expected;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    coll = drop_and_get_coll (client, "db", "coll_resume");
@@ -2198,7 +2199,7 @@ prose_test_12 (void *ctx)
    bson_t expected_token;
    bson_t expected_doc;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    coll = drop_and_get_coll (client, "db", "coll_resume");
@@ -2270,7 +2271,7 @@ prose_test_13 (void *ctx)
    const bson_t *resume_token;
    bson_iter_t iter, child;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -2350,7 +2351,7 @@ _save_operation_time_from_agg (const mongoc_apm_command_succeeded_t *event)
 void
 prose_test_14 (void *test_ctx)
 {
-   mongoc_client_t *client = test_framework_client_new ();
+   mongoc_client_t *client = test_framework_new_default_client ();
    mongoc_collection_t *coll;
    mongoc_change_stream_t *stream;
    bson_t opts;
@@ -2445,7 +2446,7 @@ prose_test_17 (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
 
    coll = mongoc_client_get_collection (client, "db", "coll");
    /* Pass an arbitrary document as the resume token, like {'x': 1} */
@@ -2521,7 +2522,7 @@ prose_test_18 (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
 
    coll = mongoc_client_get_collection (client, "db", "coll");
    /* Pass an arbitrary document as the resume token, like {'x': 1} */

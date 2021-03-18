@@ -467,7 +467,7 @@ _test_write_concern_wire_version (bool allow)
       allow ? WIRE_VERSION_CMD_WRITE_CONCERN
             : WIRE_VERSION_CMD_WRITE_CONCERN - 1);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    /*
@@ -535,7 +535,7 @@ test_write_concern_unacknowledged (void)
    bson_t opts;
    const bson_t **docs;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    coll = mongoc_client_get_collection (client, "db", "coll");
 
    /* w:0 in OP_MSG is indicated by setting the moreToCome flag in OP_MSG. That
@@ -643,7 +643,7 @@ test_write_concern_inheritance_fam_txn (bool in_session, bool in_txn)
    int sent_w = MONGOC_WRITE_CONCERN_W_DEFAULT;
    bool success;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -698,7 +698,8 @@ test_write_concern_inheritance_fam_txn (bool in_session, bool in_txn)
    if (in_txn) {
       /* check that the sent write concern is not inherited */
       BSON_ASSERT (sent_w == MONGOC_WRITE_CONCERN_W_DEFAULT);
-      success = mongoc_client_session_commit_transaction (session, NULL, &error);
+      success =
+         mongoc_client_session_commit_transaction (session, NULL, &error);
       ASSERT_OR_PRINT (success, error);
    } else if (!in_session) {
       /* assert that write concern is inherited */
@@ -791,5 +792,4 @@ test_write_concern_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_sessions,
                       test_framework_skip_if_no_txns);
-
 }

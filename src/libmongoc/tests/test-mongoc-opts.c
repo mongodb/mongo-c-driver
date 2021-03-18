@@ -805,7 +805,7 @@ test_func_inherits_opts (void *ctx)
       bson_reinit (&cmd);
       bson_reinit (&opts);
 
-      client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+      client = test_framework_client_new_from_uri (mock_rs_get_uri (rs));
       if (source_matrix[i] & OPT_SOURCE_CLIENT) {
          set_client_opt (client, test->opt_type);
       }

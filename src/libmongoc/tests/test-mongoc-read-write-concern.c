@@ -246,7 +246,7 @@ errinfo_propagated (void *unused)
       "clientSupplied'}}}},'mode':{'times':1}}";
 
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ret = mongoc_client_command_simple (client,
                                        "admin",
                                        tmp_bson (failpoint),

@@ -42,7 +42,7 @@ test_with_transaction_timeout (void *ctx)
    bson_error_t error;
    bool res;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session, error);

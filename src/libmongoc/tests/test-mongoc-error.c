@@ -21,7 +21,7 @@ test_set_error_api_single (void)
    int i;
 
    capture_logs (true);
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    for (i = 0; i < sizeof (unsupported_versions) / sizeof (int32_t); i++) {
       ASSERT (!mongoc_client_set_error_api (client, unsupported_versions[i]));
@@ -43,7 +43,7 @@ test_set_error_api_pooled (void)
    int i;
 
    capture_logs (true);
-   pool = test_framework_client_pool_new ();
+   pool = test_framework_new_default_client_pool ();
 
    for (i = 0; i < sizeof (unsupported_versions) / sizeof (int32_t); i++) {
       ASSERT (
@@ -76,7 +76,7 @@ _test_command_error (int32_t error_api_version)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
 
    if (error_api_version != 0) {
       BSON_ASSERT (mongoc_client_set_error_api (client, error_api_version));

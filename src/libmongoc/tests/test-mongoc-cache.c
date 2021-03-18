@@ -41,7 +41,7 @@ ping ()
 
    uri = bson_strdup_printf ("mongodb://localhost/?tls=true&tlsCAFile=%s",
                              ca_file);
-   ASSERT ((client = mongoc_client_new (uri)));
+   ASSERT ((client = test_framework_client_new (uri)));
 
    bson_init (&ping);
    bson_append_int32 (&ping, "ping", 4, 1);
@@ -86,7 +86,7 @@ main (int argc, char *argv[])
    raise (SIGSTOP);
    ASSERT (ping () == EXIT_FAILURE);
 
-  mongoc_cleanup ();
+   mongoc_cleanup ();
 #endif
    return EXIT_SUCCESS;
 }

@@ -526,7 +526,7 @@ test_mongoc_uri_functions (void)
    ASSERT_CMPSTR (mongoc_uri_get_database (uri),
                   "longer database that should work");
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    mongoc_uri_destroy (uri);
 
    ASSERT_CMPSTR (mongoc_uri_get_username (client->uri),
@@ -571,7 +571,7 @@ test_mongoc_uri_functions (void)
    ASSERT (!mongoc_uri_get_option_as_bool (
       uri, MONGOC_URI_CANONICALIZEHOSTNAME, true));
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
 
    ASSERT (
       mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_JOURNAL, false));
@@ -615,7 +615,7 @@ test_mongoc_uri_functions (void)
                      uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 0));
 
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    ASSERT_CMPINT (2, ==, client->cluster.sockettimeoutms);
    ASSERT_CMPINT (202, ==, client->cluster.socketcheckintervalms);
 
@@ -626,7 +626,7 @@ test_mongoc_uri_functions (void)
    uri = mongoc_uri_new ("mongodb://host/dbname0");
    ASSERT_CMPSTR (mongoc_uri_get_database (uri), "dbname0");
    mongoc_uri_set_database (uri, "dbname1");
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri);
    db = mongoc_client_get_default_database (client);
    ASSERT_CMPSTR (mongoc_database_get_name (db), "dbname1");
 
@@ -2739,7 +2739,7 @@ _run_timeout_ms_deprecated_opts_tests (const char *option)
    mongoc_uri_t *uri;
    const char *msg = "in combination with timeoutMS";
    char buf[256];
-   
+
    /* Both options set through URI string */
    bson_snprintf (buf,
                 sizeof (buf),

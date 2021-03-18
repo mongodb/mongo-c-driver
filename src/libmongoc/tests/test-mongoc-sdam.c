@@ -121,7 +121,7 @@ test_sdam_cb (bson_t *test)
 
    /* parse out the uri and use it to create a client */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
-   client = mongoc_client_new (bson_iter_utf8 (&iter, NULL));
+   client = test_framework_client_new (bson_iter_utf8 (&iter, NULL));
    td = &client->topology->description;
 
    /* for each phase, parse and validate */
@@ -340,11 +340,11 @@ run_one_integration_test (json_test_config_t *config, bson_t *test)
 
    /* SDAM integration tests require streamable ismaster support, which is only
     * available for a client pool. */
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new (uri);
    mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
    test_framework_set_pool_ssl_opts (pool);
 
-   setup_client = test_framework_client_new ();
+   setup_client = test_framework_new_default_client ();
    /* Disable failpoints that may have been enabled in a previous test run. */
    deactivate_failpoints_on_all_servers (setup_client);
    mongoc_client_command_simple (setup_client,
@@ -504,7 +504,7 @@ test_topology_discovery (void *ctx)
    replset_name = test_framework_replset_name ();
    uri_str = test_framework_get_uri_str ();
 
-   client = mongoc_client_new (uri_str);
+   client = test_framework_client_new (uri_str);
    test_framework_set_ssl_opts (client);
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    sd_secondary = mongoc_client_select_server (client,
@@ -526,7 +526,7 @@ test_topology_discovery (void *ctx)
    uri_str_auth = test_framework_add_user_password_from_env (uri_str);
 
    mongoc_client_destroy (client);
-   client = mongoc_client_new (uri_str_auth);
+   client = test_framework_client_new (uri_str_auth);
    test_framework_set_ssl_opts (client);
    collection = get_test_collection (client, "sdam_dc_test");
    BSON_APPEND_UTF8 (&doc, "hello", "world");
@@ -567,7 +567,7 @@ test_direct_connection (void *ctx)
    replset_name = test_framework_replset_name ();
    uri_str = test_framework_get_uri_str ();
 
-   client = mongoc_client_new (uri_str);
+   client = test_framework_client_new (uri_str);
    test_framework_set_ssl_opts (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -590,7 +590,7 @@ test_direct_connection (void *ctx)
    uri_str_auth = test_framework_add_user_password_from_env (uri_str);
 
    mongoc_client_destroy (client);
-   client = mongoc_client_new (uri_str_auth);
+   client = test_framework_client_new (uri_str_auth);
    test_framework_set_ssl_opts (client);
    collection = get_test_collection (client, "sdam_dc_test");
    BSON_APPEND_UTF8 (&doc, "hello", "world");
@@ -631,7 +631,7 @@ test_existing_behavior (void *ctx)
    replset_name = test_framework_replset_name ();
    uri_str = test_framework_get_uri_str ();
 
-   client = mongoc_client_new (uri_str);
+   client = test_framework_client_new (uri_str);
    test_framework_set_ssl_opts (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -654,7 +654,7 @@ test_existing_behavior (void *ctx)
    uri_str_auth = test_framework_add_user_password_from_env (uri_str);
 
    mongoc_client_destroy (client);
-   client = mongoc_client_new (uri_str_auth);
+   client = test_framework_client_new (uri_str_auth);
    test_framework_set_ssl_opts (client);
    collection = get_test_collection (client, "sdam_dc_test");
    BSON_APPEND_UTF8 (&doc, "hello", "world");
@@ -728,7 +728,7 @@ test_prose_rtt (void *unused)
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks,
                                                  heartbeat_succeeded);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new (uri);
    test_framework_set_pool_ssl_opts (pool);
    memset (&ctx, 0, sizeof (prose_test_ctx_t));
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &ctx);

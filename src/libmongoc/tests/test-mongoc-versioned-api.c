@@ -17,6 +17,7 @@
 #include <mongoc/mongoc.h>
 #include "mongoc-client-private.h"
 #include "mongoc-server-api-private.h"
+#include "test-libmongoc.h"
 
 #include "unified/runner.h"
 
@@ -71,7 +72,7 @@ _test_mongoc_server_api_client (void)
    mongoc_server_api_t *api;
    bson_error_t error;
 
-   client = mongoc_client_new ("mongodb://localhost");
+   client = test_framework_client_new ("mongodb://localhost");
    BSON_ASSERT (!client->api);
 
    api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
@@ -104,7 +105,7 @@ _test_mongoc_server_api_client_pool (void)
    bson_error_t error;
 
    uri = mongoc_uri_new ("mongodb://localhost");
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new (uri);
 
    api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
 
