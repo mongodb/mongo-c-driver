@@ -963,8 +963,8 @@ _test_select_succeed (bool try_once)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
-                              "  'minWireVersion': 2,"
-                              "  'maxWireVersion': 5,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 5,"
                               " 'hosts': ['127.0.0.1:%hu', '127.0.0.1:%hu']}",
                               mock_server_get_port (primary),
                               mock_server_get_port (secondary));
@@ -1110,8 +1110,8 @@ _test_server_removed_during_handshake (bool pooled)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
-                              "  'minWireVersion': 2,"
-                              "  'maxWireVersion': 5,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 5,"
                               " 'hosts': ['%s']}",
                               mock_server_get_host_and_port (server));
 
@@ -1145,8 +1145,8 @@ _test_server_removed_during_handshake (bool pooled)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'BAD NAME',"
-                              "  'minWireVersion': 2,"
-                              "  'maxWireVersion': 5,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 5,"
                               " 'hosts': ['%s']}",
                               mock_server_get_host_and_port (server));
 
@@ -1293,8 +1293,8 @@ test_add_and_scan_failure (void)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
-                              "  'minWireVersion': 2,"
-                              "  'maxWireVersion': 5,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 5,"
                               " 'hosts': ['%s', 'fake:1']}",
                               mock_server_get_host_and_port (server));
 
@@ -1395,8 +1395,8 @@ _test_ismaster_retry_single (bool hangup, int n_failures)
    ismaster = bson_strdup_printf ("{'ok': 1,"
                                   " 'ismaster': true,"
                                   " 'setName': 'rs',"
-                                  "  'minWireVersion': 2,"
-                                  "  'maxWireVersion': 5,"
+                                  " 'minWireVersion': 2,"
+                                  " 'maxWireVersion': 5,"
                                   " 'hosts': ['%s']}",
                                   mock_server_get_host_and_port (server));
 
@@ -1491,8 +1491,8 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
    ismaster = bson_strdup_printf ("{'ok': 1,"
                                   " 'ismaster': true,"
                                   " 'setName': 'rs',"
-                                  "  'minWireVersion': 2,"
-                                  "  'maxWireVersion': 5,"
+                                  " 'minWireVersion': 2,"
+                                  " 'maxWireVersion': 5,"
                                   " 'hosts': ['%s']}",
                                   mock_server_get_host_and_port (server));
 
@@ -1986,8 +1986,8 @@ test_last_server_removed_warning (void)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
-                              "  'minWireVersion': 2,"
-                              "  'maxWireVersion': 5,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 5,"
                               " 'hosts': ['127.0.0.1:%hu']}",
                               mock_server_get_port (server));
 
@@ -2236,8 +2236,8 @@ _test_ismaster_versioned_api (bool pooled)
    ismaster = bson_strdup_printf ("{'ok': 1,"
                                   " 'ismaster': true,"
                                   " 'setName': 'rs',"
-                                  "  'minWireVersion': 2,"
-                                  "  'maxWireVersion': 5,"
+                                  " 'minWireVersion': 2,"
+                                  " 'maxWireVersion': 5,"
                                   " 'hosts': ['%s']}",
                                   mock_server_get_host_and_port (server));
 
