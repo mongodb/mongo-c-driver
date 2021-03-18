@@ -822,8 +822,6 @@ _make_aggregate_for_edc (const mongoc_collection_t *coll, bson_t *out)
    bson_t sum;
    bson_t cursor_empty;
    bson_t empty;
-   const char *keys[] = {"0", "1"};
-   int key = 0;
 
    bson_init (out);
    BSON_APPEND_UTF8 (out, "aggregate", coll->collection);
@@ -831,8 +829,7 @@ _make_aggregate_for_edc (const mongoc_collection_t *coll, bson_t *out)
    bson_append_document_end (out, &cursor_empty);
    BSON_APPEND_ARRAY_BEGIN (out, "pipeline", &pipeline);
 
-   BSON_APPEND_DOCUMENT_BEGIN (&pipeline, keys[key], &coll_stats_stage);
-   key++;
+   BSON_APPEND_DOCUMENT_BEGIN (&pipeline, "0", &coll_stats_stage);
    BSON_APPEND_DOCUMENT_BEGIN (
       &coll_stats_stage, "$collStats", &coll_stats_stage_doc);
    BSON_APPEND_DOCUMENT_BEGIN (&coll_stats_stage_doc, "count", &empty);
@@ -840,7 +837,7 @@ _make_aggregate_for_edc (const mongoc_collection_t *coll, bson_t *out)
    bson_append_document_end (&coll_stats_stage, &coll_stats_stage_doc);
    bson_append_document_end (&pipeline, &coll_stats_stage);
 
-   BSON_APPEND_DOCUMENT_BEGIN (&pipeline, keys[key], &group_stage);
+   BSON_APPEND_DOCUMENT_BEGIN (&pipeline, "1", &group_stage);
    BSON_APPEND_DOCUMENT_BEGIN (&group_stage, "$group", &group_stage_doc);
    BSON_APPEND_INT32 (&group_stage_doc, "_id", 1);
    BSON_APPEND_DOCUMENT_BEGIN (&group_stage_doc, "n", &sum);
