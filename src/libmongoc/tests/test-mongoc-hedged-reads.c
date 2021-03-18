@@ -21,6 +21,7 @@
 #include "TestSuite.h"
 #include "mock_server/mock-server.h"
 #include "mock_server/future-functions.h"
+#include "test-libmongoc.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client-test-hedged-reads"
