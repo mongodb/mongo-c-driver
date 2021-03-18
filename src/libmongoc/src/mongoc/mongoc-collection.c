@@ -823,7 +823,6 @@ _make_aggregate_for_edc (const mongoc_collection_t *coll, bson_t *out)
    bson_t cursor_empty;
    bson_t empty;
 
-   bson_init (out);
    BSON_APPEND_UTF8 (out, "aggregate", coll->collection);
    BSON_APPEND_DOCUMENT_BEGIN (out, "cursor", &cursor_empty);
    bson_append_document_end (out, &cursor_empty);
@@ -861,7 +860,7 @@ mongoc_collection_estimated_document_count (
    bool ret;
    bson_t reply_local;
    bson_t *reply_ptr;
-   bson_t cmd;
+   bson_t cmd = BSON_INITIALIZER;
    mongoc_server_stream_t *server_stream = NULL;
 
    ENTRY;
@@ -882,7 +881,6 @@ mongoc_collection_estimated_document_count (
    reply_ptr = reply ? reply : &reply_local;
    if (server_stream->sd->max_wire_version < WIRE_VERSION_4_9) {
       /* On < 4.9, use actual count command for estimatedDocumentCount */
-      bson_init (&cmd);
       BSON_APPEND_UTF8 (&cmd, "count", coll->collection);
       ret = _mongoc_client_command_with_opts (coll->client,
                                               coll->db,
@@ -911,7 +909,9 @@ mongoc_collection_estimated_document_count (
          /* Collection does not exist. From spec: return 0 but no err:
           * https://github.com/mongodb/specifications/blob/master/source/crud/crud.rst#estimateddocumentcount
           */
-         bson_set_error (error, 0, 0, "");
+         error->code = 0;
+         error->domain = 0;
+         memset (error->message, 0, strlen (error->message));
          count = 0;
          GOTO (done);
       }
