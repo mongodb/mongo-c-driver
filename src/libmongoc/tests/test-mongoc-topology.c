@@ -2218,7 +2218,7 @@ _test_ismaster_versioned_api (bool pooled)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
 
-   mongoc_server_api_version_from_string ("1", &version);
+   BSON_ASSERT (mongoc_server_api_version_from_string ("1", &version));
    api = mongoc_server_api_new (version);
 
    if (pooled) {

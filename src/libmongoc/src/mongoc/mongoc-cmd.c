@@ -1150,6 +1150,7 @@ _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out)
  *
  * Pre-conditions:
  *    - @api is initialized.
+ *    - @command_body is initialised
  *
  *--------------------------------------------------------------------------
  */
@@ -1159,6 +1160,7 @@ _mongoc_cmd_append_server_api (bson_t *command_body,
 {
    const char *string_version;
 
+   BSON_ASSERT (command_body);
    BSON_ASSERT (api);
 
    string_version = mongoc_server_api_version_to_string (api->version);
