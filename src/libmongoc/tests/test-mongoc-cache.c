@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include "TestSuite.h"
+#include "test-libmongoc.h"
 
 #ifndef SIGSTOP
 #define SIGSTOP 19
