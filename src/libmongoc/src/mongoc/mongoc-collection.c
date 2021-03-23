@@ -796,6 +796,56 @@ mongoc_collection_count_with_opts (
    RETURN (ret);
 }
 
+/* --------------------------------------------------------------------------
+ *
+ * _make_aggregate_for_edc --
+ *
+ *       Construct an aggregate pipeline with the following form:
+ *
+ *
+ *       { pipeline: [
+ *           { $collStats: { count: {} } },
+ *           { $group: { _id: 1, n: { $sum: $count } } },
+ *         ]
+ *       }
+ *
+ *--------------------------------------------------------------------------
+ */
+static void
+_make_aggregate_for_edc (const mongoc_collection_t *coll, bson_t *out)
+{
+   bson_t pipeline;
+   bson_t coll_stats_stage;
+   bson_t coll_stats_stage_doc;
+   bson_t group_stage;
+   bson_t group_stage_doc;
+   bson_t sum;
+   bson_t cursor_empty;
+   bson_t empty;
+
+   BSON_APPEND_UTF8 (out, "aggregate", coll->collection);
+   BSON_APPEND_DOCUMENT_BEGIN (out, "cursor", &cursor_empty);
+   bson_append_document_end (out, &cursor_empty);
+   BSON_APPEND_ARRAY_BEGIN (out, "pipeline", &pipeline);
+
+   BSON_APPEND_DOCUMENT_BEGIN (&pipeline, "0", &coll_stats_stage);
+   BSON_APPEND_DOCUMENT_BEGIN (
+      &coll_stats_stage, "$collStats", &coll_stats_stage_doc);
+   BSON_APPEND_DOCUMENT_BEGIN (&coll_stats_stage_doc, "count", &empty);
+   bson_append_document_end (&coll_stats_stage_doc, &empty);
+   bson_append_document_end (&coll_stats_stage, &coll_stats_stage_doc);
+   bson_append_document_end (&pipeline, &coll_stats_stage);
+
+   BSON_APPEND_DOCUMENT_BEGIN (&pipeline, "1", &group_stage);
+   BSON_APPEND_DOCUMENT_BEGIN (&group_stage, "$group", &group_stage_doc);
+   BSON_APPEND_INT32 (&group_stage_doc, "_id", 1);
+   BSON_APPEND_DOCUMENT_BEGIN (&group_stage_doc, "n", &sum);
+   BSON_APPEND_UTF8 (&sum, "$sum", "$count");
+   bson_append_document_end (&group_stage_doc, &sum);
+   bson_append_document_end (&group_stage, &group_stage_doc);
+   bson_append_document_end (&pipeline, &group_stage);
+   bson_append_array_end (out, &pipeline);
+}
 
 int64_t
 mongoc_collection_estimated_document_count (
@@ -811,10 +861,14 @@ mongoc_collection_estimated_document_count (
    bson_t reply_local;
    bson_t *reply_ptr;
    bson_t cmd = BSON_INITIALIZER;
+   mongoc_server_stream_t *server_stream = NULL;
 
    ENTRY;
 
    BSON_ASSERT_PARAM (coll);
+
+   server_stream = mongoc_cluster_stream_for_reads (
+      &coll->client->cluster, read_prefs, NULL, reply, error);
 
    if (opts && bson_has_field (opts, "sessionId")) {
       bson_set_error (error,
@@ -825,24 +879,45 @@ mongoc_collection_estimated_document_count (
    }
 
    reply_ptr = reply ? reply : &reply_local;
-   bson_append_utf8 (&cmd, "count", 5, coll->collection, coll->collectionlen);
+   if (server_stream->sd->max_wire_version < WIRE_VERSION_4_9) {
+      /* On < 4.9, use actual count command for estimatedDocumentCount */
+      BSON_APPEND_UTF8 (&cmd, "count", coll->collection);
+      ret = _mongoc_client_command_with_opts (coll->client,
+                                              coll->db,
+                                              &cmd,
+                                              MONGOC_CMD_READ,
+                                              opts,
+                                              MONGOC_QUERY_NONE,
+                                              read_prefs,
+                                              coll->read_prefs,
+                                              coll->read_concern,
+                                              coll->write_concern,
+                                              reply_ptr,
+                                              error);
+      if (ret) {
+         if (bson_iter_init_find (&iter, reply_ptr, "n")) {
+            count = bson_iter_as_int64 (&iter);
+         }
+      }
+   } else {
+      /* On >= 4.9, use aggregate with collStats for estimatedDocumentCount */
+      _make_aggregate_for_edc (coll, &cmd);
+      ret = mongoc_collection_read_command_with_opts (
+         coll, &cmd, read_prefs, opts, reply_ptr, error);
 
-   ret = _mongoc_client_command_with_opts (coll->client,
-                                           coll->db,
-                                           &cmd,
-                                           MONGOC_CMD_READ,
-                                           opts,
-                                           MONGOC_QUERY_NONE,
-                                           read_prefs,
-                                           coll->read_prefs,
-                                           coll->read_concern,
-                                           coll->write_concern,
-                                           reply_ptr,
-                                           error);
-
-   if (ret) {
-      if (bson_iter_init_find (&iter, reply_ptr, "n")) {
-         count = bson_iter_as_int64 (&iter);
+      if (error && error->code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
+         /* Collection does not exist. From spec: return 0 but no err:
+          * https://github.com/mongodb/specifications/blob/master/source/crud/crud.rst#estimateddocumentcount
+          */
+         memset (error, 0, sizeof *error);
+         count = 0;
+         GOTO (done);
+      }
+      if (ret && bson_iter_init (&iter, reply_ptr)) {
+         if (bson_iter_find_descendant (
+                &iter, "cursor.firstBatch.0.n", &iter)) {
+            count = bson_iter_as_int64 (&iter);
+         }
       }
    }
 
@@ -851,6 +926,7 @@ done:
       bson_destroy (&reply_local);
    }
    bson_destroy (&cmd);
+   mongoc_server_stream_cleanup (server_stream);
 
    RETURN (count);
 }
@@ -3380,9 +3456,8 @@ retry:
       retry_server_stream = mongoc_cluster_stream_for_writes (
          cluster, parts.assembled.session, NULL /* reply */, &ignored_error);
 
-      if (retry_server_stream &&
-          retry_server_stream->sd->max_wire_version >=
-             WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
+                                    WIRE_VERSION_RETRY_WRITES) {
          parts.assembled.server_stream = retry_server_stream;
          GOTO (retry);
       }

@@ -90,6 +90,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_RETRYABLE_WRITE_ERROR_LABEL 9
 /* first version to support server hedged reads */
 #define WIRE_VERSION_HEDGED_READS 9
+/* first version to support estimatedDocumentCount with collStats */
+#define WIRE_VERSION_4_9 12
 
 struct _mongoc_collection_t;
 

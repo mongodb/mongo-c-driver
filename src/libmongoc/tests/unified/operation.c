@@ -817,7 +817,12 @@ operation_estimated_document_count (test_t *test,
       val = bson_val_from_int64 (op_ret);
    }
 
-   result_from_val_and_reply (result, val, &op_reply, &op_error);
+   /* CDRIVER-3933 Remove special case for 0 count. */
+   if (op_ret == 0) {
+      result_from_val_and_reply (result, val, NULL, &op_error);
+   } else {
+      result_from_val_and_reply (result, val, &op_reply, &op_error);
+   }
 
    ret = true;
 done:
