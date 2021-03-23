@@ -596,6 +596,7 @@
     },
     {
       "description": "estimatedDocumentCount appends declared API version",
+      "skipReason": "DRIVERS-1561 collStats is not in API version 1",
       "runOnRequirements": [
         {
           "minServerVersion": "4.9.0"
