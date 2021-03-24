@@ -2260,37 +2260,46 @@ assert_session_transaction_state (json_test_ctx_t *ctx, const bson_t *operation)
 {
    const char *expected_state;
    const mongoc_client_session_t *session;
+   mongoc_transaction_state_t state;
+   char *state_strings[] = {"none",
+                            "starting",
+                            "in progress",
+                            "ending",
+                            "committed",
+                            "committed empty",
+                            "aborted"};
 
    expected_state = bson_lookup_utf8 (operation, "arguments.state");
    session = session_from_name (
       ctx, bson_lookup_utf8 (operation, "arguments.session"));
+   state = mongoc_client_session_get_transaction_state (session);
 
    if (!strcmp (expected_state, "none")) {
-      if (session->txn.state != MONGOC_INTERNAL_TRANSACTION_NONE) {
-         test_error ("expected session transaction state none, but have %i",
-                     session->txn.state);
+      if (state != MONGOC_INTERNAL_TRANSACTION_NONE) {
+         test_error ("expected session transaction state none, but have %s",
+                     state_strings[state]);
       }
    } else if (!strcmp (expected_state, "starting")) {
-      if (session->txn.state != MONGOC_INTERNAL_TRANSACTION_STARTING) {
-         test_error ("expected session transaction state starting, but have %i",
-                     session->txn.state);
+      if (state != MONGOC_INTERNAL_TRANSACTION_STARTING) {
+         test_error ("expected session transaction state starting, but have %s",
+                     state_strings[state]);
       }
    } else if (!strcmp (expected_state, "in_progress")) {
-      if (session->txn.state != MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS) {
+      if (state != MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS) {
          test_error (
-            "expected session transaction state in progress, but have %i",
-            session->txn.state);
+            "expected session transaction state in progress, but have %s",
+            state_strings[state]);
       }
    } else if (!strcmp (expected_state, "committed")) {
-      if (session->txn.state != MONGOC_INTERNAL_TRANSACTION_COMMITTED) {
+      if (state != MONGOC_INTERNAL_TRANSACTION_COMMITTED) {
          test_error (
-            "expected session transaction state committed, but have %i",
-            session->txn.state);
+            "expected session transaction state committed, but have %s",
+            state_strings[state]);
       }
    } else if (!strcmp (expected_state, "aborted")) {
-      if (session->txn.state != MONGOC_INTERNAL_TRANSACTION_ABORTED) {
-         test_error ("expected session transaction state aborted, but have %i",
-                     session->txn.state);
+      if (state != MONGOC_INTERNAL_TRANSACTION_ABORTED) {
+         test_error ("expected session transaction state aborted, but have %s",
+                     state_strings[state]);
       }
    } else {
       test_error ("unrecognized state %s for assertSessionTransactionState",
