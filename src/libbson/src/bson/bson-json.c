@@ -1048,7 +1048,7 @@ _bson_json_read_string (bson_json_reader_t *reader, /* IN */
       case BSON_JSON_LF_BINARY:
       case BSON_JSON_LF_TYPE:
          bson->bson_type_data.binary.is_legacy = true;
-         /* Break omitted intentionally */
+         /* FALL THROUGH */
       case BSON_JSON_LF_UUID:
          _bson_json_parse_binary_elem (reader, val_w_null, vlen);
          break;
