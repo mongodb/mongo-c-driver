@@ -38,6 +38,7 @@ API Reference
    mongoc_insert_flags_t
    mongoc_iovec_t
    mongoc_matcher_t
+   mongoc_optional_t
    mongoc_query_flags_t
    mongoc_rand
    mongoc_read_concern_t
