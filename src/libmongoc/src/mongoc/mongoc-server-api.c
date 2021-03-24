@@ -109,3 +109,10 @@ mongoc_server_api_get_strict (const mongoc_server_api_t *api)
    BSON_ASSERT (api);
    return &api->strict;
 }
+
+mongoc_server_api_version_t
+mongoc_server_api_get_version (const mongoc_server_api_t *api)
+{
+   BSON_ASSERT (api);
+   return api->version;
+}

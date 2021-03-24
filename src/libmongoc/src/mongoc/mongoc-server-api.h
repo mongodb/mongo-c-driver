@@ -59,6 +59,9 @@ mongoc_server_api_get_deprecation_errors (const mongoc_server_api_t *api);
 MONGOC_EXPORT (const mongoc_optional_t *)
 mongoc_server_api_get_strict (const mongoc_server_api_t *api);
 
+MONGOC_EXPORT (mongoc_server_api_version_t)
+mongoc_server_api_get_version (const mongoc_server_api_t *api);
+
 BSON_END_DECLS
 
 #endif /* MONGOC_SERVER_API_H */
