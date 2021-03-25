@@ -909,7 +909,9 @@ mongoc_collection_estimated_document_count (
          /* Collection does not exist. From spec: return 0 but no err:
           * https://github.com/mongodb/specifications/blob/master/source/crud/crud.rst#estimateddocumentcount
           */
-         bson_reinit (reply);
+         if (reply) {
+            bson_reinit (reply);
+         }
          memset (error, 0, sizeof *error);
          count = 0;
          GOTO (done);
