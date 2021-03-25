@@ -24,14 +24,14 @@ mongoc_optional_init (mongoc_optional_t *opt)
 }
 
 bool
-mongoc_optional_is_set (mongoc_optional_t *opt)
+mongoc_optional_is_set (const mongoc_optional_t *opt)
 {
    BSON_ASSERT (opt);
    return opt->is_set;
 }
 
 bool
-mongoc_optional_value (mongoc_optional_t *opt)
+mongoc_optional_value (const mongoc_optional_t *opt)
 {
    BSON_ASSERT (opt);
    return opt->value;

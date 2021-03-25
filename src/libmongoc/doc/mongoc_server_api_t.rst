@@ -26,5 +26,8 @@ A :symbol:`mongoc_server_api_t` can be set on a client, and will then be sent to
     mongoc_server_api_copy
     mongoc_server_api_deprecation_errors
     mongoc_server_api_destroy
+    mongoc_server_api_get_deprecation_errors
+    mongoc_server_api_get_strict
+    mongoc_server_api_get_version
     mongoc_server_api_new
     mongoc_server_api_strict
