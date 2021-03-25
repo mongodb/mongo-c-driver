@@ -146,6 +146,10 @@ _is_retryable_read (const mongoc_cmd_parts_t *parts,
 void
 _mongoc_cmd_append_payload_as_array (const mongoc_cmd_t *cmd, bson_t *out);
 
+void
+_mongoc_cmd_append_server_api (bson_t *command_body,
+                               const mongoc_server_api_t *api);
+
 BSON_END_DECLS
 
 

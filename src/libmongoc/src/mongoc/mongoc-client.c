@@ -3105,6 +3105,14 @@ mongoc_client_set_server_api (mongoc_client_t *client,
    BSON_ASSERT_PARAM (client);
    BSON_ASSERT_PARAM (api);
 
+   if (client->is_pooled) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT,
+                      MONGOC_ERROR_CLIENT_API_FROM_POOL,
+                      "Cannot set server api on a client checked out from a pool");
+      return false;
+   }
+
    if (client->api) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
@@ -3114,5 +3122,6 @@ mongoc_client_set_server_api (mongoc_client_t *client,
    }
 
    client->api = mongoc_server_api_copy (api);
+   _mongoc_topology_scanner_set_server_api (client->topology->scanner, api);
    return true;
 }

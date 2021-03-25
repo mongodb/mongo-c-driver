@@ -3,6 +3,7 @@
 #include <mongoc/mongoc-client-pool-private.h>
 
 #include "mongoc/mongoc-client-private.h"
+#include "mongoc/mongoc-server-api-private.h"
 #include "mongoc/mongoc-util-private.h"
 #include "mongoc/mongoc-topology-background-monitoring-private.h"
 #include "TestSuite.h"
@@ -962,8 +963,8 @@ _test_select_succeed (bool try_once)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
-                              "  'minWireVersion': 2,"
-                              "  'maxWireVersion': 5,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 5,"
                               " 'hosts': ['127.0.0.1:%hu', '127.0.0.1:%hu']}",
                               mock_server_get_port (primary),
                               mock_server_get_port (secondary));
@@ -1109,8 +1110,8 @@ _test_server_removed_during_handshake (bool pooled)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
-                              "  'minWireVersion': 2,"
-                              "  'maxWireVersion': 5,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 5,"
                               " 'hosts': ['%s']}",
                               mock_server_get_host_and_port (server));
 
@@ -1144,8 +1145,8 @@ _test_server_removed_during_handshake (bool pooled)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'BAD NAME',"
-                              "  'minWireVersion': 2,"
-                              "  'maxWireVersion': 5,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 5,"
                               " 'hosts': ['%s']}",
                               mock_server_get_host_and_port (server));
 
@@ -1292,8 +1293,8 @@ test_add_and_scan_failure (void)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
-                              "  'minWireVersion': 2,"
-                              "  'maxWireVersion': 5,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 5,"
                               " 'hosts': ['%s', 'fake:1']}",
                               mock_server_get_host_and_port (server));
 
@@ -1394,8 +1395,8 @@ _test_ismaster_retry_single (bool hangup, int n_failures)
    ismaster = bson_strdup_printf ("{'ok': 1,"
                                   " 'ismaster': true,"
                                   " 'setName': 'rs',"
-                                  "  'minWireVersion': 2,"
-                                  "  'maxWireVersion': 5,"
+                                  " 'minWireVersion': 2,"
+                                  " 'maxWireVersion': 5,"
                                   " 'hosts': ['%s']}",
                                   mock_server_get_host_and_port (server));
 
@@ -1490,8 +1491,8 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
    ismaster = bson_strdup_printf ("{'ok': 1,"
                                   " 'ismaster': true,"
                                   " 'setName': 'rs',"
-                                  "  'minWireVersion': 2,"
-                                  "  'maxWireVersion': 5,"
+                                  " 'minWireVersion': 2,"
+                                  " 'maxWireVersion': 5,"
                                   " 'hosts': ['%s']}",
                                   mock_server_get_host_and_port (server));
 
@@ -1985,8 +1986,8 @@ test_last_server_removed_warning (void)
                               "{'ok': 1,"
                               " 'ismaster': true,"
                               " 'setName': 'rs',"
-                              "  'minWireVersion': 2,"
-                              "  'maxWireVersion': 5,"
+                              " 'minWireVersion': 2,"
+                              " 'maxWireVersion': 5,"
                               " 'hosts': ['127.0.0.1:%hu']}",
                               mock_server_get_port (server));
 
@@ -2198,6 +2199,94 @@ test_slow_server_pooled (void)
    mock_server_destroy (primary);
    checks_cleanup (&checks);
 }
+
+static void
+_test_ismaster_versioned_api (bool pooled)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   char *ismaster;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   mongoc_server_api_version_t version;
+   mongoc_server_api_t *api;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+
+   BSON_ASSERT (mongoc_server_api_version_from_string ("1", &version));
+   api = mongoc_server_api_new (version);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error),
+                       error);
+
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
+                       error);
+   }
+
+   ismaster = bson_strdup_printf ("{'ok': 1,"
+                                  " 'ismaster': true,"
+                                  " 'setName': 'rs',"
+                                  " 'minWireVersion': 2,"
+                                  " 'maxWireVersion': 5,"
+                                  " 'hosts': ['%s']}",
+                                  mock_server_get_host_and_port (server));
+
+   /* For client pools, the first handshake happens when the client is popped.
+    * For non-pooled clients, send a ping command to trigger a handshake. */
+   if (!pooled) {
+      future = future_client_command_simple (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   }
+
+   request = mock_server_receives_ismaster (server);
+   BSON_ASSERT (request);
+   BSON_ASSERT (bson_has_field (request_get_doc (request, 0), "apiVersion"));
+   mock_server_replies_simple (request, ismaster);
+   request_destroy (request);
+
+   if (!pooled) {
+      request = mock_server_receives_command (
+         server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      mock_server_replies_ok_and_destroys (request);
+      BSON_ASSERT (future_get_bool (future));
+      future_destroy (future);
+   }
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_server_api_destroy (api);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+   bson_free (ismaster);
+}
+
+static void
+test_ismaster_versioned_api_single ()
+{
+   _test_ismaster_versioned_api (false);
+}
+
+static void
+test_ismaster_versioned_api_pooled ()
+{
+   _test_ismaster_versioned_api (true);
+}
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -2352,4 +2441,11 @@ test_topology_install (TestSuite *suite)
                                 test_last_server_removed_warning);
    TestSuite_AddMockServerTest (
       suite, "/Topology/slow_server/pooled", test_slow_server_pooled);
+
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/ismaster/versioned_api/single",
+                                test_ismaster_versioned_api_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Topology/ismaster/versioned_api/pooled",
+                                test_ismaster_versioned_api_pooled);
 }

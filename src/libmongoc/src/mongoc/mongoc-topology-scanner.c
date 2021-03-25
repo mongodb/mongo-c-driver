@@ -104,9 +104,32 @@ _jumpstart_other_acmds (mongoc_topology_scanner_node_t *node,
                         mongoc_async_cmd_t *acmd);
 
 static void
-_add_ismaster (bson_t *cmd)
+_add_ismaster (bson_t *cmd, const mongoc_server_api_t *api)
 {
    BSON_APPEND_INT32 (cmd, "isMaster", 1);
+
+   if (api) {
+      _mongoc_cmd_append_server_api (cmd, api);
+   }
+}
+
+static void
+_init_ismaster (mongoc_topology_scanner_t *ts)
+{
+   bson_init (&ts->ismaster_cmd);
+   bson_init (&ts->ismaster_cmd_with_handshake);
+   bson_init (&ts->cluster_time);
+
+   _add_ismaster (&ts->ismaster_cmd, ts->api);
+}
+
+static void
+_reset_ismaster (mongoc_topology_scanner_t *ts)
+{
+   bson_reinit (&ts->ismaster_cmd);
+   bson_reinit (&ts->ismaster_cmd_with_handshake);
+
+   _add_ismaster (&ts->ismaster_cmd, ts->api);
 }
 
 const char *
@@ -226,7 +249,7 @@ _build_ismaster_with_handshake (mongoc_topology_scanner_t *ts)
    int count = 0;
    char buf[16];
 
-   _add_ismaster (doc);
+   _add_ismaster (doc, ts->api);
 
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
    res = _mongoc_handshake_build_doc_with_application (&subdoc, ts->appname);
@@ -346,20 +369,18 @@ mongoc_topology_scanner_new (
 
    ts->async = mongoc_async_new ();
 
-   bson_init (&ts->ismaster_cmd);
-   _add_ismaster (&ts->ismaster_cmd);
-   bson_init (&ts->ismaster_cmd_with_handshake);
-   bson_init (&ts->cluster_time);
-
    ts->setup_err_cb = setup_err_cb;
    ts->cb = cb;
    ts->cb_data = data;
    ts->uri = uri;
    ts->appname = NULL;
+   ts->api = NULL;
    ts->handshake_ok_to_send = false;
    ts->connect_timeout_msec = connect_timeout_msec;
    /* may be overridden for testing. */
    ts->dns_cache_timeout_ms = DNS_CACHE_TIMEOUT_MS;
+
+   _init_ismaster (ts);
 
    return ts;
 }
@@ -398,6 +419,7 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    bson_destroy (&ts->ismaster_cmd);
    bson_destroy (&ts->ismaster_cmd_with_handshake);
    bson_destroy (&ts->cluster_time);
+   mongoc_server_api_destroy (ts->api);
 
    /* This field can be set by a mongoc_client */
    bson_free ((char *) ts->appname);
@@ -1323,4 +1345,16 @@ _jumpstart_other_acmds (mongoc_topology_scanner_node_t *node,
             BSON_MAX (iter->initiate_delay_ms - HAPPY_EYEBALLS_DELAY_MS, 0);
       }
    }
+}
+
+void
+_mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
+                                         const mongoc_server_api_t *api)
+{
+   BSON_ASSERT (ts);
+   BSON_ASSERT (api);
+
+   mongoc_server_api_destroy (ts->api);
+   ts->api = mongoc_server_api_copy (api);
+   _reset_ismaster (ts);
 }

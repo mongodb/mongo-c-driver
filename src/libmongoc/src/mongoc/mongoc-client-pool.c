@@ -51,6 +51,7 @@ struct _mongoc_client_pool_t {
    int32_t error_api_version;
    bool error_api_set;
    mongoc_server_api_t *api;
+   bool client_initialized;
 };
 
 
@@ -240,6 +241,8 @@ _initialize_new_client (mongoc_client_pool_t *pool, mongoc_client_t *client)
       pool->topology->scanner->initiator,
       pool->topology->scanner->initiator_context);
 
+   pool->client_initialized = true;
+   client->is_pooled = true;
    client->error_api_version = pool->error_api_version;
    _mongoc_client_set_apm_callbacks_private (
       client, &pool->apm_callbacks, pool->apm_context);
@@ -528,6 +531,15 @@ mongoc_client_pool_set_server_api (mongoc_client_pool_t *pool,
       return false;
    }
 
+   if (pool->client_initialized) {
+      bson_set_error (error,
+                      MONGOC_ERROR_POOL,
+                      MONGOC_ERROR_POOL_API_TOO_LATE,
+                      "Cannot set server api after a client has been created");
+      return false;
+   }
+
    pool->api = mongoc_server_api_copy (api);
+   _mongoc_topology_scanner_set_server_api (pool->topology->scanner, api);
    return true;
 }
