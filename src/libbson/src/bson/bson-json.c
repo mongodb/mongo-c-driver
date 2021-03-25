@@ -103,7 +103,8 @@ static const char *read_state_names[] = {FOREACH_READ_STATE (GENERATE_STRING)};
    BS (DECIMAL128)                                                   \
    BS (DBPOINTER)                                                    \
    BS (SYMBOL)                                                       \
-   BS (DBREF)
+   BS (DBREF)                                                        \
+   BS (UUID)
 
 typedef enum {
    FOREACH_BSON_STATE (BSON_STATE_ENUM)
@@ -706,6 +707,7 @@ _bson_json_read_integer (bson_json_reader_t *reader, uint64_t val, int64_t sign)
       case BSON_JSON_LF_OID:
       case BSON_JSON_LF_BINARY:
       case BSON_JSON_LF_TYPE:
+      case BSON_JSON_LF_UUID:
       case BSON_JSON_LF_UNDEFINED:
       case BSON_JSON_LF_DOUBLE:
       case BSON_JSON_LF_DECIMAL128:
@@ -833,8 +835,29 @@ _bson_json_read_int64_or_set_error (bson_json_reader_t *reader, /* IN */
    return true;
 }
 
+static bool
+_unhexlify_uuid (const char *uuid, uint8_t *out, size_t max)
+{
+   unsigned int byte;
+   int x = 0;
+   int i = 0;
 
-/* parse a value for "base64", "subType" or legacy "$binary" or "$type" */
+   BSON_ASSERT (strlen (uuid) == 32);
+
+   while (SSCANF (&uuid[i], "%2x", &byte) == 1) {
+      if (x >= max) {
+         return false;
+      }
+
+      out[x++] = (uint8_t) byte;
+      i += 2;
+   }
+
+   return i == 32;
+}
+
+/* parse a value for "base64", "subType", legacy "$binary" or "$type", or
+ * "$uuid" */
 static void
 _bson_json_parse_binary_elem (bson_json_reader_t *reader,
                               const char *val_w_null,
@@ -894,6 +917,64 @@ _bson_json_parse_binary_elem (bson_json_reader_t *reader,
                               (int) vlen);
          }
       }
+   } else if (bs == BSON_JSON_LF_UUID) {
+      int nread = 0;
+      char uuid[33];
+
+      data->binary.has_binary = true;
+      data->binary.has_subtype = true;
+      data->binary.type = BSON_SUBTYPE_UUID;
+
+      /* Validate the UUID and extract relevant portions */
+      /* We can't use %x here as it allows +, -, and 0x prefixes */
+#ifdef _MSC_VER
+      SSCANF (val_w_null,
+              "%8c-%4c-%4c-%4c-%12c%n",
+              &uuid[0],
+              8,
+              &uuid[8],
+              4,
+              &uuid[12],
+              4,
+              &uuid[16],
+              4,
+              &uuid[20],
+              12,
+              &nread);
+#else
+      SSCANF (val_w_null,
+              "%8c-%4c-%4c-%4c-%12c%n",
+              &uuid[0],
+              &uuid[8],
+              &uuid[12],
+              &uuid[16],
+              &uuid[20],
+              &nread);
+#endif
+
+      uuid[32] = '\0';
+
+      if (nread != 36 || val_w_null[nread] != '\0') {
+         _bson_json_read_set_error (reader,
+                                    "Invalid input string \"%s\", looking for "
+                                    "a dash-separated UUID string",
+                                    val_w_null);
+
+         return;
+      }
+
+      binary_len = 16;
+      _bson_json_buf_ensure (&bson->bson_type_buf[0], (size_t) binary_len + 1);
+
+      if (!_unhexlify_uuid (
+             &uuid[0], bson->bson_type_buf[0].buf, (size_t) binary_len)) {
+         _bson_json_read_set_error (reader,
+                                    "Invalid input string \"%s\", looking for "
+                                    "a dash-separated UUID string",
+                                    val_w_null);
+      }
+
+      bson->bson_type_buf[0].len = (size_t) binary_len;
    }
 }
 
@@ -967,6 +1048,8 @@ _bson_json_read_string (bson_json_reader_t *reader, /* IN */
       case BSON_JSON_LF_BINARY:
       case BSON_JSON_LF_TYPE:
          bson->bson_type_data.binary.is_legacy = true;
+         /* FALL THROUGH */
+      case BSON_JSON_LF_UUID:
          _bson_json_parse_binary_elem (reader, val_w_null, vlen);
          break;
       case BSON_JSON_LF_INT32: {
@@ -1123,7 +1206,7 @@ _is_known_key (const char *key, size_t len)
           IS_KEY ("$numberDouble") || IS_KEY ("$numberDecimal") ||
           IS_KEY ("$numberInt") || IS_KEY ("$numberLong") ||
           IS_KEY ("$numberDouble") || IS_KEY ("$numberDecimal") ||
-          IS_KEY ("$dbPointer") || IS_KEY ("$symbol"));
+          IS_KEY ("$dbPointer") || IS_KEY ("$symbol") || IS_KEY ("$uuid"));
 
 #undef IS_KEY
 
@@ -1241,6 +1324,8 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
          HANDLE_OPTION ("$binary", BSON_TYPE_BINARY, BSON_JSON_LF_BINARY)
       else if
          HANDLE_OPTION ("$type", BSON_TYPE_BINARY, BSON_JSON_LF_TYPE)
+      else if
+         HANDLE_OPTION ("$uuid", BSON_TYPE_BINARY, BSON_JSON_LF_UUID)
       else if
          HANDLE_OPTION ("$date", BSON_TYPE_DATE_TIME, BSON_JSON_LF_DATE)
       else if
