@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  mongoc_optional_t *
+  void
   mongoc_optional_copy (const mongoc_optional_t *source, mongoc_optional_t *copy);
 
 Creates a deep copy of ``source`` into ``copy``.
