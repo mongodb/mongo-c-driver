@@ -38,7 +38,4 @@ Parameters
 Returns
 -------
 
-A :symbol:`mongoc_cursor_t`.
-
-The cursor should be freed with :symbol:`mongoc_cursor_destroy()`.
-
+.. include:: includes/returns-cursor.txt

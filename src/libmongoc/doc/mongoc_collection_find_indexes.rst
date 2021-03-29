@@ -37,4 +37,9 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-A cursor where each result corresponds to the server's representation of an index on this collection. If the collection does not exist on the server, the cursor will be empty.
+.. include:: includes/returns-cursor.txt
+
+In the returned cursor each result corresponds to the server's representation of an index on this collection. If the collection does not exist on the server, the cursor will be empty.
+
+The cursor functions :symbol:`mongoc_cursor_set_limit`, :symbol:`mongoc_cursor_set_batch_size`, and :symbol:`mongoc_cursor_set_max_await_time_ms` have no use on the returned cursor.
+
