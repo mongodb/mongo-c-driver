@@ -2516,7 +2516,7 @@ _mongoc_uri_warn_for_bad_int_option_combos (const mongoc_uri_t *uri,
       if (mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WAITQUEUETIMEOUTMS, -1) > 0 ||
 	  mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_SOCKETTIMEOUTMS, -1) > 0 ||
 	  mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, -1) > 0) {
-	 MONGOC_WARNING ("Setting a deprecated timeout option in combination with timeoutMS");
+	 MONGOC_WARNING ("Setting a deprecated timeout option %s in combination with timeoutMS", option);
       }
    }
 
