@@ -194,7 +194,7 @@ _mongoc_topology_scanner_get_speculative_auth_mechanism (
    const mongoc_uri_t *uri);
 
 const bson_t *
-_mongoc_topology_scanner_get_ismaster (mongoc_topology_scanner_t *ts);
+_mongoc_topology_scanner_get_handshake_cmd (mongoc_topology_scanner_t *ts);
 
 bool
 mongoc_topology_scanner_has_node_for_host (mongoc_topology_scanner_t *ts,

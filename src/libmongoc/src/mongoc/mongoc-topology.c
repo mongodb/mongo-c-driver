@@ -1593,7 +1593,7 @@ _mongoc_topology_get_ismaster (mongoc_topology_t *topology)
 {
    const bson_t *cmd;
    bson_mutex_lock (&topology->mutex);
-   cmd = _mongoc_topology_scanner_get_ismaster (topology->scanner);
+   cmd = _mongoc_topology_scanner_get_handshake_cmd (topology->scanner);
    bson_mutex_unlock (&topology->mutex);
    return cmd;
 }
