@@ -1621,6 +1621,15 @@ tasks:
       permissions: public-read
       local_file: deb.tar.gz
       content_type: ${content_type|application/x-gzip}
+  - command: s3.put
+    params:
+      aws_key: ${aws_key}
+      aws_secret: ${aws_secret}
+      remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz
+      bucket: mciuploads
+      permissions: public-read
+      local_file: deb.tar.gz
+      content_type: ${content_type|application/x-gzip}
 - name: rpm-package-build
   commands:
   - command: shell.exec
@@ -1637,6 +1646,15 @@ tasks:
       aws_key: ${aws_key}
       aws_secret: ${aws_secret}
       remote_file: ${project}/${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz
+      bucket: mciuploads
+      permissions: public-read
+      local_file: rpm.tar.gz
+      content_type: ${content_type|application/x-gzip}
+  - command: s3.put
+    params:
+      aws_key: ${aws_key}
+      aws_secret: ${aws_secret}
+      remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz
       bucket: mciuploads
       permissions: public-read
       local_file: rpm.tar.gz
