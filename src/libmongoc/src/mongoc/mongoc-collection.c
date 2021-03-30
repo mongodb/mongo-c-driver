@@ -905,7 +905,7 @@ mongoc_collection_estimated_document_count (
       ret = mongoc_collection_read_command_with_opts (
          coll, &cmd, read_prefs, opts, reply_ptr, error);
 
-      if (error && error->code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
+      if (!ret && error->code == MONGOC_ERROR_COLLECTION_DOES_NOT_EXIST) {
          /* Collection does not exist. From spec: return 0 but no err:
           * https://github.com/mongodb/specifications/blob/master/source/crud/crud.rst#estimateddocumentcount
           */
