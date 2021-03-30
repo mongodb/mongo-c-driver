@@ -326,10 +326,12 @@ _server_monitor_polling_ismaster (mongoc_server_monitor_t *server_monitor,
                                   bson_error_t *error)
 {
    bson_t cmd;
+   const bson_t *hello;
    bool ret;
 
-   bson_init (&cmd);
-   bson_append_int32 (&cmd, "isMaster", 8, 1);
+   hello = _mongoc_topology_scanner_get_hello_cmd (server_monitor->topology->scanner);
+   bson_copy_to (hello, &cmd);
+
    _server_monitor_append_cluster_time (server_monitor, &cmd);
    ret = _server_monitor_send_and_recv_opquery (
       server_monitor, &cmd, ismaster_reply, error);
@@ -603,10 +605,13 @@ _server_monitor_awaitable_ismaster (mongoc_server_monitor_t *server_monitor,
                                     bool *cancelled,
                                     bson_error_t *error)
 {
-   bson_t cmd = BSON_INITIALIZER;
+   bson_t cmd;
+   const bson_t *hello;
    bool ret = false;
 
-   bson_append_int32 (&cmd, "isMaster", 8, 1);
+   hello = _mongoc_topology_scanner_get_hello_cmd (server_monitor->topology->scanner);
+   bson_copy_to (hello, &cmd);
+
    _server_monitor_append_cluster_time (server_monitor, &cmd);
    bson_append_document (&cmd, "topologyVersion", 15, topology_version);
    bson_append_int32 (
