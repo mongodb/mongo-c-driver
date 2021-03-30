@@ -1256,7 +1256,6 @@ test_run_distinct_workaround (test_t *test, bson_error_t *error)
    /* Get the database/collection name from each collection entity. */
    BSON_FOREACH (test->test_file->create_entities, iter)
    {
-      bson_t create_entity;
       bson_t entity_bson;
       char *coll_name = NULL;
       char *db_id = NULL;
@@ -1264,18 +1263,26 @@ test_run_distinct_workaround (test_t *test, bson_error_t *error)
       mongoc_database_t *db = NULL;
       bson_iter_t entity_iter;
 
-      bson_iter_bson (&iter, &create_entity);
-      if (!bson_has_field (&create_entity, "collection")) {
-         continue;
-      }
       if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
          test_set_error (error,
                          "unexpected non-document createEntity: %s",
-                         tmp_json (&create_entity));
+                         bson_iter_key (&iter));
          goto done;
       }
 
       bson_iter_recurse (&iter, &entity_iter);
+
+      if (!bson_iter_find (&entity_iter, "collection")) {
+         continue;
+      }
+
+      if (!BSON_ITER_HOLDS_DOCUMENT (&entity_iter)) {
+         test_set_error (error,
+                         "unexpected non-document in iter: %s",
+                         bson_iter_key (&entity_iter));
+         goto done;
+      }
+
       bson_iter_bson (&entity_iter, &entity_bson);
 
       bp = bson_parser_new ();
