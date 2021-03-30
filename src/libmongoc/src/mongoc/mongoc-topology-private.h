@@ -197,7 +197,7 @@ void
 _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
                                    bson_error_t *error);
 const bson_t *
-_mongoc_topology_get_ismaster (mongoc_topology_t *topology);
+_mongoc_topology_get_handshake_cmd (mongoc_topology_t *topology);
 void
 _mongoc_topology_request_scan (mongoc_topology_t *topology);
 

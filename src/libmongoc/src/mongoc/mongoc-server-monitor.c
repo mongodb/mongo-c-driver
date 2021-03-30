@@ -775,7 +775,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    /* Update the start time just before the handshake. */
    *start_us = _now_us ();
    /* Perform handshake. */
-   handshake = _mongoc_topology_get_ismaster (server_monitor->topology);
+   handshake = _mongoc_topology_get_handshake_cmd (server_monitor->topology);
    bson_destroy (&cmd);
    bson_copy_to (handshake, &cmd);
    _server_monitor_append_cluster_time (server_monitor, &cmd);

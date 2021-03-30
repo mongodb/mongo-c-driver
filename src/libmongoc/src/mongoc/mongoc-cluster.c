@@ -770,7 +770,7 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
 
-   command = _mongoc_topology_get_ismaster (cluster->client->topology);
+   command = _mongoc_topology_get_handshake_cmd (cluster->client->topology);
 
    if (cluster->requires_auth || negotiate_sasl_supported_mechs) {
       copied_command = bson_copy (command);
