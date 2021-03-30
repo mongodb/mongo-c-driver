@@ -194,6 +194,9 @@ _mongoc_topology_scanner_get_speculative_auth_mechanism (
    const mongoc_uri_t *uri);
 
 const bson_t *
+_mongoc_topology_scanner_get_hello_cmd (mongoc_topology_scanner_t *ts);
+
+const bson_t *
 _mongoc_topology_scanner_get_handshake_cmd (mongoc_topology_scanner_t *ts);
 
 bool
