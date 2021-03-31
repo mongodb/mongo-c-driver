@@ -23127,7 +23127,7 @@ buildvariants:
   - name: .ocsp-openssl-1.0.1
     distros:
     - ubuntu1804-test
-  batchtime: 20160
+  batchtime: 10080
 - name: packaging
   display_name: Linux Distro Packaging
   run_on: ubuntu1604-test
