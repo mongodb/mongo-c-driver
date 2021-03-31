@@ -2094,17 +2094,18 @@ _parse_server_version (const bson_t *buildinfo)
    ASSERT (bson_iter_recurse (&iter, &array_iter));
 
    /* Server returns a 4-part version like [3, 2, 0, 0], or like [3, 2, 0, -49]
-    * for an RC. Bail if number of parts is ever not 4. */
+    * for an RC. Ignore the 4th part since RCs are equivalent to non-RCs for
+    * testing purposes. */
    i = 0;
    while (bson_iter_next (&array_iter)) {
+      if (++i == N_SERVER_VERSION_PARTS) {
+         break;
+      }
       ret *= 1000;
       ret += 100 + bson_iter_as_int64 (&array_iter);
-      i++;
-      ASSERT_CMPINT (i, <=, N_SERVER_VERSION_PARTS);
    }
 
    ASSERT_CMPINT (i, ==, N_SERVER_VERSION_PARTS);
-
    return ret;
 }
 
@@ -2142,18 +2143,21 @@ test_framework_str_to_version (const char *version_str)
    str_copy = bson_strdup (version_str);
    i = 0;
    part = strtok (str_copy, ".");
-   while (part) {
-      ret *= 1000;
 
-      /* add 100 since release candidates have versions like "3.2.0.-49" */
+   /* Versions can have 4 parts like "3.2.0.0", or like "3.2.0.-49" for an RC.
+    * Ignore the 4th part since RCs are equivalent to non-RCs for testing
+    * purposes. */
+   while (part) {
+      if (++i == N_SERVER_VERSION_PARTS) {
+         break;
+      }
+      ret *= 1000;
       ret += 100 + bson_ascii_strtoll (part, &end, 10);
-      i++;
-      ASSERT_CMPINT (i, <=, N_SERVER_VERSION_PARTS);
       part = strtok (NULL, ".");
    }
 
-   /* pad out a short version like "3.0" */
-   for (; i < N_SERVER_VERSION_PARTS; i++) {
+   /* pad out a short version like "3.0" to three parts */
+   for (; i < N_SERVER_VERSION_PARTS - 1; i++) {
       ret *= 1000;
       ret += 100;
    }
@@ -2167,11 +2171,11 @@ test_framework_str_to_version (const char *version_str)
 static void
 test_version_cmp (void)
 {
-   server_version_t v2_6_12 = 102106112100;
-   server_version_t v3_0_0 = 103100100100;
-   server_version_t v3_0_1 = 103100101100;
-   server_version_t v3_0_10 = 103100110100;
-   server_version_t v3_2_0_rc1_pre = 103102100051;
+   server_version_t v2_6_12 = 102106112;
+   server_version_t v3_0_0 = 103100100;
+   server_version_t v3_0_1 = 103100101;
+   server_version_t v3_0_10 = 103100110;
+   server_version_t v3_2_0 = 103102100;
 
    ASSERT (v2_6_12 == test_framework_str_to_version ("2.6.12"));
    ASSERT (v2_6_12 == _parse_server_version (
@@ -2189,12 +2193,14 @@ test_version_cmp (void)
    ASSERT (v3_0_10 == _parse_server_version (
                          tmp_bson ("{'versionArray': [3, 0, 10, 0]}")));
 
-   ASSERT (v3_2_0_rc1_pre == test_framework_str_to_version ("3.2.0.-49"));
-   ASSERT (v3_2_0_rc1_pre == _parse_server_version (
-                                tmp_bson ("{'versionArray': [3, 2, 0, -49]}")));
+   /* release candidates should be equivalent to non-rcs. */
+   ASSERT (v3_2_0 == test_framework_str_to_version ("3.2.0.-49"));
+   ASSERT (v3_2_0 == _parse_server_version (
+                        tmp_bson ("{'versionArray': [3, 2, 0, -49]}")));
 
-   ASSERT (v3_2_0_rc1_pre > test_framework_str_to_version ("3.1.9"));
-   ASSERT (v3_2_0_rc1_pre < test_framework_str_to_version ("3.2"));
+   ASSERT (v3_2_0 > test_framework_str_to_version ("3.1.9"));
+   ASSERT (v3_2_0 == test_framework_str_to_version ("3.2"));
+   ASSERT (v3_2_0 < test_framework_str_to_version ("3.2.1"));
 }
 
 int

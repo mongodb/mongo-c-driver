@@ -416,6 +416,7 @@ functions:
         export SSL=${SSL}
         export ORCHESTRATION_FILE=${ORCHESTRATION_FILE}
         export OCSP=${OCSP}
+        export REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
         sh .evergreen/integration-tests.sh
   run tests:
   - command: shell.exec
@@ -716,6 +717,28 @@ functions:
         export RUN_MONGOHOUSE_TESTS=true
         ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d
         unset RUN_MONGOHOUSE_TESTS
+  test versioned api:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export COMPRESSORS='${COMPRESSORS}'
+        export CC='${CC}'
+        export AUTH=${AUTH}
+        export SSL=${SSL}
+        export URI=${URI}
+        export IPV4_ONLY=${IPV4_ONLY}
+        export VALGRIND=${VALGRIND}
+        export MONGOC_TEST_URI=${URI}
+        export DNS=${DNS}
+        export ASAN=${ASAN}
+        export MONGODB_API_VERSION=1
+        ./src/libmongoc/test-libmongoc --no-fork -l /versioned_api/* -d
+        unset MONGODB_API_VERSION
   run aws tests:
   - command: shell.exec
     type: test
@@ -22446,6 +22469,46 @@ tasks:
         set -o errexit
         set -o xtrace
         CERT_TYPE=ecdsa .evergreen/run-ocsp-cache-test.sh
+- name: test-versioned-api
+  tags:
+    - versioned-api
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      TOPOLOGY: server
+      AUTH: auth
+      SSL: ssl
+      VERSION: latest
+      REQUIRE_API_VERSION: true
+  - func: test versioned api
+    vars:
+      AUTH: auth
+      SSL: ssl
+- name: test-versioned-api-accept-version-two
+  tags:
+    - versioned-api
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      TOPOLOGY: server
+      AUTH: auth
+      SSL: ssl
+      VERSION: latest
+      ORCHESTRATION_FILE: 'versioned-api-testing'
+  - func: test versioned api
+    vars:
+      AUTH: auth
+      SSL: ssl
 buildvariants:
 - name: releng
   display_name: '**Release Archive Creator'
@@ -23162,3 +23225,9 @@ buildvariants:
   tasks:
   - .tsan
   batchtime: 1440
+- name: versioned-api
+  display_name: Versioned API Tests
+  run_on: ubuntu1804-test
+  tasks:
+  - debug-compile-nosasl-openssl
+  - .versioned-api
