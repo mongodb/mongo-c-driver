@@ -3121,6 +3121,8 @@ mongoc_client_set_server_api (mongoc_client_t *client,
    }
 
    client->api = mongoc_server_api_copy (api);
+   bson_mutex_lock (&client->topology->mutex);
    _mongoc_topology_scanner_set_server_api (client->topology->scanner, api);
+   bson_mutex_unlock (&client->topology->mutex);
    return true;
 }

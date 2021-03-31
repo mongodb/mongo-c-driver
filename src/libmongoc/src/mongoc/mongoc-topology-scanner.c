@@ -1347,6 +1347,7 @@ _jumpstart_other_acmds (mongoc_topology_scanner_node_t *node,
    }
 }
 
+/* Caller must lock topology->mutex to protect ismaster_cmd_with_handshake. */
 void
 _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
                                          const mongoc_server_api_t *api)
