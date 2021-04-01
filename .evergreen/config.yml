@@ -695,8 +695,13 @@ functions:
       working_dir: mongoc
       background: true
       shell: bash
-      script: "set -o errexit\nset -o xtrace\nset -o xtrace\ncd drivers-evergreen-tools\
-        \ \nexport DRIVERS_TOOLS=$(pwd)\nsh .evergreen/atlas_data_lake/run-mongohouse-local.sh"
+      script: |-
+        set -o errexit
+        set -o xtrace
+        set -o xtrace
+        cd drivers-evergreen-tools
+        export DRIVERS_TOOLS=$(pwd)
+        sh .evergreen/atlas_data_lake/run-mongohouse-local.sh
   test mongohouse:
   - command: shell.exec
     type: test
@@ -17496,6 +17501,52 @@ tasks:
   - func: run auth tests
     vars:
       valgrind: 'true'
+- name: test-versioned-api
+  tags:
+  - versioned-api
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      REQUIRE_API_VERSION: 'true'
+      SSL: ssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: test versioned api
+    vars:
+      AUTH: auth
+      SSL: ssl
+- name: test-versioned-api-accept-version-two
+  tags:
+  - versioned-api
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: versioned-api-testing
+      SSL: ssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: test versioned api
+    vars:
+      AUTH: auth
+      SSL: ssl
 - name: build-and-run-authentication-tests-openssl-0.9.8
   commands:
   - func: install ssl
@@ -22469,46 +22520,6 @@ tasks:
         set -o errexit
         set -o xtrace
         CERT_TYPE=ecdsa .evergreen/run-ocsp-cache-test.sh
-- name: test-versioned-api
-  tags:
-    - versioned-api
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: bootstrap mongo-orchestration
-    vars:
-      TOPOLOGY: server
-      AUTH: auth
-      SSL: ssl
-      VERSION: latest
-      REQUIRE_API_VERSION: true
-  - func: test versioned api
-    vars:
-      AUTH: auth
-      SSL: ssl
-- name: test-versioned-api-accept-version-two
-  tags:
-    - versioned-api
-  depends_on:
-    name: debug-compile-nosasl-openssl
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: bootstrap mongo-orchestration
-    vars:
-      TOPOLOGY: server
-      AUTH: auth
-      SSL: ssl
-      VERSION: latest
-      ORCHESTRATION_FILE: 'versioned-api-testing'
-  - func: test versioned api
-    vars:
-      AUTH: auth
-      SSL: ssl
 buildvariants:
 - name: releng
   display_name: '**Release Archive Creator'

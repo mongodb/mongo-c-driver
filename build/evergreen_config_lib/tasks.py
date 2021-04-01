@@ -838,6 +838,20 @@ all_tasks = chain(all_tasks, [
                   SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
                 """),
             func('run auth tests', valgrind='true')]),
+    PostCompileTask(
+        'test-versioned-api',
+        tags=['versioned-api'],
+        depends_on='debug-compile-nosasl-openssl',
+        commands=[func('fetch build', BUILD_NAME='debug-compile-nosasl-openssl'),
+                  func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='auth', SSL='ssl', VERSION='latest', REQUIRE_API_VERSION='true'),
+                  func('test versioned api', AUTH='auth', SSL='ssl')]),
+    PostCompileTask(
+        'test-versioned-api-accept-version-two',
+        tags=['versioned-api'],
+        depends_on='debug-compile-nosasl-openssl',
+        commands=[func('fetch build', BUILD_NAME='debug-compile-nosasl-openssl'),
+                  func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='auth', SSL='ssl', VERSION='latest', ORCHESTRATION_FILE='versioned-api-testing'),
+                  func('test versioned api', AUTH='auth', SSL='ssl')]),
 ])
 
 
