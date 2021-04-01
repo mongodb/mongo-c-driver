@@ -552,7 +552,7 @@ all_variants = [
              '.debug-compile .special .valgrind',
              '.test-valgrind !.3.0 !.3.2 !.3.4 !.3.6'],
             {'CC': 'gcc'},
-            batchtime=days(7)),
+            batchtime=days(1)),
     Variant('valgrind-ubuntu-1404',
             'Valgrind Tests - MongoDB (pre 4.0) (Ubuntu 14.04)',
             'ubuntu1404-build',
@@ -564,7 +564,7 @@ all_variants = [
              '.test-valgrind .3.4',
              '.test-valgrind .3.6'],
             {'CC': 'gcc'},
-            batchtime=days(7)),
+            batchtime=days(1)),
     Variant('asan-ubuntu',
             'ASAN Tests (Ubuntu 16.04)',
             'ubuntu1604-test',
@@ -625,7 +625,7 @@ all_variants = [
         OD([('name', '.ocsp-winssl'), ('distros', ['windows-64-vs2017-test'])]),
         OD([('name', 'debug-compile-nosasl-openssl-1.0.1'), ('distros', ['ubuntu1804-test'])]),
         OD([('name', '.ocsp-openssl-1.0.1'), ('distros', ['ubuntu1804-test'])])
-    ], {}, batchtime=days(14)),
+    ], {}, batchtime=days(7)),
     Variant ('packaging', 'Linux Distro Packaging', 'ubuntu1604-test', [
         'debian-package-build',
         OD([('name', 'rpm-package-build'), ('distros', ['rhel80-test'])]),
@@ -635,5 +635,5 @@ all_variants = [
         'ubuntu1604-small',
         ['.tsan'],
         {'CC': '/opt/mongodbtoolchain/v3/bin/clang'},
-        batchtime=days(7))
+        batchtime=days(1))
 ]
