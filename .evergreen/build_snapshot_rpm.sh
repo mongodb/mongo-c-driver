@@ -89,14 +89,12 @@ sudo mock -r ${config} --use-bootstrap-image --isolation=simple --init
 mock_root=$(sudo mock -r ${config} --use-bootstrap-image --isolation=simple --print-root-path)
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install rpmdevtools git rpm-build cmake python python3-sphinx gcc openssl-devel
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
-if [ ! -f VERSION_CURRENT ]; then
-  sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
-    set -o xtrace ;
-    python build/calc_release_version.py | sed -E 's/([^-]+).*/\1/' > VERSION_CURRENT ;
-    python build/calc_release_version.py -p > VERSION_RELEASED
-    )"
-  sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/VERSION_CURRENT" "/tmp/${build_dir}/VERSION_RELEASED" .
-fi
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
+  set -o xtrace ;
+  python build/calc_release_version.py | sed -E 's/([^-]+).*/\1/' > VERSION_CURRENT ;
+  python build/calc_release_version.py -p > VERSION_RELEASED
+  )"
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/VERSION_CURRENT" "/tmp/${build_dir}/VERSION_RELEASED" .
 
 bare_upstream_version=$(sed -E 's/([^-]+).*/\1/' VERSION_CURRENT)
 # Upstream version in the .spec file cannot have hyphen (-); replace the current
