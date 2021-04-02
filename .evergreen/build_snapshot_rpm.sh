@@ -40,8 +40,8 @@ done
 
 package=mongo-c-driver
 spec_file=../mongo-c-driver.spec
-spec_url=https://src.fedoraproject.org/rpms/mongo-c-driver/raw/master/f/mongo-c-driver.spec
-config=${MOCK_TARGET_CONFIG:=fedora-29-x86_64}
+spec_url=https://src.fedoraproject.org/rpms/mongo-c-driver/raw/rawhide/f/mongo-c-driver.spec
+config=${MOCK_TARGET_CONFIG:=fedora-34-x86_64}
 
 if [ ! -x /usr/bin/rpmbuild -o ! -x /usr/bin/rpmspec ]; then
   echo "Missing the rpmbuild or rpmspec utility from the rpm-build package"
@@ -67,7 +67,7 @@ if [ -f "${spec_file}" ]; then
   echo "Found old spec file (${spec_file})...removing"
   rm -f  ${spec_file}
 fi
-/usr/bin/curl -L --retry 5 -o "${spec_file}" "${spec_url}"
+/usr/bin/curl -f -L --retry 5 -o "${spec_file}" "${spec_url}"
 if [ "${?}" != "0" -o ! -f "${spec_file}" ]; then
   echo "Could not retrieve spec file from URL: ${spec_url}"
   exit 1
@@ -84,19 +84,17 @@ fi
 
 build_dir=$(basename $(pwd))
 
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --clean
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --init
-mock_root=$(sudo mock -r ${config} --bootstrap-chroot --old-chroot --print-root-path)
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --install rpmdevtools git rpm-build cmake python python2-sphinx gcc openssl-devel
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
-if [ ! -f VERSION_CURRENT ]; then
-  sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
-    set -o xtrace ;
-    python build/calc_release_version.py | sed -E 's/([^-]+).*/\1/' > VERSION_CURRENT ;
-    python build/calc_release_version.py -p > VERSION_RELEASED
-    )"
-  sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyout "/tmp/${build_dir}/VERSION_CURRENT" "/tmp/${build_dir}/VERSION_RELEASED" .
-fi
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --clean
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --init
+mock_root=$(sudo mock -r ${config} --use-bootstrap-image --isolation=simple --print-root-path)
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install rpmdevtools git rpm-build cmake python python3-sphinx gcc openssl-devel
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
+  set -o xtrace ;
+  python build/calc_release_version.py | sed -E 's/([^-]+).*/\1/' > VERSION_CURRENT ;
+  python build/calc_release_version.py -p > VERSION_RELEASED
+  )"
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/VERSION_CURRENT" "/tmp/${build_dir}/VERSION_RELEASED" .
 
 bare_upstream_version=$(sed -E 's/([^-]+).*/\1/' VERSION_CURRENT)
 # Upstream version in the .spec file cannot have hyphen (-); replace the current
@@ -110,12 +108,12 @@ current_package_version=$(rpmspec --srpm -q --qf "%{version}-%{release}" ${spec_
 
 if [ -n "${current_package_version##*${git_rev}*}" ]; then
   echo "Making RPM changelog entry"
-  sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- rpmdev-bumpspec --comment="Built from Git Snapshot." --userstring="Test User <test@example.com>" --new="${snapshot_version}%{?dist}" ${spec_file}
+  sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- rpmdev-bumpspec --comment="Built from Git Snapshot." --userstring="Test User <test@example.com>" --new="${snapshot_version}%{?dist}" ${spec_file}
 fi
 
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyout "/tmp/${build_dir}/${spec_file}" ..
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/${spec_file}" ..
 
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
   set -o xtrace ;
   [ -d cmake-build ] || mkdir cmake-build ;
   cd cmake-build ;
@@ -124,7 +122,7 @@ sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}"
   )"
 
 [ -d cmake-build ] || mkdir cmake-build
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyout "/tmp/${build_dir}/cmake-build/${package}*.tar.gz" cmake-build
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/cmake-build/${package}*.tar.gz" cmake-build
 
 [ -d ~/rpmbuild/SOURCES ] || mkdir -p ~/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
 mv cmake-build/${package}*.tar.gz ~/rpmbuild/SOURCES/
@@ -133,10 +131,10 @@ echo "Building source RPM ..."
 rpmbuild -bs ${spec_file}
 echo "Building binary RPMs ..."
 mock_result=$(readlink -f ../mock-result)
-sudo mock --resultdir="${mock_result}" --bootstrap-chroot --old-chroot -r ${config} --no-clean --no-cleanup-after --rebuild ~/rpmbuild/SRPMS/${package}-${snapshot_version}*.src.rpm
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --copyin "${mock_result}" /tmp
+sudo mock --resultdir="${mock_result}" --use-bootstrap-image --isolation=simple -r ${config} --no-clean --no-cleanup-after --rebuild ~/rpmbuild/SRPMS/${package}-${snapshot_version}*.src.rpm
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "${mock_result}" /tmp
 
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
   set -o xtrace &&
   rpm -Uvh ../mock-result/*.rpm &&
   gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0
@@ -144,10 +142,10 @@ sudo mock -r ${config} --bootstrap-chroot --old-chroot --cwd "/tmp/${build_dir}"
 
 if [ ! -e "${mock_root}/tmp/${build_dir}/example-client" ]; then
   echo "Example was not built!"
-  sudo mock -r ${config} --bootstrap-chroot --old-chroot --clean
+  sudo mock -r ${config} --use-bootstrap-image --isolation=simple --clean
   exit 1
 fi
 
-sudo mock -r ${config} --bootstrap-chroot --old-chroot --clean
+sudo mock -r ${config} --use-bootstrap-image --isolation=simple --clean
 (cd "${mock_result}" ; tar zcvf ../rpm.tar.gz *.rpm)
 
