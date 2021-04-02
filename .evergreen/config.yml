@@ -1757,7 +1757,7 @@ tasks:
     params:
       aws_key: ${aws_key}
       aws_secret: ${aws_secret}
-      remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz
+      remote_file: ${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz
       bucket: mciuploads
       permissions: public-read
       local_file: rpm.tar.gz
