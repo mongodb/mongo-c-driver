@@ -109,7 +109,7 @@ test_framework_client_new_from_uri (const mongoc_uri_t *uri);
 mongoc_client_pool_t *
 test_framework_new_default_client_pool (void);
 mongoc_client_pool_t *
-test_framework_client_pool_new (const mongoc_uri_t *uri);
+test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri);
 
 bool
 test_framework_is_mongos (void);

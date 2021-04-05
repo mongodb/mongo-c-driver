@@ -313,7 +313,7 @@ test_counters_clients (void)
    DIFF_AND_RESET (client_pools_active, ==, 0);
    DIFF_AND_RESET (client_pools_disposed, ==, 0);
    /* check client pools. */
-   client_pool = test_framework_client_pool_new (uri);
+   client_pool = test_framework_client_pool_new_from_uri (uri);
    BSON_ASSERT (client_pool);
    DIFF_AND_RESET (clients_active, ==, 0);
    DIFF_AND_RESET (clients_disposed, ==, 0);

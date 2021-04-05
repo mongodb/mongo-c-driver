@@ -105,7 +105,7 @@ _test_mongoc_server_api_client_pool (void)
    bson_error_t error;
 
    uri = mongoc_uri_new ("mongodb://localhost");
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
 
    api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
 

@@ -170,7 +170,7 @@ _test_cluster_node_disconnect (bool pooled)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri);
@@ -244,7 +244,7 @@ _test_cluster_command_timeout (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 200);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri);
@@ -916,7 +916,7 @@ _test_cluster_time_comparison (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri);
@@ -1051,7 +1051,7 @@ _test_not_master (bool pooled,
    mock_server_run (server);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new_from_uri (mock_server_get_uri (server));
       client = mongoc_client_pool_pop (pool);
    } else {
       client =
@@ -1453,7 +1453,7 @@ _test_cluster_ismaster_fails (bool hangup)
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
    /* increase heartbeatFrequencyMS to prevent background server selection. */
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    mongoc_client_pool_set_error_api (pool, 2);
    mongoc_uri_destroy (uri);
    client = mongoc_client_pool_pop (pool);
@@ -1708,7 +1708,7 @@ _test_ismaster_on_unknown (char *ismaster)
     * The host will get removed on the first failed ismaster. */
    ret = mongoc_uri_upsert_host (uri, "localhost", 12345, &error);
    ASSERT_OR_PRINT (ret, error);
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
 
    client = mongoc_client_pool_pop (pool);
 
@@ -1762,7 +1762,7 @@ _test_cmd_on_unknown_serverid (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
    } else {

@@ -228,7 +228,7 @@ _test_last_write_date (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
    } else {

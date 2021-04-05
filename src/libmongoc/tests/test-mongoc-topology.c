@@ -310,7 +310,7 @@ test_server_selection_try_once_option (void *ctx)
    /* off for pooled clients, can't be enabled */
    for (i = 0; i < sizeof (uri_strings) / sizeof (char *); i++) {
       uri = mongoc_uri_new ("mongodb://a");
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       client = mongoc_client_pool_pop (pool);
       BSON_ASSERT (!client->topology->server_selection_try_once);
       mongoc_client_pool_push (pool, client);
@@ -480,7 +480,7 @@ _test_topology_invalidate_server (bool pooled)
    callbacks = heartbeat_callbacks ();
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
       test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
@@ -1120,7 +1120,7 @@ _test_server_removed_during_handshake (bool pooled)
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri);
@@ -1299,7 +1299,7 @@ test_add_and_scan_failure (void)
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    client = mongoc_client_pool_pop (pool);
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
@@ -1482,7 +1482,7 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 100);
    }
 
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    callbacks = heartbeat_callbacks ();
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
    client = mongoc_client_pool_pop (pool);
@@ -1739,7 +1739,7 @@ test_cluster_time_updated_during_handshake ()
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
 
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    client = mongoc_client_pool_pop (pool);
 
    /* ensure a topology scan has run, populating the topology description
@@ -1840,7 +1840,7 @@ _test_request_scan_on_error (bool pooled,
 
    if (pooled) {
       mongoc_topology_t *topology;
-      client_pool = test_framework_client_pool_new (uri);
+      client_pool = test_framework_client_pool_new_from_uri (uri);
       topology = _mongoc_client_pool_get_topology (client_pool);
       /* set a small minHeartbeatFrequency, so scans don't block for 500ms. */
       topology->min_heartbeat_frequency_msec = minHBMS;
@@ -2143,7 +2143,7 @@ test_slow_server_pooled (void)
    mongoc_uri_set_option_as_int32 (
       uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 500);
 
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    callbacks = heartbeat_callbacks ();
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
 

@@ -469,7 +469,7 @@ _mock_test_exhaust (bool pooled,
    mock_server_run (server);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new_from_uri (mock_server_get_uri (server));
       client = mongoc_client_pool_pop (pool);
    } else {
       client =

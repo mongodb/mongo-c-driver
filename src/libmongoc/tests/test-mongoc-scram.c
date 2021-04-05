@@ -220,7 +220,7 @@ _check_mechanism (bool pooled,
    }
 
    if (pooled) {
-      client_pool = test_framework_client_pool_new (uri);
+      client_pool = test_framework_client_pool_new_from_uri (uri);
       client = mongoc_client_pool_pop (client_pool);
       /* suppress the auth failure logs from pooled clients. */
       capture_logs (true);
@@ -303,7 +303,7 @@ _try_auth_from_uri (bool pooled, mongoc_uri_t *uri, test_error_t expected_error)
    bool res;
 
    if (pooled) {
-      client_pool = test_framework_client_pool_new (uri);
+      client_pool = test_framework_client_pool_new_from_uri (uri);
       test_framework_set_pool_ssl_opts (client_pool);
       mongoc_client_pool_set_error_api (client_pool, 2);
       client = mongoc_client_pool_pop (client_pool);

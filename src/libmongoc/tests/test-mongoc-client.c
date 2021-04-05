@@ -908,7 +908,7 @@ _test_command_read_prefs (bool simple, bool pooled)
    mongoc_uri_set_read_prefs_t (uri, secondary_pref);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri);
@@ -1791,7 +1791,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    mock_server_autoresponds (server, responder, NULL, NULL);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri);
@@ -2122,7 +2122,7 @@ _test_mongoc_client_ipv6 (bool pooled)
 #endif
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
 #if (defined(__APPLE__) || defined(_WIN32)) && defined(MONGOC_ENABLE_SSL)
       mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
 #else
@@ -2286,7 +2286,7 @@ _test_mongoc_client_ssl_opts (bool pooled)
       }
 
       if (pooled) {
-         pool = test_framework_client_pool_new (uri);
+         pool = test_framework_client_pool_new_from_uri (uri);
          mongoc_client_pool_set_ssl_opts (pool, ssl_opts);
          client = mongoc_client_pool_pop (pool);
       } else {
@@ -2620,7 +2620,7 @@ _test_mongoc_client_select_server_error (bool pooled)
    if (pooled) {
       uri = test_framework_get_uri ();
       mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 3000);
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
    } else {
@@ -2917,7 +2917,7 @@ test_client_set_ssl_copies_args (bool pooled)
 
    if (pooled) {
       capture_logs (true);
-      pool = test_framework_client_pool_new (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new_from_uri (mock_server_get_uri (server));
       mongoc_client_pool_set_ssl_opts (pool, &client_opts);
       client = mongoc_client_pool_pop (pool);
    } else {
@@ -2984,7 +2984,7 @@ _test_ssl_reconnect (bool pooled)
 
    if (pooled) {
       capture_logs (true);
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       mongoc_client_pool_set_ssl_opts (pool, &client_opts);
       client = mongoc_client_pool_pop (pool);
    } else {
@@ -3146,7 +3146,7 @@ test_mongoc_handshake_pool (void)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    ASSERT (mongoc_uri_set_appname (uri, BSON_FUNC));
 
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
 
    client1 = mongoc_client_pool_pop (pool);
    request1 = mock_server_receives_ismaster (server);
@@ -3201,7 +3201,7 @@ _test_client_sends_handshake (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "connectTimeoutMS", 100);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
 
       /* Pop a client to trigger the topology scanner */
       client = mongoc_client_pool_pop (pool);
@@ -3319,7 +3319,7 @@ test_client_appname (bool pooled, bool use_uri)
    }
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       if (!use_uri) {
          ASSERT (mongoc_client_pool_set_appname (pool, "testapp"));
       }
@@ -3406,7 +3406,7 @@ _test_null_error_pointer (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri);

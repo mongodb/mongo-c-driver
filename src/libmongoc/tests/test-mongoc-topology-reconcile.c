@@ -118,7 +118,7 @@ _test_topology_reconcile_rs (bool pooled)
    uri = mongoc_uri_new (uri_str);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new (uri_str);
@@ -236,7 +236,7 @@ _test_topology_reconcile_sharded (bool pooled)
    uri = mongoc_uri_new (uri_str);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new (uri_str);
@@ -367,7 +367,7 @@ test_topology_reconcile_from_handshake (void *ctx)
       "mongodb://%s/?replicaSet=%s", host_and_port, replset_name);
 
    uri = mongoc_uri_new (uri_str);
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    mongoc_apm_set_server_opening_cb (callbacks, server_opening);
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &data);
    test_framework_set_pool_ssl_opts (pool);

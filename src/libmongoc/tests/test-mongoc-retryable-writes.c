@@ -458,10 +458,10 @@ test_retry_no_crypto (void *ctx)
       "test_framework_client_new_from_uri and retryWrites=false");
    mongoc_client_destroy (client);
 
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    BSON_ASSERT (pool);
    ASSERT_NO_CAPTURED_LOGS (
-      "test_framework_client_pool_new and retryWrites=false");
+      "test_framework_client_pool_new_from_uri and retryWrites=false");
    mongoc_client_pool_destroy (pool);
 
    mongoc_uri_destroy (uri);
@@ -490,10 +490,10 @@ test_retry_no_crypto (void *ctx)
 
    clear_captured_logs ();
 
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    BSON_ASSERT (pool);
    ASSERT_CAPTURED_LOG (
-      "test_framework_client_pool_new and retryWrites=true",
+      "test_framework_client_pool_new_from_uri and retryWrites=true",
       MONGOC_LOG_LEVEL_WARNING,
       "retryWrites not supported without an SSL crypto library");
    mongoc_client_pool_destroy (pool);

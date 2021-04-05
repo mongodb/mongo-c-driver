@@ -1716,7 +1716,7 @@ _reset (mongoc_client_pool_t **pool,
       bson_error_t error;
 
       uri = test_framework_get_uri ();
-      *pool = test_framework_client_pool_new (uri);
+      *pool = test_framework_client_pool_new_from_uri (uri);
       test_framework_set_pool_ssl_opts (*pool);
       *singled_threaded_client = test_framework_client_new_from_uri (uri);
       test_framework_set_ssl_opts (*singled_threaded_client);
@@ -1964,7 +1964,7 @@ _test_multi_threaded (bool external_key_vault)
    int i;
 
    uri = test_framework_get_uri ();
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    test_framework_set_pool_ssl_opts (pool);
    client = test_framework_client_new_from_uri (uri);
    test_framework_set_ssl_opts (client);

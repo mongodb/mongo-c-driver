@@ -217,7 +217,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
 #endif
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
 
       /* before we set SSL on so that we can connect to the test replica set,
        * assert that the URI has SSL on by default, and SSL off if "ssl=false"

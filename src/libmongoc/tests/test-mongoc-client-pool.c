@@ -15,7 +15,7 @@ test_mongoc_client_pool_basic (void)
    mongoc_uri_t *uri;
 
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1");
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    client = mongoc_client_pool_pop (pool);
    BSON_ASSERT (client);
    mongoc_client_pool_push (pool, client);
@@ -32,7 +32,7 @@ test_mongoc_client_pool_try_pop (void)
    mongoc_uri_t *uri;
 
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1");
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    client = mongoc_client_pool_pop (pool);
    BSON_ASSERT (client);
    BSON_ASSERT (!mongoc_client_pool_try_pop (pool));
@@ -52,7 +52,7 @@ test_mongoc_client_pool_pop_timeout (void)
 
    uri = mongoc_uri_new (
       "mongodb://127.0.0.1/?maxpoolsize=1&waitqueuetimeoutms=2000");
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    client = mongoc_client_pool_pop (pool);
    BSON_ASSERT (client);
    start = bson_get_monotonic_time ();
@@ -78,7 +78,7 @@ test_mongoc_client_pool_min_size_zero (void)
    mongoc_uri_t *uri;
 
    uri = mongoc_uri_new (NULL);
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
 
    client1 = mongoc_client_pool_pop (pool);
    client2 = mongoc_client_pool_pop (pool);
@@ -109,7 +109,7 @@ test_mongoc_client_pool_min_size_dispose (void)
 
    capture_logs (true);
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?minpoolsize=2");
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
 
    c0 = mongoc_client_pool_pop (pool);
    BSON_ASSERT (c0);
@@ -173,7 +173,7 @@ test_mongoc_client_pool_set_max_size (void)
    _mongoc_array_init (&conns, sizeof client);
 
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=10");
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
 
    for (i = 0; i < 5; i++) {
       client = mongoc_client_pool_pop (pool);
@@ -211,7 +211,7 @@ test_mongoc_client_pool_set_min_size (void)
 
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=10&minpoolsize=3");
    capture_logs (true);
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    ASSERT_CAPTURED_LOG (
       "minpoolsize URI option", MONGOC_LOG_LEVEL_WARNING, "is deprecated");
 
@@ -252,7 +252,7 @@ test_mongoc_client_pool_ssl_disabled (void)
 
    ASSERT (uri);
    capture_logs (true);
-   ASSERT (NULL == test_framework_client_pool_new (uri));
+   ASSERT (NULL == test_framework_client_pool_new_from_uri (uri));
 
    mongoc_uri_destroy (uri);
 }
@@ -266,7 +266,7 @@ test_mongoc_client_pool_handshake (void)
    mongoc_uri_t *uri;
 
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1");
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
 
 
    ASSERT (mongoc_client_pool_set_appname (pool, "some application"));
@@ -281,7 +281,7 @@ test_mongoc_client_pool_handshake (void)
    mongoc_client_pool_destroy (pool);
 
    /* Make sure that after we pop a client we can't set handshake anymore */
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
 
    client = mongoc_client_pool_pop (pool);
 
@@ -442,7 +442,7 @@ test_client_pool_max_pool_size_exceeded (void)
    int ret;
 
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?maxpoolsize=1");
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    args->pool = pool;
    args->nleft = 2;
    bson_mutex_init (&args->mutex);
