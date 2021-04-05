@@ -273,12 +273,18 @@ _build_ismaster_with_handshake (mongoc_topology_scanner_t *ts)
    return res;
 }
 
+const bson_t *
+_mongoc_topology_scanner_get_hello_cmd (mongoc_topology_scanner_t *ts)
+{
+   return &ts->ismaster_cmd;
+}
+
 /* Caller must lock topology->mutex to protect ismaster_cmd_with_handshake. This
  * is called at the start of the scan in _mongoc_topology_run_background, when a
  * node is added in _mongoc_topology_reconcile_add_nodes, or when running an
  * ismaster directly on a node in _mongoc_stream_run_ismaster. */
 const bson_t *
-_mongoc_topology_scanner_get_ismaster (mongoc_topology_scanner_t *ts)
+_mongoc_topology_scanner_get_handshake_cmd (mongoc_topology_scanner_t *ts)
 {
    /* If this is the first time using the node or if it's the first time
     * using it after a failure, build handshake doc */
@@ -311,7 +317,7 @@ _begin_ismaster_cmd (mongoc_topology_scanner_node_t *node,
       /* The node's been used before and not failed recently */
       bson_copy_to (&ts->ismaster_cmd, &cmd);
    } else {
-      bson_copy_to (_mongoc_topology_scanner_get_ismaster (ts), &cmd);
+      bson_copy_to (_mongoc_topology_scanner_get_handshake_cmd (ts), &cmd);
    }
 
    if (node->ts->negotiate_sasl_supported_mechs &&
