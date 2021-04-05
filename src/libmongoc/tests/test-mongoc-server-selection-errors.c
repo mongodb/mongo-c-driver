@@ -42,13 +42,13 @@ server_selection_error_dns (const char *uri_str,
    ASSERT (uri);
 
    if (pooled && expect_success) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
    } else if (pooled) {
       /* we expect selection to fail; let the test finish faster */
       mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       test_framework_set_pool_ssl_opts (pool);
       _mongoc_client_pool_set_stream_initiator (pool, cannot_resolve, NULL);
       client = mongoc_client_pool_pop (pool);
@@ -178,7 +178,7 @@ _test_server_selection_uds_auth_failure (bool pooled)
    ASSERT (uri);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
 #ifdef MONGOC_ENABLE_SSL
       test_framework_set_pool_ssl_opts (pool);
 #endif
@@ -237,7 +237,7 @@ _test_server_selection_uds_not_found (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 100);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
 #ifdef MONGOC_ENABLE_SSL
       test_framework_set_pool_ssl_opts (pool);
 #endif

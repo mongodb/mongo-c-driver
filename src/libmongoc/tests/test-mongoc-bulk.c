@@ -4156,7 +4156,7 @@ _test_bulk_hint (bool pooled, bool use_primary)
    mock_rs_run (rs);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (mock_rs_get_uri (rs));
+      pool = test_framework_client_pool_new_from_uri (mock_rs_get_uri (rs));
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (mock_rs_get_uri (rs));

@@ -1752,7 +1752,7 @@ test_framework_new_default_client_pool ()
 }
 
 mongoc_client_pool_t *
-test_framework_client_pool_new (const mongoc_uri_t *uri)
+test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri)
 {
    /* TODO CDRIVER-3917 */
    return mongoc_client_pool_new (uri);

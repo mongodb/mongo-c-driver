@@ -664,7 +664,7 @@ _test_query_operation_id (bool pooled)
    mongoc_apm_set_command_failed_cb (callbacks, test_op_id_failed_cb);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new_from_uri (mock_server_get_uri (server));
       ASSERT (mongoc_client_pool_set_apm_callbacks (
          pool, callbacks, (void *) &test));
       client = mongoc_client_pool_pop (pool);

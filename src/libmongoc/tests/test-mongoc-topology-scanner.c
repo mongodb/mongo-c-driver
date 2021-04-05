@@ -655,7 +655,7 @@ _test_topology_scanner_does_not_renegotiate (bool pooled)
    mongoc_apm_set_server_heartbeat_failed_cb (callbacks, heartbeat_failed);
 
    if (pooled) {
-      pool = test_framework_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri);
       test_framework_set_pool_ssl_opts (pool);
       mongoc_client_pool_set_apm_callbacks (pool, callbacks, &failed);
       client = mongoc_client_pool_pop (pool);

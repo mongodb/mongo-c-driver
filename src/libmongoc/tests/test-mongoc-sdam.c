@@ -340,7 +340,7 @@ run_one_integration_test (json_test_config_t *config, bson_t *test)
 
    /* SDAM integration tests require streamable ismaster support, which is only
     * available for a client pool. */
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
    test_framework_set_pool_ssl_opts (pool);
 
@@ -728,7 +728,7 @@ test_prose_rtt (void *unused)
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks,
                                                  heartbeat_succeeded);
-   pool = test_framework_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri);
    test_framework_set_pool_ssl_opts (pool);
    memset (&ctx, 0, sizeof (prose_test_ctx_t));
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &ctx);
