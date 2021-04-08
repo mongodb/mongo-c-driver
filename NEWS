@@ -1,3 +1,20 @@
+mongo-c-driver 1.17.5
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.5.
+
+Improvements:
+
+  * Fix documentation regarding when to call mongoc_log_set_handler
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Clyde Bazile
+  * Fermín Galán Márquez
+
+--Kevin Albertson
+
+
 mongo-c-driver 1.17.4
 =====================
 
