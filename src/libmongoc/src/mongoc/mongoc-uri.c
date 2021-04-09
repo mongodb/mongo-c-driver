@@ -2851,7 +2851,7 @@ _mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri,
    if (!bson_strcasecmp (option, MONGOC_URI_TIMEOUTMS) && value < 0) {
       MONGOC_URI_ERROR (
          error,
-         "Invalid \"%s\" of %lld: must be a non-negative integer",
+         "Invalid \"%s\" of %" PRId64 ": must be a non-negative integer",
          option_orig,
          value);
       return false;
