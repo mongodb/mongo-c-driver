@@ -514,6 +514,7 @@ all_functions = OD([
         export DNS=${DNS}
         export ASAN=${ASAN}
         export MONGODB_API_VERSION=1
+        # TODO: CDRIVER-3954 Run all integration tests
         ./src/libmongoc/test-libmongoc --no-fork -l /versioned_api/* -d
         unset MONGODB_API_VERSION
 
