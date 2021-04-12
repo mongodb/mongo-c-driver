@@ -416,6 +416,7 @@ functions:
         export SSL=${SSL}
         export ORCHESTRATION_FILE=${ORCHESTRATION_FILE}
         export OCSP=${OCSP}
+        export REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
         sh .evergreen/integration-tests.sh
   run tests:
   - command: shell.exec
@@ -694,8 +695,13 @@ functions:
       working_dir: mongoc
       background: true
       shell: bash
-      script: "set -o errexit\nset -o xtrace\nset -o xtrace\ncd drivers-evergreen-tools\
-        \ \nexport DRIVERS_TOOLS=$(pwd)\nsh .evergreen/atlas_data_lake/run-mongohouse-local.sh"
+      script: |-
+        set -o errexit
+        set -o xtrace
+        set -o xtrace
+        cd drivers-evergreen-tools
+        export DRIVERS_TOOLS=$(pwd)
+        sh .evergreen/atlas_data_lake/run-mongohouse-local.sh
   test mongohouse:
   - command: shell.exec
     type: test
@@ -716,6 +722,29 @@ functions:
         export RUN_MONGOHOUSE_TESTS=true
         ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d
         unset RUN_MONGOHOUSE_TESTS
+  test versioned api:
+  - command: shell.exec
+    type: test
+    params:
+      working_dir: mongoc
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        export COMPRESSORS='${COMPRESSORS}'
+        export CC='${CC}'
+        export AUTH=${AUTH}
+        export SSL=${SSL}
+        export URI=${URI}
+        export IPV4_ONLY=${IPV4_ONLY}
+        export VALGRIND=${VALGRIND}
+        export MONGOC_TEST_URI=${URI}
+        export DNS=${DNS}
+        export ASAN=${ASAN}
+        export MONGODB_API_VERSION=1
+        # TODO: CDRIVER-3954 Run all integration tests
+        ./src/libmongoc/test-libmongoc --no-fork -l /versioned_api/* -d
+        unset MONGODB_API_VERSION
   run aws tests:
   - command: shell.exec
     type: test
@@ -17473,6 +17502,52 @@ tasks:
   - func: run auth tests
     vars:
       valgrind: 'true'
+- name: test-versioned-api
+  tags:
+  - versioned-api
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      REQUIRE_API_VERSION: 'true'
+      SSL: ssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: test versioned api
+    vars:
+      AUTH: auth
+      SSL: ssl
+- name: test-versioned-api-accept-version-two
+  tags:
+  - versioned-api
+  depends_on:
+    name: debug-compile-nosasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-nosasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      ORCHESTRATION_FILE: versioned-api-testing
+      SSL: ssl
+      TOPOLOGY: server
+      VERSION: latest
+  - func: test versioned api
+    vars:
+      AUTH: auth
+      SSL: ssl
 - name: build-and-run-authentication-tests-openssl-0.9.8
   commands:
   - func: install ssl
@@ -23162,3 +23237,9 @@ buildvariants:
   tasks:
   - .tsan
   batchtime: 1440
+- name: versioned-api
+  display_name: Versioned API Tests
+  run_on: ubuntu1804-test
+  tasks:
+  - debug-compile-nosasl-openssl
+  - .versioned-api

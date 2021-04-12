@@ -74,7 +74,7 @@ all_functions = OD([
         . bin/activate
         ./bin/pip install sphinx
         cd ..
-        
+
         set -o xtrace
         export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
         export MONGOC_TEST_SKIP_LIVE=on
@@ -98,13 +98,13 @@ all_functions = OD([
             ]))]),
         shell_exec(r'''
         mkdir mongoc
-        
+
         if command -v gtar 2>/dev/null; then
            TAR=gtar
         else
            TAR=tar
         fi
-        
+
         $TAR xf build.tar.gz -C mongoc/
         ''', test=False, continue_on_err=True),
     )),
@@ -140,7 +140,7 @@ all_functions = OD([
         make
         cd ..
         mv aha-repo/aha .
-        
+
         sh .evergreen/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
         sh .evergreen/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
         ''', test=False, silent=True, xtrace=False),
@@ -175,7 +175,7 @@ all_functions = OD([
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
         aws s3 cp abi-compliance/compat_reports s3://mciuploads/${project}/%s/abi-compliance/compat_reports --recursive --acl public-read --region us-east-1
-        
+
         if [ -e ./abi-compliance/abi-error.txt ]; then
           exit 1
         else
@@ -279,6 +279,7 @@ all_functions = OD([
         export SSL=${SSL}
         export ORCHESTRATION_FILE=${ORCHESTRATION_FILE}
         export OCSP=${OCSP}
+        export REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
         sh .evergreen/integration-tests.sh
         ''', test=False),
     )),
@@ -475,7 +476,7 @@ all_functions = OD([
         shell_mongoc(r'''
         set -o xtrace
 
-        cd drivers-evergreen-tools 
+        cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
 
         sh .evergreen/atlas_data_lake/run-mongohouse-local.sh
@@ -497,6 +498,25 @@ all_functions = OD([
         export RUN_MONGOHOUSE_TESTS=true
         ./src/libmongoc/test-libmongoc --no-fork -l /mongohouse/* -d
         unset RUN_MONGOHOUSE_TESTS
+
+        '''),
+    )),
+    ('test versioned api', Function(
+        shell_mongoc(r'''
+        export COMPRESSORS='${COMPRESSORS}'
+        export CC='${CC}'
+        export AUTH=${AUTH}
+        export SSL=${SSL}
+        export URI=${URI}
+        export IPV4_ONLY=${IPV4_ONLY}
+        export VALGRIND=${VALGRIND}
+        export MONGOC_TEST_URI=${URI}
+        export DNS=${DNS}
+        export ASAN=${ASAN}
+        export MONGODB_API_VERSION=1
+        # TODO: CDRIVER-3954 Run all integration tests
+        ./src/libmongoc/test-libmongoc --no-fork -l /versioned_api/* -d
+        unset MONGODB_API_VERSION
 
         '''),
     )),

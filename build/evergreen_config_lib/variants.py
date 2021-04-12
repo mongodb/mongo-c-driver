@@ -636,4 +636,10 @@ all_variants = [
         ['.tsan'],
         {'CC': '/opt/mongodbtoolchain/v3/bin/clang'},
         batchtime=days(1))
+    Variant('versioned-api',
+        'Versioned API Tests',
+        'ubuntu1804-test',
+        ['debug-compile-nosasl-openssl',
+         '.versioned-api'],
+        {})
 ]
