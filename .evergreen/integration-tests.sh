@@ -12,6 +12,8 @@
 # ORCHESTRATION_FILE: <file name in orchestration_configs/ without .json>
 #   If this is not set, the file name is constructed from other options.
 # OCSP: off, on
+# REQUIRE_API_VERSION: set to a non-empty string to set the requireApiVersion parameter
+#   This is currently only supported for standalone servers
 #
 # This script may be run locally.
 #
@@ -39,6 +41,7 @@ AUTH=${AUTH:-noauth}
 SSL=${SSL:-nossl}
 TOPOLOGY=${TOPOLOGY:-server}
 OCSP=${OCSP:-off}
+REQUIRE_API_VERSION=${REQUIRE_API_VERSION}
 
 # If caller of script specifies an ORCHESTRATION_FILE, do not attempt to modify it. Otherwise construct it.
 if [ -z "$ORCHESTRATION_FILE" ]; then
@@ -166,3 +169,8 @@ echo $MONGO_SHELL_CONNECTION_FLAGS
 
 `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.serverBuildInfo())' admin
 `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())' admin
+
+# Set the requireApiVersion parameter.
+if [ ! -z "$REQUIRE_API_VERSION" ]; then
+  `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS $DIR/require-api-version.js
+fi
