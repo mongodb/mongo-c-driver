@@ -2080,7 +2080,7 @@ test_framework_max_write_batch_size (void)
    return size;
 }
 
-#define N_SERVER_VERSION_PARTS 4
+#define N_SERVER_VERSION_PARTS 3
 
 static server_version_t
 _parse_server_version (const bson_t *buildinfo)
@@ -2098,11 +2098,12 @@ _parse_server_version (const bson_t *buildinfo)
     * testing purposes. */
    i = 0;
    while (bson_iter_next (&array_iter)) {
-      if (++i == N_SERVER_VERSION_PARTS) {
+      if (i == N_SERVER_VERSION_PARTS) {
          break;
       }
       ret *= 1000;
       ret += 100 + bson_iter_as_int64 (&array_iter);
+      i++;
    }
 
    ASSERT_CMPINT (i, ==, N_SERVER_VERSION_PARTS);
@@ -2148,16 +2149,17 @@ test_framework_str_to_version (const char *version_str)
     * Ignore the 4th part since RCs are equivalent to non-RCs for testing
     * purposes. */
    while (part) {
-      if (++i == N_SERVER_VERSION_PARTS) {
+      if (i == N_SERVER_VERSION_PARTS) {
          break;
       }
       ret *= 1000;
       ret += 100 + bson_ascii_strtoll (part, &end, 10);
       part = strtok (NULL, ".");
+      i++;
    }
 
    /* pad out a short version like "3.0" to three parts */
-   for (; i < N_SERVER_VERSION_PARTS - 1; i++) {
+   for (; i < N_SERVER_VERSION_PARTS; i++) {
       ret *= 1000;
       ret += 100;
    }
