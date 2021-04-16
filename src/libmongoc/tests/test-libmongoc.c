@@ -2080,7 +2080,7 @@ test_framework_max_write_batch_size (void)
    return size;
 }
 
-#define N_SERVER_VERSION_PARTS 4
+#define N_SERVER_VERSION_PARTS 3
 
 static server_version_t
 _parse_server_version (const bson_t *buildinfo)
@@ -2096,11 +2096,8 @@ _parse_server_version (const bson_t *buildinfo)
    /* Server returns a 4-part version like [3, 2, 0, 0], or like [3, 2, 0, -49]
     * for an RC. Ignore the 4th part since RCs are equivalent to non-RCs for
     * testing purposes. */
-   i = 0;
-   while (bson_iter_next (&array_iter)) {
-      if (++i == N_SERVER_VERSION_PARTS) {
-         break;
-      }
+   for (i = 0; i < N_SERVER_VERSION_PARTS && bson_iter_next (&array_iter);
+        i++) {
       ret *= 1000;
       ret += 100 + bson_iter_as_int64 (&array_iter);
    }
@@ -2141,23 +2138,19 @@ test_framework_str_to_version (const char *version_str)
    server_version_t ret = 0;
 
    str_copy = bson_strdup (version_str);
-   i = 0;
    part = strtok (str_copy, ".");
 
    /* Versions can have 4 parts like "3.2.0.0", or like "3.2.0.-49" for an RC.
     * Ignore the 4th part since RCs are equivalent to non-RCs for testing
     * purposes. */
-   while (part) {
-      if (++i == N_SERVER_VERSION_PARTS) {
-         break;
-      }
+   for (i = 0; i < N_SERVER_VERSION_PARTS && part; i++) {
       ret *= 1000;
       ret += 100 + bson_ascii_strtoll (part, &end, 10);
       part = strtok (NULL, ".");
    }
 
    /* pad out a short version like "3.0" to three parts */
-   for (; i < N_SERVER_VERSION_PARTS - 1; i++) {
+   for (; i < N_SERVER_VERSION_PARTS; i++) {
       ret *= 1000;
       ret += 100;
    }
