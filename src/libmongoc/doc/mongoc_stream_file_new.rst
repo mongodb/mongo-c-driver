@@ -8,7 +8,7 @@ Synopsis
 
 .. code-block:: c
 
-  mongoc_stream_t *
+  mongoc_stream_file_t *
   mongoc_stream_file_new (int fd);
 
 Parameters
