@@ -2717,7 +2717,7 @@ _bson_as_json_visit_binary (const bson_iter_t *iter,
 
    if (state->mode == BSON_JSON_MODE_CANONICAL ||
        state->mode == BSON_JSON_MODE_RELAXED) {
-      bson_string_append (state->str, "{ \"$binary\" : { \"base64\": \"");
+      bson_string_append (state->str, "{ \"$binary\" : { \"base64\" : \"");
       bson_string_append (state->str, b64);
       bson_string_append (state->str, "\", \"subType\" : \"");
       bson_string_append_printf (state->str, "%02x", v_subtype);
