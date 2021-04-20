@@ -297,6 +297,26 @@ test_server_description_ignores_rtt (void)
    bson_destroy (&ismaster);
 }
 
+static void
+test_server_description_hello (void)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error;
+   bson_t hello_response;
+
+   bson_init (&hello_response);
+   BCON_APPEND (&hello_response, "isWritablePrimary", BCON_BOOL (true));
+
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+   mongoc_server_description_handle_ismaster (&sd, &hello_response, 0, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+
+   mongoc_server_description_cleanup (&sd);
+   bson_destroy (&hello_response);
+}
+
 void
 test_server_description_install (TestSuite *suite)
 {
@@ -308,4 +328,6 @@ test_server_description_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/server_description/ignores_unset_rtt",
                   test_server_description_ignores_rtt);
+   TestSuite_Add (
+      suite, "/server_description/hello", test_server_description_hello);
 }
