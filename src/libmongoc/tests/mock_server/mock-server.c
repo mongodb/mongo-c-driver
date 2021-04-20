@@ -170,7 +170,7 @@ mock_server_with_autoismaster (int32_t max_wire_version)
                                         max_wire_version);
 
    BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_ismaster (server, ismaster);
+   mock_server_auto_hello (server, ismaster);
 
    bson_free (ismaster);
 
@@ -226,7 +226,7 @@ mock_mongos_new (int32_t max_wire_version)
                                   mongos_36_fields);
 
    BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_ismaster (server, ismaster);
+   mock_server_auto_hello (server, ismaster);
 
    bson_free (ismaster);
 
@@ -486,14 +486,16 @@ mock_server_remove_autoresponder (mock_server_t *server, int id)
 
 
 static bool
-auto_ismaster (request_t *request, void *data)
+auto_hello (request_t *request, void *data)
 {
    const char *response_json = (const char *) data;
    char *quotes_replaced;
    bson_t response;
    bson_error_t error;
 
-   if (!request->is_command || strcasecmp (request->command_name, "ismaster")) {
+   if (!request->is_command ||
+       (strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) &&
+        strcasecmp (request->command_name, "hello"))) {
       return false;
    }
 
@@ -520,9 +522,9 @@ auto_ismaster (request_t *request, void *data)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_auto_ismaster --
+ * mock_server_auto_hello --
  *
- *       Autorespond to "ismaster" with the provided document.
+ *       Autorespond to "hello" and legacy hello with the provided document.
  *
  * Returns:
  *       An id for mock_server_remove_autoresponder.
@@ -535,9 +537,7 @@ auto_ismaster (request_t *request, void *data)
 
 MONGOC_PRINTF_FORMAT (2, 3)
 int
-mock_server_auto_ismaster (mock_server_t *server,
-                           const char *response_json,
-                           ...)
+mock_server_auto_hello (mock_server_t *server, const char *response_json, ...)
 {
    char *formatted_response_json;
    va_list args;
@@ -559,7 +559,7 @@ mock_server_auto_ismaster (mock_server_t *server,
    formatted_response_json = bson_as_json (tmp, 0);
 
    return mock_server_autoresponds (
-      server, auto_ismaster, (void *) formatted_response_json, bson_free);
+      server, auto_hello, (void *) formatted_response_json, bson_free);
 }
 
 
@@ -2069,7 +2069,7 @@ rs_response_to_ismaster (
                                            hosts->str,
                                            session_timeout);
 
-   mock_server_auto_ismaster (server, "%s", ismaster_response);
+   mock_server_auto_hello (server, "%s", ismaster_response);
 
    bson_free (ismaster_response);
    bson_string_free (hosts, true);

@@ -960,15 +960,15 @@ _test_select_succeed (bool try_once)
     * https://support.microsoft.com/en-us/help/175523/info-winsock-tcp-connection-performance-to-unused-ports
     */
    /* primary auto-responds, secondary never responds */
-   mock_server_auto_ismaster (primary,
-                              "{'ok': 1,"
-                              " 'ismaster': true,"
-                              " 'setName': 'rs',"
-                              " 'minWireVersion': 2,"
-                              " 'maxWireVersion': 5,"
-                              " 'hosts': ['127.0.0.1:%hu', '127.0.0.1:%hu']}",
-                              mock_server_get_port (primary),
-                              mock_server_get_port (secondary));
+   mock_server_auto_hello (primary,
+                           "{'ok': 1,"
+                           " 'ismaster': true,"
+                           " 'setName': 'rs',"
+                           " 'minWireVersion': 2,"
+                           " 'maxWireVersion': 5,"
+                           " 'hosts': ['127.0.0.1:%hu', '127.0.0.1:%hu']}",
+                           mock_server_get_port (primary),
+                           mock_server_get_port (secondary));
 
    uri_str = bson_strdup_printf ("mongodb://127.0.0.1:%hu,127.0.0.1:%hu/"
                                  "?replicaSet=rs&connectTimeoutMS=%d",
@@ -1107,14 +1107,14 @@ _test_server_removed_during_handshake (bool pooled)
    server = mock_server_new ();
    mock_server_run (server);
    mock_server_autoresponds (server, auto_ping, NULL, NULL);
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'ismaster': true,"
-                              " 'setName': 'rs',"
-                              " 'minWireVersion': 2,"
-                              " 'maxWireVersion': 5,"
-                              " 'hosts': ['%s']}",
-                              mock_server_get_host_and_port (server));
+   mock_server_auto_hello (server,
+                           "{'ok': 1,"
+                           " 'ismaster': true,"
+                           " 'setName': 'rs',"
+                           " 'minWireVersion': 2,"
+                           " 'maxWireVersion': 5,"
+                           " 'hosts': ['%s']}",
+                           mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* no auto heartbeat */
@@ -1142,14 +1142,14 @@ _test_server_removed_during_handshake (bool pooled)
    mongoc_server_description_destroy (sd);
 
    /* primary changes setName */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'ismaster': true,"
-                              " 'setName': 'BAD NAME',"
-                              " 'minWireVersion': 2,"
-                              " 'maxWireVersion': 5,"
-                              " 'hosts': ['%s']}",
-                              mock_server_get_host_and_port (server));
+   mock_server_auto_hello (server,
+                           "{'ok': 1,"
+                           " 'ismaster': true,"
+                           " 'setName': 'BAD NAME',"
+                           " 'minWireVersion': 2,"
+                           " 'maxWireVersion': 5,"
+                           " 'hosts': ['%s']}",
+                           mock_server_get_host_and_port (server));
 
    /* pretend to close a connection. does NOT affect server description yet */
    mongoc_cluster_disconnect_node (&client->cluster, 1);
@@ -1291,14 +1291,14 @@ test_add_and_scan_failure (void)
    server = mock_server_new ();
    mock_server_run (server);
    /* client will discover "fake" host and fail to connect */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'ismaster': true,"
-                              " 'setName': 'rs',"
-                              " 'minWireVersion': 2,"
-                              " 'maxWireVersion': 5,"
-                              " 'hosts': ['%s', 'fake:1']}",
-                              mock_server_get_host_and_port (server));
+   mock_server_auto_hello (server,
+                           "{'ok': 1,"
+                           " 'ismaster': true,"
+                           " 'setName': 'rs',"
+                           " 'minWireVersion': 2,"
+                           " 'maxWireVersion': 5,"
+                           " 'hosts': ['%s', 'fake:1']}",
+                           mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
@@ -1640,11 +1640,11 @@ test_incompatible_error (void)
                           "reports wire version 2, but this version of"
                           " libmongoc requires at least 3 (MongoDB 3.0)");
 
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1.0,"
-                              " 'ismaster': true,"
-                              " 'minWireVersion': 10,"
-                              " 'maxWireVersion': 11}");
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'ismaster': true,"
+                           " 'minWireVersion': 10,"
+                           " 'maxWireVersion': 11}");
 
    /* wait until it's time for next heartbeat */
    _mongoc_usleep (600 * 1000);
@@ -1730,12 +1730,12 @@ test_cluster_time_updated_during_handshake ()
    mock_server_run (server);
    mock_server_autoresponds (server, auto_ping, NULL, NULL);
    cluster_time = cluster_time_fmt (1);
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1, 'ismaster': true, 'setName': 'rs', "
-                              "'minWireVersion': 2, 'maxWireVersion': 7, "
-                              "'hosts': ['%s'], '$clusterTime': %s}",
-                              mock_server_get_host_and_port (server),
-                              cluster_time);
+   mock_server_auto_hello (server,
+                           "{'ok': 1, 'ismaster': true, 'setName': 'rs', "
+                           "'minWireVersion': 2, 'maxWireVersion': 7, "
+                           "'hosts': ['%s'], '$clusterTime': %s}",
+                           mock_server_get_host_and_port (server),
+                           cluster_time);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* set a large heartbeatFrequencyMS so we don't do a background scan in
@@ -1760,12 +1760,12 @@ test_cluster_time_updated_during_handshake ()
    cluster_time = cluster_time_fmt (2);
 
    /* primary changes clusterTime */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1, 'ismaster': true, 'setName': 'rs', "
-                              "'minWireVersion': 2, 'maxWireVersion': 7, "
-                              "'hosts': ['%s'], '$clusterTime': %s}",
-                              mock_server_get_host_and_port (server),
-                              cluster_time);
+   mock_server_auto_hello (server,
+                           "{'ok': 1, 'ismaster': true, 'setName': 'rs', "
+                           "'minWireVersion': 2, 'maxWireVersion': 7, "
+                           "'hosts': ['%s'], '$clusterTime': %s}",
+                           mock_server_get_host_and_port (server),
+                           cluster_time);
 
    /* remove the node from the cluster to trigger an ismaster handshake. */
    mongoc_cluster_disconnect_node (&client->cluster, 1);
@@ -1985,14 +1985,14 @@ test_last_server_removed_warning (void)
    client = test_framework_client_new_from_uri (uri, NULL);
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'ismaster': true,"
-                              " 'setName': 'rs',"
-                              " 'minWireVersion': 2,"
-                              " 'maxWireVersion': 5,"
-                              " 'hosts': ['127.0.0.1:%hu']}",
-                              mock_server_get_port (server));
+   mock_server_auto_hello (server,
+                           "{'ok': 1,"
+                           " 'ismaster': true,"
+                           " 'setName': 'rs',"
+                           " 'minWireVersion': 2,"
+                           " 'maxWireVersion': 5,"
+                           " 'hosts': ['127.0.0.1:%hu']}",
+                           mock_server_get_port (server));
 
    capture_logs (true);
    description = mongoc_topology_select (
@@ -2138,7 +2138,7 @@ test_slow_server_pooled (void)
       "%s, 'ismaster': false, 'secondary': true }", ismaster_common);
 
    /* Primary responds immediately, but secondary does not. */
-   mock_server_auto_ismaster (primary, ismaster_primary);
+   mock_server_auto_hello (primary, ismaster_primary);
 
    uri = mongoc_uri_copy (mock_server_get_uri (primary));
    /* Do not connect as topology type Single, so the client pool discovers the
@@ -2180,7 +2180,7 @@ test_slow_server_pooled (void)
    /* Set up an auto responder so future ismasters on the secondary do not
     * block until connectTimeoutMS. Otherwise, the shutdown sequence will be
     * blocked for connectTimeoutMS. */
-   mock_server_auto_ismaster (secondary, ismaster_secondary);
+   mock_server_auto_hello (secondary, ismaster_secondary);
    /* Respond to the first ismaster. */
    mock_server_replies_simple (request, ismaster_secondary);
    request_destroy (request);

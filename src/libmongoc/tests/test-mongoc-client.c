@@ -839,11 +839,11 @@ test_wire_version (void)
    server = mock_server_new ();
 
    /* too new */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1.0,"
-                              " 'ismaster': true,"
-                              " 'minWireVersion': 10,"
-                              " 'maxWireVersion': 11}");
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'ismaster': true,"
+                           " 'minWireVersion': 10,"
+                           " 'maxWireVersion': 11}");
 
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
@@ -859,11 +859,11 @@ test_wire_version (void)
    mongoc_cursor_destroy (cursor);
 
    /* too old */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1.0,"
-                              " 'ismaster': true,"
-                              " 'minWireVersion': -1,"
-                              " 'maxWireVersion': -1}");
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'ismaster': true,"
+                           " 'minWireVersion': -1,"
+                           " 'maxWireVersion': -1}");
 
    /* wait until it's time for next heartbeat */
    _mongoc_usleep (600 * 1000);
@@ -876,11 +876,11 @@ test_wire_version (void)
    mongoc_cursor_destroy (cursor);
 
    /* compatible again */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1.0,"
-                              " 'ismaster': true,"
-                              " 'minWireVersion': 2,"
-                              " 'maxWireVersion': 5}");
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'ismaster': true,"
+                           " 'minWireVersion': 2,"
+                           " 'maxWireVersion': 5}");
 
    /* wait until it's time for next heartbeat */
    _mongoc_usleep (600 * 1000);
@@ -1910,19 +1910,19 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    }
 
    if (rs) {
-      mock_server_auto_ismaster (server,
-                                 "{'ok': 1,"
-                                 " 'ismaster': true,"
-                                 " 'setName': 'rs',"
-                                 " 'hosts': ['%s']}",
-                                 mock_server_get_host_and_port (server));
+      mock_server_auto_hello (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'setName': 'rs',"
+                              " 'hosts': ['%s']}",
+                              mock_server_get_host_and_port (server));
 
       mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
    } else {
-      mock_server_auto_ismaster (server,
-                                 "{'ok': 1,"
-                                 " 'ismaster': true,"
-                                 " 'msg': 'isdbgrid'}");
+      mock_server_auto_hello (server,
+                              "{'ok': 1,"
+                              " 'ismaster': true,"
+                              " 'msg': 'isdbgrid'}");
    }
 
    /* auto-respond to "foo" command */
@@ -2123,13 +2123,13 @@ test_recovering (void *ctx)
    mock_server_run (server);
 
    /* server is "recovering": not master, not secondary */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'ismaster': false,"
-                              " 'secondary': false,"
-                              " 'setName': 'rs',"
-                              " 'hosts': ['%s']}",
-                              mock_server_get_host_and_port (server));
+   mock_server_auto_hello (server,
+                           "{'ok': 1,"
+                           " 'ismaster': false,"
+                           " 'secondary': false,"
+                           " 'setName': 'rs',"
+                           " 'hosts': ['%s']}",
+                           mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
@@ -3803,7 +3803,7 @@ test_client_reset_connections (void)
    int autoresponder_id;
 
    server = mock_server_new ();
-   autoresponder_id = mock_server_auto_ismaster (server, "{ 'isMaster': 1.0 }");
+   autoresponder_id = mock_server_auto_hello (server, "{ 'isMaster': 1.0 }");
    mock_server_run (server);
 
    /* After calling reset, check that connections are left as-is. Set

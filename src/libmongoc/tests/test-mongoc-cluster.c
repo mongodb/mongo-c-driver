@@ -424,15 +424,15 @@ test_cluster_command_notmaster (void)
    mock_server_run (server);
 
    /* server is "recovering": not master, not secondary */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'maxWireVersion': %d,"
-                              " 'ismaster': false,"
-                              " 'secondary': false,"
-                              " 'setName': 'rs',"
-                              " 'hosts': ['%s']}",
-                              WIRE_VERSION_OP_MSG - 1,
-                              mock_server_get_host_and_port (server));
+   mock_server_auto_hello (server,
+                           "{'ok': 1,"
+                           " 'maxWireVersion': %d,"
+                           " 'ismaster': false,"
+                           " 'secondary': false,"
+                           " 'setName': 'rs',"
+                           " 'hosts': ['%s']}",
+                           WIRE_VERSION_OP_MSG - 1,
+                           mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
@@ -1451,7 +1451,7 @@ _test_cluster_ismaster_fails (bool hangup)
 
    mock_server = mock_server_new ();
    autoresponder_id =
-      mock_server_auto_ismaster (mock_server, "{ 'isMaster': 1.0 }");
+      mock_server_auto_hello (mock_server, "{ 'isMaster': 1.0 }");
    mock_server_run (mock_server);
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
    /* increase heartbeatFrequencyMS to prevent background server selection. */
@@ -1590,12 +1590,12 @@ test_advanced_cluster_time_not_sent_to_standalone (void)
 
    server = mock_server_new ();
    mock_server_auto_endsessions (server);
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1.0,"
-                              " 'ismaster': true,"
-                              " 'minWireVersion': 0,"
-                              " 'maxWireVersion': 6,"
-                              " 'logicalSessionTimeoutMinutes': 30}");
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'ismaster': true,"
+                           " 'minWireVersion': 0,"
+                           " 'maxWireVersion': 6,"
+                           " 'logicalSessionTimeoutMinutes': 30}");
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

@@ -282,40 +282,40 @@ _run_server (read_pref_test_type_t test_type, int32_t max_wire_version)
    BSON_ASSERT (max_wire_version > 0);
    switch (test_type) {
    case READ_PREF_TEST_STANDALONE:
-      mock_server_auto_ismaster (server,
-                                 "{'ok': 1,"
-                                 " 'maxWireVersion': %d,"
-                                 " 'ismaster': true}",
-                                 max_wire_version);
+      mock_server_auto_hello (server,
+                              "{'ok': 1,"
+                              " 'maxWireVersion': %d,"
+                              " 'ismaster': true}",
+                              max_wire_version);
       break;
    case READ_PREF_TEST_MONGOS:
-      mock_server_auto_ismaster (server,
-                                 "{'ok': 1,"
-                                 " 'maxWireVersion': %d,"
-                                 " 'ismaster': true,"
-                                 " 'msg': 'isdbgrid'}",
-                                 max_wire_version);
+      mock_server_auto_hello (server,
+                              "{'ok': 1,"
+                              " 'maxWireVersion': %d,"
+                              " 'ismaster': true,"
+                              " 'msg': 'isdbgrid'}",
+                              max_wire_version);
       break;
    case READ_PREF_TEST_PRIMARY:
-      mock_server_auto_ismaster (server,
-                                 "{'ok': 1,"
-                                 " 'maxWireVersion': %d,"
-                                 " 'ismaster': true,"
-                                 " 'setName': 'rs',"
-                                 " 'hosts': ['%s']}",
-                                 max_wire_version,
-                                 mock_server_get_host_and_port (server));
+      mock_server_auto_hello (server,
+                              "{'ok': 1,"
+                              " 'maxWireVersion': %d,"
+                              " 'ismaster': true,"
+                              " 'setName': 'rs',"
+                              " 'hosts': ['%s']}",
+                              max_wire_version,
+                              mock_server_get_host_and_port (server));
       break;
    case READ_PREF_TEST_SECONDARY:
-      mock_server_auto_ismaster (server,
-                                 "{'ok': 1,"
-                                 " 'maxWireVersion': %d,"
-                                 " 'ismaster': false,"
-                                 " 'secondary': true,"
-                                 " 'setName': 'rs',"
-                                 " 'hosts': ['%s']}",
-                                 max_wire_version,
-                                 mock_server_get_host_and_port (server));
+      mock_server_auto_hello (server,
+                              "{'ok': 1,"
+                              " 'maxWireVersion': %d,"
+                              " 'ismaster': false,"
+                              " 'secondary': true,"
+                              " 'setName': 'rs',"
+                              " 'hosts': ['%s']}",
+                              max_wire_version,
+                              mock_server_get_host_and_port (server));
       break;
    default:
       fprintf (stderr, "Invalid test_type: : %d\n", test_type);
@@ -993,7 +993,7 @@ _test_op_msg_direct_connection (bool is_mongos,
                                            " 'maxWireVersion': %d}",
                                            WIRE_VERSION_OP_MSG);
       server = mock_server_new ();
-      mock_server_auto_ismaster (server, ismaster);
+      mock_server_auto_hello (server, ismaster);
       bson_free (ismaster);
    }
 

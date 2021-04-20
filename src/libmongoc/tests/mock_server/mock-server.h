@@ -64,9 +64,7 @@ void
 mock_server_remove_autoresponder (mock_server_t *server, int id);
 
 int
-mock_server_auto_ismaster (mock_server_t *server,
-                           const char *response_json,
-                           ...);
+mock_server_auto_hello (mock_server_t *server, const char *response_json, ...);
 
 int
 mock_server_auto_endsessions (mock_server_t *server);

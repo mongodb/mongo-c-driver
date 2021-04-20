@@ -375,15 +375,14 @@ mock_rs_run (mock_rs_t *rs)
    if (rs->has_primary) {
       /* primary's ismaster response */
       ismaster_reply = primary_json (rs);
-      mock_server_auto_ismaster (rs->primary, ismaster_reply);
+      mock_server_auto_hello (rs->primary, ismaster_reply);
       bson_free (ismaster_reply);
    }
 
    /* secondaries' ismaster response */
    for (i = 0; i < rs->n_secondaries; i++) {
       ismaster_reply = secondary_json (rs, i);
-      mock_server_auto_ismaster (get_server (&rs->secondaries, i),
-                                 ismaster_reply);
+      mock_server_auto_hello (get_server (&rs->secondaries, i), ismaster_reply);
       bson_free (ismaster_reply);
    }
 
@@ -391,7 +390,7 @@ mock_rs_run (mock_rs_t *rs)
    ismaster_reply = arbiter_json (rs);
 
    for (i = 0; i < rs->n_arbiters; i++) {
-      mock_server_auto_ismaster (get_server (&rs->arbiters, i), ismaster_reply);
+      mock_server_auto_hello (get_server (&rs->arbiters, i), ismaster_reply);
    }
 
    bson_free (ismaster_reply);
@@ -935,7 +934,7 @@ mock_rs_stepdown (mock_rs_t *rs)
    bson_reinit (&rs->primary_tags);
 
    json = secondary_json (rs, rs->n_secondaries - 1);
-   mock_server_auto_ismaster (rs->primary, json);
+   mock_server_auto_hello (rs->primary, json);
    bson_free (json);
 
    _mongoc_array_append_val (&rs->secondaries, rs->primary);
@@ -971,7 +970,7 @@ mock_rs_elect (mock_rs_t *rs, int id)
 
    /* primary_json() uses the current primary_tags */
    json = primary_json (rs);
-   mock_server_auto_ismaster (rs->primary, json);
+   mock_server_auto_hello (rs->primary, json);
    bson_free (json);
 
    ptrs = (mock_server_t **) rs->secondaries.data;

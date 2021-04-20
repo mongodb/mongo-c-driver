@@ -2966,16 +2966,16 @@ test_unordered_bulk_writes_with_error (void)
    mock_server_run (server);
 
    /* server is "recovering": not master, not secondary */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'maxWireVersion': %d,"
-                              " 'maxWriteBatchSize': 1,"
-                              " 'ismaster': true,"
-                              " 'secondary': false,"
-                              " 'setName': 'rs',"
-                              " 'hosts': ['%s']}",
-                              WIRE_VERSION_OP_MSG,
-                              mock_server_get_host_and_port (server));
+   mock_server_auto_hello (server,
+                           "{'ok': 1,"
+                           " 'maxWireVersion': %d,"
+                           " 'maxWriteBatchSize': 1,"
+                           " 'ismaster': true,"
+                           " 'secondary': false,"
+                           " 'setName': 'rs',"
+                           " 'hosts': ['%s']}",
+                           WIRE_VERSION_OP_MSG,
+                           mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* disable retryable writes, so we move to the next operation on error */
@@ -3478,13 +3478,13 @@ _test_numerous (bool ordered)
 
    server = mock_server_new ();
    /* the real OP_MSG max batch is 100k docs, choose 3 for faster test */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1.0,"
-                              " 'ismaster': true,"
-                              " 'minWireVersion': 0,"
-                              " 'maxWireVersion': %d,"
-                              " 'maxWriteBatchSize': 3}",
-                              WIRE_VERSION_OP_MSG);
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'ismaster': true,"
+                           " 'minWireVersion': 0,"
+                           " 'maxWireVersion': %d,"
+                           " 'maxWriteBatchSize': 3}",
+                           WIRE_VERSION_OP_MSG);
 
    mock_server_run (server);
 

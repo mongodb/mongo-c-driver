@@ -29,7 +29,7 @@ auto_ismaster (mock_server_t *server,
                                         max_batch_size);
 
    BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_ismaster (server, response);
+   mock_server_auto_hello (server, response);
 
    bson_free (response);
 }

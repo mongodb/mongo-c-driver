@@ -392,18 +392,18 @@ test_split_opquery_with_options (void)
                           " 'maxBsonObjectSize': 100}";
 
    server = mock_server_new ();
-   mock_server_auto_ismaster (server, ismaster);
+   mock_server_auto_hello (server, ismaster);
    mock_server_run (server);
 
    /* Create an insert with two batches. Because of the reduced
-   * maxBsonObjectSize, each document must be less than 100 bytes.
-   * Because of the hardcoded allowance (see SERVER-10643), and our current
-   * incorrect batching logic (see CDRIVER-3310) the complete insert
-   * command can be can be 16k + 100 bytes.
-   * After CDRIVER-3310, update this test, since the allowance will not be
-   * taken into consideration for document batching.
-   * So create enough documents to fill up at least one batch.
-   */
+    * maxBsonObjectSize, each document must be less than 100 bytes.
+    * Because of the hardcoded allowance (see SERVER-10643), and our current
+    * incorrect batching logic (see CDRIVER-3310) the complete insert
+    * command can be can be 16k + 100 bytes.
+    * After CDRIVER-3310, update this test, since the allowance will not be
+    * taken into consideration for document batching.
+    * So create enough documents to fill up at least one batch.
+    */
    n_docs = ((BSON_OBJECT_ALLOWANCE) / tmp_bson ("{ '_id': 1 }")->len) +
             1; /* inexact, but errs towards more than enough documents. */
    docs = bson_malloc (sizeof (bson_t *) * n_docs);
@@ -476,7 +476,7 @@ test_opmsg_disconnect_mid_batch_helper (int wire_version)
                           " 'maxBsonObjectSize': 100}";
 
    server = mock_server_new ();
-   mock_server_auto_ismaster (server, ismaster, wire_version);
+   mock_server_auto_hello (server, ismaster, wire_version);
    mock_server_run (server);
 
    /* create enough documents for two batches. Note, because of our wonky
@@ -537,9 +537,9 @@ test_w0_legacy_insert_many (void)
 
    /* wire version will use OP_INSERT for w:0 insert many (since no OP_MSG) */
    server = mock_server_new ();
-   mock_server_auto_ismaster (server,
-                              "{'ismaster': true,"
-                              " 'maxWireVersion': 5}");
+   mock_server_auto_hello (server,
+                           "{'ismaster': true,"
+                           " 'maxWireVersion': 5}");
    mock_server_run (server);
 
    docs = bson_malloc (sizeof (bson_t *) * 2);
