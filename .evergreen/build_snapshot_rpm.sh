@@ -32,7 +32,7 @@ for arg in "$@"; do
     echo "  current repository."
     echo ""
     echo "  This script must be called from the base directory of the repository, and"
-    echo "  requires utilites from these packages: rpm-build, mock, curl"
+    echo "  requires utilities from these packages: rpm-build, mock"
     echo ""
     exit
   fi
@@ -40,7 +40,6 @@ done
 
 package=mongo-c-driver
 spec_file=../mongo-c-driver.spec
-spec_url=https://src.fedoraproject.org/rpms/mongo-c-driver/raw/rawhide/f/mongo-c-driver.spec
 config=${MOCK_TARGET_CONFIG:=fedora-34-x86_64}
 
 if [ ! -x /usr/bin/rpmbuild -o ! -x /usr/bin/rpmspec ]; then
@@ -58,20 +57,11 @@ if [ ! -x /usr/bin/mock ]; then
   exit 1
 fi
 
-if [ ! -x /usr/bin/curl ]; then
-  echo "Missing curl"
-  exit 1
-fi
-
 if [ -f "${spec_file}" ]; then
   echo "Found old spec file (${spec_file})...removing"
   rm -f  ${spec_file}
 fi
-/usr/bin/curl -f -L --retry 5 -o "${spec_file}" "${spec_url}"
-if [ "${?}" != "0" -o ! -f "${spec_file}" ]; then
-  echo "Could not retrieve spec file from URL: ${spec_url}"
-  exit 1
-fi
+cp "$(pwd)/.evergreen/${package}.spec" ..
 if [ -f .evergreen/spec.patch ]; then
   patch -d .. -p0 -i $(pwd)/.evergreen/spec.patch
 fi
