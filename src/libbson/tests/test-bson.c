@@ -2471,7 +2471,7 @@ test_bson_as_json_string (void)
    const char *expected =
       "{ \"double\" : { \"$numberDouble\" : \"1.0\" }, \"string\" : "
       "\"string_example\", \"document\" : { \"x\" : \"y\" }, \"document\" : [ "
-      "\"x\" ], \"binary\" : { \"$binary\" : { \"base64\": \"ZGF0YQ==\", "
+      "\"x\" ], \"binary\" : { \"$binary\" : { \"base64\" : \"ZGF0YQ==\", "
       "\"subType\" : \"00\" } }, \"undefined\" : { \"$undefined\" : true }, "
       "\"oid\" : { \"$oid\" : \"000000000000000000000000\" }, \"bool\" : true, "
       "\"datetime\" : { \"$date\" : { \"$numberLong\" : \"123\" } }, \"null\" "

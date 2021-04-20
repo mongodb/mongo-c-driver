@@ -2976,12 +2976,12 @@ test_bson_as_json_with_opts_binary (void)
 
    run_bson_as_json_with_opts_tests (b,
 			   BSON_JSON_MODE_CANONICAL,
-			   "{ \"v\" : { \"$binary\" : { \"base64\": "
+			   "{ \"v\" : { \"$binary\" : { \"base64\" : "
 			   "\"AQIDBA==\", \"subType\" : \"00\" } } }");
 
    run_bson_as_json_with_opts_tests (b,
 			   BSON_JSON_MODE_RELAXED,
-			   "{ \"v\" : { \"$binary\" : { \"base64\": "
+			   "{ \"v\" : { \"$binary\" : { \"base64\" : "
 			   "\"AQIDBA==\", \"subType\" : \"00\" } } }");
 
    bson_destroy (b);
