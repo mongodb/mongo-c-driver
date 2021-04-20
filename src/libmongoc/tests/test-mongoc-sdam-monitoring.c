@@ -983,7 +983,7 @@ test_no_duplicates (void)
     * topology description. It differs in that it has the 'lastWrite' field,
     * which does not have an effect in equality comparison. */
    sd = mongoc_client_get_server_description (client, 1);
-   BSON_ASSERT (bson_has_field (&sd->last_is_master, "lastWrite"));
+   BSON_ASSERT (bson_has_field (&sd->last_hello_response, "lastWrite"));
    mongoc_server_description_destroy (sd);
 
    mongoc_uri_destroy (uri);

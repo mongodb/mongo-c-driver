@@ -803,7 +803,7 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
       sd = (mongoc_server_description_t *) mongoc_set_get_item (
          topology->servers, 0);
 
-      if (sd->has_is_master) {
+      if (sd->has_hello_response) {
          RETURN (sd);
       } else {
          TRACE ("Topology type single, [%s] is down", sd->host.host_and_port);
@@ -1132,7 +1132,8 @@ mongoc_topology_description_invalidate_server (
    BSON_ASSERT (error);
 
    /* send NULL ismaster reply */
-   mongoc_topology_description_handle_ismaster (topology, id, NULL, MONGOC_RTT_UNSET, error);
+   mongoc_topology_description_handle_ismaster (
+      topology, id, NULL, MONGOC_RTT_UNSET, error);
 }
 
 /*

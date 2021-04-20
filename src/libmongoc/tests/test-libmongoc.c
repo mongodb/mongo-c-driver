@@ -1133,7 +1133,7 @@ call_ismaster_with_host_and_port (char *host_and_port, bson_t *reply)
 
    if (!mongoc_client_command_simple (
           client, "admin", tmp_bson ("{'isMaster': 1}"), NULL, reply, &error)) {
-      fprintf (stderr, "error calling ismaster: '%s'\n", error.message);
+      fprintf (stderr, "error calling hello: '%s'\n", error.message);
       fprintf (stderr, "URI = %s\n", uri_str);
       abort ();
    }

@@ -545,7 +545,7 @@ _test_topology_invalidate_server (bool pooled)
       BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
       BSON_ASSERT (sd->error.domain != 0);
       ASSERT_CMPINT64 (sd->round_trip_time_msec, ==, (int64_t) -1);
-      BSON_ASSERT (bson_empty (&sd->last_is_master));
+      BSON_ASSERT (bson_empty (&sd->last_hello_response));
       BSON_ASSERT (bson_empty (&sd->hosts));
       BSON_ASSERT (bson_empty (&sd->passives));
       BSON_ASSERT (bson_empty (&sd->arbiters));
@@ -1051,7 +1051,7 @@ test_multiple_selection_errors (void *context)
     */
    ASSERT_CONTAINS (error.message, "No suitable servers found");
    /* either "connection error" or "connection timeout" calling ismaster */
-   ASSERT_CONTAINS (error.message, "calling ismaster on 'example.com:2'");
+   ASSERT_CONTAINS (error.message, "calling hello on 'example.com:2'");
    ASSERT_CONTAINS (error.message, "[Failed to resolve 'doesntexist']");
 
    bson_destroy (&reply);
@@ -1906,13 +1906,13 @@ _test_request_scan_on_error (bool pooled,
          }
       } else {
          /* after the 'ping' command and returning, the server should
-            * have been marked as unknown. */
+          * have been marked as unknown. */
          BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
          ASSERT_CMPINT (sd->last_update_time_usec, >=, ping_started_usec);
          ASSERT_CMPINT (
             sd->last_update_time_usec, <=, bson_get_monotonic_time ());
          /* check that the error on the server description matches the error
-         * message in the response. */
+          * message in the response. */
          if (server_err) {
             ASSERT_CMPSTR (server_err, sd->error.message);
          }

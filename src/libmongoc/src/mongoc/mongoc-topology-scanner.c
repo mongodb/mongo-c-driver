@@ -296,7 +296,7 @@ _mongoc_topology_scanner_get_handshake_cmd (mongoc_topology_scanner_t *ts)
    if (bson_empty (&ts->ismaster_cmd_with_handshake)) {
       ts->handshake_ok_to_send = _build_ismaster_with_handshake (ts);
       if (!ts->handshake_ok_to_send) {
-         MONGOC_WARNING ("Handshake doc too big, not including in isMaster");
+         MONGOC_WARNING ("Handshake doc too big, not including in hello");
       }
    }
 
@@ -697,7 +697,7 @@ _async_error_or_timeout (mongoc_async_cmd_t *acmd,
       bson_set_error (&node->last_error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_STREAM_CONNECT,
-                      "%s calling ismaster on \'%s\'",
+                      "%s calling hello on \'%s\'",
                       message,
                       node->host.host_and_port);
 
@@ -1014,7 +1014,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
  * mongoc_topology_scanner_node_in_cooldown --
  *
  *      Return true if @node has experienced a network error attempting
- *      to call "ismaster" less than 5 seconds before @when, a timestamp in
+ *      to call "hello" less than 5 seconds before @when, a timestamp in
  *      microseconds.
  *
  *      Server Discovery and Monitoring Spec: "After a single-threaded client

@@ -329,7 +329,8 @@ _server_monitor_polling_ismaster (mongoc_server_monitor_t *server_monitor,
    const bson_t *hello;
    bool ret;
 
-   hello = _mongoc_topology_scanner_get_hello_cmd (server_monitor->topology->scanner);
+   hello = _mongoc_topology_scanner_get_hello_cmd (
+      server_monitor->topology->scanner);
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
@@ -373,9 +374,8 @@ _server_monitor_awaitable_ismaster_send (
                                     niovec,
                                     server_monitor->connect_timeout_ms,
                                     error)) {
-      MONITOR_LOG_ERROR (server_monitor,
-                         "failed to write awaitable ismaster: %s",
-                         error->message);
+      MONITOR_LOG_ERROR (
+         server_monitor, "failed to write awaitable hello: %s", error->message);
       _mongoc_array_destroy (&array_to_write);
       return false;
    }
@@ -416,7 +416,7 @@ _server_monitor_poll_with_interrupt (mongoc_server_monitor_t *server_monitor,
 
       MONITOR_LOG (
          server_monitor,
-         "polling for awaitable ismaster reply with timeleft_ms: %" PRId64,
+         "polling for awaitable hello reply with timeleft_ms: %" PRId64,
          timeleft_ms);
       ret = mongoc_stream_poll (
          poller, 1, (int32_t) BSON_MIN (timeleft_ms, monitor_tick_ms));
@@ -609,7 +609,8 @@ _server_monitor_awaitable_ismaster (mongoc_server_monitor_t *server_monitor,
    const bson_t *hello;
    bool ret = false;
 
-   hello = _mongoc_topology_scanner_get_hello_cmd (server_monitor->topology->scanner);
+   hello = _mongoc_topology_scanner_get_hello_cmd (
+      server_monitor->topology->scanner);
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
@@ -652,8 +653,8 @@ _server_monitor_update_topology_description (
    bson_t *ismaster_reply = NULL;
 
    topology = server_monitor->topology;
-   if (description->has_is_master) {
-      ismaster_reply = &description->last_is_master;
+   if (description->has_hello_response) {
+      ismaster_reply = &description->last_hello_response;
    }
 
    if (ismaster_reply) {
@@ -857,7 +858,7 @@ mongoc_server_monitor_check_server (
    if (!bson_empty (&previous_description->topology_version)) {
       awaited = true;
       _server_monitor_heartbeat_started (server_monitor, awaited);
-      MONITOR_LOG (server_monitor, "awaitable ismaster");
+      MONITOR_LOG (server_monitor, "awaitable hello");
       ret = _server_monitor_awaitable_ismaster (
          server_monitor,
          &previous_description->topology_version,
@@ -867,7 +868,7 @@ mongoc_server_monitor_check_server (
       GOTO (exit);
    }
 
-   MONITOR_LOG (server_monitor, "polling ismaster");
+   MONITOR_LOG (server_monitor, "polling hello");
    awaited = false;
    _server_monitor_heartbeat_started (server_monitor, awaited);
    ret = _server_monitor_polling_ismaster (
@@ -1108,7 +1109,7 @@ _server_monitor_ping_server (mongoc_server_monitor_t *server_monitor,
    }
 
    if (server_monitor->stream) {
-      MONITOR_LOG (server_monitor, "rtt polling ismaster");
+      MONITOR_LOG (server_monitor, "rtt polling hello");
       ret = _server_monitor_polling_ismaster (
          server_monitor, &ismaster_reply, &error);
       if (ret) {

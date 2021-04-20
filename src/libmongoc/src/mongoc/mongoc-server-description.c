@@ -41,7 +41,7 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
 {
    BSON_ASSERT (sd);
 
-   bson_destroy (&sd->last_is_master);
+   bson_destroy (&sd->last_hello_response);
    bson_destroy (&sd->hosts);
    bson_destroy (&sd->passives);
    bson_destroy (&sd->arbiters);
@@ -69,10 +69,10 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->session_timeout_minutes = MONGOC_NO_SESSIONS;
    sd->last_write_date_ms = -1;
 
-   /* always leave last ismaster in an init-ed state until we destroy sd */
-   bson_destroy (&sd->last_is_master);
-   bson_init (&sd->last_is_master);
-   sd->has_is_master = false;
+   /* always leave last hello in an init-ed state until we destroy sd */
+   bson_destroy (&sd->last_hello_response);
+   bson_init (&sd->last_hello_response);
+   sd->has_hello_response = false;
    sd->last_update_time_usec = bson_get_monotonic_time ();
 
    bson_destroy (&sd->hosts);
@@ -128,7 +128,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    }
 
    sd->connection_address = sd->host.host_and_port;
-   bson_init (&sd->last_is_master);
+   bson_init (&sd->last_hello_response);
    bson_init (&sd->hosts);
    bson_init (&sd->passives);
    bson_init (&sd->arbiters);
@@ -309,7 +309,7 @@ mongoc_server_description_last_update_time (
  * mongoc_server_description_round_trip_time --
  *
  *      Get the round trip time of this server, which is the client's
- *      measurement of the duration of an "ismaster" command.
+ *      measurement of the duration of a "hello" command.
  *
  * Returns:
  *      The server's round trip time in milliseconds.
@@ -370,9 +370,29 @@ mongoc_server_description_type (const mongoc_server_description_t *description)
 /*
  *--------------------------------------------------------------------------
  *
+ * mongoc_server_description_hello_response --
+ *
+ *      Return this server's most recent "hello" command response.
+ *
+ * Returns:
+ *      A reference to a BSON document, owned by the server description.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+const bson_t *
+mongoc_server_description_hello_response (
+   const mongoc_server_description_t *description)
+{
+   return &description->last_hello_response;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * mongoc_server_description_ismaster --
  *
- *      Return this server's most recent "ismaster" command response.
+ *      Return this server's most recent "hello" command response.
  *
  * Returns:
  *      A reference to a BSON document, owned by the server description.
@@ -384,7 +404,7 @@ const bson_t *
 mongoc_server_description_ismaster (
    const mongoc_server_description_t *description)
 {
-   return &description->last_is_master;
+   return &description->last_hello_response;
 }
 
 /*
@@ -487,7 +507,7 @@ _mongoc_server_description_set_error (mongoc_server_description_t *sd,
       bson_set_error (&sd->error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_CONNECT,
-                      "unknown error calling ismaster");
+                      "unknown error calling hello");
    }
 
    /* Server Discovery and Monitoring Spec: if the server type changes from a
@@ -534,17 +554,19 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
       EXIT;
    }
 
-   bson_destroy (&sd->last_is_master);
-   bson_init (&sd->last_is_master);
-   bson_copy_to_excluding_noinit (
-      ismaster_response, &sd->last_is_master, "speculativeAuthenticate", NULL);
-   sd->has_is_master = true;
+   bson_destroy (&sd->last_hello_response);
+   bson_init (&sd->last_hello_response);
+   bson_copy_to_excluding_noinit (ismaster_response,
+                                  &sd->last_hello_response,
+                                  "speculativeAuthenticate",
+                                  NULL);
+   sd->has_hello_response = true;
 
    /* Only reinitialize the topology version if we have an ismaster response.
     * Resetting a server description should not effect the topology version. */
    bson_reinit (&sd->topology_version);
 
-   BSON_ASSERT (bson_iter_init (&iter, &sd->last_is_master));
+   BSON_ASSERT (bson_iter_init (&iter, &sd->last_hello_response));
 
    while (bson_iter_next (&iter)) {
       num_keys++;
@@ -760,7 +782,7 @@ mongoc_server_description_new_copy (
    copy->round_trip_time_msec = MONGOC_RTT_UNSET;
 
    copy->connection_address = copy->host.host_and_port;
-   bson_init (&copy->last_is_master);
+   bson_init (&copy->last_hello_response);
    bson_init (&copy->hosts);
    bson_init (&copy->passives);
    bson_init (&copy->arbiters);
@@ -768,11 +790,11 @@ mongoc_server_description_new_copy (
    bson_init (&copy->compressors);
    bson_copy_to (&description->topology_version, &copy->topology_version);
 
-   if (description->has_is_master) {
+   if (description->has_hello_response) {
       /* calls mongoc_server_description_reset */
       mongoc_server_description_handle_ismaster (
          copy,
-         &description->last_is_master,
+         &description->last_hello_response,
          description->round_trip_time_msec,
          &description->error);
    } else {

@@ -584,9 +584,9 @@ mongoc_topology_apply_scanned_srv_hosts (mongoc_uri_t *uri,
    bool had_valid_hosts = false;
 
    /* Validate that the hosts have a matching domain.
-   * If validation fails, log it.
-   * If no valid hosts remain, do not update the topology description.
-   */
+    * If validation fails, log it.
+    * If no valid hosts remain, do not update the topology description.
+    */
    LL_FOREACH (hosts, host)
    {
       if (mongoc_uri_validate_srv_result (uri, host->host, error)) {
@@ -617,20 +617,21 @@ mongoc_topology_apply_scanned_srv_hosts (mongoc_uri_t *uri,
  *--------------------------------------------------------------------------
  *
  * mongoc_topology_should_rescan_srv --
- * 
+ *
  *      Checks whether it is valid to rescan SRV records on the topology.
  *      Namely, that the topology type is Sharded or Unknown, and that
  *      the topology URI was configured with SRV.
- * 
+ *
  *      If this returns false, caller can stop scanning SRV records
  *      and does not need to try again in the future.
- * 
+ *
  *      NOTE: this method expects @topology's mutex to be locked on entry.
  *
  * --------------------------------------------------------------------------
  */
 bool
-mongoc_topology_should_rescan_srv (mongoc_topology_t *topology) {
+mongoc_topology_should_rescan_srv (mongoc_topology_t *topology)
+{
    const char *service;
 
    MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
@@ -758,7 +759,8 @@ mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
    MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
    if (mongoc_topology_should_rescan_srv (topology)) {
-      /* Prior to scanning hosts, update the list of SRV hosts, if applicable. */
+      /* Prior to scanning hosts, update the list of SRV hosts, if applicable.
+       */
       mongoc_topology_rescan_srv (topology);
    }
 
@@ -1286,8 +1288,11 @@ _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
    bson_mutex_lock (&topology->mutex);
 
    /* return false if server was removed from topology */
-   has_server = _mongoc_topology_update_no_lock (
-      sd->id, &sd->last_is_master, sd->round_trip_time_msec, topology, NULL);
+   has_server = _mongoc_topology_update_no_lock (sd->id,
+                                                 &sd->last_hello_response,
+                                                 sd->round_trip_time_msec,
+                                                 topology,
+                                                 NULL);
 
    /* if pooled, wake threads waiting in mongoc_topology_server_by_id */
    mongoc_cond_broadcast (&topology->cond_client);
@@ -1719,9 +1724,9 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       }
 
       /* Check if the error is "stale", i.e. the topologyVersion refers to an
-      * older
-      * version of the server than we have stored in the topology description.
-      */
+       * older
+       * version of the server than we have stored in the topology description.
+       */
       _find_topology_version (reply, &incoming_topology_version);
       if (mongoc_server_description_topology_version_cmp (
              &sd->topology_version, &incoming_topology_version) >= 0) {

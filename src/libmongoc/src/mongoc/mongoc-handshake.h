@@ -61,7 +61,7 @@ BSON_BEGIN_DECLS
  * Returns true if the given fields are set successfully. Otherwise, it returns
  * false and logs an error.
  *
- * The default handshake data the driver sends with "isMaster" looks something
+ * The default handshake data the driver sends with "hello" looks something
  * like:
  *  client: {
  *    driver: {

@@ -110,10 +110,10 @@ test_server_description_equal (void)
    sd1.round_trip_time_msec = 1234;
    BSON_ASSERT (_mongoc_server_description_equal (&sd1, &sd2));
 
-   /* "lastWriteDate"/"opTime" are stored in last_is_master and not parsed out.
-    * Check that overwriting the stored reply does not factor into the equality
-    * check. */
-   bson_reinit (&sd1.last_is_master);
+   /* "lastWriteDate"/"opTime" are stored in last_hello_response and not parsed
+    * out. Check that overwriting the stored reply does not factor into the
+    * equality check. */
+   bson_reinit (&sd1.last_hello_response);
    BSON_ASSERT (_mongoc_server_description_equal (&sd1, &sd2));
 
    /* "error" differs, considered unequal. */

@@ -2107,7 +2107,7 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
       GOTO (error);
    }
 
-   _mongoc_handshake_parse_sasl_supported_mechs (&sd->last_is_master,
+   _mongoc_handshake_parse_sasl_supported_mechs (&sd->last_hello_response,
                                                  &sasl_supported_mechs);
 
    if (cluster->requires_auth) {
