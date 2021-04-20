@@ -125,11 +125,11 @@ test_get_servers (void)
 
    /* servers "a" and "c" are mongos, but "b" remains unknown */
    sd_a = _sd_for_host (td, "a");
-   mongoc_topology_description_handle_ismaster (
+   mongoc_topology_description_handle_hello (
       td, sd_a->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    sd_c = _sd_for_host (td, "c");
-   mongoc_topology_description_handle_ismaster (
+   mongoc_topology_description_handle_hello (
       td, sd_c->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
 
    sds = mongoc_topology_description_get_servers (td, &n);
@@ -183,7 +183,7 @@ test_topology_version_equal (void)
    mongoc_topology_set_apm_callbacks (topology, callbacks, &num_calls);
 
    sd = _sd_for_host (td, "host");
-   mongoc_topology_description_handle_ismaster (
+   mongoc_topology_description_handle_hello (
       td,
       sd->id,
       tmp_bson ("{'ok': 1, 'topologyVersion': " TV_2 " }"),
@@ -194,7 +194,7 @@ test_topology_version_equal (void)
 
    /* The subsequent ismaster has a topologyVersion that compares less, so the
     * ismaster skips. */
-   mongoc_topology_description_handle_ismaster (
+   mongoc_topology_description_handle_hello (
       td,
       sd->id,
       tmp_bson ("{'ok': 1, 'topologyVersion': " TV_1 " }"),

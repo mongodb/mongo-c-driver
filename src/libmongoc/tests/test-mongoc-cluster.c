@@ -1473,8 +1473,8 @@ _test_cluster_ismaster_fails (bool hangup)
     * sends an ismaster request. */
    request = mock_server_receives_ismaster (mock_server);
    /* CDRIVER-2576: the server replies with an error, so
-    * _mongoc_stream_run_ismaster returns NULL, which
-    * _mongoc_cluster_run_ismaster must check. */
+    * _mongoc_stream_run_hello returns NULL, which
+    * _mongoc_cluster_run_hello must check. */
 
    if (hangup) {
       capture_logs (true); /* suppress "failed to buffer" warning */

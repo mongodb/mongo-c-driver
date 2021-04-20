@@ -51,7 +51,7 @@ _force_ismaster_with_ping (mongoc_client_t *client)
    return future;
 }
 
-/* Call after we've dealt with the isMaster sent by
+/* Call after we've dealt with the hello sent by
  * _force_ismaster_with_ping */
 static void
 _respond_to_ping (future_t *future, mock_server_t *server, bool expect_ping)

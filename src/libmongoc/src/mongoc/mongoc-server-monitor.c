@@ -321,9 +321,9 @@ fail:
 }
 
 static bool
-_server_monitor_polling_ismaster (mongoc_server_monitor_t *server_monitor,
-                                  bson_t *ismaster_reply,
-                                  bson_error_t *error)
+_server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
+                               bson_t *hello_response,
+                               bson_error_t *error)
 {
    bson_t cmd;
    const bson_t *hello;
@@ -335,14 +335,15 @@ _server_monitor_polling_ismaster (mongoc_server_monitor_t *server_monitor,
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
    ret = _server_monitor_send_and_recv_opquery (
-      server_monitor, &cmd, ismaster_reply, error);
+      server_monitor, &cmd, hello_response, error);
    bson_destroy (&cmd);
    return ret;
 }
 
 static bool
-_server_monitor_awaitable_ismaster_send (
-   mongoc_server_monitor_t *server_monitor, bson_t *cmd, bson_error_t *error)
+_server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
+                                      bson_t *cmd,
+                                      bson_error_t *error)
 {
    mongoc_rpc_t rpc = {0};
    mongoc_array_t array_to_write;
@@ -481,7 +482,7 @@ _get_timeout_ms (int64_t expire_at_ms, bson_error_t *error)
    return timeout_ms;
 }
 
-/* Receive an awaitable ismaster reply.
+/* Receive an awaitable hello reply.
  *
  * May be used to receive additional replies when moreToCome is set.
  * Called only from server monitor thread.
@@ -492,11 +493,10 @@ _get_timeout_ms (int64_t expire_at_ms, bson_error_t *error)
  * On cancellation, no error is set, but cancelled is set to true.
  */
 static bool
-_server_monitor_awaitable_ismaster_recv (
-   mongoc_server_monitor_t *server_monitor,
-   bson_t *ismaster_reply,
-   bool *cancelled,
-   bson_error_t *error)
+_server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
+                                      bson_t *hello_response,
+                                      bool *cancelled,
+                                      bson_error_t *error)
 {
    bool ret = false;
    mongoc_buffer_t buffer;
@@ -579,14 +579,14 @@ _server_monitor_awaitable_ismaster_recv (
       GOTO (fail);
    }
 
-   bson_copy_to (&reply_local, ismaster_reply);
+   bson_copy_to (&reply_local, hello_response);
    server_monitor->more_to_come =
       (rpc.msg.flags & MONGOC_MSG_MORE_TO_COME) != 0;
 
    ret = true;
 fail:
    if (!ret) {
-      bson_init (ismaster_reply);
+      bson_init (hello_response);
    }
    _mongoc_buffer_destroy (&buffer);
    return ret;
@@ -599,11 +599,11 @@ fail:
  * May block for up to heartbeatFrequencyMS waiting for reply.
  */
 static bool
-_server_monitor_awaitable_ismaster (mongoc_server_monitor_t *server_monitor,
-                                    const bson_t *topology_version,
-                                    bson_t *ismaster_reply,
-                                    bool *cancelled,
-                                    bson_error_t *error)
+_server_monitor_awaitable_hello (mongoc_server_monitor_t *server_monitor,
+                                 const bson_t *topology_version,
+                                 bson_t *hello_response,
+                                 bool *cancelled,
+                                 bson_error_t *error)
 {
    bson_t cmd;
    const bson_t *hello;
@@ -619,20 +619,20 @@ _server_monitor_awaitable_ismaster (mongoc_server_monitor_t *server_monitor,
       &cmd, "maxAwaitTimeMS", 14, server_monitor->heartbeat_frequency_ms);
    bson_append_utf8 (&cmd, "$db", 3, "admin", 5);
 
-   if (!_server_monitor_awaitable_ismaster_send (server_monitor, &cmd, error)) {
+   if (!_server_monitor_awaitable_hello_send (server_monitor, &cmd, error)) {
       GOTO (fail);
    }
 
-   if (!_server_monitor_awaitable_ismaster_recv (
-          server_monitor, ismaster_reply, cancelled, error)) {
-      bson_destroy (ismaster_reply);
+   if (!_server_monitor_awaitable_hello_recv (
+          server_monitor, hello_response, cancelled, error)) {
+      bson_destroy (hello_response);
       GOTO (fail);
    }
 
    ret = true;
 fail:
    if (!ret) {
-      bson_init (ismaster_reply);
+      bson_init (hello_response);
    }
    bson_destroy (&cmd);
    return ret;
@@ -650,15 +650,15 @@ _server_monitor_update_topology_description (
    mongoc_server_description_t *description)
 {
    mongoc_topology_t *topology;
-   bson_t *ismaster_reply = NULL;
+   bson_t *hello_response = NULL;
 
    topology = server_monitor->topology;
    if (description->has_hello_response) {
-      ismaster_reply = &description->last_hello_response;
+      hello_response = &description->last_hello_response;
    }
 
-   if (ismaster_reply) {
-      _mongoc_topology_update_cluster_time (topology, ismaster_reply);
+   if (hello_response) {
+      _mongoc_topology_update_cluster_time (topology, hello_response);
    }
 
    bson_mutex_lock (&topology->mutex);
@@ -669,10 +669,10 @@ _server_monitor_update_topology_description (
       server_monitor->shared.scan_requested = false;
       bson_mutex_unlock (&server_monitor->shared.mutex);
 
-      mongoc_topology_description_handle_ismaster (
+      mongoc_topology_description_handle_hello (
          &server_monitor->topology->description,
          server_monitor->server_id,
-         ismaster_reply,
+         hello_response,
          description->round_trip_time_msec,
          &description->error);
       /* Reconcile server monitors. */
@@ -732,11 +732,11 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
  * Called only by server monitor thread.
  * Returns true if both connection and handshake succeeds.
  * Returns false and sets error otherwise.
- * ismaster_reply is always initialized.
+ * hello_response is always initialized.
  */
 static bool
 _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
-                                  bson_t *ismaster_reply,
+                                  bson_t *hello_response,
                                   int64_t *start_us,
                                   bson_error_t *error)
 {
@@ -747,7 +747,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    ENTRY;
 
    BSON_ASSERT (!server_monitor->stream);
-   bson_init (ismaster_reply);
+   bson_init (hello_response);
 
    server_monitor->more_to_come = false;
 
@@ -785,9 +785,9 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    bson_destroy (&cmd);
    bson_copy_to (handshake, &cmd);
    _server_monitor_append_cluster_time (server_monitor, &cmd);
-   bson_destroy (ismaster_reply);
+   bson_destroy (hello_response);
    if (!_server_monitor_send_and_recv_opquery (
-          server_monitor, &cmd, ismaster_reply, error)) {
+          server_monitor, &cmd, hello_response, error)) {
       GOTO (fail);
    }
 
@@ -818,7 +818,7 @@ mongoc_server_monitor_check_server (
 {
    bool ret = false;
    bson_error_t error;
-   bson_t ismaster_reply;
+   bson_t hello_response;
    int64_t duration_us;
    int64_t start_us;
    bool command_or_network_error = false;
@@ -841,7 +841,7 @@ mongoc_server_monitor_check_server (
       awaited = false;
       _server_monitor_heartbeat_started (server_monitor, awaited);
       ret = _server_monitor_setup_connection (
-         server_monitor, &ismaster_reply, &start_us, &error);
+         server_monitor, &hello_response, &start_us, &error);
       GOTO (exit);
    }
 
@@ -850,8 +850,8 @@ mongoc_server_monitor_check_server (
       /* Publish a heartbeat started for each additional response read. */
       _server_monitor_heartbeat_started (server_monitor, awaited);
       MONITOR_LOG (server_monitor, "more to come");
-      ret = _server_monitor_awaitable_ismaster_recv (
-         server_monitor, &ismaster_reply, cancelled, &error);
+      ret = _server_monitor_awaitable_hello_recv (
+         server_monitor, &hello_response, cancelled, &error);
       GOTO (exit);
    }
 
@@ -859,10 +859,10 @@ mongoc_server_monitor_check_server (
       awaited = true;
       _server_monitor_heartbeat_started (server_monitor, awaited);
       MONITOR_LOG (server_monitor, "awaitable hello");
-      ret = _server_monitor_awaitable_ismaster (
+      ret = _server_monitor_awaitable_hello (
          server_monitor,
          &previous_description->topology_version,
-         &ismaster_reply,
+         &hello_response,
          cancelled,
          &error);
       GOTO (exit);
@@ -871,8 +871,8 @@ mongoc_server_monitor_check_server (
    MONITOR_LOG (server_monitor, "polling hello");
    awaited = false;
    _server_monitor_heartbeat_started (server_monitor, awaited);
-   ret = _server_monitor_polling_ismaster (
-      server_monitor, &ismaster_reply, &error);
+   ret =
+      _server_monitor_polling_hello (server_monitor, &hello_response, &error);
 
 exit:
    duration_us = _now_us () - start_us;
@@ -881,7 +881,7 @@ exit:
 
    /* If ret is true, we have a reply. Check if "ok": 1. */
    if (ret && _mongoc_cmd_check_ok (
-                 &ismaster_reply, MONGOC_ERROR_API_VERSION_2, &error)) {
+                 &hello_response, MONGOC_ERROR_API_VERSION_2, &error)) {
       int64_t rtt_ms = MONGOC_RTT_UNSET;
 
       /* rtt remains MONGOC_RTT_UNSET if awaited. */
@@ -889,8 +889,8 @@ exit:
          rtt_ms = duration_us / 1000;
       }
 
-      mongoc_server_description_handle_ismaster (
-         description, &ismaster_reply, rtt_ms, NULL);
+      mongoc_server_description_handle_hello (
+         description, &hello_response, rtt_ms, NULL);
       /* If the ismaster reply could not be parsed, consider this a command
        * error. */
       if (description->error.code) {
@@ -902,7 +902,7 @@ exit:
             server_monitor, &description->error, duration_us, awaited);
       } else {
          _server_monitor_heartbeat_succeeded (
-            server_monitor, &ismaster_reply, duration_us, awaited);
+            server_monitor, &hello_response, duration_us, awaited);
       }
    } else if (*cancelled) {
       MONITOR_LOG (server_monitor, "server monitor cancelled");
@@ -919,7 +919,7 @@ exit:
                          "command or network error occurred: %s",
                          error.message);
       command_or_network_error = true;
-      mongoc_server_description_handle_ismaster (
+      mongoc_server_description_handle_hello (
          description, NULL, MONGOC_RTT_UNSET, &error);
       _server_monitor_heartbeat_failed (
          server_monitor, &description->error, duration_us, awaited);
@@ -937,7 +937,7 @@ exit:
       bson_mutex_unlock (&server_monitor->topology->mutex);
    }
 
-   bson_destroy (&ismaster_reply);
+   bson_destroy (&hello_response);
    return description;
 }
 
@@ -1096,7 +1096,7 @@ _server_monitor_ping_server (mongoc_server_monitor_t *server_monitor,
 {
    bool ret = false;
    int64_t start_us = _now_us ();
-   bson_t ismaster_reply;
+   bson_t hello_response;
    bson_error_t error;
 
    *rtt_ms = MONGOC_RTT_UNSET;
@@ -1104,18 +1104,18 @@ _server_monitor_ping_server (mongoc_server_monitor_t *server_monitor,
    if (!server_monitor->stream) {
       MONITOR_LOG (server_monitor, "rtt setting up connection");
       ret = _server_monitor_setup_connection (
-         server_monitor, &ismaster_reply, &start_us, &error);
-      bson_destroy (&ismaster_reply);
+         server_monitor, &hello_response, &start_us, &error);
+      bson_destroy (&hello_response);
    }
 
    if (server_monitor->stream) {
       MONITOR_LOG (server_monitor, "rtt polling hello");
-      ret = _server_monitor_polling_ismaster (
-         server_monitor, &ismaster_reply, &error);
+      ret = _server_monitor_polling_hello (
+         server_monitor, &hello_response, &error);
       if (ret) {
          *rtt_ms = (_now_us () - start_us) / 1000;
       }
-      bson_destroy (&ismaster_reply);
+      bson_destroy (&hello_response);
    }
    return ret;
 }

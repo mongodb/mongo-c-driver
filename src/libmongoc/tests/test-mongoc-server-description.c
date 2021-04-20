@@ -32,8 +32,7 @@ reset_basic_sd (mongoc_server_description_t *sd)
 
    mongoc_server_description_reset (sd);
    memset (&error, 0, sizeof (bson_error_t));
-   mongoc_server_description_handle_ismaster (
-      sd, ismaster, 0 /* rtt */, &error);
+   mongoc_server_description_handle_hello (sd, ismaster, 0 /* rtt */, &error);
    bson_destroy (ismaster);
 }
 
@@ -243,8 +242,7 @@ test_server_description_msg_without_isdbgrid (void)
                         "msg",
                         "isdbgrid");
    memset (&error, 0, sizeof (bson_error_t));
-   mongoc_server_description_handle_ismaster (
-      &sd, ismaster, 0 /* rtt */, &error);
+   mongoc_server_description_handle_hello (&sd, ismaster, 0 /* rtt */, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_MONGOS);
 
    mongoc_server_description_reset (&sd);
@@ -255,8 +253,7 @@ test_server_description_msg_without_isdbgrid (void)
                         BCON_INT32 (WIRE_VERSION_MAX),
                         "msg",
                         "something_else");
-   mongoc_server_description_handle_ismaster (
-      &sd, ismaster, 0 /* rtt */, &error);
+   mongoc_server_description_handle_hello (&sd, ismaster, 0 /* rtt */, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
 
    bson_destroy (ismaster);
@@ -279,16 +276,16 @@ test_server_description_ignores_rtt (void)
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, MONGOC_RTT_UNSET);
    BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
    /* If MONGOC_RTT_UNSET is passed as the RTT, it remains MONGOC_RTT_UNSET. */
-   mongoc_server_description_handle_ismaster (
+   mongoc_server_description_handle_hello (
       &sd, &ismaster, MONGOC_RTT_UNSET, &error);
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, MONGOC_RTT_UNSET);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
    /* The first real RTT overwrites the stored RTT. */
-   mongoc_server_description_handle_ismaster (&sd, &ismaster, 10, &error);
+   mongoc_server_description_handle_hello (&sd, &ismaster, 10, &error);
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, 10);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
    /* But subsequent MONGOC_RTT_UNSET values do not effect it. */
-   mongoc_server_description_handle_ismaster (
+   mongoc_server_description_handle_hello (
       &sd, &ismaster, MONGOC_RTT_UNSET, &error);
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, 10);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
@@ -310,7 +307,7 @@ test_server_description_hello (void)
    memset (&error, 0, sizeof (bson_error_t));
    mongoc_server_description_init (&sd, "host:1234", 1);
    BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
-   mongoc_server_description_handle_ismaster (&sd, &hello_response, 0, &error);
+   mongoc_server_description_handle_hello (&sd, &hello_response, 0, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
 
    mongoc_server_description_cleanup (&sd);

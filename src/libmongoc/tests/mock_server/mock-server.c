@@ -72,9 +72,7 @@ struct _autoresponder_handle_t {
    int id;
 };
 
-typedef enum {
-   REPLY, HANGUP, RESET
-} reply_type_t;
+typedef enum { REPLY, HANGUP, RESET } reply_type_t;
 
 
 typedef struct {
@@ -947,6 +945,34 @@ mock_server_receives_ismaster (mock_server_t *server)
 
 /*--------------------------------------------------------------------------
  *
+ * mock_server_receives_hello --
+ *
+ *       Pop a client non-streaming hello call if one is enqueued,
+ *       or wait up to request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the current
+ *       request is not an hello command.
+ *
+ * Side effects:
+ *       Logs if the current request is not an hello command.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_hello (mock_server_t *server)
+{
+   return mock_server_receives_command (
+      server,
+      "admin",
+      MONGOC_QUERY_SLAVE_OK,
+      "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * mock_server_receives_query --
  *
  *       Pop a client request if one is enqueued, or wait up to
@@ -1088,9 +1114,8 @@ mock_server_receives_update (mock_server_t *server,
 
    request = mock_server_receives_request (server);
 
-   if (request &&
-       !request_matches_update (
-          request, ns, flags, selector_json, update_json)) {
+   if (request && !request_matches_update (
+                     request, ns, flags, selector_json, update_json)) {
       request_destroy (request);
       return NULL;
    }

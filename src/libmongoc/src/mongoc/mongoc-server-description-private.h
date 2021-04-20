@@ -149,10 +149,10 @@ mongoc_server_description_update_rtt (mongoc_server_description_t *server,
                                       int64_t rtt_msec);
 
 void
-mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
-                                           const bson_t *reply,
-                                           int64_t rtt_msec,
-                                           const bson_error_t *error /* IN */);
+mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
+                                        const bson_t *hello_response,
+                                        int64_t rtt_msec,
+                                        const bson_error_t *error /* IN */);
 
 void
 mongoc_server_description_filter_stale (mongoc_server_description_t **sds,

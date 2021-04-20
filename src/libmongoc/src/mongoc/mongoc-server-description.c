@@ -522,16 +522,16 @@ _mongoc_server_description_set_error (mongoc_server_description_t *sd,
  * Called during SDAM, from topology description's ismaster handler, or
  * when handshaking a connection in _mongoc_cluster_stream_for_server.
  *
- * If @ismaster_response is empty, @error must say why ismaster failed.
+ * If @hello_response is empty, @error must say why hello failed.
  *
  *-------------------------------------------------------------------------
  */
 
 void
-mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
-                                           const bson_t *ismaster_response,
-                                           int64_t rtt_msec,
-                                           const bson_error_t *error /* IN */)
+mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
+                                        const bson_t *hello_response,
+                                        int64_t rtt_msec,
+                                        const bson_error_t *error /* IN */)
 {
    bson_iter_t iter;
    bson_iter_t child;
@@ -549,14 +549,14 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
    BSON_ASSERT (sd);
 
    mongoc_server_description_reset (sd);
-   if (!ismaster_response) {
+   if (!hello_response) {
       _mongoc_server_description_set_error (sd, error);
       EXIT;
    }
 
    bson_destroy (&sd->last_hello_response);
    bson_init (&sd->last_hello_response);
-   bson_copy_to_excluding_noinit (ismaster_response,
+   bson_copy_to_excluding_noinit (hello_response,
                                   &sd->last_hello_response,
                                   "speculativeAuthenticate",
                                   NULL);
@@ -575,7 +575,7 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
             /* it doesn't really matter what error API we use. the code and
              * domain will be overwritten. */
             (void) _mongoc_cmd_check_ok (
-               ismaster_response, MONGOC_ERROR_API_VERSION_2, &sd->error);
+               hello_response, MONGOC_ERROR_API_VERSION_2, &sd->error);
             /* TODO CDRIVER-3696: this is an existing bug. If this is handling
              * an ismaster reply that is NOT from a handshake, this should not
              * be considered an auth error. */
@@ -792,11 +792,10 @@ mongoc_server_description_new_copy (
 
    if (description->has_hello_response) {
       /* calls mongoc_server_description_reset */
-      mongoc_server_description_handle_ismaster (
-         copy,
-         &description->last_hello_response,
-         description->round_trip_time_msec,
-         &description->error);
+      mongoc_server_description_handle_hello (copy,
+                                              &description->last_hello_response,
+                                              description->round_trip_time_msec,
+                                              &description->error);
    } else {
       mongoc_server_description_reset (copy);
    }

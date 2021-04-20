@@ -92,13 +92,13 @@ mongoc_topology_reconcile (mongoc_topology_t *topology)
 /* call this while already holding the lock */
 static bool
 _mongoc_topology_update_no_lock (uint32_t id,
-                                 const bson_t *ismaster_response,
+                                 const bson_t *hello_response,
                                  int64_t rtt_msec,
                                  mongoc_topology_t *topology,
                                  const bson_error_t *error /* IN */)
 {
-   mongoc_topology_description_handle_ismaster (
-      &topology->description, id, ismaster_response, rtt_msec, error);
+   mongoc_topology_description_handle_hello (
+      &topology->description, id, hello_response, rtt_msec, error);
 
    /* return false if server removed from topology */
    return mongoc_topology_description_server_by_id (
@@ -128,11 +128,11 @@ _mongoc_topology_scanner_setup_err_cb (uint32_t id,
 
    topology = (mongoc_topology_t *) data;
 
-   mongoc_topology_description_handle_ismaster (&topology->description,
-                                                id,
-                                                NULL /* ismaster reply */,
-                                                -1 /* rtt_msec */,
-                                                error);
+   mongoc_topology_description_handle_hello (&topology->description,
+                                             id,
+                                             NULL /* ismaster reply */,
+                                             -1 /* rtt_msec */,
+                                             error);
 }
 
 
@@ -152,7 +152,7 @@ _mongoc_topology_scanner_setup_err_cb (uint32_t id,
 
 void
 _mongoc_topology_scanner_cb (uint32_t id,
-                             const bson_t *ismaster_response,
+                             const bson_t *hello_response,
                              int64_t rtt_msec,
                              void *data,
                              const bson_error_t *error /* IN */)
@@ -168,7 +168,7 @@ _mongoc_topology_scanner_cb (uint32_t id,
    sd = mongoc_topology_description_server_by_id (
       &topology->description, id, NULL);
 
-   if (!ismaster_response) {
+   if (!hello_response) {
       /* Server monitoring: When a server check fails due to a network error
        * (including a network timeout), the client MUST clear its connection
        * pool for the server */
@@ -178,16 +178,16 @@ _mongoc_topology_scanner_cb (uint32_t id,
    /* Server Discovery and Monitoring Spec: "Once a server is connected, the
     * client MUST change its type to Unknown only after it has retried the
     * server once." */
-   if (!ismaster_response && sd && sd->type != MONGOC_SERVER_UNKNOWN) {
+   if (!hello_response && sd && sd->type != MONGOC_SERVER_UNKNOWN) {
       _mongoc_topology_update_no_lock (
-         id, ismaster_response, rtt_msec, topology, error);
+         id, hello_response, rtt_msec, topology, error);
 
       /* add another ismaster call to the current scan - the scan continues
        * until all commands are done */
       mongoc_topology_scanner_scan (topology->scanner, sd->id);
    } else {
       _mongoc_topology_update_no_lock (
-         id, ismaster_response, rtt_msec, topology, error);
+         id, hello_response, rtt_msec, topology, error);
 
       /* The processing of the ismaster results above may have added/removed
        * server descriptions. We need to reconcile that with our monitoring

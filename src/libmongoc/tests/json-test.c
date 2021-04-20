@@ -218,7 +218,7 @@ process_sdam_test_ismaster_responses (bson_t *phase,
 
          /* send ismaster through the topology description's handler */
          capture_logs (true);
-         mongoc_topology_description_handle_ismaster (
+         mongoc_topology_description_handle_hello (
             td, sd->id, &response, 1, NULL);
          if (td->servers->items_len == 0) {
             ASSERT_CAPTURED_LOG ("topology",
@@ -1739,8 +1739,9 @@ run_json_general_test (const json_test_config_t *config)
 
       /* expect "operation was interrupted", ignore "command not found" or "is
        * not supported" */
-      if (!r && (error.domain != MONGOC_ERROR_SERVER ||
-                 (error.code != 11601 && error.code != 59)) &&
+      if (!r &&
+          (error.domain != MONGOC_ERROR_SERVER ||
+           (error.code != 11601 && error.code != 59)) &&
           (strstr (error.message, "is unsupported") == NULL)) {
          MONGOC_WARNING ("Error in killAllSessions: %s", error.message);
       }
