@@ -285,10 +285,11 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
    _mongoc_rpc_gather (&rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (&rpc);
 
-   if (compressor_id != -1 && IS_NOT_COMMAND ("ismaster") &&
-       IS_NOT_COMMAND ("saslstart") && IS_NOT_COMMAND ("saslcontinue") &&
-       IS_NOT_COMMAND ("getnonce") && IS_NOT_COMMAND ("authenticate") &&
-       IS_NOT_COMMAND ("createuser") && IS_NOT_COMMAND ("updateuser")) {
+   if (compressor_id != -1 && IS_NOT_COMMAND (HANDSHAKE_CMD_LEGACY_HELLO) &&
+       IS_NOT_COMMAND ("hello") && IS_NOT_COMMAND ("saslstart") &&
+       IS_NOT_COMMAND ("saslcontinue") && IS_NOT_COMMAND ("getnonce") &&
+       IS_NOT_COMMAND ("authenticate") && IS_NOT_COMMAND ("createuser") &&
+       IS_NOT_COMMAND ("updateuser")) {
       output = _mongoc_rpc_compress (cluster, compressor_id, &rpc, error);
       if (output == NULL) {
          GOTO (done);

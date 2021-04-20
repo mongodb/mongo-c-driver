@@ -35,6 +35,9 @@ BSON_BEGIN_DECLS
 #define HANDSHAKE_OS_ARCHITECTURE_MAX 32
 #define HANDSHAKE_DRIVER_NAME_MAX 64
 #define HANDSHAKE_DRIVER_VERSION_MAX 32
+
+#define HANDSHAKE_CMD_LEGACY_HELLO "isMaster"
+#define HANDSHAKE_RESPONSE_LEGACY_HELLO "ismaster"
 /* platform has no fixed max size. It can just occupy the remaining
  * available space in the document. */
 

@@ -564,7 +564,9 @@ mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
             sd->error.code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
             goto failure;
          }
-      } else if (strcmp ("ismaster", bson_iter_key (&iter)) == 0) {
+      } else if (strcmp ("isWritablePrimary", bson_iter_key (&iter)) == 0 ||
+                 strcmp (HANDSHAKE_RESPONSE_LEGACY_HELLO,
+                         bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_BOOL (&iter))
             goto failure;
          is_master = bson_iter_bool (&iter);

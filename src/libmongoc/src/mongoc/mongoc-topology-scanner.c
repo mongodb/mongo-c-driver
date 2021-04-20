@@ -113,7 +113,7 @@ _add_ismaster (mongoc_topology_scanner_t *ts)
       BSON_APPEND_INT32 (cmd, "hello", 1);
       _mongoc_cmd_append_server_api (cmd, api);
    } else {
-      BSON_APPEND_INT32 (cmd, "isMaster", 1);
+      BSON_APPEND_INT32 (cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
    }
 }
 
