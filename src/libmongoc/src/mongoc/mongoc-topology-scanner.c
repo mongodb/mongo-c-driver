@@ -104,12 +104,16 @@ _jumpstart_other_acmds (mongoc_topology_scanner_node_t *node,
                         mongoc_async_cmd_t *acmd);
 
 static void
-_add_ismaster (bson_t *cmd, const mongoc_server_api_t *api)
+_add_ismaster (mongoc_topology_scanner_t *ts)
 {
-   BSON_APPEND_INT32 (cmd, "isMaster", 1);
+   bson_t *cmd = &ts->ismaster_cmd;
+   mongoc_server_api_t *api = ts->api;
 
    if (api) {
+      BSON_APPEND_INT32 (cmd, "hello", 1);
       _mongoc_cmd_append_server_api (cmd, api);
+   } else {
+      BSON_APPEND_INT32 (cmd, "isMaster", 1);
    }
 }
 
@@ -120,7 +124,7 @@ _init_ismaster (mongoc_topology_scanner_t *ts)
    bson_init (&ts->ismaster_cmd_with_handshake);
    bson_init (&ts->cluster_time);
 
-   _add_ismaster (&ts->ismaster_cmd, ts->api);
+   _add_ismaster (ts);
 }
 
 static void
@@ -129,7 +133,7 @@ _reset_ismaster (mongoc_topology_scanner_t *ts)
    bson_reinit (&ts->ismaster_cmd);
    bson_reinit (&ts->ismaster_cmd_with_handshake);
 
-   _add_ismaster (&ts->ismaster_cmd, ts->api);
+   _add_ismaster (ts);
 }
 
 const char *
@@ -249,7 +253,8 @@ _build_ismaster_with_handshake (mongoc_topology_scanner_t *ts)
    int count = 0;
    char buf[16];
 
-   _add_ismaster (doc, ts->api);
+   bson_destroy (doc);
+   bson_copy_to (&ts->ismaster_cmd, doc);
 
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
    res = _mongoc_handshake_build_doc_with_application (&subdoc, ts->appname);
