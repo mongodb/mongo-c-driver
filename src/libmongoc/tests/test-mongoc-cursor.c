@@ -437,14 +437,15 @@ _make_cmd_cursor_from_agg (mongoc_collection_t *coll)
 static mongoc_cursor_t *
 _make_cmd_deprecated_cursor (mongoc_collection_t *coll)
 {
-   return mongoc_collection_command (coll,
-                                     MONGOC_QUERY_SLAVE_OK,
-                                     0,
-                                     0,
-                                     0,
-                                     tmp_bson ("{'hello': 1}"),
-                                     NULL,
-                                     NULL);
+   return mongoc_collection_command (
+      coll,
+      MONGOC_QUERY_SLAVE_OK,
+      0,
+      0,
+      0,
+      tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+      NULL,
+      NULL);
 }
 
 

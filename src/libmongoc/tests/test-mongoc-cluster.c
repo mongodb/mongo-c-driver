@@ -1234,7 +1234,11 @@ auto_ismaster (request_t *request, void *data)
    const char *server_type;
    char *hello;
 
-   if (!request->is_command ||
+   if (!request->is_command) {
+      return false;
+   }
+
+   if (strcasecmp (request->command_name, "hello") != 0 &&
        strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) != 0) {
       return false;
    }

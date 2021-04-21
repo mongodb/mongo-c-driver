@@ -395,10 +395,14 @@ test_topology_scanner_blocking_initiator (void)
    data.client = client;
    mongoc_client_set_stream_initiator (client, slow_initiator, &data);
 
-   ASSERT_OR_PRINT (
-      mongoc_client_command_simple (
-         client, "admin", tmp_bson ("{'hello': 1}"), NULL, NULL, &error),
-      error);
+   ASSERT_OR_PRINT (mongoc_client_command_simple (
+                       client,
+                       "admin",
+                       tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+                       NULL,
+                       NULL,
+                       &error),
+                    error);
 
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);

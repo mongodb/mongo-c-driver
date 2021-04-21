@@ -1635,7 +1635,12 @@ test_incompatible_error (void)
 
    /* trigger connection, fails due to incompatibility */
    ASSERT (!mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'hello': 1}"), NULL, NULL, &error));
+      client,
+      "admin",
+      tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+      NULL,
+      NULL,
+      &error));
 
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_PROTOCOL,
@@ -1652,7 +1657,12 @@ test_incompatible_error (void)
    /* wait until it's time for next heartbeat */
    _mongoc_usleep (600 * 1000);
    ASSERT (!mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'hello': 1}"), NULL, NULL, &error));
+      client,
+      "admin",
+      tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+      NULL,
+      NULL,
+      &error));
 
    msg = bson_strdup_printf ("requires wire version 10, but this version"
                              " of libmongoc only supports up to %d",
@@ -1689,7 +1699,12 @@ test_compatible_null_error_pointer (void)
 
    /* trigger connection, fails due to incompatibility */
    ASSERT (!mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'hello': 1}"), NULL, NULL, &error));
+      client,
+      "admin",
+      tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+      NULL,
+      NULL,
+      &error));
 
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION, "");

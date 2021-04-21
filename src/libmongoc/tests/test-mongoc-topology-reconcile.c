@@ -382,13 +382,14 @@ test_topology_reconcile_from_handshake (void *ctx)
    client = mongoc_client_pool_pop (pool);
 
    /* command in the foreground (hello, just because it doesn't need auth) */
-   r = mongoc_client_read_command_with_opts (client,
-                                             "admin",
-                                             tmp_bson ("{'hello': 1}"),
-                                             NULL,
-                                             tmp_bson ("{'serverId': 1}"),
-                                             NULL,
-                                             &error);
+   r = mongoc_client_read_command_with_opts (
+      client,
+      "admin",
+      tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+      NULL,
+      tmp_bson ("{'serverId': 1}"),
+      NULL,
+      &error);
 
    ASSERT_OR_PRINT (r, error);
 
@@ -412,7 +413,13 @@ test_topology_reconcile_from_handshake (void *ctx)
 
    /* no serverId, waits for topology scan */
    r = mongoc_client_read_command_with_opts (
-      client, "admin", tmp_bson ("{'hello': 1}"), NULL, NULL, NULL, &error);
+      client,
+      "admin",
+      tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+      NULL,
+      NULL,
+      NULL,
+      &error);
 
    ASSERT_OR_PRINT (r, error);
    bson_mutex_lock (&data.mutex);

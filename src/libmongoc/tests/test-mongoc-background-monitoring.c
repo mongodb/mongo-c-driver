@@ -735,7 +735,7 @@ test_streaming_succeeds (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->awaited);
@@ -760,7 +760,7 @@ test_streaming_hangup (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->awaited);
@@ -788,7 +788,7 @@ test_streaming_badreply (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    mock_server_replies_simple (request, "{'ok': 0}");
@@ -820,7 +820,7 @@ test_streaming_shutdown (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    _signal_shutdown (tf);
@@ -842,7 +842,7 @@ test_streaming_cancel (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    _request_cancel (tf);
@@ -862,7 +862,7 @@ test_streaming_cancel (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 4);
    mock_server_replies_ok_and_destroys (request);
@@ -882,7 +882,7 @@ test_moretocome_succeeds (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->awaited);
@@ -916,7 +916,7 @@ test_moretocome_succeeds (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 5);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
@@ -938,7 +938,7 @@ test_moretocome_hangup (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    OBSERVE (tf, tf->observations->awaited);
@@ -977,7 +977,7 @@ test_moretocome_badreply (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    mock_server_replies_opmsg (
@@ -1017,7 +1017,7 @@ test_moretocome_shutdown (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    mock_server_replies_opmsg (
@@ -1052,7 +1052,7 @@ test_moretocome_cancel (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    mock_server_replies_opmsg (
@@ -1091,7 +1091,7 @@ test_moretocome_cancel (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 5);
    mock_server_replies_opmsg (
@@ -1109,7 +1109,7 @@ test_moretocome_cancel (void)
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
-      tmp_bson ("{'isMaster': 1, 'topologyVersion': { '$exists': true}}"));
+      tmp_bson ("{'topologyVersion': { '$exists': true}}"));
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 6);
    mock_server_replies_opmsg (

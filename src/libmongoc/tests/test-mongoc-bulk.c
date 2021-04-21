@@ -4173,7 +4173,12 @@ _test_bulk_hint (bool pooled, bool use_primary)
 
    /* warm up the client so its server_id is valid */
    ret = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'hello': 1}"), NULL, NULL, &error);
+      client,
+      "admin",
+      tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+      NULL,
+      NULL,
+      &error);
    ASSERT_OR_PRINT (ret, error);
 
    collection = mongoc_client_get_collection (client, "test", "test");
