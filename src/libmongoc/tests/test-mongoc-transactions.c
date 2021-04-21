@@ -1167,7 +1167,7 @@ test_transactions_install (TestSuite *suite)
 {
    char resolved[PATH_MAX];
 
-   ASSERT (realpath (JSON_DIR "/transactions", resolved));
+   ASSERT (realpath (JSON_DIR "/transactions/legacy", resolved));
    install_json_test_suite_with_check (suite,
                                        resolved,
                                        test_transactions_cb,
