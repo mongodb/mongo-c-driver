@@ -727,7 +727,7 @@ _test_heartbeat_events (bool pooled, bool succeeded)
       request_destroy (request);
    }
 
-   /* pooled client opens new socket, handshakes it by calling ismaster again */
+   /* pooled client opens new socket, handshakes it by calling hello again */
    if (pooled && succeeded) {
       request = mock_server_receives_ismaster (server);
       mock_server_replies (

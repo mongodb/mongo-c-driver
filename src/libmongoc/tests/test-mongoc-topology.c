@@ -1047,10 +1047,10 @@ test_multiple_selection_errors (void *context)
    /* Like:
     * "No suitable servers found (`serverselectiontryonce` set):
     *  [Failed to resolve 'doesntexist']
-    *  [connection error calling ismaster on 'example.com:2']"
+    *  [connection error calling hello on 'example.com:2']"
     */
    ASSERT_CONTAINS (error.message, "No suitable servers found");
-   /* either "connection error" or "connection timeout" calling ismaster */
+   /* either "connection error" or "connection timeout" calling hello */
    ASSERT_CONTAINS (error.message, "calling hello on 'example.com:2'");
    ASSERT_CONTAINS (error.message, "[Failed to resolve 'doesntexist']");
 
@@ -1088,7 +1088,7 @@ auto_ping (request_t *request, void *data)
 }
 
 
-/* Tests CDRIVER-562: after calling ismaster to handshake a new connection we
+/* Tests CDRIVER-562: after calling hello to handshake a new connection we
  * must update topology description with the server response.
  */
 static void

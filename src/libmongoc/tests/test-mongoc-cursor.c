@@ -1667,7 +1667,7 @@ test_cursor_hint_mongos_cmd (void)
 }
 
 
-/* Tests CDRIVER-562: after calling ismaster to handshake a new connection we
+/* Tests CDRIVER-562: after calling hello to handshake a new connection we
  * must update topology description with the server response. If not, this test
  * fails under auth with "auth failed" because we use the wrong auth protocol.
  */

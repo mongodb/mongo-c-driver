@@ -304,7 +304,7 @@ test_topology_scanner_connection_error (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "connection refused calling ismaster on "
+                          "connection refused calling hello on "
                           "'localhost:9876'");
 
    mongoc_client_destroy (client);
@@ -332,7 +332,7 @@ test_topology_scanner_socket_timeout (void)
 
    /* the mock server did accept connection, but never replied */
    expected_msg =
-      bson_strdup_printf ("socket timeout calling ismaster on '%s'",
+      bson_strdup_printf ("socket timeout calling hello on '%s'",
                           mongoc_uri_get_hosts (uri)->host_and_port);
 
    ASSERT_ERROR_CONTAINS (error,
