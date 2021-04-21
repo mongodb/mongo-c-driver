@@ -1160,7 +1160,7 @@ test_get_collection_names_error (void)
 
    server = mock_server_new ();
    mock_server_auto_hello (server,
-                           "{'ismaster': true,"
+                           "{'isWritablePrimary': true,"
                            " 'maxWireVersion': 3}");
    mock_server_run (server);
    client =

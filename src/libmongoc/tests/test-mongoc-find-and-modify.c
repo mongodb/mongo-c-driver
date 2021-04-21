@@ -18,7 +18,7 @@ auto_ismaster (mock_server_t *server,
                int32_t max_bson_size,
                int32_t max_batch_size)
 {
-   char *response = bson_strdup_printf ("{'ismaster': true, "
+   char *response = bson_strdup_printf ("{'isWritablePrimary': true, "
                                         " 'maxWireVersion': %d,"
                                         " 'maxBsonObjectSize': %d,"
                                         " 'maxMessageSizeBytes': %d,"

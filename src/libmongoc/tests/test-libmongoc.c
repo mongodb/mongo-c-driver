@@ -1132,7 +1132,14 @@ call_ismaster_with_host_and_port (char *host_and_port, bson_t *reply)
 #endif
 
    if (!mongoc_client_command_simple (
-          client, "admin", tmp_bson ("{'isMaster': 1}"), NULL, reply, &error)) {
+          client, "admin", tmp_bson ("{'hello': 1}"), NULL, reply, &error) &&
+       !mongoc_client_command_simple (
+          client,
+          "admin",
+          tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+          NULL,
+          reply,
+          &error)) {
       fprintf (stderr, "error calling hello: '%s'\n", error.message);
       fprintf (stderr, "URI = %s\n", uri_str);
       abort ();

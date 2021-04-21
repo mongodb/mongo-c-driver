@@ -194,11 +194,10 @@ test_mongoc_handshake_data_append_success (void)
    /* Force topology scanner to start */
    client = mongoc_client_pool_pop (pool);
 
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
-   ASSERT (bson_has_field (request_doc, "isMaster"));
    ASSERT (bson_has_field (request_doc, HANDSHAKE_FIELD));
 
    ASSERT (bson_iter_init_find (&iter, request_doc, HANDSHAKE_FIELD));
@@ -264,7 +263,7 @@ test_mongoc_handshake_data_append_success (void)
       ASSERT (strstr (val, platform) != NULL);
    }
 
-   mock_server_replies_simple (request, "{'ok': 1, 'ismaster': true}");
+   mock_server_replies_simple (request, "{'ok': 1, 'isWritablePrimary': true}");
    request_destroy (request);
 
    /* Cleanup */
@@ -378,7 +377,7 @@ test_mongoc_handshake_too_big (void)
    mongoc_uri_t *uri;
    future_t *future;
    request_t *request;
-   const bson_t *ismaster_doc;
+   const bson_t *hello_doc;
    bson_iter_t iter;
 
    enum { BUFFER_SIZE = HANDSHAKE_MAX_SIZE };
@@ -405,17 +404,16 @@ test_mongoc_handshake_too_big (void)
    /* Send a ping, mock server deals with it */
    future = future_client_command_simple (
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
 
    /* Make sure the isMaster request has a handshake field, and it's not huge */
    ASSERT (request);
-   ismaster_doc = request_get_doc (request, 0);
-   ASSERT (ismaster_doc);
-   ASSERT (bson_has_field (ismaster_doc, "isMaster"));
-   ASSERT (bson_has_field (ismaster_doc, HANDSHAKE_FIELD));
+   hello_doc = request_get_doc (request, 0);
+   ASSERT (hello_doc);
+   ASSERT (bson_has_field (hello_doc, HANDSHAKE_FIELD));
 
    /* isMaster with handshake isn't too big */
-   bson_iter_init_find (&iter, ismaster_doc, HANDSHAKE_FIELD);
+   bson_iter_init_find (&iter, hello_doc, HANDSHAKE_FIELD);
    ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
    bson_iter_document (&iter, &len, &dummy);
 
@@ -547,7 +545,7 @@ test_mongoc_handshake_cannot_send (void)
    mongoc_client_t *client;
    mongoc_client_pool_t *pool;
    request_t *request;
-   const char *const server_reply = "{'ok': 1, 'ismaster': true}";
+   const char *const server_reply = "{'ok': 1, 'isWritablePrimary': true}";
    const bson_t *request_doc;
    char big_string[HANDSHAKE_MAX_SIZE];
    mongoc_handshake_t *md;
@@ -572,31 +570,29 @@ test_mongoc_handshake_cannot_send (void)
 
    /* Pop a client to trigger the topology scanner */
    client = mongoc_client_pool_pop (pool);
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
 
    /* Make sure the isMaster request DOESN'T have a handshake field: */
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
-   ASSERT (bson_has_field (request_doc, "isMaster"));
    ASSERT (!bson_has_field (request_doc, HANDSHAKE_FIELD));
 
    mock_server_replies_simple (request, server_reply);
    request_destroy (request);
 
    /* Cause failure on client side */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    ASSERT (request);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    /* Make sure the isMaster request still DOESN'T have a handshake field
     * on subsequent heartbeats. */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
-   ASSERT (bson_has_field (request_doc, "isMaster"));
    ASSERT (!bson_has_field (request_doc, HANDSHAKE_FIELD));
 
    mock_server_replies_simple (request, server_reply);

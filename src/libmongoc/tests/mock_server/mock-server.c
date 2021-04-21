@@ -72,6 +72,12 @@ struct _autoresponder_handle_t {
    int id;
 };
 
+struct _hello_callback_t {
+   hello_callback_func_t callback_func;
+   void *data;
+   destructor_t destructor;
+};
+
 typedef enum { REPLY, HANGUP, RESET } reply_type_t;
 
 
@@ -163,16 +169,16 @@ mock_server_with_autoismaster (int32_t max_wire_version)
 {
    mock_server_t *server = mock_server_new ();
 
-   char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
-                                        " 'ismaster': true,"
-                                        " 'minWireVersion': 0,"
-                                        " 'maxWireVersion': %d}",
-                                        max_wire_version);
+   char *hello = bson_strdup_printf ("{'ok': 1.0,"
+                                     " 'isWritablePrimary': true,"
+                                     " 'minWireVersion': 0,"
+                                     " 'maxWireVersion': %d}",
+                                     max_wire_version);
 
    BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_hello (server, ismaster);
+   mock_server_auto_hello (server, hello);
 
-   bson_free (ismaster);
+   bson_free (hello);
 
    return server;
 }
@@ -200,7 +206,7 @@ mock_mongos_new (int32_t max_wire_version)
 {
    mock_server_t *server = mock_server_new ();
    char *mongos_36_fields = "";
-   char *ismaster;
+   char *hello;
 
    if (max_wire_version >= WIRE_VERSION_OP_MSG) {
       mongos_36_fields =
@@ -216,19 +222,19 @@ mock_mongos_new (int32_t max_wire_version)
          "'logicalSessionTimeoutMinutes': 30";
    }
 
-   ismaster = bson_strdup_printf ("{'ok': 1.0,"
-                                  " 'ismaster': true,"
-                                  " 'msg': 'isdbgrid',"
-                                  " 'minWireVersion': 2,"
-                                  " 'maxWireVersion': %d"
-                                  " %s}",
-                                  max_wire_version,
-                                  mongos_36_fields);
+   hello = bson_strdup_printf ("{'ok': 1.0,"
+                               " 'isWritablePrimary': true,"
+                               " 'msg': 'isdbgrid',"
+                               " 'minWireVersion': 2,"
+                               " 'maxWireVersion': %d"
+                               " %s}",
+                               max_wire_version,
+                               mongos_36_fields);
 
    BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_hello (server, ismaster);
+   mock_server_auto_hello (server, hello);
 
-   bson_free (ismaster);
+   bson_free (hello);
 
    return server;
 }
@@ -486,26 +492,71 @@ mock_server_remove_autoresponder (mock_server_t *server, int id)
 
 
 static bool
-auto_hello (request_t *request, void *data)
+auto_hello_generate_legacy_response (request_t *request,
+                                     void *data,
+                                     bson_t *hello_response)
 {
    const char *response_json = (const char *) data;
    char *quotes_replaced;
-   bson_t response;
    bson_error_t error;
-
-   if (!request->is_command ||
-       (strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) &&
-        strcasecmp (request->command_name, "hello"))) {
-      return false;
-   }
 
    quotes_replaced = single_quotes_to_double (response_json);
 
-   if (!bson_init_from_json (&response, quotes_replaced, -1, &error)) {
+   if (!bson_init_from_json (hello_response, quotes_replaced, -1, &error)) {
       fprintf (stderr, "%s\n", error.message);
       fflush (stderr);
       abort ();
    }
+
+   bson_free (quotes_replaced);
+
+   return true;
+}
+
+static bool
+auto_hello (request_t *request, void *data)
+{
+   hello_callback_t *callback = (hello_callback_t *) data;
+   bson_t response;
+   bool is_hello;
+   bool is_legacy_hello;
+   char *response_json;
+   bson_iter_t iter;
+
+   if (!request->is_command) {
+      return false;
+   }
+
+   // Check whether we've got "hello" or legacy hello
+   is_hello = strcasecmp (request->command_name, "hello") == 0;
+   is_legacy_hello =
+      strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) == 0;
+
+   if (!is_hello && !is_legacy_hello) {
+      return false;
+   }
+
+   if (!callback->callback_func (request, callback->data, &response)) {
+      return false;
+   }
+
+   // Convert responses for legacy hello
+   if (bson_iter_init_find (&iter, &response, "isWritablePrimary")) {
+      BSON_APPEND_BOOL (
+         &response, HANDSHAKE_RESPONSE_LEGACY_HELLO, bson_iter_bool (&iter));
+   } else if (bson_iter_init_find (
+                 &iter, &response, HANDSHAKE_RESPONSE_LEGACY_HELLO)) {
+      BSON_APPEND_BOOL (&response, "isWritablePrimary", bson_iter_bool (&iter));
+   }
+
+   if (!bson_iter_init_find (&iter, &response, "minWireVersion")) {
+      BSON_APPEND_INT32 (&response, "minWireVersion", WIRE_VERSION_MIN);
+   }
+   if (!bson_iter_init_find (&iter, &response, "maxWireVersion")) {
+      BSON_APPEND_INT32 (&response, "maxWireVersion", WIRE_VERSION_OP_MSG - 1);
+   }
+
+   response_json = bson_as_json (&response, 0);
 
    if (mock_server_get_rand_delay (request->server)) {
       _mongoc_usleep ((int64_t) (rand () % 10) * 1000);
@@ -514,11 +565,40 @@ auto_hello (request_t *request, void *data)
    mock_server_replies (request, MONGOC_REPLY_NONE, 0, 0, 1, response_json);
 
    bson_destroy (&response);
-   bson_free (quotes_replaced);
+   bson_free (response_json);
    request_destroy (request);
    return true;
 }
 
+static void
+mock_server_free_callback (void *data)
+{
+   hello_callback_t *callback = (hello_callback_t *) data;
+
+   if (callback->destructor) {
+      callback->destructor (callback->data);
+   }
+
+   bson_free (callback);
+}
+
+int
+mock_server_auto_hello_callback (mock_server_t *server,
+                                 hello_callback_func_t callback_func,
+                                 void *data,
+                                 destructor_t destructor)
+{
+   hello_callback_t *callback = bson_malloc0 (sizeof (hello_callback_t));
+
+   ASSERT (callback_func);
+
+   callback->callback_func = callback_func;
+   callback->data = data;
+   callback->destructor = destructor;
+
+   return mock_server_autoresponds (
+      server, auto_hello, (void *) callback, mock_server_free_callback);
+}
 
 /*--------------------------------------------------------------------------
  *
@@ -541,25 +621,15 @@ mock_server_auto_hello (mock_server_t *server, const char *response_json, ...)
 {
    char *formatted_response_json;
    va_list args;
-   bson_t *tmp;
-   bson_iter_t iter;
 
    va_start (args, response_json);
    formatted_response_json = bson_strdupv_printf (response_json, args);
    va_end (args);
-   tmp = tmp_bson (formatted_response_json);
 
-   if (!bson_iter_init_find (&iter, tmp, "minWireVersion")) {
-      BSON_APPEND_INT32 (tmp, "minWireVersion", WIRE_VERSION_MIN);
-   }
-   if (!bson_iter_init_find (&iter, tmp, "maxWireVersion")) {
-      BSON_APPEND_INT32 (tmp, "maxWireVersion", WIRE_VERSION_OP_MSG - 1);
-   }
-   bson_free (formatted_response_json);
-   formatted_response_json = bson_as_json (tmp, 0);
-
-   return mock_server_autoresponds (
-      server, auto_hello, (void *) formatted_response_json, bson_free);
+   return mock_server_auto_hello_callback (server,
+                                           auto_hello_generate_legacy_response,
+                                           (void *) formatted_response_json,
+                                           bson_free);
 }
 
 
@@ -914,7 +984,6 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
    return request;
 }
 
-
 /*--------------------------------------------------------------------------
  *
  * mock_server_receives_ismaster --
@@ -933,13 +1002,43 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
  */
 
 request_t *
-mock_server_receives_ismaster (mock_server_t *server)
+mock_server_receives_legacy_hello (mock_server_t *server,
+                                   const char *match_json)
 {
-   return mock_server_receives_command (
-      server,
-      "admin",
-      MONGOC_QUERY_SLAVE_OK,
-      "{'isMaster': 1, 'maxAwaitTimeMS': { '$exists': false }}");
+   request_t *request;
+   char *formatted_command_json;
+
+   request = mock_server_receives_request (server);
+
+   if (!request) {
+      return NULL;
+   }
+
+   if (strcasecmp (request->command_name, "hello") &&
+       strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO)) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   formatted_command_json =
+      bson_strdup_printf ("{'%s': 1, 'maxAwaitTimeMS': { '$exists': false }}",
+                          request->command_name);
+
+   if (!request_matches_query (request,
+                               "admin.$cmd",
+                               MONGOC_QUERY_SLAVE_OK,
+                               0,
+                               1,
+                               match_json ? match_json : formatted_command_json,
+                               NULL,
+                               true)) {
+      request_destroy (request);
+      request = NULL;
+   }
+
+   bson_free (formatted_command_json);
+
+   return request;
 }
 
 
@@ -2025,7 +2124,7 @@ rs_response_to_ismaster (
    bool first;
    mock_server_t *host;
    const char *session_timeout;
-   char *ismaster_response;
+   char *hello;
 
    hosts = bson_string_new ("");
 
@@ -2052,25 +2151,25 @@ rs_response_to_ismaster (
       session_timeout = "";
    }
 
-   ismaster_response = bson_strdup_printf ("{'ok': 1, "
-                                           " 'setName': 'rs',"
-                                           " 'ismaster': %s,"
-                                           " 'secondary': %s,"
-                                           " 'tags': {%s},"
-                                           " 'minWireVersion': 3,"
-                                           " 'maxWireVersion': %d,"
-                                           " 'hosts': [%s]"
-                                           " %s"
-                                           "}",
-                                           primary ? "true" : "false",
-                                           primary ? "false" : "true",
-                                           has_tags ? "'key': 'value'" : "",
-                                           max_wire_version,
-                                           hosts->str,
-                                           session_timeout);
+   hello = bson_strdup_printf ("{'ok': 1, "
+                               " 'setName': 'rs',"
+                               " 'isWritablePrimary': %s,"
+                               " 'secondary': %s,"
+                               " 'tags': {%s},"
+                               " 'minWireVersion': 3,"
+                               " 'maxWireVersion': %d,"
+                               " 'hosts': [%s]"
+                               " %s"
+                               "}",
+                               primary ? "true" : "false",
+                               primary ? "false" : "true",
+                               has_tags ? "'key': 'value'" : "",
+                               max_wire_version,
+                               hosts->str,
+                               session_timeout);
 
-   mock_server_auto_hello (server, "%s", ismaster_response);
+   mock_server_auto_hello (server, "%s", hello);
 
-   bson_free (ismaster_response);
+   bson_free (hello);
    bson_string_free (hosts, true);
 }

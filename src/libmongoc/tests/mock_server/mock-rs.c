@@ -120,12 +120,12 @@ ismaster_json (mock_rs_t *rs,
    char *json;
 
    if (type == MONGOC_SERVER_RS_PRIMARY) {
-      server_type = "'ismaster': true, 'secondary': false, ";
+      server_type = "'isWritablePrimary': true, 'secondary': false, ";
    } else if (type == MONGOC_SERVER_RS_SECONDARY) {
-      server_type = "'ismaster': false, 'secondary': true, ";
+      server_type = "'isWritablePrimary': false, 'secondary': true, ";
    } else {
       BSON_ASSERT (type == MONGOC_SERVER_RS_ARBITER);
-      server_type = "'ismaster': false, 'arbiterOnly': true, ";
+      server_type = "'isWritablePrimary': false, 'arbiterOnly': true, ";
    }
 
    if (rs->max_wire_version >= WIRE_VERSION_OP_MSG) {
@@ -322,7 +322,7 @@ mock_rs_run (mock_rs_t *rs)
    int i;
    mock_server_t *server;
    char *hosts_str;
-   char *ismaster_reply;
+   char *hello;
 
    if (rs->has_primary) {
       /* start primary */
@@ -374,26 +374,26 @@ mock_rs_run (mock_rs_t *rs)
    BSON_ASSERT (rs->max_wire_version > 0);
    if (rs->has_primary) {
       /* primary's ismaster response */
-      ismaster_reply = primary_json (rs);
-      mock_server_auto_hello (rs->primary, ismaster_reply);
-      bson_free (ismaster_reply);
+      hello = primary_json (rs);
+      mock_server_auto_hello (rs->primary, hello);
+      bson_free (hello);
    }
 
    /* secondaries' ismaster response */
    for (i = 0; i < rs->n_secondaries; i++) {
-      ismaster_reply = secondary_json (rs, i);
-      mock_server_auto_hello (get_server (&rs->secondaries, i), ismaster_reply);
-      bson_free (ismaster_reply);
+      hello = secondary_json (rs, i);
+      mock_server_auto_hello (get_server (&rs->secondaries, i), hello);
+      bson_free (hello);
    }
 
    /* arbiters' ismaster response */
-   ismaster_reply = arbiter_json (rs);
+   hello = arbiter_json (rs);
 
    for (i = 0; i < rs->n_arbiters; i++) {
-      mock_server_auto_hello (get_server (&rs->arbiters, i), ismaster_reply);
+      mock_server_auto_hello (get_server (&rs->arbiters, i), hello);
    }
 
-   bson_free (ismaster_reply);
+   bson_free (hello);
 
    if (rs->max_wire_version >= WIRE_VERSION_OP_MSG) {
       mock_rs_auto_endsessions (rs);

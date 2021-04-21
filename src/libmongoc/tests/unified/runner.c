@@ -424,14 +424,14 @@ test_destroy (test_t *test)
 }
 
 static bool
-is_replset (bson_t *ismaster_reply)
+is_replset (bson_t *hello_reply)
 {
-   if (bson_has_field (ismaster_reply, "setName")) {
+   if (bson_has_field (hello_reply, "setName")) {
       return true;
    }
 
-   if (bson_has_field (ismaster_reply, "isreplicaset") &&
-       bson_lookup_bool (ismaster_reply, "isreplicaset") == true) {
+   if (bson_has_field (hello_reply, "isreplicaset") &&
+       bson_lookup_bool (hello_reply, "isreplicaset") == true) {
       return true;
    }
 
@@ -463,7 +463,16 @@ get_topology_type (mongoc_client_t *client)
    const char *topology_type = "single";
 
    ret = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, &reply, &error);
+      client, "admin", tmp_bson ("{'hello': 1}"), NULL, &reply, &error);
+   if (!ret) {
+      ret = mongoc_client_command_simple (
+         client,
+         "admin",
+         tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+         NULL,
+         &reply,
+         &error);
+   }
    ASSERT_OR_PRINT (ret, error);
 
    if (is_replset (&reply)) {

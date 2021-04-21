@@ -265,10 +265,10 @@ test_server_description_ignores_rtt (void)
 {
    mongoc_server_description_t sd;
    bson_error_t error;
-   bson_t ismaster;
+   bson_t hello;
 
-   bson_init (&ismaster);
-   BCON_APPEND (&ismaster, "ismaster", BCON_BOOL (true));
+   bson_init (&hello);
+   BCON_APPEND (&hello, "isWritablePrimary", BCON_BOOL (true));
 
    memset (&error, 0, sizeof (bson_error_t));
    mongoc_server_description_init (&sd, "host:1234", 1);
@@ -277,21 +277,21 @@ test_server_description_ignores_rtt (void)
    BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
    /* If MONGOC_RTT_UNSET is passed as the RTT, it remains MONGOC_RTT_UNSET. */
    mongoc_server_description_handle_hello (
-      &sd, &ismaster, MONGOC_RTT_UNSET, &error);
+      &sd, &hello, MONGOC_RTT_UNSET, &error);
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, MONGOC_RTT_UNSET);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
    /* The first real RTT overwrites the stored RTT. */
-   mongoc_server_description_handle_hello (&sd, &ismaster, 10, &error);
+   mongoc_server_description_handle_hello (&sd, &hello, 10, &error);
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, 10);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
    /* But subsequent MONGOC_RTT_UNSET values do not effect it. */
    mongoc_server_description_handle_hello (
-      &sd, &ismaster, MONGOC_RTT_UNSET, &error);
+      &sd, &hello, MONGOC_RTT_UNSET, &error);
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, 10);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
 
    mongoc_server_description_cleanup (&sd);
-   bson_destroy (&ismaster);
+   bson_destroy (&hello);
 }
 
 static void
@@ -303,6 +303,27 @@ test_server_description_hello (void)
 
    bson_init (&hello_response);
    BCON_APPEND (&hello_response, "isWritablePrimary", BCON_BOOL (true));
+
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+   mongoc_server_description_handle_hello (&sd, &hello_response, 0, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+
+   mongoc_server_description_cleanup (&sd);
+   bson_destroy (&hello_response);
+}
+
+static void
+test_server_description_legacy_hello (void)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error;
+   bson_t hello_response;
+
+   bson_init (&hello_response);
+   BCON_APPEND (
+      &hello_response, HANDSHAKE_RESPONSE_LEGACY_HELLO, BCON_BOOL (true));
 
    memset (&error, 0, sizeof (bson_error_t));
    mongoc_server_description_init (&sd, "host:1234", 1);
@@ -327,4 +348,7 @@ test_server_description_install (TestSuite *suite)
                   test_server_description_ignores_rtt);
    TestSuite_Add (
       suite, "/server_description/hello", test_server_description_hello);
+   TestSuite_Add (suite,
+                  "/server_description/legacy_hello",
+                  test_server_description_legacy_hello);
 }

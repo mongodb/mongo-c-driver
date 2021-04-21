@@ -343,7 +343,7 @@ _test_server_selection (bool try_once)
 
    secondary_response =
       bson_strdup_printf ("{'ok': 1, "
-                          " 'ismaster': false,"
+                          " 'isWritablePrimary': false,"
                           " 'secondary': true,"
                           " 'setName': 'rs',"
                           " 'minWireVersion': 2,"
@@ -353,7 +353,7 @@ _test_server_selection (bool try_once)
 
    primary_response =
       bson_strdup_printf ("{'ok': 1, "
-                          " 'ismaster': true,"
+                          " 'isWritablePrimary': true,"
                           " 'setName': 'rs',"
                           " 'minWireVersion': 2,"
                           " 'maxWireVersion': 5,"
@@ -375,7 +375,7 @@ _test_server_selection (bool try_once)
    /* no primary, selection fails after one try */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
@@ -383,7 +383,7 @@ _test_server_selection (bool try_once)
    /* the selection timeout is 100 ms, and we can't rescan until a half second
     * passes, so selection fails without another ismaster call */
    mock_server_set_request_timeout_msec (server, 600);
-   BSON_ASSERT (!mock_server_receives_ismaster (server));
+   BSON_ASSERT (!mock_server_receives_legacy_hello (server, NULL));
    mock_server_set_request_timeout_msec (server, get_future_timeout_ms ());
 
    /* selection fails */
@@ -406,7 +406,7 @@ _test_server_selection (bool try_once)
    /* second selection, now we try ismaster again */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    BSON_ASSERT (request);
 
    /* the secondary is now primary, selection succeeds */
@@ -710,7 +710,7 @@ test_cooldown_standalone (void)
    /* first ismaster fails, selection fails */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    BSON_ASSERT (request);
    mock_server_hangs_up (request);
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
@@ -736,7 +736,8 @@ test_cooldown_standalone (void)
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
    mock_server_set_request_timeout_msec (server, 100);
-   BSON_ASSERT (!mock_server_receives_ismaster (server)); /* no ismaster call */
+   BSON_ASSERT (
+      !mock_server_receives_legacy_hello (server, NULL)); /* no ismaster call */
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
@@ -751,11 +752,12 @@ test_cooldown_standalone (void)
    /* cooldown ends, now we try ismaster again, this time succeeding */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
-   request = mock_server_receives_ismaster (server); /* not in cooldown now */
+   request = mock_server_receives_legacy_hello (server,
+                                                NULL); /* not in cooldown now */
    BSON_ASSERT (request);
-   mock_server_replies_simple (
-      request,
-      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5 }");
+   mock_server_replies_simple (request,
+                               "{'ok': 1, 'isWritablePrimary': true, "
+                               "'minWireVersion': 2, 'maxWireVersion': 5 }");
    sd = future_get_mongoc_server_description_ptr (future);
    BSON_ASSERT (sd);
    request_destroy (request);
@@ -796,30 +798,31 @@ test_cooldown_rs (void)
    client = test_framework_client_new (uri_str, NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   secondary_response = bson_strdup_printf (
-      "{'ok': 1, 'ismaster': false, 'minWireVersion': 2, 'maxWireVersion': 5 , "
-      "'secondary': true, 'setName': 'rs',"
-      " 'hosts': ['localhost:%hu', 'localhost:%hu']}",
-      mock_server_get_port (servers[0]),
-      mock_server_get_port (servers[1]));
-
-   primary_response =
-      bson_strdup_printf ("{'ok': 1, 'ismaster': true, 'minWireVersion': 2, "
-                          "'maxWireVersion': 5 , 'setName': 'rs',"
-                          " 'hosts': ['localhost:%hu']}",
+   secondary_response =
+      bson_strdup_printf ("{'ok': 1, 'isWritablePrimary': false, "
+                          "'minWireVersion': 2, 'maxWireVersion': 5 , "
+                          "'secondary': true, 'setName': 'rs',"
+                          " 'hosts': ['localhost:%hu', 'localhost:%hu']}",
+                          mock_server_get_port (servers[0]),
                           mock_server_get_port (servers[1]));
+
+   primary_response = bson_strdup_printf (
+      "{'ok': 1, 'isWritablePrimary': true, 'minWireVersion': 2, "
+      "'maxWireVersion': 5 , 'setName': 'rs',"
+      " 'hosts': ['localhost:%hu']}",
+      mock_server_get_port (servers[1]));
 
    /* server 0 is a secondary. */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
-   request = mock_server_receives_ismaster (servers[0]);
+   request = mock_server_receives_legacy_hello (servers[0], NULL);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
    /* server 0 told us about server 1. we check it immediately but it's down. */
-   request = mock_server_receives_ismaster (servers[1]);
+   request = mock_server_receives_legacy_hello (servers[1], NULL);
    BSON_ASSERT (request);
    mock_server_hangs_up (request);
    request_destroy (request);
@@ -834,14 +837,14 @@ test_cooldown_rs (void)
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
-   request = mock_server_receives_ismaster (servers[0]);
+   request = mock_server_receives_legacy_hello (servers[0], NULL);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, secondary_response);
    request_destroy (request);
 
    mock_server_set_request_timeout_msec (servers[1], 100);
-   BSON_ASSERT (
-      !mock_server_receives_ismaster (servers[1])); /* no ismaster call */
+   BSON_ASSERT (!mock_server_receives_legacy_hello (
+      servers[1], NULL)); /* no ismaster call */
    mock_server_set_request_timeout_msec (servers[1], get_future_timeout_ms ());
 
    /* still no primary */
@@ -854,7 +857,7 @@ test_cooldown_rs (void)
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
-   request = mock_server_receives_ismaster (servers[1]);
+   request = mock_server_receives_legacy_hello (servers[1], NULL);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, primary_response);
    request_destroy (request);
@@ -901,23 +904,23 @@ test_cooldown_retry (void)
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
    /* first ismaster fails */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    BSON_ASSERT (request);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    /* after cooldown passes, driver sends another ismaster */
    start = bson_get_monotonic_time ();
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    BSON_ASSERT (request);
    duration = bson_get_monotonic_time () - start;
    /* waited at least cooldownMS, but not unreasonably longer than that */
    ASSERT_CMPINT64 (duration, >, (int64_t) 5 * 1000 * 1000);
    ASSERT_CMPINT64 (duration, <, (int64_t) 10 * 1000 * 1000);
 
-   mock_server_replies_simple (
-      request,
-      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5 }");
+   mock_server_replies_simple (request,
+                               "{'ok': 1, 'isWritablePrimary': true, "
+                               "'minWireVersion': 2, 'maxWireVersion': 5 }");
    sd = future_get_mongoc_server_description_ptr (future);
    ASSERT_OR_PRINT (sd, error);
    request_destroy (request);
@@ -962,7 +965,7 @@ _test_select_succeed (bool try_once)
    /* primary auto-responds, secondary never responds */
    mock_server_auto_hello (primary,
                            "{'ok': 1,"
-                           " 'ismaster': true,"
+                           " 'isWritablePrimary': true,"
                            " 'setName': 'rs',"
                            " 'minWireVersion': 2,"
                            " 'maxWireVersion': 5,"
@@ -1109,7 +1112,7 @@ _test_server_removed_during_handshake (bool pooled)
    mock_server_autoresponds (server, auto_ping, NULL, NULL);
    mock_server_auto_hello (server,
                            "{'ok': 1,"
-                           " 'ismaster': true,"
+                           " 'isWritablePrimary': true,"
                            " 'setName': 'rs',"
                            " 'minWireVersion': 2,"
                            " 'maxWireVersion': 5,"
@@ -1144,7 +1147,7 @@ _test_server_removed_during_handshake (bool pooled)
    /* primary changes setName */
    mock_server_auto_hello (server,
                            "{'ok': 1,"
-                           " 'ismaster': true,"
+                           " 'isWritablePrimary': true,"
                            " 'setName': 'BAD NAME',"
                            " 'minWireVersion': 2,"
                            " 'maxWireVersion': 5,"
@@ -1237,7 +1240,7 @@ test_rtt (void *ctx)
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    _mongoc_usleep (1000 * 1000); /* one second */
    mock_server_replies (request,
                         MONGOC_REPLY_NONE,
@@ -1293,7 +1296,7 @@ test_add_and_scan_failure (void)
    /* client will discover "fake" host and fail to connect */
    mock_server_auto_hello (server,
                            "{'ok': 1,"
-                           " 'ismaster': true,"
+                           " 'isWritablePrimary': true,"
                            " 'setName': 'rs',"
                            " 'minWireVersion': 2,"
                            " 'maxWireVersion': 5,"
@@ -1367,14 +1370,14 @@ has_known_server (mongoc_client_t *client)
 
 
 static void
-_test_ismaster_retry_single (bool hangup, int n_failures)
+_test_hello_retry_single (bool hangup, int n_failures)
 {
    checks_t checks;
    mongoc_apm_callbacks_t *callbacks;
    mock_server_t *server;
    mongoc_uri_t *uri;
    mongoc_client_t *client;
-   char *ismaster;
+   char *hello;
    future_t *future;
    request_t *request;
    bson_error_t error;
@@ -1394,18 +1397,18 @@ _test_ismaster_retry_single (bool hangup, int n_failures)
    callbacks = heartbeat_callbacks ();
    mongoc_client_set_apm_callbacks (client, callbacks, &checks);
 
-   ismaster = bson_strdup_printf ("{'ok': 1,"
-                                  " 'ismaster': true,"
-                                  " 'setName': 'rs',"
-                                  " 'minWireVersion': 2,"
-                                  " 'maxWireVersion': 5,"
-                                  " 'hosts': ['%s']}",
-                                  mock_server_get_host_and_port (server));
+   hello = bson_strdup_printf ("{'ok': 1,"
+                               " 'isWritablePrimary': true,"
+                               " 'setName': 'rs',"
+                               " 'minWireVersion': 2,"
+                               " 'maxWireVersion': 5,"
+                               " 'hosts': ['%s']}",
+                               mock_server_get_host_and_port (server));
 
    /* start a {foo: 1} command, handshake normally */
    future = future_command (client, &error);
-   request = mock_server_receives_ismaster (server);
-   mock_server_replies_simple (request, ismaster);
+   request = mock_server_receives_legacy_hello (server, NULL);
+   mock_server_replies_simple (request, hello);
    request_destroy (request);
    receives_command (server, future);
 
@@ -1414,7 +1417,7 @@ _test_ismaster_retry_single (bool hangup, int n_failures)
 
    /* start a {foo: 1} command, server check fails and retries immediately */
    future = future_command (client, &error);
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    t = bson_get_monotonic_time ();
    if (hangup) {
       mock_server_hangs_up (request);
@@ -1423,7 +1426,7 @@ _test_ismaster_retry_single (bool hangup, int n_failures)
    request_destroy (request);
 
    /* retry immediately (for testing, "immediately" means less than 250ms */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    ASSERT_CMPINT64 (bson_get_monotonic_time () - t, <, (int64_t) 250 * 1000);
 
    if (n_failures == 2) {
@@ -1434,7 +1437,7 @@ _test_ismaster_retry_single (bool hangup, int n_failures)
       BSON_ASSERT (!future_get_bool (future));
       future_destroy (future);
    } else {
-      mock_server_replies_simple (request, ismaster);
+      mock_server_replies_simple (request, hello);
       /* the {foo: 1} command finishes */
       receives_command (server, future);
    }
@@ -1454,14 +1457,14 @@ _test_ismaster_retry_single (bool hangup, int n_failures)
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
    mock_server_destroy (server);
-   bson_free (ismaster);
+   bson_free (hello);
    mongoc_apm_callbacks_destroy (callbacks);
    checks_cleanup (&checks);
 }
 
 
 static void
-_test_ismaster_retry_pooled (bool hangup, int n_failures)
+_test_hello_retry_pooled (bool hangup, int n_failures)
 {
    checks_t checks;
    mongoc_apm_callbacks_t *callbacks;
@@ -1469,7 +1472,7 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
-   char *ismaster;
+   char *hello;
    future_t *future;
    request_t *request;
    bson_error_t error;
@@ -1490,32 +1493,32 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
    client = mongoc_client_pool_pop (pool);
 
-   ismaster = bson_strdup_printf ("{'ok': 1,"
-                                  " 'ismaster': true,"
-                                  " 'setName': 'rs',"
-                                  " 'minWireVersion': 2,"
-                                  " 'maxWireVersion': 5,"
-                                  " 'hosts': ['%s']}",
-                                  mock_server_get_host_and_port (server));
+   hello = bson_strdup_printf ("{'ok': 1,"
+                               " 'isWritablePrimary': true,"
+                               " 'setName': 'rs',"
+                               " 'minWireVersion': 2,"
+                               " 'maxWireVersion': 5,"
+                               " 'hosts': ['%s']}",
+                               mock_server_get_host_and_port (server));
 
    /* As soon as the client is popped, background monitoring starts. */
-   request = mock_server_receives_ismaster (server);
-   mock_server_replies_simple (request, ismaster);
+   request = mock_server_receives_legacy_hello (server, NULL);
+   mock_server_replies_simple (request, hello);
    request_destroy (request);
 
    /* start a {foo: 1} command, handshake normally */
    future = future_command (client, &error);
 
    /* Another ismaster to handshake the connection */
-   request = mock_server_receives_ismaster (server);
-   mock_server_replies_simple (request, ismaster);
+   request = mock_server_receives_legacy_hello (server, NULL);
+   mock_server_replies_simple (request, hello);
    request_destroy (request);
 
    /* the {foo: 1} command finishes */
    receives_command (server, future);
 
    /* wait for the next server check */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    t = bson_get_monotonic_time ();
    if (hangup) {
       mock_server_hangs_up (request);
@@ -1524,7 +1527,7 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
    request_destroy (request);
 
    /* retry immediately (for testing, "immediately" means less than 250ms */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    ASSERT_CMPINT64 (bson_get_monotonic_time () - t, <, (int64_t) 250 * 1000);
    /* The server is marked as Unknown, but immediately rescanned. This behavior
     * comes from the server monitoring spec:
@@ -1539,7 +1542,7 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
          mock_server_hangs_up (request);
       }
    } else {
-      mock_server_replies_simple (request, ismaster);
+      mock_server_replies_simple (request, hello);
       WAIT_UNTIL (has_known_server (client));
    }
 
@@ -1553,64 +1556,64 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
    mongoc_client_pool_destroy (pool);
    mongoc_uri_destroy (uri);
    mock_server_destroy (server);
-   bson_free (ismaster);
+   bson_free (hello);
    mongoc_apm_callbacks_destroy (callbacks);
    checks_cleanup (&checks);
 }
 
 
 static void
-test_ismaster_retry_single_hangup (void)
+test_hello_retry_single_hangup (void)
 {
-   _test_ismaster_retry_single (true, 1);
+   _test_hello_retry_single (true, 1);
 }
 
 
 static void
-test_ismaster_retry_single_timeout (void)
+test_hello_retry_single_timeout (void)
 {
-   _test_ismaster_retry_single (false, 1);
+   _test_hello_retry_single (false, 1);
 }
 
 static void
-test_ismaster_retry_single_hangup_fail (void)
+test_hello_retry_single_hangup_fail (void)
 {
-   _test_ismaster_retry_single (true, 2);
-}
-
-
-static void
-test_ismaster_retry_single_timeout_fail (void)
-{
-   _test_ismaster_retry_single (false, 2);
+   _test_hello_retry_single (true, 2);
 }
 
 
 static void
-test_ismaster_retry_pooled_hangup (void)
+test_hello_retry_single_timeout_fail (void)
 {
-   _test_ismaster_retry_pooled (true, 1);
+   _test_hello_retry_single (false, 2);
 }
 
 
 static void
-test_ismaster_retry_pooled_timeout (void)
+test_hello_retry_pooled_hangup (void)
 {
-   _test_ismaster_retry_pooled (false, 1);
+   _test_hello_retry_pooled (true, 1);
 }
 
 
 static void
-test_ismaster_retry_pooled_hangup_fail (void)
+test_hello_retry_pooled_timeout (void)
 {
-   _test_ismaster_retry_pooled (true, 2);
+   _test_hello_retry_pooled (false, 1);
 }
 
 
 static void
-test_ismaster_retry_pooled_timeout_fail (void)
+test_hello_retry_pooled_hangup_fail (void)
 {
-   _test_ismaster_retry_pooled (false, 2);
+   _test_hello_retry_pooled (true, 2);
+}
+
+
+static void
+test_hello_retry_pooled_timeout_fail (void)
+{
+   _test_hello_retry_pooled (false, 2);
 }
 
 
@@ -1632,7 +1635,7 @@ test_incompatible_error (void)
 
    /* trigger connection, fails due to incompatibility */
    ASSERT (!mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error));
+      client, "admin", tmp_bson ("{'hello': 1}"), NULL, NULL, &error));
 
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_PROTOCOL,
@@ -1642,14 +1645,14 @@ test_incompatible_error (void)
 
    mock_server_auto_hello (server,
                            "{'ok': 1.0,"
-                           " 'ismaster': true,"
+                           " 'isWritablePrimary': true,"
                            " 'minWireVersion': 10,"
                            " 'maxWireVersion': 11}");
 
    /* wait until it's time for next heartbeat */
    _mongoc_usleep (600 * 1000);
    ASSERT (!mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error));
+      client, "admin", tmp_bson ("{'hello': 1}"), NULL, NULL, &error));
 
    msg = bson_strdup_printf ("requires wire version 10, but this version"
                              " of libmongoc only supports up to %d",
@@ -1686,7 +1689,7 @@ test_compatible_null_error_pointer (void)
 
    /* trigger connection, fails due to incompatibility */
    ASSERT (!mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error));
+      client, "admin", tmp_bson ("{'hello': 1}"), NULL, NULL, &error));
 
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION, "");
@@ -1730,12 +1733,13 @@ test_cluster_time_updated_during_handshake ()
    mock_server_run (server);
    mock_server_autoresponds (server, auto_ping, NULL, NULL);
    cluster_time = cluster_time_fmt (1);
-   mock_server_auto_hello (server,
-                           "{'ok': 1, 'ismaster': true, 'setName': 'rs', "
-                           "'minWireVersion': 2, 'maxWireVersion': 7, "
-                           "'hosts': ['%s'], '$clusterTime': %s}",
-                           mock_server_get_host_and_port (server),
-                           cluster_time);
+   mock_server_auto_hello (
+      server,
+      "{'ok': 1, 'isWritablePrimary': true, 'setName': 'rs', "
+      "'minWireVersion': 2, 'maxWireVersion': 7, "
+      "'hosts': ['%s'], '$clusterTime': %s}",
+      mock_server_get_host_and_port (server),
+      cluster_time);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* set a large heartbeatFrequencyMS so we don't do a background scan in
@@ -1760,12 +1764,13 @@ test_cluster_time_updated_during_handshake ()
    cluster_time = cluster_time_fmt (2);
 
    /* primary changes clusterTime */
-   mock_server_auto_hello (server,
-                           "{'ok': 1, 'ismaster': true, 'setName': 'rs', "
-                           "'minWireVersion': 2, 'maxWireVersion': 7, "
-                           "'hosts': ['%s'], '$clusterTime': %s}",
-                           mock_server_get_host_and_port (server),
-                           cluster_time);
+   mock_server_auto_hello (
+      server,
+      "{'ok': 1, 'isWritablePrimary': true, 'setName': 'rs', "
+      "'minWireVersion': 2, 'maxWireVersion': 7, "
+      "'hosts': ['%s'], '$clusterTime': %s}",
+      mock_server_get_host_and_port (server),
+      cluster_time);
 
    /* remove the node from the cluster to trigger an ismaster handshake. */
    mongoc_cluster_disconnect_node (&client->cluster, 1);
@@ -1987,7 +1992,7 @@ test_last_server_removed_warning (void)
 
    mock_server_auto_hello (server,
                            "{'ok': 1,"
-                           " 'ismaster': true,"
+                           " 'isWritablePrimary': true,"
                            " 'setName': 'rs',"
                            " 'minWireVersion': 2,"
                            " 'maxWireVersion': 5,"
@@ -2104,9 +2109,9 @@ test_slow_server_pooled (void)
 {
    mock_server_t *primary;
    mock_server_t *secondary;
-   char *ismaster_common;
-   char *ismaster_primary;
-   char *ismaster_secondary;
+   char *hello_common;
+   char *hello_primary;
+   char *hello_secondary;
    mongoc_read_prefs_t *prefs_secondary;
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
@@ -2127,18 +2132,18 @@ test_slow_server_pooled (void)
    mock_server_autoresponds (primary, auto_ping, NULL, NULL);
    mock_server_autoresponds (secondary, auto_ping, NULL, NULL);
 
-   ismaster_common = bson_strdup_printf (
+   hello_common = bson_strdup_printf (
       "{'ok': 1, 'setName': 'rs', 'hosts': ['%s', '%s'], 'maxWireVersion': %d",
       mock_server_get_host_and_port (primary),
       mock_server_get_host_and_port (secondary),
       WIRE_VERSION_MAX);
-   ismaster_primary = bson_strdup_printf (
-      "%s, 'ismaster': true, 'secondary': false }", ismaster_common);
-   ismaster_secondary = bson_strdup_printf (
-      "%s, 'ismaster': false, 'secondary': true }", ismaster_common);
+   hello_primary = bson_strdup_printf (
+      "%s, 'isWritablePrimary': true, 'secondary': false }", hello_common);
+   hello_secondary = bson_strdup_printf (
+      "%s, 'isWritablePrimary': false, 'secondary': true }", hello_common);
 
    /* Primary responds immediately, but secondary does not. */
-   mock_server_auto_hello (primary, ismaster_primary);
+   mock_server_auto_hello (primary, hello_primary);
 
    uri = mongoc_uri_copy (mock_server_get_uri (primary));
    /* Do not connect as topology type Single, so the client pool discovers the
@@ -2160,7 +2165,7 @@ test_slow_server_pooled (void)
     * Wait for two scans of the primary. */
    WAIT_UNTIL (checks_cmp (&checks, "n_started", '>', 1));
 
-   request = mock_server_receives_ismaster (secondary);
+   request = mock_server_receives_legacy_hello (secondary, NULL);
 
    /* A command to the primary succeeds. */
    ret = mongoc_client_command_simple (
@@ -2180,9 +2185,9 @@ test_slow_server_pooled (void)
    /* Set up an auto responder so future ismasters on the secondary do not
     * block until connectTimeoutMS. Otherwise, the shutdown sequence will be
     * blocked for connectTimeoutMS. */
-   mock_server_auto_hello (secondary, ismaster_secondary);
+   mock_server_auto_hello (secondary, hello_secondary);
    /* Respond to the first ismaster. */
-   mock_server_replies_simple (request, ismaster_secondary);
+   mock_server_replies_simple (request, hello_secondary);
    request_destroy (request);
 
    /* Now a command to the secondary succeeds. */
@@ -2195,16 +2200,16 @@ test_slow_server_pooled (void)
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_client_pool_destroy (pool);
    mongoc_uri_destroy (uri);
-   bson_free (ismaster_secondary);
-   bson_free (ismaster_primary);
-   bson_free (ismaster_common);
+   bson_free (hello_secondary);
+   bson_free (hello_primary);
+   bson_free (hello_common);
    mock_server_destroy (secondary);
    mock_server_destroy (primary);
    checks_cleanup (&checks);
 }
 
 static void
-_test_ismaster_versioned_api (bool pooled)
+_test_hello_versioned_api (bool pooled)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -2274,15 +2279,15 @@ _test_ismaster_versioned_api (bool pooled)
 }
 
 static void
-test_ismaster_versioned_api_single ()
+test_hello_versioned_api_single ()
 {
-   _test_ismaster_versioned_api (false);
+   _test_hello_versioned_api (false);
 }
 
 static void
-test_ismaster_versioned_api_pooled ()
+test_hello_versioned_api_pooled ()
 {
-   _test_ismaster_versioned_api (true);
+   _test_hello_versioned_api (true);
 }
 
 void
@@ -2390,36 +2395,36 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/Topology/add_and_scan_failure", test_add_and_scan_failure);
    TestSuite_AddMockServerTest (suite,
-                                "/Topology/ismaster_retry/single/hangup",
-                                test_ismaster_retry_single_hangup,
+                                "/Topology/hello_retry/single/hangup",
+                                test_hello_retry_single_hangup,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Topology/ismaster_retry/single/timeout",
-                                test_ismaster_retry_single_timeout,
+                                "/Topology/hello_retry/single/timeout",
+                                test_hello_retry_single_timeout,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Topology/ismaster_retry/single/hangup/fail",
-                                test_ismaster_retry_single_hangup_fail,
+                                "/Topology/hello_retry/single/hangup/fail",
+                                test_hello_retry_single_hangup_fail,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Topology/ismaster_retry/single/timeout/fail",
-                                test_ismaster_retry_single_timeout_fail,
+                                "/Topology/hello_retry/single/timeout/fail",
+                                test_hello_retry_single_timeout_fail,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Topology/ismaster_retry/pooled/hangup",
-                                test_ismaster_retry_pooled_hangup,
+                                "/Topology/hello_retry/pooled/hangup",
+                                test_hello_retry_pooled_hangup,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Topology/ismaster_retry/pooled/timeout",
-                                test_ismaster_retry_pooled_timeout,
+                                "/Topology/hello_retry/pooled/timeout",
+                                test_hello_retry_pooled_timeout,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Topology/ismaster_retry/pooled/hangup/fail",
-                                test_ismaster_retry_pooled_hangup_fail,
+                                "/Topology/hello_retry/pooled/hangup/fail",
+                                test_hello_retry_pooled_hangup_fail,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Topology/ismaster_retry/pooled/timeout/fail",
-                                test_ismaster_retry_pooled_timeout_fail,
+                                "/Topology/hello_retry/pooled/timeout/fail",
+                                test_hello_retry_pooled_timeout_fail,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/incompatible_error",
@@ -2441,9 +2446,9 @@ test_topology_install (TestSuite *suite)
       suite, "/Topology/slow_server/pooled", test_slow_server_pooled);
 
    TestSuite_AddMockServerTest (suite,
-                                "/Topology/ismaster/versioned_api/single",
-                                test_ismaster_versioned_api_single);
+                                "/Topology/hello/versioned_api/single",
+                                test_hello_versioned_api_single);
    TestSuite_AddMockServerTest (suite,
-                                "/Topology/ismaster/versioned_api/pooled",
-                                test_ismaster_versioned_api_pooled);
+                                "/Topology/hello/versioned_api/pooled",
+                                test_hello_versioned_api_pooled);
 }

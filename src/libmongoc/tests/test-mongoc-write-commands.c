@@ -385,14 +385,14 @@ test_split_opquery_with_options (void)
    int n_docs;
 
    /* Use a reduced maxBsonObjectSize, and wire version for OP_QUERY */
-   const char *ismaster = "{'ok': 1.0,"
-                          " 'ismaster': true,"
-                          " 'minWireVersion': 0,"
-                          " 'maxWireVersion': 5,"
-                          " 'maxBsonObjectSize': 100}";
+   const char *hello = "{'ok': 1.0,"
+                       " 'isWritablePrimary': true,"
+                       " 'minWireVersion': 0,"
+                       " 'maxWireVersion': 5,"
+                       " 'maxBsonObjectSize': 100}";
 
    server = mock_server_new ();
-   mock_server_auto_hello (server, ismaster);
+   mock_server_auto_hello (server, hello);
    mock_server_run (server);
 
    /* Create an insert with two batches. Because of the reduced
@@ -469,14 +469,14 @@ test_opmsg_disconnect_mid_batch_helper (int wire_version)
    int n_docs;
 
    /* Use a reduced maxBsonObjectSize, and wire version for OP_QUERY */
-   const char *ismaster = "{'ok': 1.0,"
-                          " 'ismaster': true,"
-                          " 'minWireVersion': 0,"
-                          " 'maxWireVersion': %d,"
-                          " 'maxBsonObjectSize': 100}";
+   const char *hello = "{'ok': 1.0,"
+                       " 'isWritablePrimary': true,"
+                       " 'minWireVersion': 0,"
+                       " 'maxWireVersion': %d,"
+                       " 'maxBsonObjectSize': 100}";
 
    server = mock_server_new ();
-   mock_server_auto_hello (server, ismaster, wire_version);
+   mock_server_auto_hello (server, hello, wire_version);
    mock_server_run (server);
 
    /* create enough documents for two batches. Note, because of our wonky
@@ -538,7 +538,7 @@ test_w0_legacy_insert_many (void)
    /* wire version will use OP_INSERT for w:0 insert many (since no OP_MSG) */
    server = mock_server_new ();
    mock_server_auto_hello (server,
-                           "{'ismaster': true,"
+                           "{'isWritablePrimary': true,"
                            " 'maxWireVersion': 5}");
    mock_server_run (server);
 

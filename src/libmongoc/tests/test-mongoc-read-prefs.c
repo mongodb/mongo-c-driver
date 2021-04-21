@@ -285,14 +285,14 @@ _run_server (read_pref_test_type_t test_type, int32_t max_wire_version)
       mock_server_auto_hello (server,
                               "{'ok': 1,"
                               " 'maxWireVersion': %d,"
-                              " 'ismaster': true}",
+                              " 'isWritablePrimary': true}",
                               max_wire_version);
       break;
    case READ_PREF_TEST_MONGOS:
       mock_server_auto_hello (server,
                               "{'ok': 1,"
                               " 'maxWireVersion': %d,"
-                              " 'ismaster': true,"
+                              " 'isWritablePrimary': true,"
                               " 'msg': 'isdbgrid'}",
                               max_wire_version);
       break;
@@ -300,7 +300,7 @@ _run_server (read_pref_test_type_t test_type, int32_t max_wire_version)
       mock_server_auto_hello (server,
                               "{'ok': 1,"
                               " 'maxWireVersion': %d,"
-                              " 'ismaster': true,"
+                              " 'isWritablePrimary': true,"
                               " 'setName': 'rs',"
                               " 'hosts': ['%s']}",
                               max_wire_version,
@@ -310,7 +310,7 @@ _run_server (read_pref_test_type_t test_type, int32_t max_wire_version)
       mock_server_auto_hello (server,
                               "{'ok': 1,"
                               " 'maxWireVersion': %d,"
-                              " 'ismaster': false,"
+                              " 'isWritablePrimary': false,"
                               " 'secondary': true,"
                               " 'setName': 'rs',"
                               " 'hosts': ['%s']}",
@@ -985,16 +985,16 @@ _test_op_msg_direct_connection (bool is_mongos,
    if (is_mongos) {
       server = mock_mongos_new (WIRE_VERSION_OP_MSG);
    } else {
-      char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
-                                           " 'ismaster': true,"
-                                           " 'setName': 'rs0',"
-                                           " 'secondary': true,"
-                                           " 'minWireVersion': 0,"
-                                           " 'maxWireVersion': %d}",
-                                           WIRE_VERSION_OP_MSG);
+      char *hello = bson_strdup_printf ("{'ok': 1.0,"
+                                        " 'ismaster': true,"
+                                        " 'setName': 'rs0',"
+                                        " 'secondary': true,"
+                                        " 'minWireVersion': 0,"
+                                        " 'maxWireVersion': %d}",
+                                        WIRE_VERSION_OP_MSG);
       server = mock_server_new ();
-      mock_server_auto_hello (server, ismaster);
-      bson_free (ismaster);
+      mock_server_auto_hello (server, hello);
+      bson_free (hello);
    }
 
    mock_server_auto_endsessions (server);

@@ -20,9 +20,7 @@
    "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 2 }"
 
 static mongoc_server_description_t *
-_force_scan (mongoc_client_t *client,
-             mock_server_t *server,
-             const char *ismaster_reply)
+_force_scan (mongoc_client_t *client, mock_server_t *server, const char *hello)
 {
    bson_error_t error;
    request_t *request;
@@ -33,8 +31,8 @@ _force_scan (mongoc_client_t *client,
    client->topology->stale = true;
    future =
       future_client_select_server (client, true /* for writes */, NULL, &error);
-   request = mock_server_receives_ismaster (server);
-   mock_server_replies_simple (request, ismaster_reply);
+   request = mock_server_receives_legacy_hello (server, NULL);
+   mock_server_replies_simple (request, hello);
    sd = future_get_mongoc_server_description_ptr (future);
    BSON_ASSERT (sd);
 
@@ -59,32 +57,32 @@ test_topology_version_update (void)
     * scan is needed. */
    client->topology->min_heartbeat_frequency_msec = 1;
 
-   sd = _force_scan (
-      client,
-      server,
-      "{ 'ismaster': true, 'maxWireVersion': 9, 'topologyVersion': " TV1 " } ");
+   sd = _force_scan (client,
+                     server,
+                     "{ 'isWritablePrimary': true, 'maxWireVersion': 9, "
+                     "'topologyVersion': " TV1 " } ");
    ASSERT_MATCH (&sd->topology_version, TV1);
    mongoc_server_description_destroy (sd);
 
    /* Returned topology version with higher counter overrides. */
-   sd = _force_scan (
-      client,
-      server,
-      "{ 'ismaster': true, 'maxWireVersion': 9, 'topologyVersion': " TV2 " } ");
+   sd = _force_scan (client,
+                     server,
+                     "{ 'isWritablePrimary': true, 'maxWireVersion': 9, "
+                     "'topologyVersion': " TV2 " } ");
    ASSERT_MATCH (&sd->topology_version, TV2);
    mongoc_server_description_destroy (sd);
 
    /* But returned topology version with lower counter does nothing. */
-   sd = _force_scan (
-      client,
-      server,
-      "{ 'ismaster': true, 'maxWireVersion': 9, 'topologyVersion': " TV1 " } ");
+   sd = _force_scan (client,
+                     server,
+                     "{ 'isWritablePrimary': true, 'maxWireVersion': 9, "
+                     "'topologyVersion': " TV1 " } ");
    ASSERT_MATCH (&sd->topology_version, TV2);
    mongoc_server_description_destroy (sd);
 
    /* Empty topology version overrides. */
    sd = _force_scan (
-      client, server, "{ 'ismaster': true, 'maxWireVersion': 9 } ");
+      client, server, "{ 'isWritablePrimary': true, 'maxWireVersion': 9 } ");
    BSON_ASSERT (bson_empty (&sd->topology_version));
    mongoc_server_description_destroy (sd);
 

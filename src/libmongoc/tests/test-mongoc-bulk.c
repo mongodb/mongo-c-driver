@@ -2970,7 +2970,7 @@ test_unordered_bulk_writes_with_error (void)
                            "{'ok': 1,"
                            " 'maxWireVersion': %d,"
                            " 'maxWriteBatchSize': 1,"
-                           " 'ismaster': true,"
+                           " 'isWritablePrimary': true,"
                            " 'secondary': false,"
                            " 'setName': 'rs',"
                            " 'hosts': ['%s']}",
@@ -3480,7 +3480,7 @@ _test_numerous (bool ordered)
    /* the real OP_MSG max batch is 100k docs, choose 3 for faster test */
    mock_server_auto_hello (server,
                            "{'ok': 1.0,"
-                           " 'ismaster': true,"
+                           " 'isWritablePrimary': true,"
                            " 'minWireVersion': 0,"
                            " 'maxWireVersion': %d,"
                            " 'maxWriteBatchSize': 3}",
@@ -4173,7 +4173,7 @@ _test_bulk_hint (bool pooled, bool use_primary)
 
    /* warm up the client so its server_id is valid */
    ret = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'isMaster': 1}"), NULL, NULL, &error);
+      client, "admin", tmp_bson ("{'hello': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (ret, error);
 
    collection = mongoc_client_get_collection (client, "test", "test");

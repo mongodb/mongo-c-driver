@@ -189,7 +189,8 @@ _server_changed (const mongoc_apm_server_changed_t *event)
 bool
 auto_respond_polling_ismaster (request_t *request, void *ctx)
 {
-   if (0 == strcmp (request->command_name, "isMaster")) {
+   if (0 == strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) ||
+       0 == strcmp (request->command_name, "hello")) {
       const bson_t *doc;
 
       doc = request_get_doc ((request), 0);
@@ -363,7 +364,7 @@ test_connect_succeeds (void)
    request_t *request;
 
    tf = tf_new (0);
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_ok_and_destroys (request);
@@ -384,7 +385,7 @@ test_connect_hangup (void)
    request_t *request;
 
    tf = tf_new (0);
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    OBSERVE (tf, !tf->observations->awaited);
@@ -410,7 +411,7 @@ test_connect_badreply (void)
    request_t *request;
 
    tf = tf_new (0);
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_simple (request, "{'ok': 0}");
@@ -435,7 +436,7 @@ test_connect_shutdown (void)
    request_t *request;
 
    tf = tf_new (0);
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_started == 1);
    /* Before the server replies, signal the server monitor to shutdown. */
@@ -461,7 +462,7 @@ test_connect_requestscan (void)
    request_t *request;
 
    tf = tf_new (0);
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    /* Before the mock server replies, request a scan. */
    _request_scan (tf);
@@ -488,7 +489,7 @@ test_retry_succeeds (void)
    tf = tf_new (TF_FAST_MIN_HEARTBEAT);
 
    /* Initial discovery occurs. */
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_ok_and_destroys (request);
@@ -502,7 +503,7 @@ test_retry_succeeds (void)
    _request_scan (tf);
 
    /* The next ismaster occurs. */
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    mock_server_hangs_up (request);
@@ -514,7 +515,7 @@ test_retry_succeeds (void)
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
 
    /* Retry occurs. */
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 3);
    mock_server_replies_ok_and_destroys (request);
@@ -534,7 +535,7 @@ test_retry_hangup (void)
    tf = tf_new (TF_FAST_MIN_HEARTBEAT);
 
    /* Initial discovery occurs. */
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_ok_and_destroys (request);
@@ -548,7 +549,7 @@ test_retry_hangup (void)
    _request_scan (tf);
 
    /* The next ismaster occurs (due to fast heartbeat). */
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    mock_server_hangs_up (request);
@@ -560,7 +561,7 @@ test_retry_hangup (void)
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
 
    /* Retry occurs. */
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 3);
    mock_server_hangs_up (request);
@@ -581,7 +582,7 @@ test_retry_badreply (void)
    tf = tf_new (TF_FAST_MIN_HEARTBEAT);
 
    /* Initial discovery occurs. */
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_ok_and_destroys (request);
@@ -595,7 +596,7 @@ test_retry_badreply (void)
    _request_scan (tf);
 
    /* The next ismaster occurs. */
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    mock_server_hangs_up (request);
@@ -607,7 +608,7 @@ test_retry_badreply (void)
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
 
    /* Retry occurs. */
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 3);
    mock_server_replies_simple (request, "{'ok': 0}");
@@ -629,7 +630,7 @@ test_retry_shutdown (void)
    tf = tf_new (TF_FAST_HEARTBEAT);
 
    /* Initial discovery occurs. */
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_ok_and_destroys (request);
@@ -640,7 +641,7 @@ test_retry_shutdown (void)
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
 
    /* The next ismaster occurs (due to fast heartbeat). */
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    _signal_shutdown (tf);
@@ -667,7 +668,7 @@ test_flip_flop (void)
    tf = tf_new (0);
 
    for (i = 1; i < 100; i++) {
-      request = mock_server_receives_ismaster (tf->server);
+      request = mock_server_receives_legacy_hello (tf->server, NULL);
       OBSERVE (tf, request);
       mock_server_replies_ok_and_destroys (request);
       _signal_shutdown (tf);
@@ -692,7 +693,7 @@ test_repeated_requestscan (void)
    for (i = 0; i < 10; i++) {
       _request_scan (tf);
    }
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    for (i = 0; i < 10; i++) {
       _request_scan (tf);
@@ -714,7 +715,7 @@ test_sleep_after_scan (void)
    /* After handling a scan request */
    tf = tf_new (TF_FAST_MIN_HEARTBEAT);
    _request_scan (tf);
-   request = mock_server_receives_ismaster (tf->server);
+   request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 1);
    mock_server_replies_ok_and_destroys (request);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);

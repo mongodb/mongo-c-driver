@@ -841,7 +841,7 @@ test_wire_version (void)
    /* too new */
    mock_server_auto_hello (server,
                            "{'ok': 1.0,"
-                           " 'ismaster': true,"
+                           " 'isWritablePrimary': true,"
                            " 'minWireVersion': 10,"
                            " 'maxWireVersion': 11}");
 
@@ -861,7 +861,7 @@ test_wire_version (void)
    /* too old */
    mock_server_auto_hello (server,
                            "{'ok': 1.0,"
-                           " 'ismaster': true,"
+                           " 'isWritablePrimary': true,"
                            " 'minWireVersion': -1,"
                            " 'maxWireVersion': -1}");
 
@@ -878,7 +878,7 @@ test_wire_version (void)
    /* compatible again */
    mock_server_auto_hello (server,
                            "{'ok': 1.0,"
-                           " 'ismaster': true,"
+                           " 'isWritablePrimary': true,"
                            " 'minWireVersion': 2,"
                            " 'maxWireVersion': 5}");
 
@@ -1912,7 +1912,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    if (rs) {
       mock_server_auto_hello (server,
                               "{'ok': 1,"
-                              " 'ismaster': true,"
+                              " 'isWritablePrimary': true,"
                               " 'setName': 'rs',"
                               " 'hosts': ['%s']}",
                               mock_server_get_host_and_port (server));
@@ -1921,7 +1921,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    } else {
       mock_server_auto_hello (server,
                               "{'ok': 1,"
-                              " 'ismaster': true,"
+                              " 'isWritablePrimary': true,"
                               " 'msg': 'isdbgrid'}");
    }
 
@@ -2125,7 +2125,7 @@ test_recovering (void *ctx)
    /* server is "recovering": not master, not secondary */
    mock_server_auto_hello (server,
                            "{'ok': 1,"
-                           " 'ismaster': false,"
+                           " 'isWritablePrimary': false,"
                            " 'secondary': false,"
                            " 'setName': 'rs',"
                            " 'hosts': ['%s']}",
@@ -2358,10 +2358,10 @@ test_mongoc_client_mismatched_me (void)
    future = future_client_command_simple (
       client, "admin", tmp_bson ("{'ping': 1}"), prefs, NULL, &error);
 
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    reply = bson_strdup_printf ("{'ok': 1,"
                                " 'setName': 'rs',"
-                               " 'ismaster': false,"
+                               " 'isWritablePrimary': false,"
                                " 'secondary': true,"
                                " 'minWireVersion': 2, 'maxWireVersion': 5,"
                                " 'me': 'foo.com'," /* mismatched "me" field */
@@ -2832,7 +2832,7 @@ test_mongoc_client_select_server_error_pooled (void)
 static void
 _test_mongoc_client_select_server_retry (bool retry_succeeds)
 {
-   char *ismaster;
+   char *hello;
    mock_server_t *server;
    mongoc_uri_t *uri;
    mongoc_client_t *client;
@@ -2843,11 +2843,11 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
 
    server = mock_server_new ();
    mock_server_run (server);
-   ismaster = bson_strdup_printf ("{'ok': 1, 'ismaster': true,"
-                                  " 'secondary': false,"
-                                  " 'minWireVersion': 2, 'maxWireVersion': 5,"
-                                  " 'setName': 'rs', 'hosts': ['%s']}",
-                                  mock_server_get_host_and_port (server));
+   hello = bson_strdup_printf ("{'ok': 1, 'isWritablePrimary': true,"
+                               " 'secondary': false,"
+                               " 'minWireVersion': 2, 'maxWireVersion': 5,"
+                               " 'setName': 'rs', 'hosts': ['%s']}",
+                               mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
@@ -2856,8 +2856,8 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
 
    /* first selection succeeds */
    future = future_client_select_server (client, true, NULL, &error);
-   request = mock_server_receives_ismaster (server);
-   mock_server_replies_simple (request, ismaster);
+   request = mock_server_receives_legacy_hello (server, NULL);
+   mock_server_replies_simple (request, hello);
    request_destroy (request);
    sd = future_get_mongoc_server_description_ptr (future);
    ASSERT_OR_PRINT (sd, error);
@@ -2877,9 +2877,9 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
    request_destroy (request);
 
    /* mongoc_client_select_server retries once */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    if (retry_succeeds) {
-      mock_server_replies_simple (request, ismaster);
+      mock_server_replies_simple (request, hello);
       sd = future_get_mongoc_server_description_ptr (future);
       ASSERT_OR_PRINT (sd, error);
       mongoc_server_description_destroy (sd);
@@ -2893,7 +2893,7 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
    request_destroy (request);
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
-   bson_free (ismaster);
+   bson_free (hello);
    mock_server_destroy (server);
 }
 
@@ -2917,7 +2917,7 @@ test_mongoc_client_select_server_retry_fail (void)
 static void
 _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
 {
-   char *ismaster;
+   char *hello;
    mock_server_t *server;
    mongoc_uri_t *uri;
    mongoc_client_t *client;
@@ -2927,8 +2927,8 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
 
    server = mock_server_new ();
    mock_server_run (server);
-   ismaster = bson_strdup_printf (
-      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5}");
+   hello = bson_strdup_printf ("{'ok': 1, 'isWritablePrimary': true, "
+                               "'minWireVersion': 2, 'maxWireVersion': 5}");
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "socketCheckIntervalMS", 50);
    client = test_framework_client_new_from_uri (uri, NULL);
@@ -2936,8 +2936,8 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
    /* first time succeeds */
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, &error);
-   request = mock_server_receives_ismaster (server);
-   mock_server_replies_simple (request, ismaster);
+   request = mock_server_receives_legacy_hello (server, NULL);
+   mock_server_replies_simple (request, hello);
    request_destroy (request);
 
    request = mock_server_receives_command (
@@ -2962,9 +2962,9 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
    request_destroy (request);
 
    /* mongoc_client_select_server retries once */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    if (retry_succeeds) {
-      mock_server_replies_simple (request, ismaster);
+      mock_server_replies_simple (request, hello);
       request_destroy (request);
 
       request = mock_server_receives_command (
@@ -2981,7 +2981,7 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
    request_destroy (request);
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
-   bson_free (ismaster);
+   bson_free (hello);
    mock_server_destroy (server);
 }
 
@@ -3226,7 +3226,6 @@ _assert_ismaster_valid (request_t *request, bool needs_meta)
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
-   ASSERT (bson_has_field (request_doc, "isMaster"));
    ASSERT (bson_has_field (request_doc, HANDSHAKE_FIELD) == needs_meta);
 }
 
@@ -3276,8 +3275,8 @@ test_mongoc_handshake_pool (void)
    mongoc_client_t *client1;
    mongoc_client_t *client2;
    mongoc_client_pool_t *pool;
-   const char *const server_reply =
-      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5}";
+   const char *const server_reply = "{'ok': 1, 'isWritablePrimary': true, "
+                                    "'minWireVersion': 2, 'maxWireVersion': 5}";
    future_t *future;
 
    server = mock_server_new ();
@@ -3289,7 +3288,7 @@ test_mongoc_handshake_pool (void)
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
    client1 = mongoc_client_pool_pop (pool);
-   request1 = mock_server_receives_ismaster (server);
+   request1 = mock_server_receives_legacy_hello (server, NULL);
    _assert_ismaster_valid (request1, true);
    mock_server_replies_simple (request1, server_reply);
    request_destroy (request1);
@@ -3298,7 +3297,7 @@ test_mongoc_handshake_pool (void)
    future = future_client_command_simple (
       client2, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
 
-   request2 = mock_server_receives_ismaster (server);
+   request2 = mock_server_receives_legacy_hello (server, NULL);
    _assert_ismaster_valid (request2, true);
    mock_server_replies_simple (request2, server_reply);
    request_destroy (request2);
@@ -3326,8 +3325,8 @@ _test_client_sends_handshake (bool pooled)
    future_t *future;
    mongoc_client_t *client;
    mongoc_client_pool_t *pool;
-   const char *const server_reply =
-      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5}";
+   const char *const server_reply = "{'ok': 1, 'isWritablePrimary': true, "
+                                    "'minWireVersion': 2, 'maxWireVersion': 5}";
    const int heartbeat_ms = 500;
 
    if (!TestSuite_CheckMockServerAllowed ()) {
@@ -3350,7 +3349,7 @@ _test_client_sends_handshake (bool pooled)
       future = _force_ismaster_with_ping (client, heartbeat_ms);
    }
 
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
 
    /* Make sure the isMaster request has a "client" field: */
    _assert_ismaster_valid (request, true);
@@ -3364,7 +3363,7 @@ _test_client_sends_handshake (bool pooled)
       future = _force_ismaster_with_ping (client, heartbeat_ms);
    }
 
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    _assert_ismaster_valid (request, false);
 
    mock_server_replies_simple (request, server_reply);
@@ -3377,13 +3376,13 @@ _test_client_sends_handshake (bool pooled)
 
    /* Now wait for the client to send another isMaster command, but this
     * time the server hangs up */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    _assert_ismaster_valid (request, false);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    /* Client retries once (CDRIVER-2075) */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    _assert_ismaster_valid (request, true);
    mock_server_hangs_up (request);
    request_destroy (request);
@@ -3401,7 +3400,7 @@ _test_client_sends_handshake (bool pooled)
 
    /* Now the client should try to reconnect. They think the server's down
     * so now they SHOULD send isMaster */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
    _assert_ismaster_valid (request, true);
 
    mock_server_replies_simple (request, server_reply);
@@ -3444,8 +3443,8 @@ test_client_appname (bool pooled, bool use_uri)
    future_t *future;
    mongoc_client_t *client;
    mongoc_client_pool_t *pool;
-   const char *const server_reply =
-      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5}";
+   const char *const server_reply = "{'ok': 1, 'isWritablePrimary': true, "
+                                    "'minWireVersion': 2, 'maxWireVersion': 5}";
    const int heartbeat_ms = 500;
 
    server = mock_server_new ();
@@ -3472,13 +3471,10 @@ test_client_appname (bool pooled, bool use_uri)
       future = _force_ismaster_with_ping (client, heartbeat_ms);
    }
 
-   request = mock_server_receives_command (server,
-                                           "admin",
-                                           MONGOC_QUERY_SLAVE_OK,
-                                           "{'isMaster': 1,"
-                                           " 'client': {"
-                                           "    'application': {"
-                                           "       'name': 'testapp'}}}");
+   request = mock_server_receives_legacy_hello (server,
+                                                "{'client': {"
+                                                "    'application': {"
+                                                "       'name': 'testapp'}}}");
 
    mock_server_replies_simple (request, server_reply);
    if (!pooled) {
@@ -3803,7 +3799,8 @@ test_client_reset_connections (void)
    int autoresponder_id;
 
    server = mock_server_new ();
-   autoresponder_id = mock_server_auto_hello (server, "{ 'isMaster': 1.0 }");
+   autoresponder_id =
+      mock_server_auto_hello (server, "{ 'isWritablePrimary': true }");
    mock_server_run (server);
 
    /* After calling reset, check that connections are left as-is. Set
@@ -3818,6 +3815,7 @@ test_client_reset_connections (void)
 
    request = mock_server_receives_command (
       server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+   BSON_ASSERT (request);
    mock_server_replies_simple (request, "{'ok': 1}");
 
    ASSERT (future_get_bool (future));

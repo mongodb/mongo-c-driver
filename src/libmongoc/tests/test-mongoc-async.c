@@ -53,10 +53,10 @@ get_localhost_stream (uint16_t port)
 
 
 static void
-test_ismaster_helper (mongoc_async_cmd_t *acmd,
-                      mongoc_async_cmd_result_t result,
-                      const bson_t *bson,
-                      int64_t duration_usec)
+test_hello_helper (mongoc_async_cmd_t *acmd,
+                   mongoc_async_cmd_result_t result,
+                   const bson_t *bson,
+                   int64_t duration_usec)
 {
    struct result *r = (struct result *) acmd->data;
    bson_iter_t iter;
@@ -80,7 +80,7 @@ test_ismaster_helper (mongoc_async_cmd_t *acmd,
 
 
 static void
-test_ismaster_impl (bool with_ssl)
+test_hello_impl (bool with_ssl)
 {
    mock_server_t *servers[NSERVERS];
    mongoc_async_t *async;
@@ -106,7 +106,7 @@ test_ismaster_impl (bool with_ssl)
       return;
    }
 
-   BSON_ASSERT (bson_append_int32 (&q, "isMaster", 8, 1));
+   BSON_ASSERT (bson_append_int32 (&q, "hello", 5, 1));
 
    for (i = 0; i < NSERVERS; i++) {
       servers[i] = mock_server_new ();
@@ -153,7 +153,7 @@ test_ismaster_impl (bool with_ssl)
                             setup_ctx,
                             "admin",
                             &q,
-                            &test_ismaster_helper,
+                            &test_hello_helper,
                             (void *) &results[i],
                             TIMEOUT);
    }
@@ -169,7 +169,7 @@ test_ismaster_impl (bool with_ssl)
 
       /* use "serverId" field to distinguish among responses */
       reply = bson_strdup_printf ("{'ok': 1,"
-                                  " 'ismaster': true,"
+                                  " 'isWritablePrimary': true,"
                                   " 'minWireVersion': 0,"
                                   " 'maxWireVersion': 1000,"
                                   " 'serverId': %d}",
@@ -202,17 +202,17 @@ test_ismaster_impl (bool with_ssl)
 }
 
 static void
-test_ismaster (void)
+test_hello (void)
 {
-   test_ismaster_impl (false);
+   test_hello_impl (false);
 }
 
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 static void
-test_ismaster_ssl (void)
+test_hello_ssl (void)
 {
-   test_ismaster_impl (true);
+   test_hello_impl (true);
 }
 #else
 
@@ -235,13 +235,13 @@ test_large_ismaster_helper (mongoc_async_cmd_t *acmd,
    }
    ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
-   ASSERT_HAS_FIELD(bson, "ismaster");
-   BSON_ASSERT (bson_iter_init_find (&iter, bson, "ismaster"));
+   ASSERT_HAS_FIELD (bson, "isWritablePrimary");
+   BSON_ASSERT (bson_iter_init_find (&iter, bson, "isWritablePrimary"));
    BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
 }
 
 static void
-test_large_ismaster (void *ctx)
+test_large_hello (void *ctx)
 {
    mongoc_async_t *async;
    mongoc_stream_t *sock_stream;
@@ -257,10 +257,10 @@ test_large_ismaster (void *ctx)
     * CDRIVER-2483 is fixed. Because mongod 4.9+ errors on unknown and duplicate
     * fields (see SERVER-53150) we add a ~1MB comment.
     */
-   BSON_ASSERT (bson_append_int32 (&q, "isMaster", 8, 1));
+   BSON_ASSERT (bson_append_int32 (&q, "hello", 5, 1));
    /* size of comment string = (1024 * 1024) - 1 (for null terminator) */
-   bson_snprintf(buf, sizeof (buf), "%01048575d", 0);
-   BSON_APPEND_UTF8(&q, "comment", buf);
+   bson_snprintf (buf, sizeof (buf), "%01048575d", 0);
+   BSON_APPEND_UTF8 (&q, "comment", buf);
 
    sock_stream = get_localhost_stream (test_framework_get_port ());
 
@@ -311,10 +311,10 @@ typedef struct _stream_with_result_t {
 } stream_with_result_t;
 
 static void
-test_ismaster_delay_callback (mongoc_async_cmd_t *acmd,
-                              mongoc_async_cmd_result_t result,
-                              const bson_t *bson,
-                              int64_t duration_usec)
+test_hello_delay_callback (mongoc_async_cmd_t *acmd,
+                           mongoc_async_cmd_result_t result,
+                           const bson_t *bson,
+                           int64_t duration_usec)
 {
    ((stream_with_result_t *) acmd->data)->finished = true;
 }
@@ -326,7 +326,7 @@ test_ismaster_delay_initializer (mongoc_async_cmd_t *acmd)
 }
 
 static void
-test_ismaster_delay ()
+test_hello_delay ()
 {
    /* test that a delayed cmd works. */
    mock_server_t *server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
@@ -341,7 +341,7 @@ test_ismaster_delay ()
       get_localhost_stream (mock_server_get_port (server));
    stream_with_result.finished = false;
 
-   BSON_ASSERT (bson_append_int32 (&ismaster_cmd, "isMaster", 8, 1));
+   BSON_ASSERT (bson_append_int32 (&ismaster_cmd, "hello", 5, 1));
    mongoc_async_cmd_new (async,
                          NULL,  /* stream, initialized after delay. */
                          false, /* is setup done. */
@@ -352,7 +352,7 @@ test_ismaster_delay ()
                          NULL, /* setup ctx. */
                          "admin",
                          &ismaster_cmd,
-                         &test_ismaster_delay_callback,
+                         &test_hello_delay_callback,
                          &stream_with_result,
                          TIMEOUT);
 
@@ -372,20 +372,19 @@ test_ismaster_delay ()
 void
 test_async_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (suite, "/Async/ismaster", test_ismaster);
+   TestSuite_AddMockServerTest (suite, "/Async/hello", test_hello);
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
-   TestSuite_AddMockServerTest (
-      suite, "/Async/ismaster_ssl", test_ismaster_ssl);
+   TestSuite_AddMockServerTest (suite, "/Async/hello_ssl", test_hello_ssl);
 #else
    /* Skip this test on OpenSSL since was having issues connecting. */
    /* Skip on Windows until CDRIVER-3519 is resolved. */
    TestSuite_AddFull (suite,
-                      "/Async/large_ismaster",
-                      test_large_ismaster,
+                      "/Async/large_hello",
+                      test_large_hello,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_not_single,
                       test_framework_skip_if_windows);
 #endif
-   TestSuite_AddMockServerTest (suite, "/Async/delay", test_ismaster_delay);
+   TestSuite_AddMockServerTest (suite, "/Async/delay", test_hello_delay);
 }
