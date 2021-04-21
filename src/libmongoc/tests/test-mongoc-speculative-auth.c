@@ -80,13 +80,16 @@ _respond_to_ping (future_t *future, mock_server_t *server, bool expect_ping)
 }
 
 static bool
-_auto_ismaster_without_speculative_auth (request_t *request, void *data)
+_auto_hello_without_speculative_auth (request_t *request, void *data)
 {
    const char *response_json = (const char *) data;
    char *quotes_replaced;
 
-   if (!request->is_command ||
-       strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) ||
+   if (!request->is_command) {
+      return false;
+   }
+
+   if (strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) &&
        strcmp (request->command_name, "hello")) {
       return false;
    }
@@ -141,7 +144,7 @@ _test_mongoc_speculative_auth (bool pooled,
 #endif
 
    mock_server_autoresponds (server,
-                             _auto_ismaster_without_speculative_auth,
+                             _auto_hello_without_speculative_auth,
                              "{'ok': 1, 'isWritablePrimary': true, "
                              "'minWireVersion': 2, 'maxWireVersion': 5}",
                              NULL);
