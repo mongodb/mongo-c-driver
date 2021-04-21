@@ -627,7 +627,7 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
        * fails with a TransientTransactionError". If the server reply included
        * a TransientTransactionError, we unpin here. If a network error caused
        * us to add a label client-side, we unpin in network_error_reply. */
-      session->server_id = 0;
+      _mongoc_client_session_unpin (session);
    }
 
    while (bson_iter_next (&iter)) {
