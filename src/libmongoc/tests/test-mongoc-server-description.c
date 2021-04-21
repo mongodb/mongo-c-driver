@@ -18,6 +18,7 @@
 #include "mongoc/mongoc-client-private.h"
 #include "mongoc/mongoc-server-description-private.h"
 #include "TestSuite.h"
+#include "test-conveniences.h"
 
 void
 reset_basic_sd (mongoc_server_description_t *sd)
@@ -315,6 +316,27 @@ test_server_description_hello (void)
 }
 
 static void
+test_server_description_hello_cmd_not_found (void)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error;
+   const char *response = "{"
+                          "  'ok' : 0,"
+                          "  'errmsg' : 'no such command: \\'hello\\'',"
+                          "  'code' : 59,"
+                          "  'codeName' : 'CommandNotFound'"
+                          "}";
+
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+   mongoc_server_description_handle_hello (&sd, tmp_bson (response), 0, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+
+   mongoc_server_description_cleanup (&sd);
+}
+
+static void
 test_server_description_legacy_hello (void)
 {
    mongoc_server_description_t sd;
@@ -348,6 +370,9 @@ test_server_description_install (TestSuite *suite)
                   test_server_description_ignores_rtt);
    TestSuite_Add (
       suite, "/server_description/hello", test_server_description_hello);
+   TestSuite_Add (suite,
+                  "/server_description/hello_cmd_not_found",
+                  test_server_description_hello_cmd_not_found);
    TestSuite_Add (suite,
                   "/server_description/legacy_hello",
                   test_server_description_legacy_hello);
