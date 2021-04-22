@@ -3,13 +3,6 @@
 aclocal.m4
 AUTHORS
 autom4te.cache
-bcon-col-view
-bcon-speed
-bson-streaming-reader
-bson-metrics
-bson-to-json
-bson-validate
-bson-depth
 ChangeLog
 CMakeFiles
 CMakeCache.txt
@@ -23,7 +16,6 @@ depcomp
 *.exe
 INSTALL
 install-sh
-json-to-bson
 *.la
 .libs
 libtool
@@ -55,8 +47,23 @@ CPackConfig.cmake
 CPackSourceConfig.cmake
 CTestTestfile.cmake
 cmake_install.cmake
+
+# CMake artifacts
 libbson-1.0-config-version.cmake
 libbson-1.0-config.cmake
 libbson-static-1.0-config-version.cmake
 libbson-static-1.0-config.cmake
+bson/bson-1.0-config-version.cmake
+bson/bson-1.0-config.cmake
+bson/bson-targets.cmake
 
+# Example binaries
+bcon-col-view
+bcon-speed
+bson-check-depth
+bson-depth
+bson-metrics
+bson-streaming-reader
+bson-to-json
+bson-validate
+json-to-bson
