@@ -169,7 +169,7 @@ test_hello_impl (bool with_ssl)
 
       /* use "serverId" field to distinguish among responses */
       reply = bson_strdup_printf ("{'ok': 1,"
-                                  " 'isWritablePrimary': true,"
+                                  " '"HANDSHAKE_RESPONSE_LEGACY_HELLO"': true,"
                                   " 'minWireVersion': 0,"
                                   " 'maxWireVersion': 1000,"
                                   " 'serverId': %d}",
@@ -235,8 +235,8 @@ test_large_ismaster_helper (mongoc_async_cmd_t *acmd,
    }
    ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
-   ASSERT_HAS_FIELD (bson, "isWritablePrimary");
-   BSON_ASSERT (bson_iter_init_find (&iter, bson, "isWritablePrimary"));
+   ASSERT_HAS_FIELD (bson, HANDSHAKE_RESPONSE_LEGACY_HELLO);
+   BSON_ASSERT (bson_iter_init_find (&iter, bson, HANDSHAKE_RESPONSE_LEGACY_HELLO));
    BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
 }
 
