@@ -465,6 +465,7 @@ get_topology_type (mongoc_client_t *client)
    ret = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'hello': 1}"), NULL, &reply, &error);
    if (!ret) {
+      bson_destroy (&reply);
       ret = mongoc_client_command_simple (
          client,
          "admin",
