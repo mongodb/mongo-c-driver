@@ -173,13 +173,13 @@ test_bulk (void)
 
    bson_init (&up);
    bson_append_document_begin (&up, "$set", -1, &child);
-   bson_append_int32 (&child, "hello", -1, 123);
+   BSON_APPEND_INT32 (&child, HANDSHAKE_CMD_LEGACY_HELLO, 123);
    bson_append_document_end (&up, &child);
    mongoc_bulk_operation_update (bulk, &doc, &up, false);
    bson_destroy (&up);
 
    bson_init (&del);
-   BSON_APPEND_INT32 (&del, "hello", 123);
+   BSON_APPEND_INT32 (&del, HANDSHAKE_CMD_LEGACY_HELLO, 123);
    mongoc_bulk_operation_remove (bulk, &del);
    bson_destroy (&del);
 

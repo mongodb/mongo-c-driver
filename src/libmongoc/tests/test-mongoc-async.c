@@ -106,7 +106,7 @@ test_hello_impl (bool with_ssl)
       return;
    }
 
-   BSON_ASSERT (bson_append_int32 (&q, "hello", 5, 1));
+   BSON_ASSERT (BSON_APPEND_INT32 (&q, HANDSHAKE_CMD_LEGACY_HELLO, 1));
 
    for (i = 0; i < NSERVERS; i++) {
       servers[i] = mock_server_new ();
@@ -257,7 +257,7 @@ test_large_hello (void *ctx)
     * CDRIVER-2483 is fixed. Because mongod 4.9+ errors on unknown and duplicate
     * fields (see SERVER-53150) we add a ~1MB comment.
     */
-   BSON_ASSERT (bson_append_int32 (&q, "hello", 5, 1));
+   BSON_ASSERT (BSON_APPEND_INT32 (&q, HANDSHAKE_CMD_LEGACY_HELLO, 1));
    /* size of comment string = (1024 * 1024) - 1 (for null terminator) */
    bson_snprintf (buf, sizeof (buf), "%01048575d", 0);
    BSON_APPEND_UTF8 (&q, "comment", buf);
@@ -331,7 +331,7 @@ test_hello_delay ()
    /* test that a delayed cmd works. */
    mock_server_t *server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
    mongoc_async_t *async = mongoc_async_new ();
-   bson_t ismaster_cmd = BSON_INITIALIZER;
+   bson_t hello_cmd = BSON_INITIALIZER;
    stream_with_result_t stream_with_result = {0};
    int64_t start = bson_get_monotonic_time ();
 
@@ -341,7 +341,7 @@ test_hello_delay ()
       get_localhost_stream (mock_server_get_port (server));
    stream_with_result.finished = false;
 
-   BSON_ASSERT (bson_append_int32 (&ismaster_cmd, "hello", 5, 1));
+   BSON_ASSERT (BSON_APPEND_INT32 (&hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1));
    mongoc_async_cmd_new (async,
                          NULL,  /* stream, initialized after delay. */
                          false, /* is setup done. */
@@ -351,7 +351,7 @@ test_hello_delay ()
                          NULL, /* setup function. */
                          NULL, /* setup ctx. */
                          "admin",
-                         &ismaster_cmd,
+                         &hello_cmd,
                          &test_hello_delay_callback,
                          &stream_with_result,
                          TIMEOUT);
@@ -363,7 +363,7 @@ test_hello_delay ()
       bson_get_monotonic_time () - start, >, (int64_t) (100 * 1000));
    BSON_ASSERT (stream_with_result.finished);
 
-   bson_destroy (&ismaster_cmd);
+   bson_destroy (&hello_cmd);
    mongoc_stream_destroy (stream_with_result.stream);
    mongoc_async_destroy (async);
    mock_server_destroy (server);
