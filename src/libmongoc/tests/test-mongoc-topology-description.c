@@ -208,6 +208,52 @@ test_topology_version_equal (void)
    mongoc_uri_destroy (uri);
 }
 
+static void
+test_topology_description_new_copy (void)
+{
+   mongoc_uri_t *uri;
+   mongoc_topology_t *topology;
+   mongoc_topology_description_t *td, *td_copy;
+   mongoc_server_description_t *sd_a;
+   mongoc_server_description_t *sd_c;
+   mongoc_server_description_t **sds;
+   size_t n;
+
+   uri = mongoc_uri_new ("mongodb://a,b,c");
+   topology = mongoc_topology_new (uri, true /* single-threaded */);
+   td = &topology->description;
+
+   td_copy = mongoc_topology_description_new_copy (td);
+
+   /* servers "a" and "c" are mongos, but "b" remains unknown */
+   sd_a = _sd_for_host (td, "a");
+   mongoc_topology_description_handle_hello (
+      td, sd_a->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+
+   sd_c = _sd_for_host (td, "c");
+   mongoc_topology_description_handle_hello (
+      td, sd_c->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+
+   /* td was copied before original was updated */
+   sds = mongoc_topology_description_get_servers (td_copy, &n);
+   ASSERT_CMPSIZE_T ((size_t) 0, ==, n);
+
+   mongoc_server_descriptions_destroy_all (sds, n);
+   mongoc_topology_description_destroy (td_copy);
+
+   td_copy = mongoc_topology_description_new_copy (td);
+
+   mongoc_topology_destroy (topology);
+   mongoc_uri_destroy (uri);
+
+   /* td was copied after original was updated, but before it was destroyed */
+   sds = mongoc_topology_description_get_servers (td_copy, &n);
+   ASSERT_CMPSIZE_T ((size_t) 2, ==, n);
+
+   mongoc_server_descriptions_destroy_all (sds, n);
+   mongoc_topology_description_destroy (td_copy);
+}
+
 void
 test_topology_description_install (TestSuite *suite)
 {
@@ -221,4 +267,7 @@ test_topology_description_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/TopologyDescription/topology_version_equal",
                   test_topology_version_equal);
+   TestSuite_Add (suite,
+                  "/TopologyDescription/new_copy",
+                  test_topology_description_new_copy);
 }
