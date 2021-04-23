@@ -144,7 +144,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
    }
 
    if (prev_td) {
-      mongoc_topology_description_destroy (prev_td);
+      mongoc_topology_description_cleanup (prev_td);
       bson_free (prev_td);
    }
 }

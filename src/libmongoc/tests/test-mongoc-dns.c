@@ -579,7 +579,7 @@ test_srv_polling_mocked (void *unused)
    _mongoc_host_list_destroy_all (hosts);
    ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_ERROR, "Invalid host");
 
-   mongoc_topology_description_destroy (&td);
+   mongoc_topology_description_cleanup (&td);
    mongoc_uri_destroy (uri);
 }
 

@@ -567,7 +567,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    _mongoc_topology_description_monitor_closed (&topology->description);
 
    mongoc_uri_destroy (topology->uri);
-   mongoc_topology_description_destroy (&topology->description);
+   mongoc_topology_description_cleanup (&topology->description);
    mongoc_topology_scanner_destroy (topology->scanner);
 
    /* If we are single-threaded, the client will try to call
