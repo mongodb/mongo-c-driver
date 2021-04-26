@@ -838,6 +838,7 @@ operation_find (test_t *test,
    bson_parser_t *parser = NULL;
    mongoc_cursor_t *cursor = NULL;
    bson_t *filter = NULL;
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -851,14 +852,22 @@ operation_find (test_t *test,
       goto done;
    }
 
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
    cursor = mongoc_collection_find_with_opts (
-      coll, filter, bson_parser_get_extra (parser), NULL /* read prefs */);
+      coll, filter, opts, NULL /* read prefs */);
 
    result_from_cursor (result, cursor);
 
    ret = true;
 done:
    bson_parser_destroy_with_parsed_fields (parser);
+   bson_destroy (opts);
    mongoc_cursor_destroy (cursor);
    return ret;
 }

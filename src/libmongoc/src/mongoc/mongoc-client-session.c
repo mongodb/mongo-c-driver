@@ -627,7 +627,7 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
        * fails with a TransientTransactionError". If the server reply included
        * a TransientTransactionError, we unpin here. If a network error caused
        * us to add a label client-side, we unpin in network_error_reply. */
-      session->server_id = 0;
+      _mongoc_client_session_unpin (session);
    }
 
    while (bson_iter_next (&iter)) {
@@ -1266,6 +1266,10 @@ mongoc_client_session_abort_transaction (mongoc_client_session_t *session,
    case MONGOC_INTERNAL_TRANSACTION_STARTING:
       /* we sent no commands, not actually started on server */
       session->txn.state = MONGOC_INTERNAL_TRANSACTION_ABORTED;
+      /* Transactions Spec: aborting a transaction MUST unpin the session.
+       * It's likely the transaction is already unpinned if TRANSACTION_STARTING
+       * was just assigned, but there is no harm in doing so again. */
+      _mongoc_client_session_unpin (session);
       txn_opts_cleanup (&session->txn.opts);
       RETURN (true);
    case MONGOC_INTERNAL_TRANSACTION_IN_PROGRESS:
@@ -1273,6 +1277,8 @@ mongoc_client_session_abort_transaction (mongoc_client_session_t *session,
       /* Transactions Spec: ignore errors from abortTransaction command */
       txn_abort (session, NULL, NULL);
       session->txn.state = MONGOC_INTERNAL_TRANSACTION_ABORTED;
+      /* Transactions Spec: aborting a transaction MUST unpin the session. */
+      _mongoc_client_session_unpin (session);
       RETURN (true);
    case MONGOC_INTERNAL_TRANSACTION_COMMITTED:
    case MONGOC_INTERNAL_TRANSACTION_COMMITTED_EMPTY:
