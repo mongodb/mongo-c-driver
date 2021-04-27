@@ -709,8 +709,7 @@ functions:
         export DNS=${DNS}
         export ASAN=${ASAN}
         export MONGODB_API_VERSION=1
-        # TODO: CDRIVER-3954 Run all integration tests
-        ./src/libmongoc/test-libmongoc --no-fork -l /versioned_api/* -d
+        sh .evergreen/run-tests.sh
         unset MONGODB_API_VERSION
   run aws tests:
   - command: shell.exec
