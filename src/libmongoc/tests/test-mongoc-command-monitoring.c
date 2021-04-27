@@ -133,7 +133,8 @@ test_get_error (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_failed_cb (callbacks, test_get_error_failed_cb);
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &error);
@@ -664,13 +665,14 @@ _test_query_operation_id (bool pooled)
    mongoc_apm_set_command_failed_cb (callbacks, test_op_id_failed_cb);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new_from_uri (
+         mock_server_get_uri (server), NULL);
       ASSERT (mongoc_client_pool_set_apm_callbacks (
          pool, callbacks, (void *) &test));
       client = mongoc_client_pool_pop (pool);
    } else {
-      client =
-         test_framework_client_new_from_uri (mock_server_get_uri (server));
+      client = test_framework_client_new_from_uri (mock_server_get_uri (server),
+                                                   NULL);
       ASSERT (
          mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
    }
@@ -1098,7 +1100,8 @@ test_command_failed_reply_mock (void)
    mongoc_apm_set_command_failed_cb (callbacks,
                                      command_failed_reply_command_failed_cb);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -1155,7 +1158,8 @@ test_command_failed_reply_hangup (void)
    mongoc_apm_set_command_failed_cb (callbacks,
                                      command_failed_reply_command_failed_cb);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, (void *) &test));
 
    collection = mongoc_client_get_collection (client, "db", "collection");

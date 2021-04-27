@@ -264,7 +264,7 @@ static BSON_THREAD_FUN (handshake_stall_client, ptr)
                                  data->server_port,
                                  connect_timeout_ms);
 
-   client = test_framework_client_new (uri_str);
+   client = test_framework_client_new (uri_str, NULL);
    mongoc_client_set_ssl_opts (client, data->client);
 
    /* we should time out after about 200ms */

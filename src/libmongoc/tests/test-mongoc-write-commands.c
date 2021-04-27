@@ -411,7 +411,8 @@ test_split_opquery_with_options (void)
       docs[i] = BCON_NEW ("_id", BCON_INT64 (i));
    }
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    coll = mongoc_client_get_collection (client, "db", "coll");
 
    /* Add a write concern, to ensure that it is taken into account during
@@ -487,7 +488,8 @@ test_opmsg_disconnect_mid_batch_helper (int wire_version)
       docs[i] = BCON_NEW ("_id", BCON_INT64 (i));
    }
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "db", "coll");
 
@@ -544,7 +546,8 @@ test_w0_legacy_insert_many (void)
    docs[0] = BCON_NEW ("x", BCON_INT32 (1));
    docs[1] = BCON_NEW ("x", BCON_INT32 (2));
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    coll = mongoc_client_get_collection (client, "db", "coll");
 
    /* Add unacknowldged write concern */

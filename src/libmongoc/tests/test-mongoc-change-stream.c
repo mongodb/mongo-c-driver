@@ -117,7 +117,8 @@ test_change_stream_pipeline (void)
    server = mock_server_with_autoismaster (5);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    ASSERT (client);
 
    coll = mongoc_client_get_collection (client, "db", "coll");
@@ -617,7 +618,8 @@ _test_getmore_error (const char *server_reply,
 
    server = mock_server_with_autoismaster (5);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    coll = mongoc_client_get_collection (client, "db", "coll");
    future = future_collection_watch (coll, tmp_bson ("{}"), NULL);
    request = mock_server_receives_command (
@@ -749,7 +751,7 @@ test_change_stream_resumable_error (void)
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 100);
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "db", "coll");
 
@@ -917,7 +919,8 @@ test_change_stream_options (void)
    server = mock_server_with_autoismaster (5);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    ASSERT (client);
 
    coll = mongoc_client_get_collection (client, "db", "coll");
@@ -1153,7 +1156,7 @@ test_change_stream_server_selection_fails (void)
    const bson_t *bson;
    bson_error_t err;
    mongoc_client_t *client =
-      test_framework_client_new ("mongodb://localhost:12345/");
+      test_framework_client_new ("mongodb://localhost:12345/", NULL);
    mongoc_collection_t *coll =
       mongoc_client_get_collection (client, "test", "test");
    mongoc_change_stream_t *cs =
@@ -1839,7 +1842,8 @@ _test_resume (const char *opts,
 
    server = mock_server_with_autoismaster (7);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "db", "coll");
    future = future_collection_watch (coll, tmp_bson ("{}"), tmp_bson (opts));
@@ -2446,7 +2450,8 @@ prose_test_17 (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    coll = mongoc_client_get_collection (client, "db", "coll");
    /* Pass an arbitrary document as the resume token, like {'x': 1} */
@@ -2522,7 +2527,8 @@ prose_test_18 (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    coll = mongoc_client_get_collection (client, "db", "coll");
    /* Pass an arbitrary document as the resume token, like {'x': 1} */

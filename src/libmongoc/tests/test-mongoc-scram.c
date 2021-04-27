@@ -220,12 +220,12 @@ _check_mechanism (bool pooled,
    }
 
    if (pooled) {
-      client_pool = test_framework_client_pool_new_from_uri (uri);
+      client_pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (client_pool);
       /* suppress the auth failure logs from pooled clients. */
       capture_logs (true);
    } else {
-      client = test_framework_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
    }
    future = future_client_command_simple (client,
                                           "admin",
@@ -303,14 +303,14 @@ _try_auth_from_uri (bool pooled, mongoc_uri_t *uri, test_error_t expected_error)
    bool res;
 
    if (pooled) {
-      client_pool = test_framework_client_pool_new_from_uri (uri);
+      client_pool = test_framework_client_pool_new_from_uri (uri, NULL);
       test_framework_set_pool_ssl_opts (client_pool);
       mongoc_client_pool_set_error_api (client_pool, 2);
       client = mongoc_client_pool_pop (client_pool);
       /* suppress the auth failure logs from pooled clients. */
       capture_logs (true);
    } else {
-      client = test_framework_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
       mongoc_client_set_error_api (client, 2);
       test_framework_set_ssl_opts (client);
    }

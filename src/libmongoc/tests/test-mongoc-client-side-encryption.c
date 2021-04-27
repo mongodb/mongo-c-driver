@@ -272,7 +272,7 @@ test_bson_size_limits_and_batch_splitting (void *unused)
 
    /* Drop and create db.coll configured with limits-schema.json */
    uri = test_framework_get_uri ();
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "db", "coll");
@@ -305,7 +305,7 @@ test_bson_size_limits_and_batch_splitting (void *unused)
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
 
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
 
@@ -722,7 +722,7 @@ _test_key_vault (bool with_external_key_vault)
    external_uri = test_framework_get_uri ();
    mongoc_uri_set_username (external_uri, "fake-user");
    mongoc_uri_set_password (external_uri, "fake-pwd");
-   client_external = test_framework_client_new_from_uri (external_uri);
+   client_external = test_framework_client_new_from_uri (external_uri, NULL);
    test_framework_set_ssl_opts (client_external);
 
    /* Using client, drop the collections keyvault.datakeys and db.coll. */
@@ -1716,9 +1716,9 @@ _reset (mongoc_client_pool_t **pool,
       bson_error_t error;
 
       uri = test_framework_get_uri ();
-      *pool = test_framework_client_pool_new_from_uri (uri);
+      *pool = test_framework_client_pool_new_from_uri (uri, NULL);
       test_framework_set_pool_ssl_opts (*pool);
-      *singled_threaded_client = test_framework_client_new_from_uri (uri);
+      *singled_threaded_client = test_framework_client_new_from_uri (uri, NULL);
       test_framework_set_ssl_opts (*singled_threaded_client);
       *multi_threaded_client = mongoc_client_pool_pop (*pool);
       mongoc_uri_destroy (uri);
@@ -1964,9 +1964,9 @@ _test_multi_threaded (bool external_key_vault)
    int i;
 
    uri = test_framework_get_uri ();
-   pool = test_framework_client_pool_new_from_uri (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    test_framework_set_pool_ssl_opts (pool);
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
    opts = mongoc_auto_encryption_opts_new ();
 
@@ -2085,7 +2085,7 @@ _check_mongocryptd_not_spawned (void)
    bool ret;
 
    client = test_framework_client_new (
-      "mongodb://localhost:27021/db?serverSelectionTimeoutMS=1000");
+      "mongodb://localhost:27021/db?serverSelectionTimeoutMS=1000", NULL);
    cmd = BCON_NEW ("ismaster", BCON_INT32 (1));
    ret = mongoc_client_command_simple (
       client, "keyvault", cmd, NULL /* read prefs */, NULL /* reply */, &error);

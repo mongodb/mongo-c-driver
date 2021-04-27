@@ -446,11 +446,12 @@ _test_mock_end_sessions (bool pooled)
    mock_server_run (server);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new_from_uri (
+         mock_server_get_uri (server), NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client =
-         test_framework_client_new_from_uri (mock_server_get_uri (server));
+      client = test_framework_client_new_from_uri (mock_server_get_uri (server),
+                                                   NULL);
    }
 
    session = mongoc_client_start_session (client, NULL, &error);
@@ -524,7 +525,8 @@ test_mock_end_sessions_server_disconnect (void)
    server = mock_mongos_new (WIRE_VERSION_OP_MSG);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    for (i = 0; i < 12000; i++) {
       session[i] = mongoc_client_start_session (client, NULL, &error);
@@ -2615,7 +2617,7 @@ _test_session_dirty_helper (bool retry_succeeds)
 
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, true);
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
    session = mongoc_client_start_session (client, NULL /* opts */, &error);
    ASSERT_OR_PRINT (session, error);

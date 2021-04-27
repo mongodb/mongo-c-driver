@@ -260,8 +260,8 @@ test_bulk_error (void)
 
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
 
    bulk = mongoc_bulk_operation_new (true);
    mongoc_bulk_operation_set_client (bulk, client);
@@ -302,7 +302,7 @@ test_bulk_error_unordered (void)
 
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
    mongoc_uri_set_option_as_int32 (uri, "sockettimeoutms", 500);
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    mongoc_uri_destroy (uri);
    collection = mongoc_client_get_collection (client, "test", "test");
 
@@ -2818,8 +2818,8 @@ _test_write_concern (bool ordered, bool multi_err)
 
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 2);
@@ -2981,7 +2981,7 @@ test_unordered_bulk_writes_with_error (void)
    /* disable retryable writes, so we move to the next operation on error */
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, false);
 
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    collection = mongoc_client_get_collection (client, "db", "test");
    /* use an unordered bulk write; we expect to continue on error */
@@ -3034,8 +3034,8 @@ _test_write_concern_err_api (int32_t error_api_version)
 
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
    ASSERT (mongoc_client_set_error_api (client, error_api_version));
    collection = mongoc_client_get_collection (client, "test", "test");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
@@ -3167,8 +3167,8 @@ _test_wtimeout_plus_duplicate_key_err (void)
 
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    /* unordered bulk */
@@ -3488,7 +3488,8 @@ _test_numerous (bool ordered)
 
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
 #define TEST_NUMEROUS(_one_write, _doc_format)                                 \
@@ -4156,10 +4157,11 @@ _test_bulk_hint (bool pooled, bool use_primary)
    mock_rs_run (rs);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (mock_rs_get_uri (rs));
+      pool =
+         test_framework_client_pool_new_from_uri (mock_rs_get_uri (rs), NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new_from_uri (mock_rs_get_uri (rs));
+      client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    }
 
    /* warm up the client so its server_id is valid */
@@ -4332,8 +4334,8 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    mock_server = mock_server_with_autoismaster (wire_version);
    mock_server_run (mock_server);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (
@@ -4475,8 +4477,8 @@ _test_bulk_collation_multi (int w, int wire_version)
    mock_server = mock_server_with_autoismaster (wire_version);
    mock_server_run (mock_server);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
    bulk = mongoc_collection_create_bulk_operation_with_opts (
       collection, tmp_bson ("{'writeConcern': {'w': %d, 'wtimeout': 100}}", w));
@@ -4606,7 +4608,7 @@ test_bulk_update_one_error_message (void)
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
 
-   client = test_framework_client_new ("mongodb://server");
+   client = test_framework_client_new ("mongodb://server", NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
@@ -4641,7 +4643,7 @@ test_bulk_opts_parse (void)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ("mongodb://server");
+   client = test_framework_client_new ("mongodb://server", NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);

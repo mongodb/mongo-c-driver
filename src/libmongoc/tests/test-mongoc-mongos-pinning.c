@@ -53,7 +53,7 @@ test_new_transaction_unpins (void *ctx)
    /* Increase localThresholdMS to avoid false positives. Nodes
       will be discovered with the first call to server selection. */
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_LOCALTHRESHOLDMS, 1000);
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
 
    /* Create a collection. */
@@ -131,7 +131,7 @@ test_non_transaction_unpins (void *ctx)
    /* Increase localThresholdMS to avoid false positives. Nodes
       will be discovered with the first call to server selection. */
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_LOCALTHRESHOLDMS, 1000);
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
 
    /* Create a collection. */

@@ -751,10 +751,11 @@ _test_kill_cursors (bool pooled, bool use_killcursors_cmd)
    mock_rs_run (rs);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (mock_rs_get_uri (rs));
+      pool =
+         test_framework_client_pool_new_from_uri (mock_rs_get_uri (rs), NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new_from_uri (mock_rs_get_uri (rs));
+      client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    }
 
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -879,7 +880,7 @@ _test_client_kill_cursor (bool has_primary, bool wire_version_4)
                                    1,           /* definitely a secondary */
                                    0);          /* no arbiter */
    mock_rs_run (rs);
-   client = test_framework_client_new_from_uri (mock_rs_get_uri (rs));
+   client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
    /* make client open a connection - it won't open one to kill a cursor */
@@ -1118,7 +1119,8 @@ test_cursor_new_tailable_await (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    cursor = mongoc_cursor_new_from_command_reply_with_opts (
       client,
       bson_copy (tmp_bson ("{'ok': 1,"
@@ -1181,7 +1183,8 @@ test_cursor_int64_t_maxtimems (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    max_await_time_ms = tmp_bson (NULL);
    bson_append_bool (max_await_time_ms, "tailable", 8, true);
@@ -1245,7 +1248,8 @@ test_cursor_new_ignores_fields (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    cursor = mongoc_cursor_new_from_command_reply_with_opts (
       client,
       bson_copy (tmp_bson ("{'ok': 1,"
@@ -1466,10 +1470,11 @@ _test_cursor_hint (bool pooled, bool use_primary)
    mock_rs_run (rs);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (mock_rs_get_uri (rs));
+      pool =
+         test_framework_client_pool_new_from_uri (mock_rs_get_uri (rs), NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new_from_uri (mock_rs_get_uri (rs));
+      client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    }
 
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -1576,7 +1581,8 @@ test_cursor_hint_mongos (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    for (i = 0; i < sizeof (modes) / sizeof (mongoc_read_mode_t); i++) {
@@ -1622,7 +1628,8 @@ test_cursor_hint_mongos_cmd (void)
 
    server = mock_mongos_new (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    for (i = 0; i < sizeof (modes) / sizeof (mongoc_read_mode_t); i++) {
@@ -1984,7 +1991,8 @@ _test_cursor_n_return (bool find_with_opts)
 
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "coll");
 
    for (i = 0; i < sizeof (tests) / sizeof (cursor_n_return_test); i++) {
@@ -2107,7 +2115,8 @@ test_empty_final_batch (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "coll");
    cursor = mongoc_collection_find_with_opts (
       collection,

@@ -420,7 +420,8 @@ test_find_one_with_opts_limit (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_error_api (client, 2);
 
    gridfs = _get_gridfs (server, client, MONGOC_QUERY_SLAVE_OK);
@@ -1400,7 +1401,8 @@ test_inherit_client_config (void)
    mock_server_run (server);
 
    /* configure read / write concern and read prefs on client */
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    write_concern = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (write_concern, 2);
@@ -1526,7 +1528,7 @@ test_write_failure (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 100);
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    gridfs = mongoc_client_get_gridfs (client, "db", "fs", &error);
    ASSERT_OR_PRINT (gridfs, error);
    stream =

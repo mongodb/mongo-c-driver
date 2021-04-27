@@ -154,7 +154,7 @@ _test_mongoc_speculative_auth (bool pooled,
    }
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
 #ifdef MONGOC_ENABLE_SSL
       if (use_ssl) {
@@ -167,7 +167,7 @@ _test_mongoc_speculative_auth (bool pooled,
       /* suppress the auth failure logs from pooled clients. */
       capture_logs (true);
    } else {
-      client = test_framework_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
 
 #ifdef MONGOC_ENABLE_SSL
       if (use_ssl) {

@@ -102,7 +102,8 @@ test_aggregate_inherit_collection (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MAX_STALENESS);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
 
@@ -249,8 +250,8 @@ _batch_size_test (bson_t *pipeline,
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
    mock_server_run (mock_server);
 
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
    coll = mongoc_client_get_collection (client, "db", "coll");
 
    cursor = mongoc_collection_aggregate (
@@ -986,7 +987,8 @@ test_insert_command_keys (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
@@ -2104,7 +2106,8 @@ test_count_read_pref (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
 
@@ -2146,7 +2149,8 @@ test_count_read_concern (void)
    /* wire protocol version 4 */
    server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    ASSERT (client);
 
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -2413,7 +2417,8 @@ test_count_with_opts (void)
    /* use a mongos since we don't send SLAVE_OK to mongos by default */
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    future = future_collection_count_with_opts (collection,
@@ -2452,7 +2457,8 @@ test_count_with_collation (int wire)
    server = mock_server_with_autoismaster (wire);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    future = future_collection_count_with_opts (
@@ -2519,7 +2525,8 @@ test_count_documents (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "coll");
 
    future =
@@ -2610,7 +2617,8 @@ test_estimated_document_count (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "coll");
 
    future = future_collection_estimated_document_count (
@@ -3089,7 +3097,8 @@ test_aggregate_modern (void *data)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG - 1);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    cursor = mongoc_collection_aggregate (collection,
@@ -3179,7 +3188,7 @@ test_aggregate_w_server_id (void)
                                    0 /* arbiters    */);
 
    mock_rs_run (rs);
-   client = test_framework_client_new_from_uri (mock_rs_get_uri (rs));
+   client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    /* use serverId instead of prefs to select the secondary */
@@ -3226,7 +3235,8 @@ test_aggregate_w_server_id_sharded (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    opts = tmp_bson ("{'serverId': 1}");
@@ -3590,7 +3600,8 @@ test_stats_read_pref (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_collection_set_read_prefs (collection, prefs);
@@ -3631,7 +3642,8 @@ test_find_and_modify_write_concern (int wire_version)
    server = mock_server_new ();
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    ASSERT (client);
 
    collection =
@@ -4083,7 +4095,8 @@ test_find_limit (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    /* test mongoc_collection_find and mongoc_collection_find_with_opts */
@@ -4154,7 +4167,8 @@ test_find_batch_size (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    /* test mongoc_collection_find and mongoc_collection_find_with_opts */
@@ -4436,7 +4450,8 @@ test_find_indexes_err (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_error_api (client, 2);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
@@ -4503,7 +4518,8 @@ test_find_read_concern (void)
    server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    /* No read_concern set - test find and find_with_opts */
@@ -4778,7 +4794,8 @@ test_aggregate_secondary_sharded (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    cursor = mongoc_collection_aggregate (
@@ -4827,7 +4844,8 @@ test_aggregate_read_concern (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    /* No readConcern */
@@ -4928,7 +4946,8 @@ test_aggregate_with_collation (int wire)
 
    server = mock_server_with_autoismaster (wire);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    cursor =
@@ -5010,7 +5029,8 @@ test_index_with_collation (int wire)
    /* wire protocol version 0 */
    server = mock_server_with_autoismaster (wire);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    bson_init (&keys);
@@ -5104,7 +5124,7 @@ test_create_index_fail (void *context)
    bson_error_t error;
 
    client = test_framework_client_new (
-      "mongodb://example.doesntexist/?connectTimeoutMS=10");
+      "mongodb://example.doesntexist/?connectTimeoutMS=10", NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
    r = mongoc_collection_create_index_with_opts (
       collection, tmp_bson ("{'a': 1}"), NULL, NULL, &reply, &error);
@@ -5955,7 +5975,8 @@ _test_delete_collation (int wire, bool is_multi)
    server = mock_server_with_autoismaster (wire);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    future = fn (collection,
                 tmp_bson ("{}"),
@@ -6036,7 +6057,8 @@ _test_update_or_replace_with_collation (int wire,
    server = mock_server_with_autoismaster (wire);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    future = fn (collection,
                 tmp_bson ("{}"),
@@ -6110,7 +6132,8 @@ _test_update_hint (int wire, bool is_replace, bool is_multi, const char *hint)
    server = mock_server_with_autoismaster (wire);
    mock_server_run (server);
 
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    future = fn (collection,
                 tmp_bson ("{}"),
@@ -6409,7 +6432,7 @@ static void
 test_timeout_ms (void)
 {
    mongoc_client_t *client =
-      test_framework_client_new ("mongodb://localhost/?timeoutms=100");
+      test_framework_client_new ("mongodb://localhost/?timeoutms=100", NULL);
    mongoc_database_t *db = NULL;
    mongoc_collection_t *coll =
       mongoc_client_get_collection (client, "db", "test");

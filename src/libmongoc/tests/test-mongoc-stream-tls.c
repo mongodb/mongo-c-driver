@@ -399,7 +399,7 @@ test_mongoc_tls_insecure_nowarning (void)
    }
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_TLSINSECURE, true);
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    capture_logs (true);
    mongoc_client_command_simple (client,

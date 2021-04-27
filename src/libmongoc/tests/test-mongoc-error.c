@@ -76,7 +76,8 @@ _test_command_error (int32_t error_api_version)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    if (error_api_version != 0) {
       BSON_ASSERT (mongoc_client_set_error_api (client, error_api_version));

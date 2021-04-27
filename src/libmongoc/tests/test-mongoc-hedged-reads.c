@@ -41,7 +41,8 @@ test_mongos_hedged_reads_read_pref (void)
 
    server = mock_mongos_new (5);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);

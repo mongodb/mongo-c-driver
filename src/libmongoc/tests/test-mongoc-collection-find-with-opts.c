@@ -60,7 +60,8 @@ _test_collection_op_query_or_find_command (
 
    server = mock_server_with_autoismaster (max_wire_version);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    cursor = mongoc_collection_find_with_opts (collection,
                                               test_data->filter_bson,
@@ -578,7 +579,8 @@ test_exhaust (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    cursor = mongoc_collection_find_with_opts (
       collection, tmp_bson (NULL), tmp_bson ("{'exhaust': true}"), NULL);
@@ -631,7 +633,8 @@ test_getmore_cmd_await (void)
     */
    server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    cursor = mongoc_collection_find_with_opts (
       collection, tmp_bson (NULL), opts, NULL);
@@ -708,7 +711,7 @@ test_find_w_server_id (void)
                                    0 /* arbiters     */);
 
    mock_rs_run (rs);
-   client = test_framework_client_new_from_uri (mock_rs_get_uri (rs));
+   client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    /* use serverId instead of prefs to select the secondary */
@@ -752,7 +755,7 @@ test_find_cmd_w_server_id (void)
                                    0 /* arbiters     */);
 
    mock_rs_run (rs);
-   client = test_framework_client_new_from_uri (mock_rs_get_uri (rs));
+   client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    /* use serverId instead of prefs to select the secondary */
@@ -805,7 +808,8 @@ test_find_w_server_id_sharded (void)
 
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    opts = tmp_bson ("{'serverId': 1}");
@@ -845,7 +849,8 @@ test_find_cmd_w_server_id_sharded (void)
 
    server = mock_mongos_new (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
-   client = test_framework_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    opts = tmp_bson ("{'serverId': 1, 'readConcern': {'level': 'local'}}");

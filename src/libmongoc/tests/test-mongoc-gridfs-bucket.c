@@ -897,7 +897,7 @@ test_upload_error (void *ctx)
    uri = test_framework_get_uri ();
    mongoc_uri_set_username (uri, "fake_user");
    mongoc_uri_set_password (uri, "password");
-   client = test_framework_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
    mongoc_uri_destroy (uri);
 

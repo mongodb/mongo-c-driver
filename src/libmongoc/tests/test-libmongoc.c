@@ -1126,7 +1126,7 @@ call_ismaster_with_host_and_port (char *host_and_port, bson_t *reply)
       bson_free (compressors);
    }
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 #ifdef MONGOC_ENABLE_SSL
    test_framework_set_ssl_opts (client);
 #endif
@@ -1639,7 +1639,7 @@ mongoc_client_t *
 test_framework_new_default_client ()
 {
    char *test_uri_str = test_framework_get_uri_str ();
-   mongoc_client_t *client = mongoc_client_new (test_uri_str);
+   mongoc_client_t *client = test_framework_client_new (test_uri_str, NULL);
 
    BSON_ASSERT (client);
    test_framework_set_ssl_opts (client);
@@ -1650,17 +1650,36 @@ test_framework_new_default_client ()
 }
 
 mongoc_client_t *
-test_framework_client_new (const char *uri_str)
+test_framework_client_new (const char *uri_str, const mongoc_server_api_t *api)
 {
+   mongoc_client_t *client = mongoc_client_new (uri_str);
+   bson_error_t error;
+
+   if (api) {
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
+                       error);
+   }
+
    /* TODO CDRIVER-3917 */
-   return mongoc_client_new (uri_str);
+
+   return client;
 }
 
 mongoc_client_t *
-test_framework_client_new_from_uri (const mongoc_uri_t *uri)
+test_framework_client_new_from_uri (const mongoc_uri_t *uri,
+                                    const mongoc_server_api_t *api)
 {
+   mongoc_client_t *client = mongoc_client_new_from_uri (uri);
+   bson_error_t error;
+
+   if (api) {
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
+                       error);
+   }
+
    /* TODO CDRIVER-3917 */
-   return mongoc_client_new_from_uri (uri);
+
+   return client;
 }
 
 
@@ -1741,7 +1760,7 @@ mongoc_client_pool_t *
 test_framework_new_default_client_pool ()
 {
    mongoc_uri_t *test_uri = test_framework_get_uri ();
-   mongoc_client_pool_t *pool = mongoc_client_pool_new (test_uri);
+   mongoc_client_pool_t *pool = test_framework_client_pool_new_from_uri (test_uri, NULL);
 
    BSON_ASSERT (pool);
    test_framework_set_pool_ssl_opts (pool);
@@ -1752,10 +1771,20 @@ test_framework_new_default_client_pool ()
 }
 
 mongoc_client_pool_t *
-test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri)
+test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri,
+                                         const mongoc_server_api_t *api)
 {
+   mongoc_client_pool_t *pool = mongoc_client_pool_new (uri);
+   bson_error_t error;
+
+   if (api) {
+      ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error),
+                       error);
+   }
+
    /* TODO CDRIVER-3917 */
-   return mongoc_client_pool_new (uri);
+
+   return pool;
 }
 
 #ifdef MONGOC_ENABLE_SSL

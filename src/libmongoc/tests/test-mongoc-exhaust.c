@@ -469,11 +469,12 @@ _mock_test_exhaust (bool pooled,
    mock_server_run (server);
 
    if (pooled) {
-      pool = test_framework_client_pool_new_from_uri (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new_from_uri (
+         mock_server_get_uri (server), NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client =
-         test_framework_client_new_from_uri (mock_server_get_uri (server));
+      client = test_framework_client_new_from_uri (mock_server_get_uri (server),
+                                                   NULL);
    }
 
    collection = mongoc_client_get_collection (client, "db", "test");
