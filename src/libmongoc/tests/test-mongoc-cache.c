@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <signal.h>
 #include "TestSuite.h"
-#include "test-libmongoc.h"
 
 #ifndef SIGSTOP
 #define SIGSTOP 19
@@ -42,7 +41,8 @@ ping ()
 
    uri = bson_strdup_printf ("mongodb://localhost/?tls=true&tlsCAFile=%s",
                              ca_file);
-   ASSERT ((client = test_framework_client_new (uri, NULL)));
+   /* TODO 3954: Replace with test_framework_client_new */
+   ASSERT ((client = mongoc_client_new (uri)));
 
    bson_init (&ping);
    bson_append_int32 (&ping, "ping", 4, 1);
