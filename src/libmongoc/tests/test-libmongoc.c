@@ -1673,6 +1673,10 @@ test_framework_client_new (const char *uri_str, const mongoc_server_api_t *api)
    bson_error_t error;
    mongoc_server_api_t *default_api = NULL;
 
+   if (!client) {
+      return client;
+   }
+
    if (api) {
       ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
                        error);
@@ -1696,6 +1700,10 @@ test_framework_client_new_from_uri (const mongoc_uri_t *uri,
    mongoc_client_t *client = mongoc_client_new_from_uri (uri);
    bson_error_t error;
    mongoc_server_api_t *default_api = NULL;
+
+   if (!client) {
+      return client;
+   }
 
    if (api) {
       ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
@@ -1808,6 +1816,10 @@ test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri,
    mongoc_client_pool_t *pool = mongoc_client_pool_new (uri);
    bson_error_t error;
    mongoc_server_api_t *default_api = NULL;
+
+   if (!pool) {
+      return pool;
+   }
 
    if (api) {
       ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error),
