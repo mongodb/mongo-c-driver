@@ -72,7 +72,7 @@ _test_mongoc_server_api_client (void)
    mongoc_server_api_t *api;
    bson_error_t error;
 
-   client = test_framework_client_new ("mongodb://localhost", NULL);
+   client = mongoc_client_new ("mongodb://localhost");
    BSON_ASSERT (!client->api);
 
    api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
@@ -105,7 +105,7 @@ _test_mongoc_server_api_client_pool (void)
    bson_error_t error;
 
    uri = mongoc_uri_new ("mongodb://localhost");
-   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+   pool = mongoc_client_pool_new (uri);
 
    api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
 
