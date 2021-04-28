@@ -3777,6 +3777,13 @@ test_bulk_max_msg_size (void)
                        strlen ("$clusterTime") + 2;
    }
 
+   /* Versioned API may be appended */
+   if (client->api) {
+      filler_string -= strlen ("apiVersion") + 7 +
+                       strlen (mongoc_server_api_version_to_string (
+                          mongoc_server_api_get_version (client->api)));
+   }
+
    cs = mongoc_client_start_session (client, NULL, NULL);
    if (cs) {
       /* sessions are supported */
