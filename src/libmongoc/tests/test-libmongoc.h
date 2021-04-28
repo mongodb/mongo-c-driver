@@ -99,6 +99,9 @@ test_framework_set_ssl_opts (mongoc_client_t *client);
 void
 test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool);
 
+mongoc_server_api_t *
+test_framework_get_default_server_api (void);
+
 mongoc_client_t *
 test_framework_new_default_client (void);
 mongoc_client_t *
