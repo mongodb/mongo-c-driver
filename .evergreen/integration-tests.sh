@@ -166,14 +166,11 @@ fi
 
 if [ ! -z "$REQUIRE_API_VERSION" ]; then
   MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --apiVersion=1"
+  # Set the requireApiVersion parameter.
+  `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS $DIR/require-api-version.js
 fi
 
 echo $MONGO_SHELL_CONNECTION_FLAGS
 
 `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.serverBuildInfo())' admin
 `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())' admin
-
-# Set the requireApiVersion parameter.
-if [ ! -z "$REQUIRE_API_VERSION" ]; then
-  `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS $DIR/require-api-version.js
-fi
