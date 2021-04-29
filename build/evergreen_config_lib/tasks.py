@@ -390,7 +390,7 @@ all_tasks = [
                          remote_file='${branch_name}/mongo-c-driver-debian-packages-${CURRENT_VERSION}.tar.gz',
                          content_type='${content_type|application/x-gzip}'),
                   s3_put(local_file='deb.tar.gz',
-                         remote_file='${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz',
+                         remote_file='${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-debian-packages.tar.gz',
                          content_type='${content_type|application/x-gzip}')]),
     NamedTask('rpm-package-build',
               commands=[
@@ -399,7 +399,7 @@ all_tasks = [
                          remote_file='${branch_name}/mongo-c-driver-rpm-packages-${CURRENT_VERSION}.tar.gz',
                          content_type='${content_type|application/x-gzip}'),
                   s3_put(local_file='rpm.tar.gz',
-                         remote_file='${project}/${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz',
+                         remote_file='${branch_name}/${revision}/${version_id}/${build_id}/${execution}/mongo-c-driver-rpm-packages.tar.gz',
                          content_type='${content_type|application/x-gzip}')]),
     NamedTask('install-uninstall-check-mingw',
               depends_on=OD([('name', 'make-release-archive'),
