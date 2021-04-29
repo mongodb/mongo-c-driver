@@ -862,7 +862,7 @@ test_insert_bulk_empty (void)
 
 
 static void
-auto_ismaster (mock_server_t *server,
+auto_hello (mock_server_t *server,
                int32_t max_wire_version,
                int32_t max_message_size,
                int32_t max_bson_size,
@@ -3649,11 +3649,11 @@ test_find_and_modify_write_concern (int wire_version)
    collection =
       mongoc_client_get_collection (client, "test", "test_find_and_modify");
 
-   auto_ismaster (server,
-                  wire_version, /* max_wire_version */
-                  48000000,     /* max_message_size */
-                  16777216,     /* max_bson_size */
-                  1000);        /* max_write_batch_size */
+   auto_hello (server,
+               wire_version, /* max_wire_version */
+               48000000,     /* max_message_size */
+               16777216,     /* max_bson_size */
+               1000);        /* max_write_batch_size */
 
    BSON_APPEND_INT32 (&doc, "superduper", 77889);
 

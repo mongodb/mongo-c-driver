@@ -359,7 +359,7 @@ mock_rs_run (mock_rs_t *rs)
 
    /* enqueue unhandled requests in rs->q, they're retrieved with
     * mock_rs_receives_query() &co. rs_q_append is added first so it
-    * runs last, after auto_ismaster.
+    * runs last, after auto_hello.
     */
    for (i = 0; i < rs->servers.len; i++) {
       mock_server_autoresponds (

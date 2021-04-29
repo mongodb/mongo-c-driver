@@ -1227,47 +1227,26 @@ typedef struct {
 
 
 static bool
-auto_ismaster (request_t *request, void *data)
+auto_hello_callback (request_t *request, void *data, bson_t *hello_response)
 {
    dollar_query_test_t *test;
-   const char *cluster_time = "";
-   const char *server_type;
-   char *hello;
-
-   if (!request->is_command) {
-      return false;
-   }
-
-   if (strcasecmp (request->command_name, "hello") != 0 &&
-       strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) != 0) {
-      return false;
-   }
+   bson_t cluster_time;
 
    test = (dollar_query_test_t *) data;
 
+   bson_init (hello_response);
+   BSON_APPEND_INT32 (hello_response, "ok", 1);
+   BSON_APPEND_BOOL (hello_response, "isWritablePrimary", !test->secondary);
+   BSON_APPEND_BOOL (hello_response, "secondary", test->secondary);
+   BSON_APPEND_INT32 (hello_response, "minWireVersion", 0);
+   BSON_APPEND_INT32 (hello_response, "maxWireVersion", WIRE_VERSION_OP_MSG);
+   BSON_APPEND_UTF8 (hello_response, "setName", "rs");
+
    if (test->cluster_time) {
-      cluster_time =
-         ", '$clusterTime': {'clusterTime': {'$timestamp': {'t': 1, 'i': 1}}}";
+      BSON_APPEND_DOCUMENT_BEGIN (hello_response, "$clusterTime", &cluster_time);
+      BSON_APPEND_TIMESTAMP (&cluster_time, "clusterTime", 1, 1);
+      bson_append_document_end (hello_response, &cluster_time);
    }
-
-   if (test->secondary) {
-      server_type = ", 'isWritablePrimary': false, 'secondary': true";
-   } else {
-      server_type = ", 'isWritablePrimary': true, 'secondary': false";
-   }
-
-   hello = bson_strdup_printf ("{'ok': 1.0,"
-                               " 'minWireVersion': 0,"
-                               " 'maxWireVersion': %d,"
-                               " 'setName': 'rs' %s %s}",
-                               WIRE_VERSION_OP_MSG,
-                               server_type,
-                               cluster_time);
-
-   mock_server_replies_simple (request, hello);
-
-   bson_free (hello);
-   request_destroy (request);
 
    return true;
 }
@@ -1290,7 +1269,7 @@ _test_dollar_query (void *ctx)
    test = (dollar_query_test_t *) ctx;
 
    server = mock_server_new ();
-   mock_server_autoresponds (server, auto_ismaster, test, NULL);
+   mock_server_auto_hello_callback (server, auto_hello_callback, test, NULL);
    mock_server_run (server);
 
    client =
