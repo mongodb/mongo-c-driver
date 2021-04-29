@@ -32,6 +32,8 @@ Update and return an object.
 
 ``reply`` is always initialized, and must be freed with :symbol:`bson:bson_destroy()`.
 
+If an unacknowledged write concern is set (through :symbol:`mongoc_find_and_modify_opts_append`), the output ``reply`` is always an empty document.
+
 Errors
 ------
 
