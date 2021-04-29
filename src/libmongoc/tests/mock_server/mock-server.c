@@ -527,7 +527,7 @@ auto_hello (request_t *request, void *data)
       return false;
    }
 
-   // Check whether we've got "hello" or legacy hello
+   /* Check whether we've got "hello" or legacy hello */
    is_hello = strcasecmp (request->command_name, "hello") == 0;
    is_legacy_hello =
       strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) == 0;
@@ -540,7 +540,7 @@ auto_hello (request_t *request, void *data)
       return false;
    }
 
-   // Convert responses for legacy hello
+   /* Convert responses for legacy hello */
    if (bson_iter_init_find (&iter, &response, "isWritablePrimary")) {
       BSON_APPEND_BOOL (
          &response, HANDSHAKE_RESPONSE_LEGACY_HELLO, bson_iter_bool (&iter));
