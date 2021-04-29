@@ -1,5 +1,4 @@
 #!/bin/sh
-set -o xtrace # print commands to stderr.
 
 # regex to match public headers.
 pattern="\.\/src\/libmongoc\/src\/mongoc\/mongoc.*[^private]\.h$"

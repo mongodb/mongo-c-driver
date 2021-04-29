@@ -1,5 +1,4 @@
 #!/bin/sh
-set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
@@ -184,8 +183,6 @@ else
     echo "mongoc-stat check ok"
   fi
 fi
-
-set -o xtrace
 
 if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then
   # Test our CMake package config file with CMake's find_package command.
