@@ -1652,16 +1652,16 @@ test_framework_new_default_client ()
 mongoc_server_api_t *
 test_framework_get_default_server_api (void)
 {
-   char *require_api_version = test_framework_getenv ("MONGODB_API_VERSION");
+   char *api_version = test_framework_getenv ("MONGODB_API_VERSION");
    mongoc_server_api_version_t version;
 
-   if (!require_api_version) {
+   if (!api_version) {
       return NULL;
    }
 
-   ASSERT (mongoc_server_api_version_from_string (require_api_version, &version));
+   ASSERT (mongoc_server_api_version_from_string (api_version, &version));
 
-   bson_free (require_api_version);
+   bson_free (api_version);
 
    return mongoc_server_api_new (version);
 }
