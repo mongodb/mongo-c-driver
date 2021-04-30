@@ -41,7 +41,6 @@ ping ()
 
    uri = bson_strdup_printf ("mongodb://localhost/?tls=true&tlsCAFile=%s",
                              ca_file);
-   /* TODO 3954: Replace with test_framework_client_new */
    ASSERT ((client = mongoc_client_new (uri)));
 
    bson_init (&ping);
