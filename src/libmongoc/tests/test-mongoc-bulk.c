@@ -3777,7 +3777,7 @@ test_bulk_max_msg_size (void)
                        strlen ("$clusterTime") + 2;
    }
 
-   /* Versioned API may be appended */
+   /* API version may be appended */
    if (client->api) {
       filler_string -= strlen ("apiVersion") + 7 +
                        strlen (mongoc_server_api_version_to_string (
