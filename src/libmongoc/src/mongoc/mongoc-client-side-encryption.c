@@ -945,9 +945,10 @@ _do_spawn (const char *path, char **args, bson_error_t *error)
       exit (EXIT_SUCCESS);
    }
 
-   /* If we later decide to change the working directory for the pid file path, possibly change the
-    * process's working directory with chdir like: `chdir (default_pid_path)`.
-    * Currently pid file ends up in application's working directory. */
+   /* If we later decide to change the working directory for the pid file path,
+    * possibly change the process's working directory with chdir like: `chdir
+    * (default_pid_path)`. Currently pid file ends up in application's working
+    * directory. */
 
    /* Set the user file creation mask to zero. */
    umask (0);
@@ -1155,7 +1156,7 @@ _parse_extra (const bson_t *extra,
       }
 
       if (!mongoc_uri_set_option_as_int32 (
-             *uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 5000)) {
+             *uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 10000)) {
          _uri_construction_error (error);
          GOTO (fail);
       }
@@ -1283,19 +1284,19 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
                          "Unable to create client to mongocryptd");
          GOTO (fail);
       }
-      /* Similarly, single threaded clients will by default wait for 5 second
+      /* Similarly, single threaded clients will by default wait for 10 second
        * cooldown period after failing to connect to a server before making
        * another attempt. Meaning if the first attempt to mongocryptd fails
-       * to connect, then the user observes a 5 second delay. This is not
+       * to connect, then the user observes a 10 second delay. This is not
        * configurable in the URI, so override. */
       _mongoc_topology_bypass_cooldown (
          client->topology->mongocryptd_client->topology);
 
       /* Also, since single threaded server selection can foreseeably take
-       * connectTimeoutMS (which by default is longer than 5 seconds), reduce
+       * connectTimeoutMS (which by default is longer than 10 seconds), reduce
        * this as well. */
       if (!mongoc_uri_set_option_as_int32 (
-             mongocryptd_uri, MONGOC_URI_CONNECTTIMEOUTMS, 5000)) {
+             mongocryptd_uri, MONGOC_URI_CONNECTTIMEOUTMS, 10000)) {
          _uri_construction_error (error);
          GOTO (fail);
       }
