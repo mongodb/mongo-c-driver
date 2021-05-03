@@ -66,7 +66,7 @@ def strip_lines(s):
     return '\n'.join(line for line in s.split('\n') if line.strip())
 
 
-def shell_exec(script, test=True, errexit=True, xtrace=True, silent=False,
+def shell_exec(script, test=True, errexit=True, xtrace=False, silent=False,
                continue_on_err=False, working_dir=None, background=False):
     dedented = ''
     if errexit:

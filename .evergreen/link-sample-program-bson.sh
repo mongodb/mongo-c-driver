@@ -1,5 +1,4 @@
 #!/bin/sh
-set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 # Supported/used environment variables:
@@ -144,7 +143,6 @@ if [ "$LINK_STATIC" ]; then
   fi
 fi
 
-set -o xtrace
 cd $SRCROOT
 
 if [ "$BUILD_SAMPLE_WITH_CMAKE" ]; then

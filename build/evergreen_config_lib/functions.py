@@ -75,12 +75,11 @@ all_functions = OD([
         ./bin/pip install sphinx
         cd ..
 
-        set -o xtrace
         export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
         export MONGOC_TEST_SKIP_LIVE=on
         export MONGOC_TEST_SKIP_SLOW=on
         sh .evergreen/check-release-archive.sh
-        ''', xtrace=False),
+        '''),
     )),
     ('install ssl', Function(
         shell_mongoc(r'SSL=${SSL} sh .evergreen/install-ssl.sh', test=False),
@@ -113,8 +112,7 @@ all_functions = OD([
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
         aws s3 cp doc/html s3://mciuploads/${project}/docs/libbson/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-        ''', test=False, silent=True, working_dir='mongoc/cmake_build/src/libbson',
-                   xtrace=False),
+        ''', test=False, silent=True, working_dir='mongoc/cmake_build/src/libbson'),
         s3_put('docs/libbson/${CURRENT_VERSION}/index.html',
                aws_key='${aws_key}', aws_secret='${aws_secret}',
                local_file='mongoc/cmake_build/src/libbson/doc/html/index.html',
@@ -124,8 +122,7 @@ all_functions = OD([
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
         aws s3 cp doc/html s3://mciuploads/${project}/docs/libmongoc/${CURRENT_VERSION} --recursive --acl public-read --region us-east-1
-        ''', test=False, silent=True, working_dir='mongoc/cmake_build/src/libmongoc',
-                   xtrace=False),
+        ''', test=False, silent=True, working_dir='mongoc/cmake_build/src/libmongoc'),
         s3_put('docs/libmongoc/${CURRENT_VERSION}/index.html',
                aws_key='${aws_key}', aws_secret='${aws_secret}',
                local_file='mongoc/cmake_build/src/libmongoc/doc/html/index.html',
@@ -143,7 +140,7 @@ all_functions = OD([
 
         sh .evergreen/man-pages-to-html.sh libbson cmake_build/src/libbson/doc/man > bson-man-pages.html
         sh .evergreen/man-pages-to-html.sh libmongoc cmake_build/src/libmongoc/doc/man > mongoc-man-pages.html
-        ''', test=False, silent=True, xtrace=False),
+        ''', test=False, silent=True),
         s3_put('man-pages/libbson/${CURRENT_VERSION}/index.html',
                aws_key='${aws_key}', aws_secret='${aws_secret}',
                local_file='mongoc/bson-man-pages.html', bucket='mciuploads',
@@ -160,7 +157,7 @@ all_functions = OD([
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
         aws s3 cp coverage s3://mciuploads/${project}/%s/coverage/ --recursive --acl public-read --region us-east-1
-        ''' % (build_path,), test=False, silent=True, xtrace=False),
+        ''' % (build_path,), test=False, silent=True),
         s3_put(build_path + '/coverage/index.html', aws_key='${aws_key}',
                aws_secret='${aws_secret}',
                local_file='mongoc/coverage/index.html', bucket='mciuploads',
@@ -170,7 +167,7 @@ all_functions = OD([
     ('abi report', Function(
         shell_mongoc(r'''
         sh .evergreen/abi-compliance-check.sh
-        ''', test=False, xtrace=True),
+        ''', test=False),
         shell_mongoc(r'''
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
@@ -181,7 +178,7 @@ all_functions = OD([
         else
           exit 0
         fi
-        ''' % (build_path,), silent=True, test=False, xtrace=False),
+        ''' % (build_path,), silent=True, test=False),
         s3_put(build_path + '/abi-compliance/compat_report.html',
                aws_key='${aws_key}', aws_secret='${aws_secret}',
                local_files_include_filter='mongoc/abi-compliance/compat_reports/**/*.html',
@@ -200,7 +197,7 @@ all_functions = OD([
         export AWS_ACCESS_KEY_ID=${aws_key}
         export AWS_SECRET_ACCESS_KEY=${aws_secret}
         aws s3 cp scan s3://mciuploads/${project}/%s/scan/ --recursive --acl public-read --region us-east-1
-        ''' % (build_path,), test=False, silent=True, xtrace=False),
+        ''' % (build_path,), test=False, silent=True),
         s3_put(build_path + '/scan/index.html', aws_key='${aws_key}',
                aws_secret='${aws_secret}', local_file='mongoc/scan.html',
                bucket='mciuploads', permissions='public-read',
@@ -315,7 +312,6 @@ all_functions = OD([
           export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
         fi
         set -o errexit
-        set -o xtrace
         sh .evergreen/run-tests.sh
         '''),
     )),
@@ -345,7 +341,7 @@ all_functions = OD([
         export OBSOLETE_TLS='${obsolete_tls}'
         export VALGRIND='${valgrind}'
         sh .evergreen/run-auth-tests.sh
-        ''', silent=True, xtrace=False),
+        ''', silent=True),
     )),
     ('run mock server tests', Function(
         shell_mongoc(
@@ -363,14 +359,14 @@ all_functions = OD([
           cat $i | tr -d '\r' > $i.new
           mv $i.new $i
         done
-        ''', test=False, xtrace=False),
+        ''', test=False),
     )),
     ('make files executable', Function(
         shell_mongoc(r'''
         for i in $(find .evergreen -name \*.sh); do
           chmod +x $i
         done
-        ''', test=False, xtrace=False),
+        ''', test=False),
     )),
     ('prepare kerberos', Function(
         shell_mongoc(r'''
@@ -379,7 +375,7 @@ all_functions = OD([
            base64 --decode /tmp/drivers.keytab.base64 > /tmp/drivers.keytab
            cat .evergreen/kerberos.realm | $SUDO tee -a /etc/krb5.conf
         fi
-        ''', test=False, silent=True, xtrace=False),
+        ''', test=False, silent=True),
     )),
     ('link sample program', Function(
         shell_mongoc(r'''
@@ -445,7 +441,7 @@ all_functions = OD([
         shell_mongoc(r'''
         export CODECOV_TOKEN=${codecov_token}
         curl -s https://codecov.io/bash | bash
-        ''', test=False, xtrace=False),
+        ''', test=False),
     )),
     ('debug-compile-coverage-notest-nosasl-nossl', Function(
         shell_mongoc(r'''
@@ -461,7 +457,6 @@ all_functions = OD([
     )),
     ('build mongohouse', Function(
         shell_mongoc(r'''
-        set -o xtrace
         if [ ! -d "drivers-evergreen-tools" ]; then
            git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git
         fi
@@ -474,8 +469,6 @@ all_functions = OD([
     )),
     ('run mongohouse', Function(
         shell_mongoc(r'''
-        set -o xtrace
-
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
 
@@ -484,7 +477,6 @@ all_functions = OD([
     )),
     ('test mongohouse', Function(
         shell_mongoc(r'''
-        set -o xtrace
         echo "testing that mongohouse is running..."
         ps aux | grep mongohouse
 
@@ -550,8 +542,7 @@ all_functions = OD([
         set +o xtrace
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
-        set -o xtrace
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
-        ''', xtrace=False)
+        ''')
     ))
 ])

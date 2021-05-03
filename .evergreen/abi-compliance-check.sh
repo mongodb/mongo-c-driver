@@ -1,5 +1,4 @@
 #!/bin/bash
-set -o xtrace   # Write all commands first to stderr
 set -o errexit
 
 # create all needed directories

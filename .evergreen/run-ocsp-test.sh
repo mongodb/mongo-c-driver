@@ -30,7 +30,6 @@
 
 # Fail on any command returning a non-zero exit status.
 set -o errexit
-set -o xtrace
 
 CDRIVER_ROOT=${CDRIVER_ROOT:-$(pwd)}
 CDRIVER_BUILD=${CDRIVER_BUILD:-$(pwd)}
