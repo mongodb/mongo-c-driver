@@ -39,7 +39,6 @@
 # CERT_TYPE
 #   Required. Set to either RSA or ECDSA.
 
-set -o xtrace   # Write all commands first to stderr
 set -o errexit  # Exit the script with error if any of the commands fail
 
 CDRIVER_ROOT=${CDRIVER_ROOT:-$(pwd)}

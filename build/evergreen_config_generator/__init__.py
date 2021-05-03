@@ -46,7 +46,6 @@ class ConfigObject(object):
 #         params:
 #           script: |-
 #             set -o errexit
-#             set -o xtrace
 #             ...
 #
 # Write values compactly except multiline strings, which use "|" style. Write

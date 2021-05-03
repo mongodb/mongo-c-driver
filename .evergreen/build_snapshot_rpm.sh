@@ -1,6 +1,5 @@
 #!/bin/sh
 
-set -o xtrace
 set -o errexit
 
 #
@@ -80,7 +79,6 @@ mock_root=$(sudo mock -r ${config} --use-bootstrap-image --isolation=simple --pr
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --install rpmdevtools git rpm-build cmake python python3-sphinx gcc openssl-devel
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "$(pwd)" "$(pwd)/${spec_file}" /tmp
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
-  set -o xtrace ;
   python build/calc_release_version.py | sed -E 's/([^-]+).*/\1/' > VERSION_CURRENT ;
   python build/calc_release_version.py -p > VERSION_RELEASED
   )"
@@ -104,7 +102,6 @@ fi
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyout "/tmp/${build_dir}/${spec_file}" ..
 
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
-  set -o xtrace ;
   [ -d cmake-build ] || mkdir cmake-build ;
   cd cmake-build ;
   /usr/bin/cmake -DENABLE_MAN_PAGES=ON -DENABLE_HTML_DOCS=ON -DENABLE_ZLIB=BUNDLED -DENABLE_BSON=ON .. ;
@@ -125,7 +122,6 @@ sudo mock --resultdir="${mock_result}" --use-bootstrap-image --isolation=simple 
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --copyin "${mock_result}" /tmp
 
 sudo mock -r ${config} --use-bootstrap-image --isolation=simple --cwd "/tmp/${build_dir}" --chroot -- /bin/sh -c "(
-  set -o xtrace &&
   rpm -Uvh ../mock-result/*.rpm &&
   gcc -I/usr/include/libmongoc-1.0 -I/usr/include/libbson-1.0 -o example-client src/libmongoc/examples/example-client.c -lmongoc-1.0 -lbson-1.0
   )"

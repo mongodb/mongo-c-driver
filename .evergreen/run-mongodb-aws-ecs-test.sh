@@ -2,8 +2,6 @@
 
 # ECS tests have paths /root/mongoc/
 
-set -o xtrace
-
 echo "run-mongodb-aws-ecs-test.sh"
 
 CDRIVER_BUILD=/root/mongoc

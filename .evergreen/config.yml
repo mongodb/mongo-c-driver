@@ -21,7 +21,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         # TODO: CDRIVER-3573 do not hardcode the version.
         if [ -n "${github_pr_number}" -o "${is_patch}" = "true" ]; then
            # This is a GitHub PR or patch build, probably branched from master
@@ -41,16 +40,14 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         rm -f *.tar.gz
         curl --retry 5 https://s3.amazonaws.com/mciuploads/${project}/${branch_name}/mongo-c-driver-${CURRENT_VERSION}.tar.gz --output mongoc.tar.gz -sS --max-time 120
   upload release:
   - command: shell.exec
     params:
       shell: bash
-      script: |-
-        set -o xtrace
-        [ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz mongoc.tar.gz
+      script: '[ -f mongoc/cmake_build/mongo*gz ] && mv mongoc/cmake_build/mongo*gz
+        mongoc.tar.gz'
   - command: s3.put
     params:
       aws_key: ${aws_key}
@@ -90,7 +87,6 @@ functions:
         . bin/activate
         ./bin/pip install sphinx
         cd ..
-        set -o xtrace
         export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
         export MONGOC_TEST_SKIP_LIVE=on
         export MONGOC_TEST_SKIP_SLOW=on
@@ -102,7 +98,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         SSL=${SSL} sh .evergreen/install-ssl.sh
   fetch build:
   - command: shell.exec
@@ -111,7 +106,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         rm -rf mongoc
   - command: s3.get
     params:
@@ -126,7 +120,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         mkdir mongoc
         if command -v gtar 2>/dev/null; then
            TAR=gtar
@@ -239,7 +232,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         sh .evergreen/abi-compliance-check.sh
   - command: shell.exec
     params:
@@ -274,7 +266,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         if find scan -name \*.html | grep -q html; then
           (cd scan && find . -name index.html -exec echo "<li><a href='{}'>{}</a></li>" \;) >> scan.html
         else
@@ -307,7 +298,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         DIR=MO
         [ -d "/cygdrive/c/data/mo" ] && DIR="/cygdrive/c/data/mo"
         [ -d $DIR ] && find $DIR -name \*.log | xargs tar czf mongodb-logs.tar.gz
@@ -337,7 +327,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         # Find all core files from mongodb in orchestration and move to mongoc
         DIR=MO
         MDMP_DIR=$DIR
@@ -377,7 +366,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         ./.evergreen/debug-core-evergreen.sh
   upload working dir:
   - command: archive.targz_pack
@@ -407,7 +395,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export MONGODB_VERSION=${VERSION}
         export TOPOLOGY=${TOPOLOGY}
         export IPV4_ONLY=${IPV4_ONLY}
@@ -426,7 +413,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export COMPRESSORS='${COMPRESSORS}'
         export CC='${CC}'
         export AUTH=${AUTH}
@@ -455,7 +441,6 @@ functions:
           export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
         fi
         set -o errexit
-        set -o xtrace
         sh .evergreen/run-tests.sh
   run tests bson:
   - command: shell.exec
@@ -465,7 +450,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         CC="${CC}" sh .evergreen/run-tests-bson.sh
   run auth tests:
   - command: shell.exec
@@ -504,7 +488,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         CC="${CC}" VALGRIND=${VALGRIND} sh .evergreen/run-mock-server-tests.sh
   cleanup:
   - command: shell.exec
@@ -513,7 +496,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         cd MO
         mongo-orchestration stop
   windows fix:
@@ -558,7 +540,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         # Compile a program that links dynamically or statically to libmongoc,
         # using variables from pkg-config or CMake's find_package command.
         export BUILD_SAMPLE_WITH_CMAKE=${BUILD_SAMPLE_WITH_CMAKE}
@@ -575,7 +556,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         # Compile a program that links dynamically or statically to libbson,
         # using variables from pkg-config or from CMake's find_package command.
         BUILD_SAMPLE_WITH_CMAKE=  BUILD_SAMPLE_WITH_CMAKE_DEPRECATED=  LINK_STATIC=  sh .evergreen/link-sample-program-bson.sh
@@ -592,7 +572,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         # Build libmongoc with CMake and compile a program that links
         # dynamically or statically to it, using variables from CMake's
         # find_package command.
@@ -608,7 +587,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
         cmd.exe /c .\\.evergreen\\link-sample-program-mingw.cmd
@@ -620,7 +598,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         # Build libmongoc with CMake and compile a program that links
         # dynamically or statically to it, using variables from CMake's
         # find_package command.
@@ -636,7 +613,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         # Build libmongoc with CMake and compile a program that links
         # dynamically to it, using variables from pkg-config.exe.
         cmd.exe /c .\\.evergreen\\link-sample-program-mingw-bson.cmd
@@ -657,7 +633,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OFF SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
   debug-compile-coverage-notest-nosasl-openssl:
@@ -668,7 +643,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_COVERAGE=ON -DENABLE_EXAMPLES=OFF"
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL SKIP_MOCK_TESTS=ON sh .evergreen/compile.sh
   build mongohouse:
@@ -679,8 +653,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
-        set -o xtrace
         if [ ! -d "drivers-evergreen-tools" ]; then
            git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git
         fi
@@ -697,8 +669,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
-        set -o xtrace
         cd drivers-evergreen-tools
         export DRIVERS_TOOLS=$(pwd)
         sh .evergreen/atlas_data_lake/run-mongohouse-local.sh
@@ -710,8 +680,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
-        set -o xtrace
         echo "testing that mongohouse is running..."
         ps aux | grep mongohouse
         echo $(pwd)
@@ -730,7 +698,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export COMPRESSORS='${COMPRESSORS}'
         export CC='${CC}'
         export AUTH=${AUTH}
@@ -754,7 +721,6 @@ functions:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         # Add AWS variables to a file.
         # Clone in one directory above so it does not get uploaded in working directory.
         git clone --depth=1 git://github.com/mongodb-labs/drivers-evergreen-tools.git ../drivers-evergreen-tools
@@ -788,7 +754,6 @@ functions:
         set +o xtrace
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
-        set -o xtrace
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
 pre:
 - func: fetch source
@@ -813,7 +778,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         sh ./.evergreen/check-public-decls.sh
   - command: shell.exec
     type: test
@@ -822,7 +786,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         python ./.evergreen/check-preludes.py .
 - name: make-release-archive
   commands:
@@ -842,7 +805,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fno-strict-overflow -D_FORTIFY_SOURCE=2 -fstack-protector-all -fPIE -O"
         export DEBUG="ON"
         export LDFLAGS="-pie -Wl,-z,relro -Wl,-z,now"
@@ -866,7 +828,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SNAPPY="OFF"
         export ZLIB="BUNDLED"
@@ -885,7 +846,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SNAPPY="ON"
         export ZLIB="OFF"
@@ -904,7 +864,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SNAPPY="OFF"
         export ZLIB="OFF"
@@ -925,7 +884,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SNAPPY="ON"
         export ZLIB="BUNDLED"
@@ -943,7 +901,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_EXTRA_ALIGNMENT=OFF"
         export SNAPPY="OFF"
@@ -964,7 +921,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SSL="OFF"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -978,7 +934,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-flto"
         export DEBUG="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -992,7 +947,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-flto=thin"
         export DEBUG="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1011,7 +965,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-std=c11 -D_XOPEN_SOURCE=600"
         export DEBUG="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1030,7 +983,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-std=c99 -D_XOPEN_SOURCE=600"
         export DEBUG="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1049,7 +1001,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-std=c89 -D_POSIX_C_SOURCE=200112L -pedantic"
         export DEBUG="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1067,7 +1018,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-DBSON_MEMCHECK"
         export DEBUG="ON"
         export SASL="OFF"
@@ -1088,7 +1038,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export COVERAGE="ON"
         export DEBUG="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1106,7 +1055,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export ENABLE_SHM_COUNTERS="OFF"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1124,7 +1072,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CC="clang-3.8"
         export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
         export CHECK_LOG="ON"
@@ -1147,7 +1094,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fsanitize=address -pthread"
         export CHECK_LOG="ON"
         export DEBUG="ON"
@@ -1170,7 +1116,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CC="clang-3.8"
         export CFLAGS="-fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
         export CHECK_LOG="ON"
@@ -1194,7 +1139,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CC="clang-3.8"
         export CFLAGS="-fsanitize=undefined -fno-omit-frame-pointer -DBSON_MEMCHECK"
         export CHECK_LOG="ON"
@@ -1220,7 +1164,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export ANALYZE="ON"
         export CC="clang"
         export DEBUG="ON"
@@ -1234,7 +1177,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         if find scan -name \*.html | grep -q html; then
           exit 123
         fi
@@ -1247,7 +1189,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-Werror -Wno-cast-align"
         export DEBUG="ON"
         export TRACING="ON"
@@ -1265,7 +1206,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export RELEASE="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -1282,7 +1222,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SSL="OPENSSL"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1300,7 +1239,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SSL="OPENSSL_STATIC"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1318,7 +1256,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SSL="DARWIN"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1336,7 +1273,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SSL="WINDOWS"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1354,7 +1290,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SASL="AUTO"
         export SSL="OFF"
@@ -1373,7 +1308,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SASL="AUTO"
         export SSL="OPENSSL"
@@ -1392,7 +1326,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SASL="AUTO"
         export SSL="OPENSSL_STATIC"
@@ -1411,7 +1344,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SASL="AUTO"
         export SSL="DARWIN"
@@ -1430,7 +1362,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SASL="CYRUS"
         export SSL="WINDOWS"
@@ -1449,7 +1380,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SASL="SSPI"
         export SSL="OFF"
@@ -1468,7 +1398,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SASL="SSPI"
         export SSL="OPENSSL"
@@ -1487,7 +1416,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SASL="SSPI"
         export SSL="OPENSSL_STATIC"
@@ -1502,7 +1430,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export ENABLE_RDTSCP="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1520,7 +1447,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SASL="SSPI"
         export SSL="WINDOWS"
@@ -1537,7 +1463,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export DEBUG="ON"
         export SRV="OFF"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1741,7 +1666,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export IS_PATCH="${is_patch}"
         sh .evergreen/debian_package_build.sh
   - command: s3.put
@@ -1771,7 +1695,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         sh .evergreen/build_snapshot_rpm.sh
   - command: s3.put
     params:
@@ -1803,7 +1726,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CC="C:/mingw-w64/x86_64-4.9.1-posix-seh-rt_v3-rev1/mingw64/bin/gcc.exe"
         BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
         cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
@@ -1819,7 +1741,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CC="Visual Studio 14 2015 Win64"
         BSON_ONLY=1 cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
         cmd.exe /c .\\.evergreen\\install-uninstall-check-windows.cmd
@@ -1835,7 +1756,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         DESTDIR="$(pwd)/dest" sh ./.evergreen/install-uninstall-check.sh
         BSON_ONLY=1 sh ./.evergreen/install-uninstall-check.sh
         sh ./.evergreen/install-uninstall-check.sh
@@ -1848,7 +1768,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-Werror -Wno-cast-align"
         export DEBUG="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
@@ -1868,7 +1787,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fPIC"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
@@ -1878,7 +1796,6 @@ tasks:
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fPIC"
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
@@ -1902,7 +1819,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fPIC"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
@@ -1912,7 +1828,6 @@ tasks:
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fPIC"
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
@@ -1936,7 +1851,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fPIC"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
@@ -1946,7 +1860,6 @@ tasks:
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fPIC"
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
@@ -1970,7 +1883,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fPIC"
         export DEBUG="ON"
         export EXTRA_CONFIGURE_FLAGS="-DENABLE_MONGOC=OFF"
@@ -1980,7 +1892,6 @@ tasks:
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fPIC"
         export COMPILE_LIBMONGOCRYPT="ON"
         export DEBUG="ON"
@@ -2002,7 +1913,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
         export CHECK_LOG="ON"
         export DEBUG="ON"
@@ -2013,7 +1923,6 @@ tasks:
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
         rm CMakeCache.txt
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fPIC -fsanitize=address -fno-omit-frame-pointer -DBSON_MEMCHECK"
         export CHECK_LOG="ON"
         export COMPILE_LIBMONGOCRYPT="ON"
@@ -2035,7 +1944,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-Wno-redundant-decls"
         export DEBUG="ON"
         export SASL="OFF"
@@ -2054,7 +1962,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS="-fsanitize=thread -fno-omit-frame-pointer"
         export CHECK_LOG="ON"
         export DEBUG="ON"
@@ -2078,7 +1985,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         sh ./.evergreen/build-and-test-with-toolchain.sh
 - name: test-valgrind-latest-server-auth-nosasl-openssl
   tags:
@@ -17497,7 +17403,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         VALGRIND=ON DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=AUTO                   SSL=OPENSSL CFLAGS='-DBSON_MEMCHECK' sh .evergreen/compile.sh
   - func: run auth tests
     vars:
@@ -17560,7 +17465,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
   - func: run auth tests
     vars:
@@ -17578,7 +17482,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
   - func: run auth tests
     vars:
@@ -17596,7 +17499,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS=-Wno-redundant-decls
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
   - func: run auth tests
@@ -17613,7 +17515,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS=-Wno-redundant-decls
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL OPENSSL_FIPS=1 sh .evergreen/compile.sh
   - func: run auth tests
@@ -17630,7 +17531,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
@@ -17646,7 +17546,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=OPENSSL sh .evergreen/compile.sh
   - func: run auth tests
   - func: upload build
@@ -17662,7 +17561,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL sh .evergreen/compile.sh
   - func: run auth tests
     vars:
@@ -17680,7 +17578,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         export CFLAGS=-Wno-redundant-decls
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=AUTO sh .evergreen/compile.sh
   - func: run auth tests
@@ -17699,7 +17596,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         DEBUG=ON CC='${CC}' MARCH='${MARCH}' SASL=OFF SSL=LIBRESSL sh .evergreen/compile.sh
   - func: run auth tests
     vars:
@@ -17798,7 +17694,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         # Compile mongoc-ping. Disable unnecessary dependencies since mongoc-ping is copied to a remote Ubuntu 18.04 ECS cluster for testing, which may not have all dependent libraries.
         . .evergreen/find-cmake.sh
         export CC='${CC}'
@@ -17981,7 +17876,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -17997,7 +17891,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-rsa-delegate-4.4
   tags:
@@ -18015,7 +17908,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18031,7 +17923,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-rsa-delegate-latest
   tags:
@@ -18049,7 +17940,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18065,7 +17955,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-rsa-delegate-4.4
   tags:
@@ -18083,7 +17972,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18099,7 +17987,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-ecdsa-delegate-latest
   tags:
@@ -18117,7 +18004,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18133,7 +18019,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-ecdsa-delegate-4.4
   tags:
@@ -18151,7 +18036,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18167,7 +18051,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-delegate-latest
   tags:
@@ -18185,7 +18068,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18201,7 +18083,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-delegate-4.4
   tags:
@@ -18219,7 +18100,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18235,7 +18115,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-rsa-nodelegate-latest
   tags:
@@ -18253,7 +18132,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18269,7 +18147,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-rsa-nodelegate-4.4
   tags:
@@ -18287,7 +18164,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18303,7 +18179,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-rsa-nodelegate-latest
   tags:
@@ -18321,7 +18196,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18337,7 +18211,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-rsa-nodelegate-4.4
   tags:
@@ -18355,7 +18228,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18371,7 +18243,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-ecdsa-nodelegate-latest
   tags:
@@ -18389,7 +18260,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18405,7 +18275,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_1-ecdsa-nodelegate-4.4
   tags:
@@ -18423,7 +18292,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18439,7 +18307,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-nodelegate-latest
   tags:
@@ -18457,7 +18324,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18473,7 +18339,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_1-ecdsa-nodelegate-4.4
   tags:
@@ -18491,7 +18356,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18507,7 +18371,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-rsa-delegate-latest
   tags:
@@ -18525,7 +18388,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18541,7 +18403,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-rsa-delegate-4.4
   tags:
@@ -18559,7 +18420,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18575,7 +18435,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-rsa-delegate-latest
   tags:
@@ -18593,7 +18452,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18609,7 +18467,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-rsa-delegate-4.4
   tags:
@@ -18627,7 +18484,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18643,7 +18499,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-ecdsa-delegate-latest
   tags:
@@ -18661,7 +18516,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18677,7 +18531,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-ecdsa-delegate-4.4
   tags:
@@ -18695,7 +18548,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18711,7 +18563,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-delegate-latest
   tags:
@@ -18729,7 +18580,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18745,7 +18595,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-delegate-4.4
   tags:
@@ -18763,7 +18612,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18779,7 +18627,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-rsa-nodelegate-latest
   tags:
@@ -18797,7 +18644,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18813,7 +18659,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-rsa-nodelegate-4.4
   tags:
@@ -18831,7 +18676,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18847,7 +18691,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-rsa-nodelegate-latest
   tags:
@@ -18865,7 +18708,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18881,7 +18723,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-rsa-nodelegate-4.4
   tags:
@@ -18899,7 +18740,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18915,7 +18755,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-ecdsa-nodelegate-latest
   tags:
@@ -18933,7 +18772,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18949,7 +18787,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_2-ecdsa-nodelegate-4.4
   tags:
@@ -18967,7 +18804,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -18983,7 +18819,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-nodelegate-latest
   tags:
@@ -19001,7 +18836,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19017,7 +18851,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_2-ecdsa-nodelegate-4.4
   tags:
@@ -19035,7 +18868,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19051,7 +18883,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-rsa-delegate-latest
   tags:
@@ -19069,7 +18900,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19085,7 +18915,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-rsa-delegate-4.4
   tags:
@@ -19103,7 +18932,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19119,7 +18947,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-rsa-delegate-latest
   tags:
@@ -19137,7 +18964,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19153,7 +18979,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-rsa-delegate-4.4
   tags:
@@ -19171,7 +18996,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19187,7 +19011,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_3-rsa-delegate-latest
   tags:
@@ -19205,7 +19028,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19221,7 +19043,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_3-rsa-delegate-4.4
   tags:
@@ -19239,7 +19060,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19255,7 +19075,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-test_3-rsa-delegate-latest
   tags:
@@ -19273,7 +19092,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19289,7 +19107,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-test_3-rsa-delegate-4.4
   tags:
@@ -19307,7 +19124,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19323,7 +19139,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-ecdsa-delegate-latest
   tags:
@@ -19341,7 +19156,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19357,7 +19171,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-ecdsa-delegate-4.4
   tags:
@@ -19375,7 +19188,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19391,7 +19203,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-delegate-latest
   tags:
@@ -19409,7 +19220,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19425,7 +19235,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-delegate-4.4
   tags:
@@ -19443,7 +19252,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19459,7 +19267,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-rsa-nodelegate-latest
   tags:
@@ -19477,7 +19284,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19493,7 +19299,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-rsa-nodelegate-4.4
   tags:
@@ -19511,7 +19316,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19527,7 +19331,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-rsa-nodelegate-latest
   tags:
@@ -19545,7 +19348,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19561,7 +19363,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-rsa-nodelegate-4.4
   tags:
@@ -19579,7 +19380,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19595,7 +19395,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_3-rsa-nodelegate-latest
   tags:
@@ -19613,7 +19412,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19629,7 +19427,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_3-rsa-nodelegate-4.4
   tags:
@@ -19647,7 +19444,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19663,7 +19459,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-test_3-rsa-nodelegate-latest
   tags:
@@ -19681,7 +19476,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19697,7 +19491,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-test_3-rsa-nodelegate-4.4
   tags:
@@ -19715,7 +19508,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19731,7 +19523,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-ecdsa-nodelegate-latest
   tags:
@@ -19749,7 +19540,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19765,7 +19555,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_3-ecdsa-nodelegate-4.4
   tags:
@@ -19783,7 +19572,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19799,7 +19587,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-nodelegate-latest
   tags:
@@ -19817,7 +19604,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19833,7 +19619,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_3-ecdsa-nodelegate-4.4
   tags:
@@ -19851,7 +19636,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19867,7 +19651,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_3 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-rsa-delegate-latest
   tags:
@@ -19885,7 +19668,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19901,7 +19683,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-rsa-delegate-4.4
   tags:
@@ -19919,7 +19700,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19935,7 +19715,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-rsa-delegate-latest
   tags:
@@ -19953,7 +19732,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -19969,7 +19747,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-rsa-delegate-4.4
   tags:
@@ -19987,7 +19764,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20003,7 +19779,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_4-rsa-delegate-latest
   tags:
@@ -20021,7 +19796,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20037,7 +19811,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_4-rsa-delegate-4.4
   tags:
@@ -20055,7 +19828,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20071,7 +19843,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-test_4-rsa-delegate-latest
   tags:
@@ -20089,7 +19860,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20105,7 +19875,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-test_4-rsa-delegate-4.4
   tags:
@@ -20123,7 +19892,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20139,7 +19907,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-ecdsa-delegate-latest
   tags:
@@ -20157,7 +19924,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20173,7 +19939,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-ecdsa-delegate-4.4
   tags:
@@ -20191,7 +19956,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20207,7 +19971,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-delegate-latest
   tags:
@@ -20225,7 +19988,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20241,7 +20003,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-delegate-4.4
   tags:
@@ -20259,7 +20020,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20275,7 +20035,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-rsa-nodelegate-latest
   tags:
@@ -20293,7 +20052,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20309,7 +20067,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-rsa-nodelegate-4.4
   tags:
@@ -20327,7 +20084,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20343,7 +20099,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-rsa-nodelegate-latest
   tags:
@@ -20361,7 +20116,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20377,7 +20131,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-rsa-nodelegate-4.4
   tags:
@@ -20395,7 +20148,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20411,7 +20163,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_4-rsa-nodelegate-latest
   tags:
@@ -20429,7 +20180,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20445,7 +20195,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-test_4-rsa-nodelegate-4.4
   tags:
@@ -20463,7 +20212,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20479,7 +20227,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-test_4-rsa-nodelegate-latest
   tags:
@@ -20497,7 +20244,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20513,7 +20259,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-test_4-rsa-nodelegate-4.4
   tags:
@@ -20531,7 +20276,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20547,7 +20291,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-ecdsa-nodelegate-latest
   tags:
@@ -20565,7 +20308,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20581,7 +20323,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-test_4-ecdsa-nodelegate-4.4
   tags:
@@ -20599,7 +20340,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20615,7 +20355,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-nodelegate-latest
   tags:
@@ -20633,7 +20372,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20649,7 +20387,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-test_4-ecdsa-nodelegate-4.4
   tags:
@@ -20667,7 +20404,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20683,7 +20419,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-soft_fail_test-rsa-nodelegate-latest
   tags:
@@ -20701,7 +20436,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20717,7 +20451,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-soft_fail_test-rsa-nodelegate-4.4
   tags:
@@ -20735,7 +20468,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20751,7 +20483,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-soft_fail_test-rsa-nodelegate-latest
   tags:
@@ -20769,7 +20500,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20785,7 +20515,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-soft_fail_test-rsa-nodelegate-4.4
   tags:
@@ -20803,7 +20532,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20819,7 +20547,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-latest
   tags:
@@ -20837,7 +20564,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20853,7 +20579,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-soft_fail_test-rsa-nodelegate-4.4
   tags:
@@ -20871,7 +20596,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20887,7 +20611,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-soft_fail_test-rsa-nodelegate-latest
   tags:
@@ -20905,7 +20628,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20921,7 +20643,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-soft_fail_test-rsa-nodelegate-4.4
   tags:
@@ -20939,7 +20660,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20955,7 +20675,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-soft_fail_test-ecdsa-nodelegate-latest
   tags:
@@ -20973,7 +20692,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -20989,7 +20707,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-soft_fail_test-ecdsa-nodelegate-4.4
   tags:
@@ -21007,7 +20724,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21023,7 +20739,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-soft_fail_test-ecdsa-nodelegate-latest
   tags:
@@ -21041,7 +20756,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21057,7 +20771,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-soft_fail_test-ecdsa-nodelegate-4.4
   tags:
@@ -21075,7 +20788,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21091,7 +20803,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=SOFT_FAIL_TEST CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-rsa-delegate-latest
   tags:
@@ -21109,7 +20820,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21125,7 +20835,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-rsa-delegate-4.4
   tags:
@@ -21143,7 +20852,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21159,7 +20867,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-delegate-latest
   tags:
@@ -21177,7 +20884,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21193,7 +20899,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-delegate-4.4
   tags:
@@ -21211,7 +20916,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21227,7 +20931,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-delegate-latest
   tags:
@@ -21245,7 +20948,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21261,7 +20963,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-delegate-4.4
   tags:
@@ -21279,7 +20980,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21295,7 +20995,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_1-rsa-delegate-latest
   tags:
@@ -21313,7 +21012,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21329,7 +21027,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_1-rsa-delegate-4.4
   tags:
@@ -21347,7 +21044,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21363,7 +21059,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-ecdsa-delegate-latest
   tags:
@@ -21381,7 +21076,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21397,7 +21091,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-ecdsa-delegate-4.4
   tags:
@@ -21415,7 +21108,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21431,7 +21123,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-delegate-latest
   tags:
@@ -21449,7 +21140,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21465,7 +21155,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-delegate-4.4
   tags:
@@ -21483,7 +21172,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=on sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21499,7 +21187,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-rsa-nodelegate-latest
   tags:
@@ -21517,7 +21204,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21533,7 +21219,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-rsa-nodelegate-4.4
   tags:
@@ -21551,7 +21236,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21567,7 +21251,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-nodelegate-latest
   tags:
@@ -21585,7 +21268,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21601,7 +21283,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-rsa-nodelegate-4.4
   tags:
@@ -21619,7 +21300,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21635,7 +21315,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-nodelegate-latest
   tags:
@@ -21653,7 +21332,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21669,7 +21347,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-darwinssl-malicious_server_test_1-rsa-nodelegate-4.4
   tags:
@@ -21687,7 +21364,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21703,7 +21379,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_1-rsa-nodelegate-latest
   tags:
@@ -21721,7 +21396,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21737,7 +21411,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_1-rsa-nodelegate-4.4
   tags:
@@ -21755,7 +21428,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21771,7 +21443,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-ecdsa-nodelegate-latest
   tags:
@@ -21789,7 +21460,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21805,7 +21475,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_1-ecdsa-nodelegate-4.4
   tags:
@@ -21823,7 +21492,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21839,7 +21507,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-nodelegate-latest
   tags:
@@ -21857,7 +21524,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21873,7 +21539,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_1-ecdsa-nodelegate-4.4
   tags:
@@ -21891,7 +21556,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21907,7 +21571,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_1 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_2-rsa-nodelegate-latest
   tags:
@@ -21925,7 +21588,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21941,7 +21603,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_2-rsa-nodelegate-4.4
   tags:
@@ -21959,7 +21620,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -21975,7 +21635,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-rsa-nodelegate-latest
   tags:
@@ -21993,7 +21652,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22009,7 +21667,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-rsa-nodelegate-4.4
   tags:
@@ -22027,7 +21684,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22043,7 +21699,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_2-rsa-nodelegate-latest
   tags:
@@ -22061,7 +21716,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22077,7 +21731,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-winssl-malicious_server_test_2-rsa-nodelegate-4.4
   tags:
@@ -22095,7 +21748,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22111,7 +21763,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=rsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_2-ecdsa-nodelegate-latest
   tags:
@@ -22129,7 +21780,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22145,7 +21795,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-malicious_server_test_2-ecdsa-nodelegate-4.4
   tags:
@@ -22163,7 +21812,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22179,7 +21827,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-ecdsa-nodelegate-latest
   tags:
@@ -22197,7 +21844,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22213,7 +21859,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-1.0.1-malicious_server_test_2-ecdsa-nodelegate-4.4
   tags:
@@ -22231,7 +21876,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22247,7 +21891,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=MALICIOUS_SERVER_TEST_2 CERT_TYPE=ecdsa sh .evergreen/run-ocsp-test.sh
 - name: ocsp-openssl-cache-rsa-nodelegate-latest
   tags:
@@ -22265,7 +21908,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22281,7 +21923,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         CERT_TYPE=rsa .evergreen/run-ocsp-cache-test.sh
 - name: ocsp-openssl-cache-rsa-nodelegate-4.4
   tags:
@@ -22299,7 +21940,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22315,7 +21955,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         CERT_TYPE=rsa .evergreen/run-ocsp-cache-test.sh
 - name: ocsp-openssl-1.0.1-cache-rsa-nodelegate-latest
   tags:
@@ -22333,7 +21972,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22349,7 +21987,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         CERT_TYPE=rsa .evergreen/run-ocsp-cache-test.sh
 - name: ocsp-openssl-1.0.1-cache-rsa-nodelegate-4.4
   tags:
@@ -22367,7 +22004,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=rsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22383,7 +22019,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         CERT_TYPE=rsa .evergreen/run-ocsp-cache-test.sh
 - name: ocsp-openssl-cache-ecdsa-nodelegate-latest
   tags:
@@ -22401,7 +22036,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22417,7 +22051,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         CERT_TYPE=ecdsa .evergreen/run-ocsp-cache-test.sh
 - name: ocsp-openssl-cache-ecdsa-nodelegate-4.4
   tags:
@@ -22435,7 +22068,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22451,7 +22083,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         CERT_TYPE=ecdsa .evergreen/run-ocsp-cache-test.sh
 - name: ocsp-openssl-1.0.1-cache-ecdsa-nodelegate-latest
   tags:
@@ -22469,7 +22100,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22485,7 +22115,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         CERT_TYPE=ecdsa .evergreen/run-ocsp-cache-test.sh
 - name: ocsp-openssl-1.0.1-cache-ecdsa-nodelegate-4.4
   tags:
@@ -22503,7 +22132,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         TEST_COLUMN=TEST_4 CERT_TYPE=ecdsa USE_DELEGATE=off sh .evergreen/run-ocsp-responder.sh
   - func: bootstrap mongo-orchestration
     vars:
@@ -22519,7 +22147,6 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        set -o xtrace
         CERT_TYPE=ecdsa .evergreen/run-ocsp-cache-test.sh
 buildvariants:
 - name: releng
