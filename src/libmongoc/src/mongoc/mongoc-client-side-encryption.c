@@ -1284,10 +1284,10 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
                          "Unable to create client to mongocryptd");
          GOTO (fail);
       }
-      /* Similarly, single threaded clients will by default wait for 10 second
+      /* Similarly, single threaded clients will by default wait for 5 second
        * cooldown period after failing to connect to a server before making
        * another attempt. Meaning if the first attempt to mongocryptd fails
-       * to connect, then the user observes a 10 second delay. This is not
+       * to connect, then the user observes a 5 second delay. This is not
        * configurable in the URI, so override. */
       _mongoc_topology_bypass_cooldown (
          client->topology->mongocryptd_client->topology);
