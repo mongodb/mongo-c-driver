@@ -485,6 +485,138 @@ test_mongoc_client_authenticate (void *context)
 
 
 static void
+test_mongoc_client_speculative_auth_failure (bool pooled)
+{
+   mongoc_client_t *admin_client;
+   char *username;
+   char *uri;
+   bson_t roles;
+   mongoc_database_t *database;
+   char *uri_str_no_auth;
+   char *uri_str_auth;
+   mongoc_collection_t *collection;
+   mongoc_client_t *auth_client;
+   mongoc_client_pool_t *pool;
+   mongoc_uri_t *pool_uri;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   bson_error_t error;
+   bool r;
+   bson_t q;
+
+   /*
+    * Log in as admin.
+    */
+   admin_client = test_framework_client_new ();
+
+   /*
+    * Add a user to the test database.
+    */
+   username = gen_test_user ();
+   uri = gen_good_uri (username, "test");
+
+   database = mongoc_client_get_database (admin_client, "test");
+   (void) mongoc_database_remove_user (database, username, &error);
+   bson_init (&roles);
+   BCON_APPEND (&roles, "0", "{", "role", "read", "db", "test", "}");
+
+   r = mongoc_database_add_user (database,
+                                 username,
+                                 "testpass",
+                                 tmp_bson ("[{'role': 'read', 'db': 'test'}]"),
+                                 NULL,
+                                 &error);
+
+   ASSERT_OR_PRINT (r, error);
+   mongoc_database_destroy (database);
+
+   bson_init (&q);
+   uri_str_no_auth = test_framework_get_uri_str_no_auth ("test");
+   uri_str_auth =
+      test_framework_add_user_password (uri_str_no_auth, username, "testpass");
+
+   if (pooled) {
+      pool_uri = mongoc_uri_new (uri_str_auth);
+      pool = mongoc_client_pool_new (pool_uri);
+      mongoc_uri_destroy (pool_uri);
+
+      test_framework_set_pool_ssl_opts (pool);
+      auth_client = mongoc_client_pool_pop (pool);
+   } else {
+      auth_client = mongoc_client_new (uri_str_auth);
+      test_framework_set_ssl_opts (auth_client);
+   }
+
+   collection = mongoc_client_get_collection (auth_client, "test", "test");
+
+   database = mongoc_client_get_database (admin_client, "admin");
+
+   /* Enable failpoint to break saslContinue */
+   r = mongoc_database_command_simple (
+      database,
+      tmp_bson ("{'configureFailPoint': 'failCommand', "
+                "'mode': {'times': 1}, "
+                "'data': {'failCommands': ['saslContinue'], 'closeConnection': "
+                "true, 'errorCode': 10107}}"),
+      NULL,
+      NULL,
+      &error);
+   ASSERT_OR_PRINT (r, error);
+   mongoc_database_destroy (database);
+
+   /* Try authenticating by creating a user */
+   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
+   r = mongoc_cursor_next (cursor, &doc);
+   if (!r) {
+      r = mongoc_cursor_error (cursor, &error);
+      BSON_ASSERT (r);
+      ASSERT_ERROR_CONTAINS (error,
+                             MONGOC_ERROR_CLIENT,
+                             MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                             "Failed to send \"saslContinue\" command");
+   }
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, auth_client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (auth_client);
+   }
+
+   /*
+    * Remove all test users.
+    */
+   database = mongoc_client_get_database (admin_client, "test");
+   r = mongoc_database_remove_all_users (database, &error);
+   BSON_ASSERT (r);
+
+   bson_destroy (&q);
+   bson_free (uri_str_no_auth);
+   bson_free (uri_str_auth);
+   bson_destroy (&roles);
+   bson_free (uri);
+   bson_free (username);
+   mongoc_database_destroy (database);
+   mongoc_client_destroy (admin_client);
+}
+
+static void
+test_mongoc_client_single_speculative_auth_failure (void *context)
+{
+   test_mongoc_client_speculative_auth_failure (false);
+}
+
+static void
+test_mongoc_client_pooled_speculative_auth_failure (void *context)
+{
+   test_mongoc_client_speculative_auth_failure (true);
+}
+
+
+static void
 test_mongoc_client_authenticate_cached (bool pooled)
 {
    mongoc_client_pool_t *pool = NULL;
@@ -3891,6 +4023,20 @@ test_client_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
+   TestSuite_AddFull (suite,
+                      "/Client/speculative_auth_failure/single",
+                      test_mongoc_client_single_speculative_auth_failure,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth,
+                      test_framework_skip_if_no_failpoint);
+   TestSuite_AddFull (suite,
+                      "/Client/speculative_auth_failure/pooled",
+                      test_mongoc_client_pooled_speculative_auth_failure,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_auth,
+                      test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/Client/authenticate_cached/pool",
                       test_mongoc_client_authenticate_cached_pooled,
