@@ -1573,13 +1573,13 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 }
 
 static bool
-_in_blacklist (const bson_t *test, char **blacklist, uint32_t blacklist_len)
+_in_deny_list (const bson_t *test, char **deny_list, uint32_t deny_list_len)
 {
    int i;
    const char *desc = bson_lookup_utf8 (test, "description");
 
-   for (i = 0; i < blacklist_len; i++) {
-      if (0 == strcmp (desc, blacklist[i])) {
+   for (i = 0; i < deny_list_len; i++) {
+      if (0 == strcmp (desc, deny_list[i])) {
          return true;
       }
    }
@@ -1590,10 +1590,10 @@ _in_blacklist (const bson_t *test, char **blacklist, uint32_t blacklist_len)
 static bool
 _should_skip_due_to_unsupported_operation (const bson_t *test)
 {
-   char *blacklist[] = {"CreateIndex and dropIndex omits default write concern",
+   char *deny_list[] = {"CreateIndex and dropIndex omits default write concern",
                         "MapReduce omits default write concern"};
 
-   if (_in_blacklist (test, blacklist, sizeof (blacklist) / sizeof (char *))) {
+   if (_in_deny_list (test, deny_list, sizeof (deny_list) / sizeof (char *))) {
       return true;
    }
 

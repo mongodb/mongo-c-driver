@@ -690,7 +690,7 @@ test_getmore_errors (void)
    _test_getmore_error ("{'ok': 0, 'code': 12345, 'errmsg': 'random error'}",
                         false /* should_resume */,
                         false /* ignored */);
-   /* most error codes are resumable, excluding a few blacklisted ones. */
+   /* most error codes are resumable, excluding a few deny listed ones. */
    _test_getmore_error ("{'ok': 0, 'code': 11601, 'errmsg': 'interrupted'}",
                         false /* should_resume */,
                         false /* ignored */);
@@ -705,7 +705,7 @@ test_getmore_errors (void)
                         false /* should_resume */,
                         false /* ignored */);
    /* Even an error with a 'NonResumableChangeStreamError' label will resume if
-    * it is on the whitelist. */
+    * it is on the allow list. */
    _test_getmore_error (
       "{'ok': 0, 'code': 6, 'errorLabels': "
       "['NonResumableChangeStreamError'], 'errmsg': 'host unreachable'}",
