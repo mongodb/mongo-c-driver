@@ -59,7 +59,8 @@ mongoc_server_description_last_hello_response (
 
 MONGOC_EXPORT (const bson_t *)
 mongoc_server_description_ismaster (
-   const mongoc_server_description_t *description) BSON_GNUC_DEPRECATED;
+   const mongoc_server_description_t *description)
+   BSON_GNUC_DEPRECATED_FOR (mongoc_server_description_last_hello_response);
 
 MONGOC_EXPORT (int32_t)
 mongoc_server_description_compressor_id (
