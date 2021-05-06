@@ -418,7 +418,7 @@ test_find_one_with_opts_limit (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -1523,7 +1523,7 @@ test_write_failure (void)
    mongoc_gridfs_file_t *file;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG);
    mock_server_autoresponds (server, responder, NULL, NULL);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));

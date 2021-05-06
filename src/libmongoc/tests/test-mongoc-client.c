@@ -44,10 +44,10 @@ test_client_cmd_w_server_id (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_READ_CONCERN,
-                                   true /* has primary */,
-                                   1 /* secondary   */,
-                                   0 /* arbiters    */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_READ_CONCERN,
+                                 true /* has primary */,
+                                 1 /* secondary   */,
+                                 0 /* arbiters    */);
 
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
@@ -262,7 +262,7 @@ test_client_cmd_write_concern (void)
    char *cmd;
 
    /* set up client and wire protocol version */
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -330,7 +330,7 @@ test_client_cmd_write_concern_fam (void)
    request_t *request;
    mock_server_t *server;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FAM_WRITE_CONCERN - 1);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FAM_WRITE_CONCERN - 1);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -355,7 +355,7 @@ test_client_cmd_write_concern_fam (void)
    mongoc_client_destroy (client);
    bson_destroy (&reply);
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FAM_WRITE_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FAM_WRITE_CONCERN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -782,7 +782,7 @@ test_mongoc_client_authenticate_timeout (void *context)
       return;
    }
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_username (uri, "user");
@@ -1287,10 +1287,10 @@ test_read_write_cmd_with_opts (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN,
-                                   true /* has primary */,
-                                   1 /* secondary */,
-                                   0 /* arbiters */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN,
+                                 true /* has primary */,
+                                 1 /* secondary */,
+                                 0 /* arbiters */);
 
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
@@ -1737,7 +1737,7 @@ test_command_no_errmsg (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -2180,7 +2180,7 @@ test_server_status (void)
 static void
 test_get_database_names (void)
 {
-   mock_server_t *server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   mock_server_t *server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mongoc_client_t *client;
    bson_error_t error;
    future_t *future;
@@ -3050,7 +3050,7 @@ test_client_set_ssl_copies_args (bool pooled)
    server_opts.ca_file = CERT_CA;
    server_opts.pem_file = CERT_SERVER;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_set_ssl_opts (server, &server_opts);
    mock_server_run (server);
 
@@ -3115,7 +3115,7 @@ _test_ssl_reconnect (bool pooled)
    server_opts.ca_file = CERT_CA;
    server_opts.pem_file = CERT_SERVER;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_set_ssl_opts (server, &server_opts);
    mock_server_run (server);
 
@@ -3219,7 +3219,7 @@ test_mongoc_client_application_handshake (void)
 }
 
 static void
-_assert_ismaster_valid (request_t *request, bool needs_meta)
+_assert_hello_valid (request_t *request, bool needs_meta)
 {
    const bson_t *request_doc;
 
@@ -3229,14 +3229,14 @@ _assert_ismaster_valid (request_t *request, bool needs_meta)
    ASSERT (bson_has_field (request_doc, HANDSHAKE_FIELD) == needs_meta);
 }
 
-/* For single threaded clients, to cause an isMaster to be sent, we must wait
+/* For single threaded clients, to cause a hello to be sent, we must wait
  * until we're overdue for a heartbeat, and then execute some command */
 static future_t *
-_force_ismaster_with_ping (mongoc_client_t *client, int heartbeat_ms)
+_force_hello_with_ping (mongoc_client_t *client, int heartbeat_ms)
 {
    future_t *future;
 
-   /* Wait until we're overdue to send an isMaster */
+   /* Wait until we're overdue to send a hello */
    _mongoc_usleep (heartbeat_ms * 2 * 1000);
 
    /* Send a ping */
@@ -3246,8 +3246,8 @@ _force_ismaster_with_ping (mongoc_client_t *client, int heartbeat_ms)
    return future;
 }
 
-/* Call after we've dealt with the isMaster sent by
- * _force_ismaster_with_ping */
+/* Call after we've dealt with the hello sent by
+ * _force_hello_with_ping */
 static void
 _respond_to_ping (future_t *future, mock_server_t *server)
 {
@@ -3290,7 +3290,7 @@ test_mongoc_handshake_pool (void)
 
    client1 = mongoc_client_pool_pop (pool);
    request1 = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request1, true);
+   _assert_hello_valid (request1, true);
    mock_server_replies_simple (request1, server_reply);
    request_destroy (request1);
 
@@ -3299,7 +3299,7 @@ test_mongoc_handshake_pool (void)
       client2, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
 
    request2 = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request2, true);
+   _assert_hello_valid (request2, true);
    mock_server_replies_simple (request2, server_reply);
    request_destroy (request2);
 
@@ -3347,62 +3347,62 @@ _test_client_sends_handshake (bool pooled)
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri, NULL);
-      future = _force_ismaster_with_ping (client, heartbeat_ms);
+      future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
    request = mock_server_receives_legacy_hello (server, NULL);
 
-   /* Make sure the isMaster request has a "client" field: */
-   _assert_ismaster_valid (request, true);
+   /* Make sure the hello request has a "client" field: */
+   _assert_hello_valid (request, true);
    mock_server_replies_simple (request, server_reply);
    request_destroy (request);
 
    if (!pooled) {
       _respond_to_ping (future, server);
 
-      /* Wait until another isMaster is sent */
-      future = _force_ismaster_with_ping (client, heartbeat_ms);
+      /* Wait until another hello is sent */
+      future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
    request = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request, false);
+   _assert_hello_valid (request, false);
 
    mock_server_replies_simple (request, server_reply);
    request_destroy (request);
 
    if (!pooled) {
       _respond_to_ping (future, server);
-      future = _force_ismaster_with_ping (client, heartbeat_ms);
+      future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
-   /* Now wait for the client to send another isMaster command, but this
+   /* Now wait for the client to send another hello command, but this
     * time the server hangs up */
    request = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request, false);
+   _assert_hello_valid (request, false);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    /* Client retries once (CDRIVER-2075) */
    request = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request, true);
+   _assert_hello_valid (request, true);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    if (!pooled) {
-      /* The ping wasn't sent since we hung up with isMaster */
+      /* The ping wasn't sent since we hung up with hello */
       ASSERT (!future_get_bool (future));
       future_destroy (future);
 
       /* We're in cooldown for the next few seconds, so we're not
-       * allowed to send isMasters. Wait for the cooldown to end. */
+       * allowed to send hellos. Wait for the cooldown to end. */
       _mongoc_usleep ((MONGOC_TOPOLOGY_COOLDOWN_MS + 1000) * 1000);
-      future = _force_ismaster_with_ping (client, heartbeat_ms);
+      future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
    /* Now the client should try to reconnect. They think the server's down
-    * so now they SHOULD send isMaster */
+    * so now they SHOULD send hello */
    request = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request, true);
+   _assert_hello_valid (request, true);
 
    mock_server_replies_simple (request, server_reply);
    request_destroy (request);
@@ -3469,7 +3469,7 @@ test_client_appname (bool pooled, bool use_uri)
       if (!use_uri) {
          ASSERT (mongoc_client_set_appname (client, "testapp"));
       }
-      future = _force_ismaster_with_ping (client, heartbeat_ms);
+      future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
    request = mock_server_receives_legacy_hello (server,
@@ -3537,7 +3537,7 @@ _test_null_error_pointer (bool pooled)
 
    capture_logs (true);
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
@@ -3703,7 +3703,7 @@ test_client_reset_cursors (void)
    bson_error_t error;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_KILLCURSORS_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_KILLCURSORS_CMD);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -3948,7 +3948,7 @@ test_mongoc_client_recv_network_error (void)
    mongoc_buffer_t buffer;
    mongoc_server_stream_t *stream;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

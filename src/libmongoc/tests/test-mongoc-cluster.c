@@ -164,7 +164,7 @@ _test_cluster_node_disconnect (bool pooled)
 
    capture_logs (true);
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
@@ -238,7 +238,7 @@ _test_cluster_command_timeout (bool pooled)
 
    capture_logs (true);
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 200);
@@ -339,7 +339,7 @@ _test_write_disconnect (void)
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    /*
-    * establish connection with an "ismaster" and "ping"
+    * establish connection with an "hello" and "ping"
     */
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
@@ -1046,7 +1046,7 @@ _test_not_primary (bool pooled,
    mongoc_server_description_t *sd;
    char *reply;
 
-   server = mock_server_with_autoismaster (use_op_msg ? 6 : 5);
+   server = mock_server_with_auto_hello (use_op_msg ? 6 : 5);
    mock_server_run (server);
 
    if (pooled) {
@@ -1451,7 +1451,7 @@ _test_cluster_hello_fails (bool hangup)
    future = future_client_command_simple (
       client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    /* the client adds a cluster node, creating a stream to the server, and then
-    * sends an ismaster request. */
+    * sends a hello request. */
    request = mock_server_receives_legacy_hello (mock_server, NULL);
    /* CDRIVER-2576: the server replies with an error, so
     * _mongoc_stream_run_hello returns NULL, which
@@ -1500,9 +1500,9 @@ _test_cluster_command_error (bool use_op_msg)
    future_t *future;
 
    if (use_op_msg) {
-      server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+      server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG);
    } else {
-      server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG - 1);
+      server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
    }
    mock_server_run (server);
    client =
@@ -1617,7 +1617,7 @@ test_advanced_cluster_time_not_sent_to_standalone (void)
    mock_server_destroy (server);
 }
 
-/* Responds properly to isMaster, hangs up on serverStatus, and replies {ok:1}
+/* Responds properly to hello, hangs up on serverStatus, and replies {ok:1}
  * to everything else. */
 static bool
 _responder (request_t *req, void *data)
@@ -1676,7 +1676,7 @@ _initiator_fn (const mongoc_uri_t *uri,
 }
 
 static void
-_test_hello_on_unknown (char *ismaster)
+_test_hello_on_unknown (char *hello)
 {
    mock_server_t *mock_server;
    mongoc_client_pool_t *pool;
@@ -1687,12 +1687,12 @@ _test_hello_on_unknown (char *ismaster)
 
    mock_server = mock_server_new ();
    mock_server_run (mock_server);
-   mock_server_autoresponds (mock_server, _responder, ismaster, NULL);
+   mock_server_autoresponds (mock_server, _responder, hello, NULL);
 
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
 
    /* Add a placeholder additional host, so the topology type can be SHARDED.
-    * The host will get removed on the first failed ismaster. */
+    * The host will get removed on the first failed hello. */
    ret = mongoc_uri_upsert_host (uri, "localhost", 12345, &error);
    ASSERT_OR_PRINT (ret, error);
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
@@ -1703,7 +1703,7 @@ _test_hello_on_unknown (char *ismaster)
 
    /* The other client marked the server as unknown after this client selected
     * the server and created a stream, but *before* constructing the initial
-    * ismaster. This reproduces the crash reported in CDRIVER-3404. */
+    * hello. This reproduces the crash reported in CDRIVER-3404. */
    ret = mongoc_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (ret, error);

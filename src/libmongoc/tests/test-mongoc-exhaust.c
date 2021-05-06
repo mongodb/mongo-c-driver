@@ -465,7 +465,7 @@ _mock_test_exhaust (bool pooled,
 
    capture_logs (true);
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    if (pooled) {

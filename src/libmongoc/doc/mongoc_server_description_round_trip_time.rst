@@ -20,5 +20,5 @@ Parameters
 Description
 -----------
 
-Get the server's round trip time in milliseconds. This is the client's measurement of the duration of an "ismaster" command.
+Get the server's round trip time in milliseconds. This is the client's measurement of the duration of a "hello" command.
 

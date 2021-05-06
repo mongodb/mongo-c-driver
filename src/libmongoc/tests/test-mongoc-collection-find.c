@@ -195,7 +195,7 @@ _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
       return;
    }
 
-   server = mock_server_with_autoismaster (max_wire_version);
+   server = mock_server_with_auto_hello (max_wire_version);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -810,7 +810,7 @@ test_exhaust (void)
    const bson_t *doc;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -860,7 +860,7 @@ test_getmore_batch_size (void)
    char *batch_size_json;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (4);
+   server = mock_server_with_auto_hello (4);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -931,7 +931,7 @@ test_getmore_invalid_reply (void *ctx)
       return;
    }
 
-   server = mock_server_with_autoismaster (4);
+   server = mock_server_with_auto_hello (4);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -1009,7 +1009,7 @@ test_getmore_await (void)
    size_t i;
    char *max_time_json;
 
-   server = mock_server_with_autoismaster (4);
+   server = mock_server_with_auto_hello (4);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

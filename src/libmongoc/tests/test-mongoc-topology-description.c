@@ -192,8 +192,8 @@ test_topology_version_equal (void)
 
    ASSERT_CMPINT (num_calls, ==, 1);
 
-   /* The subsequent ismaster has a topologyVersion that compares less, so the
-    * ismaster skips. */
+   /* The subsequent hello has a topologyVersion that compares less, so the
+    * hello skips. */
    mongoc_topology_description_handle_hello (
       td,
       sd->id,

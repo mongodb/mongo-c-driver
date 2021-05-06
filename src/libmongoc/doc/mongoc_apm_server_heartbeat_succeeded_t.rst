@@ -8,7 +8,7 @@ Heartbeat-succeeded event
 Synopsis
 --------
 
-An event notification sent when the driver completes an "isMaster" command to check the status of a server.
+An event notification sent when the driver completes a "hello" command to check the status of a server.
 
 .. seealso::
 

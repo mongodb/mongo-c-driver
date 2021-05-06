@@ -512,7 +512,7 @@ _append_platform_field (bson_t *doc, const char *platform)
 /*
  * Return true if we build the document, and it's not too big
  * false if there's no way to prevent the doc from being too big. In this
- * case, the caller shouldn't include it with isMaster
+ * case, the caller shouldn't include it with hello
  */
 bool
 _mongoc_handshake_build_doc_with_application (bson_t *doc, const char *appname)
@@ -607,7 +607,7 @@ _append_and_truncate (char **s, const char *suffix, int max_len)
 
 /*
  * Set some values in our global handshake struct. These values will be sent
- * to the server as part of the initial connection handshake (isMaster).
+ * to the server as part of the initial connection handshake (hello).
  * If this function is called more than once, or after we've connected to a
  * mongod, then it will do nothing and return false. It will return true if it
  * successfully sets the values.
@@ -685,12 +685,12 @@ _mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri,
 
 void
 _mongoc_handshake_parse_sasl_supported_mechs (
-   const bson_t *ismaster,
+   const bson_t *hello,
    mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs)
 {
    bson_iter_t iter;
    memset (sasl_supported_mechs, 0, sizeof (*sasl_supported_mechs));
-   if (bson_iter_init_find (&iter, ismaster, "saslSupportedMechs")) {
+   if (bson_iter_init_find (&iter, hello, "saslSupportedMechs")) {
       bson_iter_t array_iter;
       if (BSON_ITER_HOLDS_ARRAY (&iter) &&
           bson_iter_recurse (&iter, &array_iter)) {

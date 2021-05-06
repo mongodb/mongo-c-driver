@@ -572,7 +572,7 @@ test_mongoc_handshake_cannot_send (void)
    client = mongoc_client_pool_pop (pool);
    request = mock_server_receives_legacy_hello (server, NULL);
 
-   /* Make sure the isMaster request DOESN'T have a handshake field: */
+   /* Make sure the hello request DOESN'T have a handshake field: */
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
@@ -587,7 +587,7 @@ test_mongoc_handshake_cannot_send (void)
    mock_server_hangs_up (request);
    request_destroy (request);
 
-   /* Make sure the isMaster request still DOESN'T have a handshake field
+   /* Make sure the hello request still DOESN'T have a handshake field
     * on subsequent heartbeats. */
    request = mock_server_receives_legacy_hello (server, NULL);
    ASSERT (request);

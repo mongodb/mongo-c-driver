@@ -130,7 +130,7 @@ test_get_error (void)
    request_t *request;
    bson_error_t error = {0};
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -656,7 +656,7 @@ _test_query_operation_id (bool pooled)
 
    op_id_test_init (&test);
 
-   server = mock_server_with_autoismaster (4);
+   server = mock_server_with_auto_hello (4);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -1093,7 +1093,7 @@ test_command_failed_reply_mock (void)
     */
    cmd_failed_reply_test_init (&test);
 
-   server = mock_server_with_autoismaster (4);
+   server = mock_server_with_auto_hello (4);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -1151,7 +1151,7 @@ test_command_failed_reply_hangup (void)
     * error (i.e. the server hangs up) */
    cmd_failed_reply_test_init (&test);
 
-   server = mock_server_with_autoismaster (4);
+   server = mock_server_with_auto_hello (4);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();

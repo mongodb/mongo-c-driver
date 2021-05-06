@@ -56,7 +56,7 @@ _mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd,
 }
 
 /* Called from:
- * - the topology scanner callback (when an ismaster was just received)
+ * - the topology scanner callback (when a hello was just received)
  * - at the start of a single-threaded scan (mongoc_topology_scan_once)
  * Not called for multi threaded monitoring.
  */
@@ -130,7 +130,7 @@ _mongoc_topology_scanner_setup_err_cb (uint32_t id,
 
    mongoc_topology_description_handle_hello (&topology->description,
                                              id,
-                                             NULL /* ismaster reply */,
+                                             NULL /* hello reply */,
                                              -1 /* rtt_msec */,
                                              error);
 }
@@ -141,7 +141,7 @@ _mongoc_topology_scanner_setup_err_cb (uint32_t id,
  *
  * _mongoc_topology_scanner_cb --
  *
- *       Callback method to handle ismaster responses received by async
+ *       Callback method to handle hello responses received by async
  *       command objects.
  *
  *       NOTE: This method locks the given topology's mutex.
@@ -182,14 +182,14 @@ _mongoc_topology_scanner_cb (uint32_t id,
       _mongoc_topology_update_no_lock (
          id, hello_response, rtt_msec, topology, error);
 
-      /* add another ismaster call to the current scan - the scan continues
+      /* add another hello call to the current scan - the scan continues
        * until all commands are done */
       mongoc_topology_scanner_scan (topology->scanner, sd->id);
    } else {
       _mongoc_topology_update_no_lock (
          id, hello_response, rtt_msec, topology, error);
 
-      /* The processing of the ismaster results above may have added/removed
+      /* The processing of the hello results above may have added/removed
        * server descriptions. We need to reconcile that with our monitoring
        * agents
        */
@@ -765,7 +765,7 @@ mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
    }
 
    /* since the last scan, members may be added or removed from the topology
-    * description based on ismaster responses in connection handshakes, see
+    * description based on hello responses in connection handshakes, see
     * _mongoc_topology_update_from_handshake. retire scanner nodes for removed
     * members and create scanner nodes for new ones. */
    mongoc_topology_reconcile (topology);
@@ -1589,7 +1589,7 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
  *       handshake on the topology scanner.
  *
  * Returns:
- *      A bson_t representing an ismaster command.
+ *      A bson_t representing a hello command.
  *
  *--------------------------------------------------------------------------
  */

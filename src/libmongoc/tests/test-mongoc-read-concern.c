@@ -134,8 +134,8 @@ _test_read_concern_wire_version (bool allow, bool explicit)
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, "foo");
 
-   server = mock_server_with_autoismaster (
-      allow ? WIRE_VERSION_READ_CONCERN : WIRE_VERSION_READ_CONCERN - 1);
+   server = mock_server_with_auto_hello (allow ? WIRE_VERSION_READ_CONCERN
+                                               : WIRE_VERSION_READ_CONCERN - 1);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

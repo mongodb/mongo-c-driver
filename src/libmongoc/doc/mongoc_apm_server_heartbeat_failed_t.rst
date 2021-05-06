@@ -8,7 +8,7 @@ Heartbeat-failed event
 Synopsis
 --------
 
-An event notification sent when the driver failed to send an "isMaster" command to check the status of a server.
+An event notification sent when the driver failed to send a "hello" command to check the status of a server.
 
 .. seealso::
 

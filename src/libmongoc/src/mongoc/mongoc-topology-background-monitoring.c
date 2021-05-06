@@ -343,7 +343,7 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    mongoc_cond_broadcast (&topology->cond_client);
 }
 
-/* Cancel an in-progress streaming ismaster for a specific server (if
+/* Cancel an in-progress streaming hello for a specific server (if
  * applicable).
  *
  * Called from application threads on network errors.

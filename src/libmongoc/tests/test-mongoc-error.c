@@ -74,7 +74,7 @@ _test_command_error (int32_t error_api_version)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

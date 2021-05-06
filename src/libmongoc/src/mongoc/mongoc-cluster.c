@@ -810,8 +810,8 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
       RETURN (NULL);
    }
 
-   /* Always use OP_QUERY for the isMaster handshake, regardless of whether the
-    * last known ismaster indicates the server supports a newer wire protocol.
+   /* Always use OP_QUERY for the handshake, regardless of whether the last
+    * known hello indicates the server supports a newer wire protocol.
     */
    server_stream->sd->max_wire_version = WIRE_VERSION_MIN;
    memset (&hello_cmd, 0, sizeof (hello_cmd));
@@ -826,8 +826,8 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
       if (negotiate_sasl_supported_mechs) {
          if (bson_iter_init_find (&iter, &reply, "ok") &&
              !bson_iter_as_bool (&iter)) {
-            /* ismaster response returned ok: 0. According to auth spec: "If the
-             * isMaster of the MongoDB Handshake fails with an error, drivers
+            /* hello response returned ok: 0. According to auth spec: "If the
+             * hello of the MongoDB Handshake fails with an error, drivers
              * MUST treat this an authentication error." */
             error->domain = MONGOC_ERROR_CLIENT;
             error->code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
@@ -1354,7 +1354,7 @@ _mongoc_cluster_init_scram (const mongoc_cluster_t *cluster,
  *
  *       Generates the saslStart command for scram authentication. Used
  *       during explicit authentication as well as speculative
- *       authentication during isMaster.
+ *       authentication during hello.
  *
  *
  * Returns:
@@ -1619,7 +1619,7 @@ _mongoc_cluster_scram_handle_reply (mongoc_scram_t *scram,
  *
  *       Continues the scram conversation from the reply to a saslStart
  *       command, either sent explicitly or received through speculative
- *       authentication during isMaster.
+ *       authentication during hello.
  *
  *
  * Returns:
@@ -1850,7 +1850,7 @@ _mongoc_cluster_auth_node (
           * used as the default, regardless of whether SCRAM-SHA-1 is in the
           * list. Drivers MUST NOT attempt to use any other mechanism (e.g.
           * PLAIN) as the default." [...] "If saslSupportedMechs is not present
-          * in the isMaster results for mechanism negotiation, then SCRAM-SHA-1
+          * in the hello results for mechanism negotiation, then SCRAM-SHA-1
           * MUST be used when talking to servers >= 3.0." */
          mechanism = "SCRAM-SHA-256";
       } else {
@@ -1998,7 +1998,7 @@ _mongoc_cluster_finish_speculative_auth (mongoc_cluster_t *cluster,
 
 #ifdef MONGOC_ENABLE_SSL
    if (strcasecmp (mechanism, "MONGODB-X509") == 0) {
-      /* For X509, a successful ismaster with speculativeAuthenticate field
+      /* For X509, a successful hello with speculativeAuthenticate field
        * indicates successful auth */
       ret = true;
       auth_handled = true;
@@ -2092,7 +2092,7 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
        * generation. */
    }
 
-   /* take critical fields from a fresh ismaster */
+   /* take critical fields from a fresh hello */
    cluster_node =
       _mongoc_cluster_node_new (stream, generation, host->host_and_port);
 

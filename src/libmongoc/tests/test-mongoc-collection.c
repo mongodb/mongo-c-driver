@@ -100,7 +100,7 @@ test_aggregate_inherit_collection (void)
    mongoc_write_concern_t *wc2;
    mongoc_write_concern_t *wc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX_STALENESS);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MAX_STALENESS);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -247,7 +247,7 @@ _batch_size_test (bson_t *pipeline,
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
-   mock_server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (mock_server);
 
    client = test_framework_client_new_from_uri (
@@ -984,7 +984,7 @@ test_insert_command_keys (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -2147,7 +2147,7 @@ test_count_read_concern (void)
    bson_t b;
 
    /* wire protocol version 4 */
-   server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -2454,7 +2454,7 @@ test_count_with_collation (int wire)
    request_t *request;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
 
    client =
@@ -2523,7 +2523,7 @@ test_count_documents (void)
    const char *server_reply = "{'cursor': {'firstBatch': [{'n': 123}], '_id': "
                               "0, 'ns': 'db.coll'}, 'ok': 1}";
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -2615,7 +2615,7 @@ test_estimated_document_count (void)
    bson_t reply;
    const char *server_reply = "{'n': 123, 'ok': 1}";
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -3095,7 +3095,7 @@ test_aggregate_modern (void *data)
       return;
    }
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG - 1);
+   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -3182,10 +3182,10 @@ test_aggregate_w_server_id (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN,
-                                   true /* has primary */,
-                                   1 /* secondary   */,
-                                   0 /* arbiters    */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN,
+                                 true /* has primary */,
+                                 1 /* secondary   */,
+                                 0 /* arbiters    */);
 
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
@@ -4092,7 +4092,7 @@ test_find_limit (void)
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -4164,7 +4164,7 @@ test_find_batch_size (void)
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -4448,7 +4448,7 @@ test_find_indexes_err (void)
    mongoc_cursor_t *cursor;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -4515,7 +4515,7 @@ test_find_read_concern (void)
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
 
    client =
@@ -4842,7 +4842,7 @@ test_aggregate_read_concern (void)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -4944,7 +4944,7 @@ test_aggregate_with_collation (int wire)
    const bson_t *doc;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -5027,7 +5027,7 @@ test_index_with_collation (int wire)
    future_t *future;
 
    /* wire protocol version 0 */
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -5972,7 +5972,7 @@ _test_delete_collation (int wire, bool is_multi)
       is_multi ? future_collection_delete_many : future_collection_delete_one;
    char *expected_cmd;
 
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
 
    client =
@@ -6054,7 +6054,7 @@ _test_update_or_replace_with_collation (int wire,
                     : future_collection_update_one;
    }
 
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
 
    client =
@@ -6129,7 +6129,7 @@ _test_update_hint (int wire, bool is_replace, bool is_multi, const char *hint)
                     : future_collection_update_one;
    }
 
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
 
    client =

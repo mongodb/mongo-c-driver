@@ -310,7 +310,7 @@ _test_common_opts (void *ctx)
    BSON_ASSERT (mongoc_cursor_set_hint (cursor, sd->id));
    ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), ==, sd->id);
 
-   /* listDatabases and isMaster prohibits limit and batchSize */
+   /* listDatabases and hello prohibits limit and batchSize */
    if ((make_cursor_fn) ctx != _make_array_cursor &&
        (make_cursor_fn) ctx != _make_cmd_deprecated_cursor) {
       mongoc_cursor_set_batch_size (cursor, 1);
@@ -744,8 +744,7 @@ _test_kill_cursors (bool pooled, bool use_killcursors_cmd)
    const char *ns_out;
    int64_t cursor_id_out;
 
-   rs =
-      mock_rs_with_autoismaster (use_killcursors_cmd ? 4 : 3, /* wire version */
+   rs = mock_rs_with_auto_hello (use_killcursors_cmd ? 4 : 3, /* wire version */
                                  true,                        /* has primary */
                                  5,  /* number of secondaries */
                                  0); /* number of arbiters */
@@ -877,10 +876,10 @@ _test_client_kill_cursor (bool has_primary, bool wire_version_4)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (wire_version_4 ? 4 : 3,
-                                   has_primary, /* maybe a primary*/
-                                   1,           /* definitely a secondary */
-                                   0);          /* no arbiter */
+   rs = mock_rs_with_auto_hello (wire_version_4 ? 4 : 3,
+                                 has_primary, /* maybe a primary*/
+                                 1,           /* definitely a secondary */
+                                 0);          /* no arbiter */
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -1118,7 +1117,7 @@ test_cursor_new_tailable_await (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
 
    client =
@@ -1182,7 +1181,7 @@ test_cursor_int64_t_maxtimems (void)
    bson_t *max_await_time_ms;
    uint64_t ms_int64 = UINT32_MAX + (uint64_t) 1;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
 
    client =
@@ -1247,7 +1246,7 @@ test_cursor_new_ignores_fields (void)
    const bson_t *doc;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
 
    client =
@@ -1468,7 +1467,7 @@ _test_cursor_hint (bool pooled, bool use_primary)
    request_t *request;
 
    /* wire version WIRE_VERSION_MIN, primary, two secondaries, no arbiters */
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN, true, 2, 0);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN, true, 2, 0);
    mock_rs_run (rs);
 
    if (pooled) {
@@ -1989,7 +1988,7 @@ _test_cursor_n_return (bool find_with_opts)
    bson_t opts = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
 
    mock_server_run (server);
 
@@ -2114,7 +2113,7 @@ test_empty_final_batch (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
 
    client =

@@ -32,14 +32,14 @@
 
 typedef void (*setup_uri_options_t) (mongoc_uri_t *uri);
 typedef void (*compare_auth_command_t) (bson_t *auth_command);
-typedef void (*post_ismaster_commands_t) (mock_server_t *server);
+typedef void (*post_handshake_commands_t) (mock_server_t *server);
 
 #ifdef MONGOC_ENABLE_CRYPTO
 
-/* For single threaded clients, we execute a command to cause an isMaster to be
+/* For single threaded clients, we execute a command to cause a hello to be
  * sent */
 static future_t *
-_force_ismaster_with_ping (mongoc_client_t *client)
+_force_hello_with_ping (mongoc_client_t *client)
 {
    future_t *future;
 
@@ -52,7 +52,7 @@ _force_ismaster_with_ping (mongoc_client_t *client)
 }
 
 /* Call after we've dealt with the hello sent by
- * _force_ismaster_with_ping */
+ * _force_hello_with_ping */
 static void
 _respond_to_ping (future_t *future, mock_server_t *server, bool expect_ping)
 {
@@ -119,7 +119,7 @@ _test_mongoc_speculative_auth (bool pooled,
                                bool includes_speculative_auth,
                                compare_auth_command_t compare_auth_command,
                                bson_t *speculative_auth_response,
-                               post_ismaster_commands_t post_ismaster_commands,
+                               post_handshake_commands_t post_hello_commands,
                                bool expect_successful_ping)
 {
    mock_server_t *server;
@@ -181,7 +181,7 @@ _test_mongoc_speculative_auth (bool pooled,
 #endif
    }
 
-   future = _force_ismaster_with_ping (client);
+   future = _force_hello_with_ping (client);
 
    if (includes_speculative_auth) {
       request_t *request;
@@ -225,8 +225,8 @@ _test_mongoc_speculative_auth (bool pooled,
       request_destroy (request);
    }
 
-   if (post_ismaster_commands) {
-      post_ismaster_commands (server);
+   if (post_hello_commands) {
+      post_hello_commands (server);
    }
 
    _respond_to_ping (future, server, expect_successful_ping);
@@ -296,7 +296,7 @@ _compare_auth_cmd_scram (bson_t *auth_cmd)
 }
 
 static void
-_post_ismaster_scram_invalid_auth_response (mock_server_t *srv)
+_post_hello_scram_invalid_auth_response (mock_server_t *srv)
 {
    request_t *request;
    const bson_t *request_doc;
@@ -394,7 +394,7 @@ test_mongoc_speculative_auth_request_scram (void)
                                   true,
                                   _compare_auth_cmd_scram,
                                   response,
-                                  _post_ismaster_scram_invalid_auth_response,
+                                  _post_hello_scram_invalid_auth_response,
                                   false);
 
    bson_destroy (response);
@@ -415,7 +415,7 @@ test_mongoc_speculative_auth_request_scram_pool (void)
                                   true,
                                   _compare_auth_cmd_scram,
                                   response,
-                                  _post_ismaster_scram_invalid_auth_response,
+                                  _post_hello_scram_invalid_auth_response,
                                   false);
 
    bson_destroy (response);

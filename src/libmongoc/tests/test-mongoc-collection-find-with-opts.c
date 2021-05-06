@@ -58,7 +58,7 @@ _test_collection_op_query_or_find_command (
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (max_wire_version);
+   server = mock_server_with_auto_hello (max_wire_version);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -577,7 +577,7 @@ test_exhaust (void)
    const bson_t *doc;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -631,7 +631,7 @@ test_getmore_cmd_await (void)
    /*
     * "find" command
     */
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -705,10 +705,10 @@ test_find_w_server_id (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN /* wire version */,
-                                   true /* has primary  */,
-                                   1 /* secondary    */,
-                                   0 /* arbiters     */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN /* wire version */,
+                                 true /* has primary  */,
+                                 1 /* secondary    */,
+                                 0 /* arbiters     */);
 
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
@@ -749,10 +749,10 @@ test_find_cmd_w_server_id (void)
    request_t *request;
    bson_error_t error;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_READ_CONCERN,
-                                   true /* has primary  */,
-                                   1 /* secondary    */,
-                                   0 /* arbiters     */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_READ_CONCERN,
+                                 true /* has primary  */,
+                                 1 /* secondary    */,
+                                 0 /* arbiters     */);
 
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);

@@ -251,7 +251,7 @@ test_server_description_install (TestSuite *suite);
 extern void
 test_aws_install (TestSuite *suite);
 extern void
-test_streamable_ismaster_install (TestSuite *suite);
+test_streamable_hello_install (TestSuite *suite);
 #if defined(MONGOC_ENABLE_OCSP_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10101000L
 extern void
 test_ocsp_cache_install (TestSuite *suite);
@@ -1044,7 +1044,7 @@ test_framework_get_ssl (void)
  *
  *       Get the connection string (unix domain socket style) of the test
  *       MongoDB server based on the variables set in the environment.
- *       Does *not* call isMaster to discover your actual topology.
+ *       Does *not* call hello to discover your actual topology.
  *
  * Returns:
  *       A string you must bson_free.
@@ -1178,11 +1178,11 @@ call_hello (bson_t *reply)
 
 
 static char *
-set_name (bson_t *ismaster_response)
+set_name (bson_t *hello_response)
 {
    bson_iter_t iter;
 
-   if (bson_iter_init_find (&iter, ismaster_response, "setName")) {
+   if (bson_iter_init_find (&iter, hello_response, "setName")) {
       return bson_strdup (bson_iter_utf8 (&iter, NULL));
    } else {
       return NULL;
@@ -1228,7 +1228,7 @@ add_option_to_uri_str (bson_string_t *uri_string,
  *
  *       Get the connection string of the test MongoDB topology --
  *       standalone, replica set, mongos, or mongoses -- along with
- *       SSL options, but not username and password. Calls calls isMaster with
+ *       SSL options, but not username and password. Calls calls hello with
  *       that connection string to discover your topology, and
  *       returns an appropriate connection string for the topology
  *       type.
@@ -1247,7 +1247,7 @@ char *
 test_framework_get_uri_str_no_auth (const char *database_name)
 {
    char *env_uri_str;
-   bson_t ismaster_response;
+   bson_t hello_response;
    bson_string_t *uri_string;
    char *name;
    bson_iter_t iter;
@@ -1268,12 +1268,12 @@ test_framework_get_uri_str_no_auth (const char *database_name)
       bson_free (env_uri_str);
    } else {
       /* construct a direct connection or replica set connection URI */
-      call_hello (&ismaster_response);
+      call_hello (&hello_response);
       uri_string = bson_string_new ("mongodb://");
 
-      if ((name = set_name (&ismaster_response))) {
+      if ((name = set_name (&hello_response))) {
          /* make a replica set URI */
-         bson_iter_init_find (&iter, &ismaster_response, "hosts");
+         bson_iter_init_find (&iter, &hello_response, "hosts");
          bson_iter_recurse (&iter, &hosts_iter);
          first = true;
 
@@ -1311,7 +1311,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
          add_option_to_uri_str (uri_string, MONGOC_URI_SSL, "true");
       }
 
-      bson_destroy (&ismaster_response);
+      bson_destroy (&hello_response);
    }
 
    if (test_framework_has_compressors ()) {
@@ -2891,7 +2891,7 @@ main (int argc, char *argv[])
    test_client_side_encryption_install (&suite);
    test_server_description_install (&suite);
    test_aws_install (&suite);
-   test_streamable_ismaster_install (&suite);
+   test_streamable_hello_install (&suite);
 #if defined(MONGOC_ENABLE_OCSP_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10101000L
    test_ocsp_cache_install (&suite);
 #endif

@@ -66,10 +66,10 @@ test_rs_failover (void)
    bson_error_t error;
    bson_t *b = tmp_bson ("{}");
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_OP_MSG,
-                                   true /* has primary */,
-                                   2 /* secondaries */,
-                                   0 /* arbiters */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_OP_MSG,
+                                 true /* has primary */,
+                                 2 /* secondaries */,
+                                 0 /* arbiters */);
 
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
@@ -518,7 +518,7 @@ test_unsupported_storage_engine_error (void)
                               "retryable writes. Please add retryWrites=false "
                               "to your connection string.";
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_RETRY_WRITES, true, 0, 0);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_RETRY_WRITES, true, 0, 0);
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    session = mongoc_client_start_session (client, NULL, &error);

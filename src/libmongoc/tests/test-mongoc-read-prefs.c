@@ -986,7 +986,7 @@ _test_op_msg_direct_connection (bool is_mongos,
       server = mock_mongos_new (WIRE_VERSION_OP_MSG);
    } else {
       char *hello = bson_strdup_printf ("{'ok': 1.0,"
-                                        " 'ismaster': true,"
+                                        " 'isWritablePrimary': true,"
                                         " 'setName': 'rs0',"
                                         " 'secondary': true,"
                                         " 'minWireVersion': 0,"

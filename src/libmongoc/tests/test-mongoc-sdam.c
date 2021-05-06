@@ -132,7 +132,7 @@ test_sdam_cb (bson_t *test)
    while (bson_iter_next (&phase_iter)) {
       bson_iter_bson (&phase_iter, &phase);
 
-      process_sdam_test_ismaster_responses (&phase, client->topology);
+      process_sdam_test_hello_responses (&phase, client->topology);
 
       /* parse out "outcome" and validate */
       BSON_ASSERT (bson_iter_init_find (&phase_field_iter, &phase, "outcome"));
@@ -219,7 +219,7 @@ test_sdam_cb (bson_t *test)
 /* Initialize a test context to run one SDAM integration test file.
  *
  * Do not use json_test_ctx_init to initialize a context. It sends commands to
- * check for sessions support. That interferes with failpoints set on isMaster.
+ * check for sessions support. That interferes with failpoints set on hello.
  */
 static void
 sdam_json_test_ctx_init (json_test_ctx_t *ctx,
@@ -338,7 +338,7 @@ run_one_integration_test (json_test_config_t *config, bson_t *test)
    db_name = bson_lookup_utf8 (config->scenario, "database_name");
    coll_name = bson_lookup_utf8 (config->scenario, "collection_name");
 
-   /* SDAM integration tests require streamable ismaster support, which is only
+   /* SDAM integration tests require streamable hello support, which is only
     * available for a client pool. */
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
    mongoc_client_pool_set_error_api (pool, MONGOC_ERROR_API_VERSION_2);
@@ -361,7 +361,7 @@ run_one_integration_test (json_test_config_t *config, bson_t *test)
    }
 
    /* Listen for events before topology scanning starts. Some tests
-    * check the result of the first ismaster command. But popping a client
+    * check the result of the first hello command. But popping a client
     * starts topology scanning. */
    set_apm_callbacks_pooled (&ctx, pool);
 
@@ -744,7 +744,7 @@ test_prose_rtt (void *unused)
     * to succeed. */
    _mongoc_usleep (RTT_TEST_INITIAL_SLEEP_SEC * 1000 * 1000);
 
-   /* Set a failpoint to make isMaster commands take longer. */
+   /* Set a failpoint to make hello commands take longer. */
    bson_init (&cmd);
    BCON_APPEND (&cmd, "configureFailPoint", "failCommand");
    BCON_APPEND (&cmd, "mode", "{", "times", BCON_INT32 (1000), "}");

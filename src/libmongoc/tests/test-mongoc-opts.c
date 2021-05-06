@@ -785,7 +785,7 @@ test_func_inherits_opts (void *ctx)
    bson_error_t error;
 
    /* one primary, one secondary */
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_OP_MSG, true, 1, 0);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_OP_MSG, true, 1, 0);
    /* we use read pref tags like "collection": "yes" to verify where the
     * pref was inherited from; ensure all secondaries match all tags */
    mock_rs_tag_secondary (rs,
