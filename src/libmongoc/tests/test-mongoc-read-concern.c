@@ -159,7 +159,7 @@ _test_read_concern_wire_version (bool allow, bool explicit)
       request =
          mock_server_receives_command (server,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'readConcern': {'level': 'foo'}}");
       mock_server_replies_simple (
          request, "{'ok': 1, 'cursor': {'id': 0, 'firstBatch': []}}");
@@ -186,7 +186,7 @@ _test_read_concern_wire_version (bool allow, bool explicit)
       request =
          mock_server_receives_command (server,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'readConcern': {'level': 'foo'}}");
       mock_server_replies_ok_and_destroys (request);
       BSON_ASSERT (future_get_bool (future));
@@ -215,7 +215,7 @@ _test_read_concern_wire_version (bool allow, bool explicit)
       request =
          mock_server_receives_command (server,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'readConcern': {'level': 'foo'}}");
       mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
       request_destroy (request);

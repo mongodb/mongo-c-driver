@@ -65,7 +65,7 @@ test_client_cmd_w_server_id (void)
    /* recognized that wire version is recent enough for readConcern */
    request = mock_rs_receives_command (rs,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'ping': 1,"
                                        " 'readConcern': {'level': 'local'},"
                                        " 'serverId': {'$exists': false}}");
@@ -107,7 +107,7 @@ test_client_cmd_w_server_id_sharded (void)
                                                   &reply,
                                                   &error);
 
-   /* does NOT set slave ok, since this is a sharded topology */
+   /* does NOT set secondaryOk, since this is a sharded topology */
    request = mock_server_receives_command (
       server,
       "db",
@@ -273,7 +273,7 @@ test_client_cmd_write_concern (void)
    future = future_client_command_simple (
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
    request =
-      mock_server_receives_command (server, "test", MONGOC_QUERY_SLAVE_OK, cmd);
+      mock_server_receives_command (server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
    BSON_ASSERT (request);
 
    mock_server_replies_ok_and_destroys (request);
@@ -286,7 +286,7 @@ test_client_cmd_write_concern (void)
    future = future_client_command_simple (
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
    request =
-      mock_server_receives_command (server, "test", MONGOC_QUERY_SLAVE_OK, cmd);
+      mock_server_receives_command (server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
    BSON_ASSERT (request);
 
    mock_server_replies_simple (
@@ -303,7 +303,7 @@ test_client_cmd_write_concern (void)
    future = future_client_command_simple (
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
    request =
-      mock_server_receives_command (server, "test", MONGOC_QUERY_SLAVE_OK, cmd);
+      mock_server_receives_command (server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
    mock_server_replies_simple (
       request,
       "{ 'ok' : 1, 'n': 1, "
@@ -794,7 +794,7 @@ test_mongoc_client_authenticate_timeout (void *context)
       client, "test", tmp_bson ("{'ping': 1}"), NULL, &reply, &error);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, NULL);
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    ASSERT (request);
    ASSERT_CMPSTR (request->command_name, "saslStart");
@@ -888,7 +888,7 @@ test_wire_version (void)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
    mock_server_replies_to_find (
-      request, MONGOC_QUERY_SLAVE_OK, 0, 0, "test.test", "{}", true);
+      request, MONGOC_QUERY_SECONDARY_OK, 0, 0, "test.test", "{}", true);
 
    /* no error */
    BSON_ASSERT (future_get_bool (future));
@@ -1073,7 +1073,7 @@ _test_command_read_prefs (bool simple, bool pooled)
       request = mock_server_receives_command (
          server,
          "db",
-         MONGOC_QUERY_SLAVE_OK,
+         MONGOC_QUERY_SECONDARY_OK,
          "{'$query': {'foo': 1},"
          " '$readPreference': {'mode': 'secondary'}}");
       mock_server_replies_simple (request, "{'ok': 1}");
@@ -1101,7 +1101,7 @@ _test_command_read_prefs (bool simple, bool pooled)
       request = mock_server_receives_command (
          server,
          "db",
-         MONGOC_QUERY_SLAVE_OK,
+         MONGOC_QUERY_SECONDARY_OK,
          "{'$query': {'foo': 1},"
          " '$readPreference': {'mode': 'secondary'}}");
 
@@ -1238,13 +1238,13 @@ test_command_with_opts_read_prefs (void)
    future = future_client_read_command_with_opts (
       client, "admin", cmd, NULL, NULL /* opts */, NULL, &error);
 
-   /* Server Selection Spec: "For mode 'secondary', drivers MUST set the slaveOK
+   /* Server Selection Spec: "For mode 'secondary', drivers MUST set the secondaryOk
     * wire protocol flag and MUST also use $readPreference".
     */
    request = mock_server_receives_command (
       server,
       "admin",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'$query': {'count': 'collection'},"
       " '$readPreference': {'mode': 'secondary'}}");
 
@@ -1574,7 +1574,7 @@ test_command_with_opts (void)
    request =
       mock_server_receives_command (server,
                                     "admin",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{"
                                     "   '$query': {"
                                     "      'create':'db',"
@@ -1748,7 +1748,7 @@ test_command_no_errmsg (void)
       future_client_command_simple (client, "admin", cmd, NULL, NULL, &error);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, NULL);
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    /* auth errors have $err, not errmsg. we'd raised "Unknown command error",
     * see CDRIVER-1928 */
@@ -2194,7 +2194,7 @@ test_get_database_names (void)
    request =
       mock_server_receives_command (server,
                                     "admin",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'listDatabases': 1, 'nameOnly': true}");
    mock_server_replies (
       request,
@@ -2216,7 +2216,7 @@ test_get_database_names (void)
    request =
       mock_server_receives_command (server,
                                     "admin",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'listDatabases': 1, 'nameOnly': true}");
    mock_server_replies (
       request, 0, 0, 0, 1, "{'ok': 0.0, 'code': 17, 'errmsg': 'err'}");
@@ -2871,7 +2871,7 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
    /* second selection requires ping, which fails */
    future = future_client_select_server (client, true, NULL, &error);
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
 
    mock_server_hangs_up (request);
    request_destroy (request);
@@ -2941,7 +2941,7 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
    request_destroy (request);
 
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, "{'cmd': 1}");
+      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'cmd': 1}");
    mock_server_replies_simple (request, "{'ok': 1}");
    request_destroy (request);
 
@@ -2956,7 +2956,7 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
       client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, &error);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
 
    mock_server_hangs_up (request);
    request_destroy (request);
@@ -2968,7 +2968,7 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
       request_destroy (request);
 
       request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_SLAVE_OK, "{'cmd': 1}");
+         server, "db", MONGOC_QUERY_SECONDARY_OK, "{'cmd': 1}");
 
       mock_server_replies_simple (request, "{'ok': 1}");
       ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -3014,7 +3014,7 @@ _cmd (mock_server_t *server,
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, error);
    request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
    ASSERT (request);
 
    if (server_replies) {
@@ -3256,7 +3256,7 @@ _respond_to_ping (future_t *future, mock_server_t *server)
    ASSERT (future);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
 
    mock_server_replies_simple (request, "{'ok': 1}");
 
@@ -3304,7 +3304,7 @@ test_mongoc_handshake_pool (void)
    request_destroy (request2);
 
    request2 = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SLAVE_OK, NULL);
+      server, "test", MONGOC_QUERY_SECONDARY_OK, NULL);
    mock_server_replies_ok_and_destroys (request2);
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -3553,7 +3553,7 @@ _test_null_error_pointer (bool pooled)
    future = future_client_command_simple (
       client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
    request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SLAVE_OK, NULL);
+      server, "test", MONGOC_QUERY_SECONDARY_OK, NULL);
    mock_server_replies_ok_and_destroys (request);
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -3717,7 +3717,7 @@ test_client_reset_cursors (void)
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SLAVE_OK, "{'find': 'test'}");
+      server, "test", MONGOC_QUERY_SECONDARY_OK, "{'find': 'test'}");
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -3752,7 +3752,7 @@ test_client_reset_cursors (void)
       database, tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
    mock_server_replies_simple (request, "{'ok': 1}");
 
    ASSERT (future_get_bool (future));
@@ -3815,7 +3815,7 @@ test_client_reset_connections (void)
       database, tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
    BSON_ASSERT (request);
    mock_server_replies_simple (request, "{'ok': 1}");
 

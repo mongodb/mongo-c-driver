@@ -246,7 +246,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
    rpc.header.request_id = server_monitor->request_id++;
    rpc.header.response_to = 0;
    rpc.header.opcode = MONGOC_OPCODE_QUERY;
-   rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
+   rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
    rpc.query.collection = "admin.$cmd";
    rpc.query.skip = 0;
    rpc.query.n_return = -1;

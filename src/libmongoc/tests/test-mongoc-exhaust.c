@@ -485,7 +485,7 @@ _mock_test_exhaust (bool pooled,
    request =
       mock_server_receives_query (server,
                                   "db.test",
-                                  MONGOC_QUERY_SLAVE_OK | MONGOC_QUERY_EXHAUST,
+                                  MONGOC_QUERY_SECONDARY_OK | MONGOC_QUERY_EXHAUST,
                                   0,
                                   0,
                                   "{}",

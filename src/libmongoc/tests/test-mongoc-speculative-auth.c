@@ -68,7 +68,7 @@ _respond_to_ping (future_t *future, mock_server_t *server, bool expect_ping)
    }
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
 
    ASSERT (request);
 
@@ -302,7 +302,7 @@ _post_hello_scram_invalid_auth_response (mock_server_t *srv)
    const bson_t *request_doc;
 
    request =
-      mock_server_receives_command (srv, "admin", MONGOC_QUERY_SLAVE_OK, NULL);
+      mock_server_receives_command (srv, "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);

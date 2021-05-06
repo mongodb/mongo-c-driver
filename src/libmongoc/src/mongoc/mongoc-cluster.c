@@ -818,7 +818,7 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
    hello_cmd.db_name = "admin";
    hello_cmd.command = command;
    hello_cmd.command_name = _mongoc_get_command_name (command);
-   hello_cmd.query_flags = MONGOC_QUERY_SLAVE_OK;
+   hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
    hello_cmd.server_stream = server_stream;
 
    if (!mongoc_cluster_run_command_private (
@@ -1059,7 +1059,7 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
    bson_init (&command);
    bson_append_int32 (&command, "getnonce", 8, 1);
    mongoc_cmd_parts_init (
-      &parts, cluster->client, auth_source, MONGOC_QUERY_SLAVE_OK, &command);
+      &parts, cluster->client, auth_source, MONGOC_QUERY_SECONDARY_OK, &command);
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
@@ -1106,7 +1106,7 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
     * checks for {ok: 1} in the response.
     */
    mongoc_cmd_parts_init (
-      &parts, cluster->client, auth_source, MONGOC_QUERY_SLAVE_OK, &command);
+      &parts, cluster->client, auth_source, MONGOC_QUERY_SECONDARY_OK, &command);
    parts.prohibit_lsid = true;
    ret = mongoc_cluster_run_command_parts (
       cluster, server_stream, &parts, &reply, error);
@@ -1193,7 +1193,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
    BSON_APPEND_INT32 (&b, "autoAuthorize", 1);
 
    mongoc_cmd_parts_init (
-      &parts, cluster->client, "$external", MONGOC_QUERY_SLAVE_OK, &b);
+      &parts, cluster->client, "$external", MONGOC_QUERY_SECONDARY_OK, &b);
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
@@ -1307,7 +1307,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
    }
 
    mongoc_cmd_parts_init (
-      &parts, cluster->client, "$external", MONGOC_QUERY_SLAVE_OK, &cmd);
+      &parts, cluster->client, "$external", MONGOC_QUERY_SECONDARY_OK, &cmd);
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
@@ -1443,7 +1443,7 @@ _mongoc_cluster_run_scram_command (mongoc_cluster_t *cluster,
    }
 
    mongoc_cmd_parts_init (
-      &parts, cluster->client, auth_source, MONGOC_QUERY_SLAVE_OK, cmd);
+      &parts, cluster->client, auth_source, MONGOC_QUERY_SECONDARY_OK, cmd);
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, server_id, stream, error);
@@ -3044,7 +3044,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
       bson_init (&command);
       BSON_APPEND_INT32 (&command, "ping", 1);
       mongoc_cmd_parts_init (
-         &parts, cluster->client, "admin", MONGOC_QUERY_SLAVE_OK, &command);
+         &parts, cluster->client, "admin", MONGOC_QUERY_SECONDARY_OK, &command);
       parts.prohibit_lsid = true;
       server_stream = _mongoc_cluster_create_server_stream (
          cluster->client->topology, server_id, stream, &error);

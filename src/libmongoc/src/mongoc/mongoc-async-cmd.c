@@ -142,7 +142,7 @@ _mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname)
    acmd->rpc.header.request_id = ++acmd->async->request_id;
    acmd->rpc.header.response_to = 0;
    acmd->rpc.header.opcode = MONGOC_OPCODE_QUERY;
-   acmd->rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
+   acmd->rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
    acmd->rpc.query.collection = acmd->ns;
    acmd->rpc.query.skip = 0;
    acmd->rpc.query.n_return = -1;

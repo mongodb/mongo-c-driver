@@ -1026,7 +1026,7 @@ mock_server_receives_legacy_hello (mock_server_t *server,
 
    if (!request_matches_query (request,
                                "admin.$cmd",
-                               MONGOC_QUERY_SLAVE_OK,
+                               MONGOC_QUERY_SECONDARY_OK,
                                0,
                                1,
                                match_json ? match_json : formatted_command_json,
@@ -1065,7 +1065,7 @@ mock_server_receives_hello (mock_server_t *server)
    return mock_server_receives_command (
       server,
       "admin",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
 }
 

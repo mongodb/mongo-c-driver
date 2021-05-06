@@ -262,7 +262,7 @@ _check_op_query (mock_server_t *server, test_collection_find_t *test_data)
 {
    mongoc_query_flags_t flags;
 
-   flags = test_data->flags | MONGOC_QUERY_SLAVE_OK;
+   flags = test_data->flags | MONGOC_QUERY_SECONDARY_OK;
 
    return mock_server_receives_query (server,
                                       "db.collection",
@@ -313,13 +313,13 @@ _test_collection_op_query (test_collection_find_t *test_data)
 static request_t *
 _check_find_command (mock_server_t *server, test_collection_find_t *test_data)
 {
-   /* Server Selection Spec: all queries to standalone set slaveOk.
+   /* Server Selection Spec: all queries to standalone set secondaryOk.
     *
     * Find, getMore And killCursors Commands Spec: "When sending a find command
-    * rather than a legacy OP_QUERY find only the slaveOk flag is honored".
+    * rather than a legacy OP_QUERY find only the secondaryOk flag is honored".
     */
    return mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, test_data->expected_find_command);
+      server, "db", MONGOC_QUERY_SECONDARY_OK, test_data->expected_find_command);
 }
 
 
@@ -772,7 +772,7 @@ test_query_flags (void)
       const char *json_fragment;
    } flag_and_name_t;
 
-   /* slaveok is not supported as an option, exhaust is tested separately */
+   /* secondaryOk is not supported as an option, exhaust is tested separately */
    flag_and_name_t flags_and_frags[] = {
       {MONGOC_QUERY_TAILABLE_CURSOR, "'tailable': true"},
       {MONGOC_QUERY_OPLOG_REPLAY, "'oplogReplay': true"},
@@ -826,7 +826,7 @@ test_exhaust (void)
     */
    request = mock_server_receives_request (server);
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SLAVE_OK | MONGOC_QUERY_EXHAUST,
+                                MONGOC_QUERY_SECONDARY_OK | MONGOC_QUERY_EXHAUST,
                                 0,
                                 0,
                                 "db.collection",
@@ -888,7 +888,7 @@ test_getmore_batch_size (void)
       request = mock_server_receives_command (
          server,
          "db",
-         MONGOC_QUERY_SLAVE_OK,
+         MONGOC_QUERY_SECONDARY_OK,
          "{'find': 'collection', 'filter': {}, 'batchSize': %s}",
          batch_size_json);
 
@@ -944,7 +944,7 @@ test_getmore_invalid_reply (void *ctx)
    request =
       mock_server_receives_command (server,
                                     "db",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'find': 'collection', 'filter': {}}");
 
    mock_server_replies_simple (request,
@@ -963,7 +963,7 @@ test_getmore_invalid_reply (void *ctx)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'getMore': {'$numberLong': '123'}, 'collection': 'collection'}");
 
    /* missing "cursor" */
@@ -1031,11 +1031,11 @@ test_getmore_await (void)
       mongoc_cursor_set_max_await_time_ms (cursor, 123);
       future = future_cursor_next (cursor, &doc);
 
-      /* only the slave ok bit is still in the query header */
+      /* only the secondaryOk bit is still in the query header */
       request = mock_server_receives_command (
          server,
          "db",
-         MONGOC_QUERY_SLAVE_OK,
+         MONGOC_QUERY_SECONDARY_OK,
          "{'find': 'collection',"
          " 'maxTimeMS': {'$exists': false},"
          " 'maxAwaitTimeMS': {'$exists': false}}");
@@ -1063,11 +1063,11 @@ test_getmore_await (void)
          max_time_json = "{'$exists': false}";
       }
 
-      /* only the slave ok bit is still in the query header */
+      /* only the secondaryOk bit is still in the query header */
       request =
          mock_server_receives_command (server,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'getMore': {'$numberLong': '1'},"
                                        " 'collection': 'collection',"
                                        " 'maxAwaitTimeMS': {'$exists': false},"

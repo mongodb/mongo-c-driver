@@ -501,7 +501,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       request = mock_server_receives_command (
          server,
          "db",
-         MONGOC_QUERY_SLAVE_OK,
+         MONGOC_QUERY_SECONDARY_OK,
          "{'$query': {'foo': 1},"
          " '$readPreference': {'mode': 'secondary'}}");
       mock_server_replies_simple (request, "{'ok': 1}");
@@ -529,7 +529,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       request = mock_server_receives_command (
          server,
          "db",
-         MONGOC_QUERY_SLAVE_OK,
+         MONGOC_QUERY_SECONDARY_OK,
          "{'$query': {'foo': 1},"
          " '$readPreference': {'mode': 'secondary'}}");
 
@@ -946,7 +946,7 @@ _test_get_collection_info_getmore ()
    request =
       mock_server_receives_command (server,
                                     "db",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'listCollections': 1, 'nameOnly': true}");
 
    mock_server_replies_simple (request,
@@ -959,7 +959,7 @@ _test_get_collection_info_getmore ()
    request =
       mock_server_receives_command (server,
                                     "db",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'getMore': {'$numberLong': '123'},"
                                     " 'collection': '$cmd.listCollections'}");
 
@@ -1172,7 +1172,7 @@ test_get_collection_names_error (void)
    request =
       mock_server_receives_command (server,
                                     "test",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'listCollections': 1, 'nameOnly': true}");
    mock_server_hangs_up (request);
    names = future_get_char_ptr_ptr (future);

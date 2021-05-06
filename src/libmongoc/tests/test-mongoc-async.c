@@ -165,7 +165,7 @@ test_hello_impl (bool with_ssl)
    for (i = 0; i < NSERVERS; i++) {
       server_id = (i + offset) % NSERVERS;
       request = mock_server_receives_command (
-         servers[server_id], "admin", MONGOC_QUERY_SLAVE_OK, NULL);
+         servers[server_id], "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
 
       /* use "serverId" field to distinguish among responses */
       reply = bson_strdup_printf ("{'ok': 1,"

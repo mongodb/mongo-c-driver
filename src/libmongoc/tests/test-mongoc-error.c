@@ -86,7 +86,7 @@ _test_command_error (int32_t error_api_version)
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, &reply, &error);
    request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
    mock_server_replies_simple (request,
                                "{'ok': 0, 'code': 42, 'errmsg': 'foo'}");
    ASSERT (!future_get_bool (future));
@@ -141,7 +141,7 @@ test_state_change_helper (uint32_t domain, bool expect_error)
    bson_error_t error;
    mongoc_server_err_t not_master_codes[] = {
       MONGOC_SERVER_ERR_NOTMASTER,
-      MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK,
+      MONGOC_SERVER_ERR_NOTPRIMARYNOSECONDARYOK,
       MONGOC_SERVER_ERR_LEGACYNOTPRIMARY};
    mongoc_server_err_t node_is_recovering_codes[] = {
       MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN,

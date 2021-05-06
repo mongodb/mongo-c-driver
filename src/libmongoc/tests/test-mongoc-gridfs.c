@@ -424,7 +424,7 @@ test_find_one_with_opts_limit (void)
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_error_api (client, 2);
 
-   gridfs = _get_gridfs (server, client, MONGOC_QUERY_SLAVE_OK);
+   gridfs = _get_gridfs (server, client, MONGOC_QUERY_SECONDARY_OK);
 
    future =
       future_gridfs_find_one_with_opts (gridfs, tmp_bson ("{}"), NULL, &error);
@@ -432,11 +432,11 @@ test_find_one_with_opts_limit (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'find': 'fs.files', 'filter': {}, 'limit': 1}");
 
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SLAVE_OK,
+                                MONGOC_QUERY_SECONDARY_OK,
                                 0 /* cursor_id */,
                                 1 /* num returned */,
                                 "db.fs.files",
@@ -456,11 +456,11 @@ test_find_one_with_opts_limit (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'find': 'fs.files', 'filter': {}, 'limit': 1}");
 
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SLAVE_OK,
+                                MONGOC_QUERY_SECONDARY_OK,
                                 0 /* cursor_id */,
                                 1 /* num returned */,
                                 "db.fs.files",
@@ -1423,7 +1423,7 @@ test_inherit_client_config (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'$query': {'find': 'fs.files', 'readConcern': {'level': 'majority'}},"
       " '$readPreference': {'mode': 'secondary'}}");
 

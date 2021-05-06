@@ -128,7 +128,7 @@ test_get_max_msg_size (void)
          collection, tmp_bson ("{}"), NULL, NULL);                      \
       future = future_cursor_next (cursor, &doc);                       \
       request = mock_server_receives_query (                            \
-         server, "test.test", MONGOC_QUERY_SLAVE_OK, 0, 0, "{}", NULL); \
+         server, "test.test", MONGOC_QUERY_SECONDARY_OK, 0, 0, "{}", NULL); \
       BSON_ASSERT (request);                                            \
       client_port_variable = request_get_client_port (request);         \
    } while (0)
@@ -254,7 +254,7 @@ _test_cluster_command_timeout (bool pooled)
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
    request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
    client_port = request_get_client_port (request);
 
    ASSERT (!future_get_bool (future));
@@ -277,7 +277,7 @@ _test_cluster_command_timeout (bool pooled)
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'baz': 1}"), NULL, &reply, &error);
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, "{'baz': 1}");
+      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'baz': 1}");
    ASSERT (request);
    /* new socket */
    ASSERT_CMPUINT16 (client_port, !=, request_get_client_port (request));
@@ -353,7 +353,7 @@ _test_write_disconnect (void)
    request_destroy (request);
 
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
    mock_server_replies_simple (request, "{'ok': 1}");
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
@@ -1018,7 +1018,7 @@ test_error_msg_t errors[] = {
    {"not master", true},
    {"not master or secondary", true},
    {"node is recovering", true},
-   {"not master and slaveOk=false", true},
+   {"not master and secondaryOk=false", true},
    {"replicatedToNum called but not master anymore", true},
    {"??? node is recovering ???", true},
    {"??? not master ???", true},
@@ -1518,7 +1518,7 @@ _test_cluster_command_error (bool use_op_msg)
          server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
    } else {
       request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+         server, "db", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
    }
    mock_server_hangs_up (request);
    BSON_ASSERT (!future_get_bool (future));

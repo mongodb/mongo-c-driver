@@ -430,7 +430,7 @@ static mongoc_cursor_t *
 _make_cmd_cursor_from_agg (mongoc_collection_t *coll)
 {
    return mongoc_collection_aggregate (
-      coll, MONGOC_QUERY_SLAVE_OK, tmp_bson ("{}"), NULL, NULL);
+      coll, MONGOC_QUERY_SECONDARY_OK, tmp_bson ("{}"), NULL, NULL);
 }
 
 
@@ -439,7 +439,7 @@ _make_cmd_deprecated_cursor (mongoc_collection_t *coll)
 {
    return mongoc_collection_command (
       coll,
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       0,
       0,
       0,
@@ -770,7 +770,7 @@ _test_kill_cursors (bool pooled, bool use_killcursors_cmd)
 
    /* reply as appropriate to OP_QUERY or find command */
    mock_rs_replies_to_find (request,
-                            MONGOC_QUERY_SLAVE_OK,
+                            MONGOC_QUERY_SECONDARY_OK,
                             123,
                             1,
                             "db.collection",
@@ -791,7 +791,7 @@ _test_kill_cursors (bool pooled, bool use_killcursors_cmd)
 
    if (use_killcursors_cmd) {
       kill_cursors =
-         mock_rs_receives_command (rs, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+         mock_rs_receives_command (rs, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
 
       /* mock server framework can't test "cursors" array, CDRIVER-994 */
       ASSERT (BCON_EXTRACT ((bson_t *) request_get_doc (kill_cursors, 0),
@@ -889,7 +889,7 @@ _test_client_kill_cursor (bool has_primary, bool wire_version_4)
       client, "admin", tmp_bson ("{'foo': 1}"), read_prefs, NULL, &error);
 
    request =
-      mock_rs_receives_command (rs, "admin", MONGOC_QUERY_SLAVE_OK, NULL);
+      mock_rs_receives_command (rs, "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    mock_rs_replies_simple (request, "{'ok': 1}");
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -1144,13 +1144,13 @@ test_cursor_new_tailable_await (void)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_command (server,
                                            "db",
-                                           MONGOC_QUERY_SLAVE_OK,
+                                           MONGOC_QUERY_SECONDARY_OK,
                                            "{'getMore': {'$numberLong': '123'},"
                                            " 'collection': 'collection',"
                                            " 'maxTimeMS': 100"
                                            "}");
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SLAVE_OK,
+                                MONGOC_QUERY_SECONDARY_OK,
                                 0 /* cursor id */,
                                 1 /* number returned */,
                                 "db.collection",
@@ -1212,14 +1212,14 @@ test_cursor_int64_t_maxtimems (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'getMore': {'$numberLong': '123'},"
       " 'collection': 'collection',"
       " 'maxTimeMS': {'$numberLong': '%" PRIu64 "'}"
       "}",
       ms_int64);
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SLAVE_OK,
+                                MONGOC_QUERY_SECONDARY_OK,
                                 0 /* cursor id */,
                                 1 /* number returned */,
                                 "db.collection",
@@ -1489,7 +1489,7 @@ _test_cursor_hint (bool pooled, bool use_primary)
       expected_flags = MONGOC_QUERY_NONE;
    } else {
       server_id = server_id_for_read_mode (client, MONGOC_READ_SECONDARY);
-      expected_flags = MONGOC_QUERY_SLAVE_OK;
+      expected_flags = MONGOC_QUERY_SECONDARY_OK;
    }
 
    ASSERT (mongoc_cursor_set_hint (cursor, server_id));
@@ -1559,13 +1559,13 @@ mongoc_read_mode_t modes[] = {
 
 mongoc_query_flags_t expected_flag[] = {
    MONGOC_QUERY_NONE,
-   MONGOC_QUERY_SLAVE_OK,
-   MONGOC_QUERY_SLAVE_OK,
-   MONGOC_QUERY_SLAVE_OK,
-   MONGOC_QUERY_SLAVE_OK,
+   MONGOC_QUERY_SECONDARY_OK,
+   MONGOC_QUERY_SECONDARY_OK,
+   MONGOC_QUERY_SECONDARY_OK,
+   MONGOC_QUERY_SECONDARY_OK,
 };
 
-/* test that mongoc_cursor_set_hint sets slaveok for mongos only if read pref
+/* test that mongoc_cursor_set_hint sets secondaryOk for mongos only if read pref
  * is secondaryPreferred. */
 static void
 test_cursor_hint_mongos (void)
@@ -1872,7 +1872,7 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor,
 
    future = future_cursor_next (cursor, &doc);
    request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    ASSERT (match_bson (request_get_doc (request, 0), &find_cmd, true));
 
@@ -1894,7 +1894,7 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor,
       /* expect getMore command, send reply_length[reply_no] docs to client */
       future = future_cursor_next (cursor, &doc);
       request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+         server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
 
       bson_reinit (&getmore_cmd);
       BSON_APPEND_INT64 (&getmore_cmd, "getMore", 123);
@@ -2130,10 +2130,10 @@ test_empty_final_batch (void)
     */
    future = future_cursor_next (cursor, &doc);
    request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    mock_server_replies_to_find (
-      request, MONGOC_QUERY_SLAVE_OK, 1234, 0, "db.coll", "{}", true);
+      request, MONGOC_QUERY_SECONDARY_OK, 1234, 0, "db.coll", "{}", true);
 
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -2144,10 +2144,10 @@ test_empty_final_batch (void)
     */
    future = future_cursor_next (cursor, &doc);
    request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    mock_server_replies_to_find (
-      request, MONGOC_QUERY_SLAVE_OK, 1234, 0, "db.coll", "" /* empty */, true);
+      request, MONGOC_QUERY_SECONDARY_OK, 1234, 0, "db.coll", "" /* empty */, true);
 
    ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -2159,7 +2159,7 @@ test_empty_final_batch (void)
     */
    future = future_cursor_next (cursor, &doc);
    request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    ASSERT_CMPINT64 (
       bson_lookup_int64 (request_get_doc (request, 0), "batchSize"),
@@ -2167,7 +2167,7 @@ test_empty_final_batch (void)
       (int64_t) 1);
 
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SLAVE_OK,
+                                MONGOC_QUERY_SECONDARY_OK,
                                 0 /* cursor id */,
                                 0,
                                 "db.coll",

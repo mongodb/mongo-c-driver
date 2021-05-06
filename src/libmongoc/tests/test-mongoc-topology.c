@@ -1250,7 +1250,7 @@ test_rtt (void *ctx)
                         "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
    request_destroy (request);
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
    mock_server_replies (request,
                         MONGOC_REPLY_NONE,
                         0,
@@ -2274,7 +2274,7 @@ _test_hello_versioned_api (bool pooled)
 
    if (!pooled) {
       request = mock_server_receives_command (
-         server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+         server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
       mock_server_replies_ok_and_destroys (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);

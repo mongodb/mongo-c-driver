@@ -244,7 +244,7 @@ When connected to a replica set, the driver chooses which member to query using 
 ========================================== ================================= =======================================================================================================================================================================
 Constant                                   Key                               Description
 ========================================== ================================= =======================================================================================================================================================================
-MONGOC_URI_READPREFERENCE                  readpreference                    Specifies the replica set read preference for this connection. This setting overrides any slaveOk value. The read preference values are the following:
+MONGOC_URI_READPREFERENCE                  readpreference                    Specifies the replica set read preference for this connection. This setting overrides any secondaryOk value. The read preference values are the following:
 
                                                                              * primary (default)
                                                                              * primaryPreferred
@@ -269,7 +269,6 @@ For historical reasons, the following options are available. They should however
 Constant                                   Key                               Description
 ========================================== ================================= =======================================================================================================================================================================
 MONGOC_URI_SAFE                            safe                              {true|false} Same as w={1|0}
-MONGOC_URI_SLAVEOK                         slaveok                           When set, same as readPreference=secondaryPreferred
 ========================================== ================================= =======================================================================================================================================================================
 
 .. only:: html
