@@ -492,7 +492,7 @@ mock_server_remove_autoresponder (mock_server_t *server, int id)
 
 
 static bool
-auto_hello_generate_legacy_response (request_t *request,
+auto_hello_generate_response (request_t *request,
                                      void *data,
                                      bson_t *hello_response)
 {
@@ -571,7 +571,7 @@ auto_hello (request_t *request, void *data)
 }
 
 static void
-mock_server_free_callback (void *data)
+hello_callback_free (void *data)
 {
    hello_callback_t *callback = (hello_callback_t *) data;
 
@@ -597,7 +597,7 @@ mock_server_auto_hello_callback (mock_server_t *server,
    callback->destructor = destructor;
 
    return mock_server_autoresponds (
-      server, auto_hello, (void *) callback, mock_server_free_callback);
+      server, auto_hello, (void *) callback, hello_callback_free);
 }
 
 /*--------------------------------------------------------------------------
@@ -627,7 +627,7 @@ mock_server_auto_hello (mock_server_t *server, const char *response_json, ...)
    va_end (args);
 
    return mock_server_auto_hello_callback (server,
-                                           auto_hello_generate_legacy_response,
+                                           auto_hello_generate_response,
                                            (void *) formatted_response_json,
                                            bson_free);
 }
