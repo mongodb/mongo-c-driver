@@ -3275,8 +3275,9 @@ test_mongoc_handshake_pool (void)
    mongoc_client_t *client1;
    mongoc_client_t *client2;
    mongoc_client_pool_t *pool;
-   const char *const server_reply = "{'ok': 1, 'isWritablePrimary': true, "
-                                    "'minWireVersion': 2, 'maxWireVersion': 5}";
+   const char *const server_reply =
+      "{'ok': 1, '" HANDSHAKE_RESPONSE_LEGACY_HELLO "': true, "
+      "'minWireVersion': 2, 'maxWireVersion': 5}";
    future_t *future;
 
    server = mock_server_new ();

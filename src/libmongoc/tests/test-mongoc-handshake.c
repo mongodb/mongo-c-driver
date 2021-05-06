@@ -406,13 +406,13 @@ test_mongoc_handshake_too_big (void)
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
    request = mock_server_receives_legacy_hello (server, NULL);
 
-   /* Make sure the isMaster request has a handshake field, and it's not huge */
+   /* Make sure the hello request has a handshake field, and it's not huge */
    ASSERT (request);
    hello_doc = request_get_doc (request, 0);
    ASSERT (hello_doc);
    ASSERT (bson_has_field (hello_doc, HANDSHAKE_FIELD));
 
-   /* isMaster with handshake isn't too big */
+   /* hello with handshake isn't too big */
    bson_iter_init_find (&iter, hello_doc, HANDSHAKE_FIELD);
    ASSERT (BSON_ITER_HOLDS_DOCUMENT (&iter));
    bson_iter_document (&iter, &len, &dummy);

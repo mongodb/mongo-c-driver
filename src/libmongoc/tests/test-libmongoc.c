@@ -1142,7 +1142,7 @@ call_hello_with_host_and_port (char *host_and_port, bson_t *reply)
              NULL,
              reply,
              &error)) {
-         fprintf (stderr, "error calling hello: '%s'\n", error.message);
+         fprintf (stderr, "error calling legacy hello: '%s'\n", error.message);
          fprintf (stderr, "URI = %s\n", uri_str);
          abort ();
       }
