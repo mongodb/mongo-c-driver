@@ -54,7 +54,7 @@ MONGOC_EXPORT (const char *)
 mongoc_server_description_type (const mongoc_server_description_t *description);
 
 MONGOC_EXPORT (const bson_t *)
-mongoc_server_description_hello_response (
+mongoc_server_description_last_hello_response (
    const mongoc_server_description_t *description);
 
 MONGOC_EXPORT (const bson_t *)

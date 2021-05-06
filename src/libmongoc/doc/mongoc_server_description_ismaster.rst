@@ -19,7 +19,7 @@ Deprecated
 
   This function is deprecated and should not be used in new code.
 
-Please use :doc:`mongoc_server_description_hello_response() <mongoc_server_description_hello_response>` instead.
+Please use :doc:`mongoc_server_description_last_hello_response() <mongoc_server_description_last_hello_response>` instead.
 
 Parameters
 ----------

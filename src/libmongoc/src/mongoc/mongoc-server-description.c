@@ -370,7 +370,7 @@ mongoc_server_description_type (const mongoc_server_description_t *description)
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_server_description_hello_response --
+ * mongoc_server_description_last_hello_response --
  *
  *      Return this server's most recent "hello" command response.
  *
@@ -381,7 +381,7 @@ mongoc_server_description_type (const mongoc_server_description_t *description)
  */
 
 const bson_t *
-mongoc_server_description_hello_response (
+mongoc_server_description_last_hello_response (
    const mongoc_server_description_t *description)
 {
    return &description->last_hello_response;
