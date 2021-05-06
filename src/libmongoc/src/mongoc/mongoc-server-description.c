@@ -404,7 +404,7 @@ const bson_t *
 mongoc_server_description_ismaster (
    const mongoc_server_description_t *description)
 {
-   return &description->last_hello_response;
+   return mongoc_server_description_last_hello_response (description);
 }
 
 /*
