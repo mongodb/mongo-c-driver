@@ -87,7 +87,7 @@ _bson_error_message_printf (bson_error_t *error, const char *format, ...)
    BSON_GNUC_PRINTF (2, 3);
 
 static void
-_handle_not_master_error (mongoc_cluster_t *cluster,
+_handle_not_primary_error (mongoc_cluster_t *cluster,
                           const mongoc_server_stream_t *server_stream,
                           const bson_t *reply)
 {
@@ -601,7 +601,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
       mongoc_apm_command_failed_cleanup (&failed_event);
    }
 
-   _handle_not_master_error (cluster, server_stream, reply);
+   _handle_not_primary_error (cluster, server_stream, reply);
 
    _handle_txn_error_labels (retval, error, cmd, reply);
 
@@ -676,7 +676,7 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
       retval =
          mongoc_cluster_run_command_opquery (cluster, cmd, -1, reply, error);
    }
-   _handle_not_master_error (cluster, server_stream, reply);
+   _handle_not_primary_error (cluster, server_stream, reply);
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
    }
@@ -2568,7 +2568,7 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
           * invalidated.
           * This may have happened if:
           * - A background scan removed the server description.
-          * - A network error or a "not master"/"node is recovering" error
+          * - A network error or a "not primary"/"node is recovering" error
           *   occurred on an app connection.
           * - A network error occurred on the monitor connection.
           */

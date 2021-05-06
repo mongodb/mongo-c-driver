@@ -92,7 +92,7 @@ test_rs_failover (void)
    mock_rs_stepdown (rs);
    mock_rs_elect (rs, 1 /* server id */);
 
-   /* insert receives "not master" from old primary, reselects and retries */
+   /* insert receives "not primary" from old primary, reselects and retries */
    future = future_collection_insert_one (
       collection, tmp_bson ("{}"), &opts, NULL, &error);
 

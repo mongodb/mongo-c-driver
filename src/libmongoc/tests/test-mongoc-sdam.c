@@ -583,7 +583,7 @@ test_direct_connection (void *ctx)
     * ``mongodb://HOST/?directConnection=true`` as the URI.
     * Attempt a write to a collection.
     *
-    * Outcome: Verify that the write failed with a NotMaster error. */
+    * Outcome: Verify that the write failed with a NotPrimary error. */
    bson_free (uri_str);
    uri_str = bson_strdup_printf ("mongodb://%s/?directConnection=true",
                                  hl_secondary->host_and_port);

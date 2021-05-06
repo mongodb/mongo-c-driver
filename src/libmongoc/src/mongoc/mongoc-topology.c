@@ -1653,7 +1653,7 @@ _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
 
 /* Handle an error from an app connection.
  *
- * This can be a network error or "not master" / "node is recovering" error.
+ * This can be a network error or "not primary" / "node is recovering" error.
  * Caller must lock topology->mutex.
  * Returns true if pool was cleared.
  */
@@ -1719,7 +1719,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       }
 
       if (!_mongoc_error_is_state_change (&cmd_error)) {
-         /* Not a "not master" or "node is recovering" error. */
+         /* Not a "not primary" or "node is recovering" error. */
          return false;
       }
 
@@ -1739,7 +1739,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
          sd, &incoming_topology_version);
       bson_destroy (&incoming_topology_version);
 
-      /* SDAM: When handling a "not master" or "node is recovering" error, the
+      /* SDAM: When handling a "not primary" or "node is recovering" error, the
        * client MUST clear the server's connection pool if and only if the error
        * is "node is shutting down" or the error originated from server version
        * < 4.2.
@@ -1750,7 +1750,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
          pool_cleared = true;
       }
 
-      /* SDAM: When the client sees a "not master" or "node is recovering" error
+      /* SDAM: When the client sees a "not primary" or "node is recovering" error
        * and the error's topologyVersion is strictly greater than the current
        * ServerDescription's topologyVersion it MUST replace the server's
        * description with a ServerDescription of type Unknown. */
@@ -1758,11 +1758,11 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
          &topology->description, server_id, &cmd_error);
 
       if (topology->single_threaded) {
-         /* SDAM: For single-threaded clients, in the case of a "not master" or
+         /* SDAM: For single-threaded clients, in the case of a "not primary" or
           * "node is shutting down" error, the client MUST mark the topology as
           * "stale"
           */
-         if (_mongoc_error_is_not_master (&cmd_error)) {
+         if (_mongoc_error_is_not_primary (&cmd_error)) {
             topology->stale = true;
          }
       } else {

@@ -1805,7 +1805,7 @@ test_cluster_time_updated_during_handshake ()
    mongoc_uri_destroy (uri);
 }
 
-/* test that when a command receives a "not master" or "node is recovering"
+/* test that when a command receives a "not primary" or "node is recovering"
  * error that the client takes the appropriate action:
  * - a pooled client should mark the server as unknown and request a full scan
  *   of the topology
@@ -2051,8 +2051,8 @@ test_request_scan_on_error ()
                 false /* should_scan */,
                 true /* should_mark_unknown */,
                 "node is recovering");
-   /* Test that "not master or secondary" is considered a "node is recovering"
-    * error, not a "not master" error. */
+   /* Test that "not primary or secondary" is considered a "node is recovering"
+    * error, not a "not primary" error. */
    TEST_SINGLE ("{'ok': 0, 'errmsg': 'not master or secondary'}",
                 false /* should_scan */,
                 true /* should_mark_unknown */,
@@ -2061,8 +2061,8 @@ test_request_scan_on_error ()
                 true /* should_scan */,
                 true /* should_mark_unknown */,
                 "node is recovering");
-   /* Test that "not master or secondary" is considered a "node is recovering"
-    * error, not a "not master" error. */
+   /* Test that "not primary or secondary" is considered a "node is recovering"
+    * error, not a "not primary" error. */
    TEST_POOLED ("{'ok': 0, 'errmsg': 'not master or secondary'}",
                 true /* should_scan */,
                 true /* should_mark_unknown */,
@@ -2071,8 +2071,8 @@ test_request_scan_on_error ()
               false /* should_scan */,
               false /* should_mark_unknown */,
               "random error");
-   /* check the error code for NotMaster, which should be considered a "not
-    * master" error. */
+   /* check the error code for NotPrimary, which should be considered a "not
+    * primary" error. */
    TEST_BOTH ("{'ok': 0, 'code': 10107 }",
               true /* should_scan */,
               true /* should_mark_unknown */,

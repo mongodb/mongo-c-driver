@@ -644,7 +644,7 @@ _test_getmore_error (const char *server_reply,
    if (should_resume) {
       /* client should retry the aggregate. */
       if (resume_kills_cursor) {
-         /* errors that are considered "not master" or "node is recovering"
+         /* errors that are considered "not primary" or "node is recovering"
           * errors by SDAM will mark the connected server as UNKNOWN, and no
           * killCursors will be executed. */
          request = mock_server_receives_command (
@@ -719,7 +719,7 @@ test_getmore_errors (void)
 }
 /* From Change Streams Spec tests:
  * "ChangeStream will automatically resume one time on a resumable error
- * (including not master) with the initial pipeline and options, except for the
+ * (including not primary) with the initial pipeline and options, except for the
  * addition/update of a resumeToken"
  * "The killCursors command sent during the “Resume Process” must not be
  * allowed to throw an exception."
@@ -737,7 +737,7 @@ test_change_stream_resumable_error (void)
    bson_error_t err;
    const bson_t *err_doc = NULL;
    const bson_t *next_doc = NULL;
-   const char *not_master_err =
+   const char *not_primary_err =
       "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }";
    const char *interrupted_err =
       "{ 'code': 11601, 'errmsg': 'interrupted', 'ok': 0 }";
@@ -804,14 +804,14 @@ test_change_stream_resumable_error (void)
    ASSERT (next_doc == NULL);
    future_destroy (future);
 
-   /* Test the "notmaster" resumable error occurring twice in a row */
+   /* Test the "not_primary" resumable error occurring twice in a row */
    future = future_change_stream_next (stream, &next_doc);
    request =
       mock_server_receives_command (server,
                                     "db",
                                     MONGOC_QUERY_SECONDARY_OK,
                                     "{ 'getMore': 124, 'collection': 'coll' }");
-   mock_server_replies_simple (request, not_master_err);
+   mock_server_replies_simple (request, not_primary_err);
    request_destroy (request);
 
    /* Retry command */
@@ -828,7 +828,7 @@ test_change_stream_resumable_error (void)
                                     "db",
                                     MONGOC_QUERY_SECONDARY_OK,
                                     "{ 'getMore': 125, 'collection': 'coll' }");
-   mock_server_replies_simple (request, not_master_err);
+   mock_server_replies_simple (request, not_primary_err);
    request_destroy (request);
 
    /* Retry command */

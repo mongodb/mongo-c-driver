@@ -2965,7 +2965,7 @@ test_unordered_bulk_writes_with_error (void)
    server = mock_server_new ();
    mock_server_run (server);
 
-   /* server is "recovering": not master, not secondary */
+   /* server is "recovering": not primary, not secondary */
    mock_server_auto_hello (server,
                            "{'ok': 1,"
                            " 'maxWireVersion': %d,"

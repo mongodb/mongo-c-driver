@@ -402,7 +402,7 @@ test_write_command_disconnect (void *ctx)
 /* Test for CDRIVER-3306 - Do not assume non-empty server reply implies stream
  * is still valid */
 static void
-test_cluster_command_notmaster (void)
+test_cluster_command_not_primary (void)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -423,7 +423,7 @@ test_cluster_command_notmaster (void)
    server = mock_server_new ();
    mock_server_run (server);
 
-   /* server is "recovering": not master, not secondary */
+   /* server is "recovering": not primary, not secondary */
    mock_server_auto_hello (server,
                            "{'ok': 1,"
                            " 'maxWireVersion': %d,"
@@ -1010,7 +1010,7 @@ typedef void (*cleanup_fn_t) (future_t *);
 
 typedef struct {
    const char *errmsg;
-   bool is_not_master_err;
+   bool is_not_primary_err;
 } test_error_msg_t;
 
 
@@ -1025,8 +1025,8 @@ test_error_msg_t errors[] = {
    {"foo", false},
    {0}};
 
-/* a "not master" or "node is recovering" error marks server Unknown.
-   "not master" and "node is recovering" need only be substrings of the error
+/* a "not primary" or "node is recovering" error marks server Unknown.
+   "not primary" and "node is recovering" need only be substrings of the error
    message. */
 static void
 _test_not_primary (bool pooled,
@@ -1076,7 +1076,7 @@ _test_not_primary (bool pooled,
       BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
 
       /*
-       * command error marks server Unknown iff it's a "not master" error
+       * command error marks server Unknown iff it's a "not primary" error
        */
       future = run_command (client);
       request = mock_server_receives_request (server);
@@ -1086,7 +1086,7 @@ _test_not_primary (bool pooled,
       mock_server_replies_simple (request, reply);
       BSON_ASSERT (!future_get_bool (future));
 
-      if (test_error_msg->is_not_master_err) {
+      if (test_error_msg->is_not_primary_err) {
          BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
       } else {
          BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
@@ -1187,7 +1187,7 @@ future_command_private_cleanup (future_t *future)
 
 
 static void
-test_not_master_auth_single_op_query (void)
+test_not_primary_auth_single_op_query (void)
 {
    _test_not_primary (
       false, false, future_command_private, future_command_private_cleanup);
@@ -1195,14 +1195,14 @@ test_not_master_auth_single_op_query (void)
 
 
 static void
-test_not_master_auth_pooled_op_query (void)
+test_not_primary_auth_pooled_op_query (void)
 {
    _test_not_primary (
       true, false, future_command_private, future_command_private_cleanup);
 }
 
 static void
-test_not_master_auth_single_op_msg (void)
+test_not_primary_auth_single_op_msg (void)
 {
    _test_not_primary (
       false, true, future_command_private, future_command_private_cleanup);
@@ -1210,7 +1210,7 @@ test_not_master_auth_single_op_msg (void)
 
 
 static void
-test_not_master_auth_pooled_op_msg (void)
+test_not_primary_auth_pooled_op_msg (void)
 {
    _test_not_primary (
       true, true, future_command_private, future_command_private_cleanup);
@@ -1859,7 +1859,7 @@ test_cluster_install (TestSuite *suite)
                                 "/Cluster/command/timeout/pooled",
                                 test_cluster_command_timeout_pooled);
    TestSuite_AddMockServerTest (
-      suite, "/Cluster/command/notmaster", test_cluster_command_notmaster);
+      suite, "/Cluster/command/notprimary", test_cluster_command_not_primary);
    TestSuite_AddFull (suite,
                       "/Cluster/write_command/disconnect",
                       test_write_command_disconnect,
@@ -1916,36 +1916,36 @@ test_cluster_install (TestSuite *suite)
       test_advanced_cluster_time_not_sent_to_standalone,
       test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_master/single/op_query",
+                                "/Cluster/not_primary/single/op_query",
                                 test_not_primary_single_op_query,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_master/pooled/op_query",
+                                "/Cluster/not_primary/pooled/op_query",
                                 test_not_primary_pooled_op_query,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_master/single/op_msg",
+                                "/Cluster/not_primary/single/op_msg",
                                 test_not_primary_single_op_msg,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_master/pooled/op_msg",
+                                "/Cluster/not_primary/pooled/op_msg",
                                 test_not_primary_pooled_op_msg,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_master_auth/single/op_query",
-                                test_not_master_auth_single_op_query,
+                                "/Cluster/not_primary_auth/single/op_query",
+                                test_not_primary_auth_single_op_query,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_master_auth/pooled/op_query",
-                                test_not_master_auth_pooled_op_query,
+                                "/Cluster/not_primary_auth/pooled/op_query",
+                                test_not_primary_auth_pooled_op_query,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_master_auth/single/op_msg",
-                                test_not_master_auth_single_op_msg,
+                                "/Cluster/not_primary_auth/single/op_msg",
+                                test_not_primary_auth_single_op_msg,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
-                                "/Cluster/not_master_auth/pooled/op_msg",
-                                test_not_master_auth_pooled_op_msg,
+                                "/Cluster/not_primary_auth/pooled/op_msg",
+                                test_not_primary_auth_pooled_op_msg,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (
       suite, "/Cluster/hello_fails", test_cluster_hello_fails);

@@ -238,7 +238,7 @@ _mongoc_topology_background_monitoring_reconcile (mongoc_topology_t *topology)
 
 /* Request all server monitors to scan.
  *
- * Called from application threads (during server selection or "not master"
+ * Called from application threads (during server selection or "not primary"
  * errors). Caller must have topology mutex locked. Locks server monitor mutexes
  * to deliver scan_requested.
  */

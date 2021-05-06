@@ -964,7 +964,7 @@ typedef mongoc_cursor_t *(*test_op_msg_direct_fn_t) (mongoc_collection_t *,
 
 
 /* direct connection to a secondary requires read pref primaryPreferred to
- * avoid "not master" error from server */
+ * avoid "not primary" error from server */
 static void
 _test_op_msg_direct_connection (bool is_mongos,
                                 test_op_msg_direct_fn_t fn,
@@ -1051,7 +1051,7 @@ aggregate (mongoc_collection_t *collection, mongoc_read_prefs_t *prefs)
 
 
 /* direct connection to a secondary requires read pref primaryPreferred to
- * avoid "not master" error from server */
+ * avoid "not primary" error from server */
 static void
 test_op_msg_direct_secondary ()
 {
