@@ -252,6 +252,12 @@ Specification tests may be filtered by their description:
 
 This can be useful in debugging a specific test case in a spec test file with multiple tests.
 
+To test with a declared API version, you can pass the API version using an environment variable:
+
+* `MONGODB_API_VERSION=<string>`
+
+This will ensure that all tests declare the indicated API version when connecting to a server.
+
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner
