@@ -489,7 +489,6 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
 {
    mongoc_client_t *admin_client;
    char *username;
-   char *uri;
    bson_t roles;
    mongoc_database_t *database;
    char *uri_str_no_auth;
@@ -497,7 +496,7 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
    mongoc_collection_t *collection;
    mongoc_client_t *auth_client;
    mongoc_client_pool_t *pool;
-   mongoc_uri_t *pool_uri;
+   mongoc_uri_t *uri;
    mongoc_cursor_t *cursor;
    const bson_t *doc;
    bson_error_t error;
@@ -513,8 +512,6 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
     * Add a user to the test database.
     */
    username = gen_test_user ();
-   uri = gen_good_uri (username, "test");
-
    database = mongoc_client_get_database (admin_client, "test");
    (void) mongoc_database_remove_user (database, username, &error);
    bson_init (&roles);
@@ -536,9 +533,9 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
       test_framework_add_user_password (uri_str_no_auth, username, "testpass");
 
    if (pooled) {
-      pool_uri = mongoc_uri_new (uri_str_auth);
-      pool = mongoc_client_pool_new (pool_uri);
-      mongoc_uri_destroy (pool_uri);
+      uri = mongoc_uri_new (uri_str_auth);
+      pool = mongoc_client_pool_new (uri);
+      mongoc_uri_destroy (uri);
 
       test_framework_set_pool_ssl_opts (pool);
       auth_client = mongoc_client_pool_pop (pool);
@@ -564,7 +561,7 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
    ASSERT_OR_PRINT (r, error);
    mongoc_database_destroy (database);
 
-   /* Try authenticating by creating a user */
+   /* Try authenticating by running a find operation */
    cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
    r = mongoc_cursor_next (cursor, &doc);
    if (!r) {
@@ -597,7 +594,6 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
    bson_free (uri_str_no_auth);
    bson_free (uri_str_auth);
    bson_destroy (&roles);
-   bson_free (uri);
    bson_free (username);
    mongoc_database_destroy (database);
    mongoc_client_destroy (admin_client);
