@@ -1666,6 +1666,27 @@ test_framework_get_default_server_api (void)
    return mongoc_server_api_new (version);
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_client_new --
+ *
+ *       Get a client connected to the indicated connection string
+ *
+ * Parameters:
+ *       @uri_str: A connection string to the test deployment
+ *       @api: A mongoc_server_api_t that declares an API version. If omitted,
+ *             the API version indicated in the MONGODB_API_VERSION env variable
+ *             is used.
+ *
+ * Returns:
+ *       A client you must mongoc_client_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 mongoc_client_t *
 test_framework_client_new (const char *uri_str, const mongoc_server_api_t *api)
 {
@@ -1693,6 +1714,27 @@ test_framework_client_new (const char *uri_str, const mongoc_server_api_t *api)
    return client;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_client_new_from_uri --
+ *
+ *       Get a client connected to the indicated URI
+ *
+ * Parameters:
+ *       @uri_str: A mongoc_uri_t to connect with
+ *       @api: A mongoc_server_api_t that declares an API version. If omitted,
+ *             the API version indicated in the MONGODB_API_VERSION env variable
+ *             is used.
+ *
+ * Returns:
+ *       A client you must mongoc_client_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 mongoc_client_t *
 test_framework_client_new_from_uri (const mongoc_uri_t *uri,
                                     const mongoc_server_api_t *api)
@@ -1809,6 +1851,27 @@ test_framework_new_default_client_pool ()
    return pool;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_client_pool_new_from_uri --
+ *
+ *       Get a client pool connected to the indicated connection string
+ *
+ * Parameters:
+ *       @uri_str: A mongoc_uri_t to connect to
+ *       @api: A mongoc_server_api_t that declares an API version. If omitted,
+ *             the API version indicated in the MONGODB_API_VERSION env variable
+ *             is used.
+ *
+ * Returns:
+ *       A pool you must mongoc_client_pool_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
 mongoc_client_pool_t *
 test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri,
                                          const mongoc_server_api_t *api)
