@@ -7,7 +7,7 @@
 #include "mock_server/mock-server.h"
 #include "mock_server/mock-rs.h"
 #include "test-conveniences.h"
-
+#include "test-libmongoc.h"
 
 static bool
 _can_be_command (const char *query)
@@ -31,7 +31,7 @@ _test_op_query (const mongoc_uri_t *uri,
    future_t *future;
    request_t *request;
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    cursor = mongoc_collection_find (collection,
@@ -83,7 +83,7 @@ _test_find_command (const mongoc_uri_t *uri,
    future_t *future;
    request_t *request;
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    cursor = mongoc_collection_find (collection,
@@ -138,7 +138,7 @@ _test_op_msg (const mongoc_uri_t *uri,
    future_t *future;
    request_t *request;
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    cursor = mongoc_collection_find (collection,
@@ -187,7 +187,7 @@ _test_command (const mongoc_uri_t *uri,
    future_t *future;
    request_t *request;
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
    mongoc_collection_set_read_prefs (collection, read_prefs);
 
@@ -236,7 +236,7 @@ _test_command_simple (const mongoc_uri_t *uri,
    future_t *future;
    request_t *request;
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
    mongoc_collection_set_read_prefs (collection, read_prefs);
 
@@ -798,7 +798,8 @@ test_read_prefs_mongos_max_staleness (void)
 
    server = mock_mongos_new (WIRE_VERSION_MAX_STALENESS);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
@@ -856,7 +857,8 @@ test_read_prefs_mongos_hedged_reads (void)
 
    server = mock_mongos_new (WIRE_VERSION_HEDGED_READS);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
@@ -916,7 +918,8 @@ test_mongos_read_concern (void)
 
    server = mock_mongos_new (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    cursor = mongoc_collection_find_with_opts (
@@ -982,13 +985,13 @@ _test_op_msg_direct_connection (bool is_mongos,
    if (is_mongos) {
       server = mock_mongos_new (WIRE_VERSION_OP_MSG);
    } else {
-      char* ismaster = bson_strdup_printf ("{'ok': 1.0,"
-                                        " 'ismaster': true,"
-                                        " 'setName': 'rs0',"
-                                        " 'secondary': true,"
-                                        " 'minWireVersion': 0,"
-                                        " 'maxWireVersion': %d}",
-                                        WIRE_VERSION_OP_MSG);
+      char *ismaster = bson_strdup_printf ("{'ok': 1.0,"
+                                           " 'ismaster': true,"
+                                           " 'setName': 'rs0',"
+                                           " 'secondary': true,"
+                                           " 'minWireVersion': 0,"
+                                           " 'maxWireVersion': %d}",
+                                           WIRE_VERSION_OP_MSG);
       server = mock_server_new ();
       mock_server_auto_ismaster (server, ismaster);
       bson_free (ismaster);
@@ -997,7 +1000,8 @@ _test_op_msg_direct_connection (bool is_mongos,
    mock_server_auto_endsessions (server);
 
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    for (i = 0; i < 2; i++) {

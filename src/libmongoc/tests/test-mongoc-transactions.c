@@ -24,7 +24,7 @@ _reset_server (json_test_ctx_t *ctx, const char *host_str)
    mongoc_uri_t *uri = _mongoc_uri_copy_and_replace_host_list (
       ctx->test_framework_uri, host_str);
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
 
    /* From Transactions tests runner: "Create a MongoClient and call
@@ -79,7 +79,7 @@ _disable_failpoints (json_test_ctx_t *ctx, const char *host_str)
    for (i = 0; i < 7; i++) {
       bool ret;
 
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
       ret = mongoc_client_command_simple (
          client,
          "admin",
@@ -285,7 +285,7 @@ test_transactions_supported (void *ctx)
       return;
    }
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, 2);
    db = mongoc_client_get_database (client, "transaction-tests");
 
@@ -339,7 +339,7 @@ test_in_transaction (void *ctx)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, 2);
    db = mongoc_client_get_database (client, "transaction-tests");
    /* drop and create collection outside of transaction */
@@ -464,7 +464,8 @@ _test_transient_txn_err (bool hangup)
    rs_response_to_ismaster (
       server, 7, true /* primary */, false /* tags */, server, NULL);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    /* allow fast reconnect */
    client->topology->min_heartbeat_frequency_msec = 0;
    session = mongoc_client_start_session (client, NULL, &error);
@@ -630,7 +631,8 @@ test_unknown_commit_result (void)
    rs_response_to_ismaster (
       server, 7, true /* primary */, false /* tags */, server, NULL);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    /* allow fast reconnect */
    client->topology->min_heartbeat_frequency_msec = 0;
    session = mongoc_client_start_session (client, NULL, &error);
@@ -687,7 +689,7 @@ test_cursor_primary_read_pref (void *ctx)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_cursor_primary_read_pref");
 
    session = mongoc_client_start_session (client, NULL, &error);
@@ -749,7 +751,7 @@ test_inherit_from_client (void *ctx)
    mongoc_write_concern_set_w (wc, 0);
    mongoc_uri_set_write_concern (uri, wc);
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
 
    sopt = mongoc_session_opts_new ();
@@ -805,7 +807,7 @@ test_transaction_fails_on_unsupported_version_or_sharded_cluster (void *ctx)
    mongoc_client_t *client;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session, error);
 
@@ -839,7 +841,7 @@ test_transaction_recovery_token_cleared (void *ctx)
    uri = test_framework_get_uri ();
    ASSERT_OR_PRINT (
       mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error), error);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
    mongoc_uri_destroy (uri);
    session = mongoc_client_start_session (client, NULL, &error);
@@ -926,7 +928,7 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    ASSERT_OR_PRINT (
       mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error), error);
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    BSON_ASSERT (client);
    test_framework_set_ssl_opts (client);
 
@@ -1040,7 +1042,8 @@ test_get_transaction_opts (void)
    rs_response_to_ismaster (
       server, 7, true /* primary */, false /* tags */, server, NULL);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    BSON_ASSERT (client);
 
    read_concern = mongoc_read_concern_new ();
@@ -1123,7 +1126,7 @@ test_max_commit_time_ms_is_reset (void *ctx)
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    BSON_ASSERT (client);
 
    txn_opts = mongoc_transaction_opts_new ();

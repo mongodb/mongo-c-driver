@@ -154,8 +154,8 @@ test_topology_client_creation (void)
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 54321);
 
    /* create two clients directly */
-   client_a = mongoc_client_new_from_uri (uri);
-   client_b = mongoc_client_new_from_uri (uri);
+   client_a = test_framework_client_new_from_uri (uri, NULL);
+   client_b = test_framework_client_new_from_uri (uri, NULL);
    BSON_ASSERT (client_a);
    BSON_ASSERT (client_b);
 
@@ -214,7 +214,7 @@ test_topology_thread_start_stop (void)
    mongoc_client_pool_t *pool;
    mongoc_topology_t *topology;
 
-   pool = test_framework_client_pool_new ();
+   pool = test_framework_new_default_client_pool ();
    topology = _mongoc_client_pool_get_topology (pool);
 
    /* Test starting up the scanner */
@@ -262,7 +262,7 @@ test_topology_client_pool_creation (void)
    mongoc_topology_t *topology_b;
 
    /* create two clients through a client pool */
-   pool = test_framework_client_pool_new ();
+   pool = test_framework_new_default_client_pool ();
    client_a = mongoc_client_pool_pop (pool);
    client_b = mongoc_client_pool_pop (pool);
    BSON_ASSERT (client_a);
@@ -296,22 +296,22 @@ test_server_selection_try_once_option (void *ctx)
    mongoc_client_pool_t *pool;
 
    /* try_once is on by default for non-pooled, can be turned off */
-   client = mongoc_client_new (uri_strings[0]);
+   client = test_framework_client_new (uri_strings[0], NULL);
    BSON_ASSERT (client->topology->server_selection_try_once);
    mongoc_client_destroy (client);
 
-   client = mongoc_client_new (uri_strings[1]);
+   client = test_framework_client_new (uri_strings[1], NULL);
    BSON_ASSERT (client->topology->server_selection_try_once);
    mongoc_client_destroy (client);
 
-   client = mongoc_client_new (uri_strings[2]);
+   client = test_framework_client_new (uri_strings[2], NULL);
    BSON_ASSERT (!client->topology->server_selection_try_once);
    mongoc_client_destroy (client);
 
    /* off for pooled clients, can't be enabled */
    for (i = 0; i < sizeof (uri_strings) / sizeof (char *); i++) {
       uri = mongoc_uri_new ("mongodb://a");
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (pool);
       BSON_ASSERT (!client->topology->server_selection_try_once);
       mongoc_client_pool_push (pool, client);
@@ -369,7 +369,7 @@ _test_server_selection (bool try_once)
       mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
    }
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    /* no primary, selection fails after one try */
@@ -481,7 +481,7 @@ _test_topology_invalidate_server (bool pooled)
    callbacks = heartbeat_callbacks ();
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
       test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
@@ -492,7 +492,7 @@ _test_topology_invalidate_server (bool pooled)
       /* background scanner complains about failed connection */
       capture_logs (true);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
       test_framework_set_ssl_opts (client);
    }
 
@@ -591,7 +591,7 @@ test_invalid_cluster_node (void *ctx)
    mongoc_server_description_t *sd;
 
    /* use client pool, this test is only valid when multi-threaded */
-   pool = test_framework_client_pool_new ();
+   pool = test_framework_new_default_client_pool ();
    client = mongoc_client_pool_pop (pool);
    cluster = &client->cluster;
 
@@ -643,7 +643,7 @@ test_max_wire_version_race_condition (void *ctx)
    bool r;
 
    /* connect directly and add our user, test is only valid with auth */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    database = mongoc_client_get_database (client, "test");
    (void) mongoc_database_remove_user (database, "pink", &error);
 
@@ -659,7 +659,7 @@ test_max_wire_version_race_condition (void *ctx)
    mongoc_client_destroy (client);
 
    /* use client pool, test is only valid when multi-threaded */
-   pool = test_framework_client_pool_new ();
+   pool = test_framework_new_default_client_pool ();
    client = mongoc_client_pool_pop (pool);
 
    /* load stream into cluster */
@@ -703,7 +703,8 @@ test_cooldown_standalone (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    /* first ismaster fails, selection fails */
@@ -792,7 +793,7 @@ test_cooldown_rs (void)
                                  "&connectTimeoutMS=100",
                                  mock_server_get_port (servers[0]));
 
-   client = mongoc_client_new (uri_str);
+   client = test_framework_client_new (uri_str, NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    secondary_response = bson_strdup_printf (
@@ -893,7 +894,7 @@ test_cooldown_retry (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    future = future_topology_select (
@@ -982,7 +983,7 @@ _test_select_succeed (bool try_once)
       mongoc_uri_set_option_as_bool (uri, "serverSelectionTryOnce", false);
    }
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    /* start waiting for a primary (NULL read pref) */
    start = bson_get_monotonic_time ();
@@ -1036,7 +1037,7 @@ test_multiple_selection_errors (void *context)
    bson_t reply;
    bson_error_t error;
 
-   client = mongoc_client_new (uri);
+   client = test_framework_client_new (uri, NULL);
    mongoc_client_command_simple (
       client, "test", tmp_bson ("{'ping': 1}"), NULL, &reply, &error);
 
@@ -1064,7 +1065,7 @@ test_invalid_server_id (void)
    mongoc_client_t *client;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    BSON_ASSERT (
       !mongoc_topology_server_by_id (client->topology, 99999, &error));
@@ -1121,10 +1122,10 @@ _test_server_removed_during_handshake (bool pooled)
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
    }
 
    /* initial connection, discover one-node replica set */
@@ -1231,7 +1232,8 @@ test_rtt (void *ctx)
    server = mock_server_new ();
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
@@ -1300,7 +1302,7 @@ test_add_and_scan_failure (void)
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    client = mongoc_client_pool_pop (pool);
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
@@ -1388,7 +1390,7 @@ _test_ismaster_retry_single (bool hangup, int n_failures)
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 100);
    }
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    callbacks = heartbeat_callbacks ();
    mongoc_client_set_apm_callbacks (client, callbacks, &checks);
 
@@ -1483,7 +1485,7 @@ _test_ismaster_retry_pooled (bool hangup, int n_failures)
       mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 100);
    }
 
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    callbacks = heartbeat_callbacks ();
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
    client = mongoc_client_pool_pop (pool);
@@ -1626,7 +1628,7 @@ test_incompatible_error (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    /* trigger connection, fails due to incompatibility */
    ASSERT (!mongoc_client_command_simple (
@@ -1678,7 +1680,8 @@ test_compatible_null_error_pointer (void)
    /* incompatible */
    server = mock_server_with_autoismaster (WIRE_VERSION_MIN - 1);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    td = &client->topology->description;
 
    /* trigger connection, fails due to incompatibility */
@@ -1740,7 +1743,7 @@ test_cluster_time_updated_during_handshake ()
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
 
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    client = mongoc_client_pool_pop (pool);
 
    /* ensure a topology scan has run, populating the topology description
@@ -1841,12 +1844,12 @@ _test_request_scan_on_error (bool pooled,
 
    if (pooled) {
       mongoc_topology_t *topology;
-      client_pool = mongoc_client_pool_new (uri);
+      client_pool = test_framework_client_pool_new_from_uri (uri, NULL);
       topology = _mongoc_client_pool_get_topology (client_pool);
       /* set a small minHeartbeatFrequency, so scans don't block for 500ms. */
       topology->min_heartbeat_frequency_msec = minHBMS;
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
       /* set a small minHeartbeatFrequency, so scans don't block for 500ms. */
       client->topology->min_heartbeat_frequency_msec = minHBMS;
    }
@@ -1979,7 +1982,7 @@ test_last_server_removed_warning (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "set");
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    mock_server_auto_ismaster (server,
@@ -2144,7 +2147,7 @@ test_slow_server_pooled (void)
    mongoc_uri_set_option_as_int32 (
       uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 500);
 
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    callbacks = heartbeat_callbacks ();
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
 
@@ -2222,15 +2225,10 @@ _test_ismaster_versioned_api (bool pooled)
    api = mongoc_server_api_new (version);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error),
-                       error);
-
+      pool = test_framework_client_pool_new_from_uri (uri, api);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
-      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
-                       error);
+      client = test_framework_client_new_from_uri (uri, api);
    }
 
    ismaster = bson_strdup_printf ("{'ok': 1,"

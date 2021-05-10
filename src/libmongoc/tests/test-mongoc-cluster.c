@@ -47,7 +47,7 @@ test_get_max_bson_obj_size (void)
    uint32_t id;
 
    /* single-threaded */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    id = server_id_for_reads (&client->cluster);
@@ -60,7 +60,7 @@ test_get_max_bson_obj_size (void)
    mongoc_client_destroy (client);
 
    /* multi-threaded */
-   pool = test_framework_client_pool_new ();
+   pool = test_framework_new_default_client_pool ();
    client = mongoc_client_pool_pop (pool);
 
    id = server_id_for_reads (&client->cluster);
@@ -84,7 +84,7 @@ test_get_max_msg_size (void)
    uint32_t id;
 
    /* single-threaded */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    id = server_id_for_reads (&client->cluster);
 
    sd = (mongoc_server_description_t *) mongoc_set_get (
@@ -96,7 +96,7 @@ test_get_max_msg_size (void)
    mongoc_client_destroy (client);
 
    /* multi-threaded */
-   pool = test_framework_client_pool_new ();
+   pool = test_framework_new_default_client_pool ();
    client = mongoc_client_pool_pop (pool);
 
    id = server_id_for_reads (&client->cluster);
@@ -170,10 +170,10 @@ _test_cluster_node_disconnect (bool pooled)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
    }
 
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -244,10 +244,10 @@ _test_cluster_command_timeout (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 200);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
    }
 
    /* server doesn't respond in time */
@@ -335,7 +335,8 @@ _test_write_disconnect (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    /*
     * establish connection with an "ismaster" and "ping"
@@ -436,7 +437,7 @@ test_cluster_command_notmaster (void)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    collection = mongoc_client_get_collection (client, "db", "test");
    /* use an unordered bulk write, so it attempts to continue on error */
@@ -578,7 +579,7 @@ _test_cluster_time (bool pooled, command_fn_t command)
                                         test_cluster_time_cmd_succeeded_cb);
 
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = test_framework_new_default_client_pool ();
       mongoc_client_pool_set_apm_callbacks (
          pool, callbacks, &cluster_time_test);
       client = mongoc_client_pool_pop (pool);
@@ -586,7 +587,7 @@ _test_cluster_time (bool pooled, command_fn_t command)
        * the test operations. */
       _mongoc_usleep (5000 * 1000); /* 5 s */
    } else {
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
       mongoc_client_set_apm_callbacks (client, callbacks, &cluster_time_test);
    }
 
@@ -916,10 +917,10 @@ _test_cluster_time_comparison (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
    }
 
    future = future_ping (client, &error);
@@ -1051,10 +1052,12 @@ _test_not_master (bool pooled,
    mock_server_run (server);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new_from_uri (
+         mock_server_get_uri (server), NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+      client = test_framework_client_new_from_uri (mock_server_get_uri (server),
+                                                   NULL);
    }
 
    td = &client->topology->description;
@@ -1288,7 +1291,8 @@ _test_dollar_query (void *ctx)
    mock_server_autoresponds (server, auto_ismaster, test, NULL);
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    if (test->secondary) {
       read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -1452,7 +1456,7 @@ _test_cluster_ismaster_fails (bool hangup)
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
    /* increase heartbeatFrequencyMS to prevent background server selection. */
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 99999);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    mongoc_client_pool_set_error_api (pool, 2);
    mongoc_uri_destroy (uri);
    client = mongoc_client_pool_pop (pool);
@@ -1520,7 +1524,8 @@ _test_cluster_command_error (bool use_op_msg)
       server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG - 1);
    }
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    future = future_client_command_simple (client,
                                           "db",
                                           tmp_bson ("{'ping': 1}"),
@@ -1592,7 +1597,8 @@ test_advanced_cluster_time_not_sent_to_standalone (void)
                               " 'maxWireVersion': 6,"
                               " 'logicalSessionTimeoutMinutes': 30}");
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    cs = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (cs, error);
@@ -1707,7 +1713,7 @@ _test_ismaster_on_unknown (char *ismaster)
     * The host will get removed on the first failed ismaster. */
    ret = mongoc_uri_upsert_host (uri, "localhost", 12345, &error);
    ASSERT_OR_PRINT (ret, error);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
    client = mongoc_client_pool_pop (pool);
 
@@ -1761,12 +1767,12 @@ _test_cmd_on_unknown_serverid (bool pooled)
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       test_framework_set_pool_ssl_opts (pool);
       client = mongoc_client_pool_pop (pool);
    } else {
       pool = NULL;
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
       test_framework_set_ssl_opts (client);
    }
 

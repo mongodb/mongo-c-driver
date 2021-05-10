@@ -709,8 +709,7 @@ functions:
         export DNS=${DNS}
         export ASAN=${ASAN}
         export MONGODB_API_VERSION=1
-        # TODO: CDRIVER-3954 Run all integration tests
-        ./src/libmongoc/test-libmongoc --no-fork -l /versioned_api/* -d
+        sh .evergreen/run-tests.sh
         unset MONGODB_API_VERSION
   run aws tests:
   - command: shell.exec
@@ -17416,9 +17415,6 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: auth
@@ -17434,25 +17430,22 @@ tasks:
   tags:
   - versioned-api
   depends_on:
-    name: debug-compile-nosasl-openssl
+    name: debug-compile-nosasl-nossl
   commands:
   - func: fetch build
     vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-nosasl-openssl
+      BUILD_NAME: debug-compile-nosasl-nossl
   - func: bootstrap mongo-orchestration
     vars:
-      AUTH: auth
+      AUTH: noauth
       ORCHESTRATION_FILE: versioned-api-testing
-      SSL: ssl
+      SSL: nossl
       TOPOLOGY: server
       VERSION: latest
   - func: test versioned api
     vars:
-      AUTH: auth
-      SSL: ssl
+      AUTH: noauth
+      SSL: nossl
 - name: build-and-run-authentication-tests-openssl-0.9.8
   commands:
   - func: install ssl
@@ -22869,4 +22862,5 @@ buildvariants:
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-nosasl-openssl
+  - debug-compile-nosasl-nossl
   - .versioned-api

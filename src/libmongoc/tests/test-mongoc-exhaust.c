@@ -58,7 +58,8 @@ get_connection_count (mongoc_client_t *client)
    int conns;
 
    BSON_APPEND_INT32 (&cmd, "serverStatus", 1);
-   res = mongoc_client_command_simple (client, "admin", &cmd, NULL, &reply, &error);
+   res = mongoc_client_command_simple (
+      client, "admin", &cmd, NULL, &reply, &error);
    ASSERT_OR_PRINT (res, error);
 
    conns = bson_lookup_int32 (&reply, "connections.totalCreated");
@@ -93,15 +94,15 @@ test_exhaust_cursor (bool pooled)
 
    can_check_connection_count = test_framework_max_wire_version_at_least (5);
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = test_framework_new_default_client_pool ();
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
    }
    BSON_ASSERT (client);
 
    /* Use a separate client to count connections. */
-   audit_client = test_framework_client_new ();
+   audit_client = test_framework_new_default_client ();
 
    collection = get_test_collection (client, "test_exhaust_cursor");
    BSON_ASSERT (collection);
@@ -186,7 +187,8 @@ test_exhaust_cursor (bool pooled)
       ASSERT_CMPINT64 (generation1, ==, get_generation (client, cursor2));
       /* But a new connection was made. */
       if (can_check_connection_count) {
-         ASSERT_CMPINT32 (connection_count1 + 1, ==, get_connection_count (audit_client));
+         ASSERT_CMPINT32 (
+            connection_count1 + 1, ==, get_connection_count (audit_client));
       }
 
       for (i = 0; i < 5; i++) {
@@ -311,7 +313,7 @@ test_exhaust_cursor_multi_batch (void *context)
    mongoc_cursor_t *cursor;
    const bson_t *cursor_doc;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_exhaust_cursor_multi_batch");
 
    ASSERT_OR_PRINT (collection, error);
@@ -355,7 +357,7 @@ test_cursor_set_max_await_time_ms (void)
    mongoc_cursor_t *cursor;
    const bson_t *bson;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection =
       get_test_collection (client, "test_cursor_set_max_await_time_ms");
 
@@ -467,10 +469,12 @@ _mock_test_exhaust (bool pooled,
    mock_server_run (server);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (mock_server_get_uri (server));
+      pool = test_framework_client_pool_new_from_uri (
+         mock_server_get_uri (server), NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+      client = test_framework_client_new_from_uri (mock_server_get_uri (server),
+                                                   NULL);
    }
 
    collection = mongoc_client_get_collection (client, "db", "test");
@@ -588,7 +592,7 @@ test_exhaust_in_child (void)
    uint32_t server_id;
    int child_exit_status;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    coll = get_test_collection (client, "exhaust_in_child");
 
    /* insert some documents, more than one reply's worth. */

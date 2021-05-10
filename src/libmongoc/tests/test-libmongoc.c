@@ -1126,7 +1126,7 @@ call_ismaster_with_host_and_port (char *host_and_port, bson_t *reply)
       bson_free (compressors);
    }
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 #ifdef MONGOC_ENABLE_SSL
    test_framework_set_ssl_opts (client);
 #endif
@@ -1391,7 +1391,7 @@ test_framework_uri_apply_multi_mongos (mongoc_uri_t *uri,
       goto done;
    }
 
-   /* TODO: Once CDRIVER-3285 is resolved, update this to no longer hardcode the
+   /* TODO Once CDRIVER-3285 is resolved, update this to no longer hardcode the
     * hosts. */
    if (use_multi) {
       if (!mongoc_uri_upsert_host_and_port (uri, "localhost:27017", error)) {
@@ -1497,7 +1497,7 @@ test_framework_replset_member_count (void)
    bson_iter_t iter, array;
    size_t count = 0;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    r = mongoc_client_command_simple (client,
                                      "admin",
                                      tmp_bson ("{'replSetGetStatus': 1}"),
@@ -1623,7 +1623,7 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_client_new --
+ * test_framework_new_default_client --
  *
  *       Get a client connected to the test MongoDB topology.
  *
@@ -1636,15 +1636,129 @@ test_framework_set_ssl_opts (mongoc_client_t *client)
  *--------------------------------------------------------------------------
  */
 mongoc_client_t *
-test_framework_client_new ()
+test_framework_new_default_client ()
 {
    char *test_uri_str = test_framework_get_uri_str ();
-   mongoc_client_t *client = mongoc_client_new (test_uri_str);
+   mongoc_client_t *client = test_framework_client_new (test_uri_str, NULL);
 
    BSON_ASSERT (client);
    test_framework_set_ssl_opts (client);
 
    bson_free (test_uri_str);
+
+   return client;
+}
+
+mongoc_server_api_t *
+test_framework_get_default_server_api (void)
+{
+   char *api_version = test_framework_getenv ("MONGODB_API_VERSION");
+   mongoc_server_api_version_t version;
+
+   if (!api_version) {
+      return NULL;
+   }
+
+   ASSERT (mongoc_server_api_version_from_string (api_version, &version));
+
+   bson_free (api_version);
+
+   return mongoc_server_api_new (version);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_client_new --
+ *
+ *       Get a client connected to the indicated connection string
+ *
+ * Parameters:
+ *       @uri_str: A connection string to the test deployment
+ *       @api: A mongoc_server_api_t that declares an API version. If omitted,
+ *             the API version indicated in the MONGODB_API_VERSION env variable
+ *             is used.
+ *
+ * Returns:
+ *       A client you must mongoc_client_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_t *
+test_framework_client_new (const char *uri_str, const mongoc_server_api_t *api)
+{
+   mongoc_client_t *client = mongoc_client_new (uri_str);
+   bson_error_t error;
+   mongoc_server_api_t *default_api = NULL;
+
+   if (!client) {
+      return client;
+   }
+
+   if (api) {
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
+                       error);
+   } else {
+      default_api = test_framework_get_default_server_api ();
+      if (default_api) {
+         ASSERT_OR_PRINT (
+            mongoc_client_set_server_api (client, default_api, &error), error);
+      }
+   }
+
+   mongoc_server_api_destroy (default_api);
+
+   return client;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_client_new_from_uri --
+ *
+ *       Get a client connected to the indicated URI
+ *
+ * Parameters:
+ *       @uri_str: A mongoc_uri_t to connect with
+ *       @api: A mongoc_server_api_t that declares an API version. If omitted,
+ *             the API version indicated in the MONGODB_API_VERSION env variable
+ *             is used.
+ *
+ * Returns:
+ *       A client you must mongoc_client_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_t *
+test_framework_client_new_from_uri (const mongoc_uri_t *uri,
+                                    const mongoc_server_api_t *api)
+{
+   mongoc_client_t *client = mongoc_client_new_from_uri (uri);
+   bson_error_t error;
+   mongoc_server_api_t *default_api = NULL;
+
+   if (!client) {
+      return client;
+   }
+
+   if (api) {
+      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, &error),
+                       error);
+   } else {
+      default_api = test_framework_get_default_server_api ();
+      if (default_api) {
+         ASSERT_OR_PRINT (
+            mongoc_client_set_server_api (client, default_api, &error), error);
+      }
+   }
+
+   mongoc_server_api_destroy (default_api);
 
    return client;
 }
@@ -1711,7 +1825,7 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
 /*
  *--------------------------------------------------------------------------
  *
- * test_framework_client_pool_new --
+ * test_framework_new_default_client_pool --
  *
  *       Get a client pool connected to the test MongoDB topology.
  *
@@ -1724,16 +1838,66 @@ test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool)
  *--------------------------------------------------------------------------
  */
 mongoc_client_pool_t *
-test_framework_client_pool_new ()
+test_framework_new_default_client_pool ()
 {
    mongoc_uri_t *test_uri = test_framework_get_uri ();
-   mongoc_client_pool_t *pool = mongoc_client_pool_new (test_uri);
+   mongoc_client_pool_t *pool = test_framework_client_pool_new_from_uri (test_uri, NULL);
 
    BSON_ASSERT (pool);
    test_framework_set_pool_ssl_opts (pool);
 
    mongoc_uri_destroy (test_uri);
    BSON_ASSERT (pool);
+   return pool;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * test_framework_client_pool_new_from_uri --
+ *
+ *       Get a client pool connected to the indicated connection string
+ *
+ * Parameters:
+ *       @uri_str: A mongoc_uri_t to connect to
+ *       @api: A mongoc_server_api_t that declares an API version. If omitted,
+ *             the API version indicated in the MONGODB_API_VERSION env variable
+ *             is used.
+ *
+ * Returns:
+ *       A pool you must mongoc_client_pool_destroy.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+mongoc_client_pool_t *
+test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri,
+                                         const mongoc_server_api_t *api)
+{
+   mongoc_client_pool_t *pool = mongoc_client_pool_new (uri);
+   bson_error_t error;
+   mongoc_server_api_t *default_api = NULL;
+
+   if (!pool) {
+      return pool;
+   }
+
+   if (api) {
+      ASSERT_OR_PRINT (mongoc_client_pool_set_server_api (pool, api, &error),
+                       error);
+   } else {
+      default_api = test_framework_get_default_server_api ();
+      if (default_api) {
+         ASSERT_OR_PRINT (
+            mongoc_client_pool_set_server_api (pool, default_api, &error),
+            error);
+      }
+   }
+
+   mongoc_server_api_destroy (default_api);
+
    return pool;
 }
 
@@ -2114,7 +2278,7 @@ test_framework_get_server_version (void)
    bson_error_t error;
    server_version_t ret = 0;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT_OR_PRINT (
       mongoc_client_command_simple (
          client, "admin", tmp_bson ("{'buildinfo': 1}"), NULL, &reply, &error),
@@ -2366,7 +2530,7 @@ test_framework_skip_if_no_failpoint (void)
       return 0;
    }
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    ret = mongoc_client_command_simple (
       client,

@@ -2476,7 +2476,7 @@ json_test_operation (json_test_ctx_t *ctx,
       } else if (!strcmp (op_name, "targetedFailPoint")) {
          mongoc_client_t *client;
 
-         client = mongoc_client_new_from_uri (ctx->client->uri);
+         client = test_framework_client_new_from_uri (ctx->client->uri, NULL);
          test_framework_set_ssl_opts (client);
          activate_fail_point (
             client, session->server_id, operation, "arguments.failPoint");
@@ -2502,7 +2502,7 @@ json_test_operation (json_test_ctx_t *ctx,
          mongoc_client_t *client;
          bool exists;
 
-         client = mongoc_client_new_from_uri (ctx->client->uri);
+         client = test_framework_client_new_from_uri (ctx->client->uri, NULL);
          test_framework_set_ssl_opts (client);
          exists = collection_exists (client, operation);
          mongoc_client_destroy (client);
@@ -2512,7 +2512,7 @@ json_test_operation (json_test_ctx_t *ctx,
          mongoc_client_t *client;
          bool exists;
 
-         client = mongoc_client_new_from_uri (ctx->client->uri);
+         client = test_framework_client_new_from_uri (ctx->client->uri, NULL);
          test_framework_set_ssl_opts (client);
          exists = collection_exists (client, operation);
          mongoc_client_destroy (client);
@@ -2522,7 +2522,7 @@ json_test_operation (json_test_ctx_t *ctx,
          mongoc_client_t *client;
          bool exists;
 
-         client = mongoc_client_new_from_uri (ctx->client->uri);
+         client = test_framework_client_new_from_uri (ctx->client->uri, NULL);
          test_framework_set_ssl_opts (client);
          exists = index_exists (client, operation);
          mongoc_client_destroy (client);
@@ -2532,7 +2532,7 @@ json_test_operation (json_test_ctx_t *ctx,
          mongoc_client_t *client;
          bool exists;
 
-         client = mongoc_client_new_from_uri (ctx->client->uri);
+         client = test_framework_client_new_from_uri (ctx->client->uri, NULL);
          test_framework_set_ssl_opts (client);
          exists = index_exists (client, operation);
          mongoc_client_destroy (client);
@@ -2545,7 +2545,7 @@ json_test_operation (json_test_ctx_t *ctx,
       } else if (!strcmp (op_name, "configureFailPoint")) {
          mongoc_client_t *client;
 
-         client = mongoc_client_new_from_uri (ctx->client->uri);
+         client = test_framework_client_new_from_uri (ctx->client->uri, NULL);
          test_framework_set_ssl_opts (client);
          activate_fail_point (
             client, 0 /* primary */, operation, "arguments.failPoint");
@@ -2564,7 +2564,7 @@ json_test_operation (json_test_ctx_t *ctx,
          mongoc_client_t *client;
          mongoc_database_t *admin_db;
 
-         client = mongoc_client_new_from_uri (ctx->client->uri);
+         client = test_framework_client_new_from_uri (ctx->client->uri, NULL);
          test_framework_set_ssl_opts (client);
          admin_db = mongoc_client_get_database (client, "admin");
          bson_destroy (reply);

@@ -53,7 +53,8 @@ test_topology_version_update (void)
    server = mock_server_new ();
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    /* Override minHeartbeatFrequencyMS so test does not wait for 500ms when a
     * scan is needed. */
    client->topology->min_heartbeat_frequency_msec = 1;

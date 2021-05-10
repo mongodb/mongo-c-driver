@@ -22,11 +22,11 @@ _test_has_readable_writable_server (bool pooled)
    mongoc_topology_t *topology;
 
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = test_framework_new_default_client_pool ();
       topology = _mongoc_client_pool_get_topology (pool);
       td = &topology->description;
    } else {
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
       td = &client->topology->description;
       topology = client->topology;
    }

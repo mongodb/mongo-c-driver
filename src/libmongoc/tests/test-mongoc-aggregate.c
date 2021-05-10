@@ -6,6 +6,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "test-conveniences.h"
+#include "test-libmongoc.h"
 
 static void
 _test_query_flag (mongoc_query_flags_t flag, bson_t *opt)
@@ -21,7 +22,8 @@ _test_query_flag (mongoc_query_flags_t flag, bson_t *opt)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    cursor = mongoc_collection_aggregate (
       collection, flag, tmp_bson ("{'pipeline': []}"), opt, NULL);

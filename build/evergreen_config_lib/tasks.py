@@ -842,16 +842,14 @@ all_tasks = chain(all_tasks, [
         'test-versioned-api',
         tags=['versioned-api'],
         depends_on='debug-compile-nosasl-openssl',
-        commands=[func('fetch build', BUILD_NAME='debug-compile-nosasl-openssl'),
-                  func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='auth', SSL='ssl', VERSION='latest', REQUIRE_API_VERSION='true'),
+        commands=[func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='auth', SSL='ssl', VERSION='latest', REQUIRE_API_VERSION='true'),
                   func('test versioned api', AUTH='auth', SSL='ssl')]),
     PostCompileTask(
         'test-versioned-api-accept-version-two',
         tags=['versioned-api'],
-        depends_on='debug-compile-nosasl-openssl',
-        commands=[func('fetch build', BUILD_NAME='debug-compile-nosasl-openssl'),
-                  func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='auth', SSL='ssl', VERSION='latest', ORCHESTRATION_FILE='versioned-api-testing'),
-                  func('test versioned api', AUTH='auth', SSL='ssl')]),
+        depends_on='debug-compile-nosasl-nossl',
+        commands=[func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='noauth', SSL='nossl', VERSION='latest', ORCHESTRATION_FILE='versioned-api-testing'),
+                  func('test versioned api', AUTH='noauth', SSL='nossl')]),
 ])
 
 

@@ -476,7 +476,7 @@ test_sdam_monitoring_cb (bson_t *test)
 
    /* parse out the uri and use it to create a client */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
-   client = mongoc_client_new (bson_iter_utf8 (&iter, NULL));
+   client = test_framework_client_new (bson_iter_utf8 (&iter, NULL), NULL);
    topology = client->topology;
    context_init (&context);
    client_set_topology_event_callbacks (client, &context);
@@ -558,11 +558,11 @@ _test_topology_events (bool pooled)
    context_init (&context);
 
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = test_framework_new_default_client_pool ();
       pool_set_topology_event_callbacks (pool, &context);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
       client_set_topology_event_callbacks (client, &context);
    }
 
@@ -622,7 +622,7 @@ test_topology_events_disabled (void)
 
    context_init (&context);
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    client_set_topology_event_callbacks (client, &context);
 
    r = mongoc_client_command_simple (
@@ -698,11 +698,11 @@ _test_heartbeat_events (bool pooled, bool succeeded)
    start = bson_get_monotonic_time ();
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       pool_set_heartbeat_event_callbacks (pool, &context);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
       client_set_heartbeat_event_callbacks (client, &context);
    }
 
@@ -835,11 +835,11 @@ _test_heartbeat_fails_dns (bool pooled)
    uri = mongoc_uri_new (
       "mongodb://doesntexist.foobar/?serverSelectionTimeoutMS=3000");
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       pool_set_heartbeat_event_callbacks (pool, &context);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
       client_set_heartbeat_event_callbacks (client, &context);
    }
 
@@ -942,7 +942,7 @@ test_no_duplicates (void)
     * from interfering. */
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    mongoc_apm_set_server_changed_cb (callbacks, duplicates_server_changed);
    mongoc_apm_set_topology_changed_cb (callbacks, duplicates_topology_changed);
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &duplicates_counter);

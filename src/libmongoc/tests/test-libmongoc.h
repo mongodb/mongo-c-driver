@@ -98,10 +98,23 @@ void
 test_framework_set_ssl_opts (mongoc_client_t *client);
 void
 test_framework_set_pool_ssl_opts (mongoc_client_pool_t *pool);
+
+mongoc_server_api_t *
+test_framework_get_default_server_api (void);
+
 mongoc_client_t *
-test_framework_client_new (void);
+test_framework_new_default_client (void);
+mongoc_client_t *
+test_framework_client_new (const char *uri_str, const mongoc_server_api_t *api);
+mongoc_client_t *
+test_framework_client_new_from_uri (const mongoc_uri_t *uri,
+                                    const mongoc_server_api_t *api);
+
 mongoc_client_pool_t *
-test_framework_client_pool_new (void);
+test_framework_new_default_client_pool (void);
+mongoc_client_pool_t *
+test_framework_client_pool_new_from_uri (const mongoc_uri_t *uri,
+                                         const mongoc_server_api_t *api);
 
 bool
 test_framework_is_mongos (void);

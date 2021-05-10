@@ -135,7 +135,7 @@ _test_create (bson_t *create_index_cmd)
    mongoc_collection_t *files;
    mongoc_collection_t *chunks;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    files = mongoc_client_get_collection (client, "test", "foo.files");
@@ -222,7 +222,7 @@ test_remove (void)
    bson_error_t error;
    char name[32];
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    ASSERT_OR_PRINT (
@@ -287,7 +287,7 @@ test_list (void)
    char buf[100];
    int i = 0;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "list", &error), error);
@@ -350,7 +350,7 @@ test_find_with_opts (void)
    bson_error_t error;
    mongoc_gridfs_file_list_t *list;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, 2);
    gridfs = get_test_gridfs (client, "test_find_with_opts", &error);
    ASSERT_OR_PRINT (gridfs, error);
@@ -420,7 +420,8 @@ test_find_one_with_opts_limit (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_error_api (client, 2);
 
    gridfs = _get_gridfs (server, client, MONGOC_QUERY_SLAVE_OK);
@@ -491,7 +492,7 @@ test_properties (void)
    const bson_value_t *file_id;
    const char *alias0, *alias1;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "list", &error), error);
 
@@ -563,7 +564,7 @@ test_create_from_stream (void)
    mongoc_client_t *client;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    ASSERT_OR_PRINT ((gridfs = get_test_gridfs (client, "from_stream", &error)),
@@ -608,7 +609,7 @@ test_seek (void)
    mongoc_client_t *client;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "seek", &error), error);
 
@@ -662,7 +663,7 @@ test_read (void)
    iov[1].iov_base = buf2;
    iov[1].iov_len = 10;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "read", &error), error);
@@ -762,7 +763,7 @@ _test_write (bool at_boundary)
 
    opt.chunk_size = 2;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    gridfs = get_test_gridfs (client, "write", &error);
@@ -879,7 +880,7 @@ test_write_past_end (void)
    opt.chunk_size = chunk_sz;
    opt.filename = "foo";
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    gridfs = get_test_gridfs (client, "write_past_end", &error);
@@ -938,7 +939,7 @@ test_empty (void)
    iov[0].iov_base = buf;
    iov[0].iov_len = 2;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "empty", &error), error);
 
@@ -994,7 +995,7 @@ test_stream (void)
    iov.iov_base = buf;
    iov.iov_len = sizeof buf;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    ASSERT_OR_PRINT (gridfs = get_test_gridfs (client, "fs", &error), error);
@@ -1051,7 +1052,7 @@ test_long_seek (void *ctx)
    iov.iov_len = sizeof (buf);
    memset (iov.iov_base, 0, iov.iov_len);
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    gridfs = get_test_gridfs (client, "long_seek", &error);
    ASSERT_OR_PRINT (gridfs, error);
    file = mongoc_gridfs_create_file (gridfs, &opt);
@@ -1118,7 +1119,7 @@ test_remove_by_filename (void)
    mongoc_client_t *client;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
 
    ASSERT_OR_PRINT (
@@ -1176,7 +1177,7 @@ test_missing_chunk (void *ctx)
    iov.iov_len = sizeof (buf);
    memset (iov.iov_base, 0, iov.iov_len);
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    gridfs = get_test_gridfs (client, "long_seek", &error);
    ASSERT_OR_PRINT (gridfs, error);
    mongoc_gridfs_drop (gridfs, NULL);
@@ -1239,7 +1240,7 @@ test_oversize (void)
    bson_error_t error;
    bool ret;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    gridfs = get_test_gridfs (client, "test_oversize", &error);
    ASSERT_OR_PRINT (gridfs, error);
@@ -1296,7 +1297,7 @@ test_missing_file (void)
    iov.iov_base = buf;
    iov.iov_len = sizeof buf;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    gridfs =
       mongoc_client_get_gridfs (client, "test_missing_file", NULL, &error);
    ASSERT_OR_PRINT (gridfs, error);
@@ -1351,7 +1352,7 @@ test_set_id (void)
    mongoc_gridfs_file_opt_t opt = {0};
 
    /* create new client and grab gridfs handle */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    ASSERT (client);
    gridfs = mongoc_client_get_gridfs (client, "test", "fs", &error);
    ASSERT_OR_PRINT (gridfs, error);
@@ -1400,7 +1401,8 @@ test_inherit_client_config (void)
    mock_server_run (server);
 
    /* configure read / write concern and read prefs on client */
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
 
    write_concern = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (write_concern, 2);
@@ -1472,7 +1474,7 @@ test_find_one_empty (void)
    mongoc_client_t *client;
    bson_error_t error = {1, 2, "hello"};
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    gridfs = get_test_gridfs (client, "list", &error);
    ASSERT_OR_PRINT (gridfs, error);
    ASSERT (!mongoc_gridfs_find_one (
@@ -1526,7 +1528,7 @@ test_write_failure (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "socketTimeoutMS", 100);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    gridfs = mongoc_client_get_gridfs (client, "db", "fs", &error);
    ASSERT_OR_PRINT (gridfs, error);
    stream =

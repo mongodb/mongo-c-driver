@@ -640,6 +640,7 @@ all_variants = [
         'Versioned API Tests',
         'ubuntu1804-test',
         ['debug-compile-nosasl-openssl',
+         'debug-compile-nosasl-nossl',
          '.versioned-api'],
         {})
 ]

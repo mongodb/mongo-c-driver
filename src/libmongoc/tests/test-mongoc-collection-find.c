@@ -111,7 +111,7 @@ _test_collection_find_live (test_collection_find_t *test_data)
    bson_error_t error;
    mongoc_cursor_t *cursor;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    database = mongoc_client_get_database (client, "test");
    collection_name = gen_collection_name ("test");
    collection = mongoc_database_create_collection (
@@ -197,7 +197,8 @@ _test_collection_op_query_or_find_command (test_collection_find_t *test_data,
 
    server = mock_server_with_autoismaster (max_wire_version);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    cursor = mongoc_collection_find (collection,
                                     test_data->flags,
@@ -811,7 +812,8 @@ test_exhaust (void)
 
    server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    cursor = mongoc_collection_find (
       collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, tmp_bson (NULL), NULL, NULL);
@@ -860,7 +862,8 @@ test_getmore_batch_size (void)
 
    server = mock_server_with_autoismaster (4);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    for (i = 0; i < sizeof (batch_sizes) / sizeof (uint32_t); i++) {
@@ -930,7 +933,8 @@ test_getmore_invalid_reply (void *ctx)
 
    server = mock_server_with_autoismaster (4);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    cursor = mongoc_collection_find (
@@ -1007,7 +1011,8 @@ test_getmore_await (void)
 
    server = mock_server_with_autoismaster (4);
    mock_server_run (server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    for (i = 3; i < sizeof (await_tests) / sizeof (await_test_t); i++) {
@@ -1112,10 +1117,10 @@ _test_tailable_timeout (bool pooled)
    capture_logs (true);
 
    if (pooled) {
-      pool = test_framework_client_pool_new ();
+      pool = test_framework_new_default_client_pool ();
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
    }
 
    database = mongoc_client_get_database (client, "test");
