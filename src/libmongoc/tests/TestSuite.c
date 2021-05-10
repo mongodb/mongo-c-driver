@@ -808,7 +808,8 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             "  },\n"
             "  \"options\": {\n"
             "    \"fork\": %s,\n"
-            "    \"tracing\": %s\n"
+            "    \"tracing\": %s,\n"
+            "    \"apiVersion\": %s\n"
             "  },\n"
             "  \"results\": [\n",
             egetenv ("MONGOC_TEST_USER"),
@@ -839,7 +840,8 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
                                                                  : "false",
             test_framework_getenv_bool ("MONGOC_CHECK_IPV6") ? "true" : "false",
             (suite->flags & TEST_NOFORK) ? "false" : "true",
-            (suite->flags & TEST_TRACE) ? "true" : "false");
+            (suite->flags & TEST_TRACE) ? "true" : "false",
+            egetenv ("MONGODB_API_VERSION"));
 
    bson_free (hostname);
    bson_free (udspath);

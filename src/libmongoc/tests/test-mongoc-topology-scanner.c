@@ -174,7 +174,7 @@ test_topology_scanner_discovery (void)
 
    uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
                                  mock_server_get_host_and_port (primary));
-   client = mongoc_client_new (uri_str);
+   client = test_framework_client_new (uri_str, NULL);
    secondary_pref = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
 
    future = future_topology_select (
@@ -252,7 +252,7 @@ test_topology_scanner_oscillate (void)
    /* start with server 0 */
    uri_str = bson_strdup_printf ("mongodb://%s/?" MONGOC_URI_REPLICASET "=rs",
                                  mock_server_get_host_and_port (server0));
-   client = mongoc_client_new (uri_str);
+   client = test_framework_client_new (uri_str, NULL);
    scanner = client->topology->scanner;
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
@@ -296,7 +296,7 @@ test_topology_scanner_connection_error (void)
    bson_error_t error;
 
    /* assuming nothing is listening on this port */
-   client = mongoc_client_new ("mongodb://localhost:9876");
+   client = test_framework_client_new ("mongodb://localhost:9876", NULL);
 
    ASSERT (!mongoc_client_command_simple (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, &error));
@@ -325,7 +325,7 @@ test_topology_scanner_socket_timeout (void)
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 10);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    ASSERT (!mongoc_client_command_simple (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, &error));
@@ -388,7 +388,7 @@ test_topology_scanner_blocking_initiator (void)
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 100);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    /* pretend last host in linked list is slow */
    data.slow_port = mongoc_uri_get_hosts (uri)->next->port;
@@ -596,8 +596,8 @@ test_topology_retired_fails_to_initiate (void)
    scanner = mongoc_topology_scanner_new (
       NULL, NULL, &_retired_fails_to_initiate_cb, NULL, TIMEOUT);
 
-   BSON_ASSERT (_mongoc_host_list_from_string (&host_list,
-                                  mock_server_get_host_and_port (server)));
+   BSON_ASSERT (_mongoc_host_list_from_string (
+      &host_list, mock_server_get_host_and_port (server)));
 
    mongoc_topology_scanner_add (scanner, &host_list, 1);
    mongoc_topology_scanner_start (scanner, false);
@@ -655,12 +655,12 @@ _test_topology_scanner_does_not_renegotiate (bool pooled)
    mongoc_apm_set_server_heartbeat_failed_cb (callbacks, heartbeat_failed);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       test_framework_set_pool_ssl_opts (pool);
       mongoc_client_pool_set_apm_callbacks (pool, callbacks, &failed);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
       mongoc_client_set_apm_callbacks (client, callbacks, &failed);
       test_framework_set_ssl_opts (client);
    }

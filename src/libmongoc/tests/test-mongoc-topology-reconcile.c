@@ -118,10 +118,10 @@ _test_topology_reconcile_rs (bool pooled)
    uri = mongoc_uri_new (uri_str);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new (uri_str);
+      client = test_framework_client_new (uri_str, NULL);
    }
 
    if (!pooled) {
@@ -236,10 +236,10 @@ _test_topology_reconcile_sharded (bool pooled)
    uri = mongoc_uri_new (uri_str);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new (uri_str);
+      client = test_framework_client_new (uri_str, NULL);
    }
 
    primary_read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
@@ -367,7 +367,7 @@ test_topology_reconcile_from_handshake (void *ctx)
       "mongodb://%s/?replicaSet=%s", host_and_port, replset_name);
 
    uri = mongoc_uri_new (uri_str);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    mongoc_apm_set_server_opening_cb (callbacks, server_opening);
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &data);
    test_framework_set_pool_ssl_opts (pool);
@@ -481,7 +481,7 @@ test_topology_reconcile_retire_single (void)
 
    uri = mongoc_uri_new (uri_str);
 
-   client = mongoc_client_new (uri_str);
+   client = test_framework_client_new (uri_str, NULL);
    topology = client->topology;
 
 
@@ -601,7 +601,7 @@ test_topology_reconcile_add_single (void)
 
    uri = mongoc_uri_new (uri_str);
 
-   client = mongoc_client_new (uri_str);
+   client = test_framework_client_new (uri_str, NULL);
    topology = client->topology;
 
    /* step 1: discover primary */

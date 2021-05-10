@@ -138,7 +138,7 @@ _create_scram_users (void)
    mongoc_client_t *client;
    bool res;
    bson_error_t error;
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    res = mongoc_client_command_simple (
       client,
       "admin",
@@ -176,7 +176,7 @@ _drop_scram_users (void)
    mongoc_database_t *db;
    bool res;
    bson_error_t error;
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    db = mongoc_client_get_database (client, "admin");
    res = mongoc_database_remove_user (db, "sha1", &error);
    ASSERT_OR_PRINT (res, error);
@@ -220,12 +220,12 @@ _check_mechanism (bool pooled,
    }
 
    if (pooled) {
-      client_pool = mongoc_client_pool_new (uri);
+      client_pool = test_framework_client_pool_new_from_uri (uri, NULL);
       client = mongoc_client_pool_pop (client_pool);
       /* suppress the auth failure logs from pooled clients. */
       capture_logs (true);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
    }
    future = future_client_command_simple (client,
                                           "admin",
@@ -303,14 +303,14 @@ _try_auth_from_uri (bool pooled, mongoc_uri_t *uri, test_error_t expected_error)
    bool res;
 
    if (pooled) {
-      client_pool = mongoc_client_pool_new (uri);
+      client_pool = test_framework_client_pool_new_from_uri (uri, NULL);
       test_framework_set_pool_ssl_opts (client_pool);
       mongoc_client_pool_set_error_api (client_pool, 2);
       client = mongoc_client_pool_pop (client_pool);
       /* suppress the auth failure logs from pooled clients. */
       capture_logs (true);
    } else {
-      client = mongoc_client_new_from_uri (uri);
+      client = test_framework_client_new_from_uri (uri, NULL);
       mongoc_client_set_error_api (client, 2);
       test_framework_set_ssl_opts (client);
    }
@@ -426,7 +426,7 @@ _skip_if_no_sha256 ()
    bool res;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
 
    /* Check if SCRAM-SHA-256 is a supported auth mechanism by attempting to
     * create a new user with it. */
@@ -476,7 +476,7 @@ _create_saslprep_users ()
    mongoc_client_t *client;
    bool res;
    bson_error_t error;
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    res = mongoc_client_command_simple (
       client,
       "admin",
@@ -506,7 +506,7 @@ _drop_saslprep_users ()
    mongoc_database_t *db;
    bool res;
    bson_error_t error;
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    db = mongoc_client_get_database (client, "admin");
    res = mongoc_database_remove_user (db, "IX", &error);
    ASSERT_OR_PRINT (res, error);

@@ -164,12 +164,13 @@ elif [ "$SSL" != "nossl" ]; then
    MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --host localhost --ssl --sslCAFile=$MONGO_ORCHESTRATION_HOME/lib/ca.pem --sslPEMKeyFile=$MONGO_ORCHESTRATION_HOME/lib/client.pem"
 fi
 
+if [ ! -z "$REQUIRE_API_VERSION" ]; then
+  MONGO_SHELL_CONNECTION_FLAGS="${MONGO_SHELL_CONNECTION_FLAGS} --apiVersion=1"
+  # Set the requireApiVersion parameter.
+  `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS $DIR/require-api-version.js
+fi
+
 echo $MONGO_SHELL_CONNECTION_FLAGS
 
 `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.serverBuildInfo())' admin
 `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS --eval 'printjson(db.isMaster())' admin
-
-# Set the requireApiVersion parameter.
-if [ ! -z "$REQUIRE_API_VERSION" ]; then
-  `pwd`/mongodb/bin/mongo $MONGO_SHELL_CONNECTION_FLAGS $DIR/require-api-version.js
-fi

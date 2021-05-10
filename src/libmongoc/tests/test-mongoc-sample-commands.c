@@ -2521,7 +2521,7 @@ test_sample_change_stream_command (sample_command_fn_t fn,
        test_framework_skip_if_slow ()) {
 
       /* separate client for the background thread */
-      client = test_framework_client_new ();
+      client = test_framework_new_default_client ();
 
       bson_mutex_init (&ctx.lock);
       ctx.collection = mongoc_client_get_collection (
@@ -3432,7 +3432,7 @@ test_sample_txn_commands (mongoc_client_t *client)
 static mongoc_client_t *
 get_client (void)
 {
-   return test_framework_client_new ();
+   return test_framework_new_default_client ();
 }
 
 static bool
@@ -3464,11 +3464,11 @@ with_transaction_example (bson_error_t *error)
     * members in the URI string; e.g.
     * uri_repl = "mongodb://mongodb0.example.com:27017,mongodb1.example.com:" \
     *    "27017/?replicaSet=myRepl";
-    * client = mongoc_client_new (uri_repl);
+    * client = test_framework_client_new (uri_repl);
     * For a sharded cluster, connect to the mongos instances; e.g.
     * uri_sharded =
     * "mongodb://mongos0.example.com:27017,mongos1.example.com:27017/";
-    * client = mongoc_client_new (uri_sharded);
+    * client = test_framework_client_new (uri_sharded);
     */
 
    client = get_client ();
@@ -3579,7 +3579,7 @@ test_sample_commands (void)
    mongoc_database_t *db;
    mongoc_collection_t *collection;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    db = mongoc_client_get_database (client, "test_sample_command");
    collection = mongoc_database_get_collection (db, "inventory");
    mongoc_collection_drop (collection, NULL);

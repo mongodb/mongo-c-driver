@@ -318,15 +318,10 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
          uri, MONGOC_URI_HEARTBEATFREQUENCYMS, REDUCED_HEARTBEAT_FREQUENCY_MS);
    }
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, api);
    test_framework_set_ssl_opts (client);
    entity->value = client;
    callbacks = mongoc_apm_callbacks_new ();
-
-   if (api) {
-      ASSERT_OR_PRINT (mongoc_client_set_server_api (client, api, error),
-                       (*error));
-   }
 
    if (can_reduce_heartbeat && em->reduced_heartbeat) {
       client->topology->min_heartbeat_frequency_msec =

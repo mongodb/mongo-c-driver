@@ -89,7 +89,7 @@ test_fixture_init (test_fixture_t *test_fixture,
       bson_strdup_printf ("%s.%s", test_fixture->ns_db, test_fixture->ns_coll);
 
    /* Construct client, database, and collection objects. */
-   test_fixture->client = test_framework_client_new ();
+   test_fixture->client = test_framework_new_default_client ();
    test_framework_set_ssl_opts (test_fixture->client);
    mongoc_client_set_error_api (test_fixture->client,
                                 MONGOC_ERROR_API_VERSION_2);
@@ -486,7 +486,7 @@ collection_rename (test_fixture_t *test_fixture)
    /* Check that source collections do not exist anymore.  Use a separate client
     * so commands
     * don't show up in APM on test fixture's client. */
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    _check_existence (client, test_fixture->ns_db, test_fixture->ns_coll, false);
 
    /* Check that the new collection exists. */
@@ -537,7 +537,7 @@ unsupported_long_coll (void *unused)
    memset (long_coll, 'd', 199);
    long_coll[199] = '\0';
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, "test", long_coll);
    /* Insert. */
@@ -568,7 +568,7 @@ unsupported_long_db (void)
    memset (long_db, 'd', 64);
    long_db[64] = '\0';
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    coll = mongoc_client_get_collection (client, long_db, "test");
    /* Insert. */

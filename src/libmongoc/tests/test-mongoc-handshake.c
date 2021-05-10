@@ -61,7 +61,7 @@ test_mongoc_handshake_appname_in_uri (void)
    capture_logs (true);
    uri_str = bson_strdup_printf ("mongodb://a/?" MONGOC_URI_APPNAME "=%s",
                                  long_string);
-   ASSERT (!mongoc_client_new (uri_str));
+   ASSERT (!test_framework_client_new (uri_str, NULL));
    ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
                         MONGOC_LOG_LEVEL_WARNING,
                         "Unsupported value");
@@ -92,7 +92,7 @@ test_mongoc_handshake_appname_frozen_single (void)
    mongoc_client_t *client;
    const char *good_uri = "mongodb://host/?" MONGOC_URI_APPNAME "=mongodump";
 
-   client = mongoc_client_new (good_uri);
+   client = test_framework_client_new (good_uri, NULL);
 
    /* Shouldn't be able to set appname again */
    capture_logs (true);
@@ -114,7 +114,7 @@ test_mongoc_handshake_appname_frozen_pooled (void)
 
    uri = mongoc_uri_new (good_uri);
 
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    capture_logs (true);
    ASSERT (!mongoc_client_pool_set_appname (pool, "test"));
    ASSERT_CAPTURED_LOG ("_mongoc_topology_scanner_set_appname",
@@ -189,7 +189,7 @@ test_mongoc_handshake_data_append_success (void)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
    mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
    /* Force topology scanner to start */
    client = mongoc_client_pool_pop (pool);
@@ -350,7 +350,7 @@ test_mongoc_handshake_data_append_after_cmd (void)
    uri = mongoc_uri_new ("mongodb://127.0.0.1/?" MONGOC_URI_MAXPOOLSIZE "=1");
 
    /* Make sure that after we pop a client we can't set global handshake */
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
    client = mongoc_client_pool_pop (pool);
 
@@ -398,7 +398,7 @@ test_mongoc_handshake_too_big (void)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* avoid rare test timeouts */
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 20000);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    ASSERT (mongoc_client_set_appname (client, "my app"));
 
@@ -568,7 +568,7 @@ test_mongoc_handshake_cannot_send (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
    /* Pop a client to trigger the topology scanner */
    client = mongoc_client_pool_pop (pool);

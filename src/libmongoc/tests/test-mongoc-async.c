@@ -247,6 +247,7 @@ test_large_ismaster (void *ctx)
    mongoc_stream_t *sock_stream;
    bson_t q = BSON_INITIALIZER;
    char buf[1024 * 1024];
+   mongoc_server_api_t *default_api = NULL;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t ssl_opts;
@@ -270,6 +271,12 @@ test_large_ismaster (void *ctx)
          mongoc_stream_tls_new_with_hostname (sock_stream, NULL, &ssl_opts, 1);
    }
 #endif
+
+   default_api = test_framework_get_default_server_api ();
+   if (default_api) {
+      _mongoc_cmd_append_server_api (&q, default_api);
+   }
+   mongoc_server_api_destroy (default_api);
 
    async = mongoc_async_new ();
    mongoc_async_cmd_new (async,

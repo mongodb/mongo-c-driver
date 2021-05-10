@@ -157,7 +157,7 @@ test_bulk (void)
    bson_t up;
    bson_t doc = BSON_INITIALIZER;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_bulk");
@@ -215,7 +215,7 @@ _test_opt (const char *opts_json, const char *msg)
    mongoc_client_t *client;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_bulk");
@@ -260,7 +260,8 @@ test_bulk_error (void)
 
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
 
    bulk = mongoc_bulk_operation_new (true);
    mongoc_bulk_operation_set_client (bulk, client);
@@ -301,7 +302,7 @@ test_bulk_error_unordered (void)
 
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
    mongoc_uri_set_option_as_int32 (uri, "sockettimeoutms", 500);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    mongoc_uri_destroy (uri);
    collection = mongoc_client_get_collection (client, "test", "test");
 
@@ -376,7 +377,7 @@ test_insert (bool ordered)
    mongoc_cursor_t *cursor;
    const bson_t *inserted_doc;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_insert");
@@ -448,7 +449,7 @@ test_insert_check_keys (void)
 
    capture_logs (true);
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
    collection = get_test_collection (client, "test_insert_check_keys");
    BSON_ASSERT (collection);
@@ -522,7 +523,7 @@ test_upsert (bool ordered)
    bson_t *sel;
    bson_t *doc;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_upsert");
@@ -612,7 +613,7 @@ test_upsert_unordered_oversized (void *ctx)
    bson_error_t error;
    bson_t reply;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "upsert_oversized");
    bson_append_bool (&opts, "ordered", 7, false);
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, &opts);
@@ -662,7 +663,7 @@ test_upserted_index (bool ordered)
    bson_t *inc = tmp_bson ("{'$inc': {'b': 1}}");
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_upserted_index");
@@ -787,7 +788,7 @@ test_update_one (bool ordered)
    bson_t *doc;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_update_one");
@@ -858,7 +859,7 @@ test_update_with_opts_validate (void)
    };
    int i;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_update_with_opts_validate");
 
    for (i = 0; i < 2; i++) {
@@ -947,7 +948,7 @@ test_update_arrayfilters (void *ctx)
    bool ret = false;
    int i;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_update_arrayfilters");
@@ -1032,7 +1033,7 @@ test_update_arrayfilters_unsupported (void *ctx)
       mongoc_bulk_operation_update_many_with_opts,
    };
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_update_arrayfilters_err");
 
    for (i = 0; i < 2; i++) {
@@ -1079,7 +1080,7 @@ test_update_hint_validate (void)
       mongoc_bulk_operation_replace_one_with_opts,
    };
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_update_hint_err");
 
    for (i = 0; i < 3; i++) {
@@ -1126,7 +1127,7 @@ test_delete_hint_validate (void)
       mongoc_bulk_operation_remove_many_with_opts,
    };
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_delete_hint_err");
 
    for (i = 0; i < 2; i++) {
@@ -1166,7 +1167,7 @@ test_replace_one (bool ordered)
    bson_t *doc;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_replace_one");
@@ -1221,7 +1222,7 @@ _test_replace_one_check_keys (bool with_opts)
    bson_t reply;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_replace_one_check_keys");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
@@ -1287,7 +1288,7 @@ test_replace_one_with_opts_validate (void)
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_replace_with_opts_validate");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
@@ -1361,7 +1362,7 @@ test_upsert_large (void *ctx)
 
    memset (large_str, 'a', sz);
    large_str[sz - 1] = '\0';
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_upsert_large");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
@@ -1413,7 +1414,7 @@ test_upsert_huge (void *ctx)
    bson_t reply;
    mongoc_cursor_t *cursor;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
    mongoc_client_set_error_api (client, 2);
 
@@ -1494,7 +1495,7 @@ test_update (bool ordered)
    bson_t *bad_update_doc = tmp_bson ("{'foo': 'bar'}");
    bson_t *update_doc;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_update");
@@ -1580,7 +1581,7 @@ _test_update_check_keys (bool many, bool with_opts)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
    collection = get_test_collection (client, "test_update_check_keys");
    BSON_ASSERT (collection);
@@ -1688,7 +1689,7 @@ _test_update_validate (update_validate_test_t *test)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
    collection = get_test_collection (client, "test_update_invalid_first");
    BSON_ASSERT (collection);
@@ -1962,7 +1963,7 @@ _test_insert_invalid (bool with_opts, bool invalid_first)
    bool r;
    const char *err = "keys cannot contain \".\": \"a.b\"";
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_insert_validate");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (mongoc_collection_delete_many (
@@ -2080,7 +2081,7 @@ test_insert_with_opts_validate (void)
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_insert_with_opts_validate");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
@@ -2152,7 +2153,7 @@ _test_remove_validate (remove_validate_test_t *test)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
    collection = get_test_collection (client, "test_update_invalid_first");
    BSON_ASSERT (collection);
@@ -2243,7 +2244,7 @@ test_index_offset (void)
    bson_t *doc;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_index_offset");
@@ -2296,7 +2297,7 @@ test_single_ordered_bulk (void)
    bson_t reply;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_single_ordered_bulk");
@@ -2346,7 +2347,7 @@ test_insert_continue_on_error (void)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_insert_continue_on_error");
@@ -2395,7 +2396,7 @@ test_update_continue_on_error (void)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_update_continue_on_error");
@@ -2458,7 +2459,7 @@ test_remove_continue_on_error (void)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_remove_continue_on_error");
@@ -2509,7 +2510,7 @@ test_single_error_ordered_bulk (void)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_single_error_ordered_bulk");
@@ -2563,7 +2564,7 @@ test_multiple_error_ordered_bulk (void)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection =
@@ -2626,7 +2627,7 @@ test_single_unordered_bulk (void)
    bson_t reply;
    bson_error_t error;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "test_single_unordered_bulk");
@@ -2674,7 +2675,7 @@ test_single_error_unordered_bulk (void)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection =
@@ -2732,7 +2733,7 @@ _test_oversized_bulk_op (bool ordered)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_oversized_bulk");
    mongoc_collection_drop_with_opts (collection, NULL, NULL);
 
@@ -2817,7 +2818,8 @@ _test_write_concern (bool ordered, bool multi_err)
 
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 2);
@@ -2979,31 +2981,31 @@ test_unordered_bulk_writes_with_error (void)
    /* disable retryable writes, so we move to the next operation on error */
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_RETRYWRITES, false);
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
 
    collection = mongoc_client_get_collection (client, "db", "test");
    /* use an unordered bulk write; we expect to continue on error */
    bulk = mongoc_collection_create_bulk_operation_with_opts (
-      collection, tmp_bson("{'ordered': false}"));
+      collection, tmp_bson ("{'ordered': false}"));
    /* maxWriteBatchSize is set to 1; with 2 inserts we get a batch split */
    for (i = 0; i < 2; i++) {
       mongoc_bulk_operation_insert_with_opts (
-         bulk, tmp_bson("{'_id': %d}", i), NULL, &error);
+         bulk, tmp_bson ("{'_id': %d}", i), NULL, &error);
    }
    future = future_bulk_operation_execute (bulk, &reply, &error);
 
    request = mock_server_receives_request (server);
    BSON_ASSERT (request);
-   mock_server_replies_simple (
-      request, "{ 'errmsg': 'random error', 'ok': 0 }");
+   mock_server_replies_simple (request,
+                               "{ 'errmsg': 'random error', 'ok': 0 }");
    request_destroy (request);
    /* should receive a second request */
    request = mock_server_receives_request (server);
    /* a failure of this assertion means that the client did not continue with
     * the next write operation; it stopped permaturely */
    BSON_ASSERT (request);
-   mock_server_replies_simple (
-      request, "{ 'errmsg': 'random error', 'ok': 0 }");
+   mock_server_replies_simple (request,
+                               "{ 'errmsg': 'random error', 'ok': 0 }");
    request_destroy (request);
    ASSERT (future_wait (future));
 
@@ -3014,7 +3016,6 @@ test_unordered_bulk_writes_with_error (void)
    future_destroy (future);
    mongoc_uri_destroy (uri);
    mock_server_destroy (server);
-
 }
 
 
@@ -3033,7 +3034,8 @@ _test_write_concern_err_api (int32_t error_api_version)
 
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
    ASSERT (mongoc_client_set_error_api (client, error_api_version));
    collection = mongoc_client_get_collection (client, "test", "test");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
@@ -3090,7 +3092,7 @@ test_multiple_error_unordered_bulk (void)
    bson_error_t error;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection =
@@ -3165,7 +3167,8 @@ _test_wtimeout_plus_duplicate_key_err (void)
 
    mock_server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
    mock_server_run (mock_server);
-   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    /* unordered bulk */
@@ -3268,7 +3271,7 @@ test_large_inserts_ordered (void *ctx)
    bson_t query = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    huge_doc = BCON_NEW ("a", BCON_INT32 (1));
@@ -3354,7 +3357,7 @@ test_large_inserts_unordered (void *ctx)
    bson_t query = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    huge_doc = BCON_NEW ("a", BCON_INT32 (1));
@@ -3485,7 +3488,8 @@ _test_numerous (bool ordered)
 
    mock_server_run (server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
 #define TEST_NUMEROUS(_one_write, _doc_format)                                 \
@@ -3549,7 +3553,7 @@ test_bulk_split (void)
    /* ensure we need two batches */
    n_docs = (int) test_framework_max_write_batch_size () + 10;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "split");
@@ -3642,7 +3646,7 @@ test_bulk_edge_case_372 (bool ordered)
    bson_t *update;
    bson_t reply;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "CDRIVER_372");
@@ -3760,7 +3764,7 @@ test_bulk_max_msg_size (void)
    mongoc_write_concern_set_w (wc, 1);
    mongoc_write_concern_append (wc, &opts);
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &stats);
@@ -3771,6 +3775,13 @@ test_bulk_max_msg_size (void)
    if (!bson_empty (&client->topology->description.cluster_time)) {
       filler_string -= client->topology->description.cluster_time.len +
                        strlen ("$clusterTime") + 2;
+   }
+
+   /* API version may be appended */
+   if (client->api) {
+      filler_string -= strlen ("apiVersion") + 7 +
+                       strlen (mongoc_server_api_version_to_string (
+                          mongoc_server_api_get_version (client->api)));
    }
 
    cs = mongoc_client_start_session (client, NULL, NULL);
@@ -3896,7 +3907,7 @@ test_bulk_max_batch_size (void)
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 1);
    mongoc_write_concern_append (wc, &opts);
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &stats);
@@ -3997,7 +4008,7 @@ test_bulk_new (void)
    bson_t empty = BSON_INITIALIZER;
    uint32_t r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    collection = get_test_collection (client, "bulk_new");
@@ -4065,7 +4076,7 @@ test_bulk_write_concern_split (void)
 
    num_docs = (int) test_framework_max_write_batch_size () + 10;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    write_concern = mongoc_write_concern_new ();
@@ -4153,10 +4164,11 @@ _test_bulk_hint (bool pooled, bool use_primary)
    mock_rs_run (rs);
 
    if (pooled) {
-      pool = mongoc_client_pool_new (mock_rs_get_uri (rs));
+      pool =
+         test_framework_client_pool_new_from_uri (mock_rs_get_uri (rs), NULL);
       client = mongoc_client_pool_pop (pool);
    } else {
-      client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+      client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    }
 
    /* warm up the client so its server_id is valid */
@@ -4244,7 +4256,7 @@ test_bulk_reply_w0 (void)
    bson_error_t error;
    bson_t reply;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_insert_w0");
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 0);
@@ -4277,7 +4289,7 @@ test_bulk_invalid_write_concern (void)
    bson_error_t error;
    bson_t reply;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_bulk_invalid_write_concern");
    bulk = mongoc_collection_create_bulk_operation_with_opts (
       collection, tmp_bson ("{'writeConcern': {'w': 0, 'j': true}}"));
@@ -4329,7 +4341,8 @@ _test_bulk_collation (int w, int wire_version, bulkop op)
    mock_server = mock_server_with_autoismaster (wire_version);
    mock_server_run (mock_server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (
@@ -4471,7 +4484,8 @@ _test_bulk_collation_multi (int w, int wire_version)
    mock_server = mock_server_with_autoismaster (wire_version);
    mock_server_run (mock_server);
 
-   client = mongoc_client_new_from_uri (mock_server_get_uri (mock_server));
+   client = test_framework_client_new_from_uri (
+      mock_server_get_uri (mock_server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
    bulk = mongoc_collection_create_bulk_operation_with_opts (
       collection, tmp_bson ("{'writeConcern': {'w': %d, 'wtimeout': 100}}", w));
@@ -4601,7 +4615,7 @@ test_bulk_update_one_error_message (void)
    mongoc_bulk_operation_t *bulk;
    bson_error_t error;
 
-   client = mongoc_client_new ("mongodb://server");
+   client = test_framework_client_new ("mongodb://server", NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
@@ -4636,7 +4650,7 @@ test_bulk_opts_parse (void)
    bson_error_t error;
    bool r;
 
-   client = mongoc_client_new ("mongodb://server");
+   client = test_framework_client_new ("mongodb://server", NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
 
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
@@ -4732,7 +4746,7 @@ test_bulk_bypass_document_validation (void)
    uint32_t i;
    bool r;
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    collection = get_test_collection (client, "bypass_validation");
 
    /* bypassDocumentValidation can't be passed in opts */
@@ -4972,10 +4986,9 @@ test_bulk_install (TestSuite *suite)
       suite,
       "/BulkOperation/write_concern/write_command/unordered/multi_err",
       test_write_concern_write_command_unordered_multi_err);
-   TestSuite_AddMockServerTest (
-      suite,
-      "/BulkOperation/writes/unordered/error",
-      test_unordered_bulk_writes_with_error);
+   TestSuite_AddMockServerTest (suite,
+                                "/BulkOperation/writes/unordered/error",
+                                test_unordered_bulk_writes_with_error);
    TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/error/write_command/v1",

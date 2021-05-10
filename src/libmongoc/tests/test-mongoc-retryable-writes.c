@@ -74,7 +74,7 @@ test_rs_failover (void)
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
    mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
    cs = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (cs, error);
@@ -99,7 +99,8 @@ test_rs_failover (void)
    request =
       mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
-   mock_server_replies_simple (request, "{'ok': 0, 'code': 10107, 'errmsg': 'not master'}");
+   mock_server_replies_simple (
+      request, "{'ok': 0, 'code': 10107, 'errmsg': 'not master'}");
    request_destroy (request);
 
    request =
@@ -134,7 +135,7 @@ test_command_with_opts (void *ctx)
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
    mongoc_uri_destroy (uri);
 
@@ -205,7 +206,7 @@ test_insert_one_unacknowledged (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    wc = mongoc_write_concern_new ();
@@ -253,7 +254,7 @@ test_update_one_unacknowledged (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    wc = mongoc_write_concern_new ();
@@ -304,7 +305,7 @@ test_delete_one_unacknowledged (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    wc = mongoc_write_concern_new ();
@@ -352,7 +353,7 @@ test_bulk_operation_execute_unacknowledged (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    wc = mongoc_write_concern_new ();
@@ -401,7 +402,7 @@ test_remove_unacknowledged (void)
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, "retryWrites", true);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    wc = mongoc_write_concern_new ();
@@ -442,31 +443,35 @@ test_retry_no_crypto (void *ctx)
    /* Test that no warning is logged if retryWrites is disabled. Warning logic
     * is implemented in mongoc_topology_new, but test all public APIs that use
     * the common code path. */
-   client = mongoc_client_new ("mongodb://localhost/?retryWrites=false");
+   client = test_framework_client_new ("mongodb://localhost/?retryWrites=false",
+                                       NULL);
    BSON_ASSERT (client);
-   ASSERT_NO_CAPTURED_LOGS ("mongoc_client_new and retryWrites=false");
+   ASSERT_NO_CAPTURED_LOGS ("test_framework_client_new and retryWrites=false");
    mongoc_client_destroy (client);
 
    uri = mongoc_uri_new ("mongodb://localhost/?retryWrites=false");
    BSON_ASSERT (uri);
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    BSON_ASSERT (client);
-   ASSERT_NO_CAPTURED_LOGS ("mongoc_client_new_from_uri and retryWrites=false");
+   ASSERT_NO_CAPTURED_LOGS (
+      "test_framework_client_new_from_uri and retryWrites=false");
    mongoc_client_destroy (client);
 
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    BSON_ASSERT (pool);
-   ASSERT_NO_CAPTURED_LOGS ("mongoc_client_pool_new and retryWrites=false");
+   ASSERT_NO_CAPTURED_LOGS (
+      "test_framework_client_pool_new_from_uri and retryWrites=false");
    mongoc_client_pool_destroy (pool);
 
    mongoc_uri_destroy (uri);
 
    /* Test that a warning is logged if retryWrites is enabled. */
-   client = mongoc_client_new ("mongodb://localhost/?retryWrites=true");
+   client =
+      test_framework_client_new ("mongodb://localhost/?retryWrites=true", NULL);
    BSON_ASSERT (client);
    ASSERT_CAPTURED_LOG (
-      "mongoc_client_new and retryWrites=true",
+      "test_framework_client_new and retryWrites=true",
       MONGOC_LOG_LEVEL_WARNING,
       "retryWrites not supported without an SSL crypto library");
    mongoc_client_destroy (client);
@@ -476,20 +481,20 @@ test_retry_no_crypto (void *ctx)
    uri = mongoc_uri_new ("mongodb://localhost/?retryWrites=true");
    BSON_ASSERT (uri);
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    BSON_ASSERT (client);
    ASSERT_CAPTURED_LOG (
-      "mongoc_client_new_from_uri and retryWrites=true",
+      "test_framework_client_new_from_uri and retryWrites=true",
       MONGOC_LOG_LEVEL_WARNING,
       "retryWrites not supported without an SSL crypto library");
    mongoc_client_destroy (client);
 
    clear_captured_logs ();
 
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
    BSON_ASSERT (pool);
    ASSERT_CAPTURED_LOG (
-      "mongoc_client_pool_new and retryWrites=true",
+      "test_framework_client_pool_new_from_uri and retryWrites=true",
       MONGOC_LOG_LEVEL_WARNING,
       "retryWrites not supported without an SSL crypto library");
    mongoc_client_pool_destroy (pool);
@@ -515,7 +520,7 @@ test_unsupported_storage_engine_error (void)
 
    rs = mock_rs_with_autoismaster (WIRE_VERSION_RETRY_WRITES, true, 0, 0);
    mock_rs_run (rs);
-   client = mongoc_client_new_from_uri (mock_rs_get_uri (rs));
+   client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session, error);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
@@ -614,7 +619,7 @@ test_bulk_retry_tracks_new_server (void *unused)
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_started_cb (callbacks, _tracks_new_server_cb);
 
-   client = test_framework_client_new ();
+   client = test_framework_new_default_client ();
    mongoc_client_set_apm_callbacks (client, callbacks, &counters);
    collection = get_test_collection (client, "tracks_new_server");
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);

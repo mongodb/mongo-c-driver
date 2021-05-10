@@ -225,7 +225,8 @@ tf_new (tf_flags_t flags)
    mongoc_apm_set_server_heartbeat_succeeded_cb (callbacks,
                                                  _heartbeat_succeeded);
    mongoc_apm_set_server_heartbeat_failed_cb (callbacks, _heartbeat_failed);
-   tf->pool = mongoc_client_pool_new (mock_server_get_uri (tf->server));
+   tf->pool = test_framework_client_pool_new_from_uri (
+      mock_server_get_uri (tf->server), NULL);
    mongoc_client_pool_set_apm_callbacks (tf->pool, callbacks, tf);
    mongoc_apm_callbacks_destroy (callbacks);
 

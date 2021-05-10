@@ -93,7 +93,7 @@ test_cmd_helpers (void *ctx)
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_bool (uri, "retryReads", true);
 
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    test_framework_set_ssl_opts (client);
    mongoc_uri_destroy (uri);
@@ -240,7 +240,7 @@ test_retry_reads_off (void *ctx)
 
    uri = test_framework_get_uri ();
    mongoc_uri_set_option_as_bool (uri, "retryreads", false);
-   client = mongoc_client_new_from_uri (uri);
+   client = test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (client);
 
    /* clean up in case a previous test aborted */
