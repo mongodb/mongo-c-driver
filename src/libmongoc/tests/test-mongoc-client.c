@@ -510,7 +510,7 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
    /*
     * Log in as admin.
     */
-   admin_client = test_framework_client_new ();
+   admin_client = test_framework_new_default_client ();
 
    /*
     * Add a user to the test database.
@@ -538,13 +538,13 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
 
    if (pooled) {
       uri = mongoc_uri_new (uri_str_auth);
-      pool = mongoc_client_pool_new (uri);
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
       mongoc_uri_destroy (uri);
 
       test_framework_set_pool_ssl_opts (pool);
       auth_client = mongoc_client_pool_pop (pool);
    } else {
-      auth_client = mongoc_client_new (uri_str_auth);
+      auth_client = test_framework_client_new (uri_str_auth, NULL);
       test_framework_set_ssl_opts (auth_client);
    }
 
