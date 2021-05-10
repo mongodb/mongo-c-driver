@@ -776,12 +776,14 @@ test_change_stream_resumable_error (void)
                                     "db",
                                     MONGOC_QUERY_SLAVE_OK,
                                     "{ 'getMore': 123, 'collection': 'coll' }");
+   BSON_ASSERT (request);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    /* Retry command */
    request = mock_server_receives_command (
       server, "db", MONGOC_QUERY_SLAVE_OK, watch_cmd);
+   BSON_ASSERT (request);
    mock_server_replies_simple (
       request,
       "{'cursor': {'id': 124,'ns': 'db.coll','firstBatch': []},'ok': 1 }");

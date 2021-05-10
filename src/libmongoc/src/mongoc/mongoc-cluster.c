@@ -2425,6 +2425,12 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
       _mongoc_scram_destroy (&scanner_node->scram);
 #endif
 
+      if (!scanner_node->stream) {
+         memcpy (error, &sd->error, sizeof *error);
+         mongoc_server_description_destroy (sd);
+         return NULL;
+      }
+
       if (!has_speculative_auth &&
           !_mongoc_cluster_auth_node (cluster,
                                       scanner_node->stream,
