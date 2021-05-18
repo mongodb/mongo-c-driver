@@ -1,6 +1,6 @@
-:man_page: mongoc_server_description_last_hello_response
+:man_page: mongoc_server_description_hello_response
 
-mongoc_server_description_last_hello_response()
+mongoc_server_description_hello_response()
 ===============================================
 
 Synopsis
@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   const bson_t *
-  mongoc_server_description_last_hello_response (
+  mongoc_server_description_hello_response (
      const mongoc_server_description_t *description);
 
 Parameters
@@ -24,7 +24,7 @@ The client or client pool periodically runs a
 `"hello" <https://docs.mongodb.org/manual/reference/command/isMaster/>`_
 command on each server, to update its view of the MongoDB deployment. Use
 :symbol:`mongoc_client_get_server_descriptions()` and
-``mongoc_server_description_last_hello_response()`` to get the most recent "hello"
+``mongoc_server_description_hello_response()`` to get the most recent "hello"
 response.
 
 Returns
