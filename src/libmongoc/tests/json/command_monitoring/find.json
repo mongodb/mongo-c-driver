@@ -356,7 +356,7 @@
               },
               "collection": "test",
               "batchSize": {
-                "$numberLong": "1"
+                "$numberLong": "3"
               }
             },
             "command_name": "getMore",
@@ -497,7 +497,7 @@
               },
               "collection": "test",
               "batchSize": {
-                "$numberLong": "1"
+                "$numberLong": "3"
               }
             },
             "command_name": "getMore",
