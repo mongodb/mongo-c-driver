@@ -803,7 +803,7 @@ mongoc_topology_description_select (mongoc_topology_description_t *topology,
       sd = (mongoc_server_description_t *) mongoc_set_get_item (
          topology->servers, 0);
 
-      if (sd->has_is_master) {
+      if (sd->has_hello_response) {
          RETURN (sd);
       } else {
          TRACE ("Topology type single, [%s] is down", sd->host.host_and_port);
@@ -1131,8 +1131,9 @@ mongoc_topology_description_invalidate_server (
 {
    BSON_ASSERT (error);
 
-   /* send NULL ismaster reply */
-   mongoc_topology_description_handle_ismaster (topology, id, NULL, MONGOC_RTT_UNSET, error);
+   /* send NULL hello reply */
+   mongoc_topology_description_handle_hello (
+      topology, id, NULL, MONGOC_RTT_UNSET, error);
 }
 
 /*
@@ -1413,7 +1414,7 @@ _mongoc_topology_description_update_rs_from_primary (
       return;
 
    /* If server->set_name was null this function wouldn't be called from
-    * mongoc_server_description_handle_ismaster(). static code analyzers however
+    * mongoc_server_description_handle_hello(). static code analyzers however
     * don't know that so we check for it explicitly. */
    if (server->set_name) {
       /* 'Server' can only be the primary if it has the right rs name  */
@@ -1902,11 +1903,11 @@ _mongoc_topology_description_check_compatible (
 /*
  *--------------------------------------------------------------------------
  *
- * mongoc_topology_description_handle_ismaster --
+ * mongoc_topology_description_handle_hello --
  *
- *      Handle an ismaster. This is called by the background SDAM process,
+ *      Handle a hello. This is called by the background SDAM process,
  *      and by client when performing a handshake or invalidating servers.
- *      If there was an error calling ismaster, pass it in as @error.
+ *      If there was an error calling hello, pass it in as @error.
  *
  *      NOTE: this method should only be called while holding the mutex on
  *      the owning topology object.
@@ -1915,10 +1916,10 @@ _mongoc_topology_description_check_compatible (
  */
 
 void
-mongoc_topology_description_handle_ismaster (
+mongoc_topology_description_handle_hello (
    mongoc_topology_description_t *topology,
    uint32_t server_id,
-   const bson_t *ismaster_response,
+   const bson_t *hello_response,
    int64_t rtt_msec,
    const bson_error_t *error /* IN */)
 {
@@ -1943,8 +1944,8 @@ mongoc_topology_description_handle_ismaster (
       _mongoc_topology_description_copy_to (topology, prev_td);
    }
 
-   if (ismaster_response &&
-       bson_iter_init_find (&iter, ismaster_response, "topologyVersion") &&
+   if (hello_response &&
+       bson_iter_init_find (&iter, hello_response, "topologyVersion") &&
        BSON_ITER_HOLDS_DOCUMENT (&iter)) {
       bson_t incoming_topology_version;
       const uint8_t *bytes;
@@ -1971,11 +1972,10 @@ mongoc_topology_description_handle_ismaster (
       prev_sd = mongoc_server_description_new_copy (sd);
    }
 
-   DUMP_BSON (ismaster_response);
+   DUMP_BSON (hello_response);
    /* pass the current error in */
 
-   mongoc_server_description_handle_ismaster (
-      sd, ismaster_response, rtt_msec, error);
+   mongoc_server_description_handle_hello (sd, hello_response, rtt_msec, error);
 
    /* if the user specified a set_name in the connection string
     * and they are in topology type single, check that the set name
@@ -2004,13 +2004,12 @@ mongoc_topology_description_handle_ismaster (
       if (wrong_set_name) {
          /* Replace with unknown. */
          TRACE ("%s", "wrong set name");
-         mongoc_server_description_handle_ismaster (
+         mongoc_server_description_handle_hello (
             sd, NULL, MONGOC_RTT_UNSET, &set_name_err);
       }
    }
 
-   mongoc_topology_description_update_cluster_time (topology,
-                                                    ismaster_response);
+   mongoc_topology_description_update_cluster_time (topology, hello_response);
 
    if (prev_sd) {
       sd_changed = !_mongoc_server_description_equal (prev_sd, sd);
@@ -2034,7 +2033,7 @@ mongoc_topology_description_handle_ismaster (
    _mongoc_topology_description_update_session_timeout (topology);
 
    /* Don't bother checking wire version compatibility if we already errored */
-   if (ismaster_response && (!error || !error->code)) {
+   if (hello_response && (!error || !error->code)) {
       _mongoc_topology_description_check_compatible (topology);
    }
 

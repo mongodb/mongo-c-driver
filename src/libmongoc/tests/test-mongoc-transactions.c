@@ -427,9 +427,10 @@ test_in_transaction (void *ctx)
 
 
 static bool
-hangup_except_ismaster (request_t *request, void *data)
+hangup_except_hello (request_t *request, void *data)
 {
-   if (!bson_strcasecmp (request->command_name, "ismaster")) {
+   if (!bson_strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) ||
+       !bson_strcasecmp (request->command_name, "hello")) {
       /* allow default response */
       return false;
    }
@@ -478,7 +479,7 @@ _test_transient_txn_err (bool hangup)
 
    if (hangup) {
       /* test that network errors have TransientTransactionError */
-      mock_server_autoresponds (server, hangup_except_ismaster, NULL, NULL);
+      mock_server_autoresponds (server, hangup_except_hello, NULL, NULL);
    } else {
       /* test server selection errors have TransientTransactionError */
       mock_server_destroy (server);

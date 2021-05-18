@@ -1073,7 +1073,8 @@ mongoc_cmd_is_compressible (mongoc_cmd_t *cmd)
    BSON_ASSERT (cmd);
    BSON_ASSERT (cmd->command_name);
 
-   return !!strcasecmp (cmd->command_name, "ismaster") &&
+   return !!strcasecmp (cmd->command_name, "hello") &&
+          !!strcasecmp (cmd->command_name, HANDSHAKE_CMD_LEGACY_HELLO) &&
           !!strcasecmp (cmd->command_name, "authenticate") &&
           !!strcasecmp (cmd->command_name, "getnonce") &&
           !!strcasecmp (cmd->command_name, "saslstart") &&

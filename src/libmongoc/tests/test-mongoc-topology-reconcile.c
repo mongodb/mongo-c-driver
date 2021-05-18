@@ -247,10 +247,11 @@ _test_topology_reconcile_sharded (bool pooled)
       client->topology, MONGOC_SS_READ, primary_read_prefs, &error);
 
    /* mongos */
-   request = mock_server_receives_ismaster (mongos);
-   mock_server_replies_simple (request,
-                               "{'ok': 1, 'ismaster': true, 'minWireVersion': "
-                               "2, 'maxWireVersion': 5, 'msg': 'isdbgrid'}");
+   request = mock_server_receives_legacy_hello (mongos, NULL);
+   mock_server_replies_simple (
+      request,
+      "{'ok': 1, 'isWritablePrimary': true, 'minWireVersion': "
+      "2, 'maxWireVersion': 5, 'msg': 'isdbgrid'}");
 
    request_destroy (request);
 
@@ -258,11 +259,11 @@ _test_topology_reconcile_sharded (bool pooled)
    _mongoc_usleep (1000 * 1000);
 
    /* replica set secondary - topology removes it */
-   request = mock_server_receives_ismaster (secondary);
+   request = mock_server_receives_legacy_hello (secondary, NULL);
    secondary_response =
       bson_strdup_printf ("{'ok': 1, "
                           " 'setName': 'rs',"
-                          " 'ismaster': false,"
+                          " 'isWritablePrimary': false,"
                           " 'secondary': true,"
                           " 'minWireVersion': 2,"
                           " 'maxWireVersion': 5,"
@@ -380,14 +381,15 @@ test_topology_reconcile_from_handshake (void *ctx)
    /* ordinarily would start bg thread */
    client = mongoc_client_pool_pop (pool);
 
-   /* command in the foreground (ismaster, just because it doesn't need auth) */
-   r = mongoc_client_read_command_with_opts (client,
-                                             "admin",
-                                             tmp_bson ("{'ismaster': 1}"),
-                                             NULL,
-                                             tmp_bson ("{'serverId': 1}"),
-                                             NULL,
-                                             &error);
+   /* command in the foreground (hello, just because it doesn't need auth) */
+   r = mongoc_client_read_command_with_opts (
+      client,
+      "admin",
+      tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+      NULL,
+      tmp_bson ("{'serverId': 1}"),
+      NULL,
+      &error);
 
    ASSERT_OR_PRINT (r, error);
 
@@ -411,7 +413,13 @@ test_topology_reconcile_from_handshake (void *ctx)
 
    /* no serverId, waits for topology scan */
    r = mongoc_client_read_command_with_opts (
-      client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, NULL, &error);
+      client,
+      "admin",
+      tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+      NULL,
+      NULL,
+      NULL,
+      &error);
 
    ASSERT_OR_PRINT (r, error);
    bson_mutex_lock (&data.mutex);

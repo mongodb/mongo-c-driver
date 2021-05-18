@@ -173,13 +173,13 @@ test_bulk (void)
 
    bson_init (&up);
    bson_append_document_begin (&up, "$set", -1, &child);
-   bson_append_int32 (&child, "hello", -1, 123);
+   BSON_APPEND_INT32 (&child, HANDSHAKE_CMD_LEGACY_HELLO, 123);
    bson_append_document_end (&up, &child);
    mongoc_bulk_operation_update (bulk, &doc, &up, false);
    bson_destroy (&up);
 
    bson_init (&del);
-   BSON_APPEND_INT32 (&del, "hello", 123);
+   BSON_APPEND_INT32 (&del, HANDSHAKE_CMD_LEGACY_HELLO, 123);
    mongoc_bulk_operation_remove (bulk, &del);
    bson_destroy (&del);
 
@@ -2966,16 +2966,16 @@ test_unordered_bulk_writes_with_error (void)
    mock_server_run (server);
 
    /* server is "recovering": not master, not secondary */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'maxWireVersion': %d,"
-                              " 'maxWriteBatchSize': 1,"
-                              " 'ismaster': true,"
-                              " 'secondary': false,"
-                              " 'setName': 'rs',"
-                              " 'hosts': ['%s']}",
-                              WIRE_VERSION_OP_MSG,
-                              mock_server_get_host_and_port (server));
+   mock_server_auto_hello (server,
+                           "{'ok': 1,"
+                           " 'maxWireVersion': %d,"
+                           " 'maxWriteBatchSize': 1,"
+                           " 'isWritablePrimary': true,"
+                           " 'secondary': false,"
+                           " 'setName': 'rs',"
+                           " 'hosts': ['%s']}",
+                           WIRE_VERSION_OP_MSG,
+                           mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* disable retryable writes, so we move to the next operation on error */
@@ -3478,13 +3478,13 @@ _test_numerous (bool ordered)
 
    server = mock_server_new ();
    /* the real OP_MSG max batch is 100k docs, choose 3 for faster test */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1.0,"
-                              " 'ismaster': true,"
-                              " 'minWireVersion': 0,"
-                              " 'maxWireVersion': %d,"
-                              " 'maxWriteBatchSize': 3}",
-                              WIRE_VERSION_OP_MSG);
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'isWritablePrimary': true,"
+                           " 'minWireVersion': 0,"
+                           " 'maxWireVersion': %d,"
+                           " 'maxWriteBatchSize': 3}",
+                           WIRE_VERSION_OP_MSG);
 
    mock_server_run (server);
 
@@ -4173,7 +4173,12 @@ _test_bulk_hint (bool pooled, bool use_primary)
 
    /* warm up the client so its server_id is valid */
    ret = mongoc_client_command_simple (
-      client, "admin", tmp_bson ("{'isMaster': 1}"), NULL, NULL, &error);
+      client,
+      "admin",
+      tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+      NULL,
+      NULL,
+      &error);
    ASSERT_OR_PRINT (ret, error);
 
    collection = mongoc_client_get_collection (client, "test", "test");

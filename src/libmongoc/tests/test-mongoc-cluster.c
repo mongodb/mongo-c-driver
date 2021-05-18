@@ -320,7 +320,7 @@ static void
 _test_write_disconnect (void)
 {
    mock_server_t *server;
-   char *ismaster_response;
+   char *hello;
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    bson_error_t error;
@@ -343,13 +343,13 @@ _test_write_disconnect (void)
     */
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-   request = mock_server_receives_ismaster (server);
-   ismaster_response = bson_strdup_printf ("{'ok': 1.0,"
-                                           " 'ismaster': true,"
-                                           " 'minWireVersion': 2,"
-                                           " 'maxWireVersion': 3}");
+   request = mock_server_receives_legacy_hello (server, NULL);
+   hello = bson_strdup_printf ("{'ok': 1.0,"
+                               " 'isWritablePrimary': true,"
+                               " 'minWireVersion': 2,"
+                               " 'maxWireVersion': 3}");
 
-   mock_server_replies_simple (request, ismaster_response);
+   mock_server_replies_simple (request, hello);
    request_destroy (request);
 
    request = mock_server_receives_command (
@@ -386,7 +386,7 @@ _test_write_disconnect (void)
    mongoc_collection_destroy (collection);
    request_destroy (request);
    future_destroy (future);
-   bson_free (ismaster_response);
+   bson_free (hello);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
 }
@@ -424,15 +424,15 @@ test_cluster_command_notmaster (void)
    mock_server_run (server);
 
    /* server is "recovering": not master, not secondary */
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1,"
-                              " 'maxWireVersion': %d,"
-                              " 'ismaster': false,"
-                              " 'secondary': false,"
-                              " 'setName': 'rs',"
-                              " 'hosts': ['%s']}",
-                              WIRE_VERSION_OP_MSG - 1,
-                              mock_server_get_host_and_port (server));
+   mock_server_auto_hello (server,
+                           "{'ok': 1,"
+                           " 'maxWireVersion': %d,"
+                           " 'isWritablePrimary': false,"
+                           " 'secondary': false,"
+                           " 'setName': 'rs',"
+                           " 'hosts': ['%s']}",
+                           WIRE_VERSION_OP_MSG - 1,
+                           mock_server_get_host_and_port (server));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_utf8 (uri, "replicaSet", "rs");
@@ -900,8 +900,8 @@ future_ping (mongoc_client_t *client, bson_error_t *error)
 static void
 _test_cluster_time_comparison (bool pooled)
 {
-   const char *ismaster =
-      "{'ok': 1.0, 'ismaster': true, 'msg': 'isdbgrid', 'maxWireVersion': 6}";
+   const char *hello = "{'ok': 1.0, 'isWritablePrimary': true, 'msg': "
+                       "'isdbgrid', 'maxWireVersion': 6}";
    mock_server_t *server;
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool = NULL;
@@ -926,13 +926,13 @@ _test_cluster_time_comparison (bool pooled)
    future = future_ping (client, &error);
 
    /* timestamp is 1 */
-   request = mock_server_receives_ismaster (server);
-   replies_with_cluster_time (request, 1, 1, ismaster);
+   request = mock_server_receives_legacy_hello (server, NULL);
+   replies_with_cluster_time (request, 1, 1, hello);
 
    if (pooled) {
       /* a pooled client handshakes its own connection */
-      request = mock_server_receives_ismaster (server);
-      replies_with_cluster_time (request, 1, 1, ismaster);
+      request = mock_server_receives_legacy_hello (server, NULL);
+      replies_with_cluster_time (request, 1, 1, hello);
    }
 
    request = receives_with_cluster_time (server, 1, 1, ping);
@@ -957,14 +957,13 @@ _test_cluster_time_comparison (bool pooled)
 
    if (pooled) {
       /* wait for next heartbeat, it should contain newest cluster time */
-      request = mock_server_receives_command (server,
-                                              "admin",
-                                              MONGOC_QUERY_SLAVE_OK,
-                                              "{'isMaster': 1, '$clusterTime': "
-                                              "{'clusterTime': {'$timestamp': "
-                                              "{'t': 2, 'i': 2}}}}");
+      request =
+         mock_server_receives_legacy_hello (server,
+                                            "{'$clusterTime': "
+                                            "{'clusterTime': {'$timestamp': "
+                                            "{'t': 2, 'i': 2}}}}");
 
-      replies_with_cluster_time (request, 2, 1, ismaster);
+      replies_with_cluster_time (request, 2, 1, hello);
 
       mongoc_client_pool_push (pool, client);
       mongoc_client_pool_destroy (pool);
@@ -972,14 +971,13 @@ _test_cluster_time_comparison (bool pooled)
       /* trigger next heartbeat, it should contain newest cluster time */
       _mongoc_usleep (750 * 1000); /* 750 ms */
       future = future_ping (client, &error);
-      request = mock_server_receives_command (server,
-                                              "admin",
-                                              MONGOC_QUERY_SLAVE_OK,
-                                              "{'isMaster': 1, '$clusterTime': "
-                                              "{'clusterTime': {'$timestamp': "
-                                              "{'t': 2, 'i': 2}}}}");
+      request =
+         mock_server_receives_legacy_hello (server,
+                                            "{'$clusterTime': "
+                                            "{'clusterTime': {'$timestamp': "
+                                            "{'t': 2, 'i': 2}}}}");
 
-      replies_with_cluster_time (request, 2, 1, ismaster);
+      replies_with_cluster_time (request, 2, 1, hello);
       request = receives_with_cluster_time (server, 2, 2, ping);
       mock_server_replies_ok_and_destroys (request);
       assert_ok (future, &error);
@@ -1031,10 +1029,10 @@ test_error_msg_t errors[] = {
    "not master" and "node is recovering" need only be substrings of the error
    message. */
 static void
-_test_not_master (bool pooled,
-                  bool use_op_msg,
-                  run_command_fn_t run_command,
-                  cleanup_fn_t cleanup_fn)
+_test_not_primary (bool pooled,
+                   bool use_op_msg,
+                   run_command_fn_t run_command,
+                   cleanup_fn_t cleanup_fn)
 {
    test_error_msg_t *test_error_msg;
    mock_server_t *server;
@@ -1126,32 +1124,32 @@ function_command_simple_cleanup (future_t *future)
 
 
 static void
-test_not_master_single_op_query (void)
+test_not_primary_single_op_query (void)
 {
-   _test_not_master (
+   _test_not_primary (
       false, false, future_command_simple, function_command_simple_cleanup);
 }
 
 
 static void
-test_not_master_pooled_op_query (void)
+test_not_primary_pooled_op_query (void)
 {
-   _test_not_master (
+   _test_not_primary (
       true, false, future_command_simple, function_command_simple_cleanup);
 }
 
 static void
-test_not_master_single_op_msg (void)
+test_not_primary_single_op_msg (void)
 {
-   _test_not_master (
+   _test_not_primary (
       false, true, future_command_simple, function_command_simple_cleanup);
 }
 
 
 static void
-test_not_master_pooled_op_msg (void)
+test_not_primary_pooled_op_msg (void)
 {
-   _test_not_master (
+   _test_not_primary (
       true, true, future_command_simple, function_command_simple_cleanup);
 }
 
@@ -1191,7 +1189,7 @@ future_command_private_cleanup (future_t *future)
 static void
 test_not_master_auth_single_op_query (void)
 {
-   _test_not_master (
+   _test_not_primary (
       false, false, future_command_private, future_command_private_cleanup);
 }
 
@@ -1199,14 +1197,14 @@ test_not_master_auth_single_op_query (void)
 static void
 test_not_master_auth_pooled_op_query (void)
 {
-   _test_not_master (
+   _test_not_primary (
       true, false, future_command_private, future_command_private_cleanup);
 }
 
 static void
 test_not_master_auth_single_op_msg (void)
 {
-   _test_not_master (
+   _test_not_primary (
       false, true, future_command_private, future_command_private_cleanup);
 }
 
@@ -1214,7 +1212,7 @@ test_not_master_auth_single_op_msg (void)
 static void
 test_not_master_auth_pooled_op_msg (void)
 {
-   _test_not_master (
+   _test_not_primary (
       true, true, future_command_private, future_command_private_cleanup);
 }
 
@@ -1229,43 +1227,26 @@ typedef struct {
 
 
 static bool
-auto_ismaster (request_t *request, void *data)
+auto_hello_callback (request_t *request, void *data, bson_t *hello_response)
 {
    dollar_query_test_t *test;
-   const char *cluster_time = "";
-   const char *server_type;
-   char *ismaster;
-
-   if (!request->is_command ||
-       strcasecmp (request->command_name, "ismaster") != 0) {
-      return false;
-   }
+   bson_t cluster_time;
 
    test = (dollar_query_test_t *) data;
 
+   bson_init (hello_response);
+   BSON_APPEND_INT32 (hello_response, "ok", 1);
+   BSON_APPEND_BOOL (hello_response, "isWritablePrimary", !test->secondary);
+   BSON_APPEND_BOOL (hello_response, "secondary", test->secondary);
+   BSON_APPEND_INT32 (hello_response, "minWireVersion", 0);
+   BSON_APPEND_INT32 (hello_response, "maxWireVersion", WIRE_VERSION_OP_MSG);
+   BSON_APPEND_UTF8 (hello_response, "setName", "rs");
+
    if (test->cluster_time) {
-      cluster_time =
-         ", '$clusterTime': {'clusterTime': {'$timestamp': {'t': 1, 'i': 1}}}";
+      BSON_APPEND_DOCUMENT_BEGIN (hello_response, "$clusterTime", &cluster_time);
+      BSON_APPEND_TIMESTAMP (&cluster_time, "clusterTime", 1, 1);
+      bson_append_document_end (hello_response, &cluster_time);
    }
-
-   if (test->secondary) {
-      server_type = ", 'ismaster': false, 'secondary': true";
-   } else {
-      server_type = ", 'ismaster': true, 'secondary': false";
-   }
-
-   ismaster = bson_strdup_printf ("{'ok': 1.0,"
-                                  " 'minWireVersion': 0,"
-                                  " 'maxWireVersion': %d,"
-                                  " 'setName': 'rs' %s %s}",
-                                  WIRE_VERSION_OP_MSG,
-                                  server_type,
-                                  cluster_time);
-
-   mock_server_replies_simple (request, ismaster);
-
-   bson_free (ismaster);
-   request_destroy (request);
 
    return true;
 }
@@ -1288,7 +1269,7 @@ _test_dollar_query (void *ctx)
    test = (dollar_query_test_t *) ctx;
 
    server = mock_server_new ();
-   mock_server_autoresponds (server, auto_ismaster, test, NULL);
+   mock_server_auto_hello_callback (server, auto_hello_callback, test, NULL);
    mock_server_run (server);
 
    client =
@@ -1437,7 +1418,7 @@ dollar_query_test_t tests[] = {
    {NULL}};
 
 static void
-_test_cluster_ismaster_fails (bool hangup)
+_test_cluster_hello_fails (bool hangup)
 {
    mock_server_t *mock_server;
    mongoc_uri_t *uri;
@@ -1451,7 +1432,7 @@ _test_cluster_ismaster_fails (bool hangup)
 
    mock_server = mock_server_new ();
    autoresponder_id =
-      mock_server_auto_ismaster (mock_server, "{ 'isMaster': 1.0 }");
+      mock_server_auto_hello (mock_server, "{ 'isWritablePrimary': true }");
    mock_server_run (mock_server);
    uri = mongoc_uri_copy (mock_server_get_uri (mock_server));
    /* increase heartbeatFrequencyMS to prevent background server selection. */
@@ -1471,10 +1452,10 @@ _test_cluster_ismaster_fails (bool hangup)
       client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    /* the client adds a cluster node, creating a stream to the server, and then
     * sends an ismaster request. */
-   request = mock_server_receives_ismaster (mock_server);
+   request = mock_server_receives_legacy_hello (mock_server, NULL);
    /* CDRIVER-2576: the server replies with an error, so
-    * _mongoc_stream_run_ismaster returns NULL, which
-    * _mongoc_cluster_run_ismaster must check. */
+    * _mongoc_stream_run_hello returns NULL, which
+    * _mongoc_cluster_run_hello must check. */
 
    if (hangup) {
       capture_logs (true); /* suppress "failed to buffer" warning */
@@ -1497,16 +1478,16 @@ _test_cluster_ismaster_fails (bool hangup)
 }
 
 static void
-test_cluster_ismaster_fails (void)
+test_cluster_hello_fails (void)
 {
-   _test_cluster_ismaster_fails (false);
+   _test_cluster_hello_fails (false);
 }
 
 
 static void
-test_cluster_ismaster_hangup (void)
+test_cluster_hello_hangup (void)
 {
-   _test_cluster_ismaster_fails (true);
+   _test_cluster_hello_fails (true);
 }
 
 static void
@@ -1590,12 +1571,12 @@ test_advanced_cluster_time_not_sent_to_standalone (void)
 
    server = mock_server_new ();
    mock_server_auto_endsessions (server);
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1.0,"
-                              " 'ismaster': true,"
-                              " 'minWireVersion': 0,"
-                              " 'maxWireVersion': 6,"
-                              " 'logicalSessionTimeoutMinutes': 30}");
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'isWritablePrimary': true,"
+                           " 'minWireVersion': 0,"
+                           " 'maxWireVersion': 6,"
+                           " 'logicalSessionTimeoutMinutes': 30}");
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -1641,11 +1622,12 @@ test_advanced_cluster_time_not_sent_to_standalone (void)
 static bool
 _responder (request_t *req, void *data)
 {
-   char *ismaster;
+   char *hello;
 
-   ismaster = (char *) data;
-   if (0 == strcmp (req->command_name, "isMaster")) {
-      mock_server_replies_simple (req, ismaster);
+   hello = (char *) data;
+   if (0 == strcasecmp (req->command_name, HANDSHAKE_CMD_LEGACY_HELLO) ||
+       0 == strcasecmp (req->command_name, "hello")) {
+      mock_server_replies_simple (req, hello);
       request_destroy (req);
       return true;
    } else if (0 == strcmp (req->command_name, "serverStatus")) {
@@ -1694,7 +1676,7 @@ _initiator_fn (const mongoc_uri_t *uri,
 }
 
 static void
-_test_ismaster_on_unknown (char *ismaster)
+_test_hello_on_unknown (char *ismaster)
 {
    mock_server_t *mock_server;
    mongoc_client_pool_t *pool;
@@ -1734,17 +1716,17 @@ _test_ismaster_on_unknown (char *ismaster)
 }
 
 void
-test_ismaster_on_unknown (void)
+test_hello_on_unknown (void)
 {
    /* Test with pre-OP_MSG to test fix to CDRIVER-3404. */
-   _test_ismaster_on_unknown ("{ 'ok': 1.0, 'ismaster': true, "
-                              "'minWireVersion': 0, 'maxWireVersion': 5, "
-                              "'msg': 'isdbgrid'}");
+   _test_hello_on_unknown ("{ 'ok': 1.0, 'isWritablePrimary': true, "
+                           "'minWireVersion': 0, 'maxWireVersion': 5, "
+                           "'msg': 'isdbgrid'}");
 
    /* Test with OP_MSG. */
-   _test_ismaster_on_unknown ("{ 'ok': 1.0, 'ismaster': true, "
-                              "'minWireVersion': 0, 'maxWireVersion': 8, "
-                              "'msg': 'isdbgrid'}");
+   _test_hello_on_unknown ("{ 'ok': 1.0, 'isWritablePrimary': true, "
+                           "'minWireVersion': 0, 'maxWireVersion': 8, "
+                           "'msg': 'isdbgrid'}");
 }
 
 
@@ -1935,19 +1917,19 @@ test_cluster_install (TestSuite *suite)
       test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/not_master/single/op_query",
-                                test_not_master_single_op_query,
+                                test_not_primary_single_op_query,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/not_master/pooled/op_query",
-                                test_not_master_pooled_op_query,
+                                test_not_primary_pooled_op_query,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/not_master/single/op_msg",
-                                test_not_master_single_op_msg,
+                                test_not_primary_single_op_msg,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/not_master/pooled/op_msg",
-                                test_not_master_pooled_op_msg,
+                                test_not_primary_pooled_op_msg,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/not_master_auth/single/op_query",
@@ -1966,9 +1948,9 @@ test_cluster_install (TestSuite *suite)
                                 test_not_master_auth_pooled_op_msg,
                                 test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (
-      suite, "/Cluster/ismaster_fails", test_cluster_ismaster_fails);
+      suite, "/Cluster/hello_fails", test_cluster_hello_fails);
    TestSuite_AddMockServerTest (
-      suite, "/Cluster/ismaster_hangup", test_cluster_ismaster_hangup);
+      suite, "/Cluster/hello_hangup", test_cluster_hello_hangup);
    TestSuite_AddMockServerTest (suite,
                                 "/Cluster/command_error/op_msg",
                                 test_cluster_command_error_op_msg);
@@ -1976,7 +1958,7 @@ test_cluster_install (TestSuite *suite)
                                 "/Cluster/command_error/op_query",
                                 test_cluster_command_error_op_query);
    TestSuite_AddMockServerTest (
-      suite, "/Cluster/ismaster_on_unknown/mock", test_ismaster_on_unknown);
+      suite, "/Cluster/hello_on_unknown/mock", test_hello_on_unknown);
    TestSuite_AddLive (
       suite, "/Cluster/cmd_on_unknown_serverid", test_cmd_on_unknown_serverid);
 }

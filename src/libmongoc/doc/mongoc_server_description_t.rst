@@ -33,6 +33,7 @@ Applications receive a temporary reference to a ``mongoc_server_description_t`` 
     :maxdepth: 1
 
     mongoc_server_description_destroy
+    mongoc_server_description_hello_response
     mongoc_server_description_host
     mongoc_server_description_id
     mongoc_server_description_ismaster

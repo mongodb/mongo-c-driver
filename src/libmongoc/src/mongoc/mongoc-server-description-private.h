@@ -62,8 +62,8 @@ struct _mongoc_server_description_t {
    mongoc_host_list_t host;
    int64_t round_trip_time_msec;
    int64_t last_update_time_usec;
-   bson_t last_is_master;
-   bool has_is_master;
+   bson_t last_hello_response;
+   bool has_hello_response;
    const char *connection_address;
    /* SDAM dictates storing me/hosts/passives/arbiters after being "normalized
     * to lower-case" Instead, they are stored in the casing they are received,
@@ -149,10 +149,10 @@ mongoc_server_description_update_rtt (mongoc_server_description_t *server,
                                       int64_t rtt_msec);
 
 void
-mongoc_server_description_handle_ismaster (mongoc_server_description_t *sd,
-                                           const bson_t *reply,
-                                           int64_t rtt_msec,
-                                           const bson_error_t *error /* IN */);
+mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
+                                        const bson_t *hello_response,
+                                        int64_t rtt_msec,
+                                        const bson_error_t *error /* IN */);
 
 void
 mongoc_server_description_filter_stale (mongoc_server_description_t **sds,

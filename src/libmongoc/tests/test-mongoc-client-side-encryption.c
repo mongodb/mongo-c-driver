@@ -2086,7 +2086,7 @@ _check_mongocryptd_not_spawned (void)
 
    client = test_framework_client_new (
       "mongodb://localhost:27021/db?serverSelectionTimeoutMS=1000", NULL);
-   cmd = BCON_NEW ("ismaster", BCON_INT32 (1));
+   cmd = BCON_NEW (HANDSHAKE_CMD_LEGACY_HELLO, BCON_INT32 (1));
    ret = mongoc_client_command_simple (
       client, "keyvault", cmd, NULL /* read prefs */, NULL /* reply */, &error);
    BSON_ASSERT (!ret);

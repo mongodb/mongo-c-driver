@@ -204,12 +204,12 @@ _check_mechanism (bool pooled,
    const char *used_mech;
 
    server = mock_server_new ();
-   mock_server_auto_ismaster (server,
-                              "{'ok': 1, 'minWireVersion': 3, "
-                              "'maxWireVersion': %d, 'ismaster': true, "
-                              "'saslSupportedMechs': [%s]}",
-                              WIRE_VERSION_MAX,
-                              server_mechs ? server_mechs : "");
+   mock_server_auto_hello (server,
+                           "{'ok': 1, 'minWireVersion': 3, "
+                           "'maxWireVersion': %d, 'isWritablePrimary': true, "
+                           "'saslSupportedMechs': [%s]}",
+                           WIRE_VERSION_MAX,
+                           server_mechs ? server_mechs : "");
 
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));

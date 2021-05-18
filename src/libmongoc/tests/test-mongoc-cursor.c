@@ -236,8 +236,9 @@ _test_common_server_hint_command_started (
    const char *cmd = mongoc_apm_command_started_get_command_name (event);
    test_common_server_hint_ctx_t *ctx;
    /* only check command associated with cursor priming. */
-   if (strcmp (cmd, "find") == 0 || strcmp (cmd, "isMaster") == 0 ||
-       strcmp (cmd, "listDatabases") == 0) {
+   if (strcmp (cmd, "find") == 0 ||
+       strcasecmp (cmd, HANDSHAKE_CMD_LEGACY_HELLO) == 0 ||
+       strcmp (cmd, "hello") == 0 || strcmp (cmd, "listDatabases") == 0) {
       ctx = (test_common_server_hint_ctx_t *)
          mongoc_apm_command_started_get_context (event);
       ASSERT_CMPSTR (host->host_and_port, ctx->expected_host_and_port);
@@ -436,14 +437,15 @@ _make_cmd_cursor_from_agg (mongoc_collection_t *coll)
 static mongoc_cursor_t *
 _make_cmd_deprecated_cursor (mongoc_collection_t *coll)
 {
-   return mongoc_collection_command (coll,
-                                     MONGOC_QUERY_SLAVE_OK,
-                                     0,
-                                     0,
-                                     0,
-                                     tmp_bson ("{'isMaster': 1}"),
-                                     NULL,
-                                     NULL);
+   return mongoc_collection_command (
+      coll,
+      MONGOC_QUERY_SLAVE_OK,
+      0,
+      0,
+      0,
+      tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+      NULL,
+      NULL);
 }
 
 
@@ -1667,7 +1669,7 @@ test_cursor_hint_mongos_cmd (void)
 }
 
 
-/* Tests CDRIVER-562: after calling ismaster to handshake a new connection we
+/* Tests CDRIVER-562: after calling hello to handshake a new connection we
  * must update topology description with the server response. If not, this test
  * fails under auth with "auth failed" because we use the wrong auth protocol.
  */

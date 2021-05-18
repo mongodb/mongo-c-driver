@@ -51,7 +51,7 @@ _force_ismaster_with_ping (mongoc_client_t *client)
    return future;
 }
 
-/* Call after we've dealt with the isMaster sent by
+/* Call after we've dealt with the hello sent by
  * _force_ismaster_with_ping */
 static void
 _respond_to_ping (future_t *future, mock_server_t *server, bool expect_ping)
@@ -80,12 +80,17 @@ _respond_to_ping (future_t *future, mock_server_t *server, bool expect_ping)
 }
 
 static bool
-_auto_ismaster_without_speculative_auth (request_t *request, void *data)
+_auto_hello_without_speculative_auth (request_t *request, void *data)
 {
    const char *response_json = (const char *) data;
    char *quotes_replaced;
 
-   if (!request->is_command || strcasecmp (request->command_name, "ismaster")) {
+   if (!request->is_command) {
+      return false;
+   }
+
+   if (strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) &&
+       strcmp (request->command_name, "hello")) {
       return false;
    }
 
@@ -138,11 +143,11 @@ _test_mongoc_speculative_auth (bool pooled,
    }
 #endif
 
-   mock_server_autoresponds (
-      server,
-      _auto_ismaster_without_speculative_auth,
-      "{'ok': 1, 'ismaster': true, 'minWireVersion': 2, 'maxWireVersion': 5}",
-      NULL);
+   mock_server_autoresponds (server,
+                             _auto_hello_without_speculative_auth,
+                             "{'ok': 1, 'isWritablePrimary': true, "
+                             "'minWireVersion': 2, 'maxWireVersion': 5}",
+                             NULL);
 
    mock_server_run (server);
 
@@ -184,11 +189,10 @@ _test_mongoc_speculative_auth (bool pooled,
       bson_t *response;
       char *str;
 
-      request = mock_server_receives_ismaster (server);
+      request = mock_server_receives_legacy_hello (server, NULL);
       ASSERT (request);
       request_doc = request_get_doc (request, 0);
       ASSERT (request_doc);
-      ASSERT (bson_has_field (request_doc, "isMaster"));
       ASSERT (bson_has_field (request_doc, "speculativeAuthenticate"));
 
       if (compare_auth_command) {
@@ -201,7 +205,7 @@ _test_mongoc_speculative_auth (bool pooled,
       /* Include authentication information in response */
       response = BCON_NEW ("ok",
                            BCON_INT32 (1),
-                           "ismaster",
+                           "isWritablePrimary",
                            BCON_BOOL (true),
                            "minWireVersion",
                            BCON_INT32 (2),

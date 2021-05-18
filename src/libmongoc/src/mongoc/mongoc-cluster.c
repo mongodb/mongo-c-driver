@@ -285,10 +285,11 @@ mongoc_cluster_run_command_opquery (mongoc_cluster_t *cluster,
    _mongoc_rpc_gather (&rpc, &cluster->iov);
    _mongoc_rpc_swab_to_le (&rpc);
 
-   if (compressor_id != -1 && IS_NOT_COMMAND ("ismaster") &&
-       IS_NOT_COMMAND ("saslstart") && IS_NOT_COMMAND ("saslcontinue") &&
-       IS_NOT_COMMAND ("getnonce") && IS_NOT_COMMAND ("authenticate") &&
-       IS_NOT_COMMAND ("createuser") && IS_NOT_COMMAND ("updateuser")) {
+   if (compressor_id != -1 && IS_NOT_COMMAND (HANDSHAKE_CMD_LEGACY_HELLO) &&
+       IS_NOT_COMMAND ("hello") && IS_NOT_COMMAND ("saslstart") &&
+       IS_NOT_COMMAND ("saslcontinue") && IS_NOT_COMMAND ("getnonce") &&
+       IS_NOT_COMMAND ("authenticate") && IS_NOT_COMMAND ("createuser") &&
+       IS_NOT_COMMAND ("updateuser")) {
       output = _mongoc_rpc_compress (cluster, compressor_id, &rpc, error);
       if (output == NULL) {
          GOTO (done);
@@ -730,11 +731,11 @@ mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_stream_run_ismaster --
+ * _mongoc_stream_run_hello --
  *
- *       Run an ismaster command on the given stream. If
+ *       Run a hello command on the given stream. If
  *       @negotiate_sasl_supported_mechs is true, then saslSupportedMechs is
- *       added to the ismaster command.
+ *       added to the hello command.
  *
  * Returns:
  *       A mongoc_server_description_t you must destroy or NULL. If the call
@@ -743,18 +744,18 @@ mongoc_cluster_run_command_parts (mongoc_cluster_t *cluster,
  *--------------------------------------------------------------------------
  */
 static mongoc_server_description_t *
-_mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
-                             mongoc_stream_t *stream,
-                             const char *address,
-                             uint32_t server_id,
-                             bool negotiate_sasl_supported_mechs,
-                             mongoc_scram_cache_t *scram_cache,
-                             mongoc_scram_t *scram,
-                             bson_t *speculative_auth_response /* OUT */,
-                             bson_error_t *error)
+_mongoc_stream_run_hello (mongoc_cluster_t *cluster,
+                          mongoc_stream_t *stream,
+                          const char *address,
+                          uint32_t server_id,
+                          bool negotiate_sasl_supported_mechs,
+                          mongoc_scram_cache_t *scram_cache,
+                          mongoc_scram_t *scram,
+                          bson_t *speculative_auth_response /* OUT */,
+                          bson_error_t *error)
 {
    const bson_t *command;
-   mongoc_cmd_t ismaster_cmd;
+   mongoc_cmd_t hello_cmd;
    bson_t reply;
    int64_t start;
    int64_t rtt_msec;
@@ -813,15 +814,15 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
     * last known ismaster indicates the server supports a newer wire protocol.
     */
    server_stream->sd->max_wire_version = WIRE_VERSION_MIN;
-   memset (&ismaster_cmd, 0, sizeof (ismaster_cmd));
-   ismaster_cmd.db_name = "admin";
-   ismaster_cmd.command = command;
-   ismaster_cmd.command_name = _mongoc_get_command_name (command);
-   ismaster_cmd.query_flags = MONGOC_QUERY_SLAVE_OK;
-   ismaster_cmd.server_stream = server_stream;
+   memset (&hello_cmd, 0, sizeof (hello_cmd));
+   hello_cmd.db_name = "admin";
+   hello_cmd.command = command;
+   hello_cmd.command_name = _mongoc_get_command_name (command);
+   hello_cmd.query_flags = MONGOC_QUERY_SLAVE_OK;
+   hello_cmd.server_stream = server_stream;
 
    if (!mongoc_cluster_run_command_private (
-          cluster, &ismaster_cmd, &reply, error)) {
+          cluster, &hello_cmd, &reply, error)) {
       if (negotiate_sasl_supported_mechs) {
          if (bson_iter_init_find (&iter, &reply, "ok") &&
              !bson_iter_as_bool (&iter)) {
@@ -845,8 +846,8 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
       sizeof (mongoc_server_description_t));
 
    mongoc_server_description_init (sd, address, server_id);
-   /* send the error from run_command IN to handle_ismaster */
-   mongoc_server_description_handle_ismaster (sd, &reply, rtt_msec, error);
+   /* send the error from run_command IN to handle_hello */
+   mongoc_server_description_handle_hello (sd, &reply, rtt_msec, error);
 
    if (cluster->requires_auth && speculative_auth_response) {
       _mongoc_topology_scanner_parse_speculative_authentication (
@@ -877,9 +878,9 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_cluster_run_ismaster --
+ * _mongoc_cluster_run_hello --
  *
- *       Run an initial ismaster command for the given node and handle result.
+ *       Run an initial hello command for the given node and handle result.
  *
  * Returns:
  *       mongoc_server_description_t on success, NULL otherwise.
@@ -887,18 +888,18 @@ _mongoc_stream_run_ismaster (mongoc_cluster_t *cluster,
  *
  * Side effects:
  *       Makes a blocking I/O call, updates cluster->topology->description
- *       with ismaster result.
+ *       with hello result.
  *
  *--------------------------------------------------------------------------
  */
 static mongoc_server_description_t *
-_mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
-                              mongoc_cluster_node_t *node,
-                              uint32_t server_id,
-                              mongoc_scram_cache_t *scram_cache,
-                              mongoc_scram_t *scram /* OUT */,
-                              bson_t *speculative_auth_response /* OUT */,
-                              bson_error_t *error /* OUT */)
+_mongoc_cluster_run_hello (mongoc_cluster_t *cluster,
+                           mongoc_cluster_node_t *node,
+                           uint32_t server_id,
+                           mongoc_scram_cache_t *scram_cache,
+                           mongoc_scram_t *scram /* OUT */,
+                           bson_t *speculative_auth_response /* OUT */,
+                           bson_error_t *error /* OUT */)
 {
    mongoc_server_description_t *sd;
 
@@ -908,7 +909,7 @@ _mongoc_cluster_run_ismaster (mongoc_cluster_t *cluster,
    BSON_ASSERT (node);
    BSON_ASSERT (node->stream);
 
-   sd = _mongoc_stream_run_ismaster (
+   sd = _mongoc_stream_run_hello (
       cluster,
       node->stream,
       node->connection_address,
@@ -2095,18 +2096,18 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    cluster_node =
       _mongoc_cluster_node_new (stream, generation, host->host_and_port);
 
-   sd = _mongoc_cluster_run_ismaster (cluster,
-                                      cluster_node,
-                                      server_id,
-                                      cluster->scram_cache,
-                                      &scram,
-                                      &speculative_auth_response,
-                                      error);
+   sd = _mongoc_cluster_run_hello (cluster,
+                                   cluster_node,
+                                   server_id,
+                                   cluster->scram_cache,
+                                   &scram,
+                                   &speculative_auth_response,
+                                   error);
    if (!sd) {
       GOTO (error);
    }
 
-   _mongoc_handshake_parse_sasl_supported_mechs (&sd->last_is_master,
+   _mongoc_handshake_parse_sasl_supported_mechs (&sd->last_hello_response,
                                                  &sasl_supported_mechs);
 
    if (cluster->requires_auth) {
