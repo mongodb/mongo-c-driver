@@ -153,7 +153,7 @@ test_topology_scanner_discovery (void)
 
    primary_response =
       bson_strdup_printf ("{'ok': 1, "
-                          " 'ismaster': true,"
+                          " 'isWritablePrimary': true,"
                           " 'setName': 'rs',"
                           " 'minWireVersion': 2,"
                           " 'maxWireVersion': 5,"
@@ -163,7 +163,7 @@ test_topology_scanner_discovery (void)
 
    secondary_response =
       bson_strdup_printf ("{'ok': 1, "
-                          " 'ismaster': false,"
+                          " 'isWritablePrimary': false,"
                           " 'secondary': true,"
                           " 'setName': 'rs',"
                           " 'minWireVersion': 2,"
@@ -181,7 +181,7 @@ test_topology_scanner_discovery (void)
       client->topology, MONGOC_SS_READ, secondary_pref, &error);
 
    /* a single scan discovers *and* checks the secondary */
-   request = mock_server_receives_ismaster (primary);
+   request = mock_server_receives_legacy_hello (primary, NULL);
    mock_server_replies_simple (request, primary_response);
    request_destroy (request);
 
@@ -189,7 +189,7 @@ test_topology_scanner_discovery (void)
    _mongoc_usleep (250 * 1000);
 
    /* a check of the secondary is scheduled in this scan */
-   request = mock_server_receives_ismaster (secondary);
+   request = mock_server_receives_legacy_hello (secondary, NULL);
    mock_server_replies_simple (request, secondary_response);
 
    /* scan completes */
@@ -236,7 +236,7 @@ test_topology_scanner_oscillate (void)
    /* server 0 says it's primary, but only server 1 is in the set */
    server0_response =
       bson_strdup_printf ("{'ok': 1, "
-                          " 'ismaster': true,"
+                          " 'isWritablePrimary': true,"
                           " 'setName': 'rs',"
                           " 'hosts': ['%s']}",
                           mock_server_get_host_and_port (server1));
@@ -244,7 +244,7 @@ test_topology_scanner_oscillate (void)
    /* the opposite */
    server1_response =
       bson_strdup_printf ("{'ok': 1, "
-                          " 'ismaster': true,"
+                          " 'isWritablePrimary': true,"
                           " 'setName': 'rs',"
                           " 'hosts': ['%s']}",
                           mock_server_get_host_and_port (server0));
@@ -261,14 +261,14 @@ test_topology_scanner_oscillate (void)
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
    /* a single scan discovers servers 0 and 1 */
-   request = mock_server_receives_ismaster (server0);
+   request = mock_server_receives_legacy_hello (server0, NULL);
    mock_server_replies_simple (request, server0_response);
    request_destroy (request);
 
    /* let client process that response */
    _mongoc_usleep (250 * 1000);
 
-   request = mock_server_receives_ismaster (server1);
+   request = mock_server_receives_legacy_hello (server1, NULL);
    mock_server_replies_simple (request, server1_response);
 
    /* we don't schedule another check of server0 */
@@ -304,7 +304,7 @@ test_topology_scanner_connection_error (void)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "connection refused calling ismaster on "
+                          "connection refused calling hello on "
                           "'localhost:9876'");
 
    mongoc_client_destroy (client);
@@ -332,7 +332,7 @@ test_topology_scanner_socket_timeout (void)
 
    /* the mock server did accept connection, but never replied */
    expected_msg =
-      bson_strdup_printf ("socket timeout calling ismaster on '%s'",
+      bson_strdup_printf ("socket timeout calling hello on '%s'",
                           mongoc_uri_get_hosts (uri)->host_and_port);
 
    ASSERT_ERROR_CONTAINS (error,
@@ -395,10 +395,14 @@ test_topology_scanner_blocking_initiator (void)
    data.client = client;
    mongoc_client_set_stream_initiator (client, slow_initiator, &data);
 
-   ASSERT_OR_PRINT (
-      mongoc_client_command_simple (
-         client, "admin", tmp_bson ("{'ismaster': 1}"), NULL, NULL, &error),
-      error);
+   ASSERT_OR_PRINT (mongoc_client_command_simple (
+                       client,
+                       "admin",
+                       tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+                       NULL,
+                       NULL,
+                       &error),
+                    error);
 
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);

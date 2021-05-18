@@ -12,6 +12,15 @@ Synopsis
   mongoc_server_description_ismaster (
      const mongoc_server_description_t *description);
 
+Deprecated
+----------
+
+.. warning::
+
+  This function is deprecated and should not be used in new code.
+
+Please use :doc:`mongoc_server_description_hello_response() <mongoc_server_description_hello_response>` instead.
+
 Parameters
 ----------
 

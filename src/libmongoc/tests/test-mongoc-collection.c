@@ -862,13 +862,13 @@ test_insert_bulk_empty (void)
 
 
 static void
-auto_ismaster (mock_server_t *server,
+auto_hello (mock_server_t *server,
                int32_t max_wire_version,
                int32_t max_message_size,
                int32_t max_bson_size,
                int32_t max_batch_size)
 {
-   char *response = bson_strdup_printf ("{'ismaster': true, "
+   char *response = bson_strdup_printf ("{'isWritablePrimary': true, "
                                         " 'maxWireVersion': %d,"
                                         " 'maxBsonObjectSize': %d,"
                                         " 'maxMessageSizeBytes': %d,"
@@ -879,7 +879,7 @@ auto_ismaster (mock_server_t *server,
                                         max_batch_size);
 
    BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_ismaster (server, response);
+   mock_server_auto_hello (server, response);
 
    bson_free (response);
 }
@@ -3649,11 +3649,11 @@ test_find_and_modify_write_concern (int wire_version)
    collection =
       mongoc_client_get_collection (client, "test", "test_find_and_modify");
 
-   auto_ismaster (server,
-                  wire_version, /* max_wire_version */
-                  48000000,     /* max_message_size */
-                  16777216,     /* max_bson_size */
-                  1000);        /* max_write_batch_size */
+   auto_hello (server,
+               wire_version, /* max_wire_version */
+               48000000,     /* max_message_size */
+               16777216,     /* max_bson_size */
+               1000);        /* max_write_batch_size */
 
    BSON_APPEND_INT32 (&doc, "superduper", 77889);
 
@@ -6441,8 +6441,9 @@ test_timeout_ms (void)
    bson_error_t error;
 
    /* no timeoutMS returns client's timeoutMS */
-   ASSERT_CMPINT (mongoc_collection_get_timeout_ms (coll), ==,
-		  mongoc_client_get_timeout_ms (client));
+   ASSERT_CMPINT (mongoc_collection_get_timeout_ms (coll),
+                  ==,
+                  mongoc_client_get_timeout_ms (client));
 
    /* negative timeouts are invalid */
    res = mongoc_collection_set_timeout_ms (coll, -1, &error);

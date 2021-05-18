@@ -18,6 +18,7 @@
 #include "mongoc/mongoc-client-private.h"
 #include "mongoc/mongoc-server-description-private.h"
 #include "TestSuite.h"
+#include "test-conveniences.h"
 
 void
 reset_basic_sd (mongoc_server_description_t *sd)
@@ -32,8 +33,7 @@ reset_basic_sd (mongoc_server_description_t *sd)
 
    mongoc_server_description_reset (sd);
    memset (&error, 0, sizeof (bson_error_t));
-   mongoc_server_description_handle_ismaster (
-      sd, ismaster, 0 /* rtt */, &error);
+   mongoc_server_description_handle_hello (sd, ismaster, 0 /* rtt */, &error);
    bson_destroy (ismaster);
 }
 
@@ -110,10 +110,10 @@ test_server_description_equal (void)
    sd1.round_trip_time_msec = 1234;
    BSON_ASSERT (_mongoc_server_description_equal (&sd1, &sd2));
 
-   /* "lastWriteDate"/"opTime" are stored in last_is_master and not parsed out.
-    * Check that overwriting the stored reply does not factor into the equality
-    * check. */
-   bson_reinit (&sd1.last_is_master);
+   /* "lastWriteDate"/"opTime" are stored in last_hello_response and not parsed
+    * out. Check that overwriting the stored reply does not factor into the
+    * equality check. */
+   bson_reinit (&sd1.last_hello_response);
    BSON_ASSERT (_mongoc_server_description_equal (&sd1, &sd2));
 
    /* "error" differs, considered unequal. */
@@ -243,8 +243,7 @@ test_server_description_msg_without_isdbgrid (void)
                         "msg",
                         "isdbgrid");
    memset (&error, 0, sizeof (bson_error_t));
-   mongoc_server_description_handle_ismaster (
-      &sd, ismaster, 0 /* rtt */, &error);
+   mongoc_server_description_handle_hello (&sd, ismaster, 0 /* rtt */, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_MONGOS);
 
    mongoc_server_description_reset (&sd);
@@ -255,8 +254,7 @@ test_server_description_msg_without_isdbgrid (void)
                         BCON_INT32 (WIRE_VERSION_MAX),
                         "msg",
                         "something_else");
-   mongoc_server_description_handle_ismaster (
-      &sd, ismaster, 0 /* rtt */, &error);
+   mongoc_server_description_handle_hello (&sd, ismaster, 0 /* rtt */, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
 
    bson_destroy (ismaster);
@@ -268,10 +266,10 @@ test_server_description_ignores_rtt (void)
 {
    mongoc_server_description_t sd;
    bson_error_t error;
-   bson_t ismaster;
+   bson_t hello;
 
-   bson_init (&ismaster);
-   BCON_APPEND (&ismaster, "ismaster", BCON_BOOL (true));
+   bson_init (&hello);
+   BCON_APPEND (&hello, "isWritablePrimary", BCON_BOOL (true));
 
    memset (&error, 0, sizeof (bson_error_t));
    mongoc_server_description_init (&sd, "host:1234", 1);
@@ -279,22 +277,84 @@ test_server_description_ignores_rtt (void)
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, MONGOC_RTT_UNSET);
    BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
    /* If MONGOC_RTT_UNSET is passed as the RTT, it remains MONGOC_RTT_UNSET. */
-   mongoc_server_description_handle_ismaster (
-      &sd, &ismaster, MONGOC_RTT_UNSET, &error);
+   mongoc_server_description_handle_hello (
+      &sd, &hello, MONGOC_RTT_UNSET, &error);
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, MONGOC_RTT_UNSET);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
    /* The first real RTT overwrites the stored RTT. */
-   mongoc_server_description_handle_ismaster (&sd, &ismaster, 10, &error);
+   mongoc_server_description_handle_hello (&sd, &hello, 10, &error);
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, 10);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
    /* But subsequent MONGOC_RTT_UNSET values do not effect it. */
-   mongoc_server_description_handle_ismaster (
-      &sd, &ismaster, MONGOC_RTT_UNSET, &error);
+   mongoc_server_description_handle_hello (
+      &sd, &hello, MONGOC_RTT_UNSET, &error);
    ASSERT_CMPINT64 (sd.round_trip_time_msec, ==, 10);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
 
    mongoc_server_description_cleanup (&sd);
-   bson_destroy (&ismaster);
+   bson_destroy (&hello);
+}
+
+static void
+test_server_description_hello (void)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error;
+   bson_t hello_response;
+
+   bson_init (&hello_response);
+   BCON_APPEND (&hello_response, "isWritablePrimary", BCON_BOOL (true));
+
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+   mongoc_server_description_handle_hello (&sd, &hello_response, 0, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+
+   mongoc_server_description_cleanup (&sd);
+   bson_destroy (&hello_response);
+}
+
+static void
+test_server_description_hello_cmd_not_found (void)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error;
+   const char *response = "{"
+                          "  'ok' : 0,"
+                          "  'errmsg' : 'no such command: \\'hello\\'',"
+                          "  'code' : 59,"
+                          "  'codeName' : 'CommandNotFound'"
+                          "}";
+
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+   mongoc_server_description_handle_hello (&sd, tmp_bson (response), 0, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+
+   mongoc_server_description_cleanup (&sd);
+}
+
+static void
+test_server_description_legacy_hello (void)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error;
+   bson_t hello_response;
+
+   bson_init (&hello_response);
+   BCON_APPEND (
+      &hello_response, HANDSHAKE_RESPONSE_LEGACY_HELLO, BCON_BOOL (true));
+
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+   mongoc_server_description_handle_hello (&sd, &hello_response, 0, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+
+   mongoc_server_description_cleanup (&sd);
+   bson_destroy (&hello_response);
 }
 
 void
@@ -308,4 +368,12 @@ test_server_description_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/server_description/ignores_unset_rtt",
                   test_server_description_ignores_rtt);
+   TestSuite_Add (
+      suite, "/server_description/hello", test_server_description_hello);
+   TestSuite_Add (suite,
+                  "/server_description/hello_cmd_not_found",
+                  test_server_description_hello_cmd_not_found);
+   TestSuite_Add (suite,
+                  "/server_description/legacy_hello",
+                  test_server_description_legacy_hello);
 }

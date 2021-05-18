@@ -30,6 +30,7 @@
 
 typedef struct _mock_server_t mock_server_t;
 typedef struct _autoresponder_handle_t autoresponder_handle_t;
+typedef struct _hello_callback_t hello_callback_t;
 
 typedef struct _mock_server_bind_opts_t {
    struct sockaddr_in *bind_addr;
@@ -39,6 +40,10 @@ typedef struct _mock_server_bind_opts_t {
 } mock_server_bind_opts_t;
 
 typedef bool (*autoresponder_t) (request_t *request, void *data);
+
+typedef bool (*hello_callback_func_t) (request_t *request,
+                                       void *data,
+                                       bson_t *hello_response);
 
 typedef void (*destructor_t) (void *data);
 
@@ -64,9 +69,13 @@ void
 mock_server_remove_autoresponder (mock_server_t *server, int id);
 
 int
-mock_server_auto_ismaster (mock_server_t *server,
-                           const char *response_json,
-                           ...);
+mock_server_auto_hello_callback (mock_server_t *server,
+                                 hello_callback_func_t callback_func,
+                                 void *data,
+                                 destructor_t destructor);
+
+int
+mock_server_auto_hello (mock_server_t *server, const char *response_json, ...);
 
 int
 mock_server_auto_endsessions (mock_server_t *server);
@@ -121,7 +130,11 @@ mock_server_receives_command (mock_server_t *server,
                               ...);
 
 request_t *
-mock_server_receives_ismaster (mock_server_t *server);
+mock_server_receives_legacy_hello (mock_server_t *server,
+                                   const char *match_json);
+
+request_t *
+mock_server_receives_hello (mock_server_t *server);
 
 request_t *
 mock_server_receives_query (mock_server_t *server,

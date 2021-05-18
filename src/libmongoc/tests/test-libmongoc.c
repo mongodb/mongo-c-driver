@@ -1077,17 +1077,17 @@ test_framework_get_unix_domain_socket_uri_str ()
 /*
  *--------------------------------------------------------------------------
  *
- * call_ismaster_with_host_and_port --
+ * call_hello_with_host_and_port --
  *
- *       Call isMaster on a server, possibly over SSL.
+ *       Call hello or legacy hello on a server, possibly over SSL.
  *
  * Side effects:
- *       Fills reply with ismaster response. Logs and aborts on error.
+ *       Fills reply with hello response. Logs and aborts on error.
  *
  *--------------------------------------------------------------------------
  */
 static void
-call_ismaster_with_host_and_port (char *host_and_port, bson_t *reply)
+call_hello_with_host_and_port (char *host_and_port, bson_t *reply)
 {
    char *user;
    char *password;
@@ -1132,10 +1132,20 @@ call_ismaster_with_host_and_port (char *host_and_port, bson_t *reply)
 #endif
 
    if (!mongoc_client_command_simple (
-          client, "admin", tmp_bson ("{'isMaster': 1}"), NULL, reply, &error)) {
-      fprintf (stderr, "error calling ismaster: '%s'\n", error.message);
-      fprintf (stderr, "URI = %s\n", uri_str);
-      abort ();
+          client, "admin", tmp_bson ("{'hello': 1}"), NULL, reply, &error)) {
+      bson_destroy (reply);
+
+      if (!mongoc_client_command_simple (
+             client,
+             "admin",
+             tmp_bson ("{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1}"),
+             NULL,
+             reply,
+             &error)) {
+         fprintf (stderr, "error calling legacy hello: '%s'\n", error.message);
+         fprintf (stderr, "URI = %s\n", uri_str);
+         abort ();
+      }
    }
 
    mongoc_client_destroy (client);
@@ -1146,22 +1156,22 @@ call_ismaster_with_host_and_port (char *host_and_port, bson_t *reply)
 /*
  *--------------------------------------------------------------------------
  *
- * call_ismaster --
+ * call_hello --
  *
- *       Call isMaster on the test server, possibly over SSL, using host
- *       and port from the environment.
+ *       Call hello or legacy hello on the test server, possibly over SSL, using
+ *       host and port from the environment.
  *
  * Side effects:
- *       Fills reply with ismaster response. Logs and aborts on error.
+ *       Fills reply with hello response. Logs and aborts on error.
  *
  *--------------------------------------------------------------------------
  */
 static void
-call_ismaster (bson_t *reply)
+call_hello (bson_t *reply)
 {
    char *host_and_port = test_framework_get_host_and_port ();
 
-   call_ismaster_with_host_and_port (host_and_port, reply);
+   call_hello_with_host_and_port (host_and_port, reply);
 
    bson_free (host_and_port);
 }
@@ -1258,7 +1268,7 @@ test_framework_get_uri_str_no_auth (const char *database_name)
       bson_free (env_uri_str);
    } else {
       /* construct a direct connection or replica set connection URI */
-      call_ismaster (&ismaster_response);
+      call_hello (&ismaster_response);
       uri_string = bson_string_new ("mongodb://");
 
       if ((name = set_name (&ismaster_response))) {
@@ -1465,7 +1475,7 @@ test_framework_replset_name (void)
    bson_iter_t iter;
    char *replset_name;
 
-   call_ismaster (&reply);
+   call_hello (&reply);
    if (!bson_iter_init_find (&iter, &reply, "setName")) {
       return NULL;
    }
@@ -1546,7 +1556,7 @@ test_framework_data_nodes_count (void)
    size_t count = 0;
 
 
-   call_ismaster (&reply);
+   call_hello (&reply);
    if (!bson_iter_init_find (&iter, &reply, "hosts")) {
       bson_destroy (&reply);
       return test_framework_mongos_count ();
@@ -1935,7 +1945,7 @@ test_framework_is_mongos (void)
    bson_iter_t iter;
    bool is_mongos;
 
-   call_ismaster (&reply);
+   call_hello (&reply);
 
    is_mongos = (bson_iter_init_find (&iter, &reply, "msg") &&
                 BSON_ITER_HOLDS_UTF8 (&iter) &&
@@ -1965,7 +1975,7 @@ test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id)
    sd = mongoc_topology_server_by_id (client->topology, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
 
-   call_ismaster_with_host_and_port (sd->host.host_and_port, &reply);
+   call_hello_with_host_and_port (sd->host.host_and_port, &reply);
 
    ret = bson_iter_init_find (&iter, &reply, "secondary") &&
          bson_iter_as_bool (&iter);
@@ -1984,7 +1994,7 @@ test_framework_clustertime_supported (void)
    bson_t reply;
    bool has_cluster_time;
 
-   call_ismaster (&reply);
+   call_hello (&reply);
    has_cluster_time = bson_has_field (&reply, "$clusterTime");
    bson_destroy (&reply);
 
@@ -2004,7 +2014,7 @@ test_framework_session_timeout_minutes (void)
       return -1;
    }
 
-   call_ismaster (&reply);
+   call_hello (&reply);
    if (bson_iter_init_find (&iter, &reply, "logicalSessionTimeoutMinutes")) {
       timeout = bson_iter_as_int64 (&iter);
    }
@@ -2021,7 +2031,7 @@ test_framework_get_max_wire_version (int64_t *max_version)
    bson_t reply;
    bson_iter_t iter;
 
-   call_ismaster (&reply);
+   call_hello (&reply);
    BSON_ASSERT (bson_iter_init_find (&iter, &reply, "maxWireVersion"));
    *max_version = bson_iter_as_int64 (&iter);
 
@@ -2231,7 +2241,7 @@ test_framework_max_write_batch_size (void)
    bson_iter_t iter;
    int64_t size;
 
-   call_ismaster (&reply);
+   call_hello (&reply);
 
    if (bson_iter_init_find (&iter, &reply, "maxWriteBatchSize")) {
       size = bson_iter_as_int64 (&iter);

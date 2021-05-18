@@ -711,7 +711,7 @@ _test_heartbeat_events (bool pooled, bool succeeded)
       client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
    /* topology scanner calls ismaster once */
-   request = mock_server_receives_ismaster (server);
+   request = mock_server_receives_legacy_hello (server, NULL);
 
    if (succeeded) {
       mock_server_replies (
@@ -727,9 +727,9 @@ _test_heartbeat_events (bool pooled, bool succeeded)
       request_destroy (request);
    }
 
-   /* pooled client opens new socket, handshakes it by calling ismaster again */
+   /* pooled client opens new socket, handshakes it by calling hello again */
    if (pooled && succeeded) {
-      request = mock_server_receives_ismaster (server);
+      request = mock_server_receives_legacy_hello (server, NULL);
       mock_server_replies (
          request,
          MONGOC_REPLY_NONE,
@@ -924,12 +924,12 @@ test_no_duplicates (void)
    bson_error_t error;
    future_t *future;
    mongoc_uri_t *uri;
-   char *first_ismaster_response =
-      "{'ok': 1.0, 'ismaster': true, 'minWireVersion': 0, 'maxWireVersion': 9}";
-   char *second_ismaster_response = "{'ok': 1.0, 'ismaster': true, "
-                                    "'minWireVersion': 0, 'maxWireVersion': 9, "
-                                    "'lastWrite': {'lastWriteDate': {'$date': "
-                                    "{'$numberLong': '123'}}, 'opTime': 2}}";
+   char *first_hello_response = "{'ok': 1.0, 'isWritablePrimary': true, "
+                                "'minWireVersion': 0, 'maxWireVersion': 9}";
+   char *second_hello_response = "{'ok': 1.0, 'isWritablePrimary': true, "
+                                 "'minWireVersion': 0, 'maxWireVersion': 9, "
+                                 "'lastWrite': {'lastWriteDate': {'$date': "
+                                 "{'$numberLong': '123'}}, 'opTime': 2}}";
    mongoc_apm_callbacks_t *callbacks;
    duplicates_counter_t duplicates_counter = {0};
    mongoc_server_description_t *sd;
@@ -949,8 +949,8 @@ test_no_duplicates (void)
    client = mongoc_client_pool_pop (pool);
 
    /* Topology scanning thread starts, and sends an ismaster. */
-   request = mock_server_receives_ismaster (server);
-   mock_server_replies_simple (request, first_ismaster_response);
+   request = mock_server_receives_legacy_hello (server, NULL);
+   mock_server_replies_simple (request, first_hello_response);
    request_destroy (request);
 
    /* Perform a ping, which creates a new connection, which performs the
@@ -961,8 +961,8 @@ test_no_duplicates (void)
                                           NULL /* read prefs */,
                                           NULL /* reply */,
                                           &error);
-   request = mock_server_receives_ismaster (server);
-   mock_server_replies_simple (request, second_ismaster_response);
+   request = mock_server_receives_legacy_hello (server, NULL);
+   mock_server_replies_simple (request, second_hello_response);
    request_destroy (request);
    request = mock_server_receives_msg (
       server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
@@ -983,7 +983,7 @@ test_no_duplicates (void)
     * topology description. It differs in that it has the 'lastWrite' field,
     * which does not have an effect in equality comparison. */
    sd = mongoc_client_get_server_description (client, 1);
-   BSON_ASSERT (bson_has_field (&sd->last_is_master, "lastWrite"));
+   BSON_ASSERT (bson_has_field (&sd->last_hello_response, "lastWrite"));
    mongoc_server_description_destroy (sd);
 
    mongoc_uri_destroy (uri);
