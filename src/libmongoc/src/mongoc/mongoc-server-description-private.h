@@ -64,6 +64,7 @@ struct _mongoc_server_description_t {
    int64_t last_update_time_usec;
    bson_t last_hello_response;
    bool has_hello_response;
+   bool hello_ok;
    const char *connection_address;
    /* SDAM dictates storing me/hosts/passives/arbiters after being "normalized
     * to lower-case" Instead, they are stored in the casing they are received,

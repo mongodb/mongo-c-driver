@@ -114,6 +114,7 @@ _add_hello (mongoc_topology_scanner_t *ts)
       _mongoc_cmd_append_server_api (cmd, api);
    } else {
       BSON_APPEND_INT32 (cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
+      BSON_APPEND_BOOL (cmd, "helloOk", true);
    }
 }
 

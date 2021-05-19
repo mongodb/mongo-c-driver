@@ -561,6 +561,8 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
                                   "speculativeAuthenticate",
                                   NULL);
    sd->has_hello_response = true;
+   /* Reset hello_ok since it may be absent from the response */
+   sd->hello_ok = false;
 
    /* Only reinitialize the topology version if we have a hello response.
     * Resetting a server description should not effect the topology version. */
@@ -592,6 +594,10 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
          if (!BSON_ITER_HOLDS_BOOL (&iter))
             goto failure;
          is_primary = bson_iter_bool (&iter);
+      } else if (strcmp ("helloOk", bson_iter_key (&iter)) == 0) {
+         if (!BSON_ITER_HOLDS_BOOL (&iter))
+            goto failure;
+         sd->hello_ok = bson_iter_bool (&iter);
       } else if (strcmp ("me", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter))
             goto failure;

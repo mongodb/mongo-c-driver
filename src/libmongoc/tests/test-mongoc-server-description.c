@@ -27,9 +27,9 @@ reset_basic_sd (mongoc_server_description_t *sd)
    bson_t *hello;
 
    hello = BCON_NEW ("minWireVersion",
-                        BCON_INT32 (0),
-                        "maxWireVersion",
-                        BCON_INT32 (WIRE_VERSION_MAX));
+                     BCON_INT32 (0),
+                     "maxWireVersion",
+                     BCON_INT32 (WIRE_VERSION_MAX));
 
    mongoc_server_description_reset (sd);
    memset (&error, 0, sizeof (bson_error_t));
@@ -237,11 +237,11 @@ test_server_description_msg_without_isdbgrid (void)
 
    mongoc_server_description_init (&sd, "host:1234", 1);
    hello = BCON_NEW ("minWireVersion",
-                        BCON_INT32 (0),
-                        "maxWireVersion",
-                        BCON_INT32 (WIRE_VERSION_MAX),
-                        "msg",
-                        "isdbgrid");
+                     BCON_INT32 (0),
+                     "maxWireVersion",
+                     BCON_INT32 (WIRE_VERSION_MAX),
+                     "msg",
+                     "isdbgrid");
    memset (&error, 0, sizeof (bson_error_t));
    mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_MONGOS);
@@ -249,11 +249,11 @@ test_server_description_msg_without_isdbgrid (void)
    mongoc_server_description_reset (&sd);
    bson_destroy (hello);
    hello = BCON_NEW ("minWireVersion",
-                        BCON_INT32 (0),
-                        "maxWireVersion",
-                        BCON_INT32 (WIRE_VERSION_MAX),
-                        "msg",
-                        "something_else");
+                     BCON_INT32 (0),
+                     "maxWireVersion",
+                     BCON_INT32 (WIRE_VERSION_MAX),
+                     "msg",
+                     "something_else");
    mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
 
@@ -352,6 +352,30 @@ test_server_description_legacy_hello (void)
    BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
    mongoc_server_description_handle_hello (&sd, &hello_response, 0, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+   BSON_ASSERT (!sd.hello_ok);
+
+   mongoc_server_description_cleanup (&sd);
+   bson_destroy (&hello_response);
+}
+
+static void
+test_server_description_legacy_hello_ok (void)
+{
+   mongoc_server_description_t sd;
+   bson_error_t error;
+   bson_t hello_response;
+
+   bson_init (&hello_response);
+   BCON_APPEND (
+      &hello_response, HANDSHAKE_RESPONSE_LEGACY_HELLO, BCON_BOOL (true));
+   BCON_APPEND (&hello_response, "helloOk", BCON_BOOL (true));
+
+   memset (&error, 0, sizeof (bson_error_t));
+   mongoc_server_description_init (&sd, "host:1234", 1);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_UNKNOWN);
+   mongoc_server_description_handle_hello (&sd, &hello_response, 0, &error);
+   BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
+   BSON_ASSERT (sd.hello_ok);
 
    mongoc_server_description_cleanup (&sd);
    bson_destroy (&hello_response);
@@ -376,4 +400,7 @@ test_server_description_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/server_description/legacy_hello",
                   test_server_description_legacy_hello);
+   TestSuite_Add (suite,
+                  "/server_description/legacy_hello_ok",
+                  test_server_description_legacy_hello_ok);
 }
