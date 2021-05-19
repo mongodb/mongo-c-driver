@@ -84,7 +84,7 @@ typedef struct mongoc_topology_scanner {
    int64_t connect_timeout_msec;
    mongoc_topology_scanner_node_t *nodes;
    bson_t hello_cmd;
-   bson_t hello_cmd_with_handshake;
+   bson_t handshake_cmd;
    bson_t cluster_time;
    bool handshake_ok_to_send;
    const char *appname;

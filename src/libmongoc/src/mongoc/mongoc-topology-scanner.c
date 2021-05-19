@@ -122,7 +122,7 @@ static void
 _init_hello (mongoc_topology_scanner_t *ts)
 {
    bson_init (&ts->hello_cmd);
-   bson_init (&ts->hello_cmd_with_handshake);
+   bson_init (&ts->handshake_cmd);
    bson_init (&ts->cluster_time);
 
    _add_hello (ts);
@@ -132,7 +132,7 @@ static void
 _reset_hello (mongoc_topology_scanner_t *ts)
 {
    bson_reinit (&ts->hello_cmd);
-   bson_reinit (&ts->hello_cmd_with_handshake);
+   bson_reinit (&ts->handshake_cmd);
 
    _add_hello (ts);
 }
@@ -242,9 +242,9 @@ _mongoc_topology_scanner_parse_speculative_authentication (
 }
 
 static bool
-_build_hello_with_handshake (mongoc_topology_scanner_t *ts)
+_build_handshake_cmd (mongoc_topology_scanner_t *ts)
 {
-   bson_t *doc = &ts->hello_cmd_with_handshake;
+   bson_t *doc = &ts->handshake_cmd;
    bson_t subdoc;
    bson_iter_t iter;
    const char *key;
@@ -285,7 +285,7 @@ _mongoc_topology_scanner_get_hello_cmd (mongoc_topology_scanner_t *ts)
    return &ts->hello_cmd;
 }
 
-/* Caller must lock topology->mutex to protect hello_cmd_with_handshake. This
+/* Caller must lock topology->mutex to protect handshake_cmd. This
  * is called at the start of the scan in _mongoc_topology_run_background, when a
  * node is added in _mongoc_topology_reconcile_add_nodes, or when running a
  * hello directly on a node in _mongoc_stream_run_hello. */
@@ -294,8 +294,8 @@ _mongoc_topology_scanner_get_handshake_cmd (mongoc_topology_scanner_t *ts)
 {
    /* If this is the first time using the node or if it's the first time
     * using it after a failure, build handshake doc */
-   if (bson_empty (&ts->hello_cmd_with_handshake)) {
-      ts->handshake_ok_to_send = _build_hello_with_handshake (ts);
+   if (bson_empty (&ts->handshake_cmd)) {
+      ts->handshake_ok_to_send = _build_handshake_cmd (ts);
       if (!ts->handshake_ok_to_send) {
          MONGOC_WARNING ("Handshake doc too big, not including in hello");
       }
@@ -306,7 +306,7 @@ _mongoc_topology_scanner_get_handshake_cmd (mongoc_topology_scanner_t *ts)
       return &ts->hello_cmd;
    }
 
-   return &ts->hello_cmd_with_handshake;
+   return &ts->handshake_cmd;
 }
 
 static void
@@ -429,7 +429,7 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
 
    mongoc_async_destroy (ts->async);
    bson_destroy (&ts->hello_cmd);
-   bson_destroy (&ts->hello_cmd_with_handshake);
+   bson_destroy (&ts->handshake_cmd);
    bson_destroy (&ts->cluster_time);
    mongoc_server_api_destroy (ts->api);
 
@@ -1358,7 +1358,7 @@ _jumpstart_other_acmds (mongoc_topology_scanner_node_t *node,
    }
 }
 
-/* Caller must lock topology->mutex to protect hello_cmd_with_handshake. */
+/* Caller must lock topology->mutex to protect handshake_cmd. */
 void
 _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
                                          const mongoc_server_api_t *api)
