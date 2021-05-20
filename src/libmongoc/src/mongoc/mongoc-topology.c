@@ -43,12 +43,19 @@ _mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd,
                                       mongoc_topology_t *topology)
 {
    mongoc_topology_scanner_t *scanner = topology->scanner;
+   mongoc_topology_scanner_node_t *node;
 
-   /* quickly search by id, then check if a node for this host was retired in
-    * this scan. */
-   if (!mongoc_topology_scanner_get_node (scanner, sd->id) &&
-       !mongoc_topology_scanner_has_node_for_host (scanner, &sd->host)) {
-      mongoc_topology_scanner_add (scanner, &sd->host, sd->id);
+   /* Search by ID and update hello_ok */
+   node = mongoc_topology_scanner_get_node (scanner, sd->id);
+   if (node) {
+      node->hello_ok = sd->hello_ok;
+
+      return true;
+   }
+
+   /* Check if a node for this host was retired in this scan. */
+   if (!mongoc_topology_scanner_has_node_for_host (scanner, &sd->host)) {
+      mongoc_topology_scanner_add (scanner, &sd->host, sd->id, sd->hello_ok);
       mongoc_topology_scanner_scan (scanner, sd->id);
    }
 
@@ -189,9 +196,9 @@ _mongoc_topology_scanner_cb (uint32_t id,
       _mongoc_topology_update_no_lock (
          id, hello_response, rtt_msec, topology, error);
 
-      /* The processing of the hello results above may have added/removed
-       * server descriptions. We need to reconcile that with our monitoring
-       * agents
+      /* The processing of the hello results above may have added, changed, or
+       * removed server descriptions. We need to reconcile that with our
+       * monitoring agents
        */
       mongoc_topology_reconcile (topology);
 
@@ -442,7 +449,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    while (hl) {
       mongoc_topology_description_add_server (
          &topology->description, hl->host_and_port, &id);
-      mongoc_topology_scanner_add (topology->scanner, hl, id);
+      mongoc_topology_scanner_add (topology->scanner, hl, id, false);
 
       hl = hl->next;
    }

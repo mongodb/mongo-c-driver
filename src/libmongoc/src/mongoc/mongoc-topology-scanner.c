@@ -106,15 +106,19 @@ _jumpstart_other_acmds (mongoc_topology_scanner_node_t *node,
 static void
 _add_hello (mongoc_topology_scanner_t *ts)
 {
-   bson_t *cmd = &ts->hello_cmd;
    mongoc_server_api_t *api = ts->api;
 
+   BSON_APPEND_INT32 (&ts->hello_cmd, "hello", 1);
+   BSON_APPEND_BOOL (&ts->hello_cmd, "helloOk", true);
+
    if (api) {
-      BSON_APPEND_INT32 (cmd, "hello", 1);
-      _mongoc_cmd_append_server_api (cmd, api);
+      BSON_APPEND_INT32 (&ts->legacy_hello_cmd, "hello", 1);
+
+      _mongoc_cmd_append_server_api (&ts->hello_cmd, api);
+      _mongoc_cmd_append_server_api (&ts->legacy_hello_cmd, api);
    } else {
-      BSON_APPEND_INT32 (cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
-      BSON_APPEND_BOOL (cmd, "helloOk", true);
+      BSON_APPEND_INT32 (&ts->legacy_hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
+      BSON_APPEND_BOOL (&ts->legacy_hello_cmd, "helloOk", true);
    }
 }
 
@@ -122,6 +126,7 @@ static void
 _init_hello (mongoc_topology_scanner_t *ts)
 {
    bson_init (&ts->hello_cmd);
+   bson_init (&ts->legacy_hello_cmd);
    bson_init (&ts->handshake_cmd);
    bson_init (&ts->cluster_time);
 
@@ -132,6 +137,7 @@ static void
 _reset_hello (mongoc_topology_scanner_t *ts)
 {
    bson_reinit (&ts->hello_cmd);
+   bson_reinit (&ts->legacy_hello_cmd);
    bson_reinit (&ts->handshake_cmd);
 
    _add_hello (ts);
@@ -255,7 +261,7 @@ _build_handshake_cmd (mongoc_topology_scanner_t *ts)
    char buf[16];
 
    bson_destroy (doc);
-   bson_copy_to (&ts->hello_cmd, doc);
+   bson_copy_to (&ts->legacy_hello_cmd, doc);
 
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
    res = _mongoc_handshake_build_doc_with_application (&subdoc, ts->appname);
@@ -280,9 +286,10 @@ _build_handshake_cmd (mongoc_topology_scanner_t *ts)
 }
 
 const bson_t *
-_mongoc_topology_scanner_get_hello_cmd (mongoc_topology_scanner_t *ts)
+_mongoc_topology_scanner_get_monitoring_cmd (mongoc_topology_scanner_t *ts,
+                                             bool hello_ok)
 {
-   return &ts->hello_cmd;
+   return hello_ok ? &ts->hello_cmd : &ts->legacy_hello_cmd;
 }
 
 /* Caller must lock topology->mutex to protect handshake_cmd. This
@@ -303,7 +310,7 @@ _mongoc_topology_scanner_get_handshake_cmd (mongoc_topology_scanner_t *ts)
 
    /* If the doc turned out to be too big */
    if (!ts->handshake_ok_to_send) {
-      return &ts->hello_cmd;
+      return &ts->legacy_hello_cmd;
    }
 
    return &ts->handshake_cmd;
@@ -321,7 +328,8 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
 
    if (node->last_used != -1 && node->last_failed == -1) {
       /* The node's been used before and not failed recently */
-      bson_copy_to (&ts->hello_cmd, &cmd);
+      bson_copy_to (_mongoc_topology_scanner_get_monitoring_cmd (ts, node->hello_ok),
+                    &cmd);
    } else {
       bson_copy_to (_mongoc_topology_scanner_get_handshake_cmd (ts), &cmd);
    }
@@ -429,6 +437,7 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
 
    mongoc_async_destroy (ts->async);
    bson_destroy (&ts->hello_cmd);
+   bson_destroy (&ts->legacy_hello_cmd);
    bson_destroy (&ts->handshake_cmd);
    bson_destroy (&ts->cluster_time);
    mongoc_server_api_destroy (ts->api);
@@ -450,7 +459,8 @@ mongoc_topology_scanner_valid (mongoc_topology_scanner_t *ts)
 void
 mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
                              const mongoc_host_list_t *host,
-                             uint32_t id)
+                             uint32_t id,
+                             bool hello_ok)
 {
    mongoc_topology_scanner_node_t *node;
 
@@ -462,6 +472,7 @@ mongoc_topology_scanner_add (mongoc_topology_scanner_t *ts,
    node->ts = ts;
    node->last_failed = -1;
    node->last_used = -1;
+   node->hello_ok = hello_ok;
    bson_init (&node->speculative_auth_response);
 
    DL_APPEND (ts->nodes, node);

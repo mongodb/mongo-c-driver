@@ -529,7 +529,7 @@ _test_topology_invalidate_server (bool pooled)
    fake_sd->type = MONGOC_SERVER_STANDALONE;
    mongoc_set_add (td->servers, fake_id, fake_sd);
    mongoc_topology_scanner_add (
-      client->topology->scanner, &fake_host_list, fake_id);
+      client->topology->scanner, &fake_host_list, fake_id, false);
    BSON_ASSERT (!mongoc_cluster_stream_for_server (
       &client->cluster, fake_id, true, NULL, NULL, &error));
    bson_mutex_lock (&client->topology->mutex);
@@ -843,8 +843,8 @@ test_cooldown_rs (void)
    request_destroy (request);
 
    mock_server_set_request_timeout_msec (servers[1], 100);
-   BSON_ASSERT (!mock_server_receives_legacy_hello (
-      servers[1], NULL)); /* no hello call */
+   BSON_ASSERT (!mock_server_receives_legacy_hello (servers[1],
+                                                    NULL)); /* no hello call */
    mock_server_set_request_timeout_msec (servers[1], get_future_timeout_ms ());
 
    /* still no primary */
@@ -2305,6 +2305,105 @@ test_hello_versioned_api_pooled ()
    _test_hello_versioned_api (true);
 }
 
+static void
+_test_hello_ok (bool pooled)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   char *hello;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
+
+   if (pooled) {
+      pool = test_framework_client_pool_new_from_uri (uri, NULL);
+      client = mongoc_client_pool_pop (pool);
+   } else {
+      client = test_framework_client_new_from_uri (uri, NULL);
+   }
+
+   hello = bson_strdup_printf ("{'ok': 1,"
+                               " 'isWritablePrimary': true,"
+                               " 'helloOk': true,"
+                               " 'setName': 'rs',"
+                               " 'minWireVersion': 2,"
+                               " 'maxWireVersion': 5,"
+                               " 'hosts': ['%s']}",
+                               mock_server_get_host_and_port (server));
+
+   /* For client pools, the first handshake happens when the client is popped.
+    * For non-pooled clients, send a ping command to trigger a handshake. */
+   if (!pooled) {
+      future = future_client_command_simple (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   }
+
+   request = mock_server_receives_legacy_hello (
+      server, "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
+   BSON_ASSERT (request);
+   mock_server_replies_simple (request, hello);
+   request_destroy (request);
+
+   /* For non-pooled clients, handle the ping */
+   if (!pooled) {
+      request = mock_server_receives_command (
+         server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
+      mock_server_replies_ok_and_destroys (request);
+      BSON_ASSERT (future_get_bool (future));
+      future_destroy (future);
+
+      /* Send off another ping for non-pooled clients, making sure to wait long
+       * enough to require another heartbeat. */
+      _mongoc_usleep (600 * 1000);
+      future = future_client_command_simple (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   }
+
+   request = mock_server_receives_hello (server);
+   BSON_ASSERT (request);
+   mock_server_replies_simple (request, hello);
+   request_destroy (request);
+
+   /* Once again, handle the ping */
+   if (!pooled) {
+      request = mock_server_receives_command (
+         server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
+      mock_server_replies_ok_and_destroys (request);
+      BSON_ASSERT (future_get_bool (future));
+      future_destroy (future);
+   }
+
+   if (pooled) {
+      mongoc_client_pool_push (pool, client);
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+   bson_free (hello);
+}
+
+static void
+test_hello_ok_single ()
+{
+   _test_hello_ok (false);
+}
+
+static void
+test_hello_ok_pooled ()
+{
+   _test_hello_ok (true);
+}
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -2466,4 +2565,9 @@ test_topology_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Topology/hello/versioned_api/pooled",
                                 test_hello_versioned_api_pooled);
+
+   TestSuite_AddMockServerTest (
+      suite, "/Topology/hello_ok/single", test_hello_ok_single);
+   TestSuite_AddMockServerTest (
+      suite, "/Topology/hello_ok/pooled", test_hello_ok_pooled);
 }

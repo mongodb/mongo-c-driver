@@ -329,8 +329,8 @@ _server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
    const bson_t *hello;
    bool ret;
 
-   hello = _mongoc_topology_scanner_get_hello_cmd (
-      server_monitor->topology->scanner);
+   hello = _mongoc_topology_scanner_get_monitoring_cmd (
+      server_monitor->topology->scanner, server_monitor->description->hello_ok);
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
@@ -609,8 +609,8 @@ _server_monitor_awaitable_hello (mongoc_server_monitor_t *server_monitor,
    const bson_t *hello;
    bool ret = false;
 
-   hello = _mongoc_topology_scanner_get_hello_cmd (
-      server_monitor->topology->scanner);
+   hello = _mongoc_topology_scanner_get_monitoring_cmd (
+      server_monitor->topology->scanner, server_monitor->description->hello_ok);
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
@@ -1050,6 +1050,16 @@ static BSON_THREAD_FUN (_server_monitor_thread, server_monitor_void)
       if (cancelled) {
          mongoc_server_monitor_wait (server_monitor);
          continue;
+      }
+
+      /* Update the server description of the server monitor to ensure we're
+       * running the correct heartbeat command in the future */
+      if (description->has_hello_response) {
+         mongoc_server_description_handle_hello (
+            server_monitor->description,
+            &description->last_hello_response,
+            description->round_trip_time_msec,
+            &description->error);
       }
 
       _server_monitor_update_topology_description (server_monitor, description);
