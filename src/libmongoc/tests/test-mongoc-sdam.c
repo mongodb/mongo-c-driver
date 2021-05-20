@@ -596,7 +596,7 @@ test_direct_connection (void *ctx)
    BSON_APPEND_UTF8 (&doc, "hello", "world");
    r = mongoc_collection_insert_one (collection, &doc, NULL, &reply, &error);
    ASSERT_OR_PRINT (!r, error);
-   ASSERT (strstr (error.message, "not master"));
+   ASSERT (strstr (error.message, "not master") || strstr (error.message, "not primary"));
 
    bson_destroy (&reply);
    bson_destroy (&doc);
@@ -660,7 +660,7 @@ test_existing_behavior (void *ctx)
    BSON_APPEND_UTF8 (&doc, "hello", "world");
    r = mongoc_collection_insert_one (collection, &doc, NULL, &reply, &error);
    ASSERT_OR_PRINT (!r, error);
-   ASSERT (strstr (error.message, "not master"));
+   ASSERT (strstr (error.message, "not master") || strstr (error.message, "not primary"));
 
    bson_destroy (&reply);
    bson_destroy (&doc);
