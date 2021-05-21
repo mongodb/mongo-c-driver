@@ -628,16 +628,16 @@ all_variants = [
         ['debug-compile-sasl-openssl',
          'test-mongohouse'],
         {}),
-    Variant ('ocsp', 'OCSP tests', 'ubuntu1804-test', [
-        OD([('name', 'debug-compile-nosasl-openssl'), ('distros', ['ubuntu1804-test'])]),
-        OD([('name', 'debug-compile-nosasl-openssl-static'), ('distros', ['ubuntu1804-test'])]),
+    Variant ('ocsp', 'OCSP tests', 'ubuntu2004-small', [
+        OD([('name', 'debug-compile-nosasl-openssl'), ('distros', ['ubuntu2004-small'])]),
+        OD([('name', 'debug-compile-nosasl-openssl-static'), ('distros', ['ubuntu2004-small'])]),
         OD([('name', 'debug-compile-nosasl-darwinssl'), ('distros', ['macos-1014'])]),
         OD([('name', 'debug-compile-nosasl-winssl'), ('distros', ['windows-64-vs2017-test'])]),
-        OD([('name', '.ocsp-openssl'), ('distros', ['ubuntu1804-test'])]),
+        OD([('name', '.ocsp-openssl'), ('distros', ['ubuntu2004-small'])]),
         OD([('name', '.ocsp-darwinssl'), ('distros', ['macos-1014'])]),
         OD([('name', '.ocsp-winssl'), ('distros', ['windows-64-vs2017-test'])]),
-        OD([('name', 'debug-compile-nosasl-openssl-1.0.1'), ('distros', ['ubuntu1804-test'])]),
-        OD([('name', '.ocsp-openssl-1.0.1'), ('distros', ['ubuntu1804-test'])])
+        OD([('name', 'debug-compile-nosasl-openssl-1.0.1'), ('distros', ['ubuntu2004-small'])]),
+        OD([('name', '.ocsp-openssl-1.0.1'), ('distros', ['ubuntu2004-small'])])
     ], {}, batchtime=days(7)),
     Variant ('packaging', 'Linux Distro Packaging', 'ubuntu1604-test', [
         'debian-package-build',
