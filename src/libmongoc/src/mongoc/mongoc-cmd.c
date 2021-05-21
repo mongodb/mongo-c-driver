@@ -785,22 +785,6 @@ _is_retryable_read (const mongoc_cmd_parts_t *parts,
 }
 
 
-static bool
-_txn_in_progress (mongoc_cmd_parts_t *parts)
-{
-   mongoc_client_session_t *cs;
-
-   cs = parts->prohibit_lsid ? NULL : parts->assembled.session;
-   if (!cs) {
-      return false;
-   }
-
-   return (_mongoc_client_session_txn_in_progress (cs)
-      /* commitTransaction and abortTransaction count as in progress, too. */
-      || parts->assembled.is_txn_finish);
-}
-
-
 /*
  *--------------------------------------------------------------------------
  *
@@ -988,13 +972,10 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
             &parts->assembled_body, "$clusterTime", 12, cluster_time);
       }
 
-      /* Add versioned server api, if it is set. Do not add api if we are
-         sending a getmore, or if we are in a transaction. */
+      /* Add versioned server api, if it is set. */
       if (parts->client->api) {
-         if (!is_get_more && !_txn_in_progress (parts)) {
-            _mongoc_cmd_append_server_api (&parts->assembled_body,
-                                           parts->client->api);
-         }
+         _mongoc_cmd_append_server_api (&parts->assembled_body,
+                                        parts->client->api);
       }
 
       if (!is_get_more) {
