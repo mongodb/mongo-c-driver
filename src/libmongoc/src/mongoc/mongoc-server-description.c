@@ -562,7 +562,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
                                   NULL);
    sd->has_hello_response = true;
 
-   /* Only reinitialize the topology version if we have an hello response.
+   /* Only reinitialize the topology version if we have a hello response.
     * Resetting a server description should not effect the topology version. */
    bson_reinit (&sd->topology_version);
 

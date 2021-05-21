@@ -1051,10 +1051,10 @@ mock_server_receives_legacy_hello (mock_server_t *server,
  *
  * Returns:
  *       A request you must request_destroy, or NULL if the current
- *       request is not an hello command.
+ *       request is not a hello command.
  *
  * Side effects:
- *       Logs if the current request is not an hello command.
+ *       Logs if the current request is not a hello command.
  *
  *--------------------------------------------------------------------------
  */

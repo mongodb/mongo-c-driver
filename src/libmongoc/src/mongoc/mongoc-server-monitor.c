@@ -797,7 +797,7 @@ fail:
    RETURN (ret);
 }
 
-/* Perform an hello check of a server.
+/* Perform a hello check of a server.
  *
  * Called only by server monitor thread.
  * Caller must not hold any locks.

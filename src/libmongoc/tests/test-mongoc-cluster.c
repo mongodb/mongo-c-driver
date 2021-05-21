@@ -1076,7 +1076,7 @@ _test_not_primary (bool pooled,
       BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
 
       /*
-       * command error marks server Unknown iff it's a "not primary" error
+       * command error marks server Unknown if it's a "not primary" error
        */
       future = run_command (client);
       request = mock_server_receives_request (server);
