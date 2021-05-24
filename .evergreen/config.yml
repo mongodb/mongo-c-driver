@@ -26490,7 +26490,7 @@ tasks:
 buildvariants:
 - name: releng
   display_name: '**Release Archive Creator'
-  run_on: ubuntu1604-test
+  run_on: ubuntu1804-test
   tasks:
   - make-release-archive
   - release-compile
@@ -26534,7 +26534,7 @@ buildvariants:
     - windows-64-vs2017-test
   - name: link-with-pkg-config
     distros:
-    - ubuntu1604-test
+    - ubuntu1804-test
   - name: link-with-pkg-config-mac
     distros:
     - macos-1014
@@ -26641,11 +26641,11 @@ buildvariants:
   - .3.2 .nossl
   - .3.0 .nossl .nosasl !.auth
 - name: clang38-i386
-  display_name: clang 3.8 (i386) (Ubuntu 16.04)
+  display_name: clang 3.8 (i386) (Ubuntu 18.04)
   expansions:
     CC: clang
     MARCH: i386
-  run_on: ubuntu1604-test
+  run_on: ubuntu1804-test
   tasks:
   - debug-compile-scan-build
   - release-compile
@@ -26660,10 +26660,10 @@ buildvariants:
   - .4.0 .nossl .nosasl
   - .3.6 .nossl .nosasl
 - name: clang38ubuntu
-  display_name: clang 3.8 (Ubuntu 16.04)
+  display_name: clang 3.8 (Ubuntu 18.04)
   expansions:
     CC: clang
-  run_on: ubuntu1604-test
+  run_on: ubuntu1804-test
   tasks:
   - .compression !.zstd
   - debug-compile-scan-build
@@ -26784,11 +26784,11 @@ buildvariants:
   - .latest .openssl-static !.nosasl .server
   - .latest .nossl
 - name: gcc54-i386
-  display_name: GCC 5.4 (i386) (Ubuntu 16.04)
+  display_name: GCC 5.4 (i386) (Ubuntu 18.04)
   expansions:
     CC: gcc
     MARCH: i386
-  run_on: ubuntu1604-test
+  run_on: ubuntu1804-test
   tasks:
   - debug-compile-coverage
   - release-compile
@@ -26801,10 +26801,10 @@ buildvariants:
   - .4.2 .nossl .nosasl
   - .4.0 .nossl .nosasl
 - name: gcc54
-  display_name: GCC 5.4 (Ubuntu 16.04)
+  display_name: GCC 5.4 (Ubuntu 18.04)
   expansions:
     CC: gcc
-  run_on: ubuntu1604-test
+  run_on: ubuntu1804-test
   tasks:
   - .compression !.zstd
   - debug-compile-asan-gcc
@@ -27009,27 +27009,11 @@ buildvariants:
   - .4.2 .openssl !.nosasl .server
   - .4.0 .openssl !.nosasl .server
   batchtime: 1440
-- name: power8-ubuntu1604
-  display_name: Power8 (ppc64le) (Ubuntu 16.04)
+- name: power8-rhel81
+  display_name: Power8 (ppc64le) (RHEL 8.1)
   expansions:
     CC: gcc
-  run_on: ubuntu1604-power8-test
-  tasks:
-  - debug-compile-scan-build
-  - debug-compile-coverage
-  - release-compile
-  - debug-compile-nosasl-nossl
-  - .debug-compile !.sspi .openssl
-  - .debug-compile !.sspi .nossl
-  - .authentication-tests .openssl
-  - .4.0 .openssl !.nosasl .server
-  - test-dns-openssl
-  batchtime: 1440
-- name: power8-ubuntu1804
-  display_name: Power8 (ppc64le) (Ubuntu 18.04)
-  expansions:
-    CC: gcc
-  run_on: ubuntu1804-power8-test
+  run_on: rhel81-power8-test
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
@@ -27044,11 +27028,11 @@ buildvariants:
   - .4.2 .openssl !.nosasl .server
   - test-dns-openssl
   batchtime: 1440
-- name: arm-ubuntu1604
-  display_name: '*ARM (aarch64) (Ubuntu 16.04)'
+- name: arm-ubuntu1804
+  display_name: '*ARM (aarch64) (Ubuntu 18.04)'
   expansions:
     CC: gcc
-  run_on: ubuntu1604-arm64-large
+  run_on: ubuntu1804-arm64-large
   tasks:
   - .compression !.snappy !.zstd
   - debug-compile-scan-build
@@ -27112,10 +27096,10 @@ buildvariants:
   - .test-valgrind .3.6
   batchtime: 1440
 - name: asan-ubuntu
-  display_name: ASAN Tests (Ubuntu 16.04)
+  display_name: ASAN Tests (Ubuntu 18.04)
   expansions:
     CC: clang
-  run_on: ubuntu1604-test
+  run_on: ubuntu1804-test
   tasks:
   - .debug-compile .asan-clang
   - .test-asan !.3.0
@@ -27201,7 +27185,7 @@ buildvariants:
   batchtime: 10080
 - name: packaging
   display_name: Linux Distro Packaging
-  run_on: ubuntu1604-test
+  run_on: ubuntu1804-test
   tasks:
   - debian-package-build
   - name: rpm-package-build
@@ -27209,10 +27193,10 @@ buildvariants:
     - rhel80-test
   batchtime: 1440
 - name: tsan-ubuntu
-  display_name: Thread Sanitizer (TSAN) Tests (Ubuntu 16.04)
+  display_name: Thread Sanitizer (TSAN) Tests (Ubuntu 18.04)
   expansions:
     CC: /opt/mongodbtoolchain/v3/bin/clang
-  run_on: ubuntu1604-small
+  run_on: ubuntu1804-small
   tasks:
   - .tsan
   batchtime: 1440
