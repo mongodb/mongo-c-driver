@@ -11,7 +11,7 @@ Synopsis
   bool
   mongoc_client_set_appname (mongoc_client_t *client, const char *appname)
 
-Sets the application name for this client. This string, along with other internal driver details, is sent to the server as part of the initial connection handshake (`"hello" <https://docs.mongodb.org/manual/reference/command/isMaster/>`_).
+Sets the application name for this client. This string, along with other internal driver details, is sent to the server as part of the initial connection handshake (`"hello" <https://docs.mongodb.org/manual/reference/command/hello/>`_).
 
 ``appname`` is copied, and doesn't have to remain valid after the call to ``mongoc_client_set_appname()``.
 
