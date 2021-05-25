@@ -192,7 +192,7 @@ A build configuration description similar to the one above will be displayed, th
 Preparing a build from a git repository clone
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Clone the repository and prepare the build on the current master branch or a particular release tag:
+Clone the repository and prepare the build on the current branch or a particular release tag:
 
 .. parsed-literal::
 
