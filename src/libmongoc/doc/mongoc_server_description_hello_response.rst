@@ -1,7 +1,7 @@
 :man_page: mongoc_server_description_hello_response
 
 mongoc_server_description_hello_response()
-===============================================
+==========================================
 
 Synopsis
 --------

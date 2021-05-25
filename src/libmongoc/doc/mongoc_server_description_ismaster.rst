@@ -1,6 +1,6 @@
-:man_page: mongoc_server_description_hello
+:man_page: mongoc_server_description_ismaster
 
-mongoc_server_description_hello()
+mongoc_server_description_ismaster()
 ====================================
 
 Synopsis
@@ -9,7 +9,7 @@ Synopsis
 .. code-block:: c
 
   const bson_t *
-  mongoc_server_description_hello (
+  mongoc_server_description_ismaster (
      const mongoc_server_description_t *description);
 
 Deprecated
@@ -29,7 +29,7 @@ Parameters
 Description
 -----------
 
-The client or client pool periodically runs a `"hello" <https://docs.mongodb.org/manual/reference/command/hello/>`_ command on each server, to update its view of the MongoDB deployment. Use :symbol:`mongoc_client_get_server_descriptions()` and ``mongoc_server_description_hello()`` to get the most recent "hello" response.
+The client or client pool periodically runs a `"hello" <https://docs.mongodb.org/manual/reference/command/hello/>`_ command on each server, to update its view of the MongoDB deployment. Use :symbol:`mongoc_client_get_server_descriptions()` and ``mongoc_server_description_hello_response()`` to get the most recent "hello" response.
 
 Returns
 -------
