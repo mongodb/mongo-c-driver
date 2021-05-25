@@ -535,7 +535,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
 {
    bson_iter_t iter;
    bson_iter_t child;
-   bool is_master = false;
+   bool is_primary = false;
    bool is_shard = false;
    bool is_secondary = false;
    bool is_arbiter = false;
@@ -591,7 +591,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
                          bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_BOOL (&iter))
             goto failure;
-         is_master = bson_iter_bool (&iter);
+         is_primary = bson_iter_bool (&iter);
       } else if (strcmp ("me", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter))
             goto failure;
@@ -722,7 +722,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
    } else if (sd->set_name) {
       if (is_hidden) {
          sd->type = MONGOC_SERVER_RS_OTHER;
-      } else if (is_master) {
+      } else if (is_primary) {
          sd->type = MONGOC_SERVER_RS_PRIMARY;
       } else if (is_secondary) {
          sd->type = MONGOC_SERVER_RS_SECONDARY;
