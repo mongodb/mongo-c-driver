@@ -738,7 +738,7 @@ test_change_stream_resumable_error (void)
    const bson_t *err_doc = NULL;
    const bson_t *next_doc = NULL;
    const char *not_primary_err =
-      "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }";
+      "{ 'code': 10107, 'errmsg': 'not primary', 'ok': 0 }";
    const char *interrupted_err =
       "{ 'code': 11601, 'errmsg': 'interrupted', 'ok': 0 }";
    const char *watch_cmd =
@@ -877,7 +877,7 @@ test_change_stream_resumable_error (void)
                                     MONGOC_QUERY_SECONDARY_OK,
                                     "{ 'getMore': 123, 'collection': 'coll' }");
    mock_server_replies_simple (
-      request, "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }");
+      request, "{ 'code': 10107, 'errmsg': 'not primary', 'ok': 0 }");
    request_destroy (request);
 
    /* Retry command */
@@ -2484,7 +2484,7 @@ prose_test_17 (void)
 
    mock_server_replies_simple (
       request,
-      "{ 'code': 10107, 'errmsg': 'not master', 'errorLabels': "
+      "{ 'code': 10107, 'errmsg': 'not primary', 'errorLabels': "
       "['ResumableChangeStreamError'], 'ok': 0 }");
 
    request_destroy (request);
@@ -2565,7 +2565,7 @@ prose_test_18 (void)
 
    mock_server_replies_simple (
       request,
-      "{ 'code': 10107, 'errmsg': 'not master', 'errorLabels': "
+      "{ 'code': 10107, 'errmsg': 'not primary', 'errorLabels': "
       "['ResumableChangeStreamError'], 'ok': 0 }");
 
    request_destroy (request);

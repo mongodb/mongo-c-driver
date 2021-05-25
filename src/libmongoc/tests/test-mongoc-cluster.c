@@ -459,7 +459,7 @@ test_cluster_command_not_primary (void)
 
    request = mock_server_receives_request (server);
    mock_server_replies_simple (
-      request, "{ 'code': 10107, 'errmsg': 'not master', 'ok': 0 }");
+      request, "{ 'code': 10107, 'errmsg': 'not primary', 'ok': 0 }");
    ASSERT (future_wait (future));
 
    mongoc_client_destroy (client);
