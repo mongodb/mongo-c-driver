@@ -462,7 +462,8 @@ class IntegrationTask(MatrixTask):
     axes = OD([('valgrind', ['valgrind', False]),
                ('sanitizer', ['asan', 'tsan', False]),
                ('coverage', ['coverage', False]),
-               ('version', ['latest', '4.4', '4.2', '4.0',
+               ('version', ['latest', '5.0',
+                            '4.4', '4.2', '4.0',
                             '3.6', '3.4', '3.2', '3.0']),
                ('topology', ['server', 'replica_set', 'sharded_cluster']),
                ('auth', [True, False]),
@@ -842,13 +843,13 @@ all_tasks = chain(all_tasks, [
         'test-versioned-api',
         tags=['versioned-api'],
         depends_on='debug-compile-nosasl-openssl',
-        commands=[func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='auth', SSL='ssl', VERSION='latest', REQUIRE_API_VERSION='true'),
+        commands=[func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='auth', SSL='ssl', VERSION='5.0', REQUIRE_API_VERSION='true'),
                   func('test versioned api', AUTH='auth', SSL='ssl')]),
     PostCompileTask(
         'test-versioned-api-accept-version-two',
         tags=['versioned-api'],
         depends_on='debug-compile-nosasl-nossl',
-        commands=[func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='noauth', SSL='nossl', VERSION='latest', ORCHESTRATION_FILE='versioned-api-testing'),
+        commands=[func('bootstrap mongo-orchestration', TOPOLOGY='server', AUTH='noauth', SSL='nossl', VERSION='5.0', ORCHESTRATION_FILE='versioned-api-testing'),
                   func('test versioned api', AUTH='noauth', SSL='nossl')]),
 ])
 
@@ -959,7 +960,7 @@ all_tasks = chain(all_tasks, [aws_compile_task])
 
 class AWSTestTask(MatrixTask):
     axes = OD([('testcase', ['regular', 'ec2', 'ecs', 'lambda', 'assume_role']),
-               ('version', ['latest', '4.4'])])
+               ('version', ['latest', '5.0', '4.4'])])
 
     name_prefix = 'test-aws-openssl'
 
@@ -985,7 +986,7 @@ class OCSPTask(MatrixTask):
                ('delegate', ['delegate', 'nodelegate']),
                ('cert', ['rsa', 'ecdsa']),
                ('ssl', ['openssl', 'openssl-1.0.1', 'darwinssl', 'winssl']),
-               ('version', ['latest', '4.4'])])
+               ('version', ['latest', '5.0', '4.4'])])
 
     name_prefix = 'test-ocsp'
 
