@@ -24,7 +24,7 @@
 typedef struct _mock_rs_t mock_rs_t;
 
 mock_rs_t *
-mock_rs_with_autoismaster (int32_t max_wire_version,
+mock_rs_with_auto_hello (int32_t max_wire_version,
                            bool has_primary,
                            int n_secondaries,
                            int n_arbiters);

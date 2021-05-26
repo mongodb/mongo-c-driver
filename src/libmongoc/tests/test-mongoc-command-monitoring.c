@@ -130,7 +130,7 @@ test_get_error (void)
    request_t *request;
    bson_error_t error = {0};
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -141,7 +141,7 @@ test_get_error (void)
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, NULL, NULL);
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, "{'foo': 1}");
+      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'foo': 1}");
    mock_server_replies_simple (request,
                                "{'ok': 0, 'errmsg': 'foo', 'code': 42}");
    ASSERT (!future_get_bool (future));
@@ -656,7 +656,7 @@ _test_query_operation_id (bool pooled)
 
    op_id_test_init (&test);
 
-   server = mock_server_with_autoismaster (4);
+   server = mock_server_with_auto_hello (4);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -684,7 +684,7 @@ _test_query_operation_id (bool pooled)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SLAVE_OK,
+                                MONGOC_QUERY_SECONDARY_OK,
                                 123 /* cursor id */,
                                 1,
                                 "db.collection",
@@ -870,7 +870,7 @@ test_client_cmd (void)
    set_cmd_test_callbacks (client, (void *) &test);
    cursor = mongoc_client_command (client,
                                    "admin",
-                                   MONGOC_QUERY_SLAVE_OK,
+                                   MONGOC_QUERY_SECONDARY_OK,
                                    0,
                                    0,
                                    0,
@@ -892,7 +892,7 @@ test_client_cmd (void)
    cmd_test_init (&test);
    cursor = mongoc_client_command (client,
                                    "admin",
-                                   MONGOC_QUERY_SLAVE_OK,
+                                   MONGOC_QUERY_SECONDARY_OK,
                                    0,
                                    0,
                                    0,
@@ -1093,7 +1093,7 @@ test_command_failed_reply_mock (void)
     */
    cmd_failed_reply_test_init (&test);
 
-   server = mock_server_with_autoismaster (4);
+   server = mock_server_with_auto_hello (4);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();
@@ -1151,7 +1151,7 @@ test_command_failed_reply_hangup (void)
     * error (i.e. the server hangs up) */
    cmd_failed_reply_test_init (&test);
 
-   server = mock_server_with_autoismaster (4);
+   server = mock_server_with_auto_hello (4);
    mock_server_run (server);
 
    callbacks = mongoc_apm_callbacks_new ();

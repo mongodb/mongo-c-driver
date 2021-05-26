@@ -418,13 +418,13 @@ test_find_one_with_opts_limit (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    mongoc_client_set_error_api (client, 2);
 
-   gridfs = _get_gridfs (server, client, MONGOC_QUERY_SLAVE_OK);
+   gridfs = _get_gridfs (server, client, MONGOC_QUERY_SECONDARY_OK);
 
    future =
       future_gridfs_find_one_with_opts (gridfs, tmp_bson ("{}"), NULL, &error);
@@ -432,11 +432,11 @@ test_find_one_with_opts_limit (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'find': 'fs.files', 'filter': {}, 'limit': 1}");
 
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SLAVE_OK,
+                                MONGOC_QUERY_SECONDARY_OK,
                                 0 /* cursor_id */,
                                 1 /* num returned */,
                                 "db.fs.files",
@@ -456,11 +456,11 @@ test_find_one_with_opts_limit (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'find': 'fs.files', 'filter': {}, 'limit': 1}");
 
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SLAVE_OK,
+                                MONGOC_QUERY_SECONDARY_OK,
                                 0 /* cursor_id */,
                                 1 /* num returned */,
                                 "db.fs.files",
@@ -1423,7 +1423,7 @@ test_inherit_client_config (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'$query': {'find': 'fs.files', 'readConcern': {'level': 'majority'}},"
       " '$readPreference': {'mode': 'secondary'}}");
 
@@ -1523,7 +1523,7 @@ test_write_failure (void)
    mongoc_gridfs_file_t *file;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG);
    mock_server_autoresponds (server, responder, NULL, NULL);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));

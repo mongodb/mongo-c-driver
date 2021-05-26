@@ -70,9 +70,9 @@ _disable_failpoints (json_test_ctx_t *ctx, const char *host_str)
    mongoc_uri_t *uri = _mongoc_uri_copy_and_replace_host_list (
       ctx->test_framework_uri, host_str);
 
-   /* Some transactions tests have a failCommand for "isMaster" repeat seven
+   /* Some transactions tests have a failCommand for "hello" repeat seven
     * times. Repeat this seven times. And set a reduced server selection timeout
-    * so we don't hang on failed ismaster commands. */
+    * so we don't hang on failed hello commands. */
    mongoc_uri_set_option_as_int32 (
       uri, MONGOC_URI_SERVERSELECTIONTIMEOUTMS, 500);
 
@@ -88,8 +88,8 @@ _disable_failpoints (json_test_ctx_t *ctx, const char *host_str)
          NULL,
          &error);
       if (!ret) {
-         /* Tests that fail with isMaster also fail to disable the failpoint
-          * (since we run isMaster when opening the connection). Ignore those
+         /* Tests that fail with hello also fail to disable the failpoint
+          * (since we run hello when opening the connection). Ignore those
           * errors. */
          BSON_ASSERT (NULL !=
                       strstr (error.message, "No suitable servers found"));
@@ -462,7 +462,7 @@ _test_transient_txn_err (bool hangup)
 
    server = mock_server_new ();
    mock_server_run (server);
-   rs_response_to_ismaster (
+   rs_response_to_hello (
       server, 7, true /* primary */, false /* tags */, server, NULL);
 
    client =
@@ -629,7 +629,7 @@ test_unknown_commit_result (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   rs_response_to_ismaster (
+   rs_response_to_hello (
       server, 7, true /* primary */, false /* tags */, server, NULL);
 
    client =
@@ -1040,7 +1040,7 @@ test_get_transaction_opts (void)
 
    server = mock_server_new ();
    mock_server_run (server);
-   rs_response_to_ismaster (
+   rs_response_to_hello (
       server, 7, true /* primary */, false /* tags */, server, NULL);
 
    client =
@@ -1119,10 +1119,10 @@ test_max_commit_time_ms_is_reset (void *ctx)
    bson_error_t error;
    bool r;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_4_2,
-                                   true /* has primary */,
-                                   2 /* secondaries */,
-                                   0 /* arbiters */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_4_2,
+                                 true /* has primary */,
+                                 2 /* secondaries */,
+                                 0 /* arbiters */);
 
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));

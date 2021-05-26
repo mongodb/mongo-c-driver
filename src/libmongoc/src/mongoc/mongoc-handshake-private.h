@@ -124,11 +124,11 @@ typedef struct {
 
 void
 _mongoc_handshake_append_sasl_supported_mechs (const mongoc_uri_t *uri,
-                                               bson_t *ismaster);
+                                               bson_t *hello);
 
 void
 _mongoc_handshake_parse_sasl_supported_mechs (
-   const bson_t *ismaster,
+   const bson_t *hello,
    mongoc_handshake_sasl_supported_mechs_t *sasl_supported_mechs);
 
 BSON_END_DECLS

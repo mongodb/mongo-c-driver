@@ -52,7 +52,7 @@ A write concern timeout or write concern error is considered a failure.
 
 .. seealso::
 
-  | `MongoDB update command documentation <https://docs.mongodb.com/master/reference/command/update/>`_ for more information on the update options.
+  | `MongoDB update command documentation <https://docs.mongodb.com/manual/reference/command/update/>`_ for more information on the update options.
 
   | :symbol:`mongoc_collection_update_one`
 

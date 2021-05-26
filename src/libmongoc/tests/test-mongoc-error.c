@@ -74,7 +74,7 @@ _test_command_error (int32_t error_api_version)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -86,7 +86,7 @@ _test_command_error (int32_t error_api_version)
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'foo': 1}"), NULL, &reply, &error);
    request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
    mock_server_replies_simple (request,
                                "{'ok': 0, 'code': 42, 'errmsg': 'foo'}");
    ASSERT (!future_get_bool (future));
@@ -139,14 +139,14 @@ static void
 test_state_change_helper (uint32_t domain, bool expect_error)
 {
    bson_error_t error;
-   mongoc_server_err_t not_master_codes[] = {
-      MONGOC_SERVER_ERR_NOTMASTER,
-      MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK,
+   mongoc_server_err_t not_primary_codes[] = {
+      MONGOC_SERVER_ERR_NOTPRIMARY,
+      MONGOC_SERVER_ERR_NOTPRIMARYNOSECONDARYOK,
       MONGOC_SERVER_ERR_LEGACYNOTPRIMARY};
    mongoc_server_err_t node_is_recovering_codes[] = {
       MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN,
       MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE,
-      MONGOC_SERVER_ERR_NOTMASTERORSECONDARY,
+      MONGOC_SERVER_ERR_NOTPRIMARYORSECONDARY,
       MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN,
       MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS};
    mongoc_server_err_t shutdown_codes[] = {
@@ -159,10 +159,10 @@ test_state_change_helper (uint32_t domain, bool expect_error)
    memset (&error, 0, sizeof (bson_error_t));
    error.domain = domain;
 
-   for (i = 0; i < sizeof (not_master_codes) / sizeof (mongoc_server_err_t);
+   for (i = 0; i < sizeof (not_primary_codes) / sizeof (mongoc_server_err_t);
         i++) {
-      error.code = not_master_codes[i];
-      BSON_ASSERT (expect_error == _mongoc_error_is_not_master (&error));
+      error.code = not_primary_codes[i];
+      BSON_ASSERT (expect_error == _mongoc_error_is_not_primary (&error));
       BSON_ASSERT (!_mongoc_error_is_recovering (&error));
       BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
       BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
@@ -171,14 +171,14 @@ test_state_change_helper (uint32_t domain, bool expect_error)
         i < sizeof (node_is_recovering_codes) / sizeof (mongoc_server_err_t);
         i++) {
       error.code = node_is_recovering_codes[i];
-      BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+      BSON_ASSERT (!_mongoc_error_is_not_primary (&error));
       BSON_ASSERT (expect_error == _mongoc_error_is_recovering (&error));
       BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
    }
    for (i = 0; i < sizeof (shutdown_codes) / sizeof (mongoc_server_err_t);
         i++) {
       error.code = shutdown_codes[i];
-      BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+      BSON_ASSERT (!_mongoc_error_is_not_primary (&error));
       /* Shutdown errors are a subset of recovering errors. */
       BSON_ASSERT (expect_error == _mongoc_error_is_recovering (&error));
       BSON_ASSERT (expect_error == _mongoc_error_is_shutdown (&error));
@@ -188,42 +188,42 @@ test_state_change_helper (uint32_t domain, bool expect_error)
    /* Fallback code that's used when no code was returned */
    error.code = MONGOC_ERROR_QUERY_FAILURE;
    bson_strncpy (error.message, "... not master ...", sizeof (error.message));
-   BSON_ASSERT (expect_error == _mongoc_error_is_not_master (&error));
+   BSON_ASSERT (expect_error == _mongoc_error_is_not_primary (&error));
    BSON_ASSERT (!_mongoc_error_is_recovering (&error));
    BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
    BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
 
    bson_strncpy (
       error.message, "... node is recovering ...", sizeof (error.message));
-   BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (!_mongoc_error_is_not_primary (&error));
    BSON_ASSERT (expect_error == _mongoc_error_is_recovering (&error));
    BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
    BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
 
    bson_strncpy (
       error.message, "... not master or secondary ...", sizeof (error.message));
-   BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (!_mongoc_error_is_not_primary (&error));
    BSON_ASSERT (expect_error == _mongoc_error_is_recovering (&error));
    BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
    BSON_ASSERT (expect_error == _mongoc_error_is_state_change (&error));
 
    error.code = 123;
    bson_strncpy (error.message, "... not master ...", sizeof (error.message));
-   BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (!_mongoc_error_is_not_primary (&error));
    BSON_ASSERT (!_mongoc_error_is_recovering (&error));
    BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
    BSON_ASSERT (!_mongoc_error_is_state_change (&error));
 
    bson_strncpy (
       error.message, "... node is recovering ...", sizeof (error.message));
-   BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (!_mongoc_error_is_not_primary (&error));
    BSON_ASSERT (!_mongoc_error_is_recovering (&error));
    BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
    BSON_ASSERT (!_mongoc_error_is_state_change (&error));
 
    bson_strncpy (
       error.message, "... not master or secondary ...", sizeof (error.message));
-   BSON_ASSERT (!_mongoc_error_is_not_master (&error));
+   BSON_ASSERT (!_mongoc_error_is_not_primary (&error));
    BSON_ASSERT (!_mongoc_error_is_recovering (&error));
    BSON_ASSERT (!_mongoc_error_is_shutdown (&error));
    BSON_ASSERT (!_mongoc_error_is_state_change (&error));

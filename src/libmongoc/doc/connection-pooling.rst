@@ -33,7 +33,7 @@ To activate pooled mode, create a :symbol:`mongoc_client_pool_t`:
 
   mongoc_client_pool_t *pool = mongoc_client_pool_new (uri);
 
-When your program first calls :symbol:`mongoc_client_pool_pop`, the pool launches monitoring threads in the background. Monitoring threads independently connect to all servers in the connection string. As monitoring threads receive ismaster responses from the servers, they update the shared view of the server topology. Additional monitoring threads and connections are created as new servers are discovered. Monitoring threads are terminated when servers are removed from the shared view of the server topology.
+When your program first calls :symbol:`mongoc_client_pool_pop`, the pool launches monitoring threads in the background. Monitoring threads independently connect to all servers in the connection string. As monitoring threads receive hello responses from the servers, they update the shared view of the server topology. Additional monitoring threads and connections are created as new servers are discovered. Monitoring threads are terminated when servers are removed from the shared view of the server topology.
 
 Each thread that executes MongoDB operations must check out a client from the pool:
 

@@ -8,7 +8,7 @@ Heartbeat-started event
 Synopsis
 --------
 
-An event notification sent when the driver begins executing an "isMaster" command to check the status of a server.
+An event notification sent when the driver begins executing a "hello" command to check the status of a server.
 
 .. seealso::
 

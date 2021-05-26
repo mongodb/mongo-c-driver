@@ -425,7 +425,7 @@ test_mongoc_handshake_too_big (void)
    request_destroy (request);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
 
    mock_server_replies_simple (request, "{'ok': 1}");
    ASSERT (future_get_bool (future));
@@ -572,7 +572,7 @@ test_mongoc_handshake_cannot_send (void)
    client = mongoc_client_pool_pop (pool);
    request = mock_server_receives_legacy_hello (server, NULL);
 
-   /* Make sure the isMaster request DOESN'T have a handshake field: */
+   /* Make sure the hello request DOESN'T have a handshake field: */
    ASSERT (request);
    request_doc = request_get_doc (request, 0);
    ASSERT (request_doc);
@@ -587,7 +587,7 @@ test_mongoc_handshake_cannot_send (void)
    mock_server_hangs_up (request);
    request_destroy (request);
 
-   /* Make sure the isMaster request still DOESN'T have a handshake field
+   /* Make sure the hello request still DOESN'T have a handshake field
     * on subsequent heartbeats. */
    request = mock_server_receives_legacy_hello (server, NULL);
    ASSERT (request);

@@ -66,10 +66,10 @@ test_rs_failover (void)
    bson_error_t error;
    bson_t *b = tmp_bson ("{}");
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_OP_MSG,
-                                   true /* has primary */,
-                                   2 /* secondaries */,
-                                   0 /* arbiters */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_OP_MSG,
+                                 true /* has primary */,
+                                 2 /* secondaries */,
+                                 0 /* arbiters */);
 
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
@@ -92,7 +92,7 @@ test_rs_failover (void)
    mock_rs_stepdown (rs);
    mock_rs_elect (rs, 1 /* server id */);
 
-   /* insert receives "not master" from old primary, reselects and retries */
+   /* insert receives "not primary" from old primary, reselects and retries */
    future = future_collection_insert_one (
       collection, tmp_bson ("{}"), &opts, NULL, &error);
 
@@ -100,7 +100,7 @@ test_rs_failover (void)
       mock_rs_receives_msg (rs, 0, tmp_bson ("{'insert': 'collection'}"), b);
    BSON_ASSERT (mock_rs_request_is_to_secondary (rs, request));
    mock_server_replies_simple (
-      request, "{'ok': 0, 'code': 10107, 'errmsg': 'not master'}");
+      request, "{'ok': 0, 'code': 10107, 'errmsg': 'not primary'}");
    request_destroy (request);
 
    request =
@@ -518,7 +518,7 @@ test_unsupported_storage_engine_error (void)
                               "retryable writes. Please add retryWrites=false "
                               "to your connection string.";
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_RETRY_WRITES, true, 0, 0);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_RETRY_WRITES, true, 0, 0);
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
    session = mongoc_client_start_session (client, NULL, &error);

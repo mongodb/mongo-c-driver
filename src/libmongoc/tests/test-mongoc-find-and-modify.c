@@ -386,7 +386,7 @@ test_find_and_modify_opts (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -440,7 +440,7 @@ test_find_and_modify_opts_write_concern (void)
    w3 = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (w3, 3);
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FAM_WRITE_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FAM_WRITE_CONCERN);
    mock_server_run (server);
 
    client =
@@ -499,7 +499,7 @@ test_find_and_modify_collation (int wire)
    request_t *request;
    bson_t *collation;
 
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
 
    client =

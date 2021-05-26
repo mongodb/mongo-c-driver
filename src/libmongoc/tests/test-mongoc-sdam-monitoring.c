@@ -501,7 +501,7 @@ test_sdam_monitoring_cb (bson_t *test)
          bson_reinit (&context.events);
          context.n_events = 0;
       }
-      process_sdam_test_ismaster_responses (&phase, client->topology);
+      process_sdam_test_hello_responses (&phase, client->topology);
 
       /* parse out "outcome" and validate */
       BSON_ASSERT (bson_iter_init_find (&phase_field_iter, &phase, "outcome"));
@@ -706,11 +706,11 @@ _test_heartbeat_events (bool pooled, bool succeeded)
       client_set_heartbeat_event_callbacks (client, &context);
    }
 
-   /* trigger "ismaster" handshake */
+   /* trigger "hello" handshake */
    future = future_client_command_simple (
       client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
-   /* topology scanner calls ismaster once */
+   /* topology scanner calls hello once */
    request = mock_server_receives_legacy_hello (server, NULL);
 
    if (succeeded) {
@@ -843,7 +843,7 @@ _test_heartbeat_fails_dns (bool pooled)
       client_set_heartbeat_event_callbacks (client, &context);
    }
 
-   /* trigger "ismaster" handshake */
+   /* trigger "hello" handshake */
    r = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
@@ -912,7 +912,7 @@ duplicates_topology_changed (const mongoc_apm_topology_changed_t *event)
    counters->num_topology_description_changed_events++;
 }
 
-/* Test that duplicate ismaster responses do not trigger two server
+/* Test that duplicate hello responses do not trigger two server
  * description changed events or topology changed events */
 static void
 test_no_duplicates (void)
@@ -948,13 +948,13 @@ test_no_duplicates (void)
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &duplicates_counter);
    client = mongoc_client_pool_pop (pool);
 
-   /* Topology scanning thread starts, and sends an ismaster. */
+   /* Topology scanning thread starts, and sends a hello. */
    request = mock_server_receives_legacy_hello (server, NULL);
    mock_server_replies_simple (request, first_hello_response);
    request_destroy (request);
 
    /* Perform a ping, which creates a new connection, which performs the
-    * ismaster handshake before sending the ping command. */
+    * hello handshake before sending the ping command. */
    future = future_client_command_simple (client,
                                           "admin",
                                           tmp_bson ("{'ping': 1}"),
@@ -973,7 +973,7 @@ test_no_duplicates (void)
    ASSERT_CMPINT (
       duplicates_counter.num_server_description_changed_events, ==, 1);
    /* There should be two topology changed events. One for the initial topology
-    * (where the server is set to Unknown), and one for the first ismaster (but
+    * (where the server is set to Unknown), and one for the first hello (but
     * not the second) */
    ASSERT_CMPINT (
       duplicates_counter.num_topology_description_changed_events, ==, 2);

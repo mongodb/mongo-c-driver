@@ -42,7 +42,7 @@ test_client_cmd_options (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

@@ -747,8 +747,8 @@ query_flags_str (uint32_t flags)
             case MONGOC_QUERY_TAILABLE_CURSOR:
                bson_string_append (str, "TAILABLE");
                break;
-            case MONGOC_QUERY_SLAVE_OK:
-               bson_string_append (str, "SLAVE_OK");
+            case MONGOC_QUERY_SECONDARY_OK:
+               bson_string_append (str, "SECONDARY_OK");
                break;
             case MONGOC_QUERY_OPLOG_REPLAY:
                bson_string_append (str, "OPLOG_REPLAY");

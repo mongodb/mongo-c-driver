@@ -100,7 +100,7 @@ test_aggregate_inherit_collection (void)
    mongoc_write_concern_t *wc2;
    mongoc_write_concern_t *wc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX_STALENESS);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MAX_STALENESS);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -120,13 +120,13 @@ test_aggregate_inherit_collection (void)
 
    /* Uses the opts */
    cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_SLAVE_OK, pipeline, &opts, NULL);
+      collection, MONGOC_QUERY_SECONDARY_OK, pipeline, &opts, NULL);
    future = future_cursor_next (cursor, &doc);
 
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       " { 'aggregate' : 'collection',"
       "   'pipeline' : [ { '$out' : 'collection2' } ],"
       "   'cursor' : {  },"
@@ -152,13 +152,13 @@ test_aggregate_inherit_collection (void)
 
    /* Inherits from collection */
    cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_SLAVE_OK, pipeline, NULL, NULL);
+      collection, MONGOC_QUERY_SECONDARY_OK, pipeline, NULL, NULL);
    future = future_cursor_next (cursor, &doc);
 
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       " { 'aggregate' : 'collection',"
       "   'pipeline' : [ { '$out' : 'collection2' } ],"
       "   'cursor' : {  },"
@@ -175,13 +175,13 @@ test_aggregate_inherit_collection (void)
 
    /* Uses the opts, not default collection level */
    cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_SLAVE_OK, pipeline, &opts, NULL);
+      collection, MONGOC_QUERY_SECONDARY_OK, pipeline, &opts, NULL);
    future = future_cursor_next (cursor, &doc);
 
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       " { 'aggregate' : 'collection',"
       "   'pipeline' : [ { '$out' : 'collection2' } ],"
       "   'cursor' : {  },"
@@ -202,13 +202,13 @@ test_aggregate_inherit_collection (void)
       "pipeline", "[", "{", "$in", BCON_UTF8 ("collection2"), "}", "]");
 
    cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_SLAVE_OK, pipeline, NULL, NULL);
+      collection, MONGOC_QUERY_SECONDARY_OK, pipeline, NULL, NULL);
    future = future_cursor_next (cursor, &doc);
 
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       " { 'aggregate' : 'collection',"
       "   'pipeline' : [ { '$in' : 'collection2' } ],"
       "   'cursor' : {  },"
@@ -247,7 +247,7 @@ _batch_size_test (bson_t *pipeline,
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
-   mock_server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (mock_server);
 
    client = test_framework_client_new_from_uri (
@@ -984,7 +984,7 @@ test_insert_command_keys (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -2117,7 +2117,7 @@ test_count_read_pref (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'$query': {'count': 'collection'},"
       " '$readPreference': {'mode': 'secondary'}}");
 
@@ -2147,7 +2147,7 @@ test_count_read_concern (void)
    bson_t b;
 
    /* wire protocol version 4 */
-   server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -2163,7 +2163,7 @@ test_count_read_concern (void)
    request =
       mock_server_receives_command (server,
                                     "test",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{ 'count' : 'test', 'query' : {  } }");
 
    mock_server_replies_simple (request, "{ 'n' : 42, 'ok' : 1 } ");
@@ -2183,7 +2183,7 @@ test_count_read_concern (void)
    bson_destroy (&b);
    request = mock_server_receives_command (server,
                                            "test",
-                                           MONGOC_QUERY_SLAVE_OK,
+                                           MONGOC_QUERY_SECONDARY_OK,
                                            "{ 'count' : 'test', 'query' : {  "
                                            "}, 'readConcern': {'level': "
                                            "'majority'}}");
@@ -2207,7 +2207,7 @@ test_count_read_concern (void)
    request = mock_server_receives_command (
       server,
       "test",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{ 'count' : 'test', 'query' : {  }, 'readConcern': {'level': 'local'}}");
 
    mock_server_replies_simple (request, "{ 'n' : 44, 'ok' : 1 } ");
@@ -2228,7 +2228,7 @@ test_count_read_concern (void)
    bson_destroy (&b);
    request = mock_server_receives_command (server,
                                            "test",
-                                           MONGOC_QUERY_SLAVE_OK,
+                                           MONGOC_QUERY_SECONDARY_OK,
                                            "{ 'count' : 'test', 'query' : {  "
                                            "}, 'readConcern': {'level': "
                                            "'futureCompatible'}}");
@@ -2251,7 +2251,7 @@ test_count_read_concern (void)
    bson_destroy (&b);
    request = mock_server_receives_command (server,
                                            "test",
-                                           MONGOC_QUERY_SLAVE_OK,
+                                           MONGOC_QUERY_SECONDARY_OK,
                                            "{ 'count' : 'test', 'query' : {  "
                                            "}, 'readConcern': { '$exists': "
                                            "false }}");
@@ -2273,7 +2273,7 @@ test_count_read_concern (void)
    bson_destroy (&b);
    request = mock_server_receives_command (server,
                                            "test",
-                                           MONGOC_QUERY_SLAVE_OK,
+                                           MONGOC_QUERY_SECONDARY_OK,
                                            "{ 'count' : 'test', 'query' : {  "
                                            "}, 'readConcern': { '$exists': "
                                            "false }}");
@@ -2414,7 +2414,7 @@ test_count_with_opts (void)
    request_t *request;
    bson_error_t error;
 
-   /* use a mongos since we don't send SLAVE_OK to mongos by default */
+   /* use a mongos since we don't send SECONDARY_OK to mongos by default */
    server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
@@ -2422,7 +2422,7 @@ test_count_with_opts (void)
    collection = mongoc_client_get_collection (client, "db", "collection");
 
    future = future_collection_count_with_opts (collection,
-                                               MONGOC_QUERY_SLAVE_OK,
+                                               MONGOC_QUERY_SECONDARY_OK,
                                                NULL,
                                                0,
                                                0,
@@ -2431,7 +2431,7 @@ test_count_with_opts (void)
                                                &error);
 
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, "{'count': 'collection', 'opt': 1}");
+      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'count': 'collection', 'opt': 1}");
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -2454,7 +2454,7 @@ test_count_with_collation (int wire)
    request_t *request;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
 
    client =
@@ -2463,7 +2463,7 @@ test_count_with_collation (int wire)
 
    future = future_collection_count_with_opts (
       collection,
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       NULL,
       0,
       0,
@@ -2475,7 +2475,7 @@ test_count_with_collation (int wire)
       request = mock_server_receives_command (
          server,
          "db",
-         MONGOC_QUERY_SLAVE_OK,
+         MONGOC_QUERY_SECONDARY_OK,
          "{'count': 'collection', 'collation': {'locale': 'en'}}");
       mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
       ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -2523,7 +2523,7 @@ test_count_documents (void)
    const char *server_reply = "{'cursor': {'firstBatch': [{'n': 123}], '_id': "
                               "0, 'ns': 'db.coll'}, 'ok': 1}";
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -2615,7 +2615,7 @@ test_estimated_document_count (void)
    bson_t reply;
    const char *server_reply = "{'n': 123, 'ok': 1}";
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -3095,7 +3095,7 @@ test_aggregate_modern (void *data)
       return;
    }
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG - 1);
+   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -3115,7 +3115,7 @@ test_aggregate_modern (void *data)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'aggregate': 'collection',"
       " 'pipeline': [{'a': 1}],"
       " 'cursor': %s %s}",
@@ -3141,7 +3141,7 @@ test_aggregate_modern (void *data)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'getMore': 42,"
       "'collection': 'collection',"
       "'batchSize': %s}",
@@ -3182,10 +3182,10 @@ test_aggregate_w_server_id (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN,
-                                   true /* has primary */,
-                                   1 /* secondary   */,
-                                   0 /* arbiters    */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN,
+                                 true /* has primary */,
+                                 1 /* secondary   */,
+                                 0 /* arbiters    */);
 
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
@@ -3199,7 +3199,7 @@ test_aggregate_w_server_id (void)
    future = future_cursor_next (cursor, &doc);
    request = mock_rs_receives_command (rs,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'aggregate': 'collection',"
                                        " 'cursor': {},"
                                        " 'serverId': {'$exists': false}}");
@@ -3245,7 +3245,7 @@ test_aggregate_w_server_id_sharded (void)
 
    future = future_cursor_next (cursor, &doc);
 
-   /* does NOT set slave ok, since this is a sharded topology */
+   /* does NOT set secondaryOk, since this is a sharded topology */
    request = mock_server_receives_command (
       server,
       "db",
@@ -3332,7 +3332,7 @@ test_aggregate_is_sent_to_primary_w_dollar_out (void *ctx)
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_SLAVE_OK, pipeline, NULL, read_prefs);
+      collection, MONGOC_QUERY_SECONDARY_OK, pipeline, NULL, read_prefs);
 
    ASSERT (cursor);
    BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
@@ -3343,7 +3343,7 @@ test_aggregate_is_sent_to_primary_w_dollar_out (void *ctx)
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_SLAVE_OK, pipeline, NULL, read_prefs);
+      collection, MONGOC_QUERY_SECONDARY_OK, pipeline, NULL, read_prefs);
 
    ASSERT (cursor);
    BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
@@ -3609,7 +3609,7 @@ test_stats_read_pref (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'$query': {'collStats': 'collection'},"
       " '$readPreference': {'mode': 'secondary'}}");
 
@@ -4092,7 +4092,7 @@ test_find_limit (void)
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -4112,7 +4112,7 @@ test_find_limit (void)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_query (server,
                                          "test.test",
-                                         MONGOC_QUERY_SLAVE_OK,
+                                         MONGOC_QUERY_SECONDARY_OK,
                                          0 /* skip */,
                                          2 /* n_return */,
                                          "{}",
@@ -4134,7 +4134,7 @@ test_find_limit (void)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_query (server,
                                          "test.test",
-                                         MONGOC_QUERY_SLAVE_OK,
+                                         MONGOC_QUERY_SECONDARY_OK,
                                          0 /* skip */,
                                          2 /* n_return */,
                                          "{}",
@@ -4164,7 +4164,7 @@ test_find_batch_size (void)
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -4184,7 +4184,7 @@ test_find_batch_size (void)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_query (server,
                                          "test.test",
-                                         MONGOC_QUERY_SLAVE_OK,
+                                         MONGOC_QUERY_SECONDARY_OK,
                                          0 /* skip */,
                                          2 /* n_return */,
                                          "{}",
@@ -4206,7 +4206,7 @@ test_find_batch_size (void)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_query (server,
                                          "test.test",
-                                         MONGOC_QUERY_SLAVE_OK,
+                                         MONGOC_QUERY_SECONDARY_OK,
                                          0 /* skip */,
                                          2 /* n_return */,
                                          "{}",
@@ -4241,7 +4241,7 @@ test_command_fq (void *context)
 
    cursor = mongoc_client_command (client,
                                    "sometest.$cmd",
-                                   MONGOC_QUERY_SLAVE_OK,
+                                   MONGOC_QUERY_SECONDARY_OK,
                                    0,
                                    -1,
                                    0,
@@ -4448,7 +4448,7 @@ test_find_indexes_err (void)
    mongoc_cursor_t *cursor;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -4457,7 +4457,7 @@ test_find_indexes_err (void)
 
    future = future_collection_find_indexes_with_opts (collection, NULL);
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, "{'listIndexes': 'collection'}");
+      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'listIndexes': 'collection'}");
 
    mock_server_replies_simple (request,
                                "{'ok': 0, 'code': 1234567, 'errmsg': 'foo'}");
@@ -4515,7 +4515,7 @@ test_find_read_concern (void)
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
 
    client =
@@ -4524,7 +4524,7 @@ test_find_read_concern (void)
 
    /* No read_concern set - test find and find_with_opts */
    cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     0 /* skip */,
                                     0 /* limit */,
                                     0 /* batch_size */,
@@ -4536,7 +4536,7 @@ test_find_read_concern (void)
    request =
       mock_server_receives_command (server,
                                     "test",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'find' : 'test', 'filter' : {  } }");
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -4554,7 +4554,7 @@ test_find_read_concern (void)
    mongoc_read_concern_set_level (rc, MONGOC_READ_CONCERN_LEVEL_LOCAL);
    mongoc_collection_set_read_concern (collection, rc);
    cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     0 /* skip */,
                                     0 /* limit */,
                                     0 /* batch_size */,
@@ -4565,7 +4565,7 @@ test_find_read_concern (void)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_command (server,
                                            "test",
-                                           MONGOC_QUERY_SLAVE_OK,
+                                           MONGOC_QUERY_SECONDARY_OK,
                                            "{"
                                            "  'find' : 'test',"
                                            "  'filter' : {  },"
@@ -4590,7 +4590,7 @@ test_find_read_concern (void)
    mongoc_read_concern_set_level (rc, "random");
    mongoc_collection_set_read_concern (collection, rc);
    cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     0 /* skip */,
                                     0 /* limit */,
                                     0 /* batch_size */,
@@ -4601,7 +4601,7 @@ test_find_read_concern (void)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_command (server,
                                            "test",
-                                           MONGOC_QUERY_SLAVE_OK,
+                                           MONGOC_QUERY_SECONDARY_OK,
                                            "{"
                                            "  'find' : 'test',"
                                            "  'filter' : {  },"
@@ -4625,7 +4625,7 @@ test_find_read_concern (void)
    rc = mongoc_read_concern_new ();
    mongoc_collection_set_read_concern (collection, rc);
    cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     0 /* skip */,
                                     0 /* limit */,
                                     0 /* batch_size */,
@@ -4637,7 +4637,7 @@ test_find_read_concern (void)
    request =
       mock_server_receives_command (server,
                                     "test",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{"
                                     "  'find' : 'test',"
                                     "  'filter' : {  },"
@@ -4660,7 +4660,7 @@ test_find_read_concern (void)
    mongoc_read_concern_set_level (rc, NULL);
    mongoc_collection_set_read_concern (collection, rc);
    cursor = mongoc_collection_find (collection,
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     0 /* skip */,
                                     0 /* limit */,
                                     0 /* batch_size */,
@@ -4672,7 +4672,7 @@ test_find_read_concern (void)
    request =
       mock_server_receives_command (server,
                                     "test",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{"
                                     "  'find' : 'test',"
                                     "  'filter' : {  },"
@@ -4806,7 +4806,7 @@ test_aggregate_secondary_sharded (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'$query': {'aggregate': 'collection', 'pipeline': []},"
       " '$readPreference': {'mode': 'secondary'}}");
 
@@ -4842,7 +4842,7 @@ test_aggregate_read_concern (void)
    mongoc_cursor_t *cursor;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -4858,7 +4858,7 @@ test_aggregate_read_concern (void)
    request =
       mock_server_receives_command (server,
                                     "db",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{"
                                     "  'aggregate' : 'collection',"
                                     "  'pipeline' : [{"
@@ -4898,7 +4898,7 @@ test_aggregate_read_concern (void)
    request =
       mock_server_receives_command (server,
                                     "db",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{"
                                     "  'aggregate' : 'collection',"
                                     "  'pipeline' : [{"
@@ -4944,7 +4944,7 @@ test_aggregate_with_collation (int wire)
    const bson_t *doc;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -4963,7 +4963,7 @@ test_aggregate_with_collation (int wire)
       request =
          mock_server_receives_command (server,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'aggregate': 'collection',"
                                        " 'pipeline': [{'a': 1}],"
                                        " 'collation': {'locale': 'en'}}");
@@ -5027,7 +5027,7 @@ test_index_with_collation (int wire)
    future_t *future;
 
    /* wire protocol version 0 */
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -5972,7 +5972,7 @@ _test_delete_collation (int wire, bool is_multi)
       is_multi ? future_collection_delete_many : future_collection_delete_one;
    char *expected_cmd;
 
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
 
    client =
@@ -6054,7 +6054,7 @@ _test_update_or_replace_with_collation (int wire,
                     : future_collection_update_one;
    }
 
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
 
    client =
@@ -6129,7 +6129,7 @@ _test_update_hint (int wire, bool is_replace, bool is_multi, const char *hint)
                     : future_collection_update_one;
    }
 
-   server = mock_server_with_autoismaster (wire);
+   server = mock_server_with_auto_hello (wire);
    mock_server_run (server);
 
    client =

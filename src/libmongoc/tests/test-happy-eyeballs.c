@@ -244,7 +244,7 @@ _testcase_setup (he_testcase_t *testcase)
       opts.bind_addr = (struct sockaddr_in *) &ipv6_addr;
    }
 
-   mock_server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_set_bind_opts (mock_server, &opts);
    mock_server_run (mock_server);
 

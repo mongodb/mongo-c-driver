@@ -120,7 +120,7 @@ struct _mongoc_cursor_t {
    uint32_t client_generation;
 
    uint32_t server_id;
-   bool slave_ok;
+   bool secondary_ok;
 
    mongoc_cursor_state_t state;
    bool in_exhaust;
@@ -160,7 +160,7 @@ _mongoc_cursor_get_opt_bool (const mongoc_cursor_t *cursor, const char *option);
 void
 _mongoc_cursor_flags_to_opts (mongoc_query_flags_t qflags,
                               bson_t *opts,
-                              bool *slave_ok);
+                              bool *secondary_ok);
 bool
 _mongoc_cursor_translate_dollar_query_opts (const bson_t *query,
                                             bson_t *opts,

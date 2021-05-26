@@ -19,7 +19,7 @@ Parameters
 Description
 -----------
 
-Get the last point in time when we processed an ismaster for this server, or, if we have not processed any ismasters since creating the description, the time the server description was initialized.
+Get the last point in time when we processed a hello for this server, or, if we have not processed any hellos since creating the description, the time the server description was initialized.
 
 Returns
 -------

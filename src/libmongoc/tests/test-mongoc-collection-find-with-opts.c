@@ -58,7 +58,7 @@ _test_collection_op_query_or_find_command (
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (max_wire_version);
+   server = mock_server_with_auto_hello (max_wire_version);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -96,8 +96,8 @@ _check_op_query (mock_server_t *server,
    const uint8_t *data;
    bson_t query;
 
-   /* Server Selection Spec: all queries to standalone set slaveOk. */
-   flags = test_data->expected_flags | MONGOC_QUERY_SLAVE_OK;
+   /* Server Selection Spec: all queries to standalone set secondaryOk. */
+   flags = test_data->expected_flags | MONGOC_QUERY_SECONDARY_OK;
 
    request =
       mock_server_receives_query (server,
@@ -138,13 +138,13 @@ static request_t *
 _check_find_command (mock_server_t *server,
                      test_collection_find_with_opts_t *test_data)
 {
-   /* Server Selection Spec: all queries to standalone set slaveOk.
+   /* Server Selection Spec: all queries to standalone set secondaryOk.
     *
     * Find, getMore And killCursors Commands Spec: "When sending a find command
-    * rather than a legacy OP_QUERY find only the slaveOk flag is honored".
+    * rather than a legacy OP_QUERY find only the secondaryOk flag is honored".
     */
    return mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, test_data->expected_find_command);
+      server, "db", MONGOC_QUERY_SECONDARY_OK, test_data->expected_find_command);
 }
 
 
@@ -538,7 +538,7 @@ test_query_flags (void)
       const char *json_fragment;
    } flag_and_name_t;
 
-   /* slaveok is not supported as an option, exhaust is tested separately */
+   /* secondaryOk is not supported as an option, exhaust is tested separately */
    flag_and_name_t flags_and_frags[] = {
       {MONGOC_QUERY_TAILABLE_CURSOR, "'tailable': true"},
       {MONGOC_QUERY_OPLOG_REPLAY, "'oplogReplay': true"},
@@ -577,7 +577,7 @@ test_exhaust (void)
    const bson_t *doc;
    bson_error_t error;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -593,7 +593,7 @@ test_exhaust (void)
     */
    request = mock_server_receives_request (server);
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SLAVE_OK | MONGOC_QUERY_EXHAUST,
+                                MONGOC_QUERY_SECONDARY_OK | MONGOC_QUERY_EXHAUST,
                                 0,
                                 0,
                                 "db.collection",
@@ -631,7 +631,7 @@ test_getmore_cmd_await (void)
    /*
     * "find" command
     */
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -643,7 +643,7 @@ test_getmore_cmd_await (void)
    request =
       mock_server_receives_command (server,
                                     "db",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'find': 'collection',"
                                     " 'filter': {},"
                                     " 'maxTimeMS': {'$exists': false},"
@@ -668,7 +668,7 @@ test_getmore_cmd_await (void)
    request =
       mock_server_receives_command (server,
                                     "db",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'getMore': {'$numberLong': '123'},"
                                     " 'collection': 'collection',"
                                     " 'maxAwaitTimeMS': {'$exists': false},"
@@ -705,10 +705,10 @@ test_find_w_server_id (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN /* wire version */,
-                                   true /* has primary  */,
-                                   1 /* secondary    */,
-                                   0 /* arbiters     */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN /* wire version */,
+                                 true /* has primary  */,
+                                 1 /* secondary    */,
+                                 0 /* arbiters     */);
 
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
@@ -721,7 +721,7 @@ test_find_w_server_id (void)
 
    future = future_cursor_next (cursor, &doc);
    request = mock_rs_receives_query (
-      rs, "db.collection", MONGOC_QUERY_SLAVE_OK, 0, 0, "{}", NULL);
+      rs, "db.collection", MONGOC_QUERY_SECONDARY_OK, 0, 0, "{}", NULL);
 
    ASSERT (mock_rs_request_is_to_secondary (rs, request));
    mock_rs_replies_simple (request, "{}");
@@ -749,10 +749,10 @@ test_find_cmd_w_server_id (void)
    request_t *request;
    bson_error_t error;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_READ_CONCERN,
-                                   true /* has primary  */,
-                                   1 /* secondary    */,
-                                   0 /* arbiters     */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_READ_CONCERN,
+                                 true /* has primary  */,
+                                 1 /* secondary    */,
+                                 0 /* arbiters     */);
 
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
@@ -768,7 +768,7 @@ test_find_cmd_w_server_id (void)
    /* recognized that wire version is recent enough for readConcern */
    request = mock_rs_receives_command (rs,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'find': 'collection', "
                                        " 'filter': {},"
                                        " 'readConcern': {'level': 'local'},"
@@ -818,7 +818,7 @@ test_find_w_server_id_sharded (void)
 
    future = future_cursor_next (cursor, &doc);
 
-   /* does NOT set slave ok, since this is a sharded topology */
+   /* does NOT set secondaryOk, since this is a sharded topology */
    request = mock_server_receives_query (
       server, "db.collection", MONGOC_QUERY_NONE, 0, 0, "{}", NULL);
 
@@ -860,7 +860,7 @@ test_find_cmd_w_server_id_sharded (void)
    future = future_cursor_next (cursor, &doc);
 
    /* recognized that wire version is recent enough for readConcern */
-   /* does NOT set slave ok, since this is a sharded topology */
+   /* does NOT set secondaryOk, since this is a sharded topology */
    request = mock_server_receives_command (server,
                                            "db",
                                            MONGOC_QUERY_NONE,

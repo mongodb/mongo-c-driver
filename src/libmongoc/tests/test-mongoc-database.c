@@ -28,7 +28,7 @@ test_aggregate_write_concern (void)
 
    /* The newest wire version that is still too old to
       support aggregate with writeConcern and $out/$merge */
-   server = mock_server_with_autoismaster (WIRE_VERSION_READ_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_READ_CONCERN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -97,7 +97,7 @@ test_aggregate_inherit_database (void)
    mongoc_write_concern_t *wc2;
    mongoc_write_concern_t *wc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -501,7 +501,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       request = mock_server_receives_command (
          server,
          "db",
-         MONGOC_QUERY_SLAVE_OK,
+         MONGOC_QUERY_SECONDARY_OK,
          "{'$query': {'foo': 1},"
          " '$readPreference': {'mode': 'secondary'}}");
       mock_server_replies_simple (request, "{'ok': 1}");
@@ -529,7 +529,7 @@ _test_db_command_read_prefs (bool simple, bool pooled)
       request = mock_server_receives_command (
          server,
          "db",
-         MONGOC_QUERY_SLAVE_OK,
+         MONGOC_QUERY_SECONDARY_OK,
          "{'$query': {'foo': 1},"
          " '$readPreference': {'mode': 'secondary'}}");
 
@@ -935,7 +935,7 @@ _test_get_collection_info_getmore ()
    request_t *request;
    char **names;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -946,7 +946,7 @@ _test_get_collection_info_getmore ()
    request =
       mock_server_receives_command (server,
                                     "db",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'listCollections': 1, 'nameOnly': true}");
 
    mock_server_replies_simple (request,
@@ -959,7 +959,7 @@ _test_get_collection_info_getmore ()
    request =
       mock_server_receives_command (server,
                                     "db",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'getMore': {'$numberLong': '123'},"
                                     " 'collection': '$cmd.listCollections'}");
 
@@ -1172,7 +1172,7 @@ test_get_collection_names_error (void)
    request =
       mock_server_receives_command (server,
                                     "test",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'listCollections': 1, 'nameOnly': true}");
    mock_server_hangs_up (request);
    names = future_get_char_ptr_ptr (future);

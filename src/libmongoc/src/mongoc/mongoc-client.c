@@ -2026,7 +2026,7 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
                                            error);
 
       if (server_stream && server_stream->sd->type != MONGOC_SERVER_MONGOS) {
-         parts.user_query_flags |= MONGOC_QUERY_SLAVE_OK;
+         parts.user_query_flags |= MONGOC_QUERY_SECONDARY_OK;
       }
    } else if (parts.is_write_command) {
       server_stream =
@@ -2510,7 +2510,7 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
 
    _mongoc_client_prepare_killcursors_command (cursor_id, collection, &command);
    mongoc_cmd_parts_init (
-      &parts, cluster->client, db, MONGOC_QUERY_SLAVE_OK, &command);
+      &parts, cluster->client, db, MONGOC_QUERY_SECONDARY_OK, &command);
    parts.assembled.operation_id = ++cluster->operation_id;
    mongoc_cmd_parts_set_session (&parts, cs);
 
@@ -3007,7 +3007,7 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
       /* end sessions in chunks */
       while (_mongoc_topology_end_sessions_cmd (t, &cmd)) {
          mongoc_cmd_parts_init (
-            &parts, client, "admin", MONGOC_QUERY_SLAVE_OK, &cmd);
+            &parts, client, "admin", MONGOC_QUERY_SECONDARY_OK, &cmd);
          parts.assembled.operation_id = ++cluster->operation_id;
          parts.prohibit_lsid = true;
 

@@ -203,7 +203,7 @@ test_getmore_iteration_runner (void *ctx)
 }
 
 static void
-test_not_master_keep_pool (mongoc_client_t *client)
+test_not_primary_keep_pool (mongoc_client_t *client)
 {
    mongoc_database_t *db;
    mongoc_collection_t *coll;
@@ -257,18 +257,18 @@ test_not_master_keep_pool (mongoc_client_t *client)
 }
 
 static void
-test_not_master_keep_pool_runner (void *ctx)
+test_not_primary_keep_pool_runner (void *ctx)
 {
    /* Only run on 4.2 and higher */
    if (!test_framework_max_wire_version_at_least (8)) {
       return;
    }
 
-   _run_test_single_and_pooled (test_not_master_keep_pool);
+   _run_test_single_and_pooled (test_not_primary_keep_pool);
 }
 
 static void
-test_not_master_reset_pool (mongoc_client_t *client)
+test_not_primary_reset_pool (mongoc_client_t *client)
 {
    mongoc_database_t *db;
    mongoc_collection_t *coll;
@@ -325,7 +325,7 @@ test_not_master_reset_pool (mongoc_client_t *client)
 }
 
 static void
-test_not_master_reset_pool_runner (void *ctx)
+test_not_primary_reset_pool_runner (void *ctx)
 {
    int64_t max_wire_version;
 
@@ -335,7 +335,7 @@ test_not_master_reset_pool_runner (void *ctx)
       return;
    }
 
-   _run_test_single_and_pooled (test_not_master_reset_pool);
+   _run_test_single_and_pooled (test_not_primary_reset_pool);
 }
 
 static void
@@ -486,16 +486,16 @@ test_primary_stepdown_install (TestSuite *suite)
                       test_framework_skip_if_not_replset);
 
    TestSuite_AddFull (suite,
-                      "/Stepdown/not_master_keep",
-                      test_not_master_keep_pool_runner,
+                      "/Stepdown/not_primary_keep",
+                      test_not_primary_keep_pool_runner,
                       NULL,
                       NULL,
                       test_framework_skip_if_auth,
                       test_framework_skip_if_not_replset);
 
    TestSuite_AddFull (suite,
-                      "/Stepdown/not_master_reset",
-                      test_not_master_reset_pool_runner,
+                      "/Stepdown/not_primary_reset",
+                      test_not_primary_reset_pool_runner,
                       NULL,
                       NULL,
                       test_framework_skip_if_auth,

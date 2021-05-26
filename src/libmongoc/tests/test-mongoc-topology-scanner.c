@@ -75,7 +75,7 @@ _test_topology_scanner (bool with_ssl)
 
    for (i = 0; i < NSERVERS; i++) {
       /* use max wire versions just to distinguish among responses */
-      servers[i] = mock_server_with_autoismaster (i + WIRE_VERSION_MIN);
+      servers[i] = mock_server_with_auto_hello (i + WIRE_VERSION_MIN);
       mock_server_set_rand_delay (servers[i], true);
 
 #ifdef MONGOC_ENABLE_SSL
@@ -380,10 +380,10 @@ test_topology_scanner_blocking_initiator (void)
    initiator_data_t data;
    bson_error_t error;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN, /* wire version   */
-                                   true,             /* has primary    */
-                                   1,                /* n_secondaries  */
-                                   0 /* n_arbiters     */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN, /* wire version   */
+                                 true,             /* has primary    */
+                                 1,                /* n_secondaries  */
+                                 0 /* n_arbiters     */);
 
    mock_rs_run (rs);
    uri = mongoc_uri_copy (mock_rs_get_uri (rs));
@@ -445,7 +445,7 @@ _mock_server_listening_on (char *server_bind_to)
       fprintf (stderr, "bad value of server_bind_to=%s\n", server_bind_to);
       ASSERT (false);
    }
-   mock_server = mock_server_with_autoismaster (WIRE_VERSION_OP_MSG);
+   mock_server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG);
    mock_server_set_bind_opts (mock_server, &opts);
    mock_server_run (mock_server);
    return mock_server;
@@ -594,7 +594,7 @@ test_topology_retired_fails_to_initiate (void)
    mongoc_async_cmd_t *acmd;
    mongoc_host_list_t host_list;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
 
    scanner = mongoc_topology_scanner_new (

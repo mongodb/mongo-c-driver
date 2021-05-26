@@ -368,7 +368,7 @@ mongoc_collection_find (mongoc_collection_t *collection,       /* IN */
    bson_t unwrapped;
    bson_error_t error = {0};
    bson_t opts;
-   bool slave_ok;
+   bool secondary_ok;
    mongoc_cursor_t *cursor;
    BSON_ASSERT_PARAM (collection);
    BSON_ASSERT_PARAM (query);
@@ -376,7 +376,7 @@ mongoc_collection_find (mongoc_collection_t *collection,       /* IN */
    bson_clear (&collection->gle);
 
    bson_init (&opts);
-   _mongoc_cursor_flags_to_opts (flags, &opts, &slave_ok);
+   _mongoc_cursor_flags_to_opts (flags, &opts, &secondary_ok);
    /* check if the query is wrapped in $query */
    has_unwrapped = _mongoc_cursor_translate_dollar_query_opts (
       query, &opts, &unwrapped, &error);

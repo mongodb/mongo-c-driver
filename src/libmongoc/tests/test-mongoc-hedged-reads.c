@@ -56,7 +56,7 @@ test_mongos_hedged_reads_read_pref (void)
    request =
       mock_server_receives_command (server,
                                     "db",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'$readPreference': { '$exists': false }}",
                                     NULL);
 
@@ -78,7 +78,7 @@ test_mongos_hedged_reads_read_pref (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'$readPreference': "
       " {'mode': 'secondaryPreferred', 'hedge': {'enabled': true}}}",
       NULL);

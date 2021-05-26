@@ -63,10 +63,10 @@ struct _mongoc_server_monitor_t {
       bool cancel_requested;
    } shared;
 
-   /* Default time to sleep between ismaster checks (reduced when a scan is
+   /* Default time to sleep between hello checks (reduced when a scan is
     * requested) */
    uint64_t heartbeat_frequency_ms;
-   /* The minimum time to sleep between ismaster checks. */
+   /* The minimum time to sleep between hello checks. */
    uint64_t min_heartbeat_frequency_ms;
    int64_t connect_timeout_ms;
    bool use_tls;
@@ -246,7 +246,7 @@ _server_monitor_send_and_recv_opquery (mongoc_server_monitor_t *server_monitor,
    rpc.header.request_id = server_monitor->request_id++;
    rpc.header.response_to = 0;
    rpc.header.opcode = MONGOC_OPCODE_QUERY;
-   rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
+   rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
    rpc.query.collection = "admin.$cmd";
    rpc.query.skip = 0;
    rpc.query.n_return = -1;
@@ -398,7 +398,7 @@ _server_monitor_poll_with_interrupt (mongoc_server_monitor_t *server_monitor,
                                      bson_error_t *error)
 {
    /* How many milliseconds we should poll for on each tick.
-    * On every tick, check whether the awaitable ismaster was cancelled. */
+    * On every tick, check whether the awaitable hello was cancelled. */
    const int32_t monitor_tick_ms = MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS;
    int64_t timeleft_ms;
 
@@ -592,7 +592,7 @@ fail:
    return ret;
 }
 
-/* Send and receive an awaitable ismaster.
+/* Send and receive an awaitable hello.
  *
  * Called only from server monitor thread.
  * May lock server monitor mutex in functions that are called.
@@ -727,7 +727,7 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
    return server_monitor;
 }
 
-/* Creates a stream and performs the initial ismaster handshake.
+/* Creates a stream and performs the initial hello handshake.
  *
  * Called only by server monitor thread.
  * Returns true if both connection and handshake succeeds.
@@ -797,17 +797,17 @@ fail:
    RETURN (ret);
 }
 
-/* Perform an ismaster check of a server.
+/* Perform a hello check of a server.
  *
  * Called only by server monitor thread.
  * Caller must not hold any locks.
  * May lock server monitor mutex. May lock topology mutex.
  * Upon network error, the returned server description will contain the error,
- * but no ismaster reply.
- * Upon ismaster cancellation, cancelled will be true, and the returned server
- * description will not contain an error or ismaster reply.
+ * but no hello reply.
+ * Upon hello cancellation, cancelled will be true, and the returned server
+ * description will not contain an error or hello reply.
  * Upon command error ("ok":0 reply), the returned server description have the
- * ismaster reply and error set.
+ * hello reply and error set.
  * Returns a new server description that the caller must destroy.
  */
 mongoc_server_description_t *
@@ -891,7 +891,7 @@ exit:
 
       mongoc_server_description_handle_hello (
          description, &hello_response, rtt_ms, NULL);
-      /* If the ismaster reply could not be parsed, consider this a command
+      /* If the hello reply could not be parsed, consider this a command
        * error. */
       if (description->error.code) {
          MONITOR_LOG_ERROR (server_monitor,
@@ -914,7 +914,7 @@ exit:
       _server_monitor_heartbeat_failed (
          server_monitor, &description->error, duration_us, awaited);
    } else {
-      /* The ismaster reply had "ok":0 or a network error occurred. */
+      /* The hello reply had "ok":0 or a network error occurred. */
       MONITOR_LOG_ERROR (server_monitor,
                          "command or network error occurred: %s",
                          error.message);
@@ -956,7 +956,7 @@ mongoc_server_monitor_request_scan (mongoc_server_monitor_t *server_monitor)
    bson_mutex_unlock (&server_monitor->shared.mutex);
 }
 
-/* Request cancellation of an in progress awaitable ismaster.
+/* Request cancellation of an in progress awaitable hello.
  *
  * Called from app threads on network errors and during shutdown.
  * Locks server monitor mutex.
@@ -1218,7 +1218,7 @@ mongoc_server_monitor_request_shutdown (mongoc_server_monitor_t *server_monitor)
    }
    mongoc_cond_signal (&server_monitor->shared.cond);
    bson_mutex_unlock (&server_monitor->shared.mutex);
-   /* Cancel an in-progress ismaster check. */
+   /* Cancel an in-progress hello check. */
    if (!off) {
       mongoc_server_monitor_request_cancel (server_monitor);
    }

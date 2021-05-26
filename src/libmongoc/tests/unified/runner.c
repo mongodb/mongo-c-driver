@@ -439,15 +439,15 @@ is_replset (bson_t *hello_reply)
 }
 
 static bool
-is_sharded (bson_t *ismaster_reply)
+is_sharded (bson_t *hello_reply)
 {
    const char *val;
-   if (!bson_has_field (ismaster_reply, "msg")) {
+   if (!bson_has_field (hello_reply, "msg")) {
       return false;
    }
 
 
-   val = bson_lookup_utf8 (ismaster_reply, "msg");
+   val = bson_lookup_utf8 (hello_reply, "msg");
    if (0 == strcmp (val, "isdbgrid")) {
       return true;
    }
