@@ -219,17 +219,17 @@ _mongoc_topology_scanner_add_speculative_authentication (
 
 void
 _mongoc_topology_scanner_parse_speculative_authentication (
-   const bson_t *ismaster, bson_t *speculative_authenticate)
+   const bson_t *hello, bson_t *speculative_authenticate)
 {
    bson_iter_t iter;
    uint32_t data_len;
    const uint8_t *data;
    bson_t auth_response;
 
-   BSON_ASSERT (ismaster);
+   BSON_ASSERT (hello);
    BSON_ASSERT (speculative_authenticate);
 
-   if (!bson_iter_init_find (&iter, ismaster, "speculativeAuthenticate")) {
+   if (!bson_iter_init_find (&iter, hello, "speculativeAuthenticate")) {
       return;
    }
 
@@ -286,8 +286,8 @@ _mongoc_topology_scanner_get_hello_cmd (mongoc_topology_scanner_t *ts)
 
 /* Caller must lock topology->mutex to protect hello_cmd_with_handshake. This
  * is called at the start of the scan in _mongoc_topology_run_background, when a
- * node is added in _mongoc_topology_reconcile_add_nodes, or when running an
- * ismaster directly on a node in _mongoc_stream_run_hello. */
+ * node is added in _mongoc_topology_reconcile_add_nodes, or when running a
+ * hello directly on a node in _mongoc_stream_run_hello. */
 const bson_t *
 _mongoc_topology_scanner_get_handshake_cmd (mongoc_topology_scanner_t *ts)
 {
@@ -718,7 +718,7 @@ _async_error_or_timeout (mongoc_async_cmd_t *acmd,
  *-----------------------------------------------------------------------
  *
  * This is the callback passed to async_cmd when we're running
- * ismasters from within the topology monitor.
+ * hellos from within the topology monitor.
  *
  *-----------------------------------------------------------------------
  */

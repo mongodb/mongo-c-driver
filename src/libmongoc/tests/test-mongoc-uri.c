@@ -173,25 +173,6 @@ test_mongoc_uri_new (void)
    ASSERT (!bson_iter_next (&iter));
    mongoc_uri_destroy (uri);
 
-   uri = mongoc_uri_new ("mongodb://localhost/a?" MONGOC_URI_SLAVEOK
-                         "=true&" MONGOC_URI_TLS "=false&" MONGOC_URI_JOURNAL
-                         "=true");
-   options = mongoc_uri_get_options (uri);
-   ASSERT (options);
-   ASSERT_CMPINT (bson_count_keys (options), ==, 3);
-   ASSERT (bson_iter_init (&iter, options));
-   ASSERT (bson_iter_find_case (&iter, "" MONGOC_URI_SLAVEOK ""));
-   ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
-   ASSERT (bson_iter_bool (&iter));
-   ASSERT (bson_iter_find_case (&iter, MONGOC_URI_TLS));
-   ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
-   ASSERT (!bson_iter_bool (&iter));
-   ASSERT (bson_iter_find_case (&iter, MONGOC_URI_JOURNAL));
-   ASSERT (BSON_ITER_HOLDS_BOOL (&iter));
-   ASSERT (bson_iter_bool (&iter));
-   ASSERT (!bson_iter_next (&iter));
-   mongoc_uri_destroy (uri);
-
    uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_SAFE
                          "=false&" MONGOC_URI_JOURNAL "=false");
    options = mongoc_uri_get_options (uri);
@@ -1100,14 +1081,6 @@ test_mongoc_uri_read_prefs (void)
 
    const read_prefs_test tests[] = {
       {"mongodb://localhost/", true, MONGOC_READ_PRIMARY, NULL},
-      {"mongodb://localhost/?" MONGOC_URI_SLAVEOK "=false",
-       true,
-       MONGOC_READ_PRIMARY,
-       NULL},
-      {"mongodb://localhost/?" MONGOC_URI_SLAVEOK "=true",
-       true,
-       MONGOC_READ_SECONDARY_PREFERRED,
-       NULL},
       {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE "=primary",
        true,
        MONGOC_READ_PRIMARY,
@@ -1128,13 +1101,6 @@ test_mongoc_uri_read_prefs (void)
        true,
        MONGOC_READ_NEAREST,
        NULL},
-      /* MONGOC_URI_READPREFERENCE should take priority over "
-         MONGOC_URI_SLAVEOK " */
-      {"mongodb://localhost/?" MONGOC_URI_SLAVEOK
-       "=false&" MONGOC_URI_READPREFERENCE "=secondary",
-       true,
-       MONGOC_READ_SECONDARY,
-       NULL},
       /* MONGOC_URI_READPREFERENCETAGS conflict with primary mode */
       {"mongodb://localhost/?" MONGOC_URI_READPREFERENCETAGS "=",
        false,
@@ -1143,12 +1109,6 @@ test_mongoc_uri_read_prefs (void)
        conflicts},
       {"mongodb://localhost/?" MONGOC_URI_READPREFERENCE
        "=primary&" MONGOC_URI_READPREFERENCETAGS "=",
-       false,
-       MONGOC_READ_PRIMARY,
-       NULL,
-       conflicts},
-      {"mongodb://localhost/?" MONGOC_URI_SLAVEOK
-       "=false&" MONGOC_URI_READPREFERENCETAGS "=",
        false,
        MONGOC_READ_PRIMARY,
        NULL,
@@ -2339,10 +2299,6 @@ test_mongoc_uri_duplicates (void)
    BSON_ASSERT (mongoc_uri_get_option_as_bool (
       uri, MONGOC_URI_SERVERSELECTIONTRYONCE, false));
 
-   RECREATE_URI (MONGOC_URI_SLAVEOK "=false&" MONGOC_URI_SLAVEOK "=true");
-   ASSERT_LOG_DUPE (MONGOC_URI_SLAVEOK);
-   BSON_ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SLAVEOK, false));
-
    RECREATE_URI (MONGOC_URI_SOCKETCHECKINTERVALMS
                  "=1&" MONGOC_URI_SOCKETCHECKINTERVALMS "=2");
    ASSERT_LOG_DUPE (MONGOC_URI_SOCKETCHECKINTERVALMS);
@@ -2664,7 +2620,6 @@ test_mongoc_uri_bool_options (void)
    run_bool_tests (MONGOC_URI_RETRYWRITES);
    run_bool_tests (MONGOC_URI_SAFE);
    run_bool_tests (MONGOC_URI_SERVERSELECTIONTRYONCE);
-   run_bool_tests (MONGOC_URI_SLAVEOK);
    run_bool_tests (MONGOC_URI_TLS);
    run_bool_tests (MONGOC_URI_TLSINSECURE);
    run_bool_tests (MONGOC_URI_TLSALLOWINVALIDCERTIFICATES);

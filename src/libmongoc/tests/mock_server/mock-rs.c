@@ -109,7 +109,7 @@ make_uri (mongoc_array_t *servers)
 
 
 static char *
-ismaster_json (mock_rs_t *rs,
+hello_json (mock_rs_t *rs,
                mongoc_server_description_type_t type,
                const bson_t *tags)
 {
@@ -168,14 +168,14 @@ ismaster_json (mock_rs_t *rs,
 static char *
 primary_json (mock_rs_t *rs)
 {
-   return ismaster_json (rs, MONGOC_SERVER_RS_PRIMARY, &rs->primary_tags);
+   return hello_json (rs, MONGOC_SERVER_RS_PRIMARY, &rs->primary_tags);
 }
 
 
 static char *
 secondary_json (mock_rs_t *rs, int server_number)
 {
-   return ismaster_json (
+   return hello_json (
       rs, MONGOC_SERVER_RS_SECONDARY, rs->secondary_tags[server_number]);
 }
 
@@ -183,15 +183,15 @@ secondary_json (mock_rs_t *rs, int server_number)
 static char *
 arbiter_json (mock_rs_t *rs)
 {
-   return ismaster_json (rs, MONGOC_SERVER_RS_ARBITER, NULL);
+   return hello_json (rs, MONGOC_SERVER_RS_ARBITER, NULL);
 }
 
 
 /*--------------------------------------------------------------------------
  *
- * mock_rs_with_autoismaster --
+ * mock_rs_with_auto_hello --
  *
- *       A new mock replica set. Each member autoresponds to ismaster.
+ *       A new mock replica set. Each member autoresponds to hello.
  *       Call mock_rs_run to start it, then mock_rs_get_uri to connect.
  *
  * Returns:
@@ -204,10 +204,10 @@ arbiter_json (mock_rs_t *rs)
  */
 
 mock_rs_t *
-mock_rs_with_autoismaster (int32_t max_wire_version,
-                           bool has_primary,
-                           int n_secondaries,
-                           int n_arbiters)
+mock_rs_with_auto_hello (int32_t max_wire_version,
+                         bool has_primary,
+                         int n_secondaries,
+                         int n_arbiters)
 {
    int i;
    mock_rs_t *rs = (mock_rs_t *) bson_malloc0 (sizeof (mock_rs_t));
@@ -373,20 +373,20 @@ mock_rs_run (mock_rs_t *rs)
 
    BSON_ASSERT (rs->max_wire_version > 0);
    if (rs->has_primary) {
-      /* primary's ismaster response */
+      /* primary's hello response */
       hello = primary_json (rs);
       mock_server_auto_hello (rs->primary, hello);
       bson_free (hello);
    }
 
-   /* secondaries' ismaster response */
+   /* secondaries' hello response */
    for (i = 0; i < rs->n_secondaries; i++) {
       hello = secondary_json (rs, i);
       mock_server_auto_hello (get_server (&rs->secondaries, i), hello);
       bson_free (hello);
    }
 
-   /* arbiters' ismaster response */
+   /* arbiters' hello response */
    hello = arbiter_json (rs);
 
    for (i = 0; i < rs->n_arbiters; i++) {

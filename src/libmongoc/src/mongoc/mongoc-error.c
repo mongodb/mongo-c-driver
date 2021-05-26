@@ -85,11 +85,11 @@ _mongoc_write_error_is_retryable (bson_error_t *error)
    case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
    case MONGOC_SERVER_ERR_EXCEEDEDTIMELIMIT:
    case MONGOC_SERVER_ERR_SOCKETEXCEPTION:
-   case MONGOC_SERVER_ERR_NOTMASTER:
+   case MONGOC_SERVER_ERR_NOTPRIMARY:
    case MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN:
    case MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE:
-   case MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK:
-   case MONGOC_SERVER_ERR_NOTMASTERORSECONDARY:
+   case MONGOC_SERVER_ERR_NOTPRIMARYNOSECONDARYOK:
+   case MONGOC_SERVER_ERR_NOTPRIMARYORSECONDARY:
       return true;
    default:
       return false;
@@ -186,9 +186,9 @@ _mongoc_read_error_get_type (bool cmd_ret,
    switch (error.code) {
    case MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN:
    case MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE:
-   case MONGOC_SERVER_ERR_NOTMASTER:
-   case MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK:
-   case MONGOC_SERVER_ERR_NOTMASTERORSECONDARY:
+   case MONGOC_SERVER_ERR_NOTPRIMARY:
+   case MONGOC_SERVER_ERR_NOTPRIMARYNOSECONDARYOK:
+   case MONGOC_SERVER_ERR_NOTPRIMARYORSECONDARY:
    case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
    case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
    case MONGOC_SERVER_ERR_HOSTNOTFOUND:
@@ -256,7 +256,7 @@ _mongoc_error_is_shutdown (bson_error_t *error)
 }
 
 bool
-_mongoc_error_is_not_master (bson_error_t *error)
+_mongoc_error_is_not_primary (bson_error_t *error)
 {
    if (!_mongoc_error_is_server (error)) {
       return false;
@@ -266,8 +266,8 @@ _mongoc_error_is_not_master (bson_error_t *error)
       return false;
    }
    switch (error->code) {
-   case MONGOC_SERVER_ERR_NOTMASTER:
-   case MONGOC_SERVER_ERR_NOTMASTERNOSLAVEOK:
+   case MONGOC_SERVER_ERR_NOTPRIMARY:
+   case MONGOC_SERVER_ERR_NOTPRIMARYNOSECONDARYOK:
    case MONGOC_SERVER_ERR_LEGACYNOTPRIMARY:
       return true;
       /* All errors where no code was found are marked as MONGOC_ERROR_QUERY_FAILURE */
@@ -287,7 +287,7 @@ _mongoc_error_is_recovering (bson_error_t *error)
    switch (error->code) {
    case MONGOC_SERVER_ERR_INTERRUPTEDATSHUTDOWN:
    case MONGOC_SERVER_ERR_INTERRUPTEDDUETOREPLSTATECHANGE:
-   case MONGOC_SERVER_ERR_NOTMASTERORSECONDARY:
+   case MONGOC_SERVER_ERR_NOTPRIMARYORSECONDARY:
    case MONGOC_SERVER_ERR_PRIMARYSTEPPEDDOWN:
    case MONGOC_SERVER_ERR_SHUTDOWNINPROGRESS:
       return true;
@@ -305,7 +305,7 @@ bool
 _mongoc_error_is_state_change (bson_error_t *error)
 {
    return _mongoc_error_is_recovering (error) ||
-          _mongoc_error_is_not_master (error);
+          _mongoc_error_is_not_primary (error);
 }
 
 bool

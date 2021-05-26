@@ -345,7 +345,7 @@ test_mongoc_rpc_query_gather (void)
    rpc.header.request_id = 1234;
    rpc.header.response_to = -1;
    rpc.header.opcode = MONGOC_OPCODE_QUERY;
-   rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
+   rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
    rpc.query.collection = "test.test";
    rpc.query.skip = 5;
    rpc.query.n_return = 1;
@@ -379,7 +379,7 @@ test_mongoc_rpc_query_scatter (void)
    ASSERT (rpc.header.request_id == 1234);
    ASSERT (rpc.header.response_to == (uint32_t) -1);
    ASSERT (rpc.header.opcode == MONGOC_OPCODE_QUERY);
-   ASSERT (rpc.query.flags == MONGOC_QUERY_SLAVE_OK);
+   ASSERT (rpc.query.flags == MONGOC_QUERY_SECONDARY_OK);
    ASSERT (!strcmp (rpc.query.collection, "test.test"));
    ASSERT (rpc.query.skip == 5);
    ASSERT (rpc.query.n_return == 1);
@@ -620,7 +620,7 @@ test_mongoc_rpc_buffer_iov (void)
    rpc.header.request_id = 1234;
    rpc.header.response_to = -1;
    rpc.header.opcode = MONGOC_OPCODE_QUERY;
-   rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
+   rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
    rpc.query.collection = "test.test";
    rpc.query.skip = 5;
    rpc.query.n_return = 1;

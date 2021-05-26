@@ -986,7 +986,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-socket.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-speculative-auth.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-streamable-ismaster.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-streamable-hello.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-thread.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-timeout.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-description.c

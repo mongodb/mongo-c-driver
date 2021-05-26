@@ -135,7 +135,7 @@ test_mongos_max_staleness_read_pref (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'$" MONGOC_URI_READPREFERENCE "': {'mode': 'secondary', "
       "                     'maxStalenessSeconds': {'$exists': false}}}");
 
@@ -157,7 +157,7 @@ test_mongos_max_staleness_read_pref (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'$readPreference': {'mode': 'secondary', 'maxStalenessSeconds': 1}}",
       NULL);
 
@@ -178,7 +178,7 @@ test_mongos_max_staleness_read_pref (void)
    request =
       mock_server_receives_command (server,
                                     "db",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'$readPreference': {'$exists': false}}",
                                     NULL);
 
@@ -199,7 +199,7 @@ test_mongos_max_staleness_read_pref (void)
    request = mock_server_receives_command (
       server,
       "db",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'$readPreference': "
       " {'mode': 'secondaryPreferred', 'maxStalenessSeconds': 1}}",
       NULL);

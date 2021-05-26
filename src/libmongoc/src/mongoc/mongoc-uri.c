@@ -756,7 +756,6 @@ mongoc_uri_option_is_bool (const char *key)
           !strcasecmp (key, MONGOC_URI_RETRYWRITES) ||
           !strcasecmp (key, MONGOC_URI_SAFE) ||
           !strcasecmp (key, MONGOC_URI_SERVERSELECTIONTRYONCE) ||
-          !strcasecmp (key, MONGOC_URI_SLAVEOK) ||
           !strcasecmp (key, MONGOC_URI_TLS) ||
           !strcasecmp (key, MONGOC_URI_TLSINSECURE) ||
           !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES) ||
@@ -1716,11 +1715,6 @@ _mongoc_uri_assign_read_prefs_mode (mongoc_uri_t *uri, bson_error_t *error)
    bson_iter_t iter;
 
    BSON_ASSERT (uri);
-
-   if (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_SLAVEOK, false)) {
-      mongoc_read_prefs_set_mode (uri->read_prefs,
-                                  MONGOC_READ_SECONDARY_PREFERRED);
-   }
 
    if (bson_iter_init_find_case (
           &iter, &uri->options, MONGOC_URI_READPREFERENCE) &&

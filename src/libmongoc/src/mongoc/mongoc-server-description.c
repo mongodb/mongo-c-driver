@@ -51,7 +51,7 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
 }
 
 /* Reset fields inside this sd, but keep same id, host information, RTT,
-   generation, topology version, and leave ismaster in empty inited state */
+   generation, topology version, and leave hello in empty inited state */
 void
 mongoc_server_description_reset (mongoc_server_description_t *sd)
 {
@@ -222,7 +222,7 @@ mongoc_server_description_has_rs_member (mongoc_server_description_t *server,
  *
  * mongoc_server_description_has_set_version --
  *
- *      Did this server's ismaster response have a "setVersion" field?
+ *      Did this server's hello response have a "setVersion" field?
  *
  * Returns:
  *      True if the server description's setVersion is set.
@@ -242,7 +242,7 @@ mongoc_server_description_has_set_version (
  *
  * mongoc_server_description_has_election_id --
  *
- *      Did this server's ismaster response have an "electionId" field?
+ *      Did this server's hello response have an "electionId" field?
  *
  * Returns:
  *      True if the server description's electionId is set.
@@ -519,7 +519,7 @@ _mongoc_server_description_set_error (mongoc_server_description_t *sd,
 /*
  *-------------------------------------------------------------------------
  *
- * Called during SDAM, from topology description's ismaster handler, or
+ * Called during SDAM, from topology description's hello handler, or
  * when handshaking a connection in _mongoc_cluster_stream_for_server.
  *
  * If @hello_response is empty, @error must say why hello failed.
@@ -535,7 +535,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
 {
    bson_iter_t iter;
    bson_iter_t child;
-   bool is_master = false;
+   bool is_primary = false;
    bool is_shard = false;
    bool is_secondary = false;
    bool is_arbiter = false;
@@ -562,7 +562,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
                                   NULL);
    sd->has_hello_response = true;
 
-   /* Only reinitialize the topology version if we have an ismaster response.
+   /* Only reinitialize the topology version if we have a hello response.
     * Resetting a server description should not effect the topology version. */
    bson_reinit (&sd->topology_version);
 
@@ -577,10 +577,10 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
             (void) _mongoc_cmd_check_ok (
                hello_response, MONGOC_ERROR_API_VERSION_2, &sd->error);
             /* TODO CDRIVER-3696: this is an existing bug. If this is handling
-             * an ismaster reply that is NOT from a handshake, this should not
+             * a hello reply that is NOT from a handshake, this should not
              * be considered an auth error. */
-            /* ismaster response returned ok: 0. According to auth spec: "If the
-             * isMaster of the MongoDB Handshake fails with an error, drivers
+            /* hello response returned ok: 0. According to auth spec: "If the
+             * hello of the MongoDB Handshake fails with an error, drivers
              * MUST treat this an authentication error." */
             sd->error.domain = MONGOC_ERROR_CLIENT;
             sd->error.code = MONGOC_ERROR_CLIENT_AUTHENTICATE;
@@ -591,7 +591,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
                          bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_BOOL (&iter))
             goto failure;
-         is_master = bson_iter_bool (&iter);
+         is_primary = bson_iter_bool (&iter);
       } else if (strcmp ("me", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter))
             goto failure;
@@ -722,7 +722,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
    } else if (sd->set_name) {
       if (is_hidden) {
          sd->type = MONGOC_SERVER_RS_OTHER;
-      } else if (is_master) {
+      } else if (is_primary) {
          sd->type = MONGOC_SERVER_RS_PRIMARY;
       } else if (is_secondary) {
          sd->type = MONGOC_SERVER_RS_SECONDARY;
@@ -740,7 +740,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
    }
 
    if (!num_keys) {
-      /* empty reply means ismaster failed */
+      /* empty reply means hello failed */
       _mongoc_server_description_set_error (sd, error);
    }
 

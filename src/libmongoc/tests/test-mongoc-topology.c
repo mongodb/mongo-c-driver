@@ -381,7 +381,7 @@ _test_server_selection (bool try_once)
    request_destroy (request);
 
    /* the selection timeout is 100 ms, and we can't rescan until a half second
-    * passes, so selection fails without another ismaster call */
+    * passes, so selection fails without another hello call */
    mock_server_set_request_timeout_msec (server, 600);
    BSON_ASSERT (!mock_server_receives_legacy_hello (server, NULL));
    mock_server_set_request_timeout_msec (server, get_future_timeout_ms ());
@@ -403,7 +403,7 @@ _test_server_selection (bool try_once)
 
    _mongoc_usleep (510 * 1000); /* one heartbeat, plus a few milliseconds */
 
-   /* second selection, now we try ismaster again */
+   /* second selection, now we try hello again */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
    request = mock_server_receives_legacy_hello (server, NULL);
@@ -707,7 +707,7 @@ test_cooldown_standalone (void)
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    primary_pref = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
-   /* first ismaster fails, selection fails */
+   /* first hello fails, selection fails */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
    request = mock_server_receives_legacy_hello (server, NULL);
@@ -717,7 +717,7 @@ test_cooldown_standalone (void)
    request_destroy (request);
    future_destroy (future);
 
-   /* second selection doesn't try to call ismaster: we're in cooldown */
+   /* second selection doesn't try to call hello: we're in cooldown */
    start = bson_get_monotonic_time ();
    sd = mongoc_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
@@ -732,12 +732,12 @@ test_cooldown_standalone (void)
 
    _mongoc_usleep (1000 * 1000); /* 1 second */
 
-   /* third selection doesn't try to call ismaster: we're still in cooldown */
+   /* third selection doesn't try to call hello: we're still in cooldown */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
    mock_server_set_request_timeout_msec (server, 100);
    BSON_ASSERT (
-      !mock_server_receives_legacy_hello (server, NULL)); /* no ismaster call */
+      !mock_server_receives_legacy_hello (server, NULL)); /* no hello call */
    BSON_ASSERT (!future_get_mongoc_server_description_ptr (future));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER_SELECTION,
@@ -749,7 +749,7 @@ test_cooldown_standalone (void)
 
    _mongoc_usleep (5100 * 1000); /* 5.1 seconds */
 
-   /* cooldown ends, now we try ismaster again, this time succeeding */
+   /* cooldown ends, now we try hello again, this time succeeding */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
    request = mock_server_receives_legacy_hello (server,
@@ -833,7 +833,7 @@ test_cooldown_rs (void)
 
    _mongoc_usleep (1000 * 1000); /* 1 second */
 
-   /* second selection doesn't try ismaster on server 1: it's in cooldown */
+   /* second selection doesn't try hello on server 1: it's in cooldown */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
@@ -844,7 +844,7 @@ test_cooldown_rs (void)
 
    mock_server_set_request_timeout_msec (servers[1], 100);
    BSON_ASSERT (!mock_server_receives_legacy_hello (
-      servers[1], NULL)); /* no ismaster call */
+      servers[1], NULL)); /* no hello call */
    mock_server_set_request_timeout_msec (servers[1], get_future_timeout_ms ());
 
    /* still no primary */
@@ -853,7 +853,7 @@ test_cooldown_rs (void)
 
    _mongoc_usleep (5100 * 1000); /* 5.1 seconds. longer than 5 sec cooldown. */
 
-   /* cooldown ends, now we try ismaster on server 1, this time succeeding */
+   /* cooldown ends, now we try hello on server 1, this time succeeding */
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
@@ -903,13 +903,13 @@ test_cooldown_retry (void)
    future = future_topology_select (
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
-   /* first ismaster fails */
+   /* first hello fails */
    request = mock_server_receives_legacy_hello (server, NULL);
    BSON_ASSERT (request);
    mock_server_hangs_up (request);
    request_destroy (request);
 
-   /* after cooldown passes, driver sends another ismaster */
+   /* after cooldown passes, driver sends another hello */
    start = bson_get_monotonic_time ();
    request = mock_server_receives_legacy_hello (server, NULL);
    BSON_ASSERT (request);
@@ -1161,7 +1161,7 @@ _test_server_removed_during_handshake (bool pooled)
    ASSERT_CMPINT ((int) MONGOC_SERVER_RS_PRIMARY, ==, sd->type);
    mongoc_server_description_destroy (sd);
 
-   /* opens new stream and runs ismaster again, discovers bad setName. */
+   /* opens new stream and runs hello again, discovers bad setName. */
    capture_logs (true);
    r = mongoc_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
@@ -1250,7 +1250,7 @@ test_rtt (void *ctx)
                         "{'ok': 1, 'minWireVersion': 2, 'maxWireVersion': 5}");
    request_destroy (request);
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
    mock_server_replies (request,
                         MONGOC_REPLY_NONE,
                         0,
@@ -1509,7 +1509,7 @@ _test_hello_retry_pooled (bool hangup, int n_failures)
    /* start a {foo: 1} command, handshake normally */
    future = future_command (client, &error);
 
-   /* Another ismaster to handshake the connection */
+   /* Another hello to handshake the connection */
    request = mock_server_receives_legacy_hello (server, NULL);
    mock_server_replies_simple (request, hello);
    request_destroy (request);
@@ -1627,7 +1627,7 @@ test_incompatible_error (void)
    char *msg;
 
    /* incompatible */
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN - 1);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN - 1);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
@@ -1691,7 +1691,7 @@ test_compatible_null_error_pointer (void)
    bson_error_t error;
 
    /* incompatible */
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN - 1);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN - 1);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -1787,10 +1787,10 @@ test_cluster_time_updated_during_handshake ()
       mock_server_get_host_and_port (server),
       cluster_time);
 
-   /* remove the node from the cluster to trigger an ismaster handshake. */
+   /* remove the node from the cluster to trigger a hello handshake. */
    mongoc_cluster_disconnect_node (&client->cluster, 1);
 
-   /* opens new stream and does an ismaster handshake (in pooled mode only). */
+   /* opens new stream and does a hello handshake (in pooled mode only). */
    r = mongoc_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
@@ -1805,7 +1805,7 @@ test_cluster_time_updated_during_handshake ()
    mongoc_uri_destroy (uri);
 }
 
-/* test that when a command receives a "not master" or "node is recovering"
+/* test that when a command receives a "not primary" or "node is recovering"
  * error that the client takes the appropriate action:
  * - a pooled client should mark the server as unknown and request a full scan
  *   of the topology
@@ -1851,8 +1851,8 @@ _test_request_scan_on_error (bool pooled,
    mock_server_run (primary);
    mock_server_run (secondary);
 
-   RS_RESPONSE_TO_ISMASTER (primary, 6, true, false, primary, secondary);
-   RS_RESPONSE_TO_ISMASTER (secondary, 6, false, false, primary, secondary);
+   RS_RESPONSE_TO_HELLO (primary, 6, true, false, primary, secondary);
+   RS_RESPONSE_TO_HELLO (secondary, 6, false, false, primary, secondary);
 
    /* set a high heartbeatFrequency. Only the first and requested scans run. */
    uri_str = bson_strdup_printf (
@@ -2051,8 +2051,8 @@ test_request_scan_on_error ()
                 false /* should_scan */,
                 true /* should_mark_unknown */,
                 "node is recovering");
-   /* Test that "not master or secondary" is considered a "node is recovering"
-    * error, not a "not master" error. */
+   /* Test that "not primary or secondary" is considered a "node is recovering"
+    * error, not a "not primary" error. */
    TEST_SINGLE ("{'ok': 0, 'errmsg': 'not master or secondary'}",
                 false /* should_scan */,
                 true /* should_mark_unknown */,
@@ -2061,8 +2061,8 @@ test_request_scan_on_error ()
                 true /* should_scan */,
                 true /* should_mark_unknown */,
                 "node is recovering");
-   /* Test that "not master or secondary" is considered a "node is recovering"
-    * error, not a "not master" error. */
+   /* Test that "not primary or secondary" is considered a "node is recovering"
+    * error, not a "not primary" error. */
    TEST_POOLED ("{'ok': 0, 'errmsg': 'not master or secondary'}",
                 true /* should_scan */,
                 true /* should_mark_unknown */,
@@ -2071,8 +2071,8 @@ test_request_scan_on_error ()
               false /* should_scan */,
               false /* should_mark_unknown */,
               "random error");
-   /* check the error code for NotMaster, which should be considered a "not
-    * master" error. */
+   /* check the error code for NotPrimary, which should be considered a "not
+    * primary" error. */
    TEST_BOTH ("{'ok': 0, 'code': 10107 }",
               true /* should_scan */,
               true /* should_mark_unknown */,
@@ -2197,11 +2197,11 @@ test_slow_server_pooled (void)
                           "expired");
    BSON_ASSERT (!ret);
 
-   /* Set up an auto responder so future ismasters on the secondary do not
+   /* Set up an auto responder so future hellos on the secondary do not
     * block until connectTimeoutMS. Otherwise, the shutdown sequence will be
     * blocked for connectTimeoutMS. */
    mock_server_auto_hello (secondary, hello_secondary);
-   /* Respond to the first ismaster. */
+   /* Respond to the first hello. */
    mock_server_replies_simple (request, hello_secondary);
    request_destroy (request);
 
@@ -2274,7 +2274,7 @@ _test_hello_versioned_api (bool pooled)
 
    if (!pooled) {
       request = mock_server_receives_command (
-         server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+         server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
       mock_server_replies_ok_and_destroys (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);

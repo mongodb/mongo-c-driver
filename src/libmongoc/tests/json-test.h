@@ -69,7 +69,7 @@ server_description_by_hostname (mongoc_topology_description_t *topology,
                                 const char *address);
 
 void
-process_sdam_test_ismaster_responses (bson_t *phase,
+process_sdam_test_hello_responses (bson_t *phase,
                                       mongoc_topology_t *topology);
 
 void

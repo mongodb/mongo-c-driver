@@ -51,7 +51,7 @@ mock_server_t *
 mock_server_new ();
 
 mock_server_t *
-mock_server_with_autoismaster (int32_t max_wire_version);
+mock_server_with_auto_hello (int32_t max_wire_version);
 
 mock_server_t *
 mock_mongos_new (int32_t max_wire_version);
@@ -229,15 +229,15 @@ void
 mock_server_destroy (mock_server_t *server);
 
 void
-rs_response_to_ismaster (mock_server_t *server,
+rs_response_to_hello (mock_server_t *server,
                          int max_wire_version,
                          bool primary,
                          int has_tags,
                          ...);
 
-#define RS_RESPONSE_TO_ISMASTER(                     \
+#define RS_RESPONSE_TO_HELLO(                     \
    server, max_wire_version, primary, has_tags, ...) \
-   rs_response_to_ismaster (                         \
+   rs_response_to_hello (                         \
       server, max_wire_version, primary, has_tags, __VA_ARGS__, NULL)
 
 #endif /* MOCK_SERVER_H */

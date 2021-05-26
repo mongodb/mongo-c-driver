@@ -23,8 +23,8 @@
 
 /* Creates a stream to use to interrupt calls to mongoc_stream_poll.
  *
- * The expected use is to cancel in-progress ismaster commands (especially for
- * awaitable ismaster). An ismaster command may not respond for a long time, so
+ * The expected use is to cancel in-progress hello commands (especially for
+ * awaitable hello). A hello command may not respond for a long time, so
  * reading the reply may block on mongoc_stream_poll until data is readable. To
  * interrupt mongoc_stream_poll, a stream retrieved by
  * _mongoc_interrupt_get_stream can be added to the call of poll. Any other

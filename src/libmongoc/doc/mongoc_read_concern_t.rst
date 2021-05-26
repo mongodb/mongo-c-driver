@@ -35,7 +35,7 @@ MONGOC_READ_CONCERN_LEVEL_SNAPSHOT      Level "snapshot".           4.0
 
 For the sake of compatibility with future versions of MongoDB, :symbol:`mongoc_read_concern_set_level` allows any string, not just this list of known read concern levels.
 
-See `Read Concern Levels <https://docs.mongodb.com/master/reference/read-concern/#read-concern-levels>`_ in the MongoDB manual for more information about the individual read concern levels.
+See `Read Concern Levels <https://docs.mongodb.com/manual/reference/read-concern/#read-concern-levels>`_ in the MongoDB manual for more information about the individual read concern levels.
 
 .. only:: html
 

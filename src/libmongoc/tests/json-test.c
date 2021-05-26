@@ -154,9 +154,9 @@ server_description_by_hostname (mongoc_topology_description_t *topology,
 /*
  *-----------------------------------------------------------------------
  *
- * process_sdam_test_ismaster_responses --
+ * process_sdam_test_hello_responses --
  *
- *      Update a topology description with the ismaster responses in a "phase"
+ *      Update a topology description with the hello responses in a "phase"
  *      from an SDAM or SDAM Monitoring test, like:
  *
  *      [
@@ -164,7 +164,7 @@ server_description_by_hostname (mongoc_topology_description_t *topology,
  *              "a:27017",
  *              {
  *                  "ok": 1,
- *                  "ismaster": false
+ *                  "isWritablePrimary": false
  *              }
  *          ]
  *      ]
@@ -175,8 +175,8 @@ server_description_by_hostname (mongoc_topology_description_t *topology,
  *-----------------------------------------------------------------------
  */
 void
-process_sdam_test_ismaster_responses (bson_t *phase,
-                                      mongoc_topology_t *topology)
+process_sdam_test_hello_responses (bson_t *phase,
+                                   mongoc_topology_t *topology)
 {
    mongoc_topology_description_t *td;
    mongoc_server_description_t *sd;
@@ -190,22 +190,22 @@ process_sdam_test_ismaster_responses (bson_t *phase,
       description = bson_iter_utf8 (&phase_field_iter, NULL);
       MONGOC_DEBUG ("phase: %s", description);
    }
-   /* grab ismaster responses out and feed them to topology */
+   /* grab hello responses out and feed them to topology */
    if (bson_iter_init_find (&phase_field_iter, phase, "responses")) {
-      bson_t ismasters;
-      bson_t ismaster;
+      bson_t hellos;
+      bson_t hello;
       bson_t response;
-      bson_iter_t ismaster_iter;
-      bson_iter_t ismaster_field_iter;
+      bson_iter_t hello_iter;
+      bson_iter_t hello_field_iter;
 
-      bson_iter_bson (&phase_field_iter, &ismasters);
-      bson_iter_init (&ismaster_iter, &ismasters);
+      bson_iter_bson (&phase_field_iter, &hellos);
+      bson_iter_init (&hello_iter, &hellos);
 
-      while (bson_iter_next (&ismaster_iter)) {
-         bson_iter_bson (&ismaster_iter, &ismaster);
+      while (bson_iter_next (&hello_iter)) {
+         bson_iter_bson (&hello_iter, &hello);
 
-         bson_iter_init_find (&ismaster_field_iter, &ismaster, "0");
-         hostname = bson_iter_utf8 (&ismaster_field_iter, NULL);
+         bson_iter_init_find (&hello_field_iter, &hello, "0");
+         hostname = bson_iter_utf8 (&hello_field_iter, NULL);
          sd = server_description_by_hostname (td, hostname);
 
          /* if server has been removed from topology, skip */
@@ -213,10 +213,10 @@ process_sdam_test_ismaster_responses (bson_t *phase,
             continue;
          }
 
-         bson_iter_init_find (&ismaster_field_iter, &ismaster, "1");
-         bson_iter_bson (&ismaster_field_iter, &response);
+         bson_iter_init_find (&hello_field_iter, &hello, "1");
+         bson_iter_bson (&hello_field_iter, &response);
 
-         /* send ismaster through the topology description's handler */
+         /* send hello through the topology description's handler */
          capture_logs (true);
          mongoc_topology_description_handle_hello (
             td, sd->id, &response, 1, NULL);
@@ -1573,13 +1573,13 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 }
 
 static bool
-_in_blacklist (const bson_t *test, char **blacklist, uint32_t blacklist_len)
+_in_deny_list (const bson_t *test, char **deny_list, uint32_t deny_list_len)
 {
    int i;
    const char *desc = bson_lookup_utf8 (test, "description");
 
-   for (i = 0; i < blacklist_len; i++) {
-      if (0 == strcmp (desc, blacklist[i])) {
+   for (i = 0; i < deny_list_len; i++) {
+      if (0 == strcmp (desc, deny_list[i])) {
          return true;
       }
    }
@@ -1590,10 +1590,10 @@ _in_blacklist (const bson_t *test, char **blacklist, uint32_t blacklist_len)
 static bool
 _should_skip_due_to_unsupported_operation (const bson_t *test)
 {
-   char *blacklist[] = {"CreateIndex and dropIndex omits default write concern",
+   char *deny_list[] = {"CreateIndex and dropIndex omits default write concern",
                         "MapReduce omits default write concern"};
 
-   if (_in_blacklist (test, blacklist, sizeof (blacklist) / sizeof (char *))) {
+   if (_in_deny_list (test, deny_list, sizeof (deny_list) / sizeof (char *))) {
       return true;
    }
 

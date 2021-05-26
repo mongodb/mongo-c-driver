@@ -142,14 +142,14 @@ _mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname)
    acmd->rpc.header.request_id = ++acmd->async->request_id;
    acmd->rpc.header.response_to = 0;
    acmd->rpc.header.opcode = MONGOC_OPCODE_QUERY;
-   acmd->rpc.query.flags = MONGOC_QUERY_SLAVE_OK;
+   acmd->rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
    acmd->rpc.query.collection = acmd->ns;
    acmd->rpc.query.skip = 0;
    acmd->rpc.query.n_return = -1;
    acmd->rpc.query.query = bson_get_data (&acmd->cmd);
    acmd->rpc.query.fields = NULL;
 
-   /* This will always be isMaster, which are not allowed to be compressed */
+   /* This will always be hello, which are not allowed to be compressed */
    _mongoc_rpc_gather (&acmd->rpc, &acmd->array);
    acmd->iovec = (mongoc_iovec_t *) acmd->array.data;
    acmd->niovec = acmd->array.len;

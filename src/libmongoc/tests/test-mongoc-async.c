@@ -165,7 +165,7 @@ test_hello_impl (bool with_ssl)
    for (i = 0; i < NSERVERS; i++) {
       server_id = (i + offset) % NSERVERS;
       request = mock_server_receives_command (
-         servers[server_id], "admin", MONGOC_QUERY_SLAVE_OK, NULL);
+         servers[server_id], "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
 
       /* use "serverId" field to distinguish among responses */
       reply = bson_strdup_printf ("{'ok': 1,"
@@ -217,7 +217,7 @@ test_hello_ssl (void)
 #else
 
 static void
-test_large_ismaster_helper (mongoc_async_cmd_t *acmd,
+test_large_hello_helper (mongoc_async_cmd_t *acmd,
                             mongoc_async_cmd_result_t result,
                             const bson_t *bson,
                             int64_t duration_usec)
@@ -253,7 +253,7 @@ test_large_hello (void *ctx)
    mongoc_ssl_opt_t ssl_opts;
 #endif
 
-   /* Inflate the size of the isMaster message to ~1MB. This tests that
+   /* Inflate the size of the hello message to ~1MB. This tests that
     * CDRIVER-2483 is fixed. Because mongod 4.9+ errors on unknown and duplicate
     * fields (see SERVER-53150) we add a ~1MB comment.
     */
@@ -294,7 +294,7 @@ test_large_hello (void *ctx)
                          NULL,
                          "admin",
                          &q,
-                         &test_large_ismaster_helper,
+                         &test_large_hello_helper,
                          NULL,
                          TIMEOUT);
 
@@ -320,7 +320,7 @@ test_hello_delay_callback (mongoc_async_cmd_t *acmd,
 }
 
 static mongoc_stream_t *
-test_ismaster_delay_initializer (mongoc_async_cmd_t *acmd)
+test_hello_delay_initializer (mongoc_async_cmd_t *acmd)
 {
    return ((stream_with_result_t *) acmd->data)->stream;
 }
@@ -329,7 +329,7 @@ static void
 test_hello_delay ()
 {
    /* test that a delayed cmd works. */
-   mock_server_t *server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   mock_server_t *server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mongoc_async_t *async = mongoc_async_new ();
    bson_t hello_cmd = BSON_INITIALIZER;
    stream_with_result_t stream_with_result = {0};
@@ -346,7 +346,7 @@ test_hello_delay ()
                          NULL,  /* stream, initialized after delay. */
                          false, /* is setup done. */
                          NULL,  /* dns result. */
-                         test_ismaster_delay_initializer,
+                         test_hello_delay_initializer,
                          100,  /* delay 100ms. */
                          NULL, /* setup function. */
                          NULL, /* setup ctx. */

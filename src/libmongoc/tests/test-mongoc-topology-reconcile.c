@@ -107,9 +107,9 @@ _test_topology_reconcile_rs (bool pooled)
    mock_server_run (server1);
 
    /* secondary, no tags */
-   RS_RESPONSE_TO_ISMASTER (server0, 6, false, false, server0, server1);
+   RS_RESPONSE_TO_HELLO (server0, 6, false, false, server0, server1);
    /* primary, no tags */
-   RS_RESPONSE_TO_ISMASTER (server1, 6, true, false, server0, server1);
+   RS_RESPONSE_TO_HELLO (server1, 6, true, false, server0, server1);
 
    /* provide secondary in seed list */
    uri_str = bson_strdup_printf ("mongodb://%s/?replicaSet=rs",
@@ -150,7 +150,7 @@ _test_topology_reconcile_rs (bool pooled)
    /*
     * remove server1 from set. server0 is the primary, with tags.
     */
-   RS_RESPONSE_TO_ISMASTER (
+   RS_RESPONSE_TO_HELLO (
       server0, 6, true, true, server0); /* server1 absent */
 
    BSON_ASSERT (selects_server (client, tag_read_prefs, server0));
@@ -165,8 +165,8 @@ _test_topology_reconcile_rs (bool pooled)
    /*
     * server1 returns as a secondary. its scanner node is un-retired.
     */
-   RS_RESPONSE_TO_ISMASTER (server0, 6, true, true, server0, server1);
-   RS_RESPONSE_TO_ISMASTER (server1, 6, false, false, server0, server1);
+   RS_RESPONSE_TO_HELLO (server0, 6, true, true, server0, server1);
+   RS_RESPONSE_TO_HELLO (server1, 6, false, false, server0, server1);
 
    BSON_ASSERT (selects_server (client, secondary_read_prefs, server1));
 
@@ -441,7 +441,7 @@ test_topology_reconcile_from_handshake (void *ctx)
  *
  * 1. scanner discovers a replica set with primary and at least one secondary
  * 2. cluster opens a new stream to the primary
- * 3. cluster handshakes the new connection by calling isMaster on the primary
+ * 3. cluster handshakes the new connection by calling hello on the primary
  * 4. the primary, for some reason, suddenly omits the secondary from its host
  *    list, perhaps because the secondary was removed from the RS configuration
  * 5. scanner marks the secondary scanner node "retired" to be destroyed later
@@ -476,8 +476,8 @@ test_topology_reconcile_retire_single (void)
    mock_server_run (secondary);
    mock_server_run (primary);
 
-   RS_RESPONSE_TO_ISMASTER (primary, 6, true, false, secondary, primary);
-   RS_RESPONSE_TO_ISMASTER (secondary, 6, false, false, secondary, primary);
+   RS_RESPONSE_TO_HELLO (primary, 6, true, false, secondary, primary);
+   RS_RESPONSE_TO_HELLO (secondary, 6, false, false, secondary, primary);
 
    /* selection timeout must be > MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS,
     * otherwise we skip second scan in pooled mode and don't hit the assert */
@@ -501,7 +501,7 @@ test_topology_reconcile_retire_single (void)
 
    /* remove secondary from primary's config */
    bson_mutex_lock (&topology->mutex);
-   RS_RESPONSE_TO_ISMASTER (primary, 6, true, false, primary);
+   RS_RESPONSE_TO_HELLO (primary, 6, true, false, primary);
 
    /* step 2: cluster opens new stream to primary - force new stream in single
     * mode by disconnecting scanner nodes (also includes step 6) */
@@ -565,7 +565,7 @@ test_topology_reconcile_retire_single (void)
  *
  * 1. scanner discovers a replica set with primary
  * 2. cluster opens a new stream to the primary
- * 3. cluster handshakes the new connection by calling isMaster on the primary
+ * 3. cluster handshakes the new connection by calling hello on the primary
  * 4. the primary suddenly includes a new secondary in its host list, perhaps
  *    because the secondary was added
  * 5. _mongoc_topology_update_from_handshake adds the secondary to the topology
@@ -595,9 +595,9 @@ test_topology_reconcile_add_single (void)
    mock_server_run (secondary);
    mock_server_run (primary);
 
-   /* omit secondary from primary's ismaster, to start with */
-   RS_RESPONSE_TO_ISMASTER (primary, 6, true, false, primary);
-   RS_RESPONSE_TO_ISMASTER (secondary, 6, false, false, secondary, primary);
+   /* omit secondary from primary's hello, to start with */
+   RS_RESPONSE_TO_HELLO (primary, 6, true, false, primary);
+   RS_RESPONSE_TO_HELLO (secondary, 6, false, false, secondary, primary);
 
    /* selection timeout must be > MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS,
     * otherwise we skip second scan in pooled mode and don't hit the assert */
@@ -617,7 +617,7 @@ test_topology_reconcile_add_single (void)
    BSON_ASSERT (selects_server (client, primary_read_prefs, primary));
 
    /* add secondary to primary's config */
-   RS_RESPONSE_TO_ISMASTER (primary, 6, true, false, primary, secondary);
+   RS_RESPONSE_TO_HELLO (primary, 6, true, false, primary, secondary);
 
    /* step 2: cluster opens new stream to primary - force new stream in single
     * mode by disconnecting primary scanner node */

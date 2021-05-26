@@ -12,7 +12,7 @@ Synopsis
   mongoc_apm_server_heartbeat_failed_get_awaited (
      const mongoc_apm_server_heartbeat_failed_t *event);
 
-Returns whether this event came from an awaitable isMaster.
+Returns whether this event came from an awaitable hello.
 
 Parameters
 ----------
@@ -22,7 +22,7 @@ Parameters
 Returns
 -------
 
-A bool indicating whether the heartbeat event came from an awaitable isMaster.
+A bool indicating whether the heartbeat event came from an awaitable hello.
 
 .. seealso::
 

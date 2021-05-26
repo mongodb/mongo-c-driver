@@ -134,8 +134,8 @@ _test_read_concern_wire_version (bool allow, bool explicit)
    rc = mongoc_read_concern_new ();
    mongoc_read_concern_set_level (rc, "foo");
 
-   server = mock_server_with_autoismaster (
-      allow ? WIRE_VERSION_READ_CONCERN : WIRE_VERSION_READ_CONCERN - 1);
+   server = mock_server_with_auto_hello (allow ? WIRE_VERSION_READ_CONCERN
+                                               : WIRE_VERSION_READ_CONCERN - 1);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -159,7 +159,7 @@ _test_read_concern_wire_version (bool allow, bool explicit)
       request =
          mock_server_receives_command (server,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'readConcern': {'level': 'foo'}}");
       mock_server_replies_simple (
          request, "{'ok': 1, 'cursor': {'id': 0, 'firstBatch': []}}");
@@ -186,7 +186,7 @@ _test_read_concern_wire_version (bool allow, bool explicit)
       request =
          mock_server_receives_command (server,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'readConcern': {'level': 'foo'}}");
       mock_server_replies_ok_and_destroys (request);
       BSON_ASSERT (future_get_bool (future));
@@ -215,7 +215,7 @@ _test_read_concern_wire_version (bool allow, bool explicit)
       request =
          mock_server_receives_command (server,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'readConcern': {'level': 'foo'}}");
       mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
       request_destroy (request);

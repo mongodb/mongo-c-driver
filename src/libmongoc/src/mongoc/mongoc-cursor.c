@@ -443,19 +443,19 @@ _translate_query_opt (const char *query_field, const char **cmd_field, int *len)
 
 
 /* set up a new opt bson from older ways of specifying options.
- * slave_ok may be NULL.
+ * secondary_ok may be NULL.
  * error may be NULL.
  */
 void
 _mongoc_cursor_flags_to_opts (mongoc_query_flags_t qflags,
                               bson_t *opts, /* IN/OUT */
-                              bool *slave_ok /* OUT */)
+                              bool *secondary_ok /* OUT */)
 {
    ENTRY;
    BSON_ASSERT (opts);
 
-   if (slave_ok) {
-      *slave_ok = !!(qflags & MONGOC_QUERY_SLAVE_OK);
+   if (secondary_ok) {
+      *secondary_ok = !!(qflags & MONGOC_QUERY_SECONDARY_OK);
    }
 
    if (qflags & MONGOC_QUERY_TAILABLE_CURSOR) {
@@ -897,13 +897,13 @@ _mongoc_cursor_opts_to_flags (mongoc_cursor_t *cursor,
       }
    }
 
-   if (cursor->slave_ok) {
-      *flags |= MONGOC_QUERY_SLAVE_OK;
+   if (cursor->secondary_ok) {
+      *flags |= MONGOC_QUERY_SECONDARY_OK;
    } else if (cursor->server_id &&
               (stream->topology_type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY ||
                stream->topology_type == MONGOC_TOPOLOGY_RS_NO_PRIMARY) &&
               stream->sd->type != MONGOC_SERVER_RS_PRIMARY) {
-      *flags |= MONGOC_QUERY_SLAVE_OK;
+      *flags |= MONGOC_QUERY_SECONDARY_OK;
    }
 
    return true;
@@ -1002,7 +1002,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
     * read preference, so the secondary rejects the read. same if we have a
     * direct connection to a secondary (topology type "single"). with
-    * OP_QUERY we handle this by setting slaveOk. here we use $readPreference.
+    * OP_QUERY we handle this by setting secondaryOk. here we use $readPreference.
     */
    cmd_name = _mongoc_get_command_name (command);
    is_primary =
@@ -1010,7 +1010,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
 
    if (strcmp (cmd_name, "getMore") != 0 &&
        server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG &&
-       is_primary && parts.user_query_flags & MONGOC_QUERY_SLAVE_OK) {
+       is_primary && parts.user_query_flags & MONGOC_QUERY_SECONDARY_OK) {
       parts.read_prefs = prefs =
          mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
    } else {

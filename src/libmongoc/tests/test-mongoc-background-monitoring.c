@@ -41,7 +41,7 @@ typedef struct {
 typedef enum {
    TF_FAST_HEARTBEAT = 1 << 0,
    TF_FAST_MIN_HEARTBEAT = 1 << 1,
-   TF_AUTO_RESPOND_POLLING_ISMASTER = 1 << 2
+   TF_AUTO_RESPOND_POLLING_HELLO = 1 << 2
 } tf_flags_t;
 
 typedef struct {
@@ -187,7 +187,7 @@ _server_changed (const mongoc_apm_server_changed_t *event)
    "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
 
 bool
-auto_respond_polling_ismaster (request_t *request, void *ctx)
+auto_respond_polling_hello (request_t *request, void *ctx)
 {
    if (0 == strcasecmp (request->command_name, HANDSHAKE_CMD_LEGACY_HELLO) ||
        0 == strcmp (request->command_name, "hello")) {
@@ -243,9 +243,9 @@ tf_new (tf_flags_t flags)
          ->min_heartbeat_frequency_msec = FAST_HEARTBEAT_MS;
    }
 
-   if (flags & TF_AUTO_RESPOND_POLLING_ISMASTER) {
+   if (flags & TF_AUTO_RESPOND_POLLING_HELLO) {
       mock_server_autoresponds (
-         tf->server, auto_respond_polling_ismaster, NULL, NULL);
+         tf->server, auto_respond_polling_hello, NULL, NULL);
    }
    tf->flags = flags;
    tf->logs = bson_string_new ("");
@@ -502,7 +502,7 @@ test_retry_succeeds (void)
    /* Request a scan to speed things up. */
    _request_scan (tf);
 
-   /* The next ismaster occurs. */
+   /* The next hello occurs. */
    request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
@@ -548,7 +548,7 @@ test_retry_hangup (void)
    /* Request a scan to speed things up. */
    _request_scan (tf);
 
-   /* The next ismaster occurs (due to fast heartbeat). */
+   /* The next hello occurs (due to fast heartbeat). */
    request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
@@ -595,7 +595,7 @@ test_retry_badreply (void)
    /* Request a scan to speed things up. */
    _request_scan (tf);
 
-   /* The next ismaster occurs. */
+   /* The next hello occurs. */
    request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
@@ -640,7 +640,7 @@ test_retry_shutdown (void)
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 0);
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
 
-   /* The next ismaster occurs (due to fast heartbeat). */
+   /* The next hello occurs (due to fast heartbeat). */
    request = mock_server_receives_legacy_hello (tf->server, NULL);
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
@@ -687,7 +687,7 @@ test_repeated_requestscan (void)
    request_t *request;
    int i;
 
-   /* Multiple repeated requests before an ismaster completes should not cause a
+   /* Multiple repeated requests before a hello completes should not cause a
     * subsequent scan. */
    tf = tf_new (TF_FAST_MIN_HEARTBEAT);
    for (i = 0; i < 10; i++) {
@@ -731,7 +731,7 @@ test_streaming_succeeds (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
@@ -756,7 +756,7 @@ test_streaming_hangup (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
@@ -784,7 +784,7 @@ test_streaming_badreply (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
@@ -799,9 +799,9 @@ test_streaming_badreply (void)
    OBSERVE_SOON (tf, tf->observations->n_server_changed == 2);
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_UNKNOWN);
 
-   /* Request an immediate scan to trigger the next polling ismaster. */
+   /* Request an immediate scan to trigger the next polling hello. */
    _request_scan (tf);
-   /* The auto responder will handle the polling ismaster. */
+   /* The auto responder will handle the polling hello. */
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 2);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
    OBSERVE_SOON (tf, tf->observations->n_server_changed == 3);
@@ -816,7 +816,7 @@ test_streaming_shutdown (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER | TF_FAST_HEARTBEAT);
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO | TF_FAST_HEARTBEAT);
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
@@ -824,9 +824,9 @@ test_streaming_shutdown (void)
    OBSERVE (tf, request);
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    _signal_shutdown (tf);
-   /* This should cancel the ismaster immediately. */
+   /* This should cancel the hello immediately. */
    WAIT_TWO_MIN_HEARTBEAT_MS;
-   /* No further ismaster commands should be sent. */
+   /* No further hello commands should be sent. */
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    request_destroy (request);
    tf_destroy (tf);
@@ -838,7 +838,7 @@ test_streaming_cancel (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
@@ -847,7 +847,7 @@ test_streaming_cancel (void)
    OBSERVE (tf, tf->observations->n_heartbeat_started == 2);
    _request_cancel (tf);
 
-   /* This should cancel the ismaster immediately. */
+   /* This should cancel the hello immediately. */
    request_destroy (request);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 1);
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_failed == 1);
@@ -878,7 +878,7 @@ test_moretocome_succeeds (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
@@ -912,7 +912,7 @@ test_moretocome_succeeds (void)
    OBSERVE_SOON (tf, tf->observations->n_heartbeat_succeeded == 4);
    OBSERVE (tf, tf->observations->awaited);
    request_destroy (request);
-   /* Server monitor immediately sends awaitable ismaster. */
+   /* Server monitor immediately sends awaitable hello. */
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
@@ -934,7 +934,7 @@ test_moretocome_hangup (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
@@ -973,7 +973,7 @@ test_moretocome_badreply (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
@@ -1013,7 +1013,7 @@ test_moretocome_shutdown (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER | TF_FAST_HEARTBEAT);
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO | TF_FAST_HEARTBEAT);
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
@@ -1048,7 +1048,7 @@ test_moretocome_cancel (void)
    test_fixture_t *tf;
    request_t *request;
 
-   tf = tf_new (TF_AUTO_RESPOND_POLLING_ISMASTER);
+   tf = tf_new (TF_AUTO_RESPOND_POLLING_HELLO);
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,
@@ -1087,7 +1087,7 @@ test_moretocome_cancel (void)
    OBSERVE_SOON (tf, tf->observations->n_server_changed == 1);
    OBSERVE_SOON (tf, tf->observations->sd_type == MONGOC_SERVER_STANDALONE);
 
-   /* Server monitor sends a fresh awaitable ismaster. */
+   /* Server monitor sends a fresh awaitable hello. */
    request = mock_server_receives_msg (
       tf->server,
       MONGOC_MSG_EXHAUST_ALLOWED,

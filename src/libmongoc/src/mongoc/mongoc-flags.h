@@ -78,7 +78,7 @@ typedef enum {
  * @MONGOC_QUERY_NONE: No query flags supplied.
  * @MONGOC_QUERY_TAILABLE_CURSOR: Cursor will not be closed when the last
  *    data is retrieved. You can resume this cursor later.
- * @MONGOC_QUERY_SLAVE_OK: Allow query of replica slave.
+ * @MONGOC_QUERY_SECONDARY_OK: Allow query of secondaries in a replica set.
  * @MONGOC_QUERY_OPLOG_REPLAY: Used internally by Mongo.
  * @MONGOC_QUERY_NO_CURSOR_TIMEOUT: The server normally times out idle
  *    cursors after an inactivity period (10 minutes). This prevents that.
@@ -96,6 +96,7 @@ typedef enum {
    MONGOC_QUERY_NONE = 0,
    MONGOC_QUERY_TAILABLE_CURSOR = 1 << 1,
    MONGOC_QUERY_SLAVE_OK = 1 << 2,
+   MONGOC_QUERY_SECONDARY_OK = 1 << 2,
    MONGOC_QUERY_OPLOG_REPLAY = 1 << 3,
    MONGOC_QUERY_NO_CURSOR_TIMEOUT = 1 << 4,
    MONGOC_QUERY_AWAIT_DATA = 1 << 5,

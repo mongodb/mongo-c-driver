@@ -24,17 +24,17 @@ void
 reset_basic_sd (mongoc_server_description_t *sd)
 {
    bson_error_t error;
-   bson_t *ismaster;
+   bson_t *hello;
 
-   ismaster = BCON_NEW ("minWireVersion",
+   hello = BCON_NEW ("minWireVersion",
                         BCON_INT32 (0),
                         "maxWireVersion",
                         BCON_INT32 (WIRE_VERSION_MAX));
 
    mongoc_server_description_reset (sd);
    memset (&error, 0, sizeof (bson_error_t));
-   mongoc_server_description_handle_hello (sd, ismaster, 0 /* rtt */, &error);
-   bson_destroy (ismaster);
+   mongoc_server_description_handle_hello (sd, hello, 0 /* rtt */, &error);
+   bson_destroy (hello);
 }
 
 /* These checks will start failing and need to be updated once CDRIVER-3527 is
@@ -232,32 +232,32 @@ void
 test_server_description_msg_without_isdbgrid (void)
 {
    mongoc_server_description_t sd;
-   bson_t *ismaster;
+   bson_t *hello;
    bson_error_t error;
 
    mongoc_server_description_init (&sd, "host:1234", 1);
-   ismaster = BCON_NEW ("minWireVersion",
+   hello = BCON_NEW ("minWireVersion",
                         BCON_INT32 (0),
                         "maxWireVersion",
                         BCON_INT32 (WIRE_VERSION_MAX),
                         "msg",
                         "isdbgrid");
    memset (&error, 0, sizeof (bson_error_t));
-   mongoc_server_description_handle_hello (&sd, ismaster, 0 /* rtt */, &error);
+   mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_MONGOS);
 
    mongoc_server_description_reset (&sd);
-   bson_destroy (ismaster);
-   ismaster = BCON_NEW ("minWireVersion",
+   bson_destroy (hello);
+   hello = BCON_NEW ("minWireVersion",
                         BCON_INT32 (0),
                         "maxWireVersion",
                         BCON_INT32 (WIRE_VERSION_MAX),
                         "msg",
                         "something_else");
-   mongoc_server_description_handle_hello (&sd, ismaster, 0 /* rtt */, &error);
+   mongoc_server_description_handle_hello (&sd, hello, 0 /* rtt */, &error);
    BSON_ASSERT (sd.type == MONGOC_SERVER_STANDALONE);
 
-   bson_destroy (ismaster);
+   bson_destroy (hello);
    mongoc_server_description_cleanup (&sd);
 }
 

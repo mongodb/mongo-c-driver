@@ -20,7 +20,7 @@ _test_query_flag (mongoc_query_flags_t flag, bson_t *opt)
    request_t *request;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

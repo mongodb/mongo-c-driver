@@ -44,10 +44,10 @@ test_client_cmd_w_server_id (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_READ_CONCERN,
-                                   true /* has primary */,
-                                   1 /* secondary   */,
-                                   0 /* arbiters    */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_READ_CONCERN,
+                                 true /* has primary */,
+                                 1 /* secondary   */,
+                                 0 /* arbiters    */);
 
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
@@ -65,7 +65,7 @@ test_client_cmd_w_server_id (void)
    /* recognized that wire version is recent enough for readConcern */
    request = mock_rs_receives_command (rs,
                                        "db",
-                                       MONGOC_QUERY_SLAVE_OK,
+                                       MONGOC_QUERY_SECONDARY_OK,
                                        "{'ping': 1,"
                                        " 'readConcern': {'level': 'local'},"
                                        " 'serverId': {'$exists': false}}");
@@ -107,7 +107,7 @@ test_client_cmd_w_server_id_sharded (void)
                                                   &reply,
                                                   &error);
 
-   /* does NOT set slave ok, since this is a sharded topology */
+   /* does NOT set secondaryOk, since this is a sharded topology */
    request = mock_server_receives_command (
       server,
       "db",
@@ -262,7 +262,7 @@ test_client_cmd_write_concern (void)
    char *cmd;
 
    /* set up client and wire protocol version */
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -273,7 +273,7 @@ test_client_cmd_write_concern (void)
    future = future_client_command_simple (
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
    request =
-      mock_server_receives_command (server, "test", MONGOC_QUERY_SLAVE_OK, cmd);
+      mock_server_receives_command (server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
    BSON_ASSERT (request);
 
    mock_server_replies_ok_and_destroys (request);
@@ -286,7 +286,7 @@ test_client_cmd_write_concern (void)
    future = future_client_command_simple (
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
    request =
-      mock_server_receives_command (server, "test", MONGOC_QUERY_SLAVE_OK, cmd);
+      mock_server_receives_command (server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
    BSON_ASSERT (request);
 
    mock_server_replies_simple (
@@ -303,7 +303,7 @@ test_client_cmd_write_concern (void)
    future = future_client_command_simple (
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
    request =
-      mock_server_receives_command (server, "test", MONGOC_QUERY_SLAVE_OK, cmd);
+      mock_server_receives_command (server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
    mock_server_replies_simple (
       request,
       "{ 'ok' : 1, 'n': 1, "
@@ -330,7 +330,7 @@ test_client_cmd_write_concern_fam (void)
    request_t *request;
    mock_server_t *server;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FAM_WRITE_CONCERN - 1);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FAM_WRITE_CONCERN - 1);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -355,7 +355,7 @@ test_client_cmd_write_concern_fam (void)
    mongoc_client_destroy (client);
    bson_destroy (&reply);
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_FAM_WRITE_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_FAM_WRITE_CONCERN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -782,7 +782,7 @@ test_mongoc_client_authenticate_timeout (void *context)
       return;
    }
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_username (uri, "user");
@@ -794,7 +794,7 @@ test_mongoc_client_authenticate_timeout (void *context)
       client, "test", tmp_bson ("{'ping': 1}"), NULL, &reply, &error);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, NULL);
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    ASSERT (request);
    ASSERT_CMPSTR (request->command_name, "saslStart");
@@ -888,7 +888,7 @@ test_wire_version (void)
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_request (server);
    mock_server_replies_to_find (
-      request, MONGOC_QUERY_SLAVE_OK, 0, 0, "test.test", "{}", true);
+      request, MONGOC_QUERY_SECONDARY_OK, 0, 0, "test.test", "{}", true);
 
    /* no error */
    BSON_ASSERT (future_get_bool (future));
@@ -1073,7 +1073,7 @@ _test_command_read_prefs (bool simple, bool pooled)
       request = mock_server_receives_command (
          server,
          "db",
-         MONGOC_QUERY_SLAVE_OK,
+         MONGOC_QUERY_SECONDARY_OK,
          "{'$query': {'foo': 1},"
          " '$readPreference': {'mode': 'secondary'}}");
       mock_server_replies_simple (request, "{'ok': 1}");
@@ -1101,7 +1101,7 @@ _test_command_read_prefs (bool simple, bool pooled)
       request = mock_server_receives_command (
          server,
          "db",
-         MONGOC_QUERY_SLAVE_OK,
+         MONGOC_QUERY_SECONDARY_OK,
          "{'$query': {'foo': 1},"
          " '$readPreference': {'mode': 'secondary'}}");
 
@@ -1238,13 +1238,13 @@ test_command_with_opts_read_prefs (void)
    future = future_client_read_command_with_opts (
       client, "admin", cmd, NULL, NULL /* opts */, NULL, &error);
 
-   /* Server Selection Spec: "For mode 'secondary', drivers MUST set the slaveOK
+   /* Server Selection Spec: "For mode 'secondary', drivers MUST set the secondaryOk
     * wire protocol flag and MUST also use $readPreference".
     */
    request = mock_server_receives_command (
       server,
       "admin",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'$query': {'count': 'collection'},"
       " '$readPreference': {'mode': 'secondary'}}");
 
@@ -1287,10 +1287,10 @@ test_read_write_cmd_with_opts (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_autoismaster (WIRE_VERSION_MIN,
-                                   true /* has primary */,
-                                   1 /* secondary */,
-                                   0 /* arbiters */);
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN,
+                                 true /* has primary */,
+                                 1 /* secondary */,
+                                 0 /* arbiters */);
 
    mock_rs_run (rs);
    client = test_framework_client_new_from_uri (mock_rs_get_uri (rs), NULL);
@@ -1574,7 +1574,7 @@ test_command_with_opts (void)
    request =
       mock_server_receives_command (server,
                                     "admin",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{"
                                     "   '$query': {"
                                     "      'create':'db',"
@@ -1737,7 +1737,7 @@ test_command_no_errmsg (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -1748,7 +1748,7 @@ test_command_no_errmsg (void)
       future_client_command_simple (client, "admin", cmd, NULL, NULL, &error);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, NULL);
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    /* auth errors have $err, not errmsg. we'd raised "Unknown command error",
     * see CDRIVER-1928 */
@@ -2122,7 +2122,7 @@ test_recovering (void *ctx)
    server = mock_server_new ();
    mock_server_run (server);
 
-   /* server is "recovering": not master, not secondary */
+   /* server is "recovering": not primary, not secondary */
    mock_server_auto_hello (server,
                            "{'ok': 1,"
                            " 'isWritablePrimary': false,"
@@ -2180,7 +2180,7 @@ test_server_status (void)
 static void
 test_get_database_names (void)
 {
-   mock_server_t *server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   mock_server_t *server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mongoc_client_t *client;
    bson_error_t error;
    future_t *future;
@@ -2194,7 +2194,7 @@ test_get_database_names (void)
    request =
       mock_server_receives_command (server,
                                     "admin",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'listDatabases': 1, 'nameOnly': true}");
    mock_server_replies (
       request,
@@ -2216,7 +2216,7 @@ test_get_database_names (void)
    request =
       mock_server_receives_command (server,
                                     "admin",
-                                    MONGOC_QUERY_SLAVE_OK,
+                                    MONGOC_QUERY_SECONDARY_OK,
                                     "{'listDatabases': 1, 'nameOnly': true}");
    mock_server_replies (
       request, 0, 0, 0, 1, "{'ok': 0.0, 'code': 17, 'errmsg': 'err'}");
@@ -2871,7 +2871,7 @@ _test_mongoc_client_select_server_retry (bool retry_succeeds)
    /* second selection requires ping, which fails */
    future = future_client_select_server (client, true, NULL, &error);
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
 
    mock_server_hangs_up (request);
    request_destroy (request);
@@ -2941,7 +2941,7 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
    request_destroy (request);
 
    request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SLAVE_OK, "{'cmd': 1}");
+      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'cmd': 1}");
    mock_server_replies_simple (request, "{'ok': 1}");
    request_destroy (request);
 
@@ -2956,7 +2956,7 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
       client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, &error);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
 
    mock_server_hangs_up (request);
    request_destroy (request);
@@ -2968,7 +2968,7 @@ _test_mongoc_client_fetch_stream_retry (bool retry_succeeds)
       request_destroy (request);
 
       request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_SLAVE_OK, "{'cmd': 1}");
+         server, "db", MONGOC_QUERY_SECONDARY_OK, "{'cmd': 1}");
 
       mock_server_replies_simple (request, "{'ok': 1}");
       ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -3014,7 +3014,7 @@ _cmd (mock_server_t *server,
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, error);
    request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SLAVE_OK, NULL);
+      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
    ASSERT (request);
 
    if (server_replies) {
@@ -3050,7 +3050,7 @@ test_client_set_ssl_copies_args (bool pooled)
    server_opts.ca_file = CERT_CA;
    server_opts.pem_file = CERT_SERVER;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_set_ssl_opts (server, &server_opts);
    mock_server_run (server);
 
@@ -3115,7 +3115,7 @@ _test_ssl_reconnect (bool pooled)
    server_opts.ca_file = CERT_CA;
    server_opts.pem_file = CERT_SERVER;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_set_ssl_opts (server, &server_opts);
    mock_server_run (server);
 
@@ -3219,7 +3219,7 @@ test_mongoc_client_application_handshake (void)
 }
 
 static void
-_assert_ismaster_valid (request_t *request, bool needs_meta)
+_assert_hello_valid (request_t *request, bool needs_meta)
 {
    const bson_t *request_doc;
 
@@ -3229,14 +3229,14 @@ _assert_ismaster_valid (request_t *request, bool needs_meta)
    ASSERT (bson_has_field (request_doc, HANDSHAKE_FIELD) == needs_meta);
 }
 
-/* For single threaded clients, to cause an isMaster to be sent, we must wait
+/* For single threaded clients, to cause a hello to be sent, we must wait
  * until we're overdue for a heartbeat, and then execute some command */
 static future_t *
-_force_ismaster_with_ping (mongoc_client_t *client, int heartbeat_ms)
+_force_hello_with_ping (mongoc_client_t *client, int heartbeat_ms)
 {
    future_t *future;
 
-   /* Wait until we're overdue to send an isMaster */
+   /* Wait until we're overdue to send a hello */
    _mongoc_usleep (heartbeat_ms * 2 * 1000);
 
    /* Send a ping */
@@ -3246,8 +3246,8 @@ _force_ismaster_with_ping (mongoc_client_t *client, int heartbeat_ms)
    return future;
 }
 
-/* Call after we've dealt with the isMaster sent by
- * _force_ismaster_with_ping */
+/* Call after we've dealt with the hello sent by
+ * _force_hello_with_ping */
 static void
 _respond_to_ping (future_t *future, mock_server_t *server)
 {
@@ -3256,7 +3256,7 @@ _respond_to_ping (future_t *future, mock_server_t *server)
    ASSERT (future);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
 
    mock_server_replies_simple (request, "{'ok': 1}");
 
@@ -3290,7 +3290,7 @@ test_mongoc_handshake_pool (void)
 
    client1 = mongoc_client_pool_pop (pool);
    request1 = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request1, true);
+   _assert_hello_valid (request1, true);
    mock_server_replies_simple (request1, server_reply);
    request_destroy (request1);
 
@@ -3299,12 +3299,12 @@ test_mongoc_handshake_pool (void)
       client2, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
 
    request2 = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request2, true);
+   _assert_hello_valid (request2, true);
    mock_server_replies_simple (request2, server_reply);
    request_destroy (request2);
 
    request2 = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SLAVE_OK, NULL);
+      server, "test", MONGOC_QUERY_SECONDARY_OK, NULL);
    mock_server_replies_ok_and_destroys (request2);
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -3347,62 +3347,62 @@ _test_client_sends_handshake (bool pooled)
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri, NULL);
-      future = _force_ismaster_with_ping (client, heartbeat_ms);
+      future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
    request = mock_server_receives_legacy_hello (server, NULL);
 
-   /* Make sure the isMaster request has a "client" field: */
-   _assert_ismaster_valid (request, true);
+   /* Make sure the hello request has a "client" field: */
+   _assert_hello_valid (request, true);
    mock_server_replies_simple (request, server_reply);
    request_destroy (request);
 
    if (!pooled) {
       _respond_to_ping (future, server);
 
-      /* Wait until another isMaster is sent */
-      future = _force_ismaster_with_ping (client, heartbeat_ms);
+      /* Wait until another hello is sent */
+      future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
    request = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request, false);
+   _assert_hello_valid (request, false);
 
    mock_server_replies_simple (request, server_reply);
    request_destroy (request);
 
    if (!pooled) {
       _respond_to_ping (future, server);
-      future = _force_ismaster_with_ping (client, heartbeat_ms);
+      future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
-   /* Now wait for the client to send another isMaster command, but this
+   /* Now wait for the client to send another hello command, but this
     * time the server hangs up */
    request = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request, false);
+   _assert_hello_valid (request, false);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    /* Client retries once (CDRIVER-2075) */
    request = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request, true);
+   _assert_hello_valid (request, true);
    mock_server_hangs_up (request);
    request_destroy (request);
 
    if (!pooled) {
-      /* The ping wasn't sent since we hung up with isMaster */
+      /* The ping wasn't sent since we hung up with hello */
       ASSERT (!future_get_bool (future));
       future_destroy (future);
 
       /* We're in cooldown for the next few seconds, so we're not
-       * allowed to send isMasters. Wait for the cooldown to end. */
+       * allowed to send hellos. Wait for the cooldown to end. */
       _mongoc_usleep ((MONGOC_TOPOLOGY_COOLDOWN_MS + 1000) * 1000);
-      future = _force_ismaster_with_ping (client, heartbeat_ms);
+      future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
    /* Now the client should try to reconnect. They think the server's down
-    * so now they SHOULD send isMaster */
+    * so now they SHOULD send hello */
    request = mock_server_receives_legacy_hello (server, NULL);
-   _assert_ismaster_valid (request, true);
+   _assert_hello_valid (request, true);
 
    mock_server_replies_simple (request, server_reply);
    request_destroy (request);
@@ -3469,7 +3469,7 @@ test_client_appname (bool pooled, bool use_uri)
       if (!use_uri) {
          ASSERT (mongoc_client_set_appname (client, "testapp"));
       }
-      future = _force_ismaster_with_ping (client, heartbeat_ms);
+      future = _force_hello_with_ping (client, heartbeat_ms);
    }
 
    request = mock_server_receives_legacy_hello (server,
@@ -3537,7 +3537,7 @@ _test_null_error_pointer (bool pooled)
 
    capture_logs (true);
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MIN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "serverSelectionTimeoutMS", 1000);
@@ -3553,7 +3553,7 @@ _test_null_error_pointer (bool pooled)
    future = future_client_command_simple (
       client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
    request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SLAVE_OK, NULL);
+      server, "test", MONGOC_QUERY_SECONDARY_OK, NULL);
    mock_server_replies_ok_and_destroys (request);
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -3703,7 +3703,7 @@ test_client_reset_cursors (void)
    bson_error_t error;
    const bson_t *doc;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_KILLCURSORS_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_KILLCURSORS_CMD);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -3717,7 +3717,7 @@ test_client_reset_cursors (void)
 
    future = future_cursor_next (cursor, &doc);
    request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SLAVE_OK, "{'find': 'test'}");
+      server, "test", MONGOC_QUERY_SECONDARY_OK, "{'find': 'test'}");
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -3752,7 +3752,7 @@ test_client_reset_cursors (void)
       database, tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
    mock_server_replies_simple (request, "{'ok': 1}");
 
    ASSERT (future_get_bool (future));
@@ -3815,7 +3815,7 @@ test_client_reset_connections (void)
       database, tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
 
    request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SLAVE_OK, "{'ping': 1}");
+      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
    BSON_ASSERT (request);
    mock_server_replies_simple (request, "{'ok': 1}");
 
@@ -3948,7 +3948,7 @@ test_mongoc_client_recv_network_error (void)
    mongoc_buffer_t buffer;
    mongoc_server_stream_t *stream;
 
-   server = mock_server_with_autoismaster (WIRE_VERSION_MAX);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);

@@ -72,7 +72,7 @@ mongoc_async_run (mongoc_async_t *async)
    }
 
    while (async->ncmds) {
-      /* ncmds grows if we discover a replica & start calling ismaster on it */
+      /* ncmds grows if we discover a replica & start calling hello on it */
       if (poll_size < async->ncmds) {
          poller = (mongoc_stream_poll_t *) bson_realloc (
             poller, sizeof (*poller) * async->ncmds);

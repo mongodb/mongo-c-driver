@@ -12,7 +12,7 @@
 #include "mongoc/mongoc-topology-description-private.h"
 
 #undef MONGOC_LOG_DOMAIN
-#define MONGOC_LOG_DOMAIN "streamable-ismaster"
+#define MONGOC_LOG_DOMAIN "streamable-hello"
 
 #define TV1 \
    "{ 'processId': { '$oid': 'AABBAABBAABBAABBAABBAABB' }, 'counter': 1 }"
@@ -171,7 +171,7 @@ test_topology_version_compare (void)
 }
 
 void
-test_streamable_ismaster_install (TestSuite *suite)
+test_streamable_hello_install (TestSuite *suite)
 {
    TestSuite_AddMockServerTest (suite,
                                 "/streamable/topology_version/update",

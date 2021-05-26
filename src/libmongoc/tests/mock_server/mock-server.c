@@ -33,7 +33,7 @@
 #include <strings.h>
 #endif
 
-/* /Async/ismaster_ssl and /TOPOLOGY/scanner_ssl need a reasonable timeout */
+/* /Async/hello_ssl and /TOPOLOGY/scanner_ssl need a reasonable timeout */
 #define TIMEOUT 5000
 
 
@@ -117,7 +117,7 @@ get_port (mongoc_socket_t *sock);
  *       Get a new mock_server_t. Call mock_server_run to start it,
  *       then mock_server_get_uri to connect.
  *
- *       This server does not autorespond to "ismaster".
+ *       This server does not autorespond to "hello".
  *
  * Returns:
  *       A server you must mock_server_destroy.
@@ -149,9 +149,9 @@ mock_server_new ()
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_with_autoismaster --
+ * mock_server_with_auto_hello --
  *
- *       A new mock_server_t that autoresponds to ismaster. Call
+ *       A new mock_server_t that autoresponds to hello. Call
  *       mock_server_run to start it, then mock_server_get_uri to
  *       connect.
  *
@@ -165,7 +165,7 @@ mock_server_new ()
  */
 
 mock_server_t *
-mock_server_with_autoismaster (int32_t max_wire_version)
+mock_server_with_auto_hello (int32_t max_wire_version)
 {
    mock_server_t *server = mock_server_new ();
 
@@ -188,7 +188,7 @@ mock_server_with_autoismaster (int32_t max_wire_version)
  *
  * mock_mongos_new --
  *
- *       A new mock_server_t that autoresponds to ismaster as if it were a
+ *       A new mock_server_t that autoresponds to hello as if it were a
  *       mongos. Call mock_server_run to start it, then mock_server_get_uri
  *       to connect.
  *
@@ -986,17 +986,17 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_receives_ismaster --
+ * mock_server_receives_hello --
  *
- *       Pop a client non-streaming ismaster call if one is enqueued,
+ *       Pop a client non-streaming hello call if one is enqueued,
  *       or wait up to request_timeout_ms for the client to send a request.
  *
  * Returns:
  *       A request you must request_destroy, or NULL if the current
- *       request is not an ismaster command.
+ *       request is not a hello command.
  *
  * Side effects:
- *       Logs if the current request is not an ismaster command.
+ *       Logs if the current request is not a hello command.
  *
  *--------------------------------------------------------------------------
  */
@@ -1026,7 +1026,7 @@ mock_server_receives_legacy_hello (mock_server_t *server,
 
    if (!request_matches_query (request,
                                "admin.$cmd",
-                               MONGOC_QUERY_SLAVE_OK,
+                               MONGOC_QUERY_SECONDARY_OK,
                                0,
                                1,
                                match_json ? match_json : formatted_command_json,
@@ -1051,10 +1051,10 @@ mock_server_receives_legacy_hello (mock_server_t *server,
  *
  * Returns:
  *       A request you must request_destroy, or NULL if the current
- *       request is not an hello command.
+ *       request is not a hello command.
  *
  * Side effects:
- *       Logs if the current request is not an hello command.
+ *       Logs if the current request is not a hello command.
  *
  *--------------------------------------------------------------------------
  */
@@ -1065,7 +1065,7 @@ mock_server_receives_hello (mock_server_t *server)
    return mock_server_receives_command (
       server,
       "admin",
-      MONGOC_QUERY_SLAVE_OK,
+      MONGOC_QUERY_SECONDARY_OK,
       "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
 }
 
@@ -2116,7 +2116,7 @@ mock_server_set_bind_opts (mock_server_t *server, mock_server_bind_opts_t *opts)
 }
 
 void
-rs_response_to_ismaster (
+rs_response_to_hello (
    mock_server_t *server, int max_wire_version, bool primary, int has_tags, ...)
 {
    va_list ap;
