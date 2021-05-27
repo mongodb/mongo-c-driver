@@ -99,7 +99,7 @@ _bson_utf8_get_sequence (const char *utf8,    /* IN */
  * Parameters:
  *       @utf8: A UTF-8 encoded string.
  *       @utf8_len: The length of @utf8 in bytes.
- *       @allow_null: If \0 is allowed within @utf8, exclusing trailing \0.
+ *       @allow_null: If \0 is allowed within @utf8, excluding trailing \0.
  *
  * Returns:
  *       true if @utf8 is valid UTF-8. otherwise false.
