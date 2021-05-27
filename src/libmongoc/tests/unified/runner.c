@@ -1153,7 +1153,7 @@ test_check_outcome_collection (test_t *test,
       expected_sorted = bson_copy_and_sort (&expected);
 
 
-      if (!bson_equal (&actual, &expected)) {
+      if (!bson_equal (actual_sorted, expected_sorted)) {
          test_set_error (error,
                          "expected %s, but got %s",
                          tmp_json (expected_sorted),
@@ -1493,4 +1493,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR "/crud/unified");
 
    run_unified_tests (suite, JSON_DIR "/transactions/unified");
+
+   run_unified_tests (suite, JSON_DIR "/collection-management");
 }
