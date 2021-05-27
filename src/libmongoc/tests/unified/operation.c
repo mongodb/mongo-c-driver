@@ -141,19 +141,36 @@ operation_list_databases (test_t *test,
    bool ret = false;
    mongoc_client_t *client = NULL;
    mongoc_cursor_t *cursor = NULL;
+   bson_parser_t *parser = NULL;
+   bson_t *opts = NULL;
+
+   parser = bson_parser_new ();
+   bson_parser_allow_extra (parser, true);
+
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+   if (op->arguments) {
+      bson_concat (opts, op->arguments);
+   }
 
    client = entity_map_get_client (test->entity_map, op->object, error);
    if (!client) {
       goto done;
    }
 
-   cursor = mongoc_client_find_databases_with_opts (client, op->arguments);
+   cursor = mongoc_client_find_databases_with_opts (client, opts);
 
    result_from_cursor (result, cursor);
 
    ret = true;
 done:
    mongoc_cursor_destroy (cursor);
+   bson_parser_destroy_with_parsed_fields (parser);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -274,6 +291,7 @@ operation_list_collections (test_t *test,
    ret = true;
 done:
    mongoc_cursor_destroy (cursor);
+   bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (opts);
    return ret;
 }
@@ -316,6 +334,7 @@ operation_list_collection_names (test_t *test,
    ret = true;
 done:
    mongoc_cursor_destroy (cursor);
+   bson_parser_destroy_with_parsed_fields (parser);
    bson_strfreev (op_ret);
    bson_destroy (opts);
    return ret;
@@ -547,7 +566,6 @@ operation_bulk_write (test_t *test,
    bson_error_t op_error = {0};
 
    parser = bson_parser_new ();
-   bson_parser_allow_extra (parser, true);
    bson_parser_array (parser, "requests", &requests);
    bson_parser_bool_optional (parser, "ordered", &ordered);
    if (!bson_parser_parse (parser, op->arguments, error)) {
@@ -847,11 +865,10 @@ operation_distinct (test_t *test,
                         "{",
                         &filter,
                         "}");
-   bson_concat (distinct, opts);
 
    bson_destroy (&op_reply);
-   mongoc_collection_command_simple (
-      coll, distinct, NULL /* read prefs */, &op_reply, &op_error);
+   mongoc_collection_read_command_with_opts (
+      coll, distinct, NULL /* read prefs */, opts, &op_reply, &op_error);
 
    result_from_distinct (result, &op_reply, &op_error);
 
@@ -1646,7 +1663,6 @@ operation_upload (test_t *test,
    bson_value_t file_id;
    bson_error_t op_error = {0};
    bson_val_t *val = NULL;
-   bson_t *opts = NULL;
 
    bp = bson_parser_new ();
    bson_parser_allow_extra (bp, true);
@@ -1656,20 +1672,13 @@ operation_upload (test_t *test,
       goto done;
    }
 
-   opts = bson_copy (bson_parser_get_extra (bp));
-   if (op->session) {
-      if (!mongoc_client_session_append (op->session, opts, error)) {
-         goto done;
-      }
-   }
-
    bucket = entity_map_get_bucket (test->entity_map, op->object, error);
    if (!bucket) {
       goto done;
    }
 
    stream = mongoc_gridfs_bucket_open_upload_stream (
-      bucket, filename, opts, &file_id, &op_error);
+      bucket, filename, bson_parser_get_extra (bp), &file_id, &op_error);
 
    if (stream) {
       ssize_t total_written = 0;
@@ -1710,7 +1719,6 @@ done:
    bson_parser_destroy_with_parsed_fields (bp);
    mongoc_stream_destroy (stream);
    bson_val_destroy (val);
-   bson_destroy (opts);
    return ret;
 }
 
@@ -2015,26 +2023,17 @@ assert_collection_exists (test_t *test,
    bson_error_t op_error = {0};
    bool actual_exist = false;
    char **head = NULL, **iter = NULL;
-   bson_t *opts = NULL;
 
    bp = bson_parser_new ();
-   bson_parser_allow_extra (bp, true);
    bson_parser_utf8 (bp, "collectionName", &collection_name);
    bson_parser_utf8 (bp, "databaseName", &database_name);
    if (!bson_parser_parse (bp, op->arguments, error)) {
       goto done;
    }
 
-   opts = bson_copy (bson_parser_get_extra (bp));
-   if (op->session) {
-      if (!mongoc_client_session_append (op->session, opts, error)) {
-         goto done;
-      }
-   }
-
    db = mongoc_client_get_database (
       test->test_file->test_runner->internal_client, database_name);
-   head = mongoc_database_get_collection_names_with_opts (db, opts, &op_error);
+   head = mongoc_database_get_collection_names_with_opts (db, NULL, &op_error);
    for (iter = head; *iter; iter++) {
       if (0 == strcmp (*iter, collection_name)) {
          actual_exist = true;
@@ -2058,7 +2057,6 @@ done:
    bson_strfreev (head);
    mongoc_database_destroy (db);
    bson_parser_destroy_with_parsed_fields (bp);
-   bson_destroy (opts);
    return ret;
 }
 
@@ -2147,10 +2145,8 @@ assert_index_exists (test_t *test,
    mongoc_cursor_t *cursor = NULL;
    const bson_t *index;
    const bson_t *error_doc = NULL;
-   bson_t *opts = NULL;
 
    bp = bson_parser_new ();
-   bson_parser_allow_extra (bp, true);
    bson_parser_utf8 (bp, "collectionName", &collection_name);
    bson_parser_utf8 (bp, "databaseName", &database_name);
    bson_parser_utf8 (bp, "indexName", &index_name);
@@ -2158,18 +2154,11 @@ assert_index_exists (test_t *test,
       goto done;
    }
 
-   opts = bson_copy (bson_parser_get_extra (bp));
-   if (op->session) {
-      if (!mongoc_client_session_append (op->session, opts, error)) {
-         goto done;
-      }
-   }
-
    coll = mongoc_client_get_collection (
       test->test_file->test_runner->internal_client,
       database_name,
       collection_name);
-   cursor = mongoc_collection_find_indexes_with_opts (coll, opts);
+   cursor = mongoc_collection_find_indexes_with_opts (coll, NULL);
    while (mongoc_cursor_next (cursor, &index)) {
       bson_iter_t iter;
 
@@ -2207,7 +2196,6 @@ done:
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (coll);
    bson_parser_destroy_with_parsed_fields (bp);
-   bson_destroy (opts);
    return ret;
 }
 
