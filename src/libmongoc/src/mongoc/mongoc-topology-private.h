@@ -230,3 +230,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology);
 bool
 mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
 #endif
+
+void
+_mongoc_topology_set_server_api (mongoc_topology_t *topology,
+                                 const mongoc_server_api_t *api);

@@ -1824,3 +1824,23 @@ _topology_collect_errors (mongoc_topology_t *topology, bson_error_t *error_out)
                  sizeof (error_out->message));
    bson_string_free (error_message, true);
 }
+
+/* Caller must lock topology->mutex to protect handshake_cmd. */
+void
+_mongoc_topology_set_server_api (mongoc_topology_t *topology,
+                                 const mongoc_server_api_t *api)
+{
+   mongoc_server_description_t *server_description;
+   int i;
+
+   BSON_ASSERT (topology);
+   BSON_ASSERT (api);
+
+   /* Set hello_ok for all server descriptions */
+   for (i = 0; i < topology->description.servers->items_len; i++) {
+      server_description = topology->description.servers->items[i].item;
+      server_description->hello_ok = true;
+   }
+
+   _mongoc_topology_scanner_set_server_api (topology->scanner, api);
+}

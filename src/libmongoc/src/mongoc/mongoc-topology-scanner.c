@@ -109,15 +109,16 @@ _add_hello (mongoc_topology_scanner_t *ts)
    mongoc_server_api_t *api = ts->api;
 
    BSON_APPEND_INT32 (&ts->hello_cmd, "hello", 1);
+   BSON_APPEND_BOOL (&ts->hello_cmd, "helloOk", true);
+
+   BSON_APPEND_INT32 (&ts->legacy_hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
+   BSON_APPEND_BOOL (&ts->legacy_hello_cmd, "helloOk", true);
 
    if (api) {
       BSON_APPEND_INT32 (&ts->legacy_hello_cmd, "hello", 1);
 
       _mongoc_cmd_append_server_api (&ts->hello_cmd, api);
       _mongoc_cmd_append_server_api (&ts->legacy_hello_cmd, api);
-   } else {
-      BSON_APPEND_INT32 (&ts->legacy_hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
-      BSON_APPEND_BOOL (&ts->legacy_hello_cmd, "helloOk", true);
    }
 }
 
@@ -260,7 +261,7 @@ _build_handshake_cmd (mongoc_topology_scanner_t *ts)
    char buf[16];
 
    bson_destroy (doc);
-   bson_copy_to (&ts->legacy_hello_cmd, doc);
+   bson_copy_to (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd, doc);
 
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
    res = _mongoc_handshake_build_doc_with_application (&subdoc, ts->appname);
@@ -288,7 +289,7 @@ const bson_t *
 _mongoc_topology_scanner_get_monitoring_cmd (mongoc_topology_scanner_t *ts,
                                              bool hello_ok)
 {
-   return hello_ok ? &ts->hello_cmd : &ts->legacy_hello_cmd;
+   return hello_ok || ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd;
 }
 
 /* Caller must lock topology->mutex to protect handshake_cmd. This
@@ -309,7 +310,7 @@ _mongoc_topology_scanner_get_handshake_cmd (mongoc_topology_scanner_t *ts)
 
    /* If the doc turned out to be too big */
    if (!ts->handshake_ok_to_send) {
-      return &ts->legacy_hello_cmd;
+      return ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd;
    }
 
    return &ts->handshake_cmd;
