@@ -1,3 +1,19 @@
+mongo-c-driver 1.17.6
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.6.
+
+Bug fixes:
+
+  * Fix possible crash when speculative authentication fails with network error.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Andreas Braun
+
+--Kevin Albertson
+
+
 mongo-c-driver 1.17.5
 =====================
 
