@@ -20,6 +20,15 @@ Thanks to everyone who contributed to the development of this release.
 
 --Kevin Albertson
 
+libbson 1.17.6
+==============
+
+It is my pleasure to announce libbson 1.17.6.
+
+No changes since 1.17.5; release to keep pace with libmongoc's version.
+
+-- Kevin Albertson
+
 
 libbson 1.17.5
 ==============

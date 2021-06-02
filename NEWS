@@ -28,6 +28,19 @@ Thanks to everyone who contributed to the development of this release.
   * Josh Weinstein
   * Pierre Mickael Gonzalo
 
+mongo-c-driver 1.17.6
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.6.
+
+Bug fixes:
+
+  * Fix possible crash when speculative authentication fails with network error.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Andreas Braun
+
 --Kevin Albertson
 
 
@@ -2049,7 +2062,7 @@ These notable bugs have been fixed since 1.1.11:
     authentication failure
   * Off-by-one error in mongoc_gridfs_file_seek with mode SEEK_END
   * The writeConcernErrors field of bulk results is properly formatted.
-  * A cursor with a server "hint" sets secondaryOk and / or $readPreference.
+  * A cursor with a server "hint" sets slaveOkay and / or $readPreference.
   * Destroying an exhaust cursor must close its socket
   * "wtimeoutms" was ignored for write concerns besides "majority".
   * Bulk write operations might fail in mixed-version sharded clusters with
@@ -2760,7 +2773,7 @@ In this release, you will find the following changes:
   * client command functions can now take a fully qualified namespace.
   * collections can now support names that indicate a command namespace.
   * Commands will no longer fail if they do not contain an "ok" field.
-  * OP_QUERY will now set the secondaryOk bit in the wire protocol if
+  * OP_QUERY will now set the slaveOk bit in the wire protocol if
   * readPreferences are set to non-PRIMARY.
   * Various documentation and build fixes.
 
