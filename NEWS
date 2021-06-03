@@ -1,3 +1,25 @@
+mongo-c-driver 1.18.0-alpha2
+============================
+
+It is my pleasure to announce the MongoDB C Driver 1.18.0-alpha2.
+
+This is an unstable prerelease and is unsuitable for production applications.
+
+Improvements:
+
+  * Update API version support for latest 5.0-rc0 MongoDB server release.
+  * Increase default timeout to mongocryptd for CSFLE.
+  * Remove deprecated terminology in code and documentation.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Andreas Braun
+  * Benjamin Rewis
+  * Jeremy Mikola
+  * Kevin Albertson
+
+--Kevin Albertson
+
 mongo-c-driver 1.18.0-alpha
 ===========================
 

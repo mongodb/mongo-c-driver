@@ -1,3 +1,21 @@
+libbson 1.18.0-alpha2
+=====================
+
+It is my pleasure to announce libbson 1.18.0-alpha2.
+
+This is an unstable prerelease and is unsuitable for production applications.
+
+Bug fixes:
+
+  * Add trailing space after "base64" field name in extended JSON
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Jeremy Mikola
+  * Andreas Braun
+
+--Kevin Albertson
+
 libbson 1.18.0-alpha
 ====================
 
