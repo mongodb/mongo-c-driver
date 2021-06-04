@@ -103,7 +103,6 @@ static const char *read_state_names[] = {FOREACH_READ_STATE (GENERATE_STRING)};
    BS (DECIMAL128)                                                   \
    BS (DBPOINTER)                                                    \
    BS (SYMBOL)                                                       \
-   BS (DBREF)                                                        \
    BS (UUID)
 
 typedef enum {
@@ -131,8 +130,6 @@ typedef enum {
 typedef struct {
    int i;
    bson_json_frame_type_t type;
-   bool has_ref;
-   bool has_id;
    bson_t bson;
 } bson_json_stack_frame_t;
 
@@ -279,8 +276,6 @@ _noop (void)
 #define FRAME_TYPE_HAS_BSON(_type) \
    ((_type) == BSON_JSON_FRAME_SCOPE || (_type) == BSON_JSON_FRAME_DBPOINTER)
 #define STACK_HAS_BSON FRAME_TYPE_HAS_BSON (STACK_FRAME_TYPE)
-#define STACK_HAS_REF STACK_ELE (0, has_ref)
-#define STACK_HAS_ID STACK_ELE (0, has_id)
 #define STACK_PUSH(frame_type)                       \
    do {                                              \
       if (bson->n >= (STACK_MAX - 1)) {              \
@@ -309,8 +304,6 @@ _noop (void)
 #define STACK_PUSH_DOC(statement)       \
    do {                                 \
       STACK_PUSH (BSON_JSON_FRAME_DOC); \
-      STACK_HAS_REF = false;            \
-      STACK_HAS_ID = false;             \
       if (bson->n != 0) {               \
          statement;                     \
       }                                 \
@@ -713,7 +706,6 @@ _bson_json_read_integer (bson_json_reader_t *reader, uint64_t val, int64_t sign)
       case BSON_JSON_LF_DECIMAL128:
       case BSON_JSON_LF_DBPOINTER:
       case BSON_JSON_LF_SYMBOL:
-      case BSON_JSON_LF_DBREF:
       default:
          _bson_json_read_set_error (reader,
                                     "Unexpected integer %s%" PRIu64
@@ -1123,12 +1115,6 @@ _bson_json_read_string (bson_json_reader_t *reader, /* IN */
          bson_append_symbol (
             STACK_BSON_CHILD, key, (int) len, (const char *) val, (int) vlen);
          break;
-      case BSON_JSON_LF_DBREF:
-         /* the "$ref" of a {$ref: "...", $id: ... }, append normally */
-         bson_append_utf8 (
-            STACK_BSON_CHILD, key, (int) len, (const char *) val, (int) vlen);
-         bson->read_state = BSON_JSON_REGULAR;
-         break;
       case BSON_JSON_LF_SCOPE:
       case BSON_JSON_LF_TIMESTAMP_T:
       case BSON_JSON_LF_TIMESTAMP_I:
@@ -1402,20 +1388,6 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
       }
    } else {
       _bson_json_save_map_key (bson, val, len);
-
-      /* in x: {$ref: "collection", $id: {$oid: "..."}, $db: "..." } */
-      if (bson->n > 0) {
-         if (!strcmp ("$ref", (const char *) val)) {
-            STACK_HAS_REF = true;
-            bson->read_state = BSON_JSON_IN_BSON_TYPE;
-            bson->bson_state = BSON_JSON_LF_DBREF;
-         } else if (!strcmp ("$id", (const char *) val)) {
-            STACK_HAS_ID = true;
-         } else if (!strcmp ("$db", (const char *) val)) {
-            bson->read_state = BSON_JSON_IN_BSON_TYPE;
-            bson->bson_state = BSON_JSON_LF_DBREF;
-         }
-      }
    }
 }
 
@@ -1820,11 +1792,6 @@ _bson_json_read_end_map (bson_json_reader_t *reader) /* IN */
          bson->read_state = BSON_JSON_IN_BSON_TYPE_DBPOINTER_STARTMAP;
          STACK_POP_DBPOINTER;
       } else {
-         if (STACK_HAS_ID != STACK_HAS_REF) {
-            _bson_json_read_set_error (
-               reader, "%s", "DBRef object must have both $ref and $id keys");
-         }
-
          STACK_POP_DOC (
             bson_append_document_end (STACK_BSON_PARENT, STACK_BSON_CHILD));
       }

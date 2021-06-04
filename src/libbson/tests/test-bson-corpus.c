@@ -19,6 +19,14 @@ skipped_corpus_test_t SKIPPED_CORPUS_TESTS[] = {
     "Unicode and embedded null in code string, empty scope"},
    /* CDRIVER-2223, legacy extended JSON $date syntax uses numbers */
    {"Top-level document validity", "Bad $date (number, not string or hash)"},
+   /* CDRIVER-3500, floating point output differs */
+   {"Double type", "1.2345678921232E+18"},
+   {"Double type", "-1.2345678921232E+18"},
+   /* CDRIVER-4017, libbson does not emit escape sequences */
+   {"Javascript Code", "two-byte UTF-8 (\u00e9)"},
+   {"Javascript Code", "three-byte UTF-8 (\u2606)"},
+   {"String", "two-byte UTF-8 (\u00e9)"},
+   {"String", "three-byte UTF-8 (\u2606)"},
    {0}};
 
 
