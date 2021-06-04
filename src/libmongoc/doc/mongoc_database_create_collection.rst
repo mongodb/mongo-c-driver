@@ -29,6 +29,8 @@ This function creates a :symbol:`mongoc_collection_t` from the given :symbol:`mo
 
 If no write concern is provided in ``opts``, the database's write concern is used.
 
+For a list of all options, see `the MongoDB Manual entry on the create command <https://docs.mongodb.org/manual/reference/command/create/>`_.
+
 Errors
 ------
 
