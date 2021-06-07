@@ -345,7 +345,8 @@ test_runner_new (void)
    if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
       test_error ("error applying multiple mongos: %s", error.message);
    }
-   test_runner->internal_client = test_framework_client_new_from_uri (uri, NULL);
+   test_runner->internal_client =
+      test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (test_runner->internal_client);
    mongoc_uri_destroy (uri);
 
