@@ -26,6 +26,54 @@
 #include "util.h"
 
 
+typedef struct {
+   const char *file_description;
+   const char *test_description;
+} skipped_unified_test_t;
+
+/* clang-format off */
+skipped_unified_test_t SKIPPED_TESTS[] = {
+   /* CDRIVER-3630, libmongoc does not unconditionally raise an error when using
+    * hint option with an unacknowledged write concern */
+   {"unacknowledged-bulkWrite-delete-hint-clientError", "Unacknowledged bulkWrite deleteOne with hints fails with client-side error"},
+   {"unacknowledged-bulkWrite-delete-hint-clientError", "Unacknowledged bulkWrite deleteMany with hints fails with client-side error"},
+   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite updateOne with hints fails with client-side error"},
+   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite updateMany with hints fails with client-side error"},
+   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite replaceOne with hints fails with client-side error"},
+   {"unacknowledged-deleteMany-hint-clientError", "Unacknowledged deleteMany with hint string fails with client-side error"},
+   {"unacknowledged-deleteMany-hint-clientError", "Unacknowledged deleteMany with hint document fails with client-side error"},
+   {"unacknowledged-deleteOne-hint-clientError", "Unacknowledged deleteOne with hint string fails with client-side error"},
+   {"unacknowledged-deleteOne-hint-clientError", "Unacknowledged deleteOne with hint document fails with client-side error"},
+   {"unacknowledged-findOneAndDelete-hint-clientError", "Unacknowledged findOneAndDelete with hint string fails with client-side error"},
+   {"unacknowledged-findOneAndDelete-hint-clientError", "Unacknowledged findOneAndDelete with hint document fails with client-side error"},
+   {"unacknowledged-findOneAndReplace-hint-clientError", "Unacknowledged findOneAndReplace with hint string fails with client-side error"},
+   {"unacknowledged-findOneAndReplace-hint-clientError", "Unacknowledged findOneAndReplace with hint document fails with client-side error"},
+   {"unacknowledged-findOneAndUpdate-hint-clientError", "Unacknowledged findOneAndUpdate with hint string fails with client-side error"},
+   {"unacknowledged-findOneAndUpdate-hint-clientError", "Unacknowledged findOneAndUpdate with hint document fails with client-side error"},
+   {"unacknowledged-replaceOne-hint-clientError", "Unacknowledged ReplaceOne with hint string fails with client-side error"},
+   {"unacknowledged-replaceOne-hint-clientError", "Unacknowledged ReplaceOne with hint document fails with client-side error"},
+   {"unacknowledged-updateMany-hint-clientError", "Unacknowledged updateMany with hint string fails with client-side error"},
+   {"unacknowledged-updateMany-hint-clientError", "Unacknowledged updateMany with hint document fails with client-side error"},
+   {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint string fails with client-side error"},
+   {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint document fails with client-side error"},
+   {0}};
+/* clang-format on */
+
+static bool
+is_test_skipped (test_t *test)
+{
+   skipped_unified_test_t *skip;
+
+   for (skip = SKIPPED_TESTS; skip->file_description != NULL; skip++) {
+      if (!strcmp (skip->file_description, test->test_file->description) &&
+          !strcmp (skip->test_description, test->description)) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
 struct _failpoint_t {
    char *client_id;
    char *name;
@@ -1340,6 +1388,14 @@ test_run (test_t *test, bson_error_t *error)
 
    test_file = test->test_file;
    test_runner = test_file->test_runner;
+
+   if (is_test_skipped (test)) {
+      MONGOC_DEBUG (
+         "SKIPPING test '%s'. Reason: 'explicitly skipped in runner.c'",
+         test->description);
+      ret = true;
+      goto done;
+   }
 
    subtest_selector = _mongoc_getenv ("MONGOC_JSON_SUBTEST");
    if (subtest_selector &&
