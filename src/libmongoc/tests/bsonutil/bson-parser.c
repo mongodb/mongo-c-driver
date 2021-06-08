@@ -27,6 +27,7 @@ typedef enum {
    BSON_PARSER_BOOL,
    BSON_PARSER_DOC,
    BSON_PARSER_ARRAY,
+   BSON_PARSER_ARRAY_OR_DOC,
    BSON_PARSER_ANY,
    BSON_PARSER_WRITE_CONCERN,
    BSON_PARSER_READ_CONCERN,
@@ -62,6 +63,8 @@ parser_type_to_string (bson_parser_type_t ptype)
       return "DOC";
    case BSON_PARSER_ARRAY:
       return "ARRAY";
+   case BSON_PARSER_ARRAY_OR_DOC:
+      return "ARRAY or DOC";
    case BSON_PARSER_ANY:
       return "ANY";
    case BSON_PARSER_WRITE_CONCERN:
@@ -240,7 +243,8 @@ bson_parser_entry_destroy (bson_parser_entry_t *entry, bool with_parsed_fields)
 {
    if (with_parsed_fields) {
       if (entry->ptype == BSON_PARSER_DOC ||
-          entry->ptype == BSON_PARSER_ARRAY) {
+          entry->ptype == BSON_PARSER_ARRAY ||
+          entry->ptype == BSON_PARSER_ARRAY_OR_DOC) {
          bson_t **out;
 
          out = (bson_t **) entry->out;
@@ -397,6 +401,23 @@ bson_parser_array_optional (bson_parser_t *parser,
 {
    *out = NULL;
    bson_parser_add_entry (parser, key, (void *) out, BSON_PARSER_ARRAY, true);
+}
+
+void
+bson_parser_array_or_doc (bson_parser_t *parser, const char *key, bson_t **out)
+{
+   *out = NULL;
+   bson_parser_add_entry (
+      parser, key, (void *) out, BSON_PARSER_ARRAY_OR_DOC, false);
+}
+void
+bson_parser_array_or_doc_optional (bson_parser_t *parser,
+                                   const char *key,
+                                   bson_t **out)
+{
+   *out = NULL;
+   bson_parser_add_entry (
+      parser, key, (void *) out, BSON_PARSER_ARRAY_OR_DOC, true);
 }
 
 void
@@ -571,6 +592,19 @@ entry_marshal (bson_parser_entry_t *entry,
       bson_t **out = (bson_t **) entry->out;
 
       if (btype != BSON_TYPE_ARRAY) {
+         marshal_error (key, btype, ptype, error);
+         goto done;
+      }
+
+      bson_iter_bson (iter, &tmp);
+      *out = bson_copy (&tmp);
+   }
+
+   else if (ptype == BSON_PARSER_ARRAY_OR_DOC) {
+      bson_t tmp;
+      bson_t **out = (bson_t **) entry->out;
+
+      if (btype != BSON_TYPE_ARRAY && btype != BSON_TYPE_DOCUMENT) {
          marshal_error (key, btype, ptype, error);
          goto done;
       }

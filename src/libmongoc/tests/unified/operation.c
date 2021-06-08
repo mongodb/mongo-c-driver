@@ -482,7 +482,7 @@ bulk_op_append (mongoc_bulk_operation_t *bulk,
       }
    } else if (0 == strcmp (op_type, "updateOne")) {
       bson_parser_doc (parser, "filter", &filter);
-      bson_parser_doc (parser, "update", &update);
+      bson_parser_array_or_doc (parser, "update", &update);
       if (!bson_parser_parse (parser, &request_doc, error)) {
          goto done;
       }
@@ -492,7 +492,7 @@ bulk_op_append (mongoc_bulk_operation_t *bulk,
       }
    } else if (0 == strcmp (op_type, "updateMany")) {
       bson_parser_doc (parser, "filter", &filter);
-      bson_parser_doc (parser, "update", &update);
+      bson_parser_array_or_doc (parser, "update", &update);
       if (!bson_parser_parse (parser, &request_doc, error)) {
          goto done;
       }
@@ -1343,7 +1343,7 @@ operation_update_one (test_t *test,
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
    bson_parser_doc (parser, "filter", &filter);
-   bson_parser_doc (parser, "update", &update);
+   bson_parser_array_or_doc (parser, "update", &update);
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
    }
@@ -1392,7 +1392,7 @@ operation_update_many (test_t *test,
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
    bson_parser_doc (parser, "filter", &filter);
-   bson_parser_doc (parser, "update", &update);
+   bson_parser_array_or_doc (parser, "update", &update);
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
    }

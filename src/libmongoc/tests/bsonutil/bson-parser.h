@@ -82,6 +82,13 @@ void
 bson_parser_array_optional (bson_parser_t *bp, const char *key, bson_t **out);
 
 void
+bson_parser_array_or_doc (bson_parser_t *bp, const char *key, bson_t **out);
+void
+bson_parser_array_or_doc_optional (bson_parser_t *bp,
+                                   const char *key,
+                                   bson_t **out);
+
+void
 bson_parser_bool (bson_parser_t *bp, const char *key, bool **out);
 void
 bson_parser_bool_optional (bson_parser_t *bp, const char *key, bool **out);
