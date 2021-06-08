@@ -344,8 +344,9 @@ result_check (result_t *result,
 
    if (!expect_result && !expect_error) {
       if (!result->ok) {
-         test_set_error (
-            error, "expected success, but got error: %s", result->error.message);
+         test_set_error (error,
+                         "expected success, but got error: %s",
+                         result->error.message);
          goto done;
       }
       ret = true;
