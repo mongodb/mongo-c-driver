@@ -26640,8 +26640,8 @@ buildvariants:
   - .3.4 .nossl
   - .3.2 .nossl
   - .3.0 .nossl .nosasl !.auth
-- name: clang38-i386
-  display_name: clang 3.8 (i386) (Ubuntu 18.04)
+- name: clang60-i386
+  display_name: clang 6.0 (i386) (Ubuntu 18.04)
   expansions:
     CC: clang
     MARCH: i386
@@ -26658,12 +26658,25 @@ buildvariants:
   - .4.4 .nossl .nosasl
   - .4.2 .nossl .nosasl
   - .4.0 .nossl .nosasl
-  - .3.6 .nossl .nosasl
-- name: clang38ubuntu
-  display_name: clang 3.8 (Ubuntu 18.04)
+- name: clang38-i386
+  display_name: clang 3.8 (i386) (Ubuntu 16.04)
   expansions:
     CC: clang
-  run_on: ubuntu1804-test
+    MARCH: i386
+  run_on: ubuntu1604-test
+  tasks:
+  - debug-compile-scan-build
+  - release-compile
+  - debug-compile-nosasl-nossl
+  - debug-compile-no-align
+  - .debug-compile .stdflags !.c89
+  - .debug-compile !.sspi .nossl .nosasl
+  - .3.6 .nossl .nosasl
+- name: clang38ubuntu
+  display_name: clang 3.8 (Ubuntu 16.04)
+  expansions:
+    CC: clang
+  run_on: ubuntu1604-test
   tasks:
   - .compression !.zstd
   - debug-compile-scan-build
@@ -26677,14 +26690,13 @@ buildvariants:
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
   - .authentication-tests .valgrind
-  - .latest .openssl !.nosasl .server
-  - .latest .nossl
-  - .5.0 .openssl !.nosasl .server
   - .4.4 .openssl !.nosasl .server
   - .4.2 .openssl !.nosasl .server
   - .4.0 .openssl !.nosasl .server
   - .3.6 .openssl !.nosasl .server
-  - .test-coverage !.3.0
+  - .test-coverage .3.2
+  - .test-coverage .3.4
+  - .test-coverage .3.6
 - name: gcc48ubuntu
   display_name: GCC 4.8 (Ubuntu 14.04)
   expansions:
@@ -26783,8 +26795,8 @@ buildvariants:
   - .latest .openssl !.nosasl .server
   - .latest .openssl-static !.nosasl .server
   - .latest .nossl
-- name: gcc54-i386
-  display_name: GCC 5.4 (i386) (Ubuntu 18.04)
+- name: gcc75-i386
+  display_name: GCC 7.5 (i386) (Ubuntu 18.04)
   expansions:
     CC: gcc
     MARCH: i386
@@ -26800,8 +26812,8 @@ buildvariants:
   - .4.4 .nossl .nosasl
   - .4.2 .nossl .nosasl
   - .4.0 .nossl .nosasl
-- name: gcc54
-  display_name: GCC 5.4 (Ubuntu 18.04)
+- name: gcc75
+  display_name: GCC 7.5 (Ubuntu 18.04)
   expansions:
     CC: gcc
   run_on: ubuntu1804-test
@@ -26821,7 +26833,6 @@ buildvariants:
   - .latest .nossl
   - .latest .openssl .nosasl .replica_set
   - .latest .openssl !.nosasl .replica_set
-  - retry-true-3.4-replica-set
   - retry-true-latest-server
   - .5.0 .openssl !.nosasl .server
   - .4.4 .openssl !.nosasl .server
@@ -26829,6 +26840,22 @@ buildvariants:
   - .4.0 .openssl !.nosasl .server
   - test-dns-openssl
   - test-dns-auth-openssl
+- name: gcc54
+  display_name: GCC 5.4 (Ubuntu 16.04)
+  expansions:
+    CC: gcc
+  run_on: ubuntu1604-test
+  tasks:
+  - .compression !.zstd
+  - debug-compile-asan-gcc
+  - debug-compile-coverage
+  - debug-compile-nosrv
+  - release-compile
+  - debug-compile-nosasl-nossl
+  - debug-compile-no-align
+  - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .nossl
+  - retry-true-3.4-replica-set
 - name: darwin
   display_name: '*Darwin, macOS (Apple LLVM)'
   expansions:
@@ -27048,8 +27075,23 @@ buildvariants:
   - .5.0 .openssl !.nosasl .server
   - .4.4 .openssl !.nosasl .server
   - .4.2 .openssl !.nosasl .server
-  - .4.0 .openssl !.nosasl .server
   - test-dns-openssl
+  batchtime: 1440
+- name: arm-ubuntu1604
+  display_name: '*ARM (aarch64) (Ubuntu 16.04)'
+  expansions:
+    CC: gcc
+  run_on: ubuntu1604-arm64-large
+  tasks:
+  - .compression !.snappy !.zstd
+  - debug-compile-scan-build
+  - debug-compile-coverage
+  - debug-compile-no-align
+  - release-compile
+  - debug-compile-nosasl-nossl
+  - .debug-compile !.sspi .openssl
+  - .debug-compile !.sspi .nossl
+  - .4.0 .openssl !.nosasl .server
   batchtime: 1440
 - name: zseries-rhel72
   display_name: '*zSeries'
@@ -27102,7 +27144,18 @@ buildvariants:
   run_on: ubuntu1804-test
   tasks:
   - .debug-compile .asan-clang
-  - .test-asan !.3.0
+  - .test-asan !.3.0 !.3.2 !.3.4 !.3.6
+  batchtime: 1440
+- name: asan-ubuntu-ubuntu1604
+  display_name: ASAN Tests (Ubuntu 16.04)
+  expansions:
+    CC: clang
+  run_on: ubuntu1604-test
+  tasks:
+  - .debug-compile .asan-clang
+  - .test-asan .3.2
+  - .test-asan .3.4
+  - .test-asan .3.6
   batchtime: 1440
 - name: asan-ubuntu-ubuntu1404
   display_name: ASAN Tests - MongoDB 3.0 (Ubuntu 14.04)
@@ -27198,7 +27251,7 @@ buildvariants:
     CC: /opt/mongodbtoolchain/v3/bin/clang
   run_on: ubuntu1804-small
   tasks:
-  - .tsan
+  - .tsan !.3.2 !.3.4 !.3.6
   batchtime: 1440
 - name: versioned-api
   display_name: Versioned API Tests
