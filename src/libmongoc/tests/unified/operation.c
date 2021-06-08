@@ -141,10 +141,7 @@ operation_list_databases (test_t *test,
    bool ret = false;
    mongoc_client_t *client = NULL;
    mongoc_cursor_t *cursor = NULL;
-   bson_parser_t *parser = NULL;
    bson_t *opts = NULL;
-
-   parser = bson_parser_new ();
 
    opts = bson_new ();
    if (op->session) {
@@ -168,7 +165,6 @@ operation_list_databases (test_t *test,
    ret = true;
 done:
    mongoc_cursor_destroy (cursor);
-   bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (opts);
    return ret;
 }
@@ -273,10 +269,7 @@ operation_list_collections (test_t *test,
    bool ret = false;
    mongoc_database_t *db = NULL;
    mongoc_cursor_t *cursor = NULL;
-   bson_parser_t *parser = NULL;
    bson_t *opts = NULL;
-
-   parser = bson_parser_new ();
 
    opts = bson_new ();
    if (op->session) {
@@ -298,7 +291,6 @@ operation_list_collections (test_t *test,
    ret = true;
 done:
    mongoc_cursor_destroy (cursor);
-   bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (opts);
    return ret;
 }
@@ -314,10 +306,7 @@ operation_list_collection_names (test_t *test,
    mongoc_cursor_t *cursor = NULL;
    char **op_ret = NULL;
    bson_error_t op_error = {0};
-   bson_parser_t *parser = NULL;
    bson_t *opts = NULL;
-
-   parser = bson_parser_new ();
 
    opts = bson_new ();
    if (op->session) {
@@ -340,7 +329,6 @@ operation_list_collection_names (test_t *test,
    ret = true;
 done:
    mongoc_cursor_destroy (cursor);
-   bson_parser_destroy_with_parsed_fields (parser);
    bson_strfreev (op_ret);
    bson_destroy (opts);
    return ret;
@@ -1000,7 +988,7 @@ operation_find_one_and_update (test_t *test,
    mongoc_find_and_modify_flags_t flags = 0;
    bson_val_t *val = NULL;
    bson_iter_t iter;
-   bson_t *session_opts = NULL;
+   bson_t *session_opts = bson_new ();
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -1065,7 +1053,7 @@ operation_find_one_and_replace (test_t *test,
    mongoc_find_and_modify_flags_t flags = 0;
    bson_val_t *val = NULL;
    bson_iter_t iter;
-   bson_t *session_opts = NULL;
+   bson_t *session_opts = bson_new ();
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -1130,7 +1118,7 @@ operation_find_one_and_delete (test_t *test,
    mongoc_find_and_modify_flags_t flags = 0;
    bson_val_t *val = NULL;
    bson_iter_t iter;
-   bson_t *session_opts = NULL;
+   bson_t *session_opts = bson_new ();
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
