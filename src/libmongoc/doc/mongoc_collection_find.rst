@@ -51,7 +51,7 @@ If no options are necessary, ``query`` can simply contain a query such as ``{a:1
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_cursor_t` that should be freed with :symbol:`mongoc_cursor_destroy()` when no longer in use.
+.. include:: includes/returns-cursor.txt
 
 Example
 -------

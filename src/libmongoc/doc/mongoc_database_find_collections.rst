@@ -43,5 +43,8 @@ Errors are propagated via the ``error`` parameter.
 Returns
 -------
 
-A cursor where each result corresponds to the server's representation of a collection in this database.
+This function returns a newly allocated :symbol:`mongoc_cursor_t` that should be freed with :symbol:`mongoc_cursor_destroy()` when no longer in use, or `NULL` in case of error. The user must call :symbol:`mongoc_cursor_next()` on the returned :symbol:`mongoc_cursor_t` to execute the initial command.
 
+In the returned cursor each result corresponds to the server's representation of a collection in this database.
+
+The cursor functions :symbol:`mongoc_cursor_set_limit`, :symbol:`mongoc_cursor_set_batch_size`, and :symbol:`mongoc_cursor_set_max_await_time_ms` have no use on the returned cursor.

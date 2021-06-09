@@ -39,7 +39,7 @@ To target a specific server, include an integer "serverId" field in ``opts`` wit
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_cursor_t` that must be freed with :symbol:`mongoc_cursor_destroy()`.
+.. include:: includes/returns-cursor.txt
 
 Examples
 --------
