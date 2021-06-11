@@ -1714,18 +1714,18 @@ test_bson_json_dbref (void)
 {
    bson_error_t error;
 
-   const char *json_with_objectid =
+   const char *json_with_objectid_id =
       "{ \"key\": {"
       "\"$ref\": \"collection\","
       "\"$id\": {\"$oid\": \"000000000000000000000000\"}}}";
 
-   bson_t *bson_with_objectid = BCON_NEW ("key",
-                                          "{",
-                                          "$ref",
-                                          BCON_UTF8 ("collection"),
-                                          "$id",
-                                          BCON_OID (oid_zero ()),
-                                          "}");
+   bson_t *bson_with_objectid_id = BCON_NEW ("key",
+                                             "{",
+                                             "$ref",
+                                             BCON_UTF8 ("collection"),
+                                             "$id",
+                                             BCON_OID (oid_zero ()),
+                                             "}");
 
    const char *json_with_int_id = "{ \"key\": {"
                                   "\"$ref\": \"collection\","
@@ -1764,6 +1764,53 @@ test_bson_json_dbref (void)
                                           BCON_BOOL (true),
                                           "}");
 
+   const char *json_with_db = "{ \"key\": {"
+                              "\"$ref\": \"collection\","
+                              "\"$id\": 1,"
+                              "\"$db\": \"database\"}}";
+
+   bson_t *bson_with_db = BCON_NEW ("key",
+                                    "{",
+                                    "$ref",
+                                    BCON_UTF8 ("collection"),
+                                    "$id",
+                                    BCON_INT32 (1),
+                                    "$db",
+                                    BCON_UTF8 ("database"),
+                                    "}");
+
+   /* Note: the following examples are not valid DBRefs but are intended to test
+    * that the Extended JSON parser leaves such documents as-is. */
+   const char *json_with_missing_ref = "{\"key\": {\"$id\": 1}}";
+
+   bson_t *bson_with_missing_ref =
+      BCON_NEW ("key", "{", "$id", BCON_INT32 (1), "}");
+
+   const char *json_with_missing_id = "{\"key\": {\"$ref\": \"collection\"}}";
+
+   bson_t *bson_with_missing_id =
+      BCON_NEW ("key", "{", "$ref", BCON_UTF8 ("collection"), "}");
+
+   const char *json_with_int_ref = "{\"key\": {\"$ref\": 1, \"$id\": 1}}";
+
+   bson_t *bson_with_int_ref =
+      BCON_NEW ("key", "{", "$ref", BCON_INT32 (1), "$id", BCON_INT32 (1), "}");
+
+   const char *json_with_int_db = "{ \"key\": {"
+                                  "\"$ref\": \"collection\","
+                                  "\"$id\": 1,"
+                                  "\"$db\": 1}}";
+
+   bson_t *bson_with_int_db = BCON_NEW ("key",
+                                        "{",
+                                        "$ref",
+                                        BCON_UTF8 ("collection"),
+                                        "$id",
+                                        BCON_INT32 (1),
+                                        "$db",
+                                        BCON_INT32 (1),
+                                        "}");
+
    bson_t b;
    bool r;
 
@@ -1773,10 +1820,15 @@ test_bson_json_dbref (void)
    } dbref_test_t;
 
    dbref_test_t tests[] = {
-      {json_with_objectid, bson_with_objectid},
+      {json_with_objectid_id, bson_with_objectid_id},
       {json_with_int_id, bson_with_int_id},
       {json_with_subdoc_id, bson_with_subdoc_id},
       {json_with_metadata, bson_with_metadata},
+      {json_with_db, bson_with_db},
+      {json_with_missing_ref, bson_with_missing_ref},
+      {json_with_missing_id, bson_with_missing_id},
+      {json_with_int_ref, bson_with_int_ref},
+      {json_with_int_db, bson_with_int_db},
    };
 
    int n_tests = sizeof (tests) / sizeof (dbref_test_t);

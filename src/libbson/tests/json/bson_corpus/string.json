@@ -21,12 +21,12 @@
         {
             "description": "two-byte UTF-8 (\u00e9)",
             "canonical_bson": "190000000261000D000000C3A9C3A9C3A9C3A9C3A9C3A90000",
-            "canonical_extjson": "{\"a\" : \"éééééé\"}"
+            "canonical_extjson": "{\"a\" : \"\\u00e9\\u00e9\\u00e9\\u00e9\\u00e9\\u00e9\"}"
         },
         {
             "description": "three-byte UTF-8 (\u2606)",
             "canonical_bson": "190000000261000D000000E29886E29886E29886E298860000",
-            "canonical_extjson": "{\"a\" : \"☆☆☆☆\"}"
+            "canonical_extjson": "{\"a\" : \"\\u2606\\u2606\\u2606\\u2606\"}"
         },
         {
             "description": "Embedded nulls",
