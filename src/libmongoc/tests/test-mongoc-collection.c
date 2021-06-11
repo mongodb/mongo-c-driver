@@ -855,10 +855,10 @@ test_insert_bulk_empty (void)
 
 static void
 auto_hello (mock_server_t *server,
-               int32_t max_wire_version,
-               int32_t max_message_size,
-               int32_t max_bson_size,
-               int32_t max_batch_size)
+            int32_t max_wire_version,
+            int32_t max_message_size,
+            int32_t max_bson_size,
+            int32_t max_batch_size)
 {
    char *response = bson_strdup_printf ("{'isWritablePrimary': true, "
                                         " 'maxWireVersion': %d,"
@@ -2403,8 +2403,10 @@ test_count_with_opts (void)
                                                NULL,
                                                &error);
 
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'count': 'collection', 'opt': 1}");
+   request = mock_server_receives_command (server,
+                                           "db",
+                                           MONGOC_QUERY_SECONDARY_OK,
+                                           "{'count': 'collection', 'opt': 1}");
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
