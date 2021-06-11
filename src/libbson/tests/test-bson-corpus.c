@@ -23,10 +23,10 @@ skipped_corpus_test_t SKIPPED_CORPUS_TESTS[] = {
    {"Double type", "1.2345678921232E+18"},
    {"Double type", "-1.2345678921232E+18"},
    /* CDRIVER-4017, libbson does not emit escape sequences */
-   {"Javascript Code", "two-byte UTF-8 (\u00e9)"},
-   {"Javascript Code", "three-byte UTF-8 (\u2606)"},
-   {"String", "two-byte UTF-8 (\u00e9)"},
-   {"String", "three-byte UTF-8 (\u2606)"},
+   {"Javascript Code", "two-byte UTF-8 (\xc3\xa9)"}, /* \u00e9 */
+   {"Javascript Code", "three-byte UTF-8 (\xe2\x98\x86)"}, /* \u2606 */
+   {"String", "two-byte UTF-8 (\xc3\xa9)"}, /* \u00e9 */
+   {"String", "three-byte UTF-8 (\xe2\x98\x86)"}, /* \u2606 */
    {0}};
 
 
