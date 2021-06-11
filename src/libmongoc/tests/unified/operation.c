@@ -77,6 +77,7 @@ operation_create_change_stream (test_t *test,
    bson_t *pipeline = NULL;
    const bson_t *op_reply = NULL;
    bson_error_t op_error = {0};
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    /* Capture options as all extra fields, and pass them directly as change
@@ -87,6 +88,13 @@ operation_create_change_stream (test_t *test,
       goto done;
    }
 
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
    entity = entity_map_get (test->entity_map, op->object, error);
    if (!entity) {
       goto done;
@@ -94,16 +102,13 @@ operation_create_change_stream (test_t *test,
 
    if (0 == strcmp (entity->type, "client")) {
       mongoc_client_t *client = (mongoc_client_t *) entity->value;
-      changestream =
-         mongoc_client_watch (client, pipeline, bson_parser_get_extra (parser));
+      changestream = mongoc_client_watch (client, pipeline, opts);
    } else if (0 == strcmp (entity->type, "database")) {
       mongoc_database_t *db = (mongoc_database_t *) entity->value;
-      changestream =
-         mongoc_database_watch (db, pipeline, bson_parser_get_extra (parser));
+      changestream = mongoc_database_watch (db, pipeline, opts);
    } else if (0 == strcmp (entity->type, "collection")) {
       mongoc_collection_t *coll = (mongoc_collection_t *) entity->value;
-      changestream = mongoc_collection_watch (
-         coll, pipeline, bson_parser_get_extra (parser));
+      changestream = mongoc_collection_watch (coll, pipeline, opts);
    }
 
    if (!op->save_result_as_entity) {
@@ -123,6 +128,7 @@ operation_create_change_stream (test_t *test,
    ret = true;
 done:
    bson_parser_destroy_with_parsed_fields (parser);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -135,19 +141,31 @@ operation_list_databases (test_t *test,
    bool ret = false;
    mongoc_client_t *client = NULL;
    mongoc_cursor_t *cursor = NULL;
+   bson_t *opts = NULL;
+
+   opts = bson_new ();
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+   if (op->arguments) {
+      bson_concat (opts, op->arguments);
+   }
 
    client = entity_map_get_client (test->entity_map, op->object, error);
    if (!client) {
       goto done;
    }
 
-   cursor = mongoc_client_find_databases_with_opts (client, op->arguments);
+   cursor = mongoc_client_find_databases_with_opts (client, opts);
 
    result_from_cursor (result, cursor);
 
    ret = true;
 done:
    mongoc_cursor_destroy (cursor);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -208,6 +226,7 @@ operation_drop_collection (test_t *test,
    mongoc_collection_t *coll = NULL;
    char *collection = NULL;
    bson_error_t op_error = {0};
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -216,13 +235,20 @@ operation_drop_collection (test_t *test,
       goto done;
    }
 
+   opts = bson_new ();
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
    db = entity_map_get_database (test->entity_map, op->object, error);
    if (!db) {
       goto done;
    }
 
    coll = mongoc_database_get_collection (db, collection);
-   mongoc_collection_drop (coll, &op_error);
+   mongoc_collection_drop_with_opts (coll, opts, &op_error);
 
    result_from_val_and_reply (result, NULL, NULL, &op_error);
 
@@ -230,6 +256,7 @@ operation_drop_collection (test_t *test,
 done:
    bson_parser_destroy_with_parsed_fields (parser);
    mongoc_collection_destroy (coll);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -242,19 +269,29 @@ operation_list_collections (test_t *test,
    bool ret = false;
    mongoc_database_t *db = NULL;
    mongoc_cursor_t *cursor = NULL;
+   bson_t *opts = NULL;
+
+   opts = bson_new ();
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+   bson_concat (opts, op->arguments);
 
    db = entity_map_get_database (test->entity_map, op->object, error);
    if (!db) {
       goto done;
    }
 
-   cursor = mongoc_database_find_collections_with_opts (db, op->arguments);
+   cursor = mongoc_database_find_collections_with_opts (db, opts);
 
    result_from_cursor (result, cursor);
 
    ret = true;
 done:
    mongoc_cursor_destroy (cursor);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -269,14 +306,23 @@ operation_list_collection_names (test_t *test,
    mongoc_cursor_t *cursor = NULL;
    char **op_ret = NULL;
    bson_error_t op_error = {0};
+   bson_t *opts = NULL;
+
+   opts = bson_new ();
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+   bson_concat (opts, op->arguments);
 
    db = entity_map_get_database (test->entity_map, op->object, error);
    if (!db) {
       goto done;
    }
 
-   op_ret = mongoc_database_get_collection_names_with_opts (
-      db, op->arguments, &op_error);
+   op_ret =
+      mongoc_database_get_collection_names_with_opts (db, opts, &op_error);
 
    result_from_ok (result);
 
@@ -284,6 +330,7 @@ operation_list_collection_names (test_t *test,
 done:
    mongoc_cursor_destroy (cursor);
    bson_strfreev (op_ret);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -303,7 +350,7 @@ operation_run_command (test_t *test,
    mongoc_read_concern_t *rc = NULL;
    bson_error_t op_error = {0};
    bson_t op_reply = BSON_INITIALIZER;
-   bson_t opts = BSON_INITIALIZER;
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_doc (parser, "command", &command);
@@ -315,29 +362,36 @@ operation_run_command (test_t *test,
       goto done;
    }
 
+   opts = bson_new ();
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
    db = entity_map_get_database (test->entity_map, op->object, error);
    if (!db) {
       goto done;
    }
 
    if (rc) {
-      mongoc_read_concern_append (rc, &opts);
+      mongoc_read_concern_append (rc, opts);
    }
    if (wc) {
-      mongoc_write_concern_append (wc, &opts);
+      mongoc_write_concern_append (wc, opts);
    }
 
    bson_destroy (&op_reply);
    mongoc_database_command_with_opts (
-      db, command, rp, &opts, &op_reply, &op_error);
+      db, command, rp, opts, &op_reply, &op_error);
 
    result_from_val_and_reply (result, NULL, &op_reply, &op_error);
 
    ret = true;
 done:
-   bson_destroy (&opts);
    bson_destroy (&op_reply);
    bson_parser_destroy_with_parsed_fields (parser);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -352,6 +406,7 @@ operation_aggregate (test_t *test,
    bson_t *pipeline = NULL;
    bson_parser_t *parser = NULL;
    mongoc_cursor_t *cursor = NULL;
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -360,18 +415,22 @@ operation_aggregate (test_t *test,
       goto done;
    }
 
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
    entity = entity_map_get (test->entity_map, op->object, error);
    if (0 == strcmp (entity->type, "collection")) {
       mongoc_collection_t *coll = (mongoc_collection_t *) entity->value;
-      cursor = mongoc_collection_aggregate (coll,
-                                            0 /* query flags */,
-                                            pipeline,
-                                            bson_parser_get_extra (parser),
-                                            NULL /* read prefs */);
+      cursor = mongoc_collection_aggregate (
+         coll, 0 /* query flags */, pipeline, opts, NULL /* read prefs */);
    } else if (0 == strcmp (entity->type, "database")) {
       mongoc_database_t *db = (mongoc_database_t *) entity->value;
-      cursor = mongoc_database_aggregate (
-         db, pipeline, bson_parser_get_extra (parser), NULL /* read prefs */);
+      cursor =
+         mongoc_database_aggregate (db, pipeline, opts, NULL /* read prefs */);
    } else {
       goto done;
    }
@@ -382,6 +441,7 @@ operation_aggregate (test_t *test,
 done:
    bson_parser_destroy_with_parsed_fields (parser);
    mongoc_cursor_destroy (cursor);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -514,6 +574,11 @@ operation_bulk_write (test_t *test,
    if (ordered) {
       BSON_APPEND_BOOL (opts, "ordered", *ordered);
    }
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
 
    bulk_op = mongoc_collection_create_bulk_operation_with_opts (coll, opts);
 
@@ -554,6 +619,7 @@ operation_count_documents (test_t *test,
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
    bson_val_t *val = NULL;
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -562,18 +628,21 @@ operation_count_documents (test_t *test,
       goto done;
    }
 
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
    coll = entity_map_get_collection (test->entity_map, op->object, error);
    if (!coll) {
       goto done;
    }
 
    bson_destroy (&op_reply);
-   op_ret = mongoc_collection_count_documents (coll,
-                                               filter,
-                                               bson_parser_get_extra (parser),
-                                               NULL /* read prefs */,
-                                               &op_reply,
-                                               &op_error);
+   op_ret = mongoc_collection_count_documents (
+      coll, filter, opts, NULL /* read prefs */, &op_reply, &op_error);
 
    if (op_ret != -1) {
       val = bson_val_from_int64 (op_ret);
@@ -586,6 +655,7 @@ done:
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (&op_reply);
    bson_val_destroy (val);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -664,6 +734,7 @@ operation_delete_one (test_t *test,
    bson_t *filter = NULL;
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -672,14 +743,20 @@ operation_delete_one (test_t *test,
       goto done;
    }
 
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
    coll = entity_map_get_collection (test->entity_map, op->object, error);
    if (!coll) {
       goto done;
    }
 
    bson_destroy (&op_reply);
-   mongoc_collection_delete_one (
-      coll, filter, bson_parser_get_extra (parser), &op_reply, &op_error);
+   mongoc_collection_delete_one (coll, filter, opts, &op_reply, &op_error);
 
    result_from_delete (result, &op_reply, &op_error);
 
@@ -687,6 +764,7 @@ operation_delete_one (test_t *test,
 done:
    bson_destroy (&op_reply);
    bson_parser_destroy_with_parsed_fields (parser);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -702,6 +780,7 @@ operation_delete_many (test_t *test,
    bson_t *filter = NULL;
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -710,14 +789,20 @@ operation_delete_many (test_t *test,
       goto done;
    }
 
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
    coll = entity_map_get_collection (test->entity_map, op->object, error);
    if (!coll) {
       goto done;
    }
 
    bson_destroy (&op_reply);
-   mongoc_collection_delete_many (
-      coll, filter, bson_parser_get_extra (parser), &op_reply, &op_error);
+   mongoc_collection_delete_many (coll, filter, opts, &op_reply, &op_error);
 
    result_from_delete (result, &op_reply, &op_error);
 
@@ -725,6 +810,7 @@ operation_delete_many (test_t *test,
 done:
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (&op_reply);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -742,6 +828,7 @@ operation_distinct (test_t *test,
    bson_t *filter = NULL;
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -749,6 +836,13 @@ operation_distinct (test_t *test,
    bson_parser_doc (parser, "filter", &filter);
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
+   }
+
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
    }
 
    coll = entity_map_get_collection (test->entity_map, op->object, error);
@@ -764,11 +858,10 @@ operation_distinct (test_t *test,
                         "{",
                         &filter,
                         "}");
-   bson_concat (distinct, bson_parser_get_extra (parser));
 
    bson_destroy (&op_reply);
-   mongoc_collection_command_simple (
-      coll, distinct, NULL /* read prefs */, &op_reply, &op_error);
+   mongoc_collection_read_command_with_opts (
+      coll, distinct, NULL /* read prefs */, opts, &op_reply, &op_error);
 
    result_from_distinct (result, &op_reply, &op_error);
 
@@ -777,6 +870,7 @@ done:
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (&op_reply);
    bson_destroy (distinct);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -793,11 +887,19 @@ operation_estimated_document_count (test_t *test,
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
    bson_val_t *val = NULL;
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
+   }
+
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
    }
 
    coll = entity_map_get_collection (test->entity_map, op->object, error);
@@ -807,11 +909,7 @@ operation_estimated_document_count (test_t *test,
 
    bson_destroy (&op_reply);
    op_ret = mongoc_collection_estimated_document_count (
-      coll,
-      bson_parser_get_extra (parser),
-      NULL /* read prefs */,
-      &op_reply,
-      &op_error);
+      coll, opts, NULL /* read prefs */, &op_reply, &op_error);
 
    if (op_ret != -1) {
       val = bson_val_from_int64 (op_ret);
@@ -824,6 +922,7 @@ done:
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (&op_reply);
    bson_val_destroy (val);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -889,6 +988,7 @@ operation_find_one_and_update (test_t *test,
    mongoc_find_and_modify_flags_t flags = 0;
    bson_val_t *val = NULL;
    bson_iter_t iter;
+   bson_t *session_opts = bson_new ();
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -909,6 +1009,12 @@ operation_find_one_and_update (test_t *test,
    }
    mongoc_find_and_modify_opts_set_flags (opts, flags);
    mongoc_find_and_modify_opts_append (opts, bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, session_opts, error)) {
+         goto done;
+      }
+   }
+   mongoc_find_and_modify_opts_append (opts, session_opts);
 
    bson_destroy (&op_reply);
    mongoc_collection_find_and_modify_with_opts (
@@ -925,6 +1031,7 @@ done:
    bson_parser_destroy_with_parsed_fields (parser);
    mongoc_find_and_modify_opts_destroy (opts);
    bson_destroy (&op_reply);
+   bson_destroy (session_opts);
    return ret;
 }
 
@@ -946,6 +1053,7 @@ operation_find_one_and_replace (test_t *test,
    mongoc_find_and_modify_flags_t flags = 0;
    bson_val_t *val = NULL;
    bson_iter_t iter;
+   bson_t *session_opts = bson_new ();
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -968,6 +1076,12 @@ operation_find_one_and_replace (test_t *test,
    mongoc_find_and_modify_opts_set_flags (opts, flags);
    mongoc_find_and_modify_opts_append (opts, bson_parser_get_extra (parser));
    mongoc_find_and_modify_opts_set_update (opts, replacement);
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, session_opts, error)) {
+         goto done;
+      }
+   }
+   mongoc_find_and_modify_opts_append (opts, session_opts);
 
    bson_destroy (&op_reply);
    mongoc_collection_find_and_modify_with_opts (
@@ -984,6 +1098,7 @@ done:
    bson_parser_destroy_with_parsed_fields (parser);
    mongoc_find_and_modify_opts_destroy (opts);
    bson_destroy (&op_reply);
+   bson_destroy (session_opts);
    return ret;
 }
 
@@ -1003,6 +1118,7 @@ operation_find_one_and_delete (test_t *test,
    mongoc_find_and_modify_flags_t flags = 0;
    bson_val_t *val = NULL;
    bson_iter_t iter;
+   bson_t *session_opts = bson_new ();
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -1020,6 +1136,12 @@ operation_find_one_and_delete (test_t *test,
    flags |= MONGOC_FIND_AND_MODIFY_REMOVE;
    mongoc_find_and_modify_opts_set_flags (opts, flags);
    mongoc_find_and_modify_opts_append (opts, bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, session_opts, error)) {
+         goto done;
+      }
+   }
+   mongoc_find_and_modify_opts_append (opts, session_opts);
 
    bson_destroy (&op_reply);
    mongoc_collection_find_and_modify_with_opts (
@@ -1036,6 +1158,7 @@ done:
    bson_parser_destroy_with_parsed_fields (parser);
    mongoc_find_and_modify_opts_destroy (opts);
    bson_destroy (&op_reply);
+   bson_destroy (session_opts);
    return ret;
 }
 
@@ -1054,12 +1177,20 @@ operation_insert_many (test_t *test,
    bson_iter_t iter;
    int n_docs = 0, i = 0;
    bson_t **docs = NULL;
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
    bson_parser_array (parser, "documents", &documents);
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
+   }
+
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
    }
 
    coll = entity_map_get_collection (test->entity_map, op->object, error);
@@ -1084,12 +1215,8 @@ operation_insert_many (test_t *test,
    }
 
    bson_destroy (&op_reply);
-   mongoc_collection_insert_many (coll,
-                                  (const bson_t **) docs,
-                                  n_docs,
-                                  bson_parser_get_extra (parser),
-                                  &op_reply,
-                                  &op_error);
+   mongoc_collection_insert_many (
+      coll, (const bson_t **) docs, n_docs, opts, &op_reply, &op_error);
    result_from_insert_many (result, &op_reply, &op_error);
    ret = true;
 done:
@@ -1101,6 +1228,7 @@ done:
    }
    bson_free (docs);
    bson_destroy (&op_reply);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -1161,6 +1289,7 @@ operation_replace_one (test_t *test,
    bson_t *replacement = NULL;
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -1170,18 +1299,21 @@ operation_replace_one (test_t *test,
       goto done;
    }
 
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
    coll = entity_map_get_collection (test->entity_map, op->object, error);
    if (!coll) {
       goto done;
    }
 
    bson_destroy (&op_reply);
-   mongoc_collection_replace_one (coll,
-                                  filter,
-                                  replacement,
-                                  bson_parser_get_extra (parser),
-                                  &op_reply,
-                                  &op_error);
+   mongoc_collection_replace_one (
+      coll, filter, replacement, opts, &op_reply, &op_error);
 
    result_from_update_or_replace (result, &op_reply, &op_error);
 
@@ -1189,6 +1321,7 @@ operation_replace_one (test_t *test,
 done:
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (&op_reply);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -1205,6 +1338,7 @@ operation_update_one (test_t *test,
    bson_t *update = NULL;
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -1214,18 +1348,21 @@ operation_update_one (test_t *test,
       goto done;
    }
 
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
    coll = entity_map_get_collection (test->entity_map, op->object, error);
    if (!coll) {
       goto done;
    }
 
    bson_destroy (&op_reply);
-   mongoc_collection_update_one (coll,
-                                 filter,
-                                 update,
-                                 bson_parser_get_extra (parser),
-                                 &op_reply,
-                                 &op_error);
+   mongoc_collection_update_one (
+      coll, filter, update, opts, &op_reply, &op_error);
 
    result_from_update_or_replace (result, &op_reply, &op_error);
 
@@ -1233,6 +1370,7 @@ operation_update_one (test_t *test,
 done:
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (&op_reply);
+   bson_destroy (opts);
    return ret;
 }
 
@@ -1249,6 +1387,7 @@ operation_update_many (test_t *test,
    bson_t *update = NULL;
    bson_t op_reply = BSON_INITIALIZER;
    bson_error_t op_error = {0};
+   bson_t *opts = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -1258,18 +1397,21 @@ operation_update_many (test_t *test,
       goto done;
    }
 
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
    coll = entity_map_get_collection (test->entity_map, op->object, error);
    if (!coll) {
       goto done;
    }
 
    bson_destroy (&op_reply);
-   mongoc_collection_update_many (coll,
-                                  filter,
-                                  update,
-                                  bson_parser_get_extra (parser),
-                                  &op_reply,
-                                  &op_error);
+   mongoc_collection_update_many (
+      coll, filter, update, opts, &op_reply, &op_error);
 
    result_from_update_or_replace (result, &op_reply, &op_error);
 
@@ -1277,6 +1419,7 @@ operation_update_many (test_t *test,
 done:
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (&op_reply);
+   bson_destroy (opts);
    return ret;
 }
 
