@@ -4016,7 +4016,7 @@ _test_insert_validate (insert_fn_t insert_fn)
 }
 
 static void
-test_insert_bulk_validate (void *ctx)
+test_insert_bulk_validate (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
@@ -4067,14 +4067,14 @@ test_insert_bulk_validate (void *ctx)
 
 
 static void
-test_insert_one_validate (void *ctx)
+test_insert_one_validate (void)
 {
    _test_insert_validate (insert_one);
 }
 
 
 static void
-test_insert_many_validate (void *ctx)
+test_insert_many_validate (void)
 {
    _test_insert_validate (insert_many);
 }
@@ -6674,24 +6674,10 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/many_return", test_many_return);
-   TestSuite_AddFull (
-      suite,
-      "/Collection/insert_one_validate",
-      test_insert_one_validate,
-      NULL,
-      NULL,
-      TestSuite_CheckLive,
-      /* TODO: remove checks when removing validation for dots and dollars */
-      test_framework_skip_if_max_wire_version_more_than_9);
-   TestSuite_AddFull (
-      suite,
-      "/Collection/insert_many_validate",
-      test_insert_many_validate,
-      NULL,
-      NULL,
-      TestSuite_CheckLive,
-      /* TODO: remove checks when removing validation for dots and dollars */
-      test_framework_skip_if_max_wire_version_more_than_9);
+   TestSuite_AddLive (
+      suite, "/Collection/insert_one_validate", test_insert_one_validate);
+   TestSuite_AddLive (
+      suite, "/Collection/insert_many_validate", test_insert_many_validate);
    TestSuite_AddMockServerTest (suite, "/Collection/limit", test_find_limit);
    TestSuite_AddMockServerTest (
       suite, "/Collection/batch_size", test_find_batch_size);
@@ -6743,15 +6729,8 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Collection/estimated_document_count_live",
                       test_estimated_document_count_live);
-   TestSuite_AddFull (
-      suite,
-      "/Collection/insert_bulk_validate",
-      test_insert_bulk_validate,
-      NULL,
-      NULL,
-      TestSuite_CheckLive,
-      /* TODO: remove checks when removing validation for dots and dollars */
-      test_framework_skip_if_max_wire_version_more_than_9);
+   TestSuite_AddLive (
+      suite, "/Collection/insert_bulk_validate", test_insert_bulk_validate);
    TestSuite_AddMockServerTest (suite,
                                 "/Collection/aggregate_with_batch_size",
                                 test_aggregate_with_batch_size);
