@@ -31,9 +31,11 @@ typedef struct {
    const char *test_description;
 } skipped_unified_test_t;
 
+#define SKIP_ALL_TESTS NULL
+
 /* clang-format off */
 skipped_unified_test_t SKIPPED_TESTS[] = {
-   /* CDRIVER-3630, libmongoc does not unconditionally raise an error when using
+   /* CDRIVER-3630: libmongoc does not unconditionally raise an error when using
     * hint option with an unacknowledged write concern */
    {"unacknowledged-bulkWrite-delete-hint-clientError", "Unacknowledged bulkWrite deleteOne with hints fails with client-side error"},
    {"unacknowledged-bulkWrite-delete-hint-clientError", "Unacknowledged bulkWrite deleteMany with hints fails with client-side error"},
@@ -56,8 +58,38 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"unacknowledged-updateMany-hint-clientError", "Unacknowledged updateMany with hint document fails with client-side error"},
    {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint string fails with client-side error"},
    {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint document fails with client-side error"},
-   {0}};
+   /* CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior */
+   {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
+   /* CDRIVER-3886: serverless testing (schema version 1.4) */
+   {"poc-crud", SKIP_ALL_TESTS},
+   {"db-aggregate", SKIP_ALL_TESTS},
+   {"mongos-unpin", SKIP_ALL_TESTS},
+   /* CDRIVER-3883: load balancer support (schema version 1.3) */
+   {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
+   {"entity-client-cmap-events", SKIP_ALL_TESTS},
+   {"entity-find-cursor", SKIP_ALL_TESTS},
+   {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
+   {"ignoreResultAndError", SKIP_ALL_TESTS},
+   /* CDRIVER-3867: comprehensive Atlas testing (schema version 1.2) */
+   {"entity-client-storeEventsAsEntities", SKIP_ALL_TESTS},
+   {0},
+};
 /* clang-format on */
+
+static bool
+is_test_file_skipped (test_file_t *test_file)
+{
+   skipped_unified_test_t *skip;
+
+   for (skip = SKIPPED_TESTS; skip->file_description != NULL; skip++) {
+      if (!strcmp (skip->file_description, test_file->description) &&
+          skip->test_description == SKIP_ALL_TESTS) {
+         return true;
+      }
+   }
+
+   return false;
+}
 
 static bool
 is_test_skipped (test_t *test)
@@ -1488,6 +1520,13 @@ run_one_test_file (bson_t *bson)
    test_file = test_file_new (test_runner, bson);
 
    test_diagnostics_test_info ("test file: %s", test_file->description);
+
+   if (is_test_file_skipped (test_file)) {
+      MONGOC_DEBUG (
+         "SKIPPING test file '%s'. Reason: 'explicitly skipped in runner.c'",
+         test_file->description);
+      goto done;
+   }
 
    check_schema_version (test_file);
    if (test_file->run_on_requirements) {
