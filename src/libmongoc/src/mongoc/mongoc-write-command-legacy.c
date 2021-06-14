@@ -405,7 +405,6 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
 
    ns = bson_strdup_printf ("%s.%s", database, collection);
 
-   bson_reader_destroy (reader);
    reader =
       bson_reader_new_from_data (command->payload.data, command->payload.len);
    while ((bson = bson_reader_read (reader, &eof))) {
