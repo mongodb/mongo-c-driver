@@ -454,7 +454,7 @@ entity_database_new (entity_map_t *entity_map,
       if (coll_or_db_opts->rp) {
          mongoc_database_set_read_prefs (db, coll_or_db_opts->rp);
       }
-      if (coll_or_db_opts->rc) {
+      if (coll_or_db_opts->wc) {
          mongoc_database_set_write_concern (db, coll_or_db_opts->wc);
       }
    }
@@ -517,7 +517,7 @@ entity_collection_new (entity_map_t *entity_map,
       if (coll_or_db_opts->rp) {
          mongoc_collection_set_read_prefs (coll, coll_or_db_opts->rp);
       }
-      if (coll_or_db_opts->rc) {
+      if (coll_or_db_opts->wc) {
          mongoc_collection_set_write_concern (coll, coll_or_db_opts->wc);
       }
    }
