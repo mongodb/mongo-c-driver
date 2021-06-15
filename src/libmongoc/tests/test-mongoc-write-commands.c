@@ -782,5 +782,6 @@ test_write_command_install (TestSuite *suite)
                       _test_invalid_wc_server_error,
                       NULL,
                       NULL,
-                      test_framework_skip_if_no_failpoint);
+                      test_framework_skip_if_no_failpoint,
+                      test_framework_skip_if_mongos);
 }
