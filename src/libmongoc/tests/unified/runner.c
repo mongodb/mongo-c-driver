@@ -26,6 +26,86 @@
 #include "util.h"
 
 
+typedef struct {
+   const char *file_description;
+   const char *test_description;
+} skipped_unified_test_t;
+
+#define SKIP_ALL_TESTS NULL
+
+/* clang-format off */
+skipped_unified_test_t SKIPPED_TESTS[] = {
+   /* CDRIVER-3630: libmongoc does not unconditionally raise an error when using
+    * hint option with an unacknowledged write concern */
+   {"unacknowledged-bulkWrite-delete-hint-clientError", "Unacknowledged bulkWrite deleteOne with hints fails with client-side error"},
+   {"unacknowledged-bulkWrite-delete-hint-clientError", "Unacknowledged bulkWrite deleteMany with hints fails with client-side error"},
+   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite updateOne with hints fails with client-side error"},
+   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite updateMany with hints fails with client-side error"},
+   {"unacknowledged-bulkWrite-update-hint-clientError", "Unacknowledged bulkWrite replaceOne with hints fails with client-side error"},
+   {"unacknowledged-deleteMany-hint-clientError", "Unacknowledged deleteMany with hint string fails with client-side error"},
+   {"unacknowledged-deleteMany-hint-clientError", "Unacknowledged deleteMany with hint document fails with client-side error"},
+   {"unacknowledged-deleteOne-hint-clientError", "Unacknowledged deleteOne with hint string fails with client-side error"},
+   {"unacknowledged-deleteOne-hint-clientError", "Unacknowledged deleteOne with hint document fails with client-side error"},
+   {"unacknowledged-findOneAndDelete-hint-clientError", "Unacknowledged findOneAndDelete with hint string fails with client-side error"},
+   {"unacknowledged-findOneAndDelete-hint-clientError", "Unacknowledged findOneAndDelete with hint document fails with client-side error"},
+   {"unacknowledged-findOneAndReplace-hint-clientError", "Unacknowledged findOneAndReplace with hint string fails with client-side error"},
+   {"unacknowledged-findOneAndReplace-hint-clientError", "Unacknowledged findOneAndReplace with hint document fails with client-side error"},
+   {"unacknowledged-findOneAndUpdate-hint-clientError", "Unacknowledged findOneAndUpdate with hint string fails with client-side error"},
+   {"unacknowledged-findOneAndUpdate-hint-clientError", "Unacknowledged findOneAndUpdate with hint document fails with client-side error"},
+   {"unacknowledged-replaceOne-hint-clientError", "Unacknowledged ReplaceOne with hint string fails with client-side error"},
+   {"unacknowledged-replaceOne-hint-clientError", "Unacknowledged ReplaceOne with hint document fails with client-side error"},
+   {"unacknowledged-updateMany-hint-clientError", "Unacknowledged updateMany with hint string fails with client-side error"},
+   {"unacknowledged-updateMany-hint-clientError", "Unacknowledged updateMany with hint document fails with client-side error"},
+   {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint string fails with client-side error"},
+   {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint document fails with client-side error"},
+   /* CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior */
+   {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
+   /* CDRIVER-3886: serverless testing (schema version 1.4) */
+   {"poc-crud", SKIP_ALL_TESTS},
+   {"db-aggregate", SKIP_ALL_TESTS},
+   {"mongos-unpin", SKIP_ALL_TESTS},
+   /* CDRIVER-3883: load balancer support (schema version 1.3) */
+   {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
+   {"entity-client-cmap-events", SKIP_ALL_TESTS},
+   {"entity-find-cursor", SKIP_ALL_TESTS},
+   {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
+   {"ignoreResultAndError", SKIP_ALL_TESTS},
+   /* CDRIVER-3867: comprehensive Atlas testing (schema version 1.2) */
+   {"entity-client-storeEventsAsEntities", SKIP_ALL_TESTS},
+   {0},
+};
+/* clang-format on */
+
+static bool
+is_test_file_skipped (test_file_t *test_file)
+{
+   skipped_unified_test_t *skip;
+
+   for (skip = SKIPPED_TESTS; skip->file_description != NULL; skip++) {
+      if (!strcmp (skip->file_description, test_file->description) &&
+          skip->test_description == SKIP_ALL_TESTS) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
+static bool
+is_test_skipped (test_t *test)
+{
+   skipped_unified_test_t *skip;
+
+   for (skip = SKIPPED_TESTS; skip->file_description != NULL; skip++) {
+      if (!strcmp (skip->file_description, test->test_file->description) &&
+          !strcmp (skip->test_description, test->description)) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
 struct _failpoint_t {
    char *client_id;
    char *name;
@@ -297,7 +377,8 @@ test_runner_new (void)
    if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
       test_error ("error applying multiple mongos: %s", error.message);
    }
-   test_runner->internal_client = test_framework_client_new_from_uri (uri, NULL);
+   test_runner->internal_client =
+      test_framework_client_new_from_uri (uri, NULL);
    test_framework_set_ssl_opts (test_runner->internal_client);
    mongoc_uri_destroy (uri);
 
@@ -1341,6 +1422,14 @@ test_run (test_t *test, bson_error_t *error)
    test_file = test->test_file;
    test_runner = test_file->test_runner;
 
+   if (is_test_skipped (test)) {
+      MONGOC_DEBUG (
+         "SKIPPING test '%s'. Reason: 'explicitly skipped in runner.c'",
+         test->description);
+      ret = true;
+      goto done;
+   }
+
    subtest_selector = _mongoc_getenv ("MONGOC_JSON_SUBTEST");
    if (subtest_selector &&
        NULL == strstr (test->description, subtest_selector)) {
@@ -1431,6 +1520,13 @@ run_one_test_file (bson_t *bson)
    test_file = test_file_new (test_runner, bson);
 
    test_diagnostics_test_info ("test file: %s", test_file->description);
+
+   if (is_test_file_skipped (test_file)) {
+      MONGOC_DEBUG (
+         "SKIPPING test file '%s'. Reason: 'explicitly skipped in runner.c'",
+         test_file->description);
+      goto done;
+   }
 
    check_schema_version (test_file);
    if (test_file->run_on_requirements) {

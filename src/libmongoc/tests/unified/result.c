@@ -150,6 +150,11 @@ result_from_bulk_write (result_t *result, bson_t *reply, bson_error_t *error)
          rewritten_upserted_ids = rewrite_upserted_ids (upserted_ids);
          BSON_APPEND_DOCUMENT (
             write_result, "upsertedIds", rewritten_upserted_ids);
+      } else {
+         /* upsertedIds is a required field in BulkWriteResult, so append an
+          * empty document even if no documents were upserted. */
+         upserted_ids = bson_new ();
+         BSON_APPEND_DOCUMENT (write_result, "upsertedIds", upserted_ids);
       }
    }
    val = bson_val_from_bson (write_result);
@@ -339,8 +344,9 @@ result_check (result_t *result,
 
    if (!expect_result && !expect_error) {
       if (!result->ok) {
-         test_set_error (
-            error, "expected success, but got error: %s", result->error.message);
+         test_set_error (error,
+                         "expected success, but got error: %s",
+                         result->error.message);
          goto done;
       }
       ret = true;

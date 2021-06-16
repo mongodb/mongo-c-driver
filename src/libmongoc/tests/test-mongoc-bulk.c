@@ -454,17 +454,17 @@ test_insert_check_keys (void)
    collection = get_test_collection (client, "test_insert_check_keys");
    BSON_ASSERT (collection);
 
-   /* keys can't start with "$" */
+   /* keys cannot be empty */
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
    BSON_ASSERT (bulk);
 
-   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'$dollar': 1}"));
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'': 1}"));
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
    BSON_ASSERT (!r);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "keys cannot begin with \"$\": \"$dollar\"");
+                          "empty key");
 
    BSON_ASSERT (bson_empty (&reply));
 
@@ -476,30 +476,13 @@ test_insert_check_keys (void)
    BSON_ASSERT (bulk);
 
    mongoc_bulk_operation_insert (bulk, tmp_bson (NULL));
-   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'$dollar': 1}"));
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'': 1}"));
    r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
    BSON_ASSERT (!r);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "keys cannot begin with \"$\": \"$dollar\"");
-
-   BSON_ASSERT (bson_empty (&reply));
-
-   bson_destroy (&reply);
-   mongoc_bulk_operation_destroy (bulk);
-
-   /* keys can't contain "." */
-   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
-   BSON_ASSERT (bulk);
-
-   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'a.b': 1}"));
-   r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
-   BSON_ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "keys cannot contain \".\": \"a.b\"");
+                          "empty key");
 
    BSON_ASSERT (bson_empty (&reply));
 
@@ -1235,7 +1218,7 @@ _test_replace_one_check_keys (bool with_opts)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "keys cannot begin with \"$\": \"$a\"");
+                             "Invalid key '$a': replace prohibits $ operators");
 
       r = (bool) mongoc_bulk_operation_execute (bulk, &reply, &error);
       ASSERT (!r);
@@ -1254,7 +1237,7 @@ _test_replace_one_check_keys (bool with_opts)
       ASSERT_ERROR_CONTAINS (error,
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "keys cannot begin with \"$\": \"$a\"");
+                             "Invalid key '$a': replace prohibits $ operators");
    }
 
    ASSERT (bson_empty (&reply));
@@ -1293,25 +1276,12 @@ test_replace_one_with_opts_validate (void)
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    BSON_ASSERT (!mongoc_bulk_operation_replace_one_with_opts (
-      bulk, tmp_bson ("{}"), tmp_bson ("{'a.a': 1}"), NULL, &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "invalid argument for replace: keys cannot contain \".\": \"a.a\"");
+      bulk, tmp_bson ("{}"), tmp_bson ("{'$a': 1}"), NULL, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid key '$a': replace prohibits $ operators");
 
-   BSON_ASSERT (mongoc_bulk_operation_replace_one_with_opts (
-      bulk,
-      tmp_bson ("{}"),
-      tmp_bson ("{'a.a': 1}"),
-      tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
-      &error));
-   BSON_ASSERT (mongoc_bulk_operation_replace_one_with_opts (
-      bulk,
-      tmp_bson ("{}"),
-      tmp_bson ("{'a.a': 1}"),
-      tmp_bson ("{'validate': %d}", BSON_VALIDATE_UTF8),
-      &error));
    BSON_ASSERT (!mongoc_bulk_operation_replace_one_with_opts (
       bulk,
       tmp_bson ("{}"),
@@ -1845,7 +1815,7 @@ _test_replace_one_invalid (bool first)
    test.update = mongoc_bulk_operation_replace_one;
    test.update_with_opts = NULL;
    test.invalid_first = first;
-   test.error_message = "keys cannot begin with \"$\": \"$set\"";
+   test.error_message = "Invalid key '$set': replace prohibits $ operators";
 
    _test_update_validate (&test);
 }
@@ -1860,7 +1830,7 @@ _test_replace_one_with_opts_invalid (bool first)
    test.update = NULL;
    test.update_with_opts = mongoc_bulk_operation_replace_one_with_opts;
    test.invalid_first = first;
-   test.error_message = "keys cannot begin with \"$\": \"$set\"";
+   test.error_message = "Invalid key '$set': replace prohibits $ operators";
 
    _test_update_validate (&test);
 }
@@ -1956,12 +1926,12 @@ _test_insert_invalid (bool with_opts, bool invalid_first)
    mongoc_bulk_operation_t *bulk;
    mongoc_collection_t *collection;
    mongoc_client_t *client;
-   bson_t *bad_insert = tmp_bson ("{'a.b': 1}");
+   bson_t *bad_insert = tmp_bson ("{'': 1}");
    bson_t *good_insert = tmp_bson ("{'x': 1}");
    bson_t reply;
    bson_error_t error;
    bool r;
-   const char *err = "keys cannot contain \".\": \"a.b\"";
+   const char *err = "empty key";
 
    client = test_framework_new_default_client ();
    collection = get_test_collection (client, "test_insert_validate");
@@ -2086,22 +2056,21 @@ test_insert_with_opts_validate (void)
    bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
 
    BSON_ASSERT (!mongoc_bulk_operation_insert_with_opts (
-      bulk, tmp_bson ("{'a.a': 1}"), NULL, &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "invalid document for insert: keys cannot contain \".\": \"a.a\"");
+      bulk, tmp_bson ("{'': 1}"), NULL, &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "empty key");
 
    ASSERT_OR_PRINT (mongoc_bulk_operation_insert_with_opts (
                        bulk,
-                       tmp_bson ("{'a.a': 1}"),
+                       tmp_bson ("{'': 1}"),
                        tmp_bson ("{'validate': %d}", BSON_VALIDATE_NONE),
                        &error),
                     error);
    ASSERT_OR_PRINT (mongoc_bulk_operation_insert_with_opts (
                        bulk,
-                       tmp_bson ("{'a.a': 1}"),
+                       tmp_bson ("{'': 1}"),
                        tmp_bson ("{'validate': %d}", BSON_VALIDATE_UTF8),
                        &error),
                     error);
@@ -2164,7 +2133,7 @@ _test_remove_validate (remove_validate_test_t *test)
    capture_logs (true);
 
    /* invalid */
-   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'$a': 1}"));
+   mongoc_bulk_operation_insert (bulk, tmp_bson ("{'': 1}"));
 
    if (test->remove_with_opts) {
       r = test->remove_with_opts (bulk, tmp_bson (NULL), NULL, &error);
@@ -2173,8 +2142,7 @@ _test_remove_validate (remove_validate_test_t *test)
                              MONGOC_ERROR_COMMAND,
                              MONGOC_ERROR_COMMAND_INVALID_ARG,
                              "Bulk operation is invalid from prior error: "
-                             "invalid document for insert: keys "
-                             "cannot begin with \"$\": \"$a\"");
+                             "invalid document for insert: empty key");
    } else {
       test->remove (bulk, tmp_bson (NULL));
    }
@@ -2189,8 +2157,7 @@ _test_remove_validate (remove_validate_test_t *test)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid document for insert: keys "
-                          "cannot begin with \"$\": \"$a\"");
+                          "invalid document for insert: empty key");
 
    bson_destroy (&reply);
    mongoc_bulk_operation_destroy (bulk);

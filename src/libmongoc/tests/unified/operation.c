@@ -476,63 +476,53 @@ bulk_op_append (mongoc_bulk_operation_t *bulk,
       if (!bson_parser_parse (parser, &request_doc, error)) {
          goto done;
       }
-      if (!mongoc_bulk_operation_insert_with_opts (
-             bulk, document, bson_parser_get_extra (parser), error)) {
-         goto done;
-      }
+
+      mongoc_bulk_operation_insert_with_opts (
+         bulk, document, bson_parser_get_extra (parser), error);
    } else if (0 == strcmp (op_type, "updateOne")) {
       bson_parser_doc (parser, "filter", &filter);
-      bson_parser_doc (parser, "update", &update);
+      bson_parser_array_or_doc (parser, "update", &update);
       if (!bson_parser_parse (parser, &request_doc, error)) {
          goto done;
       }
-      if (!mongoc_bulk_operation_update_one_with_opts (
-             bulk, filter, update, bson_parser_get_extra (parser), error)) {
-         goto done;
-      }
+
+      mongoc_bulk_operation_update_one_with_opts (
+         bulk, filter, update, bson_parser_get_extra (parser), error);
    } else if (0 == strcmp (op_type, "updateMany")) {
       bson_parser_doc (parser, "filter", &filter);
-      bson_parser_doc (parser, "update", &update);
+      bson_parser_array_or_doc (parser, "update", &update);
       if (!bson_parser_parse (parser, &request_doc, error)) {
          goto done;
       }
-      if (!mongoc_bulk_operation_update_many_with_opts (
-             bulk, filter, update, bson_parser_get_extra (parser), error)) {
-         goto done;
-      }
+
+      mongoc_bulk_operation_update_many_with_opts (
+         bulk, filter, update, bson_parser_get_extra (parser), error);
    } else if (0 == strcmp (op_type, "deleteOne")) {
       bson_parser_doc (parser, "filter", &filter);
 
       if (!bson_parser_parse (parser, &request_doc, error)) {
          goto done;
       }
-      if (!mongoc_bulk_operation_remove_one_with_opts (
-             bulk, filter, bson_parser_get_extra (parser), error)) {
-         goto done;
-      }
+
+      mongoc_bulk_operation_remove_one_with_opts (
+         bulk, filter, bson_parser_get_extra (parser), error);
    } else if (0 == strcmp (op_type, "deleteMany")) {
       bson_parser_doc (parser, "filter", &filter);
       if (!bson_parser_parse (parser, &request_doc, error)) {
          goto done;
       }
-      if (!mongoc_bulk_operation_remove_many_with_opts (
-             bulk, filter, bson_parser_get_extra (parser), error)) {
-         goto done;
-      }
+
+      mongoc_bulk_operation_remove_many_with_opts (
+         bulk, filter, bson_parser_get_extra (parser), error);
    } else if (0 == strcmp (op_type, "replaceOne")) {
       bson_parser_doc (parser, "filter", &filter);
       bson_parser_doc (parser, "replacement", &replacement);
       if (!bson_parser_parse (parser, &request_doc, error)) {
          goto done;
       }
-      if (!mongoc_bulk_operation_replace_one_with_opts (
-             bulk,
-             filter,
-             replacement,
-             bson_parser_get_extra (parser),
-             error)) {
-         goto done;
-      }
+
+      mongoc_bulk_operation_replace_one_with_opts (
+         bulk, filter, replacement, bson_parser_get_extra (parser), error);
    }
 
    ret = true;
@@ -1343,7 +1333,7 @@ operation_update_one (test_t *test,
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
    bson_parser_doc (parser, "filter", &filter);
-   bson_parser_doc (parser, "update", &update);
+   bson_parser_array_or_doc (parser, "update", &update);
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
    }
@@ -1392,7 +1382,7 @@ operation_update_many (test_t *test,
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
    bson_parser_doc (parser, "filter", &filter);
-   bson_parser_doc (parser, "update", &update);
+   bson_parser_array_or_doc (parser, "update", &update);
    if (!bson_parser_parse (parser, op->arguments, error)) {
       goto done;
    }

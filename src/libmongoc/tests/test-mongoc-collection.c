@@ -559,15 +559,7 @@ test_insert (void)
    }
 
    r = mongoc_collection_insert_one (
-      collection, tmp_bson ("{'$hello': 1}"), NULL, NULL, &error);
-   ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid document");
-
-   r = mongoc_collection_insert_one (
-      collection, tmp_bson ("{'a.b': 1}"), NULL, NULL, &error);
+      collection, tmp_bson ("{'': 1}"), NULL, NULL, &error);
    ASSERT (!r);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
@@ -789,7 +781,7 @@ test_insert_many (void)
    for (i = 0; i < 10; i++) {
       bson_destroy (&b[i]);
       bson_init (&b[i]);
-      BSON_APPEND_INT32 (&b[i], "$invalid_dollar_prefixed_name", i);
+      BSON_APPEND_INT32 (&b[i], "" /* empty key */, i);
       bptr[i] = &b[i];
    }
    r = mongoc_collection_insert_many (collection,
@@ -805,7 +797,7 @@ test_insert_many (void)
    for (i = 0; i < 10; i++) {
       bson_destroy (&b[i]);
       bson_init (&b[i]);
-      BSON_APPEND_INT32 (&b[i], "a.b", i);
+      BSON_APPEND_INT32 (&b[i], "" /* empty key */, i);
       bptr[i] = &b[i];
    }
 
@@ -863,10 +855,10 @@ test_insert_bulk_empty (void)
 
 static void
 auto_hello (mock_server_t *server,
-               int32_t max_wire_version,
-               int32_t max_message_size,
-               int32_t max_bson_size,
-               int32_t max_batch_size)
+            int32_t max_wire_version,
+            int32_t max_message_size,
+            int32_t max_bson_size,
+            int32_t max_batch_size)
 {
    char *response = bson_strdup_printf ("{'isWritablePrimary': true, "
                                         " 'maxWireVersion': %d,"
@@ -1057,16 +1049,7 @@ test_save (void)
       bson_destroy (&b);
    }
 
-   r = mongoc_collection_save (
-      collection, tmp_bson ("{'$hello': 1}"), NULL, &error);
-   ASSERT (!r);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid document");
-
-   r = mongoc_collection_save (
-      collection, tmp_bson ("{'a.b': 1}"), NULL, &error);
+   r = mongoc_collection_save (collection, tmp_bson ("{'': 1}"), NULL, &error);
 
    END_IGNORE_DEPRECATIONS;
 
@@ -1272,7 +1255,7 @@ test_update (void)
 
    bson_init (&q);
    bson_init (&u);
-   BSON_APPEND_INT32 (&u, "a.b.c.d", 1);
+   BSON_APPEND_INT32 (&u, "" /* empty key */, 1);
    r = mongoc_collection_update (
       collection, MONGOC_UPDATE_NONE, &q, &u, NULL, &error);
    ASSERT (!r);
@@ -1331,16 +1314,6 @@ test_update_pipeline (void *ctx)
    res = mongoc_collection_replace_one (
       collection, b, replacement, NULL, NULL, &error);
    ASSERT_OR_PRINT (res, error);
-
-   /* ensure that pipeline updates sent to mongoc_collection_replace_one
-      receive a client-side error */
-   res = mongoc_collection_replace_one (
-      collection, b, pipeline, NULL, NULL, &error);
-   ASSERT (!res);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid argument for replace");
 
    /* ensure that a pipeline with an empty document is considered invalid */
    pipeline = tmp_bson ("{ '0': {} }");
@@ -2430,8 +2403,10 @@ test_count_with_opts (void)
                                                NULL,
                                                &error);
 
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, "{'count': 'collection', 'opt': 1}");
+   request = mock_server_receives_command (server,
+                                           "db",
+                                           MONGOC_QUERY_SECONDARY_OK,
+                                           "{'count': 'collection', 'opt': 1}");
 
    mock_server_replies_simple (request, "{'ok': 1, 'n': 1}");
    ASSERT_OR_PRINT (1 == future_get_int64_t (future), error);
@@ -3946,14 +3921,14 @@ _test_insert_validate (insert_fn_t insert_fn)
    mongoc_client_set_error_api (client, 2);
    collection = get_test_collection (client, "test_insert_validate");
 
-   BSON_ASSERT (!insert_fn (collection, tmp_bson ("{'$': 1}"), NULL, &error));
+   BSON_ASSERT (!insert_fn (collection, tmp_bson ("{'': 1}"), NULL, &error));
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_COMMAND,
                           MONGOC_ERROR_COMMAND_INVALID_ARG,
-                          "invalid document");
+                          "empty key");
 
    BSON_ASSERT (!insert_fn (collection,
-                            tmp_bson ("{'$': 1}"),
+                            tmp_bson ("{'_id': {'$a': 1}}"),
                             tmp_bson ("{'validate': false}"),
                             &error));
    ASSERT_CMPUINT32 (error.domain, ==, (uint32_t) MONGOC_ERROR_SERVER);
@@ -3981,18 +3956,9 @@ _test_insert_validate (insert_fn_t insert_fn)
       MONGOC_ERROR_COMMAND_INVALID_ARG,
       "invalid document for insert: keys cannot contain \".\": \"a.a\"");
 
-   /* BSON_VALIDATE_DOT_KEYS is set by default */
-   BSON_ASSERT (!insert_fn (
-      collection, tmp_bson ("{'a.a': 1}"), tmp_bson ("{}"), &error));
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_COMMAND,
-      MONGOC_ERROR_COMMAND_INVALID_ARG,
-      "invalid document for insert: keys cannot contain \".\": \"a.a\"");
-
    /* {validate: true} is still prohibited */
    BSON_ASSERT (!insert_fn (collection,
-                            tmp_bson ("{'a.a': 1}"),
+                            tmp_bson ("{'a': 1}"),
                             tmp_bson ("{'validate': true}"),
                             &error));
    ASSERT_ERROR_CONTAINS (error,
@@ -4016,12 +3982,15 @@ _test_insert_validate (insert_fn_t insert_fn)
 }
 
 static void
-test_insert_bulk_validate (void *ctx)
+test_insert_bulk_validate (void)
 {
    mongoc_client_t *client;
    mongoc_collection_t *collection;
    bson_error_t error;
-   const bson_t *docs[] = {tmp_bson ("{'a': 1}"), tmp_bson ("{'$': 2}")};
+   const bson_t *docs_client_invalid[] = {tmp_bson ("{'a': 1}"),
+                                          tmp_bson ("{'': 2}")};
+   const bson_t *docs_server_invalid[] = {tmp_bson ("{'a': 1}"),
+                                          tmp_bson ("{'_id': {'$a': 2}}")};
 
    BEGIN_IGNORE_DEPRECATIONS
    client = test_framework_new_default_client ();
@@ -4031,7 +4000,7 @@ test_insert_bulk_validate (void *ctx)
    /* Invalid documents, validation. */
    BSON_ASSERT (!mongoc_collection_insert_bulk (collection,
                                                 MONGOC_INSERT_NONE,
-                                                docs,
+                                                docs_client_invalid,
                                                 2,
                                                 NULL /* write concern */,
                                                 &error));
@@ -4044,7 +4013,7 @@ test_insert_bulk_validate (void *ctx)
    BSON_ASSERT (!mongoc_collection_insert_bulk (
       collection,
       (mongoc_insert_flags_t) MONGOC_INSERT_NO_VALIDATE,
-      docs,
+      docs_server_invalid,
       2,
       NULL /* write concern */,
       &error));
@@ -4054,7 +4023,7 @@ test_insert_bulk_validate (void *ctx)
    ASSERT_OR_PRINT (
       mongoc_collection_insert_bulk (collection,
                                      MONGOC_INSERT_NONE,
-                                     docs,
+                                     docs_client_invalid,
                                      1 /* don't include invalid second doc. */,
                                      NULL /* write concern */,
                                      &error),
@@ -4067,14 +4036,14 @@ test_insert_bulk_validate (void *ctx)
 
 
 static void
-test_insert_one_validate (void *ctx)
+test_insert_one_validate (void)
 {
    _test_insert_validate (insert_one);
 }
 
 
 static void
-test_insert_many_validate (void *ctx)
+test_insert_many_validate (void)
 {
    _test_insert_validate (insert_many);
 }
@@ -5567,10 +5536,11 @@ _test_update_and_replace (bool is_replace, bool is_multi)
                 NULL,
                 &err);
       ASSERT (!ret);
-      ASSERT_ERROR_CONTAINS (err,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "invalid argument for replace");
+      ASSERT_ERROR_CONTAINS (
+         err,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_COMMAND_INVALID_ARG,
+         "Invalid key '$set': replace prohibits $ operators");
    } else {
       /* Test update_one and update_many with arrayFilters */
       ret = mongoc_collection_insert_one (
@@ -5708,13 +5678,13 @@ _test_update_validate (update_fn_t update_fn)
       invalid_update = tmp_bson ("{'$set': {'x': 1}}");
       /* permitted for replace */
       valid_update = tmp_bson ("{'x': 1}");
-      msg = "invalid argument for replace";
+      msg = "Invalid key '$set': replace prohibits $ operators";
    } else {
       /* prohibited for update */
       invalid_update = tmp_bson ("{'x': 1}");
       /* permitted for update */
       valid_update = tmp_bson ("{'$set': {'x': 1}}");
-      msg = "only works with $ operators";
+      msg = "Invalid key 'x': update only works with $ operators and pipelines";
    }
 
    BSON_ASSERT (
@@ -5752,6 +5722,14 @@ _test_update_validate (update_fn_t update_fn)
                             tmp_bson ("{'validate': 31}"),
                             NULL,
                             &error));
+
+   /* bson_validate_with_error will yield a different error message than the
+    * standard key check in _mongoc_validate_replace */
+   if (update_fn == mongoc_collection_replace_one) {
+      msg =
+         "invalid argument for replace: keys cannot begin with \"$\": \"$set\"";
+   }
+
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, msg);
 
@@ -6674,24 +6652,10 @@ test_collection_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite, "/Collection/many_return", test_many_return);
-   TestSuite_AddFull (
-      suite,
-      "/Collection/insert_one_validate",
-      test_insert_one_validate,
-      NULL,
-      NULL,
-      TestSuite_CheckLive,
-      /* TODO: remove checks when removing validation for dots and dollars */
-      test_framework_skip_if_max_wire_version_more_than_9);
-   TestSuite_AddFull (
-      suite,
-      "/Collection/insert_many_validate",
-      test_insert_many_validate,
-      NULL,
-      NULL,
-      TestSuite_CheckLive,
-      /* TODO: remove checks when removing validation for dots and dollars */
-      test_framework_skip_if_max_wire_version_more_than_9);
+   TestSuite_AddLive (
+      suite, "/Collection/insert_one_validate", test_insert_one_validate);
+   TestSuite_AddLive (
+      suite, "/Collection/insert_many_validate", test_insert_many_validate);
    TestSuite_AddMockServerTest (suite, "/Collection/limit", test_find_limit);
    TestSuite_AddMockServerTest (
       suite, "/Collection/batch_size", test_find_batch_size);
@@ -6743,15 +6707,8 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Collection/estimated_document_count_live",
                       test_estimated_document_count_live);
-   TestSuite_AddFull (
-      suite,
-      "/Collection/insert_bulk_validate",
-      test_insert_bulk_validate,
-      NULL,
-      NULL,
-      TestSuite_CheckLive,
-      /* TODO: remove checks when removing validation for dots and dollars */
-      test_framework_skip_if_max_wire_version_more_than_9);
+   TestSuite_AddLive (
+      suite, "/Collection/insert_bulk_validate", test_insert_bulk_validate);
    TestSuite_AddMockServerTest (suite,
                                 "/Collection/aggregate_with_batch_size",
                                 test_aggregate_with_batch_size);

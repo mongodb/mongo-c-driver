@@ -380,16 +380,13 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
    int32_t max_bson_obj_size;
    mongoc_rpc_t rpc;
    uint32_t request_id = 0;
-   bson_iter_t subiter, subsubiter;
-   bson_t doc;
+   bson_iter_t subiter;
    bson_t update, selector;
    const uint8_t *data = NULL;
    uint32_t len = 0;
-   size_t err_offset;
    bool val = false;
    char *ns;
-   int vflags = (BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
-                 BSON_VALIDATE_DOLLAR_KEYS | BSON_VALIDATE_DOT_KEYS);
+   bool r;
    bson_reader_t *reader;
    const bson_t *bson;
    bool eof;
@@ -406,45 +403,19 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
 
    max_bson_obj_size = mongoc_server_stream_max_bson_obj_size (server_stream);
 
-   reader =
-      bson_reader_new_from_data (command->payload.data, command->payload.len);
-   while ((bson = bson_reader_read (reader, &eof))) {
-      if (bson_iter_init (&subiter, bson) && bson_iter_find (&subiter, "u") &&
-          BSON_ITER_HOLDS_DOCUMENT (&subiter)) {
-         bson_iter_document (&subiter, &len, &data);
-         BSON_ASSERT (bson_init_static (&doc, data, len));
-
-         if (bson_iter_init (&subsubiter, &doc) &&
-             bson_iter_next (&subsubiter) &&
-             (bson_iter_key (&subsubiter)[0] != '$') &&
-             !bson_validate (
-                &doc, (bson_validate_flags_t) vflags, &err_offset)) {
-            result->failed = true;
-            bson_set_error (error,
-                            MONGOC_ERROR_BSON,
-                            MONGOC_ERROR_BSON_INVALID,
-                            "update document is corrupt or contains "
-                            "invalid keys including $ or .");
-            bson_reader_destroy (reader);
-            EXIT;
-         }
-      } else {
-         result->failed = true;
-         bson_set_error (error,
-                         MONGOC_ERROR_BSON,
-                         MONGOC_ERROR_BSON_INVALID,
-                         "updates is malformed.");
-         bson_reader_destroy (reader);
-         EXIT;
-      }
-   }
-
    ns = bson_strdup_printf ("%s.%s", database, collection);
 
-   bson_reader_destroy (reader);
    reader =
       bson_reader_new_from_data (command->payload.data, command->payload.len);
    while ((bson = bson_reader_read (reader, &eof))) {
+      /* ensure the document has "q" and "u" document fields in that order */
+      r = (bson_iter_init (&subiter, bson) && bson_iter_find (&subiter, "q") &&
+           BSON_ITER_HOLDS_DOCUMENT (&subiter) &&
+           bson_iter_find (&subiter, "u") &&
+           BSON_ITER_HOLDS_DOCUMENT (&subiter));
+
+      BSON_ASSERT (r);
+
       request_id = ++client->cluster.request_id;
 
       rpc.header.msg_len = 0;
@@ -459,6 +430,10 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
       while (bson_iter_next (&subiter)) {
          if (strcmp (bson_iter_key (&subiter), "u") == 0) {
             bson_iter_document (&subiter, &len, &data);
+
+            BSON_ASSERT (data);
+            BSON_ASSERT (len >= 5);
+
             if (len > max_bson_obj_size) {
                _mongoc_write_command_too_large_error (
                   error, 0, len, max_bson_obj_size);
@@ -472,6 +447,10 @@ _mongoc_write_command_update_legacy (mongoc_write_command_t *command,
             BSON_ASSERT (bson_init_static (&update, data, len));
          } else if (strcmp (bson_iter_key (&subiter), "q") == 0) {
             bson_iter_document (&subiter, &len, &data);
+
+            BSON_ASSERT (data);
+            BSON_ASSERT (len >= 5);
+
             if (len > max_bson_obj_size) {
                _mongoc_write_command_too_large_error (
                   error, 0, len, max_bson_obj_size);

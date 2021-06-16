@@ -28,13 +28,11 @@
 
 const bson_validate_flags_t _mongoc_default_insert_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
-   BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_DOT_KEYS |
-   BSON_VALIDATE_DOLLAR_KEYS;
+   BSON_VALIDATE_EMPTY_KEYS;
 
 const bson_validate_flags_t _mongoc_default_replace_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
-   BSON_VALIDATE_EMPTY_KEYS | BSON_VALIDATE_DOT_KEYS |
-   BSON_VALIDATE_DOLLAR_KEYS;
+   BSON_VALIDATE_EMPTY_KEYS;
 
 const bson_validate_flags_t _mongoc_default_update_vflags =
    BSON_VALIDATE_UTF8 | BSON_VALIDATE_UTF8_ALLOW_NULL |
@@ -324,6 +322,8 @@ _mongoc_validate_replace (const bson_t *doc,
                           bson_error_t *error)
 {
    bson_error_t validate_err;
+   bson_iter_t iter;
+   const char *key;
 
    if (vflags == BSON_VALIDATE_NONE) {
       return true;
@@ -336,6 +336,27 @@ _mongoc_validate_replace (const bson_t *doc,
                       "invalid argument for replace: %s",
                       validate_err.message);
       return false;
+   }
+
+   if (!bson_iter_init (&iter, doc)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_BSON,
+                      MONGOC_ERROR_BSON_INVALID,
+                      "replace document is corrupt");
+      return false;
+   }
+
+   while (bson_iter_next (&iter)) {
+      key = bson_iter_key (&iter);
+      if (key[0] == '$') {
+         bson_set_error (error,
+                         MONGOC_ERROR_COMMAND,
+                         MONGOC_ERROR_COMMAND_INVALID_ARG,
+                         "Invalid key '%s': replace prohibits $ operators",
+                         key);
+
+         return false;
+      }
    }
 
    return true;

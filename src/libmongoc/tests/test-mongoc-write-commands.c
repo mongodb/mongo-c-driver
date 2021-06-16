@@ -577,6 +577,126 @@ test_w0_legacy_insert_many (void)
 }
 
 static void
+test_w0_legacy_update_one (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_error_t error;
+   future_t *future;
+   request_t *request;
+   bson_t opts;
+   mongoc_write_concern_t *wc;
+
+   /* wire version will use OP_UPDATE for w:0 update (since no OP_MSG) */
+   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
+   mock_server_run (server);
+
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   /* Add unacknowledged write concern */
+   bson_init (&opts);
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   mongoc_write_concern_append (wc, &opts);
+   mongoc_write_concern_destroy (wc);
+
+   future = future_collection_update_one (coll,
+                                          tmp_bson ("{'x':1}"),
+                                          tmp_bson ("{'$set': {'y':1}}"),
+                                          &opts,
+                                          NULL,
+                                          &error);
+
+   /* Mock server receives OP_UPDATE */
+   request = mock_server_receives_update (
+      server, "db.coll", 0, "{'x':1}", "{'$set': {'y':1}}");
+   BSON_ASSERT (request);
+
+   mock_server_replies_ok_and_destroys (request);
+   BSON_ASSERT (future_get_bool (future));
+
+   future_destroy (future);
+   bson_destroy (&opts);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+static void
+test_w0_legacy_update_and_replace_validation (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_collection_t *coll;
+   bson_error_t error;
+   bool r;
+   bson_t opts;
+   mongoc_write_concern_t *wc;
+
+   /* wire version will use OP_UPDATE for w:0 update (since no OP_MSG) */
+   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
+   mock_server_run (server);
+
+   client =
+      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
+   coll = mongoc_client_get_collection (client, "db", "coll");
+
+   /* Add unacknowledged write concern */
+   bson_init (&opts);
+   wc = mongoc_write_concern_new ();
+   mongoc_write_concern_set_w (wc, 0);
+   mongoc_write_concern_append (wc, &opts);
+   mongoc_write_concern_destroy (wc);
+
+   /* replace_one prohibits top-level, dollar-prefixed keys */
+   memset (&error, 0, sizeof (bson_error_t));
+   r = mongoc_collection_replace_one (coll,
+                                      tmp_bson ("{'x':1}"),
+                                      tmp_bson ("{'$set': {'y':1}}"),
+                                      &opts,
+                                      NULL,
+                                      &error);
+
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid key '$set': replace prohibits $ operators");
+
+   /* update_one requires top-level, dollar-prefixed keys */
+   memset (&error, 0, sizeof (bson_error_t));
+   r = mongoc_collection_update_one (
+      coll, tmp_bson ("{'x':1}"), tmp_bson ("{'y':1}"), &opts, NULL, &error);
+
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Invalid key 'y': update only works with $ operators and pipelines");
+
+   /* update_many requires top-level, dollar-prefixed keys */
+   memset (&error, 0, sizeof (bson_error_t));
+   r = mongoc_collection_update_many (
+      coll, tmp_bson ("{'x':1}"), tmp_bson ("{'y':1}"), &opts, NULL, &error);
+
+   BSON_ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Invalid key 'y': update only works with $ operators and pipelines");
+
+   bson_destroy (&opts);
+   mongoc_collection_destroy (coll);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+static void
 _configure_failpoint (mongoc_client_t *client,
                       const char *mode,
                       const char *data)
@@ -651,6 +771,12 @@ test_write_command_install (TestSuite *suite)
                                 test_opmsg_disconnect_mid_batch);
    TestSuite_AddMockServerTest (
       suite, "/WriteCommand/w0_legacy_insert_many", test_w0_legacy_insert_many);
+   TestSuite_AddMockServerTest (
+      suite, "/WriteCommand/w0_legacy_update_one", test_w0_legacy_update_one);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/WriteCommand/w0_legacy_update_and_replace_validation",
+      test_w0_legacy_update_and_replace_validation);
    TestSuite_AddFull (suite,
                       "/WriteCommand/invalid_wc_server_error",
                       _test_invalid_wc_server_error,
