@@ -5723,7 +5723,7 @@ _test_update_validate (update_fn_t update_fn)
                             NULL,
                             &error));
 
-   /* BSON_VALIDATE_EMPTY_KEYS will yield a different error message than the
+   /* bson_validate_with_error will yield a different error message than the
     * standard key check in _mongoc_validate_replace */
    if (update_fn == mongoc_collection_replace_one) {
       msg =
