@@ -599,7 +599,7 @@ test_w0_legacy_update_one (void)
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    coll = mongoc_client_get_collection (client, "db", "coll");
 
-   /* Add unacknowldged write concern */
+   /* Add unacknowledged write concern */
    bson_init (&opts);
    wc = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (wc, 0);
