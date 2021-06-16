@@ -2633,6 +2633,12 @@ test_framework_resolve_path (const char *path, char *resolved)
    }
 }
 
+bool
+test_framework_is_serverless (void)
+{
+   return test_framework_getenv_bool ("MONGOC_TEST_IS_SERVERLESS");
+}
+
 int
 test_framework_skip_if_time_sensitive (void)
 {
