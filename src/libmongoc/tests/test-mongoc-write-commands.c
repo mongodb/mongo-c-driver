@@ -589,10 +589,7 @@ test_w0_legacy_update_one (void)
    mongoc_write_concern_t *wc;
 
    /* wire version will use OP_UPDATE for w:0 update (since no OP_MSG) */
-   server = mock_server_new ();
-   mock_server_auto_hello (server,
-                           "{'isWritablePrimary': true,"
-                           " 'maxWireVersion': 5}");
+   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
    mock_server_run (server);
 
    client =
@@ -640,10 +637,7 @@ test_w0_legacy_update_and_replace_validation (void)
    mongoc_write_concern_t *wc;
 
    /* wire version will use OP_UPDATE for w:0 update (since no OP_MSG) */
-   server = mock_server_new ();
-   mock_server_auto_hello (server,
-                           "{'isWritablePrimary': true,"
-                           " 'maxWireVersion': 5}");
+   server = mock_server_with_auto_hello (WIRE_VERSION_OP_MSG - 1);
    mock_server_run (server);
 
    client =
