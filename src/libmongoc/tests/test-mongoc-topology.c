@@ -2313,6 +2313,7 @@ _test_hello_ok (bool pooled)
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
    char *hello;
+   char *hello_not_ok;
    future_t *future;
    request_t *request;
    bson_error_t error;
@@ -2337,6 +2338,14 @@ _test_hello_ok (bool pooled)
                                " 'maxWireVersion': 5,"
                                " 'hosts': ['%s']}",
                                mock_server_get_host_and_port (server));
+
+   hello_not_ok = bson_strdup_printf ("{'ok': 1,"
+                                      " 'isWritablePrimary': true,"
+                                      " 'setName': 'rs',"
+                                      " 'minWireVersion': 2,"
+                                      " 'maxWireVersion': 5,"
+                                      " 'hosts': ['%s']}",
+                                      mock_server_get_host_and_port (server));
 
    /* For client pools, the first handshake happens when the client is popped.
     * For non-pooled clients, send a ping command to trigger a handshake. */
@@ -2366,9 +2375,40 @@ _test_hello_ok (bool pooled)
          client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    }
 
+   /* Hang up to ensure that the next check runs legacy hello again */
    request = mock_server_receives_hello (server);
    BSON_ASSERT (request);
-   mock_server_replies_simple (request, hello);
+   mock_server_hangs_up (request);
+   request_destroy (request);
+
+   /* The previous failure will trigger another handshake using legacy hello */
+   request = mock_server_receives_legacy_hello (
+      server, "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
+   BSON_ASSERT (request);
+   mock_server_replies_simple (request, hello_not_ok);
+   request_destroy (request);
+
+   /* Once again, handle the ping */
+   if (!pooled) {
+      request = mock_server_receives_command (
+         server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
+      mock_server_replies_ok_and_destroys (request);
+      BSON_ASSERT (future_get_bool (future));
+      future_destroy (future);
+
+      /* Send off another ping for non-pooled clients, making sure to wait long
+       * enough to require another heartbeat. */
+      _mongoc_usleep (600 * 1000);
+      future = future_client_command_simple (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   }
+
+   /* Since we never responded with helloOk: true, we're expecting another
+    * legacy hello. */
+   request = mock_server_receives_legacy_hello (
+      server, "{'" HANDSHAKE_CMD_LEGACY_HELLO "': 1, 'helloOk': true}");
+   BSON_ASSERT (request);
+   mock_server_replies_simple (request, hello_not_ok);
    request_destroy (request);
 
    /* Once again, handle the ping */
@@ -2390,6 +2430,7 @@ _test_hello_ok (bool pooled)
    mongoc_uri_destroy (uri);
    mock_server_destroy (server);
    bson_free (hello);
+   bson_free (hello_not_ok);
 }
 
 static void
