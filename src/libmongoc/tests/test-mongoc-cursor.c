@@ -1907,7 +1907,7 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor,
             &getmore_cmd, "batchSize", tmp_bson ("{'$exists': false}"));
       }
 
-      ASSERT (match_bson (request_get_doc (request, 0), &getmore_cmd, true));
+      assert_match_bson (request_get_doc (request, 0), &getmore_cmd, true);
 
       reply = bson_string_new (NULL);
       cursor_finished = (reply_no == 2);
