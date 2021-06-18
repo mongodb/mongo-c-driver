@@ -49,12 +49,8 @@ _mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd,
    node = mongoc_topology_scanner_get_node (scanner, sd->id);
    if (node) {
       node->hello_ok = sd->hello_ok;
-
-      return true;
-   }
-
-   /* Check if a node for this host was retired in this scan. */
-   if (!mongoc_topology_scanner_has_node_for_host (scanner, &sd->host)) {
+   } else if (!mongoc_topology_scanner_has_node_for_host (scanner, &sd->host)) {
+      /* A node for this host was retired in this scan. */
       mongoc_topology_scanner_add (scanner, &sd->host, sd->id, sd->hello_ok);
       mongoc_topology_scanner_scan (scanner, sd->id);
    }
