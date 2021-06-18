@@ -1955,28 +1955,28 @@ _test_cursor_n_return (bool find_with_opts)
                                       0,         /* skip              */
                                       3,         /* limit             */
                                       0,         /* batch_size        */
-                                      {1, 1, 1}, /* expected_n_return */
+                                      {3, 2, 1}, /* expected_n_return */
                                       {1, 1, 1}  /* reply_length      */
                                    },
                                    {
                                       0,         /* skip              */
                                       5,         /* limit             */
                                       2,         /* batch_size        */
-                                      {2, 2, 2}, /* expected_n_return */
+                                      {2, 2, 1}, /* expected_n_return */
                                       {2, 2, 1}  /* reply_length      */
                                    },
                                    {
                                       0,         /* skip              */
                                       4,         /* limit             */
                                       7,         /* batch_size        */
-                                      {4, 7, 7}, /* expected_n_return */
+                                      {4, 2, 1}, /* expected_n_return */
                                       {2, 1, 1}  /* reply_length      */
                                    },
                                    {
                                       0,            /* skip              */
                                       -3,           /* limit             */
                                       1,            /* batch_size        */
-                                      {1, 1, 1}, /* expected_n_return */
+                                      {-3, -3, -3}, /* expected_n_return */
                                       {1, 1, 1}     /* reply_length      */
                                    }};
 
