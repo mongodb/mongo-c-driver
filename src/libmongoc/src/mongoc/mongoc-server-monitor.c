@@ -1145,11 +1145,13 @@ static BSON_THREAD_FUN (_server_monitor_rtt_thread, server_monitor_void)
       }
       bson_mutex_unlock (&server_monitor->shared.mutex);
 
+      bson_mutex_lock (&server_monitor->topology->mutex);
       sd = mongoc_topology_description_server_by_id (
          &server_monitor->topology->description,
          server_monitor->description->id,
          &error);
       hello_ok = sd ? sd->hello_ok : false;
+      bson_mutex_unlock (&server_monitor->topology->mutex);
 
       _server_monitor_ping_server (server_monitor, hello_ok, &rtt_ms);
       if (rtt_ms != MONGOC_RTT_UNSET) {
