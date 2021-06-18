@@ -115,10 +115,7 @@ _add_hello (mongoc_topology_scanner_t *ts)
    BSON_APPEND_BOOL (&ts->legacy_hello_cmd, "helloOk", true);
 
    if (api) {
-      BSON_APPEND_INT32 (&ts->legacy_hello_cmd, "hello", 1);
-
       _mongoc_cmd_append_server_api (&ts->hello_cmd, api);
-      _mongoc_cmd_append_server_api (&ts->legacy_hello_cmd, api);
    }
 }
 
