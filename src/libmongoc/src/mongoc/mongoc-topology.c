@@ -1825,7 +1825,7 @@ _topology_collect_errors (mongoc_topology_t *topology, bson_error_t *error_out)
    bson_string_free (error_message, true);
 }
 
-/* Caller must lock topology->mutex to protect handshake_cmd. */
+/* Caller must lock topology->mutex to protect the topology->description. */
 void
 _mongoc_topology_set_server_api (mongoc_topology_t *topology,
                                  const mongoc_server_api_t *api)
