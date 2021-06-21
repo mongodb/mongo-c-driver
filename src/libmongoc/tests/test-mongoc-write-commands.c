@@ -783,5 +783,6 @@ test_write_command_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_failpoint,
+                      /* Skipping on sharded clusters; see SERVER-57772 */
                       test_framework_skip_if_mongos);
 }
