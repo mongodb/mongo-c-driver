@@ -322,6 +322,7 @@ fail:
 
 static bool
 _server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
+                               bool hello_ok,
                                bson_t *hello_response,
                                bson_error_t *error)
 {
@@ -329,8 +330,8 @@ _server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
    const bson_t *hello;
    bool ret;
 
-   hello = _mongoc_topology_scanner_get_hello_cmd (
-      server_monitor->topology->scanner);
+   hello = _mongoc_topology_scanner_get_monitoring_cmd (
+      server_monitor->topology->scanner, hello_ok);
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
@@ -600,7 +601,7 @@ fail:
  */
 static bool
 _server_monitor_awaitable_hello (mongoc_server_monitor_t *server_monitor,
-                                 const bson_t *topology_version,
+                                 const mongoc_server_description_t *description,
                                  bson_t *hello_response,
                                  bool *cancelled,
                                  bson_error_t *error)
@@ -609,12 +610,12 @@ _server_monitor_awaitable_hello (mongoc_server_monitor_t *server_monitor,
    const bson_t *hello;
    bool ret = false;
 
-   hello = _mongoc_topology_scanner_get_hello_cmd (
-      server_monitor->topology->scanner);
+   hello = _mongoc_topology_scanner_get_monitoring_cmd (
+      server_monitor->topology->scanner, description->hello_ok);
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
-   bson_append_document (&cmd, "topologyVersion", 15, topology_version);
+   bson_append_document (&cmd, "topologyVersion", 15, &description->topology_version);
    bson_append_int32 (
       &cmd, "maxAwaitTimeMS", 14, server_monitor->heartbeat_frequency_ms);
    bson_append_utf8 (&cmd, "$db", 3, "admin", 5);
@@ -861,7 +862,7 @@ mongoc_server_monitor_check_server (
       MONITOR_LOG (server_monitor, "awaitable hello");
       ret = _server_monitor_awaitable_hello (
          server_monitor,
-         &previous_description->topology_version,
+         previous_description,
          &hello_response,
          cancelled,
          &error);
@@ -872,7 +873,7 @@ mongoc_server_monitor_check_server (
    awaited = false;
    _server_monitor_heartbeat_started (server_monitor, awaited);
    ret =
-      _server_monitor_polling_hello (server_monitor, &hello_response, &error);
+      _server_monitor_polling_hello (server_monitor, previous_description->hello_ok, &hello_response, &error);
 
 exit:
    duration_us = _now_us () - start_us;
@@ -1092,6 +1093,7 @@ static BSON_THREAD_FUN (_server_monitor_thread, server_monitor_void)
 
 static bool
 _server_monitor_ping_server (mongoc_server_monitor_t *server_monitor,
+                             bool hello_ok,
                              int64_t *rtt_ms)
 {
    bool ret = false;
@@ -1111,7 +1113,7 @@ _server_monitor_ping_server (mongoc_server_monitor_t *server_monitor,
    if (server_monitor->stream) {
       MONITOR_LOG (server_monitor, "rtt polling hello");
       ret = _server_monitor_polling_hello (
-         server_monitor, &hello_response, &error);
+         server_monitor, hello_ok, &hello_response, &error);
       if (ret) {
          *rtt_ms = (_now_us () - start_us) / 1000;
       }
@@ -1127,12 +1129,14 @@ _server_monitor_ping_server (mongoc_server_monitor_t *server_monitor,
 static BSON_THREAD_FUN (_server_monitor_rtt_thread, server_monitor_void)
 {
    mongoc_server_monitor_t *server_monitor;
+   mongoc_server_description_t *sd;
 
    server_monitor = (mongoc_server_monitor_t *) server_monitor_void;
 
    while (true) {
       int64_t rtt_ms;
       bson_error_t error;
+      bool hello_ok;
 
       bson_mutex_lock (&server_monitor->shared.mutex);
       if (server_monitor->shared.state != MONGOC_THREAD_RUNNING) {
@@ -1141,10 +1145,16 @@ static BSON_THREAD_FUN (_server_monitor_rtt_thread, server_monitor_void)
       }
       bson_mutex_unlock (&server_monitor->shared.mutex);
 
-      _server_monitor_ping_server (server_monitor, &rtt_ms);
-      if (rtt_ms != MONGOC_RTT_UNSET) {
-         mongoc_server_description_t *sd;
+      bson_mutex_lock (&server_monitor->topology->mutex);
+      sd = mongoc_topology_description_server_by_id (
+         &server_monitor->topology->description,
+         server_monitor->description->id,
+         &error);
+      hello_ok = sd ? sd->hello_ok : false;
+      bson_mutex_unlock (&server_monitor->topology->mutex);
 
+      _server_monitor_ping_server (server_monitor, hello_ok, &rtt_ms);
+      if (rtt_ms != MONGOC_RTT_UNSET) {
          bson_mutex_lock (&server_monitor->topology->mutex);
          sd = mongoc_topology_description_server_by_id (
             &server_monitor->topology->description,

@@ -26,7 +26,7 @@
 #include "json-test-monitoring.h"
 #include "json-test-operations.h"
 
-#define MAX_NUM_TESTS 100
+#define MAX_NUM_TESTS 150
 
 typedef void (*test_hook) (bson_t *test);
 

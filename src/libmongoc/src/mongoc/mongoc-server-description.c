@@ -68,6 +68,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
    sd->session_timeout_minutes = MONGOC_NO_SESSIONS;
    sd->last_write_date_ms = -1;
+   sd->hello_ok = false;
 
    /* always leave last hello in an init-ed state until we destroy sd */
    bson_destroy (&sd->last_hello_response);
@@ -592,6 +593,10 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
          if (!BSON_ITER_HOLDS_BOOL (&iter))
             goto failure;
          is_primary = bson_iter_bool (&iter);
+      } else if (strcmp ("helloOk", bson_iter_key (&iter)) == 0) {
+         if (!BSON_ITER_HOLDS_BOOL (&iter))
+            goto failure;
+         sd->hello_ok = bson_iter_bool (&iter);
       } else if (strcmp ("me", bson_iter_key (&iter)) == 0) {
          if (!BSON_ITER_HOLDS_UTF8 (&iter))
             goto failure;

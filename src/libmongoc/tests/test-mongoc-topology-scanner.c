@@ -92,7 +92,8 @@ _test_topology_scanner (bool with_ssl)
       mongoc_topology_scanner_add (
          topology_scanner,
          mongoc_uri_get_hosts (mock_server_get_uri (servers[i])),
-         (uint32_t) i);
+         (uint32_t) i,
+         false);
    }
 
    for (i = 0; i < 3; i++) {
@@ -498,7 +499,7 @@ test_topology_scanner_dns_testcase (dns_testcase_t *testcase)
    BSON_ASSERT (!host.next);
    bson_free (host_str);
 
-   mongoc_topology_scanner_add (ts, &host, 1);
+   mongoc_topology_scanner_add (ts, &host, 1, false);
    mongoc_topology_scanner_scan (ts, 1 /* any server id is ok. */);
    ASSERT_CMPINT ((int) (ts->async->ncmds), ==, testcase->expected_ncmds);
    mongoc_topology_scanner_work (ts);
@@ -603,7 +604,7 @@ test_topology_retired_fails_to_initiate (void)
    BSON_ASSERT (_mongoc_host_list_from_string (
       &host_list, mock_server_get_host_and_port (server)));
 
-   mongoc_topology_scanner_add (scanner, &host_list, 1);
+   mongoc_topology_scanner_add (scanner, &host_list, 1, false);
    mongoc_topology_scanner_start (scanner, false);
    BSON_ASSERT (scanner->async->ncmds > 0);
    /* retire the node */
