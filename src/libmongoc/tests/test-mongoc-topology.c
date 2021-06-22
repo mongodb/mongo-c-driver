@@ -1651,8 +1651,8 @@ test_incompatible_error (void)
    mock_server_auto_hello (server,
                            "{'ok': 1.0,"
                            " 'isWritablePrimary': true,"
-                           " 'minWireVersion': 10,"
-                           " 'maxWireVersion': 11}");
+                           " 'minWireVersion': 20,"
+                           " 'maxWireVersion': 21}");
 
    /* wait until it's time for next heartbeat */
    _mongoc_usleep (600 * 1000);
@@ -1664,7 +1664,7 @@ test_incompatible_error (void)
       NULL,
       &error));
 
-   msg = bson_strdup_printf ("requires wire version 10, but this version"
+   msg = bson_strdup_printf ("requires wire version 20, but this version"
                              " of libmongoc only supports up to %d",
                              WIRE_VERSION_MAX);
 

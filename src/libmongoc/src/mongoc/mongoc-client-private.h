@@ -43,7 +43,7 @@ BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
 #define WIRE_VERSION_MIN 3
-#define WIRE_VERSION_MAX 9
+#define WIRE_VERSION_MAX 13
 
 /* first version that supported "find" and "getMore" commands */
 #define WIRE_VERSION_FIND_CMD 4
@@ -92,6 +92,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_HEDGED_READS 9
 /* first version to support estimatedDocumentCount with collStats */
 #define WIRE_VERSION_4_9 12
+/* version corresponding to server 5.0 release */
+#define WIRE_VERSION_5_0 13
 
 struct _mongoc_collection_t;
 

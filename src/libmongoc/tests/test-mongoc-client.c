@@ -842,8 +842,8 @@ test_wire_version (void)
    mock_server_auto_hello (server,
                            "{'ok': 1.0,"
                            " 'isWritablePrimary': true,"
-                           " 'minWireVersion': 10,"
-                           " 'maxWireVersion': 11}");
+                           " 'minWireVersion': 20,"
+                           " 'maxWireVersion': 21}");
 
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
