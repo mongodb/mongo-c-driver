@@ -1585,10 +1585,11 @@ test_install_unified (TestSuite *suite)
 {
    run_unified_tests (suite, JSON_DIR "/unified");
 
-   /* crud/unified spec tests also use the unified format. */
    run_unified_tests (suite, JSON_DIR "/crud/unified");
 
    run_unified_tests (suite, JSON_DIR "/transactions/unified");
 
    run_unified_tests (suite, JSON_DIR "/collection-management");
+
+   run_unified_tests (suite, JSON_DIR "/sessions/unified");
 }

@@ -3063,7 +3063,7 @@ test_session_install (TestSuite *suite)
       false,
       false);
 
-   ASSERT (realpath (JSON_DIR "/sessions", resolved));
+   ASSERT (realpath (JSON_DIR "/sessions/legacy", resolved));
    install_json_test_suite_with_check (suite,
                                        resolved,
                                        test_sessions_spec_cb,
