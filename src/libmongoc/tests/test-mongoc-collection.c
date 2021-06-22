@@ -2588,7 +2588,7 @@ test_estimated_document_count (void)
    request_t *request;
    bson_error_t error;
    bson_t reply;
-   const char *server_reply = "{'n': 123, 'ok': 1}";
+   const char *server_reply = "{'cursor': { 'firstBatch': [{'n': 123}]}, 'ok': 1}";
 
    server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
@@ -2600,7 +2600,7 @@ test_estimated_document_count (void)
       collection, tmp_bson ("{'limit': 2, 'skip': 1}"), NULL, &reply, &error);
 
    request = mock_server_receives_msg (
-      server, 0, tmp_bson ("{'count': 'coll', 'limit': 2, 'skip': 1}"));
+      server, 0, tmp_bson ("{'aggregate': 'coll', 'limit': 2, 'skip': 1}"));
    mock_server_replies_simple (request, server_reply);
    ASSERT_OR_PRINT (123 == future_get_int64_t (future), error);
    ASSERT_MATCH (&reply, server_reply);
