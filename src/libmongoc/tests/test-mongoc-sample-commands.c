@@ -3573,6 +3573,134 @@ fail:
 /* End Transactions withTxn API Example 1 */
 
 static void
+_test_sample_versioned_api_example_1 (void)
+{
+   /* Start Versioned API Example 1 */
+   mongoc_client_t *client = NULL;
+   mongoc_server_api_t *server_api = NULL;
+   mongoc_server_api_version_t server_api_version;
+   bson_error_t error;
+
+   /* For a replica set, include the replica set name and a seedlist of the
+    * members in the URI string; e.g.
+    * uri_repl = "mongodb://mongodb0.example.com:27017,mongodb1.example.com:" \
+    *    "27017/?replicaSet=myRepl";
+    * client = test_framework_client_new (uri_repl);
+    * For a sharded cluster, connect to the mongos instances; e.g.
+    * uri_sharded =
+    * "mongodb://mongos0.example.com:27017,mongos1.example.com:27017/";
+    * client = test_framework_client_new (uri_sharded);
+    */
+
+   client = get_client ();
+
+   mongoc_server_api_version_from_string ("1", &server_api_version);
+   server_api = mongoc_server_api_new (server_api_version);
+
+   mongoc_client_set_server_api (client, server_api, &error);
+   /* End Versioned API Example 1 */
+}
+
+static void
+_test_sample_versioned_api_example_2 (void)
+{
+   /* Start Versioned API Example 2 */
+   mongoc_client_t *client = NULL;
+   mongoc_server_api_t *server_api = NULL;
+   mongoc_server_api_version_t server_api_version;
+   bson_error_t error;
+
+   /* For a replica set, include the replica set name and a seedlist of the
+    * members in the URI string; e.g.
+    * uri_repl = "mongodb://mongodb0.example.com:27017,mongodb1.example.com:" \
+    *    "27017/?replicaSet=myRepl";
+    * client = test_framework_client_new (uri_repl);
+    * For a sharded cluster, connect to the mongos instances; e.g.
+    * uri_sharded =
+    * "mongodb://mongos0.example.com:27017,mongos1.example.com:27017/";
+    * client = test_framework_client_new (uri_sharded);
+    */
+
+   client = get_client ();
+
+   mongoc_server_api_version_from_string ("1", &server_api_version);
+   server_api = mongoc_server_api_new (server_api_version);
+   mongoc_server_api_strict (server_api, true);
+
+   mongoc_client_set_server_api (client, server_api, &error);
+   /* End Versioned API Example 2 */
+}
+
+static void
+_test_sample_versioned_api_example_3 (void)
+{
+   /* Start Versioned API Example 3 */
+   mongoc_client_t *client = NULL;
+   mongoc_server_api_t *server_api = NULL;
+   mongoc_server_api_version_t server_api_version;
+   bson_error_t error;
+
+   /* For a replica set, include the replica set name and a seedlist of the
+    * members in the URI string; e.g.
+    * uri_repl = "mongodb://mongodb0.example.com:27017,mongodb1.example.com:" \
+    *    "27017/?replicaSet=myRepl";
+    * client = test_framework_client_new (uri_repl);
+    * For a sharded cluster, connect to the mongos instances; e.g.
+    * uri_sharded =
+    * "mongodb://mongos0.example.com:27017,mongos1.example.com:27017/";
+    * client = test_framework_client_new (uri_sharded);
+    */
+
+   client = get_client ();
+
+   mongoc_server_api_version_from_string ("1", &server_api_version);
+   server_api = mongoc_server_api_new (server_api_version);
+   mongoc_server_api_strict (server_api, false);
+
+   mongoc_client_set_server_api (client, server_api, &error);
+   /* End Versioned API Example 3 */
+}
+
+static void
+_test_sample_versioned_api_example_4 (void)
+{
+   /* Start Versioned API Example 4 */
+   mongoc_client_t *client = NULL;
+   mongoc_server_api_t *server_api = NULL;
+   mongoc_server_api_version_t server_api_version;
+   bson_error_t error;
+
+   /* For a replica set, include the replica set name and a seedlist of the
+    * members in the URI string; e.g.
+    * uri_repl = "mongodb://mongodb0.example.com:27017,mongodb1.example.com:" \
+    *    "27017/?replicaSet=myRepl";
+    * client = test_framework_client_new (uri_repl);
+    * For a sharded cluster, connect to the mongos instances; e.g.
+    * uri_sharded =
+    * "mongodb://mongos0.example.com:27017,mongos1.example.com:27017/";
+    * client = test_framework_client_new (uri_sharded);
+    */
+
+   client = get_client ();
+
+   mongoc_server_api_version_from_string ("1", &server_api_version);
+   server_api = mongoc_server_api_new (server_api_version);
+   mongoc_server_api_deprecation_errors (server_api, true);
+
+   mongoc_client_set_server_api (client, server_api, &error);
+   /* End Versioned API Example 4 */
+}
+
+static void
+test_sample_versioned_api (void)
+{
+   _test_sample_versioned_api_example_1 ();
+   _test_sample_versioned_api_example_2 ();
+   _test_sample_versioned_api_example_3 ();
+   _test_sample_versioned_api_example_4 ();
+}
+
+static void
 test_sample_commands (void)
 {
    mongoc_client_t *client;
@@ -3648,6 +3776,7 @@ test_sample_commands (void)
    if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_4)) {
       test_sample_txn_commands (client);
    }
+   test_sample_versioned_api ();
 
    mongoc_collection_drop (collection, NULL);
 
