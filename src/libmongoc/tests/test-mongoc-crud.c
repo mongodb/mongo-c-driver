@@ -181,5 +181,5 @@ test_crud_install (TestSuite *suite)
                       prose_test_2,
                       NULL, /* dtor */
                       NULL, /* ctx */
-                      test_framework_skip_if_max_wire_version_less_than_12);
+                      test_framework_skip_if_max_wire_version_less_than_13);
 }
