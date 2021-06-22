@@ -97,6 +97,10 @@ mongoc_read_concern_get_level (const mongoc_read_concern_t *read_concern)
  *  - MONGOC_READ_CONCERN_LEVEL_MAJORITY
  * MongoDB 3.4 added
  *  - MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE
+ * MongoDB 3.6 added
+ *  - MONGOC_READ_CONCERN_LEVEL_AVAILABLE
+ * MongoDB 4.0 added (and 5.0 allowed its usage outside of transactions)
+ *  - MONGOC_READ_CONCERN_LEVEL_SNAPSHOT
  *
  * See the MongoDB docs for more information on readConcernLevel
  */
