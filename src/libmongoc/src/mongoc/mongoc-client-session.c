@@ -395,36 +395,6 @@ mongoc_transaction_opts_get_read_prefs (const mongoc_transaction_opt_t *opts)
    return opts->read_prefs;
 }
 
-
-mongoc_session_opt_t *
-mongoc_session_opts_new (void)
-{
-   mongoc_session_opt_t *opts = bson_malloc0 (sizeof (mongoc_session_opt_t));
-
-   /* Driver Sessions Spec: causal consistency is true by default */
-   mongoc_session_opts_set_causal_consistency (opts, true);
-
-   return opts;
-}
-
-
-void
-mongoc_session_opts_set_causal_consistency (mongoc_session_opt_t *opts,
-                                            bool causal_consistency)
-{
-   ENTRY;
-
-   BSON_ASSERT (opts);
-
-   if (causal_consistency) {
-      opts->flags |= MONGOC_SESSION_CAUSAL_CONSISTENCY;
-   } else {
-      opts->flags &= ~MONGOC_SESSION_CAUSAL_CONSISTENCY;
-   }
-
-   EXIT;
-}
-
 bool
 mongoc_session_opts_get_causal_consistency (const mongoc_session_opt_t *opts)
 {
@@ -435,6 +405,72 @@ mongoc_session_opts_get_causal_consistency (const mongoc_session_opt_t *opts)
    RETURN (!!(opts->flags & MONGOC_SESSION_CAUSAL_CONSISTENCY));
 }
 
+bool
+mongoc_session_opts_get_snapshot (const mongoc_session_opt_t *opts)
+{
+   ENTRY;
+
+   BSON_ASSERT (opts);
+
+   RETURN (!!(opts->flags & MONGOC_SESSION_SNAPSHOT));
+}
+
+void
+mongoc_session_opts_set_causal_consistency (mongoc_session_opt_t *opts,
+                                            bool causal_consistency)
+{
+   ENTRY;
+
+   BSON_ASSERT (opts);
+
+   if (causal_consistency) {
+      if (mongoc_session_opts_get_snapshot (opts)) {
+         MONGOC_WARNING (
+            "Cannot set causal consistency when session is snapshot");
+         EXIT;
+      }
+      opts->flags |= MONGOC_SESSION_CAUSAL_CONSISTENCY;
+   } else {
+      opts->flags &= ~MONGOC_SESSION_CAUSAL_CONSISTENCY;
+   }
+
+   EXIT;
+}
+
+void
+mongoc_session_opts_set_snapshot (mongoc_session_opt_t *opts, bool snapshot)
+{
+   ENTRY;
+
+   BSON_ASSERT (opts);
+
+   if (snapshot) {
+      if (mongoc_session_opts_get_causal_consistency (opts)) {
+         MONGOC_WARNING (
+            "Cannot set snapshot when session is causal consistency");
+         EXIT;
+      }
+      opts->flags |= MONGOC_SESSION_SNAPSHOT;
+   } else {
+      opts->flags &= ~MONGOC_SESSION_SNAPSHOT;
+   }
+
+   EXIT;
+}
+
+mongoc_session_opt_t *
+mongoc_session_opts_new (void)
+{
+   mongoc_session_opt_t *opts = bson_malloc0 (sizeof (mongoc_session_opt_t));
+
+   /* Driver Sessions Spec: causal consistency is true by default */
+   mongoc_session_opts_set_causal_consistency (opts, true);
+
+   /* Snapshot Reads Spec: snapshot is false by default */
+   mongoc_session_opts_set_snapshot (opts, false);
+
+   return opts;
+}
 
 void
 mongoc_session_opts_set_default_transaction_opts (
