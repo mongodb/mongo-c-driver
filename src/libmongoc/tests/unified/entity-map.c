@@ -140,15 +140,16 @@ entity_new (const char *type)
 static bool
 is_sensitive_command (event_t *event)
 {
-   return 0 == strcasecmp (event->command_name, "authenticate") ||
-          0 == strcasecmp (event->command_name, "saslStart") ||
-          0 == strcasecmp (event->command_name, "saslContinue") ||
-          0 == strcasecmp (event->command_name, "getnonce") ||
-          0 == strcasecmp (event->command_name, "createUser") ||
-          0 == strcasecmp (event->command_name, "updateUser") ||
-          0 == strcasecmp (event->command_name, "copydbgetnonce") ||
-          0 == strcasecmp (event->command_name, "copydbsaslstart") ||
-          0 == strcasecmp (event->command_name, "copydb");
+   if (event->reply) {
+      return mongoc_apm_is_sensitive_reply (event->command_name, event->reply);
+   }
+
+   if (event->command) {
+      return mongoc_apm_is_sensitive_command (event->command_name,
+                                              event->command);
+   }
+
+   return false;
 }
 
 bool
