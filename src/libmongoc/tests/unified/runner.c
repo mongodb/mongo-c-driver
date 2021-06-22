@@ -602,7 +602,7 @@ get_topology_type (mongoc_client_t *client)
 static void
 check_schema_version (test_file_t *test_file)
 {
-   const char *supported_version_strs[] = {"1.1"};
+   const char *supported_version_strs[] = {"1.1", "1.5"};
    int i;
 
    for (i = 0; i < sizeof (supported_version_strs) /
@@ -714,6 +714,20 @@ check_run_on_requirement (test_runner_t *test_runner,
             return false;
          }
          continue;
+      }
+
+      if (0 == strcmp (key, "auth")) {
+         bool auth_requirement = bson_iter_bool (&req_iter);
+
+         if (auth_requirement == test_framework_has_auth ()) {
+            continue;
+         }
+
+         *fail_reason = bson_strdup_printf (
+            "Server does not match auth requirement, test %s authentication.",
+            auth_requirement ? "requires" : "forbids");
+
+         return false;
       }
 
       test_error ("Unexpected runOnRequirement field: %s", key);

@@ -134,6 +134,8 @@ test_framework_max_wire_version_at_least (int version);
 int64_t
 test_framework_max_write_batch_size (void);
 
+bool
+test_framework_has_auth (void);
 int
 test_framework_skip_if_auth (void);
 int

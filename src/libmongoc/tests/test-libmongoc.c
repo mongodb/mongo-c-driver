@@ -2038,8 +2038,8 @@ test_framework_get_max_wire_version (int64_t *max_version)
    bson_destroy (&reply);
 }
 
-static bool
-_test_framework_has_auth (void)
+bool
+test_framework_has_auth (void)
 {
    char *user;
 
@@ -2066,7 +2066,7 @@ test_framework_skip_if_auth (void)
       return 0;
    }
 
-   if (_test_framework_has_auth ()) {
+   if (test_framework_has_auth ()) {
       return 0;
    }
 
@@ -2081,7 +2081,7 @@ test_framework_skip_if_no_auth (void)
       return 0;
    }
 
-   if (!_test_framework_has_auth ()) {
+   if (!test_framework_has_auth ()) {
       return 0;
    }
 
