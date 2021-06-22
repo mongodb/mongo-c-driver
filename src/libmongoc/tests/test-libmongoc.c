@@ -2477,6 +2477,7 @@ WIRE_VERSION_CHECKS (6)
 WIRE_VERSION_CHECKS (7)
 WIRE_VERSION_CHECKS (8)
 WIRE_VERSION_CHECKS (9)
+/* wire versions 10, 11, 12 were internal to the 5.0 release cycle */
 WIRE_VERSION_CHECKS (13)
 
 int
