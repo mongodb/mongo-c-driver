@@ -116,7 +116,7 @@ prose_test_2 (void *ctx)
 {
    mongoc_client_t *client;
    mongoc_database_t *db;
-   mongoc_collection_t *coll;
+   mongoc_collection_t *coll, *coll_created;
    mongoc_apm_callbacks_t *callbacks;
    prose_test_2_apm_ctx_t apm_ctx = {0};
    bool ret;
@@ -130,17 +130,19 @@ prose_test_2 (void *ctx)
    /* don't care if ns not found. */
    (void) mongoc_collection_drop (coll, NULL);
 
-   ret = mongoc_database_create_collection (
+   coll_created = mongoc_database_create_collection (
       db,
       mongoc_collection_get_name (coll),
       tmp_bson ("{'validator': {'x': {'$type': 'string'}}}"),
       &error);
-   ASSERT_OR_PRINT (ret, error);
+   ASSERT_OR_PRINT (coll_created, error);
+   mongoc_collection_destroy (coll_created);
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_command_succeeded_cb (callbacks,
                                         prose_test_2_command_succeeded);
    mongoc_client_set_apm_callbacks (client, callbacks, (void *) &apm_ctx);
+   mongoc_apm_callbacks_destroy (callbacks);
 
    ret = mongoc_collection_insert_one (
       coll, tmp_bson ("{'x':1}"), NULL /* opts */, &reply, &error);
