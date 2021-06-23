@@ -28,6 +28,9 @@ BSON_BEGIN_DECLS
 
 struct _mongoc_read_concern_t {
    char *level;
+   uint32_t at_cluster_time_timestamp;
+   uint32_t at_cluster_time_increment;
+   bool at_cluster_time_set;
    bool frozen;
    bson_t compiled;
 };

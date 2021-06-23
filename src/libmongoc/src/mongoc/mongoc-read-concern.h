@@ -46,6 +46,16 @@ mongoc_read_concern_get_level (const mongoc_read_concern_t *read_concern);
 MONGOC_EXPORT (bool)
 mongoc_read_concern_set_level (mongoc_read_concern_t *read_concern,
                                const char *level);
+MONGOC_EXPORT (uint32_t)
+mongoc_read_concern_get_at_cluster_time_timestamp (
+   const mongoc_read_concern_t *read_concern);
+MONGOC_EXPORT (uint32_t)
+mongoc_read_concern_get_at_cluster_time_increment (
+   const mongoc_read_concern_t *read_concern);
+MONGOC_EXPORT (bool)
+mongoc_read_concern_set_at_cluster_time (mongoc_read_concern_t *read_concern,
+                                         uint32_t t,
+                                         uint32_t i);
 MONGOC_EXPORT (bool)
 mongoc_read_concern_append (mongoc_read_concern_t *read_concern, bson_t *doc);
 MONGOC_EXPORT (bool)

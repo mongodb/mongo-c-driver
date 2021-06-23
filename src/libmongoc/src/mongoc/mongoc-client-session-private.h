@@ -84,6 +84,9 @@ struct _mongoc_client_session_t {
    uint32_t client_generation;
    uint32_t server_id;
    bson_t *recovery_token;
+   uint32_t snapshot_time_timestamp;
+   uint32_t snapshot_time_increment;
+   bool snapshot_time_set;
 
    /* For testing only */
    int64_t with_txn_timeout_ms;

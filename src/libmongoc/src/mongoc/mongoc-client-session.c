@@ -645,11 +645,14 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
                                      const bson_t *reply)
 {
    bson_iter_t iter;
+   bson_iter_t cursor_iter;
    uint32_t len;
    const uint8_t *data;
    bson_t cluster_time;
-   uint32_t t;
-   uint32_t i;
+   uint32_t operation_t;
+   uint32_t operation_i;
+   uint32_t snapshot_t;
+   uint32_t snapshot_i;
 
    BSON_ASSERT (session);
 
@@ -675,8 +678,29 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
          mongoc_client_session_advance_cluster_time (session, &cluster_time);
       } else if (!strcmp (bson_iter_key (&iter), "operationTime") &&
                  BSON_ITER_HOLDS_TIMESTAMP (&iter) && is_acknowledged) {
-         bson_iter_timestamp (&iter, &t, &i);
-         mongoc_client_session_advance_operation_time (session, t, i);
+         bson_iter_timestamp (&iter, &operation_t, &operation_i);
+         mongoc_client_session_advance_operation_time (
+            session, operation_t, operation_i);
+      } else if (!strcmp (bson_iter_key (&iter), "cursor") &&
+                 mongoc_session_opts_get_snapshot (&session->opts) &&
+                 !session->snapshot_time_set) {
+         /* If cursor is present, snapshot is enabled for the session,
+          * and snapshot_time has not already been set, try to find
+          * atClusterTime in cursor field to set snapshot_time_timestamp and
+          * increment. */
+         bson_iter_recurse (&iter, &cursor_iter);
+
+         while (bson_iter_next (&cursor_iter)) {
+            /* If atClusterTime is in cursor and is a valid timestamp, use it to
+             * set snapshot_time_timestamp and increment. */
+            if (!strcmp (bson_iter_key (&cursor_iter), "atClusterTime") &&
+                BSON_ITER_HOLDS_TIMESTAMP (&cursor_iter)) {
+               bson_iter_timestamp (&cursor_iter, &snapshot_t, &snapshot_i);
+               session->snapshot_time_set = true;
+               session->snapshot_time_timestamp = snapshot_t;
+               session->snapshot_time_increment = snapshot_i;
+            }
+         }
       }
    }
 }
@@ -786,6 +810,9 @@ _mongoc_client_session_new (mongoc_client_t *client,
       /* sessions are causally consistent by default */
       session->opts.flags = MONGOC_SESSION_CAUSAL_CONSISTENCY;
    }
+
+   /* snapshot_time_set is false by default */
+   session->snapshot_time_set = false;
 
    /* these values are used for testing only. */
    session->with_txn_timeout_ms = 0;
