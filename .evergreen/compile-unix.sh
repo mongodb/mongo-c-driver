@@ -162,7 +162,7 @@ case "$MARCH" in
    i386)
       CFLAGS="$CFLAGS -m32 -march=i386"
       CXXFLAGS="$CXXFLAGS -m32 -march=i386"
-      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=AUTO -DENABLE_ZLIB=BUNDLED"
+      CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DENABLE_SNAPPY=AUTO -DENABLE_ZLIB=BUNDLED -DENABLE_ZSTD=OFF"
    ;;
    s390x)
       CFLAGS="$CFLAGS -march=z196 -mtune=zEC12"
@@ -229,10 +229,18 @@ fi
 if [ "$ANALYZE" = "ON" ]; then
    # Clang static analyzer, available on Ubuntu 16.04 images.
    # https://clang-analyzer.llvm.org/scan-build.html
-   scan-build $CMAKE $CONFIGURE_FLAGS .
+   #
+   # On images other than Ubuntu 16.04, use scan-build-3.9 if
+   # scan-build is not found.
+   if command -v scan-build 2>/dev/null; then
+      SCAN_BUILD_COMMAND="scan-build"
+   else
+      SCAN_BUILD_COMMAND="scan-build-3.9"
+   fi
+   $SCAN_BUILD_COMMAND $CMAKE $CONFIGURE_FLAGS .
 
    # Put clang static analyzer results in scan/ and fail build if warnings found.
-   SCAN_BUILD="scan-build -o scan --status-bugs"
+   SCAN_BUILD="$SCAN_BUILD_COMMAND -o scan --status-bugs"
 else
    $CMAKE $CONFIGURE_FLAGS .
 fi

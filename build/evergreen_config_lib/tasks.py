@@ -1022,11 +1022,20 @@ class OCSPTask(MatrixTask):
             'TEST_COLUMN=%s CERT_TYPE=%s USE_DELEGATE=%s sh .evergreen/run-ocsp-responder.sh' % (
             test_column, self.cert, 'on' if self.delegate == 'delegate' else 'off')))
         commands.append(orchestration)
-        if self.test == 'cache':
-            commands.append(shell_mongoc('CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
+        if self.depends_on['name'] == 'debug-compile-nosasl-openssl-1.0.1':
+            # LD_LIBRARY_PATH is needed so the in-tree OpenSSL 1.0.1 is found at runtime
+            if self.test == 'cache':
+                commands.append(shell_mongoc('export LD_LIBRARY_PATH=$(pwd)/install-dir/lib\n'
+                    'CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
+            else:
+                commands.append(shell_mongoc('export LD_LIBRARY_PATH=$(pwd)/install-dir/lib\n'
+                    'TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
         else:
-            commands.append(shell_mongoc(
-                'TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
+            if self.test == 'cache':
+                commands.append(shell_mongoc('CERT_TYPE=%s .evergreen/run-ocsp-cache-test.sh' % self.cert))
+            else:
+                commands.append(shell_mongoc(
+                    'TEST_COLUMN=%s CERT_TYPE=%s sh .evergreen/run-ocsp-test.sh' % (self.test.upper(), self.cert)))
 
         return task
 
