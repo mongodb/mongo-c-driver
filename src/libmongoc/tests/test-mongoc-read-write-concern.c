@@ -230,45 +230,6 @@ test_rw_concern_document (bson_t *scenario)
    }
 }
 
-static void
-errinfo_propagated (void *unused)
-{
-   mongoc_client_t *client;
-   bool ret;
-   bson_error_t error;
-   mongoc_collection_t *coll;
-   bson_t reply;
-   const char *failpoint =
-      "{'configureFailPoint':'failCommand','data':{'failCommands':['insert'],'"
-      "writeConcernError':{'code':100,'codeName':'UnsatisfiableWriteConcern','"
-      "errmsg':'Not enough data-bearing "
-      "nodes','errInfo':{'writeConcern':{'w':2,'wtimeout':0,'provenance':'"
-      "clientSupplied'}}}},'mode':{'times':1}}";
-
-
-   client = test_framework_new_default_client ();
-   ret = mongoc_client_command_simple (client,
-                                       "admin",
-                                       tmp_bson (failpoint),
-                                       NULL /* read prefs */,
-                                       NULL /* reply */,
-                                       &error);
-   ASSERT_OR_PRINT (ret, error);
-   coll = get_test_collection (client, "rwc_errinfo");
-   ret = mongoc_collection_insert_one (
-      coll, tmp_bson ("{'x': 1}"), NULL /* opts */, &reply, &error);
-   BSON_ASSERT (!ret);
-   assert_match_bson (&reply,
-                      tmp_bson ("{'writeConcernErrors': [ { 'errInfo' : { "
-                                "'writeConcern' : { 'w' : 2, 'wtimeout' : 0, "
-                                "'provenance' : 'clientSupplied' } } } ] }"),
-                      false);
-
-   bson_destroy (&reply);
-   mongoc_collection_destroy (coll);
-   mongoc_client_destroy (client);
-}
-
 void
 test_read_write_concern_install (TestSuite *suite)
 {
@@ -281,11 +242,4 @@ test_read_write_concern_install (TestSuite *suite)
    test_framework_resolve_path (JSON_DIR "/read_write_concern/document",
                                 resolved);
    install_json_test_suite (suite, resolved, &test_rw_concern_document);
-   TestSuite_AddFull (suite,
-                      "/read_write_concern/errinfo_propagated",
-                      errinfo_propagated,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      test_framework_skip_if_max_wire_version_less_than_7,
-                      test_framework_skip_if_no_failpoint);
 }
