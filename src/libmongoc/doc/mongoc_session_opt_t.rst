@@ -14,7 +14,7 @@ Synopsis
 
 .. include:: includes/session-lifecycle.txt
 
-See the example code for :symbol:`mongoc_session_opts_set_causal_consistency` and :symbol:`mongoc_session_opts_set_snapshot`.
+See the example code for :symbol:`mongoc_session_opts_set_causal_consistency`.
 
 .. only:: html
 
@@ -28,8 +28,6 @@ See the example code for :symbol:`mongoc_session_opts_set_causal_consistency` an
     mongoc_session_opts_new
     mongoc_session_opts_get_causal_consistency
     mongoc_session_opts_set_causal_consistency
-    mongoc_session_opts_get_snapshot
-    mongoc_session_opts_set_snapshot
     mongoc_session_opts_get_default_transaction_opts
     mongoc_session_opts_set_default_transaction_opts
     mongoc_session_opts_get_transaction_opts

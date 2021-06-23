@@ -21,8 +21,7 @@ Parameters
 Example
 -------
 
-See the example code for :symbol:`mongoc_session_opts_set_causal_consistency` and
-:symbol:`mongoc_session_opts_set_snapshot`.
+See the example code for :symbol:`mongoc_session_opts_set_causal_consistency`.
 
 .. only:: html
 

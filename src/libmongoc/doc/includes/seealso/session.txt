@@ -34,8 +34,6 @@
 
   | :symbol:`mongoc_session_opts_get_causal_consistency()`
 
-  | :symbol:`mongoc_session_opts_get_snapshot()`
-
   | :symbol:`mongoc_session_opts_get_default_transaction_opts()`
 
   | :symbol:`mongoc_session_opts_get_transaction_opts()`
@@ -43,8 +41,6 @@
   | :symbol:`mongoc_session_opts_new()`
 
   | :symbol:`mongoc_session_opts_set_causal_consistency()`
-
-  | :symbol:`mongoc_session_opts_set_snapshot()`
 
   | :symbol:`mongoc_session_opts_set_default_transaction_opts()`
 
