@@ -3599,6 +3599,9 @@ _test_sample_versioned_api_example_1 (void)
 
    mongoc_client_set_server_api (client, server_api, &error);
    /* End Versioned API Example 1 */
+
+   mongoc_client_destroy (client);
+   mongoc_server_api_destroy (server_api);
 }
 
 static void
@@ -3629,6 +3632,9 @@ _test_sample_versioned_api_example_2 (void)
 
    mongoc_client_set_server_api (client, server_api, &error);
    /* End Versioned API Example 2 */
+
+   mongoc_client_destroy (client);
+   mongoc_server_api_destroy (server_api);
 }
 
 static void
@@ -3659,6 +3665,9 @@ _test_sample_versioned_api_example_3 (void)
 
    mongoc_client_set_server_api (client, server_api, &error);
    /* End Versioned API Example 3 */
+
+   mongoc_client_destroy (client);
+   mongoc_server_api_destroy (server_api);
 }
 
 static void
@@ -3689,6 +3698,9 @@ _test_sample_versioned_api_example_4 (void)
 
    mongoc_client_set_server_api (client, server_api, &error);
    /* End Versioned API Example 4 */
+
+   mongoc_client_destroy (client);
+   mongoc_server_api_destroy (server_api);
 }
 
 static void
