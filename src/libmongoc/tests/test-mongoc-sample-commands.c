@@ -3464,11 +3464,11 @@ with_transaction_example (bson_error_t *error)
     * members in the URI string; e.g.
     * uri_repl = "mongodb://mongodb0.example.com:27017,mongodb1.example.com:" \
     *    "27017/?replicaSet=myRepl";
-    * client = test_framework_client_new (uri_repl);
+    * client = mongoc_client_new (uri_repl);
     * For a sharded cluster, connect to the mongos instances; e.g.
     * uri_sharded =
     * "mongodb://mongos0.example.com:27017,mongos1.example.com:27017/";
-    * client = test_framework_client_new (uri_sharded);
+    * client = mongoc_client_new (uri_sharded);
     */
 
    client = get_client ();
@@ -3585,11 +3585,11 @@ _test_sample_versioned_api_example_1 (void)
     * members in the URI string; e.g.
     * uri_repl = "mongodb://mongodb0.example.com:27017,mongodb1.example.com:" \
     *    "27017/?replicaSet=myRepl";
-    * client = test_framework_client_new (uri_repl);
+    * client = mongoc_client_new (uri_repl);
     * For a sharded cluster, connect to the mongos instances; e.g.
     * uri_sharded =
     * "mongodb://mongos0.example.com:27017,mongos1.example.com:27017/";
-    * client = test_framework_client_new (uri_sharded);
+    * client = mongoc_client_new (uri_sharded);
     */
 
    client = get_client ();
@@ -3614,11 +3614,11 @@ _test_sample_versioned_api_example_2 (void)
     * members in the URI string; e.g.
     * uri_repl = "mongodb://mongodb0.example.com:27017,mongodb1.example.com:" \
     *    "27017/?replicaSet=myRepl";
-    * client = test_framework_client_new (uri_repl);
+    * client = mongoc_client_new (uri_repl);
     * For a sharded cluster, connect to the mongos instances; e.g.
     * uri_sharded =
     * "mongodb://mongos0.example.com:27017,mongos1.example.com:27017/";
-    * client = test_framework_client_new (uri_sharded);
+    * client = mongoc_client_new (uri_sharded);
     */
 
    client = get_client ();
@@ -3644,11 +3644,11 @@ _test_sample_versioned_api_example_3 (void)
     * members in the URI string; e.g.
     * uri_repl = "mongodb://mongodb0.example.com:27017,mongodb1.example.com:" \
     *    "27017/?replicaSet=myRepl";
-    * client = test_framework_client_new (uri_repl);
+    * client = mongoc_client_new (uri_repl);
     * For a sharded cluster, connect to the mongos instances; e.g.
     * uri_sharded =
     * "mongodb://mongos0.example.com:27017,mongos1.example.com:27017/";
-    * client = test_framework_client_new (uri_sharded);
+    * client = mongoc_client_new (uri_sharded);
     */
 
    client = get_client ();
@@ -3674,11 +3674,11 @@ _test_sample_versioned_api_example_4 (void)
     * members in the URI string; e.g.
     * uri_repl = "mongodb://mongodb0.example.com:27017,mongodb1.example.com:" \
     *    "27017/?replicaSet=myRepl";
-    * client = test_framework_client_new (uri_repl);
+    * client = mongoc_client_new (uri_repl);
     * For a sharded cluster, connect to the mongos instances; e.g.
     * uri_sharded =
     * "mongodb://mongos0.example.com:27017,mongos1.example.com:27017/";
-    * client = test_framework_client_new (uri_sharded);
+    * client = mongoc_client_new (uri_sharded);
     */
 
    client = get_client ();
