@@ -1167,6 +1167,34 @@ test_max_commit_time_ms_is_reset (void *ctx)
 }
 
 void
+test_snapshot_session_prose_1 (void *ctx)
+{
+   mongoc_client_t *client = NULL;
+   mongoc_session_opt_t *session_opts = NULL;
+   bson_error_t error;
+   bool r;
+
+   client =
+      test_framework_client_new_from_uri (test_framework_get_uri (), NULL);
+   BSON_ASSERT (client);
+
+   session_opts = mongoc_session_opts_new ();
+   mongoc_session_opts_set_causal_consistency (session_opts, true);
+   mongoc_session_opts_set_snapshot (session_opts, true);
+
+   /* assert that starting session with causal consistency and snapshot enabled
+    * results in an error. */
+   r = mongoc_client_start_session (client, session_opts, &error);
+   ASSERT (!r);
+   ASSERT (error.domain == MONGOC_ERROR_CLIENT);
+   ASSERT (error.code == MONGOC_ERROR_CLIENT_SESSION_FAILURE);
+   BSON_ASSERT (
+      NULL !=
+      strstr (error.message,
+              "Only one of causal consistency and snapshot can be enabled."));
+}
+
+void
 test_transactions_install (TestSuite *suite)
 {
    char resolved[PATH_MAX];
@@ -1257,4 +1285,10 @@ test_transactions_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/transactions/snapshot_sessions_prose_1",
+                      test_snapshot_session_prose_1,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_txns);
 }
