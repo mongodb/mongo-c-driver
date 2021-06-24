@@ -373,6 +373,10 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
          GOTO (srv_fail);
       }
 
+      if (!mongoc_uri_finalize_loadbalanced (uri, &topology->scanner->error)) {
+         GOTO (srv_fail);
+      }
+
       topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;
       topology->srv_polling_rescan_interval_ms = BSON_MAX (
          rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
@@ -1753,7 +1757,8 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
          pool_cleared = true;
       }
 
-      /* SDAM: When the client sees a "not primary" or "node is recovering" error
+      /* SDAM: When the client sees a "not primary" or "node is recovering"
+       * error
        * and the error's topologyVersion is strictly greater than the current
        * ServerDescription's topologyVersion it MUST replace the server's
        * description with a ServerDescription of type Unknown. */

@@ -103,6 +103,8 @@ MONGOC_URI_REPLICASET                      replicaset                        Emp
 MONGOC_URI_ZLIBCOMPRESSIONLEVEL            zlibcompressionlevel              -1                                When the MONGOC_URI_COMPRESSORS includes "zlib" this options configures the zlib compression level, when the zlib compressor is used to compress client data.
 ========================================== ================================= ================================= ============================================================================================================================================================================================================================================
 
+LBTODO add a row for loadbalanced
+
 Setting any of the \*timeoutMS options above to ``0`` will be interpreted as "use the default value".
 
 Authentication Options

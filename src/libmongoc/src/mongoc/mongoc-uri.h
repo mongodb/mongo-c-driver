@@ -46,6 +46,8 @@
 #define MONGOC_URI_GSSAPISERVICENAME "gssapiservicename"
 #define MONGOC_URI_HEARTBEATFREQUENCYMS "heartbeatfrequencyms"
 #define MONGOC_URI_JOURNAL "journal"
+// LBTODO add macro
+#define MONGOC_URI_LOADBALANCED "loadbalanced"
 #define MONGOC_URI_LOCALTHRESHOLDMS "localthresholdms"
 #define MONGOC_URI_MAXIDLETIMEMS "maxidletimems"
 #define MONGOC_URI_MAXPOOLSIZE "maxpoolsize"
