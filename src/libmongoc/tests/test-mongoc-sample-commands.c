@@ -3776,7 +3776,10 @@ test_sample_commands (void)
    if (!test_framework_max_wire_version_at_least (WIRE_VERSION_4_4)) {
       test_sample_txn_commands (client);
    }
-   test_sample_versioned_api ();
+
+   if (test_framework_max_wire_version_at_least (WIRE_VERSION_4_9)) {
+      test_sample_versioned_api ();
+   }
 
    mongoc_collection_drop (collection, NULL);
 
