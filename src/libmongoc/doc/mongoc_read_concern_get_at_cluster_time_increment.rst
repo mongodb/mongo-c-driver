@@ -1,1 +1,0 @@
-TODO CDRIVER-4036: Document this function and give example code.

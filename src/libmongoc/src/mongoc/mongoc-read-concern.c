@@ -42,8 +42,6 @@ mongoc_read_concern_new (void)
 
    bson_init (&read_concern->compiled);
 
-   read_concern->at_cluster_time_set = false;
-
    return read_concern;
 }
 
@@ -56,13 +54,6 @@ mongoc_read_concern_copy (const mongoc_read_concern_t *read_concern)
    if (read_concern) {
       ret = mongoc_read_concern_new ();
       ret->level = bson_strdup (read_concern->level);
-      if (read_concern->at_cluster_time_set) {
-         ret->at_cluster_time_set = true;
-         ret->at_cluster_time_timestamp =
-            read_concern->at_cluster_time_timestamp;
-         ret->at_cluster_time_increment =
-            read_concern->at_cluster_time_increment;
-      }
    }
 
    return ret;
@@ -106,10 +97,6 @@ mongoc_read_concern_get_level (const mongoc_read_concern_t *read_concern)
  *  - MONGOC_READ_CONCERN_LEVEL_MAJORITY
  * MongoDB 3.4 added
  *  - MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE
- * MongoDB 3.6 added
- *  - MONGOC_READ_CONCERN_LEVEL_AVAILABLE
- * MongoDB 4.0 added (and 5.0 allowed its usage outside of transactions)
- *  - MONGOC_READ_CONCERN_LEVEL_SNAPSHOT
  *
  * See the MongoDB docs for more information on readConcernLevel
  */
@@ -121,58 +108,6 @@ mongoc_read_concern_set_level (mongoc_read_concern_t *read_concern,
 
    bson_free (read_concern->level);
    read_concern->level = bson_strdup (level);
-   read_concern->frozen = false;
-
-   return true;
-}
-
-uint32_t
-mongoc_read_concern_get_at_cluster_time_timestamp (
-   const mongoc_read_concern_t *read_concern)
-{
-   BSON_ASSERT (read_concern);
-
-   if (read_concern->at_cluster_time_set) {
-      return read_concern->at_cluster_time_timestamp;
-   }
-   MONGOC_WARNING ("at_cluster_time has not been set on read_concern");
-   return 0;
-}
-
-uint32_t
-mongoc_read_concern_get_at_cluster_time_increment (
-   const mongoc_read_concern_t *read_concern)
-{
-   BSON_ASSERT (read_concern);
-
-   if (read_concern->at_cluster_time_set) {
-      return read_concern->at_cluster_time_increment;
-   }
-   MONGOC_WARNING ("at_cluster_time has not been set on read_concern");
-   return 0;
-}
-
-/**
- * mongoc_read_concern_set_at_cluster_time:
- * @read_concern: A mongoc_read_concern_t.
- * @t: The timestamp to add to read_concern for atClusterTime.
- * @i: The increment to add to read_concern for atClusterTime.
- *
- * Sets the atClusterTime value. If the readConcernLevel is set to "snapshot",
- * the atClusterTime will indicate the desired point in time for reading.
- *
- * See the MongoDB docs for more information on atClusterTime.
- */
-bool
-mongoc_read_concern_set_at_cluster_time (mongoc_read_concern_t *read_concern,
-                                         uint32_t t,
-                                         uint32_t i)
-{
-   BSON_ASSERT (read_concern);
-
-   read_concern->at_cluster_time_set = true;
-   read_concern->at_cluster_time_timestamp = t;
-   read_concern->at_cluster_time_increment = i;
    read_concern->frozen = false;
 
    return true;
@@ -311,11 +246,5 @@ _mongoc_read_concern_freeze (mongoc_read_concern_t *read_concern)
 
    if (read_concern->level) {
       BSON_APPEND_UTF8 (compiled, "level", read_concern->level);
-   }
-   if (read_concern->at_cluster_time_set) {
-      BSON_APPEND_TIMESTAMP (compiled,
-                             "atClusterTime",
-                             read_concern->at_cluster_time_timestamp,
-                             read_concern->at_cluster_time_increment);
    }
 }

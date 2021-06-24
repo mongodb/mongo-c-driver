@@ -352,29 +352,8 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
       cursor->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
    }
 
-   /* If client session exists and snapshot is enabled, set read_concern to
-    * snapshot and potentially add at_cluster_time. Otherwise, use passed-in
-    * read_concern or default if none was given. */
-   if (cursor->client_session &&
-       mongoc_session_opts_get_snapshot (&cursor->client_session->opts)) {
-      cursor->read_concern = mongoc_read_concern_new ();
-
-      mongoc_read_concern_set_level (cursor->read_concern,
-                                     MONGOC_READ_CONCERN_LEVEL_SNAPSHOT);
-
-      /* If snapshot_time has already been set, add it as
-       * at_cluster_time to read_concern. */
-      if (cursor->client_session->snapshot_time_set) {
-         mongoc_read_concern_set_at_cluster_time (
-            cursor->read_concern,
-            cursor->client_session->snapshot_time_timestamp,
-            cursor->client_session->snapshot_time_increment);
-      }
-   } else if (read_concern) {
-      cursor->read_concern = mongoc_read_concern_copy (read_concern);
-   } else {
-      cursor->read_concern = mongoc_read_concern_new ();
-   }
+   cursor->read_concern = read_concern ? mongoc_read_concern_copy (read_concern)
+                                       : mongoc_read_concern_new ();
 
    if (db_and_collection) {
       _mongoc_set_cursor_ns (
@@ -627,7 +606,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       cursor->client->in_exhaust = false;
       if (cursor->state != DONE) {
          /* The only way to stop an exhaust cursor is to kill the connection
-          */
+            */
          mongoc_cluster_disconnect_node (&cursor->client->cluster,
                                          cursor->server_id);
       }
@@ -1023,8 +1002,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
     * read preference, so the secondary rejects the read. same if we have a
     * direct connection to a secondary (topology type "single"). with
-    * OP_QUERY we handle this by setting secondaryOk. here we use
-    * $readPreference.
+    * OP_QUERY we handle this by setting secondaryOk. here we use $readPreference.
     */
    cmd_name = _mongoc_get_command_name (command);
    is_primary =

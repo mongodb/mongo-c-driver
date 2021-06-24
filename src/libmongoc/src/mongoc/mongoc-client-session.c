@@ -1550,6 +1550,7 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
    bool user_rc_has_level;
    bool txn_has_level;
    bool has_timestamp;
+   bool is_snapshot;
    bool has_level;
    bson_t child;
 
@@ -1568,12 +1569,16 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
       (txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING || is_read_command) &&
       mongoc_session_opts_get_causal_consistency (&cs->opts) &&
       cs->operation_timestamp;
+   is_snapshot =
+      is_read_command && mongoc_session_opts_get_snapshot (&cs->opts);
    user_rc_has_level = rc && bson_has_field (rc, "level");
    txn_has_level = txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING &&
                    !mongoc_read_concern_is_default (txn_rc);
    has_level = user_rc_has_level || txn_has_level;
 
-   if (!has_timestamp && !has_level) {
+   /* do not append read concern if no causal consistency, snapshot disabled and
+    * no read concern is provided. */
+   if (!has_timestamp && !is_snapshot && !has_level) {
       return;
    }
 
@@ -1583,18 +1588,32 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
    }
 
    if (txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING) {
-      /* add transaction's read concern level unless user overrides */
-      if (txn_has_level && !user_rc_has_level) {
+      /* add transaction's read concern level unless user overrides or snapshot
+       * is enabled. */
+      if (txn_has_level && !user_rc_has_level && !is_snapshot) {
          bson_append_utf8 (&child, "level", 5, txn_rc->level, -1);
       }
    }
+   if (is_snapshot) {
+      bson_append_utf8 (
+         &child, "level", 5, MONGOC_READ_CONCERN_LEVEL_SNAPSHOT, -1);
+   }
 
+   /* append afterClusterTime if causal consistency and operation_time is set.
+    * otherwise append atClusterTime if snapshot enabled and snapshot_time is
+    * set. */
    if (has_timestamp) {
       bson_append_timestamp (&child,
                              "afterClusterTime",
                              16,
                              cs->operation_timestamp,
                              cs->operation_increment);
+   } else if (is_snapshot && cs->snapshot_time_set) {
+      bson_append_timestamp (&child,
+                             "atClusterTime",
+                             13,
+                             cs->snapshot_time_timestamp,
+                             cs->snapshot_time_increment);
    }
 
    bson_append_document_end (cmd, &child);
