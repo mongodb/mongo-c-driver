@@ -696,9 +696,8 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
             if (!strcmp (bson_iter_key (&cursor_iter), "atClusterTime") &&
                 BSON_ITER_HOLDS_TIMESTAMP (&cursor_iter)) {
                bson_iter_timestamp (&cursor_iter, &snapshot_t, &snapshot_i);
-               session->snapshot_time_set = true;
-               session->snapshot_time_timestamp = snapshot_t;
-               session->snapshot_time_increment = snapshot_i;
+               _mongoc_client_session_set_snapshot_time (
+                  session, snapshot_t, snapshot_i);
             }
          }
       }
@@ -812,7 +811,7 @@ _mongoc_client_session_new (mongoc_client_t *client,
    }
 
    /* snapshot_time_set is false by default */
-   session->snapshot_time_set = false;
+   _mongoc_client_session_clear_snapshot_time (session);
 
    /* these values are used for testing only. */
    session->with_txn_timeout_ms = 0;
@@ -1682,6 +1681,26 @@ _mongoc_client_session_pin (mongoc_client_session_t *session,
    BSON_ASSERT (session);
 
    session->server_id = server_id;
+}
+
+void
+_mongoc_client_session_set_snapshot_time (mongoc_client_session_t *session,
+                                          uint32_t t,
+                                          uint32_t i)
+{
+   BSON_ASSERT (session);
+
+   session->snapshot_time_set = true;
+   session->snapshot_time_timestamp = t;
+   session->snapshot_time_increment = i;
+}
+
+void
+_mongoc_client_session_clear_snapshot_time (mongoc_client_session_t *session)
+{
+   BSON_ASSERT (session);
+
+   session->snapshot_time_set = false;
 }
 
 bool

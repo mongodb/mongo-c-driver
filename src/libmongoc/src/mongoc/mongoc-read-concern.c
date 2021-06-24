@@ -132,7 +132,11 @@ mongoc_read_concern_get_at_cluster_time_timestamp (
 {
    BSON_ASSERT (read_concern);
 
-   return read_concern->at_cluster_time_timestamp;
+   if (read_concern->at_cluster_time_set) {
+      return read_concern->at_cluster_time_timestamp;
+   }
+   MONGOC_WARNING ("at_cluster_time has not been set on read_concern");
+   return 0;
 }
 
 uint32_t
@@ -141,7 +145,11 @@ mongoc_read_concern_get_at_cluster_time_increment (
 {
    BSON_ASSERT (read_concern);
 
-   return read_concern->at_cluster_time_increment;
+   if (read_concern->at_cluster_time_set) {
+      return read_concern->at_cluster_time_increment;
+   }
+   MONGOC_WARNING ("at_cluster_time has not been set on read_concern");
+   return 0;
 }
 
 /**

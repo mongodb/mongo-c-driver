@@ -156,5 +156,12 @@ void
 _mongoc_client_session_pin (mongoc_client_session_t *session,
                             uint32_t server_id);
 
+void
+_mongoc_client_session_set_snapshot_time (mongoc_client_session_t *session,
+                                          uint32_t t,
+                                          uint32_t i);
+
+void
+_mongoc_client_session_clear_snapshot_time (mongoc_client_session_t *session);
 
 #endif /* MONGOC_CLIENT_SESSION_PRIVATE_H */
