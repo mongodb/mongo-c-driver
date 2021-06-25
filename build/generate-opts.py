@@ -320,7 +320,8 @@ opts_structs = OrderedDict([
         bypass_option,
         collation_option,
         server_option,
-        ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_cursor_next`', 'check_set': True})
+        ('batchSize', {'type': 'int32_t', 'help': 'An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_cursor_next`', 'check_set': True}),
+        ('let', {'type': 'document', 'help': 'A BSON document consisting of any number of parameter names, each followed by definitions of constants in the MQL Aggregate Expression language'})
     ])),
 
     ('mongoc_find_and_modify_appended_opts_t', Struct([
