@@ -165,6 +165,31 @@ _host_list_matches (const bson_t *test, context_t *ctx)
    return ret;
 }
 
+typedef struct {
+   const char *uri_str;
+   const char *reason;
+} skipped_dns_test_t;
+
+skipped_dns_test_t SKIPPED_DNS_TESTS[] = {
+   {"mongodb+srv://test5.test.build.10gen.cc/?authSource=otherDB",
+    "C driver requires username present if any auth fields are present"},
+   {0}};
+
+static bool
+is_test_skipped (const char *uri_str)
+{
+   skipped_dns_test_t *skip;
+
+   for (skip = SKIPPED_DNS_TESTS; skip->uri_str != NULL; skip++) {
+      if (!strcmp (skip->uri_str, uri_str)) {
+         MONGOC_DEBUG (
+            "Skipping test of URI: %s Reason: %s", skip->uri_str, skip->reason);
+         return true;
+      }
+   }
+
+   return false;
+}
 
 static void
 _test_dns_maybe_pooled (bson_t *test, bool pooled)
@@ -182,6 +207,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    int n_hosts;
    bson_error_t error;
    bool r;
+   const char *uri_str;
 
    if (!test_framework_get_ssl ()) {
       fprintf (stderr,
@@ -190,12 +216,17 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       abort ();
    }
 
+   uri_str = bson_lookup_utf8 (test, "uri");
+   if (is_test_skipped (uri_str)) {
+      return;
+   }
+
    bson_mutex_init (&ctx.mutex);
    ctx.hosts = NULL;
-   expect_ssl = strstr (bson_lookup_utf8 (test, "uri"), "ssl=false") == NULL;
+   expect_ssl = strstr (uri_str, "ssl=false") == NULL;
    expect_error = _mongoc_lookup_bool (test, "error", false /* default */);
 
-   uri = mongoc_uri_new_with_error (bson_lookup_utf8 (test, "uri"), &error);
+   uri = mongoc_uri_new_with_error (uri_str, &error);
    if (!expect_error) {
       ASSERT_OR_PRINT (uri, error);
    }
@@ -249,19 +280,28 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
 
    n_hosts = hosts_count (test);
 
-   if (n_hosts && !expect_error) {
-      r = mongoc_client_command_simple (
-         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-      ASSERT_OR_PRINT (r, error);
-      WAIT_UNTIL (_host_list_matches (test, &ctx));
-   } else {
-      r = mongoc_client_command_simple (
-         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-      BSON_ASSERT (!r);
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_SERVER_SELECTION,
-                             MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                             "");
+   if (pooled) {
+      if (n_hosts && !expect_error) {
+         WAIT_UNTIL (_host_list_matches (test, &ctx));
+      }
+   } else if (NULL == mongoc_uri_get_username (uri)) {
+      /* TODO: CDRIVER-???? skip single-threaded tests with auth since
+       * monitoring connections need to authenticate, and the credentials in the
+       * tests do not correspond to the test users. */
+      if (n_hosts && !expect_error) {
+         r = mongoc_client_command_simple (
+            client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+         ASSERT_OR_PRINT (r, error);
+         WAIT_UNTIL (_host_list_matches (test, &ctx));
+      } else {
+         r = mongoc_client_command_simple (
+            client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+         BSON_ASSERT (!r);
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_SERVER_SELECTION,
+                                MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                                "");
+      }
    }
 
    /* the client's URI is updated after initial seedlist discovery (though for
@@ -304,9 +344,15 @@ test_dns (bson_t *test)
 
 
 static int
-test_dns_check (void)
+test_dns_check_replset (void)
 {
    return test_framework_getenv_bool ("MONGOC_TEST_DNS") ? 1 : 0;
+}
+
+static int
+test_dns_check_loadbalanced (void)
+{
+   return test_framework_getenv_bool ("MONGOC_TEST_DNS_LOADBALANCED") ? 1 : 0;
 }
 
 
@@ -340,19 +386,20 @@ test_all_spec_tests (TestSuite *suite)
 {
    char resolved[PATH_MAX];
 
-   test_framework_resolve_path (JSON_DIR "/initial_dns_seedlist_discovery",
-                                resolved);
+   test_framework_resolve_path (
+      JSON_DIR "/initial_dns_seedlist_discovery/replica-set", resolved);
    install_json_test_suite_with_check (suite,
                                        resolved,
                                        test_dns,
-                                       test_dns_check,
+                                       test_dns_check_replset,
                                        test_framework_skip_if_no_crypto);
 
-   test_framework_resolve_path (JSON_DIR "/initial_dns_auth", resolved);
+   test_framework_resolve_path (
+      JSON_DIR "/initial_dns_seedlist_discovery/load-balanced", resolved);
    install_json_test_suite_with_check (suite,
                                        resolved,
                                        test_dns,
-                                       test_dns_check,
+                                       test_dns_check_loadbalanced,
                                        test_framework_skip_if_no_crypto);
 }
 
@@ -539,5 +586,5 @@ test_dns_install (TestSuite *suite)
                       test_small_initial_buffer,
                       NULL,
                       NULL,
-                      test_dns_check);
+                      test_dns_check_replset);
 }

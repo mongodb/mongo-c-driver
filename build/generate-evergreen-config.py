@@ -60,6 +60,7 @@ config = OD([
         OD([('func', 'upload mo artifacts')]),
         OD([('func', 'upload test results')]),
         OD([('func', 'cleanup')]),
+        OD([('func', 'stop load balancer')]),
     ]),
     ('timeout', [
         OD([('func', 'backtrace')])

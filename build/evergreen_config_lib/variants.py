@@ -325,7 +325,8 @@ all_variants = [
              '.4.2 .openssl !.nosasl .server',
              '.4.0 .openssl !.nosasl .server',
              'test-dns-openssl',
-             'test-dns-auth-openssl'
+             'test-dns-auth-openssl',
+             'test-dns-loadbalanced-openssl'
              ],
             {'CC': 'gcc'}),
     Variant('gcc54',

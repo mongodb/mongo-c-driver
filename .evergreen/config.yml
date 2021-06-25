@@ -754,6 +754,31 @@ functions:
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
+  start load balancer:
+  - command: shell.exec
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        set -o xtrace
+        if [ ! -d "drivers-evergreen-tools" ]; then
+        git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
+        fi
+        export DRIVERS_TOOLS=./drivers-evergreen-tools
+        export MONGODB_URI="${MONGODB_URI}"
+        bash $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
+  - command: expansions.update
+    params:
+      file: lb-expansion.yml
+  stop load balancer:
+  - command: shell.exec
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
+        export DRIVERS_TOOLS=./drivers-evergreen-tools
+        export MONGODB_URI=${MONGODB_URI}
+        $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh stop
 pre:
 - func: fetch source
 - func: windows fix
@@ -765,6 +790,7 @@ post:
 - func: upload mo artifacts
 - func: upload test results
 - func: cleanup
+- func: stop load balancer
 timeout:
 - func: backtrace
 tasks:
@@ -19123,6 +19149,48 @@ tasks:
       AUTH: noauth
       DNS: 'on'
       SSL: ssl
+- name: test-dns-loadbalanced-openssl
+  depends_on:
+    name: debug-compile-sasl-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: ssl
+      TOPOLOGY: sharded_cluster
+      VERSION: latest
+  - func: start load balancer
+    vars:
+      MONGODB_URI: mongodb://localhost:27017,localhost:27018
+  - func: run tests
+    vars:
+      AUTH: noauth
+      DNS: loadbalanced
+      SSL: ssl
+- name: test-dns-loadbalanced-darwinssl
+  depends_on:
+    name: debug-compile-sasl-darwinssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-sasl-darwinssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: ssl
+      TOPOLOGY: sharded_cluster
+      VERSION: latest
+  - func: start load balancer
+    vars:
+      MONGODB_URI: mongodb://localhost:27017,localhost:27018
+  - func: run tests
+    vars:
+      AUTH: noauth
+      DNS: loadbalanced
+      SSL: ssl
 - name: test-dns-auth-openssl
   depends_on:
     name: debug-compile-sasl-openssl
@@ -26840,6 +26908,7 @@ buildvariants:
   - .4.0 .openssl !.nosasl .server
   - test-dns-openssl
   - test-dns-auth-openssl
+  - test-dns-loadbalanced-openssl
 - name: gcc54
   display_name: GCC 5.4 (Ubuntu 16.04)
   expansions:

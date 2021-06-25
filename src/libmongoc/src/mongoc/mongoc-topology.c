@@ -373,7 +373,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
          GOTO (srv_fail);
       }
 
-      if (!mongoc_uri_finalize_loadbalanced (uri, &topology->scanner->error)) {
+      if (!mongoc_uri_finalize_loadbalanced (topology->uri,
+                                             &topology->scanner->error)) {
          GOTO (srv_fail);
       }
 
@@ -442,6 +443,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    if (!topology_valid) {
       TRACE ("%s", "topology invalid");
+      MONGOC_DEBUG ("TOPOLOGY INVALID");
       /* add no nodes */
       return topology;
    }

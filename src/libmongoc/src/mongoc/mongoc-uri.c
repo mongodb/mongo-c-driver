@@ -852,7 +852,8 @@ dns_option_allowed (const char *lkey)
     * error if any other option is encountered."
     */
    return !strcmp (lkey, MONGOC_URI_AUTHSOURCE) ||
-          !strcmp (lkey, MONGOC_URI_REPLICASET);
+          !strcmp (lkey, MONGOC_URI_REPLICASET) ||
+          !strcmp (lkey, MONGOC_URI_LOADBALANCED);
 }
 
 
@@ -894,7 +895,8 @@ mongoc_uri_split_option (mongoc_uri_t *uri,
    mongoc_lowercase (key, lkey);
 
    /* Initial DNS Seedlist Discovery Spec: "A Client MUST only support the
-    * authSource and replicaSet options through a TXT record, and MUST raise an
+    * authSource, replicaSet, and loadBalanced options through a TXT record, and
+    * MUST raise an
     * error if any other option is encountered."*/
    if (from_dns && !dns_option_allowed (lkey)) {
       MONGOC_URI_ERROR (

@@ -543,5 +543,27 @@ all_functions = OD([
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
         ''')
-    ))
+    )),
+    ('start load balancer', Function(
+        shell_exec(r'''
+        set -o xtrace
+        if [ ! -d "drivers-evergreen-tools" ]; then
+        git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
+        fi
+        export DRIVERS_TOOLS=./drivers-evergreen-tools
+        export MONGODB_URI="${MONGODB_URI}"
+        bash $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
+        ''', test=False),
+        OD ([
+            ("command", "expansions.update"),
+            ("params", OD([("file", "lb-expansion.yml")]))
+        ]),
+    )),
+    ('stop load balancer', Function(
+        shell_exec(r'''
+        export DRIVERS_TOOLS=./drivers-evergreen-tools
+        export MONGODB_URI=${MONGODB_URI}
+        $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh stop
+        ''', test=False),
+    )),
 ])
