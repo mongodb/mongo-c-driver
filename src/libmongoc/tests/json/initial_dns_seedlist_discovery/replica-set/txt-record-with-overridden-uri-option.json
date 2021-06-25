@@ -12,7 +12,5 @@
     "replicaSet": "repl0",
     "authSource": "otherDB",
     "ssl": true
-  },
-  "error": true,
-  "comment": "invalid URI (see SPEC-1424)"
+  }
 }
