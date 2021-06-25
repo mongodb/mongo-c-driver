@@ -12,3 +12,4 @@
 * ``collation``: Configure textual comparisons. See :ref:`Setting Collation Order <setting_collation_order>`, and `the MongoDB Manual entry on Collation <https://docs.mongodb.com/manual/reference/collation/>`_. Collation requires MongoDB 3.2 or later, otherwise an error is returned.
 * ``serverId``: To target a specific server, include an int32 "serverId" field. Obtain the id by calling :symbol:`mongoc_client_select_server`, then :symbol:`mongoc_server_description_id` on its return value.
 * ``batchSize``: An ``int32`` representing number of documents requested to be returned on each call to :symbol:`mongoc_cursor_next`
+* ``let``: A BSON document consisting of any number of parameter names, each followed by definitions of constants in the MQL Aggregate Expression language

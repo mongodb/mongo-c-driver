@@ -185,6 +185,7 @@ typedef struct _mongoc_aggregate_opts_t {
    uint32_t serverId;
    int32_t batchSize;
    bool batchSize_is_set;
+   bson_t let;
    bson_t extra;
 } mongoc_aggregate_opts_t;
 
