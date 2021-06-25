@@ -1192,6 +1192,9 @@ test_snapshot_session_prose_1 (void *ctx)
       NULL !=
       strstr (error.message,
               "Only one of causal consistency and snapshot can be enabled."));
+
+   mongoc_session_opts_destroy (session_opts);
+   mongoc_client_destroy (client);
 }
 
 void
