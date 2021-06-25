@@ -88,8 +88,8 @@ _bson_error_message_printf (bson_error_t *error, const char *format, ...)
 
 static void
 _handle_not_primary_error (mongoc_cluster_t *cluster,
-                          const mongoc_server_stream_t *server_stream,
-                          const bson_t *reply)
+                           const mongoc_server_stream_t *server_stream,
+                           const bson_t *reply)
 {
    uint32_t server_id;
 
@@ -1058,8 +1058,11 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
     */
    bson_init (&command);
    bson_append_int32 (&command, "getnonce", 8, 1);
-   mongoc_cmd_parts_init (
-      &parts, cluster->client, auth_source, MONGOC_QUERY_SECONDARY_OK, &command);
+   mongoc_cmd_parts_init (&parts,
+                          cluster->client,
+                          auth_source,
+                          MONGOC_QUERY_SECONDARY_OK,
+                          &command);
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, sd->id, stream, error);
@@ -1105,8 +1108,11 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
     * Execute the authenticate command. mongoc_cluster_run_command_private
     * checks for {ok: 1} in the response.
     */
-   mongoc_cmd_parts_init (
-      &parts, cluster->client, auth_source, MONGOC_QUERY_SECONDARY_OK, &command);
+   mongoc_cmd_parts_init (&parts,
+                          cluster->client,
+                          auth_source,
+                          MONGOC_QUERY_SECONDARY_OK,
+                          &command);
    parts.prohibit_lsid = true;
    ret = mongoc_cluster_run_command_parts (
       cluster, server_stream, &parts, &reply, error);
@@ -3528,8 +3534,10 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
          &reply_local, cluster->client->error_api_version, error);
 
       if (cmd->session) {
-         _mongoc_client_session_handle_reply (
-            cmd->session, cmd->is_acknowledged, &reply_local);
+         _mongoc_client_session_handle_reply (cmd->session,
+                                              cmd->is_acknowledged,
+                                              cmd->command_name,
+                                              &reply_local);
       }
 
       if (reply) {

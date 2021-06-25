@@ -1297,6 +1297,7 @@ mongoc_client_start_session (mongoc_client_t *client,
          MONGOC_ERROR_CLIENT,
          MONGOC_ERROR_CLIENT_SESSION_FAILURE,
          "Only one of causal consistency and snapshot can be enabled.");
+      _mongoc_client_push_server_session (client, ss);
       RETURN (NULL);
    }
    cs = _mongoc_client_session_new (client, ss, opts, csid);

@@ -475,23 +475,23 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
 
    /* Server Selection Spec says:
     *
-    * For mode 'primary', drivers MUST NOT set the secondaryOk wire protocol flag
-    *   and MUST NOT use $readPreference
+    * For mode 'primary', drivers MUST NOT set the secondaryOk wire protocol
+    * flag and MUST NOT use $readPreference
     *
-    * For mode 'secondary', drivers MUST set the secondaryOk wire protocol flag and
-    *   MUST also use $readPreference
+    * For mode 'secondary', drivers MUST set the secondaryOk wire protocol flag
+    * and MUST also use $readPreference
     *
-    * For mode 'primaryPreferred', drivers MUST set the secondaryOk wire protocol
-    *   flag and MUST also use $readPreference
+    * For mode 'primaryPreferred', drivers MUST set the secondaryOk wire
+    * protocol flag and MUST also use $readPreference
     *
-    * For mode 'secondaryPreferred', drivers MUST set the secondaryOk wire protocol
-    *   flag. If the read preference contains a non-empty tag_sets parameter,
-    *   maxStalenessSeconds is a positive integer, or the hedge parameter is
-    *   non-empty, drivers MUST use $readPreference; otherwise, drivers MUST NOT
-    *   use $readPreference
+    * For mode 'secondaryPreferred', drivers MUST set the secondaryOk wire
+    * protocol flag. If the read preference contains a non-empty tag_sets
+    * parameter, maxStalenessSeconds is a positive integer, or the hedge
+    * parameter is non-empty, drivers MUST use $readPreference; otherwise,
+    * drivers MUST NOT use $readPreference
     *
-    * For mode 'nearest', drivers MUST set the secondaryOk wire protocol flag and
-    *   MUST also use $readPreference
+    * For mode 'nearest', drivers MUST set the secondaryOk wire protocol flag
+    * and MUST also use $readPreference
     */
    switch (mode) {
    case MONGOC_READ_PRIMARY:
@@ -613,10 +613,10 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
       case MONGOC_TOPOLOGY_RS_NO_PRIMARY:
       case MONGOC_TOPOLOGY_RS_WITH_PRIMARY:
          /* Server Selection Spec: for RS topology types, "For all read
-          * preferences modes except primary, clients MUST set the secondaryOk wire
-          * protocol flag to ensure that any suitable server can handle the
-          * request. Clients MUST  NOT set the secondaryOk wire protocol flag if the
-          * read preference mode is primary.
+          * preferences modes except primary, clients MUST set the secondaryOk
+          * wire protocol flag to ensure that any suitable server can handle the
+          * request. Clients MUST  NOT set the secondaryOk wire protocol flag if
+          * the read preference mode is primary.
           */
          if (parts->read_prefs &&
              parts->read_prefs->mode != MONGOC_READ_PRIMARY) {
@@ -985,6 +985,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                cs,
                &parts->read_concern_document,
                parts->is_read_command,
+               cmd_name,
                &parts->assembled_body);
          } else if (!bson_empty (&parts->read_concern_document)) {
             _mongoc_cmd_parts_ensure_copied (parts);

@@ -632,6 +632,7 @@ _mongoc_cluster_time_greater (const bson_t *new, const bson_t *old)
 void
 _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
                                      bool is_acknowledged,
+                                     const char *cmd_name,
                                      const bson_t *reply)
 {
    bson_iter_t iter;
@@ -643,12 +644,17 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
    uint32_t operation_i;
    uint32_t snapshot_t;
    uint32_t snapshot_i;
+   bool is_find_aggregate_distinct;
 
    BSON_ASSERT (session);
 
    if (!reply || !bson_iter_init (&iter, reply)) {
       return;
    }
+
+   is_find_aggregate_distinct =
+      (!strcmp (cmd_name, "find") || !strcmp (cmd_name, "aggregate") ||
+       !strcmp (cmd_name, "distinct"));
 
    if (mongoc_error_has_label (reply, "TransientTransactionError")) {
       /* Transaction Spec: "Drivers MUST unpin a ClientSession when a command
@@ -671,18 +677,29 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
          bson_iter_timestamp (&iter, &operation_t, &operation_i);
          mongoc_client_session_advance_operation_time (
             session, operation_t, operation_i);
-      } else if (!strcmp (bson_iter_key (&iter), "cursor") &&
+      } else if (is_find_aggregate_distinct &&
+                 !strcmp (bson_iter_key (&iter), "atClusterTime") &&
                  mongoc_session_opts_get_snapshot (&session->opts) &&
                  !session->snapshot_time_set) {
-         /* If cursor is present, snapshot is enabled for the session,
-          * and snapshot_time has not already been set, try to find
-          * atClusterTime in cursor field to set snapshot_time_timestamp and
-          * increment. */
+         /* If command is "find", "aggregate" or "distinct", atClusterTime is on
+          * top level of reply, snapshot is enabled for the session, and
+          * snapshot_time has not already been set, set it. */
+         bson_iter_timestamp (&iter, &snapshot_t, &snapshot_i);
+         _mongoc_client_session_set_snapshot_time (
+            session, snapshot_t, snapshot_i);
+      } else if (is_find_aggregate_distinct &&
+                 !strcmp (bson_iter_key (&iter), "cursor") &&
+                 mongoc_session_opts_get_snapshot (&session->opts) &&
+                 !session->snapshot_time_set) {
+         /* If command is "find", "aggregate" or "distinct", cursor is present,
+          * snapshot is enabled for the session, and snapshot_time has not
+          * already been set, try to find atClusterTime in cursor field to set
+          * snapshot_time. */
          bson_iter_recurse (&iter, &cursor_iter);
 
          while (bson_iter_next (&cursor_iter)) {
             /* If atClusterTime is in cursor and is a valid timestamp, use it to
-             * set snapshot_time_timestamp and increment. */
+             * set snapshot_time. */
             if (!strcmp (bson_iter_key (&cursor_iter), "atClusterTime") &&
                 BSON_ITER_HOLDS_TIMESTAMP (&cursor_iter)) {
                bson_iter_timestamp (&cursor_iter, &snapshot_t, &snapshot_i);
@@ -1543,6 +1560,7 @@ void
 _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
                                             const bson_t *rc,
                                             bool is_read_command,
+                                            const char *cmd_name,
                                             bson_t *cmd)
 {
    const mongoc_read_concern_t *txn_rc;
@@ -1552,6 +1570,7 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
    bool has_timestamp;
    bool is_snapshot;
    bool has_level;
+   bool is_find_aggregate_distinct;
    bson_t child;
 
    ENTRY;
@@ -1565,12 +1584,17 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
       return;
    }
 
+   is_find_aggregate_distinct =
+      (!strcmp (cmd_name, "find") || !strcmp (cmd_name, "aggregate") ||
+       !strcmp (cmd_name, "distinct"));
+
    has_timestamp =
       (txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING || is_read_command) &&
       mongoc_session_opts_get_causal_consistency (&cs->opts) &&
       cs->operation_timestamp;
-   is_snapshot =
-      is_read_command && mongoc_session_opts_get_snapshot (&cs->opts);
+   is_snapshot = is_find_aggregate_distinct &&
+                 txn_state == MONGOC_INTERNAL_TRANSACTION_NONE &&
+                 mongoc_session_opts_get_snapshot (&cs->opts);
    user_rc_has_level = rc && bson_has_field (rc, "level");
    txn_has_level = txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING &&
                    !mongoc_read_concern_is_default (txn_rc);
@@ -1698,6 +1722,7 @@ _mongoc_client_session_set_snapshot_time (mongoc_client_session_t *session,
                                           uint32_t i)
 {
    BSON_ASSERT (session);
+   BSON_ASSERT (!session->snapshot_time_set);
 
    session->snapshot_time_set = true;
    session->snapshot_time_timestamp = t;
