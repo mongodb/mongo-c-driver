@@ -35,7 +35,12 @@
       "collection": {
         "id": "collection0",
         "database": "database0",
-        "collectionName": "collection0"
+        "collectionName": "collection0",
+        "collectionOptions": {
+          "writeConcern": {
+            "w": "majority"
+          }
+        }
       }
     },
     {
@@ -43,7 +48,7 @@
         "id": "session0",
         "client": "client0",
         "sessionOptions": {
-          "isSnapshot": true
+          "snapshot": true
         }
       }
     },
@@ -52,7 +57,7 @@
         "id": "session1",
         "client": "client0",
         "sessionOptions": {
-          "isSnapshot": true
+          "snapshot": true
         }
       }
     }
@@ -147,7 +152,6 @@
             "x": 13
           }
         },
-
         {
           "name": "find",
           "object": "collection0",
@@ -914,6 +918,19 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "description": "StartTransaction fails in snapshot session",
+      "operations": [
+        {
+          "name": "startTransaction",
+          "object": "session0",
+          "expectError": {
+            "isClientError": true,
+            "errorContains": "Transactions are not supported in snapshot sessions"
+          }
         }
       ]
     }

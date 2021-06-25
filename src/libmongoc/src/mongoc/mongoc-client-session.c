@@ -1124,6 +1124,15 @@ mongoc_client_session_start_transaction (mongoc_client_session_t *session,
       GOTO (done);
    }
 
+   if (mongoc_session_opts_get_snapshot (&session->opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_TRANSACTION,
+                      MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                      "Transactions are not supported in snapshot sessions");
+      ret = false;
+      GOTO (done);
+   }
+
    if (sd->max_wire_version < 7 ||
        (sd->max_wire_version < 8 && sd->type == MONGOC_SERVER_MONGOS)) {
       bson_set_error (error,

@@ -552,7 +552,7 @@ session_opts_new (bson_t *bson, bson_error_t *error)
 
    bp = bson_parser_new ();
    bson_parser_bool_optional (bp, "causalConsistency", &causal_consistency);
-   bson_parser_bool_optional (bp, "isSnapshot", &snapshot);
+   bson_parser_bool_optional (bp, "snapshot", &snapshot);
    bson_parser_doc_optional (
       bp, "defaultTransactionOptions", &default_transaction_opts);
    if (!bson_parser_parse (bp, bson, error)) {
