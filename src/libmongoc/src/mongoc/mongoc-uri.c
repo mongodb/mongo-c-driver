@@ -3164,10 +3164,6 @@ _mongoc_uri_init_scram (const mongoc_uri_t *uri,
 bool
 mongoc_uri_finalize_loadbalanced (const mongoc_uri_t *uri, bson_error_t *error)
 {
-   if (!mongoc_uri_has_option (uri, MONGOC_URI_LOADBALANCED)) {
-      return true;
-   }
-
    if (!mongoc_uri_get_option_as_bool (uri, MONGOC_URI_LOADBALANCED, false)) {
       return true;
    }

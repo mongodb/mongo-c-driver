@@ -546,7 +546,6 @@ all_functions = OD([
     )),
     ('start load balancer', Function(
         shell_exec(r'''
-        set -o xtrace
         if [ ! -d "drivers-evergreen-tools" ]; then
         git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
         fi

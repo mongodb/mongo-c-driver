@@ -80,8 +80,8 @@ _mongoc_uri_init_scram (const mongoc_uri_t *uri,
  * URI option.
  * For example, it is invalid to have loadBalanced=true with multiple hosts in
  * the URI.
- * This is expected to be called whenever URI options may change (parsing a new
- * URI or applying TXT records.
+ * This is expected to be called whenever URI options may change (e.g. parsing a
+ * new URI or applying TXT records).
  * Returns false and sets @error on failure.
  * Returns true and does not modify @error on success.
  */

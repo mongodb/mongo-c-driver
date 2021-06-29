@@ -255,16 +255,20 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology);
 bool
 mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
 
-/* This is used by tests to mock DNS responses for SRV polling.
- * This is expected to be called after a mongoc_topology_t is created and
- * initial seedlist discovery completes.
- * Call this after constructing a client / client pool, but before monitoring
- * starts.
+/* _mongoc_topology_set_rr_resolver is called by tests to mock DNS responses for
+ * SRV polling.
+ * This is necessarily called after initial seedlist discovery completes in
+ * mongoc_topology_new.
+ * Callers should call this before monitoring starts.
  */
 void
 _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology,
                                   _mongoc_rr_resolver_fn rr_resolver);
 
+/* _mongoc_topology_set_srv_polling_rescan_interval_ms is called by tests to
+ * shorten the rescan interval.
+ * Callers should call this before monitoring starts.
+ */
 void
 _mongoc_topology_set_srv_polling_rescan_interval_ms (
    mongoc_topology_t *topology, int64_t val);
