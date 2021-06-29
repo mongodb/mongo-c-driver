@@ -46,6 +46,29 @@ typedef enum {
 struct _mongoc_background_monitor_t;
 struct _mongoc_client_pool_t;
 
+typedef enum { MONGOC_RR_SRV, MONGOC_RR_TXT } mongoc_rr_type_t;
+
+typedef struct _mongoc_rr_data_t {
+   /* Number of records returned by DNS. */
+   uint32_t count;
+
+   /* Set to lowest TTL found when polling SRV records. */
+   uint32_t min_ttl;
+
+   /* Set to the resulting host list when polling SRV records */
+   mongoc_host_list_t *hosts;
+
+   /* Set to the TXT record when polling for TXT */
+   char *txt_record_opts;
+} mongoc_rr_data_t;
+
+/* TODO: accept a context object. */
+typedef bool (*_mongoc_rr_resolver_fn) (const char *service,
+                                        mongoc_rr_type_t rr_type,
+                                        mongoc_rr_data_t *rr_data,
+                                        size_t initial_buffer_size,
+                                        bson_error_t *error);
+
 typedef struct _mongoc_topology_t {
    mongoc_topology_description_t description;
    /* topology->uri is initialized as a copy of the client/pool's URI.
@@ -104,6 +127,9 @@ typedef struct _mongoc_topology_t {
    mongoc_set_t *server_monitors;
    mongoc_set_t *rtt_monitors;
    bson_mutex_t apm_mutex;
+
+   /* For SRV polling tests. */
+   _mongoc_rr_resolver_fn rr_resolver;
 } mongoc_topology_t;
 
 mongoc_topology_t *
@@ -229,4 +255,18 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology);
 
 bool
 mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
+
+/* This is used by tests to mock DNS responses for SRV polling.
+ * This is expected to be called after a mongoc_topology_t is created and
+ * initial seedlist discovery completes.
+ * Call this after constructing a client / client pool, but before monitoring
+ * starts.
+ */
+void
+_mongoc_topology_set_rr_resolver (mongoc_topology_t *topology,
+                                  _mongoc_rr_resolver_fn rr_resolver);
+
+void
+_mongoc_topology_set_srv_polling_rescan_interval_ms (
+   mongoc_topology_t *topology, int64_t val);
 #endif

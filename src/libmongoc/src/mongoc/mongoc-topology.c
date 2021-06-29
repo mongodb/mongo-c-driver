@@ -330,6 +330,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    service = mongoc_uri_get_service (uri);
    if (service) {
       memset (&rr_data, 0, sizeof (mongoc_rr_data_t));
+      /* Set the default resource record resolver */
+      topology->rr_resolver = _mongoc_client_get_rr;
 
       /* Initialize the last scan time and interval. Even if the initial DNS
        * lookup fails, SRV polling will still start when background monitoring
@@ -340,7 +342,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
       /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
       prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
-      if (!_mongoc_client_get_rr (prefixed_service,
+      if (!topology->rr_resolver (prefixed_service,
                                   MONGOC_RR_SRV,
                                   &rr_data,
                                   MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -351,7 +353,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       /* Failure to find TXT records will not return an error (since it is only
        * for options). But _mongoc_client_get_rr may return an error if
        * there is more than one TXT record returned. */
-      if (!_mongoc_client_get_rr (service,
+      if (!topology->rr_resolver (service,
                                   MONGOC_RR_TXT,
                                   &rr_data,
                                   MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -379,6 +381,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       }
 
       topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;
+      // TODO: bug, this should be BSON_MIN.
       topology->srv_polling_rescan_interval_ms = BSON_MAX (
          rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
 
@@ -651,6 +654,12 @@ mongoc_topology_should_rescan_srv (mongoc_topology_t *topology)
       return false;
    }
 
+   /* TODO: rely on topology->description.type instead of URI option. */
+   if (mongoc_uri_get_option_as_bool (
+          topology->uri, MONGOC_URI_LOADBALANCED, false)) {
+      return false;
+   }
+
    if ((topology->description.type != MONGOC_TOPOLOGY_SHARDED) &&
        (topology->description.type != MONGOC_TOPOLOGY_UNKNOWN)) {
       /* Only perform rescan for sharded topology. */
@@ -702,7 +711,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    /* Unlock topology mutex during scan so it does not hold up other operations.
     */
    bson_mutex_unlock (&topology->mutex);
-   ret = _mongoc_client_get_rr (prefixed_service,
+   ret = topology->rr_resolver (prefixed_service,
                                 MONGOC_RR_SRV,
                                 &rr_data,
                                 MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -1826,4 +1835,18 @@ _topology_collect_errors (mongoc_topology_t *topology, bson_error_t *error_out)
                  error_message->str,
                  sizeof (error_out->message));
    bson_string_free (error_message, true);
+}
+
+void
+_mongoc_topology_set_rr_resolver (mongoc_topology_t *topology,
+                                  _mongoc_rr_resolver_fn rr_resolver)
+{
+   topology->rr_resolver = rr_resolver;
+}
+
+void
+_mongoc_topology_set_srv_polling_rescan_interval_ms (
+   mongoc_topology_t *topology, int64_t val)
+{
+   topology->srv_polling_rescan_interval_ms = val;
 }

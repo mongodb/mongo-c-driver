@@ -51,7 +51,7 @@ fi
 
 # TODO (CDRIVER-????): consolidate DNS tests into regular test tasks.
 if [ "$DNS" != "nodns" ]; then
-   TEST_ARGS="$TEST_ARGS -l /initial_dns_seedlist_discovery*"
+   TEST_ARGS="$TEST_ARGS -l /dns*"
    if [ "$DNS" = "loadbalanced" ]; then
       export MONGOC_TEST_DNS_LOADBALANCED=on
    else

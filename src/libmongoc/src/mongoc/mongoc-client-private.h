@@ -148,22 +148,10 @@ typedef enum {
 BSON_STATIC_ASSERT2 (mongoc_cmd_rw,
                      MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
 
-typedef enum { MONGOC_RR_SRV, MONGOC_RR_TXT } mongoc_rr_type_t;
 
-typedef struct _mongoc_rr_data_t {
-   /* Number of records returned by DNS. */
-   uint32_t count;
-
-   /* Set to lowest TTL found when polling SRV records. */
-   uint32_t min_ttl;
-
-   /* Set to the resulting host list when polling SRV records */
-   mongoc_host_list_t *hosts;
-
-   /* Set to the TXT record when polling for TXT */
-   char *txt_record_opts;
-} mongoc_rr_data_t;
-
+/* TODO: there is no reason this should be in mongoc-client.
+ * This makes more sense to put in mongoc-topology, or in a separate file.
+ */
 #define MONGOC_RR_DEFAULT_BUFFER_SIZE 1024
 bool
 _mongoc_client_get_rr (const char *service,
