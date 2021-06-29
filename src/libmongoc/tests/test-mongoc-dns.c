@@ -705,13 +705,13 @@ _prose_loadbalanced_run (bool pooled)
 }
 
 static void
-test_prose_loadbalanced_single (void)
+test_prose_loadbalanced_single (void* unused)
 {
    _prose_loadbalanced_run (false);
 }
 
 static void
-test_prose_loadbalanced_pooled (void)
+test_prose_loadbalanced_pooled (void* unused)
 {
    _prose_loadbalanced_run (true);
 }
