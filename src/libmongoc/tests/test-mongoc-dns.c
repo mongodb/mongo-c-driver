@@ -285,9 +285,10 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
          WAIT_UNTIL (_host_list_matches (test, &ctx));
       }
    } else if (NULL == mongoc_uri_get_username (uri)) {
-      /* TODO: CDRIVER-???? skip single-threaded tests with auth since
-       * monitoring connections need to authenticate, and the credentials in the
-       * tests do not correspond to the test users. */
+      /* Skip single-threaded tests containing auth credentials. Monitoring
+       * connections need to authenticate, and the credentials in the tests do
+       * not correspond to the test users. TODO (CDRIVER-4046): unskip these
+       * tests. */
       if (n_hosts && !expect_error) {
          r = mongoc_client_command_simple (
             client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
@@ -645,9 +646,9 @@ _prose_loadbalanced_run (bool pooled)
    mongoc_client_t *client;
    mongoc_host_list_t *expected_hosts;
    mongoc_topology_t *topology;
-   #define RESCAN_INTERVAL_MS 500
-   #ifdef MONGOC_ENABLE_SSL
-   mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts();
+#define RESCAN_INTERVAL_MS 500
+#ifdef MONGOC_ENABLE_SSL
+   mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
 
    ssl_opts.allow_invalid_hostname = true;
 #endif
@@ -725,14 +726,19 @@ test_dns_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto);
-   TestSuite_AddFull (
-      suite, "/dns/srv_polling/mocked", test_srv_polling_mocked, NULL, NULL, NULL);
    TestSuite_AddFull (suite,
-                      "/dns/initial_dns_seedlist_discovery/small_initial_buffer",
-                      test_small_initial_buffer,
+                      "/dns/srv_polling/mocked",
+                      test_srv_polling_mocked,
                       NULL,
                       NULL,
-                      test_dns_check_replset);
+                      NULL);
+   TestSuite_AddFull (
+      suite,
+      "/dns/initial_dns_seedlist_discovery/small_initial_buffer",
+      test_small_initial_buffer,
+      NULL,
+      NULL,
+      test_dns_check_replset);
 
    TestSuite_AddFull (suite,
                       "/dns/srv_polling/prose_loadbalanced/single",

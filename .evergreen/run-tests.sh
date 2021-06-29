@@ -1,6 +1,6 @@
 #!/bin/sh
 set -o errexit  # Exit the script with error if any of the commands fail
-set -o xtrace
+
 
 COMPRESSORS=${COMPRESSORS:-nocompressors}
 AUTH=${AUTH:-noauth}
@@ -49,7 +49,7 @@ if [ "$IPV4_ONLY" != "on" ]; then
    export MONGOC_CHECK_IPV6="on"
 fi
 
-# TODO (CDRIVER-????): consolidate DNS tests into regular test tasks.
+# TODO (CDRIVER-4045): consolidate DNS tests into regular test tasks.
 if [ "$DNS" != "nodns" ]; then
    TEST_ARGS="$TEST_ARGS -l /dns*"
    if [ "$DNS" = "loadbalanced" ]; then

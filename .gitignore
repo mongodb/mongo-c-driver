@@ -21,6 +21,7 @@ Makefile
 test-results.json
 VERSION_CURRENT
 VERSION_RELEASED
+*.pyc
 
 # Windows things
 *.sdf

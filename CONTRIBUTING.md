@@ -217,7 +217,7 @@ NOT tested, enable them with:
 
 * `MONGOC_TEST_DNS=on` assumes a replica set is running with TLS enabled on ports 27017 and 27018.
 
-* `MONGOC_TEST_DNS_LOADBALANCED=on` assumes a load balanced sharded cluster is running with TLS enabled with mongoses on ports 27017 and 27018. The load balancer can be listening on any port.
+* `MONGOC_TEST_DNS_LOADBALANCED=on` assumes a load balanced sharded cluster is running with mongoses on ports 27017 and 27018 and TLS enabled. The load balancer can be listening on any port.
 
 The mock server timeout threshold for future functions can be set with:
 

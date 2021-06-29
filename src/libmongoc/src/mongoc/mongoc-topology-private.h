@@ -62,7 +62,6 @@ typedef struct _mongoc_rr_data_t {
    char *txt_record_opts;
 } mongoc_rr_data_t;
 
-/* TODO: accept a context object. */
 typedef bool (*_mongoc_rr_resolver_fn) (const char *service,
                                         mongoc_rr_type_t rr_type,
                                         mongoc_rr_data_t *rr_data,
@@ -128,7 +127,7 @@ typedef struct _mongoc_topology_t {
    mongoc_set_t *rtt_monitors;
    bson_mutex_t apm_mutex;
 
-   /* For SRV polling tests. */
+   /* This is overridable for SRV polling tests to mock DNS records. */
    _mongoc_rr_resolver_fn rr_resolver;
 } mongoc_topology_t;
 

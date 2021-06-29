@@ -149,9 +149,9 @@ BSON_STATIC_ASSERT2 (mongoc_cmd_rw,
                      MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
 
 
-/* TODO: there is no reason this should be in mongoc-client.
- * This makes more sense to put in mongoc-topology, or in a separate file.
- */
+/* TODO: Move MONGOC_RR_DEFAULT_BUFFER_SIZE and _mongoc_client_get_rr to
+ * mongoc-topology-private.h or in a separate file. There is no reason these
+ * should be in mongoc-client. */
 #define MONGOC_RR_DEFAULT_BUFFER_SIZE 1024
 bool
 _mongoc_client_get_rr (const char *service,
