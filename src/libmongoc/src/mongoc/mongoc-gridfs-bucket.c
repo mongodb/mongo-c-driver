@@ -467,8 +467,8 @@ mongoc_gridfs_bucket_find (mongoc_gridfs_bucket_t *bucket,
    BSON_ASSERT (filter);
 
    cursor =
-      mongoc_collection_find_with_opts (bucket->files, filter, NULL, NULL);
-   if (!cursor->error.code && bson_has_field (opts, "sessionId")) {
+      mongoc_collection_find_with_opts (bucket->files, filter, opts, NULL);
+   if (!cursor->error.code && opts && bson_has_field (opts, "sessionId")) {
       bson_set_error (&cursor->error,
                       MONGOC_ERROR_CURSOR,
                       MONGOC_ERROR_CURSOR_INVALID_CURSOR,

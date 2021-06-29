@@ -1347,6 +1347,7 @@ test_set_id (void)
    bson_error_t error;
    bson_value_t id;
    bson_t *query;
+   char *dbname;
    mongoc_gridfs_file_t *file;
    mongoc_gridfs_file_t *result;
    mongoc_gridfs_file_opt_t opt = {0};
@@ -1354,7 +1355,9 @@ test_set_id (void)
    /* create new client and grab gridfs handle */
    client = test_framework_new_default_client ();
    ASSERT (client);
-   gridfs = mongoc_client_get_gridfs (client, "test", "fs", &error);
+   dbname = gen_collection_name ("test_set_id");
+   gridfs = mongoc_client_get_gridfs (client, dbname, "fs", &error);
+   bson_free (dbname);
    ASSERT_OR_PRINT (gridfs, error);
 
    /* create bson */
