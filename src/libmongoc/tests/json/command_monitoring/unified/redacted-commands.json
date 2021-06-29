@@ -400,7 +400,7 @@
       "description": "hello with speculative authenticate",
       "runOnRequirements": [
         {
-          "minServerVersion": 4.9
+          "minServerVersion": "4.9"
         }
       ],
       "operations": [
@@ -440,7 +440,7 @@
                 "commandName": "hello",
                 "reply": {
                   "isWritablePrimary": {
-                    "$$exists": true
+                    "$$exists": false
                   },
                   "speculativeAuthenticate": {
                     "$$exists": false
@@ -504,7 +504,7 @@
                 "commandName": "ismaster",
                 "reply": {
                   "ismaster": {
-                    "$$exists": true
+                    "$$exists": false
                   },
                   "speculativeAuthenticate": {
                     "$$exists": false
@@ -530,7 +530,7 @@
                 "commandName": "isMaster",
                 "reply": {
                   "ismaster": {
-                    "$$exists": true
+                    "$$exists": false
                   },
                   "speculativeAuthenticate": {
                     "$$exists": false
@@ -546,7 +546,7 @@
       "description": "hello without speculative authenticate is not redacted",
       "runOnRequirements": [
         {
-          "minServerVersion": 4.9
+          "minServerVersion": "4.9"
         }
       ],
       "operations": [

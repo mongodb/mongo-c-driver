@@ -62,6 +62,7 @@ _mongoc_cursor_monitor_legacy_get_more (mongoc_cursor_t *cursor,
                                     cursor->operation_id,
                                     &server_stream->sd->host,
                                     server_stream->sd->id,
+                                    NULL,
                                     client->apm_context);
 
    client->apm_callbacks.started (&event);

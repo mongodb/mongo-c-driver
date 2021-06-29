@@ -56,6 +56,7 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
                                  int64_t operation_id,
                                  const mongoc_host_list_t *host,
                                  uint32_t server_id,
+                                 bool *is_redacted, /* out */
                                  void *context)
 {
    bson_iter_t iter;
@@ -94,7 +95,13 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
          event->command_owned = true;
       }
 
+      if (is_redacted) {
+         *is_redacted = true;
+      }
+
       mongoc_apm_redact_command (event->command);
+   } else if (is_redacted) {
+      *is_redacted = false;
    }
 
    event->database_name = database_name;
@@ -111,6 +118,7 @@ void
 mongoc_apm_command_started_init_with_cmd (mongoc_apm_command_started_t *event,
                                           mongoc_cmd_t *cmd,
                                           int64_t request_id,
+                                          bool *is_redacted, /* out */
                                           void *context)
 {
    mongoc_apm_command_started_init (event,
@@ -121,6 +129,7 @@ mongoc_apm_command_started_init_with_cmd (mongoc_apm_command_started_t *event,
                                     cmd->operation_id,
                                     &cmd->server_stream->sd->host,
                                     cmd->server_stream->sd->id,
+                                    is_redacted,
                                     context);
 
    /* OP_MSG document sequence for insert, update, or delete? */
@@ -146,11 +155,12 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    int64_t operation_id,
                                    const mongoc_host_list_t *host,
                                    uint32_t server_id,
+                                   bool force_redaction,
                                    void *context)
 {
    BSON_ASSERT (reply);
 
-   if (mongoc_apm_is_sensitive_reply (command_name, reply)) {
+   if (force_redaction || mongoc_apm_is_sensitive_reply (command_name, reply)) {
       event->reply = bson_copy (reply);
       event->reply_owned = true;
 
@@ -190,11 +200,12 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t operation_id,
                                 const mongoc_host_list_t *host,
                                 uint32_t server_id,
+                                bool force_redaction,
                                 void *context)
 {
    BSON_ASSERT (reply);
 
-   if (mongoc_apm_is_sensitive_reply (command_name, reply)) {
+   if (force_redaction || mongoc_apm_is_sensitive_reply (command_name, reply)) {
       event->reply = bson_copy (reply);
       event->reply_owned = true;
 

@@ -2360,6 +2360,7 @@ _mongoc_client_monitor_op_killcursors (mongoc_cluster_t *cluster,
                                     operation_id,
                                     &server_stream->sd->host,
                                     server_stream->sd->id,
+                                    NULL,
                                     client->apm_context);
 
    client->apm_callbacks.started (&event);
@@ -2406,6 +2407,7 @@ _mongoc_client_monitor_op_killcursors_succeeded (
                                       operation_id,
                                       &server_stream->sd->host,
                                       server_stream->sd->id,
+                                      false,
                                       client->apm_context);
 
    client->apm_callbacks.succeeded (&event);
@@ -2448,6 +2450,7 @@ _mongoc_client_monitor_op_killcursors_failed (
                                    operation_id,
                                    &server_stream->sd->host,
                                    server_stream->sd->id,
+                                   false,
                                    client->apm_context);
 
    client->apm_callbacks.failed (&event);
