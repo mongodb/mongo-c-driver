@@ -104,8 +104,6 @@ MONGOC_URI_ZLIBCOMPRESSIONLEVEL            zlibcompressionlevel              -1 
 MONGOC_URI_LOADBALANCED                    loadbalanced                      false                             If true, this indicates the driver is connecting to a MongoDB cluster behind a load balancer.
 ========================================== ================================= ================================= ============================================================================================================================================================================================================================================
 
-LBTODO add a row for loadbalanced
-
 Setting any of the \*timeoutMS options above to ``0`` will be interpreted as "use the default value".
 
 Authentication Options

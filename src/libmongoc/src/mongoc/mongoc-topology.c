@@ -381,7 +381,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       }
 
       topology->srv_polling_last_scan_ms = bson_get_monotonic_time () / 1000;
-      // TODO: bug, this should be BSON_MIN.
+      /* TODO (CDRIVER-4047) use BSON_MIN */
       topology->srv_polling_rescan_interval_ms = BSON_MAX (
          rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
 
@@ -446,7 +446,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    if (!topology_valid) {
       TRACE ("%s", "topology invalid");
-      MONGOC_DEBUG ("TOPOLOGY INVALID");
       /* add no nodes */
       return topology;
    }
@@ -727,6 +726,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
       GOTO (done);
    }
 
+   /* TODO (CDRIVER-4047) use BSON_MIN */
    topology->srv_polling_rescan_interval_ms = BSON_MAX (
       rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
 
