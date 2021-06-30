@@ -306,7 +306,6 @@ _mongoc_hstrerror (int code)
    case HOST_NOT_FOUND:
       return "The specified host is unknown.";
    case NO_ADDRESS:
-   case NO_DATA:
       return "The requested name is valid but does not have an IP address.";
    case NO_RECOVERY:
       return "A nonrecoverable name server error occurred.";
