@@ -807,6 +807,9 @@ mongoc_server_description_new_copy (
                                               &description->error);
    } else {
       mongoc_server_description_reset (copy);
+      /* preserve the original server description type, which is manually set
+       * for a LoadBalancer server */
+      copy->type = description->type;
    }
 
    /* Preserve the error */

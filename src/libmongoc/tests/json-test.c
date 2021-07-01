@@ -52,6 +52,8 @@ topology_type_from_test (const char *type)
       return MONGOC_TOPOLOGY_SINGLE;
    } else if (strcmp (type, "Sharded") == 0) {
       return MONGOC_TOPOLOGY_SHARDED;
+   } else if (strcmp (type, "LoadBalanced") == 0) {
+      return MONGOC_TOPOLOGY_LOADBALANCED;
    }
 
    fprintf (stderr, "can't parse this: %s", type);
@@ -80,6 +82,8 @@ server_type_from_test (const char *type)
       return MONGOC_SERVER_RS_GHOST;
    } else if (strcmp (type, "Unknown") == 0) {
       return MONGOC_SERVER_UNKNOWN;
+   } else if (strcmp (type, "LoadBalancer") == 0) {
+      return MONGOC_SERVER_LOADBALANCER;
    }
    fprintf (stderr, "ERROR: Unknown server type %s\n", type);
    BSON_ASSERT (0);
@@ -175,8 +179,7 @@ server_description_by_hostname (mongoc_topology_description_t *topology,
  *-----------------------------------------------------------------------
  */
 void
-process_sdam_test_hello_responses (bson_t *phase,
-                                   mongoc_topology_t *topology)
+process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 {
    mongoc_topology_description_t *td;
    mongoc_server_description_t *sd;
@@ -190,7 +193,7 @@ process_sdam_test_hello_responses (bson_t *phase,
       description = bson_iter_utf8 (&phase_field_iter, NULL);
       MONGOC_DEBUG ("phase: %s", description);
    }
-   /* grab hello responses out and feed them to topology */
+   /* grab hello responses (if present) and feed them to topology */
    if (bson_iter_init_find (&phase_field_iter, phase, "responses")) {
       bson_t hellos;
       bson_t hello;
@@ -317,9 +320,6 @@ process_sdam_test_hello_responses (bson_t *phase,
                                             generation);
          bson_mutex_unlock (&topology->mutex);
       }
-   } else {
-      test_error (
-         "test does not have 'responses' or 'applicationErrors' array");
    }
 }
 
@@ -1739,9 +1739,8 @@ run_json_general_test (const json_test_config_t *config)
 
       /* expect "operation was interrupted", ignore "command not found" or "is
        * not supported" */
-      if (!r &&
-          (error.domain != MONGOC_ERROR_SERVER ||
-           (error.code != 11601 && error.code != 59)) &&
+      if (!r && (error.domain != MONGOC_ERROR_SERVER ||
+                 (error.code != 11601 && error.code != 59)) &&
           (strstr (error.message, "is unsupported") == NULL)) {
          MONGOC_WARNING ("Error in killAllSessions: %s", error.message);
       }

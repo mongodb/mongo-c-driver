@@ -818,6 +818,10 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
 {
    _mongoc_handshake_freeze ();
 
+   if (topology->description.type == MONGOC_TOPOLOGY_LOADBALANCED) {
+      MONGOC_DEBUG ("bypassing server selection logic for single threaded");
+      return;
+   }
    bson_mutex_lock (&topology->mutex);
    mongoc_topology_scan_once (topology, true /* obey cooldown */);
    bson_mutex_unlock (&topology->mutex);

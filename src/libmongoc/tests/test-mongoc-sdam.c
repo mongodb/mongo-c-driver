@@ -6,6 +6,7 @@
 
 #include "mongoc/mongoc-client-private.h"
 #include "mongoc/mongoc-topology-private.h"
+#include "mongoc/mongoc-topology-description-apm-private.h"
 #include "test-libmongoc.h"
 
 #ifdef BSON_HAVE_STRINGS_H
@@ -33,6 +34,8 @@ _topology_has_description (mongoc_topology_description_t *topology,
          if (set_name) {
             BSON_ASSERT (sd->set_name);
             ASSERT_CMPSTR (sd->set_name, set_name);
+         } else if (sd->set_name) {
+            test_error ("expected NULL setName, got: %s", sd->set_name);
          }
       } else if (strcmp ("type", bson_iter_key (&server_iter)) == 0) {
          server_type = bson_iter_utf8 (&server_iter, NULL);
@@ -86,6 +89,41 @@ _topology_has_description (mongoc_topology_description_t *topology,
                       BSON_ITER_HOLDS_INT32 (&iter));
          expected_generation = bson_iter_int32 (&iter);
          ASSERT_CMPINT32 (expected_generation, ==, sd->generation);
+      } else if (strcmp ("logicalSessionTimeoutMinutes",
+                         bson_iter_key (&server_iter)) == 0) {
+         if (BSON_ITER_HOLDS_NULL (&server_iter)) {
+            if (sd->session_timeout_minutes != MONGOC_NO_SESSIONS) {
+               test_error ("ERROR: expected unset value for "
+                           "logicalSessionTimeoutMinutes but got: %" PRId64,
+                           sd->session_timeout_minutes);
+            }
+         } else {
+            ASSERT_CMPINT64 (bson_iter_as_int64 (&server_iter),
+                             ==,
+                             sd->session_timeout_minutes);
+         }
+      } else if (strcmp ("minWireVersion", bson_iter_key (&server_iter)) == 0) {
+         if (BSON_ITER_HOLDS_NULL (&server_iter)) {
+            if (sd->min_wire_version != 0) {
+               test_error ("ERROR: expected unset value for minWireVersion but "
+                           "got: %" PRId32,
+                           sd->min_wire_version);
+            }
+         } else {
+            ASSERT_CMPINT32 (
+               bson_iter_int32 (&server_iter), ==, sd->min_wire_version);
+         }
+      } else if (strcmp ("maxWireVersion", bson_iter_key (&server_iter)) == 0) {
+         if (BSON_ITER_HOLDS_NULL (&server_iter)) {
+            if (sd->max_wire_version != 0) {
+               test_error ("ERROR: expected unset value for maxWireVersion but "
+                           "got: %" PRId32,
+                           sd->max_wire_version);
+            }
+         } else {
+            ASSERT_CMPINT32 (
+               bson_iter_int32 (&server_iter), ==, sd->max_wire_version);
+         }
       } else {
          fprintf (
             stderr, "ERROR: unparsed field %s\n", bson_iter_key (&server_iter));
@@ -129,6 +167,11 @@ test_sdam_cb (bson_t *test)
    bson_iter_bson (&iter, &phases);
    bson_iter_init (&phase_iter, &phases);
 
+   /* LoadBalanced topologies change the server from Unknown to LoadBalancer
+    * when SDAM monitoring begins. Force an opening, which would occur on the
+    * first operation on the client. */
+   _mongoc_topology_description_monitor_opening (td);
+
    while (bson_iter_next (&phase_iter)) {
       bson_iter_bson (&phase_iter, &phase);
 
@@ -160,6 +203,10 @@ test_sdam_cb (bson_t *test)
             if (set_name) {
                BSON_ASSERT (td->set_name);
                ASSERT_CMPSTR (td->set_name, set_name);
+            } else {
+               if (td->set_name) {
+                  test_error ("expected NULL setName, got: %s", td->set_name);
+               }
             }
          } else if (strcmp ("topologyType", bson_iter_key (&outcome_iter)) ==
                     0) {
@@ -187,12 +234,26 @@ test_sdam_cb (bson_t *test)
             }
          } else if (strcmp ("maxSetVersion", bson_iter_key (&outcome_iter)) ==
                     0) {
-            ASSERT_CMPINT64 (
-               bson_iter_as_int64 (&outcome_iter), ==, td->max_set_version);
+            if (BSON_ITER_HOLDS_NULL (&outcome_iter)) {
+               if (td->max_set_version != MONGOC_NO_SET_VERSION) {
+                  test_error ("ERROR: expected unset value for maxSetVersion "
+                              "but got: %" PRId64,
+                              td->max_set_version);
+               }
+            } else {
+               ASSERT_CMPINT64 (
+                  bson_iter_as_int64 (&outcome_iter), ==, td->max_set_version);
+            }
          } else if (strcmp ("maxElectionId", bson_iter_key (&outcome_iter)) ==
                     0) {
             const bson_oid_t *expected_oid;
+            bson_oid_t zeroed = {0};
+
             expected_oid = bson_iter_oid (&outcome_iter);
+
+            if (expected_oid == NULL) {
+               expected_oid = &zeroed;
+            }
 
             if (!bson_oid_equal (expected_oid, &td->max_election_id)) {
                char expected_oid_str[25];
@@ -204,6 +265,19 @@ test_sdam_cb (bson_t *test)
                            "maxElectionId to be %s, but was %s",
                            expected_oid_str,
                            actual_oid_str);
+            }
+         } else if (strcmp ("logicalSessionTimeoutMinutes",
+                            bson_iter_key (&outcome_iter)) == 0) {
+            if (BSON_ITER_HOLDS_NULL (&outcome_iter)) {
+               if (td->session_timeout_minutes != MONGOC_NO_SESSIONS) {
+                  test_error ("ERROR: expected unset value for "
+                              "logicalSessionTimeoutMinutes but got: %" PRId64,
+                              td->session_timeout_minutes);
+               }
+            } else {
+               ASSERT_CMPINT64 (bson_iter_as_int64 (&outcome_iter),
+                                ==,
+                                td->session_timeout_minutes);
             }
          } else {
             fprintf (stderr,
@@ -481,6 +555,10 @@ test_all_spec_tests (TestSuite *suite)
                                        TestSuite_CheckLive,
                                        test_framework_skip_if_no_crypto,
                                        test_framework_skip_if_slow);
+
+   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/load-balanced",
+                     resolved));
+   install_json_test_suite (suite, resolved, &test_sdam_cb);
 }
 
 static void
@@ -773,8 +851,9 @@ test_prose_rtt (void *unused)
     * RTT_TEST_TIMEOUT_SEC seconds, consider it a failure. */
    satisfied = false;
    start_us = bson_get_monotonic_time ();
-   while (!satisfied && bson_get_monotonic_time () <
-                           start_us + RTT_TEST_TIMEOUT_SEC * 1000 * 1000) {
+   while (!satisfied &&
+          bson_get_monotonic_time () <
+             start_us + RTT_TEST_TIMEOUT_SEC * 1000 * 1000) {
       mongoc_server_description_t *sd;
 
       sd = mongoc_client_select_server (
