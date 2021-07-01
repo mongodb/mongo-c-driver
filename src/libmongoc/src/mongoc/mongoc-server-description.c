@@ -361,6 +361,8 @@ mongoc_server_description_type (const mongoc_server_description_t *description)
       return "RSOther";
    case MONGOC_SERVER_RS_GHOST:
       return "RSGhost";
+   case MONGOC_SERVER_LOAD_BALANCER:
+      return "LoadBalancer";
    case MONGOC_SERVER_DESCRIPTION_TYPES:
    default:
       MONGOC_ERROR ("Invalid mongoc_server_description_t type");

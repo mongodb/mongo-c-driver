@@ -378,6 +378,7 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
       break;
 
    case MONGOC_TOPOLOGY_SHARDED:
+   case MONGOC_TOPOLOGY_LOAD_BALANCED:
       _apply_read_preferences_mongos (read_prefs, query_bson, result);
       break;
 
