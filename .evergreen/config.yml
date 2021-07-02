@@ -754,15 +754,21 @@ functions:
         export IAM_AUTH_ECS_ACCOUNT=${iam_auth_ecs_account}
         export IAM_AUTH_ECS_SECRET_ACCESS_KEY=${iam_auth_ecs_secret_access_key}
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
-  start load balancer:
+  clone drivers-evergreen-tools:
   - command: shell.exec
     params:
       shell: bash
       script: |-
         set -o errexit
         if [ ! -d "drivers-evergreen-tools" ]; then
-        git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
+            git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
         fi
+  start load balancer:
+  - command: shell.exec
+    params:
+      shell: bash
+      script: |-
+        set -o errexit
         export DRIVERS_TOOLS=./drivers-evergreen-tools
         export MONGODB_URI="${MONGODB_URI}"
         bash $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
@@ -19161,6 +19167,7 @@ tasks:
       SSL: ssl
       TOPOLOGY: sharded_cluster
       VERSION: latest
+  - func: clone drivers-evergreen-tools
   - func: start load balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018
@@ -19182,6 +19189,7 @@ tasks:
       SSL: ssl
       TOPOLOGY: sharded_cluster
       VERSION: latest
+  - func: clone drivers-evergreen-tools
   - func: start load balancer
     vars:
       MONGODB_URI: mongodb://localhost:27017,localhost:27018

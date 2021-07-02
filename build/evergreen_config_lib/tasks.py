@@ -662,6 +662,7 @@ class DNSTask(MatrixTask):
         dns = 'on'
         if self.loadbalanced:
             dns = 'loadbalanced'
+            commands.append (func("clone drivers-evergreen-tools"))
             commands.append (func("start load balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
         elif self.auth:
             dns = 'dns-auth'

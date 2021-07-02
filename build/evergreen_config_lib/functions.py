@@ -544,11 +544,15 @@ all_functions = OD([
         sh ./.evergreen/run-aws-tests.sh ${TESTCASE}
         ''')
     )),
-    ('start load balancer', Function(
+    ('clone drivers-evergreen-tools', Function(
         shell_exec(r'''
         if [ ! -d "drivers-evergreen-tools" ]; then
-        git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
+            git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
         fi
+        ''', test=False)
+    )),
+    ('start load balancer', Function(
+        shell_exec(r'''
         export DRIVERS_TOOLS=./drivers-evergreen-tools
         export MONGODB_URI="${MONGODB_URI}"
         bash $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh start
