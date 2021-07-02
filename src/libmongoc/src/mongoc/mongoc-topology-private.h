@@ -260,6 +260,7 @@ mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
  * This is necessarily called after initial seedlist discovery completes in
  * mongoc_topology_new.
  * Callers should call this before monitoring starts.
+ * Callers must lock topology->mutex.
  */
 void
 _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology,
@@ -268,6 +269,7 @@ _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology,
 /* _mongoc_topology_set_srv_polling_rescan_interval_ms is called by tests to
  * shorten the rescan interval.
  * Callers should call this before monitoring starts.
+ * Callers must lock topology->mutex.
  */
 void
 _mongoc_topology_set_srv_polling_rescan_interval_ms (

@@ -848,8 +848,8 @@ static bool
 dns_option_allowed (const char *lkey)
 {
    /* Initial DNS Seedlist Discovery Spec: "A Client MUST only support the
-    * authSource and replicaSet options through a TXT record, and MUST raise an
-    * error if any other option is encountered."
+    * authSource, replicaSet, and loadBalanced options through a TXT record, and
+    * MUST raise an error if any other option is encountered."
     */
    return !strcmp (lkey, MONGOC_URI_AUTHSOURCE) ||
           !strcmp (lkey, MONGOC_URI_REPLICASET) ||
@@ -3168,7 +3168,7 @@ mongoc_uri_finalize_loadbalanced (const mongoc_uri_t *uri, bson_error_t *error)
       return true;
    }
 
-   if (uri->hosts && uri->hosts->next) {
+   if (!uri->hosts || (uri->hosts && uri->hosts->next)) {
       MONGOC_URI_ERROR (error,
                         "URI with \"%s\" enabled must contain exactly one host",
                         MONGOC_URI_LOADBALANCED);

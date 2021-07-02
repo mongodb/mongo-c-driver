@@ -283,6 +283,13 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    if (pooled) {
       if (n_hosts && !expect_error) {
          WAIT_UNTIL (_host_list_matches (test, &ctx));
+      } else {
+         r = mongoc_client_command_simple (
+            client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_SERVER_SELECTION,
+                                MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                                "");
       }
    } else if (NULL == mongoc_uri_get_username (uri)) {
       /* Skip single-threaded tests containing auth credentials. Monitoring
@@ -298,6 +305,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
          r = mongoc_client_command_simple (
             client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
          BSON_ASSERT (!r);
+         MONGOC_DEBUG ("ss error: %s", error.message);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_SERVER_SELECTION,
                                 MONGOC_ERROR_SERVER_SELECTION_FAILURE,
@@ -606,11 +614,7 @@ _mock_resolver (const char *service,
                 size_t initial_buffer_size,
                 bson_error_t *error)
 {
-   rr_data->count = 2;
-   rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
-                                "localhost.test.build.10gen.cc:27018");
-   rr_data->min_ttl = 1;
-   rr_data->txt_record_opts = NULL;
+   test_error ("Expected mock resolver to not be called");
    return true;
 }
 
@@ -656,6 +660,10 @@ _prose_loadbalanced_run (bool pooled)
 
    uri = mongoc_uri_new ("mongodb+srv://test3.test.build.10gen.cc");
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
+   /* Single-threaded clients will only enter SRV polling during monitoring in
+    * mongoc_topology_scan_once. Reducing the heartbeatFrequencyMS will exercise
+    * the code path that would poll for SRV records. That should be bypassed
+    * because of the load balanced topology type. */
    mongoc_uri_set_option_as_int32 (
       uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
 
@@ -675,9 +683,11 @@ _prose_loadbalanced_run (bool pooled)
       topology = client->topology;
    }
 
+   bson_mutex_lock (&topology->mutex);
    _mongoc_topology_set_rr_resolver (topology, _mock_resolver);
    _mongoc_topology_set_srv_polling_rescan_interval_ms (topology,
                                                         RESCAN_INTERVAL_MS);
+   bson_mutex_unlock (&topology->mutex);
 
    if (pooled) {
       client = mongoc_client_pool_pop (pool);
@@ -686,7 +696,9 @@ _prose_loadbalanced_run (bool pooled)
    _mongoc_usleep (2 * RESCAN_INTERVAL_MS * 1000);
    /* For single-threaded, perform an operation since SRV polling occurs as a
     * part of topology scanning. */
-   _prose_loadbalanced_ping (client);
+   if (!pooled) {
+      _prose_loadbalanced_ping (client);
+   }
 
    bson_mutex_lock (&topology->mutex);
    expected_hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
@@ -705,13 +717,13 @@ _prose_loadbalanced_run (bool pooled)
 }
 
 static void
-test_prose_loadbalanced_single (void* unused)
+test_prose_loadbalanced_single (void *unused)
 {
    _prose_loadbalanced_run (false);
 }
 
 static void
-test_prose_loadbalanced_pooled (void* unused)
+test_prose_loadbalanced_pooled (void *unused)
 {
    _prose_loadbalanced_run (true);
 }
@@ -721,36 +733,41 @@ test_dns_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
    TestSuite_AddFull (suite,
-                      "/dns/initial_dns_seedlist_discovery/null_error_pointer",
+                      "/initial_dns_seedlist_discovery/null_error_pointer",
                       test_null_error_pointer,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
-                      "/dns/srv_polling/mocked",
+                      "/initial_dns_seedlist_discovery/srv_polling/mocked",
                       test_srv_polling_mocked,
                       NULL,
                       NULL,
                       NULL);
+   TestSuite_AddFull (suite,
+                      "/initial_dns_seedlist_discovery/small_initial_buffer",
+                      test_small_initial_buffer,
+                      NULL,
+                      NULL,
+                      test_dns_check_replset);
+
+   /* TODO (CDRIVER-4045): remove /initial_dns_seedlist_discovery from the path
+    * of the SRV polling tests, since they are defined in the "Polling SRV
+    * Records for mongos Discovery" spec, not the "Initial DNS Seedlist
+    * Discovery" spec. */
    TestSuite_AddFull (
       suite,
-      "/dns/initial_dns_seedlist_discovery/small_initial_buffer",
-      test_small_initial_buffer,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_loadbalanced/single",
+      test_prose_loadbalanced_single,
       NULL,
       NULL,
-      test_dns_check_replset);
+      test_dns_check_loadbalanced);
 
-   TestSuite_AddFull (suite,
-                      "/dns/srv_polling/prose_loadbalanced/single",
-                      test_prose_loadbalanced_single,
-                      NULL,
-                      NULL,
-                      test_dns_check_loadbalanced);
-
-   TestSuite_AddFull (suite,
-                      "/dns/srv_polling/prose_loadbalanced/pooled",
-                      test_prose_loadbalanced_pooled,
-                      NULL,
-                      NULL,
-                      test_dns_check_loadbalanced);
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_loadbalanced/pooled",
+      test_prose_loadbalanced_pooled,
+      NULL,
+      NULL,
+      test_dns_check_loadbalanced);
 }

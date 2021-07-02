@@ -1769,10 +1769,9 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       }
 
       /* SDAM: When the client sees a "not primary" or "node is recovering"
-       * error
-       * and the error's topologyVersion is strictly greater than the current
-       * ServerDescription's topologyVersion it MUST replace the server's
-       * description with a ServerDescription of type Unknown. */
+       * error and the error's topologyVersion is strictly greater than the
+       * current ServerDescription's topologyVersion it MUST replace the
+       * server's description with a ServerDescription of type Unknown. */
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, &cmd_error);
 
@@ -1841,6 +1840,7 @@ void
 _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology,
                                   _mongoc_rr_resolver_fn rr_resolver)
 {
+   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
    topology->rr_resolver = rr_resolver;
 }
 
@@ -1848,5 +1848,6 @@ void
 _mongoc_topology_set_srv_polling_rescan_interval_ms (
    mongoc_topology_t *topology, int64_t val)
 {
+   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
    topology->srv_polling_rescan_interval_ms = val;
 }
