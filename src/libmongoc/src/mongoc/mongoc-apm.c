@@ -47,6 +47,18 @@ append_documents_from_cmd (const mongoc_cmd_t *cmd,
  * Private initializer / cleanup functions.
  */
 
+/*--------------------------------------------------------------------------
+ *
+ * mongoc_apm_command_started_init --
+ *
+ *       Initialises the command started event.
+ *
+ * Side effects:
+ *       If provided, is_redacted indicates whether the command document was
+ *       redacted to hide sensitive information.
+ *
+ *--------------------------------------------------------------------------
+ */
 void
 mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
                                  const bson_t *command,
@@ -114,6 +126,18 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
 }
 
 
+/*--------------------------------------------------------------------------
+ *
+ * mongoc_apm_command_started_init_with_cmd --
+ *
+ *       Initialises the command started event from a mongoc_cmd_t.
+ *
+ * Side effects:
+ *       If provided, is_redacted indicates whether the command document was
+ *       redacted to hide sensitive information.
+ *
+ *--------------------------------------------------------------------------
+ */
 void
 mongoc_apm_command_started_init_with_cmd (mongoc_apm_command_started_t *event,
                                           mongoc_cmd_t *cmd,
@@ -146,6 +170,18 @@ mongoc_apm_command_started_cleanup (mongoc_apm_command_started_t *event)
 }
 
 
+/*--------------------------------------------------------------------------
+ *
+ * mongoc_apm_command_succeeded_init --
+ *
+ *       Initialises the command succeeded event.
+ *
+ * Parameters:
+ *       @force_redaction: If true, the reply document is always redacted,
+ *       regardless of whether the command contains sensitive information.
+ *
+ *--------------------------------------------------------------------------
+ */
 void
 mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    int64_t duration,
@@ -190,6 +226,18 @@ mongoc_apm_command_succeeded_cleanup (mongoc_apm_command_succeeded_t *event)
 }
 
 
+/*--------------------------------------------------------------------------
+ *
+ * mongoc_apm_command_failed_init --
+ *
+ *       Initialises the command failed event.
+ *
+ * Parameters:
+ *       @force_redaction: If true, the reply document is always redacted,
+ *       regardless of whether the command contains sensitive information.
+ *
+ *--------------------------------------------------------------------------
+ */
 void
 mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t duration,
