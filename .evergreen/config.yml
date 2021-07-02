@@ -781,8 +781,13 @@ functions:
       shell: bash
       script: |-
         set -o errexit
+        # Only run if a load balancer was started.
+        if [ -z "${SINGLE_MONGOS_LB_URI}" ]; then
+            echo "OK - no load balancer running"
+            exit 0
+        fi
         export DRIVERS_TOOLS=./drivers-evergreen-tools
-        export MONGODB_URI=${MONGODB_URI}
+        export MONGODB_URI="foo" # TODO: DRIVERS-1833 remove this.
         $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh stop
 pre:
 - func: fetch source
@@ -19161,28 +19166,6 @@ tasks:
   - func: fetch build
     vars:
       BUILD_NAME: debug-compile-sasl-openssl
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: noauth
-      SSL: ssl
-      TOPOLOGY: sharded_cluster
-      VERSION: latest
-  - func: clone drivers-evergreen-tools
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run tests
-    vars:
-      AUTH: noauth
-      DNS: loadbalanced
-      SSL: ssl
-- name: test-dns-loadbalanced-darwinssl
-  depends_on:
-    name: debug-compile-sasl-darwinssl
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-sasl-darwinssl
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: noauth

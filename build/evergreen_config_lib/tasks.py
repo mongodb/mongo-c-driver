@@ -675,7 +675,7 @@ class DNSTask(MatrixTask):
     def _check_allowed(self):
         prohibit (self.loadbalanced and self.auth)
         # Load balancer tests only run on some Linux hosts in Evergreen until CDRIVER-4041 is resolved.
-        prohibit (self.loadbalanced and self.ssl in ["darwin", "winssl"])
+        prohibit (self.loadbalanced and self.ssl in ["darwinssl", "winssl"])
 
 
 all_tasks = chain(all_tasks, DNSTask.matrix())

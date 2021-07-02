@@ -564,8 +564,13 @@ all_functions = OD([
     )),
     ('stop load balancer', Function(
         shell_exec(r'''
+        # Only run if a load balancer was started.
+        if [ -z "${SINGLE_MONGOS_LB_URI}" ]; then
+            echo "OK - no load balancer running"
+            exit 0
+        fi
         export DRIVERS_TOOLS=./drivers-evergreen-tools
-        export MONGODB_URI=${MONGODB_URI}
+        export MONGODB_URI="foo" # TODO: DRIVERS-1833 remove this.
         $DRIVERS_TOOLS/.evergreen/run-load-balancer.sh stop
         ''', test=False),
     )),

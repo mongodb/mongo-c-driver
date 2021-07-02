@@ -215,7 +215,7 @@ The tests for mongodb+srv:// connection strings require some setup, see the
 Initial DNS Seedlist Discovery Spec. By default these connection strings are
 NOT tested, enable them with:
 
-* `MONGOC_TEST_DNS=on` assumes a replica set is running with TLS enabled on ports 27017 and 27018.
+* `MONGOC_TEST_DNS=on` assumes a replica set is running with TLS enabled on ports 27017, 27018, and 27019.
 
 * `MONGOC_TEST_DNS_LOADBALANCED=on` assumes a load balanced sharded cluster is running with mongoses on ports 27017 and 27018 and TLS enabled. The load balancer can be listening on any port.
 
