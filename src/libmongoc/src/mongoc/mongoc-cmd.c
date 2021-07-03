@@ -628,6 +628,7 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
       case MONGOC_TOPOLOGY_UNKNOWN:
       case MONGOC_TOPOLOGY_LOAD_BALANCED:
       case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
+      case MONGOC_TOPOLOGY_LOADBALANCED:
       default:
          /* must not call this function w/ sharded or unknown topology type */
          BSON_ASSERT (false);
