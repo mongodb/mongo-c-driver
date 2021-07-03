@@ -286,6 +286,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       } else {
          r = mongoc_client_command_simple (
             client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+         BSON_ASSERT (!r);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_SERVER_SELECTION,
                                 MONGOC_ERROR_SERVER_SELECTION_FAILURE,
@@ -305,7 +306,6 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
          r = mongoc_client_command_simple (
             client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
          BSON_ASSERT (!r);
-         MONGOC_DEBUG ("ss error: %s", error.message);
          ASSERT_ERROR_CONTAINS (error,
                                 MONGOC_ERROR_SERVER_SELECTION,
                                 MONGOC_ERROR_SERVER_SELECTION_FAILURE,
