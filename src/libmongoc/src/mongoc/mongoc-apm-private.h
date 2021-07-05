@@ -203,14 +203,8 @@ bool
 mongoc_apm_is_sensitive_command (const char *command_name,
                                  const bson_t *command);
 
-void
-mongoc_apm_redact_command (bson_t *command);
-
 bool
 mongoc_apm_is_sensitive_reply (const char *command_name, const bson_t *reply);
-
-void
-mongoc_apm_redact_reply (bson_t *reply);
 
 BSON_END_DECLS
 

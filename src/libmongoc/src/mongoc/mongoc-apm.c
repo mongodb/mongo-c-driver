@@ -47,6 +47,12 @@ append_documents_from_cmd (const mongoc_cmd_t *cmd,
  * Private initializer / cleanup functions.
  */
 
+static void
+mongoc_apm_redact_command (bson_t *command);
+
+static void
+mongoc_apm_redact_reply (bson_t *reply);
+
 /*--------------------------------------------------------------------------
  *
  * mongoc_apm_command_started_init --
