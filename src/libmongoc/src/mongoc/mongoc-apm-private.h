@@ -60,7 +60,8 @@ struct _mongoc_apm_command_started_t {
 
 struct _mongoc_apm_command_succeeded_t {
    int64_t duration;
-   const bson_t *reply;
+   bson_t *reply;
+   bool reply_owned;
    const char *command_name;
    int64_t request_id;
    int64_t operation_id;
@@ -73,7 +74,8 @@ struct _mongoc_apm_command_failed_t {
    int64_t duration;
    const char *command_name;
    const bson_error_t *error;
-   const bson_t *reply;
+   bson_t *reply;
+   bool reply_owned;
    int64_t request_id;
    int64_t operation_id;
    const mongoc_host_list_t *host;
@@ -153,12 +155,14 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
                                  int64_t operation_id,
                                  const mongoc_host_list_t *host,
                                  uint32_t server_id,
+                                 bool *is_redacted, /* out */
                                  void *context);
 
 void
 mongoc_apm_command_started_init_with_cmd (mongoc_apm_command_started_t *event,
                                           struct _mongoc_cmd_t *cmd,
                                           int64_t request_id,
+                                          bool *is_redacted, /* out */
                                           void *context);
 
 void
@@ -173,6 +177,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    int64_t operation_id,
                                    const mongoc_host_list_t *host,
                                    uint32_t server_id,
+                                   bool force_redaction,
                                    void *context);
 
 void
@@ -188,10 +193,18 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t operation_id,
                                 const mongoc_host_list_t *host,
                                 uint32_t server_id,
+                                bool force_redaction,
                                 void *context);
 
 void
 mongoc_apm_command_failed_cleanup (mongoc_apm_command_failed_t *event);
+
+bool
+mongoc_apm_is_sensitive_command (const char *command_name,
+                                 const bson_t *command);
+
+bool
+mongoc_apm_is_sensitive_reply (const char *command_name, const bson_t *reply);
 
 BSON_END_DECLS
 
