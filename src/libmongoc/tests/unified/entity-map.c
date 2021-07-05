@@ -137,6 +137,21 @@ entity_new (const char *type)
    return entity;
 }
 
+static bool
+is_sensitive_command (event_t *event)
+{
+   if (event->reply) {
+      return mongoc_apm_is_sensitive_reply (event->command_name, event->reply);
+   }
+
+   if (event->command) {
+      return mongoc_apm_is_sensitive_command (event->command_name,
+                                              event->command);
+   }
+
+   return false;
+}
+
 bool
 should_ignore_event (entity_t *client_entity, event_t *event)
 {
@@ -157,7 +172,13 @@ should_ignore_event (entity_t *client_entity, event_t *event)
       }
    }
 
-   return false;
+   if (client_entity->observe_sensitive_commands &&
+       *client_entity->observe_sensitive_commands) {
+      return false;
+   }
+
+   /* Sensitive commands need to be ignored */
+   return is_sensitive_command (event);
 }
 
 static void
@@ -251,6 +272,8 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
                                "ignoreCommandMonitoringEvents",
                                &entity->ignore_command_monitoring_events);
    bson_parser_doc_optional (parser, "serverApi", &server_api);
+   bson_parser_bool_optional (
+      parser, "observeSensitiveCommands", &entity->observe_sensitive_commands);
 
    if (!bson_parser_parse (parser, bson, error)) {
       goto done;
@@ -861,6 +884,7 @@ entity_destroy (entity_t *entity)
    bson_free (entity->id);
    bson_destroy (entity->lsid);
    bson_free (entity->session_client_id);
+   bson_free (entity->observe_sensitive_commands);
    bson_free (entity);
 }
 

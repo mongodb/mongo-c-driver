@@ -508,6 +508,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    bson_t encrypted = BSON_INITIALIZER;
    bson_t decrypted = BSON_INITIALIZER;
    mongoc_cmd_t encrypted_cmd;
+   bool is_redacted = false;
 
    server_stream = cmd->server_stream;
    server_id = server_stream->sd->id;
@@ -534,8 +535,11 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
    }
 
    if (callbacks->started) {
-      mongoc_apm_command_started_init_with_cmd (
-         &started_event, cmd, request_id, cluster->client->apm_context);
+      mongoc_apm_command_started_init_with_cmd (&started_event,
+                                                cmd,
+                                                request_id,
+                                                &is_redacted,
+                                                cluster->client->apm_context);
 
       callbacks->started (&started_event);
       mongoc_apm_command_started_cleanup (&started_event);
@@ -579,6 +583,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                          cmd->operation_id,
                                          &server_stream->sd->host,
                                          server_id,
+                                         is_redacted,
                                          cluster->client->apm_context);
 
       callbacks->succeeded (&succeeded_event);
@@ -595,6 +600,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                       cmd->operation_id,
                                       &server_stream->sd->host,
                                       server_id,
+                                      is_redacted,
                                       cluster->client->apm_context);
 
       callbacks->failed (&failed_event);

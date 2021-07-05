@@ -8,6 +8,7 @@
 #include "mock_server/future.h"
 #include "mock_server/future-functions.h"
 #include "json-test-operations.h"
+#include "unified/runner.h"
 
 
 const char *
@@ -105,7 +106,10 @@ test_all_spec_tests (TestSuite *suite)
 {
    char resolved[PATH_MAX];
 
-   test_framework_resolve_path (JSON_DIR "/command_monitoring", resolved);
+   run_unified_tests (suite, JSON_DIR "/command_monitoring/unified");
+
+   test_framework_resolve_path (JSON_DIR "/command_monitoring/legacy",
+                                resolved);
    install_json_test_suite (suite, resolved, &test_command_monitoring_cb);
 }
 

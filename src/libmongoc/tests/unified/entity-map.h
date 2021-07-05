@@ -37,6 +37,7 @@ typedef struct _entity_t {
    char *type;
    void *value;
    bson_t *ignore_command_monitoring_events;
+   bool *observe_sensitive_commands;
    struct _entity_t *next;
    event_t *events;
    bson_t *lsid;
