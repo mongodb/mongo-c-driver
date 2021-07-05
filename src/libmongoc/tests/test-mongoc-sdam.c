@@ -464,10 +464,6 @@ test_all_spec_tests (TestSuite *suite)
    ASSERT (
       realpath (JSON_DIR "/server_discovery_and_monitoring/errors", resolved));
    install_json_test_suite (suite, resolved, &test_sdam_cb);
-   ASSERT (realpath (JSON_DIR
-                     "/server_discovery_and_monitoring/legacy-hello/errors",
-                     resolved));
-   install_json_test_suite (suite, resolved, &test_sdam_cb);
 
    /* Tests not in official Server Discovery And Monitoring Spec */
    ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/supplemental",
