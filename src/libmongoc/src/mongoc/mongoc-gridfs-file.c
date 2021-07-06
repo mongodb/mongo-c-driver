@@ -337,7 +337,7 @@ _mongoc_gridfs_file_new (mongoc_gridfs_t *gridfs, mongoc_gridfs_file_opt_t *opt)
    file->files_id.value_type = BSON_TYPE_OID;
    bson_oid_init (&file->files_id.value.v_oid, NULL);
 
-   file->upload_date = ((int64_t) time (NULL)) * 1000;
+   file->upload_date = bson_get_real_time_ms ();
 
    if (opt->md5) {
       file->md5 = bson_strdup (opt->md5);

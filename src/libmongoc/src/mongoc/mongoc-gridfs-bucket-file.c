@@ -491,7 +491,7 @@ _mongoc_gridfs_bucket_file_save (mongoc_gridfs_bucket_file_t *file)
    BSON_APPEND_VALUE (&new_doc, "_id", file->file_id);
    BSON_APPEND_INT64 (&new_doc, "length", file->length);
    BSON_APPEND_INT32 (&new_doc, "chunkSize", file->chunk_size);
-   BSON_APPEND_DATE_TIME (&new_doc, "uploadDate", bson_get_monotonic_time ());
+   BSON_APPEND_DATE_TIME (&new_doc, "uploadDate", bson_get_real_time_ms ());
    BSON_APPEND_UTF8 (&new_doc, "filename", file->filename);
    if (file->metadata) {
       BSON_APPEND_DOCUMENT (&new_doc, "metadata", file->metadata);

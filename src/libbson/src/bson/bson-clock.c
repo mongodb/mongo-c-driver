@@ -101,6 +101,29 @@ bson_gettimeofday (struct timeval *tv) /* OUT */
 /*
  *--------------------------------------------------------------------------
  *
+ * bson_get_real_time_ms --
+ *
+ * Returns:
+ *       The current number of milliseconds that have elapsed since the
+ *       Unix Epoch.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+int64_t
+bson_get_real_time_ms (void)
+{
+   struct timeval tv;
+   const bool ok = bson_gettimeofday (&tv);
+   return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+
+/*
+ *--------------------------------------------------------------------------
+ *
  * bson_get_monotonic_time --
  *
  *       Returns the monotonic system time, if available. A best effort is
