@@ -34,9 +34,13 @@ _topology_has_description (mongoc_topology_description_t *topology,
          if (set_name) {
             BSON_ASSERT (sd->set_name);
             ASSERT_CMPSTR (sd->set_name, set_name);
-         } else if (sd->set_name) {
-            test_error ("expected NULL setName, got: %s", sd->set_name);
          }
+         /* TODO (CDRIVER-4057) this should assert that a null setName means the server description also has no setName.
+            Uncomment this when CDRIVER-4057 is resolved.
+         else if (sd->set_name) {
+            test_error ("server: %s, expected NULL setName, got: %s", address, sd->set_name);
+         }
+         */
       } else if (strcmp ("type", bson_iter_key (&server_iter)) == 0) {
          server_type = bson_iter_utf8 (&server_iter, NULL);
          if (sd->type != server_type_from_test (server_type)) {
