@@ -101,6 +101,7 @@ MONGOC_URI_SOCKETTIMEOUTMS                 sockettimeoutms                   300
 MONGOC_URI_TIMEOUTMS                       timeoutms                         Empty (no timeout)                The time limit for the full execution of an operation.
 MONGOC_URI_REPLICASET                      replicaset                        Empty (no replicaset)             The name of the Replica Set that the driver should connect to.
 MONGOC_URI_ZLIBCOMPRESSIONLEVEL            zlibcompressionlevel              -1                                When the MONGOC_URI_COMPRESSORS includes "zlib" this options configures the zlib compression level, when the zlib compressor is used to compress client data.
+MONGOC_URI_LOADBALANCED                    loadbalanced                      false                             If true, this indicates the driver is connecting to a MongoDB cluster behind a load balancer.
 ========================================== ================================= ================================= ============================================================================================================================================================================================================================================
 
 Setting any of the \*timeoutMS options above to ``0`` will be interpreted as "use the default value".

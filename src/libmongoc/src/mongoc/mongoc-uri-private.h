@@ -76,6 +76,18 @@ _mongoc_uri_init_scram (const mongoc_uri_t *uri,
                         mongoc_crypto_hash_algorithm_t algo);
 #endif
 
+/* mongoc_uri_finalize_loadbalanced validates constraints for the loadBalanced
+ * URI option.
+ * For example, it is invalid to have loadBalanced=true with multiple hosts in
+ * the URI.
+ * This is expected to be called whenever URI options may change (e.g. parsing a
+ * new URI or applying TXT records).
+ * Returns false and sets @error on failure.
+ * Returns true and does not modify @error on success.
+ */
+bool
+mongoc_uri_finalize_loadbalanced (const mongoc_uri_t *uri, bson_error_t *error);
+
 BSON_END_DECLS
 
 

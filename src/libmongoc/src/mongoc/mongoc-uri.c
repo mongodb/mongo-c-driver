@@ -762,6 +762,7 @@ mongoc_uri_option_is_bool (const char *key)
           !strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES) ||
           !strcasecmp (key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK) ||
           !strcasecmp (key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK) ||
+          !strcasecmp (key, MONGOC_URI_LOADBALANCED) ||
           /* deprecated options */
           !strcasecmp (key, MONGOC_URI_SSL) ||
           !strcasecmp (key, MONGOC_URI_SSLALLOWINVALIDCERTIFICATES) ||
@@ -847,11 +848,12 @@ static bool
 dns_option_allowed (const char *lkey)
 {
    /* Initial DNS Seedlist Discovery Spec: "A Client MUST only support the
-    * authSource and replicaSet options through a TXT record, and MUST raise an
-    * error if any other option is encountered."
+    * authSource, replicaSet, and loadBalanced options through a TXT record, and
+    * MUST raise an error if any other option is encountered."
     */
    return !strcmp (lkey, MONGOC_URI_AUTHSOURCE) ||
-          !strcmp (lkey, MONGOC_URI_REPLICASET);
+          !strcmp (lkey, MONGOC_URI_REPLICASET) ||
+          !strcmp (lkey, MONGOC_URI_LOADBALANCED);
 }
 
 
@@ -893,8 +895,8 @@ mongoc_uri_split_option (mongoc_uri_t *uri,
    mongoc_lowercase (key, lkey);
 
    /* Initial DNS Seedlist Discovery Spec: "A Client MUST only support the
-    * authSource and replicaSet options through a TXT record, and MUST raise an
-    * error if any other option is encountered."*/
+    * authSource, replicaSet, and loadBalanced options through a TXT record, and
+    * MUST raise an error if any other option is encountered."*/
    if (from_dns && !dns_option_allowed (lkey)) {
       MONGOC_URI_ERROR (
          error, "URI option \"%s\" prohibited in TXT record", key);
@@ -1553,6 +1555,9 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       }
    }
 
+   /* TODO (CDRIVER-3723) Consider moving all "finalize" calls into one function
+    * that is additionally called after initial SRV and TXT records are applied
+    * in mongoc_topology_new. */
    if (!mongoc_uri_finalize_tls (uri, error)) {
       goto error;
    }
@@ -1563,6 +1568,10 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    }
 
    if (!mongoc_uri_finalize_directconnection (uri, error)) {
+      goto error;
+   }
+
+   if (!mongoc_uri_finalize_loadbalanced (uri, error)) {
       goto error;
    }
 
@@ -2503,14 +2512,18 @@ mongoc_uri_get_option_as_int32 (const mongoc_uri_t *uri,
 
 static void
 _mongoc_uri_warn_for_bad_int_option_combos (const mongoc_uri_t *uri,
-					    const char *option)
+                                            const char *option)
 {
    /* Warn for deprecated option combinations */
    if (!strcasecmp (option, MONGOC_URI_TIMEOUTMS)) {
-      if (mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WAITQUEUETIMEOUTMS, -1) > 0 ||
-	  mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_SOCKETTIMEOUTMS, -1) > 0 ||
-	  mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, -1) > 0) {
-	 MONGOC_WARNING ("Setting a deprecated timeout option %s in combination with timeoutMS", option);
+      if (mongoc_uri_get_option_as_int64 (
+             uri, MONGOC_URI_WAITQUEUETIMEOUTMS, -1) > 0 ||
+          mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_SOCKETTIMEOUTMS, -1) >
+             0 ||
+          mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, -1) > 0) {
+         MONGOC_WARNING ("Setting a deprecated timeout option %s in "
+                         "combination with timeoutMS",
+                         option);
       }
    }
 
@@ -2518,7 +2531,9 @@ _mongoc_uri_warn_for_bad_int_option_combos (const mongoc_uri_t *uri,
        !strcasecmp (option, MONGOC_URI_SOCKETTIMEOUTMS) ||
        !strcasecmp (option, MONGOC_URI_WTIMEOUTMS)) {
       if (mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_TIMEOUTMS, -1) > 0) {
-	 MONGOC_WARNING ("Setting a deprecated timeout option %s in combination with timeoutMS", option);
+         MONGOC_WARNING ("Setting a deprecated timeout option %s in "
+                         "combination with timeoutMS",
+                         option);
       }
    }
 }
@@ -2647,7 +2662,7 @@ _mongoc_uri_set_option_as_int32_with_error (mongoc_uri_t *uri,
    }
 
    _mongoc_uri_warn_for_bad_int_option_combos (uri, option);
-   
+
    option_lowercase = lowercase_str_new (option);
    if (!bson_append_int32 (&uri->options, option_lowercase, -1, value)) {
       bson_free (option_lowercase);
@@ -2843,11 +2858,11 @@ _mongoc_uri_set_option_as_int64_with_error (mongoc_uri_t *uri,
 
    /* timeoutMS may not be a negative number. */
    if (!bson_strcasecmp (option, MONGOC_URI_TIMEOUTMS) && value < 0) {
-      MONGOC_URI_ERROR (
-         error,
-         "Invalid \"%s\" of %" PRId64 ": must be a non-negative integer",
-         option_orig,
-         value);
+      MONGOC_URI_ERROR (error,
+                        "Invalid \"%s\" of %" PRId64
+                        ": must be a non-negative integer",
+                        option_orig,
+                        value);
       return false;
    }
 
@@ -3144,3 +3159,40 @@ _mongoc_uri_init_scram (const mongoc_uri_t *uri,
    _mongoc_scram_set_user (scram, mongoc_uri_get_username (uri));
 }
 #endif
+
+bool
+mongoc_uri_finalize_loadbalanced (const mongoc_uri_t *uri, bson_error_t *error)
+{
+   if (!mongoc_uri_get_option_as_bool (uri, MONGOC_URI_LOADBALANCED, false)) {
+      return true;
+   }
+
+   if (!uri->hosts || (uri->hosts && uri->hosts->next)) {
+      MONGOC_URI_ERROR (error,
+                        "URI with \"%s\" enabled must contain exactly one host",
+                        MONGOC_URI_LOADBALANCED);
+      return false;
+   }
+
+   if (mongoc_uri_has_option (uri, MONGOC_URI_REPLICASET)) {
+      MONGOC_URI_ERROR (
+         error,
+         "URI with \"%s\" enabled must not contain option \"%s\"",
+         MONGOC_URI_LOADBALANCED,
+         MONGOC_URI_REPLICASET);
+      return false;
+   }
+
+   if (mongoc_uri_has_option (uri, MONGOC_URI_DIRECTCONNECTION) &&
+       mongoc_uri_get_option_as_bool (
+          uri, MONGOC_URI_DIRECTCONNECTION, false)) {
+      MONGOC_URI_ERROR (
+         error,
+         "URI with \"%s\" enabled must not contain option \"%s\" enabled",
+         MONGOC_URI_LOADBALANCED,
+         MONGOC_URI_DIRECTCONNECTION);
+      return false;
+   }
+
+   return true;
+}

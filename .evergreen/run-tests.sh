@@ -49,12 +49,14 @@ if [ "$IPV4_ONLY" != "on" ]; then
    export MONGOC_CHECK_IPV6="on"
 fi
 
-if [ "$DNS" = "dns-auth" ]; then
-   export MONGOC_TEST_DNS=on
-   TEST_ARGS="$TEST_ARGS -l /initial_dns_auth/*"
-elif [ "$DNS" != "nodns" ]; then
-   export MONGOC_TEST_DNS=on
-   TEST_ARGS="$TEST_ARGS -l /initial_dns_seedlist_discovery*"
+# TODO (CDRIVER-4045): consolidate DNS tests into regular test tasks.
+if [ "$DNS" != "nodns" ]; then
+   TEST_ARGS="$TEST_ARGS -l /initial_dns_seedlist_discovery/*"
+   if [ "$DNS" = "loadbalanced" ]; then
+      export MONGOC_TEST_DNS_LOADBALANCED=on
+   else
+      export MONGOC_TEST_DNS=on
+   fi
 fi
 
 if [ "$CC" = "mingw" ]; then

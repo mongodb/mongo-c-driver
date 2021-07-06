@@ -626,7 +626,9 @@ all_tasks = chain(all_tasks, IntegrationTask.matrix())
 
 class DNSTask(MatrixTask):
     axes = OD([('auth', [False, True]),
-               ('ssl', ['openssl', 'winssl', 'darwinssl'])])
+               ('loadbalanced', [False, True]),
+               ('ssl', ['openssl', 'winssl', 'darwinssl'])
+               ])
 
     name_prefix = 'test-dns'
 
@@ -648,7 +650,7 @@ class DNSTask(MatrixTask):
         commands.append(
             func('fetch build', BUILD_NAME=self.depends_on['name']))
 
-        orchestration = bootstrap(TOPOLOGY='replica_set',
+        orchestration = bootstrap(TOPOLOGY='sharded_cluster' if self.loadbalanced else 'replica_set',
                                   AUTH='auth' if self.auth else 'noauth',
                                   SSL='ssl')
 
@@ -656,11 +658,24 @@ class DNSTask(MatrixTask):
             orchestration['vars']['AUTHSOURCE'] = 'thisDB'
 
         commands.append(orchestration)
+
+        dns = 'on'
+        if self.loadbalanced:
+            dns = 'loadbalanced'
+            commands.append (func("clone drivers-evergreen-tools"))
+            commands.append (func("start load balancer", MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
+        elif self.auth:
+            dns = 'dns-auth'
         commands.append(run_tests(SSL='ssl',
                                   AUTH=self.display('auth'),
-                                  DNS='dns-auth' if self.auth else 'on'))
+                                  DNS=dns))
 
         return task
+
+    def _check_allowed(self):
+        prohibit (self.loadbalanced and self.auth)
+        # Load balancer tests only run on some Linux hosts in Evergreen until CDRIVER-4041 is resolved.
+        prohibit (self.loadbalanced and self.ssl in ["darwinssl", "winssl"])
 
 
 all_tasks = chain(all_tasks, DNSTask.matrix())
