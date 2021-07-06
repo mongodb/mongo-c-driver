@@ -1,3 +1,13 @@
+libbson 1.17.7
+==============
+
+It is my pleasure to announce libbson 1.17.7.
+
+No changes since 1.17.6; release to keep pace with libmongoc's version.
+
+--Kevin Albertson
+
+
 libbson 1.17.6
 ==============
 

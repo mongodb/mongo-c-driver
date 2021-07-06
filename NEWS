@@ -1,3 +1,19 @@
+mongo-c-driver 1.17.7
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.17.7.
+
+- Print correct error message when DNS resolution fails
+- Mix time to avoid duplicate RAND_bytes for the same PIDs
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Andreas Braun
+  * Jeremy Mikola
+
+--Kevin Albertson
+
+
 mongo-c-driver 1.17.6
 =====================
 
