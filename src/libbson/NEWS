@@ -1,24 +1,12 @@
-libbson 1.18.0-alpha
-====================
+libbson 1.17.7
+==============
 
-It is my pleasure to announce libbson 1.18.0-alpha.
+It is my pleasure to announce libbson 1.17.7.
 
-This is an unstable prerelease and is unsuitable for production applications.
-
-Thanks to everyone who contributed to the development of this release.
-
-  * Kevin Albertson
-  * Roberto C. Sánchez
-  * Benjamin Rewis
-  * Richard Donkin
-  * Andreas Braun
-  * Tim Gates
-  * Andrew Witten
-  * David Carlier
-  * David Korczynski
-  * Josh Weinstein
+No changes since 1.17.6; release to keep pace with libmongoc's version.
 
 --Kevin Albertson
+
 
 libbson 1.17.6
 ==============

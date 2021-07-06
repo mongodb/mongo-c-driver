@@ -1,32 +1,18 @@
-mongo-c-driver 1.18.0-alpha
-===========================
+mongo-c-driver 1.17.7
+=====================
 
-It is my pleasure to announce the MongoDB C Driver 1.18.0-alpha.
+It is my pleasure to announce the MongoDB C Driver 1.17.7.
 
-This is an unstable prerelease and is unsuitable for production applications.
-
-Features:
-
-  * Introduces support to select an API version when connecting to a MongoDB instance.
-  * Supports Azure and Google Cloud Platform as Key Management Service (KMS) providers in Client-Side Field Level Encryption (CSFLE)
-
-Bug fixes:
-
-  * Fixes a possible hang when a limited size client pool is waiting for a client to become available in mongoc_client_pool_pop.
+- Print correct error message when DNS resolution fails
+- Mix time to avoid duplicate RAND_bytes for the same PIDs
 
 Thanks to everyone who contributed to the development of this release.
 
-  * Kevin Albertson
-  * Roberto C. Sánchez
-  * Clyde Bazile
   * Andreas Braun
-  * Andrew Witten
-  * Samantha Ritter
-  * Benjamin Rewis
-  * Fermín Galán Márquez
-  * David Carlier
-  * Josh Weinstein
-  * Pierre Mickael Gonzalo
+  * Jeremy Mikola
+
+--Kevin Albertson
+
 
 mongo-c-driver 1.17.6
 =====================
