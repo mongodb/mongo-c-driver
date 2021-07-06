@@ -900,7 +900,7 @@ mongoc_apm_is_sensitive_command (const char *command_name,
    }
 
    if (0 != strcasecmp (command_name, "hello") &&
-       0 != strcasecmp (command_name, HANDSHAKE_CMD_LEGACY_HELLO)) {
+       0 != strcasecmp (command_name, "ismaster")) {
       return false;
    }
 
@@ -926,7 +926,7 @@ mongoc_apm_is_sensitive_reply (const char *command_name, const bson_t *reply)
    }
 
    if (0 != strcasecmp (command_name, "hello") &&
-       0 != strcasecmp (command_name, HANDSHAKE_CMD_LEGACY_HELLO)) {
+       0 != strcasecmp (command_name, "ismaster")) {
       return false;
    }
 
