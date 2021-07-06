@@ -818,10 +818,6 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
 {
    _mongoc_handshake_freeze ();
 
-   if (topology->description.type == MONGOC_TOPOLOGY_LOADBALANCED) {
-      MONGOC_DEBUG ("bypassing server selection logic for single threaded");
-      return;
-   }
    bson_mutex_lock (&topology->mutex);
    mongoc_topology_scan_once (topology, true /* obey cooldown */);
    bson_mutex_unlock (&topology->mutex);
@@ -1015,6 +1011,20 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    if (topology->single_threaded) {
       _mongoc_topology_description_monitor_opening (&topology->description);
 
+      if (topology->description.type == MONGOC_TOPOLOGY_LOADBALANCED) {
+         /* Bypass server selection loop. Always select the only server. */
+         selected_server = mongoc_topology_description_select (
+            &topology->description, optype, read_prefs, local_threshold_ms);
+
+         if (!selected_server) {
+            _mongoc_server_selection_error (
+                  "No suitable server found in load balanced deployment",
+                  NULL,
+                  error);
+            return 0;
+         }
+      }
+
       tried_once = false;
       next_update = topology->last_scan + heartbeat_msec * 1000;
       if (next_update < loop_start) {
@@ -1111,6 +1121,17 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
       selected_server = mongoc_topology_description_select (
          &topology->description, optype, read_prefs, local_threshold_ms);
+
+      if (topology->description.type == MONGOC_TOPOLOGY_LOADBALANCED) {
+         /* Bypass server selection loop. Always select the only server. */
+         if (!selected_server) {
+            _mongoc_server_selection_error (
+                  "No suitable server found in load balanced deployment",
+                  NULL,
+                  error);
+            return 0;
+         }
+      }
 
       if (!selected_server) {
          TRACE (

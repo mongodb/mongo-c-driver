@@ -131,6 +131,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
                                                                 (int) 0);
       prev_sd = mongoc_server_description_new_copy (sd);
       if (td->apm_callbacks.topology_changed) {
+         mongoc_topology_description_destroy (prev_td);
          _mongoc_topology_description_copy_to (td, prev_td);
       }
       sd->type = MONGOC_SERVER_LOADBALANCER;
