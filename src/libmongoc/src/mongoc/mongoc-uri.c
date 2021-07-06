@@ -896,8 +896,7 @@ mongoc_uri_split_option (mongoc_uri_t *uri,
 
    /* Initial DNS Seedlist Discovery Spec: "A Client MUST only support the
     * authSource, replicaSet, and loadBalanced options through a TXT record, and
-    * MUST raise an
-    * error if any other option is encountered."*/
+    * MUST raise an error if any other option is encountered."*/
    if (from_dns && !dns_option_allowed (lkey)) {
       MONGOC_URI_ERROR (
          error, "URI option \"%s\" prohibited in TXT record", key);
