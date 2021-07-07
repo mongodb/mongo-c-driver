@@ -883,6 +883,10 @@ entity_destroy (entity_t *entity)
       mongoc_gridfs_bucket_t *bucket = entity->value;
 
       mongoc_gridfs_bucket_destroy (bucket);
+   } else if (0 == strcmp ("cursor", entity->type)) {
+      mongoc_cursor_t *cursor = entity->value;
+
+      mongoc_cursor_destroy (cursor);
    } else {
       test_error ("Attempting to destroy unrecognized entity type: %s, id: %s",
                   entity->type,
@@ -916,6 +920,20 @@ entity_map_get (entity_map_t *entity_map, const char *id, bson_error_t *error)
 
    test_set_error (error, "Entity '%s' not found", id);
    return NULL;
+}
+
+bool
+entity_map_delete (entity_map_t *em, const char *id, bson_error_t *error)
+{
+   entity_t *entity = entity_map_get (em, id, error);
+   if (!entity) {
+      return false;
+   }
+
+   LL_DELETE (em->entities, entity);
+   entity_destroy (entity);
+
+   return true;
 }
 
 static entity_t *
@@ -990,6 +1008,18 @@ entity_map_get_changestream (entity_map_t *entity_map,
       return NULL;
    }
    return (mongoc_change_stream_t *) entity->value;
+}
+
+mongoc_cursor_t *
+entity_map_get_cursor (entity_map_t *entity_map,
+                       const char *id,
+                       bson_error_t *error)
+{
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "cursor", error);
+   if (!entity) {
+      return NULL;
+   }
+   return (mongoc_cursor_t *) entity->value;
 }
 
 bson_val_t *
@@ -1085,6 +1115,15 @@ entity_map_add_changestream (entity_map_t *em,
 {
    return _entity_map_add (
       em, id, "changestream", (void *) changestream, error);
+}
+
+bool
+entity_map_add_cursor (entity_map_t *em,
+                       const char *id,
+                       mongoc_cursor_t *cursor,
+                       bson_error_t *error)
+{
+   return _entity_map_add (em, id, "cursor", (void *) cursor, error);
 }
 
 bool

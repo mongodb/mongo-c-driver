@@ -67,12 +67,10 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"poc-crud", SKIP_ALL_TESTS},
    {"db-aggregate", SKIP_ALL_TESTS},
    {"mongos-unpin", SKIP_ALL_TESTS},
-   /* CDRIVER-3883: load balancer support (schema version 1.3) */
+   /* CMAP is not implemented */
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
-   {"entity-find-cursor", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
-   {"ignoreResultAndError", SKIP_ALL_TESTS},
    {0},
 };
 /* clang-format on */
@@ -558,6 +556,8 @@ get_topology_type (mongoc_client_t *client)
    }
    ASSERT_OR_PRINT (ret, error);
 
+   /* TODO: CDRIVER-4060 Detect load-balancer */
+
    if (is_replset (&reply)) {
       topology_type = "replicaset";
    } else if (is_sharded (&reply)) {
@@ -603,7 +603,7 @@ get_topology_type (mongoc_client_t *client)
 static void
 check_schema_version (test_file_t *test_file)
 {
-   const char *supported_version_strs[] = {"1.2", "1.5"};
+   const char *supported_version_strs[] = {"1.3", "1.5"};
    int i;
 
    for (i = 0; i < sizeof (supported_version_strs) /

@@ -29,8 +29,8 @@
 typedef struct {
    mongoc_client_t *internal_client;
    semver_t server_version;
-   /* topology_type may be "single", "replicaset", "sharded", or
-    * "sharded-replicaset". */
+   /* topology_type may be "single", "replicaset", "sharded",
+    * "sharded-replicaset", or "load-balanced". */
    const char *topology_type;
    mongoc_array_t server_ids;
    bson_t *server_parameters;
