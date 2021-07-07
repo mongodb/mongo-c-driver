@@ -257,6 +257,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    bson_t *uri_options = NULL;
    bool *use_multiple_mongoses = NULL;
    bson_t *observe_events = NULL;
+   bson_t *store_events_as_entities = NULL;
    bson_t *server_api = NULL;
    bool can_reduce_heartbeat = false;
    mongoc_server_api_t *api = NULL;
@@ -274,6 +275,8 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    bson_parser_doc_optional (parser, "serverApi", &server_api);
    bson_parser_bool_optional (
       parser, "observeSensitiveCommands", &entity->observe_sensitive_commands);
+   bson_parser_array_optional (
+      parser, "storeEventsAsEntities", &store_events_as_entities);
 
    if (!bson_parser_parse (parser, bson, error)) {
       goto done;
@@ -370,6 +373,10 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    }
    mongoc_client_set_apm_callbacks (client, callbacks, entity);
 
+   if (store_events_as_entities) {
+      /* TODO: CDRIVER-3867 Comprehensive Atlas Testing */
+   }
+
    ret = true;
 done:
    mongoc_uri_destroy (uri);
@@ -379,6 +386,7 @@ done:
    bson_destroy (uri_options);
    bson_free (use_multiple_mongoses);
    bson_destroy (observe_events);
+   bson_destroy (store_events_as_entities);
    bson_destroy (server_api);
    if (!ret) {
       entity_destroy (entity);

@@ -2402,6 +2402,17 @@ operation_assert_session_unpinned (test_t *test,
    return assert_session_pinned (test, op, result, false, error);
 }
 
+static bool
+operation_loop (test_t *test,
+                operation_t *op,
+                result_t *result,
+                bson_error_t *error)
+{
+   /* TODO: CDRIVER-3867 Comprehensive Atlas Testing */
+   test_set_error (error, "Loop operation not implemented");
+   return false;
+}
+
 typedef struct {
    const char *op;
    bool (*fn) (test_t *, operation_t *, result_t *, bson_error_t *);
@@ -2466,6 +2477,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"assertIndexExists", operation_assert_index_exists},
       {"assertSessionPinned", operation_assert_session_pinned},
       {"assertSessionUnpinned", operation_assert_session_unpinned},
+      {"loop", operation_loop},
 
       /* GridFS operations */
       {"delete", operation_delete},

@@ -73,8 +73,6 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"entity-find-cursor", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
    {"ignoreResultAndError", SKIP_ALL_TESTS},
-   /* CDRIVER-3867: comprehensive Atlas testing (schema version 1.2) */
-   {"entity-client-storeEventsAsEntities", SKIP_ALL_TESTS},
    {0},
 };
 /* clang-format on */
@@ -605,7 +603,7 @@ get_topology_type (mongoc_client_t *client)
 static void
 check_schema_version (test_file_t *test_file)
 {
-   const char *supported_version_strs[] = {"1.1", "1.5"};
+   const char *supported_version_strs[] = {"1.2", "1.5"};
    int i;
 
    for (i = 0; i < sizeof (supported_version_strs) /
