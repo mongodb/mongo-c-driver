@@ -995,20 +995,36 @@ test_find (void *ctx)
    bool ok;
    bson_value_t const *found_id;
    const bson_t *const find_opts =
-      tmp_bson ("{'limit': 1, 'skip': 2, 'sort': {'uploadDate': -1}}");
+      tmp_bson ("{'limit': 1, 'skip': 2, 'sort': {'metadata.testOrder': -1}}");
 
-   _upload_file_from_str (gridfs, "file1", "First file", NULL, NULL);
-   _upload_file_from_str (gridfs, "file2", "Second file", NULL, NULL);
-   _upload_file_from_str (gridfs, "file3", "Third file", NULL, NULL);
-   _upload_file_from_str (gridfs, "file4", "Fourth file", NULL, NULL);
+   _upload_file_from_str (gridfs,
+                          "file1",
+                          "First file",
+                          tmp_bson ("{'metadata': {'testOrder': 1}}"),
+                          NULL);
+   _upload_file_from_str (gridfs,
+                          "file2",
+                          "Second file",
+                          tmp_bson ("{'metadata': {'testOrder': 2}}"),
+                          NULL);
+   _upload_file_from_str (gridfs,
+                          "file3",
+                          "Third file",
+                          tmp_bson ("{'metadata': {'testOrder': 3}}"),
+                          NULL);
+   _upload_file_from_str (gridfs,
+                          "file4",
+                          "Fourth file",
+                          tmp_bson ("{'metadata': {'testOrder': 4}}"),
+                          NULL);
 
    cursor = mongoc_gridfs_bucket_find (gridfs, tmp_bson ("{}"), find_opts);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    ok = mongoc_cursor_next (cursor, &found);
-   ASSERT (ok);
+   ASSERT (ok && "No files returned");
    ok = bson_iter_init_find (&iter, found, "_id");
-   ASSERT (ok);
+   ASSERT (ok && "Document has no '_id' ??");
    found_id = bson_iter_value (&iter);
 
    _download_file_into_buf (gridfs, found_id, buffer, sizeof buffer);
