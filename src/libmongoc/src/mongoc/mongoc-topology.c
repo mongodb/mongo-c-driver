@@ -1018,9 +1018,9 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
          if (!selected_server) {
             _mongoc_server_selection_error (
-                  "No suitable server found in load balanced deployment",
-                  NULL,
-                  error);
+               "No suitable server found in load balanced deployment",
+               NULL,
+               error);
             return 0;
          }
       }
@@ -1125,10 +1125,11 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
       if (topology->description.type == MONGOC_TOPOLOGY_LOADBALANCED) {
          /* Bypass server selection loop. Always select the only server. */
          if (!selected_server) {
+            bson_mutex_unlock (&topology->mutex);
             _mongoc_server_selection_error (
-                  "No suitable server found in load balanced deployment",
-                  NULL,
-                  error);
+               "No suitable server found in load balanced deployment",
+               NULL,
+               error);
             return 0;
          }
       }

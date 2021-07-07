@@ -384,12 +384,6 @@ assemble_query (const mongoc_read_prefs_t *read_prefs,
 
    case MONGOC_TOPOLOGY_UNKNOWN:
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
-   case MONGOC_TOPOLOGY_LOADBALANCED:
-   /* TODO (CDRIVER-4056): this is pending a question on pre-5.0 support and testing.
-    * The spec says 5.0 is the minimum server version.
-    * It is unclear if we can assume the backing server always supports OP_MSG.
-    * I think the intent is we can, but there is no max wire version check.
-    */
    default:
       /* must not call _apply_read_preferences with unknown topology type */
       BSON_ASSERT (false);
