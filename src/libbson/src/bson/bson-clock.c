@@ -105,7 +105,7 @@ bson_gettimeofday (struct timeval *tv) /* OUT */
  *
  * Returns:
  *       The current number of milliseconds that have elapsed since the
- *       Unix Epoch.
+ *       Unix Epoch, or -1 on error
  *
  * Side effects:
  *       None.
@@ -117,6 +117,9 @@ bson_get_real_time_ms (void)
 {
    struct timeval tv;
    const bool ok = bson_gettimeofday (&tv);
+   if (!ok) {
+      return -1;
+   }
    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
 }
 
