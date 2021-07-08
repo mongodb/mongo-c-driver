@@ -1012,7 +1012,10 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
       _mongoc_topology_description_monitor_opening (&topology->description);
 
       if (topology->description.type == MONGOC_TOPOLOGY_LOADBALANCED) {
+         MONGOC_DEBUG ("mongoc_topology_select_server_id is returning single load balancer, not proceeding with monitoring");
          /* Bypass server selection loop. Always select the only server. */
+         // LBTODO: by skipping topology scanning, no connection is created
+         // to the load balancer here. It will be created in mongoc_cluster_fetch_stream_singled.
          selected_server = mongoc_topology_description_select (
             &topology->description, optype, read_prefs, local_threshold_ms);
 
@@ -1023,6 +1026,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                error);
             return 0;
          }
+         return selected_server->id;
       }
 
       tried_once = false;
@@ -1132,6 +1136,8 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                error);
             return 0;
          }
+         bson_mutex_unlock (&topology->mutex);
+         return selected_server->id;
       }
 
       if (!selected_server) {
@@ -1330,6 +1336,12 @@ _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
    BSON_ASSERT (!topology->single_threaded);
 
    bson_mutex_lock (&topology->mutex);
+
+   if (topology->description.type == MONGOC_TOPOLOGY_LOADBALANCED) {
+      /* Do not update the topology from a connection handshake. */
+      bson_mutex_unlock (&topology->mutex);
+      return true;
+   }
 
    /* return false if server was removed from topology */
    has_server = _mongoc_topology_update_no_lock (sd->id,

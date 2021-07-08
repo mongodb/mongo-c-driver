@@ -226,6 +226,9 @@ _mongoc_topology_get_handshake_cmd (mongoc_topology_t *topology);
 void
 _mongoc_topology_request_scan (mongoc_topology_t *topology);
 
+// LBTODO: call this when in load balancer mode.
+// If a network error occurs on a server, there is no reason to assume
+// we should wait for a cooldown period before attempting subsequent connection.
 void
 _mongoc_topology_bypass_cooldown (mongoc_topology_t *topology);
 

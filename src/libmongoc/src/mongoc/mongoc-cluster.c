@@ -2268,6 +2268,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
        * into account.
        */
 
+      // LBTODO: do not invalidate the server!
       mongoc_topology_invalidate_server (topology, server_id, err_ptr);
       mongoc_cluster_disconnect_node (cluster, server_id);
       bson_mutex_lock (&topology->mutex);
@@ -2392,6 +2393,7 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
          mongoc_server_description_new_copy (scanner_node->handshake_sd);
    } else {
       if (!reconnect_ok) {
+         MONGOC_DEBUG ("mongoc_cluster_fetch_stream_single reconnect_ok==false, erroring");
          stream_not_found (
             topology, server_id, scanner_node->host.host_and_port, error);
          return NULL;
@@ -2399,6 +2401,7 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
 
       /* save the scanner node address in case it is removed during the scan. */
       address = bson_strdup (scanner_node->host.host_and_port);
+      MONGOC_DEBUG ("mongoc_cluster_fetch_stream_single is doing a blocking scan");
       _mongoc_topology_do_blocking_scan (topology, error);
       if (error->code) {
          bson_free (address);
@@ -3057,6 +3060,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
                          MONGOC_ERROR_STREAM_SOCKET,
                          "connection closed");
          mongoc_cluster_disconnect_node (cluster, server_id);
+         // LBTODO (error handing)
          mongoc_topology_invalidate_server (topology, server_id, &error);
          return false;
       }
@@ -3083,6 +3087,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
 
       if (!r) {
          mongoc_cluster_disconnect_node (cluster, server_id);
+         // LBTODO (error handling): do not invalidate the server!
          mongoc_topology_invalidate_server (topology, server_id, &error);
       }
    }
