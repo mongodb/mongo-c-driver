@@ -57,6 +57,9 @@ test_loadbalanced_sessions_do_not_expire (void *unused)
    bson_t *session2_lsid;
 
    client = mongoc_client_new (uristr);
+   /* Mock a timeout so session expiration applies. */
+   client->topology->description.session_timeout_minutes = 1;
+
    /* Start two sessions, to ensure that pooled sessions remain in the pool when
     * the pool is accessed. */
    session1 = mongoc_client_start_session (client, NULL /* opts */, &error);

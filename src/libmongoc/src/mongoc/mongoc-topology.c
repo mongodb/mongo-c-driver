@@ -1474,7 +1474,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
       ss = topology->session_pool;
       CDL_DELETE (topology->session_pool, ss);
       /* Sessions do not expire when the topology type is load balanced. */
-      if (!loadbalanced) {
+      if (loadbalanced) {
          break;
       }
 
