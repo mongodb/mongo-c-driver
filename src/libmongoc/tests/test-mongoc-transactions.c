@@ -1171,12 +1171,10 @@ test_snapshot_session_prose_1 (void *ctx)
 {
    mongoc_client_t *client = NULL;
    mongoc_session_opt_t *session_opts = NULL;
-   mongoc_uri_t *uri = NULL;
    bson_error_t error;
    bool r;
 
-   uri = test_framework_get_uri ();
-   client = test_framework_client_new_from_uri (uri, NULL);
+   client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    session_opts = mongoc_session_opts_new ();
@@ -1187,15 +1185,13 @@ test_snapshot_session_prose_1 (void *ctx)
     * results in an error. */
    r = mongoc_client_start_session (client, session_opts, &error);
    ASSERT (!r);
-   ASSERT (error.domain == MONGOC_ERROR_CLIENT);
-   ASSERT (error.code == MONGOC_ERROR_CLIENT_SESSION_FAILURE);
-   BSON_ASSERT (
-      NULL !=
-      strstr (error.message,
-              "Only one of causal consistency and snapshot can be enabled."));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_CLIENT,
+      MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+      "Only one of causal consistency and snapshot can be enabled.");
 
    mongoc_session_opts_destroy (session_opts);
-   mongoc_uri_destroy (uri);
    mongoc_client_destroy (client);
 }
 
