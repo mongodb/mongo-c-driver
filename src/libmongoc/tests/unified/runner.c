@@ -723,7 +723,7 @@ check_run_on_requirement (test_runner_t *test_runner,
          const char *serverless_mode = bson_iter_utf8 (&req_iter, NULL);
 
          if (0 == strcmp (serverless_mode, "allow")) {
-            return true;
+            continue;
          } else if (0 == strcmp (serverless_mode, "require")) {
             if (!test_runner->is_serverless) {
                *fail_reason =
@@ -731,14 +731,14 @@ check_run_on_requirement (test_runner_t *test_runner,
                return false;
             }
 
-            return true;
+            continue;
          } else if (0 == strcmp (serverless_mode, "forbid")) {
             if (test_runner->is_serverless) {
                *fail_reason = bson_strdup_printf ("Running in serverless mode");
                return false;
             }
 
-            return true;
+            continue;
          } else {
             test_error ("Unexpected serverless mode: %s", serverless_mode);
          }
