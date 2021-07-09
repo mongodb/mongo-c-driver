@@ -36,6 +36,7 @@ _is_data_node (mongoc_server_description_t *sd)
    case MONGOC_SERVER_STANDALONE:
    case MONGOC_SERVER_RS_SECONDARY:
    case MONGOC_SERVER_RS_PRIMARY:
+   case MONGOC_SERVER_LOAD_BALANCER:
       return true;
    case MONGOC_SERVER_RS_OTHER:
    case MONGOC_SERVER_RS_ARBITER:
@@ -2139,6 +2140,8 @@ mongoc_topology_description_type (const mongoc_topology_description_t *td)
       return "ReplicaSetWithPrimary";
    case MONGOC_TOPOLOGY_SINGLE:
       return "Single";
+   case MONGOC_TOPOLOGY_LOAD_BALANCED:
+      return "LoadBalanced";
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
    default:
       fprintf (stderr, "ERROR: Unknown topology type %d\n", td->type);

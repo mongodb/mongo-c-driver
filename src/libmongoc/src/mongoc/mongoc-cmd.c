@@ -626,6 +626,7 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
          break;
       case MONGOC_TOPOLOGY_SHARDED:
       case MONGOC_TOPOLOGY_UNKNOWN:
+      case MONGOC_TOPOLOGY_LOAD_BALANCED:
       case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
       default:
          /* must not call this function w/ sharded or unknown topology type */

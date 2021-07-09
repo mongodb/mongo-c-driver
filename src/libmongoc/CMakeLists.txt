@@ -960,6 +960,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-interrupt.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-linux-distro-scanner.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-list.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-loadbalanced.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-log.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-long-namespace.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-matcher.c

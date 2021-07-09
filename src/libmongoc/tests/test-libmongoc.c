@@ -272,6 +272,8 @@ extern void
 test_bson_util_install (TestSuite *suite);
 extern void
 test_result_install (TestSuite *suite);
+extern void
+test_loadbalanced_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -1851,7 +1853,8 @@ mongoc_client_pool_t *
 test_framework_new_default_client_pool ()
 {
    mongoc_uri_t *test_uri = test_framework_get_uri ();
-   mongoc_client_pool_t *pool = test_framework_client_pool_new_from_uri (test_uri, NULL);
+   mongoc_client_pool_t *pool =
+      test_framework_client_pool_new_from_uri (test_uri, NULL);
 
    BSON_ASSERT (pool);
    test_framework_set_pool_ssl_opts (pool);
@@ -2905,6 +2908,7 @@ main (int argc, char *argv[])
    test_bson_match_install (&suite);
    test_bson_util_install (&suite);
    test_result_install (&suite);
+   test_loadbalanced_install (&suite);
 
    ret = TestSuite_Run (&suite);
 
