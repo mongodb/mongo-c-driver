@@ -33,8 +33,6 @@ BSON_EXPORT (int64_t)
 bson_get_monotonic_time (void);
 BSON_EXPORT (int)
 bson_gettimeofday (struct timeval *tv);
-BSON_EXPORT (int64_t)
-bson_get_real_time_ms (void);
 
 
 BSON_END_DECLS
