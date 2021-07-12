@@ -104,8 +104,8 @@ int64_t
 _mongoc_get_real_time_ms (void)
 {
    struct timeval tv;
-   const bool ok = bson_gettimeofday (&tv);
-   if (!ok) {
+   const bool rc = bson_gettimeofday (&tv);
+   if (rc != 0) {
       return -1;
    }
    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
