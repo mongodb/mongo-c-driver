@@ -1602,7 +1602,6 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
       mongoc_session_opts_get_causal_consistency (&cs->opts) &&
       cs->operation_timestamp;
    is_snapshot = is_find_aggregate_distinct &&
-                 txn_state == MONGOC_INTERNAL_TRANSACTION_NONE &&
                  mongoc_session_opts_get_snapshot (&cs->opts);
    user_rc_has_level = rc && bson_has_field (rc, "level");
    txn_has_level = txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING &&
