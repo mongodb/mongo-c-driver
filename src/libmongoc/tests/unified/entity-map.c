@@ -566,6 +566,7 @@ session_opts_new (bson_t *bson, bson_error_t *error)
    bson_parser_t *bp = NULL;
    bson_parser_t *bp_opts = NULL;
    bool *causal_consistency = NULL;
+   bool *snapshot = NULL;
    bson_t *default_transaction_opts = NULL;
    mongoc_write_concern_t *wc = NULL;
    mongoc_read_concern_t *rc = NULL;
@@ -574,6 +575,7 @@ session_opts_new (bson_t *bson, bson_error_t *error)
 
    bp = bson_parser_new ();
    bson_parser_bool_optional (bp, "causalConsistency", &causal_consistency);
+   bson_parser_bool_optional (bp, "snapshot", &snapshot);
    bson_parser_doc_optional (
       bp, "defaultTransactionOptions", &default_transaction_opts);
    if (!bson_parser_parse (bp, bson, error)) {
@@ -583,6 +585,11 @@ session_opts_new (bson_t *bson, bson_error_t *error)
    opts = mongoc_session_opts_new ();
    if (causal_consistency) {
       mongoc_session_opts_set_causal_consistency (opts, *causal_consistency);
+   }
+   if (snapshot) {
+      /* Set causal consistency to false to allow snapshot */
+      mongoc_session_opts_set_causal_consistency (opts, false);
+      mongoc_session_opts_set_snapshot (opts, *snapshot);
    }
 
    if (default_transaction_opts) {

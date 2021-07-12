@@ -92,6 +92,12 @@ MONGOC_EXPORT (bool)
 mongoc_session_opts_get_causal_consistency (const mongoc_session_opt_t *opts);
 
 MONGOC_EXPORT (void)
+mongoc_session_opts_set_snapshot (mongoc_session_opt_t *opts, bool snapshot);
+
+MONGOC_EXPORT (bool)
+mongoc_session_opts_get_snapshot (const mongoc_session_opt_t *opts);
+
+MONGOC_EXPORT (void)
 mongoc_session_opts_set_default_transaction_opts (
    mongoc_session_opt_t *opts, const mongoc_transaction_opt_t *txn_opts);
 

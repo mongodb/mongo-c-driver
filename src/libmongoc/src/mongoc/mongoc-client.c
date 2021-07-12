@@ -1174,7 +1174,8 @@ _mongoc_client_new_from_uri (mongoc_topology_t *topology)
       BSON_ASSERT (mongoc_client_set_appname (client, appname));
    }
 
-   client->timeout_ms = mongoc_uri_get_option_as_int64 (client->uri, MONGOC_URI_TIMEOUTMS, MONGOC_TIMEOUTMS_UNSET);
+   client->timeout_ms = mongoc_uri_get_option_as_int64 (
+      client->uri, MONGOC_URI_TIMEOUTMS, MONGOC_TIMEOUTMS_UNSET);
 
    mongoc_cluster_init (&client->cluster, client->uri, client);
 
@@ -1306,6 +1307,17 @@ mongoc_client_start_session (mongoc_client_t *client,
       csid = (uint32_t) _mongoc_rand_simple (&client->csid_rand_seed);
    } while (mongoc_set_get (client->client_sessions, csid));
 
+   /* causal consistency and snapshot cannot both be set. */
+   if (opts && mongoc_session_opts_get_causal_consistency (opts) &&
+       mongoc_session_opts_get_snapshot (opts)) {
+      bson_set_error (
+         error,
+         MONGOC_ERROR_CLIENT,
+         MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+         "Only one of causal consistency and snapshot can be enabled.");
+      _mongoc_client_push_server_session (client, ss);
+      RETURN (NULL);
+   }
    cs = _mongoc_client_session_new (client, ss, opts, csid);
 
    /* remember session so if we see its client_session_id in a command, we can
@@ -1734,9 +1746,8 @@ retry:
       retry_server_stream = mongoc_cluster_stream_for_writes (
          &client->cluster, parts->assembled.session, NULL, &ignored_error);
 
-      if (retry_server_stream &&
-          retry_server_stream->sd->max_wire_version >=
-             WIRE_VERSION_RETRY_WRITES) {
+      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
+                                    WIRE_VERSION_RETRY_WRITES) {
          parts->assembled.server_stream = retry_server_stream;
          bson_destroy (reply);
          GOTO (retry);
@@ -1785,9 +1796,8 @@ retry:
     * a new readable stream and retry. If server selection fails or the selected
     * server does not support retryable reads, fall through and allow the
     * original error to be reported. */
-   if (is_retryable &&
-       _mongoc_read_error_get_type (ret, error, reply) ==
-          MONGOC_READ_ERR_RETRY) {
+   if (is_retryable && _mongoc_read_error_get_type (ret, error, reply) ==
+                          MONGOC_READ_ERR_RETRY) {
       bson_error_t ignored_error;
 
       /* each read command may be retried at most once */
@@ -1804,9 +1814,8 @@ retry:
                                           NULL,
                                           &ignored_error);
 
-      if (retry_server_stream &&
-          retry_server_stream->sd->max_wire_version >=
-             WIRE_VERSION_RETRY_READS) {
+      if (retry_server_stream && retry_server_stream->sd->max_wire_version >=
+                                    WIRE_VERSION_RETRY_READS) {
          parts->assembled.server_stream = retry_server_stream;
          bson_destroy (reply);
          GOTO (retry);
@@ -3126,10 +3135,11 @@ mongoc_client_set_server_api (mongoc_client_t *client,
    BSON_ASSERT_PARAM (api);
 
    if (client->is_pooled) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT,
-                      MONGOC_ERROR_CLIENT_API_FROM_POOL,
-                      "Cannot set server api on a client checked out from a pool");
+      bson_set_error (
+         error,
+         MONGOC_ERROR_CLIENT,
+         MONGOC_ERROR_CLIENT_API_FROM_POOL,
+         "Cannot set server api on a client checked out from a pool");
       return false;
    }
 

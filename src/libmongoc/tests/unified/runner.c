@@ -60,6 +60,9 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint document fails with client-side error"},
    /* CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior */
    {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
+   /* libmongoc does not have a distinct helper, so skip snapshot tests testing particular distinct functionality */
+   {"snapshot-sessions", "Distinct operation with snapshot"},
+   {"snapshot-sessions", "Mixed operation with snapshot"},
    /* CDRIVER-3886: serverless testing (schema version 1.4) */
    {"poc-crud", SKIP_ALL_TESTS},
    {"db-aggregate", SKIP_ALL_TESTS},
@@ -1599,10 +1602,11 @@ test_install_unified (TestSuite *suite)
 {
    run_unified_tests (suite, JSON_DIR "/unified");
 
-   /* crud/unified spec tests also use the unified format. */
    run_unified_tests (suite, JSON_DIR "/crud/unified");
 
    run_unified_tests (suite, JSON_DIR "/transactions/unified");
 
    run_unified_tests (suite, JSON_DIR "/collection-management");
+
+   run_unified_tests (suite, JSON_DIR "/sessions/unified");
 }

@@ -30,6 +30,8 @@ See the example code for :symbol:`mongoc_session_opts_set_causal_consistency`.
     mongoc_session_opts_set_causal_consistency
     mongoc_session_opts_get_default_transaction_opts
     mongoc_session_opts_set_default_transaction_opts
+    mongoc_session_opts_get_snapshot
+    mongoc_session_opts_set_snapshot
     mongoc_session_opts_get_transaction_opts
     mongoc_session_opts_clone
     mongoc_session_opts_destroy
