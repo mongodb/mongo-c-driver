@@ -86,12 +86,48 @@ _get_index_count (mongoc_collection_t *collection)
    return n;
 }
 
+/* Util that downloads a file content into the given buffer. Returns num bytes
+ * read. */
+static size_t
+_download_file_into_buf (mongoc_gridfs_bucket_t *bucket,
+                         const bson_value_t *file_id,
+                         char *buf,
+                         size_t len)
+{
+   bson_error_t error;
+   size_t nread;
+   mongoc_stream_t *down =
+      mongoc_gridfs_bucket_open_download_stream (bucket, file_id, &error);
+   ASSERT_OR_PRINT (down, error);
+   nread =
+      mongoc_stream_read (down, buf, len, 1 /* min read */, 0 /* No timeout */);
+   mongoc_stream_destroy (down);
+   ASSERT (nread > 0);
+   return nread;
+}
+
+/* Util for uploading a file with the given string as content */
+static void
+_upload_file_from_str (mongoc_gridfs_bucket_t *bucket,
+                       const char *filename,
+                       const char *content,
+                       const bson_t *opts,
+                       bson_value_t *file_id)
+{
+   bson_error_t error;
+   size_t nwritten;
+   mongoc_stream_t *up = mongoc_gridfs_bucket_open_upload_stream (
+      bucket, filename, opts, file_id, &error);
+   ASSERT_OR_PRINT (up, error);
+   nwritten = mongoc_stream_write (up, (void *) content, strlen (content), 0);
+   ASSERT_CMPINT (nwritten, ==, strlen (content));
+   mongoc_stream_destroy (up);
+}
+
 void
 _test_upload_and_download (bson_t *create_index_cmd)
 {
    mongoc_gridfs_bucket_t *gridfs;
-   mongoc_stream_t *upload_stream;
-   mongoc_stream_t *download_stream;
    bson_value_t file_id;
    mongoc_database_t *db;
    mongoc_client_t *client;
@@ -128,22 +164,10 @@ _test_upload_and_download (bson_t *create_index_cmd)
 
    gridfs = mongoc_gridfs_bucket_new (db, opts, NULL, NULL);
 
-   upload_stream = mongoc_gridfs_bucket_open_upload_stream (
-      gridfs, "my-file", NULL, &file_id, NULL);
-
-   ASSERT (upload_stream);
-
-   /* write str to gridfs. */
-   ASSERT_CMPINT (
-      mongoc_stream_write (upload_stream, (void *) str, strlen (str), 0),
-      ==,
-      strlen (str));
-   mongoc_stream_destroy (upload_stream);
+   _upload_file_from_str (gridfs, "my-file", str, opts, &file_id);
 
    /* download str into the buffer from gridfs. */
-   download_stream =
-      mongoc_gridfs_bucket_open_download_stream (gridfs, &file_id, NULL);
-   mongoc_stream_read (download_stream, buf, 100, 1, 0);
+   _download_file_into_buf (gridfs, &file_id, buf, sizeof buf);
 
    /* compare. */
    ASSERT (strcmp (buf, str) == 0);
@@ -152,7 +176,6 @@ _test_upload_and_download (bson_t *create_index_cmd)
    ASSERT_CMPINT (_get_index_count (gridfs->chunks), ==, 2);
 
    bson_destroy (opts);
-   mongoc_stream_destroy (download_stream);
    mongoc_gridfs_bucket_destroy (gridfs);
    mongoc_database_destroy (db);
    mongoc_client_destroy (client);
@@ -869,10 +892,11 @@ test_upload_error (void *ctx)
    mongoc_gridfs_bucket_t *gridfs;
    mongoc_stream_t *source;
    bson_error_t error = {0};
+   char *const dbname = gen_collection_name ("test_upload_error");
    bool r;
 
    client = test_framework_new_default_client ();
-   db = mongoc_client_get_database (client, "test");
+   db = mongoc_client_get_database (client, dbname);
    gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
    source = mongoc_stream_file_new_for_path (
       BSON_BINARY_DIR "/test1.bson", O_RDONLY, 0);
@@ -904,7 +928,7 @@ test_upload_error (void *ctx)
    source = mongoc_stream_file_new_for_path (
       BSON_BINARY_DIR "/test1.bson", O_RDONLY, 0);
    BSON_ASSERT (source);
-   db = mongoc_client_get_database (client, "test");
+   db = mongoc_client_get_database (client, dbname);
    gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
    mongoc_gridfs_bucket_upload_from_stream (
       gridfs, "test1", source, NULL /* opts */, NULL /* file id */, &error);
@@ -914,6 +938,7 @@ test_upload_error (void *ctx)
    mongoc_stream_close (source);
    mongoc_stream_destroy (source);
    mongoc_gridfs_bucket_destroy (gridfs);
+   bson_free (dbname);
    mongoc_database_destroy (db);
    mongoc_client_destroy (client);
 }
@@ -928,10 +953,11 @@ test_find_w_session (void *ctx)
    bson_error_t error = {0};
    bson_t opts;
    mongoc_client_session_t *session;
+   char *dbname = gen_collection_name ("test_find_w_session");
    bool r;
 
    client = test_framework_new_default_client ();
-   db = mongoc_client_get_database (client, "test");
+   db = mongoc_client_get_database (client, dbname);
    gridfs = mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
    session = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (session, error);
@@ -948,6 +974,68 @@ test_find_w_session (void *ctx)
    mongoc_cursor_destroy (cursor);
    mongoc_gridfs_bucket_destroy (gridfs);
    mongoc_client_session_destroy (session);
+   mongoc_database_destroy (db);
+   bson_free (dbname);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_find (void *ctx)
+{
+   mongoc_client_t *const client = test_framework_new_default_client ();
+   char *const dbname = gen_collection_name ("test_find");
+   mongoc_database_t *const db = mongoc_client_get_database (client, dbname);
+   mongoc_gridfs_bucket_t *const gridfs =
+      mongoc_gridfs_bucket_new (db, NULL, NULL, NULL);
+   mongoc_cursor_t *cursor;
+   bson_error_t error = {0};
+   bson_t const *found;
+   bson_iter_t iter;
+   char buffer[256] = {0};
+   bool ok;
+   bson_value_t const *found_id;
+   const bson_t *const find_opts =
+      tmp_bson ("{'limit': 1, 'skip': 2, 'sort': {'metadata.testOrder': -1}}");
+
+   _upload_file_from_str (gridfs,
+                          "file1",
+                          "First file",
+                          tmp_bson ("{'metadata': {'testOrder': 1}}"),
+                          NULL);
+   _upload_file_from_str (gridfs,
+                          "file2",
+                          "Second file",
+                          tmp_bson ("{'metadata': {'testOrder': 2}}"),
+                          NULL);
+   _upload_file_from_str (gridfs,
+                          "file3",
+                          "Third file",
+                          tmp_bson ("{'metadata': {'testOrder': 3}}"),
+                          NULL);
+   _upload_file_from_str (gridfs,
+                          "file4",
+                          "Fourth file",
+                          tmp_bson ("{'metadata': {'testOrder': 4}}"),
+                          NULL);
+
+   cursor = mongoc_gridfs_bucket_find (gridfs, tmp_bson ("{}"), find_opts);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+
+   ok = mongoc_cursor_next (cursor, &found);
+   ASSERT (ok && "No files returned");
+   ok = bson_iter_init_find (&iter, found, "_id");
+   ASSERT (ok && "Document has no '_id' ??");
+   found_id = bson_iter_value (&iter);
+
+   _download_file_into_buf (gridfs, found_id, buffer, sizeof buffer);
+   ASSERT_CMPSTR (buffer, "Second file");
+
+   ok = mongoc_cursor_next (cursor, &found);
+   ASSERT (!(ok && "More than one file returned"));
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_gridfs_bucket_destroy (gridfs);
+   bson_free (dbname);
    mongoc_database_destroy (db);
    mongoc_client_destroy (client);
 }
@@ -1075,6 +1163,13 @@ test_gridfs_bucket_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/gridfs/find_w_session",
                       test_find_w_session,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_crypto);
+   TestSuite_AddFull (suite,
+                      "/gridfs/find",
+                      test_find,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_sessions,
