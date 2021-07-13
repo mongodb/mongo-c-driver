@@ -335,6 +335,41 @@ done:
 }
 
 static bool
+operation_list_indexes (test_t *test,
+                        operation_t *op,
+                        result_t *result,
+                        bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_collection_t *coll = NULL;
+   mongoc_cursor_t *cursor = NULL;
+   bson_t *opts = NULL;
+
+   opts = bson_new ();
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+   bson_concat (opts, op->arguments);
+
+   coll = entity_map_get_collection (test->entity_map, op->object, error);
+   if (!coll) {
+      goto done;
+   }
+
+   cursor = mongoc_collection_find_indexes_with_opts (coll, opts);
+
+   result_from_cursor (result, cursor);
+
+   ret = true;
+done:
+   mongoc_cursor_destroy (cursor);
+   bson_destroy (opts);
+   return ret;
+}
+
+static bool
 operation_run_command (test_t *test,
                        operation_t *op,
                        result_t *result,
@@ -2388,6 +2423,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"dropCollection", operation_drop_collection},
       {"listCollections", operation_list_collections},
       {"listCollectionNames", operation_list_collection_names},
+      {"listIndexes", operation_list_indexes},
       {"runCommand", operation_run_command},
 
       /* Collection operations */
