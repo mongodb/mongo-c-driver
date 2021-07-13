@@ -62,7 +62,6 @@
 #define MONGOC_URI_SLAVEOK "slaveok"
 #define MONGOC_URI_SOCKETCHECKINTERVALMS "socketcheckintervalms"
 #define MONGOC_URI_SOCKETTIMEOUTMS "sockettimeoutms"
-#define MONGOC_URI_TIMEOUTMS "timeoutms"
 #define MONGOC_URI_TLS "tls"
 #define MONGOC_URI_TLSCERTIFICATEKEYFILE "tlscertificatekeyfile"
 #define MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD "tlscertificatekeyfilepassword"

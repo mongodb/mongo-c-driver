@@ -97,8 +97,7 @@ MONGOC_URI_APPNAME                         appname                           Emp
 MONGOC_URI_TLS                             tls                               Empty (not set, same as false)    {true|false}, indicating if TLS must be used. (See also :symbol:`mongoc_client_set_ssl_opts` and :symbol:`mongoc_client_pool_set_ssl_opts`.)
 MONGOC_URI_COMPRESSORS                     compressors                       Empty (no compressors)            Comma separated list of compressors, if any, to use to compress the wire protocol messages. Snappy, zlib, and zstd are optional build time dependencies, and enable the "snappy", "zlib", and "zstd" values respectively.
 MONGOC_URI_CONNECTTIMEOUTMS                connecttimeoutms                  10,000 ms (10 seconds)            This setting applies to new server connections. It is also used as the socket timeout for server discovery and monitoring operations.
-MONGOC_URI_SOCKETTIMEOUTMS                 sockettimeoutms                   300,000 ms (5 minutes)            Deprecated in favor of MONGOC_URI_TIMEOUTMS. The time in milliseconds to attempt to send or receive on a socket before the attempt times out.
-MONGOC_URI_TIMEOUTMS                       timeoutms                         Empty (no timeout)                The time limit for the full execution of an operation.
+MONGOC_URI_SOCKETTIMEOUTMS                 sockettimeoutms                   300,000 ms (5 minutes)            The time in milliseconds to attempt to send or receive on a socket before the attempt times out.
 MONGOC_URI_REPLICASET                      replicaset                        Empty (no replicaset)             The name of the Replica Set that the driver should connect to.
 MONGOC_URI_ZLIBCOMPRESSIONLEVEL            zlibcompressionlevel              -1                                When the MONGOC_URI_COMPRESSORS includes "zlib" this options configures the zlib compression level, when the zlib compressor is used to compress client data.
 MONGOC_URI_LOADBALANCED                    loadbalanced                      false                             If true, this indicates the driver is connecting to a MongoDB cluster behind a load balancer.
@@ -195,7 +194,7 @@ MONGOC_URI_MAXPOOLSIZE                     maxpoolsize                       The
 MONGOC_URI_MINPOOLSIZE                     minpoolsize                       Deprecated. This option's behavior does not match its name, and its actual behavior will likely hurt performance.
 MONGOC_URI_MAXIDLETIMEMS                   maxidletimems                     Not implemented.
 MONGOC_URI_WAITQUEUEMULTIPLE               waitqueuemultiple                 Not implemented.
-MONGOC_URI_WAITQUEUETIMEOUTMS              waitqueuetimeoutms                Deprecated in favor of MONGOC_URI_TIMEOUTMS. The maximum time to wait for a client to become available from the pool.
+MONGOC_URI_WAITQUEUETIMEOUTMS              waitqueuetimeoutms                The maximum time to wait for a client to become available from the pool.
 ========================================== ================================= =========================================================================================================================================================================================================================
 
 .. _mongoc_uri_t_write_concern_options:
@@ -213,7 +212,7 @@ MONGOC_URI_W                               w                                 Det
                                                                              * majority = For replica sets, if you specify the special majority value to w option, write operations will only return successfully after a majority of the configured replica set members have acknowledged the write operation.
                                                                              * n = For replica sets, if you specify a number n greater than 1, operations with this write concern return only after n members of the set have acknowledged the write. If you set n to a number that is greater than the number of available set members or members that hold data, MongoDB will wait, potentially indefinitely, for these members to become available.
                                                                              * tags = For replica sets, you can specify a tag set to require that all members of the set that have these tags configured return confirmation of the write operation.
-MONGOC_URI_WTIMEOUTMS                      wtimeoutms                        Deprecated in favor of MONGOC_URI_TIMEOUTMS. The time in milliseconds to wait for replication to succeed, as specified in the w option, before timing out. When wtimeoutMS is 0, write operations will never time out.
+MONGOC_URI_WTIMEOUTMS                      wtimeoutms                        The time in milliseconds to wait for replication to succeed, as specified in the w option, before timing out. When wtimeoutMS is 0, write operations will never time out.
 MONGOC_URI_JOURNAL                         journal                           Controls whether write operations will wait until the mongod acknowledges the write operations and commits the data to the on disk journal.
 
                                                                              * true  = Enables journal commit acknowledgement write concern. Equivalent to specifying the getLastError command with the j option enabled.
