@@ -94,6 +94,8 @@ BSON_BEGIN_DECLS
 #define WIRE_VERSION_4_9 12
 /* version corresponding to server 5.0 release */
 #define WIRE_VERSION_5_0 13
+/* first version to support snapshot reads */
+#define WIRE_VERSION_SNAPSHOT_READS 13
 
 struct _mongoc_collection_t;
 
@@ -147,9 +149,9 @@ BSON_STATIC_ASSERT2 (mongoc_cmd_rw,
                      MONGOC_CMD_RW == (MONGOC_CMD_READ | MONGOC_CMD_WRITE));
 
 
-/* TODO (CDRIVER-4052): Move MONGOC_RR_DEFAULT_BUFFER_SIZE and _mongoc_client_get_rr to
- * mongoc-topology-private.h or in a separate file. There is no reason these
- * should be in mongoc-client. */
+/* TODO (CDRIVER-4052): Move MONGOC_RR_DEFAULT_BUFFER_SIZE and
+ * _mongoc_client_get_rr to mongoc-topology-private.h or in a separate file.
+ * There is no reason these should be in mongoc-client. */
 #define MONGOC_RR_DEFAULT_BUFFER_SIZE 1024
 bool
 _mongoc_client_get_rr (const char *service,

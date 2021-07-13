@@ -981,6 +981,19 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
       if (!is_get_more) {
          if (cs) {
+            /* Snapshot Sessions Spec: "Snapshot reads require MongoDB 5.0+."
+             * Throw an error if snapshot is enabled and wire version is less
+             * than 13 before potentially appending "snapshot" read concern. */
+            if (mongoc_session_opts_get_snapshot (&cs->opts) &&
+                server_stream->sd->max_wire_version <
+                   WIRE_VERSION_SNAPSHOT_READS) {
+               bson_set_error (error,
+                               MONGOC_ERROR_TRANSACTION,
+                               MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                               "Snapshot reads require MongoDB 5.0 or later");
+               GOTO (done);
+            }
+
             _mongoc_cmd_parts_ensure_copied (parts);
             _mongoc_client_session_append_read_concern (
                cs,
