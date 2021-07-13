@@ -22,25 +22,23 @@
 #include "mongoc-bulk-operation-private.h"
 #include "mongoc-change-stream-private.h"
 #include "mongoc-client-private.h"
+#include "mongoc-find-and-modify-private.h"
+#include "mongoc-find-and-modify.h"
 #include "mongoc-collection.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-cursor-private.h"
-#include "mongoc-database-private.h"
 #include "mongoc-error.h"
-#include "mongoc-error-private.h"
-#include "mongoc-find-and-modify-private.h"
-#include "mongoc-find-and-modify.h"
 #include "mongoc-index.h"
 #include "mongoc-log.h"
-#include "mongoc-opts-private.h"
-#include "mongoc-read-concern-private.h"
-#include "mongoc-read-prefs-private.h"
 #include "mongoc-trace-private.h"
-#include "mongoc-uri.h"
+#include "mongoc-read-concern-private.h"
+#include "mongoc-write-concern-private.h"
+#include "mongoc-read-prefs-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-write-command-private.h"
+#include "mongoc-opts-private.h"
 #include "mongoc-write-command-private.h"
-#include "mongoc-write-concern-private.h"
+#include "mongoc-error-private.h"
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "collection"
@@ -168,8 +166,7 @@ _mongoc_collection_new (mongoc_client_t *client,
                         const char *collection,
                         const mongoc_read_prefs_t *read_prefs,
                         const mongoc_read_concern_t *read_concern,
-                        const mongoc_write_concern_t *write_concern,
-                        int64_t timeout_ms)
+                        const mongoc_write_concern_t *write_concern)
 {
    mongoc_collection_t *col;
 
@@ -197,8 +194,6 @@ _mongoc_collection_new (mongoc_client_t *client,
    col->nslen = (uint32_t) strlen (col->ns);
 
    col->gle = NULL;
-
-   col->timeout_ms = timeout_ms;
 
    RETURN (col);
 }
@@ -285,8 +280,7 @@ mongoc_collection_copy (mongoc_collection_t *collection) /* IN */
                                    collection->collection,
                                    collection->read_prefs,
                                    collection->read_concern,
-                                   collection->write_concern,
-                                   collection->timeout_ms));
+                                   collection->write_concern));
 }
 
 
@@ -3590,32 +3584,4 @@ mongoc_collection_watch (const mongoc_collection_t *coll,
                          const bson_t *opts)
 {
    return _mongoc_change_stream_new_from_collection (coll, pipeline, opts);
-}
-
-bool
-mongoc_collection_set_timeout_ms (mongoc_collection_t *coll,
-                                  int64_t timeout_ms,
-                                  bson_error_t *error)
-{
-   BSON_ASSERT_PARAM (coll);
-
-   if (timeout_ms < 0) {
-      bson_set_error (error,
-                      MONGOC_ERROR_TIMEOUT,
-                      MONGOC_ERROR_TIMEOUT_INVALID,
-                      "timeoutMS must be a non-negative integer");
-      return false;
-   }
-
-   coll->timeout_ms = timeout_ms;
-
-   return true;
-}
-
-int64_t
-mongoc_collection_get_timeout_ms (const mongoc_collection_t *coll)
-{
-   BSON_ASSERT_PARAM (coll);
-
-   return coll->timeout_ms;
 }
