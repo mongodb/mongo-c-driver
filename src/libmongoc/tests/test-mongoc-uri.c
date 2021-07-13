@@ -222,6 +222,20 @@ test_mongoc_uri_new (void)
    ASSERT (!mongoc_uri_get_hosts (uri)->next->next);
    mongoc_uri_destroy (uri);
 
+   uri = mongoc_uri_new ("mongodb://localhost/?" MONGOC_URI_HEARTBEATFREQUENCYMS
+                         "=600");
+   ASSERT (uri);
+   ASSERT_CMPINT32 (
+      600,
+      ==,
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 0));
+
+   mongoc_uri_destroy (uri);
+
+   /* heartbeat frequency too short */
+   ASSERT (!mongoc_uri_new (
+      "mongodb://localhost/?" MONGOC_URI_HEARTBEATFREQUENCYMS "=499"));
+
    /* should use the " MONGOC_URI_AUTHSOURCE " over db when both are specified
     */
    uri = mongoc_uri_new (
@@ -473,12 +487,14 @@ test_mongoc_uri_authmechanismproperties (void)
    mongoc_uri_destroy (uri);
 }
 
+
 static void
 test_mongoc_uri_functions (void)
 {
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    mongoc_database_t *db;
+   int32_t i;
 
    uri = mongoc_uri_new (
       "mongodb://foo:bar@localhost:27017/baz?" MONGOC_URI_AUTHSOURCE "=source");
@@ -546,21 +562,58 @@ test_mongoc_uri_functions (void)
    ASSERT_CMPINT (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 19), ==, 18);
 
+   ASSERT (mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 20));
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 19), ==, 20);
+
+   ASSERT (mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500));
+
+   i = mongoc_uri_get_option_as_int32 (
+      uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 1000);
+
+   ASSERT_CMPINT32 (i, ==, 500);
+
    capture_logs (true);
+
+   /* Server Discovery and Monitoring Spec: "the driver MUST NOT permit users to
+    * configure it less than minHeartbeatFrequencyMS (500ms)." */
+   ASSERT (!mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 499));
+
+   ASSERT_CAPTURED_LOG (
+      "mongoc_uri_set_option_as_int32",
+      MONGOC_LOG_LEVEL_WARNING,
+      "Invalid \"heartbeatfrequencyms\" of 499: must be at least 500");
+
+   /* socketcheckintervalms isn't set, return our fallback */
+   ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (
+                     uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 123),
+                  ==,
+                  123);
+   ASSERT (mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 18));
+   ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (
+                     uri, MONGOC_URI_SOCKETCHECKINTERVALMS, 19),
+                  ==,
+                  18);
 
    ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_JOURNAL, false));
    ASSERT (!mongoc_uri_get_option_as_bool (
       uri, MONGOC_URI_CANONICALIZEHOSTNAME, true));
+   /* tls isn't set, return out fallback */
+   ASSERT (mongoc_uri_get_option_as_bool (uri, MONGOC_URI_TLS, true));
 
    client = test_framework_client_new_from_uri (uri, NULL);
+   mongoc_uri_destroy (uri);
 
    ASSERT (
       mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_JOURNAL, false));
    ASSERT (!mongoc_uri_get_option_as_bool (
       client->uri, MONGOC_URI_CANONICALIZEHOSTNAME, true));
-
+   /* tls isn't set, return out fallback */
+   ASSERT (mongoc_uri_get_option_as_bool (client->uri, MONGOC_URI_TLS, true));
    mongoc_client_destroy (client);
-   mongoc_uri_destroy (uri);
 
    uri = mongoc_uri_new ("mongodb://localhost/");
    ASSERT_CMPSTR (mongoc_uri_get_option_as_utf8 (uri, "replicaset", "default"),
@@ -633,26 +686,51 @@ test_mongoc_uri_functions (void)
 }
 
 static void
-run_new_with_error_tests (const char *uri_str, const char *err_msg)
-{
-   bson_error_t error = {0};
-
-   capture_logs (true);
-
-   ASSERT (!mongoc_uri_new_with_error (uri_str, &error));
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG, err_msg);
-}
-
-static void
 test_mongoc_uri_new_with_error (void)
 {
+   bson_error_t error = {0};
    mongoc_uri_t *uri;
 
-   /* Test a valid URI */
+   capture_logs (true);
+   ASSERT (!mongoc_uri_new_with_error ("mongodb://", NULL));
    uri = mongoc_uri_new_with_error ("mongodb://localhost", NULL);
    ASSERT (uri);
    mongoc_uri_destroy (uri);
+
+   ASSERT (!mongoc_uri_new_with_error ("mongodb://", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid host string in URI");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error ("mongo://localhost", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid URI Schema, expecting 'mongodb://'");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/?readPreference=unknown", &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
+      "Unsupported readPreference value [readPreference=unknown]");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/"
+      "?appname="
+      "WayTooLongAppnameToBeValidSoThisShouldResultInAnErrorWayToLongAppnameToB"
+      "eValidSoThisShouldResultInAnErrorWayToLongAppnameToBeValidSoThisShouldRe"
+      "sultInAnError",
+      &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Unsupported value for \"appname\""); /* ... */
 
    uri = mongoc_uri_new ("mongodb://localhost");
    ASSERT (!mongoc_uri_set_option_as_utf8 (
@@ -663,51 +741,75 @@ test_mongoc_uri_new_with_error (void)
       "sultInAnError"));
    mongoc_uri_destroy (uri);
 
-   run_new_with_error_tests ("mongodb://", "Invalid host string in URI");
-   run_new_with_error_tests ("mongo://localhost",
-                             "Invalid URI Schema, expecting 'mongodb://'");
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (
+      !mongoc_uri_new_with_error ("mongodb://user%p:pass@localhost/", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Incorrect URI escapes in username. Percent-encode "
+                          "username and password according to RFC 3986");
 
-   /* Test unsupported values */
-   run_new_with_error_tests (
-      "mongodb://localhost/?readPreference=unknown",
-      "Unsupported readPreference value [readPreference=unknown]");
-   run_new_with_error_tests (
-      "mongodb://localhost/"
-      "?appname="
-      "WayTooLongAppnameToBeValidSoThisShouldResultInAnErrorWayToLongAppnameToB"
-      "eValidSoThisShouldResultInAnErrorWayToLongAppnameToBeValidSoThisShouldRe"
-      "sultInAnError",
-      "Unsupported value for \"appname\"");
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error ("mongodb://l%oc, alhost/", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid host string in URI");
 
-   /* Test improper string encoding and invalid symbols */
-   run_new_with_error_tests (
-      "mongodb://user%p:pass@localhost/",
-      "Incorrect URI escapes in username. Percent-encode "
-      "username and password according to RFC 3986");
-   run_new_with_error_tests ("mongodb://l%oc, alhost/",
-                             "Invalid host string in URI");
-   run_new_with_error_tests ("mongodb:///tmp/mongodb.sock",
-                             "Invalid host string in URI");
-   run_new_with_error_tests ("mongodb://localhost/db.na%me",
-                             "Invalid database name in URI");
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error ("mongodb:///tmp/mongodb.sock", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid host string in URI")
 
-   /* Test journal and w values */
-   run_new_with_error_tests ("mongodb://localhost/db?journal=true&w=0",
-                             "Journal conflicts with w value [w=0]");
-   run_new_with_error_tests ("mongodb://localhost/db?journal=true&w=-1",
-                             "Journal conflicts with w value [w=-1]");
-   run_new_with_error_tests ("mongodb://localhost/db?w=-5",
-                             "Unsupported w value [w=-5]");
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db.na%me", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Invalid database name in URI");
 
-   /* Test out-of-bounds values for options with bounds */
-   run_new_with_error_tests (
-      "mongodb://localhost/db?heartbeatfrequencyms=10",
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/db?journal=true&w=0", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Journal conflicts with w value [w=0]");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/db?journal=true&w=-1", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Journal conflicts with w value [w=-1]");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error ("mongodb://localhost/db?w=-5", &error));
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+                          "Unsupported w value [w=-5]");
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/db?heartbeatfrequencyms=10", &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
       "Invalid \"heartbeatfrequencyms\" of 10: must be at least 500");
-   run_new_with_error_tests (
-      "mongodb://localhost/db?timeoutms=-10",
-      "Invalid \"timeoutms\" of -10: must be a non-negative integer");
-   run_new_with_error_tests (
-      "mongodb://localhost/db?zlibcompressionlevel=10",
+
+   memset (&error, 0, sizeof (bson_error_t));
+   ASSERT (!mongoc_uri_new_with_error (
+      "mongodb://localhost/db?zlibcompressionlevel=10", &error));
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_COMMAND,
+      MONGOC_ERROR_COMMAND_INVALID_ARG,
       "Invalid \"zlibcompressionlevel\" of 10: must be between -1 and 9");
 }
 
@@ -756,17 +858,6 @@ test_mongoc_uri_compound_setters (void)
    mongoc_uri_destroy (uri);
 }
 
-static void
-run_invalid_host_list_test (const char *list)
-{
-   mongoc_host_list_t host_list = {0};
-
-   capture_logs (true);
-   ASSERT (!_mongoc_host_list_from_string (&host_list, list));
-   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
-                        MONGOC_LOG_LEVEL_ERROR,
-                        "Could not parse address");
-}
 
 static void
 test_mongoc_host_list_from_string (void)
@@ -774,14 +865,51 @@ test_mongoc_host_list_from_string (void)
    mongoc_host_list_t host_list = {0};
 
    /* shouldn't be parsable */
-   run_invalid_host_list_test (":27017");
-   run_invalid_host_list_test ("example.com:");
-   run_invalid_host_list_test ("localhost:999999999");
-   run_invalid_host_list_test ("::1234");
-   run_invalid_host_list_test ("]:1234");
-   run_invalid_host_list_test ("[]:1234");
-   run_invalid_host_list_test ("[::1] foo");
-   run_invalid_host_list_test ("[::1]extra_chars:27017");
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, ":27017"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "example.com:"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "localhost:999999999"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "::1234"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "]:1234"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "[]:1234"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "[::1] foo"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "Could not parse address");
+
+   capture_logs (true);
+   ASSERT (!_mongoc_host_list_from_string (&host_list, "[::1]extra_chars:27017"));
+   ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "If present, port should immediately follow the \"]\""
+                           "in an IPv6 address");
 
    /* normal parsing, host and port are split, host is downcased */
    ASSERT (_mongoc_host_list_from_string (&host_list, "localHOST:27019"));
@@ -1788,6 +1916,17 @@ test_mongoc_uri_tls_ssl (const char *tls,
    ASSERT (mongoc_uri_set_option_as_utf8 (uri, tlsCAFile, "/path/to/pem"));
    ASSERT (mongoc_uri_get_tls (uri));
    mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   ASSERT (
+      mongoc_uri_set_option_as_bool (uri, tlsAllowInvalidCertificates, false));
+   ASSERT (mongoc_uri_get_tls (uri));
+   mongoc_uri_destroy (uri);
+
+   uri = mongoc_uri_new ("mongodb://localhost/");
+   ASSERT (mongoc_uri_set_option_as_bool (uri, tlsAllowInvalidHostnames, true));
+   ASSERT (mongoc_uri_get_tls (uri));
+   mongoc_uri_destroy (uri);
 }
 
 static void
@@ -2237,10 +2376,10 @@ test_mongoc_uri_duplicates (void)
 
    RECREATE_URI (MONGOC_URI_READPREFERENCE
                  "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS
-                 "=100&" MONGOC_URI_MAXSTALENESSSECONDS "=200");
+                 "=1&" MONGOC_URI_MAXSTALENESSSECONDS "=2");
    ASSERT_LOG_DUPE (MONGOC_URI_MAXSTALENESSSECONDS);
    BSON_ASSERT (mongoc_uri_get_option_as_int32 (
-                   uri, MONGOC_URI_MAXSTALENESSSECONDS, 0) == 200);
+                   uri, MONGOC_URI_MAXSTALENESSSECONDS, 0) == 2);
 
    RECREATE_URI (MONGOC_URI_MINPOOLSIZE "=1&" MONGOC_URI_MINPOOLSIZE "=2");
    ASSERT_LOG_DUPE (MONGOC_URI_MINPOOLSIZE);
@@ -2311,11 +2450,6 @@ test_mongoc_uri_duplicates (void)
    BSON_ASSERT (
       mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SOCKETTIMEOUTMS, 0) == 2);
 
-   RECREATE_URI (MONGOC_URI_TIMEOUTMS "=100&" MONGOC_URI_TIMEOUTMS "=200");
-   ASSERT_LOG_DUPE (MONGOC_URI_TIMEOUTMS);
-   BSON_ASSERT (mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_TIMEOUTMS, 0) ==
-                200);
-
    RECREATE_URI (MONGOC_URI_TLS "=false&" MONGOC_URI_TLS "=true");
    ASSERT_LOG_DUPE (MONGOC_URI_TLS);
    BSON_ASSERT (mongoc_uri_get_tls (uri));
@@ -2385,251 +2519,128 @@ test_mongoc_uri_duplicates (void)
    mongoc_uri_destroy (uri);
 }
 
-static void
-run_common_int_tests (const char *option, int32_t val)
-{
-   mongoc_uri_t *uri;
-   char buf[256];
-
-   /* When no value is set, we get our fallback value */
-   uri = mongoc_uri_new ("mongodb://localhost");
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (uri, option, val), ==, val);
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int64 (uri, option, val), ==, val);
-   mongoc_uri_destroy (uri);
-
-   /* Test non-numeric types */
-   bson_snprintf (buf, sizeof (buf), "mongodb://localhost/?%s=hello", option);
-   ASSERT (!mongoc_uri_new (buf));
-   bson_snprintf (buf, sizeof (buf), "mongodb://localhost/?%s=true", option);
-   ASSERT (!mongoc_uri_new (buf));
-
-   /* Test setting as uri string; readPreference secondary
-      supports maxStalenessSeconds. */
-   bson_snprintf (buf,
-                  sizeof (buf),
-                  "mongodb://localhost/?readpreference=secondary&%s=%d",
-                  option,
-                  val);
-   uri = mongoc_uri_new (buf);
-   ASSERT (uri);
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (uri, option, 0), ==, val);
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int64 (uri, option, 0), ==, val);
-
-   mongoc_uri_destroy (uri);
-}
-
-static void
-run_int64_tests (const char *option, int64_t lower_limit, int64_t upper_limit)
-
-{
-   int32_t val = lower_limit == -1 ? 1 : lower_limit + 1;
-   int64_t val64 = 2147483648LL;
-   mongoc_uri_t *uri;
-   char buf[256];
-
-   capture_logs (true);
-
-   run_common_int_tests (option, val);
-
-   uri = mongoc_uri_new ("mongodb://localhost");
-
-   /* Setting a 32-bit value for an int64 option as int64 succeeds */
-   ASSERT (mongoc_uri_set_option_as_int64 (uri, option, val));
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (uri, option, 0), ==, val);
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int64 (uri, option, 0), ==, val);
-
-   /* Setting a 32-bit value for int64 option as int32 succeeds */
-   ASSERT (mongoc_uri_set_option_as_int32 (uri, option, val));
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int64 (uri, option, 0), ==, val);
-
-   /* Setting a 64-bit value for an int64 option as int64 succeeds */
-   ASSERT (mongoc_uri_set_option_as_int64 (uri, option, val64));
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int64 (uri, option, 0), ==, val64);
-
-   /* Truncating a 64-bit value when fetching as 32-bit emits a warning */
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (uri, option, 0), ==, 0);
-   bson_snprintf (buf, sizeof (buf), "option: %s with 64-bit value", option);
-   ASSERT_CAPTURED_LOG (
-      buf, MONGOC_LOG_LEVEL_WARNING, "Cannot read 64-bit value");
-   clear_captured_logs ();
-
-   /* If limits are set, test values outside of limits */
-   if (lower_limit != -1) {
-      int32_t too_low = lower_limit - 10;
-
-      ASSERT (!mongoc_uri_set_option_as_int64 (uri, option, too_low));
-      ASSERT_CAPTURED_LOG (
-         "mongoc_uri_set_option_as_int64", MONGOC_LOG_LEVEL_WARNING, "Invalid");
-   } else {
-      /* Setting INT_MIN doesn't cause truncation error */
-      ASSERT (mongoc_uri_set_option_as_int64 (uri, option, INT32_MIN));
-      ASSERT_CMPINT (
-         mongoc_uri_get_option_as_int32 (uri, option, 0), ==, INT32_MIN);
-      ASSERT_NO_CAPTURED_LOGS ("INT_MIN");
-   }
-
-   clear_captured_logs ();
-
-   if (upper_limit != -1) {
-      int32_t too_high = upper_limit + 10;
-
-      ASSERT (!mongoc_uri_set_option_as_int32 (uri, option, too_high));
-      ASSERT (!mongoc_uri_set_option_as_int64 (uri, option, too_high));
-   } else {
-      /* Setting INT_MAX doesn't cause truncation errors */
-      ASSERT (mongoc_uri_set_option_as_int64 (uri, option, INT32_MAX));
-      ASSERT_CMPINT (
-         mongoc_uri_get_option_as_int32 (uri, option, 0), ==, INT32_MAX);
-      ASSERT_NO_CAPTURED_LOGS ("INT_MAX");
-   }
-
-   clear_captured_logs ();
-
-   mongoc_uri_destroy (uri);
-}
-
-static void
-run_int32_tests (const char *option, int32_t lower_limit, int32_t upper_limit)
-{
-   int32_t val = lower_limit == -1 ? 1 : lower_limit + 1;
-   int64_t val64 = 2147483648LL;
-   mongoc_uri_t *uri;
-   char buf[256];
-
-   capture_logs (true);
-
-   run_common_int_tests (option, val);
-
-   uri = mongoc_uri_new ("mongodb://localhost");
-
-   /* Setting a 64-bit value using as_int64 for a 32-bit option is not
-    * permitted. */
-   ASSERT (!mongoc_uri_set_option_as_int64 (uri, option, val64));
-   ASSERT_CAPTURED_LOG (option, MONGOC_LOG_LEVEL_WARNING, "Unsupported value");
-   clear_captured_logs ();
-
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (uri, option, 0), ==, 0);
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int64 (uri, option, 0), ==, 0);
-
-   /* Setting a 32-bit value using as_int64 for a 32-bit option succeeds with a
-    * warning. */
-   ASSERT (mongoc_uri_set_option_as_int64 (uri, option, val));
-   bson_snprintf (
-      buf,
-      sizeof (buf),
-      "Setting value for 32-bit option \"%s\" through 64-bit method",
-      option);
-   ASSERT_CAPTURED_LOG (option, MONGOC_LOG_LEVEL_WARNING, buf);
-   clear_captured_logs ();
-
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (uri, option, 0), ==, val);
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int64 (uri, option, 0), ==, val);
-
-   /* Setting a 32-bit value using as_int32 succeeds. */
-   ASSERT (mongoc_uri_set_option_as_int32 (uri, option, val));
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int32 (uri, option, 0), ==, val);
-   ASSERT_CMPINT (mongoc_uri_get_option_as_int64 (uri, option, 0), ==, val);
-
-   /* If limits are set, test values outside of limits */
-   if (lower_limit != -1) {
-      int32_t too_low = lower_limit - 10;
-
-      ASSERT (!mongoc_uri_set_option_as_int32 (uri, option, too_low));
-      ASSERT_CAPTURED_LOG (
-         "mongoc_uri_set_option_as_int32", MONGOC_LOG_LEVEL_WARNING, "Invalid");
-
-      bson_snprintf (
-         buf, sizeof (buf), "mongodb://localhost/?%s=%d", option, too_low);
-      ASSERT (!mongoc_uri_new (buf));
-   }
-
-   if (upper_limit != -1) {
-      int32_t too_high = upper_limit + 10;
-
-      ASSERT (!mongoc_uri_set_option_as_int32 (uri, option, too_high));
-      ASSERT (!mongoc_uri_set_option_as_int64 (uri, option, too_high));
-
-      bson_snprintf (
-         buf, sizeof (buf), "mongodb://localhost/?%s=%d", option, too_high);
-      ASSERT (!mongoc_uri_new (buf));
-   }
-
-   mongoc_uri_destroy (uri);
-}
-
 
 /* Tests behavior of int32 and int64 options */
 static void
 test_mongoc_uri_int_options (void)
 {
-   /* Test 64-bit options */
-   run_int64_tests (MONGOC_URI_WTIMEOUTMS, -1, -1);
-   run_int64_tests (MONGOC_URI_TIMEOUTMS, 0, -1);
+   mongoc_uri_t *uri;
 
-   /* Test 32-bit options */
-   run_int32_tests (MONGOC_URI_ZLIBCOMPRESSIONLEVEL, -1, 9);
-   run_int32_tests (MONGOC_URI_CONNECTTIMEOUTMS, -1, -1);
-   run_int32_tests (MONGOC_URI_HEARTBEATFREQUENCYMS, 500, -1);
-   run_int32_tests (MONGOC_URI_SERVERSELECTIONTIMEOUTMS, -1, -1);
-   run_int32_tests (MONGOC_URI_SOCKETCHECKINTERVALMS, -1, -1);
-   run_int32_tests (MONGOC_URI_LOCALTHRESHOLDMS, -1, -1);
-   run_int32_tests (MONGOC_URI_MAXPOOLSIZE, -1, -1);
-   /* maxStalenessSeconds lower limit of 90 is not enforced */
-   run_int32_tests (MONGOC_URI_MAXSTALENESSSECONDS, -1, -1);
-   run_int32_tests (MONGOC_URI_MINPOOLSIZE, -1, -1);
-   run_int32_tests (MONGOC_URI_MAXIDLETIMEMS, -1, -1);
-   run_int32_tests (MONGOC_URI_WAITQUEUEMULTIPLE, -1, -1);
-   /* deprecated options */
-   run_int32_tests (MONGOC_URI_WAITQUEUETIMEOUTMS, -1, -1);
-   run_int32_tests (MONGOC_URI_SOCKETTIMEOUTMS, -1, -1);
-}
+   capture_logs (true);
 
-static void
-run_bool_tests (const char *option)
-{
-   mongoc_uri_t *uri = mongoc_uri_new ("mongodb://localhost/");
-   char buf[256];
+   uri = mongoc_uri_new ("mongodb://localhost/");
 
-   /* If value isn't set, return fallback */
-   ASSERT (mongoc_uri_get_option_as_bool (uri, option, true));
+   /* Set an int64 option as int64 succeeds */
+   ASSERT (mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 10));
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 10);
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 10);
 
-   /* Set option via function */
-   ASSERT (mongoc_uri_set_option_as_bool (uri, option, false));
-   ASSERT (!mongoc_uri_get_option_as_bool (uri, option, true));
+   /* Set an int64 option as int32 succeeds */
+   ASSERT (mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 15));
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 15);
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 0), ==, 15);
 
-   ASSERT (mongoc_uri_set_option_as_bool (uri, option, true));
-   ASSERT (mongoc_uri_get_option_as_bool (uri, option, false));
+   /* Setting an int32 option through _as_int64 succeeds for 32-bit values but
+    * emits a warning */
+   ASSERT (
+      mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 9));
+   ASSERT_CAPTURED_LOG ("option: " MONGOC_URI_ZLIBCOMPRESSIONLEVEL,
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Setting value for 32-bit option "
+                        "\"zlibcompressionlevel\" through 64-bit method");
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
+      ==,
+      9);
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
+      ==,
+      9);
+
+   clear_captured_logs ();
+
+   ASSERT (!mongoc_uri_set_option_as_int64 (
+      uri, MONGOC_URI_CONNECTTIMEOUTMS, 2147483648LL));
+   ASSERT_CAPTURED_LOG (
+      "option: " MONGOC_URI_CONNECTTIMEOUTMS,
+      MONGOC_LOG_LEVEL_WARNING,
+      "Unsupported value for \"connecttimeoutms\": 2147483648,"
+      " \"connecttimeoutms\" is not an int64 option");
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 0),
+      ==,
+      0);
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_CONNECTTIMEOUTMS, 0),
+      ==,
+      0);
+
+   clear_captured_logs ();
+
+   /* Setting an int32 option as int32 succeeds */
+   ASSERT (
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 9));
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
+      ==,
+      9);
+   ASSERT_CMPINT (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_ZLIBCOMPRESSIONLEVEL, 0),
+      ==,
+      9);
+
+   /* Truncating a 64-bit value when fetching as 32-bit emits a warning */
+   ASSERT (mongoc_uri_set_option_as_int64 (
+      uri, MONGOC_URI_WTIMEOUTMS, 2147483648LL));
+   ASSERT_CMPINT32 (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 5), ==, 5);
+   ASSERT_CAPTURED_LOG (
+      "option: " MONGOC_URI_WTIMEOUTMS " with 64-bit value",
+      MONGOC_LOG_LEVEL_WARNING,
+      "Cannot read 64-bit value for \"wtimeoutms\": 2147483648");
+   ASSERT_CMPINT64 (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 5),
+      ==,
+      2147483648LL);
+
+   clear_captured_logs ();
+
+   ASSERT (mongoc_uri_set_option_as_int64 (
+      uri, MONGOC_URI_WTIMEOUTMS, -2147483649LL));
+   ASSERT_CMPINT32 (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 5), ==, 5);
+   ASSERT_CAPTURED_LOG (
+      "option: " MONGOC_URI_WTIMEOUTMS " with 64-bit value",
+      MONGOC_LOG_LEVEL_WARNING,
+      "Cannot read 64-bit value for \"wtimeoutms\": -2147483649");
+   ASSERT_CMPINT64 (
+      mongoc_uri_get_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, 5),
+      ==,
+      -2147483649LL);
+
+   clear_captured_logs ();
+
+   /* Setting a INT_MAX and INT_MIN values doesn't cause truncation errors */
+   ASSERT (
+      mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, INT32_MAX));
+   ASSERT_CMPINT32 (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0),
+      ==,
+      INT32_MAX);
+   ASSERT_NO_CAPTURED_LOGS ("INT_MAX");
+   ASSERT (
+      mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_WTIMEOUTMS, INT32_MIN));
+   ASSERT_CMPINT32 (
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_WTIMEOUTMS, 0),
+      ==,
+      INT32_MIN);
+   ASSERT_NO_CAPTURED_LOGS ("INT_MIN");
 
    mongoc_uri_destroy (uri);
-
-   /* Set option via uri string */
-   bson_snprintf (buf, sizeof (buf), "mongodb://localhost/?%s=true", option);
-   uri = mongoc_uri_new (buf);
-   ASSERT (mongoc_uri_set_option_as_bool (uri, option, true));
-
-   mongoc_uri_destroy (uri);
-}
-
-static void
-test_mongoc_uri_bool_options (void)
-{
-   run_bool_tests (MONGOC_URI_CANONICALIZEHOSTNAME);
-   run_bool_tests (MONGOC_URI_DIRECTCONNECTION);
-   run_bool_tests (MONGOC_URI_JOURNAL);
-   run_bool_tests (MONGOC_URI_RETRYREADS);
-   run_bool_tests (MONGOC_URI_RETRYWRITES);
-   run_bool_tests (MONGOC_URI_SAFE);
-   run_bool_tests (MONGOC_URI_SERVERSELECTIONTRYONCE);
-   run_bool_tests (MONGOC_URI_TLS);
-   run_bool_tests (MONGOC_URI_TLSINSECURE);
-   run_bool_tests (MONGOC_URI_TLSALLOWINVALIDCERTIFICATES);
-   run_bool_tests (MONGOC_URI_TLSALLOWINVALIDHOSTNAMES);
-   run_bool_tests (MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK);
-   run_bool_tests (MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK);
-   /* deprecated options */
-   run_bool_tests (MONGOC_URI_SSL);
-   run_bool_tests (MONGOC_URI_SSLALLOWINVALIDCERTIFICATES);
-   run_bool_tests (MONGOC_URI_SSLALLOWINVALIDHOSTNAMES);
 }
 
 static void
@@ -2673,110 +2684,18 @@ test_one_tls_option_enables_tls ()
 }
 
 static void
-_create_uri_get_warning (const char *uri_str, const char *msg)
-{
-   mongoc_uri_t *uri;
-
-   capture_logs (true);
-
-   uri = mongoc_uri_new (uri_str);
-   BSON_ASSERT (uri);
-   ASSERT_CAPTURED_LOG (
-      "uri", MONGOC_LOG_LEVEL_WARNING, msg);
-
-   clear_captured_logs ();
-   mongoc_uri_destroy (uri);
-}
-
-static void
-_run_timeout_ms_deprecated_opts_tests (const char *option)
-{
-   mongoc_uri_t *uri;
-   const char *msg = "in combination with timeoutMS";
-   char buf[256];
-
-   /* Both options set through URI string */
-   bson_snprintf (buf,
-                sizeof (buf),
-                "mongodb://localhost/?%s=100&timeoutms=100",
-                option);
-   _create_uri_get_warning (buf, msg);
-
-   /* Both options set through URI string, swap order */
-   bson_snprintf (buf,
-                sizeof (buf),
-                "mongodb://localhost/?timeoutms=100&%s=100",
-                option);
-   _create_uri_get_warning (buf, msg);
-
-   capture_logs (true);
-
-   /* Option A set through URI string, option B through setter */
-   uri = mongoc_uri_new ("mongodb://localhost/?timeoutms=100");
-   BSON_ASSERT (uri);
-   BSON_ASSERT (mongoc_uri_set_option_as_int64 (uri, option, 100));
-   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, msg);
-
-   clear_captured_logs ();
-   mongoc_uri_destroy (uri);
-
-   /* Option B set through URI string, option A through setter */
-   bson_snprintf (buf,
-		  sizeof (buf),
-		  "mongodb://localhost/?%s=100",
-		  option);
-   uri = mongoc_uri_new (buf);
-   BSON_ASSERT (uri);
-   BSON_ASSERT (mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_TIMEOUTMS, 100));
-   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, msg);
-
-   clear_captured_logs ();
-   mongoc_uri_destroy (uri);
-
-   /* Both options set through setters */
-   uri = mongoc_uri_new ("mongodb://localhost");
-   BSON_ASSERT (uri);
-   BSON_ASSERT (mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_TIMEOUTMS, 100));
-   BSON_ASSERT (mongoc_uri_set_option_as_int64 (uri, option, 100));
-   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, msg);
-
-   clear_captured_logs ();
-   mongoc_uri_destroy (uri);
-
-   /* Both options set through setters, swap order */
-   uri = mongoc_uri_new ("mongodb://localhost");
-   BSON_ASSERT (uri);
-   BSON_ASSERT (mongoc_uri_set_option_as_int64 (uri, option, 100));
-   BSON_ASSERT (mongoc_uri_set_option_as_int64 (uri, MONGOC_URI_TIMEOUTMS, 100));
-   ASSERT_CAPTURED_LOG ("uri", MONGOC_LOG_LEVEL_WARNING, msg);
-
-   clear_captured_logs ();
-   mongoc_uri_destroy (uri);
-}
-
-static void
-test_timeout_ms_with_deprecated_opts ()
-{
-   _run_timeout_ms_deprecated_opts_tests (MONGOC_URI_WAITQUEUETIMEOUTMS);
-   _run_timeout_ms_deprecated_opts_tests (MONGOC_URI_SOCKETTIMEOUTMS);
-   _run_timeout_ms_deprecated_opts_tests (MONGOC_URI_WTIMEOUTMS);
-}
-
-static void
 test_casing_options ()
 {
-   mongoc_uri_t *uri;
+   mongoc_uri_t* uri;
    bson_error_t error;
 
-   uri = mongoc_uri_new ("mongodb://localhost:27017/");
+   uri = mongoc_uri_new("mongodb://localhost:27017/");
    mongoc_uri_set_option_as_bool (uri, "TLS", true);
-   mongoc_uri_parse_options (uri, "ssl=false", false, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_COMMAND_INVALID_ARG,
+   mongoc_uri_parse_options(uri, "ssl=false", false, &error);
+   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "conflicts");
 
-   mongoc_uri_destroy (uri);
+   mongoc_uri_destroy(uri);
 }
 
 void
@@ -2809,12 +2728,8 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite, "/Uri/utf8", test_mongoc_uri_utf8);
    TestSuite_Add (suite, "/Uri/duplicates", test_mongoc_uri_duplicates);
    TestSuite_Add (suite, "/Uri/int_options", test_mongoc_uri_int_options);
-   TestSuite_Add (suite, "/Uri/bool_options", test_mongoc_uri_bool_options);
    TestSuite_Add (suite,
                   "/Uri/one_tls_option_enables_tls",
                   test_one_tls_option_enables_tls);
-   TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
-   TestSuite_Add (suite,
-                  "/Uri/timeout_ms_deprecated_opts",
-                  test_timeout_ms_with_deprecated_opts);
+   TestSuite_Add(suite, "/Uri/options_casing", test_casing_options);
 }
