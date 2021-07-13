@@ -14,7 +14,7 @@ Synopsis
 
 Given a string ``version``, populates ``out`` with the equivalent :symbol:`mongoc_server_api_version_t` if ``version`` represents a valid API version.
 
-Paremeters
+Parameters
 ----------
 
 * ``version``: A string representing the version identifier.
