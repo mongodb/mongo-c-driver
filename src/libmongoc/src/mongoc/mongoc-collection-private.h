@@ -37,7 +37,6 @@ struct _mongoc_collection_t {
    mongoc_read_concern_t *read_concern;
    mongoc_write_concern_t *write_concern;
    bson_t *gle;
-   int64_t timeout_ms;
 };
 
 
@@ -47,8 +46,7 @@ _mongoc_collection_new (mongoc_client_t *client,
                         const char *collection,
                         const mongoc_read_prefs_t *read_prefs,
                         const mongoc_read_concern_t *read_concern,
-                        const mongoc_write_concern_t *write_concern,
-                        int64_t timeout_ms);
+                        const mongoc_write_concern_t *write_concern);
 
 bool
 _mongoc_collection_create_index_if_not_exists (mongoc_collection_t *collection,

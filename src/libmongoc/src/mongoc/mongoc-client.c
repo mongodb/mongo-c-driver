@@ -1174,9 +1174,6 @@ _mongoc_client_new_from_uri (mongoc_topology_t *topology)
       BSON_ASSERT (mongoc_client_set_appname (client, appname));
    }
 
-   client->timeout_ms = mongoc_uri_get_option_as_int64 (
-      client->uri, MONGOC_URI_TIMEOUTMS, MONGOC_TIMEOUTMS_UNSET);
-
    mongoc_cluster_init (&client->cluster, client->uri, client);
 
 #ifdef MONGOC_ENABLE_SSL
@@ -1360,8 +1357,7 @@ mongoc_client_get_database (mongoc_client_t *client, const char *name)
                                 name,
                                 client->read_prefs,
                                 client->read_concern,
-                                client->write_concern,
-                                client->timeout_ms);
+                                client->write_concern);
 }
 
 
@@ -1440,8 +1436,7 @@ mongoc_client_get_collection (mongoc_client_t *client,
                                   collection,
                                   client->read_prefs,
                                   client->read_concern,
-                                  client->write_concern,
-                                  client->timeout_ms);
+                                  client->write_concern);
 }
 
 
@@ -3105,8 +3100,6 @@ mongoc_client_enable_auto_encryption (mongoc_client_t *client,
                                       mongoc_auto_encryption_opts_t *opts,
                                       bson_error_t *error)
 {
-   BSON_ASSERT_PARAM (client);
-
    if (!client->topology->single_threaded) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
@@ -3116,14 +3109,6 @@ mongoc_client_enable_auto_encryption (mongoc_client_t *client,
       return false;
    }
    return _mongoc_cse_client_enable_auto_encryption (client, opts, error);
-}
-
-int64_t
-mongoc_client_get_timeout_ms (const mongoc_client_t *client)
-{
-   BSON_ASSERT_PARAM (client);
-
-   return client->timeout_ms;
 }
 
 bool
