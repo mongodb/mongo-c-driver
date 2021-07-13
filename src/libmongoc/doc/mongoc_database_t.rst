@@ -43,7 +43,6 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_database_get_name
     mongoc_database_get_read_concern
     mongoc_database_get_read_prefs
-    mongoc_database_get_timeout_ms
     mongoc_database_get_write_concern
     mongoc_database_has_collection
     mongoc_database_read_command_with_opts
@@ -52,7 +51,6 @@ Read preferences and write concerns are inherited from the parent client. They c
     mongoc_database_remove_user
     mongoc_database_set_read_concern
     mongoc_database_set_read_prefs
-    mongoc_database_set_timeout_ms
     mongoc_database_set_write_concern
     mongoc_database_watch
     mongoc_database_write_command_with_opts

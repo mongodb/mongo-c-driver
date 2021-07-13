@@ -269,9 +269,6 @@ mongoc_client_enable_auto_encryption (mongoc_client_t *client,
                                       mongoc_auto_encryption_opts_t *opts,
                                       bson_error_t *error);
 
-MONGOC_EXPORT (int64_t)
-mongoc_client_get_timeout_ms (const mongoc_client_t *client);
-
 MONGOC_EXPORT (bool)
 mongoc_client_set_server_api (mongoc_client_t *client,
                               const mongoc_server_api_t *api,

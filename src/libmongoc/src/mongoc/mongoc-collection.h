@@ -351,14 +351,6 @@ mongoc_collection_estimated_document_count (
    bson_t *reply,
    bson_error_t *error);
 
-MONGOC_EXPORT (bool)
-mongoc_collection_set_timeout_ms (mongoc_collection_t *coll,
-                                  int64_t timeout_ms,
-                                  bson_error_t *error);
-
-MONGOC_EXPORT (int64_t)
-mongoc_collection_get_timeout_ms (const mongoc_collection_t *coll);
-
 BSON_END_DECLS
 
 
