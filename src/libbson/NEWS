@@ -1,3 +1,34 @@
+libbson 1.18.0
+==============
+
+It is my pleasure to announce libbson 1.18.0.
+
+Features:
+
+  * Add BSON to JSON encoder that limits encoded string length.
+  * Support parsing $uuid into a binary UUID.
+  * Relax validation for insert and replace documents to support fields containing dots and dollars.
+
+Improvements:
+
+  * Add trailing space after base64 JSON field for consistency.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Roberto C. Sánchez
+  * Jeremy Mikola
+  * Andreas Braun
+  * Benjamin Rewis
+  * Richard Donkin
+  * David Korczynski
+  * Josh Weinstein
+  * David Carlier
+  * Andrew Witten
+  * Tim Gates
+
+--Kevin Albertson
+
 libbson 1.18.0-alpha
 ====================
 

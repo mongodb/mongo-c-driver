@@ -1,3 +1,45 @@
+mongo-c-driver 1.18.0
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.18.0 release.
+This release adds partial support for MongoDB 5.0 servers.
+
+Features:
+
+  * Introduces support to select an API version when connecting to a MongoDB instance.
+  * Supports Azure and Google Cloud Platform as Key Management Service (KMS) providers in Client-Side Field Level Encryption (CSFLE).
+  * Support "let" option in aggregate command.
+  * Support time series collections.
+  * Relax validation for insert and replace documents to support fields containing dots and dollars.
+  * Expose the reason operations fail document validation.
+
+Bug fixes:
+
+  * Forward opts from mongoc_gridfs_bucket_find to underlying find operation.
+  * Fixes a possible hang when a limited size client pool is waiting for a client to become available in mongoc_client_pool_pop.
+
+Improvements
+
+  * Deprecate API containing deprecated terminology.
+  * Use "hello" command for monitoring servers.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Roberto C. Sánchez
+  * Andreas Braun
+  * Clyde Bazile
+  * Benjamin Rewis
+  * Jeremy Mikola
+  * Andrew Witten
+  * Samantha Ritter
+  * samantharitter
+  * Fermín Galán Márquez
+  * David Carlier
+  * Colby Pike
+  * Josh Weinstein
+  * Pierre Mickael Gonzalo
+
 mongo-c-driver 1.18.0-alpha
 ===========================
 
