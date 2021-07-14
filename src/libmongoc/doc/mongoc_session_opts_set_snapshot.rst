@@ -33,7 +33,7 @@ Example
    mongoc_session_opt_t *session_opts;
    mongoc_client_session_t *client_session;
    mongoc_collection_t *collection;
-   bson_t find_opts = BSON_INITIALIZER;
+   bson_t query_opts = BSON_INITIALIZER;
    bson_t filter = BSON_INITIALIZER;
    bson_t pipeline = BSON_INITIALIZER;
 
@@ -58,11 +58,11 @@ Example
    }
 
    /* First read operation will set the snapshot time for subsequent reads. */
-   cursor = mongoc_collection_find_with_opts (collection, filter, &find_opts, NULL);
+   cursor = mongoc_collection_find_with_opts (collection, filter, &query_opts, NULL);
 
    /* Subsequent read operations will automatically read from the same point
     * in time as the first read operation. */
-   cursor = mongoc_collection_aggregate (collection, NULL, pipeline, find_opts, NULL);
+   cursor = mongoc_collection_aggregate (collection, NULL, pipeline, &query_opts, NULL);
 
 .. only:: html
 
