@@ -83,7 +83,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
       TRACE ("SASL: authenticating (step %d)", sasl.step);
 
       server_stream = _mongoc_cluster_create_server_stream (
-         cluster->client->topology, sd->id, stream, error);
+         cluster->client->topology, sd, stream, error);
 
       if (!server_stream) {
          bson_destroy (&cmd);

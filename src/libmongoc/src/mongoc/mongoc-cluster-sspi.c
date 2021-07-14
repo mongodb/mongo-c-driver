@@ -223,7 +223,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       }
 
       server_stream = _mongoc_cluster_create_server_stream (
-         cluster->client->topology, sd->id, stream, error);
+         cluster->client->topology, sd, stream, error);
 
       if (!server_stream ||
           !mongoc_cmd_parts_assemble (&parts, server_stream, error)) {

@@ -1167,7 +1167,7 @@ test_change_stream_server_selection_fails (void)
    ASSERT_ERROR_CONTAINS (err,
                           MONGOC_ERROR_SERVER_SELECTION,
                           MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "No suitable servers found");
+                          "No servers yet eligible for rescan");
    mongoc_change_stream_destroy (cs);
    mongoc_collection_destroy (coll);
    mongoc_client_destroy (client);
@@ -2493,6 +2493,13 @@ prose_test_17 (void)
    request = mock_server_receives_msg (
       server,
       MONGOC_QUERY_NONE,
+      tmp_bson (
+         "{ 'killCursors': 'coll', 'cursors': [{ '$numberLong': '123'}]}"));
+   mock_server_replies_ok_and_destroys (request);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
       tmp_bson ("{ 'aggregate': 'coll', 'pipeline': [ { "
                 "'$changeStream': { 'startAfter': {'x': 1}, 'resumeAfter': { "
                 "'$exists': false }, 'startAtOperationTime': { '$exists': "
@@ -2569,6 +2576,13 @@ prose_test_18 (void)
       "['ResumableChangeStreamError'], 'ok': 0 }");
 
    request_destroy (request);
+
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_QUERY_NONE,
+      tmp_bson (
+         "{ 'killCursors': 'coll', 'cursors': [{ '$numberLong': '123'}]}"));
+   mock_server_replies_ok_and_destroys (request);
 
    request = mock_server_receives_msg (
       server,

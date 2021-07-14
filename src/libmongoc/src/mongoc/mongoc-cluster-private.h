@@ -45,13 +45,8 @@ typedef struct _mongoc_cluster_node_t {
    mongoc_stream_t *stream;
    char *connection_address;
    uint32_t generation;
-
-   /* TODO CDRIVER-3653, these fields are unused. */
-   int32_t max_wire_version;
-   int32_t min_wire_version;
-   int32_t max_write_batch_size;
-   int32_t max_bson_obj_size;
-   int32_t max_msg_size;
+   /* handshake_sd is a server description created from the handshake on the stream. */
+   mongoc_server_description_t *handshake_sd;
 } mongoc_cluster_node_t;
 
 typedef struct _mongoc_cluster_t {
@@ -172,7 +167,7 @@ _mongoc_cluster_get_conversation_id (const bson_t *reply);
 
 mongoc_server_stream_t *
 _mongoc_cluster_create_server_stream (mongoc_topology_t *topology,
-                                      uint32_t server_id,
+                                      const mongoc_server_description_t *sd,
                                       mongoc_stream_t *stream,
                                       bson_error_t *error /* OUT */);
 

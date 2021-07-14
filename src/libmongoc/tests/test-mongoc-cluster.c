@@ -65,7 +65,7 @@ test_get_max_bson_obj_size (void)
 
    id = server_id_for_reads (&client->cluster);
    node = (mongoc_cluster_node_t *) mongoc_set_get (client->cluster.nodes, id);
-   node->max_bson_obj_size = max_bson_obj_size;
+   node->handshake_sd->max_bson_obj_size = max_bson_obj_size;
    BSON_ASSERT (max_bson_obj_size ==
                 mongoc_cluster_get_max_bson_obj_size (&client->cluster));
 
@@ -101,7 +101,7 @@ test_get_max_msg_size (void)
 
    id = server_id_for_reads (&client->cluster);
    node = (mongoc_cluster_node_t *) mongoc_set_get (client->cluster.nodes, id);
-   node->max_msg_size = max_msg_size;
+   node->handshake_sd->max_msg_size = max_msg_size;
    BSON_ASSERT (max_msg_size ==
                 mongoc_cluster_get_max_msg_size (&client->cluster));
 
@@ -1733,7 +1733,14 @@ test_hello_on_unknown (void)
 /* Test what happens when running a command directly on a server (by passing an
  * explicit server id) that is marked as "unknown" in the topology description.
  * Prior to the bug fix of CDRIVER-3404, a pooled client would erroneously
- * attempt to send the command. */
+ * attempt to send the command.
+ *
+ * Update: After applying the fix to CDRIVER-3653 this test was updated.
+ * Connections will track their own server description from the handshake
+ * response.
+ * Marking the server unknown in the shared topology description no longer
+ * affects established connections.
+ */
 void
 _test_cmd_on_unknown_serverid (bool pooled)
 {
@@ -1746,7 +1753,7 @@ _test_cmd_on_unknown_serverid (bool pooled)
    uri = test_framework_get_uri ();
    /* Set a high heartbeatFrequencyMS so subsequent topology scans do not
     * interfere with the test. */
-   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 99999);
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 5000);
 
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, NULL);
@@ -1792,16 +1799,7 @@ _test_cmd_on_unknown_serverid (bool pooled)
                                                       1,
                                                       NULL /* reply */,
                                                       &error);
-   BSON_ASSERT (!ret);
-   if (!pooled) {
-      ASSERT_ERROR_CONTAINS (
-         error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated")
-   } else {
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_COMMAND_INVALID_ARG,
-                             "Cannot assemble command for invalidated server")
-   }
+   ASSERT_OR_PRINT (ret, error);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -1813,12 +1811,114 @@ _test_cmd_on_unknown_serverid (bool pooled)
 }
 
 void
-test_cmd_on_unknown_serverid (void)
+test_cmd_on_unknown_serverid_pooled (void)
 {
-   _test_cmd_on_unknown_serverid (false /* pooled */);
    _test_cmd_on_unknown_serverid (true /* pooled */);
 }
 
+void
+test_cmd_on_unknown_serverid_single (void)
+{
+   _test_cmd_on_unknown_serverid (false /* pooled */);
+}
+
+
+/* Test that server streams are invalidated as expected. */
+static void
+test_cluster_stream_invalidation_single (void)
+{
+   mongoc_client_t *client;
+   mongoc_server_description_t *sd;
+   bson_error_t error;
+   mongoc_server_stream_t *stream;
+
+   client = test_framework_new_default_client ();
+   /* Select a server to start monitoring. */
+   sd = mongoc_client_select_server (
+      client, true /* for writes */, NULL /* read prefs */, &error);
+   ASSERT_OR_PRINT (sd, error);
+
+   /* Test "clearing the pool". This should invalidate existing server streams.
+    */
+   stream = mongoc_cluster_stream_for_writes (
+      &client->cluster, NULL /* session */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (stream, error);
+   BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
+   _mongoc_topology_clear_connection_pool (client->topology,
+                                           mongoc_server_description_id (sd));
+   BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
+   mongoc_server_stream_cleanup (stream);
+
+   /* Test closing the connection. This should invalidate existing server
+    * streams. */
+   stream = mongoc_cluster_stream_for_writes (
+      &client->cluster, NULL /* session */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (stream, error);
+   BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
+   mongoc_cluster_disconnect_node (&client->cluster, sd->id);
+   BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
+   mongoc_server_stream_cleanup (stream);
+
+   /* Test that a new stream is considered valid. */
+   stream = mongoc_cluster_stream_for_writes (
+      &client->cluster, NULL /* session */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (stream, error);
+   BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
+   mongoc_server_stream_cleanup (stream);
+
+   mongoc_server_description_destroy (sd);
+   mongoc_client_destroy (client);
+}
+
+/* Test that server streams are invalidated as expected. */
+static void
+test_cluster_stream_invalidation_pooled (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_server_description_t *sd;
+   bson_error_t error;
+   mongoc_server_stream_t *stream;
+
+   pool = test_framework_new_default_client_pool ();
+   client = mongoc_client_pool_pop (pool);
+   /* Select a server. */
+   sd = mongoc_client_select_server (
+      client, true /* for writes */, NULL /* read prefs */, &error);
+   ASSERT_OR_PRINT (sd, error);
+
+   /* Test "clearing the pool". This should invalidate existing server streams.
+    */
+   stream = mongoc_cluster_stream_for_writes (
+      &client->cluster, NULL /* session */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (stream, error);
+   BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
+   _mongoc_topology_clear_connection_pool (client->topology,
+                                           mongoc_server_description_id (sd));
+   BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
+   mongoc_server_stream_cleanup (stream);
+
+   /* Test closing the connection. This should invalidate existing server
+    * streams. */
+   stream = mongoc_cluster_stream_for_writes (
+      &client->cluster, NULL /* session */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (stream, error);
+   BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
+   mongoc_cluster_disconnect_node (&client->cluster, sd->id);
+   BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
+   mongoc_server_stream_cleanup (stream);
+
+   /* Test that a new stream is considered valid. */
+   stream = mongoc_cluster_stream_for_writes (
+      &client->cluster, NULL /* session */, NULL /* reply */, &error);
+   ASSERT_OR_PRINT (stream, error);
+   BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
+   mongoc_server_stream_cleanup (stream);
+
+   mongoc_server_description_destroy (sd);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+}
 
 void
 test_cluster_install (TestSuite *suite)
@@ -1959,6 +2059,16 @@ test_cluster_install (TestSuite *suite)
                                 test_cluster_command_error_op_query);
    TestSuite_AddMockServerTest (
       suite, "/Cluster/hello_on_unknown/mock", test_hello_on_unknown);
-   TestSuite_AddLive (
-      suite, "/Cluster/cmd_on_unknown_serverid", test_cmd_on_unknown_serverid);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cmd_on_unknown_serverid/pooled",
+                      test_cmd_on_unknown_serverid_pooled);
+   TestSuite_AddLive (suite,
+                      "/Cluster/cmd_on_unknown_serverid/single",
+                      test_cmd_on_unknown_serverid_single);
+   TestSuite_AddLive (suite,
+                      "/Cluster/stream_invalidation/single",
+                      test_cluster_stream_invalidation_single);
+   TestSuite_AddLive (suite,
+                      "/Cluster/stream_invalidation/pooled",
+                      test_cluster_stream_invalidation_pooled);
 }

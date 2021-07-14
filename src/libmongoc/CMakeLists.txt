@@ -983,6 +983,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-description.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection-errors.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-stream.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-set.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-socket.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-speculative-auth.c
