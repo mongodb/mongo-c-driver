@@ -53,7 +53,7 @@ topology_type_from_test (const char *type)
    } else if (strcmp (type, "Sharded") == 0) {
       return MONGOC_TOPOLOGY_SHARDED;
    } else if (strcmp (type, "LoadBalanced") == 0) {
-      return MONGOC_TOPOLOGY_LOADBALANCED;
+      return MONGOC_TOPOLOGY_LOAD_BALANCED;
    }
 
    fprintf (stderr, "can't parse this: %s", type);
@@ -83,7 +83,7 @@ server_type_from_test (const char *type)
    } else if (strcmp (type, "Unknown") == 0) {
       return MONGOC_SERVER_UNKNOWN;
    } else if (strcmp (type, "LoadBalancer") == 0) {
-      return MONGOC_SERVER_LOADBALANCER;
+      return MONGOC_SERVER_LOAD_BALANCER;
    }
    fprintf (stderr, "ERROR: Unknown server type %s\n", type);
    BSON_ASSERT (0);

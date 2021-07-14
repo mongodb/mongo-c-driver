@@ -1011,7 +1011,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    if (topology->single_threaded) {
       _mongoc_topology_description_monitor_opening (&topology->description);
 
-      if (topology->description.type == MONGOC_TOPOLOGY_LOADBALANCED) {
+      if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
          /* Bypass server selection loop. Always select the only server. */
          // LBTODO: this will not work for PHP. Single threaded server selection must imply connection establishment.
          selected_server = mongoc_topology_description_select (
@@ -1123,7 +1123,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
       selected_server = mongoc_topology_description_select (
          &topology->description, optype, read_prefs, local_threshold_ms);
 
-      if (topology->description.type == MONGOC_TOPOLOGY_LOADBALANCED) {
+      if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
          /* Bypass server selection loop. Always select the only server. */
          if (!selected_server) {
             bson_mutex_unlock (&topology->mutex);

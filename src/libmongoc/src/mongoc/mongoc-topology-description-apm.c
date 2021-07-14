@@ -122,7 +122,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
     * - emit a server changed event Unknown => LoadBalancer
     * - emit a topology changed event
     */
-   if (td->type == MONGOC_TOPOLOGY_LOADBALANCED) {
+   if (td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       mongoc_server_description_t *prev_sd;
 
       /* LoadBalanced deployments must have exactly one host listed. */
@@ -134,7 +134,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
          mongoc_topology_description_destroy (prev_td);
          _mongoc_topology_description_copy_to (td, prev_td);
       }
-      sd->type = MONGOC_SERVER_LOADBALANCER;
+      sd->type = MONGOC_SERVER_LOAD_BALANCER;
       _mongoc_topology_description_monitor_server_changed (td, prev_sd, sd);
       mongoc_server_description_destroy (prev_sd);
       if (td->apm_callbacks.topology_changed) {
@@ -175,7 +175,7 @@ _mongoc_topology_description_monitor_closed (
    if (td->apm_callbacks.topology_closed) {
       mongoc_apm_topology_closed_t event;
 
-      if (td->type == MONGOC_TOPOLOGY_LOADBALANCED) {
+      if (td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
          mongoc_server_description_t *sd;
 
          /* LoadBalanced deployments must have exactly one host listed. */

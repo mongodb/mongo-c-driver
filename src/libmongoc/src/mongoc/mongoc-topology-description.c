@@ -353,8 +353,8 @@ _mongoc_topology_description_server_is_candidate (
          return false;
       }
 
-   case MONGOC_TOPOLOGY_LOADBALANCED:
-      return desc_type == MONGOC_SERVER_LOADBALANCER;
+   case MONGOC_TOPOLOGY_LOAD_BALANCED:
+      return desc_type == MONGOC_SERVER_LOAD_BALANCER;
 
    default:
       return false;
@@ -718,7 +718,7 @@ mongoc_topology_description_suitable_servers (
 
    /* Load balanced clusters --
     * Always select the only server. */
-   if (topology->type == MONGOC_TOPOLOGY_LOADBALANCED) {
+   if (topology->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       BSON_ASSERT (topology->servers->items_len == 1);
       server = (mongoc_server_description_t *) mongoc_set_get_item (
          topology->servers, 0);
@@ -1807,7 +1807,7 @@ _mongoc_topology_description_type (mongoc_topology_description_t *topology)
       return "RSWithPrimary";
    case MONGOC_TOPOLOGY_SINGLE:
       return "Single";
-   case MONGOC_TOPOLOGY_LOADBALANCED:
+   case MONGOC_TOPOLOGY_LOAD_BALANCED:
       return "LoadBalanced";
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
    default:
