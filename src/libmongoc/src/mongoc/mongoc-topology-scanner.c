@@ -667,7 +667,6 @@ _async_success (mongoc_async_cmd_t *acmd,
          hello_response, &node->speculative_auth_response);
    }
 
-   // LBTODO: skip this if load balanced?
    /* mongoc_topology_scanner_cb_t takes rtt_msec, not usec */
    ts->cb (node->id,
            hello_response,
@@ -729,7 +728,6 @@ _async_error_or_timeout (mongoc_async_cmd_t *acmd,
 
       /* call the topology scanner callback. cannot connect to this node.
        * callback takes rtt_msec, not usec. */
-      // LBTODO: skip this if load balanced?
       ts->cb (node->id, NULL, duration_usec / 1000, ts->cb_data, error);
 
       mongoc_server_description_destroy (node->handshake_sd);
@@ -996,8 +994,6 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
    _mongoc_topology_scanner_monitor_heartbeat_started (node->ts, &node->host);
    start = bson_get_monotonic_time ();
 
-   // LBTODO assert that a node already has a stream.
-   // A load balanced cluster only uses the topology scanner for connection establishment. Not monitoring.
    /* if there is already a working stream, push it back to be re-scanned. */
    if (node->stream) {
       _begin_hello_cmd (node, node->stream, true /* is_setup_done */, NULL, 0);
@@ -1137,7 +1133,6 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
 
    DL_FOREACH_SAFE (ts->nodes, node, tmp)
    {
-      // LBTODO: Should we skip the cooldown period?
       skip =
          obey_cooldown && mongoc_topology_scanner_node_in_cooldown (node, now);
 
