@@ -1013,6 +1013,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
       if (topology->description.type == MONGOC_TOPOLOGY_LOADBALANCED) {
          /* Bypass server selection loop. Always select the only server. */
+         // LBTODO: this will not work for PHP. Single threaded server selection must imply connection establishment.
          selected_server = mongoc_topology_description_select (
             &topology->description, optype, read_prefs, local_threshold_ms);
 
