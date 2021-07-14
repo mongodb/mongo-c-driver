@@ -1569,7 +1569,6 @@ void
 _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
                                             const bson_t *rc,
                                             bool is_read_command,
-                                            const char *cmd_name,
                                             bson_t *cmd)
 {
    const mongoc_read_concern_t *txn_rc;
@@ -1579,7 +1578,6 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
    bool has_timestamp;
    bool is_snapshot;
    bool has_level;
-   bool is_find_aggregate_distinct;
    bson_t child;
 
    ENTRY;
@@ -1593,16 +1591,11 @@ _mongoc_client_session_append_read_concern (const mongoc_client_session_t *cs,
       return;
    }
 
-   is_find_aggregate_distinct =
-      (!strcmp (cmd_name, "find") || !strcmp (cmd_name, "aggregate") ||
-       !strcmp (cmd_name, "distinct"));
-
    has_timestamp =
       (txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING || is_read_command) &&
       mongoc_session_opts_get_causal_consistency (&cs->opts) &&
       cs->operation_timestamp;
-   is_snapshot = is_find_aggregate_distinct &&
-                 mongoc_session_opts_get_snapshot (&cs->opts);
+   is_snapshot = mongoc_session_opts_get_snapshot (&cs->opts);
    user_rc_has_level = rc && bson_has_field (rc, "level");
    txn_has_level = txn_state == MONGOC_INTERNAL_TRANSACTION_STARTING &&
                    !mongoc_read_concern_is_default (txn_rc);
