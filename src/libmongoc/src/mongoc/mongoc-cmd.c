@@ -988,8 +988,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
                 server_stream->sd->max_wire_version <
                    WIRE_VERSION_SNAPSHOT_READS) {
                bson_set_error (error,
-                               MONGOC_ERROR_TRANSACTION,
-                               MONGOC_ERROR_TRANSACTION_INVALID_STATE,
+                               MONGOC_ERROR_CLIENT,
+                               MONGOC_ERROR_CLIENT_SESSION_FAILURE,
                                "Snapshot reads require MongoDB 5.0 or later");
                GOTO (done);
             }
