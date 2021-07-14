@@ -3,4 +3,21 @@
 mongoc_session_opts_get_snapshot()
 ==================================
 
-TODO CDRIVER-4036: Document this function and give example code.
+Synopsis
+--------
+
+.. code-block:: c
+
+  bool
+  mongoc_session_opts_get_snapshot (const mongoc_session_opt_t *opts);
+
+Return true if this session is configured for snapshot reads, false by default. See :symbol:`mongoc_session_opts_set_snapshot()`.
+
+Parameters
+----------
+
+* ``opts``: A :symbol:`mongoc_session_opt_t`.
+
+.. only:: html
+
+  .. include:: includes/seealso/session.txt
