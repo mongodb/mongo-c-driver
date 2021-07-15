@@ -10,7 +10,7 @@ Synopsis
 
   void
   mongoc_session_opts_set_snapshot (mongoc_session_opt_t *opts,
-                                              bool snapshot);
+                                    bool snapshot);
 
 Configure snapshot reads for a session. If true (false by default), each read operation in the session will be sent with a "snapshot" level read concern. After the first read operation ("find", "aggregate" or "distinct"), subsequent read operations will read from the same point in time as the first read operation. Set to true to enable snapshot reads. See `the official documentation for Read Concern "snapshot" <https://docs.mongodb.com/manual/reference/read-concern-snapshot/>`_.
 
@@ -38,7 +38,7 @@ Example
    bson_t pipeline = BSON_INITIALIZER;
 
    client = mongoc_client_new ("mongodb://example/?appname=session-opts-example");
-   mongoc_client_set_error_api (client, 2);
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
 
    session_opts = mongoc_session_opts_new ();
    mongoc_session_opts_set_snapshot (session_opts, true);
@@ -51,7 +51,7 @@ Example
    }
 
    collection = mongoc_client_get_collection (client, "test", "collection");
-   r = mongoc_client_session_append (client_session, &find_opts, NULL);
+   r = mongoc_client_session_append (client_session, &find_opts, &error);
    if (!r) {
       fprintf (stderr, "mongoc_client_session_append failed: %s\n", error.message);
       abort ();
@@ -62,7 +62,7 @@ Example
 
    /* Subsequent read operations will automatically read from the same point
     * in time as the first read operation. */
-   cursor = mongoc_collection_aggregate (collection, NULL, pipeline, &query_opts, NULL);
+   cursor = mongoc_collection_aggregate (collection, MONGOC_QUERY_NONE, pipeline, &query_opts, NULL);
 
 .. only:: html
 
