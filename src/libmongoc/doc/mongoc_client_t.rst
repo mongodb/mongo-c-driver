@@ -21,6 +21,7 @@ Synopsis
 ``mongoc_client_t`` is an opaque type that provides access to a MongoDB server,
 replica set, or sharded cluster. It maintains management of underlying sockets
 and routing to individual nodes based on :symbol:`mongoc_read_prefs_t` or :symbol:`mongoc_write_concern_t`.
+Foo.
 
 Streams
 -------
