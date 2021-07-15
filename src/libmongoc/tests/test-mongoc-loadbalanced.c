@@ -20,6 +20,119 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 
+typedef struct {
+   int server_changed_events;
+   int server_opening_events;
+   int server_closed_events;
+   int topology_changed_events;
+   int topology_opening_events;
+   int topology_closed_events;
+} stats_t;
+
+static void
+server_changed (const mongoc_apm_server_changed_t *event)
+{
+   stats_t *context;
+
+   context = (stats_t *) mongoc_apm_server_changed_get_context (event);
+   context->server_changed_events++;
+}
+
+
+static void
+server_opening (const mongoc_apm_server_opening_t *event)
+{
+   stats_t *context;
+
+   context = (stats_t *) mongoc_apm_server_opening_get_context (event);
+   context->server_opening_events++;
+}
+
+
+static void
+server_closed (const mongoc_apm_server_closed_t *event)
+{
+   stats_t *context;
+
+   context = (stats_t *) mongoc_apm_server_closed_get_context (event);
+   context->server_closed_events++;
+}
+
+
+static void
+topology_changed (const mongoc_apm_topology_changed_t *event)
+{
+   stats_t *context;
+
+   context = (stats_t *) mongoc_apm_topology_changed_get_context (event);
+   context->topology_changed_events++;
+}
+
+
+static void
+topology_opening (const mongoc_apm_topology_opening_t *event)
+{
+   stats_t *context;
+
+   context = (stats_t *) mongoc_apm_topology_opening_get_context (event);
+   context->topology_opening_events++;
+}
+
+
+static void
+topology_closed (const mongoc_apm_topology_closed_t *event)
+{
+   stats_t *context;
+
+   context = (stats_t *) mongoc_apm_topology_closed_get_context (event);
+   context->topology_closed_events++;
+}
+
+static mongoc_apm_callbacks_t * make_callbacks (void) {
+   mongoc_apm_callbacks_t *cbs;
+
+   cbs = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_server_changed_cb (cbs, server_changed);
+   mongoc_apm_set_server_opening_cb (cbs, server_opening);
+   mongoc_apm_set_server_closed_cb (cbs, server_closed);
+   mongoc_apm_set_topology_changed_cb (cbs, topology_changed);
+   mongoc_apm_set_topology_opening_cb (cbs, topology_opening);
+   mongoc_apm_set_topology_closed_cb (cbs, topology_closed);
+   return cbs;
+}
+
+static stats_t * set_client_callbacks (mongoc_client_t *client) {
+   mongoc_apm_callbacks_t *cbs;
+   stats_t *stats;
+
+   stats = bson_malloc0 (sizeof (stats_t));
+   cbs = make_callbacks ();
+   mongoc_client_set_apm_callbacks (client, cbs, stats);
+   mongoc_apm_callbacks_destroy (cbs);
+   return stats;
+}
+
+static stats_t * set_client_pool_callbacks (mongoc_client_pool_t *pool) {
+   mongoc_apm_callbacks_t *cbs;
+   stats_t *stats;
+
+   stats = bson_malloc0 (sizeof (stats_t));
+   cbs = make_callbacks ();
+   mongoc_client_pool_set_apm_callbacks (pool, cbs, stats);
+   mongoc_apm_callbacks_destroy (cbs);
+   return stats;
+}
+
+static void free_and_assert_stats (stats_t *stats) {
+   ASSERT_CMPINT (stats->topology_opening_events, ==, 1);
+   ASSERT_CMPINT (stats->topology_changed_events, ==, 2);
+   ASSERT_CMPINT (stats->server_opening_events, ==, 1);
+   ASSERT_CMPINT (stats->server_changed_events, ==, 1);
+   ASSERT_CMPINT (stats->server_closed_events, ==, 1);
+   ASSERT_CMPINT (stats->topology_closed_events, ==, 1);
+   bson_free (stats);
+}
+
 static char *
 loadbalanced_uri (void)
 {
@@ -142,8 +255,10 @@ test_loadbalanced_connect_single (void *unused)
    bson_error_t error;
    bool ok;
    mongoc_server_description_t *monitor_sd;
+   stats_t *stats;
 
    client = mongoc_client_new (uristr);
+   stats = set_client_callbacks (client);
    ok = mongoc_client_command_simple (client,
                                       "admin",
                                       tmp_bson ("{'ping': 1}"),
@@ -161,6 +276,7 @@ test_loadbalanced_connect_single (void *unused)
    mongoc_server_description_destroy (monitor_sd);
    bson_free (uristr);
    mongoc_client_destroy (client);
+   free_and_assert_stats (stats);
 }
 
 static void
@@ -173,10 +289,12 @@ test_loadbalanced_connect_pooled (void *unused)
    bson_error_t error;
    bool ok;
    mongoc_server_description_t *monitor_sd;
+   stats_t *stats;
 
    uristr = loadbalanced_uri ();
    uri = mongoc_uri_new (uristr);
    pool = mongoc_client_pool_new (uri);
+   stats = set_client_pool_callbacks (pool);
    client = mongoc_client_pool_pop (pool);
 
    ok = mongoc_client_command_simple (client,
@@ -198,6 +316,7 @@ test_loadbalanced_connect_pooled (void *unused)
    mongoc_uri_destroy (uri);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
+   free_and_assert_stats (stats);   
 }
 
 /* Ensure that server selection on single threaded clients establishes a
