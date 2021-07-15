@@ -131,6 +131,12 @@ _mongoc_topology_scanner_setup_err_cb (uint32_t id,
 
    topology = (mongoc_topology_t *) data;
 
+   if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      /* In load balanced mode, scanning is only for connection establishment. It must not modify the topology description. */
+      MONGOC_DEBUG ("Ignoring scanner error in load balanced mode");
+      return;
+   }
+
    mongoc_topology_description_handle_hello (&topology->description,
                                              id,
                                              NULL /* hello reply */,
@@ -167,7 +173,14 @@ _mongoc_topology_scanner_cb (uint32_t id,
 
    topology = (mongoc_topology_t *) data;
 
+   if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      /* In load balanced mode, scanning is only for connection establishment. It must not modify the topology description. */
+      MONGOC_DEBUG ("Ignoring hello response in callback in load balanced mode");
+      return;
+   }
+
    bson_mutex_lock (&topology->mutex);
+
    sd = mongoc_topology_description_server_by_id (
       &topology->description, id, NULL);
 
@@ -818,7 +831,9 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
 {
    _mongoc_handshake_freeze ();
 
+   // LBTODO: don't even bother locking the mutex, note that this is for single-threaded clients only.
    bson_mutex_lock (&topology->mutex);
+   // LBTODO if this is a load balanced cluster, then do not obey cooldown.
    mongoc_topology_scan_once (topology, true /* obey cooldown */);
    bson_mutex_unlock (&topology->mutex);
    mongoc_topology_scanner_get_error (topology->scanner, error);
@@ -945,6 +960,64 @@ mongoc_topology_select (mongoc_topology_t *topology,
    }
 }
 
+/* Bypasses normal server selection behavior for a load balanced topology. Returns the id of the one load balancer server. Returns 0 on failure.
+ * Successful post-condition: On a single threaded client, a connection will have been established.
+*/
+static uint32_t
+_mongoc_topology_select_server_id_loadbalanced (mongoc_topology_t *topology,
+                                                bson_error_t *error)
+{
+   mongoc_server_description_t *selected_server;
+   int32_t selected_server_id;
+   mongoc_topology_scanner_node_t *node;
+   bson_error_t scanner_error = {0};
+
+   bson_mutex_lock (&topology->mutex);
+
+   BSON_ASSERT (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED);
+
+   /* Emit the opening SDAM events if they have not emitted already. */
+   _mongoc_topology_description_monitor_opening (&topology->description);
+   selected_server =
+      mongoc_topology_description_select (&topology->description,
+                                          MONGOC_SS_WRITE,
+                                          NULL /* read prefs */,
+                                          0 /* local threshold */);
+
+   if (!selected_server) {
+      _mongoc_server_selection_error (
+         "No suitable server found in load balanced deployment", NULL, error);
+      bson_mutex_unlock (&topology->mutex);
+      return 0;
+   }
+
+   selected_server_id = selected_server->id;
+   bson_mutex_unlock (&topology->mutex);
+
+   if (!topology->single_threaded) {
+      return selected_server_id;
+   }
+
+   /* If this is a single threaded topology, we must ensure that a connection is available to this server. Wrapping drivers make the assumption that successful server selection implies a connection is available. */
+   node = mongoc_topology_scanner_get_node (topology->scanner, selected_server_id);
+   if (!node) {
+      _mongoc_server_selection_error ("Topology scanner in invalid state; cannot find load balancer", NULL, error);
+      return 0;
+   }
+
+   if (!node->stream) {
+      MONGOC_DEBUG ("server selection performing scan since no connection has been established");
+      _mongoc_topology_do_blocking_scan (topology, &scanner_error);
+   }
+
+   if (!node->stream) {
+      _mongoc_server_selection_error ("Topology scanner in invalid state; cannot find load balancer", &scanner_error, error);
+      return 0;
+   }
+
+   return selected_server_id;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -999,6 +1072,13 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
       bson_mutex_unlock (&topology->mutex);
       return 0;
    }
+
+   if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      bson_mutex_unlock (&topology->mutex);
+      MONGOC_DEBUG ("bypassing server selection for load balanced topology");
+      return _mongoc_topology_select_server_id_loadbalanced (topology, error);   
+   }
+
    bson_mutex_unlock (&topology->mutex);
 
    heartbeat_msec = topology->description.heartbeat_msec;
@@ -1010,21 +1090,6 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
    if (topology->single_threaded) {
       _mongoc_topology_description_monitor_opening (&topology->description);
-
-      if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-         /* Bypass server selection loop. Always select the only server. */
-         // LBTODO: this will not work for PHP. Single threaded server selection must imply connection establishment.
-         selected_server = mongoc_topology_description_select (
-            &topology->description, optype, read_prefs, local_threshold_ms);
-
-         if (!selected_server) {
-            _mongoc_server_selection_error (
-               "No suitable server found in load balanced deployment",
-               NULL,
-               error);
-            return 0;
-         }
-      }
 
       tried_once = false;
       next_update = topology->last_scan + heartbeat_msec * 1000;
@@ -1122,18 +1187,6 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
       selected_server = mongoc_topology_description_select (
          &topology->description, optype, read_prefs, local_threshold_ms);
-
-      if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-         /* Bypass server selection loop. Always select the only server. */
-         if (!selected_server) {
-            bson_mutex_unlock (&topology->mutex);
-            _mongoc_server_selection_error (
-               "No suitable server found in load balanced deployment",
-               NULL,
-               error);
-            return 0;
-         }
-      }
 
       if (!selected_server) {
          TRACE (
@@ -1304,6 +1357,8 @@ mongoc_topology_invalidate_server (mongoc_topology_t *topology,
 {
    BSON_ASSERT (error);
 
+   // LBTODO: do not update in load balanced mode.
+
    bson_mutex_lock (&topology->mutex);
    mongoc_topology_description_invalidate_server (
       &topology->description, id, error);
@@ -1331,6 +1386,14 @@ _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
    BSON_ASSERT (!topology->single_threaded);
 
    bson_mutex_lock (&topology->mutex);
+
+   // LBTODO: do not update the topology if this is load balanced mode.
+   if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      /* In load balanced mode, scanning is only for connection establishment. It must not modify the topology description. */
+      MONGOC_DEBUG ("Ignoring handshake response in load balanced mode");
+      bson_mutex_unlock (&topology->mutex);
+      return true;
+   }
 
    /* return false if server was removed from topology */
    has_server = _mongoc_topology_update_no_lock (sd->id,
@@ -1743,6 +1806,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
    }
 
    if (type == MONGOC_SDAM_APP_ERROR_NETWORK) {
+      // LBTODO: bypass this in load balanced mode.
       /* Mark server as unknown. */
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, why);
@@ -1758,6 +1822,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
          return false;
       }
       /* Mark server as unknown. */
+      // LBTODO: bypass this in load balanced mode.
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, why);
       _mongoc_topology_clear_connection_pool (topology, server_id);
@@ -1812,6 +1877,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
        * error and the error's topologyVersion is strictly greater than the
        * current ServerDescription's topologyVersion it MUST replace the
        * server's description with a ServerDescription of type Unknown. */
+      // LBTODO: bypass this in load balanced mode.
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, &cmd_error);
 

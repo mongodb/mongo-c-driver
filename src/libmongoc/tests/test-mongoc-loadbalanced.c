@@ -133,6 +133,109 @@ test_loadbalanced_client_uri_validation (void *unused)
    mongoc_client_destroy (client);
 }
 
+/* Test basic connectivity to a load balanced cluster. */
+static void
+test_loadbalanced_connect_single (void *unused)
+{
+   mongoc_client_t *client;
+   char *uristr = loadbalanced_uri ();
+   bson_error_t error;
+   bool ok;
+   mongoc_server_description_t *monitor_sd;
+
+   client = mongoc_client_new (uristr);
+   ok = mongoc_client_command_simple (client,
+                                      "admin",
+                                      tmp_bson ("{'ping': 1}"),
+                                      NULL /* read prefs */,
+                                      NULL /* reply */,
+                                      &error);
+   ASSERT_OR_PRINT (ok, error);
+
+   /* Ensure the server description is unchanged and remains as type LoadBalancer. */
+   monitor_sd = mongoc_client_select_server (
+      client, true /* for writes */, NULL /* read prefs */, &error);
+   ASSERT_OR_PRINT (monitor_sd, error);
+   ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
+
+   mongoc_server_description_destroy (monitor_sd);
+   bson_free (uristr);
+   mongoc_client_destroy (client);
+}
+
+static void
+test_loadbalanced_connect_pooled (void *unused)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   char *uristr;
+   mongoc_uri_t *uri;
+   bson_error_t error;
+   bool ok;
+   mongoc_server_description_t *monitor_sd;
+
+   uristr = loadbalanced_uri ();
+   uri = mongoc_uri_new (uristr);
+   pool = mongoc_client_pool_new (uri);
+   client = mongoc_client_pool_pop (pool);
+
+   ok = mongoc_client_command_simple (client,
+                                    "admin",
+                                    tmp_bson ("{'ping': 1}"),
+                                    NULL /* read prefs */,
+                                    NULL /* reply */,
+                                    &error);
+   ASSERT_OR_PRINT (ok, error);
+
+   /* Ensure the server description is unchanged and remains as type LoadBalancer. */
+   monitor_sd = mongoc_client_select_server (
+      client, true /* for writes */, NULL /* read prefs */, &error);
+   ASSERT_OR_PRINT (monitor_sd, error);
+   ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
+
+   mongoc_server_description_destroy (monitor_sd);
+   bson_free (uristr);
+   mongoc_uri_destroy (uri);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+}
+
+/* Ensure that server selection on single threaded clients establishes a
+ * connection against load balanced clusters. */
+static void
+test_loadbalanced_server_selection_establishes_connection_single (void *unused)
+{
+   mongoc_client_t *client;
+   char *uristr = loadbalanced_uri ();
+   bson_error_t error;
+   mongoc_server_description_t *monitor_sd;
+   mongoc_server_description_t *handshake_sd;
+
+   client = mongoc_client_new (uristr);
+   monitor_sd = mongoc_client_select_server (
+      client, true /* for writes */, NULL /* read prefs */, &error);
+   ASSERT_OR_PRINT (monitor_sd, error);
+   ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
+
+   /* Ensure that a connection has been established by getting the handshake's
+    * server description. */
+   handshake_sd = mongoc_client_get_handshake_description (
+      client, monitor_sd->id, NULL /* opts */, &error);
+   ASSERT_OR_PRINT (handshake_sd, error);
+   ASSERT_CMPSTR ("Mongos", mongoc_server_description_type (handshake_sd));
+
+   bson_free (uristr);
+   mongoc_server_description_destroy (monitor_sd);
+   mongoc_server_description_destroy (handshake_sd);
+   mongoc_client_destroy (client);
+}
+
+/* Test that the 5 second cooldown does not apply when establishing a new connection to the load balancer after a network error. */
+static void
+test_loadbalanced_network_error_bypasses_cooldown_single (void *unused) {
+
+}
+
 static int
 skip_if_not_loadbalanced (void)
 {
@@ -165,4 +268,26 @@ test_loadbalanced_install (TestSuite *suite)
                       NULL /* ctx */,
                       NULL /* dtor */,
                       NULL);
+
+   TestSuite_AddFull (suite,
+                      "/loadbalanced/connect/single",
+                      test_loadbalanced_connect_single,
+                      NULL /* ctx */,
+                      NULL /* dtor */,
+                      skip_if_not_loadbalanced);
+
+   TestSuite_AddFull (suite,
+                      "/loadbalanced/connect/pooled",
+                      test_loadbalanced_connect_pooled,
+                      NULL /* ctx */,
+                      NULL /* dtor */,
+                      skip_if_not_loadbalanced);
+
+   TestSuite_AddFull (
+      suite,
+      "/loadbalanced/server_selection_establishes_connection/single",
+      test_loadbalanced_server_selection_establishes_connection_single,
+      NULL /* ctx */,
+      NULL /* dtor */,
+      skip_if_not_loadbalanced);
 }
