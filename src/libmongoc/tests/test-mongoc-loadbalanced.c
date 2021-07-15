@@ -615,6 +615,7 @@ test_loadbalanced_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/loadbalanced/handshake_sends_loadbalanced",
                                 test_loadbalanced_handshake_sends_loadbalanced);
+
    TestSuite_AddMockServerTest (
       suite,
       "/loadbalanced/handshake_rejects_non_loadbalanced",

@@ -1399,9 +1399,12 @@ _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
    _reset_hello (ts);
 }
 
-/* This must be called before the handshake command is constructed. Caller does not need to lock the topology->mutex. */
+/* This must be called before the handshake command is constructed. Caller does
+ * not need to lock the topology->mutex. */
 void
-_mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts, bool val) {
+_mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
+                                           bool val)
+{
    BSON_ASSERT (bson_empty (&ts->handshake_cmd));
    ts->loadbalanced = true;
 }
