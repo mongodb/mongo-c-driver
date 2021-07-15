@@ -1146,6 +1146,11 @@ mongoc_topology_description_invalidate_server (
 {
    BSON_ASSERT (error);
 
+   if (topology->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      /* Load balancers must never be marked unknown. */
+      return;
+   }
+
    /* send NULL hello reply */
    mongoc_topology_description_handle_hello (
       topology, id, NULL, MONGOC_RTT_UNSET, error);

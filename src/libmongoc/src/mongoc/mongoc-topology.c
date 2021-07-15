@@ -431,6 +431,9 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    if (mongoc_uri_get_option_as_bool (
           topology->uri, MONGOC_URI_LOADBALANCED, false)) {
       init_type = MONGOC_TOPOLOGY_LOAD_BALANCED;
+      if (topology->single_threaded) {
+         _mongoc_topology_bypass_cooldown (topology);
+      }
    } else if (service && !has_directconnection) {
       init_type = MONGOC_TOPOLOGY_UNKNOWN;
    } else if (has_directconnection) {
@@ -1011,7 +1014,20 @@ _mongoc_topology_select_server_id_loadbalanced (mongoc_topology_t *topology,
    }
 
    if (!node->stream) {
-      _mongoc_server_selection_error ("Topology scanner in invalid state; cannot find load balancer", &scanner_error, error);
+      /* Use the error domain / code returned in mongoc-cluster when fetching a stream fails. */
+      if (scanner_error.code) {
+         bson_set_error (error,
+                  MONGOC_ERROR_STREAM,
+                  MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                  "Could not establish stream for node %s: %s",
+                  node->host.host_and_port, scanner_error.message);
+      } else {
+         bson_set_error (error,
+                           MONGOC_ERROR_STREAM,
+                           MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                           "Could not establish stream for node %s",
+                           node->host.host_and_port);
+      }
       return 0;
    }
 
@@ -1356,8 +1372,6 @@ mongoc_topology_invalidate_server (mongoc_topology_t *topology,
                                    const bson_error_t *error)
 {
    BSON_ASSERT (error);
-
-   // LBTODO: do not update in load balanced mode.
 
    bson_mutex_lock (&topology->mutex);
    mongoc_topology_description_invalidate_server (

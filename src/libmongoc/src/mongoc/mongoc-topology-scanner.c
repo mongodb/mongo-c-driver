@@ -1136,6 +1136,10 @@ mongoc_topology_scanner_start (mongoc_topology_scanner_t *ts,
       skip =
          obey_cooldown && mongoc_topology_scanner_node_in_cooldown (node, now);
 
+      if (skip) {
+         MONGOC_DEBUG ("skipping node: %s due to cooldown", node->host.host_and_port);
+      }
+
       if (!skip) {
          mongoc_topology_scanner_node_setup (node, &node->last_error);
       }

@@ -88,7 +88,9 @@ topology_closed (const mongoc_apm_topology_closed_t *event)
    context->topology_closed_events++;
 }
 
-static mongoc_apm_callbacks_t * make_callbacks (void) {
+static mongoc_apm_callbacks_t *
+make_callbacks (void)
+{
    mongoc_apm_callbacks_t *cbs;
 
    cbs = mongoc_apm_callbacks_new ();
@@ -101,7 +103,9 @@ static mongoc_apm_callbacks_t * make_callbacks (void) {
    return cbs;
 }
 
-static stats_t * set_client_callbacks (mongoc_client_t *client) {
+static stats_t *
+set_client_callbacks (mongoc_client_t *client)
+{
    mongoc_apm_callbacks_t *cbs;
    stats_t *stats;
 
@@ -112,7 +116,9 @@ static stats_t * set_client_callbacks (mongoc_client_t *client) {
    return stats;
 }
 
-static stats_t * set_client_pool_callbacks (mongoc_client_pool_t *pool) {
+static stats_t *
+set_client_pool_callbacks (mongoc_client_pool_t *pool)
+{
    mongoc_apm_callbacks_t *cbs;
    stats_t *stats;
 
@@ -123,7 +129,9 @@ static stats_t * set_client_pool_callbacks (mongoc_client_pool_t *pool) {
    return stats;
 }
 
-static void free_and_assert_stats (stats_t *stats) {
+static void
+free_and_assert_stats (stats_t *stats)
+{
    ASSERT_CMPINT (stats->topology_opening_events, ==, 1);
    ASSERT_CMPINT (stats->topology_changed_events, ==, 2);
    ASSERT_CMPINT (stats->server_opening_events, ==, 1);
@@ -267,7 +275,8 @@ test_loadbalanced_connect_single (void *unused)
                                       &error);
    ASSERT_OR_PRINT (ok, error);
 
-   /* Ensure the server description is unchanged and remains as type LoadBalancer. */
+   /* Ensure the server description is unchanged and remains as type
+    * LoadBalancer. */
    monitor_sd = mongoc_client_select_server (
       client, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (monitor_sd, error);
@@ -298,14 +307,15 @@ test_loadbalanced_connect_pooled (void *unused)
    client = mongoc_client_pool_pop (pool);
 
    ok = mongoc_client_command_simple (client,
-                                    "admin",
-                                    tmp_bson ("{'ping': 1}"),
-                                    NULL /* read prefs */,
-                                    NULL /* reply */,
-                                    &error);
+                                      "admin",
+                                      tmp_bson ("{'ping': 1}"),
+                                      NULL /* read prefs */,
+                                      NULL /* reply */,
+                                      &error);
    ASSERT_OR_PRINT (ok, error);
 
-   /* Ensure the server description is unchanged and remains as type LoadBalancer. */
+   /* Ensure the server description is unchanged and remains as type
+    * LoadBalancer. */
    monitor_sd = mongoc_client_select_server (
       client, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (monitor_sd, error);
@@ -316,7 +326,7 @@ test_loadbalanced_connect_pooled (void *unused)
    mongoc_uri_destroy (uri);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
-   free_and_assert_stats (stats);   
+   free_and_assert_stats (stats);
 }
 
 /* Ensure that server selection on single threaded clients establishes a
@@ -349,10 +359,76 @@ test_loadbalanced_server_selection_establishes_connection_single (void *unused)
    mongoc_client_destroy (client);
 }
 
-/* Test that the 5 second cooldown does not apply when establishing a new connection to the load balancer after a network error. */
+/* Test that the 5 second cooldown does not apply when establishing a new
+ * connection to the load balancer after a network error. */
 static void
-test_loadbalanced_network_error_bypasses_cooldown_single (void *unused) {
+test_loadbalanced_cooldown_is_bypassed_single (void *unused)
+{
+   mongoc_client_t *client;
+   char *uristr = loadbalanced_uri ();
+   bson_error_t error;
+   bool ok;
+   stats_t *stats;
+   mongoc_server_description_t *monitor_sd;
 
+   client = mongoc_client_new (uristr);
+   stats = set_client_callbacks (client);
+
+   ok = mongoc_client_command_simple (
+      client,
+      "admin",
+      tmp_bson ("{'configureFailPoint': 'failCommand', 'mode': { 'times': 2 }, "
+                "'data': {'closeConnection': true, 'failCommands': ['ping', "
+                "'isMaster']}}"),
+      NULL /* read prefs */,
+      NULL /* reply */,
+      &error);
+   ASSERT_OR_PRINT (ok, error);
+
+   ok = mongoc_client_command_simple (client,
+                                      "admin",
+                                      tmp_bson ("{'ping': 1}"),
+                                      NULL /* read prefs */,
+                                      NULL /* reply */,
+                                      &error);
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
+
+   /* The next attempted command should attempt to scan, and fail when
+    * performing the handshake with the isMaster command. */
+   ok = mongoc_client_command_simple (client,
+                                      "admin",
+                                      tmp_bson ("{'ping': 1}"),
+                                      NULL /* read prefs */,
+                                      NULL /* reply */,
+                                      &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                          "Could not establish stream");
+
+   /* Failing to "scan" would normally cause the node to be in cooldown. But in
+    * load balancer mode this is bypassed. The subsequent connect attempt should
+    * succeed. */
+   ok = mongoc_client_command_simple (client,
+                                      "admin",
+                                      tmp_bson ("{'ping': 1}"),
+                                      NULL /* read prefs */,
+                                      NULL /* reply */,
+                                      &error);
+   ASSERT_OR_PRINT (ok, error);
+
+   /* Ensure the server description is unchanged and remains as type
+    * LoadBalancer. */
+   monitor_sd = mongoc_client_select_server (
+      client, true /* for writes */, NULL /* read prefs */, &error);
+   ASSERT_OR_PRINT (monitor_sd, error);
+   ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
+
+   mongoc_server_description_destroy (monitor_sd);
+   bson_free (uristr);
+   mongoc_client_destroy (client);
+   free_and_assert_stats (stats);
 }
 
 static int
@@ -409,4 +485,12 @@ test_loadbalanced_install (TestSuite *suite)
       NULL /* ctx */,
       NULL /* dtor */,
       skip_if_not_loadbalanced);
+
+   TestSuite_AddFull (suite,
+                      "/loadbalanced/cooldown_is_bypassed/single",
+                      test_loadbalanced_cooldown_is_bypassed_single,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      skip_if_not_loadbalanced,
+                      test_framework_skip_if_no_failpoint);
 }
