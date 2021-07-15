@@ -439,6 +439,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
           * should occur. */
          _mongoc_topology_bypass_cooldown (topology);
       }
+      _mongoc_topology_scanner_set_loadbalanced (topology->scanner, true);
    } else if (service && !has_directconnection) {
       init_type = MONGOC_TOPOLOGY_UNKNOWN;
    } else if (has_directconnection) {

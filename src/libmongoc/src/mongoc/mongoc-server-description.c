@@ -724,6 +724,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
             sd, &incoming_topology_version);
          bson_destroy (&incoming_topology_version);
       }
+      // LBTODO: process serviceID
    }
 
    if (is_shard) {
@@ -1238,4 +1239,11 @@ mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
    BSON_ASSERT (tv);
    bson_destroy (&sd->topology_version);
    bson_copy_to (tv, &sd->topology_version);
+}
+
+bool
+mongoc_server_description_service_id (const mongoc_server_description_t *description, bson_oid_t *oid) {
+   // LBTODO
+   memset (oid, 0, sizeof (bson_oid_t));
+   return false;
 }

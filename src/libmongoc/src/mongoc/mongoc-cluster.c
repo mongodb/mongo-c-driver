@@ -2280,6 +2280,8 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       _mongoc_bson_init_with_transient_txn_error (cs, reply);
    }
 
+   // LBTODO: if this is a load balanced topology and the server stream does not have a service id, disconnect and return an error.
+
    RETURN (server_stream);
 }
 

@@ -260,6 +260,8 @@ _build_handshake_cmd (mongoc_topology_scanner_t *ts)
    bson_destroy (doc);
    bson_copy_to (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd, doc);
 
+   // LBTODO: if ts->loadbalanced, append loadBalanced: true
+
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
    res = _mongoc_handshake_build_doc_with_application (&subdoc, ts->appname);
    bson_append_document_end (doc, &subdoc);
@@ -1393,4 +1395,11 @@ _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
    mongoc_server_api_destroy (ts->api);
    ts->api = mongoc_server_api_copy (api);
    _reset_hello (ts);
+}
+
+/* This must be called before the handshake command is constructed. Caller does not need to lock the topology->mutex. */
+void
+_mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts, bool val) {
+   BSON_ASSERT (bson_empty (&ts->handshake_cmd));
+   ts->loadbalanced = true;
 }
