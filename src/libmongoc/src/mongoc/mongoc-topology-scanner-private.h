@@ -83,7 +83,6 @@ typedef struct mongoc_topology_scanner_node {
    /* handshake_sd is a server description constructed from the response of the
     * initial handshake. It is bound to the lifetime of stream. */
    mongoc_server_description_t *handshake_sd;
-   bool loadbalanced;
 } mongoc_topology_scanner_node_t;
 
 typedef struct mongoc_topology_scanner {
@@ -119,6 +118,7 @@ typedef struct mongoc_topology_scanner {
    bool speculative_authentication;
 
    mongoc_server_api_t *api;
+   bool loadbalanced;
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *

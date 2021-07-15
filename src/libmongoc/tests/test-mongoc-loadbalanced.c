@@ -443,10 +443,10 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
 
 /* Tests:
  * - loadBalanced: true is added to the handshake
- * - serviceID is set in the server description.
+ * - serviceId is set in the server description.
  */
 #define LB_HELLO                                                               \
-   "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', 'serviceID', " \
+   "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', 'serviceId': " \
    "{'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}"
 static void
 test_loadbalanced_handshake_sends_loadbalanced (void)
@@ -464,6 +464,7 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
 
    server = mock_server_new ();
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
    client = mongoc_client_new_from_uri (uri);
@@ -519,6 +520,7 @@ test_loadbalanced_handshake_rejects_non_loadbalanced (void)
 
    server = mock_server_new ();
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
    client = mongoc_client_new_from_uri (uri);
@@ -538,7 +540,7 @@ test_loadbalanced_handshake_rejects_non_loadbalanced (void)
 
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_CLIENT,
-                          123,
+                          MONGOC_ERROR_CLIENT_INVALID_LOAD_BALANCER,
                           "Driver attempted to initialize in load balancing "
                           "mode, but the server does not support this mode");
 

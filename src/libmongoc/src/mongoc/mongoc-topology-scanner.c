@@ -260,8 +260,6 @@ _build_handshake_cmd (mongoc_topology_scanner_t *ts)
    bson_destroy (doc);
    bson_copy_to (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd, doc);
 
-   // LBTODO: if ts->loadbalanced, append loadBalanced: true
-
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
    res = _mongoc_handshake_build_doc_with_application (&subdoc, ts->appname);
    bson_append_document_end (doc, &subdoc);
@@ -279,6 +277,10 @@ _build_handshake_cmd (mongoc_topology_scanner_t *ts)
       }
    }
    bson_append_array_end (doc, &subdoc);
+
+   if (ts->loadbalanced) {
+      BSON_APPEND_BOOL (doc, "loadBalanced", true);
+   }
 
    /* Return whether the handshake doc fit the size limit */
    return res;

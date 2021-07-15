@@ -66,10 +66,6 @@ MONGOC_EXPORT (int32_t)
 mongoc_server_description_compressor_id (
    const mongoc_server_description_t *description);
 
-// LBTODO
-MONGOC_EXPORT (bool)
-mongoc_server_description_service_id (const mongoc_server_description_t *description, bson_oid_t *oid);
-
 BSON_END_DECLS
 
 #endif

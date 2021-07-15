@@ -92,6 +92,7 @@ mongoc_server_description_reset (mongoc_server_description_t *sd)
    sd->current_primary = NULL;
    sd->set_version = MONGOC_NO_SET_VERSION;
    bson_oid_copy_unsafe (&kObjectIdZero, &sd->election_id);
+   bson_oid_copy_unsafe (&kObjectIdZero, &sd->service_id);
 }
 
 /*
@@ -723,8 +724,11 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
          mongoc_server_description_set_topology_version (
             sd, &incoming_topology_version);
          bson_destroy (&incoming_topology_version);
+      } else if (strcmp ("serviceId", bson_iter_key (&iter)) == 0) {
+          if (!BSON_ITER_HOLDS_OID (&iter))
+            goto failure;
+         bson_oid_copy_unsafe (bson_iter_oid (&iter), &sd->service_id);
       }
-      // LBTODO: process serviceID
    }
 
    if (is_shard) {
@@ -799,6 +803,7 @@ mongoc_server_description_new_copy (
    bson_init (&copy->tags);
    bson_init (&copy->compressors);
    bson_copy_to (&description->topology_version, &copy->topology_version);
+   bson_oid_copy (&description->service_id, &copy->service_id);
 
    if (description->has_hello_response) {
       /* calls mongoc_server_description_reset */
@@ -1243,7 +1248,11 @@ mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
 
 bool
 mongoc_server_description_service_id (const mongoc_server_description_t *description, bson_oid_t *oid) {
-   // LBTODO
-   memset (oid, 0, sizeof (bson_oid_t));
-   return false;
+   bson_oid_copy (&description->service_id, oid);
+
+   if (0 == bson_oid_compare (oid, &kObjectIdZero)) {
+      /* serviceID is unset. */
+      return false;
+   }
+   return true;
 }
