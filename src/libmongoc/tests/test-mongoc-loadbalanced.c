@@ -391,6 +391,7 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
                                       NULL /* read prefs */,
                                       NULL /* reply */,
                                       &error);
+   BSON_ASSERT (!ok);
    ASSERT_ERROR_CONTAINS (
       error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "socket error");
 
@@ -402,6 +403,7 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
                                       NULL /* read prefs */,
                                       NULL /* reply */,
                                       &error);
+   BSON_ASSERT (!ok);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_NOT_ESTABLISHED,

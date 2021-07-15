@@ -834,9 +834,7 @@ _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
 {
    _mongoc_handshake_freeze ();
 
-   // LBTODO: don't even bother locking the mutex, note that this is for single-threaded clients only.
    bson_mutex_lock (&topology->mutex);
-   // LBTODO if this is a load balanced cluster, then do not obey cooldown.
    mongoc_topology_scan_once (topology, true /* obey cooldown */);
    bson_mutex_unlock (&topology->mutex);
    mongoc_topology_scanner_get_error (topology->scanner, error);
@@ -1401,7 +1399,6 @@ _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
 
    bson_mutex_lock (&topology->mutex);
 
-   // LBTODO: do not update the topology if this is load balanced mode.
    if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       /* In load balanced mode, scanning is only for connection establishment. It must not modify the topology description. */
       MONGOC_DEBUG ("Ignoring handshake response in load balanced mode");
@@ -1820,7 +1817,6 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
    }
 
    if (type == MONGOC_SDAM_APP_ERROR_NETWORK) {
-      // LBTODO: bypass this in load balanced mode.
       /* Mark server as unknown. */
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, why);
@@ -1836,7 +1832,6 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
          return false;
       }
       /* Mark server as unknown. */
-      // LBTODO: bypass this in load balanced mode.
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, why);
       _mongoc_topology_clear_connection_pool (topology, server_id);
@@ -1891,7 +1886,6 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
        * error and the error's topologyVersion is strictly greater than the
        * current ServerDescription's topologyVersion it MUST replace the
        * server's description with a ServerDescription of type Unknown. */
-      // LBTODO: bypass this in load balanced mode.
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, &cmd_error);
 
