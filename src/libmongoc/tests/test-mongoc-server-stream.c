@@ -90,7 +90,7 @@ test_server_stream_ties_server_description_pooled (void *unused)
    request = mock_server_receives_legacy_hello (server, NULL);
    mock_server_replies_simple (request, HELLO_POST_OPMSG);
    request_destroy (request);
-   /* Check that the mock server recieves an OP_MSG. */
+   /* Check that the mock server receives an OP_MSG. */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    ASSERT_CMPINT ((int) request->opcode, ==, (int) MONGOC_OPCODE_MSG);
    mock_server_replies_ok_and_destroys (request);
