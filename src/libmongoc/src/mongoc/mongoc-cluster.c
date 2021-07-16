@@ -811,7 +811,6 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
     * invalidates again.
     */
    mongoc_server_description_init (&empty_sd, address, server_id);
-   empty_sd.max_wire_version = WIRE_VERSION_MIN;
    server_stream = _mongoc_cluster_create_server_stream (
       cluster->client->topology, &empty_sd, stream, error);
    mongoc_server_description_cleanup (&empty_sd);
