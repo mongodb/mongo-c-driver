@@ -4080,12 +4080,59 @@ test_mongoc_client_get_handshake_hello_response_pooled (void)
    handshake_sd = mongoc_client_get_handshake_description (
       client, monitor_sd->id, NULL /* opts */, &error);
    ASSERT_OR_PRINT (handshake_sd, error);
-   BSON_ASSERT (MONGOC_SERVER_UNKNOWN !=
-                mongoc_server_description_type (handshake_sd));
+   BSON_ASSERT (
+      0 != strcmp ("Unknown", mongoc_server_description_type (handshake_sd)));
 
    mongoc_server_description_destroy (handshake_sd);
    mongoc_server_description_destroy (invalidated_sd);
    mongoc_server_description_destroy (monitor_sd);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+}
+
+/* Test that calling mongoc_client_get_handshake_description establishes a
+ * connection if a connection has not already been established. */
+void
+test_mongoc_client_get_handshake_establishes_connection_single (void)
+{
+   mongoc_client_t *client;
+   mongoc_server_description_t *handshake_sd;
+   bson_error_t error = {0};
+   uint32_t server_id = 1;
+
+   client = test_framework_new_default_client ();
+
+   handshake_sd = mongoc_client_get_handshake_description (
+      client, server_id, NULL /* opts */, &error);
+   ASSERT_OR_PRINT (handshake_sd, error);
+   BSON_ASSERT (
+      0 != strcmp ("Unknown", mongoc_server_description_type (handshake_sd)));
+
+   mongoc_server_description_destroy (handshake_sd);
+   mongoc_client_destroy (client);
+}
+
+void
+test_mongoc_client_get_handshake_establishes_connection_pooled (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_server_description_t *handshake_sd;
+   bson_error_t error = {0};
+   uint32_t server_id = 1;
+
+   pool = test_framework_new_default_client_pool ();
+   client = mongoc_client_pool_pop (pool);
+
+   /* The previously established connection should have a valid server
+    * description. */
+   handshake_sd = mongoc_client_get_handshake_description (
+      client, server_id, NULL /* opts */, &error);
+   ASSERT_OR_PRINT (handshake_sd, error);
+   BSON_ASSERT (
+      0 != strcmp ("Unknown", mongoc_server_description_type (handshake_sd)));
+
+   mongoc_server_description_destroy (handshake_sd);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
 }
@@ -4389,4 +4436,10 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Client/get_handshake_hello_response/pooled",
                       test_mongoc_client_get_handshake_hello_response_pooled);
+   TestSuite_AddLive (suite,
+                      "/Client/get_handshake_establishes_connection/single",
+                      test_mongoc_client_get_handshake_establishes_connection_single);
+   TestSuite_AddLive (suite,
+                      "/Client/get_handshake_establishes_connection/pooled",
+                      test_mongoc_client_get_handshake_establishes_connection_pooled);
 }
