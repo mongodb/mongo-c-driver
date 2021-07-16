@@ -24,6 +24,7 @@ This function returns a string, one of the server types defined in the Server Di
 * Standalone
 * Mongos
 * PossiblePrimary
+* LoadBalancer
 * RSPrimary
 * RSSecondary
 * RSArbiter
