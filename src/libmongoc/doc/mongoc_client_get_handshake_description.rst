@@ -28,7 +28,7 @@ Use this function only for building a language driver that wraps the C Driver. W
 Single-threaded client behavior
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Single-threaded clients only have one active connection to each server. The one connection is used for both monitoring and application operations. However, the server description returned by :symbol:`mongoc_client_get_handshake_description` may still differ from the server description returned by :symbol:`mongoc_client_get_server_description`. Notably, if connected to a load balanced cluster, the :symbol:`mongoc_client_get_server_description` will describe the load balancer server (:symbol:`mongoc_server_description_type` will return "LoadBalancer"). And :symbol:`mongoc_client_get_handshake_description` will describe the backing server.
+Single-threaded clients only have one active connection to each server. The one connection is used for both monitoring and application operations. However, the server description returned by :symbol:`mongoc_client_get_handshake_description` may still differ from the server description returned by :symbol:`mongoc_client_get_server_description`. Notably, if connected to a load balanced cluster, the server description returned by :symbol:`mongoc_client_get_server_description` will describe the load balancer server (:symbol:`mongoc_server_description_type` will return "LoadBalancer"). And the server description returned by :symbol:`mongoc_client_get_handshake_description` will describe the backing server.
 
 Parameters
 ----------
