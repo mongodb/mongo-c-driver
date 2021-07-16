@@ -4040,6 +4040,7 @@ test_mongoc_client_get_handshake_hello_response_single (void)
 void
 test_mongoc_client_get_handshake_hello_response_pooled (void)
 {
+   mongoc_client_pool_t *pool;
    mongoc_client_t *client;
    mongoc_server_description_t *monitor_sd;
    mongoc_server_description_t *invalidated_sd;
@@ -4047,7 +4048,8 @@ test_mongoc_client_get_handshake_hello_response_pooled (void)
    bson_error_t error = {0};
    bool ret;
 
-   client = test_framework_new_default_client ();
+   pool = test_framework_new_default_client_pool ();
+   client = mongoc_client_pool_pop (pool);
    monitor_sd = mongoc_client_select_server (
       client, false /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (monitor_sd, error);
@@ -4084,7 +4086,8 @@ test_mongoc_client_get_handshake_hello_response_pooled (void)
    mongoc_server_description_destroy (handshake_sd);
    mongoc_server_description_destroy (invalidated_sd);
    mongoc_server_description_destroy (monitor_sd);
-   mongoc_client_destroy (client);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
 }
 
 void

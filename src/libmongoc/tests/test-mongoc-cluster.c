@@ -1751,8 +1751,12 @@ _test_cmd_on_unknown_serverid (bool pooled)
    mongoc_uri_t *uri;
 
    uri = test_framework_get_uri ();
-   /* Set a high heartbeatFrequencyMS so subsequent topology scans do not
-    * interfere with the test. */
+   /* Set a lower heartbeatFrequencyMS.
+    * Servers supporting streamable hello will only respond to an awaitable
+    * hello until heartbeatFrequencyMS has passed or the server had changed
+    * state. This test marks the server Unknown in the client's topology
+    * description. During cleanup, _mongoc_client_end_sessions will attempt to
+    * do server selection again and wait for a server to become discovered. */
    mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 5000);
 
    if (pooled) {

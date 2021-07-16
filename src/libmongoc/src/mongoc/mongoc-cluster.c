@@ -2592,15 +2592,8 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
           */
          mongoc_cluster_disconnect_node (cluster, server_id);
       } else {
-         mongoc_server_stream_t *stream;
-
-         bson_mutex_lock (&topology->mutex);
-         stream = mongoc_server_stream_new (
-            &topology->description,
-            mongoc_server_description_new_copy (cluster_node->handshake_sd),
-            cluster_node->stream);
-         bson_mutex_unlock (&topology->mutex);
-         return stream;
+         return _mongoc_cluster_create_server_stream (
+            topology, cluster_node->handshake_sd, cluster_node->stream, error);
       }
    }
 
@@ -2613,15 +2606,8 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
    cluster_node =
       _mongoc_cluster_add_node (cluster, generation, server_id, error);
    if (cluster_node) {
-      mongoc_server_stream_t *stream;
-
-      bson_mutex_lock (&topology->mutex);
-      stream = mongoc_server_stream_new (
-         &topology->description,
-         mongoc_server_description_new_copy (cluster_node->handshake_sd),
-         cluster_node->stream);
-      bson_mutex_unlock (&topology->mutex);
-      return stream;
+      return _mongoc_cluster_create_server_stream (
+            topology, cluster_node->handshake_sd, cluster_node->stream, error);
    } else {
       return NULL;
    }

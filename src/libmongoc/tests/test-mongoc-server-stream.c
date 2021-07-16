@@ -124,9 +124,9 @@ test_server_stream_ties_server_description_pooled (void *unused)
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
-   /* Check that selecting the server still returns the OP_MSG server */
+   /* Check that selecting the server still returns the OP_QUERY server */
    sd = mongoc_client_select_server (
-      client_opquery, true /* for writes */, NULL /* read prefs */, &error);
+      client_opmsg, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (sd, error);
    ASSERT_MATCH (mongoc_server_description_hello_response (sd),
                  "{'maxWireVersion': 6}");
@@ -177,7 +177,7 @@ test_server_stream_ties_server_description_single (void *unused)
    future_destroy (future);
 
    /* Muck with the topology description. */
-   /* Pass in an empty error. */
+   /* Pass in a zeroed out error. */
    memset (&error, 0, sizeof (bson_error_t));
    mongoc_topology_description_handle_hello (
       &client->topology->description, 1, tmp_bson (HELLO_PRE_OPMSG), 0, &error);
