@@ -765,7 +765,8 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
    bson_t reply;
    int64_t start;
    int64_t rtt_msec;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t empty_sd;
+   mongoc_server_description_t *handshake_sd;
    mongoc_server_stream_t *server_stream;
    bson_t *copied_command = NULL;
    bool r;
@@ -809,8 +810,10 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
     * Then _mongoc_cluster_stream_for_server also handles the error, and
     * invalidates again.
     */
+   mongoc_server_description_init (&empty_sd, address, server_id);
    server_stream = _mongoc_cluster_create_server_stream (
-      cluster->client->topology, server_id, stream, error);
+      cluster->client->topology, &empty_sd, stream, error);
+   mongoc_server_description_cleanup (&empty_sd);
    if (!server_stream) {
       bson_destroy (copied_command);
       RETURN (NULL);
@@ -819,7 +822,6 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
    /* Always use OP_QUERY for the handshake, regardless of whether the last
     * known hello indicates the server supports a newer wire protocol.
     */
-   server_stream->sd->max_wire_version = WIRE_VERSION_MIN;
    memset (&hello_cmd, 0, sizeof (hello_cmd));
    hello_cmd.db_name = "admin";
    hello_cmd.command = command;
@@ -848,12 +850,12 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
 
    rtt_msec = (bson_get_monotonic_time () - start) / 1000;
 
-   sd = (mongoc_server_description_t *) bson_malloc0 (
+   handshake_sd = (mongoc_server_description_t *) bson_malloc0 (
       sizeof (mongoc_server_description_t));
 
-   mongoc_server_description_init (sd, address, server_id);
+   mongoc_server_description_init (handshake_sd, address, server_id);
    /* send the error from run_command IN to handle_hello */
-   mongoc_server_description_handle_hello (sd, &reply, rtt_msec, error);
+   mongoc_server_description_handle_hello (handshake_sd, &reply, rtt_msec, error);
 
    if (cluster->requires_auth && speculative_auth_response) {
       _mongoc_topology_scanner_parse_speculative_authentication (
@@ -862,10 +864,10 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
 
    bson_destroy (&reply);
 
-   r = _mongoc_topology_update_from_handshake (cluster->client->topology, sd);
+   r = _mongoc_topology_update_from_handshake (cluster->client->topology, handshake_sd);
    if (!r) {
-      mongoc_server_description_reset (sd);
-      bson_set_error (&sd->error,
+      mongoc_server_description_reset (handshake_sd);
+      bson_set_error (&handshake_sd->error,
                       MONGOC_ERROR_STREAM,
                       MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
                       "\"%s\" removed from topology",
@@ -878,7 +880,7 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
       bson_destroy (copied_command);
    }
 
-   RETURN (sd);
+   RETURN (handshake_sd);
 }
 
 /*
@@ -934,12 +936,6 @@ _mongoc_cluster_run_hello (mongoc_cluster_t *cluster,
       memcpy (error, &sd->error, sizeof (bson_error_t));
       mongoc_server_description_destroy (sd);
       return NULL;
-   } else {
-      node->max_write_batch_size = sd->max_write_batch_size;
-      node->min_wire_version = sd->min_wire_version;
-      node->max_wire_version = sd->max_wire_version;
-      node->max_bson_obj_size = sd->max_bson_obj_size;
-      node->max_msg_size = sd->max_msg_size;
    }
 
    return sd;
@@ -1071,7 +1067,7 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
                           &command);
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
-      cluster->client->topology, sd->id, stream, error);
+      cluster->client->topology, sd, stream, error);
    if (!server_stream) {
       bson_destroy (&command);
       bson_destroy (&reply);
@@ -1208,7 +1204,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
       &parts, cluster->client, "$external", MONGOC_QUERY_SECONDARY_OK, &b);
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
-      cluster->client->topology, sd->id, stream, error);
+      cluster->client->topology, sd, stream, error);
    if (!server_stream) {
       bson_destroy (&b);
       bson_destroy (&reply);
@@ -1322,7 +1318,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
       &parts, cluster->client, "$external", MONGOC_QUERY_SECONDARY_OK, &cmd);
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
-      cluster->client->topology, sd->id, stream, error);
+      cluster->client->topology, sd, stream, error);
    if (!server_stream) {
       bson_destroy (&cmd);
       bson_destroy (&reply);
@@ -1436,12 +1432,13 @@ _mongoc_cluster_get_auth_cmd_scram (mongoc_crypto_hash_algorithm_t algo,
  */
 
 static bool
-_mongoc_cluster_run_scram_command (mongoc_cluster_t *cluster,
-                                   mongoc_stream_t *stream,
-                                   uint32_t server_id,
-                                   const bson_t *cmd,
-                                   bson_t *reply,
-                                   bson_error_t *error)
+_mongoc_cluster_run_scram_command (
+   mongoc_cluster_t *cluster,
+   mongoc_stream_t *stream,
+   const mongoc_server_description_t *handshake_sd,
+   const bson_t *cmd,
+   bson_t *reply,
+   bson_error_t *error)
 {
    mongoc_cmd_parts_t parts;
    mongoc_server_stream_t *server_stream;
@@ -1458,7 +1455,7 @@ _mongoc_cluster_run_scram_command (mongoc_cluster_t *cluster,
       &parts, cluster->client, auth_source, MONGOC_QUERY_SECONDARY_OK, cmd);
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (
-      cluster->client->topology, server_id, stream, error);
+      cluster->client->topology, handshake_sd, stream, error);
    if (!server_stream) {
       bson_destroy (reply);
       return false;
@@ -1501,13 +1498,14 @@ _mongoc_cluster_run_scram_command (mongoc_cluster_t *cluster,
  */
 
 static bool
-_mongoc_cluster_auth_scram_start (mongoc_cluster_t *cluster,
-                                  mongoc_stream_t *stream,
-                                  uint32_t server_id,
-                                  mongoc_crypto_hash_algorithm_t algo,
-                                  mongoc_scram_t *scram,
-                                  bson_t *reply,
-                                  bson_error_t *error)
+_mongoc_cluster_auth_scram_start (
+   mongoc_cluster_t *cluster,
+   mongoc_stream_t *stream,
+   const mongoc_server_description_t *handshake_sd,
+   mongoc_crypto_hash_algorithm_t algo,
+   mongoc_scram_t *scram,
+   bson_t *reply,
+   bson_error_t *error)
 {
    bson_t cmd;
 
@@ -1522,7 +1520,7 @@ _mongoc_cluster_auth_scram_start (mongoc_cluster_t *cluster,
    }
 
    if (!_mongoc_cluster_run_scram_command (
-          cluster, stream, server_id, &cmd, reply, error)) {
+          cluster, stream, handshake_sd, &cmd, reply, error)) {
       bson_destroy (&cmd);
 
       return false;
@@ -1644,12 +1642,13 @@ _mongoc_cluster_scram_handle_reply (mongoc_scram_t *scram,
  */
 
 static bool
-_mongoc_cluster_auth_scram_continue (mongoc_cluster_t *cluster,
-                                     mongoc_stream_t *stream,
-                                     uint32_t server_id,
-                                     mongoc_scram_t *scram,
-                                     const bson_t *sasl_start_reply,
-                                     bson_error_t *error)
+_mongoc_cluster_auth_scram_continue (
+   mongoc_cluster_t *cluster,
+   mongoc_stream_t *stream,
+   const mongoc_server_description_t *handshake_sd,
+   mongoc_scram_t *scram,
+   const bson_t *sasl_start_reply,
+   bson_error_t *error)
 {
    bson_t cmd;
    uint8_t buf[4096] = {0};
@@ -1688,7 +1687,7 @@ _mongoc_cluster_auth_scram_continue (mongoc_cluster_t *cluster,
       TRACE ("SCRAM: authenticating (step %d)", scram->step);
 
       if (!_mongoc_cluster_run_scram_command (
-             cluster, stream, server_id, &cmd, &reply_local, error)) {
+             cluster, stream, handshake_sd, &cmd, &reply_local, error)) {
          bson_destroy (&cmd);
          return false;
       }
@@ -1747,7 +1746,7 @@ _mongoc_cluster_auth_scram_continue (mongoc_cluster_t *cluster,
 static bool
 _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
                                  mongoc_stream_t *stream,
-                                 uint32_t server_id,
+                                 mongoc_server_description_t *handshake_sd,
                                  mongoc_crypto_hash_algorithm_t algo,
                                  bson_error_t *error)
 {
@@ -1760,12 +1759,12 @@ _mongoc_cluster_auth_node_scram (mongoc_cluster_t *cluster,
    _mongoc_cluster_init_scram (cluster, &scram, algo);
 
    if (!_mongoc_cluster_auth_scram_start (
-          cluster, stream, server_id, algo, &scram, &reply, error)) {
+          cluster, stream, handshake_sd, algo, &scram, &reply, error)) {
       goto failure;
    }
 
    if (!_mongoc_cluster_auth_scram_continue (
-          cluster, stream, server_id, &scram, &reply, error)) {
+          cluster, stream, handshake_sd, &scram, &reply, error)) {
       bson_destroy (&reply);
 
       goto failure;
@@ -1799,7 +1798,7 @@ _mongoc_cluster_auth_node_scram_sha_1 (mongoc_cluster_t *cluster,
    return false;
 #else
    return _mongoc_cluster_auth_node_scram (
-      cluster, stream, sd->id, MONGOC_CRYPTO_ALGORITHM_SHA_1, error);
+      cluster, stream, sd, MONGOC_CRYPTO_ALGORITHM_SHA_1, error);
 #endif
 }
 
@@ -1818,7 +1817,7 @@ _mongoc_cluster_auth_node_scram_sha_256 (mongoc_cluster_t *cluster,
    return false;
 #else
    return _mongoc_cluster_auth_node_scram (
-      cluster, stream, sd->id, MONGOC_CRYPTO_ALGORITHM_SHA_256, error);
+      cluster, stream, sd, MONGOC_CRYPTO_ALGORITHM_SHA_256, error);
 #endif
 }
 
@@ -1945,6 +1944,7 @@ _mongoc_cluster_node_destroy (mongoc_cluster_node_t *node)
    /* Failure, or Replica Set reconfigure without this node */
    mongoc_stream_failed (node->stream);
    bson_free (node->connection_address);
+   mongoc_server_description_destroy (node->handshake_sd);
 
    bson_free (node);
 }
@@ -1974,30 +1974,24 @@ _mongoc_cluster_node_new (mongoc_stream_t *stream,
    node->connection_address = bson_strdup (connection_address);
    node->generation = generation;
 
-   node->max_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
-   node->min_wire_version = MONGOC_DEFAULT_WIRE_VERSION;
-
-   node->max_write_batch_size = MONGOC_DEFAULT_WRITE_BATCH_SIZE;
-   node->max_bson_obj_size = MONGOC_DEFAULT_BSON_OBJ_SIZE;
-   node->max_msg_size = MONGOC_DEFAULT_MAX_MSG_SIZE;
-
    return node;
 }
 
 static bool
-_mongoc_cluster_finish_speculative_auth (mongoc_cluster_t *cluster,
-                                         mongoc_stream_t *stream,
-                                         mongoc_server_description_t *sd,
-                                         bson_t *speculative_auth_response,
-                                         mongoc_scram_t *scram,
-                                         bson_error_t *error)
+_mongoc_cluster_finish_speculative_auth (
+   mongoc_cluster_t *cluster,
+   mongoc_stream_t *stream,
+   mongoc_server_description_t *handshake_sd,
+   bson_t *speculative_auth_response,
+   mongoc_scram_t *scram,
+   bson_error_t *error)
 {
    const char *mechanism =
       _mongoc_topology_scanner_get_speculative_auth_mechanism (cluster->uri);
    bool ret = false;
    bool auth_handled = false;
 
-   BSON_ASSERT (sd);
+   BSON_ASSERT (handshake_sd);
    BSON_ASSERT (speculative_auth_response);
 
    if (!mechanism) {
@@ -2028,8 +2022,12 @@ _mongoc_cluster_finish_speculative_auth (mongoc_cluster_t *cluster,
 
       auth_handled = true;
 
-      ret = _mongoc_cluster_auth_scram_continue (
-         cluster, stream, sd->id, scram, speculative_auth_response, error);
+      ret = _mongoc_cluster_auth_scram_continue (cluster,
+                                                 stream,
+                                                 handshake_sd,
+                                                 scram,
+                                                 speculative_auth_response,
+                                                 error);
    }
 #endif
 
@@ -2065,7 +2063,7 @@ _mongoc_cluster_finish_speculative_auth (mongoc_cluster_t *cluster,
  *
  *--------------------------------------------------------------------------
  */
-static mongoc_stream_t *
+static mongoc_cluster_node_t *
 _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
                           uint32_t generation,
                           uint32_t server_id,
@@ -2074,7 +2072,7 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    mongoc_host_list_t *host = NULL;
    mongoc_cluster_node_t *cluster_node = NULL;
    mongoc_stream_t *stream;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t *handshake_sd;
    mongoc_handshake_sasl_supported_mechs_t sasl_supported_mechs;
    mongoc_scram_t scram = {0};
    bson_t speculative_auth_response = BSON_INITIALIZER;
@@ -2108,36 +2106,44 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    cluster_node =
       _mongoc_cluster_node_new (stream, generation, host->host_and_port);
 
-   sd = _mongoc_cluster_run_hello (cluster,
-                                   cluster_node,
-                                   server_id,
-                                   cluster->scram_cache,
-                                   &scram,
-                                   &speculative_auth_response,
-                                   error);
-   if (!sd) {
+   handshake_sd = _mongoc_cluster_run_hello (cluster,
+                                             cluster_node,
+                                             server_id,
+                                             cluster->scram_cache,
+                                             &scram,
+                                             &speculative_auth_response,
+                                             error);
+   if (!handshake_sd) {
       GOTO (error);
    }
 
-   _mongoc_handshake_parse_sasl_supported_mechs (&sd->last_hello_response,
-                                                 &sasl_supported_mechs);
+   _mongoc_handshake_parse_sasl_supported_mechs (
+      &handshake_sd->last_hello_response, &sasl_supported_mechs);
 
    if (cluster->requires_auth) {
       /* Complete speculative authentication */
       bool is_auth = _mongoc_cluster_finish_speculative_auth (
-         cluster, stream, sd, &speculative_auth_response, &scram, error);
+         cluster, stream, handshake_sd, &speculative_auth_response, &scram, error);
 
-      if (!is_auth &&
-          !_mongoc_cluster_auth_node (
-             cluster, cluster_node->stream, sd, &sasl_supported_mechs, error)) {
+      if (!is_auth && !_mongoc_cluster_auth_node (cluster,
+                                                  cluster_node->stream,
+                                                  handshake_sd,
+                                                  &sasl_supported_mechs,
+                                                  error)) {
          MONGOC_WARNING ("Failed authentication to %s (%s)",
                          host->host_and_port,
                          error->message);
-         mongoc_server_description_destroy (sd);
+         mongoc_server_description_destroy (handshake_sd);
          GOTO (error);
       }
    }
-   mongoc_server_description_destroy (sd);
+
+   /* Transfer ownership of the server description into the cluster node. */
+   cluster_node->handshake_sd = handshake_sd;
+   /* Copy the generation from the cluster node.
+    * TODO (CDRIVER-4078) do not store the generation counter on the server
+    * description */
+   cluster_node->handshake_sd->generation = generation;
 
    bson_destroy (&speculative_auth_response);
    mongoc_set_add (cluster->nodes, server_id, cluster_node);
@@ -2147,7 +2153,7 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    _mongoc_scram_destroy (&scram);
 #endif
 
-   RETURN (stream);
+   RETURN (cluster_node);
 
 error:
    bson_destroy (&speculative_auth_response);
@@ -2352,7 +2358,8 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                                     bson_error_t *error /* OUT */)
 {
    mongoc_topology_t *topology;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t *monitor_sd;
+   mongoc_server_description_t *handshake_sd;
    mongoc_topology_scanner_node_t *scanner_node;
    char *address;
 
@@ -2381,11 +2388,8 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
    }
 
    if (scanner_node->stream) {
-      sd = mongoc_topology_server_by_id (topology, server_id, error);
-
-      if (!sd) {
-         return NULL;
-      }
+      handshake_sd =
+         mongoc_server_description_new_copy (scanner_node->handshake_sd);
    } else {
       if (!reconnect_ok) {
          stream_not_found (
@@ -2411,15 +2415,13 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
       }
       bson_free (address);
 
-      sd = mongoc_topology_server_by_id (topology, server_id, error);
-      if (!sd) {
-         return NULL;
-      }
+      handshake_sd =
+         mongoc_server_description_new_copy (scanner_node->handshake_sd);
    }
 
-   if (sd->type == MONGOC_SERVER_UNKNOWN) {
-      memcpy (error, &sd->error, sizeof *error);
-      mongoc_server_description_destroy (sd);
+   if (handshake_sd->type == MONGOC_SERVER_UNKNOWN) {
+      memcpy (error, &handshake_sd->error, sizeof *error);
+      mongoc_server_description_destroy (handshake_sd);
       return NULL;
    }
 
@@ -2429,37 +2431,48 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
       bool has_speculative_auth = _mongoc_cluster_finish_speculative_auth (
          cluster,
          scanner_node->stream,
-         sd,
+         handshake_sd,
          &scanner_node->speculative_auth_response,
          &scanner_node->scram,
-         &sd->error);
+         &handshake_sd->error);
 
 #ifdef MONGOC_ENABLE_CRYPTO
       _mongoc_scram_destroy (&scanner_node->scram);
 #endif
 
       if (!scanner_node->stream) {
-         memcpy (error, &sd->error, sizeof *error);
-         mongoc_server_description_destroy (sd);
+         memcpy (error, &handshake_sd->error, sizeof *error);
+         mongoc_server_description_destroy (handshake_sd);
          return NULL;
       }
 
       if (!has_speculative_auth &&
           !_mongoc_cluster_auth_node (cluster,
                                       scanner_node->stream,
-                                      sd,
+                                      handshake_sd,
                                       &scanner_node->sasl_supported_mechs,
-                                      &sd->error)) {
-         memcpy (error, &sd->error, sizeof *error);
-         mongoc_server_description_destroy (sd);
+                                      &handshake_sd->error)) {
+         memcpy (error, &handshake_sd->error, sizeof *error);
+         mongoc_server_description_destroy (handshake_sd);
          return NULL;
       }
 
       scanner_node->has_auth = true;
    }
 
+   /* Always copy the latest generation from the shared server description. */
+   monitor_sd = mongoc_topology_server_by_id (topology, server_id, error);
+   if (!monitor_sd) {
+      mongoc_server_description_destroy (handshake_sd);
+      return NULL;
+   }
+   /* TODO: (CDRIVER-4078) do not store the generation counter as part of the
+    * server description. */
+   handshake_sd->generation = monitor_sd->generation;
+   mongoc_server_description_destroy (monitor_sd);
+
    return mongoc_server_stream_new (
-      &topology->description, sd, scanner_node->stream);
+      &topology->description, handshake_sd, scanner_node->stream);
 }
 
 
@@ -2519,27 +2532,21 @@ done:
 }
 
 mongoc_server_stream_t *
-_mongoc_cluster_create_server_stream (mongoc_topology_t *topology,
-                                      uint32_t server_id,
-                                      mongoc_stream_t *stream,
-                                      bson_error_t *error /* OUT */)
+_mongoc_cluster_create_server_stream (
+   mongoc_topology_t *topology,
+   const mongoc_server_description_t *handshake_sd,
+   mongoc_stream_t *stream,
+   bson_error_t *error /* OUT */)
 {
    mongoc_server_description_t *sd;
    mongoc_server_stream_t *server_stream = NULL;
 
+   sd = mongoc_server_description_new_copy (handshake_sd);
    /* can't just use mongoc_topology_server_by_id(), since we must hold the
     * lock while copying topology->description.logical_time below */
    bson_mutex_lock (&topology->mutex);
-
-   sd = mongoc_server_description_new_copy (
-      mongoc_topology_description_server_by_id (
-         &topology->description, server_id, error));
-
-   if (sd) {
-      server_stream =
+   server_stream =
          mongoc_server_stream_new (&topology->description, sd, stream);
-   }
-
    bson_mutex_unlock (&topology->mutex);
 
    return server_stream;
@@ -2553,7 +2560,6 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
                                     bson_error_t *error /* OUT */)
 {
    mongoc_topology_t *topology;
-   mongoc_stream_t *stream;
    mongoc_cluster_node_t *cluster_node;
    mongoc_server_description_t *sd;
    bool has_server_description = false;
@@ -2587,7 +2593,7 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
          mongoc_cluster_disconnect_node (cluster, server_id);
       } else {
          return _mongoc_cluster_create_server_stream (
-            topology, server_id, cluster_node->stream, error);
+            topology, cluster_node->handshake_sd, cluster_node->stream, error);
       }
    }
 
@@ -2597,10 +2603,11 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
       return NULL;
    }
 
-   stream = _mongoc_cluster_add_node (cluster, generation, server_id, error);
-   if (stream) {
+   cluster_node =
+      _mongoc_cluster_add_node (cluster, generation, server_id, error);
+   if (cluster_node) {
       return _mongoc_cluster_create_server_stream (
-         topology, server_id, stream, error);
+            topology, cluster_node->handshake_sd, cluster_node->stream, error);
    } else {
       return NULL;
    }
@@ -2873,8 +2880,8 @@ _mongoc_cluster_min_of_max_obj_size_nodes (void *item, void *ctx)
    mongoc_cluster_node_t *node = (mongoc_cluster_node_t *) item;
    int32_t *current_min = (int32_t *) ctx;
 
-   if (node->max_bson_obj_size < *current_min) {
-      *current_min = node->max_bson_obj_size;
+   if (node->handshake_sd->max_bson_obj_size < *current_min) {
+      *current_min = node->handshake_sd->max_bson_obj_size;
    }
    return true;
 }
@@ -2897,8 +2904,8 @@ _mongoc_cluster_min_of_max_msg_size_nodes (void *item, void *ctx)
    mongoc_cluster_node_t *node = (mongoc_cluster_node_t *) item;
    int32_t *current_min = (int32_t *) ctx;
 
-   if (node->max_msg_size < *current_min) {
-      *current_min = node->max_msg_size;
+   if (node->handshake_sd->max_msg_size < *current_min) {
+      *current_min = node->handshake_sd->max_msg_size;
    }
    return true;
 }
@@ -3015,6 +3022,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
    bson_error_t error;
    bool r = true;
    mongoc_server_stream_t *server_stream;
+   mongoc_server_description_t *handshake_sd;
 
    topology = cluster->client->topology;
 
@@ -3036,6 +3044,9 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
    if (!stream) {
       return false;
    }
+
+   handshake_sd = scanner_node->handshake_sd;
+   BSON_ASSERT (handshake_sd);
 
    now = bson_get_monotonic_time ();
 
@@ -3059,7 +3070,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
          &parts, cluster->client, "admin", MONGOC_QUERY_SECONDARY_OK, &command);
       parts.prohibit_lsid = true;
       server_stream = _mongoc_cluster_create_server_stream (
-         cluster->client->topology, server_id, stream, &error);
+         cluster->client->topology, handshake_sd, stream, &error);
       if (!server_stream) {
          bson_destroy (&command);
          return false;

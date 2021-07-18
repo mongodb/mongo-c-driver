@@ -274,6 +274,12 @@ mongoc_client_set_server_api (mongoc_client_t *client,
                               const mongoc_server_api_t *api,
                               bson_error_t *error);
 
+MONGOC_EXPORT (mongoc_server_description_t *)
+mongoc_client_get_handshake_description (mongoc_client_t *client,
+                                         uint32_t server_id,
+                                         bson_t *opts,
+                                         bson_error_t *error);
+
 BSON_END_DECLS
 
 

@@ -15,6 +15,7 @@
  */
 
 #include <bson/bson.h>
+#include "mongoc-cluster-private.h"
 #include "mongoc-change-stream-private.h"
 #include "mongoc-collection-private.h"
 #include "mongoc-client-private.h"
@@ -235,23 +236,12 @@ _make_cursor (mongoc_change_stream_t *stream)
    bson_t reply;
    bson_t getmore_opts = BSON_INITIALIZER;
    bson_iter_t iter;
-   mongoc_server_description_t *sd;
-   uint32_t server_id;
+   mongoc_server_stream_t *server_stream;
 
    BSON_ASSERT (stream);
    BSON_ASSERT (!stream->cursor);
    bson_init (&command);
    bson_copy_to (&(stream->opts.extra), &command_opts);
-   sd = mongoc_client_select_server (
-      stream->client, false /* for_writes */, stream->read_prefs, &stream->err);
-   if (!sd) {
-      goto cleanup;
-   }
-   server_id = mongoc_server_description_id (sd);
-   bson_append_int32 (&command_opts, "serverId", 8, server_id);
-   bson_append_int32 (&getmore_opts, "serverId", 8, server_id);
-   stream->max_wire_version = sd->max_wire_version;
-   mongoc_server_description_destroy (sd);
 
    if (bson_iter_init_find (&iter, &command_opts, "sessionId")) {
       if (!_mongoc_client_session_from_iter (
@@ -288,6 +278,19 @@ _make_cursor (mongoc_change_stream_t *stream)
    if (cs && !mongoc_client_session_append (cs, &getmore_opts, &stream->err)) {
       goto cleanup;
    }
+
+   server_stream = mongoc_cluster_stream_for_reads (
+      &stream->client->cluster, stream->read_prefs, cs, &reply, &stream->err);
+   if (!server_stream) {
+      bson_destroy (&stream->err_doc);
+      bson_copy_to (&reply, &stream->err_doc);
+      bson_destroy (&reply);
+      goto cleanup;
+   }
+   bson_append_int32 (&command_opts, "serverId", 8, server_stream->sd->id);
+   bson_append_int32 (&getmore_opts, "serverId", 8, server_stream->sd->id);
+   stream->max_wire_version = server_stream->sd->max_wire_version;
+   mongoc_server_stream_cleanup (server_stream);
 
    if (stream->read_concern && !bson_has_field (&command_opts, "readConcern")) {
       mongoc_read_concern_append (stream->read_concern, &command_opts);

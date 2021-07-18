@@ -274,6 +274,8 @@ extern void
 test_result_install (TestSuite *suite);
 extern void
 test_loadbalanced_install (TestSuite *suite);
+extern void
+test_server_stream_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2909,6 +2911,7 @@ main (int argc, char *argv[])
    test_bson_util_install (&suite);
    test_result_install (&suite);
    test_loadbalanced_install (&suite);
+   test_server_stream_install (&suite);
 
    ret = TestSuite_Run (&suite);
 

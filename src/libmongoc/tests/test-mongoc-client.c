@@ -571,10 +571,22 @@ test_mongoc_client_speculative_auth_failure (bool pooled)
    if (!r) {
       r = mongoc_cursor_error (cursor, &error);
       BSON_ASSERT (r);
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_CLIENT,
-                             MONGOC_ERROR_CLIENT_AUTHENTICATE,
-                             "Failed to send \"saslContinue\" command");
+      /* A client pool on servers supporting speculative auth (4.4+) will get an
+       * error on saslContinue and subsequently attempt to start auth from the
+       * beginning. The failpoint closes the stream causing an error from
+       * saslStart. */
+      if (pooled &&
+          test_framework_max_wire_version_at_least (WIRE_VERSION_4_4)) {
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_CLIENT,
+                                MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                                "Failed to send \"saslStart\" command");
+      } else {
+         ASSERT_ERROR_CONTAINS (error,
+                                MONGOC_ERROR_CLIENT,
+                                MONGOC_ERROR_CLIENT_AUTHENTICATE,
+                                "Failed to send \"saslContinue\" command");
+      }
    }
 
    mongoc_cursor_destroy (cursor);
@@ -817,19 +829,25 @@ test_mongoc_client_authenticate_timeout (void *context)
 }
 
 
+/* Update: this test was changed after CDRIVER-3653 was fixed.
+ * Originally, the test used cursor operations, assuming changes in the
+ * min/maxWireVersion from the mock server would be re-evaluated on each cursor
+ * operation.
+ * After CDRIVER-3653 was fixed, this is no longer true. The cursor will examine
+ * the server description associated with the connection handshake. If the
+ * connection has not been closed, changes from monitoring will not affect the
+ * connection's server description.
+ * This test now uses mongoc_client_select_server to validate wire version
+ * checks. */
 static void
 test_wire_version (void)
 {
    mongoc_uri_t *uri;
-   mongoc_collection_t *collection;
-   mongoc_cursor_t *cursor;
    mongoc_client_t *client;
    mock_server_t *server;
-   const bson_t *doc;
    bson_error_t error;
    bson_t q = BSON_INITIALIZER;
-   future_t *future;
-   request_t *request;
+   mongoc_server_description_t *sd;
 
    if (!test_framework_skip_if_slow ()) {
       bson_destroy (&q);
@@ -849,14 +867,10 @@ test_wire_version (void)
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    mongoc_uri_set_option_as_int32 (uri, "heartbeatFrequencyMS", 500);
    client = test_framework_client_new_from_uri (uri, NULL);
-   collection = mongoc_client_get_collection (client, "test", "test");
-
-   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
-   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
-   BSON_ASSERT (mongoc_cursor_error (cursor, &error));
+   sd = mongoc_client_select_server (client, true, NULL, &error);
+   BSON_ASSERT (!sd);
    BSON_ASSERT (error.domain == MONGOC_ERROR_PROTOCOL);
    BSON_ASSERT (error.code == MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION);
-   mongoc_cursor_destroy (cursor);
 
    /* too old */
    mock_server_auto_hello (server,
@@ -867,13 +881,10 @@ test_wire_version (void)
 
    /* wait until it's time for next heartbeat */
    _mongoc_usleep (600 * 1000);
-
-   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
-   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
-   BSON_ASSERT (mongoc_cursor_error (cursor, &error));
+   sd = mongoc_client_select_server (client, true, NULL, &error);
+   BSON_ASSERT (!sd);
    BSON_ASSERT (error.domain == MONGOC_ERROR_PROTOCOL);
    BSON_ASSERT (error.code == MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION);
-   mongoc_cursor_destroy (cursor);
 
    /* compatible again */
    mock_server_auto_hello (server,
@@ -884,21 +895,11 @@ test_wire_version (void)
 
    /* wait until it's time for next heartbeat */
    _mongoc_usleep (600 * 1000);
-   cursor = mongoc_collection_find_with_opts (collection, &q, NULL, NULL);
-   future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_request (server);
-   mock_server_replies_to_find (
-      request, MONGOC_QUERY_SECONDARY_OK, 0, 0, "test.test", "{}", true);
-
-   /* no error */
-   BSON_ASSERT (future_get_bool (future));
-   BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
+   sd = mongoc_client_select_server (client, true, NULL, &error);
+   ASSERT_OR_PRINT (sd, error);
+   mongoc_server_description_destroy (sd);
 
    bson_destroy (&q);
-   request_destroy (request);
-   future_destroy (future);
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
    mock_server_destroy (server);
@@ -3997,6 +3998,146 @@ test_mongoc_client_recv_network_error (void)
 }
 
 void
+test_mongoc_client_get_handshake_hello_response_single (void)
+{
+   mongoc_client_t *client;
+   mongoc_server_description_t *monitor_sd;
+   mongoc_server_description_t *invalidated_sd;
+   mongoc_server_description_t *handshake_sd;
+   bson_error_t error = {0};
+
+   client = test_framework_new_default_client ();
+   /* Perform server selection to establish a connection. */
+   monitor_sd = mongoc_client_select_server (
+      client, false /* for writes */, NULL /* read prefs */, &error);
+   ASSERT_OR_PRINT (monitor_sd, error);
+   BSON_ASSERT (
+      0 != strcmp ("Unknown", mongoc_server_description_type (monitor_sd)));
+
+   /* Invalidate the server. */
+   mongoc_topology_invalidate_server (client->topology, monitor_sd->id, &error);
+
+   /* Get the new invalidated server description from monitoring. */
+   invalidated_sd =
+      mongoc_client_get_server_description (client, monitor_sd->id);
+   BSON_ASSERT (NULL != invalidated_sd);
+   ASSERT_CMPSTR ("Unknown", mongoc_server_description_type (invalidated_sd));
+
+   /* The previously established connection should have a valid server
+    * description. */
+   handshake_sd = mongoc_client_get_handshake_description (
+      client, monitor_sd->id, NULL /* opts */, &error);
+   ASSERT_OR_PRINT (handshake_sd, error);
+   BSON_ASSERT (
+      0 != strcmp ("Unknown", mongoc_server_description_type (handshake_sd)));
+
+   mongoc_server_description_destroy (handshake_sd);
+   mongoc_server_description_destroy (invalidated_sd);
+   mongoc_server_description_destroy (monitor_sd);
+   mongoc_client_destroy (client);
+}
+
+void
+test_mongoc_client_get_handshake_hello_response_pooled (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_server_description_t *monitor_sd;
+   mongoc_server_description_t *invalidated_sd;
+   mongoc_server_description_t *handshake_sd;
+   bson_error_t error = {0};
+   bool ret;
+
+   pool = test_framework_new_default_client_pool ();
+   client = mongoc_client_pool_pop (pool);
+   monitor_sd = mongoc_client_select_server (
+      client, false /* for writes */, NULL /* read prefs */, &error);
+   ASSERT_OR_PRINT (monitor_sd, error);
+   BSON_ASSERT (
+      0 != strcmp ("Unknown", mongoc_server_description_type (monitor_sd)));
+
+   /* Send a ping to establish a connection. */
+   ret = mongoc_client_command_simple_with_server_id (client,
+                                                      "admin",
+                                                      tmp_bson ("{'ping': 1}"),
+                                                      NULL,
+                                                      monitor_sd->id,
+                                                      NULL /* reply */,
+                                                      &error);
+   ASSERT_OR_PRINT (ret, error);
+
+   /* Invalidate the server. */
+   mongoc_topology_invalidate_server (client->topology, monitor_sd->id, &error);
+
+   /* Get the new invalidated server description from monitoring. */
+   invalidated_sd =
+      mongoc_client_get_server_description (client, monitor_sd->id);
+   BSON_ASSERT (NULL != invalidated_sd);
+   ASSERT_CMPSTR ("Unknown", mongoc_server_description_type (invalidated_sd));
+
+   /* The previously established connection should have a valid server
+    * description. */
+   handshake_sd = mongoc_client_get_handshake_description (
+      client, monitor_sd->id, NULL /* opts */, &error);
+   ASSERT_OR_PRINT (handshake_sd, error);
+   BSON_ASSERT (
+      0 != strcmp ("Unknown", mongoc_server_description_type (handshake_sd)));
+
+   mongoc_server_description_destroy (handshake_sd);
+   mongoc_server_description_destroy (invalidated_sd);
+   mongoc_server_description_destroy (monitor_sd);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+}
+
+/* Test that calling mongoc_client_get_handshake_description establishes a
+ * connection if a connection has not already been established. */
+void
+test_mongoc_client_get_handshake_establishes_connection_single (void)
+{
+   mongoc_client_t *client;
+   mongoc_server_description_t *handshake_sd;
+   bson_error_t error = {0};
+   uint32_t server_id = 1;
+
+   client = test_framework_new_default_client ();
+
+   handshake_sd = mongoc_client_get_handshake_description (
+      client, server_id, NULL /* opts */, &error);
+   ASSERT_OR_PRINT (handshake_sd, error);
+   BSON_ASSERT (
+      0 != strcmp ("Unknown", mongoc_server_description_type (handshake_sd)));
+
+   mongoc_server_description_destroy (handshake_sd);
+   mongoc_client_destroy (client);
+}
+
+void
+test_mongoc_client_get_handshake_establishes_connection_pooled (void)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_server_description_t *handshake_sd;
+   bson_error_t error = {0};
+   uint32_t server_id = 1;
+
+   pool = test_framework_new_default_client_pool ();
+   client = mongoc_client_pool_pop (pool);
+
+   /* The previously established connection should have a valid server
+    * description. */
+   handshake_sd = mongoc_client_get_handshake_description (
+      client, server_id, NULL /* opts */, &error);
+   ASSERT_OR_PRINT (handshake_sd, error);
+   BSON_ASSERT (
+      0 != strcmp ("Unknown", mongoc_server_description_type (handshake_sd)));
+
+   mongoc_server_description_destroy (handshake_sd);
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+}
+
+void
 test_client_install (TestSuite *suite)
 {
    if (test_framework_getenv_bool ("MONGOC_CHECK_IPV6")) {
@@ -4289,4 +4430,16 @@ test_client_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Client/recv_network_error",
                                 test_mongoc_client_recv_network_error);
+   TestSuite_AddLive (suite,
+                      "/Client/get_handshake_hello_response/single",
+                      test_mongoc_client_get_handshake_hello_response_single);
+   TestSuite_AddLive (suite,
+                      "/Client/get_handshake_hello_response/pooled",
+                      test_mongoc_client_get_handshake_hello_response_pooled);
+   TestSuite_AddLive (suite,
+                      "/Client/get_handshake_establishes_connection/single",
+                      test_mongoc_client_get_handshake_establishes_connection_single);
+   TestSuite_AddLive (suite,
+                      "/Client/get_handshake_establishes_connection/pooled",
+                      test_mongoc_client_get_handshake_establishes_connection_pooled);
 }
