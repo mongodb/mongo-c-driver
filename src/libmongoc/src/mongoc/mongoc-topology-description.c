@@ -352,6 +352,10 @@ _mongoc_topology_description_server_is_candidate (
       default:
          return false;
       }
+
+   case MONGOC_TOPOLOGY_LOAD_BALANCED:
+      return desc_type == MONGOC_SERVER_LOAD_BALANCER;
+
    default:
       return false;
    }
@@ -710,6 +714,16 @@ mongoc_topology_description_suitable_servers (
    if (topology->type == MONGOC_TOPOLOGY_SHARDED) {
       mongoc_set_for_each (
          topology->servers, _mongoc_find_suitable_mongos_cb, &data);
+   }
+
+   /* Load balanced clusters --
+    * Always select the only server. */
+   if (topology->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      BSON_ASSERT (topology->servers->items_len == 1);
+      server = (mongoc_server_description_t *) mongoc_set_get_item (
+         topology->servers, 0);
+      _mongoc_array_append_val (set, server);
+      goto DONE;
    }
 
    /* Ways to get here:
@@ -1131,6 +1145,11 @@ mongoc_topology_description_invalidate_server (
    const bson_error_t *error /* IN */)
 {
    BSON_ASSERT (error);
+
+   if (topology->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      /* Load balancers must never be marked unknown. */
+      return;
+   }
 
    /* send NULL hello reply */
    mongoc_topology_description_handle_hello (
@@ -1793,6 +1812,8 @@ _mongoc_topology_description_type (mongoc_topology_description_t *topology)
       return "RSWithPrimary";
    case MONGOC_TOPOLOGY_SINGLE:
       return "Single";
+   case MONGOC_TOPOLOGY_LOAD_BALANCED:
+      return "LoadBalanced";
    case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
    default:
       MONGOC_ERROR ("Invalid mongoc_topology_description_type_t type");

@@ -146,6 +146,11 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
 
    _mongoc_handshake_freeze ();
    _mongoc_topology_description_monitor_opening (&topology->description);
+   if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      /* Do not proceed to start monitoring threads. */
+      TRACE ("%s", "disabling monitoring for load balanced topology");
+      return;
+   }
 
    /* Reconcile to create the first server monitors. */
    _mongoc_topology_background_monitoring_reconcile (topology);
