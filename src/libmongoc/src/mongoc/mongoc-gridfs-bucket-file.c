@@ -21,6 +21,7 @@
 #include "mongoc-stream-gridfs-download-private.h"
 #include "mongoc-stream-gridfs-upload-private.h"
 #include "mongoc-collection-private.h"
+#include "mongoc-util-private.h"
 
 /* Returns the minimum of two numbers */
 static size_t
@@ -369,7 +370,9 @@ _mongoc_gridfs_bucket_file_writev (mongoc_gridfs_bucket_file_t *file,
 #ifndef _WIN32
                  (char *)
 #endif
-                 iov[i].iov_base + written_this_iov,
+                       iov[i]
+                          .iov_base +
+                    written_this_iov,
                  to_write);
          file->in_buffer += to_write;
          written_this_iov += to_write;
@@ -420,11 +423,13 @@ _mongoc_gridfs_bucket_file_readv (mongoc_gridfs_bucket_file_t *file,
          to_read = _mongoc_min (bytes_available, space_available);
          memcpy (
 #ifndef _WIN32
-                 (char *)
+            (char *)
 #endif
-                 iov[i].iov_base + read_this_iov,
-                 file->buffer + file->bytes_read,
-                 to_read);
+                  iov[i]
+                     .iov_base +
+               read_this_iov,
+            file->buffer + file->bytes_read,
+            to_read);
          file->bytes_read += to_read;
          read_this_iov += to_read;
          total += to_read;
@@ -491,7 +496,7 @@ _mongoc_gridfs_bucket_file_save (mongoc_gridfs_bucket_file_t *file)
    BSON_APPEND_VALUE (&new_doc, "_id", file->file_id);
    BSON_APPEND_INT64 (&new_doc, "length", file->length);
    BSON_APPEND_INT32 (&new_doc, "chunkSize", file->chunk_size);
-   BSON_APPEND_DATE_TIME (&new_doc, "uploadDate", bson_get_monotonic_time ());
+   BSON_APPEND_DATE_TIME (&new_doc, "uploadDate", _mongoc_get_real_time_ms ());
    BSON_APPEND_UTF8 (&new_doc, "filename", file->filename);
    if (file->metadata) {
       BSON_APPEND_DOCUMENT (&new_doc, "metadata", file->metadata);
