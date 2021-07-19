@@ -409,8 +409,9 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
                           MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
                           "Could not establish stream");
 
-   /* Failing to "scan" would normally cause the node to be in cooldown. But in
-    * load balancer mode this is bypassed. The subsequent connect attempt should
+   /* Failing to "scan" would normally cause the node to be in cooldown and fail
+    * to reconnect (until the 5 second period has passed). But in load balancer
+    * mode cooldown is bypassed, so the subsequent connect attempt should
     * succeed. */
    ok = mongoc_client_command_simple (client,
                                       "admin",

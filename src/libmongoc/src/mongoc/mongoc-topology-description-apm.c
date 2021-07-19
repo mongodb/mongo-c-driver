@@ -125,10 +125,10 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
    if (td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       mongoc_server_description_t *prev_sd;
 
-      /* LoadBalanced deployments must have exactly one host listed. */
+      /* LoadBalanced deployments must have exactly one host listed. Otherwise,
+       * an error would have occurred when constructing the topology. */
       BSON_ASSERT (td->servers->items_len == 1);
-      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers,
-                                                                (int) 0);
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, 0);
       prev_sd = mongoc_server_description_new_copy (sd);
       if (td->apm_callbacks.topology_changed) {
          mongoc_topology_description_destroy (prev_td);

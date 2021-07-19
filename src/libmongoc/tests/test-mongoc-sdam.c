@@ -36,8 +36,9 @@ _topology_has_description (mongoc_topology_description_t *topology,
             ASSERT_CMPSTR (sd->set_name, set_name);
          }
          /* TODO (CDRIVER-4057) this should assert that a null setName means the
-         server description also has no setName.
-            Uncomment this when CDRIVER-4057 is resolved.
+         server description also has no setName. Uncomment this when
+         CDRIVER-4057 is resolved:
+
          else if (sd->set_name) {
             test_error ("server: %s, expected NULL setName, got: %s", address,
          sd->set_name);

@@ -1739,8 +1739,9 @@ run_json_general_test (const json_test_config_t *config)
 
       /* expect "operation was interrupted", ignore "command not found" or "is
        * not supported" */
-      if (!r && (error.domain != MONGOC_ERROR_SERVER ||
-                 (error.code != 11601 && error.code != 59)) &&
+      if (!r &&
+          (error.domain != MONGOC_ERROR_SERVER ||
+           (error.code != 11601 && error.code != 59)) &&
           (strstr (error.message, "is unsupported") == NULL)) {
          MONGOC_WARNING ("Error in killAllSessions: %s", error.message);
       }

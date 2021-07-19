@@ -174,13 +174,12 @@ _mongoc_topology_scanner_cb (uint32_t id,
    topology = (mongoc_topology_t *) data;
 
    if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-      /* In load balanced mode, scanning is only for connection establishment. It must not modify the topology description. */
-      MONGOC_DEBUG ("Ignoring hello response in callback in load balanced mode");
+      /* In load balanced mode, scanning is only for connection establishment.
+       * It must not modify the topology description. */
       return;
    }
 
    bson_mutex_lock (&topology->mutex);
-
    sd = mongoc_topology_description_server_by_id (
       &topology->description, id, NULL);
 
@@ -432,6 +431,12 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
           topology->uri, MONGOC_URI_LOADBALANCED, false)) {
       init_type = MONGOC_TOPOLOGY_LOAD_BALANCED;
       if (topology->single_threaded) {
+         /* Cooldown only applies to server monitoring for single-threaded
+          * clients. In load balanced mode, the topology scanner is used to
+          * create connections. The cooldown period does not apply. A network
+          * error to a load balanced connection does not imply subsequent
+          * connection attempts will be to the same server and that a delay
+          * should occur. */
          _mongoc_topology_bypass_cooldown (topology);
       }
    } else if (service && !has_directconnection) {
@@ -961,9 +966,10 @@ mongoc_topology_select (mongoc_topology_t *topology,
    }
 }
 
-/* Bypasses normal server selection behavior for a load balanced topology. Returns the id of the one load balancer server. Returns 0 on failure.
- * Successful post-condition: On a single threaded client, a connection will have been established.
-*/
+/* Bypasses normal server selection behavior for a load balanced topology.
+ * Returns the id of the one load balancer server. Returns 0 on failure.
+ * Successful post-condition: On a single threaded client, a connection will
+ * have been established. */
 static uint32_t
 _mongoc_topology_select_server_id_loadbalanced (mongoc_topology_t *topology,
                                                 bson_error_t *error)
@@ -999,32 +1005,42 @@ _mongoc_topology_select_server_id_loadbalanced (mongoc_topology_t *topology,
       return selected_server_id;
    }
 
-   /* If this is a single threaded topology, we must ensure that a connection is available to this server. Wrapping drivers make the assumption that successful server selection implies a connection is available. */
-   node = mongoc_topology_scanner_get_node (topology->scanner, selected_server_id);
+   /* If this is a single threaded topology, we must ensure that a connection is
+    * available to this server. Wrapping drivers make the assumption that
+    * successful server selection implies a connection is available. */
+   node =
+      mongoc_topology_scanner_get_node (topology->scanner, selected_server_id);
    if (!node) {
-      _mongoc_server_selection_error ("Topology scanner in invalid state; cannot find load balancer", NULL, error);
+      _mongoc_server_selection_error (
+         "Topology scanner in invalid state; cannot find load balancer",
+         NULL,
+         error);
       return 0;
    }
 
    if (!node->stream) {
-      MONGOC_DEBUG ("server selection performing scan since no connection has been established");
+      TRACE ("%s",
+             "Server selection performing scan since no connection has "
+             "been established");
       _mongoc_topology_do_blocking_scan (topology, &scanner_error);
    }
 
    if (!node->stream) {
-      /* Use the error domain / code returned in mongoc-cluster when fetching a stream fails. */
+      /* Use the same error domain / code that is returned in mongoc-cluster.c
+       * when fetching a stream fails. */
       if (scanner_error.code) {
          bson_set_error (error,
-                  MONGOC_ERROR_STREAM,
-                  MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                  "Could not establish stream for node %s: %s",
-                  node->host.host_and_port, scanner_error.message);
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                         "Could not establish stream for node %s: %s",
+                         node->host.host_and_port,
+                         scanner_error.message);
       } else {
          bson_set_error (error,
-                           MONGOC_ERROR_STREAM,
-                           MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
-                           "Could not establish stream for node %s",
-                           node->host.host_and_port);
+                         MONGOC_ERROR_STREAM,
+                         MONGOC_ERROR_STREAM_NOT_ESTABLISHED,
+                         "Could not establish stream for node %s",
+                         node->host.host_and_port);
       }
       return 0;
    }
@@ -1089,7 +1105,6 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
    if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       bson_mutex_unlock (&topology->mutex);
-      MONGOC_DEBUG ("bypassing server selection for load balanced topology");
       return _mongoc_topology_select_server_id_loadbalanced (topology, error);   
    }
 
@@ -1400,8 +1415,8 @@ _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
    bson_mutex_lock (&topology->mutex);
 
    if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-      /* In load balanced mode, scanning is only for connection establishment. It must not modify the topology description. */
-      MONGOC_DEBUG ("Ignoring handshake response in load balanced mode");
+      /* In load balanced mode, scanning is only for connection establishment.
+       * It must not modify the topology description. */
       bson_mutex_unlock (&topology->mutex);
       return true;
    }
