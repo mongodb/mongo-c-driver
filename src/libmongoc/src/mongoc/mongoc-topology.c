@@ -132,8 +132,8 @@ _mongoc_topology_scanner_setup_err_cb (uint32_t id,
    topology = (mongoc_topology_t *) data;
 
    if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-      /* In load balanced mode, scanning is only for connection establishment. It must not modify the topology description. */
-      MONGOC_DEBUG ("Ignoring scanner error in load balanced mode");
+      /* In load balanced mode, scanning is only for connection establishment.
+       * It must not modify the topology description. */
       return;
    }
 

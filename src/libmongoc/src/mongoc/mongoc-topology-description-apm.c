@@ -180,8 +180,7 @@ _mongoc_topology_description_monitor_closed (
 
          /* LoadBalanced deployments must have exactly one host listed. */
          BSON_ASSERT (td->servers->items_len == 1);
-         sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers,
-                                                                   (int) 0);
+         sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, 0);
          _mongoc_topology_description_monitor_server_closed (td, sd);
       }
       bson_oid_copy (&td->topology_id, &event.topology_id);
