@@ -80,6 +80,10 @@ mock_server_auto_hello (mock_server_t *server, const char *response_json, ...);
 int
 mock_server_auto_endsessions (mock_server_t *server);
 
+/* Reply to {"ping": 1} command with {"ok": 1} */
+int
+mock_server_auto_ping (mock_server_t *server);
+
 #ifdef MONGOC_ENABLE_SSL
 
 void
