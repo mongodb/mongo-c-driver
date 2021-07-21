@@ -72,12 +72,14 @@ mongoc_generation_map_copy (const mongoc_generation_map_t *gm)
       LL_PREPEND (gm_copy->list, node_copy);
    }
 
-   gm_copy->null_node = gm_node_copy (gm->null_node);
+   if (gm->null_node) {
+      gm_copy->null_node = gm_node_copy (gm->null_node);
+   }
    return gm_copy;
 }
 
 uint32_t
-mongoc_generation_map_get (const mongoc_generation_map_t *gm, bson_oid_t *key)
+mongoc_generation_map_get (const mongoc_generation_map_t *gm, const bson_oid_t *key)
 {
    gm_node_t *iter = NULL;
 
@@ -102,7 +104,7 @@ mongoc_generation_map_get (const mongoc_generation_map_t *gm, bson_oid_t *key)
 }
 
 void
-mongoc_generation_map_increment (mongoc_generation_map_t* gm, bson_oid_t *key)
+mongoc_generation_map_increment (mongoc_generation_map_t* gm, const bson_oid_t *key)
 {
    gm_node_t *match;
 

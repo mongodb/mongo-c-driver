@@ -33,11 +33,11 @@ mongoc_generation_map_copy (const mongoc_generation_map_t *gm);
 
 /* key may be NULL. */
 uint32_t
-mongoc_generation_map_get (const mongoc_generation_map_t *gm, bson_oid_t *key);
+mongoc_generation_map_get (const mongoc_generation_map_t *gm, const bson_oid_t *key);
 
 /* key may be NULL. */
 void
-mongoc_generation_map_increment (mongoc_generation_map_t* gm, bson_oid_t *key);
+mongoc_generation_map_increment (mongoc_generation_map_t* gm, const bson_oid_t *key);
 
 void
 mongoc_generation_map_destroy (mongoc_generation_map_t * gm);
