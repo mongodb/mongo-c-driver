@@ -2445,6 +2445,46 @@ test_hello_ok_pooled ()
    _test_hello_ok (true);
 }
 
+/* Test that _mongoc_topology_clear_connection_pool increments the generation. */
+static void test_topology_pool_clear (void) {
+   mongoc_topology_t *topology;
+   mongoc_uri_t *uri;
+
+   uri = mongoc_uri_new ("mongodb://localhost:27017,localhost:27018");
+   topology = mongoc_topology_new (uri, true);
+
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 1, NULL));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 2, NULL));
+   _mongoc_topology_clear_connection_pool (topology, 1);
+   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_generation (topology, 1, NULL));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 2, NULL));
+
+   mongoc_uri_destroy (uri);
+   mongoc_topology_destroy (topology);
+}
+
+static void test_topology_pool_clear_by_serviceid(void) {
+   mongoc_topology_t *topology;
+   mongoc_uri_t *uri;
+   bson_oid_t oid_a;
+   bson_oid_t oid_b;
+
+   uri = mongoc_uri_new ("mongodb://localhost:27017");
+   topology = mongoc_topology_new (uri, true);
+
+   bson_oid_init_from_string (&oid_a, "AAAAAAAAAAAAAAAAAAAAAAAA");
+   bson_oid_init_from_string (&oid_b, "BBBBBBBBBBBBBBBBBBBBBBBB");
+
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 1, &oid_a));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 1, &oid_b));
+   _mongoc_topology_clear_connection_pool (topology, 1);
+   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_generation (topology, 1, &oid_a));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 1, &oid_b));
+
+   mongoc_uri_destroy (uri);
+   mongoc_topology_destroy (topology);
+}
+
 void
 test_topology_install (TestSuite *suite)
 {
@@ -2611,4 +2651,7 @@ test_topology_install (TestSuite *suite)
       suite, "/Topology/hello_ok/single", test_hello_ok_single);
    TestSuite_AddMockServerTest (
       suite, "/Topology/hello_ok/pooled", test_hello_ok_pooled);
+
+   TestSuite_Add (suite, "/Topology/pool_clear", test_topology_pool_clear);
+   TestSuite_Add (suite, "/Topology/pool_clear_by_serviceid", test_topology_pool_clear_by_serviceid);
 }

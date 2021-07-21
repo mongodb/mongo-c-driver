@@ -274,4 +274,11 @@ _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology,
 void
 _mongoc_topology_set_srv_polling_rescan_interval_ms (
    mongoc_topology_t *topology, int64_t val);
+
+/* Return the latest connection generation for the server_id and/or service_id.
+ * Use this generation for newly established connections.
+ * service_id may be NULL.
+ */
+uint32_t _mongoc_topology_get_connection_generation (mongoc_topology_t *topology, uint32_t server_id, bson_oid_t* service_id);
+
 #endif

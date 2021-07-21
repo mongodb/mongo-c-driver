@@ -110,6 +110,7 @@ struct _mongoc_server_description_t {
    3. an app thread receives a non-timeout network error after the handshake
    4. an app thread receives a "not primary" or "node is recovering" error from a
    pre-4.2 server.
+   // LBTODO: generation should map from service_id to generation.
    */
    uint32_t generation;
    bson_oid_t service_id;

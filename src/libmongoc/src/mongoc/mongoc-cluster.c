@@ -95,6 +95,7 @@ _handle_not_primary_error (mongoc_cluster_t *cluster,
 
    server_id = server_stream->sd->id;
    bson_mutex_lock (&cluster->client->topology->mutex);
+   // LBTODO: pass server stream's handshake_sd.
    if (_mongoc_topology_handle_app_error (cluster->client->topology,
                                           server_id,
                                           true /* handshake complete */,
@@ -131,6 +132,7 @@ _handle_network_error (mongoc_cluster_t *cluster,
    }
 
    bson_mutex_lock (&topology->mutex);
+   // LBTODO: pass server stream's handshake_sd.
    _mongoc_topology_handle_app_error (topology,
                                       server_id,
                                       handshake_complete,
@@ -2268,6 +2270,19 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
        * into account.
        */
 
+      /* Add a transient transaction label if applicable. */
+      _mongoc_bson_init_with_transient_txn_error (cs, reply);
+
+      /* When establishing a new connection in load balanced mode, drivers MUST
+       * NOT perform SDAM error handling for any errors that occur before the
+       * MongoDB Handshake. */
+      bson_mutex_lock (&topology->mutex);
+      if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+         MONGOC_DEBUG ("bypassing connection pool clear because of load balanced deployment");
+         bson_mutex_unlock (&topology->mutex);
+         return NULL;
+      }
+
       mongoc_topology_invalidate_server (topology, server_id, err_ptr);
       mongoc_cluster_disconnect_node (cluster, server_id);
       bson_mutex_lock (&topology->mutex);
@@ -2277,7 +2292,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                                               server_id);
       }
       bson_mutex_unlock (&topology->mutex);
-      _mongoc_bson_init_with_transient_txn_error (cs, reply);
+
       return NULL;
    }
 
