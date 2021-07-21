@@ -103,7 +103,6 @@ _handle_not_primary_error (mongoc_cluster_t *cluster,
                                           reply,
                                           NULL,
                                           server_stream->sd->max_wire_version,
-                                          // LBTODO: _mongoc_topology_get_connection_generation (topology, server_id, NULL)
                                           server_stream->sd->generation)) {
       mongoc_cluster_disconnect_node (cluster, server_id);
    }
@@ -141,7 +140,6 @@ _handle_network_error (mongoc_cluster_t *cluster,
                                       NULL,
                                       why,
                                       server_stream->sd->max_wire_version,
-                                      // LBTODO: _mongoc_topology_get_connection_generation (topology, server_id, NULL)
                                       server_stream->sd->generation);
    bson_mutex_unlock (&topology->mutex);
    /* Always disconnect the current connection on network error. */

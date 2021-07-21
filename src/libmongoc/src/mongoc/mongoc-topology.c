@@ -2004,5 +2004,5 @@ uint32_t _mongoc_topology_get_connection_generation (mongoc_topology_t *topology
       /* Server removed, ignore and ignore error. */
       return 0;
    }
-   return sd->generation;
+   return mongoc_generation_map_get (sd->generation_map, service_id);
 }
