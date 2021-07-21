@@ -48,6 +48,7 @@ mongoc_server_description_cleanup (mongoc_server_description_t *sd)
    bson_destroy (&sd->tags);
    bson_destroy (&sd->compressors);
    bson_destroy (&sd->topology_version);
+   mongoc_generation_map_destroy (sd->generation_map);
 }
 
 /* Reset fields inside this sd, but keep same id, host information, RTT,
@@ -125,6 +126,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    sd->round_trip_time_msec = MONGOC_RTT_UNSET;
    sd->generation = 0;
    sd->opened = 0;
+   sd->generation_map = mongoc_generation_map_new ();
 
    if (!_mongoc_host_list_from_string (&sd->host, address)) {
       MONGOC_WARNING ("Failed to parse uri for %s", address);
@@ -822,6 +824,7 @@ mongoc_server_description_new_copy (
    memcpy (&copy->error, &description->error, sizeof copy->error);
 
    copy->generation = description->generation;
+   copy->generation_map = mongoc_generation_map_copy (description->generation_map);
    return copy;
 }
 

@@ -103,6 +103,7 @@ _handle_not_primary_error (mongoc_cluster_t *cluster,
                                           reply,
                                           NULL,
                                           server_stream->sd->max_wire_version,
+                                          // LBTODO: _mongoc_topology_get_connection_generation (topology, server_id, NULL)
                                           server_stream->sd->generation)) {
       mongoc_cluster_disconnect_node (cluster, server_id);
    }
@@ -140,6 +141,7 @@ _handle_network_error (mongoc_cluster_t *cluster,
                                       NULL,
                                       why,
                                       server_stream->sd->max_wire_version,
+                                      // LBTODO: _mongoc_topology_get_connection_generation (topology, server_id, NULL)
                                       server_stream->sd->generation);
    bson_mutex_unlock (&topology->mutex);
    /* Always disconnect the current connection on network error. */
@@ -2505,6 +2507,7 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
    }
    /* TODO: (CDRIVER-4078) do not store the generation counter as part of the
     * server description. */
+   // LBTODO: _mongoc_topology_get_connection_generation (topology, server_id, NULL)
    handshake_sd->generation = monitor_sd->generation;
    mongoc_server_description_destroy (monitor_sd);
 
@@ -2555,6 +2558,7 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
    bson_mutex_lock (&topology->mutex);
    sd = mongoc_topology_description_server_by_id (
       &topology->description, server_stream->sd->id, &error);
+   // LBTODO: _mongoc_topology_get_connection_generation (topology, server_id, NULL)
    if (!sd || server_stream->sd->generation < sd->generation) {
       /* No server description, or the pool has been cleared. */
       bson_mutex_unlock (&topology->mutex);
@@ -2611,6 +2615,7 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
       &topology->description, server_id, error);
    if (sd) {
       has_server_description = true;
+      // LBTODO: _mongoc_topology_get_connection_generation (topology, server_id, NULL)
       generation = sd->generation;
    }
    bson_mutex_unlock (&topology->mutex);

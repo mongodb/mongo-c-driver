@@ -1834,6 +1834,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       return false;
    }
 
+   // LBTODO: _mongoc_topology_get_connection_generation (topology, server_id, NULL)
    if (generation < sd->generation) {
       /* This is a stale connection. Ignore. */
       return false;

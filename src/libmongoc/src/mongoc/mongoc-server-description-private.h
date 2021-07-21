@@ -20,6 +20,7 @@
 #define MONGOC_SERVER_DESCRIPTION_PRIVATE_H
 
 #include "mongoc-server-description.h"
+#include "mongoc-generation-map-private.h"
 
 
 #define MONGOC_DEFAULT_WIRE_VERSION 0
@@ -113,6 +114,7 @@ struct _mongoc_server_description_t {
    // LBTODO: generation should map from service_id to generation.
    */
    uint32_t generation;
+   mongoc_generation_map_t *generation_map;
    bson_oid_t service_id;
 };
 
