@@ -508,6 +508,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-database.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-error.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-find-and-modify.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-generation-map.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-init.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-gridfs-bucket.c
@@ -951,6 +952,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-error.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-exhaust.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-find-and-modify.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-generation-map.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs-bucket.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs-file-page.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-gridfs.c
