@@ -353,6 +353,10 @@ _mongoc_topology_description_server_is_candidate (
          return false;
       }
 
+   /* Note, there is no call path that leads to the
+    * MONGOC_TOPOLOGY_LOAD_BALANCED case. Server selection for load balanced
+    * topologies bypasses this logic. This silences compiler warnings on
+    * unhandled enum values. */
    case MONGOC_TOPOLOGY_LOAD_BALANCED:
       return desc_type == MONGOC_SERVER_LOAD_BALANCER;
 
