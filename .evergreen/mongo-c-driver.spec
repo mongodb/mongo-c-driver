@@ -10,7 +10,7 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.17.5
+%global up_version   1.18.0
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
@@ -109,6 +109,8 @@ Documentation: http://mongoc.org/libbson/%{version}/
 
 
 %build
+sed -e '/CMAKE_SKIP_BUILD_RPATH/s/OFF/ON/' -i CMakeLists.txt
+
 %cmake \
     -DENABLE_BSON:STRING=ON \
     -DENABLE_MONGOC:BOOL=ON \
@@ -223,6 +225,22 @@ exit $ret
 
 
 %changelog
+* Wed Jul 14 2021 Remi Collet <remi@remirepo.net> - 1.18.0-1
+- update to 1.18.0
+
+* Wed Jul  7 2021 Remi Collet <remi@remirepo.net> - 1.17.7-1
+- update to 1.17.7
+
+* Thu Jun  3 2021 Remi Collet <remi@remirepo.net> - 1.17.6-2
+- update to 1.17.6
+- fix invalid rpath
+
+* Thu May 20 2021 Pete Walter <pwalter@fedoraproject.org> - 1.17.5-3
+- Rebuild for ICU 69
+
+* Wed May 19 2021 Pete Walter <pwalter@fedoraproject.org> - 1.17.5-2
+- Rebuild for ICU 69
+
 * Fri Apr  9 2021 Remi Collet <remi@remirepo.net> - 1.17.5-1
 - update to 1.17.5 (no change)
 
