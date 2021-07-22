@@ -27,8 +27,7 @@ https://github.com/mongodb/specifications/blob/master/source/server-discovery-an
 /* ServerOpeningEvent */
 void
 _mongoc_topology_description_monitor_server_opening (
-   const mongoc_topology_description_t *td,
-   mongoc_server_description_t *sd)
+   const mongoc_topology_description_t *td, mongoc_server_description_t *sd)
 {
    if (td->apm_callbacks.server_opening && !sd->opened) {
       mongoc_apm_server_opening_t event;
@@ -115,8 +114,33 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
    for (i = 0; i < td->servers->items_len; i++) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers,
                                                                 (int) i);
-
       _mongoc_topology_description_monitor_server_opening (td, sd);
+   }
+
+   /* If this is a load balanced topology:
+    * - update the one server description to be LoadBalancer
+    * - emit a server changed event Unknown => LoadBalancer
+    * - emit a topology changed event
+    */
+   if (td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      mongoc_server_description_t *prev_sd;
+
+      /* LoadBalanced deployments must have exactly one host listed. Otherwise,
+       * an error would have occurred when constructing the topology. */
+      BSON_ASSERT (td->servers->items_len == 1);
+      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, 0);
+      prev_sd = mongoc_server_description_new_copy (sd);
+      BSON_ASSERT (prev_sd);
+      if (td->apm_callbacks.topology_changed) {
+         mongoc_topology_description_destroy (prev_td);
+         _mongoc_topology_description_copy_to (td, prev_td);
+      }
+      sd->type = MONGOC_SERVER_LOAD_BALANCER;
+      _mongoc_topology_description_monitor_server_changed (td, prev_sd, sd);
+      mongoc_server_description_destroy (prev_sd);
+      if (td->apm_callbacks.topology_changed) {
+         _mongoc_topology_description_monitor_changed (prev_td, td);
+      }
    }
 
    if (prev_td) {
@@ -152,6 +176,14 @@ _mongoc_topology_description_monitor_closed (
    if (td->apm_callbacks.topology_closed) {
       mongoc_apm_topology_closed_t event;
 
+      if (td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+         mongoc_server_description_t *sd;
+
+         /* LoadBalanced deployments must have exactly one host listed. */
+         BSON_ASSERT (td->servers->items_len == 1);
+         sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, 0);
+         _mongoc_topology_description_monitor_server_closed (td, sd);
+      }
       bson_oid_copy (&td->topology_id, &event.topology_id);
       event.context = td->apm_context;
       td->apm_callbacks.topology_closed (&event);
