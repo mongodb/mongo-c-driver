@@ -280,6 +280,8 @@ extern void
 test_server_stream_install (TestSuite *suite);
 extern void
 test_generation_map_install (TestSuite *suite);
+extern void
+test_shared_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -659,7 +661,8 @@ static char *
 _uri_str_from_env (void)
 {
    if (test_framework_getenv_bool ("MONGOC_TEST_LOADBALANCED")) {
-      char *loadbalanced_uri_str = test_framework_getenv ("SINGLE_MONGOS_LB_URI");
+      char *loadbalanced_uri_str =
+         test_framework_getenv ("SINGLE_MONGOS_LB_URI");
       if (!loadbalanced_uri_str) {
          test_error ("SINGLE_MONGOS_LB_URI and MULTI_MONGOS_LB_URI must be set "
                      "when MONGOC_TEST_LOADBALANCED is enabled");
@@ -1406,7 +1409,8 @@ test_framework_get_uri ()
 }
 
 mongoc_uri_t *
-test_framework_get_uri_multi_mongos_loadbalanced () {
+test_framework_get_uri_multi_mongos_loadbalanced ()
+{
    char *uri_str_no_auth;
    char *uri_str;
    mongoc_uri_t *uri;
@@ -2955,6 +2959,7 @@ main (int argc, char *argv[])
    test_loadbalanced_install (&suite);
    test_server_stream_install (&suite);
    test_generation_map_install (&suite);
+   test_shared_install (&suite);
 
    if (test_framework_is_loadbalanced ()) {
       mongoc_global_mock_service_id = true;
@@ -2986,14 +2991,16 @@ main (int argc, char *argv[])
  * initially discover the min/max wire version of a server)
  */
 bool
-test_framework_supports_legacy_opcodes (void) {
+test_framework_supports_legacy_opcodes (void)
+{
    /* Wire v14+ removed legacy opcodes */
-   return test_framework_skip_if_max_wire_version_less_than_14() == 0;
+   return test_framework_skip_if_max_wire_version_less_than_14 () == 0;
 }
 
 int
-test_framework_skip_if_no_legacy_opcodes (void) {
-   if (!TestSuite_CheckLive()) {
+test_framework_skip_if_no_legacy_opcodes (void)
+{
+   if (!TestSuite_CheckLive ()) {
       return 0;
    }
 
@@ -3006,8 +3013,9 @@ test_framework_skip_if_no_legacy_opcodes (void) {
 
 /* SERVER-57390 removed the getLastError command on 5.1 servers. */
 int
-test_framework_skip_if_no_getlasterror (void) {
-   if (!TestSuite_CheckLive()) {
+test_framework_skip_if_no_getlasterror (void)
+{
+   if (!TestSuite_CheckLive ()) {
       return 0;
    }
 
@@ -3019,6 +3027,7 @@ test_framework_skip_if_no_getlasterror (void) {
 }
 
 bool
-test_framework_is_loadbalanced (void) {
+test_framework_is_loadbalanced (void)
+{
    return test_framework_getenv_bool ("MONGOC_TEST_LOADBALANCED");
 }

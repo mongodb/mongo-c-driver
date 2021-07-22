@@ -607,6 +607,8 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-api.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-server-description.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-client-session.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-shared.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-shared.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-socket.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-libressl.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-tls-openssl.h
@@ -989,6 +991,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-selection.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-server-stream.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-set.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-shared.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-socket.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-speculative-auth.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream.c
