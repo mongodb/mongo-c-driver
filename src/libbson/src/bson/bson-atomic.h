@@ -25,9 +25,55 @@
 #include "bson-compat.h"
 #include "bson-macros.h"
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
 
 BSON_BEGIN_DECLS
 
+
+#define DECL_ATOMIC_INTEGRAL(NamePart, Type, VCIntrinSuffix)                 \
+   static BSON_INLINE Type bson_atomic_##NamePart##_fetch_add (              \
+      volatile Type *a, Type addend)                                         \
+   {                                                                         \
+      return BSON_CC_Pick (                                                  \
+         BSON_CONCAT (_InterlockedExchangeAdd, VCIntrinSuffix),              \
+         __sync_fetch_and_add) (a, addend);                                  \
+   }                                                                         \
+                                                                             \
+   static BSON_INLINE Type bson_atomic_##NamePart##_fetch_sub (              \
+      volatile Type *a, Type subtrahend)                                     \
+   {                                                                         \
+      return BSON_CC_Pick (BSON_CONCAT (_InterlockedExchangeAdd,             \
+                                        VCIntrinSuffix) (a, -subtrahend),    \
+                           __sync_fetch_and_sub (a, subtrahend));            \
+   }                                                                         \
+                                                                             \
+   static BSON_INLINE Type bson_atomic_##NamePart##_fetch (volatile Type *a) \
+   {                                                                         \
+      return bson_atomic_##NamePart##_fetch_add (a, 0);                      \
+   }                                                                         \
+                                                                             \
+   static BSON_INLINE Type bson_atomic_##NamePart##_compare_and_swap (       \
+      volatile Type *a, Type expect, Type new_value)                         \
+   {                                                                         \
+      return BSON_CC_Pick (                                                  \
+         BSON_CONCAT (_InterlockedCompareExchange,                           \
+                      VCIntrinSuffix) (a, new_value, expect),                \
+         __sync_val_compare_and_swap (a, expect, new_value));                \
+   }
+
+#define DECL_ATOMIC_STDINT(Name, VCSuffix) \
+   DECL_ATOMIC_INTEGRAL (Name, Name##_t, VCSuffix)
+
+DECL_ATOMIC_STDINT (int8, 8);
+DECL_ATOMIC_STDINT (int16, 16);
+DECL_ATOMIC_STDINT (int32, );
+DECL_ATOMIC_STDINT (int64, 64);
+
+#undef DECL_ATOMIC_STDINT
+#undef DECL_ATOMIC_INTEGRAL
 
 #if defined(__sun) && defined(__SVR4)
 /* Solaris */

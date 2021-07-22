@@ -171,6 +171,17 @@ typedef signed char bool;
 #endif
 
 
+
+#ifdef _MSC_VER
+#define BSON_CC_Pick(MSVC_Action, GNU_Action) MSVC_Action
+#elif defined(__GNUC__)
+#define BSON_CC_Pick(MSVC_Action, GNU_Action) GNU_Action
+#else
+#define BSON_CC_Pick(MSVC_Action, GNU_Action) \
+   _bson_cc_pick_compiler_is_not_known_
+#endif
+
+
 BSON_END_DECLS
 
 
