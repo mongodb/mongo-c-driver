@@ -605,6 +605,7 @@ test_pre_handshake_error_does_not_clear_pool (void)
    request =
       mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
    BSON_ASSERT (request);
+   capture_logs (true); /* hide Failed to buffer logs. */
    mock_server_hangs_up (request);
    request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));
@@ -740,6 +741,7 @@ test_post_handshake_error_clears_pool (void)
    /* The "ping" command is sent. */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
+   capture_logs (true); /* hide Failed to buffer logs. */
    mock_server_hangs_up (request);
    request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));
