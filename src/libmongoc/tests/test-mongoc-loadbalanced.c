@@ -339,8 +339,10 @@ test_loadbalanced_server_selection_establishes_connection_single (void *unused)
    bson_error_t error;
    mongoc_server_description_t *monitor_sd;
    mongoc_server_description_t *handshake_sd;
+   stats_t *stats;
 
    client = mongoc_client_new (uristr);
+   stats = set_client_callbacks (client);
    monitor_sd = mongoc_client_select_server (
       client, true /* for writes */, NULL /* read prefs */, &error);
    ASSERT_OR_PRINT (monitor_sd, error);
@@ -357,6 +359,7 @@ test_loadbalanced_server_selection_establishes_connection_single (void *unused)
    mongoc_server_description_destroy (monitor_sd);
    mongoc_server_description_destroy (handshake_sd);
    mongoc_client_destroy (client);
+   free_and_assert_stats (stats);
 }
 
 /* Test that the 5 second cooldown does not apply when establishing a new

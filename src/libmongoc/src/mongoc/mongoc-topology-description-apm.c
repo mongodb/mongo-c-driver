@@ -130,6 +130,7 @@ _mongoc_topology_description_monitor_opening (mongoc_topology_description_t *td)
       BSON_ASSERT (td->servers->items_len == 1);
       sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, 0);
       prev_sd = mongoc_server_description_new_copy (sd);
+      BSON_ASSERT (prev_sd);
       if (td->apm_callbacks.topology_changed) {
          mongoc_topology_description_destroy (prev_td);
          _mongoc_topology_description_copy_to (td, prev_td);
