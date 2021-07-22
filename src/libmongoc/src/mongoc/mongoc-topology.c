@@ -187,7 +187,7 @@ _mongoc_topology_scanner_cb (uint32_t id,
       /* Server monitoring: When a server check fails due to a network error
        * (including a network timeout), the client MUST clear its connection
        * pool for the server */
-      _mongoc_topology_clear_connection_pool (topology, id);
+      _mongoc_topology_clear_connection_pool (topology, id, NULL /* service_id */);
    }
 
    /* Server Discovery and Monitoring Spec: "Once a server is connected, the
@@ -478,7 +478,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    }
 
    while (hl) {
-      MONGOC_DEBUG ("adding server");
       mongoc_topology_description_add_server (
          &topology->description, hl->host_and_port, &id);
       mongoc_topology_scanner_add (topology->scanner, hl, id, false);
@@ -1784,10 +1783,12 @@ _find_topology_version (const bson_t *reply, bson_t *topology_version)
  * Caller must lock topology->mutex. */
 void
 _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
-                                        uint32_t server_id)
+                                        uint32_t server_id,
+                                        const bson_oid_t *service_id)
 {
    mongoc_server_description_t *sd;
    bson_error_t error;
+   char oidstr[26] = {0};
 
    sd = mongoc_topology_description_server_by_id (
       &topology->description, server_id, &error);
@@ -1795,8 +1796,12 @@ _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
       /* Server removed, ignore and ignore error. */
       return;
    }
-   MONGOC_DEBUG ("clearing pool for server: %s", sd->host.host_and_port);
-   sd->generation++;
+
+   if (service_id) {
+      bson_oid_to_string (service_id, oidstr);
+   }
+   MONGOC_DEBUG ("clearing pool for server: %s and service_id: %s", sd->host.host_and_port, oidstr);
+   mongoc_generation_map_increment (sd->generation_map, service_id);
 }
 
 
@@ -1804,6 +1809,8 @@ _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
  *
  * This can be a network error or "not primary" / "node is recovering" error.
  * Caller must lock topology->mutex.
+ * service_id may be NULL. It is only applicable if connected to a load balanced
+ * deployment.
  * Returns true if pool was cleared.
  */
 bool
@@ -1814,7 +1821,8 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    const bson_t *reply,
                                    const bson_error_t *why,
                                    uint32_t max_wire_version,
-                                   uint32_t generation)
+                                   uint32_t generation,
+                                   const bson_oid_t *service_id)
 {
    bson_error_t server_selection_error;
    mongoc_server_description_t *sd;
@@ -1834,8 +1842,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       return false;
    }
 
-   // LBTODO: _mongoc_topology_get_connection_generation (topology, server_id, NULL)
-   if (generation < sd->generation) {
+   if (generation < _mongoc_topology_get_connection_generation (topology, server_id, service_id)) {
       /* This is a stale connection. Ignore. */
       return false;
    }
@@ -1845,7 +1852,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, why);
       // LBTODO: pass the server description through to only clear the pool with the appropriate service ID.
-      _mongoc_topology_clear_connection_pool (topology, server_id);
+      _mongoc_topology_clear_connection_pool (topology, server_id, service_id);
       pool_cleared = true;
       if (!topology->single_threaded) {
          _mongoc_topology_background_monitoring_cancel_check (topology,
@@ -1860,7 +1867,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       mongoc_topology_description_invalidate_server (
          &topology->description, server_id, why);
       // LBTODO: pass the server description through to only clear the pool with the appropriate service ID.
-      _mongoc_topology_clear_connection_pool (topology, server_id);
+      _mongoc_topology_clear_connection_pool (topology, server_id, service_id);
       pool_cleared = true;
       if (!topology->single_threaded) {
          _mongoc_topology_background_monitoring_cancel_check (topology,
@@ -1905,7 +1912,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       if (max_wire_version <= WIRE_VERSION_4_0 ||
           _mongoc_error_is_shutdown (&cmd_error)) {
          // LBTODO: pass the server description through to only clear the pool with the appropriate service ID.
-         _mongoc_topology_clear_connection_pool (topology, server_id);
+         _mongoc_topology_clear_connection_pool (topology, server_id, service_id);
          pool_cleared = true;
       }
 
@@ -1994,7 +2001,7 @@ _mongoc_topology_set_srv_polling_rescan_interval_ms (
 }
 
 /* Caller must lock topology->mutex. */
-uint32_t _mongoc_topology_get_connection_generation (mongoc_topology_t *topology, uint32_t server_id, bson_oid_t* service_id) {
+uint32_t _mongoc_topology_get_connection_generation (mongoc_topology_t *topology, uint32_t server_id, const bson_oid_t* service_id) {
    mongoc_server_description_t *sd;
    bson_error_t error;
 

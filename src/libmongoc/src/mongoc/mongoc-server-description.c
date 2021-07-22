@@ -124,7 +124,6 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    sd->id = id;
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time_msec = MONGOC_RTT_UNSET;
-   sd->generation = 0;
    sd->opened = 0;
    sd->generation_map = mongoc_generation_map_new ();
 
@@ -823,7 +822,6 @@ mongoc_server_description_new_copy (
    /* Preserve the error */
    memcpy (&copy->error, &description->error, sizeof copy->error);
 
-   copy->generation = description->generation;
    copy->generation_map = mongoc_generation_map_copy (description->generation_map);
    return copy;
 }
@@ -1249,13 +1247,11 @@ mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
    bson_copy_to (tv, &sd->topology_version);
 }
 
-bool
-mongoc_server_description_service_id (const mongoc_server_description_t *description, bson_oid_t *oid) {
-   bson_oid_copy (&description->service_id, oid);
-
-   if (0 == bson_oid_compare (oid, &kObjectIdZero)) {
+const bson_oid_t *
+mongoc_server_description_service_id (const mongoc_server_description_t *description) {
+   if (0 == bson_oid_compare (&description->service_id, &kObjectIdZero)) {
       /* serviceID is unset. */
-      return false;
+      return NULL;
    }
-   return true;
+   return &description->service_id;
 }

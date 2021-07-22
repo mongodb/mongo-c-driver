@@ -460,7 +460,7 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
    mongoc_server_description_t *monitor_sd;
    mongoc_server_description_t *handshake_sd;
    bson_oid_t expected;
-   bson_oid_t actual;
+   const bson_oid_t *actual;
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -494,8 +494,9 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
    ASSERT_OR_PRINT (handshake_sd, error);
 
    bson_oid_init_from_string (&expected, "AAAAAAAAAAAAAAAAAAAAAAAA");
-   BSON_ASSERT (mongoc_server_description_service_id (handshake_sd, &actual));
-   ASSERT_CMPOID (&actual, &expected);
+   actual = mongoc_server_description_service_id (handshake_sd);
+   BSON_ASSERT (actual);
+   ASSERT_CMPOID (actual, &expected);
 
    mongoc_server_description_destroy (handshake_sd);
    mongoc_server_description_destroy (monitor_sd);
@@ -740,6 +741,7 @@ test_post_handshake_error_clears_pool (void)
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);
    mock_server_hangs_up (request);
+   request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));
    ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to send");
    future_destroy (future);

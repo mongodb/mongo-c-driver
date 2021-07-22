@@ -243,11 +243,17 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    const bson_t *reply,
                                    const bson_error_t *why,
                                    uint32_t max_wire_version,
-                                   uint32_t generation);
+                                   uint32_t generation,
+                                   const bson_oid_t *service_id);
 
+/* Invalidate open connections to a server.
+ * This is not applicable to single-threaded clients, which only have one
+ * or zero connections to any single server.
+ * service_id may be NULL. It is only applicable to load balanced deployments. */
 void
 _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
-                                        uint32_t server_id);
+                                        uint32_t server_id,
+                                        const bson_oid_t* service_id);
 
 void
 mongoc_topology_rescan_srv (mongoc_topology_t *topology);
@@ -278,7 +284,9 @@ _mongoc_topology_set_srv_polling_rescan_interval_ms (
 /* Return the latest connection generation for the server_id and/or service_id.
  * Use this generation for newly established connections.
  * service_id may be NULL.
+ * Callers must lock topology->mutex.
  */
-uint32_t _mongoc_topology_get_connection_generation (mongoc_topology_t *topology, uint32_t server_id, bson_oid_t* service_id);
+// LBTODO: rename this to get_pool_generation
+uint32_t _mongoc_topology_get_connection_generation (mongoc_topology_t *topology, uint32_t server_id, const bson_oid_t* service_id);
 
 #endif

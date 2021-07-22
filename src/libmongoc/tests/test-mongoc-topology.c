@@ -612,10 +612,10 @@ test_invalid_cluster_node (void *ctx)
    ASSERT_OR_PRINT (sd, error);
    /* Both generations match, and are the first generation. */
    ASSERT_CMPINT32 (cluster_node->generation, ==, 0);
-   ASSERT_CMPINT32 (sd->generation, ==, 0);
+   ASSERT_CMPINT32 (mongoc_generation_map_get(sd->generation_map, NULL /* service_id */), ==, 0);
 
    /* update the server's generation, simulating a connection pool clearing */
-   sd->generation++;
+   mongoc_generation_map_increment(sd->generation_map, NULL /* service_id */);
    bson_mutex_unlock (&client->topology->mutex);
 
    /* cluster discards node and creates new one with the current generation */
@@ -674,7 +674,7 @@ test_max_wire_version_race_condition (void *ctx)
    sd = (mongoc_server_description_t *) mongoc_set_get (
       client->topology->description.servers, id);
    BSON_ASSERT (sd);
-   sd->generation++;
+   mongoc_generation_map_increment (sd->generation_map, NULL /* service_id */);
    mongoc_server_description_reset (sd);
 
    /* new stream, ensure that we can still auth with cached wire version */
@@ -2455,7 +2455,7 @@ static void test_topology_pool_clear (void) {
 
    ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 1, NULL));
    ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 2, NULL));
-   _mongoc_topology_clear_connection_pool (topology, 1);
+   _mongoc_topology_clear_connection_pool (topology, 1, NULL);
    ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_generation (topology, 1, NULL));
    ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 2, NULL));
 
@@ -2477,7 +2477,7 @@ static void test_topology_pool_clear_by_serviceid(void) {
 
    ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 1, &oid_a));
    ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 1, &oid_b));
-   _mongoc_topology_clear_connection_pool (topology, 1);
+   _mongoc_topology_clear_connection_pool (topology, 1, &oid_a);
    ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_generation (topology, 1, &oid_a));
    ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 1, &oid_b));
 

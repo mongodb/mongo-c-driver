@@ -1849,7 +1849,7 @@ test_cluster_stream_invalidation_single (void)
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
    _mongoc_topology_clear_connection_pool (client->topology,
-                                           mongoc_server_description_id (sd));
+                                           mongoc_server_description_id (sd), NULL /* service_id */);
    BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);
 
@@ -1898,7 +1898,7 @@ test_cluster_stream_invalidation_pooled (void)
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
    _mongoc_topology_clear_connection_pool (client->topology,
-                                           mongoc_server_description_id (sd));
+                                           mongoc_server_description_id (sd), NULL /* service_id */);
    BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);
 
