@@ -108,7 +108,7 @@ _mongoc_get_real_time_ms (void)
    if (rc != 0) {
       return -1;
    }
-   return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+   return tv.tv_sec * (int64_t) 1000 + tv.tv_usec / (int64_t) 1000;
 }
 
 
