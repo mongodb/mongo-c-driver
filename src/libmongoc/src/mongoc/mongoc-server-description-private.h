@@ -184,10 +184,11 @@ void
 mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
                                                 const bson_t *tv);
 
-/* If a service_id is set on the topology description, copies it to @oid and returns true.
- * Otherwise returns false and zeros out oid.
+/* If a service_id is set on the topology description, copies it to @oid and
+ * returns true. Otherwise returns false and zeros out oid.
  */
 bool
-mongoc_server_description_service_id (const mongoc_server_description_t *description, bson_oid_t *oid);
+mongoc_server_description_service_id (
+   const mongoc_server_description_t *description, bson_oid_t *oid);
 
 #endif
