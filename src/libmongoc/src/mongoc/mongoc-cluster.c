@@ -2278,9 +2278,11 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       }
       bson_mutex_unlock (&topology->mutex);
       _mongoc_bson_init_with_transient_txn_error (cs, reply);
+      return NULL;
    }
 
-   /* If this is a load balanced topology and the server stream does not have a service id, disconnect and return an error. */
+   /* If this is a load balanced topology and the server stream does not have a
+    * service id, disconnect and return an error. */
    bson_mutex_lock (&topology->mutex);
    if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       bson_oid_t service_id;
