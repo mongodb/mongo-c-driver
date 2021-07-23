@@ -21,7 +21,7 @@
 #include <assert.h>
 
 typedef struct _mongoc_shared_aux {
-   int64_t refcount;
+   int refcount;
    void (*dtor) (void *);
    void *managed;
 } _mongoc_shared_aux;
@@ -126,11 +126,11 @@ mongoc_shared_ptr_rebind_atomic (mongoc_shared_ptr *const out,
       _shared_ptr_spin_lock ();
       prev_aux = out->_aux;
       if (prev_aux) {
-         prevcount = bson_atomic_int64_fetch_sub (
+         prevcount = bson_atomic_int_fetch_sub (
             &_paux (out)->refcount, 1, bson_memorder_seqcst);
       }
       *out = from;
-      bson_atomic_int64_fetch_add (
+      bson_atomic_int_fetch_add (
          &_paux (out)->refcount, 1, bson_memorder_seqcst);
       _shared_ptr_spin_unlock ();
    }
@@ -145,7 +145,7 @@ mongoc_shared_ptr_take (mongoc_shared_ptr const ptr)
 {
    mongoc_shared_ptr ret = ptr;
    if (!mongoc_shared_ptr_is_null (ptr)) {
-      bson_atomic_int64_fetch_add (
+      bson_atomic_int_fetch_add (
          &_aux (ret)->refcount, 1, bson_memorder_seqcst);
    }
    return ret;
@@ -169,7 +169,7 @@ mongoc_shared_ptr_release (mongoc_shared_ptr *const ptr)
    assert (!mongoc_shared_ptr_is_null (*ptr) &&
            "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_release");
    /* Decrement the reference count by one */
-   size_t prevcount = bson_atomic_int64_fetch_sub (
+   size_t prevcount = bson_atomic_int_fetch_sub (
       &_paux (ptr)->refcount, 1, bson_memorder_seqcst);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
@@ -185,6 +185,6 @@ mongoc_shared_ptr_refcount (mongoc_shared_ptr const ptr)
 {
    assert (!mongoc_shared_ptr_is_null (ptr) &&
            "Unbound mongoc_shraed_ptr given to mongoc_shared_ptr_refcount");
-   return (int) bson_atomic_int64_fetch (&_aux (ptr)->refcount,
-                                         bson_memorder_relaxed);
+   return (int) bson_atomic_int_fetch (&_aux (ptr)->refcount,
+                                       bson_memorder_relaxed);
 }

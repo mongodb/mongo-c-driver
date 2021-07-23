@@ -40,6 +40,12 @@ enum bson_atomic_memorder {
    bson_memorder_relaxed
 };
 
+#if _M_ARM /* MSVC memorder atomics are only avail on ARM */
+#define MSVC_MEMORDER_SUFFIX(X) X
+#else
+#define MSVC_MEMORDER_SUFFIX(X)
+#endif
+
 
 #define DEF_ATOMIC_OP(MSVC_Intrinsic, GNU_Intrinsic, Order, ...)             \
    do {                                                                      \
@@ -49,22 +55,25 @@ enum bson_atomic_memorder {
          BSON_IF_GNU (return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_SEQ_CST);) \
       case bson_memorder_acquire:                                            \
          BSON_IF_MSVC (                                                      \
-            return BSON_CONCAT (MSVC_Intrinsic, _acq) (__VA_ARGS__);)        \
+            return BSON_CONCAT (MSVC_Intrinsic,                              \
+                                MSVC_MEMORDER_SUFFIX (_acq)) (__VA_ARGS__);) \
          BSON_IF_GNU (return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_ACQUIRE);) \
       case bson_memorder_release:                                            \
          BSON_IF_MSVC (                                                      \
-            return BSON_CONCAT (MSVC_Intrinsic, _rel) (__VA_ARGS__);)        \
+            return BSON_CONCAT (MSVC_Intrinsic,                              \
+                                MSVC_MEMORDER_SUFFIX (_rel)) (__VA_ARGS__);) \
          BSON_IF_GNU (return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_RELEASE);) \
       case bson_memorder_relaxed:                                            \
          BSON_IF_MSVC (                                                      \
-            return BSON_CONCAT (MSVC_Intrinsic, _nf) (__VA_ARGS__);)         \
+            return BSON_CONCAT (MSVC_Intrinsic,                              \
+                                MSVC_MEMORDER_SUFFIX (_nf)) (__VA_ARGS__);)  \
          BSON_IF_GNU (return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_RELAXED);) \
       }                                                                      \
    } while (0)
 
 
 #define DEF_ATOMIC_CMPEXCH(                                              \
-   VCSuffix, VCSuffix2, GNU_MemOrder, Ptr, ExpectActualVar, NewValue)    \
+   VCSuffix1, VCSuffix2, GNU_MemOrder, Ptr, ExpectActualVar, NewValue)   \
    BSON_IF_MSVC (ExpectActualVar = BSON_CONCAT3 (                        \
                     _InterlockedCompareExchange, VCSuffix1, VCSuffix2) ( \
                     Ptr, NewValue, ExpectActualVar);)                    \
@@ -134,12 +143,20 @@ enum bson_atomic_memorder {
             VCIntrinSuffix, , __ATOMIC_SEQ_CST, a, actual, new_value);         \
          break;                                                                \
       case bson_memorder_acquire:                                              \
-         DEF_ATOMIC_CMPEXCH (                                                  \
-            VCIntrinSuffix, _acq, __ATOMIC_ACQUIRE, a, actual, new_value);     \
+         DEF_ATOMIC_CMPEXCH (VCIntrinSuffix,                                   \
+                             MSVC_MEMORDER_SUFFIX (_acq),                      \
+                             __ATOMIC_ACQUIRE,                                 \
+                             a,                                                \
+                             actual,                                           \
+                             new_value);                                       \
          break;                                                                \
       case bson_memorder_relaxed:                                              \
-         DEF_ATOMIC_CMPEXCH (                                                  \
-            VCIntrinSuffix, _nf, __ATOMIC_RELAXED, a, actual, new_value);      \
+         DEF_ATOMIC_CMPEXCH (VCIntrinSuffix,                                   \
+                             MSVC_MEMORDER_SUFFIX (_nf),                       \
+                             __ATOMIC_RELAXED,                                 \
+                             a,                                                \
+                             actual,                                           \
+                             new_value);                                       \
          break;                                                                \
       }                                                                        \
       return actual;                                                           \
@@ -151,12 +168,18 @@ enum bson_atomic_memorder {
 DECL_ATOMIC_STDINT (int8, 8);
 DECL_ATOMIC_STDINT (int16, 16);
 DECL_ATOMIC_STDINT (int32, );
+#if !defined(_MSC_VER) || defined(_M_X64)
+/* (MSVC 64-bit intrinsics are only available in x64) */
 DECL_ATOMIC_STDINT (int64, 64);
+#endif
+
+DECL_ATOMIC_INTEGRAL (int, int, );
 
 #undef DECL_ATOMIC_STDINT
 #undef DECL_ATOMIC_INTEGRAL
 #undef DEF_ATOMIC_OP
 #undef DEF_ATOMIC_CMPEXCH
+#undef MSVC_MEMORDER_SUFFIX
 
 #if defined(__sun) && defined(__SVR4)
 /* Solaris */
