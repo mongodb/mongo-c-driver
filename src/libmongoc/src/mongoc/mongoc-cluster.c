@@ -2146,6 +2146,9 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
    /* Transfer ownership of the server description into the cluster node. */
    cluster_node->handshake_sd = handshake_sd;
+   /* Copy the generation from the cluster node.
+    * TODO (CDRIVER-4078) do not store the generation counter on the server
+    * description */
    cluster_node->handshake_sd->generation = cluster_node->generation;
 
    bson_destroy (&speculative_auth_response);
