@@ -42,7 +42,7 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
    sd = mongoc_topology_description_server_by_id (
       &client->topology->description, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
-   generation = mongoc_generation_map_get (sd->generation_map, NULL /* service_id */);
+   generation = mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
    bson_mutex_unlock (&client->topology->mutex);
 
    return generation;

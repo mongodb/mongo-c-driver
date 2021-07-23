@@ -612,10 +612,10 @@ test_invalid_cluster_node (void *ctx)
    ASSERT_OR_PRINT (sd, error);
    /* Both generations match, and are the first generation. */
    ASSERT_CMPINT32 (cluster_node->generation, ==, 0);
-   ASSERT_CMPINT32 (mongoc_generation_map_get(sd->generation_map, NULL /* service_id */), ==, 0);
+   ASSERT_CMPINT32 (mongoc_generation_map_get(sd->generation_map, &kZeroServiceId), ==, 0);
 
    /* update the server's generation, simulating a connection pool clearing */
-   mongoc_generation_map_increment(sd->generation_map, NULL /* service_id */);
+   mongoc_generation_map_increment(sd->generation_map, &kZeroServiceId);
    bson_mutex_unlock (&client->topology->mutex);
 
    /* cluster discards node and creates new one with the current generation */
@@ -674,7 +674,7 @@ test_max_wire_version_race_condition (void *ctx)
    sd = (mongoc_server_description_t *) mongoc_set_get (
       client->topology->description.servers, id);
    BSON_ASSERT (sd);
-   mongoc_generation_map_increment (sd->generation_map, NULL /* service_id */);
+   mongoc_generation_map_increment (sd->generation_map, &kZeroServiceId);
    mongoc_server_description_reset (sd);
 
    /* new stream, ensure that we can still auth with cached wire version */
@@ -2453,11 +2453,11 @@ static void test_topology_pool_clear (void) {
    uri = mongoc_uri_new ("mongodb://localhost:27017,localhost:27018");
    topology = mongoc_topology_new (uri, true);
 
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 1, NULL));
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 2, NULL));
-   _mongoc_topology_clear_connection_pool (topology, 1, NULL);
-   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_generation (topology, 1, NULL));
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 2, NULL));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 1, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 2, &kZeroServiceId));
+   _mongoc_topology_clear_connection_pool (topology, 1, &kZeroServiceId);
+   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_generation (topology, 1, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_generation (topology, 2, &kZeroServiceId));
 
    mongoc_uri_destroy (uri);
    mongoc_topology_destroy (topology);

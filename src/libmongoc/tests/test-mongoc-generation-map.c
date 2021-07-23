@@ -40,16 +40,10 @@ test_generation_map_basic (void) {
    mongoc_generation_map_increment (gm, &oid_b);
    ASSERT_CMPUINT32 (2, ==, mongoc_generation_map_get (gm, &oid_b));
 
-   /* The NULL key is valid. */
-   ASSERT_CMPUINT32 (0, ==, mongoc_generation_map_get (gm, NULL));
-   mongoc_generation_map_increment (gm, NULL);
-   ASSERT_CMPUINT32 (1, ==, mongoc_generation_map_get (gm, NULL));
-
    /* Copying a generation map retains values. */
    gm_copy = mongoc_generation_map_copy (gm);
    ASSERT_CMPUINT32 (0, ==, mongoc_generation_map_get (gm_copy, &oid_a));
    ASSERT_CMPUINT32 (2, ==, mongoc_generation_map_get (gm_copy, &oid_b));
-   ASSERT_CMPUINT32 (1, ==, mongoc_generation_map_get (gm_copy, NULL));
 
    mongoc_generation_map_destroy (gm_copy);
    mongoc_generation_map_destroy (gm);

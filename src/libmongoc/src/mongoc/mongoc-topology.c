@@ -187,7 +187,7 @@ _mongoc_topology_scanner_cb (uint32_t id,
       /* Server monitoring: When a server check fails due to a network error
        * (including a network timeout), the client MUST clear its connection
        * pool for the server */
-      _mongoc_topology_clear_connection_pool (topology, id, NULL /* service_id */);
+      _mongoc_topology_clear_connection_pool (topology, id, &kZeroServiceId);
    }
 
    /* Server Discovery and Monitoring Spec: "Once a server is connected, the
@@ -1790,6 +1790,8 @@ _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
    bson_error_t error;
    char oidstr[26] = {0};
 
+   BSON_ASSERT (service_id);
+
    sd = mongoc_topology_description_server_by_id (
       &topology->description, server_id, &error);
    if (!sd) {
@@ -2005,6 +2007,8 @@ uint32_t _mongoc_topology_get_connection_generation (mongoc_topology_t *topology
    mongoc_server_description_t *sd;
    bson_error_t error;
 
+   BSON_ASSERT (service_id);
+   
    sd = mongoc_topology_description_server_by_id (
       &topology->description, server_id, &error);
    if (!sd) {

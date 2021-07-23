@@ -494,7 +494,7 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
    ASSERT_OR_PRINT (handshake_sd, error);
 
    bson_oid_init_from_string (&expected, "AAAAAAAAAAAAAAAAAAAAAAAA");
-   actual = mongoc_server_description_service_id (handshake_sd);
+   actual = &handshake_sd->service_id;
    BSON_ASSERT (actual);
    ASSERT_CMPOID (actual, &expected);
 

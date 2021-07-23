@@ -45,7 +45,6 @@ static gm_node_t *gm_node_copy (const gm_node_t* node) {
 
 struct _mongoc_generation_map {
    gm_node_t *list;
-   gm_node_t *null_node;
 };
 
 mongoc_generation_map_t *
@@ -72,9 +71,6 @@ mongoc_generation_map_copy (const mongoc_generation_map_t *gm)
       LL_PREPEND (gm_copy->list, node_copy);
    }
 
-   if (gm->null_node) {
-      gm_copy->null_node = gm_node_copy (gm->null_node);
-   }
    return gm_copy;
 }
 
@@ -83,12 +79,7 @@ mongoc_generation_map_get (const mongoc_generation_map_t *gm, const bson_oid_t *
 {
    gm_node_t *iter = NULL;
 
-   if (!key) {
-      if (!gm->null_node) {
-         return 0;
-      }
-      return gm->null_node->val;
-   }
+   BSON_ASSERT (key);
 
    LL_FOREACH (gm->list, iter) {
       if (bson_oid_equal (key, &iter->key)) {
@@ -107,30 +98,25 @@ void
 mongoc_generation_map_increment (mongoc_generation_map_t* gm, const bson_oid_t *key)
 {
    gm_node_t *match;
+   gm_node_t *iter = NULL;
 
-   if (!key) {
-      if (!gm->null_node) {
-         gm->null_node = gm_node_new ();
-      }
-      match = gm->null_node;
-   } else {
-      gm_node_t *iter = NULL;
+   BSON_ASSERT (key);
 
-      LL_FOREACH (gm->list, iter) {
-         if (bson_oid_equal (key, &iter->key)) {
-            break;
-         }
-      }
-
-      if (iter) {
-         match = iter;
-      } else {
-         gm_node_t *new_node = gm_node_new ();
-         bson_oid_copy (key, &new_node->key);
-         LL_PREPEND (gm->list, new_node);
-         match = new_node;
+   LL_FOREACH (gm->list, iter) {
+      if (bson_oid_equal (key, &iter->key)) {
+         break;
       }
    }
+
+   if (iter) {
+      match = iter;
+   } else {
+      gm_node_t *new_node = gm_node_new ();
+      bson_oid_copy (key, &new_node->key);
+      LL_PREPEND (gm->list, new_node);
+      match = new_node;
+   }
+   
 
    BSON_ASSERT (match);
    match->val++;
@@ -145,8 +131,6 @@ mongoc_generation_map_destroy (mongoc_generation_map_t *gm)
    if (!gm) {
       return;
    }
-
-   gm_node_destroy (gm->null_node);
 
    LL_FOREACH_SAFE (gm->list, iter, tmp) {
       gm_node_destroy (iter);

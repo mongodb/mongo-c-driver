@@ -3968,7 +3968,7 @@ test_mongoc_client_recv_network_error (void)
    /* The server should be a standalone. */
    sd = mongoc_topology_server_by_id (client->topology, 1, &error);
    ASSERT_OR_PRINT (sd, error);
-   generation = mongoc_generation_map_get (sd->generation_map, NULL /* service id */);
+   generation = mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
    BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
    mongoc_server_description_destroy (sd);
    mock_server_destroy (server);
@@ -3988,7 +3988,7 @@ test_mongoc_client_recv_network_error (void)
 
    sd = mongoc_topology_server_by_id (client->topology, 1, &error);
    ASSERT_OR_PRINT (sd, error);
-   ASSERT_CMPINT (mongoc_generation_map_get (sd->generation_map, NULL /* service id */), ==, generation + 1);
+   ASSERT_CMPINT (mongoc_generation_map_get (sd->generation_map, &kZeroServiceId), ==, generation + 1);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
 
    mongoc_server_description_destroy (sd);

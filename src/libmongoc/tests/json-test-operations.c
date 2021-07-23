@@ -2118,7 +2118,7 @@ _get_total_pool_cleared_event (json_test_ctx_t *ctx)
       mongoc_server_description_t *sd;
 
       sd = mongoc_set_get_item (td->servers, i);
-      total += mongoc_generation_map_get (sd->generation_map, NULL /* service id */);
+      total += mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
    }
    bson_mutex_unlock (&ctx->client->topology->mutex);
    return total;

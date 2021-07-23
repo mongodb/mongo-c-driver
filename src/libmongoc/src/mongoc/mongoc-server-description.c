@@ -31,6 +31,8 @@
 
 static bson_oid_t kObjectIdZero = {{0}};
 
+const bson_oid_t kZeroServiceId = {{0}};
+
 static bool
 _match_tag_set (const mongoc_server_description_t *sd,
                 bson_iter_t *tag_set_iter);
@@ -1247,11 +1249,10 @@ mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
    bson_copy_to (tv, &sd->topology_version);
 }
 
-const bson_oid_t *
-mongoc_server_description_service_id (const mongoc_server_description_t *description) {
-   if (0 == bson_oid_compare (&description->service_id, &kObjectIdZero)) {
-      /* serviceID is unset. */
-      return NULL;
+bool
+mongoc_server_description_has_service_id (const mongoc_server_description_t *description) {
+   if (0 == bson_oid_compare (&description->service_id, &kZeroServiceId)) {
+      return false;
    }
-   return &description->service_id;
+   return true;
 }

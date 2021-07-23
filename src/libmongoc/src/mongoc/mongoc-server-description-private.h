@@ -111,7 +111,7 @@ struct _mongoc_server_description_t {
    3. an app thread receives a non-timeout network error after the handshake
    4. an app thread receives a "not primary" or "node is recovering" error from a
    pre-4.2 server.
-   // LBTODO: generation should map from service_id to generation.
+   // LBTODO: add back generation and comment. It is only applicable for a handshake server description. generation_map is only applicable to a monitor server description.
    */
    mongoc_generation_map_t *generation_map;
    bson_oid_t service_id;
@@ -186,8 +186,10 @@ void
 mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
                                                 const bson_t *tv);
 
-/* Returns NULL if no serviceId was processed. */
-const bson_oid_t *
-mongoc_server_description_service_id (const mongoc_server_description_t *description);
+extern const bson_oid_t kZeroServiceId;
+
+bool
+mongoc_server_description_has_service_id (
+   const mongoc_server_description_t *description);
 
 #endif
