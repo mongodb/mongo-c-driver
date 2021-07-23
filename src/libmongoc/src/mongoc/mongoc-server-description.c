@@ -126,6 +126,7 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
    sd->id = id;
    sd->type = MONGOC_SERVER_UNKNOWN;
    sd->round_trip_time_msec = MONGOC_RTT_UNSET;
+   sd->generation = 0;
    sd->opened = 0;
    sd->generation_map = mongoc_generation_map_new ();
 
@@ -824,6 +825,7 @@ mongoc_server_description_new_copy (
    /* Preserve the error */
    memcpy (&copy->error, &description->error, sizeof copy->error);
 
+   copy->generation = description->generation;
    copy->generation_map = mongoc_generation_map_copy (description->generation_map);
    return copy;
 }

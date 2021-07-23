@@ -113,6 +113,15 @@ struct _mongoc_server_description_t {
    pre-4.2 server.
    // LBTODO: add back generation and comment. It is only applicable for a handshake server description. generation_map is only applicable to a monitor server description.
    */
+
+   /* generation only applies to a server description for a connection handshake.
+    * It represents the generation number for this connection (and service_id if in load balanced mode) */
+   uint32_t generation;
+
+   /* generation_map stores all generations for all service IDs associated with this server.
+    * generation_map is only accessed on the server description for monitoring.
+    * In non-load-balanced mode, there are no service IDs. The only server generation is mapped from kZeroServiceID
+    */
    mongoc_generation_map_t *generation_map;
    bson_oid_t service_id;
 };

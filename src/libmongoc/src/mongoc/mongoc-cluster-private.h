@@ -44,7 +44,7 @@ BSON_BEGIN_DECLS
 typedef struct _mongoc_cluster_node_t {
    mongoc_stream_t *stream;
    char *connection_address;
-   uint32_t generation;
+   uint32_t generation; // LBTODO: should we remove this?
    /* handshake_sd is a server description created from the handshake on the stream. */
    mongoc_server_description_t *handshake_sd;
 } mongoc_cluster_node_t;

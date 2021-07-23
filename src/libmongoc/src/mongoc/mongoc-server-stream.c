@@ -22,12 +22,10 @@
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "server-stream"
 
-// LBTODO: remove generation again.
 mongoc_server_stream_t *
 mongoc_server_stream_new (const mongoc_topology_description_t *td,
                           mongoc_server_description_t *sd,
-                          mongoc_stream_t *stream,
-                          uint32_t generation)
+                          mongoc_stream_t *stream)
 {
    mongoc_server_stream_t *server_stream;
 
@@ -39,7 +37,6 @@ mongoc_server_stream_new (const mongoc_topology_description_t *td,
    bson_copy_to (&td->cluster_time, &server_stream->cluster_time);
    server_stream->sd = sd;         /* becomes owned */
    server_stream->stream = stream; /* merely borrowed */
-   server_stream->generation = generation;
 
    return server_stream;
 }
@@ -104,9 +101,4 @@ mongoc_server_stream_max_write_batch_size (
 {
    return COALESCE (server_stream->sd->max_write_batch_size,
                     MONGOC_DEFAULT_WRITE_BATCH_SIZE);
-}
-
-uint32_t
-mongoc_server_stream_generation (const mongoc_server_stream_t* server_stream) {
-   return server_stream->generation;
 }
