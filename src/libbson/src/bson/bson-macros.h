@@ -304,6 +304,7 @@
 
 #define BSON_CONCAT_1(a, b) a##b
 #define BSON_CONCAT(a, b) BSON_CONCAT_1 (a, b)
+#define BSON_CONCAT3(a, b, c) BSON_CONCAT (a, BSON_CONCAT (b, c))
 
 
 #endif /* BSON_MACROS_H */

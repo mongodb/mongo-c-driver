@@ -55,8 +55,8 @@ _shared_ptr_spin_lock ()
    while (true) {
       int8_t f = false;
       int8_t t = true;
-      bool was_locked =
-         bson_atomic_int8_compare_and_swap (&g_shared_ptr_spin_mtx, f, t);
+      bool was_locked = bson_atomic_int8_compare_exchange (
+         &g_shared_ptr_spin_mtx, f, t, bson_memorder_acquire);
       if (!was_locked) {
          return;
       }
@@ -66,8 +66,8 @@ _shared_ptr_spin_lock ()
 static void
 _shared_ptr_spin_unlock ()
 {
-   bool was_locked =
-      bson_atomic_int8_compare_and_swap (&g_shared_ptr_spin_mtx, 1, 0);
+   bool was_locked = bson_atomic_int8_compare_exchange (
+      &g_shared_ptr_spin_mtx, 1, 0, bson_memorder_release);
    assert (
       was_locked &&
       "_shared_ptr_spin_unlock() was called, but the spin lock was not held");
@@ -126,10 +126,12 @@ mongoc_shared_ptr_rebind_atomic (mongoc_shared_ptr *const out,
       _shared_ptr_spin_lock ();
       prev_aux = out->_aux;
       if (prev_aux) {
-         prevcount = bson_atomic_int64_fetch_sub (&_paux (out)->refcount, 1);
+         prevcount = bson_atomic_int64_fetch_sub (
+            &_paux (out)->refcount, 1, bson_memorder_seqcst);
       }
       *out = from;
-      bson_atomic_int64_fetch_add (&_paux (out)->refcount, 1);
+      bson_atomic_int64_fetch_add (
+         &_paux (out)->refcount, 1, bson_memorder_seqcst);
       _shared_ptr_spin_unlock ();
    }
 
@@ -143,7 +145,8 @@ mongoc_shared_ptr_take (mongoc_shared_ptr const ptr)
 {
    mongoc_shared_ptr ret = ptr;
    if (!mongoc_shared_ptr_is_null (ptr)) {
-      bson_atomic_int64_fetch_add (&_aux (ret)->refcount, 1);
+      bson_atomic_int64_fetch_add (
+         &_aux (ret)->refcount, 1, bson_memorder_seqcst);
    }
    return ret;
 }
@@ -166,7 +169,8 @@ mongoc_shared_ptr_release (mongoc_shared_ptr *const ptr)
    assert (!mongoc_shared_ptr_is_null (*ptr) &&
            "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_release");
    /* Decrement the reference count by one */
-   size_t prevcount = bson_atomic_int64_fetch_sub (&_paux (ptr)->refcount, 1);
+   size_t prevcount = bson_atomic_int64_fetch_sub (
+      &_paux (ptr)->refcount, 1, bson_memorder_seqcst);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
        * Release the managed data. */
@@ -181,5 +185,6 @@ mongoc_shared_ptr_refcount (mongoc_shared_ptr const ptr)
 {
    assert (!mongoc_shared_ptr_is_null (ptr) &&
            "Unbound mongoc_shraed_ptr given to mongoc_shared_ptr_refcount");
-   return (int) bson_atomic_int64_fetch (&_aux (ptr)->refcount);
+   return (int) bson_atomic_int64_fetch (&_aux (ptr)->refcount,
+                                         bson_memorder_relaxed);
 }
