@@ -1,5 +1,5 @@
---- mongo-c-driver.spec.orig	2020-11-30 10:07:51.831526659 -0500
-+++ mongo-c-driver.spec	2020-11-30 10:09:59.029834450 -0500
+--- mongo-c-driver.spec.orig	2021-07-29 18:30:42.094477733 -0400
++++ mongo-c-driver.spec	2021-07-29 18:31:06.347021236 -0400
 @@ -10,14 +10,14 @@
  %global gh_project   mongo-c-driver
  %global libname      libmongoc
@@ -33,7 +33,7 @@
  
  %description devel
  This package contains the header files and development libraries
-@@ -128,7 +126,6 @@
+@@ -130,7 +128,6 @@
  %endif
      -DENABLE_EXAMPLES:BOOL=OFF \
      -DENABLE_UNINSTALL:BOOL=OFF \
