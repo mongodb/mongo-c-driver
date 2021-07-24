@@ -115,7 +115,8 @@ struct _mongoc_server_description_t {
 
    /* generation only applies to a server description for a connection
     * handshake. It represents the generation number for this connection (and
-    * service_id if in load balanced mode) */
+    * service_id if in load balanced mode)
+    * TODO: CDRIVER-???? rename this to connection_generation. */
    uint32_t generation;
 
    /* generation_map stores all generations for all service IDs associated with
