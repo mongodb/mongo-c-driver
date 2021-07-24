@@ -2143,7 +2143,9 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
     * TODO (CDRIVER-4078) do not store the generation counter on the server
     * description */
    bson_mutex_lock (&cluster->client->topology->mutex);
-   cluster_node->handshake_sd->generation = _mongoc_topology_get_connection_pool_generation (cluster->client->topology, server_id, &handshake_sd->service_id);
+   cluster_node->handshake_sd->generation =
+      _mongoc_topology_get_connection_pool_generation (
+         cluster->client->topology, server_id, &handshake_sd->service_id);
    bson_mutex_unlock (&cluster->client->topology->mutex);
 
    bson_destroy (&speculative_auth_response);
@@ -2277,7 +2279,6 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
        * MongoDB Handshake. */
       bson_mutex_lock (&topology->mutex);
       if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-         MONGOC_DEBUG ("bypassing connection pool clear because of load balanced deployment");
          bson_mutex_unlock (&topology->mutex);
          return NULL;
       }
@@ -2544,10 +2545,12 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
    bson_mutex_lock (&topology->mutex);
    sd = mongoc_topology_description_server_by_id (
       &topology->description, server_stream->sd->id, &error);
-   if (!sd || server_stream->sd->generation < _mongoc_topology_get_connection_pool_generation (topology, server_stream->sd->id, &server_stream->sd->service_id)) {
+   if (!sd ||
+       server_stream->sd->generation <
+          _mongoc_topology_get_connection_pool_generation (
+             topology, server_stream->sd->id, &server_stream->sd->service_id)) {
       /* No server description, or the pool has been cleared. */
       bson_mutex_unlock (&topology->mutex);
-      MONGOC_DEBUG ("stream invalid");
       goto done;
    }
    bson_mutex_unlock (&topology->mutex);
@@ -2590,7 +2593,6 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
    mongoc_cluster_node_t *cluster_node;
    mongoc_server_description_t *sd;
    bool has_server_description = false;
-   uint32_t generation = 0;
 
    cluster_node =
       (mongoc_cluster_node_t *) mongoc_set_get (cluster->nodes, server_id);
@@ -2604,16 +2606,16 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
    }
    bson_mutex_unlock (&topology->mutex);
 
-   MONGOC_DEBUG ("fetching stream");
-
    if (cluster_node) {
+      uint32_t connection_pool_generation = 0;
       BSON_ASSERT (cluster_node->stream);
 
       bson_mutex_lock (&topology->mutex);
-      generation = _mongoc_topology_get_connection_pool_generation (topology, server_id, &cluster_node->handshake_sd->service_id);
+      connection_pool_generation = _mongoc_topology_get_connection_pool_generation (topology, server_id, &cluster_node->handshake_sd->service_id);
       bson_mutex_unlock (&topology->mutex);
 
-      if (!has_server_description || cluster_node->handshake_sd->generation < generation) {
+      if (!has_server_description ||
+          cluster_node->handshake_sd->generation < connection_pool_generation) {
          /* Since the stream was created, connections to this server were
           * invalidated.
           * This may have happened if:
@@ -2641,7 +2643,6 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
       return _mongoc_cluster_create_server_stream (
             topology, cluster_node->handshake_sd, cluster_node->stream, error);
    } else {
-      MONGOC_DEBUG ("failed to create cluster node");
       return NULL;
    }
 }

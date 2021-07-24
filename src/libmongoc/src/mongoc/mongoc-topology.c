@@ -1788,7 +1788,6 @@ _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
 {
    mongoc_server_description_t *sd;
    bson_error_t error;
-   char oidstr[26] = {0};
 
    BSON_ASSERT (service_id);
 
@@ -1799,10 +1798,6 @@ _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
       return;
    }
 
-   if (service_id) {
-      bson_oid_to_string (service_id, oidstr);
-   }
-   MONGOC_DEBUG ("clearing pool for server: %s and service_id: %s", sd->host.host_and_port, oidstr);
    mongoc_generation_map_increment (sd->generation_map, service_id);
 }
 
@@ -1811,8 +1806,9 @@ _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
  *
  * This can be a network error or "not primary" / "node is recovering" error.
  * Caller must lock topology->mutex.
- * service_id may be NULL. It is only applicable if connected to a load balanced
- * deployment.
+ * service_id is only applicable if connected to a load balanced deployment.
+ * Pass kZeroServiceID as service_id for connections that have no
+ * associated service ID.
  * Returns true if pool was cleared.
  */
 bool
@@ -1838,12 +1834,16 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       return false;
    }
 
-   /* When establishing a new connection in load balanced mode, drivers MUST NOT perform SDAM error handling for any errors that occur before the MongoDB Handshake. */
-   if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED && !handshake_complete) {
+   /* When establishing a new connection in load balanced mode, drivers MUST NOT
+    * perform SDAM error handling for any errors that occur before the MongoDB
+    * Handshake. */
+   if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED &&
+       !handshake_complete) {
       return false;
    }
 
-   if (generation < _mongoc_topology_get_connection_pool_generation (topology, server_id, service_id)) {
+   if (generation < _mongoc_topology_get_connection_pool_generation (
+                       topology, server_id, service_id)) {
       /* This is a stale connection. Ignore. */
       return false;
    }
@@ -1998,13 +1998,16 @@ _mongoc_topology_set_srv_polling_rescan_interval_ms (
    topology->srv_polling_rescan_interval_ms = val;
 }
 
-/* Caller must lock topology->mutex. */
-uint32_t _mongoc_topology_get_connection_pool_generation (mongoc_topology_t *topology, uint32_t server_id, const bson_oid_t* service_id) {
+uint32_t
+_mongoc_topology_get_connection_pool_generation (mongoc_topology_t *topology,
+                                                 uint32_t server_id,
+                                                 const bson_oid_t *service_id)
+{
    mongoc_server_description_t *sd;
    bson_error_t error;
 
    BSON_ASSERT (service_id);
-   
+
    sd = mongoc_topology_description_server_by_id (
       &topology->description, server_id, &error);
    if (!sd) {

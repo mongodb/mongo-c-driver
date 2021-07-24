@@ -95,7 +95,10 @@ _topology_has_description (mongoc_topology_description_t *topology,
          BSON_ASSERT (bson_iter_find (&iter, "generation") &&
                       BSON_ITER_HOLDS_INT32 (&iter));
          expected_generation = bson_iter_int32 (&iter);
-         ASSERT_CMPINT32 (expected_generation, ==, mongoc_generation_map_get (sd->generation_map, &kZeroServiceId));
+         ASSERT_CMPINT32 (
+            expected_generation,
+            ==,
+            mongoc_generation_map_get (sd->generation_map, &kZeroServiceId));
       } else if (strcmp ("logicalSessionTimeoutMinutes",
                          bson_iter_key (&server_iter)) == 0) {
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {

@@ -612,7 +612,8 @@ test_invalid_cluster_node (void *ctx)
    ASSERT_OR_PRINT (sd, error);
    /* Both generations match, and are the first generation. */
    ASSERT_CMPINT32 (cluster_node->handshake_sd->generation, ==, 0);
-   ASSERT_CMPINT32 (mongoc_generation_map_get(sd->generation_map, &kZeroServiceId), ==, 0);
+   ASSERT_CMPINT32 (
+      mongoc_generation_map_get (sd->generation_map, &kZeroServiceId), ==, 0);
 
    /* update the server's generation, simulating a connection pool clearing */
    mongoc_generation_map_increment(sd->generation_map, &kZeroServiceId);
@@ -2445,25 +2446,42 @@ test_hello_ok_pooled ()
    _test_hello_ok (true);
 }
 
-/* Test that _mongoc_topology_clear_connection_pool increments the generation. */
-static void test_topology_pool_clear (void) {
+/* Test that _mongoc_topology_clear_connection_pool increments the generation.
+ */
+static void
+test_topology_pool_clear (void)
+{
    mongoc_topology_t *topology;
    mongoc_uri_t *uri;
 
    uri = mongoc_uri_new ("mongodb://localhost:27017,localhost:27018");
    topology = mongoc_topology_new (uri, true);
 
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (topology, 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (topology, 2, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        topology, 1, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        topology, 2, &kZeroServiceId));
    _mongoc_topology_clear_connection_pool (topology, 1, &kZeroServiceId);
-   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_pool_generation (topology, 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (topology, 2, &kZeroServiceId));
+   ASSERT_CMPUINT32 (1,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        topology, 1, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        topology, 2, &kZeroServiceId));
 
    mongoc_uri_destroy (uri);
    mongoc_topology_destroy (topology);
 }
 
-static void test_topology_pool_clear_by_serviceid(void) {
+static void
+test_topology_pool_clear_by_serviceid (void)
+{
    mongoc_topology_t *topology;
    mongoc_uri_t *uri;
    bson_oid_t oid_a;
@@ -2475,11 +2493,23 @@ static void test_topology_pool_clear_by_serviceid(void) {
    bson_oid_init_from_string (&oid_a, "AAAAAAAAAAAAAAAAAAAAAAAA");
    bson_oid_init_from_string (&oid_b, "BBBBBBBBBBBBBBBBBBBBBBBB");
 
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_a));
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_b));
+   ASSERT_CMPUINT32 (
+      0,
+      ==,
+      _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_a));
+   ASSERT_CMPUINT32 (
+      0,
+      ==,
+      _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_b));
    _mongoc_topology_clear_connection_pool (topology, 1, &oid_a);
-   ASSERT_CMPUINT32 (1, ==, _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_a));
-   ASSERT_CMPUINT32 (0, ==, _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_b));
+   ASSERT_CMPUINT32 (
+      1,
+      ==,
+      _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_a));
+   ASSERT_CMPUINT32 (
+      0,
+      ==,
+      _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_b));
 
    mongoc_uri_destroy (uri);
    mongoc_topology_destroy (topology);
@@ -2653,5 +2683,7 @@ test_topology_install (TestSuite *suite)
       suite, "/Topology/hello_ok/pooled", test_hello_ok_pooled);
 
    TestSuite_Add (suite, "/Topology/pool_clear", test_topology_pool_clear);
-   TestSuite_Add (suite, "/Topology/pool_clear_by_serviceid", test_topology_pool_clear_by_serviceid);
+   TestSuite_Add (suite,
+                  "/Topology/pool_clear_by_serviceid",
+                  test_topology_pool_clear_by_serviceid);
 }

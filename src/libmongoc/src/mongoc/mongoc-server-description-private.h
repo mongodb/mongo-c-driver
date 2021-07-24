@@ -113,17 +113,14 @@ struct _mongoc_server_description_t {
    pre-4.2 server.
    */
 
-   /* generation only applies to a server description for a connection
-    * handshake. It represents the generation number for this connection (and
-    * service_id if in load balanced mode)
-    * TODO: CDRIVER-???? rename this to connection_generation. */
+   /* generation only applies to a server description tied to a connection.
+    * It represents the generation number for this connection. */
    uint32_t generation;
 
    /* generation_map stores all generations for all service IDs associated with
     * this server. generation_map is only accessed on the server description for
     * monitoring. In non-load-balanced mode, there are no service IDs. The only
-    * server generation is mapped from kZeroServiceID
-    */
+    * server generation is mapped from kZeroServiceID */
    mongoc_generation_map_t *generation_map;
    bson_oid_t service_id;
 };

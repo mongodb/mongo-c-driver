@@ -826,7 +826,8 @@ mongoc_server_description_new_copy (
    memcpy (&copy->error, &description->error, sizeof copy->error);
 
    copy->generation = description->generation;
-   copy->generation_map = mongoc_generation_map_copy (description->generation_map);
+   copy->generation_map =
+      mongoc_generation_map_copy (description->generation_map);
    return copy;
 }
 

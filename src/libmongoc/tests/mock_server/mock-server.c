@@ -645,18 +645,6 @@ auto_endsessions (request_t *request, void *data)
    return true;
 }
 
-static bool
-auto_ping (request_t *request, void *data)
-{
-   if (!request->is_command ||
-       strcasecmp (request->command_name, "ping") != 0) {
-      return false;
-   }
-
-   mock_server_replies_ok_and_destroys (request);
-   return true;
-}
-
 
 /*--------------------------------------------------------------------------
  *
@@ -677,26 +665,6 @@ int
 mock_server_auto_endsessions (mock_server_t *server)
 {
    return mock_server_autoresponds (server, auto_endsessions, NULL, NULL);
-}
-
-/*--------------------------------------------------------------------------
- *
- * mock_server_auto_ping --
- *
- *       Autorespond to "ping".
- *
- * Returns:
- *       An id for mock_server_remove_autoresponder.
- *
- * Side effects:
- *       If a matching request is enqueued, pop it and respond.
- *
- *--------------------------------------------------------------------------
- */
-
-int
-mock_server_auto_ping (mock_server_t *server) {
-   return mock_server_autoresponds (server, auto_ping, NULL, NULL);
 }
 
 
