@@ -27282,7 +27282,7 @@ buildvariants:
   - debian-package-build
   - name: rpm-package-build
     distros:
-    - rhel80-test
+    - rhel82-arm64-small
   batchtime: 1440
 - name: tsan-ubuntu
   display_name: Thread Sanitizer (TSAN) Tests (Ubuntu 18.04)
