@@ -137,8 +137,6 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
    suite->flags = 0;
    suite->prgname = bson_strdup (argv[0]);
    suite->silent = false;
-   _mongoc_array_init (&suite->match_patterns, sizeof (char *));
-   _mongoc_array_init (&suite->skip_patterns, sizeof (char *));
 
    for (i = 1; i < argc; i++) {
       if (0 == strcmp ("-d", argv[i])) {
@@ -179,24 +177,10 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
                  (0 == strcmp ("--silent", argv[i]))) {
          suite->silent = true;
       } else if (0 == strcmp ("-l", argv[i])) {
-         char *val;
          if (argc - 1 == i) {
             test_error ("-l requires an argument.");
          }
-         val = bson_strdup (argv[++i]);
-         _mongoc_array_append_val (&suite->match_patterns, val);
-      } else if (0 == strcmp ("--skip", argv[i])) {
-         char *val;
-         if (argc - 1 == i) {
-            test_error ("--skip requires an argument.");
-         }
-         val = bson_strdup (argv[++i]);
-         _mongoc_array_append_val (&suite->skip_patterns, val);
-      } else if (0 == strcmp ("--after", argv[i])) {
-         if (argc - 1 == i) {
-            test_error ("--after requires an argument.");
-         }
-         suite->after = bson_strdup (argv[++i]);
+         suite->testname = bson_strdup (argv[++i]);
       } else {
          test_error ("Unknown option: %s\n"
                      "Try using the --help option.",
@@ -678,24 +662,21 @@ done:
 static void
 TestSuite_PrintHelp (TestSuite *suite) /* IN */
 {
-   printf (
-      "usage: %s [OPTIONS]\n"
-      "\n"
-      "Options:\n"
-      "    -h, --help       Show this help menu.\n"
-      "    --list-tests     Print list of available tests.\n"
-      "    -f, --no-fork    Do not spawn a process per test (abort on first "
-      "error).\n"
-      "    -l PATTERN       Run test by name, e.g. \"/Client/command\" or "
-      "\"/Client/*\". May be repeated.\n"
-      "    -s, --silent     Suppress all output.\n"
-      "    -F FILENAME      Write test results (JSON) to FILENAME.\n"
-      "    -d               Print debug output (useful if a test hangs).\n"
-      "    -t, --trace      Enable mongoc tracing (useful to debug tests).\n"
-      "    --skip PATTERN   Skip test by name or pattern. May be repeated.\n"
-      "    --after NAME     Start running tests after this test name.\n"
-      "\n",
-      suite->prgname);
+   printf ("usage: %s [OPTIONS]\n"
+           "\n"
+           "Options:\n"
+           "    -h, --help    Show this help menu.\n"
+           "    --list-tests  Print list of available tests.\n"
+           "    -f, --no-fork Do not spawn a process per test (abort on first "
+           "error).\n"
+           "    -l NAME       Run test by name, e.g. \"/Client/command\" or "
+           "\"/Client/*\".\n"
+           "    -s, --silent  Suppress all output.\n"
+           "    -F FILENAME   Write test results (JSON) to FILENAME.\n"
+           "    -d            Print debug output (useful if a test hangs).\n"
+           "    -t, --trace   Enable mongoc tracing (useful to debug tests).\n"
+           "\n",
+           suite->prgname);
 }
 
 
@@ -876,6 +857,36 @@ TestSuite_PrintJsonFooter (FILE *stream) /* IN */
    fflush (stream);
 }
 
+
+static int
+TestSuite_RunSerial (TestSuite *suite) /* IN */
+{
+   Test *test;
+   int count = 0;
+   int status = 0;
+
+   for (test = suite->tests; test; test = test->next) {
+      count++;
+   }
+
+   for (test = suite->tests; test; test = test->next) {
+      status += TestSuite_RunTest (suite, test, &count);
+      count--;
+   }
+
+   if (suite->silent) {
+      return status;
+   }
+
+   TestSuite_PrintJsonFooter (stdout);
+   if (suite->outfile) {
+      TestSuite_PrintJsonFooter (suite->outfile);
+   }
+
+   return status;
+}
+
+
 static bool
 TestSuite_TestMatchesName (const TestSuite *suite,
                            const Test *test,
@@ -895,70 +906,26 @@ TestSuite_TestMatchesName (const TestSuite *suite,
 }
 
 
-bool
-test_matches (TestSuite *suite, Test *test)
-{
-   int i;
-   bool matches;
-
-   /* If no match patterns were provided, then assume all match unless they are
-    * skipped. */
-   if (suite->match_patterns.len == 0) {
-      matches = true;
-   } else {
-      matches = false;
-      for (i = 0; i < suite->match_patterns.len; i++) {
-         char *pattern =
-            _mongoc_array_index (&suite->match_patterns, char *, i);
-         if (TestSuite_TestMatchesName (suite, test, pattern)) {
-            matches = true;
-            break;
-         }
-      }
-   }
-
-   /* Remove it if it matches anything in the skips. */
-   for (i = 0; i < suite->skip_patterns.len; i++) {
-      char *pattern = _mongoc_array_index (&suite->skip_patterns, char *, i);
-      if (TestSuite_TestMatchesName (suite, test, pattern)) {
-         return false;
-      }
-   }
-
-   return matches;
-}
-
 static int
-TestSuite_RunAll (TestSuite *suite /* IN */)
+TestSuite_RunNamed (TestSuite *suite,     /* IN */
+                    const char *testname) /* IN */
 {
    Test *test;
    int count = 0;
    int status = 0;
-   int num_to_skip = 0;
 
    ASSERT (suite);
+   ASSERT (testname);
 
    /* initialize "count" so we can omit comma after last test output */
    for (test = suite->tests; test; test = test->next) {
-      if (test_matches (suite, test)) {
+      if (TestSuite_TestMatchesName (suite, test, testname)) {
          count++;
       }
-      if (suite->after && 0 == strcmp (test->name, suite->after)) {
-         num_to_skip = count - 1;
-      }
-   }
-
-   if (suite->after && num_to_skip == 0) {
-      test_error ("Error: specified --after \"%s\", but no tests matched", suite->after);
    }
 
    for (test = suite->tests; test; test = test->next) {
-      if (num_to_skip > 0) {
-         num_to_skip--;
-         count--;
-         continue;
-      }
-      if (test_matches (suite, test)) {
+      if (TestSuite_TestMatchesName (suite, test, testname)) {
          status += TestSuite_RunTest (suite, test, &count);
          count--;
       }
@@ -1004,7 +971,11 @@ TestSuite_Run (TestSuite *suite) /* IN */
 
    start_us = bson_get_monotonic_time ();
    if (suite->tests) {
-      failures += TestSuite_RunAll (suite);
+      if (suite->testname) {
+         failures += TestSuite_RunNamed (suite, suite->testname);
+      } else {
+         failures += TestSuite_RunSerial (suite);
+      }
    } else if (!suite->silent) {
       TestSuite_PrintJsonFooter (stdout);
       if (suite->outfile) {
@@ -1023,7 +994,6 @@ TestSuite_Destroy (TestSuite *suite)
 {
    Test *test;
    Test *tmp;
-   int i;
 
    bson_mutex_lock (&gTestMutex);
    gTestSuite = NULL;
@@ -1049,18 +1019,7 @@ TestSuite_Destroy (TestSuite *suite)
 
    free (suite->name);
    free (suite->prgname);
-   for (i = 0; i < suite->skip_patterns.len; i++) {
-      char *val = _mongoc_array_index (&suite->skip_patterns, char *, i);
-      bson_free (val);
-   }
-   _mongoc_array_destroy (&suite->skip_patterns);
-   for (i = 0; i < suite->match_patterns.len; i++) {
-      char *val = _mongoc_array_index (&suite->match_patterns, char *, i);
-      bson_free (val);
-   }
-
-   _mongoc_array_destroy (&suite->match_patterns);
-   free (suite->after);
+   free (suite->testname);
 }
 
 
