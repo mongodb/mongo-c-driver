@@ -20,6 +20,10 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 
+#include "mock_server/future-functions.h"
+#include "mock_server/mock-server.h"
+#include "mock_server/request.h"
+
 typedef struct {
    int server_changed_events;
    int server_opening_events;
@@ -437,6 +441,114 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
    free_and_assert_stats (stats);
 }
 
+/* Tests:
+ * - loadBalanced: true is added to the handshake
+ * - serviceId is set in the server description.
+ */
+#define LB_HELLO                                                               \
+   "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', 'serviceId': " \
+   "{'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}"
+static void
+test_loadbalanced_handshake_sends_loadbalanced (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   request_t *request;
+   future_t *future;
+   bson_error_t error;
+   mongoc_server_description_t *monitor_sd;
+   mongoc_server_description_t *handshake_sd;
+   bson_oid_t expected;
+   bson_oid_t actual;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   mock_server_auto_endsessions (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
+   client = mongoc_client_new_from_uri (uri);
+
+   future = future_client_command_simple (client,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+   request =
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   mock_server_replies_simple (request, LB_HELLO);
+   request_destroy (request);
+
+   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
+   mock_server_replies_ok_and_destroys (request);
+
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   monitor_sd = mongoc_client_select_server (
+      client, true /* for writes */, NULL /* read prefs */, &error);
+   ASSERT_OR_PRINT (monitor_sd, error);
+   handshake_sd = mongoc_client_get_handshake_description (
+      client, 1, NULL /* opts */, &error);
+   ASSERT_OR_PRINT (handshake_sd, error);
+
+   bson_oid_init_from_string (&expected, "AAAAAAAAAAAAAAAAAAAAAAAA");
+   BSON_ASSERT (mongoc_server_description_service_id (handshake_sd, &actual));
+   ASSERT_CMPOID (&actual, &expected);
+
+   mongoc_server_description_destroy (handshake_sd);
+   mongoc_server_description_destroy (monitor_sd);
+   mongoc_uri_destroy (uri);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+/* Tests that a connection is rejected if the handshake reply does not include a
+ * serviceID field. */
+#define NON_LB_HELLO \
+   "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid'}"
+static void
+test_loadbalanced_handshake_rejects_non_loadbalanced (void)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   request_t *request;
+   future_t *future;
+   bson_error_t error;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   mock_server_auto_endsessions (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
+   client = mongoc_client_new_from_uri (uri);
+
+   future = future_client_command_simple (client,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+   request =
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   mock_server_replies_simple (request, NON_LB_HELLO);
+   request_destroy (request);
+   BSON_ASSERT (!future_get_bool (future));
+   future_destroy (future);
+
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT,
+                          MONGOC_ERROR_CLIENT_INVALID_LOAD_BALANCER,
+                          "Driver attempted to initialize in load balancing "
+                          "mode, but the server does not support this mode");
+
+   mongoc_uri_destroy (uri);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
 static int
 skip_if_not_loadbalanced (void)
 {
@@ -499,4 +611,13 @@ test_loadbalanced_install (TestSuite *suite)
                       NULL /* ctx */,
                       skip_if_not_loadbalanced,
                       test_framework_skip_if_no_failpoint);
+
+   TestSuite_AddMockServerTest (suite,
+                                "/loadbalanced/handshake_sends_loadbalanced",
+                                test_loadbalanced_handshake_sends_loadbalanced);
+
+   TestSuite_AddMockServerTest (
+      suite,
+      "/loadbalanced/handshake_rejects_non_loadbalanced",
+      test_loadbalanced_handshake_rejects_non_loadbalanced);
 }

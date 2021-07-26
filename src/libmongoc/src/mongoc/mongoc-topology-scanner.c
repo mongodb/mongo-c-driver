@@ -278,6 +278,10 @@ _build_handshake_cmd (mongoc_topology_scanner_t *ts)
    }
    bson_append_array_end (doc, &subdoc);
 
+   if (ts->loadbalanced) {
+      BSON_APPEND_BOOL (doc, "loadBalanced", true);
+   }
+
    /* Return whether the handshake doc fit the size limit */
    return res;
 }
@@ -1393,4 +1397,14 @@ _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
    mongoc_server_api_destroy (ts->api);
    ts->api = mongoc_server_api_copy (api);
    _reset_hello (ts);
+}
+
+/* This must be called before the handshake command is constructed. Caller does
+ * not need to lock the topology->mutex. */
+void
+_mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
+                                           bool val)
+{
+   BSON_ASSERT (bson_empty (&ts->handshake_cmd));
+   ts->loadbalanced = true;
 }

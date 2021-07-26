@@ -2278,7 +2278,29 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       }
       bson_mutex_unlock (&topology->mutex);
       _mongoc_bson_init_with_transient_txn_error (cs, reply);
+      return NULL;
    }
+
+   /* If this is a load balanced topology and the server stream does not have a
+    * service id, disconnect and return an error. */
+   bson_mutex_lock (&topology->mutex);
+   if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      bson_oid_t service_id;
+
+      if (!mongoc_server_description_service_id (server_stream->sd,
+                                                 &service_id)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT,
+                         MONGOC_ERROR_CLIENT_INVALID_LOAD_BALANCER,
+                         "Driver attempted to initialize in load balancing "
+                         "mode, but the server does not support this mode.");
+         mongoc_server_stream_cleanup (server_stream);
+         mongoc_cluster_disconnect_node (cluster, server_id);
+         bson_mutex_unlock (&topology->mutex);
+         return NULL;
+      }
+   }
+   bson_mutex_unlock (&topology->mutex);
 
    RETURN (server_stream);
 }

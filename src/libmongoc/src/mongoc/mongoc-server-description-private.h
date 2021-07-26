@@ -112,6 +112,7 @@ struct _mongoc_server_description_t {
    pre-4.2 server.
    */
    uint32_t generation;
+   bson_oid_t service_id;
 };
 
 void
@@ -182,5 +183,12 @@ mongoc_server_description_topology_version_cmp (const bson_t *tv1,
 void
 mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
                                                 const bson_t *tv);
+
+/* If a service_id is set on the topology description, copies it to @oid and
+ * returns true. Otherwise returns false and zeros out oid.
+ */
+bool
+mongoc_server_description_service_id (
+   const mongoc_server_description_t *description, bson_oid_t *oid);
 
 #endif

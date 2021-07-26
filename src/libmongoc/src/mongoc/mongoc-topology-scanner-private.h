@@ -118,6 +118,7 @@ typedef struct mongoc_topology_scanner {
    bool speculative_authentication;
 
    mongoc_server_api_t *api;
+   bool loadbalanced;
 } mongoc_topology_scanner_t;
 
 mongoc_topology_scanner_t *
@@ -240,6 +241,9 @@ mongoc_topology_scanner_node_in_cooldown (mongoc_topology_scanner_node_t *node,
 void
 _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
                                          const mongoc_server_api_t *api);
+
+void
+_mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts, bool val);
 
 /* for testing. */
 mongoc_stream_t *
