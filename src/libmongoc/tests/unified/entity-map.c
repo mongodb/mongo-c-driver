@@ -375,6 +375,8 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
 
    if (store_events_as_entities) {
       /* TODO: CDRIVER-3867 Comprehensive Atlas Testing */
+      test_set_error (error, "storeEventsAsEntities is not supported");
+      goto done;
    }
 
    ret = true;
