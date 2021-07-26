@@ -2287,6 +2287,9 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       mongoc_topology_invalidate_server (topology, server_id, err_ptr);
       mongoc_cluster_disconnect_node (cluster, server_id);
       bson_mutex_lock (&topology->mutex);
+      /* This is not load balanced mode, so there are no service IDs associated
+       * with connections. Pass kZeroServiceId to clear the entire connection
+       * pool to this server. */
       _mongoc_topology_clear_connection_pool (topology, server_id, &kZeroServiceId);
       if (!topology->single_threaded) {
          _mongoc_topology_background_monitoring_cancel_check (topology,

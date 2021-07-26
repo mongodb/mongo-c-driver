@@ -285,7 +285,7 @@ _mongoc_topology_set_srv_polling_rescan_interval_ms (
 
 /* Return the latest connection generation for the server_id and/or service_id.
  * Use this generation for newly established connections.
- * service_id may be NULL.
+ * Pass kZeroServiceID connections do not have an associated service ID.
  * Callers must lock topology->mutex if topology is pooled. */
 uint32_t
 _mongoc_topology_get_connection_pool_generation (mongoc_topology_t *topology,
