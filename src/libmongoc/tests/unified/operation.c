@@ -2530,6 +2530,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
    operation_t *op = NULL;
    result_t *result = NULL;
    int i, num_ops;
+   bool check_result = true;
    op_to_fn_t op_to_fn_map[] = {
       /* Client operations */
       {"createChangeStream", operation_create_change_stream},
@@ -2634,19 +2635,20 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
    num_ops = sizeof (op_to_fn_map) / sizeof (op_to_fn_t);
    result = result_new ();
 
+   if (op->ignore_result_and_error && *op->ignore_result_and_error) {
+      check_result = false;
+   }
+
    for (i = 0; i < num_ops; i++) {
       if (0 == strcmp (op->name, op_to_fn_map[i].op)) {
          if (!op_to_fn_map[i].fn (test, op, result, error)) {
             goto done;
          }
-         if (!result_check (result,
-                            test->entity_map,
-                            op->ignore_result_and_error
-                               ? *op->ignore_result_and_error
-                               : false,
-                            op->expect_result,
-                            op->expect_error,
-                            error)) {
+         if (check_result && !result_check (result,
+                                            test->entity_map,
+                                            op->expect_result,
+                                            op->expect_error,
+                                            error)) {
             test_diagnostics_error_info (
                "checking for result (%s) / error (%s)",
                bson_val_to_json (op->expect_result),

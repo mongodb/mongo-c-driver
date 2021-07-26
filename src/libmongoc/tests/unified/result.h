@@ -71,7 +71,6 @@ result_get_val (result_t *result);
 bool
 result_check (result_t *result,
               entity_map_t *em,
-              bool ignore_result_and_error,
               bson_val_t *expect_result,
               bson_t *expect_error,
               bson_error_t *error);

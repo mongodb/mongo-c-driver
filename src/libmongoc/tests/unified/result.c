@@ -327,7 +327,6 @@ result_from_ok (result_t *result)
 bool
 result_check (result_t *result,
               entity_map_t *em,
-              bool ignore_result_and_error,
               bson_val_t *expect_result,
               bson_t *expect_error,
               bson_error_t *error)
@@ -342,11 +341,6 @@ result_check (result_t *result,
    bson_t *error_labels_contain;
    bson_t *error_labels_omit;
    bson_val_t *error_expect_result;
-
-   if (ignore_result_and_error) {
-      ret = true;
-      goto done;
-   }
 
    if (!expect_result && !expect_error) {
       if (!result->ok) {
@@ -564,7 +558,7 @@ test_resultfrombulkwrite (void)
       "'modifiedCount': 3, 'upsertedCount': 4}");
    result_from_bulk_write (result, reply, &empty);
    MONGOC_DEBUG ("rewritten to: %s", bson_val_to_json (result->value));
-   if (!result_check (result, false, NULL, expect, NULL, &error)) {
+   if (!result_check (result, NULL, expect, NULL, &error)) {
       test_error ("result_check error: %s", error.message);
    }
    result_destroy (result);
