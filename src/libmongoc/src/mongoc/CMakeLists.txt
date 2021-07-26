@@ -205,6 +205,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-database.c
    mongoc-error.c
    mongoc-find-and-modify.c
+   mongoc-generation-map.c
    mongoc-host-list.c
    mongoc-init.c
    mongoc-interrupt.c
