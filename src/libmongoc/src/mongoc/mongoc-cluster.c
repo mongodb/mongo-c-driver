@@ -2496,7 +2496,8 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
    /* Copy the latest connection pool generation.
     * TODO (CDRIVER-4078) do not store the generation counter on the server
     * description */
-   handshake_sd->generation = _mongoc_topology_get_connection_pool_generation (cluster->client->topology, server_id, &handshake_sd->service_id);
+   handshake_sd->generation = _mongoc_topology_get_connection_pool_generation (
+      cluster->client->topology, server_id, &handshake_sd->service_id);
 
    return mongoc_server_stream_new (
       &topology->description, handshake_sd, scanner_node->stream);
@@ -2611,7 +2612,9 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
       BSON_ASSERT (cluster_node->stream);
 
       bson_mutex_lock (&topology->mutex);
-      connection_pool_generation = _mongoc_topology_get_connection_pool_generation (topology, server_id, &cluster_node->handshake_sd->service_id);
+      connection_pool_generation =
+         _mongoc_topology_get_connection_pool_generation (
+            topology, server_id, &cluster_node->handshake_sd->service_id);
       bson_mutex_unlock (&topology->mutex);
 
       if (!has_server_description ||
