@@ -69,7 +69,7 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"poc-crud", SKIP_ALL_TESTS},
    {"db-aggregate", SKIP_ALL_TESTS},
    {"mongos-unpin", SKIP_ALL_TESTS},
-   /* CMAP is not implemented */
+   /* CDRIVER-2871: CMAP is not implemented */
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
