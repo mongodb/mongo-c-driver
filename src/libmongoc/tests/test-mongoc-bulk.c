@@ -5017,7 +5017,7 @@ test_bulk_install (TestSuite *suite)
                       test_bulk_write_concern_split,
                       NULL /* dtor */,
                       NULL /* ctx */,
-                      test_framework_skip_if_no_legacy_opcodes);
+                      test_framework_skip_if_no_getlasterror);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/hint/single/command/secondary",
                                 test_hint_single_command_secondary);

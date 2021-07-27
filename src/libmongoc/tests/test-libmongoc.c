@@ -2931,7 +2931,7 @@ main (int argc, char *argv[])
  * does not support legacy wire protocol op codes.
  *
  * As of SERVER-57457 and SERVER-57391, the following legacy wire protocol
- * op codes have been removed in the server:
+ * op codes have been removed in the server 5.1:
  * - OP_KILL_CURSORS
  * - OP_INSERT
  * - OP_UPDATE
@@ -2950,6 +2950,24 @@ test_framework_supports_legacy_opcodes (void) {
 
 int
 test_framework_skip_if_no_legacy_opcodes (void) {
+   if (!TestSuite_CheckLive()) {
+      return 0;
+   }
+
+   if (test_framework_supports_legacy_opcodes ()) {
+      return 1;
+   }
+
+   return 0;
+}
+
+/* SERVER-57390 removed the getLastError command on 5.1 servers. */
+int
+test_framework_skip_if_no_getlasterror (void) {
+   if (!TestSuite_CheckLive()) {
+      return 0;
+   }
+
    if (test_framework_supports_legacy_opcodes ()) {
       return 1;
    }

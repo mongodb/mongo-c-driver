@@ -250,4 +250,10 @@ test_framework_supports_legacy_opcodes (void);
 int
 test_framework_skip_if_no_legacy_opcodes (void);
 
+int
+test_framework_skip_if_no_getlasterror (void);
+
+int
+test_framework_skip_if_no_exhaust_cursors (void);
+
 #endif
