@@ -859,7 +859,8 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
 
    mongoc_server_description_init (handshake_sd, address, server_id);
    /* send the error from run_command IN to handle_hello */
-   mongoc_server_description_handle_hello (handshake_sd, &reply, rtt_msec, error);
+   mongoc_server_description_handle_hello (
+      handshake_sd, &reply, rtt_msec, error);
 
    if (cluster->requires_auth && speculative_auth_response) {
       _mongoc_topology_scanner_parse_speculative_authentication (
@@ -868,7 +869,8 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
 
    bson_destroy (&reply);
 
-   r = _mongoc_topology_update_from_handshake (cluster->client->topology, handshake_sd);
+   r = _mongoc_topology_update_from_handshake (cluster->client->topology,
+                                               handshake_sd);
    if (!r) {
       mongoc_server_description_reset (handshake_sd);
       bson_set_error (&handshake_sd->error,
@@ -2123,8 +2125,13 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
 
    if (cluster->requires_auth) {
       /* Complete speculative authentication */
-      bool is_auth = _mongoc_cluster_finish_speculative_auth (
-         cluster, stream, handshake_sd, &speculative_auth_response, &scram, error);
+      bool is_auth =
+         _mongoc_cluster_finish_speculative_auth (cluster,
+                                                  stream,
+                                                  handshake_sd,
+                                                  &speculative_auth_response,
+                                                  &scram,
+                                                  error);
 
       if (!is_auth && !_mongoc_cluster_auth_node (cluster,
                                                   cluster_node->stream,
@@ -2582,7 +2589,7 @@ _mongoc_cluster_create_server_stream (
     * lock while copying topology->description.logical_time below */
    bson_mutex_lock (&topology->mutex);
    server_stream =
-         mongoc_server_stream_new (&topology->description, sd, stream);
+      mongoc_server_stream_new (&topology->description, sd, stream);
    bson_mutex_unlock (&topology->mutex);
 
    return server_stream;
@@ -2649,7 +2656,7 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
       _mongoc_cluster_add_node (cluster, server_id, error);
    if (cluster_node) {
       return _mongoc_cluster_create_server_stream (
-            topology, cluster_node->handshake_sd, cluster_node->stream, error);
+         topology, cluster_node->handshake_sd, cluster_node->stream, error);
    } else {
       return NULL;
    }

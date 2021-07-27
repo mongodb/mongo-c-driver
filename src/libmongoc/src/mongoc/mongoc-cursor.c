@@ -606,7 +606,7 @@ mongoc_cursor_destroy (mongoc_cursor_t *cursor)
       cursor->client->in_exhaust = false;
       if (cursor->state != DONE) {
          /* The only way to stop an exhaust cursor is to kill the connection
-            */
+          */
          mongoc_cluster_disconnect_node (&cursor->client->cluster,
                                          cursor->server_id);
       }
@@ -1008,7 +1008,8 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
     * read preference, so the secondary rejects the read. same if we have a
     * direct connection to a secondary (topology type "single"). with
-    * OP_QUERY we handle this by setting secondaryOk. here we use $readPreference.
+    * OP_QUERY we handle this by setting secondaryOk. here we use
+    * $readPreference.
     */
    cmd_name = _mongoc_get_command_name (command);
    is_primary =

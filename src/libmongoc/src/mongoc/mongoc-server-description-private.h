@@ -109,8 +109,8 @@ struct _mongoc_server_description_t {
    1. a monitor receives a network error
    2. an app thread receives any network error before completing a handshake
    3. an app thread receives a non-timeout network error after the handshake
-   4. an app thread receives a "not primary" or "node is recovering" error from a
-   pre-4.2 server.
+   4. an app thread receives a "not primary" or "node is recovering" error from
+   a pre-4.2 server.
    */
 
    /* generation only applies to a server description tied to a connection.
