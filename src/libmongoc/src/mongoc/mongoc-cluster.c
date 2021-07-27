@@ -585,6 +585,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                          cmd->operation_id,
                                          &server_stream->sd->host,
                                          server_id,
+                                         &server_stream->sd->service_id,
                                          is_redacted,
                                          cluster->client->apm_context);
 
@@ -602,6 +603,7 @@ mongoc_cluster_run_command_monitored (mongoc_cluster_t *cluster,
                                       cmd->operation_id,
                                       &server_stream->sd->host,
                                       server_id,
+                                      &server_stream->sd->service_id,
                                       is_redacted,
                                       cluster->client->apm_context);
 

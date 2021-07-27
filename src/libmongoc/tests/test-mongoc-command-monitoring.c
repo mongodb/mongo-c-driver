@@ -1198,6 +1198,159 @@ test_command_failed_reply_hangup (void)
 }
 
 
+typedef struct {
+   int started_calls;
+   int succeeded_calls;
+   int failed_calls;
+   bool has_service_id;
+   bson_oid_t expected_service_id;
+} service_id_test_t;
+
+
+static void
+assert_service_id (service_id_test_t *test, const bson_oid_t *actual_service_id)
+{
+   if (test->has_service_id) {
+      BSON_ASSERT (actual_service_id);
+      ASSERT_CMPOID (actual_service_id, &test->expected_service_id);
+   } else {
+      BSON_ASSERT (!actual_service_id);
+   }
+}
+
+
+static void
+service_id_cmd_started_cb (const mongoc_apm_command_started_t *event)
+{
+   service_id_test_t *test = mongoc_apm_command_started_get_context (event);
+
+   test->started_calls++;
+   assert_service_id (test, mongoc_apm_command_started_get_service_id (event));
+}
+
+
+static void
+service_id_cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
+{
+   service_id_test_t *test = mongoc_apm_command_succeeded_get_context (event);
+
+   test->succeeded_calls++;
+   assert_service_id (test,
+                      mongoc_apm_command_succeeded_get_service_id (event));
+}
+
+
+static void
+service_id_cmd_failed_cb (const mongoc_apm_command_failed_t *event)
+{
+   service_id_test_t *test = mongoc_apm_command_failed_get_context (event);
+
+   test->failed_calls++;
+   assert_service_id (test, mongoc_apm_command_failed_get_service_id (event));
+}
+
+
+static void
+_test_service_id (bool is_loadbalanced)
+{
+   mock_server_t *server;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   request_t *request;
+   future_t *future;
+   bson_error_t error;
+   service_id_test_t context = {0};
+   mongoc_apm_callbacks_t *callbacks;
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   mock_server_auto_endsessions (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (
+      uri, MONGOC_URI_LOADBALANCED, is_loadbalanced);
+   client = mongoc_client_new_from_uri (uri);
+
+   if (is_loadbalanced) {
+      context.has_service_id = true;
+      bson_oid_init_from_string (&context.expected_service_id,
+                                 "AAAAAAAAAAAAAAAAAAAAAAAA");
+   }
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_started_cb (callbacks, service_id_cmd_started_cb);
+   mongoc_apm_set_command_succeeded_cb (callbacks, service_id_cmd_succeeded_cb);
+   mongoc_apm_set_command_failed_cb (callbacks, service_id_cmd_failed_cb);
+   ASSERT (mongoc_client_set_apm_callbacks (client, callbacks, &context));
+   mongoc_apm_callbacks_destroy (callbacks);
+
+   future = future_client_command_simple (client,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+
+   if (is_loadbalanced) {
+      request =
+         mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+      mock_server_replies_simple (
+         request,
+         "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', "
+         "'serviceId': {'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}");
+   } else {
+      request = mock_server_receives_legacy_hello (
+         server, "{'loadBalanced': { '$exists': false }}");
+      mock_server_replies_simple (
+         request,
+         "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid'}");
+   }
+   request_destroy (request);
+
+   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
+   mock_server_replies_ok_and_destroys (request);
+
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   future = future_client_command_simple (client,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+
+   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
+   mock_server_replies_simple (
+      request, "{'ok': 0, 'code': 8, 'errmsg': 'UnknownError'}");
+   request_destroy (request);
+
+   ASSERT (!future_get_bool (future));
+   future_destroy (future);
+
+   ASSERT_CMPINT (2, ==, context.started_calls);
+   ASSERT_CMPINT (1, ==, context.succeeded_calls);
+   ASSERT_CMPINT (1, ==, context.failed_calls);
+
+   mongoc_uri_destroy (uri);
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+
+void
+test_service_id_loadbalanced (void)
+{
+   _test_service_id (true);
+}
+
+
+void
+test_service_id_not_loadbalanced (void)
+{
+   _test_service_id (false);
+}
+
+
 void
 test_command_monitoring_install (TestSuite *suite)
 {
@@ -1255,4 +1408,11 @@ test_command_monitoring_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/command_monitoring/failed_reply_hangup",
                                 test_command_failed_reply_hangup);
+   TestSuite_AddMockServerTest (suite,
+                                "/command_monitoring/service_id/loadbalanced",
+                                test_service_id_loadbalanced);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/command_monitoring/service_id/not_loadbalanced",
+      test_service_id_not_loadbalanced);
 }
