@@ -4026,7 +4026,7 @@ typedef enum { HANGUP, SERVER_ERROR, ERR_TYPE_LAST } err_type_t;
 
 
 static void
-test_bulk_write_concern_split (void)
+test_bulk_write_concern_split (void* unused)
 {
    mongoc_client_t *client;
    mongoc_bulk_operation_t *bulk;
@@ -5012,9 +5012,12 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (
       suite, "/BulkOperation/OP_MSG/max_msg_size", test_bulk_max_msg_size);
    TestSuite_AddLive (suite, "/BulkOperation/split", test_bulk_split);
-   TestSuite_AddLive (suite,
+   TestSuite_AddFull (suite,
                       "/BulkOperation/write_concern/split",
-                      test_bulk_write_concern_split, test_framework_skip_if_no_legacy_opcodes);
+                      test_bulk_write_concern_split,
+                      NULL /* dtor */,
+                      NULL /* ctx */,
+                      test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/hint/single/command/secondary",
                                 test_hint_single_command_secondary);
