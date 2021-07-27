@@ -5014,7 +5014,7 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/BulkOperation/split", test_bulk_split);
    TestSuite_AddLive (suite,
                       "/BulkOperation/write_concern/split",
-                      test_bulk_write_concern_split);
+                      test_bulk_write_concern_split, test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/hint/single/command/secondary",
                                 test_hint_single_command_secondary);

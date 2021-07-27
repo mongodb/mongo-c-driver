@@ -7,6 +7,7 @@
 #include "mock_server/future-functions.h"
 #include "mongoc/mongoc-cursor-private.h"
 #include "mongoc/mongoc-collection-private.h"
+#include "mongoc/mongoc-error-private.h"
 #include "mongoc/mongoc-read-concern-private.h"
 #include "mongoc/mongoc-write-concern-private.h"
 #include "test-conveniences.h"
@@ -650,7 +651,10 @@ killcursors_succeeded (const mongoc_apm_command_succeeded_t *event)
 extern void
 _mongoc_cursor_impl_find_opquery_init (mongoc_cursor_t *cursor, bson_t *filter);
 
-/* test killing a cursor with mongo_cursor_destroy and a real server */
+/* Tests killing a cursor with mongo_cursor_destroy and a real server.
+ * Asserts that the cursor ID is no longer valid by attempting to get another batch of results with the previously killed cursor ID.
+ * Uses OP_GET_MORE (on servers older than 3.2) or a getMore command (servers 3.2+) to iterate the cursor ID.
+ */
 static void
 test_kill_cursor_live (void)
 {
@@ -701,6 +705,70 @@ test_kill_cursor_live (void)
    mongoc_cursor_destroy (cursor);
 
    ASSERT_CMPINT (ctx.succeeded_count, ==, 1);
+
+   if (test_framework_supports_legacy_opcodes ()) {
+      b = bson_new ();
+      cursor = _mongoc_cursor_find_new (
+         client, collection->ns, b, NULL, NULL, NULL, NULL);
+      /* override the typical priming, and immediately transition to an OPQUERY
+      * find cursor. */
+      cursor->impl.destroy (&cursor->impl);
+      _mongoc_cursor_impl_find_opquery_init (cursor, b);
+
+      cursor->cursor_id = ctx.cursor_id;
+      cursor->state = END_OF_BATCH; /* meaning, "finished reading first batch" */
+      r = mongoc_cursor_next (cursor, &doc);
+      ASSERT (!r);
+      ASSERT (mongoc_cursor_error (cursor, &error));
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CURSOR, 16, "cursor is invalid");
+
+      mongoc_cursor_destroy (cursor);
+   } else {
+      bson_t* cmd;
+
+      cmd = BCON_NEW ("getMore", BCON_INT64 (ctx.cursor_id), "collection", mongoc_collection_get_name(collection));
+      r = mongoc_client_command_simple (client, "test", cmd, NULL /* read prefs */, NULL /* reply */, &error);
+      ASSERT (!r);
+      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_QUERY, MONGOC_SERVER_ERR_CURSOR_NOT_FOUND, "not found");
+      bson_destroy (cmd);
+   }
+
+   mongoc_bulk_operation_destroy (bulk);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+   mongoc_apm_callbacks_destroy (callbacks);
+}
+
+/* Test that sending a legacy OP_GET_MORE with an invalid cursor ID returns an error. */ 
+static void test_legacy_get_more_invalid_cursorid_live (void) {
+  mongoc_apm_callbacks_t *callbacks;
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_t *b;
+   mongoc_bulk_operation_t *bulk;
+   int i;
+   bson_error_t error;
+   uint32_t server_id;
+   bool r;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+   killcursors_test_t ctx;
+
+   ctx.succeeded_count = 0;
+
+   callbacks = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_command_succeeded_cb (callbacks, killcursors_succeeded);
+   client = test_framework_new_default_client ();
+   mongoc_client_set_apm_callbacks (client, callbacks, &ctx);
+   collection = get_test_collection (client, "test");
+   b = tmp_bson ("{}");
+   bulk = mongoc_collection_create_bulk_operation_with_opts (collection, NULL);
+   for (i = 0; i < 200; i++) {
+      mongoc_bulk_operation_insert (bulk, b);
+   }
+
+   server_id = mongoc_bulk_operation_execute (bulk, NULL, &error);
+   ASSERT_OR_PRINT (server_id > 0, error);
 
    b = bson_new ();
    cursor = _mongoc_cursor_find_new (

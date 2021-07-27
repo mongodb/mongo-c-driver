@@ -192,6 +192,8 @@ WIRE_VERSION_CHECK_DECLS (8)
 WIRE_VERSION_CHECK_DECLS (9)
 /* wire versions 10, 11, 12 were internal to the 5.0 release cycle */
 WIRE_VERSION_CHECK_DECLS (13)
+/* wire version 14 begins with the 5.1 prerelease. */
+WIRE_VERSION_CHECK_DECLS (14)
 
 #undef WIRE_VERSION_CHECK_DECLS
 
@@ -241,5 +243,11 @@ test_framework_skip_if_no_aws (void);
 
 int
 test_framework_skip_if_no_setenv (void);
+
+bool
+test_framework_supports_legacy_opcodes (void);
+
+int
+test_framework_skip_if_no_legacy_opcodes (void);
 
 #endif

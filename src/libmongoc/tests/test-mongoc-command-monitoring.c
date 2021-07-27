@@ -1032,7 +1032,7 @@ test_killcursors_deprecated (void)
    ASSERT_OR_PRINT (r, error);
    set_cmd_test_callbacks (client, (void *) &test);
 
-   /* deprecated function without "db" or "collection", skips APM */
+   /* deprecated function without "db" or "collection", skips APM. This sends OP_KILL_CURSORS. */
    mongoc_client_kill_cursor (client, 123);
 
    ASSERT_CMPINT (0, ==, test.started_calls);
@@ -1242,9 +1242,9 @@ test_command_monitoring_install (TestSuite *suite)
       suite, "/command_monitoring/client_cmd_simple", test_client_cmd_simple);
    TestSuite_AddLive (
       suite, "/command_monitoring/client_cmd/op_ids", test_client_cmd_op_ids);
-   TestSuite_AddLive (suite,
+   TestSuite_AddFull (suite,
                       "/command_monitoring/killcursors_deprecated",
-                      test_killcursors_deprecated);
+                      test_killcursors_deprecated, NULL /* dtor */, NULL /* ctx */, test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddMockServerTest (suite,
                                 "/command_monitoring/failed_reply_mock",
                                 test_command_failed_reply_mock);

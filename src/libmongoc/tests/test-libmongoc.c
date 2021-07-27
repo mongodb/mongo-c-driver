@@ -2484,6 +2484,8 @@ WIRE_VERSION_CHECKS (8)
 WIRE_VERSION_CHECKS (9)
 /* wire versions 10, 11, 12 were internal to the 5.0 release cycle */
 WIRE_VERSION_CHECKS (13)
+/* wire version 14 begins with the 5.1 prerelease. */
+WIRE_VERSION_CHECKS (14)
 
 int
 test_framework_skip_if_no_dual_ip_hostname (void)
@@ -2922,4 +2924,35 @@ main (int argc, char *argv[])
    mongoc_cleanup ();
 
    return ret;
+}
+
+/*
+ * test_framework_skip_if_no_legacy_opcodes returns 0 if the connected server
+ * does not support legacy wire protocol op codes.
+ *
+ * As of SERVER-57457 and SERVER-57391, the following legacy wire protocol
+ * op codes have been removed in the server:
+ * - OP_KILL_CURSORS
+ * - OP_INSERT
+ * - OP_UPDATE
+ * - OP_DELETE
+ * - OP_GET_MORE
+ * - OP_QUERY (for any command other than isMaster, which drivers use to
+ * initially discover the min/max wire version of a server)
+ */
+bool
+test_framework_supports_legacy_opcodes (void) {
+   if (test_framework_skip_if_max_wire_version_less_than_14 () == 0) {
+      return true;
+   }
+   return false;
+}
+
+int
+test_framework_skip_if_no_legacy_opcodes (void) {
+   if (test_framework_supports_legacy_opcodes ()) {
+      return 1;
+   }
+
+   return 0;
 }
