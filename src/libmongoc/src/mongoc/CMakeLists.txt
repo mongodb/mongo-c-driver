@@ -108,6 +108,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-error-private.h
    mongoc-find-and-modify-private.h
    mongoc-flags-private.h
+   mongoc-generation-map-private.h
    mongoc-gridfs-bucket-file-private.h
    mongoc-gridfs-bucket-private.h
    mongoc-gridfs-file-list-private.h
