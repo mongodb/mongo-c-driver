@@ -1798,6 +1798,8 @@ _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
       return;
    }
 
+   TRACE ("clearing pool for server: %s", sd->host.host_and_port);
+
    mongoc_generation_map_increment (sd->generation_map, service_id);
 }
 
@@ -2014,7 +2016,6 @@ _mongoc_topology_get_connection_pool_generation (mongoc_topology_t *topology,
       /* Server removed, ignore and ignore error. */
       return 0;
    }
-   TRACE ("clearing pool for server: %s", sd->host.host_and_port);
 
    return mongoc_generation_map_get (sd->generation_map, service_id);
 }

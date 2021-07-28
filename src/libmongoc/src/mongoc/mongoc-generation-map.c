@@ -33,9 +33,6 @@ gm_node_new ()
 static void
 gm_node_destroy (gm_node_t *node)
 {
-   if (!node) {
-      return;
-   }
    bson_free (node);
 }
 
@@ -43,6 +40,9 @@ static gm_node_t *
 gm_node_copy (const gm_node_t *node)
 {
    gm_node_t *node_copy = gm_node_new ();
+
+   BSON_ASSERT (node_copy);
+   BSON_ASSERT (node);
 
    bson_oid_copy (&node->key, &node_copy->key);
    node_copy->val = node->val;
@@ -69,12 +69,14 @@ mongoc_generation_map_copy (const mongoc_generation_map_t *gm)
    gm_node_t *iter;
 
    gm_copy = mongoc_generation_map_new ();
+   BSON_ASSERT (gm_copy);
 
    LL_FOREACH (gm->list, iter)
    {
       gm_node_t *node_copy;
 
       node_copy = gm_node_copy (iter);
+      BSON_ASSERT (node_copy);
       LL_PREPEND (gm_copy->list, node_copy);
    }
 
@@ -87,6 +89,7 @@ mongoc_generation_map_get (const mongoc_generation_map_t *gm,
 {
    gm_node_t *iter = NULL;
 
+   BSON_ASSERT (gm);
    BSON_ASSERT (key);
 
    LL_FOREACH (gm->list, iter)
@@ -110,6 +113,7 @@ mongoc_generation_map_increment (mongoc_generation_map_t *gm,
    gm_node_t *match;
    gm_node_t *iter = NULL;
 
+   BSON_ASSERT (gm);
    BSON_ASSERT (key);
 
    LL_FOREACH (gm->list, iter)
@@ -123,6 +127,7 @@ mongoc_generation_map_increment (mongoc_generation_map_t *gm,
       match = iter;
    } else {
       gm_node_t *new_node = gm_node_new ();
+      BSON_ASSERT (new_node);
       bson_oid_copy (key, &new_node->key);
       LL_PREPEND (gm->list, new_node);
       match = new_node;
