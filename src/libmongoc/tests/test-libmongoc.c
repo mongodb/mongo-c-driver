@@ -2942,10 +2942,8 @@ main (int argc, char *argv[])
  */
 bool
 test_framework_supports_legacy_opcodes (void) {
-   if (test_framework_skip_if_max_wire_version_less_than_14 () == 0) {
-      return true;
-   }
-   return false;
+   /* Wire v14+ removed legacy opcodes */
+   return test_framework_skip_if_max_wire_version_less_than_14() == 0;
 }
 
 int
