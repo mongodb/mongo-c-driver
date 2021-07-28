@@ -200,4 +200,6 @@ bool
 mongoc_server_description_has_service_id (
    const mongoc_server_description_t *description);
 
+extern bool global_mock_service_id;
+
 #endif

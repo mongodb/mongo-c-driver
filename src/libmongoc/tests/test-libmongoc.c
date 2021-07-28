@@ -656,6 +656,10 @@ test_framework_get_unix_domain_socket_path_escaped (void)
 static char *
 _uri_str_from_env (void)
 {
+   char *loadbalanced_uri_str = test_framework_getenv ("SINGLE_MONGOS_LB_URI");
+   if (loadbalanced_uri_str) {
+      return loadbalanced_uri_str;
+   }
    return test_framework_getenv ("MONGOC_TEST_URI");
 }
 
@@ -2924,6 +2928,10 @@ main (int argc, char *argv[])
    test_server_stream_install (&suite);
    test_generation_map_install (&suite);
 
+   if (test_framework_is_loadbalanced ()) {
+      global_mock_service_id = true;
+   }
+
    ret = TestSuite_Run (&suite);
 
    TestSuite_Destroy (&suite);
@@ -2980,4 +2988,14 @@ test_framework_skip_if_no_getlasterror (void) {
    }
 
    return 0;
+}
+
+bool
+test_framework_is_loadbalanced (void) {
+   char *uristr = test_framework_getenv ("SINGLE_MONGOS_LB_URI");
+   if (uristr) {
+      bson_free (uristr);
+      return true;
+   }
+   return false;
 }

@@ -33,6 +33,8 @@ static bson_oid_t kObjectIdZero = {{0}};
 
 const bson_oid_t kZeroServiceId = {{0}};
 
+bool global_mock_service_id = false;
+
 static bool
 _match_tag_set (const mongoc_server_description_t *sd,
                 bson_iter_t *tag_set_iter);
@@ -732,6 +734,16 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
           if (!BSON_ITER_HOLDS_OID (&iter))
             goto failure;
          bson_oid_copy_unsafe (bson_iter_oid (&iter), &sd->service_id);
+      }
+   }
+
+   
+   if (global_mock_service_id) {
+      bson_iter_t pid_iter;
+
+      if (bson_iter_init_find (&pid_iter, &sd->topology_version, "processId") &&
+          BSON_ITER_HOLDS_OID (&pid_iter)) {
+         bson_oid_copy (bson_iter_oid (&pid_iter), &sd->service_id);
       }
    }
 

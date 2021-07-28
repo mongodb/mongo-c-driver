@@ -259,4 +259,7 @@ test_framework_skip_if_no_exhaust_cursors (void);
 bool
 test_framework_is_serverless (void);
 
+bool
+test_framework_is_loadbalanced (void);
+
 #endif
