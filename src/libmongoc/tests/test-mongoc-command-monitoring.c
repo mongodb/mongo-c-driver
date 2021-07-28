@@ -1032,7 +1032,7 @@ test_killcursors_deprecated (void* unused)
    ASSERT_OR_PRINT (r, error);
    set_cmd_test_callbacks (client, (void *) &test);
 
-   /* deprecated function without "db" or "collection", skips APM.This sends
+   /* deprecated function without "db" or "collection", skips APM. This sends
     * OP_KILL_CURSORS. */
    mongoc_client_kill_cursor (client, 123);
 
