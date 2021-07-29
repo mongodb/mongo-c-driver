@@ -666,19 +666,22 @@ test_exhaust_install (TestSuite *suite)
                       test_exhaust_cursor_single,
                       NULL,
                       NULL,
-                      skip_if_mongos);
+                      skip_if_mongos,
+                      test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/pool",
                       test_exhaust_cursor_pool,
                       NULL,
                       NULL,
-                      skip_if_mongos);
+                      skip_if_mongos,
+                      test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/batches",
                       test_exhaust_cursor_multi_batch,
                       NULL,
                       NULL,
-                      skip_if_mongos);
+                      skip_if_mongos,
+                      test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddLive (suite,
                       "/Client/set_max_await_time_ms",
                       test_cursor_set_max_await_time_ms);
