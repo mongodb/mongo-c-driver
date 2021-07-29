@@ -267,7 +267,8 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
             generation = bson_iter_int32 (&app_error_field_iter);
          } else {
             /* Default to the current generation. */
-            generation = sd->generation;
+            generation =
+               mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
          }
 
          BSON_ASSERT (bson_iter_init_find (
@@ -317,7 +318,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
                                             &response,
                                             &err,
                                             max_wire_version,
-                                            generation);
+                                            generation, &kZeroServiceId);
          bson_mutex_unlock (&topology->mutex);
       }
    }

@@ -933,8 +933,10 @@ exit:
       server_monitor->stream = NULL;
       server_monitor->more_to_come = false;
       bson_mutex_lock (&server_monitor->topology->mutex);
-      _mongoc_topology_clear_connection_pool (server_monitor->topology,
-                                              server_monitor->description->id);
+      _mongoc_topology_clear_connection_pool (
+         server_monitor->topology,
+         server_monitor->description->id,
+         &server_monitor->description->service_id);
       bson_mutex_unlock (&server_monitor->topology->mutex);
    }
 

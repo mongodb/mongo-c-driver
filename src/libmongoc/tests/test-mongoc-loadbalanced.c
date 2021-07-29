@@ -460,7 +460,7 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
    mongoc_server_description_t *monitor_sd;
    mongoc_server_description_t *handshake_sd;
    bson_oid_t expected;
-   bson_oid_t actual;
+   const bson_oid_t *actual;
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -494,8 +494,9 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
    ASSERT_OR_PRINT (handshake_sd, error);
 
    bson_oid_init_from_string (&expected, "AAAAAAAAAAAAAAAAAAAAAAAA");
-   BSON_ASSERT (mongoc_server_description_service_id (handshake_sd, &actual));
-   ASSERT_CMPOID (&actual, &expected);
+   actual = &handshake_sd->service_id;
+   BSON_ASSERT (actual);
+   ASSERT_CMPOID (actual, &expected);
 
    mongoc_server_description_destroy (handshake_sd);
    mongoc_server_description_destroy (monitor_sd);
@@ -546,6 +547,251 @@ test_loadbalanced_handshake_rejects_non_loadbalanced (void)
 
    mongoc_uri_destroy (uri);
    mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
+/* Test that an error before the MongoDB handshake completes does NOT go through
+ * SDAM error handling flow. */
+static void
+test_pre_handshake_error_does_not_clear_pool (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client_1;
+   mongoc_client_t *client_2;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+
+   server = mock_server_new ();
+   mock_server_auto_endsessions (server);
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
+   pool = mongoc_client_pool_new (uri);
+   client_1 = mongoc_client_pool_pop (pool);
+   client_2 = mongoc_client_pool_pop (pool);
+
+   /* client_1 opens a new connection to send "ping" */
+   future = future_client_command_simple (client_1,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+   /* A new connection is opened. */
+   request =
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   BSON_ASSERT (request);
+   mock_server_replies_simple (request, LB_HELLO);
+   request_destroy (request);
+   /* The "ping" command is sent. */
+   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
+   BSON_ASSERT (request);
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* client_2 attempts to open a new connection, but receives an error on the
+    * handshake. */
+   future = future_client_command_simple (client_2,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+   /* A new connection is opened. */
+   request =
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   BSON_ASSERT (request);
+   capture_logs (true); /* hide Failed to buffer logs. */
+   mock_server_hangs_up (request);
+   request_destroy (request);
+   BSON_ASSERT (!future_get_bool (future));
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to send");
+   future_destroy (future);
+
+   /* client_1 sends another "ping". */
+   future = future_client_command_simple (client_1,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+
+   /* The connection pool must not have been cleared. It can reuse the previous
+    * connection. The next command is the "ping". */
+   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
+   BSON_ASSERT (request);
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   mongoc_client_pool_push (pool, client_2);
+   mongoc_client_pool_push (pool, client_1);
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+}
+
+#define LB_HELLO_A                                                             \
+   "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', 'serviceId': " \
+   "{'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}"
+
+#define LB_HELLO_B                                                             \
+   "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', 'serviceId': " \
+   "{'$oid': 'BBBBBBBBBBBBBBBBBBBBBBBB'}}"
+
+/* Test that a post handshake error clears the pool ONLY for connections with
+ * the same serviceID. Test that a post handshake error does not mark the server
+ * unknown. */
+static void
+test_post_handshake_error_clears_pool (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client_1_serviceid_a;
+   mongoc_client_t *client_2_serviceid_a;
+   mongoc_client_t *client_3_serviceid_b;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   mongoc_server_description_t *monitor_sd;
+
+   server = mock_server_new ();
+   mock_server_auto_endsessions (server);
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
+   pool = mongoc_client_pool_new (uri);
+   client_1_serviceid_a = mongoc_client_pool_pop (pool);
+   client_2_serviceid_a = mongoc_client_pool_pop (pool);
+   client_3_serviceid_b = mongoc_client_pool_pop (pool);
+
+   /* client_1_serviceid_a opens a new connection to send "ping" */
+   future = future_client_command_simple (client_1_serviceid_a,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+   /* A new connection is opened. */
+   request =
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   BSON_ASSERT (request);
+   mock_server_replies_simple (request, LB_HELLO_A);
+   request_destroy (request);
+   /* The "ping" command is sent. */
+   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
+   BSON_ASSERT (request);
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* client_2_serviceid_a also opens a new connection and receives the same service ID. */
+   future = future_client_command_simple (client_2_serviceid_a,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+   /* A new connection is opened. */
+   request =
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   BSON_ASSERT (request);
+   mock_server_replies_simple (request, LB_HELLO_A);
+   request_destroy (request);
+   /* The "ping" command is sent. */
+   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
+   BSON_ASSERT (request);
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* client_3_serviceid_b also opens a new connection, but receives a different service ID. */
+   future = future_client_command_simple (client_3_serviceid_b,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+   /* A new connection is opened. */
+   request =
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   BSON_ASSERT (request);
+   mock_server_replies_simple (request, LB_HELLO_B);
+   request_destroy (request);
+   /* The "ping" command is sent. */
+   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
+   BSON_ASSERT (request);
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* client_1_serviceid_a receives a network error. */
+   future = future_client_command_simple (client_1_serviceid_a,
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
+   /* The "ping" command is sent. */
+   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
+   BSON_ASSERT (request);
+   capture_logs (true); /* hide Failed to buffer logs. */
+   mock_server_hangs_up (request);
+   request_destroy (request);
+   BSON_ASSERT (!future_get_bool (future));
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to send");
+   future_destroy (future);
+
+   /* Assert that the server is NOT marked Unknown. */
+   monitor_sd = mongoc_client_select_server (client_1_serviceid_a, true, NULL /* read prefs */, &error);
+   ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
+
+   /* This should have invalidated the connection for client_2_serviceid_a. */
+   future = future_client_command_simple (client_2_serviceid_a,
+                                       "admin",
+                                       tmp_bson ("{'ping': 1}"),
+                                       NULL /* read prefs */,
+                                       NULL /* reply */,
+                                       &error);
+   /* A new connection is opened. */
+   request =
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+   BSON_ASSERT (request);
+   mock_server_replies_simple (request, LB_HELLO_A);
+   request_destroy (request);
+   /* The "ping" command is sent. */
+   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
+   BSON_ASSERT (request);
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   /* But the connection for client_3_serviceid_b should still be OK. */
+   future = future_client_command_simple (client_3_serviceid_b,
+                                       "admin",
+                                       tmp_bson ("{'ping': 1}"),
+                                       NULL /* read prefs */,
+                                       NULL /* reply */,
+                                       &error);
+   /* The "ping" command is sent. */
+   request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
+   BSON_ASSERT (request);
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
+
+   mongoc_server_description_destroy (monitor_sd);
+   mongoc_client_pool_push (pool, client_3_serviceid_b);
+   mongoc_client_pool_push (pool, client_2_serviceid_a);
+   mongoc_client_pool_push (pool, client_1_serviceid_a);
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
    mock_server_destroy (server);
 }
 
@@ -620,4 +866,14 @@ test_loadbalanced_install (TestSuite *suite)
       suite,
       "/loadbalanced/handshake_rejects_non_loadbalanced",
       test_loadbalanced_handshake_rejects_non_loadbalanced);
+
+   TestSuite_AddMockServerTest (
+      suite,
+      "/loadbalanced/pre_handshake_error_does_not_clear_pool",
+      test_pre_handshake_error_does_not_clear_pool);
+
+   TestSuite_AddMockServerTest (
+      suite,
+      "/loadbalanced/post_handshake_error_clears_pool",
+      test_post_handshake_error_clears_pool);
 }

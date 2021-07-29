@@ -20,6 +20,7 @@
 #define MONGOC_SERVER_DESCRIPTION_PRIVATE_H
 
 #include "mongoc-server-description.h"
+#include "mongoc-generation-map-private.h"
 
 
 #define MONGOC_DEFAULT_WIRE_VERSION 0
@@ -111,7 +112,16 @@ struct _mongoc_server_description_t {
    4. an app thread receives a "not primary" or "node is recovering" error from a
    pre-4.2 server.
    */
+
+   /* generation only applies to a server description tied to a connection.
+    * It represents the generation number for this connection. */
    uint32_t generation;
+
+   /* generation_map stores all generations for all service IDs associated with
+    * this server. generation_map is only accessed on the server description for
+    * monitoring. In non-load-balanced mode, there are no service IDs. The only
+    * server generation is mapped from kZeroServiceID */
+   mongoc_generation_map_t *generation_map;
    bson_oid_t service_id;
 };
 
@@ -184,11 +194,10 @@ void
 mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
                                                 const bson_t *tv);
 
-/* If a service_id is set on the topology description, copies it to @oid and
- * returns true. Otherwise returns false and zeros out oid.
- */
+extern const bson_oid_t kZeroServiceId;
+
 bool
-mongoc_server_description_service_id (
-   const mongoc_server_description_t *description, bson_oid_t *oid);
+mongoc_server_description_has_service_id (
+   const mongoc_server_description_t *description);
 
 #endif
