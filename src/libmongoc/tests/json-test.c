@@ -1696,6 +1696,23 @@ run_json_general_test (const json_test_config_t *config)
          continue;
       }
 
+      if (config->skips) {
+         test_skip_t *iter;
+         bool should_skip = false;
+
+         for (iter = config->skips; iter->description != NULL; iter++) {
+            if (0 == strcmp (description, iter->description)) {
+               should_skip = true;
+               break;
+            }
+         }
+         
+         if (should_skip) {
+            fprintf (stderr, " - %s SKIPPED, due to reason: %s", description, iter->reason);
+            continue;
+         }
+      }
+
       bson_free (selected_test);
 
       uri = (config->uri_str != NULL) ? mongoc_uri_new (config->uri_str)
