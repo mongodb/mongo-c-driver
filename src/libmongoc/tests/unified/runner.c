@@ -1638,4 +1638,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR "/collection-management");
 
    run_unified_tests (suite, JSON_DIR "/sessions/unified");
+
+   run_unified_tests (suite, JSON_DIR "/change_streams/unified");
 }

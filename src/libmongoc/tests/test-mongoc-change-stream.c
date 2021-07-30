@@ -2774,6 +2774,6 @@ test_change_stream_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/change_streams/prose_test_18", prose_test_18);
 
-   test_framework_resolve_path (JSON_DIR "/change_streams", resolved);
+   test_framework_resolve_path (JSON_DIR "/change_streams/legacy", resolved);
    install_json_test_suite (suite, resolved, &test_change_stream_spec_cb);
 }
