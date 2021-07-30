@@ -783,7 +783,10 @@ check_version_info (const bson_t *scenario, bool print_reason)
       bson_iter_bson (&iter, &topology);
 
       /* Determine cluster type */
-      if (test_framework_is_mongos ()) {
+      if (test_framework_is_loadbalanced()) {
+         MONGOC_DEBUG ("TOPOLOGY detected as load-balanced from env variable");
+         current_topology = "load-balanced";
+      } else if (test_framework_is_mongos ()) {
          current_topology = "sharded";
       } else if (test_framework_is_replset ()) {
          current_topology = "replicaset";
@@ -1719,6 +1722,7 @@ run_json_general_test (const json_test_config_t *config)
       }
 
       client = test_framework_client_new_from_uri (uri, NULL);
+      MONGOC_DEBUG ("client is using uri: %s", mongoc_uri_get_string (uri));
       mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
       test_framework_set_ssl_opts (client);
       /* reconnect right away, if a fail point causes a disconnect */
