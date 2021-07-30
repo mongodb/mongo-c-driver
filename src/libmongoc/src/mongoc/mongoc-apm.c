@@ -19,6 +19,8 @@
 #include "mongoc-cmd-private.h"
 #include "mongoc-handshake-private.h"
 
+static bson_oid_t kObjectIdZero = {{0}};
+
 /*
  * An Application Performance Management (APM) implementation, complying with
  * MongoDB's Command Monitoring Spec:
@@ -74,6 +76,7 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
                                  int64_t operation_id,
                                  const mongoc_host_list_t *host,
                                  uint32_t server_id,
+                                 const bson_oid_t *service_id,
                                  bool *is_redacted, /* out */
                                  void *context)
 {
@@ -129,6 +132,8 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
    event->host = host;
    event->server_id = server_id;
    event->context = context;
+
+   bson_oid_copy_unsafe (service_id, &event->service_id);
 }
 
 
@@ -159,6 +164,7 @@ mongoc_apm_command_started_init_with_cmd (mongoc_apm_command_started_t *event,
                                     cmd->operation_id,
                                     &cmd->server_stream->sd->host,
                                     cmd->server_stream->sd->id,
+                                    &cmd->server_stream->sd->service_id,
                                     is_redacted,
                                     context);
 
@@ -197,6 +203,7 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
                                    int64_t operation_id,
                                    const mongoc_host_list_t *host,
                                    uint32_t server_id,
+                                   const bson_oid_t *service_id,
                                    bool force_redaction,
                                    void *context)
 {
@@ -220,6 +227,8 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
    event->host = host;
    event->server_id = server_id;
    event->context = context;
+
+   bson_oid_copy_unsafe (service_id, &event->service_id);
 }
 
 
@@ -254,6 +263,7 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
                                 int64_t operation_id,
                                 const mongoc_host_list_t *host,
                                 uint32_t server_id,
+                                const bson_oid_t *service_id,
                                 bool force_redaction,
                                 void *context)
 {
@@ -278,6 +288,8 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
    event->host = host;
    event->server_id = server_id;
    event->context = context;
+
+   bson_oid_copy_unsafe (service_id, &event->service_id);
 }
 
 
@@ -351,6 +363,19 @@ mongoc_apm_command_started_get_server_id (
 }
 
 
+const bson_oid_t *
+mongoc_apm_command_started_get_service_id (
+   const mongoc_apm_command_started_t *event)
+{
+   if (0 == bson_oid_compare (&event->service_id, &kObjectIdZero)) {
+      /* serviceId is unset. */
+      return NULL;
+   }
+
+   return &event->service_id;
+}
+
+
 void *
 mongoc_apm_command_started_get_context (
    const mongoc_apm_command_started_t *event)
@@ -414,6 +439,19 @@ mongoc_apm_command_succeeded_get_server_id (
    const mongoc_apm_command_succeeded_t *event)
 {
    return event->server_id;
+}
+
+
+const bson_oid_t *
+mongoc_apm_command_succeeded_get_service_id (
+   const mongoc_apm_command_succeeded_t *event)
+{
+   if (0 == bson_oid_compare (&event->service_id, &kObjectIdZero)) {
+      /* serviceId is unset. */
+      return NULL;
+   }
+
+   return &event->service_id;
 }
 
 
@@ -484,6 +522,19 @@ mongoc_apm_command_failed_get_server_id (
    const mongoc_apm_command_failed_t *event)
 {
    return event->server_id;
+}
+
+
+const bson_oid_t *
+mongoc_apm_command_failed_get_service_id (
+   const mongoc_apm_command_failed_t *event)
+{
+   if (0 == bson_oid_compare (&event->service_id, &kObjectIdZero)) {
+      /* serviceId is unset. */
+      return NULL;
+   }
+
+   return &event->service_id;
 }
 
 
