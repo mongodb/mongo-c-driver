@@ -38,14 +38,9 @@ struct _mongoc_transaction_opt_t {
    int64_t max_commit_time_ms;
 };
 
-typedef enum {
-   MONGOC_SESSION_NO_OPTS = 0,
-   MONGOC_SESSION_CAUSAL_CONSISTENCY = (1 << 0),
-   MONGOC_SESSION_SNAPSHOT = (2 << 0),
-} mongoc_session_flag_t;
-
 struct _mongoc_session_opt_t {
-   mongoc_session_flag_t flags;
+   mongoc_optional_t causal_consistency;
+   mongoc_optional_t snapshot;
    mongoc_transaction_opt_t default_txn_opts;
 };
 
