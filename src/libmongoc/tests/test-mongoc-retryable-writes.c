@@ -126,7 +126,8 @@ test_rs_failover (void)
 }
 
 
-/* Test code paths for _mongoc_client_command_with_opts */
+/* Test code paths for _mongoc_client_command_with_opts.
+ * This test requires a 3.6+ replica set to support the onPrimaryTransactionalWrite failpoint. */
 static void
 test_command_with_opts (void *ctx)
 {
@@ -670,22 +671,6 @@ test_bulk_retry_tracks_new_server (void *unused)
    mongoc_client_destroy (client);
 }
 
-int
-test_framework_skip_if_no_retryable_writes ()
-{
-   int64_t wv;
-
-   test_framework_get_max_wire_version (&wv);
-   if (wv < 6) {
-      return 0;
-   }
-   if (!test_framework_is_mongos () && !test_framework_is_replset ()) {
-      return 0;
-   }
-
-   return 1;
-}
-
 void
 test_retryable_writes_install (TestSuite *suite)
 {
@@ -699,8 +684,7 @@ test_retryable_writes_install (TestSuite *suite)
                       test_command_with_opts,
                       NULL,
                       NULL,
-                      test_framework_skip_if_no_retryable_writes,
-                      test_framework_skip_if_no_failpoint);
+                      test_framework_skip_if_not_rs_version_6);
    TestSuite_AddMockServerTest (suite,
                                 "/retryable_writes/insert_one_unacknowledged",
                                 test_insert_one_unacknowledged,
