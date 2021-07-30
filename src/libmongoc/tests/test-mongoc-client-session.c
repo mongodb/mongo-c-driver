@@ -2708,6 +2708,35 @@ test_session_dirty (void *unused)
 }
 
 void
+test_sessions_snapshot_prose_test_1 (void *ctx)
+{
+   mongoc_client_t *client = NULL;
+   mongoc_session_opt_t *session_opts = NULL;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_new_default_client ();
+   BSON_ASSERT (client);
+
+   session_opts = mongoc_session_opts_new ();
+   mongoc_session_opts_set_causal_consistency (session_opts, true);
+   mongoc_session_opts_set_snapshot (session_opts, true);
+
+   /* assert that starting session with causal consistency and snapshot enabled
+    * results in an error. */
+   r = mongoc_client_start_session (client, session_opts, &error);
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_CLIENT,
+      MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+      "Only one of causal consistency and snapshot can be enabled.");
+
+   mongoc_session_opts_destroy (session_opts);
+   mongoc_client_destroy (client);
+}
+
+void
 test_session_install (TestSuite *suite)
 {
    char resolved[PATH_MAX];
@@ -3079,4 +3108,12 @@ test_session_install (TestSuite *suite)
       test_framework_skip_if_no_failpoint,
       /* Tests with retryable writes, requires non-standalone. */
       test_framework_skip_if_single);
+
+   TestSuite_AddFull (suite,
+                      "/Session/snapshot/prose_test_1",
+                      test_sessions_snapshot_prose_test_1,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_crypto);
 }
