@@ -1722,12 +1722,17 @@ run_json_general_test (const json_test_config_t *config)
        * the other URI components (CDRIVER-3285) */
       if (bson_iter_init_find (&uri_iter, &test, "useMultipleMongoses") &&
           bson_iter_as_bool (&uri_iter)) {
-         ASSERT_OR_PRINT (
-            mongoc_uri_upsert_host_and_port (uri, "localhost:27017", &error),
-            error);
-         ASSERT_OR_PRINT (
-            mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error),
-            error);
+         if (test_framework_is_loadbalanced ()) {
+            mongoc_uri_destroy (uri);
+            uri = test_framework_get_uri_multi_mongos_loadbalanced ();
+         } else {
+            ASSERT_OR_PRINT (
+               mongoc_uri_upsert_host_and_port (uri, "localhost:27017", &error),
+               error);
+            ASSERT_OR_PRINT (
+               mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error),
+               error);
+         }
       }
 
       if (bson_iter_init_find (&client_opts_iter, &test, "clientOptions")) {

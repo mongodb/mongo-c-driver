@@ -1399,6 +1399,24 @@ test_framework_get_uri ()
    return uri;
 }
 
+mongoc_uri_t *
+test_framework_get_uri_multi_mongos_loadbalanced () {
+   char *uri_str_no_auth;
+   char *uri_str;
+   mongoc_uri_t *uri;
+
+   uri_str_no_auth = _mongoc_getenv ("MULTI_MONGOS_LB_URI");
+   if (!uri_str_no_auth) {
+      test_error ("expected MULTI_MONGOS_LB_URI to be set");
+   }
+   uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
+   uri = mongoc_uri_new (uri_str);
+
+   bson_free (uri_str_no_auth);
+   bson_free (uri_str);
+   return uri;
+}
+
 bool
 test_framework_uri_apply_multi_mongos (mongoc_uri_t *uri,
                                        bool use_multi,
