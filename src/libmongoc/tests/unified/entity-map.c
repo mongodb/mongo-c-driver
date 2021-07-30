@@ -587,8 +587,6 @@ session_opts_new (bson_t *bson, bson_error_t *error)
       mongoc_session_opts_set_causal_consistency (opts, *causal_consistency);
    }
    if (snapshot) {
-      /* Set causal consistency to false to allow snapshot */
-      mongoc_session_opts_set_causal_consistency (opts, false);
       mongoc_session_opts_set_snapshot (opts, *snapshot);
    }
 
