@@ -373,10 +373,13 @@ test_runner_new (void)
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
    uri = test_framework_get_uri ();
-   /* Always use multiple mongos's if speaking to a mongos.
-    * Some test operations require communicating with all known mongos */
-   if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
-      test_error ("error applying multiple mongos: %s", error.message);
+   /* In load balanced mode, the internal client must use the SINGLE_LB_MONGOS_URI. */
+   if (!test_framework_is_loadbalanced ()) {
+      /* Always use multiple mongos's if speaking to a mongos.
+      * Some test operations require communicating with all known mongos */
+      if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
+         test_error ("error applying multiple mongos: %s", error.message);
+      }
    }
    test_runner->internal_client =
       test_framework_client_new_from_uri (uri, NULL);
@@ -546,6 +549,10 @@ get_topology_type (mongoc_client_t *client)
    bson_error_t error;
    const char *topology_type = "single";
 
+   if (test_framework_is_loadbalanced ()) {
+      return "load-balanced";
+   }
+
    ret = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'hello': 1}"), NULL, &reply, &error);
    if (!ret) {
@@ -559,8 +566,6 @@ get_topology_type (mongoc_client_t *client)
          &error);
    }
    ASSERT_OR_PRINT (ret, error);
-
-   /* TODO: CDRIVER-4060 Detect load-balancer */
 
    if (is_replset (&reply)) {
       topology_type = "replicaset";

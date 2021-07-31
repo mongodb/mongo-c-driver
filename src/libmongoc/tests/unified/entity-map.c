@@ -322,9 +322,14 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
     * has one host. If useMultipleMongoses unspecified, make no assertion.
     */
    if (use_multiple_mongoses != NULL) {
-      if (!test_framework_uri_apply_multi_mongos (
-             uri, *use_multiple_mongoses, error)) {
-         goto done;
+      if (*use_multiple_mongoses && test_framework_is_loadbalanced ()) {
+         mongoc_uri_destroy (uri);
+         uri = test_framework_get_uri_multi_mongos_loadbalanced ();
+      } else {
+         if (!test_framework_uri_apply_multi_mongos (
+                uri, *use_multiple_mongoses, error)) {
+            goto done;
+         }
       }
    }
 
