@@ -197,6 +197,11 @@ command_started (const mongoc_apm_command_started_t *started)
    event->database_name =
       bson_strdup (mongoc_apm_command_started_get_database_name (started));
 
+   if (mongoc_apm_command_started_get_service_id (started)) {
+      bson_oid_copy (mongoc_apm_command_started_get_service_id (started),
+                     &event->service_id);
+   }
+
    if (should_ignore_event (entity, event)) {
       event_destroy (event);
       return;
@@ -217,6 +222,11 @@ command_failed (const mongoc_apm_command_failed_t *failed)
    event->command_name =
       bson_strdup (mongoc_apm_command_failed_get_command_name (failed));
 
+   if (mongoc_apm_command_failed_get_service_id (failed)) {
+      bson_oid_copy (mongoc_apm_command_failed_get_service_id (failed),
+                     &event->service_id);
+   }
+
    if (should_ignore_event (entity, event)) {
       event_destroy (event);
       return;
@@ -236,6 +246,11 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
       bson_copy (mongoc_apm_command_succeeded_get_reply (succeeded));
    event->command_name =
       bson_strdup (mongoc_apm_command_succeeded_get_command_name (succeeded));
+
+   if (mongoc_apm_command_succeeded_get_service_id (succeeded)) {
+      bson_oid_copy (mongoc_apm_command_succeeded_get_service_id (succeeded),
+                     &event->service_id);
+   }
 
    if (should_ignore_event (entity, event)) {
       event_destroy (event);
@@ -370,6 +385,9 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
             mongoc_apm_set_command_failed_cb (callbacks, command_failed);
          } else if (0 == strcmp (event_type, "commandSucceededEvent")) {
             mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
+         } else if (is_unsupported_event_type (event_type)) {
+            MONGOC_DEBUG ("Skipping observing unsupported event type: %s", event_type);
+            continue;
          } else {
             test_set_error (error, "Unexpected event type: %s", event_type);
             goto done;

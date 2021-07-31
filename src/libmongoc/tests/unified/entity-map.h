@@ -29,6 +29,7 @@ typedef struct _event_t {
    char *database_name;
    bson_t *command;
    bson_t *reply;
+   bson_oid_t service_id;
    struct _event_t *next;
 } event_t;
 

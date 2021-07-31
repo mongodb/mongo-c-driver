@@ -1002,6 +1002,7 @@ test_check_event (test_t *test,
    char *expected_command_name = NULL;
    char *expected_database_name = NULL;
    bson_t *expected_reply = NULL;
+   bool *expected_has_service_id = NULL;
 
    if (bson_count_keys (expected) != 1) {
       test_set_error (error,
@@ -1034,6 +1035,7 @@ test_check_event (test_t *test,
    bson_parser_utf8_optional (bp, "commandName", &expected_command_name);
    bson_parser_utf8_optional (bp, "databaseName", &expected_database_name);
    bson_parser_doc_optional (bp, "reply", &expected_reply);
+   bson_parser_bool_optional (bp, "hasServiceId", &expected_has_service_id);
    if (!bson_parser_parse (bp, &expected_bson, error)) {
       goto done;
    }
@@ -1091,10 +1093,60 @@ test_check_event (test_t *test,
       bson_val_destroy (actual_val);
    }
 
+   if (expected_has_service_id) {
+      char oid_str[25] = {0};
+      bool has_service_id = false;
+
+      bson_oid_to_string (&actual->service_id, oid_str);
+      has_service_id = 0 != bson_oid_compare (&actual->service_id, &kZeroServiceId);
+
+      if (*expected_has_service_id && !has_service_id) {
+         test_error ("expected serviceId, but got none");
+      }
+      
+      if (!*expected_has_service_id && has_service_id) {
+         test_error ("expected no serviceId, but got %s", oid_str);
+      }
+   }
+
    ret = true;
 done:
    bson_parser_destroy_with_parsed_fields (bp);
    return ret;
+}
+
+/* Rewrite expected_events. */
+// LBTODO: remove this.
+static void
+filter_unsupported_events (bson_t **expected_events) {
+   bson_t *expected_events_filtered = bson_new ();
+   uint32_t append_index = 0;
+   bson_iter_t iter;
+
+   BSON_FOREACH (*expected_events, iter) {
+      bson_t event;
+      bson_iter_t event_iter;
+      const char *event_type;
+      char *append_index_str;
+
+      bson_iter_bson (&iter, &event);
+      bson_iter_init (&event_iter, &event);
+      bson_iter_next (&event_iter);
+      event_type = bson_iter_key (&event_iter);
+
+      if (is_unsupported_event_type (event_type)) {
+         MONGOC_DEBUG ("filtering out unsupported event: %s", event_type);
+         continue;
+      }
+      append_index_str = bson_strdup_printf ("%d", append_index);
+      append_index++;
+      MONGOC_DEBUG ("copying supported event: %s", event_type);
+      BSON_APPEND_DOCUMENT (expected_events_filtered, append_index_str, &event);
+      bson_free (append_index_str);
+   }
+   
+   bson_destroy (*expected_events);
+   *expected_events = expected_events_filtered;
 }
 
 static bool
@@ -1111,12 +1163,27 @@ test_check_expected_events_for_client (test_t *test,
    event_t *eiter = NULL;
    uint32_t expected_num_events;
    uint32_t actual_num_events = 0;
+   char *event_type = NULL;
 
    bp = bson_parser_new ();
    bson_parser_utf8 (bp, "client", &client_id);
    bson_parser_array (bp, "events", &expected_events);
+   bson_parser_utf8_optional (bp, "eventType", &event_type);
    if (!bson_parser_parse (bp, expected_events_for_client, error)) {
       goto done;
+   }
+
+   if (event_type) {
+      if (0 == strcmp (event_type, "cmap")) {
+         /* Explicitly ignore cmap events. These are unsupported by the C driver */
+         ret = true;
+         goto done;
+      } else if (0 == strcmp (event_type, "command")) {
+         /* proceed. */
+      } else {
+         test_set_error (error, "unexpected event type: %s", event_type);
+         goto done;
+      }
    }
 
    entity = entity_map_get (test->entity_map, client_id, error);
@@ -1645,4 +1712,6 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR "/sessions/unified");
 
    run_unified_tests (suite, JSON_DIR "/change_streams/unified");
+
+   run_unified_tests (suite, JSON_DIR "/load_balancers");
 }
