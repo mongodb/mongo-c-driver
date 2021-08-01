@@ -73,6 +73,9 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
+   /* CDRIVER-????: File a ticket to support batchSize on listCollections and listIndexes. Prefer this waits until a cursor specification (DRIVERS-722). */
+   {"cursors are correctly pinned to connections for load-balanced clusters", "listCollections pins the cursor to a connection"},
+   {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
    {0},
 };
 /* clang-format on */
@@ -1638,7 +1641,6 @@ run_one_test_file (bson_t *bson)
    test_file = test_file_new (test_runner, bson);
 
    test_diagnostics_test_info ("test file: %s", test_file->description);
-
    if (is_test_file_skipped (test_file)) {
       MONGOC_DEBUG (
          "SKIPPING test file '%s'. Reason: 'explicitly skipped in runner.c'",

@@ -31,6 +31,11 @@
 #define REDUCED_HEARTBEAT_FREQUENCY_MS 500
 #define REDUCED_MIN_HEARTBEAT_FREQUENCY_MS 50
 
+struct _entity_findcursor_t {
+   const bson_t *first_result;
+   mongoc_cursor_t *cursor;
+};
+
 static void
 entity_destroy (entity_t *entity);
 
@@ -906,10 +911,11 @@ entity_destroy (entity_t *entity)
       mongoc_gridfs_bucket_t *bucket = entity->value;
 
       mongoc_gridfs_bucket_destroy (bucket);
-   } else if (0 == strcmp ("cursor", entity->type)) {
-      mongoc_cursor_t *cursor = entity->value;
+   } else if (0 == strcmp ("findcursor", entity->type)) {
+      entity_findcursor_t *findcursor = entity->value;
 
-      mongoc_cursor_destroy (cursor);
+      mongoc_cursor_destroy (findcursor->cursor);
+      bson_free (findcursor);
    } else {
       test_error ("Attempting to destroy unrecognized entity type: %s, id: %s",
                   entity->type,
@@ -1033,16 +1039,17 @@ entity_map_get_changestream (entity_map_t *entity_map,
    return (mongoc_change_stream_t *) entity->value;
 }
 
-mongoc_cursor_t *
-entity_map_get_cursor (entity_map_t *entity_map,
-                       const char *id,
-                       bson_error_t *error)
+entity_findcursor_t *
+entity_map_get_findcursor (entity_map_t *entity_map,
+                           const char *id,
+                           bson_error_t *error)
 {
-   entity_t *entity = _entity_map_get_by_type (entity_map, id, "cursor", error);
+   entity_t *entity =
+      _entity_map_get_by_type (entity_map, id, "findcursor", error);
    if (!entity) {
       return NULL;
    }
-   return (mongoc_cursor_t *) entity->value;
+   return (entity_findcursor_t *) entity->value;
 }
 
 bson_val_t *
@@ -1141,12 +1148,43 @@ entity_map_add_changestream (entity_map_t *em,
 }
 
 bool
-entity_map_add_cursor (entity_map_t *em,
-                       const char *id,
-                       mongoc_cursor_t *cursor,
-                       bson_error_t *error)
+entity_findcursor_iterate_until_document_or_error (
+   entity_findcursor_t *findcursor,
+   const bson_t **document,
+   bson_error_t *error,
+   const bson_t **error_document)
 {
-   return _entity_map_add (em, id, "cursor", (void *) cursor, error);
+   *document = NULL;
+
+   if (findcursor->first_result) {
+      *document = findcursor->first_result;
+      findcursor->first_result = NULL;
+      return true;
+   }
+
+   while (!mongoc_cursor_next (findcursor->cursor, document)) {
+      if (mongoc_cursor_error_document (
+             findcursor->cursor, error, error_document)) {
+         return false;
+      }
+   }
+   return true;
+}
+
+bool
+entity_map_add_findcursor (entity_map_t *em,
+                           const char *id,
+                           mongoc_cursor_t *cursor,
+                           const bson_t *first_result,
+                           bson_error_t *error)
+{
+   entity_findcursor_t *findcursor;
+
+   findcursor =
+      (entity_findcursor_t *) bson_malloc0 (sizeof (entity_findcursor_t));
+   findcursor->cursor = cursor;
+   findcursor->first_result = first_result;
+   return _entity_map_add (em, id, "findcursor", (void *) findcursor, error);
 }
 
 bool
