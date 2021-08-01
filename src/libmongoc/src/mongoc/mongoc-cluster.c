@@ -2321,7 +2321,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
          mongoc_server_stream_cleanup (server_stream);
          mongoc_cluster_disconnect_node (cluster, server_id);
          bson_mutex_unlock (&topology->mutex);
-         bson_init (reply);
+         _mongoc_bson_init_if_set (reply);
          return NULL;
       }
    }
