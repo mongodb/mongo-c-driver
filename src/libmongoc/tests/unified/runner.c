@@ -76,6 +76,8 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    /* CDRIVER-????: File a ticket to support batchSize on listCollections and listIndexes. Prefer this waits until a cursor specification (DRIVERS-722). */
    {"cursors are correctly pinned to connections for load-balanced clusters", "listCollections pins the cursor to a connection"},
    {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
+   /* libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode. */
+   {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
    {0},
 };
 /* clang-format on */
