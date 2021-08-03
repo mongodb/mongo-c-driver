@@ -73,23 +73,69 @@ bson_atomic_int64_add (volatile int64_t *p, int64_t n)
 #endif
 
 
-/*
- * The logic in the header is such that __BSON_NEED_ATOMIC_WINDOWS should only
- * be defined if neither __BSON_NEED_ATOMIC_32 nor __BSON_NEED_ATOMIC_64 are.
+#if defined(_MSC_VER) && !defined(_M_X64)
+
+/**
+ * MSVC targeting 32-bit x86  does not support 64-bit atomic integer operations.
+ * We emulate thath here using a spin lock and regular arithmetic operations
  */
+static int g64bitAtomicLock = 0;
 
-
-#ifdef __BSON_NEED_ATOMIC_WINDOWS
-int32_t
-bson_atomic_int_add (volatile int32_t *p, int32_t n)
+static _lock_64bit_atomic ()
 {
-   return InterlockedExchangeAdd (p, n) + n;
+   while (!bson_atomic_int_compare_exchange (
+      &g64bitAtomicLock, 0, 1, bson_memorder_acquire)) {
+      SwitchToThread ();
+   }
 }
 
+static _unlock_64bit_atomic ()
+{
+   int64_t rv =
+      bson_atomic_int_exchange (&g64bitAtomicLock, 0, bson_memorder_release);
+   BSON_ASSERT (rv == 1 && "Released atomic lock while not holding it");
+}
 
 int64_t
-bson_atomic_int64_add (volatile int64_t *p, int64_t n)
+bson_atomic_int64_fetch_add (volatile int64_t *p,
+                             int64_t n,
+                             enum bson_atomic_memorder _unused)
 {
-   return InterlockedExchangeAdd (p, n) + n;
+   int64_t ret;
+   _lock_64bit_atomic ();
+   ret = *p;
+   *p += n;
+   _unlock_64bit_atomic ();
+   return ret;
 }
+
+int64_t
+bson_atomic_int64_exchange (volatile int64_t *p,
+                            int64_t n,
+                            enum bson_atomic_memorder _unused)
+{
+   int64_t ret;
+   _lock_64bit_atomic ();
+   ret = *p;
+   *p = n;
+   _unlock_64bit_atomic ();
+   return ret;
+}
+
+int64_t
+bson_atomic_int64_compare_exchange (volatile int64_t *p,
+                                    int64_t expect_value,
+                                    int64_t new_value,
+                                    enum bson_atomic_memorder _unused)
+{
+   int64_t ret;
+   _lock_64bit_atomic ();
+   ret = *p;
+   if (ret == expect_value) {
+      *p = new_value;
+   }
+   _unlock_64bit_atomic ();
+   return ret;
+}
+
 #endif

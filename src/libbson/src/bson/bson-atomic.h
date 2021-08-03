@@ -175,10 +175,69 @@ DECL_ATOMIC_STDINT (int32, );
 #if !defined(_MSC_VER) || defined(_M_X64)
 /* (MSVC 64-bit intrinsics are only available in x64) */
 DECL_ATOMIC_STDINT (int64, 64);
+#else
+extern int64_t
+bson_atomic_int64_fetch_add (int64_t volatile *val,
+                             int64_t v,
+                             enum bson_atomic_memorder);
+extern int64_t
+bson_atomic_int64_exchange (int64_t volatile *val,
+                            int64_t v,
+                            enum bson_atomic_memorder);
+extern int64_t
+bson_atomic_int64_compare_exchange (int64_t volatile *val,
+                                    int64_t expect_value,
+                                    int64_t new_value,
+                                    enum bson_atomic_memorder);
 #endif
 
 DECL_ATOMIC_INTEGRAL (int, int, );
-DECL_ATOMIC_INTEGRAL (ptr, void *, Pointer);
+
+static BSON_INLINE void *
+bson_atomic_ptr_exchange (void *volatile *ptr,
+                          void *new_value,
+                          enum bson_atomic_memorder ord)
+{
+   DEF_ATOMIC_OP (
+      _InterlockedExchangePointer, __atomic_exchange_n, ord, ptr, new_value);
+}
+
+static BSON_INLINE void *
+bson_atomic_ptr_compare_exchange (void *volatile *ptr,
+                                  void *expect,
+                                  void *new_value,
+                                  enum bson_atomic_memorder ord)
+{
+   switch (ord) {
+   case bson_memorder_seqcst:
+      DEF_ATOMIC_CMPEXCH (Pointer, , __ATOMIC_SEQ_CST, ptr, expect, new_value);
+      return expect;
+   case bson_memorder_relaxed:
+      DEF_ATOMIC_CMPEXCH (Pointer,
+                          MSVC_MEMORDER_SUFFIX (_nf),
+                          __ATOMIC_RELAXED,
+                          ptr,
+                          expect,
+                          new_value);
+      return expect;
+   case bson_memorder_acquire:
+      DEF_ATOMIC_CMPEXCH (Pointer,
+                          MSVC_MEMORDER_SUFFIX (_acq),
+                          __ATOMIC_ACQUIRE,
+                          ptr,
+                          expect,
+                          new_value);
+      return expect;
+   case bson_memorder_release:
+      DEF_ATOMIC_CMPEXCH (Pointer,
+                          MSVC_MEMORDER_SUFFIX (_rel),
+                          __ATOMIC_RELEASE,
+                          ptr,
+                          expect,
+                          new_value);
+      return expect;
+   }
+}
 
 #undef DECL_ATOMIC_STDINT
 #undef DECL_ATOMIC_INTEGRAL
