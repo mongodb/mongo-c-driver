@@ -656,8 +656,12 @@ test_framework_get_unix_domain_socket_path_escaped (void)
 static char *
 _uri_str_from_env (void)
 {
-   char *loadbalanced_uri_str = test_framework_getenv ("SINGLE_MONGOS_LB_URI");
-   if (loadbalanced_uri_str) {
+   if (test_framework_getenv_bool ("MONGOC_TEST_LOADBALANCED")) {
+      char *loadbalanced_uri_str = test_framework_getenv ("SINGLE_MONGOS_LB_URI");
+      if (!loadbalanced_uri_str) {
+         test_error ("SINGLE_MONGOS_LB_URI and MULTI_MONGOS_LB_URI must be set "
+                     "when MONGOC_TEST_LOADBALANCED is enabled");
+      }
       return loadbalanced_uri_str;
    }
    return test_framework_getenv ("MONGOC_TEST_URI");
@@ -3010,10 +3014,5 @@ test_framework_skip_if_no_getlasterror (void) {
 
 bool
 test_framework_is_loadbalanced (void) {
-   char *uristr = test_framework_getenv ("SINGLE_MONGOS_LB_URI");
-   if (uristr) {
-      bson_free (uristr);
-      return true;
-   }
-   return false;
+   return test_framework_getenv_bool ("MONGOC_TEST_LOADBALANCED");
 }

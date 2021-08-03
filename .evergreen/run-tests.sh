@@ -8,6 +8,7 @@ SSL=${SSL:-nossl}
 URI=${URI:-}
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 DNS=${DNS:-nodns}
+LOADBALANCED=${LOADBALANCED:-noloadbalanced}
 
 # AddressSanitizer configuration
 export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
@@ -91,6 +92,23 @@ check_mongocryptd() {
 
 export MONGOC_TEST_MONITORING_VERBOSE=on
 
+set -o xtrace 
+if [ "$LOADBALANCED" != "noloadbalanced" ]; then
+   if [ -z "$SINGLE_MONGOS_LB_URI" -o -z "$MULTI_MONGOS_LB_URI" ]; then
+      echo "SINGLE_MONGOS_LB_URI and MULTI_MONGOS_LB_URI environment variables required."
+      exit 1
+   fi
+   
+   export MONGOC_TEST_LOADBALANCED=ON
+
+   # TODO: use kleen star.
+   TEST_ARGS="$TEST_ARGS -l /unified/ignoreResultAndError"
+   TEST_ARGS="$TEST_ARGS -l /retryable_reads/distinct-serverError"
+   TEST_ARGS="$TEST_ARGS -l /retryable_writes/bulkWrite-errorLabels"
+   TEST_ARGS="$TEST_ARGS -l /change_streams/legacy/change-streams-resume-allowlist"
+   TEST_ARGS="$TEST_ARGS -l /loadbalanced/*"
+fi
+
 case "$OS" in
    cygwin*)
       export PATH=$PATH:/cygdrive/c/mongodb/bin:/cygdrive/c/libmongocrypt/bin
@@ -110,7 +128,7 @@ case "$OS" in
          . $DIR/valgrind.sh
          run_valgrind ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
       else
-         ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
+         ./cmake-build/src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
       fi
 
       ;;

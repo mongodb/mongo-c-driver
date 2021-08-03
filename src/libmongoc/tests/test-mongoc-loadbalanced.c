@@ -822,11 +822,9 @@ test_loadbalanced_ping (void *unused)
 static int
 skip_if_not_loadbalanced (void)
 {
-   char *val = loadbalanced_uri ();
-   if (!val) {
+   if (!test_framework_is_loadbalanced ()) {
       return 0;
    }
-   bson_free (val);
    return 1;
 }
 
