@@ -178,10 +178,11 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
       } else if ((0 == strcmp ("-s", argv[i])) ||
                  (0 == strcmp ("--silent", argv[i]))) {
          suite->silent = true;
-      } else if (0 == strcmp ("-l", argv[i])) {
+      } else if ((0 == strcmp ("-l", argv[i])) ||
+                 (0 == strcmp ("--match", argv[i]))) {
          char *val;
          if (argc - 1 == i) {
-            test_error ("-l requires an argument.");
+            test_error ("%s requires an argument.", argv[i]);
          }
          val = bson_strdup (argv[++i]);
          _mongoc_array_append_val (&suite->match_patterns, val);
@@ -682,18 +683,20 @@ TestSuite_PrintHelp (TestSuite *suite) /* IN */
       "usage: %s [OPTIONS]\n"
       "\n"
       "Options:\n"
-      "    -h, --help       Show this help menu.\n"
-      "    --list-tests     Print list of available tests.\n"
-      "    -f, --no-fork    Do not spawn a process per test (abort on first "
-      "error).\n"
-      "    -l PATTERN       Run test by name, e.g. \"/Client/command\" or "
+      "    -h, --help            Show this help menu.\n"
+      "    --list-tests          Print list of available tests.\n"
+      "    -f, --no-fork         Do not spawn a process per test (abort on "
+      "first error).\n"
+      "    -l, --match PATTERN   Run test by name, e.g. \"/Client/command\" or "
       "\"/Client/*\". May be repeated.\n"
-      "    -s, --silent     Suppress all output.\n"
-      "    -F FILENAME      Write test results (JSON) to FILENAME.\n"
-      "    -d               Print debug output (useful if a test hangs).\n"
-      "    -t, --trace      Enable mongoc tracing (useful to debug tests).\n"
-      "    --skip PATTERN   Skip test by name or pattern. May be repeated.\n"
-      "    --after NAME     Start running tests after this test name.\n"
+      "    -s, --silent          Suppress all output.\n"
+      "    -F FILENAME           Write test results (JSON) to FILENAME.\n"
+      "    -d                    Print debug output (useful if a test hangs).\n"
+      "    -t, --trace           Enable mongoc tracing (useful to debug "
+      "tests).\n"
+      "    --skip PATTERN        Skip test by name or pattern. May be "
+      "repeated.\n"
+      "    --after NAME          Start running tests after this test name.\n"
       "\n",
       suite->prgname);
 }
