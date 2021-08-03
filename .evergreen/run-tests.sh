@@ -128,7 +128,7 @@ case "$OS" in
          . $DIR/valgrind.sh
          run_valgrind ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
       else
-         ./cmake-build/src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
+         ./src/libmongoc/test-libmongoc --no-fork $TEST_ARGS -d
       fi
 
       ;;
