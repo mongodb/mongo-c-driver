@@ -26552,7 +26552,7 @@ tasks:
         set -o errexit
         export LD_LIBRARY_PATH=$(pwd)/install-dir/lib
         CERT_TYPE=ecdsa .evergreen/run-ocsp-cache-test.sh
-- name: test-loadbalanced-asan-auth-openssl
+- name: test-loadbalanced-asan-auth-openssl-latest
   tags:
   - test-asan
   - latest
@@ -26580,7 +26580,7 @@ tasks:
       SSL: ssl
       VALGRIND: 'off'
       LOADBALANCED: loadbalanced
-- name: test-loadbalanced-asan-noauth
+- name: test-loadbalanced-asan-noauth-latest
   tags:
   - test-asan
   - latest
@@ -26597,6 +26597,60 @@ tasks:
       SSL: openssl
       TOPOLOGY: sharded_cluster
       VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: start load balancer
+    vars:
+      MONGODB_URI: mongodb://localhost:27017,localhost:27018
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      VALGRIND: 'off'
+      LOADBALANCED: loadbalanced
+- name: test-loadbalanced-asan-auth-openssl-5.0
+  tags:
+  - test-asan
+  - latest
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
+  - func: start load balancer
+    vars:
+      MONGODB_URI: mongodb://localhost:27017,localhost:27018
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      SSL: ssl
+      VALGRIND: 'off'
+      LOADBALANCED: loadbalanced
+- name: test-loadbalanced-asan-noauth-5.0
+  tags:
+  - test-asan
+  - latest
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: auth
+      SSL: openssl
+      TOPOLOGY: sharded_cluster
+      VERSION: '5.0'
   - func: clone drivers-evergreen-tools
   - func: start load balancer
     vars:
