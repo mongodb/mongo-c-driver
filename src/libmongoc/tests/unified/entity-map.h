@@ -78,10 +78,10 @@ entity_map_add_changestream (entity_map_t *em,
 /* Steals ownership of cursor. */
 bool
 entity_map_add_findcursor (entity_map_t *em,
-                       const char *id,
-                       mongoc_cursor_t *cursor,
-                       const bson_t *first_result,
-                       bson_error_t *error);
+                           const char *id,
+                           mongoc_cursor_t *cursor,
+                           const bson_t *first_result,
+                           bson_error_t *error);
 
 /* Copies val */
 bool

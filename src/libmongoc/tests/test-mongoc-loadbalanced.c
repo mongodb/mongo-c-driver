@@ -771,29 +771,6 @@ test_post_handshake_error_clears_pool (void)
    mock_server_destroy (server);
 }
 
-/* Test a basic load balanced connection. */
-static void
-test_loadbalanced_ping (void *unused)
-{
-   mongoc_client_t *client;
-   bson_error_t error;
-   bool ok;
-
-   client = test_framework_new_default_client ();
-   BSON_ASSERT (mongoc_uri_get_option_as_bool (
-      mongoc_client_get_uri (client), MONGOC_URI_LOADBALANCED, false));
-
-   ok = mongoc_client_command_simple (client,
-                                      "admin",
-                                      tmp_bson ("{'ping': 1}"),
-                                      NULL /* read prefs */,
-                                      NULL /* reply */,
-                                      &error);
-   ASSERT_OR_PRINT (ok, error);
-
-   mongoc_client_destroy (client);
-}
-
 static int
 skip_if_not_loadbalanced (void)
 {
@@ -873,11 +850,4 @@ test_loadbalanced_install (TestSuite *suite)
       suite,
       "/loadbalanced/post_handshake_error_clears_pool",
       test_post_handshake_error_clears_pool);
-
-   TestSuite_AddFull (suite,
-                      "/loadbalanced/ping",
-                      test_loadbalanced_ping,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      skip_if_not_loadbalanced);
 }
