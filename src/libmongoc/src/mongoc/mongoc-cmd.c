@@ -824,7 +824,6 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
 
    BSON_ASSERT (parts);
    BSON_ASSERT (server_stream);
-
    server_type = server_stream->sd->type;
    cs = parts->prohibit_lsid ? NULL : parts->assembled.session;
 
@@ -1022,7 +1021,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       }
 
       ret = true;
-   } else if (server_type == MONGOC_SERVER_MONGOS) {
+   } else if (server_type == MONGOC_SERVER_MONGOS ||
+              server_stream->topology_type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       _mongoc_cmd_parts_assemble_mongos (parts, server_stream);
       ret = true;
    } else {
