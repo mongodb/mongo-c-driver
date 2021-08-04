@@ -72,6 +72,7 @@ enum bson_atomic_memorder {
          BSON_IF_GNU_LIKE (                                                  \
             return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_RELAXED);)           \
       }                                                                      \
+      BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");               \
    } while (0)
 
 
@@ -120,7 +121,7 @@ enum bson_atomic_memorder {
             return __atomic_load_n (a, __ATOMIC_ACQUIRE);                     \
          case bson_memorder_relaxed:                                          \
             return __atomic_load_n (a, __ATOMIC_RELAXED);                     \
-      })                                                                      \
+      } BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");)             \
    }                                                                          \
                                                                               \
    static BSON_INLINE Type bson_atomic_##NamePart##_exchange (                \
@@ -162,6 +163,8 @@ enum bson_atomic_memorder {
                              actual,                                          \
                              new_value);                                      \
          break;                                                               \
+      default:                                                                \
+         BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");             \
       }                                                                       \
       return actual;                                                          \
    }
@@ -237,6 +240,7 @@ bson_atomic_ptr_compare_exchange (void *volatile *ptr,
                           new_value);
       return expect;
    }
+   BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");
 }
 
 #undef DECL_ATOMIC_STDINT
@@ -255,6 +259,11 @@ bson_memory_barrier ()
    BSON_IF_GNU_LIKE (__sync_synchronize ();)
 }
 
+BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int_fetch_add")
+BSON_EXPORT (int32_t) bson_atomic_int_add (volatile int32_t *p, int32_t n);
+
+BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int64_fetch_add")
+BSON_EXPORT (int64_t) bson_atomic_int64_add (volatile int64_t *p, int64_t n);
 
 BSON_END_DECLS
 
