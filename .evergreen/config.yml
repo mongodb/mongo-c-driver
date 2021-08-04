@@ -424,11 +424,6 @@ functions:
         export DNS=${DNS}
         export ASAN=${ASAN}
         export CLIENT_SIDE_ENCRYPTION=${CLIENT_SIDE_ENCRYPTION}
-        # TODO: remove xtrace
-        set -o xtrace
-        export LOADBALANCED=${LOADBALANCED}
-        export SINGLE_MONGOS_LB_URI="${SINGLE_MONGOS_LB_URI}"
-        export MULTI_MONGOS_LB_URI="${MULTI_MONGOS_LB_URI}"
         # Hide credentials.
         set +o xtrace
         set +o errexit
@@ -445,6 +440,9 @@ functions:
           export MONGOC_TEST_GCP_EMAIL="${client_side_encryption_gcp_email}"
           export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
         fi
+        export LOADBALANCED=${LOADBALANCED}
+        export SINGLE_MONGOS_LB_URI="${SINGLE_MONGOS_LB_URI}"
+        export MULTI_MONGOS_LB_URI="${MULTI_MONGOS_LB_URI}"
         set -o errexit
         sh .evergreen/run-tests.sh
   run tests bson:
@@ -26552,64 +26550,10 @@ tasks:
         set -o errexit
         export LD_LIBRARY_PATH=$(pwd)/install-dir/lib
         CERT_TYPE=ecdsa .evergreen/run-ocsp-cache-test.sh
-- name: test-loadbalanced-asan-auth-openssl-latest
-  tags:
-  - test-asan
-  - latest
-  exec_timeout_secs: 3600
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-      VERSION: latest
-  - func: clone drivers-evergreen-tools
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run tests
-    vars:
-      ASAN: 'on'
-      AUTH: auth
-      SSL: ssl
-      VALGRIND: 'off'
-      LOADBALANCED: loadbalanced
-- name: test-loadbalanced-asan-noauth-latest
-  tags:
-  - test-asan
-  - latest
-  exec_timeout_secs: 3600
-  depends_on:
-    name: debug-compile-asan-clang-openssl
-  commands:
-  - func: fetch build
-    vars:
-      BUILD_NAME: debug-compile-asan-clang-openssl
-  - func: bootstrap mongo-orchestration
-    vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-      VERSION: latest
-  - func: clone drivers-evergreen-tools
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run tests
-    vars:
-      ASAN: 'on'
-      VALGRIND: 'off'
-      LOADBALANCED: loadbalanced
 - name: test-loadbalanced-asan-auth-openssl-5.0
   tags:
+  - '5.0'
   - test-asan
-  - latest
   exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
@@ -26619,25 +26563,25 @@ tasks:
       BUILD_NAME: debug-compile-asan-clang-openssl
   - func: bootstrap mongo-orchestration
     vars:
-      AUTH: auth
-      SSL: openssl
-      TOPOLOGY: sharded_cluster
-      VERSION: '5.0'
-  - func: clone drivers-evergreen-tools
-  - func: start load balancer
-    vars:
-      MONGODB_URI: mongodb://localhost:27017,localhost:27018
-  - func: run tests
-    vars:
-      ASAN: 'on'
       AUTH: auth
       SSL: ssl
-      VALGRIND: 'off'
+      TOPOLOGY: sharded_cluster
+      VERSION: '5.0'
+      AUTHSOURCE: thisDB
+  - func: clone drivers-evergreen-tools
+  - func: start load balancer
+    vars:
+      MONGODB_URI: mongodb://localhost:27017,localhost:27018
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
       LOADBALANCED: loadbalanced
-- name: test-loadbalanced-asan-noauth-5.0
+      SSL: ssl
+- name: test-loadbalanced-asan-auth-openssl-latest
   tags:
-  - test-asan
   - latest
+  - test-asan
   exec_timeout_secs: 3600
   depends_on:
     name: debug-compile-asan-clang-openssl
@@ -26648,7 +26592,35 @@ tasks:
   - func: bootstrap mongo-orchestration
     vars:
       AUTH: auth
-      SSL: openssl
+      SSL: ssl
+      TOPOLOGY: sharded_cluster
+      VERSION: latest
+      AUTHSOURCE: thisDB
+  - func: clone drivers-evergreen-tools
+  - func: start load balancer
+    vars:
+      MONGODB_URI: mongodb://localhost:27017,localhost:27018
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: auth
+      LOADBALANCED: loadbalanced
+      SSL: ssl
+- name: test-loadbalanced-asan-noauth-nossl-5.0
+  tags:
+  - '5.0'
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
       TOPOLOGY: sharded_cluster
       VERSION: '5.0'
   - func: clone drivers-evergreen-tools
@@ -26658,8 +26630,36 @@ tasks:
   - func: run tests
     vars:
       ASAN: 'on'
-      VALGRIND: 'off'
+      AUTH: noauth
       LOADBALANCED: loadbalanced
+      SSL: nossl
+- name: test-loadbalanced-asan-noauth-nossl-latest
+  tags:
+  - latest
+  - test-asan
+  exec_timeout_secs: 3600
+  depends_on:
+    name: debug-compile-asan-clang-openssl
+  commands:
+  - func: fetch build
+    vars:
+      BUILD_NAME: debug-compile-asan-clang-openssl
+  - func: bootstrap mongo-orchestration
+    vars:
+      AUTH: noauth
+      SSL: nossl
+      TOPOLOGY: sharded_cluster
+      VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: start load balancer
+    vars:
+      MONGODB_URI: mongodb://localhost:27017,localhost:27018
+  - func: run tests
+    vars:
+      ASAN: 'on'
+      AUTH: noauth
+      LOADBALANCED: loadbalanced
+      SSL: nossl
 buildvariants:
 - name: releng
   display_name: '**Release Archive Creator'
