@@ -1120,40 +1120,6 @@ done:
    return ret;
 }
 
-/* Rewrite expected_events. */
-// LBTODO: remove this.
-static void
-filter_unsupported_events (bson_t **expected_events) {
-   bson_t *expected_events_filtered = bson_new ();
-   uint32_t append_index = 0;
-   bson_iter_t iter;
-
-   BSON_FOREACH (*expected_events, iter) {
-      bson_t event;
-      bson_iter_t event_iter;
-      const char *event_type;
-      char *append_index_str;
-
-      bson_iter_bson (&iter, &event);
-      bson_iter_init (&event_iter, &event);
-      bson_iter_next (&event_iter);
-      event_type = bson_iter_key (&event_iter);
-
-      if (is_unsupported_event_type (event_type)) {
-         MONGOC_DEBUG ("filtering out unsupported event: %s", event_type);
-         continue;
-      }
-      append_index_str = bson_strdup_printf ("%d", append_index);
-      append_index++;
-      MONGOC_DEBUG ("copying supported event: %s", event_type);
-      BSON_APPEND_DOCUMENT (expected_events_filtered, append_index_str, &event);
-      bson_free (append_index_str);
-   }
-   
-   bson_destroy (*expected_events);
-   *expected_events = expected_events_filtered;
-}
-
 static bool
 test_check_expected_events_for_client (test_t *test,
                                        bson_t *expected_events_for_client,

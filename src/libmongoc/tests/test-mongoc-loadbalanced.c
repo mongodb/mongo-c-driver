@@ -771,7 +771,7 @@ test_post_handshake_error_clears_pool (void)
    mock_server_destroy (server);
 }
 
-// LBTODO: remove this test later. It should be redundant.
+/* Test a basic load balanced connection. */
 static void
 test_loadbalanced_ping (void *unused)
 {
