@@ -724,10 +724,10 @@ operation_create_find_cursor (test_t *test,
    cursor = mongoc_collection_find_with_opts (
       coll, filter, opts, NULL /* read prefs */);
 
-   ret = true;
-
    mongoc_cursor_error_document (cursor, &op_error, &op_reply);
    result_from_val_and_reply (result, NULL, (bson_t *) op_reply, &op_error);
+
+   ret = true;
 
    if (!op->save_result_as_entity) {
       mongoc_cursor_destroy (cursor);
