@@ -101,12 +101,19 @@ if [ "$LOADBALANCED" != "noloadbalanced" ]; then
    
    export MONGOC_TEST_LOADBALANCED=ON
 
-   # TODO: use kleen star.
-   TEST_ARGS="$TEST_ARGS -l /unified/ignoreResultAndError"
-   TEST_ARGS="$TEST_ARGS -l /retryable_reads/distinct-serverError"
-   TEST_ARGS="$TEST_ARGS -l /retryable_writes/bulkWrite-errorLabels"
-   TEST_ARGS="$TEST_ARGS -l /change_streams/legacy/change-streams-resume-allowlist"
+   TEST_ARGS="$TEST_ARGS -l /unified/*"
+   TEST_ARGS="$TEST_ARGS -l /retryable_reads/*"
+   TEST_ARGS="$TEST_ARGS -l /retryable_writes/*"
+   TEST_ARGS="$TEST_ARGS -l /change_streams/*"
    TEST_ARGS="$TEST_ARGS -l /loadbalanced/*"
+   TEST_ARGS="$TEST_ARGS -l /load_balancers/*"
+   TEST_ARGS="$TEST_ARGS -l /crud/unified/*"
+   TEST_ARGS="$TEST_ARGS -l /transactions/unified/*"
+   TEST_ARGS="$TEST_ARGS -l /collection-management/*"
+   TEST_ARGS="$TEST_ARGS -l /sessions/unified/*"
+   TEST_ARGS="$TEST_ARGS -l /change_streams/unified/*"
+   TEST_ARGS="$TEST_ARGS -l /versioned_api/*"
+   TEST_ARGS="$TEST_ARGS -l /command_monitoring/unified/*"
 fi
 
 case "$OS" in
