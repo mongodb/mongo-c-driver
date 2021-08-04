@@ -48,7 +48,7 @@ _mongoc_rand_simple (unsigned int *seed)
 
    err = rand_s (&ret);
    if (0 != err) {
-      MONGOC_ERROR ("rand_s failed: %s", strerror(err));
+      MONGOC_ERROR ("rand_s failed: %s", strerror (err));
    }
 
    return (int) ret;
@@ -98,6 +98,17 @@ _mongoc_usleep (int64_t usec)
    BSON_ASSERT (usec >= 0);
    usleep ((useconds_t) usec);
 #endif
+}
+
+int64_t
+_mongoc_get_real_time_ms (void)
+{
+   struct timeval tv;
+   const bool rc = bson_gettimeofday (&tv);
+   if (rc != 0) {
+      return -1;
+   }
+   return tv.tv_sec * (int64_t) 1000 + tv.tv_usec / (int64_t) 1000;
 }
 
 

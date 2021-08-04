@@ -572,7 +572,7 @@ test_create_from_stream (void)
 
    mongoc_gridfs_drop (gridfs, &error);
 
-   start = ((int64_t) time (NULL)) * 1000;
+   start = _mongoc_get_real_time_ms ();
    stream =
       mongoc_stream_file_new_for_path (BINARY_DIR "/gridfs.dat", O_RDONLY, 0);
    ASSERT_OR_PRINT_ERRNO (stream, errno);
@@ -582,7 +582,7 @@ test_create_from_stream (void)
    ASSERT (file);
    ASSERT (mongoc_gridfs_file_save (file));
 
-   now = ((int64_t) time (NULL)) * 1000;
+   now = _mongoc_get_real_time_ms ();
 
    filter = tmp_bson (NULL);
    BSON_APPEND_VALUE (filter, "_id", mongoc_gridfs_file_get_id (file));

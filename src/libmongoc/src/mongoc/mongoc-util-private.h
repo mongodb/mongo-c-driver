@@ -75,6 +75,10 @@ _mongoc_hex_md5 (const char *input);
 void
 _mongoc_usleep (int64_t usec);
 
+/* Get the current time as a number of milliseconds since the Unix Epoch. */
+int64_t
+_mongoc_get_real_time_ms (void);
+
 const char *
 _mongoc_get_command_name (const bson_t *command);
 
