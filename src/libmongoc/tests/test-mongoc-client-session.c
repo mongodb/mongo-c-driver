@@ -34,7 +34,7 @@ test_session_opts_clone (void)
 
    opts = mongoc_session_opts_new ();
    clone = mongoc_session_opts_clone (opts);
-   /* causal is enabled by default */
+   /* causalConsistency is enabled by default if snapshot is not enabled */
    BSON_ASSERT (mongoc_session_opts_get_causal_consistency (clone));
    mongoc_session_opts_destroy (clone);
 
@@ -43,6 +43,31 @@ test_session_opts_clone (void)
    BSON_ASSERT (!mongoc_session_opts_get_causal_consistency (clone));
 
    mongoc_session_opts_destroy (clone);
+   mongoc_session_opts_destroy (opts);
+}
+
+
+static void
+test_session_opts_causal_consistency_and_snapshot (void)
+{
+   mongoc_session_opt_t *opts;
+
+   opts = mongoc_session_opts_new ();
+   /* causalConsistency is enabled by default if snapshot is not enabled */
+   BSON_ASSERT (mongoc_session_opts_get_causal_consistency (opts));
+   BSON_ASSERT (!mongoc_session_opts_get_snapshot (opts));
+
+   /* causalConsistency is disabled by default if snapshot is enabled */
+   mongoc_session_opts_set_snapshot (opts, true);
+   BSON_ASSERT (!mongoc_session_opts_get_causal_consistency (opts));
+   BSON_ASSERT (mongoc_session_opts_get_snapshot (opts));
+
+   /* causalConsistency and snapshot can both be enabled, although this will
+    * result in an error when starting the session. */
+   mongoc_session_opts_set_causal_consistency (opts, true);
+   BSON_ASSERT (mongoc_session_opts_get_causal_consistency (opts));
+   BSON_ASSERT (mongoc_session_opts_get_snapshot (opts));
+
    mongoc_session_opts_destroy (opts);
 }
 
@@ -2708,11 +2733,43 @@ test_session_dirty (void *unused)
 }
 
 void
+test_sessions_snapshot_prose_test_1 (void *ctx)
+{
+   mongoc_client_t *client = NULL;
+   mongoc_session_opt_t *session_opts = NULL;
+   bson_error_t error;
+   bool r;
+
+   client = test_framework_new_default_client ();
+   BSON_ASSERT (client);
+
+   session_opts = mongoc_session_opts_new ();
+   mongoc_session_opts_set_causal_consistency (session_opts, true);
+   mongoc_session_opts_set_snapshot (session_opts, true);
+
+   /* assert that starting session with causal consistency and snapshot enabled
+    * results in an error. */
+   r = mongoc_client_start_session (client, session_opts, &error);
+   ASSERT (!r);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_CLIENT,
+      MONGOC_ERROR_CLIENT_SESSION_FAILURE,
+      "Only one of causal consistency and snapshot can be enabled.");
+
+   mongoc_session_opts_destroy (session_opts);
+   mongoc_client_destroy (client);
+}
+
+void
 test_session_install (TestSuite *suite)
 {
    char resolved[PATH_MAX];
 
    TestSuite_Add (suite, "/Session/opts/clone", test_session_opts_clone);
+   TestSuite_Add (suite,
+                  "/Session/opts/causal_consistency_and_snapshot",
+                  test_session_opts_causal_consistency_and_snapshot);
    TestSuite_AddFull (suite,
                       "/Session/no_crypto",
                       test_session_no_crypto,
@@ -3079,4 +3136,12 @@ test_session_install (TestSuite *suite)
       test_framework_skip_if_no_failpoint,
       /* Tests with retryable writes, requires non-standalone. */
       test_framework_skip_if_single);
+
+   TestSuite_AddFull (suite,
+                      "/Session/snapshot/prose_test_1",
+                      test_sessions_snapshot_prose_test_1,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_sessions,
+                      test_framework_skip_if_no_crypto);
 }

@@ -403,7 +403,14 @@ mongoc_session_opts_get_causal_consistency (const mongoc_session_opt_t *opts)
 
    BSON_ASSERT (opts);
 
-   RETURN (!!(opts->flags & MONGOC_SESSION_CAUSAL_CONSISTENCY));
+   /* Causal Consistency spec: If no value is provided for causalConsistency
+    * and snapshot reads are not requested a value of true is implied. */
+   if (!mongoc_optional_is_set (&opts->causal_consistency) &&
+       !mongoc_optional_value (&opts->snapshot)) {
+      RETURN (true);
+   }
+
+   RETURN (mongoc_optional_value (&opts->causal_consistency));
 }
 
 bool
@@ -413,7 +420,7 @@ mongoc_session_opts_get_snapshot (const mongoc_session_opt_t *opts)
 
    BSON_ASSERT (opts);
 
-   RETURN (!!(opts->flags & MONGOC_SESSION_SNAPSHOT));
+   RETURN (mongoc_optional_value (&opts->snapshot));
 }
 
 void
@@ -424,11 +431,7 @@ mongoc_session_opts_set_causal_consistency (mongoc_session_opt_t *opts,
 
    BSON_ASSERT (opts);
 
-   if (causal_consistency) {
-      opts->flags |= MONGOC_SESSION_CAUSAL_CONSISTENCY;
-   } else {
-      opts->flags &= ~MONGOC_SESSION_CAUSAL_CONSISTENCY;
-   }
+   mongoc_optional_set_value (&opts->causal_consistency, causal_consistency);
 
    EXIT;
 }
@@ -440,11 +443,7 @@ mongoc_session_opts_set_snapshot (mongoc_session_opt_t *opts, bool snapshot)
 
    BSON_ASSERT (opts);
 
-   if (snapshot) {
-      opts->flags |= MONGOC_SESSION_SNAPSHOT;
-   } else {
-      opts->flags &= ~MONGOC_SESSION_SNAPSHOT;
-   }
+   mongoc_optional_set_value (&opts->snapshot, snapshot);
 
    EXIT;
 }
@@ -454,11 +453,8 @@ mongoc_session_opts_new (void)
 {
    mongoc_session_opt_t *opts = bson_malloc0 (sizeof (mongoc_session_opt_t));
 
-   /* Driver Sessions Spec: causal consistency is true by default */
-   mongoc_session_opts_set_causal_consistency (opts, true);
-
-   /* Snapshot Reads Spec: snapshot is false by default */
-   mongoc_session_opts_set_snapshot (opts, false);
+   mongoc_optional_init (&opts->causal_consistency);
+   mongoc_optional_init (&opts->snapshot);
 
    return opts;
 }
@@ -513,7 +509,8 @@ static void
 _mongoc_session_opts_copy (const mongoc_session_opt_t *src,
                            mongoc_session_opt_t *dst)
 {
-   dst->flags = src->flags;
+   mongoc_optional_copy (&src->causal_consistency, &dst->causal_consistency);
+   mongoc_optional_copy (&src->snapshot, &dst->snapshot);
    txn_opts_copy (&src->default_txn_opts, &dst->default_txn_opts);
 }
 
@@ -800,6 +797,8 @@ _mongoc_client_session_new (mongoc_client_t *client,
    session->client_session_id = client_session_id;
    bson_init (&session->cluster_time);
 
+   mongoc_optional_init (&session->opts.causal_consistency);
+   mongoc_optional_init (&session->opts.snapshot);
    txn_opts_set (&session->opts.default_txn_opts,
                  client->read_concern,
                  client->write_concern,
@@ -807,15 +806,13 @@ _mongoc_client_session_new (mongoc_client_t *client,
                  DEFAULT_MAX_COMMIT_TIME_MS);
 
    if (opts) {
-      session->opts.flags = opts->flags;
+      mongoc_optional_copy (&opts->causal_consistency, &session->opts.causal_consistency);
+      mongoc_optional_copy (&opts->snapshot, &session->opts.snapshot);
       txn_opts_set (&session->opts.default_txn_opts,
                     opts->default_txn_opts.read_concern,
                     opts->default_txn_opts.write_concern,
                     opts->default_txn_opts.read_prefs,
                     opts->default_txn_opts.max_commit_time_ms);
-   } else {
-      /* sessions are causally consistent by default */
-      session->opts.flags = MONGOC_SESSION_CAUSAL_CONSISTENCY;
    }
 
    /* snapshot_time_set is false by default */
