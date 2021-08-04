@@ -92,7 +92,6 @@ check_mongocryptd() {
 
 export MONGOC_TEST_MONITORING_VERBOSE=on
 
-set -o xtrace 
 if [ "$LOADBALANCED" != "noloadbalanced" ]; then
    if [ -z "$SINGLE_MONGOS_LB_URI" -o -z "$MULTI_MONGOS_LB_URI" ]; then
       echo "SINGLE_MONGOS_LB_URI and MULTI_MONGOS_LB_URI environment variables required."
