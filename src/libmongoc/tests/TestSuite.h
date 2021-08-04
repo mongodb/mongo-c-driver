@@ -662,14 +662,12 @@ struct _TestSuite {
    char *prgname;
    char *name;
    mongoc_array_t match_patterns;
-   mongoc_array_t skip_patterns;
    Test *tests;
    FILE *outfile;
    int flags;
    int silent;
    bson_string_t *mock_server_log_buf;
    FILE *mock_server_log;
-   char *after;
 };
 
 

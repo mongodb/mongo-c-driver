@@ -138,7 +138,6 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
    suite->prgname = bson_strdup (argv[0]);
    suite->silent = false;
    _mongoc_array_init (&suite->match_patterns, sizeof (char *));
-   _mongoc_array_init (&suite->skip_patterns, sizeof (char *));
 
    for (i = 1; i < argc; i++) {
       if (0 == strcmp ("-d", argv[i])) {
@@ -186,18 +185,6 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          }
          val = bson_strdup (argv[++i]);
          _mongoc_array_append_val (&suite->match_patterns, val);
-      } else if (0 == strcmp ("--skip", argv[i])) {
-         char *val;
-         if (argc - 1 == i) {
-            test_error ("--skip requires an argument.");
-         }
-         val = bson_strdup (argv[++i]);
-         _mongoc_array_append_val (&suite->skip_patterns, val);
-      } else if (0 == strcmp ("--after", argv[i])) {
-         if (argc - 1 == i) {
-            test_error ("--after requires an argument.");
-         }
-         suite->after = bson_strdup (argv[++i]);
       } else {
          test_error ("Unknown option: %s\n"
                      "Try using the --help option.",
@@ -694,9 +681,6 @@ TestSuite_PrintHelp (TestSuite *suite) /* IN */
       "    -d                    Print debug output (useful if a test hangs).\n"
       "    -t, --trace           Enable mongoc tracing (useful to debug "
       "tests).\n"
-      "    --skip PATTERN        Skip test by name or pattern. May be "
-      "repeated.\n"
-      "    --after NAME          Start running tests after this test name.\n"
       "\n",
       suite->prgname);
 }
@@ -904,8 +888,7 @@ test_matches (TestSuite *suite, Test *test)
    int i;
    bool matches;
 
-   /* If no match patterns were provided, then assume all match unless they are
-    * skipped. */
+   /* If no match patterns were provided, then assume all match. */
    if (suite->match_patterns.len == 0) {
       matches = true;
    } else {
@@ -920,14 +903,6 @@ test_matches (TestSuite *suite, Test *test)
       }
    }
 
-   /* Remove it if it matches anything in the skips. */
-   for (i = 0; i < suite->skip_patterns.len; i++) {
-      char *pattern = _mongoc_array_index (&suite->skip_patterns, char *, i);
-      if (TestSuite_TestMatchesName (suite, test, pattern)) {
-         return false;
-      }
-   }
-
    return matches;
 }
 
@@ -937,7 +912,6 @@ TestSuite_RunAll (TestSuite *suite /* IN */)
    Test *test;
    int count = 0;
    int status = 0;
-   int num_to_skip = 0;
 
    ASSERT (suite);
 
@@ -946,21 +920,9 @@ TestSuite_RunAll (TestSuite *suite /* IN */)
       if (test_matches (suite, test)) {
          count++;
       }
-      if (suite->after && 0 == strcmp (test->name, suite->after)) {
-         num_to_skip = count - 1;
-      }
-   }
-
-   if (suite->after && num_to_skip == 0) {
-      test_error ("Error: specified --after \"%s\", but no tests matched", suite->after);
    }
 
    for (test = suite->tests; test; test = test->next) {
-      if (num_to_skip > 0) {
-         num_to_skip--;
-         count--;
-         continue;
-      }
       if (test_matches (suite, test)) {
          status += TestSuite_RunTest (suite, test, &count);
          count--;
@@ -1052,18 +1014,12 @@ TestSuite_Destroy (TestSuite *suite)
 
    free (suite->name);
    free (suite->prgname);
-   for (i = 0; i < suite->skip_patterns.len; i++) {
-      char *val = _mongoc_array_index (&suite->skip_patterns, char *, i);
-      bson_free (val);
-   }
-   _mongoc_array_destroy (&suite->skip_patterns);
    for (i = 0; i < suite->match_patterns.len; i++) {
       char *val = _mongoc_array_index (&suite->match_patterns, char *, i);
       bson_free (val);
    }
 
    _mongoc_array_destroy (&suite->match_patterns);
-   free (suite->after);
 }
 
 
