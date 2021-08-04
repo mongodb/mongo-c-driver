@@ -44,13 +44,14 @@ typedef struct _json_test_config_t {
    bool command_started_events_only;
    bool command_monitoring_allow_subset;
    const char *uri_str;
-   /* skips is a NULL terminated list of tests to skip identified by the test "description" */
+   /* skips is a NULL terminated list of tests to skip identified by the test
+    * "description" */
    test_skip_t *skips;
 } json_test_config_t;
 
 
-#define JSON_TEST_CONFIG_INIT                                \
-   {                                                         \
+#define JSON_TEST_CONFIG_INIT                                      \
+   {                                                               \
       NULL, NULL, NULL, NULL, NULL, NULL, false, false, NULL, NULL \
    }
 

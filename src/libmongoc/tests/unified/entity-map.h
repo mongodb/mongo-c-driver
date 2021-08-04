@@ -48,13 +48,6 @@ typedef struct _entity_t {
 struct _entity_findcursor_t;
 typedef struct _entity_findcursor_t entity_findcursor_t;
 
-bool
-entity_findcursor_iterate_until_document_or_error (
-   entity_findcursor_t *cursor,
-   const bson_t **document,
-   bson_error_t *error,
-   const bson_t **error_document);
-
 /* Operations on the entity map enforce:
  * 1. Uniqueness. Attempting to create two entries with the same id is an error.
  * 2. Referential integrity. Attempting to get with an unknown id is an error.
@@ -130,6 +123,13 @@ entity_findcursor_t *
 entity_map_get_findcursor (entity_map_t *entity_map,
                            const char *id,
                            bson_error_t *error);
+
+void
+entity_findcursor_iterate_until_document_or_error (
+   entity_findcursor_t *cursor,
+   const bson_t **document,
+   bson_error_t *error,
+   const bson_t **error_document);
 
 mongoc_client_session_t *
 entity_map_get_session (entity_map_t *entity_map,

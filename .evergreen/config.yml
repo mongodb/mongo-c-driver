@@ -26567,7 +26567,6 @@ tasks:
       SSL: ssl
       TOPOLOGY: sharded_cluster
       VERSION: '5.0'
-      AUTHSOURCE: thisDB
   - func: clone drivers-evergreen-tools
   - func: start load balancer
     vars:
@@ -26595,7 +26594,6 @@ tasks:
       SSL: ssl
       TOPOLOGY: sharded_cluster
       VERSION: latest
-      AUTHSOURCE: thisDB
   - func: clone drivers-evergreen-tools
   - func: start load balancer
     vars:

@@ -73,8 +73,9 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
-   /* CDRIVER-????: File a ticket to support batchSize on listCollections and listIndexes. Prefer this waits until a cursor specification (DRIVERS-722). */
+   /* CDRIVER-4115: listCollections does not support batchSize. */
    {"cursors are correctly pinned to connections for load-balanced clusters", "listCollections pins the cursor to a connection"},
+   /* CDRIVER-4116: listIndexes does not support batchSize. */
    {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
    /* libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode. */
    {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
@@ -381,7 +382,7 @@ test_runner_new (void)
    /* In load balanced mode, the internal client must use the SINGLE_LB_MONGOS_URI. */
    if (!test_framework_is_loadbalanced ()) {
       /* Always use multiple mongos's if speaking to a mongos.
-      * Some test operations require communicating with all known mongos */
+       * Some test operations require communicating with all known mongos */
       if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
          test_error ("error applying multiple mongos: %s", error.message);
       }
@@ -1146,7 +1147,8 @@ test_check_expected_events_for_client (test_t *test,
 
    if (event_type) {
       if (0 == strcmp (event_type, "cmap")) {
-         /* Explicitly ignore cmap events. These are unsupported by the C driver */
+         /* TODO: (CDRIVER-3525) Explicitly ignore cmap events until CMAP is
+          * supported. */
          ret = true;
          goto done;
       } else if (0 == strcmp (event_type, "command")) {
@@ -1609,6 +1611,7 @@ run_one_test_file (bson_t *bson)
    test_file = test_file_new (test_runner, bson);
 
    test_diagnostics_test_info ("test file: %s", test_file->description);
+
    if (is_test_file_skipped (test_file)) {
       MONGOC_DEBUG (
          "SKIPPING test file '%s'. Reason: 'explicitly skipped in runner.c'",

@@ -1128,8 +1128,6 @@ class LoadBalancedTask(MatrixTask):
                                   AUTH='auth' if self.test_auth else 'noauth',
                                   SSL='ssl' if self.test_ssl else 'nossl',
                                   VERSION=self.version)
-        if self.test_auth:
-            orchestration['vars']['AUTHSOURCE'] = 'thisDB'
         commands.append(orchestration)
         commands.append (func("clone drivers-evergreen-tools"))
         commands.append (func("start load balancer",

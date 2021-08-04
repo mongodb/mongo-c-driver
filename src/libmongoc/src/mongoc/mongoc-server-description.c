@@ -737,7 +737,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
       }
    }
 
-   
+
    if (global_mock_service_id) {
       bson_iter_t pid_iter;
 

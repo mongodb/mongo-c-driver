@@ -688,7 +688,7 @@ done:
 }
 
 static bool
-operation_create_findcursor (test_t *test,
+operation_create_find_cursor (test_t *test,
                              operation_t *op,
                              result_t *result,
                              bson_error_t *error)
@@ -2533,7 +2533,8 @@ operation_assert_number_connections_checked_out (test_t *test,
                                                  bson_error_t *error)
 {
    /* "This operation only applies to drivers that implement connection pooling
-    * and should be skipped for drivers that do not." */
+    * and should be skipped for drivers that do not."
+    * TODO: (CDRIVER-3525) add this assertion when CMAP is implemented. */
    result_from_ok (result);
    return true;
 }
@@ -2567,7 +2568,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"aggregate", operation_aggregate},
       {"bulkWrite", operation_bulk_write},
       {"countDocuments", operation_count_documents},
-      {"createFindCursor", operation_create_findcursor},
+      {"createFindCursor", operation_create_find_cursor},
       {"createIndex", operation_create_index},
       {"deleteOne", operation_delete_one},
       {"deleteMany", operation_delete_many},

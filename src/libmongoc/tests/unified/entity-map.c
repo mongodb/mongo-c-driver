@@ -1149,7 +1149,7 @@ entity_map_add_changestream (entity_map_t *em,
       em, id, "changestream", (void *) changestream, error);
 }
 
-bool
+void
 entity_findcursor_iterate_until_document_or_error (
    entity_findcursor_t *findcursor,
    const bson_t **document,
@@ -1161,16 +1161,15 @@ entity_findcursor_iterate_until_document_or_error (
    if (findcursor->first_result) {
       *document = findcursor->first_result;
       findcursor->first_result = NULL;
-      return true;
+      return;
    }
 
    while (!mongoc_cursor_next (findcursor->cursor, document)) {
       if (mongoc_cursor_error_document (
              findcursor->cursor, error, error_document)) {
-         return false;
+         return;
       }
    }
-   return true;
 }
 
 bool
