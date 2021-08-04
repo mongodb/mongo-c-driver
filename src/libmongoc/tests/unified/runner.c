@@ -60,6 +60,8 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"unacknowledged-updateOne-hint-clientError", "Unacknowledged updateOne with hint document fails with client-side error"},
    /* CDRIVER-4001, DRIVERS-1781, and DRIVERS-1448: 5.0 cursor behavior */
    {"poc-command-monitoring", "A successful find event with a getmore and the server kills the cursor"},
+   /* CDRIVER-3867: drivers atlas testing (schema version 1.2) */
+   {"entity-client-storeEventsAsEntities", SKIP_ALL_TESTS},
    /* libmongoc does not have a distinct helper, so skip snapshot tests testing particular distinct functionality */
    {"snapshot-sessions", "Distinct operation with snapshot"},
    {"snapshot-sessions", "Mixed operation with snapshot"},
@@ -67,14 +69,10 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"poc-crud", SKIP_ALL_TESTS},
    {"db-aggregate", SKIP_ALL_TESTS},
    {"mongos-unpin", SKIP_ALL_TESTS},
-   /* CDRIVER-3883: load balancer support (schema version 1.3) */
+   /* CDRIVER-2871: CMAP is not implemented */
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
-   {"entity-find-cursor", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
-   {"ignoreResultAndError", SKIP_ALL_TESTS},
-   /* CDRIVER-3867: comprehensive Atlas testing (schema version 1.2) */
-   {"entity-client-storeEventsAsEntities", SKIP_ALL_TESTS},
    {0},
 };
 /* clang-format on */
@@ -393,6 +391,8 @@ test_runner_new (void)
       get_topology_type (test_runner->internal_client);
    server_semver (test_runner->internal_client, &test_runner->server_version);
 
+   test_runner->is_serverless = test_framework_is_serverless ();
+
    /* Terminate any possible open transactions. */
    if (!test_runner_terminate_open_transactions (test_runner, &error)) {
       test_error ("error terminating transactions: %s", error.message);
@@ -560,6 +560,8 @@ get_topology_type (mongoc_client_t *client)
    }
    ASSERT_OR_PRINT (ret, error);
 
+   /* TODO: CDRIVER-4060 Detect load-balancer */
+
    if (is_replset (&reply)) {
       topology_type = "replicaset";
    } else if (is_sharded (&reply)) {
@@ -605,7 +607,7 @@ get_topology_type (mongoc_client_t *client)
 static void
 check_schema_version (test_file_t *test_file)
 {
-   const char *supported_version_strs[] = {"1.1", "1.5"};
+   const char *supported_version_strs[] = {"1.5"};
    int i;
 
    for (i = 0; i < sizeof (supported_version_strs) /
@@ -716,6 +718,33 @@ check_run_on_requirement (test_runner_t *test_runner,
                                                error.message);
             return false;
          }
+         continue;
+      }
+
+      if (0 == strcmp (key, "serverless")) {
+         const char *serverless_mode = bson_iter_utf8 (&req_iter, NULL);
+
+         if (0 == strcmp (serverless_mode, "allow")) {
+            continue;
+         } else if (0 == strcmp (serverless_mode, "require")) {
+            if (!test_runner->is_serverless) {
+               *fail_reason =
+                  bson_strdup_printf ("Not running in serverless mode");
+               return false;
+            }
+
+            continue;
+         } else if (0 == strcmp (serverless_mode, "forbid")) {
+            if (test_runner->is_serverless) {
+               *fail_reason = bson_strdup_printf ("Running in serverless mode");
+               return false;
+            }
+
+            continue;
+         } else {
+            test_error ("Unexpected serverless mode: %s", serverless_mode);
+         }
+
          continue;
       }
 

@@ -28,6 +28,7 @@ typedef struct {
    bson_t *arguments;
    bson_t *expect_error;
    bson_val_t *expect_result;
+   bool *ignore_result_and_error;
    char *save_result_as_entity;
    bson_parser_t *parser;
    char *session_id;
@@ -55,6 +56,8 @@ operation_new (bson_t *bson, bson_error_t *error)
    bson_parser_doc_optional (op->parser, "arguments", &op->arguments);
    bson_parser_doc_optional (op->parser, "expectError", &op->expect_error);
    bson_parser_any_optional (op->parser, "expectResult", &op->expect_result);
+   bson_parser_bool_optional (
+      op->parser, "ignoreResultAndError", &op->ignore_result_and_error);
    bson_parser_utf8_optional (
       op->parser, "saveResultAsEntity", &op->save_result_as_entity);
    if (!bson_parser_parse (op->parser, bson, error)) {
@@ -680,6 +683,64 @@ done:
    bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (&op_reply);
    bson_val_destroy (val);
+   bson_destroy (opts);
+   return ret;
+}
+
+static bool
+operation_create_find_cursor (test_t *test,
+                              operation_t *op,
+                              result_t *result,
+                              bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_collection_t *coll = NULL;
+   bson_parser_t *parser = NULL;
+   mongoc_cursor_t *cursor = NULL;
+   bson_t *filter = NULL;
+   bson_t *opts = NULL;
+   const bson_t *op_reply = NULL;
+   bson_error_t op_error = {0};
+
+   parser = bson_parser_new ();
+   bson_parser_allow_extra (parser, true);
+   bson_parser_doc (parser, "filter", &filter);
+   if (!bson_parser_parse (parser, op->arguments, error)) {
+      goto done;
+   }
+
+   coll = entity_map_get_collection (test->entity_map, op->object, error);
+   if (!coll) {
+      goto done;
+   }
+
+   opts = bson_copy (bson_parser_get_extra (parser));
+   if (op->session) {
+      if (!mongoc_client_session_append (op->session, opts, error)) {
+         goto done;
+      }
+   }
+
+   cursor = mongoc_collection_find_with_opts (
+      coll, filter, opts, NULL /* read prefs */);
+
+   mongoc_cursor_error_document (cursor, &op_error, &op_reply);
+   result_from_val_and_reply (result, NULL, (bson_t *) op_reply, &op_error);
+
+   ret = true;
+
+   if (!op->save_result_as_entity) {
+      mongoc_cursor_destroy (cursor);
+      goto done;
+   }
+
+   if (!entity_map_add_cursor (
+          test->entity_map, op->save_result_as_entity, cursor, error)) {
+      goto done;
+   }
+
+done:
+   bson_parser_destroy_with_parsed_fields (parser);
    bson_destroy (opts);
    return ret;
 }
@@ -1456,22 +1517,43 @@ operation_iterate_until_document_or_error (test_t *test,
 {
    bool ret = false;
    mongoc_change_stream_t *changestream = NULL;
+   mongoc_cursor_t *cursor = NULL;
    const bson_t *doc = NULL;
    const bson_t *op_reply = NULL;
    bson_error_t op_error = {0};
    bson_val_t *val = NULL;
+   entity_t *entity;
 
-   changestream =
-      entity_map_get_changestream (test->entity_map, op->object, error);
-   if (!changestream) {
+   entity = entity_map_get (test->entity_map, op->object, error);
+   if (!entity) {
       goto done;
    }
 
-   /* Loop until error or document is returned. */
-   while (!mongoc_change_stream_next (changestream, &doc)) {
-      if (mongoc_change_stream_error_document (
-             changestream, &op_error, &op_reply)) {
+   if (strcmp ("changestream", entity->type) == 0) {
+      changestream =
+         entity_map_get_changestream (test->entity_map, op->object, error);
+      if (!changestream) {
          goto done;
+      }
+
+      /* Loop until error or document is returned. */
+      while (!mongoc_change_stream_next (changestream, &doc)) {
+         if (mongoc_change_stream_error_document (
+                changestream, &op_error, &op_reply)) {
+            goto done;
+         }
+      }
+   } else {
+      cursor = entity_map_get_cursor (test->entity_map, op->object, error);
+      if (!cursor) {
+         goto done;
+      }
+
+      /* Loop until error or document is returned. */
+      while (!mongoc_cursor_next (cursor, &doc)) {
+         if (mongoc_cursor_error_document (cursor, &op_error, &op_reply)) {
+            goto done;
+         }
       }
    }
 
@@ -1484,6 +1566,29 @@ operation_iterate_until_document_or_error (test_t *test,
    ret = true;
 done:
    bson_val_destroy (val);
+   return ret;
+}
+
+static bool
+operation_close (test_t *test,
+                 operation_t *op,
+                 result_t *result,
+                 bson_error_t *error)
+{
+   bool ret = false;
+   mongoc_cursor_t *cursor = NULL;
+
+   cursor = entity_map_get_cursor (test->entity_map, op->object, error);
+   if (!cursor) {
+      goto done;
+   }
+
+   entity_map_delete (test->entity_map, op->object, error);
+
+   result_from_ok (result);
+
+   ret = true;
+done:
    return ret;
 }
 
@@ -2402,6 +2507,17 @@ operation_assert_session_unpinned (test_t *test,
    return assert_session_pinned (test, op, result, false, error);
 }
 
+static bool
+operation_loop (test_t *test,
+                operation_t *op,
+                result_t *result,
+                bson_error_t *error)
+{
+   /* TODO: CDRIVER-3867 Comprehensive Atlas Testing */
+   test_set_error (error, "Loop operation not implemented");
+   return false;
+}
+
 typedef struct {
    const char *op;
    bool (*fn) (test_t *, operation_t *, result_t *, bson_error_t *);
@@ -2413,6 +2529,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
    operation_t *op = NULL;
    result_t *result = NULL;
    int i, num_ops;
+   bool check_result = true;
    op_to_fn_t op_to_fn_map[] = {
       /* Client operations */
       {"createChangeStream", operation_create_change_stream},
@@ -2430,6 +2547,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"aggregate", operation_aggregate},
       {"bulkWrite", operation_bulk_write},
       {"countDocuments", operation_count_documents},
+      {"createFindCursor", operation_create_find_cursor},
       {"createIndex", operation_create_index},
       {"deleteOne", operation_delete_one},
       {"deleteMany", operation_delete_many},
@@ -2445,9 +2563,10 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"updateOne", operation_update_one},
       {"updateMany", operation_update_many},
 
-      /* Change stream operations */
+      /* Change stream and cursor operations */
       {"iterateUntilDocumentOrError",
        operation_iterate_until_document_or_error},
+      {"close", operation_close},
 
       /* Test runner operations */
       {"failPoint", operation_failpoint},
@@ -2466,6 +2585,7 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"assertIndexExists", operation_assert_index_exists},
       {"assertSessionPinned", operation_assert_session_pinned},
       {"assertSessionUnpinned", operation_assert_session_unpinned},
+      {"loop", operation_loop},
 
       /* GridFS operations */
       {"delete", operation_delete},
@@ -2514,16 +2634,20 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
    num_ops = sizeof (op_to_fn_map) / sizeof (op_to_fn_t);
    result = result_new ();
 
+   if (op->ignore_result_and_error && *op->ignore_result_and_error) {
+      check_result = false;
+   }
+
    for (i = 0; i < num_ops; i++) {
       if (0 == strcmp (op->name, op_to_fn_map[i].op)) {
          if (!op_to_fn_map[i].fn (test, op, result, error)) {
             goto done;
          }
-         if (!result_check (result,
-                            test->entity_map,
-                            op->expect_result,
-                            op->expect_error,
-                            error)) {
+         if (check_result && !result_check (result,
+                                            test->entity_map,
+                                            op->expect_result,
+                                            op->expect_error,
+                                            error)) {
             test_diagnostics_error_info (
                "checking for result (%s) / error (%s)",
                bson_val_to_json (op->expect_result),

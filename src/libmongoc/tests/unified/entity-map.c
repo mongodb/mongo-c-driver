@@ -257,6 +257,7 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    bson_t *uri_options = NULL;
    bool *use_multiple_mongoses = NULL;
    bson_t *observe_events = NULL;
+   bson_t *store_events_as_entities = NULL;
    bson_t *server_api = NULL;
    bool can_reduce_heartbeat = false;
    mongoc_server_api_t *api = NULL;
@@ -274,6 +275,8 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    bson_parser_doc_optional (parser, "serverApi", &server_api);
    bson_parser_bool_optional (
       parser, "observeSensitiveCommands", &entity->observe_sensitive_commands);
+   bson_parser_array_optional (
+      parser, "storeEventsAsEntities", &store_events_as_entities);
 
    if (!bson_parser_parse (parser, bson, error)) {
       goto done;
@@ -370,6 +373,12 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
    }
    mongoc_client_set_apm_callbacks (client, callbacks, entity);
 
+   if (store_events_as_entities) {
+      /* TODO: CDRIVER-3867 Comprehensive Atlas Testing */
+      test_set_error (error, "storeEventsAsEntities is not supported");
+      goto done;
+   }
+
    ret = true;
 done:
    mongoc_uri_destroy (uri);
@@ -379,6 +388,7 @@ done:
    bson_destroy (uri_options);
    bson_free (use_multiple_mongoses);
    bson_destroy (observe_events);
+   bson_destroy (store_events_as_entities);
    bson_destroy (server_api);
    if (!ret) {
       entity_destroy (entity);
@@ -875,6 +885,10 @@ entity_destroy (entity_t *entity)
       mongoc_gridfs_bucket_t *bucket = entity->value;
 
       mongoc_gridfs_bucket_destroy (bucket);
+   } else if (0 == strcmp ("cursor", entity->type)) {
+      mongoc_cursor_t *cursor = entity->value;
+
+      mongoc_cursor_destroy (cursor);
    } else {
       test_error ("Attempting to destroy unrecognized entity type: %s, id: %s",
                   entity->type,
@@ -908,6 +922,20 @@ entity_map_get (entity_map_t *entity_map, const char *id, bson_error_t *error)
 
    test_set_error (error, "Entity '%s' not found", id);
    return NULL;
+}
+
+bool
+entity_map_delete (entity_map_t *em, const char *id, bson_error_t *error)
+{
+   entity_t *entity = entity_map_get (em, id, error);
+   if (!entity) {
+      return false;
+   }
+
+   LL_DELETE (em->entities, entity);
+   entity_destroy (entity);
+
+   return true;
 }
 
 static entity_t *
@@ -982,6 +1010,18 @@ entity_map_get_changestream (entity_map_t *entity_map,
       return NULL;
    }
    return (mongoc_change_stream_t *) entity->value;
+}
+
+mongoc_cursor_t *
+entity_map_get_cursor (entity_map_t *entity_map,
+                       const char *id,
+                       bson_error_t *error)
+{
+   entity_t *entity = _entity_map_get_by_type (entity_map, id, "cursor", error);
+   if (!entity) {
+      return NULL;
+   }
+   return (mongoc_cursor_t *) entity->value;
 }
 
 bson_val_t *
@@ -1077,6 +1117,15 @@ entity_map_add_changestream (entity_map_t *em,
 {
    return _entity_map_add (
       em, id, "changestream", (void *) changestream, error);
+}
+
+bool
+entity_map_add_cursor (entity_map_t *em,
+                       const char *id,
+                       mongoc_cursor_t *cursor,
+                       bson_error_t *error)
+{
+   return _entity_map_add (em, id, "cursor", (void *) cursor, error);
 }
 
 bool

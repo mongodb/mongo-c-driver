@@ -71,6 +71,13 @@ entity_map_add_changestream (entity_map_t *em,
                              mongoc_change_stream_t *changestream,
                              bson_error_t *error);
 
+/* Steals ownership of cursor. */
+bool
+entity_map_add_cursor (entity_map_t *em,
+                       const char *id,
+                       mongoc_cursor_t *cursor,
+                       bson_error_t *error);
+
 /* Copies val */
 bool
 entity_map_add_bson (entity_map_t *em,
@@ -81,6 +88,11 @@ entity_map_add_bson (entity_map_t *em,
 /* Returns NULL and sets @error if @id does not map to an entry. */
 entity_t *
 entity_map_get (entity_map_t *em, const char *id, bson_error_t *error);
+
+/* Removes an entity from the entity map. Returns false and sets @error if @id
+ * does not map to an entry. */
+bool
+entity_map_delete (entity_map_t *em, const char *id, bson_error_t *error);
 
 mongoc_client_t *
 entity_map_get_client (entity_map_t *entity_map,
@@ -101,6 +113,11 @@ mongoc_change_stream_t *
 entity_map_get_changestream (entity_map_t *entity_map,
                              const char *id,
                              bson_error_t *error);
+
+mongoc_cursor_t *
+entity_map_get_cursor (entity_map_t *entity_map,
+                       const char *id,
+                       bson_error_t *error);
 
 mongoc_client_session_t *
 entity_map_get_session (entity_map_t *entity_map,
