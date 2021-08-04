@@ -39,7 +39,7 @@ enum bson_atomic_memorder {
    bson_memorder_relaxed
 };
 
-#if _M_ARM /* MSVC memorder atomics are only avail on ARM */
+#if defined(_M_ARM) /* MSVC memorder atomics are only avail on ARM */
 #define MSVC_MEMORDER_SUFFIX(X) X
 #else
 #define MSVC_MEMORDER_SUFFIX(X)
@@ -71,127 +71,164 @@ enum bson_atomic_memorder {
                                 MSVC_MEMORDER_SUFFIX (_nf)) (__VA_ARGS__);)  \
          BSON_IF_GNU_LIKE (                                                  \
             return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_RELAXED);)           \
+      default:                                                               \
+         BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");            \
       }                                                                      \
-      BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");               \
    } while (0)
 
 
-#define DEF_ATOMIC_CMPEXCH(                                              \
-   VCSuffix1, VCSuffix2, GNU_MemOrder, Ptr, ExpectActualVar, NewValue)   \
-   BSON_IF_MSVC (ExpectActualVar = BSON_CONCAT3 (                        \
-                    _InterlockedCompareExchange, VCSuffix1, VCSuffix2) ( \
-                    Ptr, NewValue, ExpectActualVar);)                    \
-   BSON_IF_GNU_LIKE (__atomic_compare_exchange_n (                       \
-      Ptr, &ExpectActualVar, NewValue, false, GNU_MemOrder, GNU_MemOrder));
+#define DEF_ATOMIC_CMPEXCH(                                                 \
+   VCSuffix1, VCSuffix2, GNU_MemOrder, Ptr, ExpectActualVar, NewValue)      \
+   do {                                                                     \
+      BSON_IF_MSVC (ExpectActualVar = BSON_CONCAT3 (                        \
+                       _InterlockedCompareExchange, VCSuffix1, VCSuffix2) ( \
+                       Ptr, NewValue, ExpectActualVar);)                    \
+      BSON_IF_GNU_LIKE (__atomic_compare_exchange_n (Ptr,                   \
+                                                     &ExpectActualVar,      \
+                                                     NewValue,              \
+                                                     false,                 \
+                                                     GNU_MemOrder,          \
+                                                     GNU_MemOrder);)        \
+   } while (0)
 
 
-#define DECL_ATOMIC_INTEGRAL(NamePart, Type, VCIntrinSuffix)                  \
-   static BSON_INLINE Type bson_atomic_##NamePart##_fetch_add (               \
-      Type volatile *a, Type addend, enum bson_atomic_memorder ord)           \
-   {                                                                          \
-      DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchangeAdd, VCIntrinSuffix),   \
-                     __atomic_fetch_add,                                      \
-                     ord,                                                     \
-                     a,                                                       \
-                     addend);                                                 \
-   }                                                                          \
-                                                                              \
-   static BSON_INLINE Type bson_atomic_##NamePart##_fetch_sub (               \
-      Type volatile *a, Type subtrahend, enum bson_atomic_memorder ord)       \
-   {                                                                          \
-      /* MSVC doesn't have a subtract intrinsic, so just reuse addition    */ \
-      BSON_IF_MSVC (                                                          \
-         return bson_atomic_##NamePart##_fetch_add (a, -subtrahend, ord);)    \
-      BSON_IF_GNU_LIKE (                                                      \
-         DEF_ATOMIC_OP (~, __atomic_fetch_sub, ord, a, subtrahend);)          \
-   }                                                                          \
-                                                                              \
-   static BSON_INLINE Type bson_atomic_##NamePart##_fetch (                   \
-      Type volatile *a, enum bson_atomic_memorder order)                      \
-   {                                                                          \
-      /* MSVC doesn't have a load intrinsic, so just add zero */              \
-      BSON_IF_MSVC (return bson_atomic_##NamePart##_fetch_add (a, 0, order);) \
-      /* GNU doesn't want RELEASE order for the fetch operation, so we can't  \
-       * just use DEF_ATOMIC_OP. */                                           \
-      BSON_IF_GNU_LIKE (switch (order) {                                      \
-         case bson_memorder_release: /* Fall back to seqcst */                \
-         case bson_memorder_seqcst:                                           \
-            return __atomic_load_n (a, __ATOMIC_SEQ_CST);                     \
-         case bson_memorder_acquire:                                          \
-            return __atomic_load_n (a, __ATOMIC_ACQUIRE);                     \
-         case bson_memorder_relaxed:                                          \
-            return __atomic_load_n (a, __ATOMIC_RELAXED);                     \
-      } BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");)             \
-   }                                                                          \
-                                                                              \
-   static BSON_INLINE Type bson_atomic_##NamePart##_exchange (                \
-      Type volatile *a, Type value, enum bson_atomic_memorder ord)            \
-   {                                                                          \
-      DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchange, VCIntrinSuffix),      \
-                     __atomic_exchange_n,                                     \
-                     ord,                                                     \
-                     a,                                                       \
-                     value);                                                  \
-   }                                                                          \
-                                                                              \
-   static BSON_INLINE Type bson_atomic_##NamePart##_compare_exchange (        \
-      Type volatile *a,                                                       \
-      Type expect,                                                            \
-      Type new_value,                                                         \
-      enum bson_atomic_memorder ord)                                          \
-   {                                                                          \
-      Type actual = expect;                                                   \
-      switch (ord) {                                                          \
-      case bson_memorder_release:                                             \
-      case bson_memorder_seqcst:                                              \
-         DEF_ATOMIC_CMPEXCH (                                                 \
-            VCIntrinSuffix, , __ATOMIC_SEQ_CST, a, actual, new_value);        \
-         break;                                                               \
-      case bson_memorder_acquire:                                             \
-         DEF_ATOMIC_CMPEXCH (VCIntrinSuffix,                                  \
-                             MSVC_MEMORDER_SUFFIX (_acq),                     \
-                             __ATOMIC_ACQUIRE,                                \
-                             a,                                               \
-                             actual,                                          \
-                             new_value);                                      \
-         break;                                                               \
-      case bson_memorder_relaxed:                                             \
-         DEF_ATOMIC_CMPEXCH (VCIntrinSuffix,                                  \
-                             MSVC_MEMORDER_SUFFIX (_nf),                      \
-                             __ATOMIC_RELAXED,                                \
-                             a,                                               \
-                             actual,                                          \
-                             new_value);                                      \
-         break;                                                               \
-      default:                                                                \
-         BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");             \
-      }                                                                       \
-      return actual;                                                          \
+#define DECL_ATOMIC_INTEGRAL(NamePart, Type, VCIntrinSuffix)                    \
+   static BSON_INLINE Type bson_atomic_##NamePart##_fetch_add (                 \
+      Type volatile *a, Type addend, enum bson_atomic_memorder ord)             \
+   {                                                                            \
+      DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchangeAdd, VCIntrinSuffix),     \
+                     __atomic_fetch_add,                                        \
+                     ord,                                                       \
+                     a,                                                         \
+                     addend);                                                   \
+   }                                                                            \
+                                                                                \
+   static BSON_INLINE Type bson_atomic_##NamePart##_fetch_sub (                 \
+      Type volatile *a, Type subtrahend, enum bson_atomic_memorder ord)         \
+   {                                                                            \
+      /* MSVC doesn't have a subtract intrinsic, so just reuse addition    */   \
+      BSON_IF_MSVC (                                                            \
+         return bson_atomic_##NamePart##_fetch_add (a, -subtrahend, ord);)      \
+      BSON_IF_GNU_LIKE (                                                        \
+         DEF_ATOMIC_OP (~, __atomic_fetch_sub, ord, a, subtrahend);)            \
+   }                                                                            \
+                                                                                \
+   static BSON_INLINE Type bson_atomic_##NamePart##_fetch (                     \
+      Type volatile *a, enum bson_atomic_memorder order)                        \
+   {                                                                            \
+      /* MSVC doesn't have a load intrinsic, so just add zero */                \
+      BSON_IF_MSVC (return bson_atomic_##NamePart##_fetch_add (a, 0, order);)   \
+      /* GNU doesn't want RELEASE order for the fetch operation, so we can't    \
+       * just use DEF_ATOMIC_OP. */                                             \
+      BSON_IF_GNU_LIKE (switch (order) {                                        \
+         case bson_memorder_release: /* Fall back to seqcst */                  \
+         case bson_memorder_seqcst:                                             \
+            return __atomic_load_n (a, __ATOMIC_SEQ_CST);                       \
+         case bson_memorder_acquire:                                            \
+            return __atomic_load_n (a, __ATOMIC_ACQUIRE);                       \
+         case bson_memorder_relaxed:                                            \
+            return __atomic_load_n (a, __ATOMIC_RELAXED);                       \
+         default: BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");)     \
+      }                                                                         \
+   }                                                                            \
+                                                                                \
+   static BSON_INLINE Type bson_atomic_##NamePart##_exchange (                  \
+      Type volatile *a, Type value, enum bson_atomic_memorder ord)              \
+   {                                                                            \
+      DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchange, VCIntrinSuffix),        \
+                     __atomic_exchange_n,                                       \
+                     ord,                                                       \
+                     a,                                                         \
+                     value);                                                    \
+   }                                                                            \
+                                                                                \
+   static BSON_INLINE Type bson_atomic_##NamePart##_compare_exchange (          \
+      Type volatile *a,                                                         \
+      Type expect,                                                              \
+      Type new_value,                                                           \
+      enum bson_atomic_memorder ord)                                            \
+   {                                                                            \
+      Type actual = expect;                                                     \
+      switch (ord) {                                                            \
+      case bson_memorder_release:                                               \
+      case bson_memorder_seqcst:                                                \
+         DEF_ATOMIC_CMPEXCH (                                                   \
+            VCIntrinSuffix, , __ATOMIC_SEQ_CST, a, actual, new_value);          \
+         break;                                                                 \
+      case bson_memorder_acquire:                                               \
+         DEF_ATOMIC_CMPEXCH (VCIntrinSuffix,                                    \
+                             MSVC_MEMORDER_SUFFIX (_acq),                       \
+                             __ATOMIC_ACQUIRE,                                  \
+                             a,                                                 \
+                             actual,                                            \
+                             new_value);                                        \
+         break;                                                                 \
+      case bson_memorder_relaxed:                                               \
+         DEF_ATOMIC_CMPEXCH (VCIntrinSuffix,                                    \
+                             MSVC_MEMORDER_SUFFIX (_nf),                        \
+                             __ATOMIC_RELAXED,                                  \
+                             a,                                                 \
+                             actual,                                            \
+                             new_value);                                        \
+         break;                                                                 \
+      default:                                                                  \
+         BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");               \
+      }                                                                         \
+      return actual;                                                            \
    }
 
 #define DECL_ATOMIC_STDINT(Name, VCSuffix) \
    DECL_ATOMIC_INTEGRAL (Name, Name##_t, VCSuffix)
 
-DECL_ATOMIC_STDINT (int8, 8);
-DECL_ATOMIC_STDINT (int16, 16);
-DECL_ATOMIC_STDINT (int32, );
-#if !defined(_MSC_VER) || defined(_M_X64)
-/* (MSVC 64-bit intrinsics are only available in x64) */
-DECL_ATOMIC_STDINT (int64, 64);
-#else
+DECL_ATOMIC_STDINT (int8, 8)
+DECL_ATOMIC_STDINT (int16, 16)
+DECL_ATOMIC_STDINT (int32, )
+
 extern int64_t
+_bson_emul_atomic_int64_fetch_add (int64_t volatile *val,
+                                   int64_t v,
+                                   enum bson_atomic_memorder);
+extern int64_t
+_bson_emul_atomic_int64_exchange (int64_t volatile *val,
+                                  int64_t v,
+                                  enum bson_atomic_memorder);
+extern int64_t
+_bson_emul_atomic_int64_compare_exchange (int64_t volatile *val,
+                                          int64_t expect_value,
+                                          int64_t new_value,
+                                          enum bson_atomic_memorder);
+
+extern void
+bson_yield_thread ();
+
+#if !(defined(_M_IX86) || defined(__i686__))
+/* (64-bit intrinsics are only available in x64) */
+DECL_ATOMIC_STDINT (int64, 64)
+#else
+static BSON_INLINE int64_t
 bson_atomic_int64_fetch_add (int64_t volatile *val,
                              int64_t v,
-                             enum bson_atomic_memorder);
-extern int64_t
+                             enum bson_atomic_memorder order)
+{
+   return _bson_emul_atomic_int64_fetch_add (val, v, order);
+}
+
+static BSON_INLINE int64_t
 bson_atomic_int64_exchange (int64_t volatile *val,
                             int64_t v,
-                            enum bson_atomic_memorder);
-extern int64_t
+                            enum bson_atomic_memorder order)
+{
+   return _bson_emul_atomic_int64_exchange (val, v, order);
+}
+
+static BSON_INLINE int64_t
 bson_atomic_int64_compare_exchange (int64_t volatile *val,
                                     int64_t expect_value,
                                     int64_t new_value,
-                                    enum bson_atomic_memorder);
+                                    enum bson_atomic_memorder order)
+{
+   return _bson_emul_atomic_int64_compare_exchange (val, v, order);
+}
 #endif
 
 DECL_ATOMIC_INTEGRAL (int, int, );

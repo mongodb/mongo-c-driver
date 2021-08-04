@@ -183,6 +183,18 @@ typedef signed char bool;
 #define BSON_IF_GNU_LIKE(...) __VA_ARGS__
 #endif
 
+#ifdef _WIN32
+/** Expands the arguments if compiling for Windows, otherwise empty */
+#define BSON_IF_WINDOWS(...) __VA_ARGS__
+/** Expands the arguments if compiling for POSIX, otherwise empty */
+#define BSON_IF_POSIX(...)
+#elif defined(_POSIX_SOURCE)
+/** Expands the arguments if compiling for Windows, otherwise empty */
+#define BSON_IF_WINDOWS(...)
+/** Expands the arguments if compiling for POSIX, otherwise empty */
+#define BSON_IF_POSIX(...) __VA_ARGS__
+#endif
+
 
 BSON_END_DECLS
 
