@@ -70,6 +70,11 @@ set (CMAKE_MODULE_PATH
 include (InstallRequiredSystemLibraries)
 include (GNUInstallDirs)
 
+# Enable CCache, if possible
+include(CCache)
+# Link with LLD, if possible
+include(LLDLinker)
+
 set (BUILD_VERSION "0.0.0" CACHE STRING "Library version (for both libbson and libmongoc)")
 
 include (ParseVersion)
