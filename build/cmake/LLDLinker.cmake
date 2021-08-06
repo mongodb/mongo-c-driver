@@ -10,11 +10,18 @@
     on or off by setting the MONGO_USE_LLD CMake option to ON or OFF.
 ]]
 
+if(NOT COMMAND add_link_options)
+    # This only works on new-enough versions of CMake that support LINK_OPTIONS as
+    # a separate configuration entity
+    return()
+endif()
+
 include(CMakePushCheckState)
 include(CheckCSourceCompiles)
 cmake_push_check_state(RESET)
     # Newer GNU compilers support lld with the '-fuse-ld=lld' flag.
-    set(CMAKE_REQUIRED_LIBRARIES "-fuse-ld=lld")
+    set(CMAKE_REQUIRED_FLAGS "-fuse-ld=lld")
+    set(CMAKE_REQUIRED_LINK_OPTIONS "-fuse-ld=lld")
     check_c_source_compiles([[
         #include <stdio.h>
 
