@@ -3,7 +3,7 @@
     {
       "description": "Repeated authSource key",
       "uri": "mongodb://example.com/?authSource=bar&authSource=foo",
-      "valid": false, 
+      "valid": true,
       "comment": "invalid URI (see SPEC-1424)",
       "warning": true,
       "hosts": [

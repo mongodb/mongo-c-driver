@@ -1339,7 +1339,6 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri,
    if (bson_iter_init_find_case (
           &iter, &uri->credentials, MONGOC_URI_AUTHSOURCE)) {
       source = bson_iter_utf8 (&iter, NULL);
-      require_auth = true;
    }
 
    if (mongoc_uri_get_auth_mechanism (uri)) {
