@@ -3703,6 +3703,138 @@ _test_sample_versioned_api_example_4 (void)
    mongoc_server_api_destroy (server_api);
 }
 
+static int64_t iso_to_unix (const char* iso_str) {
+   /* TODO (CDRIVER-2945) there is no convenient helper for converting ISO8601
+    * strings to Unix timestamps. This is not shown in the example. */
+   return 1628330345;
+}
+
+static void _test_sample_versioned_api_example_5_6_7_8 (void) {
+#define N_DOCS 8
+   mongoc_client_t *client = NULL;
+   mongoc_server_api_t *server_api = NULL;
+   mongoc_server_api_version_t server_api_version;
+   bool ok;
+   bson_error_t error;
+   mongoc_database_t *db;
+   mongoc_collection_t *sales;
+   bson_t *docs[N_DOCS];
+   int i;
+   bson_t reply;
+   bson_t *cmd;
+   int64_t count;
+   bson_t *filter;
+
+   client = get_client ();
+   mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
+   mongoc_server_api_version_from_string ("1", &server_api_version);
+   server_api = mongoc_server_api_new (server_api_version);
+   mongoc_server_api_strict (server_api, true);
+   ok = mongoc_client_set_server_api (client, server_api, &error);
+   ASSERT_OR_PRINT (ok, error);
+   db = mongoc_client_get_database (client, "db");
+   sales = mongoc_database_get_collection (db, "sales");
+   /* Drop db.sales in case the collection exists. */
+   ok = mongoc_collection_drop (sales, &error);
+   if (!ok && NULL == strstr (error.message, "ns not found")) {
+      /* Ignore an "ns not found" error on dropping the collection in case the
+       * namespace does not exist. */
+      ASSERT_OR_PRINT (ok, error);
+   }
+
+   /* Start Versioned API Example 5 */
+   docs[0] = BCON_NEW ("_id", BCON_INT32 (1),
+                       "item", "abc",
+                       "price", BCON_INT32 (10),
+                       "quantity", BCON_INT32 (2),
+                       "date", BCON_DATE_TIME (iso_to_unix ("2021-01-01T08:00:00Z")));
+   docs[1] = BCON_NEW ("_id", BCON_INT32 (2),
+                       "item", "jkl",
+                       "price", BCON_INT32 (20),
+                       "quantity", BCON_INT32 (1),
+                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-03T09:00:00Z")));
+   docs[2] = BCON_NEW ("_id", BCON_INT32 (3),
+                       "item", "xyz",
+                       "price", BCON_INT32 (5),
+                       "quantity", BCON_INT32 (5),
+                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-03T09:05:00Z")));
+   docs[3] = BCON_NEW ("_id", BCON_INT32 (4),
+                       "item", "abc",
+                       "price", BCON_INT32 (10),
+                       "quantity", BCON_INT32 (10),
+                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-15T08:00:00Z")));
+   docs[4] = BCON_NEW ("_id", BCON_INT32 (5),
+                       "item", "xyz",
+                       "price", BCON_INT32 (5),
+                       "quantity",BCON_INT32 (10),
+                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-15T09:05:00Z")));
+   docs[5] = BCON_NEW ("_id", BCON_INT32 (6),
+                       "item", "xyz",
+                       "price", BCON_INT32 (5),
+                       "quantity",BCON_INT32 (5),
+                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-15T12:05:10Z")));
+   docs[6] = BCON_NEW ("_id", BCON_INT32 (7),
+                       "item", "xyz",
+                       "price", BCON_INT32 (5),
+                       "quantity",BCON_INT32 (10),
+                       "date", BCON_DATE_TIME (iso_to_unix ("2021-02-15T14:12:12Z")));
+   docs[7] = BCON_NEW ("_id", BCON_INT32 (8),
+                       "item", "abc",
+                       "price", BCON_INT32 (10),
+                       "quantity",BCON_INT32 (5),
+                       "date", BCON_DATE_TIME (iso_to_unix ("2021-03-16T20:20:13Z")));
+   ok = mongoc_collection_insert_many (
+      sales, (const bson_t**) docs, N_DOCS, NULL /* opts */, &reply, &error);
+   /* End Versioned API Example 5 */
+   ASSERT_OR_PRINT (ok, error);
+   bson_destroy (&reply);
+
+   cmd = BCON_NEW ("count", "sales");
+   ok = mongoc_database_command_simple (
+      db, cmd, NULL /* read_prefs */, &reply, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER,
+                          323,
+                          "Provided apiStrict:true, but the command count is "
+                          "not in API Version 1.");
+   bson_destroy (&reply);
+#if 0
+   /* This block not evaluated, but is inserted into documentation to represent the above reply.
+    * Don't delete me! */
+   /* Begin Versioned API Example 6 */
+   char *str = bson_as_json (&reply, NULL /* length */);
+   printf ("%s", str);
+   /* Prints the server reply:
+    * { "ok" : 0, "errmsg" : "Provided apiStrict:true, but the command count is not in API Version 1", "code" : 323, "codeName" : "APIStrictError" } */
+   bson_free (str);
+   /* End Versioned API Example 6 */
+#endif
+
+   /* Start Versioned API Example 7 */
+   filter = bson_new ();
+   count = mongoc_collection_count_documents (
+      sales, filter, NULL /* opts */, NULL /* read_prefs */, &reply, &error);
+   /* End Versioned API Example 7 */
+   if (N_DOCS != count) {
+      test_error ("expected %d documents, got %" PRId64, N_DOCS, count);
+   }
+   bson_destroy (&reply);
+
+   /* Start Versioned API Example 8 */
+   BSON_ASSERT (count == N_DOCS);
+   /* End Versioned API Example 8 */
+
+   bson_destroy (filter);
+   bson_destroy (cmd);
+   for (i = 0; i < N_DOCS; i++) {
+      bson_destroy (docs[i]);
+   }
+   mongoc_collection_destroy (sales);
+   mongoc_database_destroy (db);
+   mongoc_server_api_destroy (server_api);
+   mongoc_client_destroy (client);
+}
+
 static void
 test_sample_versioned_api (void)
 {
@@ -3710,6 +3842,7 @@ test_sample_versioned_api (void)
    _test_sample_versioned_api_example_2 ();
    _test_sample_versioned_api_example_3 ();
    _test_sample_versioned_api_example_4 ();
+   _test_sample_versioned_api_example_5_6_7_8 ();
 }
 
 static void
