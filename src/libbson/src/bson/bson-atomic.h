@@ -202,7 +202,7 @@ _bson_emul_atomic_int64_compare_exchange (int64_t volatile *val,
 extern void
 bson_yield_thread ();
 
-#if !(defined(_M_IX86) || defined(__i686__))
+#if (defined(_MSC_VER) && !defined(_M_IX86)) || defined(__LP64__)
 /* (64-bit intrinsics are only available in x64) */
 DECL_ATOMIC_STDINT (int64, 64)
 #else
@@ -277,8 +277,9 @@ bson_atomic_ptr_compare_exchange (void *volatile *ptr,
                           expect,
                           new_value);
       return expect;
+   default:
+      BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");
    }
-   BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");
 }
 
 #undef DECL_ATOMIC_STDINT
