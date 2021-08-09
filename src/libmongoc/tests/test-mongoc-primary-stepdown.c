@@ -241,8 +241,7 @@ test_not_primary_keep_pool (mongoc_client_t *client)
       coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT (!res);
    ASSERT_CMPINT (error.code, ==, 10107);
-   ASSERT_CONTAINS (error.message,
-                    "Failing command due to 'failCommand' failpoint");
+   ASSERT_CONTAINS (error.message, "failpoint");
 
    /* Execute a second insert, verify that it succeeds */
    res = mongoc_collection_insert_one (
@@ -308,8 +307,7 @@ test_not_primary_reset_pool (mongoc_client_t *client)
       coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT (!res);
    ASSERT_CMPINT (error.code, ==, 10107);
-   ASSERT_CONTAINS (error.message,
-                    "Failing command due to 'failCommand' failpoint");
+   ASSERT_CONTAINS (error.message, "failpoint");
 
    /* Verify that the pool has been cleared */
    ASSERT_CMPINT ((conn_count + 1), ==, _connection_count (client, primary_id));
@@ -376,8 +374,7 @@ test_shutdown_reset_pool (mongoc_client_t *client)
       coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT (!res);
    ASSERT_CMPINT (error.code, ==, 91);
-   ASSERT_CONTAINS (error.message,
-                    "Failing command due to 'failCommand' failpoint");
+   ASSERT_CONTAINS (error.message, "failpoint");
 
    /* Verify that the pool has been cleared */
    ASSERT_CMPINT ((conn_count + 1), ==, _connection_count (client, primary_id));
@@ -444,8 +441,7 @@ test_interrupted_shutdown_reset_pool (mongoc_client_t *client)
       coll, tmp_bson ("{'test': 1}"), NULL, NULL, &error);
    ASSERT (!res);
    ASSERT_CMPINT (error.code, ==, 11600);
-   ASSERT_CONTAINS (error.message,
-                    "Failing command due to 'failCommand' failpoint");
+   ASSERT_CONTAINS (error.message, "failpoint");
 
    /* Verify that the pool has been cleared */
    ASSERT_CMPINT ((conn_count + 1), ==, _connection_count (client, primary_id));
