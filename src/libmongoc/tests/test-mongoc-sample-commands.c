@@ -3795,8 +3795,8 @@ static void _test_sample_versioned_api_example_5_6_7_8 (void) {
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_SERVER,
                           323,
-                          "Provided apiStrict:true, but the command count is "
-                          "not in API Version 1.");
+                          "Provided apiStrict:true, but the command count is not in API Version 1");
+   ASSERT (!ok);
    bson_destroy (&reply);
 #if 0
    /* This block not evaluated, but is inserted into documentation to represent the above reply.
