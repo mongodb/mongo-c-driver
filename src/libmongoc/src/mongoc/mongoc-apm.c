@@ -955,7 +955,9 @@ mongoc_apm_is_sensitive_command (const char *command_name,
       return false;
    }
 
-   return bson_has_field (command, "speculativeAuthenticate");
+   /* An empty command means it has been redacted */
+   return bson_count_keys (command) == 0 ||
+          bson_has_field (command, "speculativeAuthenticate");
 }
 
 void
@@ -981,7 +983,9 @@ mongoc_apm_is_sensitive_reply (const char *command_name, const bson_t *reply)
       return false;
    }
 
-   return bson_has_field (reply, "speculativeAuthenticate");
+   /* An empty command means it has been redacted */
+   return bson_count_keys (reply) == 0 ||
+          bson_has_field (reply, "speculativeAuthenticate");
 }
 
 void

@@ -161,14 +161,12 @@ should_ignore_event (entity_t *client_entity, event_t *event)
       return true;
    }
 
-   if (!client_entity->ignore_command_monitoring_events) {
-      return false;
-   }
-
-   BSON_FOREACH (client_entity->ignore_command_monitoring_events, iter)
-   {
-      if (0 == strcmp (event->command_name, bson_iter_utf8 (&iter, NULL))) {
-         return true;
+   if (client_entity->ignore_command_monitoring_events) {
+      BSON_FOREACH (client_entity->ignore_command_monitoring_events, iter)
+      {
+         if (0 == strcmp (event->command_name, bson_iter_utf8 (&iter, NULL))) {
+            return true;
+         }
       }
    }
 
