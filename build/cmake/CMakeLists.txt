@@ -11,6 +11,8 @@ set (build_cmake_MODULES
    MongoCPackage.cmake
    ParseVersion.cmake
    SphinxBuild.cmake
+   CCache.cmake
+   LLDLinker.cmake
 )
 
 set_local_dist (build_cmake_DIST_local
