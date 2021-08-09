@@ -232,7 +232,7 @@ bson_atomic_int64_compare_exchange (int64_t volatile *val,
 }
 #endif
 
-DECL_ATOMIC_INTEGRAL (int, int, );
+DECL_ATOMIC_INTEGRAL (int, int, )
 
 static BSON_INLINE void *
 bson_atomic_ptr_exchange (void *volatile *ptr,
