@@ -22,6 +22,8 @@ set +o xtrace   # Don't echo commands
 # REQUIRE_TLS12=${require_tls12} # libmongoc requires TLS 1.2+
 # OBSOLETE_TLS=${obsolete_tls} # libmongoc was built with old TLS lib, don't try connecting to Atlas
 # VALGRIND=${valgrind} # Whether to run with valgrind
+# ATLAS_SERVERLESS_SRV=${atlas_serverless_srv} # Evergreen variable
+# ATLAS_SERVERLESS=${atlas_serverless} # Evergreen variable
 
 
 C_TIMEOUT="connectTimeoutMS=30000&serverSelectionTryOnce=false"
@@ -112,6 +114,10 @@ if [ $SSL -eq 1 ]; then
       $PING "$ATLAS_TLS12&${C_TIMEOUT}"
       echo "Connecting to Atlas with only TLS 1.2 enabled with SRV"
       $PING "$ATLAS_TLS12_SRV${C_TIMEOUT}"
+      echo "Connecting to Atlas Serverless with SRV"
+      $PING "$ATLAS_SERVERLESS_SRV/?${C_TIMEOUT}"
+      echo "Connecting to Atlas Serverless"
+      $PING "$ATLAS_SERVERLESS&${C_TIMEOUT}"
    fi
 fi
 
