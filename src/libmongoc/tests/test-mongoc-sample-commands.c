@@ -3801,7 +3801,7 @@ static void _test_sample_versioned_api_example_5_6_7_8 (void) {
 #if 0
    /* This block not evaluated, but is inserted into documentation to represent the above reply.
     * Don't delete me! */
-   /* Begin Versioned API Example 6 */
+   /* Start Versioned API Example 6 */
    char *str = bson_as_json (&reply, NULL /* length */);
    printf ("%s", str);
    /* Prints the server reply:
