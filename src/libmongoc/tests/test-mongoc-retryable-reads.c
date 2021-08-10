@@ -263,8 +263,7 @@ test_retry_reads_off (void *ctx)
    res = mongoc_collection_read_command_with_opts (
       collection, cmd, NULL, NULL, NULL, &error);
    ASSERT (!res);
-   ASSERT_CONTAINS (error.message,
-                    "Failing command due to 'failCommand' failpoint");
+   ASSERT_CONTAINS (error.message, "failpoint");
 
    deactivate_fail_points (client, server_id);
 
