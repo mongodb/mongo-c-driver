@@ -3711,8 +3711,8 @@ static int64_t iso_to_unix (const char* iso_str) {
 
 static void _test_sample_versioned_api_example_5_6_7_8 (void) {
 #define N_DOCS 8
-   mongoc_client_t *client = NULL;
-   mongoc_server_api_t *server_api = NULL;
+   mongoc_client_t *client;
+   mongoc_server_api_t *server_api;
    mongoc_server_api_version_t server_api_version;
    bool ok;
    bson_error_t error;
