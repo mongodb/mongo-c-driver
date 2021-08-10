@@ -35,7 +35,7 @@ retryable_writes_test_run_operation (json_test_ctx_t *ctx,
 static test_skip_t skips[] = {
    {"InsertOne fails after multiple retryable writeConcernErrors",
     "Waiting on CDRIVER-3790"},
-   {0, 0}};
+   {0}};
 
 /* Callback for JSON tests from Retryable Writes Spec */
 static void

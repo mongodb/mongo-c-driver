@@ -200,6 +200,10 @@ bool
 mongoc_server_description_has_service_id (
    const mongoc_server_description_t *description);
 
-extern bool global_mock_service_id;
+/* mongoc_global_mock_service_id is only used for testing. The test runner sets
+ * this to true when testing against a load balanced deployment to mock the
+ * presence of a serviceId field in the "hello" response. The purpose of this is
+ * further described in the Load Balancer test README. */
+extern bool mongoc_global_mock_service_id;
 
 #endif

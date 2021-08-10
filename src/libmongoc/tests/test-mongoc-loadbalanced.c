@@ -774,10 +774,7 @@ test_post_handshake_error_clears_pool (void)
 static int
 skip_if_not_loadbalanced (void)
 {
-   if (!test_framework_is_loadbalanced ()) {
-      return 0;
-   }
-   return 1;
+   return test_framework_is_loadbalanced () ? 1 : 0;
 }
 
 void

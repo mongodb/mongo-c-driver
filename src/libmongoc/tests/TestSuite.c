@@ -886,24 +886,21 @@ bool
 test_matches (TestSuite *suite, Test *test)
 {
    int i;
-   bool matches;
 
    /* If no match patterns were provided, then assume all match. */
    if (suite->match_patterns.len == 0) {
-      matches = true;
-   } else {
-      matches = false;
-      for (i = 0; i < suite->match_patterns.len; i++) {
-         char *pattern =
-            _mongoc_array_index (&suite->match_patterns, char *, i);
-         if (TestSuite_TestMatchesName (suite, test, pattern)) {
-            matches = true;
-            break;
-         }
+      return true;
+   }
+
+   for (i = 0; i < suite->match_patterns.len; i++) {
+      char *pattern =
+         _mongoc_array_index (&suite->match_patterns, char *, i);
+      if (TestSuite_TestMatchesName (suite, test, pattern)) {
+         return true;
       }
    }
 
-   return matches;
+   return false;
 }
 
 static int

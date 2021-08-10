@@ -381,7 +381,7 @@ test_runner_new (void)
    uri = test_framework_get_uri ();
    /* In load balanced mode, the internal client must use the SINGLE_LB_MONGOS_URI. */
    if (!test_framework_is_loadbalanced ()) {
-      /* Always use multiple mongos's if speaking to a mongos.
+      /* Always use multiple mongoses if speaking to a mongos.
        * Some test operations require communicating with all known mongos */
       if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
          test_error ("error applying multiple mongos: %s", error.message);
@@ -1151,9 +1151,7 @@ test_check_expected_events_for_client (test_t *test,
           * supported. */
          ret = true;
          goto done;
-      } else if (0 == strcmp (event_type, "command")) {
-         /* proceed. */
-      } else {
+      } else if (0 != strcmp (event_type, "command")) {
          test_set_error (error, "unexpected event type: %s", event_type);
          goto done;
       }

@@ -1408,13 +1408,16 @@ test_framework_get_uri_multi_mongos_loadbalanced () {
    char *uri_str_no_auth;
    char *uri_str;
    mongoc_uri_t *uri;
+   bson_error_t error;
 
    uri_str_no_auth = _mongoc_getenv ("MULTI_MONGOS_LB_URI");
    if (!uri_str_no_auth) {
       test_error ("expected MULTI_MONGOS_LB_URI to be set");
    }
    uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
-   uri = mongoc_uri_new (uri_str);
+   uri = mongoc_uri_new_with_error (uri_str, &error);
+
+   ASSERT_OR_PRINT (uri, error);
 
    bson_free (uri_str_no_auth);
    bson_free (uri_str);
@@ -2951,7 +2954,7 @@ main (int argc, char *argv[])
    test_generation_map_install (&suite);
 
    if (test_framework_is_loadbalanced ()) {
-      global_mock_service_id = true;
+      mongoc_global_mock_service_id = true;
    }
 
    ret = TestSuite_Run (&suite);
