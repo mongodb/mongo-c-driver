@@ -120,11 +120,12 @@ the .rst files.
 
 ### Testing
 
-To run the entire test suite, including authentication tests,
-start `mongod` with auth enabled:
+To run the entire test suite, including authentication and support for the
+`configureFailPoint` command, start `mongod` with security and test commands
+enabled:
 
 ```
-$ mongod --auth
+$ mongod --auth --setParameter enableTestCommands=1
 ```
 
 In another terminal, use the `mongo` shell to create a user:
