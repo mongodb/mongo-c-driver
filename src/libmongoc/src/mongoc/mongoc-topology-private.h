@@ -27,6 +27,7 @@
 #include "mongoc-uri.h"
 #include "mongoc-client-session-private.h"
 #include "mongoc-crypt-private.h"
+#include "mongoc-ts-pool-private.h"
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
@@ -102,7 +103,7 @@ typedef struct _mongoc_topology_t {
    bool single_threaded;
    bool stale;
 
-   mongoc_server_session_t *session_pool;
+   mongoc_ts_pool session_pool;
 
    /* Is client side encryption enabled? */
    bool cse_enabled;
@@ -255,7 +256,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
 void
 _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
                                         uint32_t server_id,
-                                        const bson_oid_t* service_id);
+                                        const bson_oid_t *service_id);
 
 void
 mongoc_topology_rescan_srv (mongoc_topology_t *topology);
