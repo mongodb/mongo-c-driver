@@ -282,6 +282,13 @@ bson_atomic_ptr_compare_exchange (void *volatile *ptr,
    }
 }
 
+
+static BSON_INLINE void *
+bson_atomic_ptr_fetch (void *volatile *ptr, enum bson_atomic_memorder ord)
+{
+   return bson_atomic_ptr_compare_exchange (ptr, NULL, NULL, ord);
+}
+
 #undef DECL_ATOMIC_STDINT
 #undef DECL_ATOMIC_INTEGRAL
 #undef DEF_ATOMIC_OP
