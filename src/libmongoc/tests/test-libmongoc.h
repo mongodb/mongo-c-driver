@@ -75,6 +75,8 @@ char *
 test_framework_get_unix_domain_socket_path_escaped (void);
 mongoc_uri_t *
 test_framework_get_uri (void);
+mongoc_uri_t *
+test_framework_get_uri_multi_mongos_loadbalanced (void);
 bool
 test_framework_uri_apply_multi_mongos (mongoc_uri_t *uri,
                                        bool use_multi,
@@ -258,5 +260,8 @@ test_framework_skip_if_no_exhaust_cursors (void);
 
 bool
 test_framework_is_serverless (void);
+
+bool
+test_framework_is_loadbalanced (void);
 
 #endif

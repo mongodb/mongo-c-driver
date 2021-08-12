@@ -24,6 +24,7 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "mongoc/mongoc-array-private.h"
 #include "mongoc/mongoc-util-private.h"
 
 
@@ -660,7 +661,7 @@ struct _Test {
 struct _TestSuite {
    char *prgname;
    char *name;
-   char *testname;
+   mongoc_array_t match_patterns;
    Test *tests;
    FILE *outfile;
    int flags;

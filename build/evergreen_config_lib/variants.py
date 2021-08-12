@@ -657,7 +657,7 @@ all_variants = [
     ], {}, batchtime=days(7)),
     Variant ('packaging', 'Linux Distro Packaging', 'ubuntu1804-test', [
         'debian-package-build',
-        OD([('name', 'rpm-package-build'), ('distros', ['rhel80-test'])]),
+        OD([('name', 'rpm-package-build'), ('distros', ['rhel82-arm64-small'])]),
     ], {}, batchtime=days(1)),
     Variant('tsan-ubuntu',
         'Thread Sanitizer (TSAN) Tests (Ubuntu 18.04)',

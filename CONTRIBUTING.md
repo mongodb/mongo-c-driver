@@ -262,6 +262,12 @@ To test with a declared API version, you can pass the API version using an envir
 
 This will ensure that all tests declare the indicated API version when connecting to a server.
 
+To test a load balanced deployment, set the following environment variables:
+
+* `MONGOC_TEST_LOADBALANCED=on`
+* `SINGLE_MONGOS_LB_URI=<string>` to a MongoDB URI with a host of a load balancer fronting one mongos.
+* `MULTI_MONGOS_LB_URI=<string>` to a MongoDB URI with a host of a load balancer fronting multiple mongos processes.
+
 All tests should pass before submitting a patch.
 
 ## Configuring the test runner

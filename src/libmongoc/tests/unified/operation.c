@@ -689,9 +689,9 @@ done:
 
 static bool
 operation_create_find_cursor (test_t *test,
-                              operation_t *op,
-                              result_t *result,
-                              bson_error_t *error)
+                             operation_t *op,
+                             result_t *result,
+                             bson_error_t *error)
 {
    bool ret = false;
    mongoc_collection_t *coll = NULL;
@@ -701,6 +701,7 @@ operation_create_find_cursor (test_t *test,
    bson_t *opts = NULL;
    const bson_t *op_reply = NULL;
    bson_error_t op_error = {0};
+   const bson_t *first_result = NULL;
 
    parser = bson_parser_new ();
    bson_parser_allow_extra (parser, true);
@@ -724,6 +725,8 @@ operation_create_find_cursor (test_t *test,
    cursor = mongoc_collection_find_with_opts (
       coll, filter, opts, NULL /* read prefs */);
 
+   mongoc_cursor_next (cursor, &first_result);
+
    mongoc_cursor_error_document (cursor, &op_error, &op_reply);
    result_from_val_and_reply (result, NULL, (bson_t *) op_reply, &op_error);
 
@@ -734,8 +737,11 @@ operation_create_find_cursor (test_t *test,
       goto done;
    }
 
-   if (!entity_map_add_cursor (
-          test->entity_map, op->save_result_as_entity, cursor, error)) {
+   if (!entity_map_add_findcursor (test->entity_map,
+                                   op->save_result_as_entity,
+                                   cursor,
+                                   first_result,
+                                   error)) {
       goto done;
    }
 
@@ -1517,7 +1523,7 @@ operation_iterate_until_document_or_error (test_t *test,
 {
    bool ret = false;
    mongoc_change_stream_t *changestream = NULL;
-   mongoc_cursor_t *cursor = NULL;
+   entity_findcursor_t *findcursor = NULL;
    const bson_t *doc = NULL;
    const bson_t *op_reply = NULL;
    bson_error_t op_error = {0};
@@ -1540,21 +1546,17 @@ operation_iterate_until_document_or_error (test_t *test,
       while (!mongoc_change_stream_next (changestream, &doc)) {
          if (mongoc_change_stream_error_document (
                 changestream, &op_error, &op_reply)) {
-            goto done;
+            break;
          }
       }
    } else {
-      cursor = entity_map_get_cursor (test->entity_map, op->object, error);
-      if (!cursor) {
+      findcursor = entity_map_get_findcursor (test->entity_map, op->object, error);
+      if (!findcursor) {
          goto done;
       }
 
-      /* Loop until error or document is returned. */
-      while (!mongoc_cursor_next (cursor, &doc)) {
-         if (mongoc_cursor_error_document (cursor, &op_error, &op_reply)) {
-            goto done;
-         }
-      }
+      entity_findcursor_iterate_until_document_or_error (
+         findcursor, &doc, &op_error, &op_reply);
    }
 
    if (NULL != doc) {
@@ -1576,10 +1578,16 @@ operation_close (test_t *test,
                  bson_error_t *error)
 {
    bool ret = false;
-   mongoc_cursor_t *cursor = NULL;
+   entity_t *entity;
+   entity = entity_map_get (test->entity_map, op->object, error);
+   if (!entity) {
+      goto done;
+   }
 
-   cursor = entity_map_get_cursor (test->entity_map, op->object, error);
-   if (!cursor) {
+   if (0 != strcmp (entity->type, "findcursor") &&
+       0 != strcmp (entity->type, "changestream")) {
+      test_set_error (
+         error, "attempting to close an unsupported entity: %s", entity->type);
       goto done;
    }
 
@@ -2518,6 +2526,19 @@ operation_loop (test_t *test,
    return false;
 }
 
+static bool
+operation_assert_number_connections_checked_out (test_t *test,
+                                                 operation_t *op,
+                                                 result_t *result,
+                                                 bson_error_t *error)
+{
+   /* "This operation only applies to drivers that implement connection pooling
+    * and should be skipped for drivers that do not."
+    * TODO: (CDRIVER-3525) add this assertion when CMAP is implemented. */
+   result_from_ok (result);
+   return true;
+}
+
 typedef struct {
    const char *op;
    bool (*fn) (test_t *, operation_t *, result_t *, bson_error_t *);
@@ -2586,6 +2607,8 @@ operation_run (test_t *test, bson_t *op_bson, bson_error_t *error)
       {"assertSessionPinned", operation_assert_session_pinned},
       {"assertSessionUnpinned", operation_assert_session_unpinned},
       {"loop", operation_loop},
+      {"assertNumberConnectionsCheckedOut",
+       operation_assert_number_connections_checked_out},
 
       /* GridFS operations */
       {"delete", operation_delete},

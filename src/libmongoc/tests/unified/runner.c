@@ -73,6 +73,12 @@ skipped_unified_test_t SKIPPED_TESTS[] = {
    {"assertNumberConnectionsCheckedOut", SKIP_ALL_TESTS},
    {"entity-client-cmap-events", SKIP_ALL_TESTS},
    {"expectedEventsForClient-eventType", SKIP_ALL_TESTS},
+   /* CDRIVER-4115: listCollections does not support batchSize. */
+   {"cursors are correctly pinned to connections for load-balanced clusters", "listCollections pins the cursor to a connection"},
+   /* CDRIVER-4116: listIndexes does not support batchSize. */
+   {"cursors are correctly pinned to connections for load-balanced clusters", "listIndexes pins the cursor to a connection"},
+   /* libmongoc does not pin connections to cursors. It cannot force an error from waitQueueTimeoutMS by creating cursors in load balanced mode. */
+   {"wait queue timeout errors include details about checked out connections", SKIP_ALL_TESTS},
    {0},
 };
 /* clang-format on */
@@ -373,10 +379,13 @@ test_runner_new (void)
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, on_topology_changed);
    uri = test_framework_get_uri ();
-   /* Always use multiple mongos's if speaking to a mongos.
-    * Some test operations require communicating with all known mongos */
-   if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
-      test_error ("error applying multiple mongos: %s", error.message);
+   /* In load balanced mode, the internal client must use the SINGLE_LB_MONGOS_URI. */
+   if (!test_framework_is_loadbalanced ()) {
+      /* Always use multiple mongoses if speaking to a mongos.
+       * Some test operations require communicating with all known mongos */
+      if (!test_framework_uri_apply_multi_mongos (uri, true, &error)) {
+         test_error ("error applying multiple mongos: %s", error.message);
+      }
    }
    test_runner->internal_client =
       test_framework_client_new_from_uri (uri, NULL);
@@ -546,6 +555,10 @@ get_topology_type (mongoc_client_t *client)
    bson_error_t error;
    const char *topology_type = "single";
 
+   if (test_framework_is_loadbalanced ()) {
+      return "load-balanced";
+   }
+
    ret = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'hello': 1}"), NULL, &reply, &error);
    if (!ret) {
@@ -559,8 +572,6 @@ get_topology_type (mongoc_client_t *client)
          &error);
    }
    ASSERT_OR_PRINT (ret, error);
-
-   /* TODO: CDRIVER-4060 Detect load-balancer */
 
    if (is_replset (&reply)) {
       topology_type = "replicaset";
@@ -997,6 +1008,7 @@ test_check_event (test_t *test,
    char *expected_command_name = NULL;
    char *expected_database_name = NULL;
    bson_t *expected_reply = NULL;
+   bool *expected_has_service_id = NULL;
 
    if (bson_count_keys (expected) != 1) {
       test_set_error (error,
@@ -1029,6 +1041,7 @@ test_check_event (test_t *test,
    bson_parser_utf8_optional (bp, "commandName", &expected_command_name);
    bson_parser_utf8_optional (bp, "databaseName", &expected_database_name);
    bson_parser_doc_optional (bp, "reply", &expected_reply);
+   bson_parser_bool_optional (bp, "hasServiceId", &expected_has_service_id);
    if (!bson_parser_parse (bp, &expected_bson, error)) {
       goto done;
    }
@@ -1086,6 +1099,22 @@ test_check_event (test_t *test,
       bson_val_destroy (actual_val);
    }
 
+   if (expected_has_service_id) {
+      char oid_str[25] = {0};
+      bool has_service_id = false;
+
+      bson_oid_to_string (&actual->service_id, oid_str);
+      has_service_id = 0 != bson_oid_compare (&actual->service_id, &kZeroServiceId);
+
+      if (*expected_has_service_id && !has_service_id) {
+         test_error ("expected serviceId, but got none");
+      }
+      
+      if (!*expected_has_service_id && has_service_id) {
+         test_error ("expected no serviceId, but got %s", oid_str);
+      }
+   }
+
    ret = true;
 done:
    bson_parser_destroy_with_parsed_fields (bp);
@@ -1106,12 +1135,26 @@ test_check_expected_events_for_client (test_t *test,
    event_t *eiter = NULL;
    uint32_t expected_num_events;
    uint32_t actual_num_events = 0;
+   char *event_type = NULL;
 
    bp = bson_parser_new ();
    bson_parser_utf8 (bp, "client", &client_id);
    bson_parser_array (bp, "events", &expected_events);
+   bson_parser_utf8_optional (bp, "eventType", &event_type);
    if (!bson_parser_parse (bp, expected_events_for_client, error)) {
       goto done;
+   }
+
+   if (event_type) {
+      if (0 == strcmp (event_type, "cmap")) {
+         /* TODO: (CDRIVER-3525) Explicitly ignore cmap events until CMAP is
+          * supported. */
+         ret = true;
+         goto done;
+      } else if (0 != strcmp (event_type, "command")) {
+         test_set_error (error, "unexpected event type: %s", event_type);
+         goto done;
+      }
    }
 
    entity = entity_map_get (test->entity_map, client_id, error);
@@ -1638,4 +1681,8 @@ test_install_unified (TestSuite *suite)
    run_unified_tests (suite, JSON_DIR "/collection-management");
 
    run_unified_tests (suite, JSON_DIR "/sessions/unified");
+
+   run_unified_tests (suite, JSON_DIR "/change_streams/unified");
+
+   run_unified_tests (suite, JSON_DIR "/load_balancers");
 }

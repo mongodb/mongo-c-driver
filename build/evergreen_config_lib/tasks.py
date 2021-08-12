@@ -1074,4 +1074,71 @@ class OCSPTask(MatrixTask):
 
 all_tasks = chain(all_tasks, OCSPTask.matrix())
 
+class LoadBalancedTask(MatrixTask):
+    axes = OD([
+        ('asan', [True]),
+        ('build_ssl', ['openssl']), # The SSL library the C driver is built with.
+        ('test_ssl', [True, False]), # Whether tests are run with SSL connections.
+        ('test_auth', [True, False]),
+        ('version', ['5.0', 'latest'])
+    ])
+
+    def _check_allowed (self):
+        # Test with both SSL and auth, or neither.
+        prohibit (self.test_ssl != self.test_auth)
+
+    def __init__(self, *args, **kwargs):
+        super(LoadBalancedTask, self).__init__(*args, **kwargs)
+        if self.asan and self.build_ssl == "openssl":
+            self.add_dependency ('debug-compile-asan-clang-openssl')
+            self.add_tags('test-asan')
+        else:
+            raise RuntimeError ("unimplemented configuration for LoadBalancedTask")
+
+        self.add_tags(self.version)
+        self.options['exec_timeout_secs'] = 3600
+
+    # Return the task name.
+    # Example: test-loadbalanced-asan-auth-openssl-latest
+    @property
+    def name(self):
+        name = "test-loadbalanced"
+        if self.asan:
+            name += "-asan"
+        if self.test_auth:
+            name += "-auth"
+        else:
+            name += "-noauth"
+        if self.test_ssl:
+            name += "-" + self.build_ssl
+        else:
+            name += "-nossl"
+        if self.version:
+            name += "-" + self.version
+        return name
+
+    def to_dict(self):
+        task = super(MatrixTask, self).to_dict()
+        commands = task['commands']
+        commands.append(
+            func('fetch build', BUILD_NAME=self.depends_on['name']))
+
+
+        orchestration = bootstrap(TOPOLOGY='sharded_cluster',
+                                  AUTH='auth' if self.test_auth else 'noauth',
+                                  SSL='ssl' if self.test_ssl else 'nossl',
+                                  VERSION=self.version)
+        commands.append(orchestration)
+        commands.append (func("clone drivers-evergreen-tools"))
+        commands.append (func("start load balancer",
+            MONGODB_URI="mongodb://localhost:27017,localhost:27018"))
+        commands.append(run_tests(ASAN='on' if self.asan else 'off',
+                                  SSL='ssl' if self.test_ssl else 'nossl',
+                                  AUTH='auth' if self.test_auth else 'noauth',
+                                  LOADBALANCED='loadbalanced'))
+
+        return task
+
+all_tasks = chain(all_tasks, LoadBalancedTask.matrix())
+
 all_tasks = list(all_tasks)
