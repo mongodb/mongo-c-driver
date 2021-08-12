@@ -1,7 +1,7 @@
 :man_page: mongoc_topology_description_destroy
 
 mongoc_topology_description_destroy()
-===================================
+=====================================
 
 Synopsis
 --------

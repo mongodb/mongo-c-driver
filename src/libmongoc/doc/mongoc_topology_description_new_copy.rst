@@ -1,7 +1,7 @@
 :man_page: mongoc_topology_description_new_copy
 
 mongoc_topology_description_new_copy()
-====================================
+======================================
 
 Synopsis
 --------
