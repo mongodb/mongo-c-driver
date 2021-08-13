@@ -3747,7 +3747,6 @@ static void _test_sample_versioned_api_example_5_6_7_8 (void) {
    bson_t *filter;
 
    client = get_client_for_version_api_example ();
-   test_framework_monitor_commands (client);
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    mongoc_server_api_version_from_string ("1", &server_api_version);
    server_api = mongoc_server_api_new (server_api_version);
