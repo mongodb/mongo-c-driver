@@ -3743,7 +3743,6 @@ static void _test_sample_versioned_api_example_5_6_7_8 (void) {
    bson_t *docs[N_DOCS];
    int i;
    bson_t reply;
-   bson_t *cmd;
    int64_t count;
    bson_t *filter;
 
@@ -3812,24 +3811,29 @@ static void _test_sample_versioned_api_example_5_6_7_8 (void) {
    ASSERT_OR_PRINT (ok, error);
    bson_destroy (&reply);
 
-   cmd = BCON_NEW ("count", "sales");
-   ok = mongoc_database_command_simple (
-      db, cmd, NULL /* read_prefs */, &reply, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_SERVER,
-                          323,
-                          "Provided apiStrict:true, but the command count is not in API Version 1");
-   ASSERT (!ok);
+   BEGIN_IGNORE_DEPRECATIONS;
+   count = mongoc_collection_count (sales,
+                                    MONGOC_QUERY_NONE,
+                                    NULL /* query */,
+                                    0 /* skip */,
+                                    0 /* limit */,
+                                    NULL /* read prefs */,
+                                    &error);
+   END_IGNORE_DEPRECATIONS;
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_SERVER,
+      323,
+      "Provided apiStrict:true, but the command count is not in API Version 1");
+   ASSERT_CMPINT64 (-1, ==, count);
    bson_destroy (&reply);
 #if 0
    /* This block not evaluated, but is inserted into documentation to represent the above reply.
     * Don't delete me! */
    /* Start Versioned API Example 6 */
-   char *str = bson_as_json (&reply, NULL /* length */);
-   printf ("%s", str);
-   /* Prints the server reply:
-    * { "ok" : 0, "errmsg" : "Provided apiStrict:true, but the command count is not in API Version 1", "code" : 323, "codeName" : "APIStrictError" } */
-   bson_free (str);
+   printf ("%s", error.message);
+   /* Prints the error message:
+    * "Provided apiStrict:true, but the command count is not in API Version 1. Information on supported commands and migrations in API Version 1 can be found at https://dochub.mongodb.org/core/manual-versioned-api" */
    /* End Versioned API Example 6 */
 #endif
 
@@ -3848,7 +3852,6 @@ static void _test_sample_versioned_api_example_5_6_7_8 (void) {
    /* End Versioned API Example 8 */
 
    bson_destroy (filter);
-   bson_destroy (cmd);
    for (i = 0; i < N_DOCS; i++) {
       bson_destroy (docs[i]);
    }
