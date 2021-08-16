@@ -228,7 +228,8 @@ bson_atomic_int64_compare_exchange (int64_t volatile *val,
                                     int64_t new_value,
                                     enum bson_atomic_memorder order)
 {
-   return _bson_emul_atomic_int64_compare_exchange (val, v, order);
+   return _bson_emul_atomic_int64_compare_exchange (
+      val, expect_value, new_value, order);
 }
 #endif
 
