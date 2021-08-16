@@ -31,6 +31,8 @@ If no write concern is provided in ``opts``, the database's write concern is use
 
 For a list of all options, see `the MongoDB Manual entry on the create command <https://docs.mongodb.org/manual/reference/command/create/>`_.
 
+This function can also be used to create a `Time Series Collection <https://docs.mongodb.com/manual/core/timeseries-collections/>`_.
+
 Errors
 ------
 
