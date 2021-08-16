@@ -9,14 +9,14 @@
 ]]
 
 # Find and enable ccache for compiling
-find_program(CCACHE_EXECUTABLE ccache)
-if(CCACHE_EXECUTABLE)
-    message(STATUS "Found ccache: ${CCACHE_EXECUTABLE}")
-    option(MONGO_USE_CCACHE "Use CCache when compiling" ON)
-endif()
+find_program (CCACHE_EXECUTABLE ccache)
+if (CCACHE_EXECUTABLE)
+    message (STATUS "Found ccache: ${CCACHE_EXECUTABLE}")
+    option (MONGO_USE_CCACHE "Use CCache when compiling" ON)
+endif ()
 
-if(MONGO_USE_CCACHE)
-    message(STATUS "Compiling with CCache enabled. Disable by setting MONGO_USE_CCACHE to OFF")
-    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_EXECUTABLE}")
-    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_EXECUTABLE}")
-endif()
+if (MONGO_USE_CCACHE)
+    message (STATUS "Compiling with CCache enabled. Disable by setting MONGO_USE_CCACHE to OFF")
+    set (CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_EXECUTABLE}")
+    set (CMAKE_C_COMPILER_LAUNCHER "${CCACHE_EXECUTABLE}")
+endif ()
