@@ -110,7 +110,7 @@ mongoc_apm_command_started_init (mongoc_apm_command_started_t *event,
       event->command_owned = false;
    }
 
-   if (mongoc_apm_is_sensitive_command (command_name, command)) {
+   if (mongoc_apm_is_sensitive_command_message (command_name, command)) {
       if (!event->command_owned) {
          event->command = bson_copy (event->command);
          event->command_owned = true;
@@ -209,7 +209,8 @@ mongoc_apm_command_succeeded_init (mongoc_apm_command_succeeded_t *event,
 {
    BSON_ASSERT (reply);
 
-   if (force_redaction || mongoc_apm_is_sensitive_reply (command_name, reply)) {
+   if (force_redaction ||
+       mongoc_apm_is_sensitive_command_message (command_name, reply)) {
       event->reply = bson_copy (reply);
       event->reply_owned = true;
 
@@ -269,7 +270,8 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
 {
    BSON_ASSERT (reply);
 
-   if (force_redaction || mongoc_apm_is_sensitive_reply (command_name, reply)) {
+   if (force_redaction ||
+       mongoc_apm_is_sensitive_command_message (command_name, reply)) {
       event->reply = bson_copy (reply);
       event->reply_owned = true;
 
@@ -940,24 +942,38 @@ _mongoc_apm_is_sensitive_command_name (const char *command_name)
           0 == strcasecmp (command_name, "copydb");
 }
 
-bool
-mongoc_apm_is_sensitive_command (const char *command_name,
-                                 const bson_t *command)
+static bool
+_mongoc_apm_is_sensitive_hello_message (const char *command_name,
+                                        const bson_t *body)
 {
-   BSON_ASSERT (command);
+   const bool is_hello =
+      (0 != strcasecmp (command_name, "hello") &&
+       0 != strcasecmp (command_name, HANDSHAKE_CMD_LEGACY_HELLO));
 
-   if (_mongoc_apm_is_sensitive_command_name (command_name)) {
-      return true;
-   }
-
-   if (0 != strcasecmp (command_name, "hello") &&
-       0 != strcasecmp (command_name, HANDSHAKE_CMD_LEGACY_HELLO)) {
+   if (!is_hello) {
       return false;
    }
+   if (bson_empty (body)) {
+      /* An empty message body means that it has been redacted */
+      return true;
+   } else if (bson_has_field (body, "speculativeAuthenticate")) {
+      /* "hello" messages are only sensitive if they contain
+       * 'speculativeAuthenticate' */
+      return true;
+   } else {
+      /* Other "hello" messages are okay */
+      return false;
+   }
+}
 
-   /* An empty command means it has been redacted */
-   return bson_count_keys (command) == 0 ||
-          bson_has_field (command, "speculativeAuthenticate");
+bool
+mongoc_apm_is_sensitive_command_message (const char *command_name,
+                                         const bson_t *body)
+{
+   BSON_ASSERT (body);
+
+   return _mongoc_apm_is_sensitive_command_name (command_name) ||
+          _mongoc_apm_is_sensitive_hello_message (command_name, body);
 }
 
 void
@@ -969,24 +985,6 @@ mongoc_apm_redact_command (bson_t *command)
    bson_reinit (command);
 }
 
-bool
-mongoc_apm_is_sensitive_reply (const char *command_name, const bson_t *reply)
-{
-   BSON_ASSERT (reply);
-
-   if (_mongoc_apm_is_sensitive_command_name (command_name)) {
-      return true;
-   }
-
-   if (0 != strcasecmp (command_name, "hello") &&
-       0 != strcasecmp (command_name, HANDSHAKE_CMD_LEGACY_HELLO)) {
-      return false;
-   }
-
-   /* An empty command means it has been redacted */
-   return bson_count_keys (reply) == 0 ||
-          bson_has_field (reply, "speculativeAuthenticate");
-}
 
 void
 mongoc_apm_redact_reply (bson_t *reply)

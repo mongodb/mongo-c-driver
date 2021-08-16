@@ -206,11 +206,8 @@ void
 mongoc_apm_command_failed_cleanup (mongoc_apm_command_failed_t *event);
 
 bool
-mongoc_apm_is_sensitive_command (const char *command_name,
-                                 const bson_t *command);
-
-bool
-mongoc_apm_is_sensitive_reply (const char *command_name, const bson_t *reply);
+mongoc_apm_is_sensitive_command_message (const char *command_name,
+                                         const bson_t *command);
 
 BSON_END_DECLS
 

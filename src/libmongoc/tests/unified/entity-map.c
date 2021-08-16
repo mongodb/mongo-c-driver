@@ -140,16 +140,9 @@ entity_new (const char *type)
 static bool
 is_sensitive_command (event_t *event)
 {
-   if (event->reply) {
-      return mongoc_apm_is_sensitive_reply (event->command_name, event->reply);
-   }
-
-   if (event->command) {
-      return mongoc_apm_is_sensitive_command (event->command_name,
-                                              event->command);
-   }
-
-   return false;
+   const bson_t *body = event->reply ? event->reply : event->command;
+   BSON_ASSERT (body);
+   return mongoc_apm_is_sensitive_command_message (event->command_name, body);
 }
 
 bool
