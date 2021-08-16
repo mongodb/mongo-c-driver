@@ -2204,15 +2204,6 @@ test_bulk_set_client (session_test_t *test)
 }
 
 
-#define ASSERT_POOL_SIZE(_topology, _expected_size)             \
-   do {                                                         \
-      const mongoc_server_session_t *_tmp;                      \
-      int _n_sessions;                                          \
-      CDL_COUNT ((_topology)->session_pool, _tmp, _n_sessions); \
-      ASSERT_CMPINT (_n_sessions, ==, (int) (_expected_size));  \
-   } while (0)
-
-
 static void
 test_cursor_implicit_session (void *ctx)
 {

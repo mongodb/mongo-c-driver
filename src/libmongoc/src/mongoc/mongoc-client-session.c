@@ -716,8 +716,6 @@ _mongoc_server_session_init (mongoc_server_session_t *self, bson_error_t *error)
    ENTRY;
 
    self->last_used_usec = SESSION_NEVER_USED;
-   self->prev = NULL;
-   self->next = NULL;
    bson_init (&self->lsid);
    /* transaction number is a positive integer and will be incremented before
     * each use, so ensure it is initialized to zero. */
