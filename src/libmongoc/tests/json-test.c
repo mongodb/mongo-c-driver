@@ -543,7 +543,7 @@ test_server_selection_logic_cb (bson_t *test)
 
 DONE:
    mongoc_read_prefs_destroy (read_prefs);
-   mongoc_topology_description_destroy (&topology);
+   mongoc_topology_description_cleanup (&topology);
    _mongoc_array_destroy (&selected_servers);
 }
 
