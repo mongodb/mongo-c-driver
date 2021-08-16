@@ -643,6 +643,7 @@ typedef void (*TestFuncDtor) (void *);
 typedef int (*CheckFunc) (void);
 typedef struct _Test Test;
 typedef struct _TestSuite TestSuite;
+typedef struct _TestFnCtx TestFnCtx;
 
 
 struct _Test {
@@ -668,6 +669,11 @@ struct _TestSuite {
    int silent;
    bson_string_t *mock_server_log_buf;
    FILE *mock_server_log;
+};
+
+
+struct _TestFnCtx {
+   TestFunc test_fn;
 };
 
 
@@ -710,6 +716,14 @@ _TestSuite_AddFull (TestSuite *suite,
                     ...);
 #define TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, ...) \
    _TestSuite_AddFull (_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
+#define TestSuite_AddFullWithTestFn(                            \
+   _suite, _name, _func, _dtor, _test_fn, ...)                  \
+   do {                                                         \
+      static TestFnCtx ctx;                                     \
+      ctx.test_fn = (TestFunc) (_test_fn);                      \
+      _TestSuite_AddFull (                                      \
+         _suite, _name, _func, _dtor, &ctx, __VA_ARGS__, NULL); \
+   } while (0)
 int
 TestSuite_Run (TestSuite *suite);
 void
