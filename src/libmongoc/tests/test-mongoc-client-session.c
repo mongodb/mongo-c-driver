@@ -1639,11 +1639,12 @@ run_session_test_bulk_operation (void *ctx)
 
 
 static void
-run_count_test (session_test_fn_t test_fn)
+run_count_test (void *ctx)
 {
    /* CDRIVER-3612: mongoc_collection_estimated_document_count does not support
     * explicit sessions */
-   _test_implicit_session_lsid (test_fn);
+   _test_implicit_session_lsid (
+      (session_test_fn_t) ((TestFnCtx *) ctx)->test_fn);
 }
 
 
