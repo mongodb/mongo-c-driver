@@ -24,6 +24,7 @@
  */
 
 /* clang-format off */
+#include <assert.h>
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-database-private.h>
@@ -3594,7 +3595,6 @@ _test_sample_versioned_api_example_1 (void)
    mongoc_server_api_t *server_api = NULL;
    mongoc_server_api_version_t server_api_version;
    bson_error_t error;
-   bool ok;
 
    /* For a replica set, include the replica set name and a seedlist of the
     * members in the URI string; e.g.
@@ -3607,13 +3607,13 @@ _test_sample_versioned_api_example_1 (void)
     * client = mongoc_client_new (uri_sharded);
     */
 
+   /* Create a mongoc_client_t without server API options configured. */
    client = get_client_for_version_api_example ();
 
    mongoc_server_api_version_from_string ("1", &server_api_version);
    server_api = mongoc_server_api_new (server_api_version);
 
-   ok = mongoc_client_set_server_api (client, server_api, &error);
-   BSON_ASSERT (ok);
+   assert (mongoc_client_set_server_api (client, server_api, &error));
    /* End Versioned API Example 1 */
 
    mongoc_client_destroy (client);
@@ -3628,7 +3628,6 @@ _test_sample_versioned_api_example_2 (void)
    mongoc_server_api_t *server_api = NULL;
    mongoc_server_api_version_t server_api_version;
    bson_error_t error;
-   bool ok;
 
    /* For a replica set, include the replica set name and a seedlist of the
     * members in the URI string; e.g.
@@ -3641,14 +3640,14 @@ _test_sample_versioned_api_example_2 (void)
     * client = mongoc_client_new (uri_sharded);
     */
 
+   /* Create a mongoc_client_t without server API options configured. */
    client = get_client_for_version_api_example ();
 
    mongoc_server_api_version_from_string ("1", &server_api_version);
    server_api = mongoc_server_api_new (server_api_version);
    mongoc_server_api_strict (server_api, true);
 
-   ok = mongoc_client_set_server_api (client, server_api, &error);
-   BSON_ASSERT (ok);
+   assert (mongoc_client_set_server_api (client, server_api, &error));
    /* End Versioned API Example 2 */
 
    mongoc_client_destroy (client);
@@ -3663,7 +3662,6 @@ _test_sample_versioned_api_example_3 (void)
    mongoc_server_api_t *server_api = NULL;
    mongoc_server_api_version_t server_api_version;
    bson_error_t error;
-   bool ok;
 
    /* For a replica set, include the replica set name and a seedlist of the
     * members in the URI string; e.g.
@@ -3676,14 +3674,14 @@ _test_sample_versioned_api_example_3 (void)
     * client = mongoc_client_new (uri_sharded);
     */
 
+   /* Create a mongoc_client_t without server API options configured. */
    client = get_client_for_version_api_example ();
 
    mongoc_server_api_version_from_string ("1", &server_api_version);
    server_api = mongoc_server_api_new (server_api_version);
    mongoc_server_api_strict (server_api, false);
 
-   ok = mongoc_client_set_server_api (client, server_api, &error);
-   BSON_ASSERT (ok);
+   assert (mongoc_client_set_server_api (client, server_api, &error));
    /* End Versioned API Example 3 */
 
    mongoc_client_destroy (client);
@@ -3698,7 +3696,6 @@ _test_sample_versioned_api_example_4 (void)
    mongoc_server_api_t *server_api = NULL;
    mongoc_server_api_version_t server_api_version;
    bson_error_t error;
-   bool ok;
 
    /* For a replica set, include the replica set name and a seedlist of the
     * members in the URI string; e.g.
@@ -3711,14 +3708,14 @@ _test_sample_versioned_api_example_4 (void)
     * client = mongoc_client_new (uri_sharded);
     */
 
+   /* Create a mongoc_client_t without server API options configured. */
    client = get_client_for_version_api_example ();
 
    mongoc_server_api_version_from_string ("1", &server_api_version);
    server_api = mongoc_server_api_new (server_api_version);
    mongoc_server_api_deprecation_errors (server_api, true);
 
-   ok = mongoc_client_set_server_api (client, server_api, &error);
-   BSON_ASSERT (ok);
+   assert (mongoc_client_set_server_api (client, server_api, &error));
    /* End Versioned API Example 4 */
 
    mongoc_client_destroy (client);
@@ -3747,6 +3744,7 @@ static void _test_sample_versioned_api_example_5_6_7_8 (void) {
    int64_t count;
    bson_t *filter;
 
+   /* Create a mongoc_client_t without server API options configured. */
    client = get_client_for_version_api_example ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    mongoc_server_api_version_from_string ("1", &server_api_version);
