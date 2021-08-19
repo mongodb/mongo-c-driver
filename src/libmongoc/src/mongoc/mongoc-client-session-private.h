@@ -101,12 +101,12 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
                                      const char *cmd_name,
                                      const bson_t *reply);
 
-extern bool
+bool
 _mongoc_server_session_init (mongoc_server_session_t *session,
                              bson_error_t *error);
 
-extern void
-_mongoc_server_session_dtor (mongoc_server_session_t *session);
+void
+_mongoc_server_session_destroy (mongoc_server_session_t *session);
 
 bool
 _mongoc_server_session_timed_out (const mongoc_server_session_t *server_session,

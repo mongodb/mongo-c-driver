@@ -1000,6 +1000,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-scanner.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-transactions.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ts-pool.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-uri.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-usleep.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-util.c

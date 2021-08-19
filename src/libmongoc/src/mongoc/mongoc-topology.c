@@ -216,6 +216,53 @@ _mongoc_topology_scanner_cb (uint32_t id,
    bson_mutex_unlock (&topology->mutex);
 }
 
+static void
+_server_session_init (mongoc_server_session_t *session,
+                      const mongoc_topology_t *unused,
+                      bson_error_t *error)
+{
+   _mongoc_server_session_init (session, error);
+}
+
+static void
+_server_session_destroy (mongoc_server_session_t *session,
+                         const mongoc_topology_t *unused)
+{
+   _mongoc_server_session_destroy (session);
+}
+
+static int
+_server_session_should_prune (mongoc_server_session_t *session,
+                              mongoc_topology_t *topo)
+{
+   bool is_loadbalanced;
+   int timeout;
+
+   /** If "dirty" (i.e. contains a network error), it should be dropped */
+   if (session->dirty) {
+      return true;
+   }
+
+   /** If the session has never been used, it should be dropped */
+   if (session->last_used_usec == SESSION_NEVER_USED) {
+      return true;
+   }
+
+   /* Check for a timeout */
+   bson_mutex_lock (&topo->mutex);
+   timeout = topo->description.session_timeout_minutes;
+   is_loadbalanced = topo->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED;
+   bson_mutex_unlock (&topo->mutex);
+
+   /** Load balanced topology sessions never expire */
+   if (is_loadbalanced) {
+      return false;
+   }
+
+   /* Prune the session if it has hit a timeout */
+   return _mongoc_server_session_timed_out (session, timeout);
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -260,9 +307,13 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 #endif
 
    topology = (mongoc_topology_t *) bson_malloc0 (sizeof *topology);
-   topology->session_pool =
-      mongoc_ts_pool_new (sizeof (mongoc_server_session_t),
-                          (void (*) (void *)) _mongoc_server_session_dtor);
+   topology->session_pool = mongoc_ts_pool_new ((mongoc_ts_pool_params){
+      .element_size = sizeof (mongoc_server_session_t),
+      .constructor = (_erased_constructor_fn) _server_session_init,
+      .destructor = (_erased_destructor_fn) _server_session_destroy,
+      .prune_predicate = (_erased_prune_predicate) _server_session_should_prune,
+      .userdata = topology,
+   });
    heartbeat_default =
       single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED
                       : MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
@@ -1075,7 +1126,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
    if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       bson_mutex_unlock (&topology->mutex);
-      return _mongoc_topology_select_server_id_loadbalanced (topology, error);   
+      return _mongoc_topology_select_server_id_loadbalanced (topology, error);
    }
 
    bson_mutex_unlock (&topology->mutex);
@@ -1559,27 +1610,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
    }
    bson_mutex_unlock (&topology->mutex);
 
-   while (true) {
-      bool got_session;
-      ss = mongoc_ts_pool_try_pop (topology->session_pool, &got_session);
-      if (!got_session) {
-         /* The pool is empty */
-         ss = mongoc_ts_pool_alloc_item (topology->session_pool);
-         if (!_mongoc_server_session_init (ss, error)) {
-            mongoc_ts_pool_free_item (topology->session_pool, ss);
-            ss = NULL;
-            goto done;
-         }
-         break;
-      }
-
-      if (_mongoc_server_session_timed_out (ss, timeout)) {
-         mongoc_ts_pool_free_item (topology->session_pool, ss);
-         ss = NULL;
-         continue;
-      }
-         break;
-   }
+   ss = mongoc_ts_pool_get (topology->session_pool, error);
 
 done:
    RETURN (ss);
@@ -1599,32 +1630,10 @@ void
 _mongoc_topology_push_server_session (mongoc_topology_t *topology,
                                       mongoc_server_session_t *server_session)
 {
-   int64_t timeout;
-   mongoc_server_session_t *ss;
-   bool loadbalanced;
-
    ENTRY;
 
-   bson_mutex_lock (&topology->mutex);
-   timeout = topology->description.session_timeout_minutes;
-   loadbalanced = topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED;
-   bson_mutex_unlock (&topology->mutex);
 
-   if ((!loadbalanced &&
-        _mongoc_server_session_timed_out (server_session, timeout)) ||
-       server_session->dirty) {
-      /* If session is expiring or "dirty" (a network error occurred on it), do
-       * not return it to the pool. Sessions do not expire when the topology
-       * type is load balanced. */
-      mongoc_ts_pool_free_item (topology->session_pool, server_session);
-   } else if (server_session->last_used_usec == SESSION_NEVER_USED) {
-      /* add server session (lsid) to session pool to be reused only if the
-       * server session has been used (the server is aware of the session) */
-      mongoc_ts_pool_free_item (topology->session_pool, server_session);
-      } else {
-      mongoc_ts_pool_push (topology->session_pool, server_session);
-   }
-
+   mongoc_ts_pool_return (server_session);
 
    EXIT;
 }
@@ -1655,22 +1664,19 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
 {
    bson_t ar;
    int i = 0;
+   mongoc_server_session_t *ss =
+      mongoc_ts_pool_get_existing (topology->session_pool);
 
    bson_init (cmd);
    BSON_APPEND_ARRAY_BEGIN (cmd, "endSessions", &ar);
 
-   for (; i < 10000; ++i) {
+   for (; i < 10000 && ss != NULL;
+        ++i, ss = mongoc_ts_pool_get_existing (topology->session_pool)) {
       char buf[16];
       const char *key;
-      bool did_pop;
-      mongoc_server_session_t *ss =
-         mongoc_ts_pool_try_pop (topology->session_pool, &did_pop);
-      if (!did_pop) {
-         break;
-      }
       bson_uint32_to_string (i, &key, buf, sizeof buf);
       BSON_APPEND_DOCUMENT (&ar, key, &ss->lsid);
-      mongoc_ts_pool_free_item (topology->session_pool, ss);
+      mongoc_ts_pool_drop (ss);
    }
 
    bson_append_array_end (cmd, &ar);
@@ -1862,7 +1868,8 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
        */
       if (max_wire_version <= WIRE_VERSION_4_0 ||
           _mongoc_error_is_shutdown (&cmd_error)) {
-         _mongoc_topology_clear_connection_pool (topology, server_id, service_id);
+         _mongoc_topology_clear_connection_pool (
+            topology, server_id, service_id);
          pool_cleared = true;
       }
 

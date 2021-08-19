@@ -1,117 +1,229 @@
-#include "./mongoc-ts-pool-private.h"
+#include "mongoc-ts-pool-private.h"
 #include "common-thread-private.h"
 
 #include "bson/bson.h"
 
+#if defined(_MSC_VER)
+typedef double _max_align_type;
+#elif defined(__APPLE__)
+typedef long double _max_align_type;
+#else
+/* Based on the GCC max_align_t definition */
+typedef struct _max_align_type {
+   long long maxalign_1 __attribute__ ((__aligned__ (__alignof__(long long))));
+   long double maxalign_2
+      __attribute__ ((__aligned__ (__alignof__(long double))));
+} _max_align_type;
+#endif
+
 typedef struct pool_node {
    struct pool_node *next;
-   max_align_t data[1];
+   mongoc_ts_pool *owner_pool;
+
+   _max_align_type data[0];
 } pool_node;
 
-typedef struct _mongoc_ts_pool {
-   void (*element_dtor) (void *);
+struct mongoc_ts_pool {
+   mongoc_ts_pool_params params;
    pool_node *head;
-   size_t element_size;
-   size_t size;
+   /* Number of elements in the pool */
+   int32_t size;
+   /* Number of elements that the pool has given to users */
+   int32_t outstanding_items;
    bson_mutex_t mtx;
-} _mongoc_ts_pool;
+};
 
-mongoc_ts_pool
-mongoc_ts_pool_new (size_t element_size, void (*dtor) (void *))
+/**
+ * @brief Check whether we should drop the given node from the pool
+ */
+static bool
+_should_prune (const pool_node *node)
 {
-   mongoc_ts_pool r = bson_malloc0 (sizeof (_mongoc_ts_pool));
-   r->element_dtor = dtor;
-   r->head = NULL;
-   r->element_size = element_size;
-   r->size = 0;
-   bson_mutex_init (&r->mtx);
-   return r;
+   mongoc_ts_pool *pool = node->owner_pool;
+   return pool->params.prune_predicate &&
+          pool->params.prune_predicate (node->data, pool->params.userdata);
 }
 
-void
-mongoc_ts_pool_free (mongoc_ts_pool pool)
+/**
+ * @brief Create a new pool node and contained element.
+ *
+ * @return pool_node* A pointer to a constructed element, or NULL if the
+ * constructor sets `error`
+ */
+static pool_node *
+_new_item (mongoc_ts_pool *pool, bson_error_t *error)
 {
-   mongoc_ts_pool_clear (pool);
-   bson_mutex_destroy (&pool->mtx);
-   bson_free (pool);
-}
-
-void
-mongoc_ts_pool_clear (mongoc_ts_pool pool)
-{
-   pool_node *node;
-   bson_mutex_lock (&pool->mtx);
-   node = pool->head;
-   pool->head = NULL;
-   pool->size = 0;
-   bson_mutex_unlock (&pool->mtx);
-   while (node) {
-      pool_node *n = node;
-      pool->element_dtor (n->data);
-      node = n->next;
-      bson_free (n);
+   pool_node *node =
+      bson_malloc0 (sizeof (pool_node) + pool->params.element_size);
+   node->owner_pool = pool;
+   if (pool->params.constructor) {
+      /* To construct, we need to know if that constructor fails */
+      bson_error_t my_error;
+      if (!error) {
+         /* Caller doesn't care about the error, but we care in case the
+          * constructor might fail */
+         error = &my_error;
+      }
+      /* Clear the error */
+      error->code = 0;
+      error->domain = 0;
+      error->message[0] = 0;
+      /* Construct the object */
+      pool->params.constructor (node->data, pool->params.userdata, error);
+      if (error->code != 0) {
+         /* Constructor reported an error. Deallocate and drop the node. */
+         bson_free (node);
+         node = NULL;
+      }
    }
+   if (node) {
+      bson_atomic_int_add (&pool->outstanding_items, 1);
+   }
+   return node;
 }
 
-void *
-mongoc_ts_pool_alloc_item (mongoc_ts_pool pool)
+/**
+ * @brief Destroy the given node and the element that it contains
+ */
+void
+_delete_item (pool_node *node)
 {
-   pool_node *node = bson_malloc0 (sizeof (pool_node) + pool->element_size);
-   return node->data;
+   mongoc_ts_pool *pool = node->owner_pool;
+   if (pool->params.destructor) {
+      pool->params.destructor (node->data, pool->params.userdata);
+   }
+   bson_free (node);
 }
 
-void *
-mongoc_ts_pool_try_pop (mongoc_ts_pool pool, bool *const did_pop)
+/**
+ * @brief Try to take a node from the pool. Returns `NULL` if the pool is empty.
+ */
+static pool_node *
+_try_get (mongoc_ts_pool *pool)
 {
    pool_node *node;
    bson_mutex_lock (&pool->mtx);
    node = pool->head;
    if (node) {
       pool->head = node->next;
-      pool->size--;
    }
    bson_mutex_unlock (&pool->mtx);
-   if (did_pop) {
-      *did_pop = node != NULL;
+   if (node) {
+      bson_atomic_int_add (&pool->size, -1);
+      bson_atomic_int_add (&pool->outstanding_items, 1);
+   }
+   return node;
+}
+
+mongoc_ts_pool *
+mongoc_ts_pool_new (mongoc_ts_pool_params params)
+{
+   mongoc_ts_pool *r = bson_malloc0 (sizeof (mongoc_ts_pool));
+   r->params = params;
+   r->head = NULL;
+   r->size = 0;
+   r->outstanding_items = 0;
+   bson_mutex_init (&r->mtx);
+   return r;
+}
+
+void
+mongoc_ts_pool_free (mongoc_ts_pool *pool)
+{
+   BSON_ASSERT (pool->outstanding_items == 0 &&
+                "Pool was destroyed while there are still items checked out");
+   mongoc_ts_pool_clear (pool);
+   bson_mutex_destroy (&pool->mtx);
+   bson_free (pool);
+}
+
+void
+mongoc_ts_pool_clear (mongoc_ts_pool *pool)
+{
+   pool_node *node;
+   {
+      bson_mutex_lock (&pool->mtx);
+      node = pool->head;
+      pool->head = NULL;
+      pool->size = 0;
+      bson_mutex_unlock (&pool->mtx);
+   }
+   while (node) {
+      pool_node *n = node;
+      node = n->next;
+      _delete_item (n);
+   }
+}
+
+void *
+mongoc_ts_pool_get_existing (mongoc_ts_pool *pool)
+{
+   pool_node *node;
+retry:
+   node = _try_get (pool);
+   if (node && _should_prune (node)) {
+      /* This node should be pruned now. Drop it and try again. */
+      mongoc_ts_pool_drop (node->data);
+      goto retry;
    }
    return node ? node->data : NULL;
 }
 
-void
-mongoc_ts_pool_push (mongoc_ts_pool pool, void *userdata)
+void *
+mongoc_ts_pool_get (mongoc_ts_pool *pool, bson_error_t *error)
 {
-   pool_node *node =
-      (void *) ((uint8_t *) (userdata) -offsetof (pool_node, data));
-
-   bson_mutex_lock (&pool->mtx);
-   node->next = pool->head;
-   pool->head = node;
-   pool->size++;
-   bson_mutex_unlock (&pool->mtx);
-   return;
+   pool_node *node;
+retry:
+   node = _try_get (pool);
+   if (node && _should_prune (node)) {
+      /* This node should be pruned now. Drop it and try again. */
+      mongoc_ts_pool_drop (node->data);
+      goto retry;
+   }
+   if (node == NULL) {
+      /* We need a new item */
+      node = _new_item (pool, error);
+   }
+   if (node == NULL) {
+      /* No item in pool, and we couldn't create one either */
+      return NULL;
+   }
+   return node->data;
 }
 
-bool
-mongoc_ts_pool_is_empty (mongoc_ts_pool pool)
+void
+mongoc_ts_pool_return (void *item)
+{
+   pool_node *node = (void *) ((uint8_t *) (item) -offsetof (pool_node, data));
+   if (_should_prune (node)) {
+      mongoc_ts_pool_drop (item);
+   } else {
+      mongoc_ts_pool *pool = node->owner_pool;
+      bson_mutex_lock (&pool->mtx);
+      node->next = pool->head;
+      pool->head = node;
+      bson_mutex_unlock (&pool->mtx);
+      bson_atomic_int_add (&node->owner_pool->size, 1);
+      bson_atomic_int_add (&node->owner_pool->outstanding_items, -1);
+   }
+}
+
+void
+mongoc_ts_pool_drop (void *item)
+{
+   pool_node *node = (void *) ((uint8_t *) (item) -offsetof (pool_node, data));
+   bson_atomic_int_add (&node->owner_pool->outstanding_items, -1);
+   _delete_item (node);
+}
+
+int
+mongoc_ts_pool_is_empty (const mongoc_ts_pool *pool)
 {
    return mongoc_ts_pool_size (pool) == 0;
 }
 
 size_t
-mongoc_ts_pool_size (mongoc_ts_pool pool)
+mongoc_ts_pool_size (const mongoc_ts_pool *pool)
 {
-   size_t r = 0;
-   bson_mutex_lock (&pool->mtx);
-   r = pool->size;
-   bson_mutex_unlock (&pool->mtx);
-   return r;
-}
-
-void
-mongoc_ts_pool_free_item (mongoc_ts_pool pool, void *userdata)
-{
-   pool_node *node =
-      (void *) ((uint8_t *) (userdata) -offsetof (pool_node, data));
-   pool->element_dtor (node->data);
-   bson_free (node);
+   return bson_atomic_int_add ((int *) &pool->size, 0);
 }

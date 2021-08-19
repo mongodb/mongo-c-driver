@@ -207,6 +207,8 @@ test_transactions_install (TestSuite *suite);
 extern void
 test_topology_scanner_install (TestSuite *suite);
 extern void
+test_ts_pool_install (TestSuite *suite);
+extern void
 test_uri_install (TestSuite *suite);
 extern void
 test_usleep_install (TestSuite *suite);
@@ -2886,6 +2888,7 @@ main (int argc, char *argv[])
    test_thread_install (&suite);
    test_topology_install (&suite);
    test_topology_description_install (&suite);
+   test_ts_pool_install (&suite);
    test_uri_install (&suite);
    test_usleep_install (&suite);
    test_util_install (&suite);

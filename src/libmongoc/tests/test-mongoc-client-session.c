@@ -209,7 +209,7 @@ _test_session_pool_timeout (bool pooled)
     * get a session, set last_used_date more than 29 minutes ago and return to
     * the pool. it's timed out & freed.
     */
-   mongoc_ts_pool_is_empty (client->topology->session_pool);
+   BSON_ASSERT (mongoc_ts_pool_is_empty (client->topology->session_pool));
    s = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (s, error);
    bson_copy_to (mongoc_client_session_get_lsid (s), &lsid);
@@ -218,7 +218,7 @@ _test_session_pool_timeout (bool pooled)
       (bson_get_monotonic_time () - almost_timeout_usec - 100);
 
    mongoc_client_session_destroy (s);
-   mongoc_ts_pool_is_empty (client->topology->session_pool);
+   BSON_ASSERT (mongoc_ts_pool_is_empty (client->topology->session_pool));
 
    /*
     * get a new session, set last_used_date so it has one second left to live,
@@ -1457,6 +1457,7 @@ _test_implicit_session_lsid (session_test_fn_t test_fn)
 {
    session_test_t *test;
    int64_t start;
+   mongoc_server_session_t *ss;
 
    test = session_test_new (CORRECT_CLIENT, NOT_CAUSAL);
    test->expect_explicit_lsid = false;
@@ -1464,11 +1465,10 @@ _test_implicit_session_lsid (session_test_fn_t test_fn)
    test_fn (test);
    check_success (test);
    mongoc_collection_drop_with_opts (test->session_collection, NULL, NULL);
-   mongoc_server_session_t *ss =
-      mongoc_ts_pool_try_pop (test->client->topology->session_pool, NULL);
+   ss = mongoc_ts_pool_get_existing (test->client->topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_CMPINT64 (ss->last_used_usec, >=, start);
-   mongoc_ts_pool_push (test->client->topology->session_pool, ss);
+   mongoc_ts_pool_return (ss);
    session_test_destroy (test);
 }
 
@@ -2214,6 +2214,7 @@ test_cursor_implicit_session (void *ctx)
    mongoc_client_session_t *cs;
    bson_t find_lsid;
    bson_error_t error;
+   mongoc_server_session_t *ss;
 
    test = session_test_new (CORRECT_CLIENT, NOT_CAUSAL);
    test->expect_explicit_lsid = false;
@@ -2244,10 +2245,10 @@ test_cursor_implicit_session (void *ctx)
    send_ping (test->client, cs);
    mongoc_client_session_destroy (cs);
    BSON_ASSERT (mongoc_ts_pool_size (topology->session_pool) == 1);
-   mongoc_server_session_t *ss =
-      mongoc_ts_pool_try_pop (topology->session_pool, NULL);
+   ss = mongoc_ts_pool_get_existing (topology->session_pool);
+   BSON_ASSERT (ss);
    ASSERT_SESSIONS_DIFFER (&find_lsid, &ss->lsid);
-   mongoc_ts_pool_push (topology->session_pool, ss);
+   mongoc_ts_pool_return (ss);
 
    /* "getMore" uses the same lsid as "find" did */
    bson_reinit (&test->sent_lsid);
@@ -2285,7 +2286,7 @@ test_change_stream_implicit_session (void *ctx)
       mongoc_collection_watch (test->session_collection, &pipeline, NULL);
    bson_destroy (&pipeline);
    bson_copy_to (&test->sent_lsid, &aggregate_lsid);
-   BSON_ASSERT (mongoc_ts_pool_size (topology->session_pool) == 0);
+   ASSERT_CMPSIZE_T (mongoc_ts_pool_size (topology->session_pool), ==, 0);
    BSON_ASSERT (change_stream->implicit_session);
 
 
@@ -2296,9 +2297,10 @@ test_change_stream_implicit_session (void *ctx)
    send_ping (test->client, cs);
    mongoc_client_session_destroy (cs);
    BSON_ASSERT (mongoc_ts_pool_size (topology->session_pool) == 1);
-   ss = mongoc_ts_pool_try_pop (topology->session_pool, NULL);
+   ss = mongoc_ts_pool_get_existing (topology->session_pool);
+   BSON_ASSERT (ss);
    ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &ss->lsid);
-   mongoc_ts_pool_push (topology->session_pool, ss);
+   mongoc_ts_pool_return (ss);
 
    /* "getMore" uses the same lsid as "aggregate" did */
    bson_reinit (&test->sent_lsid);

@@ -758,7 +758,7 @@ _mongoc_server_session_timed_out (const mongoc_server_session_t *server_session,
 
 
 void
-_mongoc_server_session_dtor (mongoc_server_session_t *self)
+_mongoc_server_session_destroy (mongoc_server_session_t *self)
 {
    bson_destroy (&self->lsid);
 }
@@ -1672,10 +1672,9 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
       _mongoc_client_push_server_session (session->client,
                                           session->server_session);
    } else {
-      /* If the client has been reset, destroy the server session instead of
-    pushing it back into the topology's pool. */
-      mongoc_ts_pool_free_item (session->client->topology->session_pool,
-                                session->server_session);
+      /** If the client has been reset, destroy the server session instead of
+       * pushing it back into the topology's pool. */
+      mongoc_ts_pool_drop (session->server_session);
    }
 
    txn_opts_cleanup (&session->opts.default_txn_opts);
