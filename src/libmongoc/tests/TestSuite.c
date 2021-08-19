@@ -42,18 +42,6 @@
 #include "test-libmongoc.h"
 #include "TestSuite.h"
 
-/*
- * Prevent failing on pedantic GCC/clang warning: "ISO C forbids conversion of
- * function pointer to object pointer type."
- */
-#ifdef __clang__
-#pragma clang diagnostic warning "-Wpedantic"
-#elif __GNUC__ > 6
-#pragma GCC diagnostic warning "-Wpedantic"
-#elif __GNUC__ <= 6
-#pragma GCC diagnostic warning "-pedantic"
-#endif
-
 static bson_once_t once = BSON_ONCE_INIT;
 static bson_mutex_t gTestMutex;
 static TestSuite *gTestSuite;
@@ -251,9 +239,9 @@ TestSuite_CheckMockServerAllowed (void)
 }
 
 static void
-TestSuite_AddHelper (void *cb_)
+TestSuite_AddHelper (void *ctx)
 {
-   TestFunc cb = (TestFunc) cb_;
+   TestFunc cb = (TestFunc) ((TestFnCtx *) ctx)->test_fn;
 
    cb ();
 }
@@ -263,12 +251,8 @@ TestSuite_Add (TestSuite *suite, /* IN */
                const char *name, /* IN */
                TestFunc func)    /* IN */
 {
-   TestSuite_AddFull (suite,
-                      name,
-                      TestSuite_AddHelper,
-                      NULL,
-                      (void *) func,
-                      TestSuite_CheckDummy);
+   TestSuite_AddFullWithTestFn (
+      suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckDummy);
 }
 
 
@@ -277,12 +261,8 @@ TestSuite_AddLive (TestSuite *suite, /* IN */
                    const char *name, /* IN */
                    TestFunc func)    /* IN */
 {
-   TestSuite_AddFull (suite,
-                      name,
-                      TestSuite_AddHelper,
-                      NULL,
-                      (void *) func,
-                      TestSuite_CheckLive);
+   TestSuite_AddFullWithTestFn (
+      suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckLive);
 }
 
 

@@ -12,18 +12,6 @@
 #include "mongoc/mongoc-write-concern-private.h"
 #include "test-conveniences.h"
 
-/*
- * Prevent failing on pedantic GCC/clang warning: "ISO C forbids conversion of
- * function pointer to object pointer type."
- */
-#ifdef __clang__
-#pragma clang diagnostic warning "-Wpedantic"
-#elif __GNUC__ > 6
-#pragma GCC diagnostic warning "-Wpedantic"
-#elif __GNUC__ <= 6
-#pragma GCC diagnostic warning "-pedantic"
-#endif
-
 #define CURSOR_COMMON_SETUP                                         \
    do {                                                             \
       bson_error_t _err;                                            \
@@ -34,7 +22,7 @@
       _ret = mongoc_collection_insert_one (                         \
          coll, tmp_bson ("{}"), NULL, NULL, &_err);                 \
       ASSERT_OR_PRINT (_ret, _err);                                 \
-      ctor = (make_cursor_fn) ctx;                                  \
+      ctor = (make_cursor_fn) ((TestFnCtx *) ctx)->test_fn;         \
    } while (0)
 
 #define CURSOR_COMMON_TEARDOWN          \
@@ -312,8 +300,7 @@ _test_common_opts (void *ctx)
    ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), ==, sd->id);
 
    /* listDatabases and hello prohibits limit and batchSize */
-   if ((make_cursor_fn) ctx != _make_array_cursor &&
-       (make_cursor_fn) ctx != _make_cmd_deprecated_cursor) {
+   if (ctor != _make_array_cursor && ctor != _make_cmd_deprecated_cursor) {
       mongoc_cursor_set_batch_size (cursor, 1);
       ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 1);
       BSON_ASSERT (mongoc_cursor_set_limit (cursor, 2));
@@ -326,8 +313,7 @@ _test_common_opts (void *ctx)
    ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc), cursor->error);
    /* options should be unchanged. */
    ASSERT_CMPINT (mongoc_cursor_get_hint (cursor), ==, sd->id);
-   if ((make_cursor_fn) ctx != _make_array_cursor &&
-       (make_cursor_fn) ctx != _make_cmd_deprecated_cursor) {
+   if (ctor != _make_array_cursor && ctor != _make_cmd_deprecated_cursor) {
       ASSERT_CMPINT (mongoc_cursor_get_batch_size (cursor), ==, 1);
       ASSERT_CMPINT ((int) mongoc_cursor_get_limit (cursor), ==, 2);
       /* limit cannot be set again. */
@@ -456,41 +442,41 @@ _make_array_cursor (mongoc_collection_t *coll)
    return mongoc_client_find_databases_with_opts (coll->client, NULL);
 }
 
-#define TEST_CURSOR_FIND(prefix, fn)     \
-   TestSuite_AddFull (suite,             \
-                      prefix "/find",    \
-                      fn,                \
-                      NULL,              \
-                      _make_find_cursor, \
-                      TestSuite_CheckLive);
+#define TEST_CURSOR_FIND(prefix, fn)               \
+   TestSuite_AddFullWithTestFn (suite,             \
+                                prefix "/find",    \
+                                fn,                \
+                                NULL,              \
+                                _make_find_cursor, \
+                                TestSuite_CheckLive);
 
 #define TEST_CURSOR_CMD(prefix, fn) \
-   TestSuite_AddFull (              \
+   TestSuite_AddFullWithTestFn (    \
       suite, prefix "/cmd", fn, NULL, _make_cmd_cursor, TestSuite_CheckLive);
 
-#define TEST_CURSOR_CMD_DEPRECATED(prefix, fn)     \
-   TestSuite_AddFull (suite,                       \
-                      prefix "/cmd_deprecated",    \
-                      fn,                          \
-                      NULL,                        \
-                      _make_cmd_deprecated_cursor, \
-                      TestSuite_CheckLive);
+#define TEST_CURSOR_CMD_DEPRECATED(prefix, fn)               \
+   TestSuite_AddFullWithTestFn (suite,                       \
+                                prefix "/cmd_deprecated",    \
+                                fn,                          \
+                                NULL,                        \
+                                _make_cmd_deprecated_cursor, \
+                                TestSuite_CheckLive);
 
-#define TEST_CURSOR_ARRAY(prefix, fn)     \
-   TestSuite_AddFull (suite,              \
-                      prefix "/array",    \
-                      fn,                 \
-                      NULL,               \
-                      _make_array_cursor, \
-                      TestSuite_CheckLive);
+#define TEST_CURSOR_ARRAY(prefix, fn)               \
+   TestSuite_AddFullWithTestFn (suite,              \
+                                prefix "/array",    \
+                                fn,                 \
+                                NULL,               \
+                                _make_array_cursor, \
+                                TestSuite_CheckLive);
 
-#define TEST_CURSOR_AGG(prefix, fn)              \
-   TestSuite_AddFull (suite,                     \
-                      prefix "/agg",             \
-                      fn,                        \
-                      NULL,                      \
-                      _make_cmd_cursor_from_agg, \
-                      TestSuite_CheckLive);
+#define TEST_CURSOR_AGG(prefix, fn)                        \
+   TestSuite_AddFullWithTestFn (suite,                     \
+                                prefix "/agg",             \
+                                fn,                        \
+                                NULL,                      \
+                                _make_cmd_cursor_from_agg, \
+                                TestSuite_CheckLive);
 
 
 #define TEST_FOREACH_CURSOR(prefix, fn)     \
