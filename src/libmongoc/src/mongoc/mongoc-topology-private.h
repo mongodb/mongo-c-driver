@@ -63,6 +63,17 @@ typedef struct _mongoc_rr_data_t {
    char *txt_record_opts;
 } mongoc_rr_data_t;
 
+struct _mongoc_topology_t;
+
+MONGOC_DECL_SPECIAL_TS_POOL (
+   mongoc_server_session_t,
+   mongoc_server_session_pool,
+   struct _mongoc_topology_t,
+   /* ctor/dtor/prune are defined in the new_with_params call */
+   NULL,
+   NULL,
+   NULL)
+
 typedef bool (*_mongoc_rr_resolver_fn) (const char *service,
                                         mongoc_rr_type_t rr_type,
                                         mongoc_rr_data_t *rr_data,
@@ -103,7 +114,7 @@ typedef struct _mongoc_topology_t {
    bool single_threaded;
    bool stale;
 
-   mongoc_ts_pool *session_pool;
+   mongoc_server_session_pool *session_pool;
 
    /* Is client side encryption enabled? */
    bool cse_enabled;

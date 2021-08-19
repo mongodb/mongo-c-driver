@@ -218,7 +218,7 @@ _mongoc_topology_scanner_cb (uint32_t id,
 
 static void
 _server_session_init (mongoc_server_session_t *session,
-                      const mongoc_topology_t *unused,
+                      mongoc_topology_t *unused,
                       bson_error_t *error)
 {
    _mongoc_server_session_init (session, error);
@@ -226,7 +226,7 @@ _server_session_init (mongoc_server_session_t *session,
 
 static void
 _server_session_destroy (mongoc_server_session_t *session,
-                         const mongoc_topology_t *unused)
+                         mongoc_topology_t *unused)
 {
    _mongoc_server_session_destroy (session);
 }
@@ -307,13 +307,11 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 #endif
 
    topology = (mongoc_topology_t *) bson_malloc0 (sizeof *topology);
-   topology->session_pool = mongoc_ts_pool_new ((mongoc_ts_pool_params){
-      .element_size = sizeof (mongoc_server_session_t),
-      .constructor = (_erased_constructor_fn) _server_session_init,
-      .destructor = (_erased_destructor_fn) _server_session_destroy,
-      .prune_predicate = (_erased_prune_predicate) _server_session_should_prune,
-      .userdata = topology,
-   });
+   topology->session_pool =
+      mongoc_server_session_pool_new_with_params (_server_session_init,
+                                                  _server_session_destroy,
+                                                  _server_session_should_prune,
+                                                  topology);
    heartbeat_default =
       single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED
                       : MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
@@ -622,7 +620,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    mongoc_uri_destroy (topology->uri);
    mongoc_topology_description_destroy (&topology->description);
    mongoc_topology_scanner_destroy (topology->scanner);
-   mongoc_ts_pool_free (topology->session_pool);
+   mongoc_server_session_pool_free (topology->session_pool);
 
    mongoc_cond_destroy (&topology->cond_client);
    bson_mutex_destroy (&topology->mutex);
@@ -1610,7 +1608,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
    }
    bson_mutex_unlock (&topology->mutex);
 
-   ss = mongoc_ts_pool_get (topology->session_pool, error);
+   ss = mongoc_server_session_pool_get (topology->session_pool, error);
 
 done:
    RETURN (ss);
@@ -1665,13 +1663,14 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
    bson_t ar;
    int i = 0;
    mongoc_server_session_t *ss =
-      mongoc_ts_pool_get_existing (topology->session_pool);
+      mongoc_server_session_pool_get_existing (topology->session_pool);
 
    bson_init (cmd);
    BSON_APPEND_ARRAY_BEGIN (cmd, "endSessions", &ar);
 
    for (; i < 10000 && ss != NULL;
-        ++i, ss = mongoc_ts_pool_get_existing (topology->session_pool)) {
+        ++i,
+        ss = mongoc_server_session_pool_get_existing (topology->session_pool)) {
       char buf[16];
       const char *key;
       bson_uint32_to_string (i, &key, buf, sizeof buf);

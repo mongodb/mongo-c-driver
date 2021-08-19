@@ -3013,7 +3013,7 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
    mongoc_cluster_t *cluster = &client->cluster;
    bool r;
 
-   while (!mongoc_ts_pool_is_empty (t->session_pool)) {
+   while (!mongoc_server_session_pool_is_empty (t->session_pool)) {
       prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
       server_id =
          mongoc_topology_select_server_id (t, MONGOC_SS_READ, prefs, &error);
@@ -3087,7 +3087,7 @@ mongoc_client_reset (mongoc_client_t *client)
    client->client_sessions = mongoc_set_new (8, NULL, NULL);
 
    /* Server sessions are owned by us, so we clear the pool on reset. */
-   mongoc_ts_pool_clear (client->topology->session_pool);
+   mongoc_server_session_pool_clear (client->topology->session_pool);
 }
 
 mongoc_change_stream_t *

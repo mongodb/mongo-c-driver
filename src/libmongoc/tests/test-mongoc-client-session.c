@@ -209,7 +209,8 @@ _test_session_pool_timeout (bool pooled)
     * get a session, set last_used_date more than 29 minutes ago and return to
     * the pool. it's timed out & freed.
     */
-   BSON_ASSERT (mongoc_ts_pool_is_empty (client->topology->session_pool));
+   BSON_ASSERT (
+      mongoc_server_session_pool_is_empty (client->topology->session_pool));
    s = mongoc_client_start_session (client, NULL, &error);
    ASSERT_OR_PRINT (s, error);
    bson_copy_to (mongoc_client_session_get_lsid (s), &lsid);
@@ -218,7 +219,8 @@ _test_session_pool_timeout (bool pooled)
       (bson_get_monotonic_time () - almost_timeout_usec - 100);
 
    mongoc_client_session_destroy (s);
-   BSON_ASSERT (mongoc_ts_pool_is_empty (client->topology->session_pool));
+   BSON_ASSERT (
+      mongoc_server_session_pool_is_empty (client->topology->session_pool));
 
    /*
     * get a new session, set last_used_date so it has one second left to live,
@@ -234,14 +236,16 @@ _test_session_pool_timeout (bool pooled)
       (bson_get_monotonic_time () + 1000 * 1000 - almost_timeout_usec);
 
    mongoc_client_session_destroy (s);
-   BSON_ASSERT (!mongoc_ts_pool_is_empty (client->topology->session_pool));
+   BSON_ASSERT (
+      !mongoc_server_session_pool_is_empty (client->topology->session_pool));
 
    _mongoc_usleep (1500 * 1000);
 
    /* getting a new client session must start a new server session */
    s = mongoc_client_start_session (client, NULL, &error);
    ASSERT_SESSIONS_DIFFER (&lsid, mongoc_client_session_get_lsid (s));
-   BSON_ASSERT (mongoc_ts_pool_is_empty (client->topology->session_pool));
+   BSON_ASSERT (
+      mongoc_server_session_pool_is_empty (client->topology->session_pool));
    mongoc_client_session_destroy (s);
 
    if (pooled) {
@@ -317,7 +321,7 @@ _test_session_pool_reap (bool pooled)
       (bson_get_monotonic_time () + 1000 * 1000 - almost_timeout_usec);
 
    mongoc_client_session_destroy (a);
-   BSON_ASSERT (!mongoc_ts_pool_is_empty (
+   BSON_ASSERT (!mongoc_server_session_pool_is_empty (
       client->topology->session_pool)); /* session is pooled */
 
    _mongoc_usleep (1500 * 1000);
@@ -327,7 +331,8 @@ _test_session_pool_reap (bool pooled)
     */
    b->server_session->last_used_usec = bson_get_monotonic_time ();
    mongoc_client_session_destroy (b);
-   BSON_ASSERT (!mongoc_ts_pool_is_empty (client->topology->session_pool));
+   BSON_ASSERT (
+      !mongoc_server_session_pool_is_empty (client->topology->session_pool));
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -1465,7 +1470,8 @@ _test_implicit_session_lsid (session_test_fn_t test_fn)
    test_fn (test);
    check_success (test);
    mongoc_collection_drop_with_opts (test->session_collection, NULL, NULL);
-   ss = mongoc_ts_pool_get_existing (test->client->topology->session_pool);
+   ss = mongoc_server_session_pool_get_existing (
+      test->client->topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_CMPINT64 (ss->last_used_usec, >=, start);
    mongoc_ts_pool_return (ss);
@@ -2235,7 +2241,7 @@ test_cursor_implicit_session (void *ctx)
    BSON_ASSERT (cursor->client_session);
    BSON_ASSERT (!cursor->explicit_session);
    bson_copy_to (&cursor->client_session->server_session->lsid, &find_lsid);
-   BSON_ASSERT (mongoc_ts_pool_size (topology->session_pool) == 0);
+   BSON_ASSERT (mongoc_server_session_pool_size (topology->session_pool) == 0);
    ASSERT_SESSIONS_MATCH (&test->sent_lsid, &find_lsid);
 
    /* push a new server session into the pool.  server session is only pushed
@@ -2244,8 +2250,8 @@ test_cursor_implicit_session (void *ctx)
    bson_reinit (&test->sent_lsid);
    send_ping (test->client, cs);
    mongoc_client_session_destroy (cs);
-   BSON_ASSERT (mongoc_ts_pool_size (topology->session_pool) == 1);
-   ss = mongoc_ts_pool_get_existing (topology->session_pool);
+   BSON_ASSERT (mongoc_server_session_pool_size (topology->session_pool) == 1);
+   ss = mongoc_server_session_pool_get_existing (topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_SESSIONS_DIFFER (&find_lsid, &ss->lsid);
    mongoc_ts_pool_return (ss);
@@ -2256,7 +2262,7 @@ test_cursor_implicit_session (void *ctx)
    ASSERT_SESSIONS_MATCH (&test->sent_lsid, &find_lsid);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
-   BSON_ASSERT (mongoc_ts_pool_size (topology->session_pool) == 2);
+   BSON_ASSERT (mongoc_server_session_pool_size (topology->session_pool) == 2);
 
    bson_destroy (&find_lsid);
    mongoc_cursor_destroy (cursor);
@@ -2286,7 +2292,8 @@ test_change_stream_implicit_session (void *ctx)
       mongoc_collection_watch (test->session_collection, &pipeline, NULL);
    bson_destroy (&pipeline);
    bson_copy_to (&test->sent_lsid, &aggregate_lsid);
-   ASSERT_CMPSIZE_T (mongoc_ts_pool_size (topology->session_pool), ==, 0);
+   ASSERT_CMPSIZE_T (
+      mongoc_server_session_pool_size (topology->session_pool), ==, 0);
    BSON_ASSERT (change_stream->implicit_session);
 
 
@@ -2296,8 +2303,8 @@ test_change_stream_implicit_session (void *ctx)
    bson_reinit (&test->sent_lsid);
    send_ping (test->client, cs);
    mongoc_client_session_destroy (cs);
-   BSON_ASSERT (mongoc_ts_pool_size (topology->session_pool) == 1);
-   ss = mongoc_ts_pool_get_existing (topology->session_pool);
+   BSON_ASSERT (mongoc_server_session_pool_size (topology->session_pool) == 1);
+   ss = mongoc_server_session_pool_get_existing (topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &ss->lsid);
    mongoc_ts_pool_return (ss);
@@ -2664,10 +2671,10 @@ _test_session_dirty_helper (bool retry_succeeds)
    BSON_ASSERT (session->server_session->dirty);
 
    pooled_session_count_pre =
-      mongoc_ts_pool_size (client->topology->session_pool);
+      mongoc_server_session_pool_size (client->topology->session_pool);
    mongoc_client_session_destroy (session);
    pooled_session_count_post =
-      mongoc_ts_pool_size (client->topology->session_pool);
+      mongoc_server_session_pool_size (client->topology->session_pool);
 
    /* Check that destroying in the session did not add it back to the pool. */
    ASSERT_CMPINT (pooled_session_count_pre, ==, pooled_session_count_post);
