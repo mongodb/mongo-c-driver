@@ -947,8 +947,8 @@ _mongoc_apm_is_sensitive_hello_message (const char *command_name,
                                         const bson_t *body)
 {
    const bool is_hello =
-      (0 != strcasecmp (command_name, "hello") &&
-       0 != strcasecmp (command_name, HANDSHAKE_CMD_LEGACY_HELLO));
+      (0 == strcasecmp (command_name, "hello") ||
+       0 == strcasecmp (command_name, HANDSHAKE_CMD_LEGACY_HELLO));
 
    if (!is_hello) {
       return false;
