@@ -63,7 +63,7 @@ MONGOC_DECL_SPECIAL_TS_POOL (
 static void
 test_ts_pool_special (void *unused)
 {
-   int_pool *p = int_pool_new (NULL);
+   int_pool p = int_pool_new (NULL);
    int *item = int_pool_get (p, NULL);
 
    BSON_ASSERT (item);

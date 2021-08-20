@@ -114,7 +114,7 @@ typedef struct _mongoc_topology_t {
    bool single_threaded;
    bool stale;
 
-   mongoc_server_session_pool *session_pool;
+   mongoc_server_session_pool session_pool;
 
    /* Is client side encryption enabled? */
    bool cse_enabled;

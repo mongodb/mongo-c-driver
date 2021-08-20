@@ -289,7 +289,7 @@ _test_session_pool_reap (bool pooled)
    bson_error_t error;
    bson_t lsid_a, lsid_b;
    int64_t almost_timeout_usec;
-   mongoc_server_session_t *session_pool;
+   mongoc_server_session_t *ss;
 
    almost_timeout_usec =
       (test_framework_session_timeout_minutes () - 1) * 60 * 1000 * 1000;
@@ -333,6 +333,11 @@ _test_session_pool_reap (bool pooled)
    mongoc_client_session_destroy (b);
    BSON_ASSERT (
       !mongoc_server_session_pool_is_empty (client->topology->session_pool));
+   ss =
+      mongoc_server_session_pool_get_existing (client->topology->session_pool);
+   BSON_ASSERT (ss);
+   ASSERT_SESSIONS_MATCH (&ss->lsid, &lsid_b);
+   mongoc_server_session_pool_return (ss);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
