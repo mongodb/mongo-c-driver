@@ -1631,7 +1631,7 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
    ENTRY;
 
 
-   mongoc_ts_pool_return (server_session);
+   mongoc_server_session_pool_return (server_session);
 
    EXIT;
 }
@@ -1675,13 +1675,13 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
       const char *key;
       bson_uint32_to_string (i, &key, buf, sizeof buf);
       BSON_APPEND_DOCUMENT (&ar, key, &ss->lsid);
-      mongoc_ts_pool_drop (ss);
+      mongoc_server_session_pool_drop (ss);
    }
 
    if (ss) {
       /* We deleted at least 10'000 sessions, so we will need to return the
        * final the final session that we didn't drop */
-      mongoc_ts_pool_return (ss);
+      mongoc_server_session_pool_return (ss);
    }
 
    bson_append_array_end (cmd, &ar);

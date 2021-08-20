@@ -1674,7 +1674,7 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
    } else {
       /** If the client has been reset, destroy the server session instead of
        * pushing it back into the topology's pool. */
-      mongoc_ts_pool_drop (session->server_session);
+      mongoc_server_session_pool_drop (session->server_session);
    }
 
    txn_opts_cleanup (&session->opts.default_txn_opts);
