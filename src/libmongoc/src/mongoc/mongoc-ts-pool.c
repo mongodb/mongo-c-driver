@@ -227,3 +227,37 @@ mongoc_ts_pool_size (const mongoc_ts_pool *pool)
 {
    return bson_atomic_int_add ((int *) &pool->size, 0);
 }
+
+void
+mongoc_ts_pool_visit_each (mongoc_ts_pool *pool,
+                           void *visit_userdata,
+                           int (*visit) (void *item,
+                                         void *pool_userdata,
+                                         void *visit_userdata))
+{
+   /* Pointer to the pointer that must be updated in case of an item pruning
+   pool_node **node_ptrptr;
+   /* The node we are looking at */
+   pool_node *node;
+   bson_mutex_lock (&pool->mtx);
+   node_ptrptr = &pool->head;
+   node = pool->head;
+   while (node) {
+      const bool should_remove =
+         visit (node->data, pool->params.userdata, visit_userdata);
+      pool_node *const next_node = node->next;
+      if (!should_remove) {
+         node_ptrptr = &node->next;
+         node = next_node;
+         continue;
+      }
+      /* Retarget the previous pointer to the next node in line */
+      *node_ptrptr = node->next;
+      _delete_item (node);
+      pool->size--;
+      /* Leave node_ptrptr pointing to the previous pointer, because we may
+       * need to erase another item */
+      node = next_node;
+   }
+   bson_mutex_unlock (&pool->mtx);
+}

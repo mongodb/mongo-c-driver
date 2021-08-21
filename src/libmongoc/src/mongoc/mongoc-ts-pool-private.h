@@ -184,6 +184,32 @@ void
 mongoc_ts_pool_drop (void *item);
 
 /**
+ * @brief Visit each element of the pool, optionally pruning items.
+ *
+ * @note While this visit function is executing, all pool operations are
+ * blocked on all threads. Attempting to return/get/drop items in the pool from
+ * within the visit callback will deadlock.
+ *
+ * The visit function will be called as:
+ *
+ *    visit(pool_item, pool_userdata, visit_userdata)
+ *
+ * If the visitor function returns non-zero for an item, then that item will be
+ * removed from the pool.
+ *
+ * @param pool The pool of items to visit
+ * @param visit_userdata Optional additional context for the visitor
+ * @param visitor The visit function
+ *
+ */
+void
+mongoc_ts_pool_visit_each (mongoc_ts_pool *pool,
+                           void *visit_userdata,
+                           int (*visitor) (void *item,
+                                           void *pool_userdata,
+                                           void *visit_userdata));
+
+/**
  * @brief Declare a thread-safe pool type that contains elements of a specific
  * type. Wraps a `mongoc_ts_pool`.
  *
@@ -196,78 +222,89 @@ mongoc_ts_pool_drop (void *item);
  * @param PrunePredicate A function that checks whether elements should be
  * dropped from the pool, or `NULL`
  */
-#define MONGOC_DECL_SPECIAL_TS_POOL(ElementType,                          \
-                                    PoolName,                             \
-                                    UserDataType,                         \
-                                    Constructor,                          \
-                                    Destructor,                           \
-                                    PrunePredicate)                       \
-   typedef struct PoolName {                                              \
-      mongoc_ts_pool *pool;                                               \
-   } PoolName;                                                            \
-   static PoolName PoolName##_new_with_params (                           \
-      void (*constructor) (                                               \
-         ElementType *, UserDataType *, struct _bson_error_t *),          \
-      void (*destructor) (ElementType *, UserDataType *),                 \
-      int (*prune_predicate) (ElementType *, UserDataType *),             \
-      UserDataType *userdata)                                             \
-   {                                                                      \
-      PoolName ret;                                                       \
-      mongoc_ts_pool_params params = {0};                                 \
-      params.userdata = userdata;                                         \
-      params.constructor = (_erased_constructor_fn) constructor;          \
-      params.destructor = (_erased_destructor_fn) destructor;             \
-      params.prune_predicate = (_erased_prune_predicate) prune_predicate; \
-      params.element_size = sizeof (ElementType);                         \
-      ret.pool = mongoc_ts_pool_new (params);                             \
-      return ret;                                                         \
-   }                                                                      \
-                                                                          \
-   static PoolName PoolName##_new (UserDataType *userdata)                \
-   {                                                                      \
-      return PoolName##_new_with_params (                                 \
-         Constructor, Destructor, PrunePredicate, userdata);              \
-   }                                                                      \
-                                                                          \
-   static void PoolName##_free (PoolName p)                               \
-   {                                                                      \
-      mongoc_ts_pool_free (p.pool);                                       \
-   }                                                                      \
-                                                                          \
-   static void PoolName##_clear (PoolName p)                              \
-   {                                                                      \
-      mongoc_ts_pool_clear (p.pool);                                      \
-   }                                                                      \
-                                                                          \
-   static ElementType *PoolName##_get_existing (PoolName p)               \
-   {                                                                      \
-      return (ElementType *) mongoc_ts_pool_get_existing (p.pool);        \
-   }                                                                      \
-                                                                          \
-   static ElementType *PoolName##_get (PoolName p,                        \
-                                       struct _bson_error_t *error)       \
-   {                                                                      \
-      return (ElementType *) mongoc_ts_pool_get (p.pool, error);          \
-   }                                                                      \
-                                                                          \
-   static void PoolName##_return (ElementType *elem)                      \
-   {                                                                      \
-      mongoc_ts_pool_return (elem);                                       \
-   }                                                                      \
-                                                                          \
-   static void PoolName##_drop (ElementType *elem)                        \
-   {                                                                      \
-      mongoc_ts_pool_drop (elem);                                         \
-   }                                                                      \
-                                                                          \
-   static size_t PoolName##_size (PoolName p)                             \
-   {                                                                      \
-      return mongoc_ts_pool_size (p.pool);                                \
-   }                                                                      \
-                                                                          \
-   static int PoolName##_is_empty (PoolName p)                            \
-   {                                                                      \
-      return mongoc_ts_pool_is_empty (p.pool);                            \
+#define MONGOC_DECL_SPECIAL_TS_POOL(ElementType,                              \
+                                    PoolName,                                 \
+                                    UserDataType,                             \
+                                    Constructor,                              \
+                                    Destructor,                               \
+                                    PrunePredicate)                           \
+   typedef struct PoolName {                                                  \
+      mongoc_ts_pool *pool;                                                   \
+   } PoolName;                                                                \
+   static PoolName PoolName##_new_with_params (                               \
+      void (*constructor) (                                                   \
+         ElementType *, UserDataType *, struct _bson_error_t *),              \
+      void (*destructor) (ElementType *, UserDataType *),                     \
+      int (*prune_predicate) (ElementType *, UserDataType *),                 \
+      UserDataType *userdata)                                                 \
+   {                                                                          \
+      PoolName ret;                                                           \
+      mongoc_ts_pool_params params = {0};                                     \
+      params.userdata = userdata;                                             \
+      params.constructor = (_erased_constructor_fn) constructor;              \
+      params.destructor = (_erased_destructor_fn) destructor;                 \
+      params.prune_predicate = (_erased_prune_predicate) prune_predicate;     \
+      params.element_size = sizeof (ElementType);                             \
+      ret.pool = mongoc_ts_pool_new (params);                                 \
+      return ret;                                                             \
+   }                                                                          \
+                                                                              \
+   static PoolName PoolName##_new (UserDataType *userdata)                    \
+   {                                                                          \
+      return PoolName##_new_with_params (                                     \
+         Constructor, Destructor, PrunePredicate, userdata);                  \
+   }                                                                          \
+                                                                              \
+   static void PoolName##_free (PoolName p)                                   \
+   {                                                                          \
+      mongoc_ts_pool_free (p.pool);                                           \
+   }                                                                          \
+                                                                              \
+   static void PoolName##_clear (PoolName p)                                  \
+   {                                                                          \
+      mongoc_ts_pool_clear (p.pool);                                          \
+   }                                                                          \
+                                                                              \
+   static ElementType *PoolName##_get_existing (PoolName p)                   \
+   {                                                                          \
+      return (ElementType *) mongoc_ts_pool_get_existing (p.pool);            \
+   }                                                                          \
+                                                                              \
+   static ElementType *PoolName##_get (PoolName p,                            \
+                                       struct _bson_error_t *error)           \
+   {                                                                          \
+      return (ElementType *) mongoc_ts_pool_get (p.pool, error);              \
+   }                                                                          \
+                                                                              \
+   static void PoolName##_return (ElementType *elem)                          \
+   {                                                                          \
+      mongoc_ts_pool_return (elem);                                           \
+   }                                                                          \
+                                                                              \
+   static void PoolName##_drop (ElementType *elem)                            \
+   {                                                                          \
+      mongoc_ts_pool_drop (elem);                                             \
+   }                                                                          \
+                                                                              \
+   static size_t PoolName##_size (PoolName p)                                 \
+   {                                                                          \
+      return mongoc_ts_pool_size (p.pool);                                    \
+   }                                                                          \
+                                                                              \
+   static int PoolName##_is_empty (PoolName p)                                \
+   {                                                                          \
+      return mongoc_ts_pool_is_empty (p.pool);                                \
+   }                                                                          \
+                                                                              \
+   static void PoolName##_visit_each (                                        \
+      PoolName p,                                                             \
+      void *visit_userdata,                                                   \
+      int (*visitor) (ElementType * elem,                                     \
+                      UserDataType * pool_userdata,                           \
+                      void *visit_userdata))                                  \
+   {                                                                          \
+      mongoc_ts_pool_visit_each (                                             \
+         p.pool, visit_userdata, (int (*) (void *, void *, void *)) visitor); \
    }
 
 #endif /* MONGOC_TS_POOL_PRIVATE_H */

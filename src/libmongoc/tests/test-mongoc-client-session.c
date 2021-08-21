@@ -1248,6 +1248,54 @@ session_test_new (session_test_correct_t correct_client,
    return test;
 }
 
+struct check_session_returned_t {
+   const bson_t *expect_lsid;
+   bool found;
+};
+
+static int
+check_session_returned_visit (mongoc_server_session_t *ss,
+                              mongoc_topology_t *unused,
+                              void *check_state_)
+{
+   match_ctx_t ctx = {{0}};
+   struct check_session_returned_t *check_state = check_state_;
+   ctx.strict_numeric_types = false;
+   if (!check_state->found) {
+      check_state->found =
+         match_bson_with_ctx (&ss->lsid, check_state->expect_lsid, &ctx);
+   }
+   /* No session will ever be returned to the pool if it has never been used */
+   ASSERT_CMPINT64 (ss->last_used_usec, !=, SESSION_NEVER_USED);
+   return 0;
+}
+
+
+static void
+check_session_returned (session_test_t *test, const bson_t *lsid)
+{
+   struct check_session_returned_t check_state;
+
+   check_state.expect_lsid = lsid;
+   check_state.found = false;
+
+   mongoc_server_session_pool_visit_each (
+      test->session_client->topology->session_pool,
+      &check_state,
+      check_session_returned_visit);
+
+   /* Server session will only be returned to the pool if it has
+    * been used. It is expected behavior for found to be false if
+    * ss->last_used_usec == SESSION_NEVER_USED */
+   if (!check_state.found) {
+      fprintf (stderr,
+               "server session %s not returned to pool\n",
+               bson_as_json (lsid, NULL));
+      abort ();
+   }
+}
+
+
 static const bson_t *
 first_cmd (session_test_t *test)
 {
@@ -1307,12 +1355,21 @@ session_test_destroy (session_test_t *test)
 {
    bson_t session_lsid;
    size_t i;
+   bool ss_was_used =
+      test->cs->server_session->last_used_usec != SESSION_NEVER_USED;
 
    bson_copy_to (mongoc_client_session_get_lsid (test->cs), &session_lsid);
 
    mongoc_client_session_destroy (test->cs);
 
+   if (ss_was_used) {
+      /* If the session was used, assert that it was returned to the pool: */
+      check_session_returned (test, &session_lsid);
+   }
    bson_destroy (&session_lsid);
+
+   /* for implicit sessions, ensure the implicit session was returned */
+   check_session_returned (test, &test->sent_lsid);
 
    if (test->client != test->session_client) {
       mongoc_client_session_destroy (test->wrong_cs);
@@ -1479,7 +1536,7 @@ _test_implicit_session_lsid (session_test_fn_t test_fn)
       test->client->topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_CMPINT64 (ss->last_used_usec, >=, start);
-   mongoc_ts_pool_return (ss);
+   mongoc_server_session_pool_return (ss);
    session_test_destroy (test);
 }
 
@@ -2259,7 +2316,7 @@ test_cursor_implicit_session (void *ctx)
    ss = mongoc_server_session_pool_get_existing (topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_SESSIONS_DIFFER (&find_lsid, &ss->lsid);
-   mongoc_ts_pool_return (ss);
+   mongoc_server_session_pool_return (ss);
 
    /* "getMore" uses the same lsid as "find" did */
    bson_reinit (&test->sent_lsid);
@@ -2267,6 +2324,8 @@ test_cursor_implicit_session (void *ctx)
    ASSERT_SESSIONS_MATCH (&test->sent_lsid, &find_lsid);
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
+   /* lsid returned after last batch, doesn't wait for mongoc_cursor_destroy */
+   check_session_returned (test, &find_lsid);
    BSON_ASSERT (mongoc_server_session_pool_size (topology->session_pool) == 2);
 
    bson_destroy (&find_lsid);
@@ -2312,7 +2371,7 @@ test_change_stream_implicit_session (void *ctx)
    ss = mongoc_server_session_pool_get_existing (topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &ss->lsid);
-   mongoc_ts_pool_return (ss);
+   mongoc_server_session_pool_return (ss);
 
    /* "getMore" uses the same lsid as "aggregate" did */
    bson_reinit (&test->sent_lsid);
