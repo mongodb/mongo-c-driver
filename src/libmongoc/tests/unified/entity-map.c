@@ -147,16 +147,9 @@ entity_new (const char *type)
 static bool
 is_sensitive_command (event_t *event)
 {
-   if (event->reply) {
-      return mongoc_apm_is_sensitive_reply (event->command_name, event->reply);
-   }
-
-   if (event->command) {
-      return mongoc_apm_is_sensitive_command (event->command_name,
-                                              event->command);
-   }
-
-   return false;
+   const bson_t *body = event->reply ? event->reply : event->command;
+   BSON_ASSERT (body);
+   return mongoc_apm_is_sensitive_command_message (event->command_name, body);
 }
 
 bool
@@ -168,14 +161,12 @@ should_ignore_event (entity_t *client_entity, event_t *event)
       return true;
    }
 
-   if (!client_entity->ignore_command_monitoring_events) {
-      return false;
-   }
-
-   BSON_FOREACH (client_entity->ignore_command_monitoring_events, iter)
-   {
-      if (0 == strcmp (event->command_name, bson_iter_utf8 (&iter, NULL))) {
-         return true;
+   if (client_entity->ignore_command_monitoring_events) {
+      BSON_FOREACH (client_entity->ignore_command_monitoring_events, iter)
+      {
+         if (0 == strcmp (event->command_name, bson_iter_utf8 (&iter, NULL))) {
+            return true;
+         }
       }
    }
 
