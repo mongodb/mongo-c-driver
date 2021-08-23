@@ -135,6 +135,125 @@ _check_bypass (mongoc_auto_encryption_opts_t *opts)
    }
 }
 
+static bson_t *
+_make_aws_kms_provider (bson_t *kms_providers)
+{
+   char *aws_secret_access_key;
+   char *aws_access_key_id;
+
+   aws_secret_access_key =
+      test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+   aws_access_key_id = test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+   if (!aws_secret_access_key || !aws_access_key_id) {
+      fprintf (stderr,
+               "Set MONGOC_TEST_AWS_SECRET_ACCESS_KEY and "
+               "MONGOC_TEST_AWS_ACCESS_KEY_ID environment "
+               "variables to run Client Side Encryption tests.");
+      abort ();
+   }
+
+   if (!kms_providers) {
+      kms_providers = bson_new ();
+   }
+
+   bson_concat (
+      kms_providers,
+      tmp_bson ("{ 'aws': { 'secretAccessKey': '%s', 'accessKeyId': '%s' }}",
+                aws_secret_access_key,
+                aws_access_key_id));
+
+   bson_free (aws_secret_access_key);
+   bson_free (aws_access_key_id);
+
+   return kms_providers;
+}
+
+static bson_t *
+_make_azure_kms_provider (bson_t *kms_providers)
+{
+   char *azure_tenant_id;
+   char *azure_client_id;
+   char *azure_client_secret;
+
+   azure_tenant_id = test_framework_getenv ("MONGOC_TEST_AZURE_TENANT_ID");
+   azure_client_id = test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_ID");
+   azure_client_secret =
+      test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
+
+   if (!azure_tenant_id || !azure_client_id || !azure_client_secret) {
+      fprintf (
+         stderr,
+         "Set MONGOC_TEST_AZURE_TENANT_ID, MONGOC_TEST_AZURE_CLIENT_ID, and "
+         "MONGOC_TEST_AZURE_CLIENT_SECRET to enable CSFLE tests.");
+      abort ();
+   }
+
+   if (!kms_providers) {
+      kms_providers = bson_new ();
+   }
+
+   bson_concat (kms_providers,
+                tmp_bson ("{ 'azure': { 'tenantId': '%s', 'clientId': '%s', "
+                          "'clientSecret': '%s' }}",
+                          azure_tenant_id,
+                          azure_client_id,
+                          azure_client_secret));
+
+   bson_free (azure_tenant_id);
+   bson_free (azure_client_id);
+   bson_free (azure_client_secret);
+
+   return kms_providers;
+}
+
+static bson_t *
+_make_gcp_kms_provider (bson_t *kms_providers)
+{
+   char *gcp_email;
+   char *gcp_privatekey;
+
+
+   gcp_email = test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
+   gcp_privatekey = test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
+
+   if (!gcp_email || !gcp_privatekey) {
+      fprintf (stderr,
+               "Set MONGOC_TEST_GCP_EMAIL and MONGOC_TEST_GCP_PRIVATEKEY to "
+               "enable CSFLE tests.");
+      abort ();
+   }
+
+   if (!kms_providers) {
+      kms_providers = bson_new ();
+   }
+
+   bson_concat (kms_providers,
+                tmp_bson ("{ 'gcp': { 'email': '%s', 'privateKey': '%s' }}",
+                          gcp_email,
+                          gcp_privatekey));
+
+   bson_free (gcp_email);
+   bson_free (gcp_privatekey);
+
+   return kms_providers;
+}
+
+static bson_t *
+_make_local_kms_provider (bson_t *kms_providers)
+{
+   bson_t *local = BCON_NEW (
+      "local", "{", "key", BCON_BIN (0, (uint8_t *) LOCAL_MASTERKEY, 96), "}");
+
+   if (!kms_providers) {
+      kms_providers = bson_new ();
+   }
+
+   bson_concat (kms_providers, local);
+   bson_destroy (local);
+
+   return kms_providers;
+}
+
 /* Convenience helper for creating KMS providers doc */
 static bson_t *
 _make_kms_providers (bool with_aws, bool with_local)
@@ -142,86 +261,13 @@ _make_kms_providers (bool with_aws, bool with_local)
    bson_t *kms_providers = bson_new ();
 
    if (with_aws) {
-      char *aws_secret_access_key;
-      char *aws_access_key_id;
-      char *azure_tenant_id;
-      char *azure_client_id;
-      char *azure_client_secret;
-      char *gcp_email;
-      char *gcp_privatekey;
-
-      aws_secret_access_key =
-         test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
-      aws_access_key_id =
-         test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
-
-      if (!aws_secret_access_key || !aws_access_key_id) {
-         fprintf (stderr,
-                  "Set MONGOC_TEST_AWS_SECRET_ACCESS_KEY and "
-                  "MONGOC_TEST_AWS_ACCESS_KEY_ID environment "
-                  "variables to run Client Side Encryption tests.");
-         abort ();
-      }
-
-      bson_concat (
-         kms_providers,
-         tmp_bson ("{ 'aws': { 'secretAccessKey': '%s', 'accessKeyId': '%s' }}",
-                   aws_secret_access_key,
-                   aws_access_key_id));
-
-      bson_free (aws_secret_access_key);
-      bson_free (aws_access_key_id);
-
-      azure_tenant_id = test_framework_getenv ("MONGOC_TEST_AZURE_TENANT_ID");
-      azure_client_id = test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_ID");
-      azure_client_secret =
-         test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
-
-      if (!azure_tenant_id || !azure_client_id || !azure_client_secret) {
-         fprintf (
-            stderr,
-            "Set MONGOC_TEST_AZURE_TENANT_ID, MONGOC_TEST_AZURE_CLIENT_ID, and "
-            "MONGOC_TEST_AZURE_CLIENT_SECRET to enable CSFLE tests.");
-         abort ();
-      }
-
-      bson_concat (kms_providers,
-                   tmp_bson ("{ 'azure': { 'tenantId': '%s', 'clientId': '%s', "
-                             "'clientSecret': '%s' }}",
-                             azure_tenant_id,
-                             azure_client_id,
-                             azure_client_secret));
-
-      bson_free (azure_tenant_id);
-      bson_free (azure_client_id);
-      bson_free (azure_client_secret);
-
-      gcp_email = test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
-      gcp_privatekey = test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
-
-      if (!gcp_email || !gcp_privatekey) {
-         fprintf (stderr,
-                  "Set MONGOC_TEST_GCP_EMAIL and MONGOC_TEST_GCP_PRIVATEKEY to "
-                  "enable CSFLE tests.");
-         abort ();
-      }
-
-      bson_concat (kms_providers,
-                   tmp_bson ("{ 'gcp': { 'email': '%s', 'privateKey': '%s' }}",
-                             gcp_email,
-                             gcp_privatekey));
-
-      bson_free (gcp_email);
-      bson_free (gcp_privatekey);
+      _make_aws_kms_provider (kms_providers);
+      _make_azure_kms_provider (kms_providers);
+      _make_gcp_kms_provider (kms_providers);
    }
+
    if (with_local) {
-      bson_t *local = BCON_NEW ("local",
-                                "{",
-                                "key",
-                                BCON_BIN (0, (uint8_t *) LOCAL_MASTERKEY, 96),
-                                "}");
-      bson_concat (kms_providers, local);
-      bson_destroy (local);
+      _make_local_kms_provider (kms_providers);
    }
 
    return kms_providers;
