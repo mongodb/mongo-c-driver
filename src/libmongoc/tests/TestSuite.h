@@ -24,6 +24,7 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "mongoc/mongoc-array-private.h"
 #include "mongoc/mongoc-util-private.h"
 
 
@@ -642,6 +643,7 @@ typedef void (*TestFuncDtor) (void *);
 typedef int (*CheckFunc) (void);
 typedef struct _Test Test;
 typedef struct _TestSuite TestSuite;
+typedef struct _TestFnCtx TestFnCtx;
 
 
 struct _Test {
@@ -660,13 +662,18 @@ struct _Test {
 struct _TestSuite {
    char *prgname;
    char *name;
-   char *testname;
+   mongoc_array_t match_patterns;
    Test *tests;
    FILE *outfile;
    int flags;
    int silent;
    bson_string_t *mock_server_log_buf;
    FILE *mock_server_log;
+};
+
+
+struct _TestFnCtx {
+   TestFunc test_fn;
 };
 
 
@@ -709,6 +716,14 @@ _TestSuite_AddFull (TestSuite *suite,
                     ...);
 #define TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, ...) \
    _TestSuite_AddFull (_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
+#define TestSuite_AddFullWithTestFn(                            \
+   _suite, _name, _func, _dtor, _test_fn, ...)                  \
+   do {                                                         \
+      static TestFnCtx ctx;                                     \
+      ctx.test_fn = (TestFunc) (_test_fn);                      \
+      _TestSuite_AddFull (                                      \
+         _suite, _name, _func, _dtor, &ctx, __VA_ARGS__, NULL); \
+   } while (0)
 int
 TestSuite_Run (TestSuite *suite);
 void

@@ -104,7 +104,7 @@ mongoc_topology_description_init (mongoc_topology_description_t *description,
  *
  *       Deep-copy @src to an uninitialized topology description @dst.
  *       @dst must not already point to any allocated resources. Clean
- *       up with mongoc_topology_description_destroy.
+ *       up with mongoc_topology_description_cleanup.
  *
  *       WARNING: @dst's rand_seed is not initialized.
  *
@@ -164,11 +164,45 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
 }
 
 /*
+ *-------------------------------------------------------------------------
+ *
+ * mongoc_topology_description_new_copy --
+ *
+ *       Allocates a new topology description and deep-copies @description to it
+ *       using _mongoc_topology_description_copy_to.
+ *
+ * Returns:
+ *       A copy of a topology description that you must destroy with
+ *       mongoc_topology_description_destroy, or NULL if @description is NULL.
+ *
+ * Side effects:
+ *       None.
+ *
+ *-------------------------------------------------------------------------
+ */
+mongoc_topology_description_t *
+mongoc_topology_description_new_copy (
+   const mongoc_topology_description_t *description)
+{
+   mongoc_topology_description_t *copy;
+
+   if (!description) {
+      return NULL;
+   }
+
+   copy = (mongoc_topology_description_t *) bson_malloc0 (sizeof (*copy));
+
+   _mongoc_topology_description_copy_to (description, copy);
+
+   return copy;
+}
+
+/*
  *--------------------------------------------------------------------------
  *
- * mongoc_topology_description_destroy --
+ * mongoc_topology_description_cleanup --
  *
- *       Destroy allocated resources within @description
+ *       Destroy allocated resources within @description but don't free it.
  *
  * Returns:
  *       None.
@@ -179,7 +213,7 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
  *--------------------------------------------------------------------------
  */
 void
-mongoc_topology_description_destroy (mongoc_topology_description_t *description)
+mongoc_topology_description_cleanup (mongoc_topology_description_t *description)
 {
    ENTRY;
 
@@ -194,6 +228,37 @@ mongoc_topology_description_destroy (mongoc_topology_description_t *description)
    }
 
    bson_destroy (&description->cluster_time);
+
+   EXIT;
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * mongoc_topology_description_destroy --
+ *
+ *       Destroy allocated resources within @description and free
+ *       @description.
+ *
+ * Returns:
+ *       None.
+ *
+ * Side effects:
+ *       None.
+ *
+ *--------------------------------------------------------------------------
+ */
+void
+mongoc_topology_description_destroy (mongoc_topology_description_t *description)
+{
+   ENTRY;
+
+   if (!description) {
+      EXIT;
+   }
+
+   mongoc_topology_description_cleanup (description);
+   bson_free (description);
 
    EXIT;
 }
@@ -1984,7 +2049,7 @@ mongoc_topology_description_handle_hello (
              &sd->topology_version, &incoming_topology_version) == 1) {
          TRACE ("%s", "topology version is strictly less. Skipping.");
          if (prev_td) {
-            mongoc_topology_description_destroy (prev_td);
+            mongoc_topology_description_cleanup (prev_td);
             bson_free (prev_td);
          }
          return;
@@ -2070,7 +2135,7 @@ mongoc_topology_description_handle_hello (
    }
 
    if (prev_td) {
-      mongoc_topology_description_destroy (prev_td);
+      mongoc_topology_description_cleanup (prev_td);
       bson_free (prev_td);
    }
 

@@ -26,4 +26,5 @@ This function returns a string, one of the topology types defined in the Server 
 * Sharded
 * ReplicaSetNoPrimary
 * ReplicaSetWithPrimary
+* LoadBalanced
 

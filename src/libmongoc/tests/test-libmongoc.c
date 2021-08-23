@@ -658,6 +658,14 @@ test_framework_get_unix_domain_socket_path_escaped (void)
 static char *
 _uri_str_from_env (void)
 {
+   if (test_framework_getenv_bool ("MONGOC_TEST_LOADBALANCED")) {
+      char *loadbalanced_uri_str = test_framework_getenv ("SINGLE_MONGOS_LB_URI");
+      if (!loadbalanced_uri_str) {
+         test_error ("SINGLE_MONGOS_LB_URI and MULTI_MONGOS_LB_URI must be set "
+                     "when MONGOC_TEST_LOADBALANCED is enabled");
+      }
+      return loadbalanced_uri_str;
+   }
    return test_framework_getenv ("MONGOC_TEST_URI");
 }
 
@@ -1394,6 +1402,27 @@ test_framework_get_uri ()
    BSON_ASSERT (uri);
    bson_free (test_uri_str);
 
+   return uri;
+}
+
+mongoc_uri_t *
+test_framework_get_uri_multi_mongos_loadbalanced () {
+   char *uri_str_no_auth;
+   char *uri_str;
+   mongoc_uri_t *uri;
+   bson_error_t error;
+
+   uri_str_no_auth = _mongoc_getenv ("MULTI_MONGOS_LB_URI");
+   if (!uri_str_no_auth) {
+      test_error ("expected MULTI_MONGOS_LB_URI to be set");
+   }
+   uri_str = test_framework_add_user_password_from_env (uri_str_no_auth);
+   uri = mongoc_uri_new_with_error (uri_str, &error);
+
+   ASSERT_OR_PRINT (uri, error);
+
+   bson_free (uri_str_no_auth);
+   bson_free (uri_str);
    return uri;
 }
 
@@ -2927,6 +2956,10 @@ main (int argc, char *argv[])
    test_server_stream_install (&suite);
    test_generation_map_install (&suite);
 
+   if (test_framework_is_loadbalanced ()) {
+      mongoc_global_mock_service_id = true;
+   }
+
    ret = TestSuite_Run (&suite);
 
    TestSuite_Destroy (&suite);
@@ -2983,4 +3016,9 @@ test_framework_skip_if_no_getlasterror (void) {
    }
 
    return 0;
+}
+
+bool
+test_framework_is_loadbalanced (void) {
+   return test_framework_getenv_bool ("MONGOC_TEST_LOADBALANCED");
 }

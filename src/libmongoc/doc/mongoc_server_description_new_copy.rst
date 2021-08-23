@@ -20,10 +20,9 @@ Parameters
 Description
 -----------
 
-This function copies the given server description and returns a new server description object.  The caller is responsible for destroying the new copy.
+Performs a deep copy of ``description``.
 
 Returns
 -------
 
-A copy of the original server description.
-
+Returns a newly allocated copy of ``description`` that should be freed with :symbol:`mongoc_server_description_destroy()` when no longer in use. Returns NULL if ``description`` is NULL.

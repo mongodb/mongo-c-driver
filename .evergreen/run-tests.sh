@@ -8,6 +8,7 @@ SSL=${SSL:-nossl}
 URI=${URI:-}
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 DNS=${DNS:-nodns}
+LOADBALANCED=${LOADBALANCED:-noloadbalanced}
 
 # AddressSanitizer configuration
 export ASAN_OPTIONS="detect_leaks=1 abort_on_error=1 symbolize=1"
@@ -90,6 +91,29 @@ check_mongocryptd() {
 }
 
 export MONGOC_TEST_MONITORING_VERBOSE=on
+
+if [ "$LOADBALANCED" != "noloadbalanced" ]; then
+   if [ -z "$SINGLE_MONGOS_LB_URI" -o -z "$MULTI_MONGOS_LB_URI" ]; then
+      echo "SINGLE_MONGOS_LB_URI and MULTI_MONGOS_LB_URI environment variables required."
+      exit 1
+   fi
+   
+   export MONGOC_TEST_LOADBALANCED=ON
+
+   TEST_ARGS="$TEST_ARGS -l /unified/*"
+   TEST_ARGS="$TEST_ARGS -l /retryable_reads/*"
+   TEST_ARGS="$TEST_ARGS -l /retryable_writes/*"
+   TEST_ARGS="$TEST_ARGS -l /change_streams/*"
+   TEST_ARGS="$TEST_ARGS -l /loadbalanced/*"
+   TEST_ARGS="$TEST_ARGS -l /load_balancers/*"
+   TEST_ARGS="$TEST_ARGS -l /crud/unified/*"
+   TEST_ARGS="$TEST_ARGS -l /transactions/unified/*"
+   TEST_ARGS="$TEST_ARGS -l /collection-management/*"
+   TEST_ARGS="$TEST_ARGS -l /sessions/unified/*"
+   TEST_ARGS="$TEST_ARGS -l /change_streams/unified/*"
+   TEST_ARGS="$TEST_ARGS -l /versioned_api/*"
+   TEST_ARGS="$TEST_ARGS -l /command_monitoring/unified/*"
+fi
 
 case "$OS" in
    cygwin*)

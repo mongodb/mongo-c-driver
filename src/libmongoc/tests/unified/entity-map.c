@@ -31,6 +31,11 @@
 #define REDUCED_HEARTBEAT_FREQUENCY_MS 500
 #define REDUCED_MIN_HEARTBEAT_FREQUENCY_MS 50
 
+struct _entity_findcursor_t {
+   const bson_t *first_result;
+   mongoc_cursor_t *cursor;
+};
+
 static void
 entity_destroy (entity_t *entity);
 
@@ -85,6 +90,8 @@ uri_apply_options (mongoc_uri_t *uri, bson_t *opts, bson_error_t *error)
          mongoc_uri_set_option_as_int64 (uri, key, bson_iter_int64 (&iter));
       } else if (mongoc_uri_option_is_bool (key)) {
          mongoc_uri_set_option_as_bool (uri, key, bson_iter_bool (&iter));
+      } else if (0 == strcmp ("appname", key)) {
+         mongoc_uri_set_appname (uri, bson_iter_utf8 (&iter, NULL));
       } else {
          test_set_error (
             error, "Unimplemented test runner support for URI option: %s", key);
@@ -140,16 +147,9 @@ entity_new (const char *type)
 static bool
 is_sensitive_command (event_t *event)
 {
-   if (event->reply) {
-      return mongoc_apm_is_sensitive_reply (event->command_name, event->reply);
-   }
-
-   if (event->command) {
-      return mongoc_apm_is_sensitive_command (event->command_name,
-                                              event->command);
-   }
-
-   return false;
+   const bson_t *body = event->reply ? event->reply : event->command;
+   BSON_ASSERT (body);
+   return mongoc_apm_is_sensitive_command_message (event->command_name, body);
 }
 
 bool
@@ -161,14 +161,12 @@ should_ignore_event (entity_t *client_entity, event_t *event)
       return true;
    }
 
-   if (!client_entity->ignore_command_monitoring_events) {
-      return false;
-   }
-
-   BSON_FOREACH (client_entity->ignore_command_monitoring_events, iter)
-   {
-      if (0 == strcmp (event->command_name, bson_iter_utf8 (&iter, NULL))) {
-         return true;
+   if (client_entity->ignore_command_monitoring_events) {
+      BSON_FOREACH (client_entity->ignore_command_monitoring_events, iter)
+      {
+         if (0 == strcmp (event->command_name, bson_iter_utf8 (&iter, NULL))) {
+            return true;
+         }
       }
    }
 
@@ -197,6 +195,11 @@ command_started (const mongoc_apm_command_started_t *started)
    event->database_name =
       bson_strdup (mongoc_apm_command_started_get_database_name (started));
 
+   if (mongoc_apm_command_started_get_service_id (started)) {
+      bson_oid_copy (mongoc_apm_command_started_get_service_id (started),
+                     &event->service_id);
+   }
+
    if (should_ignore_event (entity, event)) {
       event_destroy (event);
       return;
@@ -217,6 +220,11 @@ command_failed (const mongoc_apm_command_failed_t *failed)
    event->command_name =
       bson_strdup (mongoc_apm_command_failed_get_command_name (failed));
 
+   if (mongoc_apm_command_failed_get_service_id (failed)) {
+      bson_oid_copy (mongoc_apm_command_failed_get_service_id (failed),
+                     &event->service_id);
+   }
+
    if (should_ignore_event (entity, event)) {
       event_destroy (event);
       return;
@@ -236,6 +244,11 @@ command_succeeded (const mongoc_apm_command_succeeded_t *succeeded)
       bson_copy (mongoc_apm_command_succeeded_get_reply (succeeded));
    event->command_name =
       bson_strdup (mongoc_apm_command_succeeded_get_command_name (succeeded));
+
+   if (mongoc_apm_command_succeeded_get_service_id (succeeded)) {
+      bson_oid_copy (mongoc_apm_command_succeeded_get_service_id (succeeded),
+                     &event->service_id);
+   }
 
    if (should_ignore_event (entity, event)) {
       event_destroy (event);
@@ -321,9 +334,20 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
     * host. If useMultipleMongoses is false, require that the connection string
     * has one host. If useMultipleMongoses unspecified, make no assertion.
     */
-   if (use_multiple_mongoses != NULL) {
+   if (test_framework_is_loadbalanced ()) {
+      /* Quoting the unified test runner specification:
+       * If the topology type is LoadBalanced, [...] If useMultipleMongoses is
+       * true or unset, the test runner MUST use the URI of the load balancer
+       * fronting multiple servers. Otherwise, the test runner MUST use the URI
+       * of the load balancer fronting a single server.
+       */
+      if (use_multiple_mongoses == NULL || *use_multiple_mongoses == true) {
+         mongoc_uri_destroy (uri);
+         uri = test_framework_get_uri_multi_mongos_loadbalanced ();
+      }
+   } else if (use_multiple_mongoses != NULL) {
       if (!test_framework_uri_apply_multi_mongos (
-             uri, *use_multiple_mongoses, error)) {
+               uri, *use_multiple_mongoses, error)) {
          goto done;
       }
    }
@@ -365,6 +389,9 @@ entity_client_new (entity_map_t *em, bson_t *bson, bson_error_t *error)
             mongoc_apm_set_command_failed_cb (callbacks, command_failed);
          } else if (0 == strcmp (event_type, "commandSucceededEvent")) {
             mongoc_apm_set_command_succeeded_cb (callbacks, command_succeeded);
+         } else if (is_unsupported_event_type (event_type)) {
+            MONGOC_DEBUG ("Skipping observing unsupported event type: %s", event_type);
+            continue;
          } else {
             test_set_error (error, "Unexpected event type: %s", event_type);
             goto done;
@@ -883,10 +910,11 @@ entity_destroy (entity_t *entity)
       mongoc_gridfs_bucket_t *bucket = entity->value;
 
       mongoc_gridfs_bucket_destroy (bucket);
-   } else if (0 == strcmp ("cursor", entity->type)) {
-      mongoc_cursor_t *cursor = entity->value;
+   } else if (0 == strcmp ("findcursor", entity->type)) {
+      entity_findcursor_t *findcursor = entity->value;
 
-      mongoc_cursor_destroy (cursor);
+      mongoc_cursor_destroy (findcursor->cursor);
+      bson_free (findcursor);
    } else {
       test_error ("Attempting to destroy unrecognized entity type: %s, id: %s",
                   entity->type,
@@ -1010,16 +1038,17 @@ entity_map_get_changestream (entity_map_t *entity_map,
    return (mongoc_change_stream_t *) entity->value;
 }
 
-mongoc_cursor_t *
-entity_map_get_cursor (entity_map_t *entity_map,
-                       const char *id,
-                       bson_error_t *error)
+entity_findcursor_t *
+entity_map_get_findcursor (entity_map_t *entity_map,
+                           const char *id,
+                           bson_error_t *error)
 {
-   entity_t *entity = _entity_map_get_by_type (entity_map, id, "cursor", error);
+   entity_t *entity =
+      _entity_map_get_by_type (entity_map, id, "findcursor", error);
    if (!entity) {
       return NULL;
    }
-   return (mongoc_cursor_t *) entity->value;
+   return (entity_findcursor_t *) entity->value;
 }
 
 bson_val_t *
@@ -1117,13 +1146,43 @@ entity_map_add_changestream (entity_map_t *em,
       em, id, "changestream", (void *) changestream, error);
 }
 
-bool
-entity_map_add_cursor (entity_map_t *em,
-                       const char *id,
-                       mongoc_cursor_t *cursor,
-                       bson_error_t *error)
+void
+entity_findcursor_iterate_until_document_or_error (
+   entity_findcursor_t *findcursor,
+   const bson_t **document,
+   bson_error_t *error,
+   const bson_t **error_document)
 {
-   return _entity_map_add (em, id, "cursor", (void *) cursor, error);
+   *document = NULL;
+
+   if (findcursor->first_result) {
+      *document = findcursor->first_result;
+      findcursor->first_result = NULL;
+      return;
+   }
+
+   while (!mongoc_cursor_next (findcursor->cursor, document)) {
+      if (mongoc_cursor_error_document (
+             findcursor->cursor, error, error_document)) {
+         return;
+      }
+   }
+}
+
+bool
+entity_map_add_findcursor (entity_map_t *em,
+                           const char *id,
+                           mongoc_cursor_t *cursor,
+                           const bson_t *first_result,
+                           bson_error_t *error)
+{
+   entity_findcursor_t *findcursor;
+
+   findcursor =
+      (entity_findcursor_t *) bson_malloc0 (sizeof (entity_findcursor_t));
+   findcursor->cursor = cursor;
+   findcursor->first_result = first_result;
+   return _entity_map_add (em, id, "findcursor", (void *) findcursor, error);
 }
 
 bool

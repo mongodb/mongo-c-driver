@@ -24,6 +24,7 @@
  */
 
 /* clang-format off */
+#include <assert.h>
 #include <mongoc/mongoc.h>
 #include <mongoc/mongoc-util-private.h>
 #include <mongoc/mongoc-database-private.h>
@@ -3435,6 +3436,20 @@ get_client (void)
    return test_framework_new_default_client ();
 }
 
+/* Returns a test client without version API options configured. */
+static mongoc_client_t *
+get_client_for_version_api_example (void) {
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+
+   uri = test_framework_get_uri ();
+   client = mongoc_client_new_from_uri (uri);
+   ASSERT (client);
+   test_framework_set_ssl_opts (client);
+   mongoc_uri_destroy (uri);
+   return client;
+}
+
 static bool
 callback (mongoc_client_session_t *session,
           void *ctx,
@@ -3592,12 +3607,13 @@ _test_sample_versioned_api_example_1 (void)
     * client = mongoc_client_new (uri_sharded);
     */
 
-   client = get_client ();
+   /* Create a mongoc_client_t without server API options configured. */
+   client = get_client_for_version_api_example ();
 
    mongoc_server_api_version_from_string ("1", &server_api_version);
    server_api = mongoc_server_api_new (server_api_version);
 
-   mongoc_client_set_server_api (client, server_api, &error);
+   assert (mongoc_client_set_server_api (client, server_api, &error));
    /* End Versioned API Example 1 */
 
    mongoc_client_destroy (client);
@@ -3624,13 +3640,14 @@ _test_sample_versioned_api_example_2 (void)
     * client = mongoc_client_new (uri_sharded);
     */
 
-   client = get_client ();
+   /* Create a mongoc_client_t without server API options configured. */
+   client = get_client_for_version_api_example ();
 
    mongoc_server_api_version_from_string ("1", &server_api_version);
    server_api = mongoc_server_api_new (server_api_version);
    mongoc_server_api_strict (server_api, true);
 
-   mongoc_client_set_server_api (client, server_api, &error);
+   assert (mongoc_client_set_server_api (client, server_api, &error));
    /* End Versioned API Example 2 */
 
    mongoc_client_destroy (client);
@@ -3657,13 +3674,14 @@ _test_sample_versioned_api_example_3 (void)
     * client = mongoc_client_new (uri_sharded);
     */
 
-   client = get_client ();
+   /* Create a mongoc_client_t without server API options configured. */
+   client = get_client_for_version_api_example ();
 
    mongoc_server_api_version_from_string ("1", &server_api_version);
    server_api = mongoc_server_api_new (server_api_version);
    mongoc_server_api_strict (server_api, false);
 
-   mongoc_client_set_server_api (client, server_api, &error);
+   assert (mongoc_client_set_server_api (client, server_api, &error));
    /* End Versioned API Example 3 */
 
    mongoc_client_destroy (client);
@@ -3690,13 +3708,14 @@ _test_sample_versioned_api_example_4 (void)
     * client = mongoc_client_new (uri_sharded);
     */
 
-   client = get_client ();
+   /* Create a mongoc_client_t without server API options configured. */
+   client = get_client_for_version_api_example ();
 
    mongoc_server_api_version_from_string ("1", &server_api_version);
    server_api = mongoc_server_api_new (server_api_version);
    mongoc_server_api_deprecation_errors (server_api, true);
 
-   mongoc_client_set_server_api (client, server_api, &error);
+   assert (mongoc_client_set_server_api (client, server_api, &error));
    /* End Versioned API Example 4 */
 
    mongoc_client_destroy (client);
@@ -3725,7 +3744,8 @@ static void _test_sample_versioned_api_example_5_6_7_8 (void) {
    int64_t count;
    bson_t *filter;
 
-   client = get_client ();
+   /* Create a mongoc_client_t without server API options configured. */
+   client = get_client_for_version_api_example ();
    mongoc_client_set_error_api (client, MONGOC_ERROR_API_VERSION_2);
    mongoc_server_api_version_from_string ("1", &server_api_version);
    server_api = mongoc_server_api_new (server_api_version);

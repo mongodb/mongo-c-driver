@@ -32,12 +32,19 @@ retryable_writes_test_run_operation (json_test_ctx_t *ctx,
 }
 
 
+static test_skip_t skips[] = {
+   {"InsertOne fails after multiple retryable writeConcernErrors",
+    "Waiting on CDRIVER-3790"},
+   {0}};
+
 /* Callback for JSON tests from Retryable Writes Spec */
 static void
 test_retryable_writes_cb (bson_t *scenario)
 {
    bool explicit_session;
    json_test_config_t config = JSON_TEST_CONFIG_INIT;
+
+   config.skips = skips;
 
    /* use the context pointer to send "explicit_session" to the callback */
    config.ctx = &explicit_session;
@@ -119,7 +126,9 @@ test_rs_failover (void)
 }
 
 
-/* Test code paths for _mongoc_client_command_with_opts */
+/* Test code paths for _mongoc_client_command_with_opts.
+ * This test requires a 3.6+ replica set to support the
+ * onPrimaryTransactionalWrite failpoint. */
 static void
 test_command_with_opts (void *ctx)
 {
@@ -572,7 +581,6 @@ test_all_spec_tests (TestSuite *suite)
                                        resolved,
                                        test_retryable_writes_cb,
                                        test_framework_skip_if_no_crypto,
-                                       test_framework_skip_if_not_replset,
                                        test_framework_skip_if_slow);
 }
 
@@ -602,7 +610,9 @@ _tracks_new_server_cb (const mongoc_apm_command_started_t *event)
 
 /* Tests that when a command within a bulk write succeeds after a retryable
  * error, and selects a new server, it continues to use that server in
- * subsequent commands. */
+ * subsequent commands.
+ * This test requires running against a replica set with at least one secondary.
+ */
 static void
 test_bulk_retry_tracks_new_server (void *unused)
 {
