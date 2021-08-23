@@ -235,7 +235,7 @@ mongoc_ts_pool_visit_each (mongoc_ts_pool *pool,
                                          void *pool_userdata,
                                          void *visit_userdata))
 {
-   /* Pointer to the pointer that must be updated in case of an item pruning
+   /* Pointer to the pointer that must be updated in case of an item pruning */
    pool_node **node_ptrptr;
    /* The node we are looking at */
    pool_node *node;

@@ -1356,8 +1356,10 @@ session_test_destroy (session_test_t *test)
    }
    bson_destroy (&session_lsid);
 
-   /* for implicit sessions, ensure the implicit session was returned */
-   check_session_returned (test, &test->sent_lsid);
+   if (!bson_empty (&test->sent_lsid)) {
+      /* for implicit sessions, ensure the implicit session was returned */
+      check_session_returned (test, &test->sent_lsid);
+   }
 
    if (test->client != test->session_client) {
       mongoc_client_session_destroy (test->wrong_cs);
