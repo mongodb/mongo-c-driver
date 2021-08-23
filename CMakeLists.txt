@@ -41,12 +41,12 @@ option (ENABLE_RDTSCP
    "Fast performance counters on Intel using the RDTSCP instruction"
    OFF
 )
-option (ENABLE_APPLE_FRAMEWORK "Build libraries as frameworks on darwin platforms" OFF) 
+option (ENABLE_APPLE_FRAMEWORK "Build libraries as frameworks on darwin platforms" OFF)
 set (ENABLE_ICU AUTO CACHE STRING "Enable ICU support, necessary to use non-ASCII usernames or passwords, default AUTO.")
 option (ENABLE_UNINSTALL "Enable creation of uninstall script and associated uninstall build target." ON)
 set (ENABLE_CLIENT_SIDE_ENCRYPTION AUTO CACHE STRING "Enable Client-Side Field Level Encryption support. Requires libmongocrypt. Set to ON/AUTO/OFF, default AUTO.")
 set (ENABLE_MONGODB_AWS_AUTH AUTO CACHE STRING "Enable support for MONGODB-AWS authentication mechanism. Set to ON/AUTO/OFF, default AUTO. (also requires ENABLE_SSL not set to OFF)")
-option (ENABLE_PIC 
+option (ENABLE_PIC
    "Enables building of position independent code for static library components."
    ON
 )
@@ -71,9 +71,9 @@ include (InstallRequiredSystemLibraries)
 include (GNUInstallDirs)
 
 # Enable CCache, if possible
-include(CCache)
+include (CCache)
 # Link with LLD, if possible
-include(LLDLinker)
+include (LLDLinker)
 
 set (BUILD_VERSION "0.0.0" CACHE STRING "Library version (for both libbson and libmongoc)")
 
