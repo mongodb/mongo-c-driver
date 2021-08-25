@@ -186,7 +186,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
    bson_iter_t phase_field_iter;
    const char *hostname;
 
-   td = &topology->description;
+   td = topology->shared_descr.ptr;
    if (bson_iter_init_find (&phase_field_iter, phase, "description")) {
       const char *description;
 

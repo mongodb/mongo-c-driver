@@ -220,9 +220,9 @@ _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
    topology = server_monitor->topology;
    /* Cluster time is updated on every reply. */
    bson_mutex_lock (&topology->mutex);
-   if (!bson_empty (&topology->description.cluster_time)) {
+   if (!bson_empty (&topology->shared_descr.ptr->cluster_time)) {
       bson_append_document (
-         cmd, "$clusterTime", 12, &topology->description.cluster_time);
+         cmd, "$clusterTime", 12, &topology->shared_descr.ptr->cluster_time);
    }
    bson_mutex_unlock (&topology->mutex);
 }
@@ -615,7 +615,8 @@ _server_monitor_awaitable_hello (mongoc_server_monitor_t *server_monitor,
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
-   bson_append_document (&cmd, "topologyVersion", 15, &description->topology_version);
+   bson_append_document (
+      &cmd, "topologyVersion", 15, &description->topology_version);
    bson_append_int32 (
       &cmd, "maxAwaitTimeMS", 14, server_monitor->heartbeat_frequency_ms);
    bson_append_utf8 (&cmd, "$db", 3, "admin", 5);
@@ -671,7 +672,7 @@ _server_monitor_update_topology_description (
       bson_mutex_unlock (&server_monitor->shared.mutex);
 
       mongoc_topology_description_handle_hello (
-         &server_monitor->topology->description,
+         server_monitor->topology->shared_descr.ptr,
          server_monitor->server_id,
          hello_response,
          description->round_trip_time_msec,
@@ -702,7 +703,7 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
    server_monitor->server_id = init_description->id;
    server_monitor->topology = topology;
    server_monitor->heartbeat_frequency_ms =
-      topology->description.heartbeat_msec;
+      topology->shared_descr.ptr->heartbeat_msec;
    server_monitor->min_heartbeat_frequency_ms =
       topology->min_heartbeat_frequency_msec;
    server_monitor->connect_timeout_ms = topology->connect_timeout_msec;
@@ -718,9 +719,9 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
    }
 #endif
    memcpy (&server_monitor->apm_callbacks,
-           &topology->description.apm_callbacks,
+           &topology->shared_descr.ptr->apm_callbacks,
            sizeof (mongoc_apm_callbacks_t));
-   server_monitor->apm_context = topology->description.apm_context;
+   server_monitor->apm_context = topology->shared_descr.ptr->apm_context;
    server_monitor->initiator = topology->scanner->initiator;
    server_monitor->initiator_context = topology->scanner->initiator_context;
    mongoc_cond_init (&server_monitor->shared.cond);
@@ -860,20 +861,19 @@ mongoc_server_monitor_check_server (
       awaited = true;
       _server_monitor_heartbeat_started (server_monitor, awaited);
       MONITOR_LOG (server_monitor, "awaitable hello");
-      ret = _server_monitor_awaitable_hello (
-         server_monitor,
-         previous_description,
-         &hello_response,
-         cancelled,
-         &error);
+      ret = _server_monitor_awaitable_hello (server_monitor,
+                                             previous_description,
+                                             &hello_response,
+                                             cancelled,
+                                             &error);
       GOTO (exit);
    }
 
    MONITOR_LOG (server_monitor, "polling hello");
    awaited = false;
    _server_monitor_heartbeat_started (server_monitor, awaited);
-   ret =
-      _server_monitor_polling_hello (server_monitor, previous_description->hello_ok, &hello_response, &error);
+   ret = _server_monitor_polling_hello (
+      server_monitor, previous_description->hello_ok, &hello_response, &error);
 
 exit:
    duration_us = _now_us () - start_us;

@@ -1937,7 +1937,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    }
 
    topology = client->topology;
-   td = &topology->description;
+   td = topology->shared_descr.ptr;
 
    /* a mongos load-balanced connection never removes down nodes */
    discovered_nodes_len = rs ? 1 : 4;
@@ -2788,7 +2788,7 @@ _test_mongoc_client_select_server_error (bool pooled)
 
    /* Server Selection Spec: "With topology type Single, the single server is
     * always suitable for reads if it is available." */
-   tdtype = client->topology->description.type;
+   tdtype = client->topology->shared_descr.ptr->type;
    if (tdtype == MONGOC_TOPOLOGY_SINGLE || tdtype == MONGOC_TOPOLOGY_SHARDED) {
       ASSERT (sd);
       server_type = mongoc_server_description_type (sd);

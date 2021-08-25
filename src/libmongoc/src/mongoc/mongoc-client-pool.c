@@ -458,14 +458,14 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
    bson_mutex_lock (&topology->mutex);
 
    if (callbacks) {
-      memcpy (&topology->description.apm_callbacks,
+      memcpy (&topology->shared_descr.ptr->apm_callbacks,
               callbacks,
               sizeof (mongoc_apm_callbacks_t));
       memcpy (&pool->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
    }
 
    mongoc_topology_set_apm_callbacks (topology, callbacks, context);
-   topology->description.apm_context = context;
+   topology->shared_descr.ptr->apm_context = context;
    pool->apm_context = context;
    pool->apm_callbacks_set = true;
 

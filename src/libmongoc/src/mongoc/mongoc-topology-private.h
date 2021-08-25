@@ -28,6 +28,7 @@
 #include "mongoc-client-session-private.h"
 #include "mongoc-crypt-private.h"
 #include "mongoc-ts-pool-private.h"
+#include "mongoc-shared.h"
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
@@ -80,8 +81,14 @@ typedef bool (*_mongoc_rr_resolver_fn) (const char *service,
                                         size_t initial_buffer_size,
                                         bson_error_t *error);
 
+typedef union mc_shared_tpl_descr {
+   mongoc_topology_description_t *ptr;
+   mongoc_shared_ptr sptr;
+} mc_shared_tpl_descr;
+
+
 typedef struct _mongoc_topology_t {
-   mongoc_topology_description_t description;
+   mc_shared_tpl_descr shared_descr;
    /* topology->uri is initialized as a copy of the client/pool's URI.
     * For a "mongodb+srv://" URI, topology->uri is then updated in
     * mongoc_topology_new() after initial seedlist discovery.

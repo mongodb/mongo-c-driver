@@ -496,7 +496,7 @@ _test_topology_invalidate_server (bool pooled)
       test_framework_set_ssl_opts (client);
    }
 
-   td = &client->topology->description;
+   td = client->topology->shared_descr.ptr;
 
    /* call explicitly */
    server_stream = mongoc_cluster_stream_for_reads (
@@ -608,7 +608,7 @@ test_invalid_cluster_node (void *ctx)
 
    bson_mutex_lock (&client->topology->mutex);
    sd = mongoc_topology_description_server_by_id (
-      &client->topology->description, id, &error);
+      client->topology->shared_descr.ptr, id, &error);
    ASSERT_OR_PRINT (sd, error);
    /* Both generations match, and are the first generation. */
    ASSERT_CMPINT32 (cluster_node->handshake_sd->generation, ==, 0);
@@ -673,7 +673,7 @@ test_max_wire_version_race_condition (void *ctx)
    /* "disconnect": increment generation and reset server description */
 
    sd = (mongoc_server_description_t *) mongoc_set_get (
-      client->topology->description.servers, id);
+      client->topology->shared_descr.ptr->servers, id);
    BSON_ASSERT (sd);
    mongoc_generation_map_increment (sd->generation_map, &kZeroServiceId);
    mongoc_server_description_reset (sd);
@@ -1696,7 +1696,7 @@ test_compatible_null_error_pointer (void)
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
-   td = &client->topology->description;
+   td = client->topology->shared_descr.ptr;
 
    /* trigger connection, fails due to incompatibility */
    ASSERT (!mongoc_client_command_simple (
@@ -1774,7 +1774,7 @@ test_cluster_time_updated_during_handshake ()
 
    /* check the cluster time stored on the topology description. */
    bson_mutex_lock (&client->topology->mutex);
-   ASSERT_MATCH (&client->topology->description.cluster_time, cluster_time);
+   ASSERT_MATCH (&client->topology->shared_descr.ptr->cluster_time, cluster_time);
    bson_mutex_unlock (&client->topology->mutex);
    bson_free (cluster_time);
    cluster_time = cluster_time_fmt (2);
@@ -1797,7 +1797,7 @@ test_cluster_time_updated_during_handshake ()
 
    ASSERT_OR_PRINT (r, error);
    bson_mutex_lock (&client->topology->mutex);
-   ASSERT_MATCH (&client->topology->description.cluster_time, cluster_time);
+   ASSERT_MATCH (&client->topology->shared_descr.ptr->cluster_time, cluster_time);
    bson_mutex_unlock (&client->topology->mutex);
    bson_free (cluster_time);
    mongoc_client_pool_push (pool, client);
@@ -2173,7 +2173,7 @@ test_slow_server_pooled (void)
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
 
    /* Set a shorter heartbeat frequencies for faster responses. */
-   _mongoc_client_pool_get_topology (pool)->description.heartbeat_msec = 10;
+   _mongoc_client_pool_get_topology (pool)->shared_descr.ptr->heartbeat_msec = 10;
    _mongoc_client_pool_get_topology (pool)->min_heartbeat_frequency_msec = 10;
 
    client = mongoc_client_pool_pop (pool);

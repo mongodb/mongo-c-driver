@@ -702,7 +702,7 @@ _prose_test_9 (bool pooled)
 
    bson_mutex_lock (&topology->mutex);
    expected_hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
-   check_topology_description (&client->topology->description, expected_hosts);
+   check_topology_description (client->topology->shared_descr.ptr, expected_hosts);
    bson_mutex_unlock (&topology->mutex);
 
    if (pooled) {

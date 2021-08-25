@@ -145,8 +145,8 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
    topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_BG_RUNNING;
 
    _mongoc_handshake_freeze ();
-   _mongoc_topology_description_monitor_opening (&topology->description);
-   if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+   _mongoc_topology_description_monitor_opening (topology->shared_descr.ptr);
+   if (topology->shared_descr.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       /* Do not proceed to start monitoring threads. */
       TRACE ("%s", "disabling monitoring for load balanced topology");
       return;
@@ -218,7 +218,7 @@ _mongoc_topology_background_monitoring_reconcile (mongoc_topology_t *topology)
    int i;
 
    MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
-   td = &topology->description;
+   td = topology->shared_descr.ptr;
    server_descriptions = td->servers;
 
    BSON_ASSERT (!topology->single_threaded);

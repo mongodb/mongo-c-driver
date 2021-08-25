@@ -2287,7 +2287,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
        * NOT perform SDAM error handling for any errors that occur before the
        * MongoDB Handshake. */
       bson_mutex_lock (&topology->mutex);
-      if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      if (topology->shared_descr.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
          bson_mutex_unlock (&topology->mutex);
          return NULL;
       }
@@ -2311,7 +2311,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
    /* If this is a load balanced topology and the server stream does not have a
     * service id, disconnect and return an error. */
    bson_mutex_lock (&topology->mutex);
-   if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+   if (topology->shared_descr.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       if (!mongoc_server_description_has_service_id (server_stream->sd)) {
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT,
@@ -2513,7 +2513,7 @@ mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
       cluster->client->topology, server_id, &handshake_sd->service_id);
 
    return mongoc_server_stream_new (
-      &topology->description, handshake_sd, scanner_node->stream);
+      topology->shared_descr.ptr, handshake_sd, scanner_node->stream);
 }
 
 
@@ -2558,7 +2558,7 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
    topology = cluster->client->topology;
    bson_mutex_lock (&topology->mutex);
    sd = mongoc_topology_description_server_by_id (
-      &topology->description, server_stream->sd->id, &error);
+      topology->shared_descr.ptr, server_stream->sd->id, &error);
    if (!sd ||
        server_stream->sd->generation <
           _mongoc_topology_get_connection_pool_generation (
@@ -2587,10 +2587,10 @@ _mongoc_cluster_create_server_stream (
 
    sd = mongoc_server_description_new_copy (handshake_sd);
    /* can't just use mongoc_topology_server_by_id(), since we must hold the
-    * lock while copying topology->description.logical_time below */
+    * lock while copying topology->shared_descr.ptr->logical_time below */
    bson_mutex_lock (&topology->mutex);
    server_stream =
-      mongoc_server_stream_new (&topology->description, sd, stream);
+      mongoc_server_stream_new (topology->shared_descr.ptr, sd, stream);
    bson_mutex_unlock (&topology->mutex);
 
    return server_stream;
@@ -2614,7 +2614,7 @@ mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
    topology = cluster->client->topology;
    bson_mutex_lock (&topology->mutex);
    sd = mongoc_topology_description_server_by_id (
-      &topology->description, server_id, error);
+      topology->shared_descr.ptr, server_id, error);
    if (sd) {
       has_server_description = true;
    }
@@ -2989,7 +2989,7 @@ mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster)
                            _mongoc_cluster_min_of_max_obj_size_nodes,
                            &max_bson_obj_size);
    } else {
-      mongoc_set_for_each (cluster->client->topology->description.servers,
+      mongoc_set_for_each (cluster->client->topology->shared_descr.ptr->servers,
                            _mongoc_cluster_min_of_max_obj_size_sds,
                            &max_bson_obj_size);
    }
@@ -3025,7 +3025,7 @@ mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster)
                            _mongoc_cluster_min_of_max_msg_size_nodes,
                            &max_msg_size);
    } else {
-      mongoc_set_for_each (cluster->client->topology->description.servers,
+      mongoc_set_for_each (cluster->client->topology->shared_descr.ptr->servers,
                            _mongoc_cluster_min_of_max_msg_size_sds,
                            &max_msg_size);
    }

@@ -170,7 +170,7 @@ test_sdam_cb (bson_t *test)
    /* parse out the uri and use it to create a client */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
    client = test_framework_client_new (bson_iter_utf8 (&iter, NULL), NULL);
-   td = &client->topology->description;
+   td = client->topology->shared_descr.ptr;
 
    /* for each phase, parse and validate */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "phases"));
@@ -375,7 +375,7 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
    bson_init (&cmd);
    BCON_APPEND (&cmd, "configureFailPoint", "failCommand", "mode", "off");
 
-   servers = client->topology->description.servers;
+   servers = client->topology->shared_descr.ptr->servers;
 
    for (i = 0; i < servers->items_len; i++) {
       bool ret;

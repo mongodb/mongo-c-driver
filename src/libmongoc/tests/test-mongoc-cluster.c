@@ -52,7 +52,7 @@ test_get_max_bson_obj_size (void)
 
    id = server_id_for_reads (&client->cluster);
    sd = (mongoc_server_description_t *) mongoc_set_get (
-      client->topology->description.servers, id);
+      client->topology->shared_descr.ptr->servers, id);
    sd->max_bson_obj_size = max_bson_obj_size;
    BSON_ASSERT (max_bson_obj_size ==
                 mongoc_cluster_get_max_bson_obj_size (&client->cluster));
@@ -88,7 +88,7 @@ test_get_max_msg_size (void)
    id = server_id_for_reads (&client->cluster);
 
    sd = (mongoc_server_description_t *) mongoc_set_get (
-      client->topology->description.servers, id);
+      client->topology->shared_descr.ptr->servers, id);
    sd->max_msg_size = max_msg_size;
    BSON_ASSERT (max_msg_size ==
                 mongoc_cluster_get_max_msg_size (&client->cluster));
@@ -1058,7 +1058,7 @@ _test_not_primary (bool pooled,
                                                    NULL);
    }
 
-   td = &client->topology->description;
+   td = client->topology->shared_descr.ptr;
    sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, 1);
 
    for (test_error_msg = errors; test_error_msg->errmsg; test_error_msg++) {

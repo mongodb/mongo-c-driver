@@ -2594,7 +2594,7 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    bson_mutex_lock (&topology->mutex);
-   if (!mongoc_topology_compatible (&topology->description, NULL, &error)) {
+   if (!mongoc_topology_compatible (topology->shared_descr.ptr, NULL, &error)) {
       MONGOC_ERROR ("Could not kill cursor: %s", error.message);
       bson_mutex_unlock (&topology->mutex);
       mongoc_read_prefs_destroy (read_prefs);
@@ -2603,7 +2603,7 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
 
    /* see if there's a known writable server - do no I/O or retries */
    selected_server =
-      mongoc_topology_description_select (&topology->description,
+      mongoc_topology_description_select (topology->shared_descr.ptr,
                                           MONGOC_SS_WRITE,
                                           read_prefs,
                                           topology->local_threshold_msec);
@@ -2825,7 +2825,7 @@ mongoc_client_get_server_descriptions (const mongoc_client_t *client,
    /* in case the client is pooled */
    bson_mutex_lock (&topology->mutex);
 
-   sds = mongoc_topology_description_get_servers (&topology->description, n);
+   sds = mongoc_topology_description_get_servers (topology->shared_descr.ptr, n);
 
    bson_mutex_unlock (&topology->mutex);
 

@@ -232,7 +232,7 @@ tf_new (tf_flags_t flags)
    mongoc_apm_callbacks_destroy (callbacks);
 
    if (flags & TF_FAST_HEARTBEAT) {
-      _mongoc_client_pool_get_topology (tf->pool)->description.heartbeat_msec =
+      _mongoc_client_pool_get_topology (tf->pool)->shared_descr.ptr->heartbeat_msec =
          FAST_HEARTBEAT_MS;
       /* A fast heartbeat implies a fast min heartbeat. */
       flags |= TF_FAST_MIN_HEARTBEAT;
@@ -313,7 +313,7 @@ _signal_shutdown (test_fixture_t *tf)
    /* Ignore the "Last server removed from topology" warning. */
    capture_logs (true);
    /* remove the server description from the topology description. */
-   mongoc_topology_description_reconcile (&tf->client->topology->description,
+   mongoc_topology_description_reconcile (tf->client->topology->shared_descr.ptr,
                                           NULL);
    capture_logs (false);
    /* remove the server monitor from the set of server monitors. */
@@ -331,7 +331,7 @@ _add_server_monitor (test_fixture_t *tf)
    bson_mutex_lock (&tf->client->topology->mutex);
    /* remove the server description from the topology description. */
    mongoc_topology_description_add_server (
-      &tf->client->topology->description,
+      tf->client->topology->shared_descr.ptr,
       mongoc_uri_get_hosts (uri)->host_and_port,
       &id);
    /* add the server monitor from the set of server monitors. */

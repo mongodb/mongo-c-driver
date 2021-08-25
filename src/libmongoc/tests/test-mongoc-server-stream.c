@@ -180,7 +180,7 @@ test_server_stream_ties_server_description_single (void *unused)
    /* Pass in a zeroed out error. */
    memset (&error, 0, sizeof (bson_error_t));
    mongoc_topology_description_handle_hello (
-      &client->topology->description, 1, tmp_bson (HELLO_PRE_OPMSG), 0, &error);
+      client->topology->shared_descr.ptr, 1, tmp_bson (HELLO_PRE_OPMSG), 0, &error);
 
    /* Send another command, it should still use OP_MSG. */
    future = future_client_command_simple (client,

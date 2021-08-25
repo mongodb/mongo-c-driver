@@ -3739,8 +3739,8 @@ test_bulk_max_msg_size (void)
    mongoc_collection_drop (collection, NULL);
 
    /* Cluster time document argument is injected sometimes */
-   if (!bson_empty (&client->topology->description.cluster_time)) {
-      filler_string -= client->topology->description.cluster_time.len +
+   if (!bson_empty (&client->topology->shared_descr.ptr->cluster_time)) {
+      filler_string -= client->topology->shared_descr.ptr->cluster_time.len +
                        strlen ("$clusterTime") + 2;
    }
 
