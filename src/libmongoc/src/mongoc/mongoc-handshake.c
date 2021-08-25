@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 MongoDB, Inc.
+ * Copyright 2016-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,12 @@
 /*
  * Global handshake data instance. Initialized at startup from mongoc_init
  *
- * Can be modified by calls to mongoc_handshake_data_append
+ * Can be modified by calls to mongoc_add_driver_info
  */
 static mongoc_handshake_t gMongocHandshake;
 
 /*
- * Used for thread-safety in mongoc_handshake_data_append
+ * Used for thread-safety in mongoc_add_driver_info
  */
 static bson_mutex_t gHandshakeLock;
 
@@ -615,9 +615,9 @@ _append_and_truncate (char **s, const char *suffix, int max_len)
  * All arguments are optional.
  */
 bool
-mongoc_handshake_data_append (const char *driver_name,
-                              const char *driver_version,
-                              const char *platform)
+mongoc_add_driver_info (const char *driver_name,
+                        const char *driver_version,
+                        const char *platform)
 {
    int platform_space;
 
@@ -656,6 +656,16 @@ mongoc_handshake_data_append (const char *driver_name,
    bson_mutex_unlock (&gHandshakeLock);
 
    return true;
+}
+
+/* This is the previous-undocumented legacy call, and remains provided for
+compatibility; users should instead call mongoc_add_driver_info():
+*/
+bool mongoc_handshake_data_append(const char *driver_name,
+                                  const char *driver_version,
+                                  const char *platform)
+{
+ return mongoc_add_driver_info(driver_name, driver_version, platform);
 }
 
 mongoc_handshake_t *

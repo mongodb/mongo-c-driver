@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 MongoDB, Inc.
+ * Copyright 2016-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ BSON_BEGIN_DECLS
 #define MONGOC_HANDSHAKE_APPNAME_MAX 128
 
 /**
- * mongoc_handshake_data_append:
+ * mongoc_add_driver_info:
  *
  * This function is intended for use by drivers which wrap the C Driver.
  * Calling this function will store the given strings as handshake data about
@@ -40,7 +40,7 @@ BSON_BEGIN_DECLS
  * called more than once, or after a handshake has been initiated.
  *
  * The passed in strings are copied, and don't have to remain valid after the
- * call to mongoc_handshake_data_append(). The driver may store truncated
+ * call to mongoc_add_driver_info(). The driver may store truncated
  * versions of the passed in strings.
  *
  * Note:
@@ -73,7 +73,7 @@ BSON_BEGIN_DECLS
  *  }
  *
  * If we call
- *   mongoc_handshake_data_append ("phongo", "1.1.8", "CC=clang")
+ *   mongoc_add_driver_info ("phongo", "1.1.8", "CC=clang")
  * and it returns true, the driver sends handshake data like:
  *  client: {
  *    driver: {
@@ -85,6 +85,22 @@ BSON_BEGIN_DECLS
  *  }
  *
  */
+MONGOC_EXPORT (bool) 
+mongoc_add_driver_info (const char *driver_name,
+                        const char *driver_version,
+                        const char *platform);
+
+/**
+ * mongoc_handshake_data_append:
+ * 
+ * This function is intended for use by drivers which wrap the C Driver. It
+ * calls mongoc_add_driver_info().
+ *
+ * @See: mongoc_add_driver_info().
+ * @Note: This is the older name for this previously-undocumented function; 
+ *        mongoc_add_driver_info() should be preferred.
+ *
+*/
 MONGOC_EXPORT (bool)
 mongoc_handshake_data_append (const char *driver_name,
                               const char *driver_version,
