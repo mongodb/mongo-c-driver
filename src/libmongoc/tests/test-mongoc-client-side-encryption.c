@@ -17,6 +17,11 @@
 #include "json-test.h"
 #include "test-libmongoc.h"
 
+/* _mongoc_host_list_from_string_with_err */
+#include "mongoc/mongoc-host-list-private.h"
+
+#include "mongoc/mongoc-uri.h"
+
 static void
 _before_test (json_test_ctx_t *ctx, const bson_t *test)
 {
@@ -2261,6 +2266,147 @@ test_bypass_spawning_via_bypassAutoEncryption (void *unused)
    bson_destroy (kms_providers);
 }
 
+
+static mongoc_client_encryption_t *
+_make_kms_certificate_client_encryption (mongoc_client_t *client,
+                                         bson_error_t *error)
+{
+   mongoc_client_encryption_opts_t *client_encryption_opts =
+      mongoc_client_encryption_opts_new ();
+
+   {
+      bson_t *kms_providers = _make_aws_kms_provider (NULL);
+      mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
+                                                       kms_providers);
+      bson_destroy (kms_providers);
+   }
+
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      client_encryption_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
+                                                      client);
+
+   mongoc_client_encryption_t *client_encryption =
+      mongoc_client_encryption_new (client_encryption_opts, error);
+   ASSERT_OR_PRINT (client_encryption, (*error));
+
+   mongoc_client_encryption_opts_destroy (client_encryption_opts);
+   return client_encryption;
+}
+
+
+static void
+test_kms_tls_cert_valid (void *unused)
+{
+   bson_error_t error;
+   const int32_t connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
+   const int is_client = 1;
+
+   mongoc_host_list_t host;
+   ASSERT_OR_PRINT (
+      _mongoc_host_list_from_string_with_err (&host, "127.0.0.1:7999", &error),
+      error);
+
+   mongoc_stream_t *base_stream =
+      mongoc_client_connect_tcp (connecttimeoutms, &host, &error);
+   ASSERT_OR_PRINT (base_stream, error);
+
+   mongoc_ssl_opt_t ssl_opts;
+   memcpy (&ssl_opts, mongoc_ssl_opt_get_default (), sizeof ssl_opts);
+
+   mongoc_stream_t *tls_stream = mongoc_stream_tls_new_with_hostname (
+      base_stream, host.host, &ssl_opts, is_client);
+
+   ASSERT_OR_PRINT (mongoc_stream_tls_handshake_block (
+                       tls_stream, host.host, connecttimeoutms, &error),
+                    error);
+
+   mongoc_stream_destroy (tls_stream); /* Also destroys host_stream. */
+}
+
+static void
+test_kms_tls_cert_expired (void *unused)
+{
+   bson_error_t error;
+
+   mongoc_client_t *client = test_framework_new_default_client ();
+
+   mongoc_client_encryption_t *client_encryption =
+      _make_kms_certificate_client_encryption (client, &error);
+
+   mongoc_client_encryption_datakey_opts_t *opts =
+      mongoc_client_encryption_datakey_opts_new ();
+
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      opts,
+      tmp_bson ("{ 'region': 'us-east-1', 'key': "
+                "'arn:aws:kms:us-east-1:579766882180:key/"
+                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', "
+                "'endpoint': 'mongodb://127.0.0.1:8000' }"));
+
+   bson_value_t keyid;
+   bool ret = mongoc_client_encryption_create_datakey (
+      client_encryption, "aws", opts, &keyid, &error);
+
+   BSON_ASSERT (!ret);
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+   ASSERT_CONTAINS (error.message, "certificate has expired");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+   ASSERT_CONTAINS (error.message, "CSSMERR_TP_CERT_EXPIRED");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+   ASSERT_CONTAINS (error.message, "certificate has expired");
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+   ASSERT_CONTAINS (error.message, "certificate has expired");
+#endif
+
+   mongoc_client_encryption_datakey_opts_destroy (opts);
+   mongoc_client_encryption_destroy (client_encryption);
+   mongoc_client_destroy (client);
+}
+
+
+static void
+test_kms_tls_cert_wrong_host (void *unused)
+{
+   bson_error_t error;
+
+   mongoc_client_t *client = test_framework_new_default_client ();
+
+   mongoc_client_encryption_t *client_encryption =
+      _make_kms_certificate_client_encryption (client, &error);
+
+   mongoc_client_encryption_datakey_opts_t *opts =
+      mongoc_client_encryption_datakey_opts_new ();
+
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      opts,
+      tmp_bson ("{ 'region': 'us-east-1', 'key': "
+                "'arn:aws:kms:us-east-1:579766882180:key/"
+                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', "
+                "'endpoint': 'mongodb://127.0.0.1:8001' }"));
+
+   bson_value_t keyid;
+   bool ret = mongoc_client_encryption_create_datakey (
+      client_encryption, "aws", opts, &keyid, &error);
+
+   BSON_ASSERT (!ret);
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+   ASSERT_CONTAINS (error.message, "IP address mismatch");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+   ASSERT_CONTAINS (error.message, "Host name mismatch");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+   ASSERT_CONTAINS (error.message, "hostname doesn't match certificate");
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+   ASSERT_CONTAINS (error.message, "not present in server certificate");
+#endif
+
+   mongoc_client_encryption_datakey_opts_destroy (opts);
+   mongoc_client_encryption_destroy (client_encryption);
+   mongoc_client_destroy (client);
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -2338,6 +2484,28 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/kms_tls/valid",
+                      test_kms_tls_cert_valid,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/kms_tls/expired",
+                      test_kms_tls_cert_expired,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/kms_tls/wrong_host",
+                      test_kms_tls_cert_wrong_host,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_if_max_wire_version_less_than_8);
+
    /* Other, C driver specific, tests. */
    TestSuite_AddFull (suite,
                       "/client_side_encryption/single_and_pool_mismatches",
