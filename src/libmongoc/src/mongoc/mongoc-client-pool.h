@@ -38,15 +38,17 @@ typedef struct _mongoc_client_pool_t mongoc_client_pool_t;
 
 
 MONGOC_EXPORT (mongoc_client_pool_t *)
-mongoc_client_pool_new (const mongoc_uri_t *uri);
+mongoc_client_pool_new (const mongoc_uri_t *uri) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (void)
 mongoc_client_pool_destroy (mongoc_client_pool_t *pool);
 MONGOC_EXPORT (mongoc_client_t *)
-mongoc_client_pool_pop (mongoc_client_pool_t *pool);
+mongoc_client_pool_pop (mongoc_client_pool_t *pool)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (void)
 mongoc_client_pool_push (mongoc_client_pool_t *pool, mongoc_client_t *client);
 MONGOC_EXPORT (mongoc_client_t *)
-mongoc_client_pool_try_pop (mongoc_client_pool_t *pool);
+mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (void)
 mongoc_client_pool_max_size (mongoc_client_pool_t *pool,
                              uint32_t max_pool_size);
