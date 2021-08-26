@@ -16,61 +16,36 @@
 
 #include "./mongoc-shared.h"
 
+#include "common-thread-private.h"
 #include <bson/bson.h>
 
 #include <assert.h>
 
-typedef struct _mongoc_shared_aux {
+typedef struct _mongoc_shared_ptr_aux {
    int refcount;
    void (*dtor) (void *);
    void *managed;
-} _mongoc_shared_aux;
-
-/** Get the pointed-to auxilary data for the given shared pointer */
-static _mongoc_shared_aux *
-_aux (const mongoc_shared_ptr p)
-{
-   return (_mongoc_shared_aux *) (p._aux);
-}
-
-/** Get the pointed-to auxilary data for the pointer to a shared pointer */
-static _mongoc_shared_aux *
-_paux (const mongoc_shared_ptr *ptrptr)
-{
-   return _aux (*ptrptr);
-}
+} _mongoc_shared_ptr_aux;
 
 static void
-_release_aux (_mongoc_shared_aux *aux)
+_release_aux (_mongoc_shared_ptr_aux *aux)
 {
    aux->dtor (aux->managed);
    bson_free (aux);
 }
 
-static int8_t g_shared_ptr_spin_mtx = 0;
+static bson_mutex_t g_shared_ptr_spin_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static void
 _shared_ptr_spin_lock ()
 {
-   while (true) {
-      int8_t f = false;
-      int8_t t = true;
-      bool was_locked = bson_atomic_int8_compare_exchange (
-         &g_shared_ptr_spin_mtx, f, t, bson_memorder_acquire);
-      if (!was_locked) {
-         return;
-      }
-   }
+   bson_mutex_lock (&g_shared_ptr_spin_mtx);
 }
 
 static void
 _shared_ptr_spin_unlock ()
 {
-   bool was_locked = bson_atomic_int8_compare_exchange (
-      &g_shared_ptr_spin_mtx, 1, 0, bson_memorder_release);
-   assert (
-      was_locked &&
-      "_shared_ptr_spin_unlock() was called, but the spin lock was not held");
+   bson_mutex_unlock (&g_shared_ptr_spin_mtx);
 }
 
 void
@@ -88,10 +63,10 @@ mongoc_shared_ptr_rebind_raw (mongoc_shared_ptr *const ptr,
    /* Take the new value */
    if (pointee != NULL) {
       assert (dtor != NULL);
-      ptr->_aux = bson_malloc0 (sizeof (_mongoc_shared_aux));
-      _paux (ptr)->dtor = dtor;
-      _paux (ptr)->refcount = 1;
-      _paux (ptr)->managed = pointee;
+      ptr->_aux = bson_malloc0 (sizeof (_mongoc_shared_ptr_aux));
+      ptr->_aux->dtor = dtor;
+      ptr->_aux->refcount = 1;
+      ptr->_aux->managed = pointee;
    }
 }
 
@@ -117,7 +92,7 @@ void
 mongoc_shared_ptr_rebind_atomic (mongoc_shared_ptr *const out,
                                  mongoc_shared_ptr const from)
 {
-   void *prev_aux = NULL;
+   struct _mongoc_shared_ptr_aux *prev_aux = NULL;
    size_t prevcount = 0;
    assert (out &&
            "NULL given as output argument to mongoc_shared_ptr_rebind_atomic");
@@ -127,16 +102,15 @@ mongoc_shared_ptr_rebind_atomic (mongoc_shared_ptr *const out,
       prev_aux = out->_aux;
       if (prev_aux) {
          prevcount = bson_atomic_int_fetch_sub (
-            &_paux (out)->refcount, 1, bson_memorder_seqcst);
+            &out->_aux->refcount, 1, bson_memorder_seqcst);
       }
       *out = from;
-      bson_atomic_int_fetch_add (
-         &_paux (out)->refcount, 1, bson_memorder_seqcst);
+      bson_atomic_int_fetch_add (&out->_aux->refcount, 1, bson_memorder_seqcst);
       _shared_ptr_spin_unlock ();
    }
 
    if (prevcount == 1) {
-      _release_aux ((_mongoc_shared_aux *) prev_aux);
+      _release_aux (prev_aux);
    }
 }
 
@@ -145,8 +119,7 @@ mongoc_shared_ptr_take (mongoc_shared_ptr const ptr)
 {
    mongoc_shared_ptr ret = ptr;
    if (!mongoc_shared_ptr_is_null (ptr)) {
-      bson_atomic_int_fetch_add (
-         &_aux (ret)->refcount, 1, bson_memorder_seqcst);
+      bson_atomic_int_fetch_add (&ret._aux->refcount, 1, bson_memorder_seqcst);
    }
    return ret;
 }
@@ -169,12 +142,12 @@ mongoc_shared_ptr_release (mongoc_shared_ptr *const ptr)
    assert (!mongoc_shared_ptr_is_null (*ptr) &&
            "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_release");
    /* Decrement the reference count by one */
-   size_t prevcount = bson_atomic_int_fetch_sub (
-      &_paux (ptr)->refcount, 1, bson_memorder_seqcst);
+   size_t prevcount =
+      bson_atomic_int_fetch_sub (&ptr->_aux->refcount, 1, bson_memorder_seqcst);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
        * Release the managed data. */
-      _release_aux (_paux (ptr));
+      _release_aux (ptr->_aux);
    }
    ptr->_aux = NULL;
    ptr->ptr = NULL;
@@ -185,6 +158,6 @@ mongoc_shared_ptr_refcount (mongoc_shared_ptr const ptr)
 {
    assert (!mongoc_shared_ptr_is_null (ptr) &&
            "Unbound mongoc_shraed_ptr given to mongoc_shared_ptr_refcount");
-   return (int) bson_atomic_int_fetch (&_aux (ptr)->refcount,
+   return (int) bson_atomic_int_fetch (&ptr._aux->refcount,
                                        bson_memorder_relaxed);
 }

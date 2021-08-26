@@ -17,6 +17,10 @@
 #ifndef MONGOC_SHARED_H
 #define MONGOC_SHARED_H
 
+#include <stddef.h>
+
+struct _mongoc_shared_ptr_aux;
+
 /**
  * @brief A ref-counted thread-safe shared pointer to arbitrary data
  */
@@ -24,8 +28,13 @@ typedef struct mongoc_shared_ptr {
    /** Pointed-to data */
    void *ptr;
    /** Auxilary book-keeping. Do not touch. */
-   void *_aux;
+   struct _mongoc_shared_ptr_aux *_aux;
 } mongoc_shared_ptr;
+
+/**
+ * @brief A "null" pointer constant for a mongoc_shared_ptr
+ */
+static const mongoc_shared_ptr MONGOC_SHARED_PTR_NULL = {NULL, NULL};
 
 /**
  * @brief Rebind a shared pointer to the given memory resources
