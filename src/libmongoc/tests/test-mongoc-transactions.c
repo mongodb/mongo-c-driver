@@ -978,7 +978,7 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    ASSERT_CMPINT32 (actual_id, ==, expected_id);
 
    /* get a valid server id that's different from the pinned server id */
-   servers = client->topology->shared_descr.ptr->servers;
+   servers = client->topology->_shared_descr_.ptr->servers;
    for (i = 0; i < servers->items_len; i++) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (servers, i);
       if (sd && sd->id != actual_id) {

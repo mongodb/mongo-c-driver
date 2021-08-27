@@ -1334,8 +1334,10 @@ mongoc_cursor_get_host (mongoc_cursor_t *cursor, mongoc_host_list_t *host)
       return;
    }
 
-   description = mongoc_topology_server_by_id (
-      cursor->client->topology, cursor->server_id, &cursor->error);
+   MC_DECL_TD_TAKE (td, cursor->client->topology);
+   description =
+      mongoc_topology_server_by_id (td.ptr, cursor->server_id, &cursor->error);
+   MC_TD_DROP (td);
    if (!description) {
       return;
    }

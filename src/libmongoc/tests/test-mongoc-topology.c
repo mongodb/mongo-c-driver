@@ -219,14 +219,16 @@ test_topology_thread_start_stop (void)
 
    /* Test starting up the scanner */
    bson_mutex_lock (&topology->mutex);
-   _mongoc_topology_background_monitoring_start (topology);
+   _mongoc_topology_background_monitoring_start (topology,
+                                                 topology->_shared_descr_.ptr);
    bson_mutex_unlock (&topology->mutex);
    assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_BG_RUNNING);
 
    /* Test that starting the topology while it is already
       running is ok to do. */
    bson_mutex_lock (&topology->mutex);
-   _mongoc_topology_background_monitoring_start (topology);
+   _mongoc_topology_background_monitoring_start (topology,
+                                                 topology->_shared_descr_.ptr);
    bson_mutex_unlock (&topology->mutex);
    assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_BG_RUNNING);
 
@@ -245,7 +247,8 @@ test_topology_thread_start_stop (void)
 
    /* Test that we can start the topology again after stopping it */
    bson_mutex_lock (&topology->mutex);
-   _mongoc_topology_background_monitoring_start (topology);
+   _mongoc_topology_background_monitoring_start (topology,
+                                                 topology->_shared_descr_.ptr);
    bson_mutex_unlock (&topology->mutex);
    assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_BG_RUNNING);
 
@@ -496,7 +499,7 @@ _test_topology_invalidate_server (bool pooled)
       test_framework_set_ssl_opts (client);
    }
 
-   td = client->topology->shared_descr.ptr;
+   td = client->topology->_shared_descr_.ptr;
 
    /* call explicitly */
    server_stream = mongoc_cluster_stream_for_reads (
@@ -512,7 +515,8 @@ _test_topology_invalidate_server (bool pooled)
 
    bson_set_error (
       &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "error");
-   mongoc_topology_invalidate_server (client->topology, id, &error);
+   mongoc_topology_invalidate_server (
+      client->topology->_shared_descr_.ptr, id, &error);
    sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, id);
    BSON_ASSERT (sd);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
@@ -608,7 +612,7 @@ test_invalid_cluster_node (void *ctx)
 
    bson_mutex_lock (&client->topology->mutex);
    sd = mongoc_topology_description_server_by_id (
-      client->topology->shared_descr.ptr, id, &error);
+      client->topology->_shared_descr_.ptr, id, &error);
    ASSERT_OR_PRINT (sd, error);
    /* Both generations match, and are the first generation. */
    ASSERT_CMPINT32 (cluster_node->handshake_sd->generation, ==, 0);
@@ -616,7 +620,7 @@ test_invalid_cluster_node (void *ctx)
       mongoc_generation_map_get (sd->generation_map, &kZeroServiceId), ==, 0);
 
    /* update the server's generation, simulating a connection pool clearing */
-   mongoc_generation_map_increment(sd->generation_map, &kZeroServiceId);
+   mongoc_generation_map_increment (sd->generation_map, &kZeroServiceId);
    bson_mutex_unlock (&client->topology->mutex);
 
    /* cluster discards node and creates new one with the current generation */
@@ -673,7 +677,7 @@ test_max_wire_version_race_condition (void *ctx)
    /* "disconnect": increment generation and reset server description */
 
    sd = (mongoc_server_description_t *) mongoc_set_get (
-      client->topology->shared_descr.ptr->servers, id);
+      client->topology->_shared_descr_.ptr->servers, id);
    BSON_ASSERT (sd);
    mongoc_generation_map_increment (sd->generation_map, &kZeroServiceId);
    mongoc_server_description_reset (sd);
@@ -1071,8 +1075,8 @@ test_invalid_server_id (void)
 
    client = test_framework_new_default_client ();
 
-   BSON_ASSERT (
-      !mongoc_topology_server_by_id (client->topology, 99999, &error));
+   BSON_ASSERT (!mongoc_topology_server_by_id (
+      client->topology->_shared_descr_.ptr, 99999, &error));
    ASSERT_STARTSWITH (error.message, "Could not find description for node");
 
    mongoc_client_destroy (client);
@@ -1261,7 +1265,8 @@ test_rtt (void *ctx)
    request_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
-   sd = mongoc_topology_server_by_id (client->topology, 1, NULL);
+   sd = mongoc_topology_server_by_id (
+      client->topology->_shared_descr_.ptr, 1, NULL);
    ASSERT (sd);
 
    /* assert, with plenty of slack, that rtt was calculated in ms, not usec */
@@ -1316,12 +1321,14 @@ test_add_and_scan_failure (void)
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
-   sd = mongoc_topology_server_by_id (client->topology, 1, NULL);
+   sd = mongoc_topology_server_by_id (
+      client->topology->_shared_descr_.ptr, 1, NULL);
    ASSERT (sd);
    ASSERT_CMPSTR (mongoc_server_description_type (sd), "RSPrimary");
    mongoc_server_description_destroy (sd);
 
-   sd = mongoc_topology_server_by_id (client->topology, 2, NULL);
+   sd = mongoc_topology_server_by_id (
+      client->topology->_shared_descr_.ptr, 2, NULL);
    ASSERT (sd);
    ASSERT_CMPSTR (mongoc_server_description_type (sd), "Unknown");
    mongoc_server_description_destroy (sd);
@@ -1696,7 +1703,7 @@ test_compatible_null_error_pointer (void)
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
-   td = client->topology->shared_descr.ptr;
+   td = client->topology->_shared_descr_.ptr;
 
    /* trigger connection, fails due to incompatibility */
    ASSERT (!mongoc_client_command_simple (
@@ -1774,7 +1781,8 @@ test_cluster_time_updated_during_handshake ()
 
    /* check the cluster time stored on the topology description. */
    bson_mutex_lock (&client->topology->mutex);
-   ASSERT_MATCH (&client->topology->shared_descr.ptr->cluster_time, cluster_time);
+   ASSERT_MATCH (&client->topology->_shared_descr_.ptr->cluster_time,
+                 cluster_time);
    bson_mutex_unlock (&client->topology->mutex);
    bson_free (cluster_time);
    cluster_time = cluster_time_fmt (2);
@@ -1797,7 +1805,8 @@ test_cluster_time_updated_during_handshake ()
 
    ASSERT_OR_PRINT (r, error);
    bson_mutex_lock (&client->topology->mutex);
-   ASSERT_MATCH (&client->topology->shared_descr.ptr->cluster_time, cluster_time);
+   ASSERT_MATCH (&client->topology->_shared_descr_.ptr->cluster_time,
+                 cluster_time);
    bson_mutex_unlock (&client->topology->mutex);
    bson_free (cluster_time);
    mongoc_client_pool_push (pool, client);
@@ -2173,7 +2182,8 @@ test_slow_server_pooled (void)
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
 
    /* Set a shorter heartbeat frequencies for faster responses. */
-   _mongoc_client_pool_get_topology (pool)->shared_descr.ptr->heartbeat_msec = 10;
+   _mongoc_client_pool_get_topology (pool)->_shared_descr_.ptr->heartbeat_msec =
+      10;
    _mongoc_client_pool_get_topology (pool)->min_heartbeat_frequency_msec = 10;
 
    client = mongoc_client_pool_pop (pool);
@@ -2460,20 +2470,21 @@ test_topology_pool_clear (void)
    ASSERT_CMPUINT32 (0,
                      ==,
                      _mongoc_topology_get_connection_pool_generation (
-                        topology, 1, &kZeroServiceId));
+                        topology->_shared_descr_.ptr, 1, &kZeroServiceId));
    ASSERT_CMPUINT32 (0,
                      ==,
                      _mongoc_topology_get_connection_pool_generation (
-                        topology, 2, &kZeroServiceId));
-   _mongoc_topology_clear_connection_pool (topology, 1, &kZeroServiceId);
+                        topology->_shared_descr_.ptr, 2, &kZeroServiceId));
+   _mongoc_topology_clear_connection_pool (
+      topology->_shared_descr_.ptr, 1, &kZeroServiceId);
    ASSERT_CMPUINT32 (1,
                      ==,
                      _mongoc_topology_get_connection_pool_generation (
-                        topology, 1, &kZeroServiceId));
+                        topology->_shared_descr_.ptr, 1, &kZeroServiceId));
    ASSERT_CMPUINT32 (0,
                      ==,
                      _mongoc_topology_get_connection_pool_generation (
-                        topology, 2, &kZeroServiceId));
+                        topology->_shared_descr_.ptr, 2, &kZeroServiceId));
 
    mongoc_uri_destroy (uri);
    mongoc_topology_destroy (topology);
@@ -2493,23 +2504,24 @@ test_topology_pool_clear_by_serviceid (void)
    bson_oid_init_from_string (&oid_a, "AAAAAAAAAAAAAAAAAAAAAAAA");
    bson_oid_init_from_string (&oid_b, "BBBBBBBBBBBBBBBBBBBBBBBB");
 
-   ASSERT_CMPUINT32 (
-      0,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_a));
-   ASSERT_CMPUINT32 (
-      0,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_b));
-   _mongoc_topology_clear_connection_pool (topology, 1, &oid_a);
-   ASSERT_CMPUINT32 (
-      1,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_a));
-   ASSERT_CMPUINT32 (
-      0,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (topology, 1, &oid_b));
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        topology->_shared_descr_.ptr, 1, &oid_a));
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        topology->_shared_descr_.ptr, 1, &oid_b));
+   _mongoc_topology_clear_connection_pool (
+      topology->_shared_descr_.ptr, 1, &oid_a);
+   ASSERT_CMPUINT32 (1,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        topology->_shared_descr_.ptr, 1, &oid_a));
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        topology->_shared_descr_.ptr, 1, &oid_b));
 
    mongoc_uri_destroy (uri);
    mongoc_topology_destroy (topology);

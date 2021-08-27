@@ -40,7 +40,7 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
 
    bson_mutex_lock (&client->topology->mutex);
    sd = mongoc_topology_description_server_by_id (
-      client->topology->shared_descr.ptr, server_id, &error);
+      client->topology->_shared_descr_.ptr, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
    generation = mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
    bson_mutex_unlock (&client->topology->mutex);
@@ -482,14 +482,14 @@ _mock_test_exhaust (bool pooled,
       collection, MONGOC_QUERY_EXHAUST, 0, 0, 0, tmp_bson ("{}"), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_query (server,
-                                  "db.test",
-                                  MONGOC_QUERY_SECONDARY_OK | MONGOC_QUERY_EXHAUST,
-                                  0,
-                                  0,
-                                  "{}",
-                                  NULL);
+   request = mock_server_receives_query (server,
+                                         "db.test",
+                                         MONGOC_QUERY_SECONDARY_OK |
+                                            MONGOC_QUERY_EXHAUST,
+                                         0,
+                                         0,
+                                         "{}",
+                                         NULL);
 
    if (error_when == SECOND_BATCH) {
       /* initial query succeeds, gets a doc and cursor id of 123 */

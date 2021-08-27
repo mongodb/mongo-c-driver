@@ -170,7 +170,7 @@ test_sdam_cb (bson_t *test)
    /* parse out the uri and use it to create a client */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
    client = test_framework_client_new (bson_iter_utf8 (&iter, NULL), NULL);
-   td = client->topology->shared_descr.ptr;
+   td = client->topology->_shared_descr_.ptr;
 
    /* for each phase, parse and validate */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "phases"));
@@ -375,7 +375,7 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
    bson_init (&cmd);
    BCON_APPEND (&cmd, "configureFailPoint", "failCommand", "mode", "off");
 
-   servers = client->topology->shared_descr.ptr->servers;
+   servers = client->topology->_shared_descr_.ptr->servers;
 
    for (i = 0; i < servers->items_len; i++) {
       bool ret;
@@ -861,9 +861,8 @@ test_prose_rtt (void *unused)
     * RTT_TEST_TIMEOUT_SEC seconds, consider it a failure. */
    satisfied = false;
    start_us = bson_get_monotonic_time ();
-   while (!satisfied &&
-          bson_get_monotonic_time () <
-             start_us + RTT_TEST_TIMEOUT_SEC * 1000 * 1000) {
+   while (!satisfied && bson_get_monotonic_time () <
+                           start_us + RTT_TEST_TIMEOUT_SEC * 1000 * 1000) {
       mongoc_server_description_t *sd;
 
       sd = mongoc_client_select_server (

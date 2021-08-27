@@ -41,13 +41,14 @@ get_node (mongoc_topology_t *topology, const char *host_and_port)
 static bool
 has_server_description (mongoc_topology_t *topology, const char *host_and_port)
 {
-   mongoc_set_t *servers = topology->shared_descr.ptr->servers;
+   mongoc_set_t *servers = topology->_shared_descr_.ptr->servers;
    bool found = false;
    int i;
    mongoc_server_description_t *sd;
 
    bson_mutex_lock (&topology->mutex);
-   for (i = 0; i < (int) topology->shared_descr.ptr->servers->items_len; i++) {
+   for (i = 0; i < (int) topology->_shared_descr_.ptr->servers->items_len;
+        i++) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (servers, i);
       if (!strcmp (sd->host.host_and_port, host_and_port)) {
          found = true;
@@ -150,8 +151,7 @@ _test_topology_reconcile_rs (bool pooled)
    /*
     * remove server1 from set. server0 is the primary, with tags.
     */
-   RS_RESPONSE_TO_HELLO (
-      server0, 6, true, true, server0); /* server1 absent */
+   RS_RESPONSE_TO_HELLO (server0, 6, true, true, server0); /* server1 absent */
 
    BSON_ASSERT (selects_server (client, tag_read_prefs, server0));
    bson_mutex_lock (&client->topology->mutex);
@@ -394,7 +394,8 @@ test_topology_reconcile_from_handshake (void *ctx)
    ASSERT_OR_PRINT (r, error);
 
    /* added server descriptions */
-   ASSERT_CMPSIZE_T (topology->shared_descr.ptr->servers->items_len, >, (size_t) 1);
+   ASSERT_CMPSIZE_T (
+      topology->_shared_descr_.ptr->servers->items_len, >, (size_t) 1);
 
    /* didn't add nodes yet, since we're not in the scanner loop */
    DL_COUNT (topology->scanner->nodes, node, count);

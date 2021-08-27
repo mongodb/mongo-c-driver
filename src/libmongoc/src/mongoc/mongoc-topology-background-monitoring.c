@@ -90,6 +90,7 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
  */
 static void
 _background_monitor_reconcile_server_monitor (mongoc_topology_t *topology,
+                                              mongoc_topology_description_t *td,
                                               mongoc_server_description_t *sd)
 {
    mongoc_set_t *server_monitors;
@@ -101,7 +102,7 @@ _background_monitor_reconcile_server_monitor (mongoc_topology_t *topology,
 
    if (!server_monitor) {
       /* Add a new server monitor. */
-      server_monitor = mongoc_server_monitor_new (topology, sd);
+      server_monitor = mongoc_server_monitor_new (topology, td, sd);
       mongoc_server_monitor_run (server_monitor);
       mongoc_set_add (server_monitors, sd->id, server_monitor);
    }
@@ -114,7 +115,7 @@ _background_monitor_reconcile_server_monitor (mongoc_topology_t *topology,
       rtt_monitors = topology->rtt_monitors;
       rtt_monitor = mongoc_set_get (rtt_monitors, sd->id);
       if (!rtt_monitor) {
-         rtt_monitor = mongoc_server_monitor_new (topology, sd);
+         rtt_monitor = mongoc_server_monitor_new (topology, td, sd);
          mongoc_server_monitor_run_as_rtt (rtt_monitor);
          mongoc_set_add (rtt_monitors, sd->id, rtt_monitor);
       }
@@ -129,7 +130,8 @@ _background_monitor_reconcile_server_monitor (mongoc_topology_t *topology,
  * Caller must have topology mutex locked.
  */
 void
-_mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
+_mongoc_topology_background_monitoring_start (mongoc_topology_t *topology,
+                                              mongoc_topology_description_t *td)
 {
    BSON_ASSERT (!topology->single_threaded);
    MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
@@ -145,15 +147,15 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
    topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_BG_RUNNING;
 
    _mongoc_handshake_freeze ();
-   _mongoc_topology_description_monitor_opening (topology->shared_descr.ptr);
-   if (topology->shared_descr.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+   _mongoc_topology_description_monitor_opening (td);
+   if (td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       /* Do not proceed to start monitoring threads. */
       TRACE ("%s", "disabling monitoring for load balanced topology");
       return;
    }
 
    /* Reconcile to create the first server monitors. */
-   _mongoc_topology_background_monitoring_reconcile (topology);
+   _mongoc_topology_background_monitoring_reconcile (topology, td);
    /* Start SRV polling thread. */
    if (mongoc_topology_should_rescan_srv (topology)) {
       topology->is_srv_polling = true;
@@ -211,14 +213,13 @@ _remove_orphaned_server_monitors (mongoc_set_t *server_monitors,
  * completed shutdown.
  */
 void
-_mongoc_topology_background_monitoring_reconcile (mongoc_topology_t *topology)
+_mongoc_topology_background_monitoring_reconcile (
+   mongoc_topology_t *topology, mongoc_topology_description_t *td)
 {
-   mongoc_topology_description_t *td;
    mongoc_set_t *server_descriptions;
    int i;
 
    MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
-   td = topology->shared_descr.ptr;
    server_descriptions = td->servers;
 
    BSON_ASSERT (!topology->single_threaded);
@@ -232,7 +233,7 @@ _mongoc_topology_background_monitoring_reconcile (mongoc_topology_t *topology)
       mongoc_server_description_t *sd;
 
       sd = mongoc_set_get_item (server_descriptions, i);
-      _background_monitor_reconcile_server_monitor (topology, sd);
+      _background_monitor_reconcile_server_monitor (topology, td, sd);
    }
 
    _remove_orphaned_server_monitors (topology->server_monitors,

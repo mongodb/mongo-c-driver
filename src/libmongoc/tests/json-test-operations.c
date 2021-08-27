@@ -2113,7 +2113,7 @@ _get_total_pool_cleared_event (json_test_ctx_t *ctx)
 
    /* Go get total generation counts. */
    bson_mutex_lock (&ctx->client->topology->mutex);
-   td = ctx->client->topology->shared_descr.ptr;
+   td = ctx->client->topology->_shared_descr_.ptr;
    for (i = 0; i < td->servers->items_len; i++) {
       mongoc_server_description_t *sd;
 

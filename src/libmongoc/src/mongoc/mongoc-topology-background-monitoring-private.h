@@ -26,10 +26,12 @@
 /* Methods of mongoc_topology_t for managing background monitoring. */
 
 void
-_mongoc_topology_background_monitoring_start (mongoc_topology_t *topology);
+_mongoc_topology_background_monitoring_start (
+   mongoc_topology_t *topology, mongoc_topology_description_t *td);
 
 void
-_mongoc_topology_background_monitoring_reconcile (mongoc_topology_t *topology);
+_mongoc_topology_background_monitoring_reconcile (
+   mongoc_topology_t *topology, mongoc_topology_description_t *td);
 
 void
 _mongoc_topology_background_monitoring_request_scan (

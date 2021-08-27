@@ -82,13 +82,20 @@ typedef bool (*_mongoc_rr_resolver_fn) (const char *service,
                                         bson_error_t *error);
 
 typedef union mc_shared_tpl_descr {
-   mongoc_topology_description_t *ptr;
    mongoc_shared_ptr sptr;
+   mongoc_topology_description_t *ptr;
 } mc_shared_tpl_descr;
 
+static const mc_shared_tpl_descr MC_SHARED_TPL_DESCR_NULL = {
+   MONGOC_SHARED_PTR_NULL};
 
 typedef struct _mongoc_topology_t {
-   mc_shared_tpl_descr shared_descr;
+   /**
+    * @brief The topology description. Do not access directly. Instead, use
+    * mc_tpld_take_ref()
+    */
+   mc_shared_tpl_descr _shared_descr_;
+
    /* topology->uri is initialized as a copy of the client/pool's URI.
     * For a "mongodb+srv://" URI, topology->uri is then updated in
     * mongoc_topology_new() after initial seedlist discovery.
@@ -182,12 +189,12 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   bson_error_t *error);
 
 mongoc_server_description_t *
-mongoc_topology_server_by_id (mongoc_topology_t *topology,
+mongoc_topology_server_by_id (mongoc_topology_description_t *topology,
                               uint32_t id,
                               bson_error_t *error);
 
 mongoc_host_list_t *
-_mongoc_topology_host_by_id (mongoc_topology_t *topology,
+_mongoc_topology_host_by_id (mongoc_topology_description_t *topology,
                              uint32_t id,
                              bson_error_t *error);
 
@@ -198,12 +205,13 @@ _mongoc_topology_host_by_id (mongoc_topology_t *topology,
  * _mongoc_topology_handle_app_error. This should not be called directly
  */
 void
-mongoc_topology_invalidate_server (mongoc_topology_t *topology,
+mongoc_topology_invalidate_server (mongoc_topology_description_t *topology,
                                    uint32_t id,
                                    const bson_error_t *error);
 
 bool
 _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
+                                        mongoc_topology_description_t *td,
                                         const mongoc_server_description_t *sd);
 
 void
@@ -272,7 +280,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
  * Pass kZeroServiceID as service_id to clear connections that have no
  * associated service ID. */
 void
-_mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
+_mongoc_topology_clear_connection_pool (mongoc_topology_description_t *td,
                                         uint32_t server_id,
                                         const bson_oid_t *service_id);
 
@@ -307,8 +315,28 @@ _mongoc_topology_set_srv_polling_rescan_interval_ms (
  * Pass kZeroServiceID connections do not have an associated service ID.
  * Callers must lock topology->mutex if topology is pooled. */
 uint32_t
-_mongoc_topology_get_connection_pool_generation (mongoc_topology_t *topology,
-                                                 uint32_t server_id,
-                                                 const bson_oid_t *service_id);
+_mongoc_topology_get_connection_pool_generation (
+   mongoc_topology_description_t *td,
+   uint32_t server_id,
+   const bson_oid_t *service_id);
+
+static BSON_INLINE mc_shared_tpl_descr
+mc_tpld_take_ref (mongoc_topology_t *tpl)
+{
+   mc_shared_tpl_descr td = MC_SHARED_TPL_DESCR_NULL;
+   td.sptr = mongoc_shared_ptr_take_atomic (&tpl->_shared_descr_.sptr);
+   return td;
+}
+
+static BSON_INLINE void
+mc_tpld_drop_ref (mc_shared_tpl_descr *p)
+{
+   mongoc_shared_ptr_release (&p->sptr);
+}
+
+#define MC_DECL_TD_TAKE(VarName, Topology) \
+   mc_shared_tpl_descr VarName = mc_tpld_take_ref (Topology)
+
+#define MC_TD_DROP(VarName) mc_tpld_drop_ref (&VarName);
 
 #endif

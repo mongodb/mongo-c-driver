@@ -220,10 +220,11 @@ _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
    topology = server_monitor->topology;
    /* Cluster time is updated on every reply. */
    bson_mutex_lock (&topology->mutex);
-   if (!bson_empty (&topology->shared_descr.ptr->cluster_time)) {
-      bson_append_document (
-         cmd, "$clusterTime", 12, &topology->shared_descr.ptr->cluster_time);
+   MC_DECL_TD_TAKE (td, topology);
+   if (!bson_empty (&td.ptr->cluster_time)) {
+      bson_append_document (cmd, "$clusterTime", 12, &td.ptr->cluster_time);
    }
+   MC_TD_DROP (td);
    bson_mutex_unlock (&topology->mutex);
 }
 
@@ -671,14 +672,16 @@ _server_monitor_update_topology_description (
       server_monitor->shared.scan_requested = false;
       bson_mutex_unlock (&server_monitor->shared.mutex);
 
+      MC_DECL_TD_TAKE (td, topology);
       mongoc_topology_description_handle_hello (
-         server_monitor->topology->shared_descr.ptr,
+         td.ptr,
          server_monitor->server_id,
          hello_response,
          description->round_trip_time_msec,
          &description->error);
       /* Reconcile server monitors. */
-      _mongoc_topology_background_monitoring_reconcile (topology);
+      _mongoc_topology_background_monitoring_reconcile (topology, td.ptr);
+      MC_TD_DROP (td);
    }
    /* Wake threads performing server selection. */
    mongoc_cond_broadcast (&server_monitor->topology->cond_client);
@@ -692,6 +695,7 @@ _server_monitor_update_topology_description (
  */
 mongoc_server_monitor_t *
 mongoc_server_monitor_new (mongoc_topology_t *topology,
+                           mongoc_topology_description_t *td,
                            mongoc_server_description_t *init_description)
 {
    mongoc_server_monitor_t *server_monitor;
@@ -702,8 +706,7 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
       mongoc_server_description_new_copy (init_description);
    server_monitor->server_id = init_description->id;
    server_monitor->topology = topology;
-   server_monitor->heartbeat_frequency_ms =
-      topology->shared_descr.ptr->heartbeat_msec;
+   server_monitor->heartbeat_frequency_ms = td->heartbeat_msec;
    server_monitor->min_heartbeat_frequency_ms =
       topology->min_heartbeat_frequency_msec;
    server_monitor->connect_timeout_ms = topology->connect_timeout_msec;
@@ -719,9 +722,9 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
    }
 #endif
    memcpy (&server_monitor->apm_callbacks,
-           &topology->shared_descr.ptr->apm_callbacks,
+           &td->apm_callbacks,
            sizeof (mongoc_apm_callbacks_t));
-   server_monitor->apm_context = topology->shared_descr.ptr->apm_context;
+   server_monitor->apm_context = td->apm_context;
    server_monitor->initiator = topology->scanner->initiator;
    server_monitor->initiator_context = topology->scanner->initiator_context;
    mongoc_cond_init (&server_monitor->shared.cond);
@@ -933,11 +936,13 @@ exit:
       server_monitor->stream = NULL;
       server_monitor->more_to_come = false;
       bson_mutex_lock (&server_monitor->topology->mutex);
+      MC_DECL_TD_TAKE (td, server_monitor->topology);
       _mongoc_topology_clear_connection_pool (
-         server_monitor->topology,
+         td.ptr,
          server_monitor->description->id,
          &server_monitor->description->service_id);
       bson_mutex_unlock (&server_monitor->topology->mutex);
+      MC_TD_DROP (td);
    }
 
    bson_destroy (&hello_response);
@@ -1148,25 +1153,25 @@ static BSON_THREAD_FUN (_server_monitor_rtt_thread, server_monitor_void)
       bson_mutex_unlock (&server_monitor->shared.mutex);
 
       bson_mutex_lock (&server_monitor->topology->mutex);
+      MC_DECL_TD_TAKE (td, server_monitor->topology);
       sd = mongoc_topology_description_server_by_id (
-         &server_monitor->topology->description,
-         server_monitor->description->id,
-         &error);
+         td.ptr, server_monitor->description->id, &error);
       hello_ok = sd ? sd->hello_ok : false;
+      MC_TD_DROP (td);
       bson_mutex_unlock (&server_monitor->topology->mutex);
 
       _server_monitor_ping_server (server_monitor, hello_ok, &rtt_ms);
       if (rtt_ms != MONGOC_RTT_UNSET) {
          bson_mutex_lock (&server_monitor->topology->mutex);
+         td = mc_tpld_take_ref (server_monitor->topology);
          sd = mongoc_topology_description_server_by_id (
-            &server_monitor->topology->description,
-            server_monitor->description->id,
-            &error);
+            td.ptr, server_monitor->description->id, &error);
          if (sd) {
             /* If the server description has been removed, the RTT thread will
              * be terminated by background monitoring soon. */
             mongoc_server_description_update_rtt (sd, rtt_ms);
          }
+         MC_TD_DROP (td);
          bson_mutex_unlock (&server_monitor->topology->mutex);
       }
       mongoc_server_monitor_wait (server_monitor);

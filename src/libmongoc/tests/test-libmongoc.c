@@ -2014,7 +2014,8 @@ test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id)
    bson_error_t error;
    bool ret;
 
-   sd = mongoc_topology_server_by_id (client->topology, server_id, &error);
+   sd = mongoc_topology_server_by_id (
+      client->topology->_shared_descr_.ptr, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
 
    call_hello_with_host_and_port (sd->host.host_and_port, &reply);

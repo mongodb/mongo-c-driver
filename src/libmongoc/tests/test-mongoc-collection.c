@@ -1914,8 +1914,9 @@ test_index_geo (void *unused)
    opt.geo_options = &geo_opt;
 
    /* TODO this hack is needed for single-threaded tests */
-   id = client->topology->shared_descr.ptr->servers->items[0].id;
-   description = mongoc_topology_server_by_id (client->topology, id, &error);
+   id = client->topology->_shared_descr_.ptr->servers->items[0].id;
+   description = mongoc_topology_server_by_id (
+      client->topology->_shared_descr_.ptr, id, &error);
    ASSERT_OR_PRINT (description, error);
 
    if (description->max_wire_version > 0) {
@@ -2588,7 +2589,8 @@ test_estimated_document_count (void)
    request_t *request;
    bson_error_t error;
    bson_t reply;
-   const char *server_reply = "{'cursor': { 'firstBatch': [{'n': 123}]}, 'ok': 1}";
+   const char *server_reply =
+      "{'cursor': { 'firstBatch': [{'n': 123}]}, 'ok': 1}";
 
    server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);

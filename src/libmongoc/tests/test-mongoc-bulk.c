@@ -3739,8 +3739,8 @@ test_bulk_max_msg_size (void)
    mongoc_collection_drop (collection, NULL);
 
    /* Cluster time document argument is injected sometimes */
-   if (!bson_empty (&client->topology->shared_descr.ptr->cluster_time)) {
-      filler_string -= client->topology->shared_descr.ptr->cluster_time.len +
+   if (!bson_empty (&client->topology->_shared_descr_.ptr->cluster_time)) {
+      filler_string -= client->topology->_shared_descr_.ptr->cluster_time.len +
                        strlen ("$clusterTime") + 2;
    }
 
@@ -4026,7 +4026,7 @@ typedef enum { HANGUP, SERVER_ERROR, ERR_TYPE_LAST } err_type_t;
 
 
 static void
-test_bulk_write_concern_split (void* unused)
+test_bulk_write_concern_split (void *unused)
 {
    mongoc_client_t *client;
    mongoc_bulk_operation_t *bulk;

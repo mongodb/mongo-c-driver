@@ -69,8 +69,10 @@ _run_command (mongoc_cluster_t *cluster,
                           command);
    /* Drivers must not append session ids to auth commands per sessions spec. */
    parts.prohibit_lsid = true;
-   server_stream = _mongoc_cluster_create_server_stream (
-      cluster->client->topology, sd, stream, error);
+   MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
+   server_stream =
+      _mongoc_cluster_create_server_stream (td.ptr, sd, stream, error);
+   MC_TD_DROP (td);
    if (!server_stream) {
       /* error was set by mongoc_topology_description_server_by_id */
       bson_init (reply);

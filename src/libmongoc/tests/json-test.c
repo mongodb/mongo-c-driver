@@ -186,7 +186,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
    bson_iter_t phase_field_iter;
    const char *hostname;
 
-   td = topology->shared_descr.ptr;
+   td = topology->_shared_descr_.ptr;
    if (bson_iter_init_find (&phase_field_iter, phase, "description")) {
       const char *description;
 
@@ -318,7 +318,8 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
                                             &response,
                                             &err,
                                             max_wire_version,
-                                            generation, &kZeroServiceId);
+                                            generation,
+                                            &kZeroServiceId);
          bson_mutex_unlock (&topology->mutex);
       }
    }
@@ -783,7 +784,7 @@ check_version_info (const bson_t *scenario, bool print_reason)
       bson_iter_bson (&iter, &topology);
 
       /* Determine cluster type */
-      if (test_framework_is_loadbalanced()) {
+      if (test_framework_is_loadbalanced ()) {
          current_topology = "load-balanced";
       } else if (test_framework_is_mongos ()) {
          current_topology = "sharded";
@@ -1705,9 +1706,12 @@ run_json_general_test (const json_test_config_t *config)
                break;
             }
          }
-         
+
          if (should_skip) {
-            fprintf (stderr, " - %s SKIPPED, due to reason: %s", description, iter->reason);
+            fprintf (stderr,
+                     " - %s SKIPPED, due to reason: %s",
+                     description,
+                     iter->reason);
             continue;
          }
       }

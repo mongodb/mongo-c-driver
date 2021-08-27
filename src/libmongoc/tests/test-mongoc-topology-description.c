@@ -24,10 +24,10 @@ _test_has_readable_writable_server (bool pooled)
    if (pooled) {
       pool = test_framework_new_default_client_pool ();
       topology = _mongoc_client_pool_get_topology (pool);
-      td = topology->shared_descr.ptr;
+      td = topology->_shared_descr_.ptr;
    } else {
       client = test_framework_new_default_client ();
-      td = client->topology->shared_descr.ptr;
+      td = client->topology->_shared_descr_.ptr;
       topology = client->topology;
    }
 
@@ -121,7 +121,7 @@ test_get_servers (void)
 
    uri = mongoc_uri_new ("mongodb://a,b,c");
    topology = mongoc_topology_new (uri, true /* single-threaded */);
-   td = topology->shared_descr.ptr;
+   td = topology->_shared_descr_.ptr;
 
    /* servers "a" and "c" are mongos, but "b" remains unknown */
    sd_a = _sd_for_host (td, "a");
@@ -176,7 +176,7 @@ test_topology_version_equal (void)
 
    uri = mongoc_uri_new ("mongodb://host");
    topology = mongoc_topology_new (uri, true /* single-threaded */);
-   td = topology->shared_descr.ptr;
+   td = topology->_shared_descr_.ptr;
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, _topology_changed);
@@ -221,7 +221,7 @@ test_topology_description_new_copy (void)
 
    uri = mongoc_uri_new ("mongodb://a,b,c");
    topology = mongoc_topology_new (uri, true /* single-threaded */);
-   td = topology->shared_descr.ptr;
+   td = topology->_shared_descr_.ptr;
 
    td_copy = mongoc_topology_description_new_copy (td);
 

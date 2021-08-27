@@ -494,7 +494,8 @@ test_sdam_monitoring_cb (bson_t *test)
          /* Force the topology opening and server opening events. This test
           * doesn't exercise this code path naturally, see below in
           * _test_topology_events for a non-hacky test of this event */
-         _mongoc_topology_description_monitor_opening (topology->shared_descr.ptr);
+         _mongoc_topology_description_monitor_opening (
+            topology->_shared_descr_.ptr);
          first_phase = false;
       } else {
          /* clear the stored events. */
