@@ -166,8 +166,8 @@
 #else
 #define BSON_ALIGNED_BEGIN(_N)
 #define BSON_ALIGNED_END(_N) \
-   __attribute__ (           \
-      (aligned ((_N) > BSON_ALIGN_OF_PTR ? BSON_ALIGN_OF_PTR : (_N))))
+   __attribute__ ((          \
+      aligned ((_N) > BSON_ALIGN_OF_PTR ? BSON_ALIGN_OF_PTR : (_N))))
 #endif
 #endif
 
@@ -196,18 +196,48 @@
          abort ();                                         \
       }                                                    \
    } while (0)
-       
+
+/**
+ * @brief Assert the expression `Assertion`, and evaluates to `Value` on
+ * success.
+ */
+#define BSON_ASSERT_INLINE(Assertion, Value)                              \
+   ((void) ((Assertion) ? (0)                                             \
+                        : ((fprintf (stderr,                              \
+                                     "%s:%d %s(): Assertion '%s' failed", \
+                                     __FILE__,                            \
+                                     __LINE__,                            \
+                                     BSON_FUNC,                           \
+                                     #Assertion),                         \
+                            abort ()),                                    \
+                           0)),                                           \
+    Value)
+
+/**
+ * @brief Assert that the given pointer is non-NULL, while also evaluating to
+ * that pointer.
+ *
+ * Can be used to inline assertions with a pointer dereference:
+ *
+ * ```
+ * foo* f = get_foo();
+ * bar* b = BSON_ASSERT_PTR_INLINE(f)->bar_value;
+ * ```
+ */
+#define BSON_ASSERT_PTR_INLINE(Pointer) \
+   BSON_ASSERT_INLINE ((Pointer) != NULL, (Pointer))
+
 /* Used for asserting parameters to provide a more precise error message */
-#define BSON_ASSERT_PARAM(param)                                                   \
-   do {                                                                            \
-      if ((BSON_UNLIKELY (param == NULL))) {                                       \
-         fprintf (stderr,                                                          \
-                  "The parameter: %s, in function %s, cannot be NULL\n",           \
-                  #param,                                                          \
-                  BSON_FUNC);                                                      \
-         abort ();                                                                 \
-      }                                                                            \
-   } while (0)      
+#define BSON_ASSERT_PARAM(param)                                         \
+   do {                                                                  \
+      if ((BSON_UNLIKELY (param == NULL))) {                             \
+         fprintf (stderr,                                                \
+                  "The parameter: %s, in function %s, cannot be NULL\n", \
+                  #param,                                                \
+                  BSON_FUNC);                                            \
+         abort ();                                                       \
+      }                                                                  \
+   } while (0)
 
 /* obsolete macros, preserved for compatibility */
 #define BSON_STATIC_ASSERT(s) BSON_STATIC_ASSERT_ (s, __LINE__)
@@ -305,6 +335,12 @@
 #define BSON_CONCAT_1(a, b) a##b
 #define BSON_CONCAT(a, b) BSON_CONCAT_1 (a, b)
 #define BSON_CONCAT3(a, b, c) BSON_CONCAT (a, BSON_CONCAT (b, c))
+
+
+#define BSON_UNUSED(...)    \
+   do {                     \
+      (void) (__VA_ARGS__); \
+   } while (0)
 
 
 #endif /* BSON_MACROS_H */
