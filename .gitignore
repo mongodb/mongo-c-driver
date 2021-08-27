@@ -22,7 +22,6 @@ test-results.json
 VERSION_CURRENT
 VERSION_RELEASED
 *.pyc
-data/
 
 # Windows things
 *.sdf

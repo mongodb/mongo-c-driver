@@ -52,26 +52,7 @@ option (ENABLE_PIC
 )
 option (ENABLE_DEBUG_ASSERTIONS "Turn on runtime debug assertions" OFF)
 
-project (mongo-c-driver C CXX)
-
-# cmake_minimum_required(VERSION 3.9)
-# set(PMM_DDS_VERSION 0.1.0-alpha.6)
-# include(pmm.cmake)
-
-# add_compile_definitions(CATCH_CONFIG_ENABLE_BENCHMARKING)
-# pmm(CMakeCM ROLLING DDS DEPENDS catch2@2.13.6 IMPORT AUTO)
-
-find_package(Threads REQUIRED)
-
-add_compile_options(
-   -Werror=discarded-qualifiers
-   -Werror=int-conversion
-   -Werror=incompatible-pointer-types
-   -Werror=implicit-function-declaration
-   -fno-omit-frame-pointer
-   # -fsanitize=thread
-   )
-# add_link_options(-fsanitize=thread)
+project (mongo-c-driver C)
 
 if (NOT CMAKE_BUILD_TYPE)
    set (CMAKE_BUILD_TYPE "RelWithDebInfo")
@@ -501,9 +482,3 @@ if (CMAKE_GENERATOR_TOOLSET)
    message (STATUS "\tinstance: ${CMAKE_GENERATOR_TOOLSET}")
 endif ()
 
-add_executable(workload-find workload_find.c)
-target_link_libraries(workload-find PRIVATE mongoc_shared -pthread)
-
-
-# add_executable(bench bench.cpp)
-# target_link_libraries(bench PRIVATE catch2::catch2 Threads::Threads mongoc_shared)
