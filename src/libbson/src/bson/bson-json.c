@@ -978,13 +978,24 @@ _bson_json_read_string (bson_json_reader_t *reader, /* IN */
 {
    bson_json_read_state_t rs;
    bson_json_read_bson_state_t bs;
+   bool allow_null = true;
 
    BASIC_CB_PREAMBLE;
 
    rs = bson->read_state;
    bs = bson->bson_state;
 
-   if (!bson_utf8_validate ((const char *) val, vlen, true /*allow null*/)) {
+   // TODO: figure out the difference between the read_state and bson_state.
+   if (rs == BSON_JSON_IN_BSON_TYPE_REGEX_VALUES &&
+       (bs == BSON_JSON_LF_REGEX ||
+        bs == BSON_JSON_LF_REGULAR_EXPRESSION_PATTERN ||
+        bs == BSON_JSON_LF_OPTIONS ||
+        bs == BSON_JSON_LF_REGULAR_EXPRESSION_OPTIONS)) {
+      /* Embedded NULL bytes are prohibited in BSON regex pattern or options. */
+      allow_null = false;
+   }
+
+   if (!bson_utf8_validate ((const char *) val, vlen, allow_null)) {
       _bson_json_read_corrupt (reader, "invalid bytes in UTF8 string");
       return;
    }
@@ -1269,7 +1280,7 @@ _bson_json_read_map_key (bson_json_reader_t *reader, /* IN */
 {
    bson_json_reader_bson_t *bson = &reader->bson;
 
-   if (!bson_utf8_validate ((const char *) val, len, true /* allow null */)) {
+   if (!bson_utf8_validate ((const char *) val, len, false /* allow null */)) {
       _bson_json_read_corrupt (reader, "invalid bytes in UTF8 string");
       return;
    }
