@@ -136,15 +136,19 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology,
    BSON_ASSERT (!topology->single_threaded);
    MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
-   if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
+   const int prev_state =
+      bson_atomic_int_compare_exchange ((int *) &topology->scanner_state,
+                                        MONGOC_TOPOLOGY_SCANNER_OFF,
+                                        MONGOC_TOPOLOGY_SCANNER_BG_RUNNING,
+                                        bson_memorder_relaxed);
+
+   if (prev_state != MONGOC_TOPOLOGY_SCANNER_OFF) {
+      // The topology scanner is already running, or another thread is starting
+      // it up now.
       return;
    }
 
    TRACE ("%s", "background monitoring starting");
-
-   BSON_ASSERT (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF);
-
-   topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_BG_RUNNING;
 
    _mongoc_handshake_freeze ();
    _mongoc_topology_description_monitor_opening (td);
