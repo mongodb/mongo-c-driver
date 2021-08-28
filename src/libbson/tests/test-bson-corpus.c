@@ -291,9 +291,91 @@ test_bson_corpus_cb (bson_t *scenario)
                 test_bson_corpus_parse_error);
 }
 
+
+static uint8_t *
+hex_to_bin (const char *hex, uint32_t *len)
+{
+   int i;
+   int hex_len;
+   uint8_t *out;
+
+   hex_len = strlen (hex);
+   if (hex_len % 2 != 0) {
+      return NULL;
+   }
+
+   *len = hex_len / 2;
+   out = bson_malloc0 (*len);
+
+   for (i = 0; i < hex_len; i += 2) {
+      uint32_t hex_char;
+
+      if (1 != sscanf (hex + i, "%2x", &hex_char)) {
+         bson_free (out);
+         return NULL;
+      }
+      out[i / 2] = (uint8_t) hex_char;
+   }
+   return out;
+}
+
+static void
+test_bson_corpus_prose_1 (void) {
+   bson_t *bson;
+   uint8_t *data;
+   uint32_t len;
+   bson_error_t error;
+   bool ok;
+
+   /* Field name within a root document */
+   memset (&error, 0, sizeof (bson_error_t));
+   data = hex_to_bin ("0D000000107800000100000000", &len);
+   bson = bson_new_from_data (data, len);
+   BSON_ASSERT (!bson_as_json (bson, NULL));
+   ok = bson_validate_with_error (bson, BSON_VALIDATE_NONE, &error);
+   BSON_ASSERT (0 == strstr (error.message, "bson corrupt"));
+   BSON_ASSERT (!ok);
+   bson_destroy (bson);
+   bson_free (data);
+
+   /* Field name within a sub-document */
+   memset (&error, 0, sizeof (bson_error_t));
+   data = hex_to_bin ("150000000378000D00000010610000010000000000", &len);
+   bson = bson_new_from_data (data, len);
+   BSON_ASSERT (!bson_as_json (bson, NULL));
+   ok = bson_validate_with_error (bson, BSON_VALIDATE_NONE, &error);
+   BSON_ASSERT (0 == strstr (error.message, "bson corrupt"));
+   BSON_ASSERT (!ok);
+   bson_destroy (bson);
+   bson_free (data);
+
+   /* Pattern for a regular expression */
+   memset (&error, 0, sizeof (bson_error_t));
+   data = hex_to_bin ("0F0000000B610061006300696D0000", &len);
+   bson = bson_new_from_data (data, len);
+   BSON_ASSERT (!bson_as_json (bson, NULL));
+   ok = bson_validate_with_error (bson, BSON_VALIDATE_NONE, &error);
+   BSON_ASSERT (0 == strstr (error.message, "bson corrupt"));
+   BSON_ASSERT (!ok);
+   bson_destroy (bson);
+   bson_free (data);
+
+   /* Flags/options for a regular expression */
+   memset (&error, 0, sizeof (bson_error_t));
+   data = hex_to_bin ("100000000B61006162630069006D0000", &len);
+   bson = bson_new_from_data (data, len);
+   BSON_ASSERT (!bson_as_json (bson, NULL));
+   ok = bson_validate_with_error (bson, BSON_VALIDATE_NONE, &error);
+   BSON_ASSERT (0 == strstr (error.message, "bson corrupt"));
+   BSON_ASSERT (!ok);
+   bson_destroy (bson);
+   bson_free (data);
+}
+
 void
 test_bson_corpus_install (TestSuite *suite)
 {
    install_json_test_suite_with_check (
       suite, BSON_JSON_DIR "/bson_corpus", test_bson_corpus_cb);
+   TestSuite_Add (suite, "/bson_corpus/prose_1", test_bson_corpus_prose_1);
 }
