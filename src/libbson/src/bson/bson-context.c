@@ -107,8 +107,8 @@ static void
 _bson_context_set_oid_seq32_threadsafe (bson_context_t *context, /* IN */
                                         bson_oid_t *oid)         /* OUT */
 {
-   int32_t seq = bson_atomic_int_add (&context->seq32, 1);
-
+   int32_t seq = 1 + bson_atomic_int32_fetch_add (
+                        &context->seq32, 1, bson_memorder_seqcst);
    seq = BSON_UINT32_TO_BE (seq);
    memcpy (&oid->bytes[9], ((uint8_t *) &seq) + 1, 3);
 }
@@ -164,7 +164,8 @@ static void
 _bson_context_set_oid_seq64_threadsafe (bson_context_t *context, /* IN */
                                         bson_oid_t *oid)         /* OUT */
 {
-   int64_t seq = bson_atomic_int64_add (&context->seq64, 1);
+   int64_t seq = 1 + bson_atomic_int64_fetch_add (
+                        &context->seq64, 1, bson_memorder_seqcst);
 
    seq = BSON_UINT64_TO_BE (seq);
    memcpy (&oid->bytes[4], &seq, sizeof (seq));

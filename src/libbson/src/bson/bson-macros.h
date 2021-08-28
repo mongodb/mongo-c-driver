@@ -323,6 +323,9 @@
 #define BSON_GNUC_DEPRECATED
 #endif
 
+#define BSON_CONCAT_1(a, ...) a##__VA_ARGS__
+#define BSON_CONCAT(a, ...) BSON_CONCAT_1 (a, __VA_ARGS__)
+#define BSON_CONCAT3(a, b, c) BSON_CONCAT (a, BSON_CONCAT (b, c))
 
 #if BSON_GNUC_CHECK_VERSION(4, 5)
 #define BSON_GNUC_DEPRECATED_FOR(f) \
@@ -332,14 +335,22 @@
 #endif
 
 
-#define BSON_CONCAT_1(a, b) a##b
-#define BSON_CONCAT(a, b) BSON_CONCAT_1 (a, b)
-#define BSON_CONCAT3(a, b, c) BSON_CONCAT (a, BSON_CONCAT (b, c))
-
-
-#define BSON_UNUSED(...)    \
-   do {                     \
-      (void) (__VA_ARGS__); \
+/**
+ * @brief Mark a point in the code as unreachable. If the point is reached, the
+ * program will abort with an error message.
+ *
+ * @param What A string to include in the error message if this point is ever
+ * executed.
+ */
+#define BSON_UNREACHABLE(What)                               \
+   do {                                                      \
+      fprintf (stderr,                                       \
+               "%s:%d %s(): Unreachable code reached: %s\n", \
+               __FILE__,                                     \
+               __LINE__,                                     \
+               BSON_FUNC,                                    \
+               What);                                        \
+      abort ();                                              \
    } while (0)
 
 

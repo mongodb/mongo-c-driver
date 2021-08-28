@@ -172,16 +172,27 @@ typedef signed char bool;
 
 
 #ifdef _MSC_VER
-#define BSON_CC_Pick(MSVC_Action, GNU_Action) MSVC_Action
+/** Expands the arguments if compiling with MSVC, otherwise empty */
 #define BSON_IF_MSVC(...) __VA_ARGS__
-#define BSON_IF_GNU(...)
+/** Expands the arguments if compiling with GCC or Clang, otherwise empty */
+#define BSON_IF_GNU_LIKE(...)
 #elif defined(__GNUC__) || defined(__clang__)
-#define BSON_CC_Pick(MSVC_Action, GNU_Action) GNU_Action
-#define BSON_IF_GNU(...) __VA_ARGS__
+/** Expands the arguments if compiling with MSVC, otherwise empty */
 #define BSON_IF_MSVC(...)
-#else
-#define BSON_CC_Pick(MSVC_Action, GNU_Action) \
-   _bson_cc_pick_compiler_is_not_known_
+/** Expands the arguments if compiling with GCC or Clang, otherwise empty */
+#define BSON_IF_GNU_LIKE(...) __VA_ARGS__
+#endif
+
+#ifdef BSON_OS_WIN32
+/** Expands the arguments if compiling for Windows, otherwise empty */
+#define BSON_IF_WINDOWS(...) __VA_ARGS__
+/** Expands the arguments if compiling for POSIX, otherwise empty */
+#define BSON_IF_POSIX(...)
+#elif defined(BSON_OS_UNIX)
+/** Expands the arguments if compiling for Windows, otherwise empty */
+#define BSON_IF_WINDOWS(...)
+/** Expands the arguments if compiling for POSIX, otherwise empty */
+#define BSON_IF_POSIX(...) __VA_ARGS__
 #endif
 
 
