@@ -766,7 +766,7 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
                           bson_t *speculative_auth_response /* OUT */,
                           bson_error_t *error)
 {
-   const bson_t *command;
+   bson_t command = BSON_INITIALIZER;
    mongoc_cmd_t hello_cmd;
    bson_t reply;
    int64_t start;
@@ -784,12 +784,8 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
    MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
    BSON_ASSERT (stream);
 
-   command = _mongoc_topology_get_handshake_cmd (cluster->client->topology);
-
-   if (cluster->requires_auth || negotiate_sasl_supported_mechs) {
-      copied_command = bson_copy (command);
-      command = copied_command;
-   }
+   bson_init (&command);
+   _mongoc_topology_dup_handshake_cmd (cluster->client->topology, &command);
 
    if (cluster->requires_auth && speculative_auth_response) {
 #ifdef MONGOC_ENABLE_SSL
@@ -797,12 +793,11 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
 #endif
 
       _mongoc_topology_scanner_add_speculative_authentication (
-         copied_command, cluster->uri, ssl_opts, scram_cache, scram);
+         &command, cluster->uri, ssl_opts, scram_cache, scram);
    }
 
    if (negotiate_sasl_supported_mechs) {
-      _mongoc_handshake_append_sasl_supported_mechs (cluster->uri,
-                                                     copied_command);
+      _mongoc_handshake_append_sasl_supported_mechs (cluster->uri, &command);
    }
 
    start = bson_get_monotonic_time ();
@@ -831,8 +826,8 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
     */
    memset (&hello_cmd, 0, sizeof (hello_cmd));
    hello_cmd.db_name = "admin";
-   hello_cmd.command = command;
-   hello_cmd.command_name = _mongoc_get_command_name (command);
+   hello_cmd.command = &command;
+   hello_cmd.command_name = _mongoc_get_command_name (&command);
    hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
    hello_cmd.server_stream = server_stream;
 
@@ -883,9 +878,7 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
    mongoc_server_stream_cleanup (server_stream);
 
 done:
-   if (copied_command) {
-      bson_destroy (copied_command);
-   }
+   bson_destroy (&command);
    bson_destroy (&reply);
    MC_TD_DROP (td);
 

@@ -124,8 +124,8 @@ _init_hello (mongoc_topology_scanner_t *ts)
 {
    bson_init (&ts->hello_cmd);
    bson_init (&ts->legacy_hello_cmd);
-   bson_init (&ts->handshake_cmd);
    bson_init (&ts->cluster_time);
+   ts->handshake_cmd = NULL;
 
    _add_hello (ts);
 }
@@ -135,7 +135,13 @@ _reset_hello (mongoc_topology_scanner_t *ts)
 {
    bson_reinit (&ts->hello_cmd);
    bson_reinit (&ts->legacy_hello_cmd);
-   bson_reinit (&ts->handshake_cmd);
+
+   bson_mutex_lock (&ts->handshake_cmd_mtx);
+   bson_t *prev_cmd = ts->handshake_cmd;
+   ts->handshake_cmd = NULL;
+   ts->handshake_state = HANDSHAKE_CMD_UNINITIALIZED;
+   bson_mutex_unlock (&ts->handshake_cmd_mtx);
+   bson_destroy (prev_cmd);
 
    _add_hello (ts);
 }
@@ -244,10 +250,13 @@ _mongoc_topology_scanner_parse_speculative_authentication (
    bson_copy_to (&auth_response, speculative_authenticate);
 }
 
-static bool
-_build_handshake_cmd (mongoc_topology_scanner_t *ts)
+static bson_t *
+_build_handshake_cmd (const bson_t *basis_cmd,
+                      const char *appname,
+                      const mongoc_uri_t *uri,
+                      bool is_loadbalanced)
 {
-   bson_t *doc = &ts->handshake_cmd;
+   bson_t *doc = bson_new ();
    bson_t subdoc;
    bson_iter_t iter;
    const char *key;
@@ -257,16 +266,21 @@ _build_handshake_cmd (mongoc_topology_scanner_t *ts)
    int count = 0;
    char buf[16];
 
-   bson_destroy (doc);
-   bson_copy_to (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd, doc);
+   bson_copy_to (basis_cmd, doc);
 
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
-   res = _mongoc_handshake_build_doc_with_application (&subdoc, ts->appname);
+   bool subdoc_okay =
+      _mongoc_handshake_build_doc_with_application (&subdoc, appname);
    bson_append_document_end (doc, &subdoc);
 
+   if (!subdoc_okay) {
+      bson_destroy (doc);
+      return NULL;
+   }
+
    BSON_APPEND_ARRAY_BEGIN (doc, "compression", &subdoc);
-   if (ts->uri) {
-      compressors = mongoc_uri_get_compressors (ts->uri);
+   if (uri) {
+      compressors = mongoc_uri_get_compressors (uri);
 
       if (bson_iter_init (&iter, compressors)) {
          while (bson_iter_next (&iter)) {
@@ -278,12 +292,12 @@ _build_handshake_cmd (mongoc_topology_scanner_t *ts)
    }
    bson_append_array_end (doc, &subdoc);
 
-   if (ts->loadbalanced) {
+   if (is_loadbalanced) {
       BSON_APPEND_BOOL (doc, "loadBalanced", true);
    }
 
    /* Return whether the handshake doc fit the size limit */
-   return res;
+   return doc;
 }
 
 const bson_t *
@@ -297,24 +311,59 @@ _mongoc_topology_scanner_get_monitoring_cmd (mongoc_topology_scanner_t *ts,
  * is called at the start of the scan in _mongoc_topology_run_background, when a
  * node is added in _mongoc_topology_reconcile_add_nodes, or when running a
  * hello directly on a node in _mongoc_stream_run_hello. */
-const bson_t *
-_mongoc_topology_scanner_get_handshake_cmd (mongoc_topology_scanner_t *ts)
+void
+_mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
+                                            bson_t *copy_into)
 {
+   bson_mutex_lock (&ts->handshake_cmd_mtx);
    /* If this is the first time using the node or if it's the first time
     * using it after a failure, build handshake doc */
-   if (bson_empty (&ts->handshake_cmd)) {
-      ts->handshake_ok_to_send = _build_handshake_cmd (ts);
-      if (!ts->handshake_ok_to_send) {
-         MONGOC_WARNING ("Handshake doc too big, not including in hello");
-      }
+   if (ts->handshake_state != HANDSHAKE_CMD_UNINITIALIZED) {
+      /* We're good to just return the handshake now */
+      goto after_init;
    }
 
+   /* There is not yet a handshake command associated with this scanner.
+    * Initialize one and set it now. */
+   /* Note: Don't hold the mutex while we build our command */
+   /* Construct a new handshake command to be sent */
+   bson_t *new_cmd =
+      _build_handshake_cmd (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd,
+                            ts->appname,
+                            ts->uri,
+                            ts->loadbalanced);
+   bson_t *defer_to_destroy = NULL;
+   if (ts->handshake_state != HANDSHAKE_CMD_UNINITIALIZED) {
+      /* Someone else updated the handshake_cmd while we were building ours.
+       * Defer to their copy and just destroy the one we created. */
+      bson_destroy (new_cmd);
+      goto after_init;
+   }
+   /* We're still the one updating the command */
+   /* We will destroy the prior command after we have updated state: */
+   defer_to_destroy = ts->handshake_cmd;
+   /* The "_build" may have failed. */
+   /* Even if new_cmd is NULL, this is still what we want */
+   ts->handshake_cmd = new_cmd;
+   ts->handshake_state =
+      new_cmd == NULL ? HANDSHAKE_CMD_TOO_BIG : HANDSHAKE_CMD_OKAY;
+   /* Defer destroying the prior command until *after* we have released the
+    * mutex. */
+   bson_destroy (defer_to_destroy);
+   if (ts->handshake_state == HANDSHAKE_CMD_TOO_BIG) {
+      MONGOC_WARNING ("Handshake doc too big, not including in hello");
+   }
+
+after_init:
    /* If the doc turned out to be too big */
-   if (!ts->handshake_ok_to_send) {
-      return ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd;
+   if (ts->handshake_state == HANDSHAKE_CMD_TOO_BIG) {
+      bson_t *ret = ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd;
+      bson_copy_to (ret, copy_into);
+   } else {
+      BSON_ASSERT (ts->handshake_cmd != NULL);
+      bson_copy_to (ts->handshake_cmd, copy_into);
    }
-
-   return &ts->handshake_cmd;
+   bson_mutex_unlock (&ts->handshake_cmd_mtx);
 }
 
 static void
@@ -329,10 +378,11 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
 
    if (node->last_used != -1 && node->last_failed == -1) {
       /* The node's been used before and not failed recently */
-      bson_copy_to (_mongoc_topology_scanner_get_monitoring_cmd (ts, node->hello_ok),
-                    &cmd);
+      bson_copy_to (
+         _mongoc_topology_scanner_get_monitoring_cmd (ts, node->hello_ok),
+         &cmd);
    } else {
-      bson_copy_to (_mongoc_topology_scanner_get_handshake_cmd (ts), &cmd);
+      _mongoc_topology_scanner_dup_handshake_cmd (ts, &cmd);
    }
 
    if (node->ts->negotiate_sasl_supported_mechs &&
@@ -396,10 +446,11 @@ mongoc_topology_scanner_new (
    ts->uri = uri;
    ts->appname = NULL;
    ts->api = NULL;
-   ts->handshake_ok_to_send = false;
+   ts->handshake_state = HANDSHAKE_CMD_UNINITIALIZED;
    ts->connect_timeout_msec = connect_timeout_msec;
    /* may be overridden for testing. */
    ts->dns_cache_timeout_ms = DNS_CACHE_TIMEOUT_MS;
+   bson_mutex_init (&ts->handshake_cmd_mtx);
 
    _init_hello (ts);
 
@@ -439,9 +490,10 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    mongoc_async_destroy (ts->async);
    bson_destroy (&ts->hello_cmd);
    bson_destroy (&ts->legacy_hello_cmd);
-   bson_destroy (&ts->handshake_cmd);
+   bson_destroy (ts->handshake_cmd);
    bson_destroy (&ts->cluster_time);
    mongoc_server_api_destroy (ts->api);
+   bson_mutex_destroy (&ts->handshake_cmd_mtx);
 
    /* This field can be set by a mongoc_client */
    bson_free ((char *) ts->appname);
@@ -1405,6 +1457,6 @@ void
 _mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
                                            bool val)
 {
-   BSON_ASSERT (bson_empty (&ts->handshake_cmd));
+   BSON_ASSERT (ts->handshake_cmd == NULL);
    ts->loadbalanced = true;
 }

@@ -1710,7 +1710,7 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_topology_get_handshake_cmd --
+ * _mongoc_topology_dup_handshake_cmd --
  *
  *       Locks topology->mutex and retrieves (possibly constructing) the
  *       handshake on the topology scanner.
@@ -1720,14 +1720,11 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
  *
  *--------------------------------------------------------------------------
  */
-const bson_t *
-_mongoc_topology_get_handshake_cmd (mongoc_topology_t *topology)
+void
+_mongoc_topology_dup_handshake_cmd (mongoc_topology_t *topology,
+                                    bson_t *copy_into)
 {
-   const bson_t *cmd;
-   bson_mutex_lock (&topology->mutex);
-   cmd = _mongoc_topology_scanner_get_handshake_cmd (topology->scanner);
-   bson_mutex_unlock (&topology->mutex);
-   return cmd;
+   _mongoc_topology_scanner_dup_handshake_cmd (topology->scanner, copy_into);
 }
 
 void
