@@ -818,13 +818,26 @@ test_mongoc_handshake_race_condition (void)
          BSON_ASSERT (!COMMON_PREFIX (thread_create) (
             &threads[j], &handshake_append_worker, NULL));
       }
-
-      for (j = 0; j < 4; ++j) {
+for (j = 0; j < 4; ++j) {
          COMMON_PREFIX (thread_join) (threads[j]);
       }
    }
 
    _reset_handshake ();
+}
+
+/* This test checks that we can call the deprecated mongoc_handshake_data_append()
+function with the same parameters as mongoc_add_driver_info(). It does not repeat
+actual checks beyond simple validation, as we do assume the the implementation 
+forwards to mongoc_add_driver_info(): */
+static void
+test_mongoc_handshake_data_append (void)
+{
+   _reset_handshake ();
+
+   mongoc_add_driver_info ("driver_name", "driver_version", "platform");
+
+   _reset_handshake();
 }
 
 void
@@ -865,4 +878,9 @@ test_handshake_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/MongoDB/handshake/race_condition",
                   test_mongoc_handshake_race_condition);
+
+   /* Test deprecated forwarding function: */
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/data_append",
+                  test_mongoc_handshake_data_append);
 }
