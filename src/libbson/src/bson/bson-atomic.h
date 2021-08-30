@@ -251,6 +251,7 @@ bson_atomic_ptr_compare_exchange (void *volatile *ptr,
                                   enum bson_atomic_memorder ord)
 {
    switch (ord) {
+   case bson_memorder_release:
    case bson_memorder_seqcst:
       DEF_ATOMIC_CMPEXCH (Pointer, , __ATOMIC_SEQ_CST, ptr, expect, new_value);
       return expect;
@@ -266,14 +267,6 @@ bson_atomic_ptr_compare_exchange (void *volatile *ptr,
       DEF_ATOMIC_CMPEXCH (Pointer,
                           MSVC_MEMORDER_SUFFIX (_acq),
                           __ATOMIC_ACQUIRE,
-                          ptr,
-                          expect,
-                          new_value);
-      return expect;
-   case bson_memorder_release:
-      DEF_ATOMIC_CMPEXCH (Pointer,
-                          MSVC_MEMORDER_SUFFIX (_rel),
-                          __ATOMIC_RELEASE,
                           ptr,
                           expect,
                           new_value);

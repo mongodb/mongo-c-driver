@@ -453,22 +453,25 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
       return false;
    }
 
-   bson_mutex_lock (&topology->mutex);
-   MC_DECL_TD_TAKE (td, topology);
+   bson_mutex_lock (&topology->modification_mtx);
+   mc_shared_tpl_descr new_td = mc_tpld_clone (topology);
 
    if (callbacks) {
-      memcpy (
-         &td.ptr->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
+      memcpy (&new_td.ptr->apm_callbacks,
+              callbacks,
+              sizeof (mongoc_apm_callbacks_t));
       memcpy (&pool->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
    }
 
-   mongoc_topology_set_apm_callbacks (topology, callbacks, context);
-   td.ptr->apm_context = context;
+   mongoc_topology_set_apm_callbacks (topology, new_td.ptr, callbacks, context);
+   new_td.ptr->apm_context = context;
    pool->apm_context = context;
    pool->apm_callbacks_set = true;
 
-   MC_TD_DROP (td);
-   bson_mutex_unlock (&topology->mutex);
+   mc_tpld_replace (topology, new_td);
+   bson_mutex_unlock (&topology->modification_mtx);
+
+   MC_TD_DROP (new_td);
 
    return true;
 }
