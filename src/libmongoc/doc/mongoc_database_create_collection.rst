@@ -12,7 +12,8 @@ Synopsis
   mongoc_database_create_collection (mongoc_database_t *database,
                                      const char *name,
                                      const bson_t *opts,
-                                     bson_error_t *error);
+                                     bson_error_t *error)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

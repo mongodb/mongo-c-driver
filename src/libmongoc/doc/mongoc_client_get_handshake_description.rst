@@ -8,11 +8,12 @@ Synopsis
 
 .. code-block:: c
 
-   mongoc_server_description_t *
-   mongoc_client_get_handshake_description (mongoc_client_t *client,
-                                            uint32_t server_id,
-                                            bson_t *opts,
-                                            bson_error_t *error);
+  mongoc_server_description_t *
+  mongoc_client_get_handshake_description (mongoc_client_t *client,
+                                           uint32_t server_id,
+                                           bson_t *opts,
+                                           bson_error_t *error)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Returns a description constructed from the initial handshake response to a server.
 

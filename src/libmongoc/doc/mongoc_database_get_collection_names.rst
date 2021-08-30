@@ -10,7 +10,9 @@ Synopsis
 
   char **
   mongoc_database_get_collection_names (mongoc_database_t *database,
-                                        bson_error_t *error);
+                                        bson_error_t *error)
+     BSON_GNUC_WARN_UNUSED_RESULT
+     BSON_GNUC_DEPRECATED_FOR (mongoc_database_get_collection_names_with_opts);
 
 Deprecated
 ----------

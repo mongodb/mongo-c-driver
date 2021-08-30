@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   mongoc_session_opt_t *
-  mongoc_session_opts_clone (const mongoc_session_opt_t *opts);
+  mongoc_session_opts_clone (const mongoc_session_opt_t *opts)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Create a copy of a session options struct.
 

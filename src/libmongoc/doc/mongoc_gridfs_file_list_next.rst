@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   mongoc_gridfs_file_t *
-  mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list);
+  mongoc_gridfs_file_list_next (mongoc_gridfs_file_list_t *list)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

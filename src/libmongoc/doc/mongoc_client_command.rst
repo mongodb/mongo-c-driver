@@ -17,7 +17,8 @@ Synopsis
                          uint32_t batch_size,
                          const bson_t *query,
                          const bson_t *fields,
-                         const mongoc_read_prefs_t *read_prefs);
+                         const mongoc_read_prefs_t *read_prefs)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 This function is superseded by :symbol:`mongoc_client_command_with_opts()`, :symbol:`mongoc_client_read_command_with_opts()`, :symbol:`mongoc_client_write_command_with_opts()`, and :symbol:`mongoc_client_read_write_command_with_opts()`.
 
