@@ -47,7 +47,8 @@ mongoc_collection_aggregate (mongoc_collection_t *collection,
 MONGOC_EXPORT (void)
 mongoc_collection_destroy (mongoc_collection_t *collection);
 MONGOC_EXPORT (mongoc_collection_t *)
-mongoc_collection_copy (mongoc_collection_t *collection);
+mongoc_collection_copy (mongoc_collection_t *collection)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_command (mongoc_collection_t *collection,
                            mongoc_query_flags_t flags,
@@ -149,10 +150,12 @@ mongoc_collection_ensure_index (mongoc_collection_t *collection,
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_find_indexes (mongoc_collection_t *collection,
                                 bson_error_t *error)
+   BSON_GNUC_WARN_UNUSED_RESULT
    BSON_GNUC_DEPRECATED_FOR (mongoc_collection_find_indexes_with_opts);
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_find_indexes_with_opts (mongoc_collection_t *collection,
-                                          const bson_t *opts);
+                                          const bson_t *opts)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_collection_find (mongoc_collection_t *collection,
                         mongoc_query_flags_t flags,
@@ -326,7 +329,8 @@ MONGOC_EXPORT (const bson_t *)
 mongoc_collection_get_last_error (const mongoc_collection_t *collection)
    BSON_GNUC_DEPRECATED;
 MONGOC_EXPORT (char *)
-mongoc_collection_keys_to_index_string (const bson_t *keys);
+mongoc_collection_keys_to_index_string (const bson_t *keys)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (bool)
 mongoc_collection_validate (mongoc_collection_t *collection,
                             const bson_t *options,
@@ -335,7 +339,7 @@ mongoc_collection_validate (mongoc_collection_t *collection,
 MONGOC_EXPORT (mongoc_change_stream_t *)
 mongoc_collection_watch (const mongoc_collection_t *coll,
                          const bson_t *pipeline,
-                         const bson_t *opts);
+                         const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (int64_t)
 mongoc_collection_count_documents (mongoc_collection_t *coll,
                                    const bson_t *filter,

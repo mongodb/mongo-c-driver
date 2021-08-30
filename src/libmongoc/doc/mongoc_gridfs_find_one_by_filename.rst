@@ -11,7 +11,8 @@ Synopsis
   mongoc_gridfs_file_t *
   mongoc_gridfs_find_one_by_filename (mongoc_gridfs_t *gridfs,
                                       const char *filename,
-                                      bson_error_t *error);
+                                      bson_error_t *error)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   mongoc_stream_t *
-  mongoc_stream_buffered_new (mongoc_stream_t *base_stream, size_t buffer_size);
+  mongoc_stream_buffered_new (mongoc_stream_t *base_stream,
+                          size_t buffer_size) BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

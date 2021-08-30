@@ -8,8 +8,8 @@ Synopsis
 
 .. code-block:: c
 
-   mongoc_auto_encryption_opts_t *
-   mongoc_auto_encryption_opts_new (void);
+  mongoc_auto_encryption_opts_t *
+  mongoc_auto_encryption_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
 
 
 Create a new :symbol:`mongoc_auto_encryption_opts_t`.

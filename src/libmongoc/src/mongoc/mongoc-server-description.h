@@ -34,7 +34,7 @@ mongoc_server_description_destroy (mongoc_server_description_t *description);
 
 MONGOC_EXPORT (mongoc_server_description_t *)
 mongoc_server_description_new_copy (
-   const mongoc_server_description_t *description);
+   const mongoc_server_description_t *description) BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (uint32_t)
 mongoc_server_description_id (const mongoc_server_description_t *description);

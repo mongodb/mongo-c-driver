@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   mongoc_read_concern_t *
-  mongoc_read_concern_copy (const mongoc_read_concern_t *read_concern);
+  mongoc_read_concern_copy (const mongoc_read_concern_t *read_concern)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

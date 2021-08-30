@@ -11,7 +11,8 @@ Synopsis
   mongoc_collection_t *
   mongoc_client_get_collection (mongoc_client_t *client,
                                 const char *db,
-                                const char *collection);
+                                const char *collection)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Get a newly allocated :symbol:`mongoc_collection_t` for the collection named ``collection`` in the database named ``db``.
 

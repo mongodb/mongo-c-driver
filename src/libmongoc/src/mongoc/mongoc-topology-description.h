@@ -35,7 +35,8 @@ mongoc_topology_description_destroy (
 
 MONGOC_EXPORT (mongoc_topology_description_t *)
 mongoc_topology_description_new_copy (
-   const mongoc_topology_description_t *description);
+   const mongoc_topology_description_t *description)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (bool)
 mongoc_topology_description_has_readable_server (
@@ -50,7 +51,8 @@ mongoc_topology_description_type (const mongoc_topology_description_t *td);
 
 MONGOC_EXPORT (mongoc_server_description_t **)
 mongoc_topology_description_get_servers (
-   const mongoc_topology_description_t *td, size_t *n);
+   const mongoc_topology_description_t *td,
+   size_t *n) BSON_GNUC_WARN_UNUSED_RESULT;
 
 BSON_END_DECLS
 

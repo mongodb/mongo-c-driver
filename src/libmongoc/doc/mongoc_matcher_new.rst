@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   mongoc_matcher_t *
-  mongoc_matcher_new (const bson_t *query, bson_error_t *error);
+  mongoc_matcher_new (const bson_t *query, bson_error_t *error)
+     BSON_GNUC_WARN_UNUSED_RESULT BSON_GNUC_DEPRECATED;
 
 Create a new :symbol:`mongoc_matcher_t` using the query specification provided.
 

@@ -39,7 +39,7 @@
 #endif
 
 #if defined(_AIX) && !defined(MONGOC_HAVE_SS_FAMILY)
-# define ss_family __ss_family
+#define ss_family __ss_family
 #endif
 
 #include "mongoc-iovec.h"
@@ -59,7 +59,8 @@ typedef struct {
 } mongoc_socket_poll_t;
 
 MONGOC_EXPORT (mongoc_socket_t *)
-mongoc_socket_accept (mongoc_socket_t *sock, int64_t expire_at);
+mongoc_socket_accept (mongoc_socket_t *sock,
+                      int64_t expire_at) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (int)
 mongoc_socket_bind (mongoc_socket_t *sock,
                     const struct sockaddr *addr,
@@ -72,7 +73,7 @@ mongoc_socket_connect (mongoc_socket_t *sock,
                        mongoc_socklen_t addrlen,
                        int64_t expire_at);
 MONGOC_EXPORT (char *)
-mongoc_socket_getnameinfo (mongoc_socket_t *sock);
+mongoc_socket_getnameinfo (mongoc_socket_t *sock) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (void)
 mongoc_socket_destroy (mongoc_socket_t *sock);
 MONGOC_EXPORT (int)
@@ -84,7 +85,9 @@ mongoc_socket_getsockname (mongoc_socket_t *sock,
 MONGOC_EXPORT (int)
 mongoc_socket_listen (mongoc_socket_t *sock, unsigned int backlog);
 MONGOC_EXPORT (mongoc_socket_t *)
-mongoc_socket_new (int domain, int type, int protocol);
+mongoc_socket_new (int domain,
+                   int type,
+                   int protocol) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (ssize_t)
 mongoc_socket_recv (mongoc_socket_t *sock,
                     void *buf,
