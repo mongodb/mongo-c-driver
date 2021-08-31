@@ -153,7 +153,6 @@ static void
 test_sdam_cb (bson_t *test)
 {
    mongoc_client_t *client;
-   mongoc_topology_description_t *td;
    bson_t phase;
    bson_t phases;
    bson_t servers;
@@ -170,7 +169,6 @@ test_sdam_cb (bson_t *test)
    /* parse out the uri and use it to create a client */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
    client = test_framework_client_new (bson_iter_utf8 (&iter, NULL), NULL);
-   td = client->topology->_shared_descr_.ptr;
 
    /* for each phase, parse and validate */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "phases"));
@@ -180,7 +178,8 @@ test_sdam_cb (bson_t *test)
    /* LoadBalanced topologies change the server from Unknown to LoadBalancer
     * when SDAM monitoring begins. Force an opening, which would occur on the
     * first operation on the client. */
-   _mongoc_topology_description_monitor_opening (td);
+   _mongoc_topology_description_monitor_opening (
+      mc_tpld_unsafe_get_mutable (client->topology));
 
    while (bson_iter_next (&phase_iter)) {
       bson_iter_bson (&phase_iter, &phase);
@@ -193,10 +192,13 @@ test_sdam_cb (bson_t *test)
       bson_iter_init (&outcome_iter, &outcome);
 
       while (bson_iter_next (&outcome_iter)) {
+         mongoc_topology_description_t *td =
+            mc_tpld_unsafe_get_mutable (client->topology);
          if (strcmp ("servers", bson_iter_key (&outcome_iter)) == 0) {
             bson_iter_bson (&outcome_iter, &servers);
-            ASSERT_CMPINT (
-               bson_count_keys (&servers), ==, (int) td->servers->items_len);
+            ASSERT_CMPINT (bson_count_keys (&servers),
+                           ==,
+                           mc_tpld_servers_const (td)->items_len);
 
             bson_iter_init (&servers_iter, &servers);
 
@@ -205,7 +207,10 @@ test_sdam_cb (bson_t *test)
                hostname = bson_iter_key (&servers_iter);
                bson_iter_bson (&servers_iter, &server);
 
-               _topology_has_description (td, &server, hostname);
+               _topology_has_description (
+                  mc_tpld_unsafe_get_mutable (client->topology),
+                  &server,
+                  hostname);
             }
 
          } else if (strcmp ("setName", bson_iter_key (&outcome_iter)) == 0) {
@@ -368,14 +373,15 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
 {
    int i;
    uint32_t server_id;
-   mongoc_set_t *servers;
+   const mongoc_set_t *servers;
    bson_t cmd;
    bson_error_t error;
 
    bson_init (&cmd);
    BCON_APPEND (&cmd, "configureFailPoint", "failCommand", "mode", "off");
 
-   servers = client->topology->_shared_descr_.ptr->servers;
+   mc_shared_tpl_descr td = mc_tpld_take_ref (client->topology);
+   servers = mc_tpld_servers_const (td.ptr);
 
    for (i = 0; i < servers->items_len; i++) {
       bool ret;
@@ -391,6 +397,9 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
       if (!ret) {
          MONGOC_DEBUG ("error disabling failpoint: %s", error.message);
       }
+      mongoc_shared_ptr_rebind (&td.sptr,
+                                mc_tpld_take_ref (client->topology).sptr);
+      servers = mc_tpld_servers_const (td.ptr);
    }
 
    bson_destroy (&cmd);

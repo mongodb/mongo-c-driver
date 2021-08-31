@@ -219,13 +219,11 @@ _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
 
    topology = server_monitor->topology;
    /* Cluster time is updated on every reply. */
-   bson_mutex_lock (&topology->mutex);
    MC_DECL_TD_TAKE (td, topology);
    if (!bson_empty (&td.ptr->cluster_time)) {
       bson_append_document (cmd, "$clusterTime", 12, &td.ptr->cluster_time);
    }
    MC_TD_DROP (td);
-   bson_mutex_unlock (&topology->mutex);
 }
 
 static bool
@@ -664,28 +662,27 @@ _server_monitor_update_topology_description (
       _mongoc_topology_update_cluster_time (topology, hello_response);
    }
 
-   bson_mutex_lock (&topology->mutex);
-   if (topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
-      /* This is the another case of holding both locks. topology->mutex is
-       * always locked first, then server monitor mutex after. */
-      bson_mutex_lock (&server_monitor->shared.mutex);
-      server_monitor->shared.scan_requested = false;
-      bson_mutex_unlock (&server_monitor->shared.mutex);
-
-      MC_DECL_TD_TAKE (td, topology);
-      mongoc_topology_description_handle_hello (
-         td.ptr,
-         server_monitor->server_id,
-         hello_response,
-         description->round_trip_time_msec,
-         &description->error);
-      /* Reconcile server monitors. */
-      _mongoc_topology_background_monitoring_reconcile (topology, td.ptr);
-      MC_TD_DROP (td);
+   if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
+      return;
    }
+
+   /* This is the another case of holding both locks. topology->mutex is
+    * always locked first, then server monitor mutex after. */
+   bson_mutex_lock (&server_monitor->shared.mutex);
+   server_monitor->shared.scan_requested = false;
+   bson_mutex_unlock (&server_monitor->shared.mutex);
+
+   mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
+   mongoc_topology_description_handle_hello (tdmod.new_td,
+                                             server_monitor->server_id,
+                                             hello_response,
+                                             description->round_trip_time_msec,
+                                             &description->error);
+   /* Reconcile server monitors. */
+   _mongoc_topology_background_monitoring_reconcile (topology, tdmod.new_td);
    /* Wake threads performing server selection. */
    mongoc_cond_broadcast (&server_monitor->topology->cond_client);
-   bson_mutex_unlock (&server_monitor->topology->mutex);
+   mc_tpld_modify_commit (tdmod);
 }
 
 /* Create a new server monitor.
@@ -932,14 +929,13 @@ exit:
       }
       server_monitor->stream = NULL;
       server_monitor->more_to_come = false;
-      bson_mutex_lock (&server_monitor->topology->mutex);
-      MC_DECL_TD_TAKE (td, server_monitor->topology);
+      mc_tpld_modification tdmod =
+         mc_tpld_modify_begin (server_monitor->topology);
       _mongoc_topology_clear_connection_pool (
-         td.ptr,
+         tdmod.new_td,
          server_monitor->description->id,
          &server_monitor->description->service_id);
-      bson_mutex_unlock (&server_monitor->topology->mutex);
-      MC_TD_DROP (td);
+      mc_tpld_modify_commit (tdmod);
    }
 
    bson_destroy (&hello_response);
@@ -1132,10 +1128,7 @@ _server_monitor_ping_server (mongoc_server_monitor_t *server_monitor,
  */
 static BSON_THREAD_FUN (_server_monitor_rtt_thread, server_monitor_void)
 {
-   mongoc_server_monitor_t *server_monitor;
-   mongoc_server_description_t *sd;
-
-   server_monitor = (mongoc_server_monitor_t *) server_monitor_void;
+   mongoc_server_monitor_t *server_monitor = server_monitor_void;
 
    while (true) {
       int64_t rtt_ms;
@@ -1149,27 +1142,30 @@ static BSON_THREAD_FUN (_server_monitor_rtt_thread, server_monitor_void)
       }
       bson_mutex_unlock (&server_monitor->shared.mutex);
 
-      bson_mutex_lock (&server_monitor->topology->mutex);
-      MC_DECL_TD_TAKE (td, server_monitor->topology);
-      sd = mongoc_topology_description_server_by_id (
-         td.ptr, server_monitor->description->id, &error);
-      hello_ok = sd ? sd->hello_ok : false;
-      MC_TD_DROP (td);
-      bson_mutex_unlock (&server_monitor->topology->mutex);
+      {
+         MC_DECL_TD_TAKE (td, server_monitor->topology);
+         const mongoc_server_description_t *sd =
+            mongoc_topology_description_server_by_id_const (
+               td.ptr, server_monitor->description->id, &error);
+         hello_ok = sd ? sd->hello_ok : false;
+         MC_TD_DROP (td);
+      }
 
       _server_monitor_ping_server (server_monitor, hello_ok, &rtt_ms);
       if (rtt_ms != MONGOC_RTT_UNSET) {
-         bson_mutex_lock (&server_monitor->topology->mutex);
-         td = mc_tpld_take_ref (server_monitor->topology);
-         sd = mongoc_topology_description_server_by_id (
-            td.ptr, server_monitor->description->id, &error);
-         if (sd) {
+         mc_tpld_modification tdmod =
+            mc_tpld_modify_begin (server_monitor->topology);
+         mongoc_server_description_t *const mut_sd =
+            mongoc_topology_description_server_by_id (
+               tdmod.new_td, server_monitor->description->id, &error);
+         if (mut_sd) {
+            mongoc_server_description_update_rtt (mut_sd, rtt_ms);
+            mc_tpld_modify_commit (tdmod);
+         } else {
             /* If the server description has been removed, the RTT thread will
              * be terminated by background monitoring soon. */
-            mongoc_server_description_update_rtt (sd, rtt_ms);
+            mc_tpld_modify_drop (tdmod);
          }
-         MC_TD_DROP (td);
-         bson_mutex_unlock (&server_monitor->topology->mutex);
       }
       mongoc_server_monitor_wait (server_monitor);
    }

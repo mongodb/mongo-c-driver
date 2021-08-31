@@ -452,15 +452,15 @@ dump_hosts (mongoc_host_list_t *hosts)
 }
 
 static void
-dump_topology_description (mongoc_topology_description_t *td)
+dump_topology_description (const mongoc_topology_description_t *td)
 {
    size_t i;
-   mongoc_server_description_t *sd;
+   const mongoc_server_description_t *sd;
+   const mongoc_set_t *servers = mc_tpld_servers_const (td);
 
    MONGOC_DEBUG ("topology hosts:");
-   for (i = 0; i < td->servers->items_len; ++i) {
-      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers,
-                                                                (int) i);
+   for (i = 0; i < servers->items_len; ++i) {
+      sd = mongoc_set_get_item_const (servers, (int) i);
       MONGOC_DEBUG ("- %s", sd->host.host_and_port);
    }
 }
@@ -471,6 +471,7 @@ check_topology_description (mongoc_topology_description_t *td,
 {
    int nhosts = 0;
    mongoc_host_list_t *host;
+   const mongoc_set_t *servers = mc_tpld_servers_const (td);
 
    for (host = hosts; host; host = host->next) {
       uint32_t server_count;
@@ -478,10 +479,10 @@ check_topology_description (mongoc_topology_description_t *td,
       nhosts++;
       /* Check that "host" is already in the topology description by upserting
        * it, and ensuring that the number of servers remains constant. */
-      server_count = td->servers->items_len;
+      server_count = servers->items_len;
       BSON_ASSERT (mongoc_topology_description_add_server (
          td, host->host_and_port, NULL));
-      if (server_count != td->servers->items_len) {
+      if (server_count != servers->items_len) {
          dump_topology_description (td);
          dump_hosts (hosts);
          test_error ("topology description did not have host: %s",
@@ -489,7 +490,7 @@ check_topology_description (mongoc_topology_description_t *td,
       }
    }
 
-   if (nhosts != td->servers->items_len) {
+   if (nhosts != mc_tpld_servers_const (td)->items_len) {
       dump_topology_description (td);
       dump_hosts (hosts);
       test_error ("topology description had extra hosts");
@@ -683,11 +684,11 @@ _prose_test_9 (bool pooled)
       topology = client->topology;
    }
 
-   bson_mutex_lock (&topology->mutex);
+   bson_mutex_lock (&topology->tpld_modification_mtx);
    _mongoc_topology_set_rr_resolver (topology, _mock_resolver);
    _mongoc_topology_set_srv_polling_rescan_interval_ms (topology,
                                                         RESCAN_INTERVAL_MS);
-   bson_mutex_unlock (&topology->mutex);
+   bson_mutex_unlock (&topology->tpld_modification_mtx);
 
    if (pooled) {
       client = mongoc_client_pool_pop (pool);
@@ -700,11 +701,11 @@ _prose_test_9 (bool pooled)
       _prose_loadbalanced_ping (client);
    }
 
-   bson_mutex_lock (&topology->mutex);
+   bson_mutex_lock (&topology->tpld_modification_mtx);
    expected_hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
-   check_topology_description (client->topology->_shared_descr_.ptr,
+   check_topology_description (mc_tpld_unsafe_get_mutable (client->topology),
                                expected_hosts);
-   bson_mutex_unlock (&topology->mutex);
+   bson_mutex_unlock (&topology->tpld_modification_mtx);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);

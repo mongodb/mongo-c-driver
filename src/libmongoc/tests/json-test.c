@@ -138,13 +138,13 @@ mongoc_server_description_t *
 server_description_by_hostname (mongoc_topology_description_t *topology,
                                 const char *address)
 {
-   mongoc_set_t *set = topology->servers;
+   const mongoc_set_t *set = mc_tpld_servers_const (topology);
    mongoc_server_description_t *server_iter;
    int i;
 
    for (i = 0; i < set->items_len; i++) {
-      server_iter = (mongoc_server_description_t *) mongoc_set_get_item (
-         topology->servers, i);
+      server_iter = (mongoc_server_description_t *) mongoc_set_get_item_const (
+         mc_tpld_servers_const (topology), i);
 
       if (strcasecmp (address, server_iter->connection_address) == 0) {
          return server_iter;
@@ -186,7 +186,6 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
    bson_iter_t phase_field_iter;
    const char *hostname;
 
-   td = topology->_shared_descr_.ptr;
    if (bson_iter_init_find (&phase_field_iter, phase, "description")) {
       const char *description;
 
@@ -209,6 +208,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          bson_iter_init_find (&hello_field_iter, &hello, "0");
          hostname = bson_iter_utf8 (&hello_field_iter, NULL);
+         td = mc_tpld_unsafe_get_mutable (topology);
          sd = server_description_by_hostname (td, hostname);
 
          /* if server has been removed from topology, skip */
@@ -223,7 +223,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
          capture_logs (true);
          mongoc_topology_description_handle_hello (
             td, sd->id, &response, 1, NULL);
-         if (td->servers->items_len == 0) {
+         if (mc_tpld_servers_const (td)->items_len == 0) {
             ASSERT_CAPTURED_LOG ("topology",
                                  MONGOC_LOG_LEVEL_WARNING,
                                  "Last server removed from topology");
@@ -254,6 +254,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          bson_iter_init_find (&app_error_field_iter, &app_error, "address");
          hostname = bson_iter_utf8 (&app_error_field_iter, NULL);
+         td = mc_tpld_unsafe_get_mutable (topology);
          sd = server_description_by_hostname (td, hostname);
 
          /* if server has been removed from topology, skip */
@@ -310,7 +311,6 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
          }
 
          memset (&err, 0, sizeof (bson_error_t));
-         bson_mutex_lock (&topology->mutex);
          _mongoc_topology_handle_app_error (topology,
                                             sd->id,
                                             handshake_complete,
@@ -320,7 +320,6 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
                                             max_wire_version,
                                             generation,
                                             &kZeroServiceId);
-         bson_mutex_unlock (&topology->mutex);
       }
    }
 }
@@ -436,7 +435,7 @@ test_server_selection_logic_cb (bson_t *test)
       }
 
       /* add new server to our topology description */
-      mongoc_set_add (topology.servers, sd->id, sd);
+      mongoc_set_add (mc_tpld_servers (&topology), sd->id, sd);
    }
 
    /* create read preference document from test */

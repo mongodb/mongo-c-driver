@@ -909,7 +909,7 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
 {
    mongoc_uri_t *uri = NULL;
    mongoc_client_t *client = NULL;
-   mongoc_set_t *servers = NULL;
+   const mongoc_set_t *servers = NULL;
    mongoc_transaction_opt_t *txn_opts = NULL;
    mongoc_session_opt_t *session_opts = NULL;
    mongoc_client_session_t *session = NULL;
@@ -922,7 +922,7 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    bool r;
    uint32_t expected_id;
    uint32_t actual_id;
-   mongoc_server_description_t *sd = NULL;
+   const mongoc_server_description_t *sd = NULL;
    int i;
 
    uri = test_framework_get_uri ();
@@ -978,9 +978,10 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
    ASSERT_CMPINT32 (actual_id, ==, expected_id);
 
    /* get a valid server id that's different from the pinned server id */
-   servers = client->topology->_shared_descr_.ptr->servers;
+   servers =
+      mc_tpld_servers_const (mc_tpld_unsafe_get_mutable (client->topology));
    for (i = 0; i < servers->items_len; i++) {
-      sd = (mongoc_server_description_t *) mongoc_set_get_item (servers, i);
+      sd = mongoc_set_get_item_const (servers, i);
       if (sd && sd->id != actual_id) {
          break;
       }

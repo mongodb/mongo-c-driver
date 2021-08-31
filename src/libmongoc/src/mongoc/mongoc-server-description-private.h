@@ -131,16 +131,16 @@ mongoc_server_description_init (mongoc_server_description_t *sd,
                                 uint32_t id);
 bool
 mongoc_server_description_has_rs_member (
-   mongoc_server_description_t *description, const char *address);
+   const mongoc_server_description_t *description, const char *address);
 
 
 bool
 mongoc_server_description_has_set_version (
-   mongoc_server_description_t *description);
+   const mongoc_server_description_t *description);
 
 bool
 mongoc_server_description_has_election_id (
-   mongoc_server_description_t *description);
+   const mongoc_server_description_t *description);
 
 void
 mongoc_server_description_cleanup (mongoc_server_description_t *sd);
@@ -168,15 +168,16 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
                                         const bson_error_t *error /* IN */);
 
 void
-mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
-                                        size_t sds_len,
-                                        mongoc_server_description_t *primary,
-                                        int64_t heartbeat_frequency_ms,
-                                        const mongoc_read_prefs_t *read_prefs);
+mongoc_server_description_filter_stale (
+   const mongoc_server_description_t **sds,
+   size_t sds_len,
+   const mongoc_server_description_t *primary,
+   int64_t heartbeat_frequency_ms,
+   const mongoc_read_prefs_t *read_prefs);
 
 void
 mongoc_server_description_filter_tags (
-   mongoc_server_description_t **descriptions,
+   const mongoc_server_description_t **descriptions,
    size_t description_len,
    const mongoc_read_prefs_t *read_prefs);
 

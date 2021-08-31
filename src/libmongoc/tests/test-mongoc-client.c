@@ -1855,13 +1855,10 @@ responder (request_t *request, void *data)
 
 /* mongoc_set_for_each callback */
 static bool
-host_equals (void *item, void *ctx)
+host_equals (const void *item, void *ctx)
 {
-   mongoc_server_description_t *sd;
-   const char *host_and_port;
-
-   sd = (mongoc_server_description_t *) item;
-   host_and_port = (const char *) ctx;
+   const mongoc_server_description_t *sd = item;
+   const char *host_and_port = ctx;
 
    return !strcasecmp (sd->host.host_and_port, host_and_port);
 }
@@ -1937,7 +1934,6 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    }
 
    topology = client->topology;
-   td = topology->_shared_descr_.ptr;
 
    /* a mongos load-balanced connection never removes down nodes */
    discovered_nodes_len = rs ? 1 : 4;
@@ -1957,7 +1953,9 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
 
       bson_destroy (&reply);
 
-      ASSERT_CMPINT (discovered_nodes_len, ==, (int) td->servers->items_len);
+      td = mc_tpld_unsafe_get_mutable (topology);
+      ASSERT_CMPINT (
+         discovered_nodes_len, ==, (int) mc_tpld_servers_const (td)->items_len);
 
       if (rs) {
          ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
@@ -1972,14 +1970,14 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    }
 
    if (connection_option == RECONNECT) {
-      id = mongoc_set_find_id (td->servers,
+      id = mongoc_set_find_id (mc_tpld_servers_const (td),
                                host_equals,
                                (void *) mock_server_get_host_and_port (server));
       ASSERT_CMPINT (id, !=, 0);
       bson_set_error (
          &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "err");
       mongoc_topology_invalidate_server (
-         topology->_shared_descr_.ptr, id, &error);
+         mc_tpld_unsafe_get_mutable (topology), id, &error);
       if (rs) {
          ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
       } else {
@@ -1996,7 +1994,8 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
 
       bson_destroy (&reply);
 
-      ASSERT_CMPINT (discovered_nodes_len, ==, (int) td->servers->items_len);
+      ASSERT_CMPINT (
+         discovered_nodes_len, ==, (int) mc_tpld_servers_const (td)->items_len);
 
       if (pooled) {
          ASSERT_CMPINT ((int) client->cluster.nodes->items_len, ==, 1);
@@ -2790,7 +2789,7 @@ _test_mongoc_client_select_server_error (bool pooled)
 
    /* Server Selection Spec: "With topology type Single, the single server is
     * always suitable for reads if it is available." */
-   tdtype = client->topology->_shared_descr_.ptr->type;
+   tdtype = mc_tpld_unsafe_get_mutable (client->topology)->type;
    if (tdtype == MONGOC_TOPOLOGY_SINGLE || tdtype == MONGOC_TOPOLOGY_SHARDED) {
       ASSERT (sd);
       server_type = mongoc_server_description_type (sd);
@@ -3969,7 +3968,7 @@ test_mongoc_client_recv_network_error (void)
 
    /* The server should be a standalone. */
    sd = mongoc_topology_server_by_id (
-      client->topology->_shared_descr_.ptr, 1, &error);
+      mc_tpld_unsafe_get_mutable (client->topology), 1, &error);
    ASSERT_OR_PRINT (sd, error);
    generation = mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
    BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
@@ -3990,7 +3989,7 @@ test_mongoc_client_recv_network_error (void)
    BSON_ASSERT (!_mongoc_client_recv (client, &rpc, &buffer, stream, &error));
 
    sd = mongoc_topology_server_by_id (
-      client->topology->_shared_descr_.ptr, 1, &error);
+      mc_tpld_unsafe_get_mutable (client->topology), 1, &error);
    ASSERT_OR_PRINT (sd, error);
    ASSERT_CMPINT (
       mongoc_generation_map_get (sd->generation_map, &kZeroServiceId),
@@ -4023,7 +4022,7 @@ test_mongoc_client_get_handshake_hello_response_single (void)
 
    /* Invalidate the server. */
    mongoc_topology_invalidate_server (
-      client->topology->_shared_descr_.ptr, monitor_sd->id, &error);
+      mc_tpld_unsafe_get_mutable (client->topology), monitor_sd->id, &error);
 
    /* Get the new invalidated server description from monitoring. */
    invalidated_sd =
@@ -4076,7 +4075,7 @@ test_mongoc_client_get_handshake_hello_response_pooled (void)
 
    /* Invalidate the server. */
    mongoc_topology_invalidate_server (
-      client->topology->_shared_descr_.ptr, monitor_sd->id, &error);
+      mc_tpld_unsafe_get_mutable (client->topology), monitor_sd->id, &error);
 
    /* Get the new invalidated server description from monitoring. */
    invalidated_sd =

@@ -1914,7 +1914,9 @@ test_index_geo (void *unused)
    opt.geo_options = &geo_opt;
 
    /* TODO this hack is needed for single-threaded tests */
-   id = client->topology->_shared_descr_.ptr->servers->items[0].id;
+   id = mc_tpld_servers_const (mc_tpld_unsafe_get_mutable (client->topology))
+           ->items[0]
+           .id;
    description = mongoc_topology_server_by_id (
       client->topology->_shared_descr_.ptr, id, &error);
    ASSERT_OR_PRINT (description, error);

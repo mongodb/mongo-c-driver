@@ -51,8 +51,8 @@ test_get_max_bson_obj_size (void)
    BSON_ASSERT (client);
 
    id = server_id_for_reads (&client->cluster);
-   sd = (mongoc_server_description_t *) mongoc_set_get (
-      client->topology->_shared_descr_.ptr->servers, id);
+   sd = mongoc_set_get (
+      mc_tpld_servers (mc_tpld_unsafe_get_mutable (client->topology)), id);
    sd->max_bson_obj_size = max_bson_obj_size;
    BSON_ASSERT (max_bson_obj_size ==
                 mongoc_cluster_get_max_bson_obj_size (&client->cluster));
@@ -87,8 +87,8 @@ test_get_max_msg_size (void)
    client = test_framework_new_default_client ();
    id = server_id_for_reads (&client->cluster);
 
-   sd = (mongoc_server_description_t *) mongoc_set_get (
-      client->topology->_shared_descr_.ptr->servers, id);
+   sd = mongoc_set_get (
+      mc_tpld_servers (mc_tpld_unsafe_get_mutable (client->topology)), id);
    sd->max_msg_size = max_msg_size;
    BSON_ASSERT (max_msg_size ==
                 mongoc_cluster_get_max_msg_size (&client->cluster));
@@ -266,7 +266,7 @@ _test_cluster_command_timeout (bool pooled)
 
    /* a network timeout does NOT invalidate the server description */
    sd = mongoc_topology_server_by_id (
-      client->topology->_shared_descr_.ptr, 1, NULL);
+      mc_tpld_unsafe_get_mutable (client->topology), 1, NULL);
    BSON_ASSERT (sd->type != MONGOC_SERVER_UNKNOWN);
    mongoc_server_description_destroy (sd);
 
@@ -381,7 +381,7 @@ _test_write_disconnect (void)
 
    /* a hangup DOES invalidate the server description */
    sd = mongoc_topology_server_by_id (
-      client->topology->_shared_descr_.ptr, 1, NULL);
+      mc_tpld_unsafe_get_mutable (client->topology), 1, NULL);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
    mongoc_server_description_destroy (sd);
 
@@ -1045,7 +1045,7 @@ _test_not_primary (bool pooled,
    future_t *future;
    request_t *request;
    mongoc_topology_description_t *td;
-   mongoc_server_description_t *sd;
+   const mongoc_server_description_t *sd;
    char *reply;
 
    server = mock_server_with_auto_hello (use_op_msg ? 6 : 5);
@@ -1060,9 +1060,6 @@ _test_not_primary (bool pooled,
                                                    NULL);
    }
 
-   td = client->topology->_shared_descr_.ptr;
-   sd = (mongoc_server_description_t *) mongoc_set_get (td->servers, 1);
-
    for (test_error_msg = errors; test_error_msg->errmsg; test_error_msg++) {
       /*
        * successful command results in known server type
@@ -1074,6 +1071,9 @@ _test_not_primary (bool pooled,
       mock_server_replies_ok_and_destroys (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);
+
+      td = mc_tpld_unsafe_get_mutable (client->topology);
+      sd = mongoc_set_get_const (mc_tpld_servers_const (td), 1);
 
       BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
 
@@ -1087,6 +1087,9 @@ _test_not_primary (bool pooled,
                                   test_error_msg->errmsg);
       mock_server_replies_simple (request, reply);
       BSON_ASSERT (!future_get_bool (future));
+
+      td = mc_tpld_unsafe_get_mutable (client->topology);
+      sd = mongoc_set_get_const (mc_tpld_servers_const (td), 1);
 
       if (test_error_msg->is_not_primary_err) {
          BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
@@ -1795,7 +1798,7 @@ _test_cmd_on_unknown_serverid (bool pooled)
    bson_set_error (
       &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
    mongoc_topology_invalidate_server (
-      client->topology->_shared_descr_.ptr, 1, &error);
+      mc_tpld_unsafe_get_mutable (client->topology), 1, &error);
    memset (&error, 0, sizeof (error));
 
    /* The next command is attempted directly on the unknown server and should
@@ -1852,9 +1855,10 @@ test_cluster_stream_invalidation_single (void)
       &client->cluster, NULL /* session */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
-   _mongoc_topology_clear_connection_pool (client->topology->_shared_descr_.ptr,
-                                           mongoc_server_description_id (sd),
-                                           &kZeroServiceId);
+   _mongoc_topology_clear_connection_pool (
+      mc_tpld_unsafe_get_mutable (client->topology),
+      mongoc_server_description_id (sd),
+      &kZeroServiceId);
    BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);
 
@@ -1902,9 +1906,10 @@ test_cluster_stream_invalidation_pooled (void)
       &client->cluster, NULL /* session */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
-   _mongoc_topology_clear_connection_pool (client->topology->_shared_descr_.ptr,
-                                           mongoc_server_description_id (sd),
-                                           &kZeroServiceId);
+   _mongoc_topology_clear_connection_pool (
+      mc_tpld_unsafe_get_mutable (client->topology),
+      mongoc_server_description_id (sd),
+      &kZeroServiceId);
    BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);
 

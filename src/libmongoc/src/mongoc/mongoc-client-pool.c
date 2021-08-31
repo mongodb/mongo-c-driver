@@ -226,9 +226,7 @@ static void
 _start_scanner_if_needed (mongoc_client_pool_t *pool)
 {
    if (!pool->topology->single_threaded) {
-      MC_DECL_TD_TAKE (td, pool->topology);
-      _mongoc_topology_background_monitoring_start (pool->topology, td.ptr);
-      MC_TD_DROP (td);
+      _mongoc_topology_background_monitoring_start (pool->topology);
    }
 }
 
@@ -453,25 +451,22 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
       return false;
    }
 
-   bson_mutex_lock (&topology->modification_mtx);
-   mc_shared_tpl_descr new_td = mc_tpld_clone (topology);
+   mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
 
    if (callbacks) {
-      memcpy (&new_td.ptr->apm_callbacks,
+      memcpy (&tdmod.new_td->apm_callbacks,
               callbacks,
               sizeof (mongoc_apm_callbacks_t));
       memcpy (&pool->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
    }
 
-   mongoc_topology_set_apm_callbacks (topology, new_td.ptr, callbacks, context);
-   new_td.ptr->apm_context = context;
+   mongoc_topology_set_apm_callbacks (
+      topology, tdmod.new_td, callbacks, context);
+   tdmod.new_td->apm_context = context;
    pool->apm_context = context;
    pool->apm_callbacks_set = true;
 
-   mc_tpld_replace (topology, new_td);
-   bson_mutex_unlock (&topology->modification_mtx);
-
-   MC_TD_DROP (new_td);
+   mc_tpld_modify_commit (tdmod);
 
    return true;
 }

@@ -1292,13 +1292,16 @@ _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
       return false;
    }
 
-   if (ts->appname != NULL) {
-      MONGOC_ERROR ("Cannot set appname more than once");
-      return false;
+   char *s = bson_strdup (appname);
+   const char *prev = bson_atomic_ptr_compare_exchange (
+      (void *) &ts->appname, NULL, s, bson_memorder_relaxed);
+   if (prev == NULL) {
+      return true;
    }
 
-   ts->appname = bson_strdup (appname);
-   return true;
+   MONGOC_ERROR ("Cannot set appname more than once");
+   bson_free (s);
+   return false;
 }
 
 /*

@@ -38,12 +38,12 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
 
    server_id = mongoc_cursor_get_hint (cursor);
 
-   bson_mutex_lock (&client->topology->mutex);
+   bson_mutex_lock (&client->topology->tpld_modification_mtx);
    sd = mongoc_topology_description_server_by_id (
-      client->topology->_shared_descr_.ptr, server_id, &error);
+      mc_tpld_unsafe_get_mutable (client->topology), server_id, &error);
    ASSERT_OR_PRINT (sd, error);
    generation = mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
-   bson_mutex_unlock (&client->topology->mutex);
+   bson_mutex_unlock (&client->topology->tpld_modification_mtx);
 
    return generation;
 }

@@ -2107,20 +2107,18 @@ index_exists (mongoc_client_t *client, const bson_t *operation)
 static uint32_t
 _get_total_pool_cleared_event (json_test_ctx_t *ctx)
 {
-   mongoc_topology_description_t *td;
+   const mongoc_topology_description_t *td;
    uint32_t i;
    uint32_t total = 0;
 
    /* Go get total generation counts. */
-   bson_mutex_lock (&ctx->client->topology->mutex);
-   td = ctx->client->topology->_shared_descr_.ptr;
-   for (i = 0; i < td->servers->items_len; i++) {
-      mongoc_server_description_t *sd;
+   td = mc_tpld_unsafe_get_mutable (ctx->client->topology);
+   for (i = 0; i < mc_tpld_servers_const (td)->items_len; i++) {
+      const mongoc_server_description_t *sd;
 
-      sd = mongoc_set_get_item (td->servers, i);
+      sd = mongoc_set_get_item_const (mc_tpld_servers_const (td), i);
       total += mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
    }
-   bson_mutex_unlock (&ctx->client->topology->mutex);
    return total;
 }
 

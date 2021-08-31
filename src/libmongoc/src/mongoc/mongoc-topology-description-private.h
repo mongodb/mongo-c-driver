@@ -41,7 +41,7 @@ struct _mongoc_topology_description_t {
    bool opened;
    mongoc_topology_description_type_t type;
    int64_t heartbeat_msec;
-   mongoc_set_t *servers;
+   mongoc_set_t *_servers_;
    char *set_name;
    int64_t max_set_version;
    bson_oid_t max_election_id;
@@ -68,6 +68,23 @@ void
 mongoc_topology_description_init (mongoc_topology_description_t *description,
                                   int64_t heartbeat_msec);
 
+
+/**
+ * @brief Get a pointer to the set of server descriptions in the topology
+ * description.
+ */
+static BSON_INLINE mongoc_set_t *
+mc_tpld_servers (mongoc_topology_description_t *tpld)
+{
+   return tpld->_servers_;
+}
+
+static BSON_INLINE const mongoc_set_t *
+mc_tpld_servers_const (const mongoc_topology_description_t *tpld)
+{
+   return tpld->_servers_;
+}
+
 void
 _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
                                       mongoc_topology_description_t *dst);
@@ -90,9 +107,22 @@ mongoc_topology_description_select (mongoc_topology_description_t *description,
                                     const mongoc_read_prefs_t *read_pref,
                                     int64_t local_threshold_ms);
 
+mongoc_server_description_t const *
+mongoc_topology_description_select_const (
+   const mongoc_topology_description_t *description,
+   mongoc_ss_optype_t optype,
+   const mongoc_read_prefs_t *read_pref,
+   int64_t local_threshold_ms);
+
 mongoc_server_description_t *
 mongoc_topology_description_server_by_id (
    mongoc_topology_description_t *description,
+   uint32_t id,
+   bson_error_t *error);
+
+const mongoc_server_description_t *
+mongoc_topology_description_server_by_id_const (
+   const mongoc_topology_description_t *description,
    uint32_t id,
    bson_error_t *error);
 
@@ -114,12 +144,13 @@ void
 mongoc_topology_description_suitable_servers (
    mongoc_array_t *set, /* OUT */
    mongoc_ss_optype_t optype,
-   mongoc_topology_description_t *topology,
+   const mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t *read_pref,
    size_t local_threshold_ms);
 
 bool
-mongoc_topology_description_has_data_node (mongoc_topology_description_t *td);
+mongoc_topology_description_has_data_node (
+   const mongoc_topology_description_t *td);
 
 void
 mongoc_topology_description_invalidate_server (

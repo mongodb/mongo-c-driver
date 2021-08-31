@@ -200,8 +200,8 @@ mongoc_server_description_destroy (mongoc_server_description_t *description)
  *--------------------------------------------------------------------------
  */
 bool
-mongoc_server_description_has_rs_member (mongoc_server_description_t *server,
-                                         const char *address)
+mongoc_server_description_has_rs_member (
+   const mongoc_server_description_t *server, const char *address)
 {
    bson_iter_t member_iter;
    const bson_t *rs_members[3];
@@ -242,7 +242,7 @@ mongoc_server_description_has_rs_member (mongoc_server_description_t *server,
 
 bool
 mongoc_server_description_has_set_version (
-   mongoc_server_description_t *description)
+   const mongoc_server_description_t *description)
 {
    return description->set_version != MONGOC_NO_SET_VERSION;
 }
@@ -262,7 +262,7 @@ mongoc_server_description_has_set_version (
 
 bool
 mongoc_server_description_has_election_id (
-   mongoc_server_description_t *description)
+   const mongoc_server_description_t *description)
 {
    return 0 != bson_oid_compare (&description->election_id, &kObjectIdZero);
 }
@@ -735,7 +735,7 @@ mongoc_server_description_handle_hello (mongoc_server_description_t *sd,
             sd, &incoming_topology_version);
          bson_destroy (&incoming_topology_version);
       } else if (strcmp ("serviceId", bson_iter_key (&iter)) == 0) {
-          if (!BSON_ITER_HOLDS_OID (&iter))
+         if (!BSON_ITER_HOLDS_OID (&iter))
             goto failure;
          bson_oid_copy_unsafe (bson_iter_oid (&iter), &sd->service_id);
       }
@@ -863,11 +863,12 @@ mongoc_server_description_new_copy (
  */
 
 void
-mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
-                                        size_t sds_len,
-                                        mongoc_server_description_t *primary,
-                                        int64_t heartbeat_frequency_ms,
-                                        const mongoc_read_prefs_t *read_prefs)
+mongoc_server_description_filter_stale (
+   const mongoc_server_description_t **sds,
+   size_t sds_len,
+   const mongoc_server_description_t *primary,
+   int64_t heartbeat_frequency_ms,
+   const mongoc_read_prefs_t *read_prefs)
 {
    int64_t max_staleness_seconds;
    size_t i;
@@ -956,7 +957,7 @@ mongoc_server_description_filter_stale (mongoc_server_description_t **sds,
 
 void
 mongoc_server_description_filter_tags (
-   mongoc_server_description_t **descriptions,
+   const mongoc_server_description_t **descriptions,
    size_t description_len,
    const mongoc_read_prefs_t *read_prefs)
 {
@@ -1271,7 +1272,9 @@ mongoc_server_description_set_topology_version (mongoc_server_description_t *sd,
 }
 
 bool
-mongoc_server_description_has_service_id (const mongoc_server_description_t *description) {
+mongoc_server_description_has_service_id (
+   const mongoc_server_description_t *description)
+{
    if (0 == bson_oid_compare (&description->service_id, &kZeroServiceId)) {
       return false;
    }

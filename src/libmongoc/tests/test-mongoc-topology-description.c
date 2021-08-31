@@ -24,12 +24,11 @@ _test_has_readable_writable_server (bool pooled)
    if (pooled) {
       pool = test_framework_new_default_client_pool ();
       topology = _mongoc_client_pool_get_topology (pool);
-      td = topology->_shared_descr_.ptr;
    } else {
       client = test_framework_new_default_client ();
-      td = client->topology->_shared_descr_.ptr;
       topology = client->topology;
    }
+   td = mc_tpld_unsafe_get_mutable (topology);
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_read_prefs_set_tags (prefs, tmp_bson ("[{'tag': 'does-not-exist'}]"));
@@ -48,21 +47,21 @@ _test_has_readable_writable_server (bool pooled)
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
-   bson_mutex_lock (&topology->mutex);
+   bson_mutex_lock (&topology->tpld_modification_mtx);
    ASSERT (mongoc_topology_description_has_writable_server (td));
    ASSERT (mongoc_topology_description_has_readable_server (td, NULL));
-   bson_mutex_unlock (&topology->mutex);
+   bson_mutex_unlock (&topology->tpld_modification_mtx);
 
    if (test_framework_is_replset ()) {
       /* prefs still don't match any server */
-      bson_mutex_lock (&topology->mutex);
+      bson_mutex_lock (&topology->tpld_modification_mtx);
       ASSERT (!mongoc_topology_description_has_readable_server (td, prefs));
-      bson_mutex_unlock (&topology->mutex);
+      bson_mutex_unlock (&topology->tpld_modification_mtx);
    } else {
       /* topology type single ignores read preference */
-      bson_mutex_lock (&topology->mutex);
+      bson_mutex_lock (&topology->tpld_modification_mtx);
       ASSERT (mongoc_topology_description_has_readable_server (td, prefs));
-      bson_mutex_unlock (&topology->mutex);
+      bson_mutex_unlock (&topology->tpld_modification_mtx);
    }
 
    mongoc_read_prefs_destroy (prefs);
@@ -90,14 +89,15 @@ test_has_readable_writable_server_pooled (void)
 }
 
 
-static mongoc_server_description_t *
+static const mongoc_server_description_t *
 _sd_for_host (mongoc_topology_description_t *td, const char *host)
 {
    int i;
-   mongoc_server_description_t *sd;
+   const mongoc_server_description_t *sd;
+   mongoc_set_t const *servers = mc_tpld_servers_const (td);
 
-   for (i = 0; i < (int) td->servers->items_len; i++) {
-      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, i);
+   for (i = 0; i < (int) servers->items_len; i++) {
+      sd = mongoc_set_get_item_const (servers, i);
 
       if (!strcmp (sd->host.host, host)) {
          return sd;
@@ -114,14 +114,14 @@ test_get_servers (void)
    mongoc_uri_t *uri;
    mongoc_topology_t *topology;
    mongoc_topology_description_t *td;
-   mongoc_server_description_t *sd_a;
-   mongoc_server_description_t *sd_c;
+   const mongoc_server_description_t *sd_a;
+   const mongoc_server_description_t *sd_c;
    mongoc_server_description_t **sds;
    size_t n;
 
    uri = mongoc_uri_new ("mongodb://a,b,c");
    topology = mongoc_topology_new (uri, true /* single-threaded */);
-   td = topology->_shared_descr_.ptr;
+   td = mc_tpld_unsafe_get_mutable (topology);
 
    /* servers "a" and "c" are mongos, but "b" remains unknown */
    sd_a = _sd_for_host (td, "a");
@@ -170,17 +170,18 @@ test_topology_version_equal (void)
    mongoc_uri_t *uri;
    mongoc_topology_t *topology;
    mongoc_topology_description_t *td;
-   mongoc_server_description_t *sd;
+   const mongoc_server_description_t *sd;
    mongoc_apm_callbacks_t *callbacks;
    int num_calls = 0;
 
    uri = mongoc_uri_new ("mongodb://host");
    topology = mongoc_topology_new (uri, true /* single-threaded */);
-   td = topology->_shared_descr_.ptr;
+   td = mc_tpld_unsafe_get_mutable (topology);
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, _topology_changed);
-   mongoc_topology_set_apm_callbacks (topology, callbacks, &num_calls);
+   mongoc_topology_set_apm_callbacks (
+      topology, mc_tpld_unsafe_get_mutable (topology), callbacks, &num_calls);
 
    sd = _sd_for_host (td, "host");
    mongoc_topology_description_handle_hello (
@@ -214,14 +215,14 @@ test_topology_description_new_copy (void)
    mongoc_uri_t *uri;
    mongoc_topology_t *topology;
    mongoc_topology_description_t *td, *td_copy;
-   mongoc_server_description_t *sd_a;
-   mongoc_server_description_t *sd_c;
+   const mongoc_server_description_t *sd_a;
+   const mongoc_server_description_t *sd_c;
    mongoc_server_description_t **sds;
    size_t n;
 
    uri = mongoc_uri_new ("mongodb://a,b,c");
    topology = mongoc_topology_new (uri, true /* single-threaded */);
-   td = topology->_shared_descr_.ptr;
+   td = mc_tpld_unsafe_get_mutable (topology);
 
    td_copy = mongoc_topology_description_new_copy (td);
 

@@ -232,8 +232,8 @@ tf_new (tf_flags_t flags)
    mongoc_apm_callbacks_destroy (callbacks);
 
    if (flags & TF_FAST_HEARTBEAT) {
-      _mongoc_client_pool_get_topology (tf->pool)
-         ->_shared_descr_.ptr->heartbeat_msec = FAST_HEARTBEAT_MS;
+      mc_tpld_unsafe_get_mutable (_mongoc_client_pool_get_topology (tf->pool))
+         ->heartbeat_msec = FAST_HEARTBEAT_MS;
       /* A fast heartbeat implies a fast min heartbeat. */
       flags |= TF_FAST_MIN_HEARTBEAT;
    }
@@ -309,17 +309,17 @@ tf_destroy (test_fixture_t *tf)
 static void
 _signal_shutdown (test_fixture_t *tf)
 {
-   bson_mutex_lock (&tf->client->topology->mutex);
+   bson_mutex_lock (&tf->client->topology->tpld_modification_mtx);
    /* Ignore the "Last server removed from topology" warning. */
    capture_logs (true);
    /* remove the server description from the topology description. */
    mongoc_topology_description_reconcile (
-      tf->client->topology->_shared_descr_.ptr, NULL);
+      mc_tpld_unsafe_get_mutable (tf->client->topology), NULL);
    capture_logs (false);
    /* remove the server monitor from the set of server monitors. */
    _mongoc_topology_background_monitoring_reconcile (
-      tf->client->topology, tf->client->topology->_shared_descr_.ptr);
-   bson_mutex_unlock (&tf->client->topology->mutex);
+      tf->client->topology, mc_tpld_unsafe_get_mutable (tf->client->topology));
+   bson_mutex_unlock (&tf->client->topology->tpld_modification_mtx);
 }
 
 static void
@@ -329,34 +329,34 @@ _add_server_monitor (test_fixture_t *tf)
    const mongoc_uri_t *uri;
 
    uri = mock_server_get_uri (tf->server);
-   bson_mutex_lock (&tf->client->topology->mutex);
+   bson_mutex_lock (&tf->client->topology->tpld_modification_mtx);
    /* remove the server description from the topology description. */
    mongoc_topology_description_add_server (
-      tf->client->topology->_shared_descr_.ptr,
+      mc_tpld_unsafe_get_mutable (tf->client->topology),
       mongoc_uri_get_hosts (uri)->host_and_port,
       &id);
    /* add the server monitor from the set of server monitors. */
    _mongoc_topology_background_monitoring_reconcile (
-      tf->client->topology, tf->client->topology->_shared_descr_.ptr);
-   bson_mutex_unlock (&tf->client->topology->mutex);
+      tf->client->topology, mc_tpld_unsafe_get_mutable (tf->client->topology));
+   bson_mutex_unlock (&tf->client->topology->tpld_modification_mtx);
 }
 
 static void
 _request_scan (test_fixture_t *tf)
 {
-   bson_mutex_lock (&tf->client->topology->mutex);
+   bson_mutex_lock (&tf->client->topology->tpld_modification_mtx);
    _mongoc_topology_request_scan (tf->client->topology);
-   bson_mutex_unlock (&tf->client->topology->mutex);
+   bson_mutex_unlock (&tf->client->topology->tpld_modification_mtx);
 }
 
 static void
 _request_cancel (test_fixture_t *tf)
 {
-   bson_mutex_lock (&tf->client->topology->mutex);
+   bson_mutex_lock (&tf->client->topology->tpld_modification_mtx);
    /* Assume server id is 1. */
    _mongoc_topology_background_monitoring_cancel_check (tf->client->topology,
                                                         1);
-   bson_mutex_unlock (&tf->client->topology->mutex);
+   bson_mutex_unlock (&tf->client->topology->tpld_modification_mtx);
 }
 
 void

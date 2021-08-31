@@ -240,7 +240,7 @@ mongoc_client_set_apm_callbacks (mongoc_client_t *client,
                                  mongoc_apm_callbacks_t *callbacks,
                                  void *context);
 MONGOC_EXPORT (mongoc_server_description_t *)
-mongoc_client_get_server_description (mongoc_client_t *client,
+mongoc_client_get_server_description (mongoc_client_t const *client,
                                       uint32_t server_id);
 MONGOC_EXPORT (mongoc_server_description_t **)
 mongoc_client_get_server_descriptions (const mongoc_client_t *client,

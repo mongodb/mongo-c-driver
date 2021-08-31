@@ -172,7 +172,7 @@ test_loadbalanced_sessions_do_not_expire (void *unused)
 
    client = test_framework_new_default_client ();
    /* Mock a timeout so session expiration applies. */
-   client->topology->_shared_descr_.ptr->session_timeout_minutes = 1;
+   mc_tpld_unsafe_get_mutable (client->topology)->session_timeout_minutes = 1;
 
    /* Start two sessions, to ensure that pooled sessions remain in the pool when
     * the pool is accessed. */

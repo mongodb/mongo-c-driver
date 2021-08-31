@@ -36,21 +36,16 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
    mongoc_topology_t *topology;
 
    topology = topology_void;
-   bson_mutex_lock (&topology->mutex);
-   while (true) {
+   while (bson_atomic_int_fetch ((int *) &topology->scanner_state,
+                                 bson_memorder_relaxed) ==
+          MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       int64_t now_ms;
       int64_t scan_due_ms;
       int64_t sleep_duration_ms;
 
-      if (topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
-         bson_mutex_unlock (&topology->mutex);
-         break;
-      }
-
       /* This will check if a scan is due. */
       if (!mongoc_topology_should_rescan_srv (topology)) {
          TRACE ("%s\n", "topology ineligible for SRV polling, stopping");
-         bson_mutex_unlock (&topology->mutex);
          break;
       }
 
@@ -69,16 +64,18 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
       }
 
       /* Check for shutdown again here. mongoc_topology_rescan_srv unlocks the
-       * topology mutex for the scan. The topology may have shut down in that
-       * time. */
+       * topology tpld_modification_mtx for the scan. The topology may have shut
+       * down in that time. */
+      bson_mutex_lock (&topology->tpld_modification_mtx);
       if (topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
-         bson_mutex_unlock (&topology->mutex);
          break;
       }
 
       /* If shutting down, stop. */
-      mongoc_cond_timedwait (
-         &topology->srv_polling_cond, &topology->mutex, sleep_duration_ms);
+      mongoc_cond_timedwait (&topology->srv_polling_cond,
+                             &topology->tpld_modification_mtx,
+                             sleep_duration_ms);
+      bson_mutex_unlock (&topology->tpld_modification_mtx);
    }
    BSON_THREAD_RETURN;
 }
@@ -130,8 +127,7 @@ _background_monitor_reconcile_server_monitor (mongoc_topology_t *topology,
  * Caller must have topology mutex locked.
  */
 void
-_mongoc_topology_background_monitoring_start (mongoc_topology_t *topology,
-                                              mongoc_topology_description_t *td)
+_mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
 {
    BSON_ASSERT (!topology->single_threaded);
    MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
@@ -150,22 +146,25 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology,
 
    TRACE ("%s", "background monitoring starting");
 
+   mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
+
    _mongoc_handshake_freeze ();
-   _mongoc_topology_description_monitor_opening (td);
-   if (td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+   _mongoc_topology_description_monitor_opening (tdmod.new_td);
+   if (tdmod.new_td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       /* Do not proceed to start monitoring threads. */
       TRACE ("%s", "disabling monitoring for load balanced topology");
-      return;
+   } else {
+      /* Reconcile to create the first server monitors. */
+      _mongoc_topology_background_monitoring_reconcile (topology, tdmod.new_td);
+      /* Start SRV polling thread. */
+      if (mongoc_topology_should_rescan_srv (topology)) {
+         topology->is_srv_polling = true;
+         COMMON_PREFIX (thread_create)
+         (&topology->srv_polling_thread, srv_polling_run, topology);
+      }
    }
 
-   /* Reconcile to create the first server monitors. */
-   _mongoc_topology_background_monitoring_reconcile (topology, td);
-   /* Start SRV polling thread. */
-   if (mongoc_topology_should_rescan_srv (topology)) {
-      topology->is_srv_polling = true;
-      COMMON_PREFIX (thread_create)
-      (&topology->srv_polling_thread, srv_polling_run, topology);
-   }
+   mc_tpld_modify_commit (tdmod);
 }
 
 /* Remove server monitors that are no longer in the set of server descriptions.
@@ -224,11 +223,13 @@ _mongoc_topology_background_monitoring_reconcile (
    int i;
 
    MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
-   server_descriptions = td->servers;
+   server_descriptions = mc_tpld_servers (td);
 
    BSON_ASSERT (!topology->single_threaded);
 
-   if (topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
+   if (bson_atomic_int_fetch ((const int *) &topology->scanner_state,
+                              bson_memorder_relaxed) !=
+       MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       return;
    }
 
@@ -323,7 +324,7 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
     * they can proceed to terminate. It is safe to unlock topology mutex. Since
     * scanner_state has transitioned to shutting down, no thread can modify
     * server_monitors. */
-   bson_mutex_unlock (&topology->mutex);
+   bson_mutex_unlock (&topology->tpld_modification_mtx);
 
    for (i = 0; i < topology->server_monitors->items_len; i++) {
       /* Wait for the thread to shutdown. */
@@ -344,7 +345,7 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
       COMMON_PREFIX (thread_join) (topology->srv_polling_thread);
    }
 
-   bson_mutex_lock (&topology->mutex);
+   bson_mutex_lock (&topology->tpld_modification_mtx);
    mongoc_set_destroy (topology->server_monitors);
    mongoc_set_destroy (topology->rtt_monitors);
    topology->server_monitors = mongoc_set_new (1, NULL, NULL);

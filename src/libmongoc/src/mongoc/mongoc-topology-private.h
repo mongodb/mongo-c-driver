@@ -83,7 +83,7 @@ typedef bool (*_mongoc_rr_resolver_fn) (const char *service,
 
 typedef union mc_shared_tpl_descr {
    mongoc_shared_ptr sptr;
-   mongoc_topology_description_t *ptr;
+   mongoc_topology_description_t const *ptr;
 } mc_shared_tpl_descr;
 
 static const mc_shared_tpl_descr MC_SHARED_TPL_DESCR_NULL = {
@@ -121,7 +121,13 @@ typedef struct _mongoc_topology_t {
    bson_thread_t srv_polling_thread;
    mongoc_cond_t srv_polling_cond;
 
-   bson_mutex_t mutex;
+   /**
+    * @brief This lock is held in order to serialize operations that modify the
+    * topology description. It *should not* be held while performing read-only
+    * operations on the topology.
+    */
+   bson_mutex_t tpld_modification_mtx;
+
    mongoc_cond_t cond_client;
    mongoc_topology_scanner_state_t scanner_state;
 
@@ -162,6 +168,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded);
 
 void
 mongoc_topology_set_apm_callbacks (mongoc_topology_t *topology,
+                                   mongoc_topology_description_t *td,
                                    mongoc_apm_callbacks_t *callbacks,
                                    void *context);
 
@@ -189,12 +196,12 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   bson_error_t *error);
 
 mongoc_server_description_t *
-mongoc_topology_server_by_id (mongoc_topology_description_t *topology,
+mongoc_topology_server_by_id (const mongoc_topology_description_t *topology,
                               uint32_t id,
                               bson_error_t *error);
 
 mongoc_host_list_t *
-_mongoc_topology_host_by_id (mongoc_topology_description_t *topology,
+_mongoc_topology_host_by_id (const mongoc_topology_description_t *topology,
                              uint32_t id,
                              bson_error_t *error);
 
@@ -211,7 +218,6 @@ mongoc_topology_invalidate_server (mongoc_topology_description_t *topology,
 
 bool
 _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
-                                        mongoc_topology_description_t *td,
                                         const mongoc_server_description_t *sd);
 
 void
@@ -317,7 +323,7 @@ _mongoc_topology_set_srv_polling_rescan_interval_ms (
  * Callers must lock topology->mutex if topology is pooled. */
 uint32_t
 _mongoc_topology_get_connection_pool_generation (
-   mongoc_topology_description_t *td,
+   const mongoc_topology_description_t *td,
    uint32_t server_id,
    const bson_oid_t *service_id);
 
@@ -333,6 +339,24 @@ static BSON_INLINE void
 mc_tpld_drop_ref (mc_shared_tpl_descr *p)
 {
    mongoc_shared_ptr_release (&p->sptr);
+}
+
+typedef struct mc_tpld_modification {
+   mc_shared_tpl_descr prev_td;
+   mongoc_topology_description_t *new_td;
+   mongoc_topology_t *topology;
+} mc_tpld_modification;
+
+mc_tpld_modification
+mc_tpld_modify_begin (mongoc_topology_t *);
+
+void mc_tpld_modify_commit (mc_tpld_modification);
+void mc_tpld_modify_drop (mc_tpld_modification);
+
+static BSON_INLINE mongoc_topology_description_t *
+mc_tpld_unsafe_get_mutable (mongoc_topology_t *tpl)
+{
+   return tpl->_shared_descr_.sptr.ptr;
 }
 
 #define MC_DECL_TD_TAKE(VarName, Topology) \

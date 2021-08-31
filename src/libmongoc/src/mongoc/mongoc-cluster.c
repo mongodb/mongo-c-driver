@@ -66,14 +66,14 @@
 
 static mongoc_server_stream_t *
 mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
-                                    mongoc_topology_description_t *td,
+                                    const mongoc_topology_description_t *td,
                                     uint32_t server_id,
                                     bool reconnect_ok,
                                     bson_error_t *error);
 
 static mongoc_server_stream_t *
 mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
-                                    mongoc_topology_description_t *td,
+                                    const mongoc_topology_description_t *td,
                                     uint32_t server_id,
                                     bool reconnect_ok,
                                     bson_error_t *error);
@@ -96,7 +96,6 @@ _handle_not_primary_error (mongoc_cluster_t *cluster,
    uint32_t server_id;
 
    server_id = server_stream->sd->id;
-   bson_mutex_lock (&cluster->client->topology->mutex);
    if (_mongoc_topology_handle_app_error (cluster->client->topology,
                                           server_id,
                                           true /* handshake complete */,
@@ -108,7 +107,6 @@ _handle_not_primary_error (mongoc_cluster_t *cluster,
                                           &server_stream->sd->service_id)) {
       mongoc_cluster_disconnect_node (cluster, server_id);
    }
-   bson_mutex_unlock (&cluster->client->topology->mutex);
 }
 
 /* Called when a network error occurs on an application socket.
@@ -133,7 +131,6 @@ _handle_network_error (mongoc_cluster_t *cluster,
       type = MONGOC_SDAM_APP_ERROR_TIMEOUT;
    }
 
-   bson_mutex_lock (&topology->mutex);
    _mongoc_topology_handle_app_error (topology,
                                       server_id,
                                       handshake_complete,
@@ -143,7 +140,6 @@ _handle_network_error (mongoc_cluster_t *cluster,
                                       server_stream->sd->max_wire_version,
                                       server_stream->sd->generation,
                                       &server_stream->sd->service_id);
-   bson_mutex_unlock (&topology->mutex);
    /* Always disconnect the current connection on network error. */
    mongoc_cluster_disconnect_node (cluster, server_id);
 
@@ -864,8 +860,10 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
          &reply, speculative_auth_response);
    }
 
-   r = _mongoc_topology_update_from_handshake (
-      cluster->client->topology, td.ptr, ret_handshake_sd);
+   /* Note: This call will render our copy of the topology description to be
+    * stale */
+   r = _mongoc_topology_update_from_handshake (cluster->client->topology,
+                                               ret_handshake_sd);
    if (!r) {
       mongoc_server_description_reset (ret_handshake_sd);
       bson_set_error (&ret_handshake_sd->error,
@@ -2156,11 +2154,9 @@ _mongoc_cluster_add_node (mongoc_cluster_t *cluster,
    /* Copy the latest connection pool generation.
     * TODO (CDRIVER-4078) do not store the generation counter on the server
     * description */
-   bson_mutex_lock (&cluster->client->topology->mutex);
    cluster_node->handshake_sd->generation =
       _mongoc_topology_get_connection_pool_generation (
          td.ptr, server_id, &handshake_sd->service_id);
-   bson_mutex_unlock (&cluster->client->topology->mutex);
 
    bson_destroy (&speculative_auth_response);
    mongoc_set_add (cluster->nodes, server_id, cluster_node);
@@ -2190,7 +2186,7 @@ error:
 }
 
 static void
-node_not_found (mongoc_topology_description_t *td,
+node_not_found (const mongoc_topology_description_t *td,
                 uint32_t server_id,
                 bson_error_t *error /* OUT */)
 {
@@ -2221,7 +2217,7 @@ node_not_found (mongoc_topology_description_t *td,
 
 
 static void
-stream_not_found (mongoc_topology_description_t *td,
+stream_not_found (const mongoc_topology_description_t *td,
                   uint32_t server_id,
                   const char *connection_address,
                   bson_error_t *error /* OUT */)
@@ -2293,33 +2289,26 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       /* When establishing a new connection in load balanced mode, drivers MUST
        * NOT perform SDAM error handling for any errors that occur before the
        * MongoDB Handshake. */
-      bson_mutex_lock (&topology->mutex);
       if (td.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-         bson_mutex_unlock (&topology->mutex);
          ret_server_stream = NULL;
          goto done;
       }
-      bson_mutex_unlock (&topology->mutex);
 
       /* Update the topology */
-      mongoc_topology_invalidate_server (td.ptr, server_id, err_ptr);
+      mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
+      mongoc_topology_invalidate_server (tdmod.new_td, server_id, err_ptr);
       mongoc_cluster_disconnect_node (cluster, server_id);
-      /* Topology may have been updated by the above lines */
-      MC_TD_DROP (td);
-      td = mc_tpld_take_ref (topology);
-
       /* This is not load balanced mode, so there are no service IDs associated
        * with connections. Pass kZeroServiceId to clear the entire connection
        * pool to this server. */
       _mongoc_topology_clear_connection_pool (
-         td.ptr, server_id, &kZeroServiceId);
+         tdmod.new_td, server_id, &kZeroServiceId);
 
       if (!topology->single_threaded) {
-         bson_mutex_lock (&topology->mutex);
          _mongoc_topology_background_monitoring_cancel_check (topology,
                                                               server_id);
-         bson_mutex_unlock (&topology->mutex);
       }
+      mc_tpld_modify_commit (tdmod);
       ret_server_stream = NULL;
       goto done;
    }
@@ -2416,7 +2405,7 @@ mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
 
 static mongoc_server_stream_t *
 mongoc_cluster_fetch_stream_single (mongoc_cluster_t *cluster,
-                                    mongoc_topology_description_t *td,
+                                    const mongoc_topology_description_t *td,
                                     uint32_t server_id,
                                     bool reconnect_ok,
                                     bson_error_t *error /* OUT */)
@@ -2552,7 +2541,7 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
    mongoc_server_stream_t *tmp_stream = NULL;
    mongoc_topology_t *topology =
       BSON_ASSERT_PTR_INLINE (cluster)->client->topology;
-   mongoc_server_description_t *sd;
+   const mongoc_server_description_t *sd;
    bool ret = false;
    bson_error_t error;
    /* Grab the topology description *now*, since we need to check if the server
@@ -2570,18 +2559,15 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
       goto done;
    }
 
-   bson_mutex_lock (&topology->mutex);
-   sd = mongoc_topology_description_server_by_id (
+   sd = mongoc_topology_description_server_by_id_const (
       td.ptr, server_stream->sd->id, &error);
    if (!sd ||
        server_stream->sd->generation <
           _mongoc_topology_get_connection_pool_generation (
              td.ptr, server_stream->sd->id, &server_stream->sd->service_id)) {
       /* No server description, or the pool has been cleared. */
-      bson_mutex_unlock (&topology->mutex);
       goto done;
    }
-   bson_mutex_unlock (&topology->mutex);
 
    ret = true;
 done:
@@ -2592,38 +2578,34 @@ done:
 
 mongoc_server_stream_t *
 _mongoc_cluster_create_server_stream (
-   mongoc_topology_description_t *td,
+   mongoc_topology_description_t const *td,
    const mongoc_server_description_t *handshake_sd,
    mongoc_stream_t *stream,
    bson_error_t *error /* OUT */)
 {
-   mongoc_server_description_t *sd;
-   mongoc_server_stream_t *server_stream = NULL;
-
-   sd = mongoc_server_description_new_copy (handshake_sd);
+   mongoc_server_description_t *const sd =
+      mongoc_server_description_new_copy (handshake_sd);
    /* can't just use mongoc_topology_server_by_id(), since we must hold the
     * lock while copying topology->shared_descr.ptr->logical_time below */
-   server_stream = mongoc_server_stream_new (td, sd, stream);
-
-   return server_stream;
+   return mongoc_server_stream_new (td, sd, stream);
 }
 
 
 static mongoc_server_stream_t *
 mongoc_cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
-                                    mongoc_topology_description_t *td,
+                                    const mongoc_topology_description_t *td,
                                     uint32_t server_id,
                                     bool reconnect_ok,
                                     bson_error_t *error /* OUT */)
 {
    mongoc_cluster_node_t *cluster_node;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
    bool has_server_description = false;
 
    cluster_node =
       (mongoc_cluster_node_t *) mongoc_set_get (cluster->nodes, server_id);
 
-   sd = mongoc_topology_description_server_by_id (td, server_id, error);
+   sd = mongoc_topology_description_server_by_id_const (td, server_id, error);
    if (sd) {
       has_server_description = true;
    }
@@ -2918,9 +2900,9 @@ mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,
 }
 
 static bool
-_mongoc_cluster_min_of_max_obj_size_sds (void *item, void *ctx)
+_mongoc_cluster_min_of_max_obj_size_sds (const void *item, void *ctx)
 {
-   mongoc_server_description_t *sd = (mongoc_server_description_t *) item;
+   const mongoc_server_description_t *sd = item;
    int32_t *current_min = (int32_t *) ctx;
 
    if (sd->max_bson_obj_size < *current_min) {
@@ -2942,9 +2924,9 @@ _mongoc_cluster_min_of_max_obj_size_nodes (void *item, void *ctx)
 }
 
 static bool
-_mongoc_cluster_min_of_max_msg_size_sds (void *item, void *ctx)
+_mongoc_cluster_min_of_max_msg_size_sds (const void *item, void *ctx)
 {
-   mongoc_server_description_t *sd = (mongoc_server_description_t *) item;
+   const mongoc_server_description_t *sd = item;
    int32_t *current_min = (int32_t *) ctx;
 
    if (sd->max_msg_size < *current_min) {
@@ -2995,9 +2977,9 @@ mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster)
                            &max_bson_obj_size);
    } else {
       MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
-      mongoc_set_for_each (td.ptr->servers,
-                           _mongoc_cluster_min_of_max_obj_size_sds,
-                           &max_bson_obj_size);
+      mongoc_set_for_each_const (mc_tpld_servers_const (td.ptr),
+                                 _mongoc_cluster_min_of_max_obj_size_sds,
+                                 &max_bson_obj_size);
       MC_TD_DROP (td);
    }
 
@@ -3033,9 +3015,9 @@ mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster)
                            &max_msg_size);
    } else {
       MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
-      mongoc_set_for_each (td.ptr->servers,
-                           _mongoc_cluster_min_of_max_msg_size_sds,
-                           &max_msg_size);
+      mongoc_set_for_each_const (mc_tpld_servers_const (td.ptr),
+                                 _mongoc_cluster_min_of_max_msg_size_sds,
+                                 &max_msg_size);
       MC_TD_DROP (td);
    }
 
@@ -3116,9 +3098,9 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
                          MONGOC_ERROR_STREAM_SOCKET,
                          "connection closed");
          mongoc_cluster_disconnect_node (cluster, server_id);
-         MC_DECL_TD_TAKE (td, topology);
-         mongoc_topology_invalidate_server (td.ptr, server_id, &error);
-         MC_TD_DROP (td);
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
+         mongoc_topology_invalidate_server (tdmod.new_td, server_id, &error);
+         mc_tpld_modify_commit (tdmod);
          return false;
       }
    }
@@ -3148,9 +3130,10 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
 
       if (!r) {
          mongoc_cluster_disconnect_node (cluster, server_id);
-         MC_DECL_TD_TAKE (td, topology);
-         mongoc_topology_invalidate_server (td.ptr, server_id, &error);
-         MC_TD_DROP (td);
+         mc_tpld_modification tdmod =
+            mc_tpld_modify_begin (cluster->client->topology);
+         mongoc_topology_invalidate_server (tdmod.new_td, server_id, &error);
+         mc_tpld_modify_commit (tdmod);
       }
    }
 

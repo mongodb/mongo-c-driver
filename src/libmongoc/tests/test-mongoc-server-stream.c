@@ -180,7 +180,7 @@ test_server_stream_ties_server_description_single (void *unused)
    /* Pass in a zeroed out error. */
    memset (&error, 0, sizeof (bson_error_t));
    mongoc_topology_description_handle_hello (
-      client->topology->_shared_descr_.ptr,
+      mc_tpld_unsafe_get_mutable (client->topology),
       1,
       tmp_bson (HELLO_PRE_OPMSG),
       0,

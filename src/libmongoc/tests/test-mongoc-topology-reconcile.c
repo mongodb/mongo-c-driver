@@ -41,22 +41,19 @@ get_node (mongoc_topology_t *topology, const char *host_and_port)
 static bool
 has_server_description (mongoc_topology_t *topology, const char *host_and_port)
 {
-   mongoc_set_t *servers = topology->_shared_descr_.ptr->servers;
+   const mongoc_set_t *servers =
+      mc_tpld_servers_const (mc_tpld_unsafe_get_mutable (topology));
    bool found = false;
    int i;
-   mongoc_server_description_t *sd;
+   const mongoc_server_description_t *sd;
 
-   bson_mutex_lock (&topology->mutex);
-   for (i = 0; i < (int) topology->_shared_descr_.ptr->servers->items_len;
-        i++) {
-      sd = (mongoc_server_description_t *) mongoc_set_get_item (servers, i);
+   for (i = 0; i < (int) servers->items_len; i++) {
+      sd = mongoc_set_get_item_const (servers, i);
       if (!strcmp (sd->host.host_and_port, host_and_port)) {
          found = true;
          break;
       }
    }
-
-   bson_mutex_unlock (&topology->mutex);
 
    return found;
 }
@@ -154,9 +151,7 @@ _test_topology_reconcile_rs (bool pooled)
    RS_RESPONSE_TO_HELLO (server0, 6, true, true, server0); /* server1 absent */
 
    BSON_ASSERT (selects_server (client, tag_read_prefs, server0));
-   bson_mutex_lock (&client->topology->mutex);
    BSON_ASSERT (!client->topology->stale);
-   bson_mutex_unlock (&client->topology->mutex);
 
    if (!pooled) {
       ASSERT_CMPINT (1, ==, debug_stream_stats.n_failed);
@@ -395,7 +390,9 @@ test_topology_reconcile_from_handshake (void *ctx)
 
    /* added server descriptions */
    ASSERT_CMPSIZE_T (
-      topology->_shared_descr_.ptr->servers->items_len, >, (size_t) 1);
+      mc_tpld_servers_const (mc_tpld_unsafe_get_mutable (topology))->items_len,
+      >,
+      (size_t) 1);
 
    /* didn't add nodes yet, since we're not in the scanner loop */
    DL_COUNT (topology->scanner->nodes, node, count);
@@ -501,7 +498,7 @@ test_topology_reconcile_retire_single (void)
    BSON_ASSERT (selects_server (client, secondary_read_prefs, secondary));
 
    /* remove secondary from primary's config */
-   bson_mutex_lock (&topology->mutex);
+   bson_mutex_lock (&topology->tpld_modification_mtx);
    RS_RESPONSE_TO_HELLO (primary, 6, true, false, primary);
 
    /* step 2: cluster opens new stream to primary - force new stream in single
@@ -513,7 +510,7 @@ test_topology_reconcile_retire_single (void)
       mongoc_stream_destroy (node->stream);
       node->stream = NULL;
    }
-   bson_mutex_unlock (&topology->mutex);
+   bson_mutex_unlock (&topology->tpld_modification_mtx);
 
    /* step 3: run "ping" on primary, triggering a connection and handshake, thus
     * step 4 & 5: the primary tells the scanner to retire the secondary node */
