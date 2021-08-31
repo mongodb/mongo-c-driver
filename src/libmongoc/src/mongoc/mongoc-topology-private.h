@@ -86,8 +86,7 @@ typedef union mc_shared_tpl_descr {
    mongoc_topology_description_t const *ptr;
 } mc_shared_tpl_descr;
 
-static const mc_shared_tpl_descr MC_SHARED_TPL_DESCR_NULL = {
-   MONGOC_SHARED_PTR_NULL};
+static const mc_shared_tpl_descr MC_SHARED_TPL_DESCR_NULL = {{NULL, NULL}};
 
 typedef struct _mongoc_topology_t {
    /**
