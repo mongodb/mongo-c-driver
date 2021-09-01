@@ -34,18 +34,24 @@ _release_aux (_mongoc_shared_ptr_aux *aux)
    bson_free (aux);
 }
 
-static bson_mutex_t g_shared_ptr_spin_mtx = PTHREAD_MUTEX_INITIALIZER;
+static bson_mutex_t g_shared_ptr_mtx;
+static bson_once_t g_shared_ptr_mtx_init_once = BSON_ONCE_INIT;
+
+static BSON_ONCE_FUN (_init_mtx)
+{
+   bson_mutex_init (&g_shared_ptr_mtx);
+}
 
 static void
 _shared_ptr_spin_lock ()
 {
-   bson_mutex_lock (&g_shared_ptr_spin_mtx);
+   bson_mutex_lock (&g_shared_ptr_mtx);
 }
 
 static void
 _shared_ptr_spin_unlock ()
 {
-   bson_mutex_unlock (&g_shared_ptr_spin_mtx);
+   bson_mutex_unlock (&g_shared_ptr_mtx);
 }
 
 void
@@ -85,6 +91,7 @@ mongoc_shared_ptr_create (void *pointee, void (*destroy) (void *))
 {
    mongoc_shared_ptr ret = {0};
    mongoc_shared_ptr_rebind_raw (&ret, pointee, destroy);
+   bson_once (&g_shared_ptr_mtx_init_once, _init_mtx);
    return ret;
 }
 
