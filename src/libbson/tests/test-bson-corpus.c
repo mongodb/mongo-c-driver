@@ -326,6 +326,7 @@ test_bson_corpus_prose_1 (void) {
    uint32_t len;
    bson_error_t error;
    bool ok;
+   bson_t subdoc;
 
    /* Field name within a root document */
    memset (&error, 0, sizeof (bson_error_t));
@@ -337,6 +338,10 @@ test_bson_corpus_prose_1 (void) {
    BSON_ASSERT (!ok);
    bson_destroy (bson);
    bson_free (data);
+   bson = bson_new ();
+   ok = bson_append_int32 (bson, "a\0b", 3, 123);
+   BSON_ASSERT (!ok);
+   bson_destroy (bson);
 
    /* Field name within a sub-document */
    memset (&error, 0, sizeof (bson_error_t));
@@ -348,6 +353,12 @@ test_bson_corpus_prose_1 (void) {
    BSON_ASSERT (!ok);
    bson_destroy (bson);
    bson_free (data);
+   bson = bson_new();
+   bson_append_document_begin (bson, "subdoc", -1, &subdoc);
+   ok = bson_append_int32 (&subdoc, "a\0b", 3, 123);
+   BSON_ASSERT (!ok);
+   bson_destroy (&subdoc);
+   bson_destroy (bson);
 
    /* Pattern for a regular expression */
    memset (&error, 0, sizeof (bson_error_t));
@@ -359,6 +370,10 @@ test_bson_corpus_prose_1 (void) {
    BSON_ASSERT (!ok);
    bson_destroy (bson);
    bson_free (data);
+   bson = bson_new ();
+   ok = bson_append_regex_w_len (bson, "key", 3, "a\0b", 3, "");
+   BSON_ASSERT (!ok);
+   bson_destroy (bson);
 
    /* Flags/options for a regular expression */
    memset (&error, 0, sizeof (bson_error_t));
