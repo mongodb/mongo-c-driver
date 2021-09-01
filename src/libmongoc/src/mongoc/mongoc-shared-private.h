@@ -160,7 +160,7 @@ mongoc_shared_ptr_create (void *pointee, void (*destroy) (void *));
  *
  * @param Type The pointed-to type of the shared pointer
  * @param VarName A name for a regular pointer to declare in the enclosing scope
- * @param Pointer A shared ppointer instance to take from
+ * @param Pointer A shared pointer instance to take from
  */
 #define MONGOC_Shared_Take(Type, VarName, Pointer) \
    mongoc_shared_ptr _shared_ptr_copy_##VarName =  \
@@ -173,7 +173,7 @@ mongoc_shared_ptr_create (void *pointee, void (*destroy) (void *));
  *
  * @param Type The pointed-to type of the shared pointer
  * @param VarName A name for a regular pointer to declare in the enclosing scope
- * @param Pointer A shared ppointer instance to take from
+ * @param Pointer A shared pointer instance to take from
  */
 #define MONGOC_Shared_Take_Atomic(Type, VarName, Pointer) \
    mongoc_shared_ptr _shared_ptr_copy_##VarName =         \
