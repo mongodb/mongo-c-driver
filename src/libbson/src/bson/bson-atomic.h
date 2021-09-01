@@ -114,7 +114,7 @@ enum bson_atomic_memorder {
    }                                                                          \
                                                                               \
    static BSON_INLINE Type bson_atomic_##NamePart##_fetch (                   \
-      Type volatile *a, enum bson_atomic_memorder order)                      \
+      Type volatile const *a, enum bson_atomic_memorder order)                \
    {                                                                          \
       /* MSVC doesn't have a load intrinsic, so just add zero */              \
       BSON_IF_MSVC (return bson_atomic_##NamePart##_fetch_add (a, 0, order);) \
@@ -251,6 +251,7 @@ bson_atomic_ptr_compare_exchange (void *volatile *ptr,
                                   enum bson_atomic_memorder ord)
 {
    switch (ord) {
+   case bson_memorder_release:
    case bson_memorder_seqcst:
       DEF_ATOMIC_CMPEXCH (Pointer, , __ATOMIC_SEQ_CST, ptr, expect, new_value);
       return expect;
@@ -270,14 +271,6 @@ bson_atomic_ptr_compare_exchange (void *volatile *ptr,
                           expect,
                           new_value);
       return expect;
-   case bson_memorder_release:
-      DEF_ATOMIC_CMPEXCH (Pointer,
-                          MSVC_MEMORDER_SUFFIX (_rel),
-                          __ATOMIC_RELEASE,
-                          ptr,
-                          expect,
-                          new_value);
-      return expect;
    default:
       BSON_UNREACHABLE ("Invalid bson_atomic_memorder value");
    }
@@ -285,7 +278,7 @@ bson_atomic_ptr_compare_exchange (void *volatile *ptr,
 
 
 static BSON_INLINE void *
-bson_atomic_ptr_fetch (void *volatile *ptr, enum bson_atomic_memorder ord)
+bson_atomic_ptr_fetch (void *volatile const *ptr, enum bson_atomic_memorder ord)
 {
    return bson_atomic_ptr_compare_exchange (ptr, NULL, NULL, ord);
 }
