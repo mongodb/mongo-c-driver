@@ -16,6 +16,12 @@ typedef struct _max_align_type {
 } _max_align_type;
 #endif
 
+/**
+ * Toggle this to enable/disable checks that all items are returned to the pool
+ * before the pool is destroyed
+ */
+enum { AUDIT_POOL_ENABLED = 0 };
+
 typedef struct pool_node {
    struct pool_node *next;
    mongoc_ts_pool *owner_pool;
@@ -28,9 +34,11 @@ struct mongoc_ts_pool {
    pool_node *head;
    /* Number of elements in the pool */
    int32_t size;
-   /* Number of elements that the pool has given to users */
-   int32_t outstanding_items;
    bson_mutex_t mtx;
+   /* Number of elements that the pool has given to users.
+    * If AUTO_POOL_ENABLED is zero, this member is absent
+    */
+   int32_t outstanding_items[AUDIT_POOL_ENABLED];
 };
 
 /**
@@ -76,8 +84,8 @@ _new_item (mongoc_ts_pool *pool, bson_error_t *error)
          node = NULL;
       }
    }
-   if (node) {
-      bson_atomic_int_add (&pool->outstanding_items, 1);
+   if (node && AUDIT_POOL_ENABLED) {
+      bson_atomic_int_add (pool->outstanding_items, 1);
    }
    return node;
 }
@@ -85,7 +93,7 @@ _new_item (mongoc_ts_pool *pool, bson_error_t *error)
 /**
  * @brief Destroy the given node and the element that it contains
  */
-void
+static void
 _delete_item (pool_node *node)
 {
    mongoc_ts_pool *pool = node->owner_pool;
@@ -110,7 +118,9 @@ _try_get (mongoc_ts_pool *pool)
    bson_mutex_unlock (&pool->mtx);
    if (node) {
       bson_atomic_int_add (&pool->size, -1);
-      bson_atomic_int_add (&pool->outstanding_items, 1);
+      if (AUDIT_POOL_ENABLED) {
+         bson_atomic_int_add (pool->outstanding_items, 1);
+      }
    }
    return node;
 }
@@ -122,7 +132,9 @@ mongoc_ts_pool_new (mongoc_ts_pool_params params)
    r->params = params;
    r->head = NULL;
    r->size = 0;
-   r->outstanding_items = 0;
+   if (AUDIT_POOL_ENABLED) {
+      *r->outstanding_items = 0;
+   }
    bson_mutex_init (&r->mtx);
    return r;
 }
@@ -130,8 +142,11 @@ mongoc_ts_pool_new (mongoc_ts_pool_params params)
 void
 mongoc_ts_pool_free (mongoc_ts_pool *pool)
 {
-   BSON_ASSERT (pool->outstanding_items == 0 &&
-                "Pool was destroyed while there are still items checked out");
+   if (AUDIT_POOL_ENABLED) {
+      BSON_ASSERT (
+         *pool->outstanding_items == 0 &&
+         "Pool was destroyed while there are still items checked out");
+   }
    mongoc_ts_pool_clear (pool);
    bson_mutex_destroy (&pool->mtx);
    bson_free (pool);
@@ -204,7 +219,9 @@ mongoc_ts_pool_return (void *item)
       pool->head = node;
       bson_mutex_unlock (&pool->mtx);
       bson_atomic_int_add (&node->owner_pool->size, 1);
-      bson_atomic_int_add (&node->owner_pool->outstanding_items, -1);
+      if (AUDIT_POOL_ENABLED) {
+         bson_atomic_int_add (node->owner_pool->outstanding_items, -1);
+      }
    }
 }
 
@@ -212,7 +229,9 @@ void
 mongoc_ts_pool_drop (void *item)
 {
    pool_node *node = (void *) ((uint8_t *) (item) -offsetof (pool_node, data));
-   bson_atomic_int_add (&node->owner_pool->outstanding_items, -1);
+   if (AUDIT_POOL_ENABLED) {
+      bson_atomic_int_add (node->owner_pool->outstanding_items, -1);
+   }
    _delete_item (node);
 }
 
