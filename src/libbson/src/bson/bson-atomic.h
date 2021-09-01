@@ -117,7 +117,8 @@ enum bson_atomic_memorder {
       Type volatile const *a, enum bson_atomic_memorder order)                \
    {                                                                          \
       /* MSVC doesn't have a load intrinsic, so just add zero */              \
-      BSON_IF_MSVC (return bson_atomic_##NamePart##_fetch_add (a, 0, order);) \
+      BSON_IF_MSVC (                                                          \
+         return bson_atomic_##NamePart##_fetch_add ((void *) a, 0, order);)   \
       /* GNU doesn't want RELEASE order for the fetch operation, so we can't  \
        * just use DEF_ATOMIC_OP. */                                           \
       BSON_IF_GNU_LIKE (switch (order) {                                      \
@@ -280,7 +281,7 @@ bson_atomic_ptr_compare_exchange (void *volatile *ptr,
 static BSON_INLINE void *
 bson_atomic_ptr_fetch (void *volatile const *ptr, enum bson_atomic_memorder ord)
 {
-   return bson_atomic_ptr_compare_exchange (ptr, NULL, NULL, ord);
+   return bson_atomic_ptr_compare_exchange ((void *) ptr, NULL, NULL, ord);
 }
 
 #undef DECL_ATOMIC_STDINT
