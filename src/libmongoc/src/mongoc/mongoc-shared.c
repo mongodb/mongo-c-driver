@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "./mongoc-shared.h"
+#include "./mongoc-shared-private.h"
 
 #include "common-thread-private.h"
 #include <bson/bson.h>

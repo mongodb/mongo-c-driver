@@ -2,7 +2,7 @@
 
 #include "./TestSuite.h"
 
-#include <mongoc/mongoc-shared.h>
+#include <mongoc/mongoc-shared-private.h>
 
 typedef struct {
    int value;
