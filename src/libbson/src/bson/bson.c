@@ -419,9 +419,14 @@ _bson_append (bson_t *bson,              /* IN */
    do {                                                                   \
       if (key_length < 0) {                                               \
          key_length = (int) strlen (key);                                 \
-      } else if ((int) strlen (key) != key_length) {                      \
+      } else {                                                            \
          /* Necessary to validate embedded NULL is not present in key. */ \
-         return false;                                                    \
+         int nulliter = 0;                                                \
+         for (nulliter = 0; nulliter < key_length; nulliter++) {          \
+            if (!key[nulliter]) {                                         \
+               return false;                                              \
+            }                                                             \
+         }                                                                \
       }                                                                   \
    } while (0)
 
@@ -1554,9 +1559,14 @@ bson_append_regex_w_len (bson_t *bson,
 
    if (regex_length < 0) {
       regex_length = (int) strlen (regex);
-   } else if (strlen (regex) != regex_length) {
+   } else {
       /* Necessary to validate embedded NULL is not present in key. */
-      return false;
+      int nulliter = 0;
+      for (nulliter = 0; nulliter < key_length; nulliter++) {
+         if (!key[nulliter]) {
+            return false;
+         }
+      }
    }
 
    if (!regex) {
