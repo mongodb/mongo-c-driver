@@ -1,17 +1,12 @@
-:man_page: mongoc_add_driver_info
+:man_page: mongoc_handshake_data_append
 
-mongoc_add_driver_info()
+mongoc_handshake_data_append()
 =========================================
 
 Synopsis
 --------
 
 .. code-block:: c
-
-   bool
-   mongoc_add_driver_info (const char *driver_name,
-                           const char *driver_version,
-                           const char *platform);
 
    bool
    mongoc_handshake_data_append (const char *driver_name,
@@ -32,7 +27,7 @@ connection handshake in the "client" document. This function must not be
 called more than once, or after a handshake has been initiated.
 
 The passed in strings are copied, and don't have to remain valid after the
-call to mongoc_add_driver_info(). The driver may store truncated
+call to mongoc_handshake_data_append(). The driver may store truncated
 versions of the passed in strings.
 
 Note:
@@ -43,8 +38,8 @@ Note:
   memory being freed by the wrong allocator.
 
 Note:
-  mongoc_handshake_data_append() is the previously undocumented, now-deprecated 
-  name for this function. It calls mongoc_add_driver_info().
+  mongoc_handshake_data_append() was previously previously undocumented, 
+  and is now deprecated.
 
 Parameters
 ----------
@@ -73,7 +68,7 @@ like:
  }
 
 If we call
-  mongoc_add_driver_info ("phongo", "1.1.8", "CC=clang")
+  mongoc_handshake_data_append ("phongo", "1.1.8", "CC=clang")
 and it returns true, the driver sends handshake data like:
 
 .. code-block::

@@ -31,7 +31,7 @@
 #include "mock_server/mock-server.h"
 
 /*
- * Call this before any test which uses mongoc_add_driver_info, to
+ * Call this before any test which uses mongoc_handshake_data_append, to
  * reset the global state and unfreeze the handshake struct. Call it
  * after a test so later tests don't have a weird handshake document
  *
@@ -157,7 +157,7 @@ _check_os_version_valid (const char *os_version)
 }
 
 static void
-test_mongoc_add_driver_info_success (void)
+test_mongoc_handshake_data_append_success (void)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -182,7 +182,7 @@ test_mongoc_add_driver_info_success (void)
    _reset_handshake ();
    /* Make sure setting the handshake works */
    ASSERT (
-      mongoc_add_driver_info (driver_name, driver_version, platform));
+      mongoc_handshake_data_append (driver_name, driver_version, platform));
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -313,7 +313,7 @@ _test_platform (bool platform_oversized)
    md->platform[platform_len - 1] = '\0';
 
    /* returns true, but ignores the suffix; there's no room */
-   ASSERT (mongoc_add_driver_info (NULL, NULL, platform_suffix));
+   ASSERT (mongoc_handshake_data_append (NULL, NULL, platform_suffix));
    ASSERT (!strstr (md->platform, "b"));
    ASSERT (_mongoc_handshake_build_doc_with_application (&doc, "my app"));
    ASSERT_CMPUINT32 (doc.len, ==, (uint32_t) HANDSHAKE_MAX_SIZE);
@@ -338,7 +338,7 @@ test_mongoc_handshake_oversized_platform (void)
 
 
 static void
-test_mongoc_add_driver_info_after_cmd (void)
+test_mongoc_handshake_data_append_after_cmd (void)
 {
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
@@ -354,7 +354,7 @@ test_mongoc_add_driver_info_after_cmd (void)
    client = mongoc_client_pool_pop (pool);
 
    capture_logs (true);
-   ASSERT (!mongoc_add_driver_info ("a", "a", "a"));
+   ASSERT (!mongoc_handshake_data_append ("a", "a", "a"));
    capture_logs (false);
 
    mongoc_client_pool_push (pool, client);
@@ -392,7 +392,7 @@ test_mongoc_handshake_too_big (void)
 
    memset (big_string, 'a', BUFFER_SIZE - 1);
    big_string[BUFFER_SIZE - 1] = '\0';
-   ASSERT (mongoc_add_driver_info (NULL, NULL, big_string));
+   ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
 
    uri = mongoc_uri_copy (mock_server_get_uri (server));
    /* avoid rare test timeouts */
@@ -505,7 +505,7 @@ test_mongoc_platform_truncate (int drop)
    memset (big_string, 'a', handshake_remaining_space + 1);
    big_string[handshake_remaining_space + 1] = '\0';
 
-   ASSERT (mongoc_add_driver_info (NULL, NULL, big_string));
+   ASSERT (mongoc_handshake_data_append (NULL, NULL, big_string));
    ASSERT (_mongoc_handshake_build_doc_with_application (&doc, "my app"));
 
    /* doc.len being strictly less than HANDSHAKE_MAX_SIZE proves that we have
@@ -799,12 +799,12 @@ static BSON_THREAD_FUN (handshake_append_worker, data)
    const char *driver_version = "version abc";
    const char *platform = "./configure -nottoomanyflags";
 
-   mongoc_add_driver_info (driver_name, driver_version, platform);
+   mongoc_handshake_data_append (driver_name, driver_version, platform);
 
    BSON_THREAD_RETURN;
 }
 
-/* Run 1000 iterations of mongoc_add_driver_info() using 4 threads */
+/* Run 1000 iterations of mongoc_handshake_data_append() using 4 threads */
 static void
 test_mongoc_handshake_race_condition (void)
 {
@@ -826,20 +826,6 @@ for (j = 0; j < 4; ++j) {
    _reset_handshake ();
 }
 
-/* This test checks that we can call the deprecated mongoc_handshake_data_append()
-function with the same parameters as mongoc_add_driver_info(). It does not repeat
-actual checks beyond simple validation, as we do assume the the implementation 
-forwards to mongoc_add_driver_info(): */
-static void
-test_mongoc_handshake_data_append (void)
-{
-   _reset_handshake ();
-
-   mongoc_add_driver_info ("driver_name", "driver_version", "platform");
-
-   _reset_handshake();
-}
-
 void
 test_handshake_install (TestSuite *suite)
 {
@@ -855,7 +841,7 @@ test_handshake_install (TestSuite *suite)
 
    TestSuite_AddMockServerTest (suite,
                                 "/MongoDB/handshake/success",
-                                test_mongoc_add_driver_info_success);
+                                test_mongoc_handshake_data_append_success);
    TestSuite_Add (suite,
                   "/MongoDB/handshake/big_platform",
                   test_mongoc_handshake_big_platform);
@@ -864,7 +850,7 @@ test_handshake_install (TestSuite *suite)
                   test_mongoc_handshake_oversized_platform);
    TestSuite_Add (suite,
                   "/MongoDB/handshake/failure",
-                  test_mongoc_add_driver_info_after_cmd);
+                  test_mongoc_handshake_data_append_after_cmd);
    TestSuite_AddMockServerTest (
       suite, "/MongoDB/handshake/too_big", test_mongoc_handshake_too_big);
    TestSuite_Add (
@@ -878,9 +864,4 @@ test_handshake_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/MongoDB/handshake/race_condition",
                   test_mongoc_handshake_race_condition);
-
-   /* Test deprecated forwarding function: */
-   TestSuite_Add (suite,
-                  "/MongoDB/handshake/data_append",
-                  test_mongoc_handshake_data_append);
 }
