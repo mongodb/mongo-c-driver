@@ -421,7 +421,7 @@ _bson_append (bson_t *bson,              /* IN */
          key_length = (int) strlen (key);                                 \
       } else {                                                            \
          /* Necessary to validate embedded NULL is not present in key. */ \
-         int nulliter = 0;                                                \
+         int nulliter;                                                \
          for (nulliter = 0; nulliter < key_length; nulliter++) {          \
             if (!key[nulliter]) {                                         \
                return false;                                              \
@@ -1561,9 +1561,9 @@ bson_append_regex_w_len (bson_t *bson,
       regex_length = (int) strlen (regex);
    } else {
       /* Necessary to validate embedded NULL is not present in key. */
-      int nulliter = 0;
-      for (nulliter = 0; nulliter < key_length; nulliter++) {
-         if (!key[nulliter]) {
+      int nulliter;
+      for (nulliter = 0; nulliter < regex_length; nulliter++) {
+         if (!regex[nulliter]) {
             return false;
          }
       }
