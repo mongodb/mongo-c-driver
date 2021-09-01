@@ -17,7 +17,7 @@
 
 #include "bson-atomic.h"
 
-#if _POSIX_SOURCE
+#ifdef BSON_OS_UNIX
 /* For sched_yield() */
 #include <sched.h>
 #endif
