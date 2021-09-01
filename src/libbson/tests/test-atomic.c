@@ -25,7 +25,8 @@ test1 (void)
 {
    int32_t v = 0;
 
-   BSON_ASSERT (bson_atomic_int_add (&v, 1) == 1);
+   BSON_ASSERT (bson_atomic_int32_fetch_add (&v, 1, bson_memorder_relaxed) ==
+                0);
    BSON_ASSERT (v == 1);
 }
 
@@ -35,7 +36,8 @@ test2 (void)
 {
    int64_t v = 0;
 
-   BSON_ASSERT (bson_atomic_int64_add (&v, 1) == 1);
+   BSON_ASSERT (bson_atomic_int64_fetch_add (&v, 1, bson_memorder_relaxed) ==
+                0);
    BSON_ASSERT (v == 1);
 }
 
