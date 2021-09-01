@@ -1630,7 +1630,19 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
 {
    ENTRY;
 
-
+   /**
+    * ! note:
+    * At time of writing, this diverges from the spec:
+    * https://github.com/mongodb/specifications/blob/df6be82f865e9b72444488fd62ae1eb5fca18569/source/sessions/driver-sessions.rst#algorithm-to-return-a-serversession-instance-to-the-server-session-pool
+    *
+    * The spec notes that before returning a session, we should first inspect
+    * the back of the pool for expired items and delete them. In this case, we
+    * simply return the item to the top of the pool and leave the remainder
+    * unchanged.
+    *
+    * The next pop operation that encounters an expired session will clear the
+    * entire session pool, thus preventing unbounded growth of the pool.
+    */
    mongoc_server_session_pool_return (server_session);
 
    EXIT;

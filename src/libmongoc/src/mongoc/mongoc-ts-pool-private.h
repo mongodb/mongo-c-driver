@@ -3,6 +3,8 @@
 #ifndef MONGOC_TS_POOL_PRIVATE_H
 #define MONGOC_TS_POOL_PRIVATE_H
 
+#include <bson/bson.h>
+
 #include <stddef.h>
 
 struct _bson_error_t;
@@ -55,7 +57,7 @@ typedef struct mongoc_ts_pool_params {
     * @brief A predicate function that is used to automatically drop items from
     * the pool.
     *
-    * If `NULL`, item are never automatically dropped from the pool, and must
+    * If `NULL`, item are never automatically dropped from the pool, and
     * can only be discarded by use of `mongoc_ts_pool_drop()`. Items will still
     * be dropped when the pool is freed, though.
     *
@@ -71,7 +73,21 @@ typedef struct mongoc_ts_pool_params {
 /**
  * @brief A thread-safe object pool.
  *
+ * Object pools act as a thread-safe stack of reusable objects. The pool can be
+ * given a prune-predicate function that will be used to discard elements
+ * automatically if they meet some user-specified condition.
  *
+ * When an item is taken from a pool, the pool will either create a new item or
+ * return the *most-recently-returned* *non-pruned* item. i.e. The pool acts as
+ * a LIFO stack.
+ *
+ * Objects are created *automatically* by the pool: Only objects obtained from a
+ * pool instance can be returned to that pool, and all objects obtained from
+ * a given pool must either be returned to that same pool, or dropped using
+ * `mongoc_ts_pool_drop`.
+ *
+ * Refer to `mongoc_ts_pool_params` for more information on the construction,
+ * destruction, and pruning of pool items.
  */
 typedef struct mongoc_ts_pool mongoc_ts_pool;
 
@@ -112,6 +128,9 @@ mongoc_ts_pool_free (mongoc_ts_pool *pool);
  * @returns A pointer to an object associated with the pool, or `NULL` if the
  * object's constructor fails.
  *
+ * @note Returns the most-recently-returned non-pruned item from the pool (i.e.
+ * the pool is a LIFO stack).
+ *
  * @note If the return value is `NULL`, then an error will be set in `*error`.
  * If the return value is non-`NULL`, then the value of `*error` is unspecified.
  *
@@ -131,6 +150,9 @@ mongoc_ts_pool_get (mongoc_ts_pool *pool, struct _bson_error_t *error);
  * @param pool The pool of objects.
  * @returns A pointer to an object previously passed to `mongo_ts_pool_push`,
  *               or `NULL` if the pool is empty.
+ *
+ * @note Returns the most-recently-returned non-pruned item from the pool
+ * (i.e. the pool is a LIFO stack).
  */
 void *
 mongoc_ts_pool_get_existing (mongoc_ts_pool *pool);
