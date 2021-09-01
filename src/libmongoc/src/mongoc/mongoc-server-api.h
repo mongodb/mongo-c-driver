@@ -38,10 +38,12 @@ mongoc_server_api_version_from_string (const char *version,
                                        mongoc_server_api_version_t *out);
 
 MONGOC_EXPORT (mongoc_server_api_t *)
-mongoc_server_api_new (mongoc_server_api_version_t version);
+mongoc_server_api_new (mongoc_server_api_version_t version)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (mongoc_server_api_t *)
-mongoc_server_api_copy (const mongoc_server_api_t *api);
+mongoc_server_api_copy (const mongoc_server_api_t *api)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (void)
 mongoc_server_api_destroy (mongoc_server_api_t *api);

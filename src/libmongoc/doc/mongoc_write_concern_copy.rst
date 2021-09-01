@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   mongoc_write_concern_t *
-  mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern);
+  mongoc_write_concern_copy (const mongoc_write_concern_t *write_concern)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

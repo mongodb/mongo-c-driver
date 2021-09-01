@@ -47,7 +47,8 @@ MONGOC_EXPORT (mongoc_transaction_opt_t *)
 mongoc_transaction_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (mongoc_transaction_opt_t *)
-mongoc_transaction_opts_clone (const mongoc_transaction_opt_t *opts);
+mongoc_transaction_opts_clone (const mongoc_transaction_opt_t *opts)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (void)
 mongoc_transaction_opts_destroy (mongoc_transaction_opt_t *opts);
@@ -107,10 +108,11 @@ mongoc_session_opts_get_default_transaction_opts (
 
 MONGOC_EXPORT (mongoc_transaction_opt_t *)
 mongoc_session_opts_get_transaction_opts (
-   const mongoc_client_session_t *session);
+   const mongoc_client_session_t *session) BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (mongoc_session_opt_t *)
-mongoc_session_opts_clone (const mongoc_session_opt_t *opts);
+mongoc_session_opts_clone (const mongoc_session_opt_t *opts)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (void)
 mongoc_session_opts_destroy (mongoc_session_opt_t *opts);

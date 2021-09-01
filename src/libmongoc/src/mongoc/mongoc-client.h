@@ -103,9 +103,10 @@ typedef mongoc_stream_t *(*mongoc_stream_initiator_t) (
 
 
 MONGOC_EXPORT (mongoc_client_t *)
-mongoc_client_new (const char *uri_string);
+mongoc_client_new (const char *uri_string) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_client_t *)
-mongoc_client_new_from_uri (const mongoc_uri_t *uri);
+mongoc_client_new_from_uri (const mongoc_uri_t *uri)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (const mongoc_uri_t *)
 mongoc_client_get_uri (const mongoc_client_t *client);
 MONGOC_EXPORT (void)
@@ -121,7 +122,8 @@ mongoc_client_command (mongoc_client_t *client,
                        uint32_t batch_size,
                        const bson_t *query,
                        const bson_t *fields,
-                       const mongoc_read_prefs_t *read_prefs);
+                       const mongoc_read_prefs_t *read_prefs)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (void)
 mongoc_client_kill_cursor (mongoc_client_t *client,
                            int64_t cursor_id) BSON_GNUC_DEPRECATED;
@@ -180,31 +182,37 @@ mongoc_client_start_session (mongoc_client_t *client,
                              const mongoc_session_opt_t *opts,
                              bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_database_t *)
-mongoc_client_get_database (mongoc_client_t *client, const char *name);
+mongoc_client_get_database (mongoc_client_t *client,
+                            const char *name) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_database_t *)
-mongoc_client_get_default_database (mongoc_client_t *client);
+mongoc_client_get_default_database (mongoc_client_t *client)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_gridfs_t *)
 mongoc_client_get_gridfs (mongoc_client_t *client,
                           const char *db,
                           const char *prefix,
-                          bson_error_t *error);
+                          bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_collection_t *)
 mongoc_client_get_collection (mongoc_client_t *client,
                               const char *db,
-                              const char *collection);
+                              const char *collection)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (char **)
 mongoc_client_get_database_names (mongoc_client_t *client, bson_error_t *error)
+   BSON_GNUC_WARN_UNUSED_RESULT
    BSON_GNUC_DEPRECATED_FOR (mongoc_client_get_database_names_with_opts);
 MONGOC_EXPORT (char **)
 mongoc_client_get_database_names_with_opts (mongoc_client_t *client,
                                             const bson_t *opts,
-                                            bson_error_t *error);
+                                            bson_error_t *error)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_cursor_t *)
-mongoc_client_find_databases (mongoc_client_t *client, bson_error_t *error)
+mongoc_client_find_databases (mongoc_client_t *client,
+                              bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT
    BSON_GNUC_DEPRECATED_FOR (mongoc_client_find_databases_with_opts);
 MONGOC_EXPORT (mongoc_cursor_t *)
-mongoc_client_find_databases_with_opts (mongoc_client_t *client,
-                                        const bson_t *opts);
+mongoc_client_find_databases_with_opts (
+   mongoc_client_t *client, const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (bool)
 mongoc_client_get_server_status (mongoc_client_t *client,
                                  mongoc_read_prefs_t *read_prefs,
@@ -240,11 +248,11 @@ mongoc_client_set_apm_callbacks (mongoc_client_t *client,
                                  mongoc_apm_callbacks_t *callbacks,
                                  void *context);
 MONGOC_EXPORT (mongoc_server_description_t *)
-mongoc_client_get_server_description (mongoc_client_t *client,
-                                      uint32_t server_id);
+mongoc_client_get_server_description (
+   mongoc_client_t *client, uint32_t server_id) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_server_description_t **)
 mongoc_client_get_server_descriptions (const mongoc_client_t *client,
-                                       size_t *n);
+                                       size_t *n) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (void)
 mongoc_server_descriptions_destroy_all (mongoc_server_description_t **sds,
                                         size_t n);
@@ -252,7 +260,7 @@ MONGOC_EXPORT (mongoc_server_description_t *)
 mongoc_client_select_server (mongoc_client_t *client,
                              bool for_writes,
                              const mongoc_read_prefs_t *prefs,
-                             bson_error_t *error);
+                             bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (bool)
 mongoc_client_set_error_api (mongoc_client_t *client, int32_t version);
 MONGOC_EXPORT (bool)
@@ -260,7 +268,7 @@ mongoc_client_set_appname (mongoc_client_t *client, const char *appname);
 MONGOC_EXPORT (mongoc_change_stream_t *)
 mongoc_client_watch (mongoc_client_t *client,
                      const bson_t *pipeline,
-                     const bson_t *opts);
+                     const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (void)
 mongoc_client_reset (mongoc_client_t *client);
 
@@ -278,7 +286,8 @@ MONGOC_EXPORT (mongoc_server_description_t *)
 mongoc_client_get_handshake_description (mongoc_client_t *client,
                                          uint32_t server_id,
                                          bson_t *opts,
-                                         bson_error_t *error);
+                                         bson_error_t *error)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 
 BSON_END_DECLS
 

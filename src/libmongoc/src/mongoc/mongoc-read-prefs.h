@@ -43,9 +43,11 @@ typedef enum {
 
 
 MONGOC_EXPORT (mongoc_read_prefs_t *)
-mongoc_read_prefs_new (mongoc_read_mode_t read_mode);
+mongoc_read_prefs_new (mongoc_read_mode_t read_mode)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_read_prefs_t *)
-mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs);
+mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (void)
 mongoc_read_prefs_destroy (mongoc_read_prefs_t *read_prefs);
 MONGOC_EXPORT (mongoc_read_mode_t)
@@ -69,7 +71,8 @@ mongoc_read_prefs_set_max_staleness_seconds (mongoc_read_prefs_t *read_prefs,
 MONGOC_EXPORT (const bson_t *)
 mongoc_read_prefs_get_hedge (const mongoc_read_prefs_t *read_prefs);
 MONGOC_EXPORT (void)
-mongoc_read_prefs_set_hedge (mongoc_read_prefs_t *read_prefs, const bson_t *hedge);
+mongoc_read_prefs_set_hedge (mongoc_read_prefs_t *read_prefs,
+                             const bson_t *hedge);
 MONGOC_EXPORT (bool)
 mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs);
 

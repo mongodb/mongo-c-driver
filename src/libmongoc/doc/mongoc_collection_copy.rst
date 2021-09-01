@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   mongoc_collection_t *
-  mongoc_collection_copy (mongoc_collection_t *collection);
+  mongoc_collection_copy (mongoc_collection_t *collection)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

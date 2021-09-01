@@ -35,7 +35,7 @@ typedef enum {
 typedef struct _mongoc_find_and_modify_opts_t mongoc_find_and_modify_opts_t;
 
 MONGOC_EXPORT (mongoc_find_and_modify_opts_t *)
-mongoc_find_and_modify_opts_new (void);
+mongoc_find_and_modify_opts_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
 
 MONGOC_EXPORT (bool)
 mongoc_find_and_modify_opts_set_sort (mongoc_find_and_modify_opts_t *opts,
