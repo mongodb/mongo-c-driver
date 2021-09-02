@@ -29,6 +29,7 @@ typedef struct _event_t {
    char *database_name;
    bson_t *command;
    bson_t *reply;
+   bson_oid_t service_id;
    struct _event_t *next;
 } event_t;
 
@@ -43,6 +44,9 @@ typedef struct _entity_t {
    bson_t *lsid;
    char *session_client_id;
 } entity_t;
+
+struct _entity_findcursor_t;
+typedef struct _entity_findcursor_t entity_findcursor_t;
 
 /* Operations on the entity map enforce:
  * 1. Uniqueness. Attempting to create two entries with the same id is an error.
@@ -73,10 +77,11 @@ entity_map_add_changestream (entity_map_t *em,
 
 /* Steals ownership of cursor. */
 bool
-entity_map_add_cursor (entity_map_t *em,
-                       const char *id,
-                       mongoc_cursor_t *cursor,
-                       bson_error_t *error);
+entity_map_add_findcursor (entity_map_t *em,
+                           const char *id,
+                           mongoc_cursor_t *cursor,
+                           const bson_t *first_result,
+                           bson_error_t *error);
 
 /* Copies val */
 bool
@@ -114,10 +119,17 @@ entity_map_get_changestream (entity_map_t *entity_map,
                              const char *id,
                              bson_error_t *error);
 
-mongoc_cursor_t *
-entity_map_get_cursor (entity_map_t *entity_map,
-                       const char *id,
-                       bson_error_t *error);
+entity_findcursor_t *
+entity_map_get_findcursor (entity_map_t *entity_map,
+                           const char *id,
+                           bson_error_t *error);
+
+void
+entity_findcursor_iterate_until_document_or_error (
+   entity_findcursor_t *cursor,
+   const bson_t **document,
+   bson_error_t *error,
+   const bson_t **error_document);
 
 mongoc_client_session_t *
 entity_map_get_session (entity_map_t *entity_map,

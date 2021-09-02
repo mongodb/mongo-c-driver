@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   mongoc_client_t *
-  mongoc_client_pool_try_pop (mongoc_client_pool_t *pool);
+  mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 This function is identical to :symbol:`mongoc_client_pool_pop()` except it will return ``NULL`` instead of blocking for a client to become available.
 

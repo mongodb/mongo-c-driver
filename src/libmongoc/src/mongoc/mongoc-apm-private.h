@@ -205,12 +205,16 @@ mongoc_apm_command_failed_init (mongoc_apm_command_failed_t *event,
 void
 mongoc_apm_command_failed_cleanup (mongoc_apm_command_failed_t *event);
 
+/**
+ * @brief Determine whether the given command-related message is a "sensitive
+ * command."
+ *
+ * @param command_name The name of the command being checked
+ * @param body The body of the command request, reply, or failure.
+ */
 bool
-mongoc_apm_is_sensitive_command (const char *command_name,
-                                 const bson_t *command);
-
-bool
-mongoc_apm_is_sensitive_reply (const char *command_name, const bson_t *reply);
+mongoc_apm_is_sensitive_command_message (const char *command_name,
+                                         const bson_t *body);
 
 BSON_END_DECLS
 

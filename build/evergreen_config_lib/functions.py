@@ -311,6 +311,9 @@ all_functions = OD([
           export MONGOC_TEST_GCP_EMAIL="${client_side_encryption_gcp_email}"
           export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
         fi
+        export LOADBALANCED=${LOADBALANCED}
+        export SINGLE_MONGOS_LB_URI="${SINGLE_MONGOS_LB_URI}"
+        export MULTI_MONGOS_LB_URI="${MULTI_MONGOS_LB_URI}"
         set -o errexit
         sh .evergreen/run-tests.sh
         '''),

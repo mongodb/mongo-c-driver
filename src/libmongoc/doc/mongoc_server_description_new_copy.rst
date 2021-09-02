@@ -10,7 +10,7 @@ Synopsis
 
   mongoc_server_description_t *
   mongoc_server_description_new_copy (
-     const mongoc_server_description_t *description);
+     const mongoc_server_description_t *description) BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------
@@ -20,10 +20,9 @@ Parameters
 Description
 -----------
 
-This function copies the given server description and returns a new server description object.  The caller is responsible for destroying the new copy.
+Performs a deep copy of ``description``.
 
 Returns
 -------
 
-A copy of the original server description.
-
+Returns a newly allocated copy of ``description`` that should be freed with :symbol:`mongoc_server_description_destroy()` when no longer in use. Returns NULL if ``description`` is NULL.

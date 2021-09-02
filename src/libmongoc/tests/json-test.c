@@ -543,7 +543,7 @@ test_server_selection_logic_cb (bson_t *test)
 
 DONE:
    mongoc_read_prefs_destroy (read_prefs);
-   mongoc_topology_description_destroy (&topology);
+   mongoc_topology_description_cleanup (&topology);
    _mongoc_array_destroy (&selected_servers);
 }
 
@@ -783,7 +783,9 @@ check_version_info (const bson_t *scenario, bool print_reason)
       bson_iter_bson (&iter, &topology);
 
       /* Determine cluster type */
-      if (test_framework_is_mongos ()) {
+      if (test_framework_is_loadbalanced()) {
+         current_topology = "load-balanced";
+      } else if (test_framework_is_mongos ()) {
          current_topology = "sharded";
       } else if (test_framework_is_replset ()) {
          current_topology = "replicaset";
@@ -1693,6 +1695,23 @@ run_json_general_test (const json_test_config_t *config)
          continue;
       }
 
+      if (config->skips) {
+         test_skip_t *iter;
+         bool should_skip = false;
+
+         for (iter = config->skips; iter->description != NULL; iter++) {
+            if (0 == strcmp (description, iter->description)) {
+               should_skip = true;
+               break;
+            }
+         }
+         
+         if (should_skip) {
+            fprintf (stderr, " - %s SKIPPED, due to reason: %s", description, iter->reason);
+            continue;
+         }
+      }
+
       bson_free (selected_test);
 
       uri = (config->uri_str != NULL) ? mongoc_uri_new (config->uri_str)
@@ -1702,12 +1721,17 @@ run_json_general_test (const json_test_config_t *config)
        * the other URI components (CDRIVER-3285) */
       if (bson_iter_init_find (&uri_iter, &test, "useMultipleMongoses") &&
           bson_iter_as_bool (&uri_iter)) {
-         ASSERT_OR_PRINT (
-            mongoc_uri_upsert_host_and_port (uri, "localhost:27017", &error),
-            error);
-         ASSERT_OR_PRINT (
-            mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error),
-            error);
+         if (test_framework_is_loadbalanced ()) {
+            mongoc_uri_destroy (uri);
+            uri = test_framework_get_uri_multi_mongos_loadbalanced ();
+         } else {
+            ASSERT_OR_PRINT (
+               mongoc_uri_upsert_host_and_port (uri, "localhost:27017", &error),
+               error);
+            ASSERT_OR_PRINT (
+               mongoc_uri_upsert_host_and_port (uri, "localhost:27018", &error),
+               error);
+         }
       }
 
       if (bson_iter_init_find (&client_opts_iter, &test, "clientOptions")) {

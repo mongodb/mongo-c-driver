@@ -34,4 +34,7 @@ bson_type_from_string (const char *in);
 const char *
 bson_type_to_string (bson_type_t btype);
 
+/* Returns true if this is an event type (part of observeEvents or expectedEvents) that is unsupported and not emitted by the C driver. */
+bool is_unsupported_event_type (const char* event_type);
+
 #endif /* UNIFIED_UTIL_H */

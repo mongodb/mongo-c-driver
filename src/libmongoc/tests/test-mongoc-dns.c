@@ -579,7 +579,7 @@ test_srv_polling_mocked (void *unused)
    _mongoc_host_list_destroy_all (hosts);
    ASSERT_CAPTURED_LOG ("topology", MONGOC_LOG_LEVEL_ERROR, "Invalid host");
 
-   mongoc_topology_description_destroy (&td);
+   mongoc_topology_description_cleanup (&td);
    mongoc_uri_destroy (uri);
 }
 
@@ -633,8 +633,8 @@ _prose_loadbalanced_ping (mongoc_client_t *client)
 }
 
 /*
-   Implements the following prose test described in the SRV polling test README:
-   Test that SRV polling is not done for load balalanced clusters. Connect to
+   Implements prose test 9 as described in the SRV polling test README:
+   Test that SRV polling is not done for load balanced clusters. Connect to
    mongodb+srv://test3.test.build.10gen.cc/?loadBalanced=true, mock the addition
    of the following DNS record, wait until 2*rescanSRVIntervalMS, and assert
    that the final topology description only contains one server
@@ -643,7 +643,7 @@ _prose_loadbalanced_ping (mongoc_client_t *client)
    localhost.test.build.10gen.cc.
 */
 static void
-_prose_loadbalanced_run (bool pooled)
+_prose_test_9 (bool pooled)
 {
    mongoc_client_pool_t *pool;
    mongoc_uri_t *uri;
@@ -717,15 +717,15 @@ _prose_loadbalanced_run (bool pooled)
 }
 
 static void
-test_prose_loadbalanced_single (void *unused)
+prose_test_9_single (void *unused)
 {
-   _prose_loadbalanced_run (false);
+   _prose_test_9 (false);
 }
 
 static void
-test_prose_loadbalanced_pooled (void *unused)
+prose_test_9_pooled (void *unused)
 {
-   _prose_loadbalanced_run (true);
+   _prose_test_9 (true);
 }
 
 void
@@ -757,16 +757,16 @@ test_dns_install (TestSuite *suite)
     * Discovery" spec. */
    TestSuite_AddFull (
       suite,
-      "/initial_dns_seedlist_discovery/srv_polling/prose_loadbalanced/single",
-      test_prose_loadbalanced_single,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/single",
+      prose_test_9_single,
       NULL,
       NULL,
       test_dns_check_loadbalanced);
 
    TestSuite_AddFull (
       suite,
-      "/initial_dns_seedlist_discovery/srv_polling/prose_loadbalanced/pooled",
-      test_prose_loadbalanced_pooled,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/pooled",
+      prose_test_9_pooled,
       NULL,
       NULL,
       test_dns_check_loadbalanced);

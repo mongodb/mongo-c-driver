@@ -163,3 +163,31 @@ test_bson_util_install (TestSuite *suite)
    TestSuite_Add (
       suite, "/unified/selftest/util/copy_and_sort", test_copy_and_sort);
 }
+
+/* TODO (CDRIVER-3525) add test support for CMAP events once the C driver
+ * supports CMAP. */
+bool
+is_unsupported_event_type (const char *event_type)
+{
+   char *unsupported_event_types[] = {"poolCreatedEvent",
+                                      "poolReadyEvent",
+                                      "poolClearedEvent",
+                                      "poolClosedEvent",
+                                      "connectionCreatedEvent",
+                                      "connectionReadyEvent",
+                                      "connectionClosedEvent",
+                                      "connectionCheckOutStartedEvent",
+                                      "connectionCheckOutFailedEvent",
+                                      "connectionCheckedOutEvent",
+                                      "connectionCheckedInEvent",
+                                      NULL};
+
+   char **iter;
+
+   for (iter = unsupported_event_types; *iter != NULL; iter++) {
+      if (0 == strcmp (event_type, *iter)) {
+         return true;
+      }
+   }
+   return false;
+}

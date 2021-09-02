@@ -1022,7 +1022,9 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       }
 
       ret = true;
-   } else if (server_type == MONGOC_SERVER_MONGOS) {
+   } else if (server_type == MONGOC_SERVER_MONGOS ||
+              server_stream->topology_type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      /* TODO (CDRIVER-4117) remove the check of the topology description type. */
       _mongoc_cmd_parts_assemble_mongos (parts, server_stream);
       ret = true;
    } else {

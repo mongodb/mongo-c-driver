@@ -51,11 +51,11 @@ get_mongodb_download_url_for ()
    _DISTRO=$1
    _VERSION=$2
 
-   VERSION_50="5.0.0-rc0"
-   VERSION_44="4.4.3"
-   VERSION_42="4.2.11"
-   VERSION_40="4.0.22"
-   VERSION_36="3.6.21"
+   VERSION_50="5.0.2"
+   VERSION_44="4.4.6"
+   VERSION_42="4.2.15"
+   VERSION_40="4.0.25"
+   VERSION_36="3.6.23"
    VERSION_34="3.4.24"
    VERSION_32="3.2.22"
    VERSION_30="3.0.15"

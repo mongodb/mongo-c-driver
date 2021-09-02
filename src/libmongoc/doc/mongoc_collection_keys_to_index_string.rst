@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   char *
-  mongoc_collection_keys_to_index_string (const bson_t *keys);
+  mongoc_collection_keys_to_index_string (const bson_t *keys)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

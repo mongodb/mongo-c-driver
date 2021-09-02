@@ -145,28 +145,18 @@ free_and_assert_stats (stats_t *stats)
    bson_free (stats);
 }
 
-static char *
-loadbalanced_uri (void)
-{
-   /* TODO (CDRIVER-4062): This will need to add TLS and auth to the URI when
-    * run in evergreen. */
-   return test_framework_getenv ("SINGLE_MONGOS_LB_URI");
-}
-
 static void
 test_loadbalanced_sessions_supported (void *unused)
 {
    mongoc_client_t *client;
    mongoc_client_session_t *session;
-   char *uristr = loadbalanced_uri ();
    bson_error_t error;
 
-   client = mongoc_client_new (uristr);
+   client = test_framework_new_default_client ();
    session = mongoc_client_start_session (client, NULL /* opts */, &error);
    ASSERT_OR_PRINT (session, error);
 
    mongoc_client_session_destroy (session);
-   bson_free (uristr);
    mongoc_client_destroy (client);
 }
 
@@ -176,12 +166,11 @@ test_loadbalanced_sessions_do_not_expire (void *unused)
    mongoc_client_t *client;
    mongoc_client_session_t *session1;
    mongoc_client_session_t *session2;
-   char *uristr = loadbalanced_uri ();
    bson_error_t error;
    bson_t *session1_lsid;
    bson_t *session2_lsid;
 
-   client = mongoc_client_new (uristr);
+   client = test_framework_new_default_client ();
    /* Mock a timeout so session expiration applies. */
    client->topology->description.session_timeout_minutes = 1;
 
@@ -220,7 +209,6 @@ test_loadbalanced_sessions_do_not_expire (void *unused)
 
    bson_destroy (session1_lsid);
    bson_destroy (session2_lsid);
-   bson_free (uristr);
    mongoc_client_session_destroy (session1);
    mongoc_client_session_destroy (session2);
    mongoc_client_destroy (client);
@@ -263,13 +251,12 @@ static void
 test_loadbalanced_connect_single (void *unused)
 {
    mongoc_client_t *client;
-   char *uristr = loadbalanced_uri ();
    bson_error_t error;
    bool ok;
    mongoc_server_description_t *monitor_sd;
    stats_t *stats;
 
-   client = mongoc_client_new (uristr);
+   client = test_framework_new_default_client ();
    stats = set_client_callbacks (client);
    ok = mongoc_client_command_simple (client,
                                       "admin",
@@ -287,7 +274,6 @@ test_loadbalanced_connect_single (void *unused)
    ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
 
    mongoc_server_description_destroy (monitor_sd);
-   bson_free (uristr);
    mongoc_client_destroy (client);
    free_and_assert_stats (stats);
 }
@@ -297,16 +283,12 @@ test_loadbalanced_connect_pooled (void *unused)
 {
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
-   char *uristr;
-   mongoc_uri_t *uri;
    bson_error_t error;
    bool ok;
    mongoc_server_description_t *monitor_sd;
    stats_t *stats;
 
-   uristr = loadbalanced_uri ();
-   uri = mongoc_uri_new (uristr);
-   pool = mongoc_client_pool_new (uri);
+   pool = test_framework_new_default_client_pool ();
    stats = set_client_pool_callbacks (pool);
    client = mongoc_client_pool_pop (pool);
 
@@ -326,8 +308,6 @@ test_loadbalanced_connect_pooled (void *unused)
    ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
 
    mongoc_server_description_destroy (monitor_sd);
-   bson_free (uristr);
-   mongoc_uri_destroy (uri);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
    free_and_assert_stats (stats);
@@ -339,13 +319,12 @@ static void
 test_loadbalanced_server_selection_establishes_connection_single (void *unused)
 {
    mongoc_client_t *client;
-   char *uristr = loadbalanced_uri ();
    bson_error_t error;
    mongoc_server_description_t *monitor_sd;
    mongoc_server_description_t *handshake_sd;
    stats_t *stats;
 
-   client = mongoc_client_new (uristr);
+   client = test_framework_new_default_client ();
    stats = set_client_callbacks (client);
    monitor_sd = mongoc_client_select_server (
       client, true /* for writes */, NULL /* read prefs */, &error);
@@ -359,7 +338,6 @@ test_loadbalanced_server_selection_establishes_connection_single (void *unused)
    ASSERT_OR_PRINT (handshake_sd, error);
    ASSERT_CMPSTR ("Mongos", mongoc_server_description_type (handshake_sd));
 
-   bson_free (uristr);
    mongoc_server_description_destroy (monitor_sd);
    mongoc_server_description_destroy (handshake_sd);
    mongoc_client_destroy (client);
@@ -372,13 +350,12 @@ static void
 test_loadbalanced_cooldown_is_bypassed_single (void *unused)
 {
    mongoc_client_t *client;
-   char *uristr = loadbalanced_uri ();
    bson_error_t error;
    bool ok;
    stats_t *stats;
    mongoc_server_description_t *monitor_sd;
 
-   client = mongoc_client_new (uristr);
+   client = test_framework_new_default_client ();
    stats = set_client_callbacks (client);
 
    ok = mongoc_client_command_simple (
@@ -436,7 +413,6 @@ test_loadbalanced_cooldown_is_bypassed_single (void *unused)
    ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
 
    mongoc_server_description_destroy (monitor_sd);
-   bson_free (uristr);
    mongoc_client_destroy (client);
    free_and_assert_stats (stats);
 }
@@ -798,12 +774,7 @@ test_post_handshake_error_clears_pool (void)
 static int
 skip_if_not_loadbalanced (void)
 {
-   char *val = loadbalanced_uri ();
-   if (!val) {
-      return 0;
-   }
-   bson_free (val);
-   return 1;
+   return test_framework_is_loadbalanced () ? 1 : 0;
 }
 
 void

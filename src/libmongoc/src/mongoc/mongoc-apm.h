@@ -322,7 +322,7 @@ typedef void (*mongoc_apm_server_heartbeat_failed_cb_t) (
  */
 
 MONGOC_EXPORT (mongoc_apm_callbacks_t *)
-mongoc_apm_callbacks_new (void);
+mongoc_apm_callbacks_new (void) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (void)
 mongoc_apm_callbacks_destroy (mongoc_apm_callbacks_t *callbacks);
 MONGOC_EXPORT (void)

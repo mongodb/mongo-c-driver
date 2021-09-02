@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   mongoc_database_t *
-  mongoc_client_get_default_database (mongoc_client_t *client);
+  mongoc_client_get_default_database (mongoc_client_t *client)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Get the database named in the MongoDB connection URI, or ``NULL`` if the URI specifies none.
 

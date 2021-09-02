@@ -11,7 +11,8 @@ Synopsis
   char **
   mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
                                                   const bson_t *opts,
-                                                  bson_error_t *error);
+                                                  bson_error_t *error)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Fetches a ``NULL`` terminated array of ``NULL-byte`` terminated ``char*`` strings containing the names of all of the collections in ``database``.
 

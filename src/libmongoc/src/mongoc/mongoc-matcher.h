@@ -30,8 +30,8 @@ typedef struct _mongoc_matcher_t mongoc_matcher_t;
 
 
 MONGOC_EXPORT (mongoc_matcher_t *)
-mongoc_matcher_new (const bson_t *query,
-                    bson_error_t *error) BSON_GNUC_DEPRECATED;
+mongoc_matcher_new (const bson_t *query, bson_error_t *error)
+   BSON_GNUC_WARN_UNUSED_RESULT BSON_GNUC_DEPRECATED;
 MONGOC_EXPORT (bool)
 mongoc_matcher_match (const mongoc_matcher_t *matcher,
                       const bson_t *document) BSON_GNUC_DEPRECATED;
