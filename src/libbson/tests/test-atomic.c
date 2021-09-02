@@ -25,8 +25,8 @@ test1 (void)
 {
    int32_t v = 0;
 
-   BSON_ASSERT (bson_atomic_int32_fetch_add (&v, 1, bson_memorder_relaxed) ==
-                0);
+   BSON_ASSERT (
+      bson_atomic_int32_fetch_add (&v, 1, bson_memory_order_relaxed) == 0);
    BSON_ASSERT (v == 1);
 }
 
@@ -36,8 +36,8 @@ test2 (void)
 {
    int64_t v = 0;
 
-   BSON_ASSERT (bson_atomic_int64_fetch_add (&v, 1, bson_memorder_relaxed) ==
-                0);
+   BSON_ASSERT (
+      bson_atomic_int64_fetch_add (&v, 1, bson_memory_order_relaxed) == 0);
    BSON_ASSERT (v == 1);
 }
 
@@ -45,7 +45,7 @@ test2 (void)
 static void
 test3 (void)
 {
-   bson_memory_barrier ();
+   bson_atomic_thread_fence ();
 }
 
 

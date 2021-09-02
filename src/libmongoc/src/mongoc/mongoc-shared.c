@@ -109,10 +109,11 @@ mongoc_shared_ptr_rebind_atomic (mongoc_shared_ptr *const out,
       prev_aux = out->_aux;
       if (prev_aux) {
          prevcount = bson_atomic_int_fetch_sub (
-            &out->_aux->refcount, 1, bson_memorder_seqcst);
+            &prev_aux->refcount, 1, bson_memory_order_relaxed);
       }
       *out = from;
-      bson_atomic_int_fetch_add (&out->_aux->refcount, 1, bson_memorder_seqcst);
+      bson_atomic_int_fetch_add (
+         &out->_aux->refcount, 1, bson_memory_order_relaxed);
       _shared_ptr_spin_unlock ();
    }
 
@@ -126,7 +127,8 @@ mongoc_shared_ptr_take (mongoc_shared_ptr const ptr)
 {
    mongoc_shared_ptr ret = ptr;
    if (!mongoc_shared_ptr_is_null (ptr)) {
-      bson_atomic_int_fetch_add (&ret._aux->refcount, 1, bson_memorder_seqcst);
+      bson_atomic_int_fetch_add (
+         &ret._aux->refcount, 1, bson_memory_order_relaxed);
    }
    return ret;
 }
@@ -149,8 +151,8 @@ mongoc_shared_ptr_release (mongoc_shared_ptr *const ptr)
    assert (!mongoc_shared_ptr_is_null (*ptr) &&
            "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_release");
    /* Decrement the reference count by one */
-   size_t prevcount =
-      bson_atomic_int_fetch_sub (&ptr->_aux->refcount, 1, bson_memorder_seqcst);
+   size_t prevcount = bson_atomic_int_fetch_sub (
+      &ptr->_aux->refcount, 1, bson_memory_order_relaxed);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
        * Release the managed data. */
@@ -166,5 +168,5 @@ mongoc_shared_ptr_refcount (mongoc_shared_ptr const ptr)
    assert (!mongoc_shared_ptr_is_null (ptr) &&
            "Unbound mongoc_shraed_ptr given to mongoc_shared_ptr_refcount");
    return (int) bson_atomic_int_fetch (&ptr._aux->refcount,
-                                       bson_memorder_relaxed);
+                                       bson_memory_order_relaxed);
 }
