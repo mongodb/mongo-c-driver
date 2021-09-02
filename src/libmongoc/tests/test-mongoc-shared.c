@@ -39,28 +39,29 @@ static void
 test_simple ()
 {
    int destroyed_value = 0;
-   mongoc_shared_ptr ptr = {0};
+   mongoc_shared_ptr ptr = MONGOC_SHARED_PTR_NULL;
 
    ASSERT (mongoc_shared_ptr_is_null (ptr));
    ptr = mongoc_shared_ptr_create (my_value_new (), my_value_free_v);
    ASSERT (!mongoc_shared_ptr_is_null (ptr));
 
-   ASSERT_CMPINT (mongoc_shared_ptr_refcount (ptr), ==, 1);
+   ASSERT_CMPINT (mongoc_shared_ptr_use_count (ptr), ==, 1);
 
-   mongoc_shared_ptr ptr2 = mongoc_shared_ptr_take (ptr);
+   mongoc_shared_ptr ptr2 = mongoc_shared_ptr_copy (ptr);
 
    ASSERT (ptr.ptr == ptr2.ptr);
    ASSERT (ptr._aux == ptr._aux);
 
-   MONGOC_Shared_Take (my_value, valptr, ptr);
+   mongoc_shared_ptr valptr_s = mongoc_shared_ptr_copy (ptr);
+   my_value *valptr = valptr_s.ptr;
    valptr->store_value_on_dtor = &destroyed_value;
    valptr->value = 133;
-   MONGOC_Shared_Release (valptr);
+   mongoc_shared_ptr_reset_null (&valptr_s);
    /* Value hasn't changed yet */
    ASSERT_CMPINT (destroyed_value, ==, 0);
 
    /* Now drop the final reference */
-   mongoc_shared_ptr_release (&ptr);
+   mongoc_shared_ptr_reset_null (&ptr);
    /* Check that the pointer is empty */
    ASSERT (mongoc_shared_ptr_is_null (ptr));
 
@@ -71,7 +72,7 @@ test_simple ()
    ASSERT_CMPINT (((my_value *) ptr2.ptr)->value, ==, 133);
 
    /* Drop the last one */
-   mongoc_shared_ptr_release (&ptr2);
+   mongoc_shared_ptr_reset_null (&ptr2);
    ASSERT (mongoc_shared_ptr_is_null (ptr2));
 
    /* Now it was destroyed and set */

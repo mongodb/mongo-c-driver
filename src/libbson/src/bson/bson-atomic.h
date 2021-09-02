@@ -434,7 +434,7 @@ static BSON_INLINE void *
 bson_atomic_ptr_fetch (void *volatile const *ptr, enum bson_memory_order ord)
 {
    return bson_atomic_ptr_compare_exchange_strong (
-      (void *) ptr, NULL, NULL, ord);
+      (void *volatile *) ptr, NULL, NULL, ord);
 }
 
 #undef DECL_ATOMIC_STDINT

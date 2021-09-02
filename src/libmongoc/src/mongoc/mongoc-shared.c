@@ -19,8 +19,6 @@
 #include "common-thread-private.h"
 #include <bson/bson.h>
 
-#include <assert.h>
-
 typedef struct _mongoc_shared_ptr_aux {
    int refcount;
    void (*dtor) (void *);
@@ -43,87 +41,92 @@ static BSON_ONCE_FUN (_init_mtx)
 }
 
 static void
-_shared_ptr_spin_lock ()
+_shared_ptr_lock ()
 {
    bson_mutex_lock (&g_shared_ptr_mtx);
 }
 
 static void
-_shared_ptr_spin_unlock ()
+_shared_ptr_unlock ()
 {
    bson_mutex_unlock (&g_shared_ptr_mtx);
 }
 
 void
-mongoc_shared_ptr_rebind_raw (mongoc_shared_ptr *const ptr,
-                              void *const pointee,
-                              void (*const dtor) (void *))
+mongoc_shared_ptr_reset (mongoc_shared_ptr *const ptr,
+                         void *const pointee,
+                         void (*const dtor) (void *))
 {
-   assert (ptr && "NULL given to mongoc_shared_ptr_rebind_raw()");
+   BSON_ASSERT (ptr && "NULL given to mongoc_shared_ptr_reset()");
    if (!mongoc_shared_ptr_is_null (*ptr)) {
       /* Release the old value of the pointer, possibly destroying it */
-      mongoc_shared_ptr_release (ptr);
+      mongoc_shared_ptr_reset_null (ptr);
    }
    ptr->ptr = pointee;
    ptr->_aux = NULL;
    /* Take the new value */
    if (pointee != NULL) {
-      assert (dtor != NULL);
+      BSON_ASSERT (dtor != NULL);
       ptr->_aux = bson_malloc0 (sizeof (_mongoc_shared_ptr_aux));
       ptr->_aux->dtor = dtor;
       ptr->_aux->refcount = 1;
       ptr->_aux->managed = pointee;
    }
+   bson_once (&g_shared_ptr_mtx_init_once, _init_mtx);
 }
 
 void
-mongoc_shared_ptr_rebind (mongoc_shared_ptr *const out,
+mongoc_shared_ptr_assign (mongoc_shared_ptr *const out,
                           mongoc_shared_ptr const from)
 {
-   assert (out &&
-           "NULL given as output argument to mongoc_shared_ptr_rebind()");
-   mongoc_shared_ptr_release (out);
-   *out = mongoc_shared_ptr_take (from);
+   BSON_ASSERT (out &&
+                "NULL given as output argument to mongoc_shared_ptr_assign()");
+   mongoc_shared_ptr_reset_null (out);
+   *out = mongoc_shared_ptr_copy (from);
 }
 
 mongoc_shared_ptr
 mongoc_shared_ptr_create (void *pointee, void (*destroy) (void *))
 {
-   mongoc_shared_ptr ret = {0};
-   mongoc_shared_ptr_rebind_raw (&ret, pointee, destroy);
-   bson_once (&g_shared_ptr_mtx_init_once, _init_mtx);
+   mongoc_shared_ptr ret = MONGOC_SHARED_PTR_NULL;
+   mongoc_shared_ptr_reset (&ret, pointee, destroy);
    return ret;
 }
 
 void
-mongoc_shared_ptr_rebind_atomic (mongoc_shared_ptr *const out,
-                                 mongoc_shared_ptr const from)
+mongoc_atomic_shared_ptr_store (mongoc_shared_ptr *const out,
+                                mongoc_shared_ptr const from)
 {
-   struct _mongoc_shared_ptr_aux *prev_aux = NULL;
-   size_t prevcount = 0;
-   assert (out &&
-           "NULL given as output argument to mongoc_shared_ptr_rebind_atomic");
+   mongoc_shared_ptr prev = MONGOC_SHARED_PTR_NULL;
+   BSON_ASSERT (
+      out && "NULL given as output argument to mongoc_atomic_shared_ptr_store");
 
-   {
-      _shared_ptr_spin_lock ();
-      prev_aux = out->_aux;
-      if (prev_aux) {
-         prevcount = bson_atomic_int_fetch_sub (
-            &prev_aux->refcount, 1, bson_memory_order_relaxed);
-      }
-      *out = from;
-      bson_atomic_int_fetch_add (
-         &out->_aux->refcount, 1, bson_memory_order_relaxed);
-      _shared_ptr_spin_unlock ();
-   }
+   /* We are effectively "copying" the 'from' */
+   (void) mongoc_shared_ptr_copy (from);
 
-   if (prevcount == 1) {
-      _release_aux (prev_aux);
-   }
+   _shared_ptr_lock ();
+   /* Do the exchange. Quick! */
+   prev = *out;
+   *out = from;
+   _shared_ptr_unlock ();
+
+   /* Free the pointer that we just overwrote */
+   mongoc_shared_ptr_reset_null (&prev);
 }
 
 mongoc_shared_ptr
-mongoc_shared_ptr_take (mongoc_shared_ptr const ptr)
+mongoc_atomic_shared_ptr_load (mongoc_shared_ptr const *ptr)
+{
+   mongoc_shared_ptr r;
+   BSON_ASSERT (ptr && "NULL given to _mongoc_shared_ptr_take_atomic()");
+   _shared_ptr_lock ();
+   r = mongoc_shared_ptr_copy (*ptr);
+   _shared_ptr_unlock ();
+   return r;
+}
+
+mongoc_shared_ptr
+mongoc_shared_ptr_copy (mongoc_shared_ptr const ptr)
 {
    mongoc_shared_ptr ret = ptr;
    if (!mongoc_shared_ptr_is_null (ptr)) {
@@ -133,23 +136,13 @@ mongoc_shared_ptr_take (mongoc_shared_ptr const ptr)
    return ret;
 }
 
-mongoc_shared_ptr
-mongoc_shared_ptr_take_atomic (mongoc_shared_ptr const *ptr)
-{
-   mongoc_shared_ptr r;
-   assert (ptr && "NULL given to _mongoc_shared_ptr_take_atomic()");
-   _shared_ptr_spin_lock ();
-   r = mongoc_shared_ptr_take (*ptr);
-   _shared_ptr_spin_unlock ();
-   return r;
-}
-
 void
-mongoc_shared_ptr_release (mongoc_shared_ptr *const ptr)
+mongoc_shared_ptr_reset_null (mongoc_shared_ptr *const ptr)
 {
-   assert (ptr && "NULL given to mongoc_shared_ptr_release()");
-   assert (!mongoc_shared_ptr_is_null (*ptr) &&
-           "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_release");
+   BSON_ASSERT (ptr && "NULL given to mongoc_shared_ptr_reset_null()");
+   BSON_ASSERT (
+      !mongoc_shared_ptr_is_null (*ptr) &&
+      "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_reset_null");
    /* Decrement the reference count by one */
    size_t prevcount = bson_atomic_int_fetch_sub (
       &ptr->_aux->refcount, 1, bson_memory_order_relaxed);
@@ -163,10 +156,11 @@ mongoc_shared_ptr_release (mongoc_shared_ptr *const ptr)
 }
 
 int
-mongoc_shared_ptr_refcount (mongoc_shared_ptr const ptr)
+mongoc_shared_ptr_use_count (mongoc_shared_ptr const ptr)
 {
-   assert (!mongoc_shared_ptr_is_null (ptr) &&
-           "Unbound mongoc_shraed_ptr given to mongoc_shared_ptr_refcount");
+   BSON_ASSERT (
+      !mongoc_shared_ptr_is_null (ptr) &&
+      "Unbound mongoc_shraed_ptr given to mongoc_shared_ptr_use_count");
    return (int) bson_atomic_int_fetch (&ptr._aux->refcount,
                                        bson_memory_order_relaxed);
 }
