@@ -142,7 +142,7 @@ enum {
          &BSON_CONCAT (__mongoc_counter_, ident)                               \
              .cpus[_mongoc_sched_getcpu ()]                                    \
              .slots[BSON_CONCAT (COUNTER_, ident) % SLOTS_PER_CACHELINE];      \
-      bson_atomic_int64_fetch_add (counter, val, bson_memorder_seqcst);        \
+      bson_atomic_int64_fetch_add (counter, val, bson_memory_order_seq_cst);   \
    }                                                                           \
    static BSON_INLINE void mongoc_counter_##ident##_inc (void)                 \
    {                                                                           \
@@ -158,9 +158,9 @@ enum {
       for (i = 0; i < _mongoc_get_cpu_count (); i++) {                         \
          int64_t *counter = &__mongoc_counter_##ident.cpus[i]                  \
                                 .slots[COUNTER_##ident % SLOTS_PER_CACHELINE]; \
-         bson_atomic_int64_exchange (counter, 0, bson_memorder_seqcst);        \
+         bson_atomic_int64_exchange (counter, 0, bson_memory_order_seq_cst);   \
       }                                                                        \
-      bson_memory_barrier ();                                                  \
+      bson_atomic_thread_fence ();                                             \
    }
 #include "mongoc-counters.defs"
 #undef COUNTER
