@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "./mongoc-shared.h"
+#include "./mongoc-shared-private.h"
 
 #include "common-thread-private.h"
 #include <bson/bson.h>
@@ -34,18 +34,24 @@ _release_aux (_mongoc_shared_ptr_aux *aux)
    bson_free (aux);
 }
 
-static bson_mutex_t g_shared_ptr_spin_mtx = PTHREAD_MUTEX_INITIALIZER;
+static bson_mutex_t g_shared_ptr_mtx;
+static bson_once_t g_shared_ptr_mtx_init_once = BSON_ONCE_INIT;
+
+static BSON_ONCE_FUN (_init_mtx)
+{
+   bson_mutex_init (&g_shared_ptr_mtx);
+}
 
 static void
 _shared_ptr_spin_lock ()
 {
-   bson_mutex_lock (&g_shared_ptr_spin_mtx);
+   bson_mutex_lock (&g_shared_ptr_mtx);
 }
 
 static void
 _shared_ptr_spin_unlock ()
 {
-   bson_mutex_unlock (&g_shared_ptr_spin_mtx);
+   bson_mutex_unlock (&g_shared_ptr_mtx);
 }
 
 void
@@ -85,6 +91,7 @@ mongoc_shared_ptr_create (void *pointee, void (*destroy) (void *))
 {
    mongoc_shared_ptr ret = {0};
    mongoc_shared_ptr_rebind_raw (&ret, pointee, destroy);
+   bson_once (&g_shared_ptr_mtx_init_once, _init_mtx);
    return ret;
 }
 
@@ -102,10 +109,11 @@ mongoc_shared_ptr_rebind_atomic (mongoc_shared_ptr *const out,
       prev_aux = out->_aux;
       if (prev_aux) {
          prevcount = bson_atomic_int_fetch_sub (
-            &out->_aux->refcount, 1, bson_memorder_seqcst);
+            &prev_aux->refcount, 1, bson_memory_order_relaxed);
       }
       *out = from;
-      bson_atomic_int_fetch_add (&out->_aux->refcount, 1, bson_memorder_seqcst);
+      bson_atomic_int_fetch_add (
+         &out->_aux->refcount, 1, bson_memory_order_relaxed);
       _shared_ptr_spin_unlock ();
    }
 
@@ -119,7 +127,8 @@ mongoc_shared_ptr_take (mongoc_shared_ptr const ptr)
 {
    mongoc_shared_ptr ret = ptr;
    if (!mongoc_shared_ptr_is_null (ptr)) {
-      bson_atomic_int_fetch_add (&ret._aux->refcount, 1, bson_memorder_seqcst);
+      bson_atomic_int_fetch_add (
+         &ret._aux->refcount, 1, bson_memory_order_relaxed);
    }
    return ret;
 }
@@ -142,8 +151,8 @@ mongoc_shared_ptr_release (mongoc_shared_ptr *const ptr)
    assert (!mongoc_shared_ptr_is_null (*ptr) &&
            "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_release");
    /* Decrement the reference count by one */
-   size_t prevcount =
-      bson_atomic_int_fetch_sub (&ptr->_aux->refcount, 1, bson_memorder_seqcst);
+   size_t prevcount = bson_atomic_int_fetch_sub (
+      &ptr->_aux->refcount, 1, bson_memory_order_relaxed);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
        * Release the managed data. */
@@ -159,5 +168,5 @@ mongoc_shared_ptr_refcount (mongoc_shared_ptr const ptr)
    assert (!mongoc_shared_ptr_is_null (ptr) &&
            "Unbound mongoc_shraed_ptr given to mongoc_shared_ptr_refcount");
    return (int) bson_atomic_int_fetch (&ptr._aux->refcount,
-                                       bson_memorder_relaxed);
+                                       bson_memory_order_relaxed);
 }

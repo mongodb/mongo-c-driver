@@ -78,7 +78,7 @@ _new_item (mongoc_ts_pool *pool, bson_error_t *error)
    }
    if (node) {
       bson_atomic_int32_fetch_add (
-         &pool->outstanding_items, 1, bson_memorder_relaxed);
+         &pool->outstanding_items, 1, bson_memory_order_relaxed);
    }
    return node;
 }
@@ -110,9 +110,9 @@ _try_get (mongoc_ts_pool *pool)
    }
    bson_mutex_unlock (&pool->mtx);
    if (node) {
-      bson_atomic_int32_fetch_sub (&pool->size, 1, bson_memorder_relaxed);
+      bson_atomic_int32_fetch_sub (&pool->size, 1, bson_memory_order_relaxed);
       bson_atomic_int32_fetch_add (
-         &pool->outstanding_items, 1, bson_memorder_relaxed);
+         &pool->outstanding_items, 1, bson_memory_order_relaxed);
    }
    return node;
 }
@@ -206,9 +206,9 @@ mongoc_ts_pool_return (void *item)
       pool->head = node;
       bson_mutex_unlock (&pool->mtx);
       bson_atomic_int32_fetch_add (
-         &node->owner_pool->size, 1, bson_memorder_relaxed);
+         &node->owner_pool->size, 1, bson_memory_order_relaxed);
       bson_atomic_int32_fetch_sub (
-         &node->owner_pool->outstanding_items, 1, bson_memorder_relaxed);
+         &node->owner_pool->outstanding_items, 1, bson_memory_order_relaxed);
    }
 }
 
@@ -217,7 +217,7 @@ mongoc_ts_pool_drop (void *item)
 {
    pool_node *node = (void *) ((uint8_t *) (item) -offsetof (pool_node, data));
    bson_atomic_int32_fetch_sub (
-      &node->owner_pool->outstanding_items, 1, bson_memorder_relaxed);
+      &node->owner_pool->outstanding_items, 1, bson_memory_order_relaxed);
    _delete_item (node);
 }
 
@@ -230,7 +230,7 @@ mongoc_ts_pool_is_empty (const mongoc_ts_pool *pool)
 size_t
 mongoc_ts_pool_size (const mongoc_ts_pool *pool)
 {
-   return bson_atomic_int32_fetch (&pool->size, bson_memorder_relaxed);
+   return bson_atomic_int32_fetch (&pool->size, bson_memory_order_relaxed);
 }
 
 void

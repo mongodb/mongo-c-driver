@@ -1293,8 +1293,8 @@ _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
    }
 
    char *s = bson_strdup (appname);
-   const char *prev = bson_atomic_ptr_compare_exchange (
-      (void *) &ts->appname, NULL, s, bson_memorder_relaxed);
+   const char *prev = bson_atomic_ptr_compare_exchange_strong (
+      (void *) &ts->appname, NULL, s, bson_memory_order_relaxed);
    if (prev == NULL) {
       return true;
    }

@@ -37,7 +37,7 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
 
    topology = topology_void;
    while (bson_atomic_int_fetch ((int *) &topology->scanner_state,
-                                 bson_memorder_relaxed) ==
+                                 bson_memory_order_relaxed) ==
           MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       int64_t now_ms;
       int64_t scan_due_ms;
@@ -132,11 +132,11 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
    BSON_ASSERT (!topology->single_threaded);
    MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
-   const int prev_state =
-      bson_atomic_int_compare_exchange ((int *) &topology->scanner_state,
-                                        MONGOC_TOPOLOGY_SCANNER_OFF,
-                                        MONGOC_TOPOLOGY_SCANNER_BG_RUNNING,
-                                        bson_memorder_relaxed);
+   const int prev_state = bson_atomic_int_compare_exchange_strong (
+      (int *) &topology->scanner_state,
+      MONGOC_TOPOLOGY_SCANNER_OFF,
+      MONGOC_TOPOLOGY_SCANNER_BG_RUNNING,
+      bson_memory_order_relaxed);
 
    if (prev_state != MONGOC_TOPOLOGY_SCANNER_OFF) {
       // The topology scanner is already running, or another thread is starting
@@ -228,7 +228,7 @@ _mongoc_topology_background_monitoring_reconcile (
    BSON_ASSERT (!topology->single_threaded);
 
    if (bson_atomic_int_fetch ((const int *) &topology->scanner_state,
-                              bson_memorder_relaxed) !=
+                              bson_memory_order_relaxed) !=
        MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       return;
    }

@@ -2804,7 +2804,7 @@ mongoc_client_set_apm_callbacks (mongoc_client_t *client,
 }
 
 mongoc_server_description_t *
-mongoc_client_get_server_description (mongoc_client_t const *client,
+mongoc_client_get_server_description (mongoc_client_t *client,
                                       uint32_t server_id)
 {
    MC_DECL_TD_TAKE (td, client->topology);

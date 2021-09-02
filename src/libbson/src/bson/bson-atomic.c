@@ -17,7 +17,7 @@
 
 #include "bson-atomic.h"
 
-#if _POSIX_SOURCE
+#ifdef BSON_OS_UNIX
 /* For sched_yield() */
 #include <sched.h>
 #endif
@@ -25,51 +25,49 @@
 int32_t
 bson_atomic_int_add (volatile int32_t *p, int32_t n)
 {
-   return 1 + bson_atomic_int32_fetch_add (p, n, bson_memorder_seqcst);
+   return 1 + bson_atomic_int32_fetch_add (p, n, bson_memory_order_seq_cst);
 }
 
 int64_t
 bson_atomic_int64_add (volatile int64_t *p, int64_t n)
 {
-   return 1 + bson_atomic_int64_fetch_add (p, n, bson_memorder_seqcst);
+   return 1 + bson_atomic_int64_fetch_add (p, n, bson_memory_order_seq_cst);
 }
 
 void
-bson_yield_thread ()
+bson_thrd_yield ()
 {
    BSON_IF_WINDOWS (SwitchToThread ();)
    BSON_IF_POSIX (sched_yield ();)
 }
 
-#if !(defined(_M_IX86) || defined(__i686__))
-
 /**
  * 32-bit x86 does not support 64-bit atomic integer operations.
- * We emulate thath here using a spin lock and regular arithmetic operations
+ * We emulate that here using a spin lock and regular arithmetic operations
  */
 static int g64bitAtomicLock = 0;
 
 static void
 _lock_64bit_atomic ()
 {
-   while (!bson_atomic_int_compare_exchange (
-      &g64bitAtomicLock, 0, 1, bson_memorder_acquire)) {
-      bson_yield_thread ();
+   while (!bson_atomic_int_compare_exchange_weak (
+      &g64bitAtomicLock, 0, 1, bson_memory_order_acquire)) {
+      bson_thrd_yield ();
    }
 }
 
 static void
 _unlock_64bit_atomic ()
 {
-   int64_t rv =
-      bson_atomic_int_exchange (&g64bitAtomicLock, 0, bson_memorder_release);
+   int64_t rv = bson_atomic_int_exchange (
+      &g64bitAtomicLock, 0, bson_memory_order_release);
    BSON_ASSERT (rv == 1 && "Released atomic lock while not holding it");
 }
 
 int64_t
 _bson_emul_atomic_int64_fetch_add (volatile int64_t *p,
                                    int64_t n,
-                                   enum bson_atomic_memorder _unused)
+                                   enum bson_memory_order _unused)
 {
    int64_t ret;
    _lock_64bit_atomic ();
@@ -82,7 +80,7 @@ _bson_emul_atomic_int64_fetch_add (volatile int64_t *p,
 int64_t
 _bson_emul_atomic_int64_exchange (volatile int64_t *p,
                                   int64_t n,
-                                  enum bson_atomic_memorder _unused)
+                                  enum bson_memory_order _unused)
 {
    int64_t ret;
    _lock_64bit_atomic ();
@@ -93,10 +91,10 @@ _bson_emul_atomic_int64_exchange (volatile int64_t *p,
 }
 
 int64_t
-_bson_emul_atomic_int64_compare_exchange (volatile int64_t *p,
-                                          int64_t expect_value,
-                                          int64_t new_value,
-                                          enum bson_atomic_memorder _unused)
+_bson_emul_atomic_int64_compare_exchange_strong (volatile int64_t *p,
+                                                 int64_t expect_value,
+                                                 int64_t new_value,
+                                                 enum bson_memory_order _unused)
 {
    int64_t ret;
    _lock_64bit_atomic ();
@@ -108,4 +106,13 @@ _bson_emul_atomic_int64_compare_exchange (volatile int64_t *p,
    return ret;
 }
 
-#endif
+int64_t
+_bson_emul_atomic_int64_compare_exchange_weak (volatile int64_t *p,
+                                               int64_t expect_value,
+                                               int64_t new_value,
+                                               enum bson_memory_order order)
+{
+   /* We're emulating. We can't do a weak version. */
+   return _bson_emul_atomic_int64_compare_exchange_strong (
+      p, expect_value, new_value, order);
+}
