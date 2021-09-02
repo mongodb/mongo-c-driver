@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   mongoc_read_prefs_t *
-  mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs);
+  mongoc_read_prefs_copy (const mongoc_read_prefs_t *read_prefs)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

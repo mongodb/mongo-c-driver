@@ -8,12 +8,13 @@ Synopsis
 
 .. code-block:: c
 
-   mongoc_stream_t *
-   mongoc_gridfs_bucket_open_upload_stream_with_id (mongoc_gridfs_bucket_t *bucket,
-                                                    const bson_value_t *file_id,
-                                                    const char *filename,
-                                                    const bson_t *opts,
-                                                    bson_error_t *error);
+  mongoc_stream_t *
+  mongoc_gridfs_bucket_open_upload_stream_with_id (mongoc_gridfs_bucket_t *bucket,
+                                                   const bson_value_t *file_id,
+                                                   const char *filename,
+                                                   const bson_t *opts,
+                                                   bson_error_t *error)
+     BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------

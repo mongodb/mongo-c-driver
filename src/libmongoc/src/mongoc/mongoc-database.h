@@ -56,9 +56,10 @@ MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_database_aggregate (mongoc_database_t *db,
                            const bson_t *pipeline,
                            const bson_t *opts,
-                           const mongoc_read_prefs_t *read_prefs);
+                           const mongoc_read_prefs_t *read_prefs)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_database_t *)
-mongoc_database_copy (mongoc_database_t *database);
+mongoc_database_copy (mongoc_database_t *database) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_database_command (mongoc_database_t *database,
                          mongoc_query_flags_t flags,
@@ -67,7 +68,8 @@ mongoc_database_command (mongoc_database_t *database,
                          uint32_t batch_size,
                          const bson_t *command,
                          const bson_t *fields,
-                         const mongoc_read_prefs_t *read_prefs);
+                         const mongoc_read_prefs_t *read_prefs)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (bool)
 mongoc_database_read_command_with_opts (mongoc_database_t *database,
                                         const bson_t *command,
@@ -116,7 +118,8 @@ MONGOC_EXPORT (mongoc_collection_t *)
 mongoc_database_create_collection (mongoc_database_t *database,
                                    const char *name,
                                    const bson_t *options,
-                                   bson_error_t *error);
+                                   bson_error_t *error)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (const mongoc_read_prefs_t *)
 mongoc_database_get_read_prefs (const mongoc_database_t *database);
 MONGOC_EXPORT (void)
@@ -136,24 +139,29 @@ MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_database_find_collections (mongoc_database_t *database,
                                   const bson_t *filter,
                                   bson_error_t *error)
+   BSON_GNUC_WARN_UNUSED_RESULT
    BSON_GNUC_DEPRECATED_FOR (mongoc_database_find_collections_with_opts);
 MONGOC_EXPORT (mongoc_cursor_t *)
 mongoc_database_find_collections_with_opts (mongoc_database_t *database,
-                                            const bson_t *opts);
+                                            const bson_t *opts)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (char **)
 mongoc_database_get_collection_names (mongoc_database_t *database,
                                       bson_error_t *error)
+   BSON_GNUC_WARN_UNUSED_RESULT
    BSON_GNUC_DEPRECATED_FOR (mongoc_database_get_collection_names_with_opts);
 MONGOC_EXPORT (char **)
 mongoc_database_get_collection_names_with_opts (mongoc_database_t *database,
                                                 const bson_t *opts,
-                                                bson_error_t *error);
+                                                bson_error_t *error)
+   BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_collection_t *)
-mongoc_database_get_collection (mongoc_database_t *database, const char *name);
+mongoc_database_get_collection (mongoc_database_t *database,
+                                const char *name) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_change_stream_t *)
 mongoc_database_watch (const mongoc_database_t *db,
                        const bson_t *pipeline,
-                       const bson_t *opts);
+                       const bson_t *opts) BSON_GNUC_WARN_UNUSED_RESULT;
 
 BSON_END_DECLS
 

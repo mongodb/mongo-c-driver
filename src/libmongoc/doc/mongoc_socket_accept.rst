@@ -9,7 +9,8 @@ Synopsis
 .. code-block:: c
 
   mongoc_socket_t *
-  mongoc_socket_accept (mongoc_socket_t *sock, int64_t expire_at);
+  mongoc_socket_accept (mongoc_socket_t *sock,
+                        int64_t expire_at) BSON_GNUC_WARN_UNUSED_RESULT;
 
 Parameters
 ----------
