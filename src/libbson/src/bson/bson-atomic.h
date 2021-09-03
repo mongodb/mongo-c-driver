@@ -454,7 +454,7 @@ bson_atomic_thread_fence ()
    BSON_IF_GNU_LIKE (__sync_synchronize ();)
 }
 
-BSON_GNUC_DEPRECATED_FOR ("bson_atomic_thread_fench")
+BSON_GNUC_DEPRECATED_FOR ("bson_atomic_thread_fence")
 BSON_EXPORT (void) bson_memory_barrier (void);
 
 BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int_fetch_add")
