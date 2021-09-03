@@ -37,10 +37,6 @@ Note:
   called before calling mongoc_cleanup. Failure to do so will result in
   memory being freed by the wrong allocator.
 
-Note:
-  mongoc_handshake_data_append() was previously previously undocumented, 
-  and is now deprecated.
-
 Parameters
 ----------
 
