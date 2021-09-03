@@ -41,6 +41,12 @@ bson_thrd_yield (void)
    BSON_IF_POSIX (sched_yield ();)
 }
 
+void
+bson_memory_barrier (void)
+{
+   bson_atomic_thread_fence ();
+}
+
 /**
  * 32-bit x86 does not support 64-bit atomic integer operations.
  * We emulate that here using a spin lock and regular arithmetic operations
