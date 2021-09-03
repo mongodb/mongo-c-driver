@@ -2295,7 +2295,8 @@ test_cursor_implicit_session (void *ctx)
    BSON_ASSERT (cursor->client_session);
    BSON_ASSERT (!cursor->explicit_session);
    bson_copy_to (&cursor->client_session->server_session->lsid, &find_lsid);
-   BSON_ASSERT (mongoc_server_session_pool_size (topology->session_pool) == 0);
+   ASSERT_CMPSIZE_T (
+      mongoc_server_session_pool_size (topology->session_pool), ==, 0);
    ASSERT_SESSIONS_MATCH (&test->sent_lsid, &find_lsid);
 
    /* push a new server session into the pool.  server session is only pushed
@@ -2318,7 +2319,8 @@ test_cursor_implicit_session (void *ctx)
 
    /* lsid returned after last batch, doesn't wait for mongoc_cursor_destroy */
    check_session_returned (test, &find_lsid);
-   BSON_ASSERT (mongoc_server_session_pool_size (topology->session_pool) == 2);
+   ASSERT_CMPSIZE_T (
+      mongoc_server_session_pool_size (topology->session_pool), ==, 2);
 
    bson_destroy (&find_lsid);
    mongoc_cursor_destroy (cursor);
@@ -2359,7 +2361,8 @@ test_change_stream_implicit_session (void *ctx)
    bson_reinit (&test->sent_lsid);
    send_ping (test->client, cs);
    mongoc_client_session_destroy (cs);
-   BSON_ASSERT (mongoc_server_session_pool_size (topology->session_pool) == 1);
+   ASSERT_CMPSIZE_T (
+      mongoc_server_session_pool_size (topology->session_pool), ==, 1);
    ss = mongoc_server_session_pool_get_existing (topology->session_pool);
    BSON_ASSERT (ss);
    ASSERT_SESSIONS_DIFFER (&aggregate_lsid, &ss->lsid);
@@ -2663,7 +2666,6 @@ _test_session_dirty_helper (bool retry_succeeds)
    bson_t *failpoint_cmd;
    int pooled_session_count_pre;
    int pooled_session_count_post;
-   mongoc_server_session_t *next;
    int fail_count;
    mongoc_uri_t *uri;
 
