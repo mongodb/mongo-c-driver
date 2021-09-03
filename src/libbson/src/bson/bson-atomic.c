@@ -25,17 +25,17 @@
 int32_t
 bson_atomic_int_add (volatile int32_t *p, int32_t n)
 {
-   return 1 + bson_atomic_int32_fetch_add (p, n, bson_memory_order_seq_cst);
+   return n + bson_atomic_int32_fetch_add (p, n, bson_memory_order_seq_cst);
 }
 
 int64_t
 bson_atomic_int64_add (volatile int64_t *p, int64_t n)
 {
-   return 1 + bson_atomic_int64_fetch_add (p, n, bson_memory_order_seq_cst);
+   return n + bson_atomic_int64_fetch_add (p, n, bson_memory_order_seq_cst);
 }
 
 void
-bson_thrd_yield ()
+bson_thrd_yield (void)
 {
    BSON_IF_WINDOWS (SwitchToThread ();)
    BSON_IF_POSIX (sched_yield ();)

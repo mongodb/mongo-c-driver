@@ -241,12 +241,12 @@ enum bson_memory_order {
                                   new_value);                                 \
          break;                                                               \
       case bson_memory_order_consume:                                         \
-         DEF_ATOMIC_CMPEXCH_STRONG (VCIntrinSuffix,                           \
-                                    MSVC_MEMORDER_SUFFIX (_acq),              \
-                                    __ATOMIC_CONSUME,                         \
-                                    a,                                        \
-                                    actual,                                   \
-                                    new_value);                               \
+         DEF_ATOMIC_CMPEXCH_WEAK (VCIntrinSuffix,                             \
+                                  MSVC_MEMORDER_SUFFIX (_acq),                \
+                                  __ATOMIC_CONSUME,                           \
+                                  a,                                          \
+                                  actual,                                     \
+                                  new_value);                                 \
          break;                                                               \
       case bson_memory_order_relaxed:                                         \
          DEF_ATOMIC_CMPEXCH_WEAK (VCIntrinSuffix,                             \
@@ -290,7 +290,7 @@ _bson_emul_atomic_int64_compare_exchange_weak (int64_t volatile *val,
                                                enum bson_memory_order);
 
 extern void
-bson_thrd_yield ();
+bson_thrd_yield (void);
 
 #if (defined(_MSC_VER) && !defined(_M_IX86)) || defined(__LP64__)
 /* (64-bit intrinsics are only available in x64) */
@@ -434,13 +434,14 @@ static BSON_INLINE void *
 bson_atomic_ptr_fetch (void *volatile const *ptr, enum bson_memory_order ord)
 {
    return bson_atomic_ptr_compare_exchange_strong (
-      (void *) ptr, NULL, NULL, ord);
+      (void *volatile *) ptr, NULL, NULL, ord);
 }
 
 #undef DECL_ATOMIC_STDINT
 #undef DECL_ATOMIC_INTEGRAL
 #undef DEF_ATOMIC_OP
 #undef DEF_ATOMIC_CMPEXCH_STRONG
+#undef DEF_ATOMIC_CMPEXCH_WEAK
 #undef MSVC_MEMORDER_SUFFIX
 
 /**
@@ -452,6 +453,9 @@ bson_atomic_thread_fence ()
    BSON_IF_MSVC (MemoryBarrier ();)
    BSON_IF_GNU_LIKE (__sync_synchronize ();)
 }
+
+BSON_GNUC_DEPRECATED_FOR ("bson_atomic_thread_fench")
+BSON_EXPORT (void) bson_memory_barrier (void);
 
 BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int_fetch_add")
 BSON_EXPORT (int32_t) bson_atomic_int_add (volatile int32_t *p, int32_t n);
