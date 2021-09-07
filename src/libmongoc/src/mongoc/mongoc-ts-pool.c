@@ -26,7 +26,7 @@ typedef struct pool_node {
    struct pool_node *next;
    mongoc_ts_pool *owner_pool;
 
-   _max_align_type data[0];
+   _max_align_type data[];
 } pool_node;
 
 struct mongoc_ts_pool {
@@ -36,9 +36,9 @@ struct mongoc_ts_pool {
    int32_t size;
    bson_mutex_t mtx;
    /* Number of elements that the pool has given to users.
-    * If AUTO_POOL_ENABLED is zero, this member is absent
+    * If AUTO_POOL_ENABLED is zero, this member is unused
     */
-   int32_t outstanding_items[AUDIT_POOL_ENABLED];
+   int32_t outstanding_items;
 };
 
 /**
@@ -85,7 +85,7 @@ _new_item (mongoc_ts_pool *pool, bson_error_t *error)
       }
    }
    if (node && AUDIT_POOL_ENABLED) {
-      bson_atomic_int_add (pool->outstanding_items, 1);
+      bson_atomic_int_add (&pool->outstanding_items, 1);
    }
    return node;
 }
@@ -119,7 +119,7 @@ _try_get (mongoc_ts_pool *pool)
    if (node) {
       bson_atomic_int_add (&pool->size, -1);
       if (AUDIT_POOL_ENABLED) {
-         bson_atomic_int_add (pool->outstanding_items, 1);
+         bson_atomic_int_add (&pool->outstanding_items, 1);
       }
    }
    return node;
@@ -133,7 +133,7 @@ mongoc_ts_pool_new (mongoc_ts_pool_params params)
    r->head = NULL;
    r->size = 0;
    if (AUDIT_POOL_ENABLED) {
-      *r->outstanding_items = 0;
+      r->outstanding_items = 0;
    }
    bson_mutex_init (&r->mtx);
    return r;
@@ -144,7 +144,7 @@ mongoc_ts_pool_free (mongoc_ts_pool *pool)
 {
    if (AUDIT_POOL_ENABLED) {
       BSON_ASSERT (
-         *pool->outstanding_items == 0 &&
+         pool->outstanding_items == 0 &&
          "Pool was destroyed while there are still items checked out");
    }
    mongoc_ts_pool_clear (pool);
@@ -220,7 +220,7 @@ mongoc_ts_pool_return (void *item)
       bson_mutex_unlock (&pool->mtx);
       bson_atomic_int_add (&node->owner_pool->size, 1);
       if (AUDIT_POOL_ENABLED) {
-         bson_atomic_int_add (node->owner_pool->outstanding_items, -1);
+         bson_atomic_int_add (&node->owner_pool->outstanding_items, -1);
       }
    }
 }
@@ -230,7 +230,7 @@ mongoc_ts_pool_drop (void *item)
 {
    pool_node *node = (void *) ((uint8_t *) (item) -offsetof (pool_node, data));
    if (AUDIT_POOL_ENABLED) {
-      bson_atomic_int_add (node->owner_pool->outstanding_items, -1);
+      bson_atomic_int_add (&node->owner_pool->outstanding_items, -1);
    }
    _delete_item (node);
 }
