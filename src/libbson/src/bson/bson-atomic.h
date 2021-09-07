@@ -317,11 +317,25 @@ bson_thrd_yield (void);
 DECL_ATOMIC_STDINT (int64, 64)
 #else
 static BSON_INLINE int64_t
+bson_atomic_int64_fetch (int64_t volatile *val, enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int64_fetch_add (val, 0, order);
+}
+
+static BSON_INLINE int64_t
 bson_atomic_int64_fetch_add (int64_t volatile *val,
                              int64_t v,
                              enum bson_memory_order order)
 {
    return _bson_emul_atomic_int64_fetch_add (val, v, order);
+}
+
+static BSON_INLINE int64_t
+bson_atomic_int64_fetch_sub (int64_t volatile *val,
+                             int64_t v,
+                             enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int64_fetch_add (val, -v, order);
 }
 
 static BSON_INLINE int64_t
