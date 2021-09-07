@@ -11,7 +11,7 @@ Synopsis
   const mongoc_transaction_opt_t *
   mongoc_session_opts_get_default_transaction_opts (const mongoc_session_opt_t *opts);
 
-The default options for transactions started with this session.
+The default options for transactions started with this session. See :symbol:`mongoc_session_opts_set_default_transaction_opts()`.
 
 Parameters
 ----------
@@ -21,9 +21,7 @@ Parameters
 Returns
 -------
 
-A :symbol:`mongoc_transaction_opt_t` which should not be modified or freed.
-
-See :symbol:`mongoc_session_opts_set_default_transaction_opts()`.
+A :symbol:`mongoc_transaction_opt_t` that is valid only for the lifetime of ``opts``.
 
 .. only:: html
 
