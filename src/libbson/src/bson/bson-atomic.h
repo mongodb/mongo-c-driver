@@ -95,12 +95,13 @@ enum bson_memory_order {
       BSON_IF_MSVC (ExpectActualVar = BSON_CONCAT3 (                        \
                        _InterlockedCompareExchange, VCSuffix1, VCSuffix2) ( \
                        Ptr, NewValue, ExpectActualVar);)                    \
-      BSON_IF_GNU_LIKE (__atomic_compare_exchange_n (Ptr,                   \
-                                                     &ExpectActualVar,      \
-                                                     NewValue,              \
-                                                     false, /* Not weak */  \
-                                                     GNU_MemOrder,          \
-                                                     GNU_MemOrder);)        \
+      BSON_IF_GNU_LIKE (                                                    \
+         (void) __atomic_compare_exchange_n (Ptr,                           \
+                                             &ExpectActualVar,              \
+                                             NewValue,                      \
+                                             false, /* Not weak */          \
+                                             GNU_MemOrder,                  \
+                                             GNU_MemOrder);)                \
    } while (0)
 
 
@@ -110,12 +111,13 @@ enum bson_memory_order {
       BSON_IF_MSVC (ExpectActualVar = BSON_CONCAT3 (                        \
                        _InterlockedCompareExchange, VCSuffix1, VCSuffix2) ( \
                        Ptr, NewValue, ExpectActualVar);)                    \
-      BSON_IF_GNU_LIKE (__atomic_compare_exchange_n (Ptr,                   \
-                                                     &ExpectActualVar,      \
-                                                     NewValue,              \
-                                                     true, /* Yes weak */   \
-                                                     GNU_MemOrder,          \
-                                                     GNU_MemOrder);)        \
+      BSON_IF_GNU_LIKE (                                                    \
+         (void) __atomic_compare_exchange_n (Ptr,                           \
+                                             &ExpectActualVar,              \
+                                             NewValue,                      \
+                                             true, /* Yes weak */           \
+                                             GNU_MemOrder,                  \
+                                             GNU_MemOrder);)                \
    } while (0)
 
 
@@ -310,7 +312,7 @@ _bson_emul_atomic_int64_compare_exchange_weak (int64_t volatile *val,
 extern void
 bson_thrd_yield (void);
 
-#if (defined(_MSC_VER) && !defined(_M_IX86)) || defined(__LP64__)
+#if (defined(_MSC_VER) && !defined(_M_IX86)) || (defined(__LP64__) && __LP64__)
 /* (64-bit intrinsics are only available in x64) */
 DECL_ATOMIC_STDINT (int64, 64)
 #else
