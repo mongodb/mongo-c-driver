@@ -167,11 +167,29 @@ enum bson_memory_order {
    static BSON_INLINE Type bson_atomic_##NamePart##_exchange (                \
       Type volatile *a, Type value, enum bson_memory_order ord)               \
    {                                                                          \
-      DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchange, VCIntrinSuffix),      \
-                     __atomic_exchange_n,                                     \
-                     ord,                                                     \
-                     a,                                                       \
-                     value);                                                  \
+      BSON_IF_MSVC (                                                          \
+         DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchange, VCIntrinSuffix),   \
+                        ~,                                                    \
+                        ord,                                                  \
+                        a,                                                    \
+                        value);)                                              \
+      /* GNU doesn't want CONSUME order for the exchange operation, so we     \
+       * cannot use DEF_ATOMIC_OP. */                                         \
+      BSON_IF_GNU_LIKE (switch (ord) {                                        \
+         case bson_memory_order_acq_rel:                                      \
+            return __atomic_exchange_n (a, value, __ATOMIC_ACQ_REL);          \
+         case bson_memory_order_release:                                      \
+            return __atomic_exchange_n (a, value, __ATOMIC_RELEASE);          \
+         case bson_memory_order_seq_cst:                                      \
+            return __atomic_exchange_n (a, value, __ATOMIC_SEQ_CST);          \
+         case bson_memory_order_consume: /* Fall back to acquire */           \
+         case bson_memory_order_acquire:                                      \
+            return __atomic_exchange_n (a, value, __ATOMIC_ACQUIRE);          \
+         case bson_memory_order_relaxed:                                      \
+            return __atomic_exchange_n (a, value, __ATOMIC_RELAXED);          \
+         default:                                                             \
+            BSON_UNREACHABLE ("Invalid bson_memory_order value");             \
+      })                                                                      \
    }                                                                          \
                                                                               \
    static BSON_INLINE Type bson_atomic_##NamePart##_compare_exchange_strong ( \
