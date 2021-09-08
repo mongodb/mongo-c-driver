@@ -365,9 +365,9 @@ _TestSuite_AddFull (TestSuite *suite,  /* IN */
 
 
 void
-_TestSuite_TestFnCtxDtor (TestFnCtx *ctx)
+_TestSuite_TestFnCtxDtor (void *ctx)
 {
-   TestFuncDtor dtor = ctx->dtor;
+   TestFuncDtor dtor = ((TestFnCtx *) ctx)->dtor;
    if (dtor) {
       dtor (ctx);
    }

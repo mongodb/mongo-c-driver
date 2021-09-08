@@ -716,7 +716,7 @@ _TestSuite_AddFull (TestSuite *suite,
                     void *ctx,
                     ...);
 void
-_TestSuite_TestFnCtxDtor (TestFnCtx *ctx);
+_TestSuite_TestFnCtxDtor (void *ctx);
 #define TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, ...) \
    _TestSuite_AddFull (_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
 #define TestSuite_AddFullWithTestFn(                \
