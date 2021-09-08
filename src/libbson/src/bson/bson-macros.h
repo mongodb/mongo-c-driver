@@ -293,9 +293,11 @@
 #define BSON_GNUC_DEPRECATED
 #endif
 
-#define BSON_CONCAT_1(a, ...) a##__VA_ARGS__
-#define BSON_CONCAT(a, ...) BSON_CONCAT_1 (a, __VA_ARGS__)
+#define BSON_CONCAT_IMPL(a, ...) a##__VA_ARGS__
+#define BSON_CONCAT(a, ...) BSON_CONCAT_IMPL (a, __VA_ARGS__)
 #define BSON_CONCAT3(a, b, c) BSON_CONCAT (a, BSON_CONCAT (b, c))
+#define BSON_CONCAT4(a, b, c, d) \
+   BSON_CONCAT (BSON_CONCAT (a, b), BSON_CONCAT (c, d))
 
 #if BSON_GNUC_CHECK_VERSION(4, 5)
 #define BSON_GNUC_DEPRECATED_FOR(f) \

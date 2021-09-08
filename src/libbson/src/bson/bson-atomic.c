@@ -25,20 +25,26 @@
 int32_t
 bson_atomic_int_add (volatile int32_t *p, int32_t n)
 {
-   return 1 + bson_atomic_int32_fetch_add (p, n, bson_memory_order_seq_cst);
+   return n + bson_atomic_int32_fetch_add (p, n, bson_memory_order_seq_cst);
 }
 
 int64_t
 bson_atomic_int64_add (volatile int64_t *p, int64_t n)
 {
-   return 1 + bson_atomic_int64_fetch_add (p, n, bson_memory_order_seq_cst);
+   return n + bson_atomic_int64_fetch_add (p, n, bson_memory_order_seq_cst);
 }
 
 void
-bson_thrd_yield ()
+bson_thrd_yield (void)
 {
    BSON_IF_WINDOWS (SwitchToThread ();)
    BSON_IF_POSIX (sched_yield ();)
+}
+
+void
+bson_memory_barrier (void)
+{
+   bson_atomic_thread_fence ();
 }
 
 /**
@@ -50,8 +56,23 @@ static int g64bitAtomicLock = 0;
 static void
 _lock_64bit_atomic ()
 {
-   while (!bson_atomic_int_compare_exchange_weak (
-      &g64bitAtomicLock, 0, 1, bson_memory_order_acquire)) {
+   int i;
+   if (bson_atomic_int_compare_exchange_weak (
+          &g64bitAtomicLock, 0, 1, bson_memory_order_acquire) == 0) {
+      /* Successfully took the spinlock */
+      return;
+   }
+   /* Failed. Try taking ten more times, then begin sleeping. */
+   for (i = 0; i < 10; ++i) {
+      if (bson_atomic_int_compare_exchange_weak (
+             &g64bitAtomicLock, 0, 1, bson_memory_order_acquire) == 0) {
+         /* Succeeded in taking the lock */
+         return;
+      }
+   }
+   /* Still don't have the lock. Spin and yield */
+   while (bson_atomic_int_compare_exchange_weak (
+             &g64bitAtomicLock, 0, 1, bson_memory_order_acquire) != 0) {
       bson_thrd_yield ();
    }
 }
