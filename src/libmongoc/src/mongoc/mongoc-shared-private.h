@@ -19,10 +19,32 @@
 
 #include <stddef.h>
 
-struct _mongoc_shared_ptr_aux;
-
 /**
- * @brief A ref-counted thread-safe shared pointer to arbitrary data
+ * @brief A ref-counted thread-safe shared pointer to arbitrary data.
+ *
+ * `shared_ptr` instances manage the lifetime of a pointed-to object when the
+ * precise time to destroy that managed object is indeterminate, such as with
+ * shared state in a multithreaded or asynchronous program.
+ *
+ * The pointed-to object of a shared_ptr instance can be accessed via
+ * the `ptr` member of the shared_ptr object. Assigning-to the `ptr` member of
+ * a shared_ptr is legal, and can be done to change the pointed-to object of a
+ * shared_ptr without changing which object is being managed. This can be done
+ * to return a pointer to a subobject of the managed object without giving
+ * out a reference to the full managed object.
+ *
+ * A new managed object with a `shared_ptr` is created with
+ * `mongoc_shared_ptr_create`, which starts with an initial shared reference
+ * count of `1`. To take another reference to keep the managed object alive,
+ * use `mongoc_shared_ptr_copy`. When one is done with a managed resource, the
+ * shared reference should be dropped using `mongoc_shared_ptr_reset_null`.
+ *
+ * When an operation on a shared_ptr causes the reference count to drop to zero,
+ * the destructor that was given to create that shared state will immediately be
+ * invoked with the pointed-to-data. The destructor runs in the thread that
+ * caused the reference count to drop, so be aware that resetting or rebinding
+ * a shared_ptr can execute unseen code: Refrain from holding locks while
+ * resetting/rebindign a shared pointer.
  */
 typedef struct mongoc_shared_ptr {
    /** Pointed-to data */
@@ -32,23 +54,30 @@ typedef struct mongoc_shared_ptr {
 } mongoc_shared_ptr;
 
 /**
- * @brief A "null" pointer constant for a mongoc_shared_ptr
+ * @brief A "null" pointer constant for a mongoc_shared_ptr.
  */
-static const mongoc_shared_ptr MONGOC_SHARED_PTR_NULL = {NULL, NULL};
+#define MONGOC_SHARED_PTR_NULL \
+   {                           \
+      NULL, NULL               \
+   }
 
 /**
- * @brief Rebind a shared pointer to the given memory resources
+ * @brief Rebind a shared pointer to the given resource
  *
  * @param ptr The shared pointer that will be rebound
- * @param pointee The pointer that we will point to. Should have been
- * dynamically allocated
- * @param destroy A destructor+deallocator for @param pointee, to be called when
- * the refcount reaches zero
+ * @param pointee The pointer that we will point to.
+ * @param destroy A destructor+deallocator for `pointee`, to be called when
+ * the refcount reaches zero.
+ *
+ * @note Equivalent to:
+ *
+ *    mongoc_shared_ptr_reset_null(ptr);
+ *    *ptr = mongoc_shared_ptr_create(pointee, destroy);
  */
 extern void
-mongoc_shared_ptr_rebind_raw (mongoc_shared_ptr *ptr,
-                              void *pointee,
-                              void (*destroy) (void *));
+mongoc_shared_ptr_reset (mongoc_shared_ptr *ptr,
+                         void *pointee,
+                         void (*destroy) (void *));
 
 
 /**
@@ -57,23 +86,33 @@ mongoc_shared_ptr_rebind_raw (mongoc_shared_ptr *ptr,
  *
  * @param dest The shared pointer to rebind
  * @param from The shared pointer to take from
+ *
+ * @note Equivalent to:
+ *
+ *    mongoc_shared_ptr_reset_null(dest);
+ *    *dest = mongoc_shared_ptr_copy(from);
  */
 extern void
-mongoc_shared_ptr_rebind (mongoc_shared_ptr *dest,
+mongoc_shared_ptr_assign (mongoc_shared_ptr *dest,
                           const mongoc_shared_ptr from);
 
 /**
  * @brief Rebind the given shared pointer to have an equivalent value as 'from'.
+ *
  * This atomic version is safe to call between threads when 'dest' may be
  * accessed simultaneously from another thread even if any of those accesses are
- * a write.
+ * a write. However: Any potential reads *must* be done using
+ * `mongoc_atomic_shared_ptr_load` and any potential writes *must* be done using
+ * `mongoc_atomic_shared_ptr_store`.
  *
  * @param dest The shared pointer to rebind
  * @param from The shared pointer to take from
+ *
+ * Thread-safe equivalent of `mongoc_shared_ptr_assign`
  */
 extern void
-mongoc_shared_ptr_rebind_atomic (mongoc_shared_ptr *dest,
-                                 const mongoc_shared_ptr from);
+mongoc_atomic_shared_ptr_store (mongoc_shared_ptr *dest,
+                                const mongoc_shared_ptr from);
 
 /**
  * @brief Create a copy of the given shared pointer. Increases the reference
@@ -82,20 +121,23 @@ mongoc_shared_ptr_rebind_atomic (mongoc_shared_ptr *dest,
  * @param ptr The pointer to copy from
  * @returns a new shared pointer that has the same pointee as @param ptr
  *
- * @note Must later call mongoc_shared_ptr_release() on the return value
+ * @note Must later reset/reassign the returned shared pointer
  */
 extern mongoc_shared_ptr
-mongoc_shared_ptr_take (mongoc_shared_ptr const ptr);
+mongoc_shared_ptr_copy (mongoc_shared_ptr const ptr);
 
 /**
- * @brief Like @see _mongoc_shared_ptr_take, but is thread-safe in case @param
- * ptr might be written-to by another thread via
- * mongoc_shared_ptr_rebind_atomic()
+ * @brief Like `mongoc_shared_ptr_copy`, but is thread-safe in case `*ptr`
+ * may be accessed simultaneously written to by another thread. However: such
+ * potential writes *must* using one of the `mongoc_atomic_shared_ptr_store`
+ * interfaces.
  *
- * @note Must later call mongoc_shared_ptr_release() on the return value
+ * This is a thread-safe equivalent of `mongoc_shared_ptr_copy`.
+ *
+ * @note Must later reset/reassign the returned shared pointer
  */
 extern mongoc_shared_ptr
-mongoc_shared_ptr_take_atomic (mongoc_shared_ptr const *ptr);
+mongoc_atomic_shared_ptr_load (mongoc_shared_ptr const *ptr);
 
 /**
  * @brief Release the ownership of the given shared pointer.
@@ -106,12 +148,12 @@ mongoc_shared_ptr_take_atomic (mongoc_shared_ptr const *ptr);
  * @param ptr The pointer to release and set to NULL
  *
  * @note This function is not thread safe if other threads may be
- * reading/writing to @param ptr simultaneously. To thread-safe release a shared
- * pointer, use mongoc_shared_ptr_rebind_atomic() with a null
- * _mongoc_shared_ptr as the 'from' argument
+ * writing to `ptr` simultaneously. To do a thread-safe null-reset of a shared
+ * pointer, use mongoc_atomic_shared_ptr_store() with a null
+ * mongoc_shared_ptr as the 'from' argument
  */
 extern void
-mongoc_shared_ptr_release (mongoc_shared_ptr *ptr);
+mongoc_shared_ptr_reset_null (mongoc_shared_ptr *ptr);
 
 /**
  * @brief Obtain the number of hard references to the resource managed by the
@@ -122,12 +164,12 @@ mongoc_shared_ptr_release (mongoc_shared_ptr *ptr);
  * @return int A positive integer reference count
  */
 extern int
-mongoc_shared_ptr_refcount (mongoc_shared_ptr ptr);
+mongoc_shared_ptr_use_count (mongoc_shared_ptr ptr);
 
 /**
  * @brief Check whether the given shared pointer is managing a resource.
  *
- * @note That the ptr.ptr MAY be NULL while the shared pointer is still managing
+ * @note The ptr.ptr MAY be NULL while the shared pointer is still managing
  * a resource.
  *
  * @return true If the pointer is managing a resource
@@ -140,56 +182,15 @@ mongoc_shared_ptr_is_null (mongoc_shared_ptr ptr)
 }
 
 /**
- * @brief Create a new shared pointer that manages the given memory, or NULL
+ * @brief Create a new shared pointer that manages the given resource, or NULL
  *
  * @param pointee The target of the pointer. Should be NULL or a dynamically
  * allocated data segment
- * @param destroy The destructor for the pointer. If @param pointee is non-NULL,
- * must be not NULL. This destructor will be called when the reference count
- * reaches zero. If should free the memory of @param pointee
+ * @param destroy The destructor for the pointer. If `pointee` is non-NULL,
+ * `destroy` must be non-NULL. This destructor will be called when the reference
+ * count reaches zero. If should free the resources referred-to by `pointee`.
  */
 extern mongoc_shared_ptr
 mongoc_shared_ptr_create (void *pointee, void (*destroy) (void *));
-
-/** Get the managed pointer owned by the given shared pointer */
-#define MONGOC_Shared_Pointee(Type, Pointer) ((Type *) ((Pointer).ptr))
-
-/**
- * @brief Create a new shared pointer instance from 'Pointer' and bind a regular
- * pointer 'Type *VarName' in the calling scope.
- *
- * @param Type The pointed-to type of the shared pointer
- * @param VarName A name for a regular pointer to declare in the enclosing scope
- * @param Pointer A shared pointer instance to take from
- */
-#define MONGOC_Shared_Take(Type, VarName, Pointer) \
-   mongoc_shared_ptr _shared_ptr_copy_##VarName =  \
-      mongoc_shared_ptr_take (Pointer);            \
-   Type *VarName = MONGOC_Shared_Pointee (Type, _shared_ptr_copy_##VarName)
-
-/**
- * @brief Like @see MONGOC_Shared_Take, but thread-safe if another thread could
- * rebind @param Pointer concurrently.
- *
- * @param Type The pointed-to type of the shared pointer
- * @param VarName A name for a regular pointer to declare in the enclosing scope
- * @param Pointer A shared pointer instance to take from
- */
-#define MONGOC_Shared_Take_Atomic(Type, VarName, Pointer) \
-   mongoc_shared_ptr _shared_ptr_copy_##VarName =         \
-      mongoc_shared_ptr_take_atomic (Pointer);            \
-   Type *VarName = MONGOC_Shared_Pointee (Type, _shared_ptr_copy_##VarName)
-
-/**
- * @brief Release a shared pointer that was created with @see MONGOC_Shared_Take
- * or @see MONGOC_Shared_Take_Atomic.
- *
- * @param VarName The 'VarName' that was given when the pointer was taken
- */
-#define MONGOC_Shared_Release(VarName)                         \
-   do {                                                        \
-      mongoc_shared_ptr_release (&_shared_ptr_copy_##VarName); \
-      VarName = NULL;                                          \
-   } while (0)
 
 #endif /* MONGOC_SHARED_H */

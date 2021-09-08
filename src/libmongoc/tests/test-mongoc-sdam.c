@@ -397,8 +397,8 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
       if (!ret) {
          MONGOC_DEBUG ("error disabling failpoint: %s", error.message);
       }
-      mongoc_shared_ptr_rebind (&td.sptr,
-                                mc_tpld_take_ref (client->topology).sptr);
+      mc_tpld_drop_ref (&td);
+      td = mc_tpld_take_ref (client->topology);
       servers = mc_tpld_servers_const (td.ptr);
    }
 

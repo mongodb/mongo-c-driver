@@ -28,7 +28,7 @@
 #include "mongoc-client-session-private.h"
 #include "mongoc-crypt-private.h"
 #include "mongoc-ts-pool-private.h"
-#include "mongoc-shared.h"
+#include "mongoc-shared-private.h"
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
@@ -330,14 +330,14 @@ static BSON_INLINE mc_shared_tpl_descr
 mc_tpld_take_ref (mongoc_topology_t *tpl)
 {
    mc_shared_tpl_descr td = MC_SHARED_TPL_DESCR_NULL;
-   td.sptr = mongoc_shared_ptr_take_atomic (&tpl->_shared_descr_.sptr);
+   td.sptr = mongoc_atomic_shared_ptr_load (&tpl->_shared_descr_.sptr);
    return td;
 }
 
 static BSON_INLINE void
 mc_tpld_drop_ref (mc_shared_tpl_descr *p)
 {
-   mongoc_shared_ptr_release (&p->sptr);
+   mongoc_shared_ptr_reset_null (&p->sptr);
 }
 
 typedef struct mc_tpld_modification {

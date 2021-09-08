@@ -148,7 +148,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-server-stream-private.h
    mongoc-server-monitor-private.h
    mongoc-set-private.h
-   mongoc-shared.h
+   mongoc-shared-private.h
    mongoc-socket-private.h
    mongoc-ssl-private.h
    mongoc-sspi-private.h

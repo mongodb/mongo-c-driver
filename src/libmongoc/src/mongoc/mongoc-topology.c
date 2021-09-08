@@ -623,7 +623,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    _mongoc_topology_description_monitor_closed (topology->_shared_descr_.ptr);
 
    mongoc_uri_destroy (topology->uri);
-   mongoc_shared_ptr_release (&topology->_shared_descr_.sptr);
+   mongoc_shared_ptr_reset_null (&topology->_shared_descr_.sptr);
    mongoc_topology_scanner_destroy (topology->scanner);
    mongoc_server_session_pool_free (topology->session_pool);
 
@@ -2088,7 +2088,7 @@ mc_tpld_modify_commit (mc_tpld_modification mod)
 {
    mongoc_shared_ptr new_sptr =
       mongoc_shared_ptr_create (mod.new_td, _topo_descr_destroy_and_free);
-   mongoc_shared_ptr_rebind_atomic (&mod.topology->_shared_descr_.sptr,
+   mongoc_atomic_shared_ptr_store (&mod.topology->_shared_descr_.sptr,
                                     new_sptr);
    bson_mutex_unlock (&mod.topology->tpld_modification_mtx);
    mc_tpld_drop_ref (&mod.prev_td);

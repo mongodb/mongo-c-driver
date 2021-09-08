@@ -95,12 +95,13 @@ enum bson_memory_order {
       BSON_IF_MSVC (ExpectActualVar = BSON_CONCAT3 (                        \
                        _InterlockedCompareExchange, VCSuffix1, VCSuffix2) ( \
                        Ptr, NewValue, ExpectActualVar);)                    \
-      BSON_IF_GNU_LIKE (__atomic_compare_exchange_n (Ptr,                   \
-                                                     &ExpectActualVar,      \
-                                                     NewValue,              \
-                                                     false, /* Not weak */  \
-                                                     GNU_MemOrder,          \
-                                                     GNU_MemOrder);)        \
+      BSON_IF_GNU_LIKE (                                                    \
+         (void) __atomic_compare_exchange_n (Ptr,                           \
+                                             &ExpectActualVar,              \
+                                             NewValue,                      \
+                                             false, /* Not weak */          \
+                                             GNU_MemOrder,                  \
+                                             GNU_MemOrder);)                \
    } while (0)
 
 
@@ -110,12 +111,13 @@ enum bson_memory_order {
       BSON_IF_MSVC (ExpectActualVar = BSON_CONCAT3 (                        \
                        _InterlockedCompareExchange, VCSuffix1, VCSuffix2) ( \
                        Ptr, NewValue, ExpectActualVar);)                    \
-      BSON_IF_GNU_LIKE (__atomic_compare_exchange_n (Ptr,                   \
-                                                     &ExpectActualVar,      \
-                                                     NewValue,              \
-                                                     true, /* Yes weak */   \
-                                                     GNU_MemOrder,          \
-                                                     GNU_MemOrder);)        \
+      BSON_IF_GNU_LIKE (                                                    \
+         (void) __atomic_compare_exchange_n (Ptr,                           \
+                                             &ExpectActualVar,              \
+                                             NewValue,                      \
+                                             true, /* Yes weak */           \
+                                             GNU_MemOrder,                  \
+                                             GNU_MemOrder);)                \
    } while (0)
 
 
@@ -167,11 +169,29 @@ enum bson_memory_order {
    static BSON_INLINE Type bson_atomic_##NamePart##_exchange (                \
       Type volatile *a, Type value, enum bson_memory_order ord)               \
    {                                                                          \
-      DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchange, VCIntrinSuffix),      \
-                     __atomic_exchange_n,                                     \
-                     ord,                                                     \
-                     a,                                                       \
-                     value);                                                  \
+      BSON_IF_MSVC (                                                          \
+         DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchange, VCIntrinSuffix),   \
+                        ~,                                                    \
+                        ord,                                                  \
+                        a,                                                    \
+                        value);)                                              \
+      /* GNU doesn't want CONSUME order for the exchange operation, so we     \
+       * cannot use DEF_ATOMIC_OP. */                                         \
+      BSON_IF_GNU_LIKE (switch (ord) {                                        \
+         case bson_memory_order_acq_rel:                                      \
+            return __atomic_exchange_n (a, value, __ATOMIC_ACQ_REL);          \
+         case bson_memory_order_release:                                      \
+            return __atomic_exchange_n (a, value, __ATOMIC_RELEASE);          \
+         case bson_memory_order_seq_cst:                                      \
+            return __atomic_exchange_n (a, value, __ATOMIC_SEQ_CST);          \
+         case bson_memory_order_consume: /* Fall back to acquire */           \
+         case bson_memory_order_acquire:                                      \
+            return __atomic_exchange_n (a, value, __ATOMIC_ACQUIRE);          \
+         case bson_memory_order_relaxed:                                      \
+            return __atomic_exchange_n (a, value, __ATOMIC_RELAXED);          \
+         default:                                                             \
+            BSON_UNREACHABLE ("Invalid bson_memory_order value");             \
+      })                                                                      \
    }                                                                          \
                                                                               \
    static BSON_INLINE Type bson_atomic_##NamePart##_compare_exchange_strong ( \
@@ -241,12 +261,12 @@ enum bson_memory_order {
                                   new_value);                                 \
          break;                                                               \
       case bson_memory_order_consume:                                         \
-         DEF_ATOMIC_CMPEXCH_STRONG (VCIntrinSuffix,                           \
-                                    MSVC_MEMORDER_SUFFIX (_acq),              \
-                                    __ATOMIC_CONSUME,                         \
-                                    a,                                        \
-                                    actual,                                   \
-                                    new_value);                               \
+         DEF_ATOMIC_CMPEXCH_WEAK (VCIntrinSuffix,                             \
+                                  MSVC_MEMORDER_SUFFIX (_acq),                \
+                                  __ATOMIC_CONSUME,                           \
+                                  a,                                          \
+                                  actual,                                     \
+                                  new_value);                                 \
          break;                                                               \
       case bson_memory_order_relaxed:                                         \
          DEF_ATOMIC_CMPEXCH_WEAK (VCIntrinSuffix,                             \
@@ -290,18 +310,32 @@ _bson_emul_atomic_int64_compare_exchange_weak (int64_t volatile *val,
                                                enum bson_memory_order);
 
 extern void
-bson_thrd_yield ();
+bson_thrd_yield (void);
 
-#if (defined(_MSC_VER) && !defined(_M_IX86)) || defined(__LP64__)
+#if (defined(_MSC_VER) && !defined(_M_IX86)) || (defined(__LP64__) && __LP64__)
 /* (64-bit intrinsics are only available in x64) */
 DECL_ATOMIC_STDINT (int64, 64)
 #else
+static BSON_INLINE int64_t
+bson_atomic_int64_fetch (int64_t volatile *val, enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int64_fetch_add (val, 0, order);
+}
+
 static BSON_INLINE int64_t
 bson_atomic_int64_fetch_add (int64_t volatile *val,
                              int64_t v,
                              enum bson_memory_order order)
 {
    return _bson_emul_atomic_int64_fetch_add (val, v, order);
+}
+
+static BSON_INLINE int64_t
+bson_atomic_int64_fetch_sub (int64_t volatile *val,
+                             int64_t v,
+                             enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int64_fetch_add (val, -v, order);
 }
 
 static BSON_INLINE int64_t
@@ -434,13 +468,14 @@ static BSON_INLINE void *
 bson_atomic_ptr_fetch (void *volatile const *ptr, enum bson_memory_order ord)
 {
    return bson_atomic_ptr_compare_exchange_strong (
-      (void *) ptr, NULL, NULL, ord);
+      (void *volatile *) ptr, NULL, NULL, ord);
 }
 
 #undef DECL_ATOMIC_STDINT
 #undef DECL_ATOMIC_INTEGRAL
 #undef DEF_ATOMIC_OP
 #undef DEF_ATOMIC_CMPEXCH_STRONG
+#undef DEF_ATOMIC_CMPEXCH_WEAK
 #undef MSVC_MEMORDER_SUFFIX
 
 /**
@@ -452,6 +487,9 @@ bson_atomic_thread_fence ()
    BSON_IF_MSVC (MemoryBarrier ();)
    BSON_IF_GNU_LIKE (__sync_synchronize ();)
 }
+
+BSON_GNUC_DEPRECATED_FOR ("bson_atomic_thread_fence")
+BSON_EXPORT (void) bson_memory_barrier (void);
 
 BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int_fetch_add")
 BSON_EXPORT (int32_t) bson_atomic_int_add (volatile int32_t *p, int32_t n);
