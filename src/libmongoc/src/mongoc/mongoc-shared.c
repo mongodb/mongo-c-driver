@@ -144,7 +144,7 @@ mongoc_shared_ptr_reset_null (mongoc_shared_ptr *const ptr)
       !mongoc_shared_ptr_is_null (*ptr) &&
       "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_reset_null");
    /* Decrement the reference count by one */
-   size_t prevcount = bson_atomic_int_fetch_sub (
+   int prevcount = bson_atomic_int_fetch_sub (
       &ptr->_aux->refcount, 1, bson_memory_order_relaxed);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
@@ -161,6 +161,6 @@ mongoc_shared_ptr_use_count (mongoc_shared_ptr const ptr)
    BSON_ASSERT (
       !mongoc_shared_ptr_is_null (ptr) &&
       "Unbound mongoc_shraed_ptr given to mongoc_shared_ptr_use_count");
-   return (int) bson_atomic_int_fetch (&ptr._aux->refcount,
-                                       bson_memory_order_relaxed);
+   return bson_atomic_int_fetch (&ptr._aux->refcount,
+                                 bson_memory_order_relaxed);
 }
