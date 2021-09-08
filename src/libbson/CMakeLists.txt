@@ -131,8 +131,6 @@ else ()
    set (BSON_BYTE_ORDER 1234)
 endif ()
 
-include (CheckAtomics)
-
 configure_file (
    "${PROJECT_SOURCE_DIR}/src/bson/bson-config.h.in"
    "${PROJECT_BINARY_DIR}/src/bson/bson-config.h"
