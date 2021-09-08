@@ -1231,14 +1231,14 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
       GOTO (fail);
    }
 
-   if (client->topology->cse_enabled) {
+   if (client->topology->cse_state != MONGOC_CSE_DISABLED) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
                       "Automatic encryption already set");
       GOTO (fail);
    } else {
-      client->topology->cse_enabled = true;
+      client->topology->cse_state = MONGOC_CSE_ENABLED;
    }
 
    if (!_parse_extra (opts->extra, client->topology, &mongocryptd_uri, error)) {
@@ -1320,11 +1320,11 @@ _mongoc_cse_client_pool_enable_auto_encryption (
    mongoc_auto_encryption_opts_t *opts,
    bson_error_t *error)
 {
-   bool ret = false;
+   bool setup_okay = false;
    mongoc_uri_t *mongocryptd_uri = NULL;
+   mongoc_topology_cse_state_t prev_cse_state = MONGOC_CSE_STARTING;
 
    BSON_ASSERT (topology);
-   bson_mutex_lock (&topology->mutex);
    if (!opts) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
@@ -1359,15 +1359,31 @@ _mongoc_cse_client_pool_enable_auto_encryption (
       GOTO (fail);
    }
 
-   if (topology->cse_enabled) {
+   prev_cse_state =
+      bson_atomic_int_compare_exchange_strong ((int *) &topology->cse_state,
+                                               MONGOC_CSE_DISABLED,
+                                               MONGOC_CSE_STARTING,
+                                               bson_memory_order_acquire);
+   while (prev_cse_state == MONGOC_CSE_STARTING) {
+      /* Another thread is starting client-side encryption. It may take some
+       * time to start, but don't continue until it is finished. */
+      bson_thrd_yield ();
+      prev_cse_state ==
+         bson_atomic_int_compare_exchange_strong ((int *) &topology->cse_state,
+                                                  MONGOC_CSE_DISABLED,
+                                                  MONGOC_CSE_STARTING,
+                                                  bson_memory_order_acquire);
+   }
+
+   if (prev_cse_state == MONGOC_CSE_ENABLED) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT,
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_STATE,
                       "Automatic encryption already set");
       GOTO (fail);
-   } else {
-      topology->cse_enabled = true;
    }
+
+   /* We just set the CSE state from DISABLED to STARTING. Start it up now. */
 
    if (!_parse_extra (opts->extra, topology, &mongocryptd_uri, error)) {
       GOTO (fail);
@@ -1408,11 +1424,18 @@ _mongoc_cse_client_pool_enable_auto_encryption (
       topology->keyvault_client_pool = opts->keyvault_client_pool;
    }
 
-   ret = true;
+   setup_okay = true;
+   BSON_ASSERT (prev_cse_state == MONGOC_CSE_DISABLED);
 fail:
+   if (prev_cse_state == MONGOC_CSE_DISABLED) {
+      /* We need to set the new CSE state. */
+      mongoc_topology_cse_state_t new_state =
+         setup_okay ? MONGOC_CSE_ENABLED : MONGOC_CSE_DISABLED;
+      bson_atomic_int_exchange (
+         (int *) &topology->cse_state, new_state, bson_memory_order_release);
+   }
    mongoc_uri_destroy (mongocryptd_uri);
-   bson_mutex_unlock (&topology->mutex);
-   RETURN (ret);
+   RETURN (setup_okay);
 }
 
 struct _mongoc_client_encryption_t {
@@ -1659,12 +1682,15 @@ fail:
 bool
 _mongoc_cse_is_enabled (mongoc_client_t *client)
 {
-   bool ret = false;
-
-   bson_mutex_lock (&client->topology->mutex);
-   ret = client->topology->cse_enabled;
-   bson_mutex_unlock (&client->topology->mutex);
-   return ret;
+   while (1) {
+      mongoc_topology_cse_state_t state = bson_atomic_int_fetch (
+         (int *) &client->topology->cse_state, bson_memory_order_relaxed);
+      if (state != MONGOC_CSE_STARTING) {
+         return state == MONGOC_CSE_ENABLED;
+      }
+      /* CSE is starting up. Wait until that succeeds or fails. */
+      bson_thrd_yield ();
+   }
 }
 
 #endif /* MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION */

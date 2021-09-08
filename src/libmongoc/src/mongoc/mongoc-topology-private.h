@@ -45,6 +45,12 @@ typedef enum {
    MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN
 } mongoc_topology_scanner_state_t;
 
+typedef enum mongoc_topology_cse_state_t {
+   MONGOC_CSE_DISABLED,
+   MONGOC_CSE_STARTING,
+   MONGOC_CSE_ENABLED,
+} mongoc_topology_cse_state_t;
+
 struct _mongoc_background_monitor_t;
 struct _mongoc_client_pool_t;
 
@@ -136,7 +142,7 @@ typedef struct _mongoc_topology_t {
    mongoc_server_session_pool session_pool;
 
    /* Is client side encryption enabled? */
-   bool cse_enabled;
+   mongoc_topology_cse_state_t cse_state;
    bool is_srv_polling;
 
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
