@@ -108,7 +108,7 @@ typedef struct {
    unsigned(__stdcall _function_name) (void *(_arg_name))
 #define BSON_THREAD_FUN_TYPE(_function_name) \
    unsigned(__stdcall * _function_name) (void *)
-#define BSON_THREAD_RETURN return
+#define BSON_THREAD_RETURN return 0
 #endif
 
 /* Functions that require definitions get the common prefix (_mongoc for
