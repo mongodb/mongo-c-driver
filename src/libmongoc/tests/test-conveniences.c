@@ -60,7 +60,7 @@ test_conveniences_init ()
 
 
 void
-test_conveniences_cleanup ()
+test_conveniences_cleanup (void)
 {
    int i;
    bson_t *doc;

@@ -1053,7 +1053,7 @@ aggregate (mongoc_collection_t *collection, mongoc_read_prefs_t *prefs)
 /* direct connection to a secondary requires read pref primaryPreferred to
  * avoid "not primary" error from server */
 static void
-test_op_msg_direct_secondary ()
+test_op_msg_direct_secondary (void)
 {
    _test_op_msg_direct_connection (
       false /* is_mongos */,
@@ -1075,7 +1075,7 @@ test_op_msg_direct_secondary ()
 
 /* direct connection to mongos must not auto-add read pref primaryPreferred */
 static void
-test_op_msg_direct_mongos ()
+test_op_msg_direct_mongos (void)
 {
    _test_op_msg_direct_connection (true /* is_mongos */,
                                    find,

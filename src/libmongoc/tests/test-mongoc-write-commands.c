@@ -280,7 +280,7 @@ test_bypass_command_started (const mongoc_apm_command_started_t *event)
 }
 
 static void
-test_bypass_not_sent ()
+test_bypass_not_sent (void)
 {
    mongoc_collection_t *collection;
    mongoc_bulk_operation_t *bulk;

@@ -22,11 +22,21 @@ function (mongoc_add_platform_compile_options)
 endfunction ()
 
 # Warnings that should always be unconditional hard errors, as the code is
-# inherently broken
+# almost definitely broken
 mongoc_add_platform_compile_options (
      # Implicit function or variable declarations
      gnu-like:-Werror=implicit msvc:/we4013 msvc:/we4431
      # Missing return types/statements
      gnu-like:-Werror=return-type msvc:/we4716
-     )
+     # Incompatible pointer types
+     gnu-like:-Werror=incompatible-pointer-types msvc:/we4113
+     # Integral/pointer conversions
+     gnu-like:-Werror=int-conversion msvc:/we4047
+     # Discarding qualifiers
+     gnu-like:-Werror=discarded-qualifiers msvc:/we4090
+     # Definite use of uninitialized value
+     gnu-like:-Werror=uninitialized msvc:/we4700
 
+     # Aside: Disable CRT insecurity warnings
+     msvc:/D_CRT_SECURE_NO_WARNINGS
+     )

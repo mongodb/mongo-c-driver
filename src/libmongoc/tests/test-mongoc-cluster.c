@@ -1544,13 +1544,13 @@ _test_cluster_command_error (bool use_op_msg)
 }
 
 static void
-test_cluster_command_error_op_msg ()
+test_cluster_command_error_op_msg (void)
 {
    _test_cluster_command_error (true);
 }
 
 static void
-test_cluster_command_error_op_query ()
+test_cluster_command_error_op_query (void)
 {
    _test_cluster_command_error (false);
 }

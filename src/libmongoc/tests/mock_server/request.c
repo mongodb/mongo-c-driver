@@ -613,14 +613,14 @@ request_matches_msg (const request_t *request,
 bool
 request_matches_msgv (const request_t *request, uint32_t flags, va_list *args)
 {
-   const bson_t **docs;
+   bson_t **docs;
    size_t n_docs, allocated;
    bool r;
 
    n_docs = 0;
    allocated = 1;
    docs = bson_malloc (allocated * sizeof (bson_t *));
-   while ((docs[n_docs] = va_arg (*args, const bson_t *))) {
+   while ((docs[n_docs] = va_arg (*args, bson_t *))) {
       n_docs++;
       if (n_docs == allocated) {
          allocated = bson_next_power_of_two (allocated + 1);
@@ -628,7 +628,7 @@ request_matches_msgv (const request_t *request, uint32_t flags, va_list *args)
       }
    }
 
-   r = request_matches_msg (request, flags, docs, n_docs);
+   r = request_matches_msg (request, flags, (const bson_t **) docs, n_docs);
    bson_free (docs);
    return r;
 }
