@@ -1,7 +1,7 @@
 :man_page: mongoc_handshake_data_append
 
 mongoc_handshake_data_append()
-=========================================
+==============================
 
 Synopsis
 --------
@@ -64,10 +64,11 @@ like:
  }
 
 If we call
-  mongoc_handshake_data_append ("phongo", "1.1.8", "CC=clang")
+mongoc_handshake_data_append ("phongo", "1.1.8", "CC=clang")
 and it returns true, the driver sends handshake data like:
 
-.. code-block::
+.. code-block:: c
+
  client: {
    driver: {
      name: "mongoc / phongo",
