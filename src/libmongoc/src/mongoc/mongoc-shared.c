@@ -57,7 +57,7 @@ mongoc_shared_ptr_reset (mongoc_shared_ptr *const ptr,
                          void *const pointee,
                          void (*const dtor) (void *))
 {
-   BSON_ASSERT (ptr && "NULL given to mongoc_shared_ptr_reset()");
+   BSON_ASSERT_PARAM (ptr);
    if (!mongoc_shared_ptr_is_null (*ptr)) {
       /* Release the old value of the pointer, possibly destroying it */
       mongoc_shared_ptr_reset_null (ptr);
