@@ -21,7 +21,7 @@ Parameters
 Returns
 -------
 
-A :symbol:`mongoc_session_opt_t` you must not modify or free.
+A :symbol:`mongoc_session_opt_t` that is valid only for the lifetime of ``session``.
 
 .. only:: html
 
