@@ -24,17 +24,20 @@ the system and driver by appending them to the handshake data for the
 underlying C Driver. These values, along with other handshake data collected
 during mongoc_init will be sent to the server as part of the initial
 connection handshake in the "client" document. This function must not be
-called more than once, or after a handshake has been initiated.
+called more than once, or after server monitoring begins. For a single-threaded 
+:symbol:`mongoc_client_t`, server monitoring begins on the first operation 
+requiring a server. For a :symbol:`mongoc_client_pool_t`, server monitoring 
+begins on the first call to `:symbol:`mongoc_client_pool_pop`.
 
 The passed in strings are copied, and don't have to remain valid after the
-call to mongoc_handshake_data_append(). The driver may store truncated
+call to :symbol:`mongoc_handshake_data_append`. The driver may store truncated
 versions of the passed in strings.
 
-Note:
+.. note::
   This function allocates memory, and therefore caution should be used when
-  using this in conjunction with bson_mem_set_vtable. If this function is
-  called before bson_mem_set_vtable, then bson_mem_restore_vtable must be
-  called before calling mongoc_cleanup. Failure to do so will result in
+  using this in conjunction with :symbol:`bson_mem_set_vtable`. If this function is
+  called before :symbol:`bson_mem_set_vtable`, then :symbol:`bson_mem_restore_vtable` must be
+  called before calling :symbol:`mongoc_cleanup`. Failure to do so will result in
   memory being freed by the wrong allocator.
 
 Parameters
@@ -64,7 +67,7 @@ like:
  }
 
 If we call
-mongoc_handshake_data_append ("phongo", "1.1.8", "CC=clang")
+:symbol:`mongoc_handshake_data_append` ("phongo", "1.1.8", "CC=clang")
 and it returns true, the driver sends handshake data like:
 
 .. code-block:: c
