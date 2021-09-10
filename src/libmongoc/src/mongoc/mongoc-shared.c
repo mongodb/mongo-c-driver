@@ -79,10 +79,12 @@ void
 mongoc_shared_ptr_assign (mongoc_shared_ptr *const out,
                           mongoc_shared_ptr const from)
 {
+   /* Copy from 'from' *first*, since this might be a self-assignment. */
+   mongoc_shared_ptr copied = mongoc_shared_ptr_copy (from);
    BSON_ASSERT (out &&
                 "NULL given as output argument to mongoc_shared_ptr_assign()");
    mongoc_shared_ptr_reset_null (out);
-   *out = mongoc_shared_ptr_copy (from);
+   *out = copied;
 }
 
 mongoc_shared_ptr
@@ -118,7 +120,7 @@ mongoc_shared_ptr
 mongoc_atomic_shared_ptr_load (mongoc_shared_ptr const *ptr)
 {
    mongoc_shared_ptr r;
-   BSON_ASSERT (ptr && "NULL given to _mongoc_shared_ptr_take_atomic()");
+   BSON_ASSERT_PARAM (ptr);
    _shared_ptr_lock ();
    r = mongoc_shared_ptr_copy (*ptr);
    _shared_ptr_unlock ();
@@ -139,7 +141,7 @@ mongoc_shared_ptr_copy (mongoc_shared_ptr const ptr)
 void
 mongoc_shared_ptr_reset_null (mongoc_shared_ptr *const ptr)
 {
-   BSON_ASSERT (ptr && "NULL given to mongoc_shared_ptr_reset_null()");
+   BSON_ASSERT_PARAM (ptr);
    BSON_ASSERT (
       !mongoc_shared_ptr_is_null (*ptr) &&
       "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_reset_null");

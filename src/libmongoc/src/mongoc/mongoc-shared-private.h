@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "mongoc-prelude.h"
+
 #ifndef MONGOC_SHARED_H
 #define MONGOC_SHARED_H
 
@@ -44,7 +46,7 @@
  * invoked with the pointed-to-data. The destructor runs in the thread that
  * caused the reference count to drop, so be aware that resetting or rebinding
  * a shared_ptr can execute unseen code: Refrain from holding locks while
- * resetting/rebindign a shared pointer.
+ * resetting/rebinding a shared pointer.
  */
 typedef struct mongoc_shared_ptr {
    /** Pointed-to data */
@@ -128,9 +130,9 @@ mongoc_shared_ptr_copy (mongoc_shared_ptr const ptr);
 
 /**
  * @brief Like `mongoc_shared_ptr_copy`, but is thread-safe in case `*ptr`
- * may be accessed simultaneously written to by another thread. However: such
- * potential writes *must* using one of the `mongoc_atomic_shared_ptr_store`
- * interfaces.
+ * may be accessed simultaneously from other threads even if any of those
+ * accesses are writes. However: such potential writes *must* use
+ * `mongoc_atomic_shared_ptr_store`.
  *
  * This is a thread-safe equivalent of `mongoc_shared_ptr_copy`.
  *
@@ -143,7 +145,8 @@ mongoc_atomic_shared_ptr_load (mongoc_shared_ptr const *ptr);
  * @brief Release the ownership of the given shared pointer.
  *
  * If this causes the refcount to reach zero, then the destructor function will
- * be executed with the pointee. The ptr will be reset to NULL
+ * be executed with the pointee. The shared pointer object and ptr->ptr will be
+ * reset to NULL.
  *
  * @param ptr The pointer to release and set to NULL
  *
