@@ -21,7 +21,7 @@ Parameters
 Returns
 -------
 
-A :symbol:`mongoc_client_t` that is valid only for the lifetime of ``session``.
+A :symbol:`mongoc_client_t` that should not be freed.
 
 .. only:: html
 
