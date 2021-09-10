@@ -11,7 +11,12 @@ Synopsis
   mongoc_transaction_opt_t *
   mongoc_transaction_opts_new (void);
 
-Create a :symbol:`mongoc_transaction_opt_t` to configure multi-document transactions. The struct must be freed with :symbol:`mongoc_transaction_opts_destroy`.
+Create a :symbol:`mongoc_transaction_opt_t` to configure multi-document transactions.
+
+Returns
+-------
+
+A new :symbol:`mongoc_transaction_opt_t` that must be freed with :symbol:`mongoc_transaction_opts_destroy()`.
 
 .. only:: html
 

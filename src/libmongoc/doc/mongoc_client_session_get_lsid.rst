@@ -11,7 +11,7 @@ Synopsis
   const bson_t *
   mongoc_client_session_get_lsid (mongoc_client_session_t *session);
 
-Get the server-side "logical session ID" associated with this :symbol:`mongoc_client_session_t`, as a BSON document.
+Get the server-side "logical session ID" associated with this :symbol:`mongoc_client_session_t` as a BSON document.
 
 Parameters
 ----------
@@ -21,7 +21,7 @@ Parameters
 Returns
 -------
 
-A :symbol:`bson:bson_t` you must not modify or free.
+A :symbol:`bson:bson_t` that is valid only for the lifetime of ``session``.
 
 .. only:: html
 
