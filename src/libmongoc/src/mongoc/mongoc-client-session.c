@@ -722,6 +722,7 @@ _mongoc_server_session_init (mongoc_server_session_t *self, bson_error_t *error)
    self->txn_number = 0;
 
    if (!_mongoc_server_session_uuid (uuid_data, error)) {
+      bson_destroy (&self->lsid);
       RETURN (false);
    }
    BSON_APPEND_BINARY (
