@@ -483,7 +483,7 @@ functions:
         export OBSOLETE_TLS='${obsolete_tls}'
         export VALGRIND='${valgrind}'
         export ATLAS_SERVERLESS_SRV='${atlas_serverless_srv}'
-        export ATLAS_SERVERLESS='${atlas_serverless}'
+        export ATLAS_SERVERLESS='${atlas_serverless}
         sh .evergreen/run-auth-tests.sh
   run mock server tests:
   - command: shell.exec
@@ -26811,11 +26811,11 @@ buildvariants:
   - .3.4 .nossl
   - .3.2 .nossl
   - .3.0 .nossl .nosasl !.auth
-- name: clang60-i386
-  display_name: clang 6.0 (i386) (Ubuntu 18.04)
+- name: clang60-i686
+  display_name: clang 6.0 (i686) (Ubuntu 18.04)
   expansions:
     CC: clang
-    MARCH: i386
+    MARCH: i686
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-scan-build
@@ -26829,11 +26829,11 @@ buildvariants:
   - .4.4 .nossl .nosasl
   - .4.2 .nossl .nosasl
   - .4.0 .nossl .nosasl
-- name: clang38-i386
-  display_name: clang 3.8 (i386) (Ubuntu 16.04)
+- name: clang38-i686
+  display_name: clang 3.8 (i686) (Ubuntu 16.04)
   expansions:
     CC: clang
-    MARCH: i386
+    MARCH: i686
   run_on: ubuntu1604-test
   tasks:
   - debug-compile-scan-build
@@ -26966,11 +26966,11 @@ buildvariants:
   - .latest .openssl !.nosasl .server
   - .latest .openssl-static !.nosasl .server
   - .latest .nossl
-- name: gcc75-i386
-  display_name: GCC 7.5 (i386) (Ubuntu 18.04)
+- name: gcc75-i686
+  display_name: GCC 7.5 (i686) (Ubuntu 18.04)
   expansions:
     CC: gcc
-    MARCH: i386
+    MARCH: i686
   run_on: ubuntu1804-test
   tasks:
   - debug-compile-coverage
@@ -27063,7 +27063,7 @@ buildvariants:
   - test-aws-openssl-regular-4.4
   - test-aws-openssl-regular-latest
 - name: windows-2017-32
-  display_name: Windows (i386) (VS 2017)
+  display_name: Windows (i686) (VS 2017)
   expansions:
     CC: Visual Studio 15 2017
   run_on: windows-64-vs2017-test
@@ -27121,7 +27121,7 @@ buildvariants:
   - .3.2 .winssl !.nosasl .server
   - .3.0 .nossl
 - name: windows-2015-32
-  display_name: Windows (i386) (VS 2015)
+  display_name: Windows (i686) (VS 2015)
   expansions:
     CC: Visual Studio 14 2015
   run_on: windows-64-vs2015-compile
@@ -27154,7 +27154,7 @@ buildvariants:
   - .4.2 .winssl !.nosasl .server !.client-side-encryption
   - .4.0 .winssl !.nosasl .server
 - name: windows-2013-32
-  display_name: Windows (i386) (VS 2013)
+  display_name: Windows (i686) (VS 2013)
   expansions:
     CC: Visual Studio 12 2013
   run_on: windows-64-vs2013-compile
