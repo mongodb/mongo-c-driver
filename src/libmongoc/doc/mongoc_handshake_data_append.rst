@@ -67,7 +67,7 @@ like:
  }
 
 If we call
-:symbol:`mongoc_handshake_data_append` ("phongo", "1.1.8", "CC=clang")
+:symbol:`mongoc_handshake_data_append` ("phongo", "1.1.8", "CC=clang / ")
 and it returns true, the driver sends handshake data like:
 
 .. code-block:: c
@@ -78,7 +78,7 @@ and it returns true, the driver sends handshake data like:
      version: "1.5.0 / 1.1.8"
    },
    os: {...},
-   platform: "CC=gcc CFLAGS=-Wall -pedantic / CC=clang"
+   platform: "CC=clang / gcc CFLAGS=-Wall -pedantic"
  }
 
 
