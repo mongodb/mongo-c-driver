@@ -709,8 +709,6 @@ bson_decimal128_from_string_w_len (const char *string,     /* IN */
    }
 
    /* Encode significand */
-   significand_high = 0;   /* The high 17 digits of the significand */
-   /* significand_low is the low 17 digits of the significand */
 
    if (significant_digits == 0) { /* read a zero */
       significand_high = 0;

@@ -481,7 +481,6 @@ test_mongoc_rpc_reply_scatter2 (void)
    bson_reader_t *reader;
    uint8_t *data;
    mongoc_rpc_t rpc;
-   const bson_t *b;
    bool r;
    bool eof = false;
    bson_t empty;
