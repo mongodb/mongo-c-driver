@@ -714,17 +714,15 @@ _mongoc_server_session_init (mongoc_server_session_t *self, bson_error_t *error)
 {
    uint8_t uuid_data[16];
    ENTRY;
-
-   self->last_used_usec = SESSION_NEVER_USED;
-   bson_init (&self->lsid);
+   BSON_ASSERT (self);
+   if (!_mongoc_server_session_uuid (uuid_data, error)) {
+      RETURN (false);
+   }
    /* transaction number is a positive integer and will be incremented before
     * each use, so ensure it is initialized to zero. */
    self->txn_number = 0;
-
-   if (!_mongoc_server_session_uuid (uuid_data, error)) {
-      bson_destroy (&self->lsid);
-      RETURN (false);
-   }
+   self->last_used_usec = SESSION_NEVER_USED;
+   bson_init (&self->lsid);
    BSON_APPEND_BINARY (
       &self->lsid, "id", BSON_SUBTYPE_UUID, uuid_data, sizeof uuid_data);
 

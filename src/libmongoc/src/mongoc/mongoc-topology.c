@@ -237,6 +237,8 @@ _server_session_should_prune (mongoc_server_session_t *session,
 {
    bool is_loadbalanced;
    int timeout;
+   BSON_ASSERT_PARAM (session);
+   BSON_ASSERT_PARAM (topo);
 
    /** If "dirty" (i.e. contains a network error), it should be dropped */
    if (session->dirty) {
@@ -1588,8 +1590,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
          bson_mutex_unlock (&topology->mutex);
          if (!mongoc_topology_select_server_id (
                 topology, MONGOC_SS_READ, NULL, error)) {
-            ss = NULL;
-            goto done;
+            RETURN (NULL);
          }
 
          bson_mutex_lock (&topology->mutex);
@@ -1597,20 +1598,18 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
       }
 
       if (timeout == MONGOC_NO_SESSIONS) {
+         bson_mutex_unlock (&topology->mutex);
          bson_set_error (error,
                          MONGOC_ERROR_CLIENT,
                          MONGOC_ERROR_CLIENT_SESSION_FAILURE,
                          "Server does not support sessions");
-         ss = NULL;
-         bson_mutex_unlock (&topology->mutex);
-         goto done;
+         RETURN (NULL);
       }
    }
    bson_mutex_unlock (&topology->mutex);
 
    ss = mongoc_server_session_pool_get (topology->session_pool, error);
 
-done:
    RETURN (ss);
 }
 
@@ -1673,6 +1672,8 @@ bool
 _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
 {
    bson_t ar;
+   /* Only end up to 10'000 sessions */
+   const int ENDED_SESSION_PRUNING_LIMIT = 10000;
    int i = 0;
    mongoc_server_session_t *ss =
       mongoc_server_session_pool_get_existing (topology->session_pool);
@@ -1680,7 +1681,7 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
    bson_init (cmd);
    BSON_APPEND_ARRAY_BEGIN (cmd, "endSessions", &ar);
 
-   for (; i < 10000 && ss != NULL;
+   for (; i < ENDED_SESSION_PRUNING_LIMIT && ss != NULL;
         ++i,
         ss = mongoc_server_session_pool_get_existing (topology->session_pool)) {
       char buf[16];
@@ -1692,7 +1693,7 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
 
    if (ss) {
       /* We deleted at least 10'000 sessions, so we will need to return the
-       * final the final session that we didn't drop */
+       * final session that we didn't drop */
       mongoc_server_session_pool_return (ss);
    }
 
