@@ -306,6 +306,35 @@
 #define BSON_GNUC_DEPRECATED_FOR(f) BSON_GNUC_DEPRECATED
 #endif
 
+/**
+ * @brief Mark the attached declared entity as "possibly-unused."
+ *
+ * Does nothing on MSVC.
+ */
+#if defined(__GNUC__) || defined(__clang__)
+#define BSON_MAYBE_UNUSED __attribute__ ((unused))
+#else
+#define BSON_MAYBE_UNUSED /* Nothing for other compilers */
+#endif
+
+/**
+ * @brief Mark a point in the code as unreachable. If the point is reached, the
+ * program will abort with an error message.
+ *
+ * @param What A string to include in the error message if this point is ever
+ * executed.
+ */
+#define BSON_UNREACHABLE(What)                               \
+   do {                                                      \
+      fprintf (stderr,                                       \
+               "%s:%d %s(): Unreachable code reached: %s\n", \
+               __FILE__,                                     \
+               __LINE__,                                     \
+               BSON_FUNC,                                    \
+               What);                                        \
+      abort ();                                              \
+   } while (0)
+
 
 /**
  * @brief Mark a point in the code as unreachable. If the point is reached, the

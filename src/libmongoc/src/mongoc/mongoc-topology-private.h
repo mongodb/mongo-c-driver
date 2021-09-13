@@ -27,6 +27,7 @@
 #include "mongoc-uri.h"
 #include "mongoc-client-session-private.h"
 #include "mongoc-crypt-private.h"
+#include "mongoc-ts-pool-private.h"
 
 #define MONGOC_TOPOLOGY_MIN_HEARTBEAT_FREQUENCY_MS 500
 #define MONGOC_TOPOLOGY_SOCKET_CHECK_INTERVAL_MS 5000
@@ -61,6 +62,17 @@ typedef struct _mongoc_rr_data_t {
    /* Set to the TXT record when polling for TXT */
    char *txt_record_opts;
 } mongoc_rr_data_t;
+
+struct _mongoc_topology_t;
+
+MONGOC_DECL_SPECIAL_TS_POOL (
+   mongoc_server_session_t,
+   mongoc_server_session_pool,
+   struct _mongoc_topology_t,
+   /* ctor/dtor/prune are defined in the new_with_params call */
+   NULL,
+   NULL,
+   NULL)
 
 typedef bool (*_mongoc_rr_resolver_fn) (const char *service,
                                         mongoc_rr_type_t rr_type,
@@ -102,7 +114,7 @@ typedef struct _mongoc_topology_t {
    bool single_threaded;
    bool stale;
 
-   mongoc_server_session_t *session_pool;
+   mongoc_server_session_pool session_pool;
 
    /* Is client side encryption enabled? */
    bool cse_enabled;
@@ -216,9 +228,6 @@ bool
 _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd);
 
 void
-_mongoc_topology_clear_session_pool (mongoc_topology_t *topology);
-
-void
 _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
                                    bson_error_t *error);
 const bson_t *
@@ -255,7 +264,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
 void
 _mongoc_topology_clear_connection_pool (mongoc_topology_t *topology,
                                         uint32_t server_id,
-                                        const bson_oid_t* service_id);
+                                        const bson_oid_t *service_id);
 
 void
 mongoc_topology_rescan_srv (mongoc_topology_t *topology);

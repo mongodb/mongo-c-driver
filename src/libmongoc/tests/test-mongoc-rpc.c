@@ -481,7 +481,6 @@ test_mongoc_rpc_reply_scatter2 (void)
    bson_reader_t *reader;
    uint8_t *data;
    mongoc_rpc_t rpc;
-   const bson_t *b;
    bool r;
    bool eof = false;
    bson_t empty;
@@ -508,7 +507,7 @@ test_mongoc_rpc_reply_scatter2 (void)
    ASSERT (rpc.reply.documents_len == 16200);
    reader =
       bson_reader_new_from_data (rpc.reply.documents, rpc.reply.documents_len);
-   while ((b = bson_reader_read (reader, &eof))) {
+   while (bson_reader_read (reader, &eof)) {
       count++;
    }
    ASSERT (eof == true);
