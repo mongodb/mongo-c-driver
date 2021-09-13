@@ -476,7 +476,9 @@ mongoc_topology_description_lowest_max_wire_version (
    for (i = 0; (size_t) i < td->servers->items_len; i++) {
       sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers, i);
 
-      if (sd->type != MONGOC_SERVER_UNKNOWN && sd->max_wire_version < ret) {
+      if (sd->type != MONGOC_SERVER_UNKNOWN &&
+          sd->type != MONGOC_SERVER_POSSIBLE_PRIMARY &&
+          sd->max_wire_version < ret) {
          ret = sd->max_wire_version;
       }
    }
