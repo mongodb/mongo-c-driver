@@ -1,5 +1,4 @@
 -Wall
--Waggregate-return
 -Wdeclaration-after-statement
 -Wempty-body
 -Wformat

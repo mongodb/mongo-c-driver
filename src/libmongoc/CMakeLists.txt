@@ -558,6 +558,7 @@ set (SOURCES ${SOURCES}
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description-apm.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-scanner.c
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ts-pool.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-uri.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-util.c
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version-functions.c
@@ -615,6 +616,7 @@ set (HEADERS
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-gridfs.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-stream-socket.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-topology-description.h
+   ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-ts-pool-private.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-uri.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-version-functions.h
    ${PROJECT_SOURCE_DIR}/src/mongoc/mongoc-write-concern.h
@@ -998,6 +1000,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology-scanner.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-topology.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-transactions.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ts-pool.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-uri.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-usleep.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-util.c

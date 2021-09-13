@@ -321,7 +321,6 @@ mock_rs_run (mock_rs_t *rs)
 {
    int i;
    mock_server_t *server;
-   char *hosts_str;
    char *hello;
 
    if (rs->has_primary) {
@@ -368,7 +367,7 @@ mock_rs_run (mock_rs_t *rs)
 
 
    /* now we know all servers' ports and we have them in one array */
-   rs->hosts_str = hosts_str = hosts (&rs->servers);
+   rs->hosts_str = hosts (&rs->servers);
    rs->uri = make_uri (&rs->servers);
 
    BSON_ASSERT (rs->max_wire_version > 0);

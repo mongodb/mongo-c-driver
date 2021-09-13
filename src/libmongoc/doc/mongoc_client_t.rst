@@ -89,4 +89,6 @@ Example
     mongoc_client_start_session
     mongoc_client_watch
     mongoc_client_write_command_with_opts
+    mongoc_handshake_data_append
+    
 
