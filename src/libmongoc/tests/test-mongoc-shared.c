@@ -1,6 +1,4 @@
-
-
-#include "./TestSuite.h"
+#include "TestSuite.h"
 
 #include <mongoc/mongoc-shared-private.h>
 
@@ -50,7 +48,7 @@ test_simple ()
    mongoc_shared_ptr ptr2 = mongoc_shared_ptr_copy (ptr);
 
    ASSERT (ptr.ptr == ptr2.ptr);
-   ASSERT (ptr._aux == ptr._aux);
+   ASSERT (ptr._aux == ptr2._aux);
 
    mongoc_shared_ptr valptr_s = mongoc_shared_ptr_copy (ptr);
    my_value *valptr = valptr_s.ptr;
@@ -60,15 +58,15 @@ test_simple ()
    /* Value hasn't changed yet */
    ASSERT_CMPINT (destroyed_value, ==, 0);
 
-   /* Now drop the final reference */
+   /* Now drop the original reference */
    mongoc_shared_ptr_reset_null (&ptr);
    /* Check that the pointer is empty */
    ASSERT (mongoc_shared_ptr_is_null (ptr));
 
-   /* Still not yet */
+   /* Still not yet destroyed */
    ASSERT_CMPINT (destroyed_value, ==, 0);
 
-   /* CHeck that the existing pointer is okay */
+   /* Check that the existing pointer is okay */
    ASSERT_CMPINT (((my_value *) ptr2.ptr)->value, ==, 133);
 
    /* Drop the last one */
