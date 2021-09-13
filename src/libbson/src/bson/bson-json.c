@@ -985,13 +985,17 @@ _bson_json_read_string (bson_json_reader_t *reader, /* IN */
    rs = bson->read_state;
    bs = bson->bson_state;
 
-   // TODO: figure out the difference between the read_state and bson_state.
+   /* Prohibit embedded NULL bytes in BSON regex pattern or options. */
    if (rs == BSON_JSON_IN_BSON_TYPE_REGEX_VALUES &&
-       (bs == BSON_JSON_LF_REGEX ||
-        bs == BSON_JSON_LF_REGULAR_EXPRESSION_PATTERN ||
-        bs == BSON_JSON_LF_OPTIONS ||
+       (bs == BSON_JSON_LF_REGULAR_EXPRESSION_PATTERN ||
         bs == BSON_JSON_LF_REGULAR_EXPRESSION_OPTIONS)) {
-      /* Embedded NULL bytes are prohibited in BSON regex pattern or options. */
+      /* Prohibit embedded NULL bytes for canonical extended regex: {
+       * $regularExpression: { pattern: "pattern", options: "options" } } */
+      allow_null = false;
+   } else if (rs == BSON_JSON_IN_BSON_TYPE &&
+              (bs == BSON_JSON_LF_REGEX || bs == BSON_JSON_LF_OPTIONS)) {
+      /* Prohibit embedded NULL bytes for legacy regex: { $regex: "pattern",
+       * $options: "options" } */
       allow_null = false;
    }
 

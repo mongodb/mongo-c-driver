@@ -234,6 +234,7 @@ github.com/mongodb/specifications/blob/master/source/bson-corpus/bson-corpus.rst
 static void
 test_bson_corpus_parse_error (test_bson_parse_error_type_t *test)
 {
+   bson_error_t error;
    BSON_ASSERT (test->str);
 
    if (is_test_skipped (test->scenario_description, test->test_description)) {
@@ -248,7 +249,7 @@ test_bson_corpus_parse_error (test_bson_parse_error_type_t *test)
    switch (test->bson_type) {
    case BSON_TYPE_EOD: /* top-level document to be parsed as JSON */
    case BSON_TYPE_BINARY:
-      ASSERT (!bson_new_from_json ((uint8_t *) test->str, test->str_len, NULL));
+      ASSERT (!bson_new_from_json ((uint8_t *) test->str, test->str_len, &error));
       break;
    case BSON_TYPE_DECIMAL128: {
       bson_decimal128_t dec;
