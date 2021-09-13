@@ -1,6 +1,5 @@
 set (src_libbson_build_cmake_MODULES
    BSONPackage.cmake
-   CheckAtomics.cmake
 )
 
 set (src_libbson_build_cmake_PKGCONFIG
