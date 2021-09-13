@@ -216,6 +216,55 @@ _mongoc_topology_scanner_cb (uint32_t id,
    bson_mutex_unlock (&topology->mutex);
 }
 
+static void
+_server_session_init (mongoc_server_session_t *session,
+                      mongoc_topology_t *unused,
+                      bson_error_t *error)
+{
+   _mongoc_server_session_init (session, error);
+}
+
+static void
+_server_session_destroy (mongoc_server_session_t *session,
+                         mongoc_topology_t *unused)
+{
+   _mongoc_server_session_destroy (session);
+}
+
+static int
+_server_session_should_prune (mongoc_server_session_t *session,
+                              mongoc_topology_t *topo)
+{
+   bool is_loadbalanced;
+   int timeout;
+   BSON_ASSERT_PARAM (session);
+   BSON_ASSERT_PARAM (topo);
+
+   /** If "dirty" (i.e. contains a network error), it should be dropped */
+   if (session->dirty) {
+      return true;
+   }
+
+   /** If the session has never been used, it should be dropped */
+   if (session->last_used_usec == SESSION_NEVER_USED) {
+      return true;
+   }
+
+   /* Check for a timeout */
+   bson_mutex_lock (&topo->mutex);
+   timeout = topo->description.session_timeout_minutes;
+   is_loadbalanced = topo->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED;
+   bson_mutex_unlock (&topo->mutex);
+
+   /** Load balanced topology sessions never expire */
+   if (is_loadbalanced) {
+      return false;
+   }
+
+   /* Prune the session if it has hit a timeout */
+   return _mongoc_server_session_timed_out (session, timeout);
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -260,7 +309,11 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 #endif
 
    topology = (mongoc_topology_t *) bson_malloc0 (sizeof *topology);
-   topology->session_pool = NULL;
+   topology->session_pool =
+      mongoc_server_session_pool_new_with_params (_server_session_init,
+                                                  _server_session_destroy,
+                                                  _server_session_should_prune,
+                                                  topology);
    heartbeat_default =
       single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED
                       : MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
@@ -569,45 +622,12 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    mongoc_uri_destroy (topology->uri);
    mongoc_topology_description_cleanup (&topology->description);
    mongoc_topology_scanner_destroy (topology->scanner);
-
-   /* If we are single-threaded, the client will try to call
-      _mongoc_topology_end_sessions_cmd when it dies. This removes
-      sessions from the pool as it calls endSessions on them. In
-      case this does not succeed, we clear the pool again here. */
-   _mongoc_topology_clear_session_pool (topology);
+   mongoc_server_session_pool_free (topology->session_pool);
 
    mongoc_cond_destroy (&topology->cond_client);
    bson_mutex_destroy (&topology->mutex);
 
    bson_free (topology);
-}
-
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_topology_clear_session_pool --
- *
- *       Clears the pool of server sessions without sending endSessions.
- *
- * Returns:
- *       Nothing.
- *
- * Side effects:
- *       Server session pool will be emptied.
- *
- *--------------------------------------------------------------------------
- */
-
-void
-_mongoc_topology_clear_session_pool (mongoc_topology_t *topology)
-{
-   mongoc_server_session_t *ss, *tmp1, *tmp2;
-
-   CDL_FOREACH_SAFE (topology->session_pool, ss, tmp1, tmp2)
-   {
-      _mongoc_server_session_destroy (ss);
-   }
-   topology->session_pool = NULL;
 }
 
 /* Returns false if none of the hosts were valid. */
@@ -1106,7 +1126,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
 
    if (topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       bson_mutex_unlock (&topology->mutex);
-      return _mongoc_topology_select_server_id_loadbalanced (topology, error);   
+      return _mongoc_topology_select_server_id_loadbalanced (topology, error);
    }
 
    bson_mutex_unlock (&topology->mutex);
@@ -1586,28 +1606,9 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
          RETURN (NULL);
       }
    }
-
-   while (topology->session_pool) {
-      ss = topology->session_pool;
-      CDL_DELETE (topology->session_pool, ss);
-      /* Sessions do not expire when the topology type is load balanced. */
-      if (loadbalanced) {
-         break;
-      }
-
-      if (_mongoc_server_session_timed_out (ss, timeout)) {
-         _mongoc_server_session_destroy (ss);
-         ss = NULL;
-      } else {
-         break;
-      }
-   }
-
    bson_mutex_unlock (&topology->mutex);
 
-   if (!ss) {
-      ss = _mongoc_server_session_new (error);
-   }
+   ss = mongoc_server_session_pool_get (topology->session_pool, error);
 
    RETURN (ss);
 }
@@ -1626,53 +1627,22 @@ void
 _mongoc_topology_push_server_session (mongoc_topology_t *topology,
                                       mongoc_server_session_t *server_session)
 {
-   int64_t timeout;
-   mongoc_server_session_t *ss;
-   bool loadbalanced;
-
    ENTRY;
 
-   bson_mutex_lock (&topology->mutex);
-
-   timeout = topology->description.session_timeout_minutes;
-   loadbalanced = topology->description.type == MONGOC_TOPOLOGY_LOAD_BALANCED;
-
-   /* start at back of queue and reap timed-out sessions */
-   while (topology->session_pool && topology->session_pool->prev) {
-      ss = topology->session_pool->prev;
-      /* Sessions do not expire when the topology type is load balanced. */
-      if (!loadbalanced && _mongoc_server_session_timed_out (ss, timeout)) {
-         BSON_ASSERT (ss->next); /* silences clang scan-build */
-         CDL_DELETE (topology->session_pool, ss);
-         _mongoc_server_session_destroy (ss);
-      } else {
-         /* if ss is not timed out, sessions in front of it are ok too */
-         break;
-      }
-   }
-
-   /* If session is expiring or "dirty" (a network error occurred on it), do not
-    * return it to the pool. Sessions do not expire when the topology type is
-    * load balanced. */
-   if ((!loadbalanced &&
-        _mongoc_server_session_timed_out (server_session, timeout)) ||
-       server_session->dirty) {
-      _mongoc_server_session_destroy (server_session);
-   } else {
-      /* silences clang scan-build */
-      BSON_ASSERT (!topology->session_pool || (topology->session_pool->next &&
-                                               topology->session_pool->prev));
-
-      /* add server session (lsid) to session pool to be reused only if the
-       * server session has been used (the server is aware of the session) */
-      if (server_session->last_used_usec == SESSION_NEVER_USED) {
-         _mongoc_server_session_destroy (server_session);
-      } else {
-         CDL_PREPEND (topology->session_pool, server_session);
-      }
-   }
-
-   bson_mutex_unlock (&topology->mutex);
+   /**
+    * ! note:
+    * At time of writing, this diverges from the spec:
+    * https://github.com/mongodb/specifications/blob/df6be82f865e9b72444488fd62ae1eb5fca18569/source/sessions/driver-sessions.rst#algorithm-to-return-a-serversession-instance-to-the-server-session-pool
+    *
+    * The spec notes that before returning a session, we should first inspect
+    * the back of the pool for expired items and delete them. In this case, we
+    * simply return the item to the top of the pool and leave the remainder
+    * unchanged.
+    *
+    * The next pop operation that encounters an expired session will clear the
+    * entire session pool, thus preventing unbounded growth of the pool.
+    */
+   mongoc_server_session_pool_return (server_session);
 
    EXIT;
 }
@@ -1701,26 +1671,30 @@ _mongoc_topology_push_server_session (mongoc_topology_t *topology,
 bool
 _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
 {
-   mongoc_server_session_t *ss, *tmp1, *tmp2;
-   char buf[16];
-   const char *key;
-   uint32_t i;
    bson_t ar;
+   /* Only end up to 10'000 sessions */
+   const int ENDED_SESSION_PRUNING_LIMIT = 10000;
+   int i = 0;
+   mongoc_server_session_t *ss =
+      mongoc_server_session_pool_get_existing (topology->session_pool);
 
    bson_init (cmd);
    BSON_APPEND_ARRAY_BEGIN (cmd, "endSessions", &ar);
 
-   i = 0;
-   CDL_FOREACH_SAFE (topology->session_pool, ss, tmp1, tmp2)
-   {
+   for (; i < ENDED_SESSION_PRUNING_LIMIT && ss != NULL;
+        ++i,
+        ss = mongoc_server_session_pool_get_existing (topology->session_pool)) {
+      char buf[16];
+      const char *key;
       bson_uint32_to_string (i, &key, buf, sizeof buf);
       BSON_APPEND_DOCUMENT (&ar, key, &ss->lsid);
-      CDL_DELETE (topology->session_pool, ss);
-      _mongoc_server_session_destroy (ss);
+      mongoc_server_session_pool_drop (ss);
+   }
 
-      if (++i == 10000) {
-         break;
-      }
+   if (ss) {
+      /* We deleted at least 10'000 sessions, so we will need to return the
+       * final session that we didn't drop */
+      mongoc_server_session_pool_return (ss);
    }
 
    bson_append_array_end (cmd, &ar);
@@ -1912,7 +1886,8 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
        */
       if (max_wire_version <= WIRE_VERSION_4_0 ||
           _mongoc_error_is_shutdown (&cmd_error)) {
-         _mongoc_topology_clear_connection_pool (topology, server_id, service_id);
+         _mongoc_topology_clear_connection_pool (
+            topology, server_id, service_id);
          pool_cleared = true;
       }
 

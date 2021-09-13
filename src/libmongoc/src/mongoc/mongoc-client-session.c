@@ -709,34 +709,25 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
    }
 }
 
-
-mongoc_server_session_t *
-_mongoc_server_session_new (bson_error_t *error)
+bool
+_mongoc_server_session_init (mongoc_server_session_t *self, bson_error_t *error)
 {
    uint8_t uuid_data[16];
-   mongoc_server_session_t *s;
-
    ENTRY;
-
+   BSON_ASSERT (self);
    if (!_mongoc_server_session_uuid (uuid_data, error)) {
-      RETURN (NULL);
+      RETURN (false);
    }
-
-   s = bson_malloc0 (sizeof (mongoc_server_session_t));
-   s->last_used_usec = SESSION_NEVER_USED;
-   s->prev = NULL;
-   s->next = NULL;
-   bson_init (&s->lsid);
-   bson_append_binary (
-      &s->lsid, "id", 2, BSON_SUBTYPE_UUID, uuid_data, sizeof uuid_data);
-
    /* transaction number is a positive integer and will be incremented before
     * each use, so ensure it is initialized to zero. */
-   s->txn_number = 0;
+   self->txn_number = 0;
+   self->last_used_usec = SESSION_NEVER_USED;
+   bson_init (&self->lsid);
+   BSON_APPEND_BINARY (
+      &self->lsid, "id", BSON_SUBTYPE_UUID, uuid_data, sizeof uuid_data);
 
-   RETURN (s);
+   RETURN (true);
 }
-
 
 bool
 _mongoc_server_session_timed_out (const mongoc_server_session_t *server_session,
@@ -766,14 +757,9 @@ _mongoc_server_session_timed_out (const mongoc_server_session_t *server_session,
 
 
 void
-_mongoc_server_session_destroy (mongoc_server_session_t *server_session)
+_mongoc_server_session_destroy (mongoc_server_session_t *self)
 {
-   ENTRY;
-
-   bson_destroy (&server_session->lsid);
-   bson_free (server_session);
-
-   EXIT;
+   bson_destroy (&self->lsid);
 }
 
 
@@ -806,7 +792,8 @@ _mongoc_client_session_new (mongoc_client_t *client,
                  DEFAULT_MAX_COMMIT_TIME_MS);
 
    if (opts) {
-      mongoc_optional_copy (&opts->causal_consistency, &session->opts.causal_consistency);
+      mongoc_optional_copy (&opts->causal_consistency,
+                            &session->opts.causal_consistency);
       mongoc_optional_copy (&opts->snapshot, &session->opts.snapshot);
       txn_opts_set (&session->opts.default_txn_opts,
                     opts->default_txn_opts.read_concern,
@@ -1684,9 +1671,9 @@ mongoc_client_session_destroy (mongoc_client_session_t *session)
       _mongoc_client_push_server_session (session->client,
                                           session->server_session);
    } else {
-      /* If the client has been reset, destroy the server session instead of
-    pushing it back into the topology's pool. */
-      _mongoc_server_session_destroy (session->server_session);
+      /** If the client has been reset, destroy the server session instead of
+       * pushing it back into the topology's pool. */
+      mongoc_server_session_pool_drop (session->server_session);
    }
 
    txn_opts_cleanup (&session->opts.default_txn_opts);

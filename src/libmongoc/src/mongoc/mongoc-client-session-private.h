@@ -45,7 +45,6 @@ struct _mongoc_session_opt_t {
 };
 
 typedef struct _mongoc_server_session_t {
-   struct _mongoc_server_session_t *prev, *next;
    int64_t last_used_usec;
    bson_t lsid;        /* logical session id */
    int64_t txn_number; /* transaction number */
@@ -102,15 +101,16 @@ _mongoc_client_session_handle_reply (mongoc_client_session_t *session,
                                      const char *cmd_name,
                                      const bson_t *reply);
 
-mongoc_server_session_t *
-_mongoc_server_session_new (bson_error_t *error);
+bool
+_mongoc_server_session_init (mongoc_server_session_t *session,
+                             bson_error_t *error);
+
+void
+_mongoc_server_session_destroy (mongoc_server_session_t *session);
 
 bool
 _mongoc_server_session_timed_out (const mongoc_server_session_t *server_session,
                                   int64_t session_timeout_minutes);
-
-void
-_mongoc_server_session_destroy (mongoc_server_session_t *server_session);
 
 mongoc_client_session_t *
 _mongoc_client_session_new (mongoc_client_t *client,
