@@ -335,24 +335,4 @@
       abort ();                                              \
    } while (0)
 
-
-/**
- * @brief Mark a point in the code as unreachable. If the point is reached, the
- * program will abort with an error message.
- *
- * @param What A string to include in the error message if this point is ever
- * executed.
- */
-#define BSON_UNREACHABLE(What)                               \
-   do {                                                      \
-      fprintf (stderr,                                       \
-               "%s:%d %s(): Unreachable code reached: %s\n", \
-               __FILE__,                                     \
-               __LINE__,                                     \
-               BSON_FUNC,                                    \
-               What);                                        \
-      abort ();                                              \
-   } while (0)
-
-
 #endif /* BSON_MACROS_H */
