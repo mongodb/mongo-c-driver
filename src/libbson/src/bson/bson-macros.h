@@ -336,6 +336,16 @@
 #define BSON_GNUC_DEPRECATED_FOR(f) BSON_GNUC_DEPRECATED
 #endif
 
+/**
+ * @brief Mark the attached declared entity as "possibly-unused."
+ *
+ * Does nothing on MSVC.
+ */
+#if defined(__GNUC__) || defined(__clang__)
+#define BSON_MAYBE_UNUSED __attribute__ ((unused))
+#else
+#define BSON_MAYBE_UNUSED /* Nothing for other compilers */
+#endif
 
 /**
  * @brief Mark a point in the code as unreachable. If the point is reached, the

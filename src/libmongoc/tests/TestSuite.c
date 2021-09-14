@@ -364,6 +364,17 @@ _TestSuite_AddFull (TestSuite *suite,  /* IN */
 }
 
 
+void
+_TestSuite_TestFnCtxDtor (void *ctx)
+{
+   TestFuncDtor dtor = ((TestFnCtx *) ctx)->dtor;
+   if (dtor) {
+      dtor (ctx);
+   }
+   free (ctx);
+}
+
+
 #if defined(_WIN32)
 static void
 _print_getlasterror_win (const char *msg)
@@ -873,8 +884,7 @@ test_matches (TestSuite *suite, Test *test)
    }
 
    for (i = 0; i < suite->match_patterns.len; i++) {
-      char *pattern =
-         _mongoc_array_index (&suite->match_patterns, char *, i);
+      char *pattern = _mongoc_array_index (&suite->match_patterns, char *, i);
       if (TestSuite_TestMatchesName (suite, test, pattern)) {
          return true;
       }

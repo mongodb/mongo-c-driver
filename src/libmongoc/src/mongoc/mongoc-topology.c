@@ -1134,7 +1134,6 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
       goto done;
    }
 
-
    heartbeat_msec = td.ptr->heartbeat_msec;
    local_threshold_ms = topology->local_threshold_msec;
    try_once = topology->server_selection_try_once;
@@ -1709,6 +1708,8 @@ bool
 _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
 {
    bson_t ar;
+   /* Only end up to 10'000 sessions */
+   const int ENDED_SESSION_PRUNING_LIMIT = 10000;
    int i = 0;
    mongoc_server_session_t *ss =
       mongoc_server_session_pool_get_existing (topology->session_pool);
@@ -1716,7 +1717,7 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
    bson_init (cmd);
    BSON_APPEND_ARRAY_BEGIN (cmd, "endSessions", &ar);
 
-   for (; i < 10000 && ss != NULL;
+   for (; i < ENDED_SESSION_PRUNING_LIMIT && ss != NULL;
         ++i,
         ss = mongoc_server_session_pool_get_existing (topology->session_pool)) {
       char buf[16];
@@ -1728,7 +1729,7 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
 
    if (ss) {
       /* We deleted at least 10'000 sessions, so we will need to return the
-       * final the final session that we didn't drop */
+       * final session that we didn't drop */
       mongoc_server_session_pool_return (ss);
    }
 
@@ -1968,12 +1969,14 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       /* Mark server as unknown. */
       goto invalidate_server;
    } else if (type == MONGOC_SDAM_APP_ERROR_COMMAND) {
-      return _handle_sdam_app_error_command (
+      bool cleared = _handle_sdam_app_error_command (
          topology, td.ptr, server_id, service_id, sd, max_wire_version, reply);
+      MC_TD_DROP (td);
+      return cleared;
    }
 
 invalidate_server:
-   0;
+   MC_TD_DROP (td);
    {
       mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
       /* Mark server as unknown. */

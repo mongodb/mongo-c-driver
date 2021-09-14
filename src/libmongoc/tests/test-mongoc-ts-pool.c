@@ -4,7 +4,7 @@
 #include "test-libmongoc.h"
 
 static void
-test_ts_pool_empty (void *unused)
+test_ts_pool_empty (void)
 {
    mongoc_ts_pool *pool = mongoc_ts_pool_new (
       (mongoc_ts_pool_params){.element_size = sizeof (int)});
@@ -14,7 +14,7 @@ test_ts_pool_empty (void *unused)
 
 
 static void
-test_ts_pool_simple (void *unused)
+test_ts_pool_simple (void)
 {
    mongoc_ts_pool *pool = mongoc_ts_pool_new (
       (mongoc_ts_pool_params){.element_size = sizeof (int)});
@@ -46,12 +46,15 @@ test_ts_pool_simple (void *unused)
 static int
 _is_int_42 (int *v, void *unused)
 {
+   (void) unused;
    return *v == 42;
 }
 
 static void
 _set_int_to_7 (int *v, void *unused, bson_error_t *unused2)
 {
+   (void) unused;
+   (void) unused2;
    *v = 7;
 }
 
@@ -61,7 +64,7 @@ MONGOC_DECL_SPECIAL_TS_POOL (
    int, int_pool, void, _set_int_to_7, NULL, _is_int_42)
 
 static void
-test_ts_pool_special (void *unused)
+test_ts_pool_special (void)
 {
    int_pool p = int_pool_new (NULL);
    int *item = int_pool_get (p, NULL);
@@ -88,22 +91,7 @@ test_ts_pool_special (void *unused)
 void
 test_ts_pool_install (TestSuite *suite)
 {
-   TestSuite_AddFull (suite,
-                      "/Util/ts-pool-empty",
-                      test_ts_pool_empty,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      NULL);
-   TestSuite_AddFull (suite,
-                      "/Util/ts-pool",
-                      test_ts_pool_simple,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      NULL);
-   TestSuite_AddFull (suite,
-                      "/Util/ts-pool-special",
-                      test_ts_pool_special,
-                      NULL /* dtor */,
-                      NULL /* ctx */,
-                      NULL);
+   TestSuite_Add (suite, "/Util/ts-pool-empty", test_ts_pool_empty);
+   TestSuite_Add (suite, "/Util/ts-pool", test_ts_pool_simple);
+   TestSuite_Add (suite, "/Util/ts-pool-special", test_ts_pool_special);
 }

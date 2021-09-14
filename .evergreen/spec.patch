@@ -4,7 +4,7 @@
  %global gh_project   mongo-c-driver
  %global libname      libmongoc
  %global libver       1.0
--%global up_version   1.18.0
+-%global up_version   1.19.0
 +%global up_version   1.20.0
  #global up_prever    rc0
  # disabled as require a MongoDB server
@@ -33,11 +33,11 @@
  
  %description devel
  This package contains the header files and development libraries
-@@ -130,7 +128,6 @@
+@@ -128,7 +126,6 @@
  %endif
      -DENABLE_EXAMPLES:BOOL=OFF \
      -DENABLE_UNINSTALL:BOOL=OFF \
 -    -DENABLE_CLIENT_SIDE_ENCRYPTION:BOOL=ON \
+     -DCMAKE_SKIP_RPATH:BOOL=ON \
      -S .
  
- %if 0%{?cmake_build:1}
