@@ -415,17 +415,25 @@ _bson_append (bson_t *bson,              /* IN */
    return ok;
 }
 
+static BSON_INLINE bool
+_string_contains_null (const char *str, size_t len)
+{
+   for (; len; ++str, --len) {
+      if (*str == 0) {
+         return true;
+      }
+   }
+   return false;
+}
+
 #define HANDLE_KEY_LENGTH(key, key_length)                                \
    do {                                                                   \
       if (key_length < 0) {                                               \
          key_length = (int) strlen (key);                                 \
       } else {                                                            \
          /* Necessary to validate embedded NULL is not present in key. */ \
-         int nulliter;                                                \
-         for (nulliter = 0; nulliter < key_length; nulliter++) {          \
-            if (!key[nulliter]) {                                         \
-               return false;                                              \
-            }                                                             \
+         if (_string_contains_null (key, key_length)) {                   \
+            return false;                                                 \
          }                                                                \
       }                                                                   \
    } while (0)
@@ -1561,11 +1569,8 @@ bson_append_regex_w_len (bson_t *bson,
       regex_length = (int) strlen (regex);
    } else {
       /* Necessary to validate embedded NULL is not present in key. */
-      int nulliter;
-      for (nulliter = 0; nulliter < regex_length; nulliter++) {
-         if (!regex[nulliter]) {
-            return false;
-         }
+      if (_string_contains_null (regex, regex_length)) {
+         return false;
       }
    }
 
