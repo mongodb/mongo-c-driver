@@ -68,7 +68,7 @@ typedef struct mongoc_shared_ptr {
  *
  * @param ptr The shared pointer that will be rebound
  * @param pointee The pointer that we will point to.
- * @param deleter A deleted for `pointee`, to be called when the refcount
+ * @param deleter A deleter for `pointee`, to be called when the refcount
  * reaches zero.
  *
  * @note Equivalent to:
