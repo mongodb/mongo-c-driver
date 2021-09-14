@@ -1,5 +1,5 @@
 {
-    "description": "Top-level document validity - libmongoc-specific tests",
+    "description": "Top-level document validity - libmongoc-specific tests. TODO (CDRIVER-4016) move this file.",
     "bson_type": "0x00",
     "valid": [],
     "decodeErrors": [],

@@ -970,6 +970,34 @@ _bson_json_parse_binary_elem (bson_json_reader_t *reader,
    }
 }
 
+static bool
+_bson_json_allow_embedded_nulls (bson_json_reader_t const *reader)
+{
+   const bson_json_read_state_t read_state = reader->bson.read_state;
+   const bson_json_read_bson_state_t bson_state = reader->bson.bson_state;
+
+   if (read_state == BSON_JSON_IN_BSON_TYPE_REGEX_VALUES) {
+      if (bson_state == BSON_JSON_LF_REGULAR_EXPRESSION_PATTERN ||
+          bson_state == BSON_JSON_LF_REGULAR_EXPRESSION_OPTIONS) {
+         /* Prohibit embedded NULL bytes for canonical extended regex:
+          * { $regularExpression: { pattern: "pattern", options: "options" } }
+          */
+         return false;
+      }
+   }
+
+   if (read_state == BSON_JSON_IN_BSON_TYPE) {
+      if (bson_state == BSON_JSON_LF_REGEX |
+          bson_state == BSON_JSON_LF_OPTIONS) {
+         /* Prohibit embedded NULL bytes for legacy regex:
+          * { $regex: "pattern", $options: "options" } */
+         return false;
+      }
+   }
+
+   /* Embedded nulls are okay in any other context */
+   return true;
+}
 
 static void
 _bson_json_read_string (bson_json_reader_t *reader, /* IN */
@@ -978,26 +1006,12 @@ _bson_json_read_string (bson_json_reader_t *reader, /* IN */
 {
    bson_json_read_state_t rs;
    bson_json_read_bson_state_t bs;
-   bool allow_null = true;
+   const bool allow_null = _bson_json_allow_embedded_nulls (reader);
 
    BASIC_CB_PREAMBLE;
 
    rs = bson->read_state;
    bs = bson->bson_state;
-
-   /* Prohibit embedded NULL bytes in BSON regex pattern or options. */
-   if (rs == BSON_JSON_IN_BSON_TYPE_REGEX_VALUES &&
-       (bs == BSON_JSON_LF_REGULAR_EXPRESSION_PATTERN ||
-        bs == BSON_JSON_LF_REGULAR_EXPRESSION_OPTIONS)) {
-      /* Prohibit embedded NULL bytes for canonical extended regex: {
-       * $regularExpression: { pattern: "pattern", options: "options" } } */
-      allow_null = false;
-   } else if (rs == BSON_JSON_IN_BSON_TYPE &&
-              (bs == BSON_JSON_LF_REGEX || bs == BSON_JSON_LF_OPTIONS)) {
-      /* Prohibit embedded NULL bytes for legacy regex: { $regex: "pattern",
-       * $options: "options" } */
-      allow_null = false;
-   }
 
    if (!bson_utf8_validate ((const char *) val, vlen, allow_null)) {
       _bson_json_read_corrupt (reader, "invalid bytes in UTF8 string");
