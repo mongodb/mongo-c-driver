@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "mongoc-prelude.h"
+
 #ifndef MONGOC_SHARED_H
 #define MONGOC_SHARED_H
 
@@ -40,11 +42,11 @@
  * shared reference should be dropped using `mongoc_shared_ptr_reset_null`.
  *
  * When an operation on a shared_ptr causes the reference count to drop to zero,
- * the destructor that was given to create that shared state will immediately be
- * invoked with the pointed-to-data. The destructor runs in the thread that
- * caused the reference count to drop, so be aware that resetting or rebinding
+ * the deleter that was given to create that shared state will immediately be
+ * invoked with the pointed-to-data. The deleter runs in the thread that
+ * caused the reference count to drop, so be aware that resetting or assigning
  * a shared_ptr can execute unseen code: Refrain from holding locks while
- * resetting/rebindign a shared pointer.
+ * resetting/assigning a shared pointer.
  */
 typedef struct mongoc_shared_ptr {
    /** Pointed-to data */
@@ -62,29 +64,32 @@ typedef struct mongoc_shared_ptr {
    }
 
 /**
- * @brief Rebind a shared pointer to the given resource
+ * @brief Reassign a shared pointer to manager the given resource
  *
  * @param ptr The shared pointer that will be rebound
  * @param pointee The pointer that we will point to.
- * @param destroy A destructor+deallocator for `pointee`, to be called when
+ * @param deleter A destructor+deallocator for `pointee`, to be called when
  * the refcount reaches zero.
  *
  * @note Equivalent to:
  *
  *    mongoc_shared_ptr_reset_null(ptr);
- *    *ptr = mongoc_shared_ptr_create(pointee, destroy);
+ *    *ptr = mongoc_shared_ptr_create(pointee, deleter);
  */
 extern void
 mongoc_shared_ptr_reset (mongoc_shared_ptr *ptr,
                          void *pointee,
-                         void (*destroy) (void *));
-
+                         void (*deleter) (void *));
 
 /**
- * @brief Rebind the given shared pointer to have an equivalent value as
+ * @brief Reassign the given shared pointer to manage the same resource as
  * 'from'
  *
- * @param dest The shared pointer to rebind
+ * If `dest` manages an existing object, the reference count of that managed
+ * object will be decremented. If this causes its refcount to reach zero, then
+ * the deleter function will be executed with the pointee.
+ *
+ * @param dest The shared pointer to change
  * @param from The shared pointer to take from
  *
  * @note Equivalent to:
@@ -93,44 +98,44 @@ mongoc_shared_ptr_reset (mongoc_shared_ptr *ptr,
  *    *dest = mongoc_shared_ptr_copy(from);
  */
 extern void
-mongoc_shared_ptr_assign (mongoc_shared_ptr *dest,
-                          const mongoc_shared_ptr from);
+mongoc_shared_ptr_assign (mongoc_shared_ptr *dest, mongoc_shared_ptr from);
 
 /**
- * @brief Rebind the given shared pointer to have an equivalent value as 'from'.
+ * @brief Reassign the given shared pointer to manage the same resource as
+ * 'from'
  *
- * This atomic version is safe to call between threads when 'dest' may be
+ * This atomic function is safe to call between threads when 'dest' may be
  * accessed simultaneously from another thread even if any of those accesses are
  * a write. However: Any potential reads *must* be done using
  * `mongoc_atomic_shared_ptr_load` and any potential writes *must* be done using
  * `mongoc_atomic_shared_ptr_store`.
  *
- * @param dest The shared pointer to rebind
+ * @param dest The shared pointer to change
  * @param from The shared pointer to take from
  *
  * Thread-safe equivalent of `mongoc_shared_ptr_assign`
  */
 extern void
 mongoc_atomic_shared_ptr_store (mongoc_shared_ptr *dest,
-                                const mongoc_shared_ptr from);
+                                mongoc_shared_ptr from);
 
 /**
  * @brief Create a copy of the given shared pointer. Increases the reference
  * count on the object.
  *
  * @param ptr The pointer to copy from
- * @returns a new shared pointer that has the same pointee as @param ptr
+ * @returns a new shared pointer that has the same pointee as ptr
  *
  * @note Must later reset/reassign the returned shared pointer
  */
 extern mongoc_shared_ptr
-mongoc_shared_ptr_copy (mongoc_shared_ptr const ptr);
+mongoc_shared_ptr_copy (mongoc_shared_ptr ptr);
 
 /**
  * @brief Like `mongoc_shared_ptr_copy`, but is thread-safe in case `*ptr`
- * may be accessed simultaneously written to by another thread. However: such
- * potential writes *must* using one of the `mongoc_atomic_shared_ptr_store`
- * interfaces.
+ * may be accessed simultaneously from other threads even if any of those
+ * accesses are writes. However: such potential writes *must* use
+ * `mongoc_atomic_shared_ptr_store`.
  *
  * This is a thread-safe equivalent of `mongoc_shared_ptr_copy`.
  *
@@ -142,8 +147,11 @@ mongoc_atomic_shared_ptr_load (mongoc_shared_ptr const *ptr);
 /**
  * @brief Release the ownership of the given shared pointer.
  *
- * If this causes the refcount to reach zero, then the destructor function will
- * be executed with the pointee. The ptr will be reset to NULL
+ * The shared pointer object and ptr->ptr will be reset to NULL, and the
+ * reference count of the managed object will be decremented.
+ *
+ * If this causes the refcount to reach zero, then the deleter function will
+ * be executed with the pointee.
  *
  * @param ptr The pointer to release and set to NULL
  *
@@ -186,11 +194,11 @@ mongoc_shared_ptr_is_null (mongoc_shared_ptr ptr)
  *
  * @param pointee The target of the pointer. Should be NULL or a dynamically
  * allocated data segment
- * @param destroy The destructor for the pointer. If `pointee` is non-NULL,
- * `destroy` must be non-NULL. This destructor will be called when the reference
- * count reaches zero. If should free the resources referred-to by `pointee`.
+ * @param deleter The deleter for the pointer. If `pointee` is non-NULL,
+ * `deleter` must be non-NULL. This deleteter will be called when the reference
+ * count reaches zero. If should release the resources referred-to by `pointee`.
  */
 extern mongoc_shared_ptr
-mongoc_shared_ptr_create (void *pointee, void (*destroy) (void *));
+mongoc_shared_ptr_create (void *pointee, void (*deleter) (void *));
 
 #endif /* MONGOC_SHARED_H */

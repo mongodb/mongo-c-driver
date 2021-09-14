@@ -21,14 +21,14 @@
 
 typedef struct _mongoc_shared_ptr_aux {
    int refcount;
-   void (*dtor) (void *);
+   void (*deleter) (void *);
    void *managed;
 } _mongoc_shared_ptr_aux;
 
 static void
 _release_aux (_mongoc_shared_ptr_aux *aux)
 {
-   aux->dtor (aux->managed);
+   aux->deleter (aux->managed);
    bson_free (aux);
 }
 
@@ -55,9 +55,9 @@ _shared_ptr_unlock ()
 void
 mongoc_shared_ptr_reset (mongoc_shared_ptr *const ptr,
                          void *const pointee,
-                         void (*const dtor) (void *))
+                         void (*const deleter) (void *))
 {
-   BSON_ASSERT (ptr && "NULL given to mongoc_shared_ptr_reset()");
+   BSON_ASSERT_PARAM (ptr);
    if (!mongoc_shared_ptr_is_null (*ptr)) {
       /* Release the old value of the pointer, possibly destroying it */
       mongoc_shared_ptr_reset_null (ptr);
@@ -66,9 +66,9 @@ mongoc_shared_ptr_reset (mongoc_shared_ptr *const ptr,
    ptr->_aux = NULL;
    /* Take the new value */
    if (pointee != NULL) {
-      BSON_ASSERT (dtor != NULL);
+      BSON_ASSERT (deleter != NULL);
       ptr->_aux = bson_malloc0 (sizeof (_mongoc_shared_ptr_aux));
-      ptr->_aux->dtor = dtor;
+      ptr->_aux->deleter = deleter;
       ptr->_aux->refcount = 1;
       ptr->_aux->managed = pointee;
    }
@@ -79,17 +79,18 @@ void
 mongoc_shared_ptr_assign (mongoc_shared_ptr *const out,
                           mongoc_shared_ptr const from)
 {
-   BSON_ASSERT (out &&
-                "NULL given as output argument to mongoc_shared_ptr_assign()");
+   /* Copy from 'from' *first*, since this might be a self-assignment. */
+   mongoc_shared_ptr copied = mongoc_shared_ptr_copy (from);
+   BSON_ASSERT_PARAM (out);
    mongoc_shared_ptr_reset_null (out);
-   *out = mongoc_shared_ptr_copy (from);
+   *out = copied;
 }
 
 mongoc_shared_ptr
-mongoc_shared_ptr_create (void *pointee, void (*destroy) (void *))
+mongoc_shared_ptr_create (void *pointee, void (*deleter) (void *))
 {
    mongoc_shared_ptr ret = MONGOC_SHARED_PTR_NULL;
-   mongoc_shared_ptr_reset (&ret, pointee, destroy);
+   mongoc_shared_ptr_reset (&ret, pointee, deleter);
    return ret;
 }
 
@@ -98,8 +99,7 @@ mongoc_atomic_shared_ptr_store (mongoc_shared_ptr *const out,
                                 mongoc_shared_ptr const from)
 {
    mongoc_shared_ptr prev = MONGOC_SHARED_PTR_NULL;
-   BSON_ASSERT (
-      out && "NULL given as output argument to mongoc_atomic_shared_ptr_store");
+   BSON_ASSERT_PARAM (out);
 
    /* We are effectively "copying" the 'from' */
    (void) mongoc_shared_ptr_copy (from);
@@ -118,7 +118,7 @@ mongoc_shared_ptr
 mongoc_atomic_shared_ptr_load (mongoc_shared_ptr const *ptr)
 {
    mongoc_shared_ptr r;
-   BSON_ASSERT (ptr && "NULL given to _mongoc_shared_ptr_take_atomic()");
+   BSON_ASSERT_PARAM (ptr);
    _shared_ptr_lock ();
    r = mongoc_shared_ptr_copy (*ptr);
    _shared_ptr_unlock ();
@@ -139,12 +139,14 @@ mongoc_shared_ptr_copy (mongoc_shared_ptr const ptr)
 void
 mongoc_shared_ptr_reset_null (mongoc_shared_ptr *const ptr)
 {
-   BSON_ASSERT (ptr && "NULL given to mongoc_shared_ptr_reset_null()");
-   BSON_ASSERT (
-      !mongoc_shared_ptr_is_null (*ptr) &&
-      "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_reset_null");
+   int prevcount = 0;
+   BSON_ASSERT_PARAM (ptr);
+   if (mongoc_shared_ptr_is_null (*ptr)) {
+      /* Already null. Okay. */
+      return;
+   }
    /* Decrement the reference count by one */
-   int prevcount = bson_atomic_int_fetch_sub (
+   prevcount = bson_atomic_int_fetch_sub (
       &ptr->_aux->refcount, 1, bson_memory_order_relaxed);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
@@ -160,7 +162,7 @@ mongoc_shared_ptr_use_count (mongoc_shared_ptr const ptr)
 {
    BSON_ASSERT (
       !mongoc_shared_ptr_is_null (ptr) &&
-      "Unbound mongoc_shraed_ptr given to mongoc_shared_ptr_use_count");
+      "Unbound mongoc_shared_ptr given to mongoc_shared_ptr_use_count");
    return bson_atomic_int_fetch (&ptr._aux->refcount,
                                  bson_memory_order_relaxed);
 }

@@ -365,5 +365,4 @@
       abort ();                                              \
    } while (0)
 
-
 #endif /* BSON_MACROS_H */
