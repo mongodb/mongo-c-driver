@@ -771,9 +771,10 @@ mongoc_topology_description_suitable_servers (
       } else if (topology->type == MONGOC_TOPOLOGY_RS_WITH_PRIMARY) {
          /* includes optype == MONGOC_SS_WRITE as the exclusion of the above if
           */
-         mongoc_set_for_each_const (td_servers,
-                                    _mongoc_topology_description_has_primary_cb,
-                                    &data.primary);
+         mongoc_set_for_each_const (
+            td_servers,
+            _mongoc_topology_description_has_primary_cb,
+            (mongoc_server_description_t *) &data.primary);
          if (data.primary) {
             _mongoc_array_append_val (set, data.primary);
             goto DONE;
@@ -821,7 +822,7 @@ mongoc_topology_description_suitable_servers (
 
 DONE:
 
-   bson_free (candidates);
+   bson_free ((mongoc_server_description_t *) candidates);
 
    return;
 }

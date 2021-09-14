@@ -299,27 +299,27 @@ DECL_ATOMIC_STDINT (int32, )
 DECL_ATOMIC_INTEGRAL (int, int, )
 #endif
 
-extern int64_t
-_bson_emul_atomic_int64_fetch_add (int64_t volatile *val,
+BSON_EXPORT (int64_t)
+_bson_emul_atomic_int64_fetch_add (int64_t const volatile *val,
                                    int64_t v,
                                    enum bson_memory_order);
-extern int64_t
+BSON_EXPORT (int64_t)
 _bson_emul_atomic_int64_exchange (int64_t volatile *val,
                                   int64_t v,
                                   enum bson_memory_order);
-extern int64_t
+BSON_EXPORT (int64_t)
 _bson_emul_atomic_int64_compare_exchange_strong (int64_t volatile *val,
                                                  int64_t expect_value,
                                                  int64_t new_value,
                                                  enum bson_memory_order);
 
-extern int64_t
+BSON_EXPORT (int64_t)
 _bson_emul_atomic_int64_compare_exchange_weak (int64_t volatile *val,
                                                int64_t expect_value,
                                                int64_t new_value,
                                                enum bson_memory_order);
 
-extern void
+BSON_EXPORT (void)
 bson_thrd_yield (void);
 
 #if (defined(_MSC_VER) && !defined(_M_IX86)) || (defined(__LP64__) && __LP64__)
@@ -331,7 +331,8 @@ DECL_ATOMIC_STDINT (int64, 64)
 #endif
 #else
 static BSON_INLINE int64_t
-bson_atomic_int64_fetch (int64_t volatile *val, enum bson_memory_order order)
+bson_atomic_int64_fetch (const int64_t volatile *val,
+                         enum bson_memory_order order)
 {
    return _bson_emul_atomic_int64_fetch_add (val, 0, order);
 }
