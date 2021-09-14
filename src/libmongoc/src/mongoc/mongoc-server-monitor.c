@@ -136,8 +136,6 @@ _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor,
    mongoc_apm_server_heartbeat_started_t event;
    MONGOC_DEBUG_ASSERT (
       !COMMON_PREFIX (mutex_is_locked) (&server_monitor->topology->apm_mutex));
-   MONGOC_DEBUG_ASSERT (
-      !COMMON_PREFIX (mutex_is_locked) (&server_monitor->topology->mutex));
 
    if (!server_monitor->apm_callbacks.server_heartbeat_started) {
       return;
@@ -215,11 +213,9 @@ static void
 _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
                                      bson_t *cmd)
 {
-   mongoc_topology_t *topology;
+   MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (server_monitor)->topology);
 
-   topology = server_monitor->topology;
    /* Cluster time is updated on every reply. */
-   MC_DECL_TD_TAKE (td, topology);
    if (!bson_empty (&td.ptr->cluster_time)) {
       bson_append_document (cmd, "$clusterTime", 12, &td.ptr->cluster_time);
    }
@@ -652,6 +648,7 @@ _server_monitor_update_topology_description (
 {
    mongoc_topology_t *topology;
    bson_t *hello_response = NULL;
+   mc_tpld_modification tdmod;
 
    topology = server_monitor->topology;
    if (description->has_hello_response) {
@@ -672,7 +669,7 @@ _server_monitor_update_topology_description (
    server_monitor->shared.scan_requested = false;
    bson_mutex_unlock (&server_monitor->shared.mutex);
 
-   mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
+   tdmod = mc_tpld_modify_begin (topology);
    mongoc_topology_description_handle_hello (tdmod.new_td,
                                              server_monitor->server_id,
                                              hello_response,
@@ -695,10 +692,8 @@ mongoc_server_monitor_new (mongoc_topology_t *topology,
                            mongoc_topology_description_t *td,
                            mongoc_server_description_t *init_description)
 {
-   mongoc_server_monitor_t *server_monitor;
-   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked (&topology->mutex)));
-
-   server_monitor = bson_malloc0 (sizeof (*server_monitor));
+   mongoc_server_monitor_t *server_monitor =
+      bson_malloc0 (sizeof (*server_monitor));
    server_monitor->description =
       mongoc_server_description_new_copy (init_description);
    server_monitor->server_id = init_description->id;
@@ -823,6 +818,7 @@ mongoc_server_monitor_check_server (
    bool command_or_network_error = false;
    bool awaited = false;
    mongoc_server_description_t *description;
+   mc_tpld_modification tdmod;
 
    ENTRY;
 
@@ -929,8 +925,7 @@ exit:
       }
       server_monitor->stream = NULL;
       server_monitor->more_to_come = false;
-      mc_tpld_modification tdmod =
-         mc_tpld_modify_begin (server_monitor->topology);
+      tdmod = mc_tpld_modify_begin (server_monitor->topology);
       _mongoc_topology_clear_connection_pool (
          tdmod.new_td,
          server_monitor->description->id,

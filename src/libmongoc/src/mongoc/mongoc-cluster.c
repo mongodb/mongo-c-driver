@@ -770,14 +770,13 @@ _mongoc_stream_run_hello (mongoc_cluster_t *cluster,
    mongoc_server_description_t empty_sd;
    mongoc_server_description_t *ret_handshake_sd;
    mongoc_server_stream_t *server_stream;
-   bson_t *copied_command = NULL;
    bool r;
    bson_iter_t iter;
    mongoc_ssl_opt_t *ssl_opts = NULL;
+   MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
 
    ENTRY;
 
-   MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
    BSON_ASSERT (stream);
 
    bson_init (&command);
@@ -1036,6 +1035,7 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
    char *nonce;
    bool ret;
    mongoc_server_stream_t *server_stream;
+   mc_shared_tpl_descr td;
 
    ENTRY;
 
@@ -1067,7 +1067,7 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
                           &command);
    parts.prohibit_lsid = true;
 
-   MC_DECL_TD_TAKE (td, cluster->client->topology);
+   td = mc_tpld_take_ref (cluster->client->topology);
    server_stream =
       _mongoc_cluster_create_server_stream (td.ptr, sd, stream, error);
    MC_TD_DROP (td);
@@ -1171,6 +1171,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
    char *str;
    bool ret;
    mongoc_server_stream_t *server_stream;
+   mc_shared_tpl_descr td;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
@@ -1208,7 +1209,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
       &parts, cluster->client, "$external", MONGOC_QUERY_SECONDARY_OK, &b);
    parts.prohibit_lsid = true;
 
-   MC_DECL_TD_TAKE (td, cluster->client->topology);
+   td = mc_tpld_take_ref (cluster->client->topology);
    server_stream =
       _mongoc_cluster_create_server_stream (td.ptr, sd, stream, error);
    MC_TD_DROP (td);
@@ -1313,6 +1314,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
    bson_t reply;
    bool ret;
    mongoc_server_stream_t *server_stream;
+   mc_shared_tpl_descr td;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
@@ -1325,7 +1327,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
    mongoc_cmd_parts_init (
       &parts, cluster->client, "$external", MONGOC_QUERY_SECONDARY_OK, &cmd);
    parts.prohibit_lsid = true;
-   MC_DECL_TD_TAKE (td, cluster->client->topology);
+   td = mc_tpld_take_ref (cluster->client->topology);
    server_stream =
       _mongoc_cluster_create_server_stream (td.ptr, sd, stream, error);
    MC_TD_DROP (td);
@@ -2258,6 +2260,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
    /* if fetch_stream fails we need a place to receive error details and pass
     * them to mongoc_topology_invalidate_server. */
    bson_error_t *err_ptr = error ? error : &err_local;
+   mc_tpld_modification tdmod;
    MC_DECL_TD_TAKE (td, topology);
 
    ENTRY;
@@ -2295,7 +2298,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       }
 
       /* Update the topology */
-      mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
+      tdmod = mc_tpld_modify_begin (topology);
       mongoc_topology_invalidate_server (tdmod.new_td, server_id, err_ptr);
       mongoc_cluster_disconnect_node (cluster, server_id);
       /* This is not load balanced mode, so there are no service IDs associated
@@ -3064,6 +3067,8 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
    bool r = true;
    mongoc_server_stream_t *server_stream;
    mongoc_server_description_t *handshake_sd;
+   mc_tpld_modification tdmod;
+   mc_shared_tpl_descr td;
 
    topology = cluster->client->topology;
 
@@ -3098,7 +3103,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
                          MONGOC_ERROR_STREAM_SOCKET,
                          "connection closed");
          mongoc_cluster_disconnect_node (cluster, server_id);
-         mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
+         tdmod = mc_tpld_modify_begin (topology);
          mongoc_topology_invalidate_server (tdmod.new_td, server_id, &error);
          mc_tpld_modify_commit (tdmod);
          return false;
@@ -3113,7 +3118,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
          &parts, cluster->client, "admin", MONGOC_QUERY_SECONDARY_OK, &command);
       parts.prohibit_lsid = true;
 
-      MC_DECL_TD_TAKE (td, cluster->client->topology);
+      td = mc_tpld_take_ref (cluster->client->topology);
       server_stream = _mongoc_cluster_create_server_stream (
          td.ptr, handshake_sd, stream, &error);
       MC_TD_DROP (td);
@@ -3130,8 +3135,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
 
       if (!r) {
          mongoc_cluster_disconnect_node (cluster, server_id);
-         mc_tpld_modification tdmod =
-            mc_tpld_modify_begin (cluster->client->topology);
+         tdmod = mc_tpld_modify_begin (cluster->client->topology);
          mongoc_topology_invalidate_server (tdmod.new_td, server_id, &error);
          mc_tpld_modify_commit (tdmod);
       }

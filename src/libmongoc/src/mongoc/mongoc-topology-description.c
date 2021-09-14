@@ -791,9 +791,9 @@ mongoc_topology_description_suitable_servers (
    /* Load balanced clusters --
     * Always select the only server. */
    if (topology->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      const mongoc_server_description_t *server;
       BSON_ASSERT (td_servers->items_len == 1);
-      const mongoc_server_description_t *server =
-         mongoc_set_get_item_const (td_servers, 0);
+      server = mongoc_set_get_item_const (td_servers, 0);
       _mongoc_array_append_val (set, server);
       goto DONE;
    }

@@ -90,12 +90,9 @@ _background_monitor_reconcile_server_monitor (mongoc_topology_t *topology,
                                               mongoc_topology_description_t *td,
                                               mongoc_server_description_t *sd)
 {
-   mongoc_set_t *server_monitors;
-   mongoc_server_monitor_t *server_monitor;
-
-   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
-   server_monitors = topology->server_monitors;
-   server_monitor = mongoc_set_get (server_monitors, sd->id);
+   mongoc_set_t *server_monitors = topology->server_monitors;
+   mongoc_server_monitor_t *server_monitor =
+      mongoc_set_get (server_monitors, sd->id);
 
    if (!server_monitor) {
       /* Add a new server monitor. */
@@ -129,10 +126,11 @@ _background_monitor_reconcile_server_monitor (mongoc_topology_t *topology,
 void
 _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
 {
+   mc_tpld_modification tdmod;
+   int prev_state;
    BSON_ASSERT (!topology->single_threaded);
-   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
-   const int prev_state = bson_atomic_int_compare_exchange_strong (
+   prev_state = bson_atomic_int_compare_exchange_strong (
       (int *) &topology->scanner_state,
       MONGOC_TOPOLOGY_SCANNER_OFF,
       MONGOC_TOPOLOGY_SCANNER_BG_RUNNING,
@@ -146,7 +144,7 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
 
    TRACE ("%s", "background monitoring starting");
 
-   mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
+   tdmod = mc_tpld_modify_begin (topology);
 
    _mongoc_handshake_freeze ();
    _mongoc_topology_description_monitor_opening (tdmod.new_td);
@@ -219,11 +217,8 @@ void
 _mongoc_topology_background_monitoring_reconcile (
    mongoc_topology_t *topology, mongoc_topology_description_t *td)
 {
-   mongoc_set_t *server_descriptions;
+   mongoc_set_t *server_descriptions = mc_tpld_servers (td);
    int i;
-
-   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
-   server_descriptions = mc_tpld_servers (td);
 
    BSON_ASSERT (!topology->single_threaded);
 
@@ -291,8 +286,6 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
 {
    mongoc_server_monitor_t *server_monitor;
    int i;
-
-   MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
    BSON_ASSERT (!topology->single_threaded);
 

@@ -1368,7 +1368,7 @@ _mongoc_cse_client_pool_enable_auto_encryption (
       /* Another thread is starting client-side encryption. It may take some
        * time to start, but don't continue until it is finished. */
       bson_thrd_yield ();
-      prev_cse_state ==
+      prev_cse_state =
          bson_atomic_int_compare_exchange_strong ((int *) &topology->cse_state,
                                                   MONGOC_CSE_DISABLED,
                                                   MONGOC_CSE_STARTING,

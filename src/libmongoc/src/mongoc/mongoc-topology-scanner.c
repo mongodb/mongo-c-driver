@@ -133,11 +133,12 @@ _init_hello (mongoc_topology_scanner_t *ts)
 static void
 _reset_hello (mongoc_topology_scanner_t *ts)
 {
+   bson_t *prev_cmd;
    bson_reinit (&ts->hello_cmd);
    bson_reinit (&ts->legacy_hello_cmd);
 
    bson_mutex_lock (&ts->handshake_cmd_mtx);
-   bson_t *prev_cmd = ts->handshake_cmd;
+   prev_cmd = ts->handshake_cmd;
    ts->handshake_cmd = NULL;
    ts->handshake_state = HANDSHAKE_CMD_UNINITIALIZED;
    bson_mutex_unlock (&ts->handshake_cmd_mtx);
@@ -261,15 +262,15 @@ _build_handshake_cmd (const bson_t *basis_cmd,
    bson_iter_t iter;
    const char *key;
    int keylen;
-   bool res;
    const bson_t *compressors;
    int count = 0;
    char buf[16];
+   bool subdoc_okay;
 
    bson_copy_to (basis_cmd, doc);
 
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
-   bool subdoc_okay =
+   subdoc_okay =
       _mongoc_handshake_build_doc_with_application (&subdoc, appname);
    bson_append_document_end (doc, &subdoc);
 
@@ -315,6 +316,9 @@ void
 _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
                                             bson_t *copy_into)
 {
+   bson_t *new_cmd;
+   bson_t *defer_to_destroy = NULL;
+
    bson_mutex_lock (&ts->handshake_cmd_mtx);
    /* If this is the first time using the node or if it's the first time
     * using it after a failure, build handshake doc */
@@ -327,12 +331,11 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
     * Initialize one and set it now. */
    /* Note: Don't hold the mutex while we build our command */
    /* Construct a new handshake command to be sent */
-   bson_t *new_cmd =
+   new_cmd =
       _build_handshake_cmd (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd,
                             ts->appname,
                             ts->uri,
                             ts->loadbalanced);
-   bson_t *defer_to_destroy = NULL;
    if (ts->handshake_state != HANDSHAKE_CMD_UNINITIALIZED) {
       /* Someone else updated the handshake_cmd while we were building ours.
        * Defer to their copy and just destroy the one we created. */
@@ -1287,13 +1290,15 @@ bool
 _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
                                       const char *appname)
 {
+   char *s;
+   const char *prev;
    if (!_mongoc_handshake_appname_is_valid (appname)) {
       MONGOC_ERROR ("Cannot set appname: %s is invalid", appname);
       return false;
    }
 
-   char *s = bson_strdup (appname);
-   const char *prev = bson_atomic_ptr_compare_exchange_strong (
+   s = bson_strdup (appname);
+   prev = bson_atomic_ptr_compare_exchange_strong (
       (void *) &ts->appname, NULL, s, bson_memory_order_relaxed);
    if (prev == NULL) {
       return true;

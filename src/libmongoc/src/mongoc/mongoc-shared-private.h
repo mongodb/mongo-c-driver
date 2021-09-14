@@ -183,7 +183,7 @@ mongoc_shared_ptr_use_count (mongoc_shared_ptr ptr);
  * @return true If the pointer is managing a resource
  * @return false Otherwise
  */
-static int
+static inline int
 mongoc_shared_ptr_is_null (mongoc_shared_ptr ptr)
 {
    return ptr._aux == 0;

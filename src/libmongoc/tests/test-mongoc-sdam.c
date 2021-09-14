@@ -376,11 +376,12 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
    const mongoc_set_t *servers;
    bson_t cmd;
    bson_error_t error;
+   mc_shared_tpl_descr td;
 
    bson_init (&cmd);
    BCON_APPEND (&cmd, "configureFailPoint", "failCommand", "mode", "off");
 
-   mc_shared_tpl_descr td = mc_tpld_take_ref (client->topology);
+   td = mc_tpld_take_ref (client->topology);
    servers = mc_tpld_servers_const (td.ptr);
 
    for (i = 0; i < servers->items_len; i++) {
@@ -402,6 +403,7 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
       servers = mc_tpld_servers_const (td.ptr);
    }
 
+   mc_tpld_drop_ref (&td);
    bson_destroy (&cmd);
 }
 
