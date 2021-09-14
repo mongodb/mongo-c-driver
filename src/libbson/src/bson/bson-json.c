@@ -987,7 +987,7 @@ _bson_json_allow_embedded_nulls (bson_json_reader_t const *reader)
    }
 
    if (read_state == BSON_JSON_IN_BSON_TYPE) {
-      if (bson_state == BSON_JSON_LF_REGEX |
+      if (bson_state == BSON_JSON_LF_REGEX ||
           bson_state == BSON_JSON_LF_OPTIONS) {
          /* Prohibit embedded NULL bytes for legacy regex:
           * { $regex: "pattern", $options: "options" } */
