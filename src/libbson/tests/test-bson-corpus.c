@@ -291,9 +291,40 @@ test_bson_corpus_cb (bson_t *scenario)
                 test_bson_corpus_parse_error);
 }
 
+static void
+test_bson_corpus_prose_1 (void) {
+   bson_t *bson;
+   bool ok;
+   bson_t subdoc;
+
+   /* Field name within a root document */
+   bson = bson_new ();
+   ok = bson_append_int32 (bson, "a\0b", 3, 123);
+   BSON_ASSERT (!ok);
+   bson_destroy (bson);
+
+   /* Field name within a sub-document */
+   bson = bson_new();
+   bson_append_document_begin (bson, "subdoc", -1, &subdoc);
+   ok = bson_append_int32 (&subdoc, "a\0b", 3, 123);
+   BSON_ASSERT (!ok);
+   bson_destroy (&subdoc);
+   bson_destroy (bson);
+
+   /* Pattern for a regular expression */
+   bson = bson_new ();
+   ok = bson_append_regex_w_len (bson, "key", 3, "a\0b", 3, "");
+   BSON_ASSERT (!ok);
+   bson_destroy (bson);
+
+   /* Testing options for a regular expression is not possible, since
+    * bson_append_regex_w_len does not accept a length for options. */
+}
+
 void
 test_bson_corpus_install (TestSuite *suite)
 {
    install_json_test_suite_with_check (
       suite, BSON_JSON_DIR "/bson_corpus", test_bson_corpus_cb);
+   TestSuite_Add (suite, "/bson_corpus/prose_1", test_bson_corpus_prose_1);
 }
