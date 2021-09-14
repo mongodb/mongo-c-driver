@@ -38,6 +38,8 @@ test_simple ()
 {
    int destroyed_value = 0;
    mongoc_shared_ptr ptr = MONGOC_SHARED_PTR_NULL;
+   mongoc_shared_ptr ptr2, valptr_s;
+   my_value *valptr;
 
    ASSERT (mongoc_shared_ptr_is_null (ptr));
    ptr = mongoc_shared_ptr_create (my_value_new (), my_value_free_v);
@@ -45,13 +47,13 @@ test_simple ()
 
    ASSERT_CMPINT (mongoc_shared_ptr_use_count (ptr), ==, 1);
 
-   mongoc_shared_ptr ptr2 = mongoc_shared_ptr_copy (ptr);
+   ptr2 = mongoc_shared_ptr_copy (ptr);
 
    ASSERT (ptr.ptr == ptr2.ptr);
    ASSERT (ptr._aux == ptr2._aux);
 
-   mongoc_shared_ptr valptr_s = mongoc_shared_ptr_copy (ptr);
-   my_value *valptr = valptr_s.ptr;
+   valptr_s = mongoc_shared_ptr_copy (ptr);
+   valptr = valptr_s.ptr;
    valptr->store_value_on_dtor = &destroyed_value;
    valptr->value = 133;
    mongoc_shared_ptr_reset_null (&valptr_s);
@@ -77,8 +79,48 @@ test_simple ()
    ASSERT_CMPINT (destroyed_value, ==, 133);
 }
 
+struct widget {
+   int value;
+   int *store_value_here;
+};
+
+void
+widget_delete (void *w_)
+{
+   struct widget *w = w_;
+   *w->store_value_here = w->value;
+   bson_free (w);
+}
+
+static void
+test_aliased (void)
+{
+   int destroyed_valued = 0;
+   int *i;
+   struct widget *w;
+   mongoc_shared_ptr ptr = MONGOC_SHARED_PTR_NULL;
+
+   ptr = mongoc_shared_ptr_create (bson_malloc0 (sizeof (struct widget)),
+                                   widget_delete);
+   w = ptr.ptr;
+   w->store_value_here = &destroyed_valued;
+
+   /* Alias 'ptr' to the `w->value` managed sub-object */
+   ptr.ptr = &w->value;
+   i = ptr.ptr;
+   /* We can store through it okay. */
+   *i = 42;
+   ASSERT_CMPINT (w->value, ==, 42);
+
+   /* Deleting with the aliased ptr is okay */
+   ASSERT_CMPINT (destroyed_valued, ==, 0);
+   mongoc_shared_ptr_reset_null (&ptr);
+   ASSERT_CMPINT (destroyed_valued, ==, 42);
+}
+
 void
 test_shared_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/shared/simple", test_simple);
+   TestSuite_Add (suite, "/shared/aliased", test_aliased);
 }

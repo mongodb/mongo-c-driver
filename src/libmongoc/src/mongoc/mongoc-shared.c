@@ -139,13 +139,14 @@ mongoc_shared_ptr_copy (mongoc_shared_ptr const ptr)
 void
 mongoc_shared_ptr_reset_null (mongoc_shared_ptr *const ptr)
 {
+   int prevcount = 0;
    BSON_ASSERT_PARAM (ptr);
    if (mongoc_shared_ptr_is_null (*ptr)) {
       /* Already null. Okay. */
       return;
    }
    /* Decrement the reference count by one */
-   int prevcount = bson_atomic_int_fetch_sub (
+   prevcount = bson_atomic_int_fetch_sub (
       &ptr->_aux->refcount, 1, bson_memory_order_relaxed);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
