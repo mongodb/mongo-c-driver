@@ -46,5 +46,9 @@ if (CMAKE_CXX_COMPILER)
    # Add a C++ source file that will #include the main C headers. This "library"
    # does nothing other than validate that the C headers are valid C++ headers.
    add_library (mongoc-cxx-check STATIC cpp-check.cpp)
-   target_link_libraries (mongoc-cxx-check PRIVATE mongoc_static)
+   if (TARGET mongoc_static)
+      target_link_libraries (mongoc-cxx-check PRIVATE mongoc_static)
+   else ()
+      target_link_libraries (mongoc-cxx-check PRIVATE mongoc_shared)
+   endif ()
 endif ()
