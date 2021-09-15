@@ -41,9 +41,8 @@ _topology_collect_errors (const mongoc_topology_description_t *topology,
 
 static bool
 _mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd,
-                                      mongoc_topology_t *topology)
+                                      mongoc_topology_scanner_t *scanner)
 {
-   mongoc_topology_scanner_t *scanner = topology->scanner;
    mongoc_topology_scanner_node_t *node;
 
    /* Search by ID and update hello_ok */
@@ -65,30 +64,25 @@ _mongoc_topology_reconcile_add_nodes (mongoc_server_description_t *sd,
  * Not called for multi threaded monitoring.
  */
 void
-mongoc_topology_reconcile (mongoc_topology_t *topology)
+mongoc_topology_reconcile (const mongoc_topology_t *topology,
+                           mongoc_topology_description_t *td)
 {
-   mongoc_topology_description_t *description;
    mongoc_set_t *servers;
    mongoc_server_description_t *sd;
    int i;
    mongoc_topology_scanner_node_t *ele, *tmp;
 
-   /* Not called from multithreading, so we are safe to access the shared
-    * description directly. */
-   description = mc_tpld_unsafe_get_mutable (topology);
-   servers = mc_tpld_servers (description);
-
+   servers = mc_tpld_servers (td);
    /* Add newly discovered nodes */
    for (i = 0; i < (int) servers->items_len; i++) {
-      sd = (mongoc_server_description_t *) mongoc_set_get_item (servers, i);
-      _mongoc_topology_reconcile_add_nodes (sd, topology);
+      sd = mongoc_set_get_item (servers, i);
+      _mongoc_topology_reconcile_add_nodes (sd, topology->scanner);
    }
 
    /* Remove removed nodes */
    DL_FOREACH_SAFE (topology->scanner->nodes, ele, tmp)
    {
-      if (!mongoc_topology_description_server_by_id (
-             description, ele->id, NULL)) {
+      if (!mongoc_topology_description_server_by_id (td, ele->id, NULL)) {
          mongoc_topology_scanner_node_retire (ele);
       }
    }
@@ -205,7 +199,7 @@ _mongoc_topology_scanner_cb (uint32_t id,
        * removed server descriptions. We need to reconcile that with our
        * monitoring agents
        */
-      mongoc_topology_reconcile (topology);
+      mongoc_topology_reconcile (topology, tdmod.new_td);
 
       mongoc_cond_broadcast (&topology->cond_client);
    }
@@ -815,6 +809,7 @@ done:
 static void
 mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
 {
+   mc_tpld_modification tdmod;
    if (mongoc_topology_should_rescan_srv (topology)) {
       /* Prior to scanning hosts, update the list of SRV hosts, if applicable.
        */
@@ -825,7 +820,9 @@ mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
     * description based on hello responses in connection handshakes, see
     * _mongoc_topology_update_from_handshake. retire scanner nodes for removed
     * members and create scanner nodes for new ones. */
-   mongoc_topology_reconcile (topology);
+   tdmod = mc_tpld_modify_begin (topology);
+   mongoc_topology_reconcile (topology, tdmod.new_td);
+   mc_tpld_modify_commit (tdmod);
 
    /* scanning locks and unlocks the mutex itself until the scan is done */
    mongoc_topology_scanner_start (topology->scanner, obey_cooldown);
@@ -1511,7 +1508,7 @@ _mongoc_topology_update_last_used (mongoc_topology_t *topology,
  *--------------------------------------------------------------------------
  */
 mongoc_topology_description_type_t
-_mongoc_topology_get_type (mongoc_topology_t *topology)
+_mongoc_topology_get_type (const mongoc_topology_t *topology)
 {
    MC_DECL_TD_TAKE (td, topology);
    mongoc_topology_description_type_t td_type = td.ptr->type;

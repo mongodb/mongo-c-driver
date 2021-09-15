@@ -181,7 +181,8 @@ void
 mongoc_topology_destroy (mongoc_topology_t *topology);
 
 void
-mongoc_topology_reconcile (mongoc_topology_t *topology);
+mongoc_topology_reconcile (const mongoc_topology_t *topology,
+                           mongoc_topology_description_t *td);
 
 bool
 mongoc_topology_compatible (const mongoc_topology_description_t *td,
@@ -233,7 +234,7 @@ int64_t
 mongoc_topology_server_timestamp (mongoc_topology_t *topology, uint32_t id);
 
 mongoc_topology_description_type_t
-_mongoc_topology_get_type (mongoc_topology_t *topology);
+_mongoc_topology_get_type (const mongoc_topology_t *topology);
 
 bool
 _mongoc_topology_set_appname (mongoc_topology_t *topology, const char *appname);
@@ -330,7 +331,7 @@ _mongoc_topology_get_connection_pool_generation (
    const bson_oid_t *service_id);
 
 static BSON_INLINE mc_shared_tpl_descr
-mc_tpld_take_ref (mongoc_topology_t *tpl)
+mc_tpld_take_ref (const mongoc_topology_t *tpl)
 {
    mc_shared_tpl_descr td = MC_SHARED_TPL_DESCR_NULL;
    td.sptr = mongoc_atomic_shared_ptr_load (&tpl->_shared_descr_.sptr);
