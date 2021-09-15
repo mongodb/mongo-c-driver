@@ -146,8 +146,8 @@ enum bson_memory_order {
       Type volatile const *a, enum bson_memory_order order)                   \
    {                                                                          \
       /* MSVC doesn't have a load intrinsic, so just add zero */              \
-      BSON_IF_MSVC (                                                          \
-         return bson_atomic_##NamePart##_fetch_add ((void *) a, 0, order);)   \
+      BSON_IF_MSVC (return bson_atomic_##NamePart##_fetch_add (               \
+                              (Type volatile *) a, 0, order);)                \
       /* GNU doesn't want RELEASE order for the fetch operation, so we can't  \
        * just use DEF_ATOMIC_OP. */                                           \
       BSON_IF_GNU_LIKE (switch (order) {                                      \
@@ -285,9 +285,19 @@ enum bson_memory_order {
 #define DECL_ATOMIC_STDINT(Name, VCSuffix) \
    DECL_ATOMIC_INTEGRAL (Name, Name##_t, VCSuffix)
 
+#ifdef _MSC_VER
+/* MSVC expects precise types for their atomic intrinsics. */
+DECL_ATOMIC_INTEGRAL (int8, char, 8);
+DECL_ATOMIC_INTEGRAL (int16, short, 16)
+DECL_ATOMIC_INTEGRAL (int32, long, )
+DECL_ATOMIC_INTEGRAL (int, long, )
+#else
+/* Other compilers that we support provide generic intrinsics */
 DECL_ATOMIC_STDINT (int8, 8)
 DECL_ATOMIC_STDINT (int16, 16)
 DECL_ATOMIC_STDINT (int32, )
+DECL_ATOMIC_INTEGRAL (int, int, )
+#endif
 
 extern int64_t
 _bson_emul_atomic_int64_fetch_add (int64_t volatile *val,
@@ -314,7 +324,11 @@ bson_thrd_yield (void);
 
 #if (defined(_MSC_VER) && !defined(_M_IX86)) || (defined(__LP64__) && __LP64__)
 /* (64-bit intrinsics are only available in x64) */
+#ifdef _MSC_VER
+DECL_ATOMIC_INTEGRAL (int64, __int64, 64)
+#else
 DECL_ATOMIC_STDINT (int64, 64)
+#endif
 #else
 static BSON_INLINE int64_t
 bson_atomic_int64_fetch (int64_t volatile *val, enum bson_memory_order order)
@@ -366,8 +380,6 @@ bson_atomic_int64_compare_exchange_weak (int64_t volatile *val,
       val, expect_value, new_value, order);
 }
 #endif
-
-DECL_ATOMIC_INTEGRAL (int, int, )
 
 static BSON_INLINE void *
 bson_atomic_ptr_exchange (void *volatile *ptr,
