@@ -285,7 +285,7 @@ enum bson_memory_order {
 #define DECL_ATOMIC_STDINT(Name, VCSuffix) \
    DECL_ATOMIC_INTEGRAL (Name, Name##_t, VCSuffix)
 
-#if _MSC_VER
+#ifdef _MSC_VER
 /* MSVC expects precise types for their atomic intrinsics. */
 DECL_ATOMIC_INTEGRAL (int8, char, 8);
 DECL_ATOMIC_INTEGRAL (int16, short, 16)
