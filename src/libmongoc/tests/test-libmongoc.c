@@ -280,6 +280,8 @@ extern void
 test_server_stream_install (TestSuite *suite);
 extern void
 test_generation_map_install (TestSuite *suite);
+extern void
+test_shared_install (TestSuite *suite);
 
 typedef struct {
    mongoc_log_level_t level;
@@ -2955,6 +2957,7 @@ main (int argc, char *argv[])
    test_loadbalanced_install (&suite);
    test_server_stream_install (&suite);
    test_generation_map_install (&suite);
+   test_shared_install (&suite);
 
    if (test_framework_is_loadbalanced ()) {
       mongoc_global_mock_service_id = true;

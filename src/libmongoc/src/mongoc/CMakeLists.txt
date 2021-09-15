@@ -148,6 +148,7 @@ set (src_libmongoc_src_mongoc_DIST_noinst_hs
    mongoc-server-stream-private.h
    mongoc-server-monitor-private.h
    mongoc-set-private.h
+   mongoc-shared-private.h
    mongoc-socket-private.h
    mongoc-ssl-private.h
    mongoc-sspi-private.h
@@ -241,6 +242,7 @@ set (src_libmongoc_src_mongoc_DIST_cs
    mongoc-client-session.c
    mongoc-set.c
    mongoc-server-monitor.c
+   mongoc-shared.c
    mongoc-socket.c
    mongoc-stream.c
    mongoc-stream-buffered.c
