@@ -29,6 +29,7 @@ file (GLOB_RECURSE src_kms_message_DIST RELATIVE "${SOURCE_DIR}" kms-message/*)
 
 set_local_dist (src_DIST_local
    CMakeLists.txt
+   cpp-check.cpp
 )
 
 set (src_DIST
@@ -46,4 +47,4 @@ if (CMAKE_CXX_COMPILER)
    # does nothing other than validate that the C headers are valid C++ headers.
    add_library (mongoc-cxx-check STATIC cpp-check.cpp)
    target_link_libraries (mongoc-cxx-check PRIVATE mongoc_static)
-endif()
+endif ()
