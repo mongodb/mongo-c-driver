@@ -54,6 +54,9 @@ option (ENABLE_DEBUG_ASSERTIONS "Turn on runtime debug assertions" OFF)
 
 project (mongo-c-driver C)
 
+# Optionally enable C++ to do some C++-specific tests
+enable_language(CXX OPTIONAL)
+
 if (NOT CMAKE_BUILD_TYPE)
    set (CMAKE_BUILD_TYPE "RelWithDebInfo")
    message (
