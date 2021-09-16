@@ -543,6 +543,28 @@ _mongoc_stream_tls_openssl_check_closed (mongoc_stream_t *stream) /* IN */
 }
 
 
+static bool
+_mongoc_stream_tls_openssl_check_cert_failure (SSL *ssl, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (ssl);
+   BSON_ASSERT_PARAM (error);
+
+   const long verify_result = SSL_get_verify_result (ssl);
+
+   if (verify_result == X509_V_OK) {
+      return false;
+   }
+
+   bson_set_error (error,
+                   MONGOC_ERROR_STREAM,
+                   MONGOC_ERROR_STREAM_SOCKET,
+                   "TLS handshake failed: certificate verify failed (%ld): %s",
+                   verify_result,
+                   X509_verify_cert_error_string (verify_result));
+
+   return true;
+}
+
 /**
  * mongoc_stream_tls_openssl_handshake:
  */
@@ -583,10 +605,13 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
          RETURN (true);
       }
 
-      bson_set_error (error,
-                      MONGOC_ERROR_STREAM,
-                      MONGOC_ERROR_STREAM_SOCKET,
-                      "TLS handshake failed: Failed certificate verification");
+      if (!_mongoc_stream_tls_openssl_check_cert_failure (ssl, error)) {
+         bson_set_error (
+            error,
+            MONGOC_ERROR_STREAM,
+            MONGOC_ERROR_STREAM_SOCKET,
+            "TLS handshake failed: Failed certificate verification");
+      }
 
       RETURN (false);
    }
@@ -604,13 +629,15 @@ _mongoc_stream_tls_openssl_handshake (mongoc_stream_t *stream,
 #endif
    }
 
-
    *events = 0;
-   bson_set_error (error,
-                   MONGOC_ERROR_STREAM,
-                   MONGOC_ERROR_STREAM_SOCKET,
-                   "TLS handshake failed: %s",
-                   ERR_error_string (ERR_get_error (), NULL));
+
+   if (!_mongoc_stream_tls_openssl_check_cert_failure (ssl, error)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "TLS handshake failed: %s",
+                      ERR_error_string (ERR_get_error (), NULL));
+   }
 
    RETURN (false);
 }
