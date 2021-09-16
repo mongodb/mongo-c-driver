@@ -100,6 +100,23 @@ bson_open (const char *filename, int flags, ...)
 #define CERT_PASSWORD_PROTECTED CERT_TEST_DIR "/password_protected.pem"
 
 
+#ifdef ASSERT
+#undef ASSERT
+#endif
+#define ASSERT(Cond)                                              \
+   do {                                                           \
+      if (!(Cond)) {                                              \
+         fprintf (stderr,                                         \
+                  "FAIL:%s:%d  %s()\n  Condition '%s' failed.\n", \
+                  __FILE__,                                       \
+                  __LINE__,                                       \
+                  BSON_FUNC,                                      \
+                  BSON_STR (Cond));                               \
+         exit (1);                                                \
+      }                                                           \
+   } while (0)
+
+
 void
 _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
 
@@ -141,24 +158,17 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
             int fd1 = bson_open ("failure.bad.bson", O_RDWR | O_CREAT, 0640); \
             int fd2 =                                                         \
                bson_open ("failure.expected.bson", O_RDWR | O_CREAT, 0640);   \
-            BSON_ASSERT (fd1 != -1);                                          \
-            BSON_ASSERT (fd2 != -1);                                          \
-            BSON_ASSERT ((bson)->len ==                                       \
-                         bson_write (fd1, bson_data, (bson)->len));           \
-            BSON_ASSERT ((expected)->len ==                                   \
-                         bson_write (fd2, expected_data, (expected)->len));   \
+            ASSERT (fd1 != -1);                                               \
+            ASSERT (fd2 != -1);                                               \
+            ASSERT ((bson)->len == bson_write (fd1, bson_data, (bson)->len)); \
+            ASSERT ((expected)->len ==                                        \
+                    bson_write (fd2, expected_data, (expected)->len));        \
             bson_close (fd1);                                                 \
             bson_close (fd2);                                                 \
          }                                                                    \
-         BSON_ASSERT (0);                                                     \
+         exit (1);                                                            \
       }                                                                       \
    } while (0)
-
-
-#ifdef ASSERT
-#undef ASSERT
-#endif
-#define ASSERT BSON_ASSERT
 
 
 #ifdef ASSERT_OR_PRINT
@@ -173,10 +183,9 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   __FILE__,                           \
                   __LINE__,                           \
                   BSON_FUNC,                          \
-                  #_statement,                        \
+                  BSON_STR (_statement),              \
                   _err.message);                      \
-         fflush (stderr);                             \
-         abort ();                                    \
+         exit (1);                                    \
       }                                               \
    } while (0)
 
@@ -199,8 +208,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                      BSON_FUNC,                        \
                      "empty cursor");                  \
          }                                             \
-         fflush (stderr);                              \
-         abort ();                                     \
+         exit (1);                                     \
       }                                                \
    } while (0)
 
@@ -216,8 +224,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   __LINE__,                         \
                   BSON_FUNC,                        \
                   "non-empty cursor");              \
-         fflush (stderr);                           \
-         abort ();                                  \
+         exit (1);                                  \
       }                                             \
       if (mongoc_cursor_error ((_cursor), &_err)) { \
          fprintf (stderr,                           \
@@ -226,8 +233,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   __LINE__,                         \
                   BSON_FUNC,                        \
                   _err.message);                    \
-         fflush (stderr);                           \
-         abort ();                                  \
+         exit (1);                                  \
       }                                             \
    } while (0)
 
@@ -242,12 +248,12 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   "FAIL\n\nAssert Failure: %" fmt " %s %" fmt "\n" \
                   "%s:%d  %s()\n",                                 \
                   _a,                                              \
-                  #eq,                                             \
+                  BSON_STR (eq),                                   \
                   _b,                                              \
                   __FILE__,                                        \
                   __LINE__,                                        \
                   BSON_FUNC);                                      \
-         abort ();                                                 \
+         exit (1);                                                 \
       }                                                            \
    } while (0)
 
@@ -284,7 +290,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   (char *) a,                                        \
                   n,                                                 \
                   (char *) b);                                       \
-         abort ();                                                   \
+         exit (1);                                                   \
       }                                                              \
    } while (0)
 
@@ -307,7 +313,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   __FILE__,                              \
                   __LINE__,                              \
                   BSON_FUNC);                            \
-         abort ();                                       \
+         exit (1);                                       \
       }                                                  \
    } while (0)
 
@@ -327,7 +333,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   __FILE__,                                            \
                   __LINE__,                                            \
                   BSON_FUNC);                                          \
-         abort ();                                                     \
+         exit (1);                                                     \
       }                                                                \
    } while (0)
 
@@ -345,7 +351,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   __FILE__,                                                   \
                   __LINE__,                                                   \
                   BSON_FUNC);                                                 \
-         abort ();                                                            \
+         exit (1);                                                            \
       }                                                                       \
    } while (0)
 
@@ -377,7 +383,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   __FILE__,                                    \
                   __LINE__,                                    \
                   BSON_FUNC);                                  \
-         abort ();                                             \
+         exit (1);                                             \
       }                                                        \
       bson_free (__aa);                                        \
       bson_free (__bb);                                        \
@@ -396,7 +402,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   "ObjectId(\"%s\") != ObjectId(\"%s\")\n", \
                   oid_a,                                    \
                   oid_b);                                   \
-         abort ();                                          \
+         exit (1);                                          \
       }                                                     \
    } while (0)
 
@@ -415,7 +421,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   BSON_FUNC,                                  \
                   a,                                          \
                   b);                                         \
-         abort ();                                            \
+         exit (1);                                            \
       }                                                       \
       bson_free (_a_lower);                                   \
       bson_free (_b_lower);                                   \
@@ -434,7 +440,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   BSON_FUNC,                                       \
                   _a,                                              \
                   _b);                                             \
-         abort ();                                                 \
+         exit (1);                                                 \
       }                                                            \
    } while (0)
 
@@ -450,7 +456,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   error.domain,                                             \
                   _domain,                                                  \
                   error.message);                                           \
-         abort ();                                                          \
+         exit (1);                                                          \
       };                                                                    \
       if (error.code != _code) {                                            \
          fprintf (stderr,                                                   \
@@ -462,7 +468,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   error.code,                                               \
                   _code,                                                    \
                   error.message);                                           \
-         abort ();                                                          \
+         exit (1);                                                          \
       };                                                                    \
       ASSERT_CONTAINS (error.message, _message);                            \
    } while (0);
@@ -478,7 +484,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   _info,                                        \
                   _msg);                                        \
          print_captured_logs ("\t");                            \
-         abort ();                                              \
+         exit (1);                                              \
       }                                                         \
    } while (0);
 
@@ -492,7 +498,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   BSON_FUNC,                                         \
                   _info);                                            \
          print_captured_logs ("\t");                                 \
-         abort ();                                                   \
+         exit (1);                                                   \
       }                                                              \
    } while (0);
 
@@ -503,7 +509,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   "FAIL\n\nAssert Failure: No field \"%s\" in \"%s\"\n", \
                   (_field),                                              \
                   bson_as_canonical_extended_json (_bson, NULL));        \
-         abort ();                                                       \
+         exit (1);                                                       \
       }                                                                  \
    } while (0)
 
@@ -515,7 +521,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
             "FAIL\n\nAssert Failure: Unexpected field \"%s\" in \"%s\"\n", \
             (_field),                                                      \
             bson_as_canonical_extended_json (_bson, NULL));                \
-         abort ();                                                         \
+         exit (1);                                                         \
       }                                                                    \
    } while (0)
 
@@ -554,11 +560,10 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
             __FILE__,                                                        \
             __LINE__,                                                        \
             BSON_FUNC,                                                       \
-            #_statement,                                                     \
+            BSON_STR (_statement),                                           \
             _errcode,                                                        \
             strerror (_errcode));                                            \
-         fflush (stderr);                                                    \
-         abort ();                                                           \
+         exit (1);                                                           \
       }                                                                      \
    } while (0)
 
@@ -576,7 +581,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   __FILE__,                                             \
                   __LINE__,                                             \
                   BSON_FUNC);                                           \
-         abort ();                                                      \
+         exit (1);                                                      \
       }                                                                 \
    } while (0)
 
@@ -596,7 +601,7 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   __FILE__,                                              \
                   __LINE__,                                              \
                   BSON_FUNC);                                            \
-         abort ();                                                       \
+         exit (1);                                                       \
       }                                                                  \
    } while (0)
 
@@ -608,11 +613,11 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
             fprintf (stderr,                                           \
                      "Predicate \"%s\" timed out\n"                    \
                      "   %s:%d  %s()\n",                               \
-                     #_pred,                                           \
+                     BSON_STR (_pred),                                 \
                      __FILE__,                                         \
                      __LINE__,                                         \
                      BSON_FUNC);                                       \
-            abort ();                                                  \
+            exit (1);                                                  \
          }                                                             \
          _mongoc_usleep (10 * 1000);                                   \
       }                                                                \
@@ -626,10 +631,9 @@ _test_error (const char *format, ...) BSON_GNUC_PRINTF (1, 2);
                   __FILE__,                     \
                   __LINE__,                     \
                   BSON_FUNC,                    \
-                  #_statement);                 \
+                  BSON_STR (_statement));       \
          fprintf (stderr, __VA_ARGS__);         \
-         fflush (stderr);                       \
-         abort ();                              \
+         exit (1);                              \
       }                                         \
    } while (0)
 
