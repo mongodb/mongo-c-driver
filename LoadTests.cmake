@@ -32,7 +32,7 @@ foreach (line IN LISTS lines)
         continue ()
     endif ()
     # The new test name is prefixed with 'mongoc'
-    set (test "mongoc${line}")
+    set (test "mongoc/${CONFIG}${line}")
     # Define the test. Use `--ctest-run` to tell it that CTest is in control.
     add_test ("${test}" "${TEST_LIBMONGOC_EXE}" --ctest-run "${line}")
     set_tests_properties ("${test}" PROPERTIES

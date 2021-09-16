@@ -492,13 +492,23 @@ if (TARGET test-libmongoc)
    # Generate a file that can be included by CTest to load and enumerate all of the
    # tests defined by the test-libmongoc executable.
    string (CONFIGURE [=[
+      set (CONFIG "$<CONFIG>")
       set (TEST_LIBMONGOC_EXE [[$<TARGET_FILE:test-libmongoc>]])
       set (SRC_ROOT [[@PROJECT_SOURCE_DIR@]])
+      if (NOT CTEST_CONFIGURATION_TYPE
+          OR CTEST_CONFIGURATION_TYPE STREQUAL CONFIG)
       include ("${SRC_ROOT}/LoadTests.cmake")
+      endif ()
    ]=] code @ONLY)
    file (GENERATE
-         OUTPUT "${PROJECT_BINARY_DIR}/LoadTests-inc.cmake"
+         OUTPUT "${PROJECT_BINARY_DIR}/LoadTests-inc-$<CONFIG>.cmake"
          CONTENT "${code}")
+   file (WRITE "${PROJECT_BINARY_DIR}/LoadTests-inc.cmake" [[
+      file (GLOB files "./LoadTests-inc-*.cmake")
+      foreach (inc IN LISTS files)
+         include ("${inc}")
+      endforeach ()
+   ]])
    # Direct the generated CTest code to include() the file that loads the tests:
    set_property (
          DIRECTORY
