@@ -125,6 +125,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
    suite->flags = 0;
    suite->prgname = bson_strdup (argv[0]);
    suite->silent = false;
+   suite->ctest_run = NULL;
    _mongoc_array_init (&suite->match_patterns, sizeof (char *));
 
    for (i = 1; i < argc; i++) {
@@ -165,6 +166,16 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
       } else if ((0 == strcmp ("-s", argv[i])) ||
                  (0 == strcmp ("--silent", argv[i]))) {
          suite->silent = true;
+      } else if ((0 == strcmp ("--ctest-run", argv[i]))) {
+         if (suite->ctest_run) {
+            test_error ("'--ctest-run' can only be specified once");
+         }
+         if (argc - 1 == 0) {
+            test_error ("'--ctest-run' requires an argument");
+         }
+         suite->flags |= TEST_NOFORK;
+         suite->silent = true;
+         suite->ctest_run = bson_strdup (argv[++i]);
       } else if ((0 == strcmp ("-l", argv[i])) ||
                  (0 == strcmp ("--match", argv[i]))) {
          char *val;
@@ -178,6 +189,10 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
                      "Try using the --help option.",
                      argv[i]);
       }
+   }
+
+   if (suite->match_patterns.len != 0 && suite->ctest_run != NULL) {
+      test_error ("'--ctest-run' cannot be specified with '-l' or '--match'");
    }
 
    if (test_framework_getenv_bool ("MONGOC_TEST_VALGRIND")) {
@@ -559,6 +574,10 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
 
    for (i = 0; i < test->num_checks; i++) {
       if (!test->checks[i]()) {
+         if (suite->ctest_run) {
+            /* Write a marker that tells CTest that we are skipping this test */
+            test_msg ("@@ctest-skipped@@");
+         }
          if (!suite->silent) {
             bson_string_append_printf (
                buf,
@@ -667,6 +686,10 @@ TestSuite_PrintHelp (TestSuite *suite) /* IN */
       "first error).\n"
       "    -l, --match PATTERN   Run test by name, e.g. \"/Client/command\" or "
       "\"/Client/*\". May be repeated.\n"
+      "    --ctest-run TEST      Run the test named TEST with CTest-specific\n"
+      "                          output. Can only be specified once and can't\n"
+      "                          be used with '--match'. \n"
+      "                          Implies --no-fork and --silent.\n"
       "    -s, --silent          Suppress all output.\n"
       "    -F FILENAME           Write test results (JSON) to FILENAME.\n"
       "    -d                    Print debug output (useful if a test hangs).\n"
@@ -878,6 +901,11 @@ test_matches (TestSuite *suite, Test *test)
 {
    int i;
 
+   if (suite->ctest_run) {
+      /* We only want exactly the named test */
+      return strcmp (test->name, suite->ctest_run) == 0;
+   }
+
    /* If no match patterns were provided, then assume all match. */
    if (suite->match_patterns.len == 0) {
       return true;
@@ -906,6 +934,14 @@ TestSuite_RunAll (TestSuite *suite /* IN */)
    for (test = suite->tests; test; test = test->next) {
       if (test_matches (suite, test)) {
          count++;
+      }
+   }
+
+   if (suite->ctest_run) {
+      /* We should have matched *at most* one test */
+      ASSERT (count <= 1);
+      if (count == 0) {
+         test_error ("No such test '%s'", suite->ctest_run);
       }
    }
 
@@ -1001,6 +1037,7 @@ TestSuite_Destroy (TestSuite *suite)
 
    free (suite->name);
    free (suite->prgname);
+   free (suite->ctest_run);
    for (i = 0; i < suite->match_patterns.len; i++) {
       char *val = _mongoc_array_index (&suite->match_patterns, char *, i);
       bson_free (val);

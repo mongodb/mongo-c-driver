@@ -1,0 +1,47 @@
+# This file is include()'d by CTest. It executes test-libmongoc to get a list
+# of all tests that are registered. Each test is then defined as a CTest test,
+# allowing CTest to control the execution, parallelization, and collection of
+# test results.
+
+if (NOT EXISTS "${TEST_LIBMONGOC_EXE}")
+    message (WARNING "The test executable ${TEST_LIBMONGOC_EXE} is not present. "
+                     "It's tests will not be registered")
+    return ()
+endif ()
+
+# Get the list of tests
+execute_process (
+    COMMAND "${TEST_LIBMONGOC_EXE}" --list-tests --no-fork
+    OUTPUT_VARIABLE tests_out
+    WORKING_DIRECTORY "${SRC_ROOT}"
+    RESULT_VARIABLE retc
+    )
+if (retc)
+    # This will fail if 'test-libmongoc' is not compiled yet.
+    message (FATAL_ERROR "Failed to run test-libmongoc to discover tests [${retc}]")
+endif ()
+
+# Split lines on newlines
+string (REPLACE "\n" ";" lines "${tests_out}")
+
+# Generate the test definitions
+foreach (line IN LISTS lines)
+    if (NOT line MATCHES "^/")
+        # Only generate if the line begins with `/`, which all tests should.
+        continue ()
+    endif ()
+    # The test name is prefixed with 'mongoc'
+    set (test "mongoc${line}")
+    # Define the test. Use `--ctest-run` to tell it that CTest is in charge.
+    add_test ("${test}" "${TEST_LIBMONGOC_EXE}" --ctest-run "${line}")
+    # Require properties:
+    set_tests_properties ("${test}" PROPERTIES
+        # test-libmongoc expects to execute in the root of the source directory
+        WORKING_DIRECTORY "${SRC_ROOT}"
+        # If a test emits '@@ctest-skipped@@', this tells us that the test is
+        # not run, but did not fail.
+        SKIP_REGULAR_EXPRESSION "@@ctest-skipped@@"
+        # 15 seconds of timeout on each test.
+        TIMEOUT 15
+        )
+endforeach ()

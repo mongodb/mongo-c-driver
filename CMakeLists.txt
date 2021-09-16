@@ -205,6 +205,25 @@ set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
 
 include (MakeDistFiles)
 
+# Enable CTest
+include (CTest)
+
+# Generate a file that can be included by CTest to load and enumerate all of the
+# tests defined by the test-libmongoc executable.
+string (CONFIGURE [=[
+   set (TEST_LIBMONGOC_EXE [[$<TARGET_FILE:test-libmongoc>]])
+   set (SRC_ROOT [[@PROJECT_SOURCE_DIR@]])
+   include ("${SRC_ROOT}/LoadTests.cmake")
+]=] code @ONLY)
+file (GENERATE
+      OUTPUT "${PROJECT_BINARY_DIR}/LoadTests-inc.cmake"
+      CONTENT "${code}")
+# Direct the generated CTest code to include() the file that loads the tests:
+set_property (
+      DIRECTORY
+      APPEND PROPERTY
+      TEST_INCLUDE_FILES "${PROJECT_BINARY_DIR}/LoadTests-inc.cmake")
+
 # Ensure the default behavior: don't ignore RPATH settings.
 set (CMAKE_SKIP_BUILD_RPATH OFF)
 

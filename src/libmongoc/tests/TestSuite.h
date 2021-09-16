@@ -663,6 +663,7 @@ struct _TestSuite {
    char *prgname;
    char *name;
    mongoc_array_t match_patterns;
+   char *ctest_run;
    Test *tests;
    FILE *outfile;
    int flags;
