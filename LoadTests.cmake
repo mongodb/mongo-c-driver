@@ -4,8 +4,9 @@
 # test results.
 
 if (NOT EXISTS "${TEST_LIBMONGOC_EXE}")
+    # This will fail if 'test-libmongoc' is not compiled yet.
     message (WARNING "The test executable ${TEST_LIBMONGOC_EXE} is not present. "
-                     "It's tests will not be registered")
+                     "Its tests will not be registered")
     return ()
 endif ()
 
@@ -17,8 +18,8 @@ execute_process (
     RESULT_VARIABLE retc
     )
 if (retc)
-    # This will fail if 'test-libmongoc' is not compiled yet.
-    message (FATAL_ERROR "Failed to run test-libmongoc to discover tests [${retc}]")
+    # Failed to list the tests. That's bad.
+    message (FATAL_ERROR "Failed to run test-libmongoc to discover tests [${retc}]:\n${tests_out}")
 endif ()
 
 # Split lines on newlines
@@ -30,11 +31,10 @@ foreach (line IN LISTS lines)
         # Only generate if the line begins with `/`, which all tests should.
         continue ()
     endif ()
-    # The test name is prefixed with 'mongoc'
+    # The new test name is prefixed with 'mongoc'
     set (test "mongoc${line}")
-    # Define the test. Use `--ctest-run` to tell it that CTest is in charge.
+    # Define the test. Use `--ctest-run` to tell it that CTest is in control.
     add_test ("${test}" "${TEST_LIBMONGOC_EXE}" --ctest-run "${line}")
-    # Require properties:
     set_tests_properties ("${test}" PROPERTIES
         # test-libmongoc expects to execute in the root of the source directory
         WORKING_DIRECTORY "${SRC_ROOT}"
