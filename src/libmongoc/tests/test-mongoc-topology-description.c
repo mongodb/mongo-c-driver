@@ -48,6 +48,7 @@ _test_has_readable_writable_server (bool pooled)
    ASSERT_OR_PRINT (r, error);
 
    bson_mutex_lock (&topology->tpld_modification_mtx);
+   td = mc_tpld_unsafe_get_mutable (topology);
    ASSERT (mongoc_topology_description_has_writable_server (td));
    ASSERT (mongoc_topology_description_has_readable_server (td, NULL));
    bson_mutex_unlock (&topology->tpld_modification_mtx);
@@ -55,11 +56,13 @@ _test_has_readable_writable_server (bool pooled)
    if (test_framework_is_replset ()) {
       /* prefs still don't match any server */
       bson_mutex_lock (&topology->tpld_modification_mtx);
+      td = mc_tpld_unsafe_get_mutable (topology);
       ASSERT (!mongoc_topology_description_has_readable_server (td, prefs));
       bson_mutex_unlock (&topology->tpld_modification_mtx);
    } else {
       /* topology type single ignores read preference */
       bson_mutex_lock (&topology->tpld_modification_mtx);
+      td = mc_tpld_unsafe_get_mutable (topology);
       ASSERT (mongoc_topology_description_has_readable_server (td, prefs));
       bson_mutex_unlock (&topology->tpld_modification_mtx);
    }

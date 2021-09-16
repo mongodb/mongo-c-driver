@@ -1709,6 +1709,7 @@ test_compatible_null_error_pointer (void)
       error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION, "");
 
    /* null error pointer is ok */
+   td = mc_tpld_unsafe_get_mutable (client->topology);
    ASSERT (!mongoc_topology_compatible (
       td, NULL /* read prefs */, NULL /* error */));
 
