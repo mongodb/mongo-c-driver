@@ -124,6 +124,12 @@ case "$OS" in
          PYTHON=python
       fi
 
+      PIP=pip
+      if ! $PYTHON -c "import virtualenv" ; then
+         PYTHON=python3
+         PIP=pip3
+      fi
+
       $PYTHON -m virtualenv venv
       cd venv
       . bin/activate
@@ -136,7 +142,7 @@ case "$OS" in
          echo "Disabling pip cache"
          PIP_PARAM="--no-cache-dir"
       fi
-      pip $PIP_PARAM install .
+      $PIP $PIP_PARAM install .
       cd ../..
       mongo-orchestration -f orchestration.config -e default --socket-timeout-ms=60000 --bind=127.0.0.1  --enable-majority-read-concern start > $MONGO_ORCHESTRATION_HOME/out.log 2> $MONGO_ORCHESTRATION_HOME/err.log < /dev/null &
       ;;
