@@ -78,7 +78,7 @@ _test_error (const char *format, ...)
    fprintf (stderr, "\n");
    fflush (stderr);
    va_end (ap);
-   exit (1);
+   abort ();
 }
 
 static void
@@ -112,6 +112,42 @@ static BSON_ONCE_FUN (_test_suite_ensure_mutex_once)
 }
 
 
+static void
+_handle_signal (int signum)
+{
+   const char *s = "\nProcess was interrupted by the delivery of a signal.\n";
+   const char *sigstr;
+   switch (signum) {
+   case SIGABRT:
+      sigstr = "SIGABRT - Abnormal termination";
+      break;
+   case SIGINT:
+      sigstr = "SIGINT - Interrupted";
+      break;
+   case SIGTERM:
+      sigstr = "SIGTERM - Termination requested";
+      break;
+   case SIGSEGV:
+      sigstr = "SIGSEGV - Access violation";
+      break;
+   default:
+      sigstr = "(Unknown signal delivered)";
+   }
+#ifdef BSON_OS_UNIX
+   /* On POSIX these APIs are signal-safe */
+   write (STDERR_FILENO, s, strlen (s));
+   write (STDERR_FILENO, "  ", 2);
+   write (STDERR_FILENO, sigstr, strlen (sigstr));
+   fsync (STDERR_FILENO);
+#else
+   /* On Windows these APIs are signal-safe */
+   fprintf (stderr, "\n%s\n  %s\n", s, sigstr);
+   fflush (stderr);
+#endif
+   _Exit (signum);
+}
+
+
 void
 TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
 {
@@ -127,6 +163,11 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
    suite->silent = false;
    suite->ctest_run = NULL;
    _mongoc_array_init (&suite->match_patterns, sizeof (char *));
+
+   suite->prev_sigabrt = signal (SIGABRT, _handle_signal);
+   suite->prev_sigint = signal (SIGINT, _handle_signal);
+   suite->prev_sigterm = signal (SIGTERM, _handle_signal);
+   suite->prev_sigsegv = signal (SIGSEGV, _handle_signal);
 
    for (i = 1; i < argc; i++) {
       if (0 == strcmp ("-d", argv[i])) {
@@ -1044,6 +1085,11 @@ TestSuite_Destroy (TestSuite *suite)
    }
 
    _mongoc_array_destroy (&suite->match_patterns);
+
+   signal (SIGABRT, suite->prev_sigabrt);
+   signal (SIGINT, suite->prev_sigint);
+   signal (SIGTERM, suite->prev_sigterm);
+   signal (SIGSEGV, suite->prev_sigsegv);
 }
 
 
