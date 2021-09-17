@@ -57,7 +57,7 @@ project (mongo-c-driver C)
 # Optionally enable C++ to do some C++-specific tests
 enable_language (CXX OPTIONAL)
 
-if (NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
    set (CMAKE_BUILD_TYPE "RelWithDebInfo")
    message (
       STATUS "No CMAKE_BUILD_TYPE selected, defaulting to ${CMAKE_BUILD_TYPE}"
@@ -490,28 +490,32 @@ endif ()
 
 if (TARGET test-libmongoc)
    # Generate a file that can be included by CTest to load and enumerate all of the
-   # tests defined by the test-libmongoc executable.
+   # tests defined by the test-libmongoc executable. Generate one for each
+   # configuration in case of multiconf generators.
    string (CONFIGURE [=[
       set (CONFIG "$<CONFIG>")
       set (TEST_LIBMONGOC_EXE [[$<TARGET_FILE:test-libmongoc>]])
       set (SRC_ROOT [[@PROJECT_SOURCE_DIR@]])
       if (NOT CTEST_CONFIGURATION_TYPE
           OR CTEST_CONFIGURATION_TYPE STREQUAL CONFIG)
-      include ("${SRC_ROOT}/LoadTests.cmake")
+         include ("${SRC_ROOT}/LoadTests.cmake")
       endif ()
    ]=] code @ONLY)
    file (GENERATE
-         OUTPUT "${PROJECT_BINARY_DIR}/LoadTests-inc-$<CONFIG>.cmake"
+         OUTPUT "${PROJECT_BINARY_DIR}/LoadTests-$<CONFIG>.cmake"
          CONTENT "${code}")
-   file (WRITE "${PROJECT_BINARY_DIR}/LoadTests-inc.cmake" [[
-      file (GLOB files "./LoadTests-inc-*.cmake")
-      foreach (inc IN LISTS files)
-         include ("${inc}")
+   if (CMAKE_CONFIGURATION_TYPES)
+      foreach (conf IN LISTS CMAKE_CONFIGURATION_TYPES)
+         # Direct the generated CTest code to include() the file that loads the tests:
+         set_property (
+            DIRECTORY
+            APPEND PROPERTY
+            TEST_INCLUDE_FILES "${PROJECT_BINARY_DIR}/LoadTests-${conf}.cmake")
       endforeach ()
-   ]])
-   # Direct the generated CTest code to include() the file that loads the tests:
-   set_property (
+   else ()
+      set_property (
          DIRECTORY
          APPEND PROPERTY
-         TEST_INCLUDE_FILES "${PROJECT_BINARY_DIR}/LoadTests-inc.cmake")
+         TEST_INCLUDE_FILES "${PROJECT_BINARY_DIR}/LoadTests-${CMAKE_BUILD_TYPE}.cmake")
+   endif ()
 endif ()

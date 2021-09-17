@@ -39,9 +39,9 @@ foreach (line IN LISTS lines)
         # test-libmongoc expects to execute in the root of the source directory
         WORKING_DIRECTORY "${SRC_ROOT}"
         # If a test emits '@@ctest-skipped@@', this tells us that the test is
-        # not run, but did not fail.
+        # skipped.
         SKIP_REGULAR_EXPRESSION "@@ctest-skipped@@"
-        # 15 seconds of timeout on each test.
-        TIMEOUT 15
+        # 45 seconds of timeout on each test.
+        TIMEOUT 45
         )
 endforeach ()
