@@ -2932,6 +2932,7 @@ main (int argc, char *argv[])
    test_stream_tls_install (&suite);
    test_x509_install (&suite);
    test_stream_tls_error_install (&suite);
+   test_client_side_encryption_install (&suite);
 #endif
 #ifdef MONGOC_ENABLE_SASL_CYRUS
    test_cyrus_install (&suite);
@@ -2941,7 +2942,6 @@ main (int argc, char *argv[])
    test_crud_install (&suite);
    test_mongohouse_install (&suite);
    test_apm_install (&suite);
-   test_client_side_encryption_install (&suite);
    test_server_description_install (&suite);
    test_aws_install (&suite);
    test_streamable_hello_install (&suite);
