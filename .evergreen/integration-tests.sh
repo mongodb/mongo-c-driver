@@ -117,6 +117,9 @@ case "$OS" in
       if [ -f /opt/python/2.7/bin/python ]; then
          # Python toolchain installation.
          PYTHON=/opt/python/2.7/bin/python
+      elif [ "x$(lsb_release -cs)" = "xtrusty" -a -f /opt/mongodbtoolchain/v2/bin/python ]; then
+         # Python toolchain installation.
+         PYTHON=/opt/mongodbtoolchain/v2/bin/python
       else
          PYTHON=python
       fi

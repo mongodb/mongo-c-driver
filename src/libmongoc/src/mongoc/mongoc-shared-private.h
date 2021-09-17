@@ -19,6 +19,8 @@
 #ifndef MONGOC_SHARED_H
 #define MONGOC_SHARED_H
 
+#include <bson/bson.h>
+
 #include <stddef.h>
 
 /**
@@ -64,12 +66,12 @@ typedef struct mongoc_shared_ptr {
    }
 
 /**
- * @brief Reassign a shared pointer to manager the given resource
+ * @brief Reassign a shared pointer to manage the given resource
  *
  * @param ptr The shared pointer that will be rebound
  * @param pointee The pointer that we will point to.
- * @param deleter A destructor+deallocator for `pointee`, to be called when
- * the refcount reaches zero.
+ * @param deleter A deleter for `pointee`, to be called when the refcount
+ * reaches zero.
  *
  * @note Equivalent to:
  *
@@ -183,7 +185,7 @@ mongoc_shared_ptr_use_count (mongoc_shared_ptr ptr);
  * @return true If the pointer is managing a resource
  * @return false Otherwise
  */
-static inline int
+static BSON_INLINE int
 mongoc_shared_ptr_is_null (mongoc_shared_ptr ptr)
 {
    return ptr._aux == 0;
@@ -195,7 +197,7 @@ mongoc_shared_ptr_is_null (mongoc_shared_ptr ptr)
  * @param pointee The target of the pointer. Should be NULL or a dynamically
  * allocated data segment
  * @param deleter The deleter for the pointer. If `pointee` is non-NULL,
- * `deleter` must be non-NULL. This deleteter will be called when the reference
+ * `deleter` must be non-NULL. This deleter will be called when the reference
  * count reaches zero. If should release the resources referred-to by `pointee`.
  */
 extern mongoc_shared_ptr
