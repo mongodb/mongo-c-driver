@@ -607,9 +607,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
 #endif
 
    if (!topology->single_threaded) {
-      bson_mutex_lock (&topology->tpld_modification_mtx);
       _mongoc_topology_background_monitoring_stop (topology);
-      bson_mutex_unlock (&topology->tpld_modification_mtx);
       BSON_ASSERT (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_OFF);
       mongoc_set_destroy (topology->server_monitors);
       mongoc_set_destroy (topology->rtt_monitors);

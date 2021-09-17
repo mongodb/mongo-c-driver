@@ -68,6 +68,7 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
        * down in that time. */
       bson_mutex_lock (&topology->tpld_modification_mtx);
       if (topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
+         bson_mutex_unlock (&topology->tpld_modification_mtx);
          break;
       }
 
@@ -293,6 +294,8 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
       return;
    }
 
+   bson_mutex_lock (&topology->tpld_modification_mtx);
+
    topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN;
    TRACE ("%s", "background monitoring stopping");
 
@@ -300,6 +303,7 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    if (topology->is_srv_polling) {
       mongoc_cond_signal (&topology->srv_polling_cond);
    }
+   bson_mutex_unlock (&topology->tpld_modification_mtx);
 
    /* Signal all server monitors to shut down. */
    for (i = 0; i < topology->server_monitors->items_len; i++) {
@@ -312,12 +316,6 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
       server_monitor = mongoc_set_get_item (topology->rtt_monitors, i);
       mongoc_server_monitor_request_shutdown (server_monitor);
    }
-
-   /* Some mongoc_server_monitor_t may be waiting for topology mutex. Unlock so
-    * they can proceed to terminate. It is safe to unlock topology mutex. Since
-    * scanner_state has transitioned to shutting down, no thread can modify
-    * server_monitors. */
-   bson_mutex_unlock (&topology->tpld_modification_mtx);
 
    for (i = 0; i < topology->server_monitors->items_len; i++) {
       /* Wait for the thread to shutdown. */
@@ -345,6 +343,7 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    topology->rtt_monitors = mongoc_set_new (1, NULL, NULL);
    topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_OFF;
    mongoc_cond_broadcast (&topology->cond_client);
+   bson_mutex_unlock (&topology->tpld_modification_mtx);
 }
 
 /* Cancel an in-progress streaming hello for a specific server (if

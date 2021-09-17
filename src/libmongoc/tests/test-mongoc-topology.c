@@ -215,35 +215,25 @@ test_topology_thread_start_stop (void)
    topology = _mongoc_client_pool_get_topology (pool);
 
    /* Test starting up the scanner */
-   bson_mutex_lock (&topology->tpld_modification_mtx);
    _mongoc_topology_background_monitoring_start (topology);
-   bson_mutex_unlock (&topology->tpld_modification_mtx);
    assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_BG_RUNNING);
 
    /* Test that starting the topology while it is already
       running is ok to do. */
-   bson_mutex_lock (&topology->tpld_modification_mtx);
    _mongoc_topology_background_monitoring_start (topology);
-   bson_mutex_unlock (&topology->tpld_modification_mtx);
    assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_BG_RUNNING);
 
    /* Test that we can stop the topology */
-   bson_mutex_lock (&topology->tpld_modification_mtx);
    _mongoc_topology_background_monitoring_stop (topology);
-   bson_mutex_unlock (&topology->tpld_modification_mtx);
    assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_OFF);
 
    /* Test that stopping the topology when it is already
       stopped is ok to do. */
-   bson_mutex_lock (&topology->tpld_modification_mtx);
    _mongoc_topology_background_monitoring_stop (topology);
-   bson_mutex_unlock (&topology->tpld_modification_mtx);
    assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_OFF);
 
    /* Test that we can start the topology again after stopping it */
-   bson_mutex_lock (&topology->tpld_modification_mtx);
    _mongoc_topology_background_monitoring_start (topology);
-   bson_mutex_unlock (&topology->tpld_modification_mtx);
    assert_topology_state (topology, MONGOC_TOPOLOGY_SCANNER_BG_RUNNING);
 
    mongoc_client_pool_destroy (pool);
