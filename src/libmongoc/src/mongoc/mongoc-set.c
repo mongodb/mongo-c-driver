@@ -27,7 +27,7 @@ mongoc_set_new (size_t nitems, mongoc_set_item_dtor dtor, void *dtor_ctx)
 {
    mongoc_set_t *set = (mongoc_set_t *) bson_malloc (sizeof (*set));
 
-   set->items_allocated = nitems;
+   set->items_allocated = BSON_MAX (nitems, 1);
    set->items = (mongoc_set_item_t *) bson_malloc (sizeof (*set->items) *
                                                    set->items_allocated);
    set->items_len = 0;
