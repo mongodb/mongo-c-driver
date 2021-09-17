@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <mongoc/mongoc-util-private.h>
 #if !defined(_WIN32)
 #include <sys/types.h>
