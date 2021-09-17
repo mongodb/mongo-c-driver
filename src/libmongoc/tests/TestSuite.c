@@ -762,11 +762,19 @@ TestSuite_PrintJsonSystemHeader (FILE *stream)
 #endif
 }
 
-char *
+static const char *
+getenv_or (const char *name, const char *dflt)
+{
+   const char *s = getenv (name);
+   return s ? s : dflt;
+}
+
+static const char *
 egetenv (const char *name)
 {
-   return getenv (name) ? getenv (name) : "";
+   return getenv_or (name, "");
 }
+
 static void
 TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
                            FILE *stream)     /* IN */
@@ -838,7 +846,7 @@ TestSuite_PrintJsonHeader (TestSuite *suite, /* IN */
             test_framework_getenv_bool ("MONGOC_CHECK_IPV6") ? "true" : "false",
             (suite->flags & TEST_NOFORK) ? "false" : "true",
             (suite->flags & TEST_TRACE) ? "true" : "false",
-            egetenv ("MONGODB_API_VERSION"));
+            getenv_or ("MONGODB_API_VERSION", "null"));
 
    bson_free (hostname);
    bson_free (udspath);
