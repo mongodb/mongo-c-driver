@@ -493,12 +493,17 @@ if (TARGET test-libmongoc)
    # tests defined by the test-libmongoc executable. Generate one for each
    # configuration in case of multiconf generators.
    string (CONFIGURE [=[
-      set (CONFIG "$<CONFIG>")
       set (TEST_LIBMONGOC_EXE [[$<TARGET_FILE:test-libmongoc>]])
       set (SRC_ROOT [[@PROJECT_SOURCE_DIR@]])
-      if (NOT CTEST_CONFIGURATION_TYPE
-          OR CTEST_CONFIGURATION_TYPE STREQUAL CONFIG)
-         include ("${SRC_ROOT}/LoadTests.cmake")
+      set (IS_MULTICONF $<BOOL:@CMAKE_CONFIGURATION_TYPES@>)
+      if (NOT IS_MULTICONF OR CTEST_CONFIGURATION_TYPE STREQUAL "$<CONFIG>")
+         # We are not in multi-conf, or the current config matches our config.
+         include ("${SRC_ROOT}/build/cmake/LoadTests.cmake")
+      elseif (NOT CTEST_CONFIGURATION_TYPE)
+         # We are in multi-conf, but no '-C' config was specified
+         message (WARNING "Specify a --build-config when using CTest with a multi-config build")
+      else ()
+         # Do nothing. Not our config.
       endif ()
    ]=] code @ONLY)
    file (GENERATE

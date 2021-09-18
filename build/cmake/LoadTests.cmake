@@ -7,6 +7,7 @@ if (NOT EXISTS "${TEST_LIBMONGOC_EXE}")
     # This will fail if 'test-libmongoc' is not compiled yet.
     message (WARNING "The test executable ${TEST_LIBMONGOC_EXE} is not present. "
                      "Its tests will not be registered")
+    add_test (mongoc/not-found NOT_FOUND)
     return ()
 endif ()
 
@@ -32,7 +33,7 @@ foreach (line IN LISTS lines)
         continue ()
     endif ()
     # The new test name is prefixed with 'mongoc'
-    set (test "mongoc/${CONFIG}${line}")
+    set (test "mongoc${line}")
     # Define the test. Use `--ctest-run` to tell it that CTest is in control.
     add_test ("${test}" "${TEST_LIBMONGOC_EXE}" --ctest-run "${line}")
     set_tests_properties ("${test}" PROPERTIES
