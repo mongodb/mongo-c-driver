@@ -2568,7 +2568,7 @@ json_test_operation (json_test_ctx_t *ctx,
          test_framework_set_ssl_opts (client);
          admin_db = mongoc_client_get_database (client, "admin");
          bson_destroy (reply);
-         res = command (admin_db, test, operation, session, NULL, reply);
+         res = command (admin_db, test, operation, session, read_prefs, reply);
          if (!res) {
             test_error ("admin command failed: %s", bson_as_json (reply, NULL));
          }
