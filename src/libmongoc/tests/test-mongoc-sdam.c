@@ -528,47 +528,45 @@ test_sdam_integration_cb (bson_t *scenario)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
    /* Single */
-   ASSERT (
-      realpath (JSON_DIR "/server_discovery_and_monitoring/single", resolved));
-   install_json_test_suite (suite, resolved, &test_sdam_cb);
+   install_json_test_suite (
+      suite, JSON_DIR, "server_discovery_and_monitoring/single", &test_sdam_cb);
 
    /* Replica set */
-   test_framework_resolve_path (JSON_DIR "/server_discovery_and_monitoring/rs",
-                                resolved);
-   install_json_test_suite (suite, resolved, &test_sdam_cb);
+   install_json_test_suite (
+      suite, JSON_DIR, "server_discovery_and_monitoring/rs", &test_sdam_cb);
 
    /* Sharded */
-   ASSERT (
-      realpath (JSON_DIR "/server_discovery_and_monitoring/sharded", resolved));
-   install_json_test_suite (suite, resolved, &test_sdam_cb);
+   install_json_test_suite (suite,
+                            JSON_DIR,
+                            "server_discovery_and_monitoring/sharded",
+                            &test_sdam_cb);
 
-   ASSERT (
-      realpath (JSON_DIR "/server_discovery_and_monitoring/errors", resolved));
-   install_json_test_suite (suite, resolved, &test_sdam_cb);
+   install_json_test_suite (
+      suite, JSON_DIR, "server_discovery_and_monitoring/errors", &test_sdam_cb);
 
    /* Tests not in official Server Discovery And Monitoring Spec */
-   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/supplemental",
-                     resolved));
-   install_json_test_suite (suite, resolved, &test_sdam_cb);
+   install_json_test_suite (suite,
+                            JSON_DIR,
+                            "server_discovery_and_monitoring/supplemental",
+                            &test_sdam_cb);
 
    /* Integration tests. */
-   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/integration",
-                     resolved));
    /* The integration tests configure retryable writes, which requires crypto.
     */
-   install_json_test_suite_with_check (suite,
-                                       resolved,
-                                       &test_sdam_integration_cb,
-                                       TestSuite_CheckLive,
-                                       test_framework_skip_if_no_crypto,
-                                       test_framework_skip_if_slow);
+   install_json_test_suite_with_check (
+      suite,
+      JSON_DIR,
+      "server_discovery_and_monitoring/integration",
+      &test_sdam_integration_cb,
+      TestSuite_CheckLive,
+      test_framework_skip_if_no_crypto,
+      test_framework_skip_if_slow);
 
-   ASSERT (realpath (JSON_DIR "/server_discovery_and_monitoring/load-balanced",
-                     resolved));
-   install_json_test_suite (suite, resolved, &test_sdam_cb);
+   install_json_test_suite (suite,
+                            JSON_DIR,
+                            "server_discovery_and_monitoring/load-balanced",
+                            &test_sdam_cb);
 }
 
 static void

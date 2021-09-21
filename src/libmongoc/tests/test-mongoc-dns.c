@@ -393,23 +393,19 @@ test_null_error_pointer (void *ctx)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   test_framework_resolve_path (
-      JSON_DIR "/initial_dns_seedlist_discovery/replica-set", resolved);
    install_json_test_suite_with_check (suite,
-                                       resolved,
+                                       JSON_DIR,
+                                       "initial_dns_seedlist_discovery",
                                        test_dns,
                                        test_dns_check_replset,
                                        test_framework_skip_if_no_crypto);
-
-   test_framework_resolve_path (
-      JSON_DIR "/initial_dns_seedlist_discovery/load-balanced", resolved);
-   install_json_test_suite_with_check (suite,
-                                       resolved,
-                                       test_dns,
-                                       test_dns_check_loadbalanced,
-                                       test_framework_skip_if_no_crypto);
+   install_json_test_suite_with_check (
+      suite,
+      JSON_DIR,
+      "initial_dns_seedlist_discovery/load-balanced",
+      test_dns,
+      test_dns_check_loadbalanced,
+      test_framework_skip_if_no_crypto);
 }
 
 extern bool

@@ -1169,18 +1169,16 @@ test_max_commit_time_ms_is_reset (void *ctx)
 void
 test_transactions_install (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   ASSERT (realpath (JSON_DIR "/transactions/legacy", resolved));
    install_json_test_suite_with_check (suite,
-                                       resolved,
+                                       JSON_DIR,
+                                       "transactions/legacy",
                                        test_transactions_cb,
                                        test_framework_skip_if_no_txns,
                                        test_framework_skip_if_slow);
 
-   test_framework_resolve_path (JSON_DIR "/with_transaction", resolved);
    install_json_test_suite_with_check (suite,
-                                       resolved,
+                                       JSON_DIR,
+                                       "with_transaction",
                                        test_transactions_cb,
                                        test_framework_skip_if_no_txns,
                                        test_framework_skip_if_slow);

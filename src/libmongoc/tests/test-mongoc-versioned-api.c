@@ -125,10 +125,11 @@ _test_mongoc_server_api_client_pool (void)
    BSON_ASSERT (client->api->version == MONGOC_SERVER_API_V1);
 
    ASSERT (!mongoc_client_set_server_api (client, api, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_CLIENT,
-                          MONGOC_ERROR_CLIENT_API_FROM_POOL,
-                          "Cannot set server api on a client checked out from a pool");
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_CLIENT,
+      MONGOC_ERROR_CLIENT_API_FROM_POOL,
+      "Cannot set server api on a client checked out from a pool");
 
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
@@ -176,7 +177,7 @@ _test_mongoc_server_api_client_pool_once (void)
 void
 test_client_versioned_api_install (TestSuite *suite)
 {
-   run_unified_tests (suite, JSON_DIR "/versioned_api");
+   run_unified_tests (suite, JSON_DIR, "versioned_api");
 
    TestSuite_Add (
       suite, "/VersionedApi/client", _test_mongoc_server_api_client);

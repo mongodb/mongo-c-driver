@@ -33,7 +33,7 @@
       request_t *_request = mock_server_receives_command (                    \
          server,                                                              \
          "db",                                                                \
-         MONGOC_QUERY_SECONDARY_OK,                                               \
+         MONGOC_QUERY_SECONDARY_OK,                                           \
          "{ 'killCursors' : 'coll', 'cursors' : [ " #cursor_id " ] }");       \
       mock_server_replies_simple (_request,                                   \
                                   "{ 'cursorsKilled': [ " #cursor_id " ] }"); \
@@ -1766,7 +1766,7 @@ change_stream_spec_after_test_cb (json_test_ctx_t *test_ctx, const bson_t *test)
       }
 
       /* iterate over the change stream, and verify that the document exists.
-         */
+       */
       for (i = 0; i < num_iterations; i++) {
          char *key = bson_strdup_printf ("%d", i);
          ret = _iterate_until_error_or_event (
@@ -1782,7 +1782,7 @@ change_stream_spec_after_test_cb (json_test_ctx_t *test_ctx, const bson_t *test)
       }
 
       /* check that everything in the "result.success" array is contained in
-         * our captured changes. */
+       * our captured changes. */
       while (bson_iter_next (&expected_iter)) {
          bson_t expected_doc;
          match_ctx_t match_ctx = {{0}};
@@ -2610,7 +2610,6 @@ prose_test_18 (void)
 void
 test_change_stream_install (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
    TestSuite_AddMockServerTest (
       suite, "/change_stream/pipeline", test_change_stream_pipeline);
 
@@ -2774,6 +2773,6 @@ test_change_stream_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite, "/change_streams/prose_test_18", prose_test_18);
 
-   test_framework_resolve_path (JSON_DIR "/change_streams/legacy", resolved);
-   install_json_test_suite (suite, resolved, &test_change_stream_spec_cb);
+   install_json_test_suite (
+      suite, JSON_DIR, "change_streams", &test_change_stream_spec_cb);
 }

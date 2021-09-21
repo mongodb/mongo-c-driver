@@ -351,6 +351,10 @@ _V_TestSuite_AddFull (TestSuite *suite,
    Test *test;
    Test *iter;
 
+   if (suite->ctest_run && (0 != strcmp (suite->ctest_run, name))) {
+      return NULL;
+   }
+
    test = (Test *) calloc (1, sizeof *test);
    test->name = bson_strdup (name);
    test->func = func;
@@ -391,7 +395,9 @@ _TestSuite_AddMockServerTest (TestSuite *suite,
    test = _V_TestSuite_AddFull (suite, name, (TestFuncWC) func, NULL, NULL, ap);
    va_end (ap);
 
-   _TestSuite_AddCheck (test, TestSuite_CheckMockServerAllowed, name);
+   if (test) {
+      _TestSuite_AddCheck (test, TestSuite_CheckMockServerAllowed, name);
+   }
 }
 
 
