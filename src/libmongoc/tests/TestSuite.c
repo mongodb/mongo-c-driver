@@ -139,6 +139,7 @@ _handle_signal (int signum)
    write (STDERR_FILENO, s, strlen (s));
    write (STDERR_FILENO, "  ", 2);
    write (STDERR_FILENO, sigstr, strlen (sigstr));
+   write (STDERR_FILENO, "\n", 1);
    fsync (STDERR_FILENO);
 #else
    /* On Windows these APIs are signal-safe */
