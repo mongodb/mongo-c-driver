@@ -63,10 +63,6 @@ test_all_spec_tests (TestSuite *suite)
    test_framework_resolve_path (JSON_DIR "/server_selection/server_selection",
                                 resolved);
    install_json_test_suite (suite, resolved, &test_server_selection_logic_cb);
-
-   test_framework_resolve_path (
-      JSON_DIR "/server_selection/server_selection/LoadBalanced", resolved);
-   install_json_test_suite (suite, resolved, &test_server_selection_logic_cb);
 }
 
 void

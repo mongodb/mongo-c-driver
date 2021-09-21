@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <mongoc/mongoc-util-private.h>
 #if !defined(_WIN32)
 #include <sys/types.h>
@@ -112,6 +113,43 @@ static BSON_ONCE_FUN (_test_suite_ensure_mutex_once)
 }
 
 
+static void
+_handle_signal (int signum)
+{
+   const char *s = "\nProcess was interrupted by the delivery of a signal.\n";
+   const char *sigstr;
+   switch (signum) {
+   case SIGABRT:
+      sigstr = "SIGABRT - Abnormal termination";
+      break;
+   case SIGINT:
+      sigstr = "SIGINT - Interrupted";
+      break;
+   case SIGTERM:
+      sigstr = "SIGTERM - Termination requested";
+      break;
+   case SIGSEGV:
+      sigstr = "SIGSEGV - Access violation";
+      break;
+   default:
+      sigstr = "(Unknown signal delivered)";
+   }
+#ifdef BSON_OS_UNIX
+   /* On POSIX these APIs are signal-safe */
+   write (STDERR_FILENO, s, strlen (s));
+   write (STDERR_FILENO, "  ", 2);
+   write (STDERR_FILENO, sigstr, strlen (sigstr));
+   write (STDERR_FILENO, "\n", 1);
+   fsync (STDERR_FILENO);
+#else
+   /* On Windows these APIs are signal-safe */
+   fprintf (stderr, "\n%s\n  %s\n", s, sigstr);
+   fflush (stderr);
+#endif
+   _Exit (signum);
+}
+
+
 void
 TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
 {
@@ -125,7 +163,13 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
    suite->flags = 0;
    suite->prgname = bson_strdup (argv[0]);
    suite->silent = false;
+   suite->ctest_run = NULL;
    _mongoc_array_init (&suite->match_patterns, sizeof (char *));
+
+   suite->prev_sigabrt = signal (SIGABRT, _handle_signal);
+   suite->prev_sigint = signal (SIGINT, _handle_signal);
+   suite->prev_sigterm = signal (SIGTERM, _handle_signal);
+   suite->prev_sigsegv = signal (SIGSEGV, _handle_signal);
 
    for (i = 1; i < argc; i++) {
       if (0 == strcmp ("-d", argv[i])) {
@@ -165,6 +209,16 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
       } else if ((0 == strcmp ("-s", argv[i])) ||
                  (0 == strcmp ("--silent", argv[i]))) {
          suite->silent = true;
+      } else if ((0 == strcmp ("--ctest-run", argv[i]))) {
+         if (suite->ctest_run) {
+            test_error ("'--ctest-run' can only be specified once");
+         }
+         if (argc - 1 == i) {
+            test_error ("'--ctest-run' requires an argument");
+         }
+         suite->flags |= TEST_NOFORK;
+         suite->silent = true;
+         suite->ctest_run = bson_strdup (argv[++i]);
       } else if ((0 == strcmp ("-l", argv[i])) ||
                  (0 == strcmp ("--match", argv[i]))) {
          char *val;
@@ -178,6 +232,10 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
                      "Try using the --help option.",
                      argv[i]);
       }
+   }
+
+   if (suite->match_patterns.len != 0 && suite->ctest_run != NULL) {
+      test_error ("'--ctest-run' cannot be specified with '-l' or '--match'");
    }
 
    if (test_framework_getenv_bool ("MONGOC_TEST_VALGRIND")) {
@@ -559,6 +617,10 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
 
    for (i = 0; i < test->num_checks; i++) {
       if (!test->checks[i]()) {
+         if (suite->ctest_run) {
+            /* Write a marker that tells CTest that we are skipping this test */
+            test_msg ("@@ctest-skipped@@");
+         }
          if (!suite->silent) {
             bson_string_append_printf (
                buf,
@@ -667,6 +729,8 @@ TestSuite_PrintHelp (TestSuite *suite) /* IN */
       "first error).\n"
       "    -l, --match PATTERN   Run test by name, e.g. \"/Client/command\" or "
       "\"/Client/*\". May be repeated.\n"
+      "    --ctest-run TEST      Run only the named TEST for CTest\n"
+      "                          integration.\n"
       "    -s, --silent          Suppress all output.\n"
       "    -F FILENAME           Write test results (JSON) to FILENAME.\n"
       "    -d                    Print debug output (useful if a test hangs).\n"
@@ -878,6 +942,11 @@ test_matches (TestSuite *suite, Test *test)
 {
    int i;
 
+   if (suite->ctest_run) {
+      /* We only want exactly the named test */
+      return strcmp (test->name, suite->ctest_run) == 0;
+   }
+
    /* If no match patterns were provided, then assume all match. */
    if (suite->match_patterns.len == 0) {
       return true;
@@ -906,6 +975,14 @@ TestSuite_RunAll (TestSuite *suite /* IN */)
    for (test = suite->tests; test; test = test->next) {
       if (test_matches (suite, test)) {
          count++;
+      }
+   }
+
+   if (suite->ctest_run) {
+      /* We should have matched *at most* one test */
+      ASSERT (count <= 1);
+      if (count == 0) {
+         test_error ("No such test '%s'", suite->ctest_run);
       }
    }
 
@@ -1001,12 +1078,18 @@ TestSuite_Destroy (TestSuite *suite)
 
    free (suite->name);
    free (suite->prgname);
+   free (suite->ctest_run);
    for (i = 0; i < suite->match_patterns.len; i++) {
       char *val = _mongoc_array_index (&suite->match_patterns, char *, i);
       bson_free (val);
    }
 
    _mongoc_array_destroy (&suite->match_patterns);
+
+   signal (SIGABRT, suite->prev_sigabrt);
+   signal (SIGINT, suite->prev_sigint);
+   signal (SIGTERM, suite->prev_sigterm);
+   signal (SIGSEGV, suite->prev_sigsegv);
 }
 
 

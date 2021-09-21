@@ -63,7 +63,7 @@ else ()
    message (STATUS "No CXX support")
 endif ()
 
-if (NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
    set (CMAKE_BUILD_TYPE "RelWithDebInfo")
    message (
       STATUS "No CMAKE_BUILD_TYPE selected, defaulting to ${CMAKE_BUILD_TYPE}"
@@ -210,6 +210,9 @@ unset (dist_generated_depends CACHE)
 set (BUILD_SOURCE_DIR ${CMAKE_BINARY_DIR})
 
 include (MakeDistFiles)
+
+# Enable CTest
+include (CTest)
 
 # Ensure the default behavior: don't ignore RPATH settings.
 set (CMAKE_SKIP_BUILD_RPATH OFF)
@@ -491,3 +494,39 @@ if (CMAKE_GENERATOR_TOOLSET)
    message (STATUS "\tinstance: ${CMAKE_GENERATOR_TOOLSET}")
 endif ()
 
+if (TARGET test-libmongoc)
+   # Generate a file that can be included by CTest to load and enumerate all of the
+   # tests defined by the test-libmongoc executable. Generate one for each
+   # configuration in case of multiconf generators.
+   string (CONFIGURE [=[
+      set (TEST_LIBMONGOC_EXE [[$<TARGET_FILE:test-libmongoc>]])
+      set (SRC_ROOT [[@PROJECT_SOURCE_DIR@]])
+      set (IS_MULTICONF $<BOOL:@CMAKE_CONFIGURATION_TYPES@>)
+      if (NOT IS_MULTICONF OR CTEST_CONFIGURATION_TYPE STREQUAL "$<CONFIG>")
+         # We are not in multi-conf, or the current config matches our config.
+         include ("${SRC_ROOT}/build/cmake/LoadTests.cmake")
+      elseif (NOT CTEST_CONFIGURATION_TYPE)
+         # We are in multi-conf, but no '-C' config was specified
+         message (WARNING "Specify a --build-config when using CTest with a multi-config build")
+      else ()
+         # Do nothing. Not our config.
+      endif ()
+   ]=] code @ONLY)
+   file (GENERATE
+         OUTPUT "${PROJECT_BINARY_DIR}/LoadTests-$<CONFIG>.cmake"
+         CONTENT "${code}")
+   if (CMAKE_CONFIGURATION_TYPES)
+      foreach (conf IN LISTS CMAKE_CONFIGURATION_TYPES)
+         # Direct the generated CTest code to include() the file that loads the tests:
+         set_property (
+            DIRECTORY
+            APPEND PROPERTY
+            TEST_INCLUDE_FILES "${PROJECT_BINARY_DIR}/LoadTests-${conf}.cmake")
+      endforeach ()
+   else ()
+      set_property (
+         DIRECTORY
+         APPEND PROPERTY
+         TEST_INCLUDE_FILES "${PROJECT_BINARY_DIR}/LoadTests-${CMAKE_BUILD_TYPE}.cmake")
+   endif ()
+endif ()

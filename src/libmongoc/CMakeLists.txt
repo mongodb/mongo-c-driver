@@ -1042,12 +1042,6 @@ mongoc_add_test (test-mongoc-gssapi FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongo
 mongoc_add_test (test-mongoc-cache FALSE ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cache.c)
 
 if (ENABLE_TESTS)
-   enable_testing ()
-   add_test (NAME test-libmongoc
-      COMMAND test-libmongoc
-      WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../..
-   )
-
    # "make test" doesn't compile tests, so we create "make check" which compiles
    # and runs tests: https://gitlab.kitware.com/cmake/cmake/issues/8774
    add_custom_target (check COMMAND ${CMAKE_CTEST_COMMAND} -V

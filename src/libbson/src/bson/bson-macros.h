@@ -307,6 +307,11 @@
 #endif
 
 /**
+ * @brief String-ify the given argument
+ */
+#define BSON_STR(...) #__VA_ARGS__
+
+/**
  * @brief Mark the attached declared entity as "possibly-unused."
  *
  * Does nothing on MSVC.
