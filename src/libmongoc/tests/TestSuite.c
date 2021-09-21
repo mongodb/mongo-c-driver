@@ -213,7 +213,7 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          if (suite->ctest_run) {
             test_error ("'--ctest-run' can only be specified once");
          }
-         if (argc - 1 == 0) {
+         if (argc - 1 == i) {
             test_error ("'--ctest-run' requires an argument");
          }
          suite->flags |= TEST_NOFORK;
