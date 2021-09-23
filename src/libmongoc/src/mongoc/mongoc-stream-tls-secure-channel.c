@@ -834,8 +834,7 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
    switch (secure_channel->connecting_state) {
    case ssl_connect_1:
 
-
-      if (mongoc_secure_channel_handshake_step_1 (tls, (char *) host)) {
+      if (mongoc_secure_channel_handshake_step_1 (tls, (char *) host, error)) {
          TRACE ("%s", "Step#1 Worked!\n\n");
          *events = POLLIN;
          RETURN (false);
@@ -849,7 +848,7 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
    case ssl_connect_2_reading:
    case ssl_connect_2_writing:
 
-      if (mongoc_secure_channel_handshake_step_2 (tls, (char *) host)) {
+      if (mongoc_secure_channel_handshake_step_2 (tls, (char *) host, error)) {
          if (secure_channel->connecting_state == ssl_connect_2_reading) {
             *events = POLLIN;
          } else {
@@ -864,7 +863,7 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
 
    case ssl_connect_3:
 
-      if (mongoc_secure_channel_handshake_step_3 (tls, (char *) host)) {
+      if (mongoc_secure_channel_handshake_step_3 (tls, (char *) host, error)) {
          TRACE ("%s", "Step#3 Worked!\n\n");
          *events = POLLIN | POLLOUT;
          RETURN (false);
@@ -884,12 +883,14 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
       break;
    }
 
-
    *events = 0;
-   bson_set_error (error,
-                   MONGOC_ERROR_STREAM,
-                   MONGOC_ERROR_STREAM_SOCKET,
-                   "TLS handshake failed");
+
+   if (error && !error->code) {
+      bson_set_error (error,
+                      MONGOC_ERROR_STREAM,
+                      MONGOC_ERROR_STREAM_SOCKET,
+                      "TLS handshake failed");
+   }
 
    RETURN (false);
 }
