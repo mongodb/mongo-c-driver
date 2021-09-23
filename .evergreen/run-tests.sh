@@ -31,12 +31,20 @@ fi
 if [ "$SSL" != "nossl" ]; then
    export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION="off"
    export MONGOC_TEST_SSL_PEM_FILE="src/libmongoc/tests/x509gen/client.pem"
-   sudo cp src/libmongoc/tests/x509gen/ca.pem /usr/local/share/ca-certificates/cdriver.crt || true
-   if [ -f /usr/local/share/ca-certificates/cdriver.crt ]; then
-      sudo update-ca-certificates
-   else
-      export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
-   fi
+
+   case "$OS" in
+      cygwin*)
+         certutil.exe -addstore "Root" "src\libmongoc\tests\x509gen\ca.pem"
+         ;;
+      *)
+         sudo cp src/libmongoc/tests/x509gen/ca.pem /usr/local/share/ca-certificates/cdriver.crt || true
+         if [ -f /usr/local/share/ca-certificates/cdriver.crt ]; then
+            sudo update-ca-certificates
+         else
+            export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
+         fi
+         ;;
+   esac
 fi
 
 export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
