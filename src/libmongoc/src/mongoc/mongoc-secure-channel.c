@@ -111,7 +111,7 @@ mongoc_secure_channel_setup_certificate_from_file (const char *filename)
       NULL, /* phCertStore, OUT, HCERTSTORE.., unused, for now */
       NULL, /* phMsg, OUT, HCRYPTMSG, only for PKC7, unused */
       (const void **) &cert /* ppvContext, OUT, the Certificate Context */
-      );
+   );
 
    if (!cert) {
       MONGOC_ERROR ("Failed to extract public key from '%s'. Error 0x%.8X",
@@ -429,7 +429,7 @@ mongoc_secure_channel_setup_crl (
       NULL, /* phCertStore, OUT, HCERTSTORE.., unused, for now */
       NULL, /* phMsg, OUT, HCRYPTMSG, only for PKC7, unused */
       (const void **) &cert /* ppvContext, OUT, the Certificate Context */
-      );
+   );
    bson_free (str);
 
    if (!cert) {
@@ -609,7 +609,7 @@ mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls,
       &outbuf_desc,                       /* pOutput OUT param */
       &secure_channel->ret_flags,         /* pfContextAttr OUT param */
       &secure_channel->ctxt->time_stamp   /* ptsExpiry OUT param */
-      );
+   );
 
    if (sspi_status != SEC_I_CONTINUE_NEEDED) {
       MONGOC_ERROR ("initial InitializeSecurityContext failed: %ld",
