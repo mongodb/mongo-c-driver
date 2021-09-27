@@ -572,7 +572,6 @@ _mongoc_handshake_freeze (void)
 /*
  * free (*s) and make *s point to *s concated with suffix.
  * If *s is NULL it's treated like it's an empty string.
- * If suffix is NULL, nothing happens.
  */
 static void
 _append_and_truncate (char **s, const char *suffix, int max_len)
@@ -582,13 +581,10 @@ _append_and_truncate (char **s, const char *suffix, int max_len)
    const int delim_len = (int) strlen (" / ");
    int space_for_suffix;
 
-   BSON_ASSERT (s);
+   BSON_ASSERT_PARAM (s);
+   BSON_ASSERT_PARAM (suffix);
 
    prefix = old_str ? old_str : "";
-
-   if (!suffix) {
-      return;
-   }
 
    space_for_suffix = max_len - (int) strlen (prefix) - delim_len;
 
@@ -627,29 +623,37 @@ mongoc_handshake_data_append (const char *driver_name,
       return false;
    }
 
+   BSON_ASSERT (_mongoc_handshake_get ()->platform);
+
    /* allow practically any size for "platform", we'll trim it down in
     * _mongoc_handshake_build_doc_with_application */
    platform_space =
       HANDSHAKE_MAX_SIZE - (int) strlen (_mongoc_handshake_get ()->platform);
 
-   /* we check for an empty string as a special case to avoid an unnecessary
-    * delimiter being added in front of the string by _append_and_truncate */
-   if (strcmp (_mongoc_handshake_get ()->platform, "") == 0) {
-      bson_free (_mongoc_handshake_get ()->platform);
-      _mongoc_handshake_get ()->platform =
-         bson_strdup_printf ("%.*s", platform_space, platform);
-   } else {
-      _append_and_truncate (
-         &_mongoc_handshake_get ()->platform, platform, HANDSHAKE_MAX_SIZE);
+   if (platform) {
+      /* we check for an empty string as a special case to avoid an unnecessary
+       * delimiter being added in front of the string by _append_and_truncate */
+      if (strcmp (_mongoc_handshake_get ()->platform, "") == 0) {
+         bson_free (_mongoc_handshake_get ()->platform);
+         _mongoc_handshake_get ()->platform =
+            bson_strdup_printf ("%.*s", platform_space, platform);
+      } else {
+         _append_and_truncate (
+            &_mongoc_handshake_get ()->platform, platform, HANDSHAKE_MAX_SIZE);
+      }
    }
 
-   _append_and_truncate (&_mongoc_handshake_get ()->driver_name,
-                         driver_name,
-                         HANDSHAKE_DRIVER_NAME_MAX);
+   if (driver_name) {
+      _append_and_truncate (&_mongoc_handshake_get ()->driver_name,
+                            driver_name,
+                            HANDSHAKE_DRIVER_NAME_MAX);
+   }
 
-   _append_and_truncate (&_mongoc_handshake_get ()->driver_version,
-                         driver_version,
-                         HANDSHAKE_DRIVER_VERSION_MAX);
+   if (driver_version) {
+      _append_and_truncate (&_mongoc_handshake_get ()->driver_version,
+                            driver_version,
+                            HANDSHAKE_DRIVER_VERSION_MAX);
+   }
 
    _mongoc_handshake_freeze ();
    bson_mutex_unlock (&gHandshakeLock);
