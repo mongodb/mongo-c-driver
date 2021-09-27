@@ -818,7 +818,7 @@ test_mongoc_handshake_race_condition (void)
          BSON_ASSERT (!COMMON_PREFIX (thread_create) (
             &threads[j], &handshake_append_worker, NULL));
       }
-for (j = 0; j < 4; ++j) {
+      for (j = 0; j < 4; ++j) {
          COMMON_PREFIX (thread_join) (threads[j]);
       }
    }
