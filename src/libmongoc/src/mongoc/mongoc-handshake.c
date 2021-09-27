@@ -473,8 +473,7 @@ _append_platform_field (bson_t *doc, const char *platform)
                             1 +
 
                             /* key size */
-                            (int) strlen (HANDSHAKE_PLATFORM_FIELD) +
-                            1 +
+                            (int) strlen (HANDSHAKE_PLATFORM_FIELD) + 1 +
 
                             /* 4 bytes for length of string */
                             4);
