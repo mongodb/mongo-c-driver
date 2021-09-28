@@ -182,7 +182,6 @@ test_mongoc_handshake_data_append_success (void)
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
    mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
@@ -292,7 +291,6 @@ test_mongoc_handshake_data_append_null_args (void)
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
    mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
