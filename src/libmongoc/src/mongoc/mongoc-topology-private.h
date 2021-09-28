@@ -141,6 +141,11 @@ typedef struct _mongoc_topology_t {
 
    /* This is overridable for SRV polling tests to mock DNS records. */
    _mongoc_rr_resolver_fn rr_resolver;
+
+   /* valid is false when mongoc_topology_new failed to construct a valid topology.
+    * This could occur if the URI is invalid.
+    * An invalid topology does not monitor servers. */
+   bool valid;
 } mongoc_topology_t;
 
 mongoc_topology_t *
