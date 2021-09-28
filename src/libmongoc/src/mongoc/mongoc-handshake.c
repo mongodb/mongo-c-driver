@@ -633,7 +633,7 @@ mongoc_handshake_data_append (const char *driver_name,
    if (platform) {
       /* we check for an empty string as a special case to avoid an unnecessary
        * delimiter being added in front of the string by _append_and_truncate */
-      if (strcmp (_mongoc_handshake_get ()->platform, "") == 0) {
+      if (_mongoc_handshake_get()->platform[0] == '\0') {
          bson_free (_mongoc_handshake_get ()->platform);
          _mongoc_handshake_get ()->platform =
             bson_strdup_printf ("%.*s", platform_space, platform);
