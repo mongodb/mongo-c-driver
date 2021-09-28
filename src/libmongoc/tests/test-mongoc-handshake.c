@@ -174,11 +174,6 @@ test_mongoc_handshake_data_append_success (void)
    const char *driver_version = "version abc";
    const char *platform = "./configure -nottoomanyflags";
 
-   char big_string[HANDSHAKE_MAX_SIZE];
-
-   memset (big_string, 'a', HANDSHAKE_MAX_SIZE - 1);
-   big_string[HANDSHAKE_MAX_SIZE - 1] = '\0';
-
    _reset_handshake ();
    /* Make sure setting the handshake works */
    ASSERT (
@@ -289,11 +284,6 @@ test_mongoc_handshake_data_append_null_args (void)
    bson_iter_t md_iter;
    bson_iter_t inner_iter;
    const char *val;
-
-   char big_string[HANDSHAKE_MAX_SIZE];
-
-   memset (big_string, 'a', HANDSHAKE_MAX_SIZE - 1);
-   big_string[HANDSHAKE_MAX_SIZE - 1] = '\0';
 
    _reset_handshake ();
    /* Make sure setting the handshake works */
