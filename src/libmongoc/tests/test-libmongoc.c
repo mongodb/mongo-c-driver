@@ -3017,5 +3017,6 @@ test_framework_skip_if_no_getlasterror (void) {
 
 bool
 test_framework_is_loadbalanced (void) {
-   return test_framework_getenv_bool ("MONGOC_TEST_LOADBALANCED");
+   return test_framework_getenv_bool ("MONGOC_TEST_LOADBALANCED") ||
+          test_framework_getenv_bool ("MONGOC_TEST_DNS_LOADBALANCED");
 }
