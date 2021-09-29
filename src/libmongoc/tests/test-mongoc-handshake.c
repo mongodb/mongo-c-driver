@@ -174,11 +174,6 @@ test_mongoc_handshake_data_append_success (void)
    const char *driver_version = "version abc";
    const char *platform = "./configure -nottoomanyflags";
 
-   char big_string[HANDSHAKE_MAX_SIZE];
-
-   memset (big_string, 'a', HANDSHAKE_MAX_SIZE - 1);
-   big_string[HANDSHAKE_MAX_SIZE - 1] = '\0';
-
    _reset_handshake ();
    /* Make sure setting the handshake works */
    ASSERT (
@@ -187,7 +182,6 @@ test_mongoc_handshake_data_append_success (void)
    server = mock_server_new ();
    mock_server_run (server);
    uri = mongoc_uri_copy (mock_server_get_uri (server));
-   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_HEARTBEATFREQUENCYMS, 500);
    mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
    pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
@@ -261,6 +255,116 @@ test_mongoc_handshake_data_append_success (void)
    if (strlen (val) <
        250) { /* standard val are < 100, may be truncated on some platform */
       ASSERT (strstr (val, platform) != NULL);
+   }
+
+   mock_server_replies_simple (request, "{'ok': 1, 'isWritablePrimary': true}");
+   request_destroy (request);
+
+   /* Cleanup */
+   mongoc_client_pool_push (pool, client);
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+   mock_server_destroy (server);
+
+   _reset_handshake ();
+}
+
+
+static void
+test_mongoc_handshake_data_append_null_args (void)
+{
+   mock_server_t *server;
+   mongoc_uri_t *uri;
+   mongoc_client_t *client;
+   mongoc_client_pool_t *pool;
+   request_t *request;
+   const bson_t *request_doc;
+   bson_iter_t iter;
+   bson_iter_t md_iter;
+   bson_iter_t inner_iter;
+   const char *val;
+
+   _reset_handshake ();
+   /* Make sure setting the handshake works */
+   ASSERT (mongoc_handshake_data_append (NULL, NULL, NULL));
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   uri = mongoc_uri_copy (mock_server_get_uri (server));
+   mongoc_uri_set_option_as_utf8 (uri, MONGOC_URI_APPNAME, "testapp");
+   pool = test_framework_client_pool_new_from_uri (uri, NULL);
+
+   /* Force topology scanner to start */
+   client = mongoc_client_pool_pop (pool);
+
+   request = mock_server_receives_legacy_hello (server, NULL);
+   ASSERT (request);
+   request_doc = request_get_doc (request, 0);
+   ASSERT (request_doc);
+   ASSERT (bson_has_field (request_doc, HANDSHAKE_FIELD));
+
+   ASSERT (bson_iter_init_find (&iter, request_doc, HANDSHAKE_FIELD));
+   ASSERT (bson_iter_recurse (&iter, &md_iter));
+
+   ASSERT (bson_iter_find (&md_iter, "application"));
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
+   ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
+   ASSERT (bson_iter_find (&inner_iter, "name"));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   ASSERT (val);
+   ASSERT_CMPSTR (val, "testapp");
+
+   /* Make sure driver.name and driver.version and platform are all right */
+   ASSERT (bson_iter_find (&md_iter, "driver"));
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
+   ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
+   ASSERT (bson_iter_find (&inner_iter, "name"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   ASSERT (val);
+   ASSERT (strstr (val, " / ") == NULL); /* No append delimiter */
+
+   ASSERT (bson_iter_find (&inner_iter, "version"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   ASSERT (val);
+   ASSERT (strstr (val, " / ") == NULL); /* No append delimiter */
+
+   /* Check os type not empty */
+   ASSERT (bson_iter_find (&md_iter, "os"));
+   ASSERT (BSON_ITER_HOLDS_DOCUMENT (&md_iter));
+   ASSERT (bson_iter_recurse (&md_iter, &inner_iter));
+
+   ASSERT (bson_iter_find (&inner_iter, "type"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   ASSERT (val);
+   ASSERT (strlen (val) > 0);
+
+   /* Check os version valid */
+   ASSERT (bson_iter_find (&inner_iter, "version"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   _check_os_version_valid (val);
+
+   /* Check os arch is valid */
+   ASSERT (bson_iter_find (&inner_iter, "architecture"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&inner_iter));
+   val = bson_iter_utf8 (&inner_iter, NULL);
+   ASSERT (val);
+   _check_arch_string_valid (val);
+
+   /* Not checking os_name, as the spec says it can be NULL. */
+
+   /* Check platform field ok */
+   ASSERT (bson_iter_find (&md_iter, "platform"));
+   ASSERT (BSON_ITER_HOLDS_UTF8 (&md_iter));
+   val = bson_iter_utf8 (&md_iter, NULL);
+   ASSERT (val);
+   /* standard val are < 100, may be truncated on some platform */
+   if (strlen (val) < 250) {
+      /* `printf("%s", NULL)` -> "(null)" with libstdc++, libc++, and STL */
+      ASSERT (strstr (val, "null") == NULL);
    }
 
    mock_server_replies_simple (request, "{'ok': 1, 'isWritablePrimary': true}");
@@ -818,7 +922,7 @@ test_mongoc_handshake_race_condition (void)
          BSON_ASSERT (!COMMON_PREFIX (thread_create) (
             &threads[j], &handshake_append_worker, NULL));
       }
-for (j = 0; j < 4; ++j) {
+      for (j = 0; j < 4; ++j) {
          COMMON_PREFIX (thread_join) (threads[j]);
       }
    }
@@ -842,6 +946,9 @@ test_handshake_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/MongoDB/handshake/success",
                                 test_mongoc_handshake_data_append_success);
+   TestSuite_AddMockServerTest (suite,
+                                "/MongoDB/handshake/null_args",
+                                test_mongoc_handshake_data_append_null_args);
    TestSuite_Add (suite,
                   "/MongoDB/handshake/big_platform",
                   test_mongoc_handshake_big_platform);
