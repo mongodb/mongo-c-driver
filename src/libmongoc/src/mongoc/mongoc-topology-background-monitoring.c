@@ -134,6 +134,10 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
    BSON_ASSERT (!topology->single_threaded);
    MONGOC_DEBUG_ASSERT (COMMON_PREFIX (mutex_is_locked) (&topology->mutex));
 
+   if (!topology->valid) {
+      return;
+   }
+
    if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       return;
    }

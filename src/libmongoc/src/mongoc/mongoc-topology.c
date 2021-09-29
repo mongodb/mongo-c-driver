@@ -286,7 +286,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    int64_t heartbeat_default;
    int64_t heartbeat;
    mongoc_topology_t *topology;
-   bool topology_valid;
    mongoc_topology_description_type_t init_type;
    const char *service;
    char *prefixed_service;
@@ -297,7 +296,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    bool directconnection;
 
    BSON_ASSERT (uri);
-   topology_valid = false;
 
 #ifndef MONGOC_ENABLE_CRYPTO
    if (mongoc_uri_get_option_as_bool (
@@ -314,6 +312,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
                                                   _server_session_destroy,
                                                   _server_session_should_prune,
                                                   topology);
+
+   topology->valid = false;
    heartbeat_default =
       single_threaded ? MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_SINGLE_THREADED
                       : MONGOC_TOPOLOGY_HEARTBEAT_FREQUENCY_MS_MULTI_THREADED;
@@ -445,18 +445,18 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       topology->srv_polling_rescan_interval_ms = BSON_MAX (
          rr_data.min_ttl * 1000, MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS);
 
-      topology_valid = true;
+      topology->valid = true;
    srv_fail:
       bson_free (rr_data.txt_record_opts);
       bson_free (prefixed_service);
       _mongoc_host_list_destroy_all (rr_data.hosts);
    } else {
-      topology_valid = true;
+      topology->valid = true;
    }
 
    if (!mongoc_uri_finalize_loadbalanced (topology->uri,
                                           &topology->scanner->error)) {
-      topology_valid = false;
+      topology->valid = false;
    }
 
    /*
@@ -524,7 +524,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       mongoc_cond_init (&topology->srv_polling_cond);
    }
 
-   if (!topology_valid) {
+   if (!topology->valid) {
       TRACE ("%s", "topology invalid");
       /* add no nodes */
       return topology;
