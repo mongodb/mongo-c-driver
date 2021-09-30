@@ -548,6 +548,7 @@ class IntegrationTask(MatrixTask):
         extra = {}
         if self.cse:
             extra["CLIENT_SIDE_ENCRYPTION"] = "on"
+            commands.append(func('clone drivers-evergreen-tools'))
         commands.append(run_tests(VALGRIND=self.on_off('valgrind'),
                                   ASAN='on' if self.sanitizer == 'asan' else 'off',
                                   AUTH=self.display('auth'),

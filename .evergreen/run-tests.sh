@@ -47,6 +47,17 @@ if [ "$SSL" != "nossl" ]; then
    esac
 fi
 
+# Start mock KMS TLS servers.
+if [ -n "$CLIENT_SIDE_ENCRYPTION" ]; then
+   # Created by 'clone drivers-evergreen-tools'.
+   cd ../drivers-evergreen-tools/.evergreen/csfle
+   . ./activate_venv.sh
+   python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 7999 &
+   python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 8000 &
+   python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 8001 &
+   cd -
+fi
+
 export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
 export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
 export MONGOC_TEST_URI="$URI"

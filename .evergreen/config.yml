@@ -3286,6 +3286,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'on'
@@ -3449,6 +3450,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'on'
@@ -3612,6 +3614,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'on'
@@ -3775,6 +3778,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'on'
@@ -6766,6 +6770,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6818,6 +6823,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6870,6 +6876,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6922,6 +6929,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7099,6 +7107,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7151,6 +7160,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7203,6 +7213,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7255,6 +7266,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8282,6 +8294,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8334,6 +8347,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8386,6 +8400,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8438,6 +8453,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8590,6 +8606,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8642,6 +8659,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8694,6 +8712,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8746,6 +8765,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -9773,6 +9793,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -9825,6 +9846,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -9877,6 +9899,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -9929,6 +9952,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10081,6 +10105,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10133,6 +10158,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10185,6 +10211,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10237,6 +10264,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11264,6 +11292,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11316,6 +11345,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11368,6 +11398,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11420,6 +11451,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11572,6 +11604,7 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11624,6 +11657,7 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11676,6 +11710,7 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11728,6 +11763,7 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
   - func: run tests
     vars:
       ASAN: 'off'
