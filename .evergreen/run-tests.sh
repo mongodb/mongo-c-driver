@@ -37,11 +37,20 @@ if [ "$SSL" != "nossl" ]; then
          certutil.exe -addstore "Root" "src\libmongoc\tests\x509gen\ca.pem"
          ;;
       *)
-         sudo cp -v src/libmongoc/tests/x509gen/ca.pem /usr/local/share/ca-certificates/cdriver.crt || true
-         if [ -f /usr/local/share/ca-certificates/cdriver.crt ]; then
-            sudo update-ca-certificates
+         if [ -f /etc/redhat-release ]; then
+            sudo cp -v src/libmongoc/tests/x509gen/ca.pem /usr/share/pki/ca-trust-source/anchors/cdriver.crt || true
+            if [ -f /usr/share/pki/ca-trust-source/anchors/cdriver.crt ]; then
+               sudo update-ca-trust
+            else
+               export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
+            fi
          else
-            export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
+            sudo cp -v src/libmongoc/tests/x509gen/ca.pem /usr/local/share/ca-certificates/cdriver.crt || true
+            if [ -f /usr/local/share/ca-certificates/cdriver.crt ]; then
+               sudo update-ca-certificates
+            else
+               export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
+            fi
          fi
          ;;
    esac
