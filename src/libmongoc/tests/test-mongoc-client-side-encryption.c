@@ -2321,7 +2321,7 @@ test_kms_tls_cert_valid (void *unused)
                        tls_stream, host.host, connecttimeoutms, &error),
                     error);
 
-   mongoc_stream_destroy (tls_stream); /* Also destroys host_stream. */
+   mongoc_stream_destroy (tls_stream); /* Also destroys base_stream. */
 }
 
 static void
