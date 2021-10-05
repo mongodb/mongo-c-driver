@@ -152,8 +152,8 @@ _make_aws_kms_provider (bson_t *kms_providers)
    if (!aws_secret_access_key || !aws_access_key_id) {
       fprintf (stderr,
                "Set MONGOC_TEST_AWS_SECRET_ACCESS_KEY and "
-               "MONGOC_TEST_AWS_ACCESS_KEY_ID environment "
-               "variables to run Client Side Encryption tests.");
+               "MONGOC_TEST_AWS_ACCESS_KEY_ID environment variables to run "
+               "CSFLE tests.");
       abort ();
    }
 
