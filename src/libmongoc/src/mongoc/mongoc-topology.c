@@ -1190,7 +1190,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
             tried_once = true;
          }
 
-         // Topology may have just been updated by a scan.
+         /* Topology may have just been updated by a scan. */
          MC_TD_DROP (td);
          td = mc_tpld_take_ref (topology);
 

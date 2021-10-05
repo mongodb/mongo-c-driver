@@ -142,8 +142,8 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
       bson_memory_order_relaxed);
 
    if (prev_state != MONGOC_TOPOLOGY_SCANNER_OFF) {
-      // The topology scanner is already running, or another thread is starting
-      // it up now.
+      /* The topology scanner is already running, or another thread is starting
+       * it up now. */
       return;
    }
 
