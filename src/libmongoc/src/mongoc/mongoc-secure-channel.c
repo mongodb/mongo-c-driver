@@ -681,6 +681,12 @@ mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
    TRACE ("%s", "SSL/TLS connection with endpoint (step 2/3)");
 
    if (!secure_channel->cred || !secure_channel->ctxt) {
+      MONGOC_LOG_AND_SET_ERROR (
+         error,
+         MONGOC_ERROR_STREAM,
+         MONGOC_ERROR_STREAM_SOCKET,
+         "required TLS credentials or context not provided");
+
       return false;
    }
 
@@ -971,6 +977,10 @@ mongoc_secure_channel_handshake_step_3 (mongoc_stream_tls_t *tls,
    TRACE ("SSL/TLS connection with %s (step 3/3)", hostname);
 
    if (!secure_channel->cred) {
+      MONGOC_LOG_AND_SET_ERROR (error,
+                                MONGOC_ERROR_STREAM,
+                                MONGOC_ERROR_STREAM_SOCKET,
+                                "required TLS credentials not provided");
       return false;
    }
 
