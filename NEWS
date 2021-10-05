@@ -1,3 +1,22 @@
+mongo-c-driver 1.19.1
+=====================
+
+It is my pleasure to announce the MongoDB C Driver 1.19.1.
+
+Bug fixes:
+
+  * Permit NULL platform argument in mongoc_handshake_data_append.
+  * Fix wire version check in server selection when maxStalenessSeconds is specified in read preferences.
+  * Fix assert on invalid URI options in client pools connected to load balanced clusters.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+
+--Kevin Albertson
+
+
 mongo-c-driver 1.19.0
 =====================
 
