@@ -131,6 +131,10 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
    int prev_state;
    BSON_ASSERT (!topology->single_threaded);
 
+   if (!topology->valid) {
+      return;
+   }
+
    prev_state = bson_atomic_int_compare_exchange_strong (
       (int *) &topology->scanner_state,
       MONGOC_TOPOLOGY_SCANNER_OFF,
