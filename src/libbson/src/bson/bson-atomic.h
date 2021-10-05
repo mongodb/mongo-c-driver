@@ -300,7 +300,7 @@ DECL_ATOMIC_INTEGRAL (int, int, )
 #endif
 
 BSON_EXPORT (int64_t)
-_bson_emul_atomic_int64_fetch_add (int64_t const volatile *val,
+_bson_emul_atomic_int64_fetch_add (int64_t volatile *val,
                                    int64_t v,
                                    enum bson_memory_order);
 BSON_EXPORT (int64_t)
