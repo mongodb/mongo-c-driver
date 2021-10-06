@@ -2303,9 +2303,18 @@ test_kms_tls_cert_valid (void *unused)
    const int is_client = 1;
 
    mongoc_host_list_t host;
+
+#if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+   /* Certificate verification fails with Secure Channel given "127.0.0.1:7999"
+    * with error: "hostname doesn't match certificate". */
+   ASSERT_OR_PRINT (
+      _mongoc_host_list_from_string_with_err (&host, "localhost:7999", &error),
+      error);
+#else
    ASSERT_OR_PRINT (
       _mongoc_host_list_from_string_with_err (&host, "127.0.0.1:7999", &error),
       error);
+#endif
 
    mongoc_stream_t *base_stream =
       mongoc_client_connect_tcp (connecttimeoutms, &host, &error);
