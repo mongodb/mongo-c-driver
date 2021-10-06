@@ -18,7 +18,7 @@ find_cmake ()
       CMAKE="$(pwd)/cmake-3.11.0/bin/cmake"
       return 0
      fi
-     curl --retry 5 https://cmake.org/files/v3.11/cmake-3.11.0-Linux-x86_64.tar.gz -sS --max-time 120 --fail --output cmake.tar.gz
+     curl --retry 5 https://github.com/Kitware/CMake/releases/download/v3.11.0/cmake-3.11.0-Linux-x86_64.tar.gz -sS --max-time 120 --fail --output cmake.tar.gz
      mkdir cmake-3.11.0
      tar xzf cmake.tar.gz -C cmake-3.11.0 --strip-components=1
      CMAKE=$(pwd)/cmake-3.11.0/bin/cmake
@@ -29,7 +29,7 @@ find_cmake ()
      # Some images have no cmake yet, or a broken cmake (see: BUILD-8570)
      echo "-- MAKE CMAKE --"
      CMAKE_INSTALL_DIR=$(readlink -f cmake-install)
-     curl --retry 5 https://cmake.org/files/v3.11/cmake-3.11.0.tar.gz -sS --max-time 120 --fail --output cmake.tar.gz
+     curl --retry 5 https://github.com/Kitware/CMake/releases/download/v3.11.0/cmake-3.11.0.tar.gz -sS --max-time 120 --fail --output cmake.tar.gz
      tar xzf cmake.tar.gz
      cd cmake-3.11.0
      ./bootstrap --prefix="${CMAKE_INSTALL_DIR}"
