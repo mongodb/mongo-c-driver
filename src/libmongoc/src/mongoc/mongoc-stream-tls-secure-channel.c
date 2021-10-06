@@ -827,6 +827,10 @@ mongoc_stream_tls_secure_channel_handshake (mongoc_stream_t *stream,
    ENTRY;
    BSON_ASSERT (secure_channel);
 
+   if (error) {
+      error->code = 0;
+   }
+
    TRACE ("Getting ready for state: %d, timeout is %d",
           secure_channel->connecting_state + 1,
           tls->timeout_msec);
