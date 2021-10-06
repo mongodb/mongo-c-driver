@@ -315,7 +315,6 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
                                             bson_t *copy_into)
 {
    bson_t *new_cmd;
-   bson_t *defer_to_destroy = NULL;
 
    bson_mutex_lock (&ts->handshake_cmd_mtx);
    /* If this is the first time using the node or if it's the first time
@@ -329,28 +328,27 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
     * Initialize one and set it now. */
    /* Note: Don't hold the mutex while we build our command */
    /* Construct a new handshake command to be sent */
+   BSON_ASSERT (ts->handshake_cmd == NULL);
+   bson_mutex_unlock (&ts->handshake_cmd_mtx);
    new_cmd =
       _build_handshake_cmd (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd,
                             ts->appname,
                             ts->uri,
                             ts->loadbalanced);
+   bson_mutex_lock (&ts->handshake_cmd_mtx);
    if (ts->handshake_state != HANDSHAKE_CMD_UNINITIALIZED) {
       /* Someone else updated the handshake_cmd while we were building ours.
        * Defer to their copy and just destroy the one we created. */
       bson_destroy (new_cmd);
       goto after_init;
    }
+   BSON_ASSERT (ts->handshake_cmd == NULL);
    /* We're still the one updating the command */
-   /* We will destroy the prior command after we have updated state: */
-   defer_to_destroy = ts->handshake_cmd;
+   ts->handshake_cmd = new_cmd;
    /* The "_build" may have failed. */
    /* Even if new_cmd is NULL, this is still what we want */
-   ts->handshake_cmd = new_cmd;
    ts->handshake_state =
       new_cmd == NULL ? HANDSHAKE_CMD_TOO_BIG : HANDSHAKE_CMD_OKAY;
-   /* Defer destroying the prior command until *after* we have released the
-    * mutex. */
-   bson_destroy (defer_to_destroy);
    if (ts->handshake_state == HANDSHAKE_CMD_TOO_BIG) {
       MONGOC_WARNING ("Handshake doc too big, not including in hello");
    }
