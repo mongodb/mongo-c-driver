@@ -1970,6 +1970,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    }
 
    if (connection_option == RECONNECT) {
+      td = mc_tpld_unsafe_get_mutable (topology);
       id = mongoc_set_find_id (mc_tpld_servers_const (td),
                                host_equals,
                                (void *) mock_server_get_host_and_port (server));
@@ -1994,6 +1995,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
 
       bson_destroy (&reply);
 
+      td = mc_tpld_unsafe_get_mutable (topology);
       ASSERT_CMPINT (
          discovered_nodes_len, ==, (int) mc_tpld_servers_const (td)->items_len);
 
