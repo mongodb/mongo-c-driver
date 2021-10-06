@@ -2085,6 +2085,7 @@ mc_tpld_modify_commit (mc_tpld_modification mod)
    mongoc_atomic_shared_ptr_store (&mod.topology->_shared_descr_.sptr,
                                    new_sptr);
    bson_mutex_unlock (&mod.topology->tpld_modification_mtx);
+   mongoc_shared_ptr_reset_null (&new_sptr);
    mc_tpld_drop_ref (&mod.prev_td);
 }
 
