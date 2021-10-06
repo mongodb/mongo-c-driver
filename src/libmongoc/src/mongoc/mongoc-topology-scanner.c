@@ -257,7 +257,7 @@ _build_handshake_cmd (const bson_t *basis_cmd,
                       const mongoc_uri_t *uri,
                       bool is_loadbalanced)
 {
-   bson_t *doc = bson_new ();
+   bson_t *doc = bson_copy (basis_cmd);
    bson_t subdoc;
    bson_iter_t iter;
    const char *key;
@@ -266,8 +266,6 @@ _build_handshake_cmd (const bson_t *basis_cmd,
    int count = 0;
    char buf[16];
    bool subdoc_okay;
-
-   bson_copy_to (basis_cmd, doc);
 
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
    subdoc_okay =
