@@ -334,7 +334,8 @@ static BSON_INLINE int64_t
 bson_atomic_int64_fetch (const int64_t volatile *val,
                          enum bson_memory_order order)
 {
-   return _bson_emul_atomic_int64_fetch_add (val, 0, order);
+   return _bson_emul_atomic_int64_fetch_add (
+      (int64_t volatile *) val, 0, order);
 }
 
 static BSON_INLINE int64_t
