@@ -38,17 +38,23 @@ if [ "$SSL" != "nossl" ]; then
          ;;
       *)
          if [ -f /etc/redhat-release ]; then
-            sudo cp -v src/libmongoc/tests/x509gen/ca.pem /usr/share/pki/ca-trust-source/anchors/cdriver.crt || true
+            echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors..."
+            sudo cp -v src/libmongoc/tests/x509gen/ca.pem /usr/share/pki/ca-trust-source/anchors/cdriver.crt
             if [ -f /usr/share/pki/ca-trust-source/anchors/cdriver.crt ]; then
-               sudo update-ca-trust
+               echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors... done."
+               sudo update-ca-trust extract --verbose
             else
+               echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors... failed."
                export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
             fi
          else
+            echo "Copying CA certificate to /usr/local/share/ca-certificates..."
             sudo cp -v src/libmongoc/tests/x509gen/ca.pem /usr/local/share/ca-certificates/cdriver.crt || true
             if [ -f /usr/local/share/ca-certificates/cdriver.crt ]; then
-               sudo update-ca-certificates
+               echo "Copying CA certificate to /usr/local/share/ca-certificates... done."
+               sudo update-ca-certificates --verbose
             else
+               echo "Copying CA certificate to /usr/local/share/ca-certificates... failed."
                export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
             fi
          fi
