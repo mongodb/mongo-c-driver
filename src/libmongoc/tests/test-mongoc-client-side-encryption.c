@@ -2351,7 +2351,7 @@ test_kms_tls_cert_expired (void *unused)
       tmp_bson ("{ 'region': 'us-east-1', 'key': "
                 "'arn:aws:kms:us-east-1:579766882180:key/"
                 "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', "
-                "'endpoint': 'mongodb://127.0.0.1:8000' }"));
+                "'endpoint': '127.0.0.1:8000' }"));
 
    bson_value_t keyid;
    bool ret = mongoc_client_encryption_create_datakey (
@@ -2393,7 +2393,7 @@ test_kms_tls_cert_wrong_host (void *unused)
       tmp_bson ("{ 'region': 'us-east-1', 'key': "
                 "'arn:aws:kms:us-east-1:579766882180:key/"
                 "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', "
-                "'endpoint': 'mongodb://127.0.0.1:8001' }"));
+                "'endpoint': '127.0.0.1:8001' }"));
 
    bson_value_t keyid;
    bool ret = mongoc_client_encryption_create_datakey (
