@@ -39,7 +39,7 @@ if [ "$SSL" != "nossl" ]; then
       *)
          if [ -f /etc/redhat-release ]; then
             echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors..."
-            sudo cp -v src/libmongoc/tests/x509gen/ca.pem /usr/share/pki/ca-trust-source/anchors/cdriver.crt
+            sudo cp -v src/libmongoc/tests/x509gen/ca.pem /usr/share/pki/ca-trust-source/anchors/cdriver.crt || true
             if [ -f /usr/share/pki/ca-trust-source/anchors/cdriver.crt ]; then
                echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors... done."
                sudo update-ca-trust extract --verbose
