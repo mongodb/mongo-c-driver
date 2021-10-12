@@ -1808,6 +1808,7 @@ static bool
 _handle_sdam_app_error_command (mongoc_topology_t *topology,
                                 const mongoc_topology_description_t *td,
                                 uint32_t server_id,
+                                uint32_t generation,
                                 const bson_oid_t *service_id,
                                 const mongoc_server_description_t *sd,
                                 uint32_t max_wire_version,
@@ -1852,7 +1853,7 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
    mut_sd =
       mongoc_topology_description_server_by_id (tdmod.new_td, server_id, NULL);
 
-   if (!mut_sd || (sd->hello_ok && !mut_sd->hello_ok)) {
+   if (!mut_sd) {
       /* Server was already removed/invalidated */
       mc_tpld_modify_drop (tdmod);
       bson_destroy (&incoming_topology_version);
@@ -1864,6 +1865,14 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
    if (mongoc_server_description_topology_version_cmp (
           &mut_sd->topology_version, &incoming_topology_version) >= 0) {
       /* The server description is greater or equal, ignore the error. */
+      mc_tpld_modify_drop (tdmod);
+      bson_destroy (&incoming_topology_version);
+      return false;
+   }
+
+   if (generation <
+       mongoc_generation_map_get (mut_sd->generation_map, service_id)) {
+      /* Our view of the server description is stale. Ignore it. */
       mc_tpld_modify_drop (tdmod);
       bson_destroy (&incoming_topology_version);
       return false;
@@ -1955,8 +1964,8 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       goto ignore_error;
    }
 
-   if (generation < _mongoc_topology_get_connection_pool_generation (
-                       td.ptr, server_id, service_id)) {
+   if (generation <
+       mongoc_generation_map_get (sd->generation_map, service_id)) {
       /* This is a stale connection. Ignore. */
       goto ignore_error;
    }
@@ -1971,8 +1980,14 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       /* Mark server as unknown. */
       goto invalidate_server;
    } else if (type == MONGOC_SDAM_APP_ERROR_COMMAND) {
-      bool cleared = _handle_sdam_app_error_command (
-         topology, td.ptr, server_id, service_id, sd, max_wire_version, reply);
+      bool cleared = _handle_sdam_app_error_command (topology,
+                                                     td.ptr,
+                                                     server_id,
+                                                     generation,
+                                                     service_id,
+                                                     sd,
+                                                     max_wire_version,
+                                                     reply);
       MC_TD_DROP (td);
       return cleared;
    }
