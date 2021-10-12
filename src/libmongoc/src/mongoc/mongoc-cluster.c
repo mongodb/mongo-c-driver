@@ -2273,7 +2273,7 @@ try_again:
 
       /* Check whether the server was updated during the "begin" above. */
       if (_try_get_server_stream (
-             cluster, tdmod.new_td, server_id, reconnect_ok, err_ptr) != NULL) {
+             cluster, tdmod.new_td, server_id, false, NULL) != NULL) {
          /* It was updated. Just try the same logic again. */
          mc_tpld_modify_drop (tdmod);
          MC_TD_DROP (td);
