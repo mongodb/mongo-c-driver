@@ -768,6 +768,18 @@ functions:
         if [ ! -d "drivers-evergreen-tools" ]; then
             git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
         fi
+  run kms servers:
+  - command: shell.exec
+    params:
+      background: true
+      shell: bash
+      script: |-
+        set -o errexit
+        cd ./drivers-evergreen-tools/.evergreen/csfle
+        . ./activate_venv.sh
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 7999 &
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 8000 &
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 8001 &
   start load balancer:
   - command: shell.exec
     params:
@@ -3286,6 +3298,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'on'
@@ -3449,6 +3463,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'on'
@@ -3612,6 +3628,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'on'
@@ -3775,6 +3793,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'on'
@@ -6766,6 +6786,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6818,6 +6840,8 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6870,6 +6894,8 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -6922,6 +6948,8 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7099,6 +7127,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7151,6 +7181,8 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7203,6 +7235,8 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -7255,6 +7289,8 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: latest
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8282,6 +8318,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8334,6 +8372,8 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8386,6 +8426,8 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8438,6 +8480,8 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8590,6 +8634,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8642,6 +8688,8 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8694,6 +8742,8 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -8746,6 +8796,8 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '5.0'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -9773,6 +9825,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -9825,6 +9879,8 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -9877,6 +9933,8 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -9929,6 +9987,8 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10081,6 +10141,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10133,6 +10195,8 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10185,6 +10249,8 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -10237,6 +10303,8 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '4.4'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11264,6 +11332,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11316,6 +11386,8 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11368,6 +11440,8 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11420,6 +11494,8 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11572,6 +11648,8 @@ tasks:
       SSL: openssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11624,6 +11702,8 @@ tasks:
       SSL: openssl-static
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11676,6 +11756,8 @@ tasks:
       SSL: darwinssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -11728,6 +11810,8 @@ tasks:
       SSL: winssl
       TOPOLOGY: server
       VERSION: '4.2'
+  - func: clone drivers-evergreen-tools
+  - func: run kms servers
   - func: run tests
     vars:
       ASAN: 'off'
@@ -26898,8 +26982,8 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
-  - .latest .openssl !.nosasl .server
-  - .latest .nossl
+  - .latest .openssl !.nosasl .server !.client-side-encryption
+  - .latest .nossl !.client-side-encryption
 - name: gcc48rhel
   display_name: GCC 4.8 (RHEL 7.0)
   expansions:
@@ -26915,14 +26999,14 @@ buildvariants:
   - .authentication-tests .openssl
   - .latest .openssl !.nosasl .server
   - .latest .nossl
-  - .5.0 .openssl !.nosasl .server
-  - .4.4 .openssl !.nosasl .server
-  - .4.2 .openssl !.nosasl .server
-  - .4.0 .openssl !.nosasl .server
-  - .3.6 .openssl !.nosasl .server
-  - .3.4 .openssl !.nosasl .server
-  - .3.2 .openssl !.nosasl .server
-  - .3.0 .openssl !.nosasl !.auth
+  - .5.0 .openssl !.nosasl .server !.client-side-encryption
+  - .4.4 .openssl !.nosasl .server !.client-side-encryption
+  - .4.2 .openssl !.nosasl .server !.client-side-encryption
+  - .4.0 .openssl !.nosasl .server !.client-side-encryption
+  - .3.6 .openssl !.nosasl .server !.client-side-encryption
+  - .3.4 .openssl !.nosasl .server !.client-side-encryption
+  - .3.2 .openssl !.nosasl .server !.client-side-encryption
+  - .3.0 .openssl !.nosasl !.auth !.client-side-encryption
 - name: gcc49
   display_name: GCC 4.9 (Debian 8.1)
   expansions:
@@ -27199,12 +27283,12 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
-  - .latest .openssl !.nosasl .server
-  - .latest .openssl-static !.nosasl .server
+  - .latest .openssl !.nosasl .server !.client-side-encryption
+  - .latest .openssl-static !.nosasl .server !.client-side-encryption
   - .latest .nossl
-  - .5.0 .openssl !.nosasl .server
-  - .4.4 .openssl !.nosasl .server
-  - .4.2 .openssl !.nosasl .server
+  - .5.0 .openssl !.nosasl .server !.client-side-encryption
+  - .4.4 .openssl !.nosasl .server !.client-side-encryption
+  - .4.2 .openssl !.nosasl .server !.client-side-encryption
   - test-dns-openssl
   batchtime: 1440
 - name: arm-ubuntu1804
@@ -27257,12 +27341,12 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
-  - .latest .openssl !.nosasl .server
+  - .latest .openssl !.nosasl .server !.client-side-encryption
   - .latest .nossl
-  - .5.0 .openssl !.nosasl .server
-  - .4.4 .openssl !.nosasl .server
-  - .4.2 .openssl !.nosasl .server
-  - .4.0 .openssl !.nosasl .server
+  - .5.0 .openssl !.nosasl .server !.client-side-encryption
+  - .4.4 .openssl !.nosasl .server !.client-side-encryption
+  - .4.2 .openssl !.nosasl .server !.client-side-encryption
+  - .4.0 .openssl !.nosasl .server !.client-side-encryption
   batchtime: 1440
 - name: valgrind-ubuntu
   display_name: Valgrind Tests (Ubuntu 18.04)

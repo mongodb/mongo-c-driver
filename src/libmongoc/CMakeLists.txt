@@ -939,7 +939,6 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-change-stream.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-pool.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-session.c
-   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-side-encryption.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cluster.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-cmd.c
@@ -1024,6 +1023,7 @@ set (test-libmongoc-sources
 if (MONGOC_ENABLE_SSL)
    set (test-libmongoc-sources ${test-libmongoc-sources}
       ${PROJECT_SOURCE_DIR}/tests/ssl-test.c
+      ${PROJECT_SOURCE_DIR}/tests/test-mongoc-client-side-encryption.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-tls-error.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream-tls.c
       ${PROJECT_SOURCE_DIR}/tests/test-mongoc-x509.c
