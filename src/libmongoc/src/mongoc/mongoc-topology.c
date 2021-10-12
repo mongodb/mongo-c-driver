@@ -1236,7 +1236,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    /* With background thread */
    /* we break out when we've found a server or timed out */
    for (;;) {
-      // Topology may have been updated on a previous loop iteration
+      /* Topology may have been updated on a previous loop iteration */
       MC_TD_DROP (td);
       td = mc_tpld_take_ref (topology);
 
@@ -1619,7 +1619,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
             goto done;
          }
 
-         // Topology may have been updated by a scan
+         /* Topology may have been updated by a scan */
          MC_TD_DROP (td);
          td = mc_tpld_take_ref (topology);
 
@@ -1852,8 +1852,18 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
    mut_sd =
       mongoc_topology_description_server_by_id (tdmod.new_td, server_id, NULL);
 
-   if (!mut_sd) {
-      /* Server was already removed */
+   if (!mut_sd || (sd->hello_ok && !mut_sd->hello_ok)) {
+      /* Server was already removed/invalidated */
+      mc_tpld_modify_drop (tdmod);
+      bson_destroy (&incoming_topology_version);
+      return false;
+   }
+
+   /* Check the topology version a second time, now that we only the lock on the
+    * topology description. */
+   if (mongoc_server_description_topology_version_cmp (
+          &mut_sd->topology_version, &incoming_topology_version) >= 0) {
+      /* The server description is greater or equal, ignore the error. */
       mc_tpld_modify_drop (tdmod);
       bson_destroy (&incoming_topology_version);
       return false;

@@ -167,8 +167,7 @@ _mongoc_cluster_get_conversation_id (const bson_t *reply);
 mongoc_server_stream_t *
 _mongoc_cluster_create_server_stream (const mongoc_topology_description_t *td,
                                       const mongoc_server_description_t *sd,
-                                      mongoc_stream_t *stream,
-                                      bson_error_t *error /* OUT */);
+                                      mongoc_stream_t *stream);
 
 bool
 _mongoc_cluster_get_auth_cmd_x509 (const mongoc_uri_t *uri,

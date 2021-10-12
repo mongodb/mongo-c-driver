@@ -926,6 +926,8 @@ exit:
       server_monitor->stream = NULL;
       server_monitor->more_to_come = false;
       tdmod = mc_tpld_modify_begin (server_monitor->topology);
+      /* clear_connection_pool() is a no-op if 'description->id' was already
+       * removed. */
       _mongoc_topology_clear_connection_pool (
          tdmod.new_td,
          server_monitor->description->id,
