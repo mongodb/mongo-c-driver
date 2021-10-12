@@ -2498,7 +2498,9 @@ _cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                                       handshake_sd,
                                       &scanner_node->sasl_supported_mechs,
                                       &handshake_sd->error)) {
-         memcpy (error, &handshake_sd->error, sizeof *error);
+         if (error) {
+            *error = handshake_sd->error;
+         }
          mongoc_server_description_destroy (handshake_sd);
          return NULL;
       }
