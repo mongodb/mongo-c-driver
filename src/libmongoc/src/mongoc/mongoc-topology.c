@@ -1266,6 +1266,9 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                  &topology->tpld_modification_mtx,
                                  (expire_at - loop_start) / 1000);
       TRACE ("%s", "server selection awake");
+      /* Refresh our topology handle */
+      MC_TD_DROP (td);
+      td = mc_tpld_take_ref (topology);
       _topology_collect_errors (td.ptr, &scanner_error);
 
       bson_mutex_unlock (&topology->tpld_modification_mtx);
