@@ -663,13 +663,12 @@ _server_monitor_update_topology_description (
       return;
    }
 
+   tdmod = mc_tpld_modify_begin (topology);
    /* This is the another case of holding both locks. topology->mutex is
     * always locked first, then server monitor mutex after. */
    bson_mutex_lock (&server_monitor->shared.mutex);
    server_monitor->shared.scan_requested = false;
    bson_mutex_unlock (&server_monitor->shared.mutex);
-
-   tdmod = mc_tpld_modify_begin (topology);
    mongoc_topology_description_handle_hello (tdmod.new_td,
                                              server_monitor->server_id,
                                              hello_response,

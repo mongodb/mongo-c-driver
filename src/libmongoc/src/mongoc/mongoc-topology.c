@@ -1253,11 +1253,23 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
          goto done;
       }
 
-      /* No valid server in the topology at the moment. Rescan now. */
+      bson_mutex_lock (&topology->tpld_modification_mtx);
+      /* Now that we have the lock, check again, since a scan may have
+       * occurred while we were waiting on the lock. */
+      MC_TD_DROP (td);
+      td = mc_tpld_take_ref (topology);
+      selected_server = mongoc_topology_description_select_const (
+         td.ptr, optype, read_prefs, local_threshold_ms);
+      if (selected_server) {
+         server_id = selected_server->id;
+         bson_mutex_unlock (&topology->tpld_modification_mtx);
+         goto done;
+      }
+
+      /* Still nothing. Request that the scanner do a scan now. */
       TRACE (
          "server selection requesting an immediate scan, want %s",
          _mongoc_read_mode_as_str (mongoc_read_prefs_get_mode (read_prefs)));
-      bson_mutex_lock (&topology->tpld_modification_mtx);
       _mongoc_topology_request_scan (topology);
 
       TRACE ("server selection about to wait for %" PRId64 "ms",

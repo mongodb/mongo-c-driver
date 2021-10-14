@@ -2045,6 +2045,7 @@ _mongoc_cluster_finish_speculative_auth (
  */
 static mongoc_cluster_node_t *
 _cluster_add_node (mongoc_cluster_t *cluster,
+                   const mongoc_topology_description_t *td,
                    uint32_t server_id,
                    bson_error_t *error /* OUT */)
 {
@@ -2055,13 +2056,12 @@ _cluster_add_node (mongoc_cluster_t *cluster,
    mongoc_handshake_sasl_supported_mechs_t sasl_supported_mechs;
    mongoc_scram_t scram = {0};
    bson_t speculative_auth_response = BSON_INITIALIZER;
-   MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
 
    ENTRY;
 
    BSON_ASSERT (!cluster->client->topology->single_threaded);
 
-   host = _mongoc_topology_host_by_id (td.ptr, server_id, error);
+   host = _mongoc_topology_host_by_id (td, server_id, error);
 
    if (!host) {
       GOTO (error);
@@ -2126,12 +2126,11 @@ _cluster_add_node (mongoc_cluster_t *cluster,
     * TODO (CDRIVER-4078) do not store the generation counter on the server
     * description */
    handshake_sd->generation = _mongoc_topology_get_connection_pool_generation (
-      td.ptr, server_id, &handshake_sd->service_id);
+      td, server_id, &handshake_sd->service_id);
 
    bson_destroy (&speculative_auth_response);
    mongoc_set_add (cluster->nodes, server_id, cluster_node);
    _mongoc_host_list_destroy_all (host);
-   MC_TD_DROP (td);
 
 #ifdef MONGOC_ENABLE_CRYPTO
    _mongoc_scram_destroy (&scram);
@@ -2140,7 +2139,6 @@ _cluster_add_node (mongoc_cluster_t *cluster,
    RETURN (cluster_node);
 
 error:
-   MC_TD_DROP (td);
    bson_destroy (&speculative_auth_response);
    _mongoc_host_list_destroy_all (host); /* null ok */
 
@@ -2638,7 +2636,7 @@ _cluster_fetch_stream_pooled (mongoc_cluster_t *cluster,
       return NULL;
    }
 
-   cluster_node = _cluster_add_node (cluster, server_id, error);
+   cluster_node = _cluster_add_node (cluster, td, server_id, error);
    if (cluster_node) {
       return _mongoc_cluster_create_server_stream (
          td, cluster_node->handshake_sd, cluster_node->stream);
