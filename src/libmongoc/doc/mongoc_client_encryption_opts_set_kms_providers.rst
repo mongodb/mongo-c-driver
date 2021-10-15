@@ -18,7 +18,7 @@ Parameters
 * ``opts``: The :symbol:`mongoc_client_encryption_opts_t`
 * ``kms_providers``: A :symbol:`bson_t` containing configuration for an external Key Management Service (KMS).
 
-``kms_providers`` is a BSON document containing configuration for each KMS provider. Currently ``aws``, ``local``, ``azure``, and ``gcp`` are supported. At least one must be specified.
+``kms_providers`` is a BSON document containing configuration for each KMS provider. Currently ``aws``, ``local``, ``azure``, ``gcp``, and ``kmip`` are supported. At least one must be specified.
 
 The format for "aws" is as follows:
 
@@ -57,6 +57,28 @@ The format for "gcp" is as follows:
       privateKey: byte[] or String, // May be passed as a base64 encoded string.
       endpoint: Optional<String> // Defaults to oauth2.googleapis.com
    }
+
+The format for "kmip" is as follows:
+
+.. code-block:: javascript
+
+   kmip: {
+      endpoint: String,
+      tls : Document
+   }
+
+The keys of "kmip.tls" may be the following TLS options:
+
+- MONGOC_URI_TLSCERTIFICATEKEYFILE
+- MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD
+- MONGOC_URI_TLSCAFILE
+- MONGOC_URI_TLSALLOWINVALIDCERTIFICATES
+- MONGOC_URI_TLSALLOWINVALIDHOSTNAMES
+- MONGOC_URI_TLSINSECURE
+- MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK
+- MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK
+
+See :doc:`configuring_tls` for a description of these options.
 
 .. seealso::
 

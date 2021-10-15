@@ -23,7 +23,7 @@ Parameters
 Description
 -----------
 
-Setting the masterkey is required when creating a data key with the KMS providers: ``aws``, ``azure``, and ``gcp``.
+Setting the masterkey is required when creating a data key with the KMS providers: ``aws``, ``azure``, ``gcp``, and ``kmip``.
 
 Setting the masterkey is prohibited with the KMS provider ``local``.
 
@@ -58,4 +58,13 @@ The format of ``masterkey`` for "gcp" is as follows:
       keyName: String,
       keyVersion: Optional<String>, // A specific version of the named key, defaults to using the key's primary version.
       endpoint: Optional<String> // Host with optional port. Defaults to "cloudkms.googleapis.com".
+   }
+
+The format of ``masterkey`` for "kmip" is as follows:
+
+.. code-block:: javascript
+
+   {
+      keyId: Optional<String>,
+      endpoint: Optional<String> // Host with optional port.
    }
