@@ -26984,8 +26984,8 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
-  - .latest .openssl !.nosasl .server !.client-side-encryption
-  - .latest .nossl !.client-side-encryption
+  - .latest .openssl !.nosasl .server
+  - .latest .nossl
 - name: gcc48rhel
   display_name: GCC 4.8 (RHEL 7.0)
   expansions:
@@ -27001,14 +27001,14 @@ buildvariants:
   - .authentication-tests .openssl
   - .latest .openssl !.nosasl .server
   - .latest .nossl
-  - .5.0 .openssl !.nosasl .server !.client-side-encryption
-  - .4.4 .openssl !.nosasl .server !.client-side-encryption
-  - .4.2 .openssl !.nosasl .server !.client-side-encryption
-  - .4.0 .openssl !.nosasl .server !.client-side-encryption
-  - .3.6 .openssl !.nosasl .server !.client-side-encryption
-  - .3.4 .openssl !.nosasl .server !.client-side-encryption
-  - .3.2 .openssl !.nosasl .server !.client-side-encryption
-  - .3.0 .openssl !.nosasl !.auth !.client-side-encryption
+  - .5.0 .openssl !.nosasl .server
+  - .4.4 .openssl !.nosasl .server
+  - .4.2 .openssl !.nosasl .server
+  - .4.0 .openssl !.nosasl .server
+  - .3.6 .openssl !.nosasl .server
+  - .3.4 .openssl !.nosasl .server
+  - .3.2 .openssl !.nosasl .server
+  - .3.0 .openssl !.nosasl !.auth
 - name: gcc49
   display_name: GCC 4.9 (Debian 8.1)
   expansions:
@@ -27285,12 +27285,12 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .openssl-static
   - .debug-compile !.sspi .nossl
-  - .latest .openssl !.nosasl .server !.client-side-encryption
-  - .latest .openssl-static !.nosasl .server !.client-side-encryption
+  - .latest .openssl !.nosasl .server
+  - .latest .openssl-static !.nosasl .server
   - .latest .nossl
-  - .5.0 .openssl !.nosasl .server !.client-side-encryption
-  - .4.4 .openssl !.nosasl .server !.client-side-encryption
-  - .4.2 .openssl !.nosasl .server !.client-side-encryption
+  - .5.0 .openssl !.nosasl .server
+  - .4.4 .openssl !.nosasl .server
+  - .4.2 .openssl !.nosasl .server
   - test-dns-openssl
   batchtime: 1440
 - name: arm-ubuntu1804
@@ -27343,12 +27343,12 @@ buildvariants:
   - .debug-compile !.sspi .openssl
   - .debug-compile !.sspi .nossl
   - .authentication-tests .openssl
-  - .latest .openssl !.nosasl .server !.client-side-encryption
+  - .latest .openssl !.nosasl .server
   - .latest .nossl
-  - .5.0 .openssl !.nosasl .server !.client-side-encryption
-  - .4.4 .openssl !.nosasl .server !.client-side-encryption
-  - .4.2 .openssl !.nosasl .server !.client-side-encryption
-  - .4.0 .openssl !.nosasl .server !.client-side-encryption
+  - .5.0 .openssl !.nosasl .server
+  - .4.4 .openssl !.nosasl .server
+  - .4.2 .openssl !.nosasl .server
+  - .4.0 .openssl !.nosasl .server
   batchtime: 1440
 - name: valgrind-ubuntu
   display_name: Valgrind Tests (Ubuntu 18.04)
