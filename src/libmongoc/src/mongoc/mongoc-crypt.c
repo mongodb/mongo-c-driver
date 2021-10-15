@@ -594,6 +594,25 @@ fail:
    return ret;
 }
 
+static const char *state_to_string (mongocrypt_ctx_state_t state) {
+   switch (state) {
+      case MONGOCRYPT_CTX_ERROR:
+      return "MONGOCRYPT_CTX_ERROR";
+      case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
+      return "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO";
+      case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
+      return "MONGOCRYPT_CTX_NEED_MONGO_MARKINGS";
+      case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
+      return "MONGOCRYPT_CTX_NEED_MONGO_KEYS";
+      case MONGOCRYPT_CTX_NEED_KMS:
+      return "MONGOCRYPT_CTX_NEED_KMS";
+      case MONGOCRYPT_CTX_READY:
+      return "MONGOCRYPT_CTX_READY";
+      case MONGOCRYPT_CTX_DONE:
+      return "MONGOCRYPT_CTX_DONE";
+   }
+}
+
 /*--------------------------------------------------------------------------
  *
  * _mongoc_cse_run_state_machine --
@@ -616,6 +635,7 @@ _state_machine_run (_state_machine_t *state_machine,
 
    bson_init (result);
    while (true) {
+      MONGOC_DEBUG ("state is %s\n", state_to_string (mongocrypt_ctx_state (state_machine->ctx)));
       switch (mongocrypt_ctx_state (state_machine->ctx)) {
       default:
       case MONGOCRYPT_CTX_ERROR:
