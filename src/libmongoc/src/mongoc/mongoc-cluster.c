@@ -779,7 +779,6 @@ _stream_run_hello (mongoc_cluster_t *cluster,
 
    BSON_ASSERT (stream);
 
-   bson_init (&command);
    _mongoc_topology_dup_handshake_cmd (cluster->client->topology, &command);
 
    if (cluster->requires_auth && speculative_auth_response) {
