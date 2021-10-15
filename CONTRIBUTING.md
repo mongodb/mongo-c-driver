@@ -260,6 +260,10 @@ The set of mock KMS servers running in the background and their corresponding po
 | 8000 | ca.pem | expired.pem |
 | 8001 | ca.pem | wrong-host.pem |
 
+KMS TLS tests for Client-Side Field Level Encryption can be skipped by defining:
+
+* `MONGOC_TEST_SKIP_KMS_TLS_TESTS=on`
+
 Specification tests may be filtered by their description:
 
 * `MONGOC_JSON_SUBTEST=<string>`

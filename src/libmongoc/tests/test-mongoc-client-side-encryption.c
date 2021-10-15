@@ -2416,6 +2416,13 @@ test_kms_tls_cert_wrong_host (void *unused)
    mongoc_client_destroy (client);
 }
 
+/* Required CA certificates may not be registered on system. See BUILD-14068. */
+int
+test_framework_skip_kms_tls_tests (void)
+{
+   return test_framework_getenv_bool ("MONGOC_TEST_SKIP_KMS_TLS_TESTS") ? 0 : 1;
+}
+
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -2499,6 +2506,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_kms_tls_tests,
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/expired",
@@ -2506,6 +2514,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_kms_tls_tests,
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/wrong_host",
@@ -2513,6 +2522,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
+                      test_framework_skip_kms_tls_tests,
                       test_framework_skip_if_max_wire_version_less_than_8);
 
    /* Other, C driver specific, tests. */
