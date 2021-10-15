@@ -736,7 +736,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
                                   int64_t *start_us,
                                   bson_error_t *error)
 {
-   bson_t cmd;
+   bson_t cmd = BSON_NOALLOC_INITIALIZER;
    bool ret = false;
 
    ENTRY;

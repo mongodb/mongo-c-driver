@@ -143,6 +143,21 @@ typedef struct _bson_t {
 } bson_t BSON_ALIGNED_END (128);
 #endif
 
+/**
+ * @brief An initializer for bson_t that initializes to an empty BSON document
+ * without any dynamic allocation.
+ *
+ * It is safe to call bson_destroy() on such an initialized value, but omitting
+ * a call to bson_destroy() on a bson_t set to this value will not leak any
+ * resources.
+ */
+#define BSON_NOALLOC_INITIALIZER \
+   {                             \
+      3, 5,                      \
+      {                          \
+         5                       \
+      }                          \
+   }
 
 /**
  * BSON_INITIALIZER:
@@ -155,22 +170,12 @@ typedef struct _bson_t {
  * ]|
  */
 #ifdef BSON_MEMCHECK
-#define BSON_INITIALIZER \
-   {                     \
-      3, 5,              \
-      bson_malloc (1),   \
-      {                  \
-         5               \
-      },                 \
+#define BSON_INITIALIZER          \
+   {                              \
+      3, 5, bson_malloc (1), {5}, \
    }
 #else
-#define BSON_INITIALIZER \
-   {                     \
-      3, 5,              \
-      {                  \
-         5               \
-      }                  \
-   }
+#define BSON_INITIALIZER BSON_NOALLOC_INITIALIZER
 #endif
 
 
