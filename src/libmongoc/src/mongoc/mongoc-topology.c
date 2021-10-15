@@ -1203,7 +1203,8 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
             td.ptr, optype, read_prefs, local_threshold_ms);
 
          if (selected_server) {
-            return selected_server->id;
+            server_id = selected_server->id;
+            goto done;
          }
 
          topology->stale = true;
