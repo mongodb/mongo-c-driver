@@ -246,6 +246,10 @@ For GCP:
 * `MONGOC_TEST_GCP_EMAIL=<string>`
 * `MONGOC_TEST_GCP_PRIVATEKEY=<string>`
 
+For KMIP:
+
+* `MONGOC_TEST_KMIP_ENDPOINT=<string>`
+
 Tests of Client-Side Field Level Encryption spawn an extra process, "mongocryptd", by default. To bypass this spawning,
 start mongocryptd on port 27020 and set the following:
 

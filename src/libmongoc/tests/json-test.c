@@ -1418,7 +1418,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 
       bson_iter_bson (&iter, &tmp);
       bson_copy_to_excluding (
-         &tmp, &kms_providers, "aws", "azure", "gcp", NULL);
+         &tmp, &kms_providers, "aws", "azure", "gcp", "kmip", NULL);
 
       /* AWS credentials are set from environment variables. */
       if (bson_has_field (&opts, "kmsProviders.aws")) {
@@ -1505,6 +1505,21 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 
          bson_free (gcp_email);
          bson_free (gcp_privatekey);
+      }
+
+      if (bson_has_field (&opts, "kmsProviders.kmip")) {
+         char *kmip_endpoint;
+
+         kmip_endpoint = test_framework_getenv ("MONGOC_TEST_KMIP_ENDPOINT");
+         if (!kmip_endpoint) {
+            test_error ("Set MONGOC_TEST_KMIP_ENDPOINT to enable CSFLE tests.");
+         }
+
+         bson_concat (
+            &kms_providers,
+            tmp_bson ("{ 'kmip': { 'endpoint': '%s' }}", kmip_endpoint));
+
+         bson_free (kmip_endpoint);
       }
 
       mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,

@@ -430,6 +430,8 @@ _get_stream (const char *endpoint,
 
    /* Wrap in a tls_stream. */
    memcpy (&ssl_opts, mongoc_ssl_opt_get_default (), sizeof ssl_opts);
+   ssl_opts.ca_file = "/Users/kevin.albertson/code/drivers-evergreen-tools/.evergreen/x509gen/ca.pem";
+   ssl_opts.pem_file = "/Users/kevin.albertson/code/drivers-evergreen-tools/.evergreen/x509gen/client.pem";
    tls_stream = mongoc_stream_tls_new_with_hostname (
       base_stream, host.host, &ssl_opts, 1 /* client */);
 
