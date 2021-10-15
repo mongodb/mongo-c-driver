@@ -19,15 +19,15 @@ Parameters
 * ``opts``: The :symbol:`mongoc_auto_encryption_opts_t`
 * ``kms_providers``: A :symbol:`bson_t` containing configuration for an external Key Management Service (KMS).
 
-``kms_providers`` is a BSON document containing configuration for each KMS provider. Currently ``aws`` or ``local`` are supported. At least one must be specified.
+``kms_providers`` is a BSON document containing configuration for each KMS provider. Currently ``aws``, ``local``, ``azure``, and ``gcp`` are supported. At least one must be specified.
 
 The format for "aws" is as follows:
 
 .. code-block:: javascript
 
    aws: {
-      accessKeyId: <string>,
-      secretAccessKey: <string>
+      accessKeyId: String,
+      secretAccessKey: String
    }
 
 The format for "local" is as follows:
@@ -35,7 +35,28 @@ The format for "local" is as follows:
 .. code-block:: javascript
 
    local: {
-      key: <96 byte BSON binary of subtype 0> // The master key used to encrypt/decrypt data keys.
+      key: byte[96] or String // The master key used to encrypt/decrypt data keys. May be passed as a base64 encoded string.
+   }
+
+The format for "azure" is as follows:
+
+.. code-block:: javascript
+
+   azure: {
+      tenantId: String,
+      clientId: String,
+      clientSecret: String,
+      identityPlatformEndpoint: Optional<String> // Defaults to login.microsoftonline.com
+   }
+
+The format for "gcp" is as follows:
+
+.. code-block:: javascript
+
+   gcp: {
+      email: String,
+      privateKey: byte[] or String, // May be passed as a base64 encoded string.
+      endpoint: Optional<String> // Defaults to oauth2.googleapis.com
    }
 
 .. seealso::
