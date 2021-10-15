@@ -710,7 +710,7 @@ _parse_kms_providers (const bson_t *kms_providers,
    bson_iter_t iter;
    const uint8_t *data;
    uint32_t len;
-   bson_string_t *errmsg = bson_string_new (NULL);;
+   bson_string_t *errmsg;
    bool ok = false;
 
    /* No change is needed if kms_providers does not contain the kmip.tls subdocument. */
@@ -722,6 +722,8 @@ _parse_kms_providers (const bson_t *kms_providers,
       _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default(), kmip_tls_opt, false /* copy internal */);
       return true;
    }
+
+   errmsg = bson_string_new (NULL);
 
    bson_init (kms_providers_for_libmongocrypt);
 
