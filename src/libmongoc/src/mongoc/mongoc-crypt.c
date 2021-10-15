@@ -26,9 +26,12 @@
 #include "mongoc-collection-private.h"
 #include "mongoc-host-list-private.h"
 #include "mongoc-stream-private.h"
+#include "mongoc-ssl-private.h"
+#include "mongoc-util-private.h"
 
 struct __mongoc_crypt_t {
    mongocrypt_t *handle;
+   mongoc_ssl_opt_t kmip_tls_opt;
 };
 
 static void
@@ -193,12 +196,15 @@ typedef struct {
    mongoc_client_t *mongocryptd_client;
    mongoc_client_t *collinfo_client;
    const char *db_name;
+   _mongoc_crypt_t *crypt;
 } _state_machine_t;
 
 _state_machine_t *
-_state_machine_new (void)
+_state_machine_new (_mongoc_crypt_t *crypt)
 {
-   return bson_malloc0 (sizeof (_state_machine_t));
+   _state_machine_t *sm = bson_malloc0 (sizeof (_state_machine_t));
+   sm->crypt = crypt;
+   return sm;
 }
 
 void
@@ -404,12 +410,13 @@ fail:
 static mongoc_stream_t *
 _get_stream (const char *endpoint,
              int32_t connecttimeoutms,
+             const mongoc_ssl_opt_t *ssl_opt,
              bson_error_t *error)
 {
    mongoc_stream_t *base_stream = NULL;
    mongoc_stream_t *tls_stream = NULL;
    bool ret = false;
-   mongoc_ssl_opt_t ssl_opts = {0};
+   mongoc_ssl_opt_t ssl_opt_copy = {0};
    mongoc_host_list_t host;
    char *host_and_port = NULL;
 
@@ -429,11 +436,9 @@ _get_stream (const char *endpoint,
    }
 
    /* Wrap in a tls_stream. */
-   memcpy (&ssl_opts, mongoc_ssl_opt_get_default (), sizeof ssl_opts);
-   ssl_opts.ca_file = "/Users/kevin.albertson/code/drivers-evergreen-tools/.evergreen/x509gen/ca.pem";
-   ssl_opts.pem_file = "/Users/kevin.albertson/code/drivers-evergreen-tools/.evergreen/x509gen/client.pem";
+   _mongoc_ssl_opts_copy_to (ssl_opt, &ssl_opt_copy, true /* copy_internal */);
    tls_stream = mongoc_stream_tls_new_with_hostname (
-      base_stream, host.host, &ssl_opts, 1 /* client */);
+      base_stream, host.host, &ssl_opt_copy, 1 /* client */);
 
    if (!mongoc_stream_tls_handshake_block (
           tls_stream, host.host, connecttimeoutms, error)) {
@@ -442,6 +447,7 @@ _get_stream (const char *endpoint,
 
    ret = true;
 fail:
+   _mongoc_ssl_opts_cleanup (&ssl_opt_copy, true /* free_internal */);
    if (host_and_port != endpoint) {
       bson_free (host_and_port);
    }
@@ -472,6 +478,14 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
    kms_ctx = mongocrypt_ctx_next_kms_ctx (state_machine->ctx);
    while (kms_ctx) {
       mongoc_iovec_t iov;
+      const mongoc_ssl_opt_t *ssl_opt;
+
+      if (0 == strcmp ("kmip",
+                       mongocrypt_kms_ctx_get_kms_provider (kms_ctx, NULL))) {
+         ssl_opt = &state_machine->crypt->kmip_tls_opt;
+      } else {
+         ssl_opt = mongoc_ssl_opt_get_default ();
+      }
 
       mongocrypt_binary_destroy (http_req);
       http_req = mongocrypt_binary_new ();
@@ -486,11 +500,11 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
       }
 
       mongoc_stream_destroy (tls_stream);
-      tls_stream = _get_stream (endpoint, sockettimeout, error);
+      tls_stream = _get_stream (endpoint, sockettimeout, ssl_opt, error);
 #ifdef MONGOC_ENABLE_SSL_SECURE_CHANNEL
       /* Retry once with schannel as a workaround for CDRIVER-3566. */
       if (!tls_stream) {
-         tls_stream = _get_stream (endpoint, sockettimeout, error);
+         tls_stream = _get_stream (endpoint, sockettimeout, ssl_opt, error);
       }
 #endif
       if (!tls_stream) {
@@ -680,6 +694,92 @@ fail:
    return ret;
 }
 
+/* _parse_kms_providers parses and removes the kmip.tls subdocument out of the kms_providers if present.
+ * Post-conditions:
+ * - kms_providers_for_libmongocrypt is always initialized.
+ * - kmip_ssl_opt must be freed with _mongoc_ssl_opts_cleanup. */
+static bool
+_parse_kms_providers (const bson_t *kms_providers,
+                      bson_t *kms_providers_for_libmongocrypt,
+                      mongoc_ssl_opt_t *kmip_tls_opt,
+                      bson_error_t *error)
+{
+   bson_t kmip;
+   bson_t kmip_tls;
+   bson_t child;
+   bson_iter_t iter;
+   const uint8_t *data;
+   uint32_t len;
+   bson_string_t *errmsg = bson_string_new (NULL);;
+   bool ok = false;
+
+   /* No change is needed if kms_providers does not contain the kmip.tls subdocument. */
+   if (!bson_has_field (kms_providers, "kmip.tls")) {
+      printf ("no kmip.tls\n");
+      bson_init_static (kms_providers_for_libmongocrypt,
+                        bson_get_data (kms_providers),
+                        kms_providers->len);
+      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default(), kmip_tls_opt, false /* copy internal */);
+      return true;
+   }
+
+   bson_init (kms_providers_for_libmongocrypt);
+
+   if (!bson_iter_init_find (&iter, kms_providers, "kmip")) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                      "Could not iterate to KMS providers kmip document");
+      goto fail;
+   }
+
+   if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+      bson_set_error (
+         error,
+         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+         "Expected KMS providers kmip.tls to be a document, got: %s",
+         _mongoc_bson_type_to_str (bson_iter_type (&iter)));
+      goto fail;
+   }
+
+   bson_iter_document (&iter, &len, &data);
+   bson_init_static (&kmip, data, len);
+
+   bson_iter_recurse (&iter, &iter);
+   if (!bson_iter_find (&iter, "tls")) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                      "Could not find tls document");
+      goto fail;
+   }
+
+   bson_iter_document (&iter, &len, &data);
+   bson_init_static (&kmip_tls, data, len);
+
+   /* Copy kms_providers to kms_providers_for_libmongocrypt excluding
+    * "kmip.tls". */
+   bson_copy_to_excluding_noinit (
+      kms_providers, kms_providers_for_libmongocrypt, "kmip", NULL);
+   BSON_APPEND_DOCUMENT_BEGIN (kms_providers_for_libmongocrypt, "kmip", &child);
+   bson_copy_to_excluding_noinit (&kmip, &child, "tls", NULL);
+   bson_append_document_end (kms_providers_for_libmongocrypt, &child);
+
+   if (!_mongoc_ssl_opts_from_bson (kmip_tls_opt, &kmip_tls, errmsg)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                      "Error parsing kmip.tls: %s",
+                      errmsg->str);
+      goto fail;
+   }
+   ok = true;
+fail:
+   bson_string_free (errmsg, true /* free_segment */);
+   return ok;
+}
+
 /* Note, _mongoc_crypt_t only has one member, to the top-level handle of
    libmongocrypt, mongocrypt_t.
    The purpose of defining _mongoc_crypt_t is to limit all interaction with
@@ -696,16 +796,25 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    mongocrypt_binary_t *schema_map_bin = NULL;
    mongocrypt_binary_t *kms_providers_bin = NULL;
    bool success = false;
+   bson_t kms_providers_for_libmongocrypt;
 
    /* Create the handle to libmongocrypt. */
    crypt = bson_malloc0 (sizeof (*crypt));
    crypt->handle = mongocrypt_new ();
 
+   if (!_parse_kms_providers (kms_providers,
+                              &kms_providers_for_libmongocrypt,
+                              &crypt->kmip_tls_opt,
+                              error)) {
+      goto fail;
+   }
+
    mongocrypt_setopt_log_handler (
       crypt->handle, _log_callback, NULL /* context */);
 
    kms_providers_bin = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (kms_providers), kms_providers->len);
+      (uint8_t *) bson_get_data (&kms_providers_for_libmongocrypt),
+      kms_providers_for_libmongocrypt.len);
    if (!mongocrypt_setopt_kms_providers (crypt->handle, kms_providers_bin)) {
       _crypt_check_error (crypt->handle, error, true);
       goto fail;
@@ -730,6 +839,7 @@ fail:
    mongocrypt_binary_destroy (local_masterkey_bin);
    mongocrypt_binary_destroy (schema_map_bin);
    mongocrypt_binary_destroy (kms_providers_bin);
+   bson_destroy (&kms_providers_for_libmongocrypt);
 
    if (!success) {
       _mongoc_crypt_destroy (crypt);
@@ -746,6 +856,7 @@ _mongoc_crypt_destroy (_mongoc_crypt_t *crypt)
       return;
    }
    mongocrypt_destroy (crypt->handle);
+   _mongoc_ssl_opts_cleanup (&crypt->kmip_tls_opt, true /* free_internal */);
    bson_free (crypt);
 }
 
@@ -765,7 +876,7 @@ _mongoc_crypt_auto_encrypt (_mongoc_crypt_t *crypt,
 
    bson_init (cmd_out);
 
-   state_machine = _state_machine_new ();
+   state_machine = _state_machine_new (crypt);
    state_machine->keyvault_coll = keyvault_coll;
    state_machine->mongocryptd_client = mongocryptd_client;
    state_machine->collinfo_client = collinfo_client;
@@ -809,7 +920,7 @@ _mongoc_crypt_auto_decrypt (_mongoc_crypt_t *crypt,
 
    bson_init (doc_out);
 
-   state_machine = _state_machine_new ();
+   state_machine = _state_machine_new (crypt);
    state_machine->keyvault_coll = keyvault_coll;
    state_machine->ctx = mongocrypt_ctx_new (crypt->handle);
    if (!state_machine->ctx) {
@@ -856,7 +967,7 @@ _mongoc_crypt_explicit_encrypt (_mongoc_crypt_t *crypt,
    value_out->value_type = BSON_TYPE_EOD;
 
    /* Create the context for the operation. */
-   state_machine = _state_machine_new ();
+   state_machine = _state_machine_new (crypt);
    state_machine->keyvault_coll = keyvault_coll;
    state_machine->ctx = mongocrypt_ctx_new (crypt->handle);
    if (!state_machine->ctx) {
@@ -961,7 +1072,7 @@ _mongoc_crypt_explicit_decrypt (_mongoc_crypt_t *crypt,
    bool ret = false;
    bson_t result = BSON_INITIALIZER;
 
-   state_machine = _state_machine_new ();
+   state_machine = _state_machine_new (crypt);
    state_machine->keyvault_coll = keyvault_coll;
    state_machine->ctx = mongocrypt_ctx_new (crypt->handle);
    if (!state_machine->ctx) {
@@ -1022,7 +1133,7 @@ _mongoc_crypt_create_datakey (_mongoc_crypt_t *crypt,
    mongocrypt_binary_t *masterkey_w_provider_bin = NULL;
 
    bson_init (doc_out);
-   state_machine = _state_machine_new ();
+   state_machine = _state_machine_new (crypt);
    state_machine->ctx = mongocrypt_ctx_new (crypt->handle);
    if (!state_machine->ctx) {
       _crypt_check_error (crypt->handle, error, true);
