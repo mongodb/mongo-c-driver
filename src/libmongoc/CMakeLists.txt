@@ -993,6 +993,7 @@ set (test-libmongoc-sources
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-shared.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-socket.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-speculative-auth.c
+   ${PROJECT_SOURCE_DIR}/tests/test-mongoc-ssl.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-stream.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-streamable-hello.c
    ${PROJECT_SOURCE_DIR}/tests/test-mongoc-thread.c
