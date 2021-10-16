@@ -736,7 +736,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
                                   int64_t *start_us,
                                   bson_error_t *error)
 {
-   bson_t cmd = BSON_NOALLOC_INITIALIZER;
+   bson_t cmd = BSON_INITIALIZER;
    bool ret = false;
 
    ENTRY;
@@ -776,6 +776,7 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    /* Update the start time just before the handshake. */
    *start_us = _now_us ();
    /* Perform handshake. */
+   bson_destroy (&cmd);
    _mongoc_topology_dup_handshake_cmd (server_monitor->topology, &cmd);
    _server_monitor_append_cluster_time (server_monitor, &cmd);
    bson_destroy (hello_response);

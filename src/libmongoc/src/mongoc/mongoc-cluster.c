@@ -762,7 +762,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
                    bson_t *speculative_auth_response /* OUT */,
                    bson_error_t *error)
 {
-   bson_t command = BSON_NOALLOC_INITIALIZER;
+   bson_t command; /* Initialized by dup_handshake below */
    mongoc_cmd_t hello_cmd;
    bson_t reply;
    int64_t start;

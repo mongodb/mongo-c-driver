@@ -129,10 +129,10 @@ typedef struct _bson_json_opts_t bson_json_opts_t;
 #ifdef BSON_MEMCHECK
 BSON_ALIGNED_BEGIN (128)
 typedef struct _bson_t {
-   uint32_t flags;       /* Internal flags for the bson_t. */
-   uint32_t len;         /* Length of BSON data. */
-   char *canary;         /* For valgrind check */
-   uint8_t padding[120 - sizeof (char*)];
+   uint32_t flags; /* Internal flags for the bson_t. */
+   uint32_t len;   /* Length of BSON data. */
+   char *canary;   /* For valgrind check */
+   uint8_t padding[120 - sizeof (char *)];
 } bson_t BSON_ALIGNED_END (128);
 #else
 BSON_ALIGNED_BEGIN (128)
@@ -142,22 +142,6 @@ typedef struct _bson_t {
    uint8_t padding[120]; /* Padding for stack allocation. */
 } bson_t BSON_ALIGNED_END (128);
 #endif
-
-/**
- * @brief An initializer for bson_t that initializes to an empty BSON document
- * without any dynamic allocation.
- *
- * It is safe to call bson_destroy() on such an initialized value, but omitting
- * a call to bson_destroy() on a bson_t set to this value will not leak any
- * resources.
- */
-#define BSON_NOALLOC_INITIALIZER \
-   {                             \
-      3, 5,                      \
-      {                          \
-         5                       \
-      }                          \
-   }
 
 /**
  * BSON_INITIALIZER:
@@ -175,7 +159,13 @@ typedef struct _bson_t {
       3, 5, bson_malloc (1), {5}, \
    }
 #else
-#define BSON_INITIALIZER BSON_NOALLOC_INITIALIZER
+#define BSON_INITIALIZER \
+   {                     \
+      3, 5,              \
+      {                  \
+         5               \
+      }                  \
+   }
 #endif
 
 
