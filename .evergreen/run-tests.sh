@@ -120,6 +120,27 @@ check_mongocryptd() {
 
 export MONGOC_TEST_MONITORING_VERBOSE=on
 
+# Ensure mock KMS servers are running before starting tests.
+if [ "$CLIENT_SIDE_ENCRYPTION" = "on" ]; then
+   echo "Waiting for mock KMS servers to start..."
+   wait_for_kms_server() {
+      for i in $(seq 60); do
+         # Exit code 7: "Failed to connect to host".
+         if curl -s "localhost:$1"; test $? -ne 7; then
+            return 0
+         else
+            sleep 1
+         fi
+      done
+      echo "Could not detect mock KMS server on port $1"
+      return 1
+   }
+   wait_for_kms_server 7999
+   wait_for_kms_server 8000
+   wait_for_kms_server 8001
+   echo "Waiting for mock KMS servers to start... done."
+fi
+
 if [ "$LOADBALANCED" != "noloadbalanced" ]; then
    if [ -z "$SINGLE_MONGOS_LB_URI" -o -z "$MULTI_MONGOS_LB_URI" ]; then
       echo "SINGLE_MONGOS_LB_URI and MULTI_MONGOS_LB_URI environment variables required."
