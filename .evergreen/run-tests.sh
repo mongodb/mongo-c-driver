@@ -36,6 +36,9 @@ if [ "$SSL" != "nossl" ]; then
       cygwin*)
          certutil.exe -addstore "Root" "src\libmongoc\tests\x509gen\ca.pem"
          ;;
+      darwin*)
+         sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain src/libmongoc/tests/x509gen/ca.pem
+         ;;
       *)
          if [ -f /etc/redhat-release ]; then
             echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors..."
