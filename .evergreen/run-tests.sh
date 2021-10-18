@@ -45,6 +45,7 @@ if [ "$SSL" != "nossl" ]; then
                sudo update-ca-trust extract --verbose
             else
                echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors... failed."
+               export MONGOC_TEST_SKIP_KMS_TLS_TESTS=on
                export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
             fi
          else
@@ -55,6 +56,7 @@ if [ "$SSL" != "nossl" ]; then
                sudo update-ca-certificates --verbose
             else
                echo "Copying CA certificate to /usr/local/share/ca-certificates... failed."
+               export MONGOC_TEST_SKIP_KMS_TLS_TESTS=on
                export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
             fi
          fi
