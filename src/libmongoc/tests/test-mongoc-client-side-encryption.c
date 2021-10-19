@@ -1542,6 +1542,8 @@ _corpus_field_destroy (corpus_field_t *field)
    "\x01\x95\x11\x10\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 #define GCP_UUID \
    "\x18\x23\xc0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+#define KMIP_UUID \
+   "\x28\xc2\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
 static void
 _corpus_copy_field (mongoc_client_encryption_t *client_encryption,
@@ -1557,7 +1559,8 @@ _corpus_copy_field (mongoc_client_encryption_t *client_encryption,
 
    if (0 == strcmp ("_id", key) || 0 == strcmp ("altname_aws", key) ||
        0 == strcmp ("altname_local", key) ||
-       0 == strcmp ("altname_azure", key) || 0 == strcmp ("altname_gcp", key)) {
+       0 == strcmp ("altname_azure", key) || 0 == strcmp ("altname_gcp", key) ||
+       0 == strcmp ("altname_kmip", key)) {
       bson_append_value (corpus_copied, key, -1, bson_iter_value (iter));
       return;
    }
@@ -1592,6 +1595,8 @@ _corpus_copy_field (mongoc_client_encryption_t *client_encryption,
          uuid.value.v_binary.data = (uint8_t *) AZURE_UUID;
       } else if (0 == strcmp ("gcp", field->kms)) {
          uuid.value.v_binary.data = (uint8_t *) GCP_UUID;
+      } else if (0 == strcmp ("kmip", field->kms)) {
+         uuid.value.v_binary.data = (uint8_t *) KMIP_UUID;
       }
       mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &uuid);
    } else if (0 == strcmp ("altname", field->identifier)) {
@@ -1639,7 +1644,8 @@ _corpus_check_encrypted (mongoc_client_encryption_t *client_encryption,
    key = bson_iter_key (expected_iter);
    if (0 == strcmp ("_id", key) || 0 == strcmp ("altname_aws", key) ||
        0 == strcmp ("altname_local", key) ||
-       0 == strcmp ("altname_azure", key) || 0 == strcmp ("altname_gcp", key)) {
+       0 == strcmp ("altname_azure", key) || 0 == strcmp ("altname_gcp", key) ||
+       0 == strcmp ("altname_kmip", key)) {
       return;
    }
 
@@ -1756,8 +1762,8 @@ _test_corpus (bool local_schema)
       ASSERT_OR_PRINT (res, error);
    }
 
-   /* Drop the collection keyvault.datakeys. Insert the documents
-    * corpus/corpus-key-local.json and corpus-key-aws.json */
+   /* Drop the collection keyvault.datakeys. Insert the key documents for each
+    * KMS provider. */
    mongoc_collection_destroy (coll);
    coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
    (void) mongoc_collection_drop (coll, NULL);
@@ -1776,6 +1782,9 @@ _test_corpus (bool local_schema)
    _insert_from_file (coll,
                       "./src/libmongoc/tests/client_side_encryption_prose/"
                       "corpus/corpus-key-local.json");
+   _insert_from_file (coll,
+                      "./src/libmongoc/tests/client_side_encryption_prose/"
+                      "corpus/corpus-key-kmip.json");
 
    /* Create a MongoClient configured with auto encryption */
    client_encrypted = test_framework_new_default_client ();
