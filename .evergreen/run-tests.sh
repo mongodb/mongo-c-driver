@@ -119,7 +119,7 @@ check_mongocryptd() {
 }
 
 # TODO: run all tests.
-TEST_ARGS="$TEST_ARGS -l /client_side_encryption/*"
+TEST_ARGS="$TEST_ARGS -l /client_side_encryption/kmipKMS"
 
 export MONGOC_TEST_MONITORING_VERBOSE=on
 
