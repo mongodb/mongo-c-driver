@@ -104,6 +104,7 @@ mongoc_log (mongoc_log_level_t log_level,
    bson_mutex_unlock (&gLogMutex);
 
    bson_free (message);
+   fflush (stdout);
 }
 
 
