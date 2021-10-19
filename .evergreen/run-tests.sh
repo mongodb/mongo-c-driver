@@ -168,9 +168,9 @@ if [ "$LOADBALANCED" != "noloadbalanced" ]; then
    TEST_ARGS="$TEST_ARGS -l /command_monitoring/unified/*"
 fi
 
-echo "sleeping for 10 seconds to wait for KMS server"
+echo "sleeping for 120 seconds to wait for KMS server"
 ps aux
-sleep 10
+sleep 120
 ps aux
 curl localhost:5698 || true
 
