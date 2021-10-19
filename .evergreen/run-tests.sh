@@ -120,7 +120,7 @@ check_mongocryptd() {
 }
 
 # TODO: run all tests.
-TEST_ARGS="$TEST_ARGS -l /client_side_encryption/kmipKMS"
+TEST_ARGS="$TEST_ARGS -l /client_side_encryption/*"
 
 export MONGOC_TEST_MONITORING_VERBOSE=on
 
@@ -142,6 +142,7 @@ if [ "$CLIENT_SIDE_ENCRYPTION" = "on" ]; then
    wait_for_kms_server 7999
    wait_for_kms_server 8000
    wait_for_kms_server 8001
+   wait_for_kms_server 5698
    echo "Waiting for mock KMS servers to start... done."
 fi
 
@@ -167,12 +168,6 @@ if [ "$LOADBALANCED" != "noloadbalanced" ]; then
    TEST_ARGS="$TEST_ARGS -l /versioned_api/*"
    TEST_ARGS="$TEST_ARGS -l /command_monitoring/unified/*"
 fi
-
-echo "sleeping for 120 seconds to wait for KMS server"
-ps aux
-sleep 120
-ps aux
-curl localhost:5698 || true
 
 case "$OS" in
    cygwin*)
