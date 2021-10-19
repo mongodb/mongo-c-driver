@@ -2249,7 +2249,6 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
 
    ENTRY;
 
-try_again:
    td = mc_tpld_take_ref (topology);
 
    ret_server_stream = _try_get_server_stream (
@@ -2269,15 +2268,6 @@ try_again:
 
       /* Update the topology */
       tdmod = mc_tpld_modify_begin (topology);
-
-      /* Check whether the server was updated during the "begin" above. */
-      if (_try_get_server_stream (
-             cluster, tdmod.new_td, server_id, false, NULL) != NULL) {
-         /* It was updated. Just try the same logic again. */
-         mc_tpld_modify_drop (tdmod);
-         mc_tpld_drop_ref (&td);
-         goto try_again;
-      }
 
       /* Add a transient transaction label if applicable. */
       _mongoc_bson_init_with_transient_txn_error (cs, reply);
