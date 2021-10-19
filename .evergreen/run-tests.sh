@@ -115,10 +115,11 @@ check_mongocryptd() {
       echo "int dlclose(void *handle) { return 0; }" > bypass_dlclose.c
       "$CC" -o bypass_dlclose.so -shared bypass_dlclose.c
       export LD_PRELOAD="$(pwd)/bypass_dlclose.so:$LD_PRELOAD"
-      # TODO: run all tests.
-      TEST_ARGS="$TEST_ARGS -l /client_side_encryption/*"
    fi
 }
+
+# TODO: run all tests.
+TEST_ARGS="$TEST_ARGS -l /client_side_encryption/*"
 
 export MONGOC_TEST_MONITORING_VERBOSE=on
 
