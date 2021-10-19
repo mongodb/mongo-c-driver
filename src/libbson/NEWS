@@ -1,7 +1,19 @@
+libbson 1.19.1
+==============
+
+It is my pleasure to announce libbson 1.19.1.
+
+Bug fixes:
+
+  * Fix string handling in BSON keys and regular expressions.
+
+--Kevin Albertson
+
+
 libbson 1.19.0
 ==============
 
-It is my pleasure to announce libbson 1.19.0.
+It is my pleasure to announce libbson 1.18.0.
 
 No changes since 1.18.0; release to keep pace with libmongoc's version.
 

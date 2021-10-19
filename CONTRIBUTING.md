@@ -251,6 +251,15 @@ start mongocryptd on port 27020 and set the following:
 
 * `MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN=on`
 
+KMS TLS tests for Client-Side Field Level Encryption require mock KMS servers to be running in the background according to the instructions given in the Client Side Encryption Tests specification.
+The set of mock KMS servers running in the background and their corresponding port number, CA file, and cert file must be as follows:
+
+| Port | CA File | Cert File |
+| --- | --- | --- |
+| 7999 | ca.pem | server.pem |
+| 8000 | ca.pem | expired.pem |
+| 8001 | ca.pem | wrong-host.pem |
+
 Specification tests may be filtered by their description:
 
 * `MONGOC_JSON_SUBTEST=<string>`

@@ -2,7 +2,6 @@ Source: mongo-c-driver
 Priority: optional
 Maintainer: Mongo C Driver Team <mongo-c-driver-debian@googlegroups.com>
 Uploaders: Kevin Albertson <kevin.albertson@mongodb.com>,
-           Samantha Ritter <samantha.ritter@mongodb.com>,
            Roberto C. Sanchez <roberto@connexer.com>
 Build-Depends: debhelper (>= 11),
                cmake,
@@ -15,7 +14,7 @@ Build-Depends: debhelper (>= 11),
                libsasl2-dev,
                libsnappy-dev,
                libzstd-dev
-Standards-Version: 4.5.1
+Standards-Version: 4.6.0
 Section: libs
 Homepage: https://github.com/mongodb/mongo-c-driver
 Vcs-Git: https://github.com/mongodb/mongo-c-driver.git

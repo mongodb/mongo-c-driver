@@ -1,3 +1,11 @@
+mongo-c-driver (1.19.1-1) unstable; urgency=medium
+
+  * New upstream release
+  * Update to Standards-Version 4.6.0 (no changes)
+  * Drop Samantha Ritter as uploader
+
+ -- Roberto C. Sanchez <roberto@connexer.com>  Fri, 08 Oct 2021 22:44:48 -0400
+
 mongo-c-driver (1.19.0-1) unstable; urgency=medium
 
   * New upstream release

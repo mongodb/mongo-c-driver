@@ -74,13 +74,16 @@ mongoc_secure_channel_realloc_buf (size_t *size,
 
 bool
 mongoc_secure_channel_handshake_step_1 (mongoc_stream_tls_t *tls,
-                                        char *hostname);
+                                        char *hostname,
+                                        bson_error_t *error);
 bool
 mongoc_secure_channel_handshake_step_2 (mongoc_stream_tls_t *tls,
-                                        char *hostname);
+                                        char *hostname,
+                                        bson_error_t *error);
 bool
 mongoc_secure_channel_handshake_step_3 (mongoc_stream_tls_t *tls,
-                                        char *hostname);
+                                        char *hostname,
+                                        bson_error_t *error);
 
 
 BSON_END_DECLS
