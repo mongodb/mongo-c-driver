@@ -261,9 +261,9 @@ if [ "$ANALYZE" != "ON" ]; then
 fi
 
 # We are done here if we don't want to run the tests.
-if [ "$SKIP_MOCK_TESTS" = "ON" ]; then
-   exit 0
-fi
+# if [ "$SKIP_MOCK_TESTS" = "ON" ]; then
+exit 0
+# fi
 
 if [ "$VALGRIND" = "ON" ]; then
    # Defines "run_valgrind" shell function.
