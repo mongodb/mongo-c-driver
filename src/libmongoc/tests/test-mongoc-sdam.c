@@ -376,7 +376,7 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
    const mongoc_set_t *servers;
    bson_t cmd;
    bson_error_t error;
-   mc_shared_tpl_descr td;
+   mc_shared_tpld td;
 
    bson_init (&cmd);
    BCON_APPEND (&cmd, "configureFailPoint", "failCommand", "mode", "off");

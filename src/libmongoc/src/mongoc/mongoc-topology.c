@@ -122,7 +122,7 @@ _mongoc_topology_scanner_setup_err_cb (uint32_t id,
                                        const bson_error_t *error /* IN */)
 {
    mongoc_topology_t *topology = BSON_ASSERT_PTR_INLINE (data);
-   MC_DECL_TD_TAKE (td, topology);
+   mc_shared_tpld td = mc_tpld_take_ref (topology);
 
    if (td.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
       /* In load balanced mode, scanning is only for connection establishment.
@@ -134,7 +134,7 @@ _mongoc_topology_scanner_setup_err_cb (uint32_t id,
          mod.new_td, id, NULL /* hello reply */, -1 /* rtt_msec */, error);
       mc_tpld_modify_commit (mod);
    }
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
 }
 
 
@@ -229,7 +229,7 @@ _server_session_should_prune (mongoc_server_session_t *session,
 {
    bool is_loadbalanced;
    int timeout;
-   mc_shared_tpl_descr td;
+   mc_shared_tpld td;
 
    /** If "dirty" (i.e. contains a network error), it should be dropped */
    if (session->dirty) {
@@ -245,7 +245,7 @@ _server_session_should_prune (mongoc_server_session_t *session,
    td = mc_tpld_take_ref (topo);
    timeout = td.ptr->session_timeout_minutes;
    is_loadbalanced = td.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED;
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
 
    /** Load balanced topology sessions never expire */
    if (is_loadbalanced) {
@@ -319,7 +319,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    heartbeat = mongoc_uri_get_option_as_int32 (
       uri, MONGOC_URI_HEARTBEATFREQUENCYMS, heartbeat_default);
 
-   topology->_shared_descr_.sptr = mongoc_shared_ptr_create (
+   topology->_shared_descr_._sptr_ = mongoc_shared_ptr_create (
       bson_malloc0 (sizeof (mongoc_topology_description_t)),
       _topo_descr_destroy_and_free);
    mongoc_topology_description_init (mc_tpld_unsafe_get_mutable (topology),
@@ -617,7 +617,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
    _mongoc_topology_description_monitor_closed (topology->_shared_descr_.ptr);
 
    mongoc_uri_destroy (topology->uri);
-   mongoc_shared_ptr_reset_null (&topology->_shared_descr_.sptr);
+   mongoc_shared_ptr_reset_null (&topology->_shared_descr_._sptr_);
    mongoc_topology_scanner_destroy (topology->scanner);
    mongoc_server_session_pool_free (topology->session_pool);
 
@@ -723,7 +723,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    char *prefixed_service = NULL;
    int64_t scan_time_ms;
    bool ret;
-   mc_shared_tpl_descr td;
+   mc_shared_tpld td;
    mc_tpld_modification tdmod;
 
    BSON_ASSERT (mongoc_topology_should_rescan_srv (topology));
@@ -782,7 +782,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    mc_tpld_modify_commit (tdmod);
 
 done:
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    bson_free (prefixed_service);
    _mongoc_host_list_destroy_all (rr_data.hosts);
 }
@@ -968,10 +968,10 @@ mongoc_topology_select (mongoc_topology_t *topology,
 
    if (server_id) {
       /* new copy of the server description */
-      MC_DECL_TD_TAKE (td, topology);
+      mc_shared_tpld td = mc_tpld_take_ref (topology);
       mongoc_server_description_t *sd =
          mongoc_topology_server_by_id (td.ptr, server_id, error);
-      MC_TD_DROP (td);
+      mc_tpld_drop_ref (&td);
       return sd;
    } else {
       return NULL;
@@ -990,7 +990,7 @@ _mongoc_topology_select_server_id_loadbalanced (mongoc_topology_t *topology,
    int32_t selected_server_id;
    mongoc_topology_scanner_node_t *node;
    bson_error_t scanner_error = {0};
-   MC_DECL_TD_TAKE (td, topology);
+   mc_shared_tpld td = mc_tpld_take_ref (topology);
 
    BSON_ASSERT (td.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED);
 
@@ -999,8 +999,7 @@ _mongoc_topology_select_server_id_loadbalanced (mongoc_topology_t *topology,
       mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
       _mongoc_topology_description_monitor_opening (tdmod.new_td);
       mc_tpld_modify_commit (tdmod);
-      MC_TD_DROP (td);
-      td = mc_tpld_take_ref (topology);
+      mc_tpld_renew_ref (&td, topology);
    }
    selected_server = mongoc_topology_description_select_const (
       td.ptr, MONGOC_SS_WRITE, NULL /* read prefs */, 0 /* local threshold */);
@@ -1061,7 +1060,7 @@ _mongoc_topology_select_server_id_loadbalanced (mongoc_topology_t *topology,
    }
 
 done:
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    return selected_server_id;
 }
 
@@ -1096,7 +1095,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    bson_error_t scanner_error = {0};
    int64_t heartbeat_msec;
    uint32_t server_id;
-   MC_DECL_TD_TAKE (td, topology);
+   mc_shared_tpld td = mc_tpld_take_ref (topology);
 
    /* These names come from the Server Selection Spec pseudocode */
    int64_t loop_start;  /* when we entered this function */
@@ -1138,8 +1137,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
          mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
          _mongoc_topology_description_monitor_opening (tdmod.new_td);
          mc_tpld_modify_commit (tdmod);
-         MC_TD_DROP (td);
-         td = mc_tpld_take_ref (topology);
+         mc_tpld_renew_ref (&td, topology);
       }
 
       tried_once = false;
@@ -1191,8 +1189,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
          }
 
          /* Topology may have just been updated by a scan. */
-         MC_TD_DROP (td);
-         td = mc_tpld_take_ref (topology);
+         mc_tpld_renew_ref (&td, topology);
 
          if (!mongoc_topology_compatible (td.ptr, read_prefs, error)) {
             server_id = 0;
@@ -1238,8 +1235,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    /* we break out when we've found a server or timed out */
    for (;;) {
       /* Topology may have been updated on a previous loop iteration */
-      MC_TD_DROP (td);
-      td = mc_tpld_take_ref (topology);
+      mc_tpld_renew_ref (&td, topology);
 
       if (!mongoc_topology_compatible (td.ptr, read_prefs, error)) {
          server_id = 0;
@@ -1257,8 +1253,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
       bson_mutex_lock (&topology->tpld_modification_mtx);
       /* Now that we have the lock, check again, since a scan may have
        * occurred while we were waiting on the lock. */
-      MC_TD_DROP (td);
-      td = mc_tpld_take_ref (topology);
+      mc_tpld_renew_ref (&td, topology);
       selected_server = mongoc_topology_description_select_const (
          td.ptr, optype, read_prefs, local_threshold_ms);
       if (selected_server) {
@@ -1280,7 +1275,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                  (expire_at - loop_start) / 1000);
       TRACE ("%s", "server selection awake");
       /* Refresh our topology handle */
-      MC_TD_DROP (td);
+      mc_tpld_drop_ref (&td);
       td = mc_tpld_take_ref (topology);
       _topology_collect_errors (td.ptr, &scanner_error);
 
@@ -1318,7 +1313,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    }
 
 done:
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    return server_id;
 }
 
@@ -1524,9 +1519,9 @@ _mongoc_topology_update_last_used (mongoc_topology_t *topology,
 mongoc_topology_description_type_t
 _mongoc_topology_get_type (const mongoc_topology_t *topology)
 {
-   MC_DECL_TD_TAKE (td, topology);
+   mc_shared_tpld td = mc_tpld_take_ref (topology);
    mongoc_topology_description_type_t td_type = td.ptr->type;
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    return td_type;
 }
 
@@ -1564,7 +1559,7 @@ _mongoc_topology_update_cluster_time (mongoc_topology_t *topology,
    const uint8_t *data;
    uint32_t size;
    bson_t cluster_time;
-   mc_shared_tpl_descr td;
+   mc_shared_tpld td;
 
    if (!reply || !bson_iter_init_find (&iter, reply, "$clusterTime")) {
       return;
@@ -1596,7 +1591,7 @@ _mongoc_topology_update_cluster_time (mongoc_topology_t *topology,
          mc_tpld_modify_drop (tdmod);
       }
    }
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
 }
 
 
@@ -1618,7 +1613,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
    int64_t timeout;
    mongoc_server_session_t *ss = NULL;
    bool loadbalanced;
-   MC_DECL_TD_TAKE (td, topology);
+   mc_shared_tpld td = mc_tpld_take_ref (topology);
 
    ENTRY;
 
@@ -1636,7 +1631,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
          }
 
          /* Topology may have been updated by a scan */
-         MC_TD_DROP (td);
+         mc_tpld_drop_ref (&td);
          td = mc_tpld_take_ref (topology);
 
          timeout = td.ptr->session_timeout_minutes;
@@ -1655,7 +1650,7 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
    ss = mongoc_server_session_pool_get (topology->session_pool, error);
 
 done:
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    RETURN (ss);
 }
 
@@ -1964,7 +1959,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
 {
    bson_error_t server_selection_error;
    const mongoc_server_description_t *sd;
-   MC_DECL_TD_TAKE (td, topology);
+   mc_shared_tpld td = mc_tpld_take_ref (topology);
 
    sd = mongoc_topology_description_server_by_id_const (
       td.ptr, server_id, &server_selection_error);
@@ -2004,12 +1999,12 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                                      sd,
                                                      max_wire_version,
                                                      reply);
-      MC_TD_DROP (td);
+      mc_tpld_drop_ref (&td);
       return cleared;
    }
 
 invalidate_server:
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    {
       mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
       /* Mark server as unknown. */
@@ -2027,7 +2022,7 @@ invalidate_server:
    return true;
 
 ignore_error:
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    return false;
 }
 
@@ -2108,12 +2103,14 @@ _mongoc_topology_get_connection_pool_generation (
 mc_tpld_modification
 mc_tpld_modify_begin (mongoc_topology_t *tpl)
 {
-   mc_shared_tpl_descr prev_td;
+   mc_shared_tpld prev_td;
+   mongoc_topology_description_t *new_td;
    bson_mutex_lock (&tpl->tpld_modification_mtx);
    prev_td = mc_tpld_take_ref (tpl);
+   new_td = mongoc_topology_description_new_copy (prev_td.ptr),
+   mc_tpld_drop_ref (&prev_td);
    return (mc_tpld_modification){
-      .prev_td = prev_td,
-      .new_td = mongoc_topology_description_new_copy (prev_td.ptr),
+      .new_td = new_td,
       .topology = tpl,
    };
 }
@@ -2123,11 +2120,10 @@ mc_tpld_modify_commit (mc_tpld_modification mod)
 {
    mongoc_shared_ptr new_sptr =
       mongoc_shared_ptr_create (mod.new_td, _topo_descr_destroy_and_free);
-   mongoc_atomic_shared_ptr_store (&mod.topology->_shared_descr_.sptr,
+   mongoc_atomic_shared_ptr_store (&mod.topology->_shared_descr_._sptr_,
                                    new_sptr);
    bson_mutex_unlock (&mod.topology->tpld_modification_mtx);
    mongoc_shared_ptr_reset_null (&new_sptr);
-   mc_tpld_drop_ref (&mod.prev_td);
 }
 
 void
@@ -2135,5 +2131,4 @@ mc_tpld_modify_drop (mc_tpld_modification mod)
 {
    bson_mutex_unlock (&mod.topology->tpld_modification_mtx);
    mongoc_topology_description_destroy (mod.new_td);
-   mc_tpld_drop_ref (&mod.prev_td);
 }

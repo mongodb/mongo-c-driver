@@ -87,19 +87,30 @@ typedef bool (*_mongoc_rr_resolver_fn) (const char *service,
                                         size_t initial_buffer_size,
                                         bson_error_t *error);
 
-typedef union mc_shared_tpl_descr {
-   mongoc_shared_ptr sptr;
+/**
+ * @brief A reference-counted reference to a topology description.
+ *
+ * The referred-to topology description should be access via the `.ptr` member
+ * of this object.
+ */
+typedef union mc_shared_tpld {
+   /* Private: The reference-counted shared pointer that manages the topology
+    * description. */
+   mongoc_shared_ptr _sptr_;
+   /** The pointed-to topology description */
    mongoc_topology_description_t const *ptr;
-} mc_shared_tpl_descr;
+} mc_shared_tpld;
 
-static const mc_shared_tpl_descr MC_SHARED_TPL_DESCR_NULL = {{NULL, NULL}};
+/** A null-pointer initializer for an `mc_shared_tpld` */
+#define MC_SHARED_TPL_DESCR_NULL \
+   ((mc_shared_tpld){._sptr_ = MONGOC_SHARED_PTR_NULL})
 
 typedef struct _mongoc_topology_t {
    /**
     * @brief The topology description. Do not access directly. Instead, use
     * mc_tpld_take_ref()
     */
-   mc_shared_tpl_descr _shared_descr_;
+   mc_shared_tpld _shared_descr_;
 
    /* topology->uri is initialized as a copy of the client/pool's URI.
     * For a "mongodb+srv://" URI, topology->uri is then updated in
@@ -335,41 +346,111 @@ _mongoc_topology_get_connection_pool_generation (
    uint32_t server_id,
    const bson_oid_t *service_id);
 
-static BSON_INLINE mc_shared_tpl_descr
+/**
+ * @brief Obtain a reference to the current topology description for the given
+ * topology.
+ *
+ * Returns a ref-counted reference to the topology description. The returned
+ * reference must later be released with mc_tpld_drop_ref(). The contents of the
+ * topology description are immutable.
+ */
+static BSON_INLINE mc_shared_tpld
 mc_tpld_take_ref (const mongoc_topology_t *tpl)
 {
-   mc_shared_tpl_descr td = MC_SHARED_TPL_DESCR_NULL;
-   td.sptr = mongoc_atomic_shared_ptr_load (&tpl->_shared_descr_.sptr);
-   return td;
+   return (mc_shared_tpld){
+      ._sptr_ = mongoc_atomic_shared_ptr_load (&tpl->_shared_descr_._sptr_)};
 }
 
+/**
+ * @brief Release a reference to a topology description obtained via
+ * mc_tpld_take_ref().
+ *
+ * The pointed-to shared reference will be reset to NULL.
+ */
 static BSON_INLINE void
-mc_tpld_drop_ref (mc_shared_tpl_descr *p)
+mc_tpld_drop_ref (mc_shared_tpld *p)
 {
-   mongoc_shared_ptr_reset_null (&p->sptr);
+   mongoc_shared_ptr_reset_null (&p->_sptr_);
 }
 
+/**
+ * @brief Refresh a reference to a topology description for the given topology.
+ *
+ * @param td Pointer-to-shared-pointer of the topology description
+ * @param tpl The topology to query.
+ *
+ * The pointed-to shared pointer will be modified to refer to the topology
+ * description of the topology.
+ *
+ * Equivalent to a call to `mc_tpld_drop_ref()` followed by a call to
+ * `mc_tpld_take_ref()`.
+ */
+static BSON_INLINE void
+mc_tpld_renew_ref (mc_shared_tpld *td, mongoc_topology_t *tpl)
+{
+   mc_tpld_drop_ref (td);
+   *td = mc_tpld_take_ref (tpl);
+}
+
+/**
+ * @brief A pending topology description modification.
+ *
+ * Create an instance using `mc_tpld_modify_begin()`.
+ */
 typedef struct mc_tpld_modification {
-   mc_shared_tpl_descr prev_td;
+   /** The new topology. Modifications should be applied to this topology
+    * description. Those modifications will be published by
+    * `mc_tpld_modify_commit()`. */
    mongoc_topology_description_t *new_td;
+   /** The topology that owns the topology description */
    mongoc_topology_t *topology;
 } mc_tpld_modification;
 
+/**
+ * @brief Begin a new modification transaction of the topology description owned
+ * by `tpl`
+ *
+ * @return mc_tpld_modification A pending modification.
+ *
+ * @note MUST be followed by a call to `mc_tpld_modify_commit` OR
+ * `mc_tpld_modify_drop`
+ *
+ * @note THIS FUNCTION MAY BLOCK: This call takes a lock, which will only be
+ * released by mc_tpld_modify_commit() or mc_tpld_modify_drop(). Do not call
+ * this API while the current thread is already performing a modification!
+ */
 mc_tpld_modification
-mc_tpld_modify_begin (mongoc_topology_t *);
+mc_tpld_modify_begin (mongoc_topology_t *tpl);
 
+/**
+ * @brief Commit a topology description modification to the owning topology.
+ *
+ * All later calls to mc_tpld_take_ref() will see the new topology.
+ */
 void mc_tpld_modify_commit (mc_tpld_modification);
+
+/**
+ * @brief Drop a pending modification to a topology description. No changes will
+ * be made to the topology.
+ */
 void mc_tpld_modify_drop (mc_tpld_modification);
 
+/**
+ * @brief Obtain a pointer-to-mutable mongoc_topology_description_t for the
+ * given topology.
+ *
+ * This call is "unsafe" in that modifications should be performed using
+ * mc_tpld_modify_begin() and mc_tpld_modify_commit().
+ *
+ * The returned pointer can be invalidated by a concurrent modification to the
+ * topology description.
+ *
+ * To obtain a safe pointer to the topology description, use mc_tpld_take_ref().
+ */
 static BSON_INLINE mongoc_topology_description_t *
 mc_tpld_unsafe_get_mutable (mongoc_topology_t *tpl)
 {
-   return tpl->_shared_descr_.sptr.ptr;
+   return tpl->_shared_descr_._sptr_.ptr;
 }
-
-#define MC_DECL_TD_TAKE(VarName, Topology) \
-   mc_shared_tpl_descr VarName = mc_tpld_take_ref (Topology)
-
-#define MC_TD_DROP(VarName) mc_tpld_drop_ref (&VarName);
 
 #endif

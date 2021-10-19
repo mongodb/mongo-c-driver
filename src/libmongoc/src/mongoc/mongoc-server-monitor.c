@@ -213,13 +213,14 @@ static void
 _server_monitor_append_cluster_time (mongoc_server_monitor_t *server_monitor,
                                      bson_t *cmd)
 {
-   MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (server_monitor)->topology);
+   mc_shared_tpld td =
+      mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (server_monitor)->topology);
 
    /* Cluster time is updated on every reply. */
    if (!bson_empty (&td.ptr->cluster_time)) {
       bson_append_document (cmd, "$clusterTime", 12, &td.ptr->cluster_time);
    }
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
 }
 
 static bool
@@ -1140,12 +1141,12 @@ static BSON_THREAD_FUN (_server_monitor_rtt_thread, server_monitor_void)
       bson_mutex_unlock (&server_monitor->shared.mutex);
 
       {
-         MC_DECL_TD_TAKE (td, server_monitor->topology);
+         mc_shared_tpld td = mc_tpld_take_ref (server_monitor->topology);
          const mongoc_server_description_t *sd =
             mongoc_topology_description_server_by_id_const (
                td.ptr, server_monitor->description->id, &error);
          hello_ok = sd ? sd->hello_ok : false;
-         MC_TD_DROP (td);
+         mc_tpld_drop_ref (&td);
       }
 
       _server_monitor_ping_server (server_monitor, hello_ok, &rtt_ms);

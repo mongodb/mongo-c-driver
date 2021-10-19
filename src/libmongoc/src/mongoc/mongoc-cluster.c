@@ -773,7 +773,8 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    bool r;
    bson_iter_t iter;
    mongoc_ssl_opt_t *ssl_opts = NULL;
-   MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
+   mc_shared_tpld td =
+      mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
 
    ENTRY;
 
@@ -871,7 +872,7 @@ _stream_run_hello (mongoc_cluster_t *cluster,
 done:
    bson_destroy (&command);
    bson_destroy (&reply);
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
 
    RETURN (ret_handshake_sd);
 }
@@ -1028,7 +1029,7 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
    char *nonce;
    bool ret;
    mongoc_server_stream_t *server_stream;
-   mc_shared_tpl_descr td;
+   mc_shared_tpld td;
 
    ENTRY;
 
@@ -1062,7 +1063,7 @@ _mongoc_cluster_auth_node_cr (mongoc_cluster_t *cluster,
 
    td = mc_tpld_take_ref (cluster->client->topology);
    server_stream = _mongoc_cluster_create_server_stream (td.ptr, sd, stream);
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
 
    if (!mongoc_cluster_run_command_parts (
           cluster, server_stream, &parts, &reply, error)) {
@@ -1157,7 +1158,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
    char *str;
    bool ret;
    mongoc_server_stream_t *server_stream;
-   mc_shared_tpl_descr td;
+   mc_shared_tpld td;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
@@ -1197,7 +1198,7 @@ _mongoc_cluster_auth_node_plain (mongoc_cluster_t *cluster,
 
    td = mc_tpld_take_ref (cluster->client->topology);
    server_stream = _mongoc_cluster_create_server_stream (td.ptr, sd, stream);
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
 
    ret = mongoc_cluster_run_command_parts (
       cluster, server_stream, &parts, &reply, error);
@@ -1293,7 +1294,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
    bson_t reply;
    bool ret;
    mongoc_server_stream_t *server_stream;
-   mc_shared_tpl_descr td;
+   mc_shared_tpld td;
 
    BSON_ASSERT (cluster);
    BSON_ASSERT (stream);
@@ -1308,7 +1309,7 @@ _mongoc_cluster_auth_node_x509 (mongoc_cluster_t *cluster,
    parts.prohibit_lsid = true;
    td = mc_tpld_take_ref (cluster->client->topology);
    server_stream = _mongoc_cluster_create_server_stream (td.ptr, sd, stream);
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
 
    ret = mongoc_cluster_run_command_parts (
       cluster, server_stream, &parts, &reply, error);
@@ -1428,7 +1429,8 @@ _mongoc_cluster_run_scram_command (
    mongoc_cmd_parts_t parts;
    mongoc_server_stream_t *server_stream;
    const char *auth_source;
-   MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
+   mc_shared_tpld td =
+      mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
 
    if (!(auth_source = mongoc_uri_get_auth_source (cluster->uri)) ||
        (*auth_source == '\0')) {
@@ -1440,7 +1442,7 @@ _mongoc_cluster_run_scram_command (
    parts.prohibit_lsid = true;
    server_stream =
       _mongoc_cluster_create_server_stream (td.ptr, handshake_sd, stream);
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
 
    if (!mongoc_cluster_run_command_parts (
           cluster, server_stream, &parts, reply, error)) {
@@ -2243,7 +2245,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
     * them to mongoc_topology_invalidate_server. */
    bson_error_t *err_ptr = error ? error : &err_local;
    mc_tpld_modification tdmod;
-   mc_shared_tpl_descr td;
+   mc_shared_tpld td;
 
    ENTRY;
 
@@ -2273,7 +2275,7 @@ try_again:
              cluster, tdmod.new_td, server_id, false, NULL) != NULL) {
          /* It was updated. Just try the same logic again. */
          mc_tpld_modify_drop (tdmod);
-         MC_TD_DROP (td);
+         mc_tpld_drop_ref (&td);
          goto try_again;
       }
 
@@ -2324,7 +2326,7 @@ try_again:
    }
 
 done:
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    RETURN (ret_server_stream);
 }
 
@@ -2541,7 +2543,7 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
    bson_error_t error;
    /* Grab the topology description *now*, since we need to check if the server
     * is still valid */
-   MC_DECL_TD_TAKE (td, topology);
+   mc_shared_tpld td = mc_tpld_take_ref (topology);
 
    if (!server_stream) {
       goto done;
@@ -2566,7 +2568,7 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
 
    ret = true;
 done:
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    mongoc_server_stream_cleanup (tmp_stream);
    return ret;
 }
@@ -2970,11 +2972,12 @@ mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster)
                            _mongoc_cluster_min_of_max_obj_size_nodes,
                            &max_bson_obj_size);
    } else {
-      MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
+      mc_shared_tpld td =
+         mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
       mongoc_set_for_each_const (mc_tpld_servers_const (td.ptr),
                                  _mongoc_cluster_min_of_max_obj_size_sds,
                                  &max_bson_obj_size);
-      MC_TD_DROP (td);
+      mc_tpld_drop_ref (&td);
    }
 
    return max_bson_obj_size;
@@ -3008,11 +3011,12 @@ mongoc_cluster_get_max_msg_size (mongoc_cluster_t *cluster)
                            _mongoc_cluster_min_of_max_msg_size_nodes,
                            &max_msg_size);
    } else {
-      MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
+      mc_shared_tpld td =
+         mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
       mongoc_set_for_each_const (mc_tpld_servers_const (td.ptr),
                                  _mongoc_cluster_min_of_max_msg_size_sds,
                                  &max_msg_size);
-      MC_TD_DROP (td);
+      mc_tpld_drop_ref (&td);
    }
 
    return max_msg_size;
@@ -3103,7 +3107,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
 
    if (scanner_node->last_used + (1000 * cluster->socketcheckintervalms) <
        now) {
-      mc_shared_tpl_descr td;
+      mc_shared_tpld td;
 
       bson_init (&command);
       BSON_APPEND_INT32 (&command, "ping", 1);
@@ -3114,7 +3118,7 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
       td = mc_tpld_take_ref (cluster->client->topology);
       server_stream =
          _mongoc_cluster_create_server_stream (td.ptr, handshake_sd, stream);
-      MC_TD_DROP (td);
+      mc_tpld_drop_ref (&td);
 
       if (!server_stream) {
          bson_destroy (&command);

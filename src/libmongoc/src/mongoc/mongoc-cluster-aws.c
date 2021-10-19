@@ -61,7 +61,8 @@ _run_command (mongoc_cluster_t *cluster,
    mongoc_cmd_parts_t parts;
    mongoc_server_stream_t *server_stream;
    bool ret;
-   MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
+   mc_shared_tpld td =
+      mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (cluster)->client->topology);
 
    mongoc_cmd_parts_init (&parts,
                           cluster->client,
@@ -71,7 +72,7 @@ _run_command (mongoc_cluster_t *cluster,
    /* Drivers must not append session ids to auth commands per sessions spec. */
    parts.prohibit_lsid = true;
    server_stream = _mongoc_cluster_create_server_stream (td.ptr, sd, stream);
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    ret = mongoc_cluster_run_command_parts (
       cluster, server_stream, &parts, reply, error);
    mongoc_server_stream_cleanup (server_stream);

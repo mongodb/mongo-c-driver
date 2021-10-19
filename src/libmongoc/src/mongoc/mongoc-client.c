@@ -2590,14 +2590,13 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
    mongoc_read_prefs_t *read_prefs;
    bson_error_t error;
    uint32_t server_id = 0;
-
-   MC_DECL_TD_TAKE (td, topology);
+   mc_shared_tpld td = mc_tpld_take_ref (topology);
 
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
    if (!mongoc_topology_compatible (td.ptr, NULL, &error)) {
       MONGOC_ERROR ("Could not kill cursor: %s", error.message);
-      MC_TD_DROP (td);
+      mc_tpld_drop_ref (&td);
       mongoc_read_prefs_destroy (read_prefs);
       return;
    }
@@ -2623,7 +2622,7 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
    }
 
    mongoc_read_prefs_destroy (read_prefs);
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
 }
 
 
@@ -2807,10 +2806,10 @@ mongoc_server_description_t *
 mongoc_client_get_server_description (mongoc_client_t *client,
                                       uint32_t server_id)
 {
-   MC_DECL_TD_TAKE (td, client->topology);
+   mc_shared_tpld td = mc_tpld_take_ref (client->topology);
    mongoc_server_description_t *sd = mongoc_topology_server_by_id (
       td.ptr, server_id, NULL /* <- the error info isn't useful */);
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    return sd;
 }
 
@@ -2819,11 +2818,12 @@ mongoc_server_description_t **
 mongoc_client_get_server_descriptions (const mongoc_client_t *client,
                                        size_t *n /* OUT */)
 {
-   MC_DECL_TD_TAKE (td, BSON_ASSERT_PTR_INLINE (client)->topology);
+   mc_shared_tpld td =
+      mc_tpld_take_ref (BSON_ASSERT_PTR_INLINE (client)->topology);
    mongoc_server_description_t **const sds =
       mongoc_topology_description_get_servers (td.ptr,
                                                BSON_ASSERT_PTR_INLINE (n));
-   MC_TD_DROP (td);
+   mc_tpld_drop_ref (&td);
    return sds;
 }
 
