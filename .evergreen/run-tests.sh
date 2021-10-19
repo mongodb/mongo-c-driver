@@ -36,6 +36,9 @@ if [ "$SSL" != "nossl" ]; then
       cygwin*)
          certutil.exe -addstore "Root" "src\libmongoc\tests\x509gen\ca.pem"
          ;;
+      darwin*)
+         sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain src/libmongoc/tests/x509gen/ca.pem
+         ;;
       *)
          if [ -f /etc/redhat-release ]; then
             echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors..."
@@ -45,6 +48,7 @@ if [ "$SSL" != "nossl" ]; then
                sudo update-ca-trust extract --verbose
             else
                echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors... failed."
+               export MONGOC_TEST_SKIP_KMS_TLS_TESTS=on
                export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
             fi
          else
@@ -55,6 +59,7 @@ if [ "$SSL" != "nossl" ]; then
                sudo update-ca-certificates --verbose
             else
                echo "Copying CA certificate to /usr/local/share/ca-certificates... failed."
+               export MONGOC_TEST_SKIP_KMS_TLS_TESTS=on
                export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
             fi
          fi
@@ -114,6 +119,27 @@ check_mongocryptd() {
 }
 
 export MONGOC_TEST_MONITORING_VERBOSE=on
+
+# Ensure mock KMS servers are running before starting tests.
+if [ "$CLIENT_SIDE_ENCRYPTION" = "on" ]; then
+   echo "Waiting for mock KMS servers to start..."
+   wait_for_kms_server() {
+      for i in $(seq 60); do
+         # Exit code 7: "Failed to connect to host".
+         if curl -s "localhost:$1"; test $? -ne 7; then
+            return 0
+         else
+            sleep 1
+         fi
+      done
+      echo "Could not detect mock KMS server on port $1"
+      return 1
+   }
+   wait_for_kms_server 7999
+   wait_for_kms_server 8000
+   wait_for_kms_server 8001
+   echo "Waiting for mock KMS servers to start... done."
+fi
 
 if [ "$LOADBALANCED" != "noloadbalanced" ]; then
    if [ -z "$SINGLE_MONGOS_LB_URI" -o -z "$MULTI_MONGOS_LB_URI" ]; then
