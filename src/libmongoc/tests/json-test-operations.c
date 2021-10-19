@@ -958,6 +958,10 @@ single_write (mongoc_collection_t *collection,
       abort ();
    }
 
+   if (!r) {
+      MONGOC_DEBUG ("operation %s has error: %s", name, error.message);
+   }
+
    value_init_from_doc (&value, reply);
    check_result (test, operation, r, &value, &error);
    bson_value_destroy (&value);
