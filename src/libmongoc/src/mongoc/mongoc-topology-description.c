@@ -106,8 +106,6 @@ mongoc_topology_description_init (mongoc_topology_description_t *description,
  *       @dst must not already point to any allocated resources. Clean
  *       up with mongoc_topology_description_cleanup.
  *
- *       WARNING: @dst's rand_seed is not initialized.
- *
  * Returns:
  *       None.
  *
@@ -134,6 +132,7 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
    dst->opened = src->opened;
    dst->type = src->type;
    dst->heartbeat_msec = src->heartbeat_msec;
+   dst->rand_seed = src->rand_seed;
 
    nitems = bson_next_power_of_two (mc_tpld_servers_const (src)->items_len);
    dst->_servers_ = mongoc_set_new (nitems, _mongoc_topology_server_dtor, NULL);
