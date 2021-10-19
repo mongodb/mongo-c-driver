@@ -180,7 +180,7 @@ case "$OS" in
       check_mongocryptd
 
       chmod +x src/libmongoc/Debug/test-libmongoc.exe
-      ./src/libmongoc/Debug/test-libmongoc.exe $TEST_ARGS -d
+      ./src/libmongoc/Debug/test-libmongoc.exe --no-fork $TEST_ARGS -d
       ;;
 
    *)
