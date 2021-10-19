@@ -1,5 +1,6 @@
 #!/bin/sh
 set -o errexit  # Exit the script with error if any of the commands fail
+set -o xtrace
 
 
 COMPRESSORS=${COMPRESSORS:-nocompressors}
@@ -166,6 +167,12 @@ if [ "$LOADBALANCED" != "noloadbalanced" ]; then
    TEST_ARGS="$TEST_ARGS -l /versioned_api/*"
    TEST_ARGS="$TEST_ARGS -l /command_monitoring/unified/*"
 fi
+
+echo "sleeping for 10 seconds to wait for KMS server"
+ps aux
+sleep 10
+ps aux
+curl localhost:5698 || true
 
 case "$OS" in
    cygwin*)
