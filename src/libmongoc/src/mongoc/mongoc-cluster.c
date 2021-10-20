@@ -2281,7 +2281,8 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
          goto done;
       }
 
-      mongoc_topology_invalidate_server (tdmod.new_td, server_id, err_ptr);
+      mongoc_topology_description_invalidate_server (
+         tdmod.new_td, server_id, err_ptr);
       mongoc_cluster_disconnect_node (cluster, server_id);
       /* This is not load balanced mode, so there are no service IDs associated
        * with connections. Pass kZeroServiceId to clear the entire connection
@@ -2940,8 +2941,6 @@ _mongoc_cluster_min_of_max_msg_size_nodes (void *item, void *ctx)
  *
  *      Return the minimum max_bson_obj_size across all servers in cluster.
  *
- *      NOTE: this method uses the topology's mutex.
- *
  * Returns:
  *      The minimum max_bson_obj_size.
  *
@@ -2980,8 +2979,6 @@ mongoc_cluster_get_max_bson_obj_size (mongoc_cluster_t *cluster)
  * mongoc_cluster_get_max_msg_size --
  *
  *      Return the minimum max msg size across all servers in cluster.
- *
- *      NOTE: this method uses the topology's mutex.
  *
  * Returns:
  *      The minimum max_msg_size
@@ -3089,7 +3086,8 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
          mongoc_cluster_disconnect_node (cluster, server_id);
          tdmod = mc_tpld_modify_begin (topology);
          /* invalidate_server() is okay if 'server_id' was already removed. */
-         mongoc_topology_invalidate_server (tdmod.new_td, server_id, &error);
+         mongoc_topology_description_invalidate_server (
+            tdmod.new_td, server_id, &error);
          mc_tpld_modify_commit (tdmod);
          return false;
       }
@@ -3125,7 +3123,8 @@ mongoc_cluster_check_interval (mongoc_cluster_t *cluster, uint32_t server_id)
          mongoc_cluster_disconnect_node (cluster, server_id);
          tdmod = mc_tpld_modify_begin (cluster->client->topology);
          /* invalidate_server() is okay if 'server_id' was already removed. */
-         mongoc_topology_invalidate_server (tdmod.new_td, server_id, &error);
+         mongoc_topology_description_invalidate_server (
+            tdmod.new_td, server_id, &error);
          mc_tpld_modify_commit (tdmod);
       }
    }

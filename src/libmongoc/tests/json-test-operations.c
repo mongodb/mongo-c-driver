@@ -2154,14 +2154,8 @@ wait_for_event (json_test_ctx_t *ctx, const bson_t *operation)
          }
          bson_mutex_unlock (&ctx->mutex);
       } else if (0 == strcmp (event_name, "PoolClearedEvent")) {
-         /* Do *NOT* lock ctx->mutex while calling
-          * _get_total_pool_cleared_event, which locks the topology mutex.
-          * This could create a deadlock situation.
-          * A monitor may be updating the topology description, calling an APM
-          * callback: topology->mutex => ctx->mutex
-          */
-         total = _get_total_pool_cleared_event (ctx);
          bson_mutex_lock (&ctx->mutex);
+         total = _get_total_pool_cleared_event (ctx);
          measured = ctx->measured_PoolClearedEvent;
          diff = total - measured;
          if (diff >= count) {

@@ -500,7 +500,7 @@ _test_topology_invalidate_server (bool pooled)
    bson_set_error (
       &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "error");
    td = mc_tpld_unsafe_get_mutable (client->topology);
-   mongoc_topology_invalidate_server (td, id, &error);
+   mongoc_topology_description_invalidate_server (td, id, &error);
    sd = mongoc_set_get_const (mc_tpld_servers_const (td), id);
    BSON_ASSERT (sd);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
@@ -1262,10 +1262,10 @@ test_rtt (void *ctx)
 }
 
 
-/* mongoc_topology_scanner_add and mongoc_topology_scan are called within the
- * topology mutex to add a discovered node and call getaddrinfo on its host
- * immediately - test that this doesn't cause a recursive acquire on the
- * topology mutex */
+/* mongoc_topology_scanner_add and mongoc_topology_scan are called while holding
+ * a topology modification lock to add a discovered node and call getaddrinfo on
+ * its host immediately - test that this doesn't cause a recursive acquire this
+ * lock. */
 static void
 test_add_and_scan_failure (void)
 {

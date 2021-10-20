@@ -1977,7 +1977,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
       ASSERT_CMPINT (id, !=, 0);
       bson_set_error (
          &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "err");
-      mongoc_topology_invalidate_server (
+      mongoc_topology_description_invalidate_server (
          mc_tpld_unsafe_get_mutable (topology), id, &error);
       if (rs) {
          ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
@@ -4023,7 +4023,7 @@ test_mongoc_client_get_handshake_hello_response_single (void)
       0 != strcmp ("Unknown", mongoc_server_description_type (monitor_sd)));
 
    /* Invalidate the server. */
-   mongoc_topology_invalidate_server (
+   mongoc_topology_description_invalidate_server (
       mc_tpld_unsafe_get_mutable (client->topology), monitor_sd->id, &error);
 
    /* Get the new invalidated server description from monitoring. */
@@ -4076,7 +4076,7 @@ test_mongoc_client_get_handshake_hello_response_pooled (void)
    ASSERT_OR_PRINT (ret, error);
 
    /* Invalidate the server. */
-   mongoc_topology_invalidate_server (
+   mongoc_topology_description_invalidate_server (
       mc_tpld_unsafe_get_mutable (client->topology), monitor_sd->id, &error);
 
    /* Get the new invalidated server description from monitoring. */

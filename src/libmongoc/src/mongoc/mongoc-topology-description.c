@@ -519,9 +519,6 @@ _mongoc_find_suitable_mongos_cb (const void *item, void *ctx)
  *
  *       The topology's max wire version.
  *
- *       NOTE: this method should only be called while holding the mutex on
- *       the owning topology object.
- *
  * Returns:
  *       The minimum of all known servers' max wire versions, or INT32_MAX
  *       if there are no known servers.
@@ -658,9 +655,6 @@ _mongoc_topology_description_validate_max_staleness (
  *
  *       Fill out an array of servers matching the read preference and
  *       localThresholdMS.
- *
- *       NOTE: this method should only be called while holding the mutex on
- *       the owning topology object.
  *
  * Side effects:
  *       None.
@@ -864,9 +858,6 @@ mongoc_topology_description_has_data_node (
  *      NOTE: this method simply attempts to select a server from the
  *      current topology, it does not retry or trigger topology checks.
  *
- *      NOTE: this method should only be called while holding the mutex on
- *      the owning topology object.
- *
  * Returns:
  *      Selected server description, or NULL upon failure.
  *
@@ -945,9 +936,7 @@ mongoc_topology_description_select_const (
  *       @error.
  *
  *       NOTE: In most cases, caller should create a duplicate of the
- *       returned server description. Caller should hold the mutex on the
- *       owning topology object while calling this method and while using
- *       the returned reference.
+ *       returned server description.
  *
  * Returns:
  *       A mongoc_server_description_t *, or NULL.
@@ -1227,10 +1216,11 @@ _mongoc_topology_description_check_if_has_primary (
  *      UNKNOWN, the error is recorded, and other parameters are reset to
  *      defaults. Pass in the reason for invalidation in @error.
  *
- *      NOTE: this method should only be called while holding the mutex on
- *      the owning topology object.
- *
- *--------------------------------------------------------------------------
+ * @todo Try to remove this function when CDRIVER-3654 is complete.
+ * It is only called when an application thread needs to mark a server Unknown.
+ * But an application error is also tied to other behavior, and should also
+ * consider the connection generation. This logic is captured in
+ * _mongoc_topology_handle_app_error. This should not be called directly
  */
 void
 mongoc_topology_description_invalidate_server (
@@ -1257,9 +1247,6 @@ mongoc_topology_description_invalidate_server (
  *
  *       Add the specified server to the cluster topology if it is not
  *       already a member. If @id, place its id in @id.
- *
- *       NOTE: this method should only be called while holding the mutex on
- *       the owning topology object.
  *
  * Return:
  *       True if the server was added or already existed in the topology,
@@ -1888,9 +1875,6 @@ transition_t gSDAMTransitionTable
  *      Get this topology's type, one of the types defined in the Server
  *      Discovery And Monitoring Spec.
  *
- *      NOTE: this method should only be called while holding the mutex on
- *      the owning topology object.
- *
  * Returns:
  *       A string.
  *
@@ -2031,9 +2015,6 @@ _mongoc_topology_description_check_compatible (
  *      Handle a hello. This is called by the background SDAM process,
  *      and by client when performing a handshake or invalidating servers.
  *      If there was an error calling hello, pass it in as @error.
- *
- *      NOTE: this method should only be called while holding the mutex on
- *      the owning topology object.
  *
  *--------------------------------------------------------------------------
  */
@@ -2183,8 +2164,7 @@ mongoc_topology_description_handle_hello (
  *      "Determines if the topology has a readable server available."
  *
  *      NOTE: this method should only be called by user code in an SDAM
- *      Monitoring callback, while the monitoring framework holds the mutex
- *      on the owning topology object.
+ *      Monitoring callback.
  *
  *--------------------------------------------------------------------------
  */
@@ -2212,8 +2192,7 @@ mongoc_topology_description_has_readable_server (
  *      "Determines if the topology has a writable server available."
  *
  *      NOTE: this method should only be called by user code in an SDAM
- *      Monitoring callback, while the monitoring framework holds the mutex
- *      on the owning topology object.
+ *      Monitoring callback.
  *
  *--------------------------------------------------------------------------
  */
@@ -2240,8 +2219,7 @@ mongoc_topology_description_has_writable_server (
  *      Discovery And Monitoring Spec.
  *
  *      NOTE: this method should only be called by user code in an SDAM
- *      Monitoring callback, while the monitoring framework holds the mutex
- *      on the owning topology object.
+ *      Monitoring callback.
  *
  * Returns:
  *      A string.

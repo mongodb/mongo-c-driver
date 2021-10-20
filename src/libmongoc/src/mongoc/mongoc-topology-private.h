@@ -114,9 +114,7 @@ typedef struct _mongoc_topology_t {
 
    /* topology->uri is initialized as a copy of the client/pool's URI.
     * For a "mongodb+srv://" URI, topology->uri is then updated in
-    * mongoc_topology_new() after initial seedlist discovery.
-    * Afterwards, it remains read-only and may be read outside of the topology
-    * mutex.
+    * mongoc_topology_new() after initial seedlist discovery..
     */
    mongoc_uri_t *uri;
    mongoc_topology_scanner_t *scanner;
@@ -178,8 +176,8 @@ typedef struct _mongoc_topology_t {
    /* This is overridable for SRV polling tests to mock DNS records. */
    _mongoc_rr_resolver_fn rr_resolver;
 
-   /* valid is false when mongoc_topology_new failed to construct a valid topology.
-    * This could occur if the URI is invalid.
+   /* valid is false when mongoc_topology_new failed to construct a valid
+    * topology. This could occur if the URI is invalid.
     * An invalid topology does not monitor servers. */
    bool valid;
 } mongoc_topology_t;
@@ -205,39 +203,100 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
                             const mongoc_read_prefs_t *read_prefs,
                             bson_error_t *error);
 
+/**
+ * @brief Select a server descriptoin for an operation. May scan and update the
+ * topology.
+ *
+ * A server description might be returned that matches the given `optype` and
+ * `read_prefs`. If the topology is out-of-date or due for a scan, then this
+ * function will perform a scan and update the topology accordingly. If no
+ * matching server is found, returns a NULL pointer.
+ *
+ * @param topology The topology to inspect and/or update.
+ * @param optype The operation that is intended to be performed.
+ * @param read_prefs The read preferences for the command.
+ * @param error An output parameter for any error information.
+ * @return mongoc_server_description_t* A copy of the topology's server
+ * description that matches the request, or NULL if there is no such server.
+ *
+ * @note The returned object is a COPY, and should be released with
+ * `mongoc_server_description_destroy()`
+ *
+ * @note This function may update the topology description.
+ */
 mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t *topology,
                         mongoc_ss_optype_t optype,
                         const mongoc_read_prefs_t *read_prefs,
                         bson_error_t *error);
 
+/**
+ * @brief Obtain the integral ID of a server description matching the requested
+ * ops.
+ *
+ * Refer to @see mongoc_topology_select() for more information
+ *
+ * @param topology The topology to inspect and/or update.
+ * @param optype The operation that is intended to be performed.
+ * @param read_prefs The read preferences for the command.
+ * @param error An output parameter for any error information.
+ * @return uint32_t A non-zero integer ID of the server description. In case of
+ * error, sets `error` and returns zero.
+ *
+ * @note This function may update the topology description.
+ */
 uint32_t
 mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
                                   const mongoc_read_prefs_t *read_prefs,
                                   bson_error_t *error);
 
+/**
+ * @brief Obtain a copy of the server description that matches the given ID
+ *
+ * @param topology The topology to inspect
+ * @param id The ID of a server description.
+ * @param error An output parameter for any error information.
+ * @return mongoc_server_description_t* A copy of a server description, or NULL
+ * in case of error.
+ *
+ * @note The returned object is a COPY, and should be released with
+ * `mongoc_server_description_destroy()`
+ */
 mongoc_server_description_t *
 mongoc_topology_server_by_id (const mongoc_topology_description_t *topology,
                               uint32_t id,
                               bson_error_t *error);
 
+
+/**
+ * @brief Return a new mongoc_host_list_t for the given server matching the
+ * given ID.
+ *
+ * @param topology The topology description to inspect
+ * @param id The ID of a server in the topology
+ * @param error Output error information
+ * @return mongoc_host_list_t* A new host list, or NULL on error
+ *
+ * @note The returned list should be freed with `bson_free()`
+ */
 mongoc_host_list_t *
 _mongoc_topology_host_by_id (const mongoc_topology_description_t *topology,
                              uint32_t id,
                              bson_error_t *error);
 
-/* TODO: Try to remove this function when CDRIVER-3654 is complete.
- * It is only called when an application thread needs to mark a server Unknown.
- * But an application error is also tied to other behavior, and should also
- * consider the connection generation. This logic is captured in
- * _mongoc_topology_handle_app_error. This should not be called directly
+/**
+ * @brief Update the topology from the response to a handshake on a new
+ * application connection.
+ *
+ * @note Only applicable to a client pool (single-threaded clients reuse
+ * monitoring connections).
+ *
+ * @param topology The topology that will be udpated.
+ * @param sd The server description that contains the hello response.
+ * @return true If the server is valid in the topology.
+ * @return false If the server was already removed from the topology.
  */
-void
-mongoc_topology_invalidate_server (mongoc_topology_description_t *topology,
-                                   uint32_t id,
-                                   const bson_error_t *error);
-
 bool
 _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
                                         const mongoc_server_description_t *sd);
@@ -249,6 +308,9 @@ _mongoc_topology_update_last_used (mongoc_topology_t *topology,
 int64_t
 mongoc_topology_server_timestamp (mongoc_topology_t *topology, uint32_t id);
 
+/**
+ * @brief Get the current type of the topology
+ */
 mongoc_topology_description_type_t
 _mongoc_topology_get_type (const mongoc_topology_t *topology);
 
@@ -273,8 +335,23 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd);
 void
 _mongoc_topology_do_blocking_scan (mongoc_topology_t *topology,
                                    bson_error_t *error);
+
+/**
+ * @brief Duplicate the handshake command of the topology scanner.
+ *
+ * @param topology The topology to inspect.
+ * @param copy_into The destination of the copy. Should be uninitialized storage
+ * for a bson_t.
+ *
+ * @note This API will lazily construct the handshake command for the scanner.
+ *
+ * @note This is called at the start of the scan in
+ * _mongoc_topology_run_background, when a node is added in
+ * _mongoc_topology_reconcile_add_nodes, or when running a hello directly on a
+ * node in _mongoc_stream_run_hello.
+ */
 void
-_mongoc_topology_dup_handshake_cmd (mongoc_topology_t *topology,
+_mongoc_topology_dup_handshake_cmd (const mongoc_topology_t *topology,
                                     bson_t *copy_into);
 void
 _mongoc_topology_request_scan (mongoc_topology_t *topology);
@@ -288,6 +365,28 @@ typedef enum {
    MONGOC_SDAM_APP_ERROR_TIMEOUT
 } _mongoc_sdam_app_error_type_t;
 
+/**
+ * @brief Handle an error from an app connection
+ *
+ * The error may be a "not primary" or "node is recovering" error.
+ *
+ * @param topology The topology that will be updated
+ * @param server_id The ID of the server on which the error occurred.
+ * @param handshake_complete Whether the handshake was complete for this server
+ * @param type The type of error that occurred
+ * @param reply If a command error, a reply associated with the error. Otherwise
+ * NULL
+ * @param why An error that will be attached to the server description
+ * @param max_wire_version
+ * @param generation The generation of the server description the caller was
+ * using.
+ * @param service_id A service ID for a load-balanced deployment. If not
+ * applicable, pass kZeroServiceID.
+ * @return true If the topology was updated and the pool was cleared.
+ * @return false If no modifications were made and the error was ignored.
+ *
+ * @note May update the topology description.
+ */
 bool
 _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    uint32_t server_id,
@@ -299,12 +398,20 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    uint32_t generation,
                                    const bson_oid_t *service_id);
 
-/* Invalidate open connections to a server.
- * This is not applicable to single-threaded clients, which only have one
- * or zero connections to any single server.
- * service_id is only applicable to load balanced deployments.
- * Pass kZeroServiceID as service_id to clear connections that have no
- * associated service ID. */
+/**
+ * @brief Invalidate open connnections to a server.
+ *
+ * Pooled clients with open connections will discover the invalidation
+ * the next time they fetch a stream to the server.
+ *
+ * @param td The topology description that will be updated.
+ * @param server_id The ID of the server to invalidate.
+ * @param service_id A service ID for load-balanced deployments. Use
+ * kZeroServiceID if not applicable.
+ *
+ * @note Not applicable to single-threaded clients, which only maintain a
+ * single connection per server, and therefor have no connection pool.
+ */
 void
 _mongoc_topology_clear_connection_pool (mongoc_topology_description_t *td,
                                         uint32_t server_id,
@@ -321,7 +428,6 @@ mongoc_topology_should_rescan_srv (mongoc_topology_t *topology);
  * This is necessarily called after initial seedlist discovery completes in
  * mongoc_topology_new.
  * Callers should call this before monitoring starts.
- * Callers must lock topology->mutex.
  */
 void
 _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology,
@@ -330,16 +436,24 @@ _mongoc_topology_set_rr_resolver (mongoc_topology_t *topology,
 /* _mongoc_topology_set_srv_polling_rescan_interval_ms is called by tests to
  * shorten the rescan interval.
  * Callers should call this before monitoring starts.
- * Callers must lock topology->mutex.
  */
 void
 _mongoc_topology_set_srv_polling_rescan_interval_ms (
    mongoc_topology_t *topology, int64_t val);
 
-/* Return the latest connection generation for the server_id and/or service_id.
+/**
+ * @brief Return the latest connection generation for the server_id and/or
+ * service_id.
+ *
  * Use this generation for newly established connections.
- * Pass kZeroServiceID connections do not have an associated service ID.
- * Callers must lock topology->mutex if topology is pooled. */
+ *
+ * @param td The topology that contains the server
+ * @param server_id The ID of the server to inspect
+ * @param service_id The service ID of the connection if applicable, or
+ * kZeroServiceID.
+ * @returns uint32_t A generation counter for the given server, or zero if the
+ * server does not exist in the topology.
+ */
 uint32_t
 _mongoc_topology_get_connection_pool_generation (
    const mongoc_topology_description_t *td,

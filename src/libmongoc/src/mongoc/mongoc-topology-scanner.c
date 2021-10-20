@@ -306,10 +306,6 @@ _mongoc_topology_scanner_get_monitoring_cmd (mongoc_topology_scanner_t *ts,
    return hello_ok || ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd;
 }
 
-/* Caller must lock topology->mutex to protect handshake_cmd. This
- * is called at the start of the scan in _mongoc_topology_run_background, when a
- * node is added in _mongoc_topology_reconcile_add_nodes, or when running a
- * hello directly on a node in _mongoc_stream_run_hello. */
 void
 _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
                                             bson_t *copy_into)
@@ -1155,8 +1151,6 @@ mongoc_topology_scanner_in_cooldown (mongoc_topology_scanner_t *ts,
  *      should be called once before calling mongoc_topology_scanner_work()
  *      to complete the scan.
  *
- *      The topology mutex must be held by the caller.
- *
  *      If "obey_cooldown" is true, this is a single-threaded blocking scan
  *      that must obey the Server Discovery And Monitoring Spec's cooldownMS:
  *
@@ -1442,7 +1436,6 @@ _jumpstart_other_acmds (mongoc_topology_scanner_node_t *node,
    }
 }
 
-/* Caller must lock topology->mutex to protect handshake_cmd. */
 void
 _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
                                          const mongoc_server_api_t *api)
@@ -1455,8 +1448,7 @@ _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
    _reset_hello (ts);
 }
 
-/* This must be called before the handshake command is constructed. Caller does
- * not need to lock the topology->mutex. */
+/* This must be called before the handshake command is constructed. */
 void
 _mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
                                            bool val)

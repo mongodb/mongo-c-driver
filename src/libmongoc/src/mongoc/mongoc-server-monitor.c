@@ -125,10 +125,6 @@ static BSON_GNUC_PRINTF (3, 4) void _server_monitor_log (
 #define MONITOR_LOG_WARNING(sm, ...) \
    _server_monitor_log (sm, MONGOC_LOG_LEVEL_DEBUG, __VA_ARGS__)
 
-/* Called only from server monitor thread.
- * Caller must hold no locks (user's callback may lock topology mutex).
- * Locks APM mutex.
- */
 static void
 _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor,
                                    bool awaited)
@@ -152,10 +148,6 @@ _server_monitor_heartbeat_started (mongoc_server_monitor_t *server_monitor,
    bson_mutex_unlock (&server_monitor->topology->apm_mutex);
 }
 
-/* Called only from server monitor thread.
- * Caller must hold no locks (user's callback may lock topology mutex).
- * Locks APM mutex.
- */
 static void
 _server_monitor_heartbeat_succeeded (mongoc_server_monitor_t *server_monitor,
                                      const bson_t *reply,
@@ -181,10 +173,6 @@ _server_monitor_heartbeat_succeeded (mongoc_server_monitor_t *server_monitor,
    bson_mutex_unlock (&server_monitor->topology->apm_mutex);
 }
 
-/* Called only from server monitor thread.
- * Caller must hold no locks (user's callback may lock topology mutex).
- * Locks APM mutex.
- */
 static void
 _server_monitor_heartbeat_failed (mongoc_server_monitor_t *server_monitor,
                                   const bson_error_t *error,
@@ -640,12 +628,11 @@ fail:
  *
  * Called only from server monitor thread.
  * Caller must hold no locks.
- * Locks topology mutex and server monitor mutex.
+ * Locks server monitor mutex.
  */
 static void
-_server_monitor_update_topology_description (
-   mongoc_server_monitor_t *server_monitor,
-   mongoc_server_description_t *description)
+_update_topology_description (mongoc_server_monitor_t *server_monitor,
+                              mongoc_server_description_t *description)
 {
    mongoc_topology_t *topology;
    bson_t *hello_response = NULL;
@@ -665,8 +652,6 @@ _server_monitor_update_topology_description (
    }
 
    tdmod = mc_tpld_modify_begin (topology);
-   /* This is the another case of holding both locks. topology->mutex is
-    * always locked first, then server monitor mutex after. */
    bson_mutex_lock (&server_monitor->shared.mutex);
    server_monitor->shared.scan_requested = false;
    bson_mutex_unlock (&server_monitor->shared.mutex);
@@ -792,21 +777,23 @@ fail:
    RETURN (ret);
 }
 
-/* Perform a hello check of a server.
+/**
+ * @brief Perform a hello check on a server
  *
- * Called only by server monitor thread.
- * Caller must not hold any locks.
- * May lock server monitor mutex. May lock topology mutex.
- * Upon network error, the returned server description will contain the error,
- * but no hello reply.
- * Upon hello cancellation, cancelled will be true, and the returned server
- * description will not contain an error or hello reply.
- * Upon command error ("ok":0 reply), the returned server description have the
- * hello reply and error set.
- * Returns a new server description that the caller must destroy.
+ * @param server_monitor The server monitor for this server.
+ * @param previous_description The most recent view of the description of this
+ * server.
+ * @param cancelled Output parameter: Whether the monitor check is cancelled.
+ * @return mongoc_server_description_t* The newly created updated server
+ * description.
+ *
+ * @note May update the topology description associated with the server monitor.
+ *
+ * @note In case of error, returns a new server description with the error
+ * information, but with no hello reply.
  */
-mongoc_server_description_t *
-mongoc_server_monitor_check_server (
+static mongoc_server_description_t *
+_server_monitor_check_server (
    mongoc_server_monitor_t *server_monitor,
    const mongoc_server_description_t *previous_description,
    bool *cancelled)
@@ -942,7 +929,6 @@ exit:
 
 /* Request scan of a single server.
  *
- * Caller does not need to have topology mutex locked.
  * Locks server monitor mutex to deliver scan_requested.
  */
 void
@@ -1043,7 +1029,7 @@ static BSON_THREAD_FUN (_server_monitor_thread, server_monitor_void)
       mongoc_server_description_destroy (previous_description);
       previous_description = mongoc_server_description_new_copy (description);
       mongoc_server_description_destroy (description);
-      description = mongoc_server_monitor_check_server (
+      description = _server_monitor_check_server (
          server_monitor, previous_description, &cancelled);
 
       if (cancelled) {
@@ -1051,7 +1037,7 @@ static BSON_THREAD_FUN (_server_monitor_thread, server_monitor_void)
          continue;
       }
 
-      _server_monitor_update_topology_description (server_monitor, description);
+      _update_topology_description (server_monitor, description);
 
       /* Immediately proceed to the next check if the previous response was
        * successful and included the topologyVersion field. */
@@ -1205,7 +1191,6 @@ mongoc_server_monitor_run_as_rtt (mongoc_server_monitor_t *server_monitor)
  * Returns true if in state MONGOC_THREAD_OFF and the server monitor can be
  * safely destroyed.
  * Called during topology description reconcile.
- * Caller may hold topology mutex.
  * Locks server monitor mutex.
  */
 bool
@@ -1236,8 +1221,6 @@ mongoc_server_monitor_request_shutdown (mongoc_server_monitor_t *server_monitor)
 /* Request thread shutdown and block until the server monitor thread terminates.
  *
  * Called by one thread.
- * Caller must not hold topology mutex. Server monitor thread may need to lock
- * it again in the process of shutting down.
  * Locks the server monitor mutex.
  */
 void

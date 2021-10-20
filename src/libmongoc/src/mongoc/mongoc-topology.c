@@ -146,7 +146,6 @@ _mongoc_topology_scanner_setup_err_cb (uint32_t id,
  *       Callback method to handle hello responses received by async
  *       command objects.
  *
- *       NOTE: This method locks the given topology's mutex.
  *       Only called for single-threaded monitoring.
  *
  *-------------------------------------------------------------------------
@@ -549,8 +548,6 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
  *
  *       Set Application Performance Monitoring callbacks.
  *
- * Caller must hold topology->mutex.
- *
  *-------------------------------------------------------------------------
  */
 void
@@ -680,8 +677,6 @@ mongoc_topology_apply_scanned_srv_hosts (mongoc_uri_t *uri,
  *      If this returns false, caller can stop scanning SRV records
  *      and does not need to try again in the future.
  *
- *      NOTE: this method expects @topology's mutex to be locked on entry.
- *
  * --------------------------------------------------------------------------
  */
 bool
@@ -708,10 +703,9 @@ mongoc_topology_should_rescan_srv (mongoc_topology_t *topology)
  *
  *      Queries SRV records for new hosts in a mongos cluster.
  *      Caller must call mongoc_topology_should_rescan_srv before calling
- *      to ensure preconditions are met (while holding @topology's mutex
- *      for the duration of both calls).
+ *      to ensure preconditions are met.
  *
- *      NOTE: this method expects @topology's mutex to be locked on entry.
+ *      NOTE: This method may update the topology description.
  *
  * --------------------------------------------------------------------------
  */
@@ -741,8 +735,6 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    /* Go forth and query... */
    prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
 
-   /* Unlock topology mutex during scan so it does not hold up other operations.
-    */
    ret = topology->rr_resolver (prefixed_service,
                                 MONGOC_RR_SRV,
                                 &rr_data,
@@ -795,9 +787,7 @@ done:
  *
  *      Runs a single complete scan.
  *
- *      NOTE: this method expects @topology's mutex to be locked on entry.
- *
- *      NOTE: this method unlocks and re-locks @topology's mutex.
+ *      NOTE: This method updates the topology description.
  *
  *      Only runs for single threaded monitoring. (obey_cooldown is always
  *      true).
@@ -822,7 +812,6 @@ mongoc_topology_scan_once (mongoc_topology_t *topology, bool obey_cooldown)
    mongoc_topology_reconcile (topology, tdmod.new_td);
    mc_tpld_modify_commit (tdmod);
 
-   /* scanning locks and unlocks the mutex itself until the scan is done */
    mongoc_topology_scanner_start (topology->scanner, obey_cooldown);
    mongoc_topology_scanner_work (topology->scanner);
 
@@ -940,8 +929,6 @@ _mongoc_server_selection_error (const char *msg,
  *       NOTE: this method returns a copy of the original server
  *       description. Callers must own and clean up this copy.
  *
- *       NOTE: this method locks and unlocks @topology's mutex.
- *
  * Parameters:
  *       @topology: The topology.
  *       @optype: Whether we are selecting for a read or write operation.
@@ -953,7 +940,7 @@ _mongoc_server_selection_error (const char *msg,
  *       @error will be set.
  *
  * Side effects:
- *       @error may be set.
+ *       @error may be set. This function may update the topology description.
  *
  *-------------------------------------------------------------------------
  */
@@ -1317,28 +1304,6 @@ done:
    return server_id;
 }
 
-/*
- *-------------------------------------------------------------------------
- *
- * mongoc_topology_server_by_id --
- *
- *      Get the server description for @id, if that server is present
- *      in @description. Otherwise, return NULL and fill out the optional
- *      @error.
- *
- *      NOTE: this method returns a copy of the original server
- *      description. Callers must own and clean up this copy.
- *
- *      NOTE: this method locks and unlocks @topology's mutex.
- *
- * Returns:
- *      A mongoc_server_description_t, or NULL.
- *
- * Side effects:
- *      Fills out optional @error if server not found.
- *
- *-------------------------------------------------------------------------
- */
 
 mongoc_server_description_t *
 mongoc_topology_server_by_id (mongoc_topology_description_t const *td,
@@ -1353,28 +1318,6 @@ mongoc_topology_server_by_id (mongoc_topology_description_t const *td,
    return sd;
 }
 
-/*
- *-------------------------------------------------------------------------
- *
- * mongoc_topology_host_by_id --
- *
- *      Copy the mongoc_host_list_t for @id, if that server is present
- *      in @description. Otherwise, return NULL and fill out the optional
- *      @error.
- *
- *      NOTE: this method returns a copy of the original mongoc_host_list_t.
- *      Callers must own and clean up this copy.
- *
- *      NOTE: this method locks and unlocks @topology's mutex.
- *
- * Returns:
- *      A mongoc_host_list_t, or NULL.
- *
- * Side effects:
- *      Fills out optional @error if server not found.
- *
- *-------------------------------------------------------------------------
- */
 
 mongoc_host_list_t *
 _mongoc_topology_host_by_id (const mongoc_topology_description_t *td,
@@ -1395,11 +1338,6 @@ _mongoc_topology_host_by_id (const mongoc_topology_description_t *td,
    return host;
 }
 
-/*
-
- * Caller must have topology->mutex locked.
- *
- */
 
 void
 _mongoc_topology_request_scan (mongoc_topology_t *topology)
@@ -1407,37 +1345,6 @@ _mongoc_topology_request_scan (mongoc_topology_t *topology)
    _mongoc_topology_background_monitoring_request_scan (topology);
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_topology_invalidate_server --
- *
- *      Invalidate the given server after receiving a network error in
- *      another part of the client.
- *
- *      NOTE: this method uses @topology's mutex.
- *
- *--------------------------------------------------------------------------
- */
-void
-mongoc_topology_invalidate_server (mongoc_topology_description_t *td,
-                                   uint32_t id,
-                                   const bson_error_t *error)
-{
-   BSON_ASSERT (error);
-   mongoc_topology_description_invalidate_server (td, id, error);
-}
-
-/*
- * Update the topology from the response to a handshake on a new application
- * connection.
- * Only applicable to a client pool (single-threaded clients reuse monitoring
- * connections).
- * Caller must not have the topology->mutex locked.
- * Locks topology->mutex.
- * Called only from app threads (not server monitor threads).
- * Returns false if the server was removed from the topology
- */
 bool
 _mongoc_topology_update_from_handshake (mongoc_topology_t *topology,
                                         const mongoc_server_description_t *sd)
@@ -1502,20 +1409,6 @@ _mongoc_topology_update_last_used (mongoc_topology_t *topology,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_topology_get_type --
- *
- *      Return the topology's description's type.
- *
- *      NOTE: this method uses @topology's mutex.
- *
- * Returns:
- *      The topology description type.
- *
- *--------------------------------------------------------------------------
- */
 mongoc_topology_description_type_t
 _mongoc_topology_get_type (const mongoc_topology_t *topology)
 {
@@ -1743,21 +1636,8 @@ _mongoc_topology_end_sessions_cmd (mongoc_topology_t *topology, bson_t *cmd)
    return i > 0;
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_topology_dup_handshake_cmd --
- *
- *       Locks topology->mutex and retrieves (possibly constructing) the
- *       handshake on the topology scanner.
- *
- * Returns:
- *      A bson_t representing a hello command.
- *
- *--------------------------------------------------------------------------
- */
 void
-_mongoc_topology_dup_handshake_cmd (mongoc_topology_t *topology,
+_mongoc_topology_dup_handshake_cmd (const mongoc_topology_t *topology,
                                     bson_t *copy_into)
 {
    _mongoc_topology_scanner_dup_handshake_cmd (topology->scanner, copy_into);
@@ -1787,12 +1667,6 @@ _find_topology_version (const bson_t *reply, bson_t *topology_version)
 }
 
 
-/* "Clears" the connection pool by incrementing the generation.
- *
- * Pooled clients with open connections will discover the invalidation
- * the next time they fetch a stream to the server.
- *
- * Caller must lock topology->mutex. */
 void
 _mongoc_topology_clear_connection_pool (mongoc_topology_description_t *td,
                                         uint32_t server_id,
@@ -1937,15 +1811,6 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
 }
 
 
-/* Handle an error from an app connection.
- *
- * This can be a network error or "not primary" / "node is recovering" error.
- * Caller must lock topology->mutex.
- * service_id is only applicable if connected to a load balanced deployment.
- * Pass kZeroServiceID as service_id for connections that have no
- * associated service ID.
- * Returns true if pool was cleared.
- */
 bool
 _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    uint32_t server_id,
@@ -2028,7 +1893,6 @@ ignore_error:
 
 /* Called from application threads
  * Caller must hold topology lock.
- * Locks topology description mutex to copy out server description errors.
  * For single-threaded monitoring, the topology scanner may include errors for
  * servers that were removed from the topology.
  */

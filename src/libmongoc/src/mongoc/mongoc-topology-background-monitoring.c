@@ -84,7 +84,7 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
 /* Create a server monitor if necessary.
  *
  * Called by monitor threads and application threads when reconciling the
- * topology description. Caller must have topology mutex locked.
+ * topology description.
  */
 static void
 _background_monitor_reconcile_server_monitor (mongoc_topology_t *topology,
@@ -122,7 +122,6 @@ _background_monitor_reconcile_server_monitor (mongoc_topology_t *topology,
  *
  * Called by an application thread popping a client from a pool. Safe to
  * call repeatedly.
- * Caller must have topology mutex locked.
  */
 void
 _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
@@ -173,7 +172,7 @@ _mongoc_topology_background_monitoring_start (mongoc_topology_t *topology)
 /* Remove server monitors that are no longer in the set of server descriptions.
  *
  * Called by monitor threads and application threads when reconciling the
- * topology description. Caller must have topology mutex locked.
+ * topology description.
  */
 static void
 _remove_orphaned_server_monitors (mongoc_set_t *server_monitors,
@@ -214,7 +213,6 @@ _remove_orphaned_server_monitors (mongoc_set_t *server_monitors,
  * Called when the topology description is updated (via handshake, monitoring,
  * or invalidation). May be called by server monitor thread or an application
  * thread.
- * Caller must have topology mutex locked.
  * Locks server monitor mutexes. May join / remove server monitors that have
  * completed shutdown.
  */
@@ -250,8 +248,7 @@ _mongoc_topology_background_monitoring_reconcile (
 /* Request all server monitors to scan.
  *
  * Called from application threads (during server selection or "not primary"
- * errors). Caller must have topology mutex locked. Locks server monitor mutexes
- * to deliver scan_requested.
+ * errors). Locks server monitor mutexes to deliver scan_requested.
  */
 void
 _mongoc_topology_background_monitoring_request_scan (
@@ -280,11 +277,9 @@ _mongoc_topology_background_monitoring_request_scan (
 /* Stop, join, and destroy all server monitors.
  *
  * Called by application threads when destroying a client pool.
- * Caller must have topology mutex locked.
- * Locks server monitor mutexes to deliver shutdown. Releases topology mutex to
- * join server monitor threads. Leaves topology mutex locked on exit. This
- * function is thread-safe. But in practice, it is only ever called by one
- * application thread (because mongoc_client_pool_destroy is not thread-safe).
+ * Locks server monitor mutexes to deliver shutdown. This function is
+ * thread-safe. But in practice, it is only ever called by one application
+ * thread (because mongoc_client_pool_destroy is not thread-safe).
  */
 void
 _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
@@ -354,7 +349,6 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
  * applicable).
  *
  * Called from application threads on network errors.
- * Caller must have topology mutex locked.
  */
 void
 _mongoc_topology_background_monitoring_cancel_check (
