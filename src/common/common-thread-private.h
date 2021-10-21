@@ -37,6 +37,7 @@ BSON_BEGIN_DECLS
 #define BSON_ONCE_INIT PTHREAD_ONCE_INIT
 #define bson_once pthread_once
 #define bson_once_t pthread_once_t
+#define bson_thread_t pthread_t
 #define BSON_THREAD_FUN(_function_name, _arg_name) \
    void *(_function_name) (void *(_arg_name))
 #define BSON_THREAD_FUN_TYPE(_function_name) void *(*(_function_name)) (void *)
@@ -55,24 +56,6 @@ BSON_BEGIN_DECLS
 #define bson_mutex_lock pthread_mutex_lock
 #define bson_mutex_t pthread_mutex_t
 #define bson_mutex_unlock pthread_mutex_unlock
-
-#ifdef _WIN32
-typedef DWORD bson_thread_t;
-#elif defined(BSON_OS_UNIX)
-typedef pthread_t bson_thread_t;
-#else
-typedef void bson_thread_t;
-#endif
-
-/**
- * @brief Get the numeric ID of the calling thread
- */
-static BSON_INLINE bson_thread_t
-bson_current_thread_id ()
-{
-   BSON_IF_POSIX (return pthread_self ();)
-   BSON_IF_WINDOWS (return GetCurrentThreadId ();)
-}
 
 #else
 typedef struct {
@@ -122,9 +105,9 @@ typedef struct {
 #define bson_once_t INIT_ONCE
 #define bson_thread_t HANDLE
 #define BSON_THREAD_FUN(_function_name, _arg_name) \
-   unsigned (__stdcall _function_name) (void *(_arg_name))
+   unsigned(__stdcall _function_name) (void *(_arg_name))
 #define BSON_THREAD_FUN_TYPE(_function_name) \
-   unsigned (__stdcall * _function_name) (void *)
+   unsigned(__stdcall * _function_name) (void *)
 #define BSON_THREAD_RETURN return
 #endif
 

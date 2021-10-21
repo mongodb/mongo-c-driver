@@ -180,9 +180,6 @@ typedef struct _mongoc_topology_t {
     * topology. This could occur if the URI is invalid.
     * An invalid topology does not monitor servers. */
    bool valid;
-
-   /* Track the thread with a pending topology description modification */
-   int _current_modifying_thread;
 } mongoc_topology_t;
 
 mongoc_topology_t *
