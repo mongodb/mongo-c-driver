@@ -346,6 +346,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       topology->server_selection_try_once = false;
    }
 
+   topology->_current_modifying_thread = -1;
+
    topology->server_selection_timeout_msec = mongoc_uri_get_option_as_int32 (
       topology->uri,
       MONGOC_URI_SERVERSELECTIONTIMEOUTMS,
@@ -1969,7 +1971,19 @@ mc_tpld_modify_begin (mongoc_topology_t *tpl)
 {
    mc_shared_tpld prev_td;
    mongoc_topology_description_t *new_td;
+   int modifier_thread = bson_atomic_int_fetch (&tpl->_current_modifying_thread,
+                                                bson_memory_order_relaxed);
+   int cur_thread = (int) bson_current_thread_id ();
+   /* If the same thread attempts to perform a modification while a modification
+    * is already in progress on the same thread, that would deadlock and is an
+    * inherent bug */
+   BSON_ASSERT (
+      modifier_thread != cur_thread &&
+      "Attempted to begin recursive modification of topology description");
    bson_mutex_lock (&tpl->tpld_modification_mtx);
+   bson_atomic_int_exchange (&tpl->_current_modifying_thread,
+                             (int) bson_current_thread_id (),
+                             bson_memory_order_relaxed);
    prev_td = mc_tpld_take_ref (tpl);
    new_td = mongoc_topology_description_new_copy (prev_td.ptr),
    mc_tpld_drop_ref (&prev_td);
@@ -1986,6 +2000,8 @@ mc_tpld_modify_commit (mc_tpld_modification mod)
       mongoc_shared_ptr_create (mod.new_td, _topo_descr_destroy_and_free);
    mongoc_atomic_shared_ptr_store (&mod.topology->_shared_descr_._sptr_,
                                    new_sptr);
+   bson_atomic_int_exchange (
+      &mod.topology->_current_modifying_thread, -1, bson_memory_order_relaxed);
    bson_mutex_unlock (&mod.topology->tpld_modification_mtx);
    mongoc_shared_ptr_reset_null (&new_sptr);
 }
@@ -1993,6 +2009,8 @@ mc_tpld_modify_commit (mc_tpld_modification mod)
 void
 mc_tpld_modify_drop (mc_tpld_modification mod)
 {
+   bson_atomic_int_exchange (
+      &mod.topology->_current_modifying_thread, -1, bson_memory_order_relaxed);
    bson_mutex_unlock (&mod.topology->tpld_modification_mtx);
    mongoc_topology_description_destroy (mod.new_td);
 }
