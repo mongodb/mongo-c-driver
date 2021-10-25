@@ -312,6 +312,14 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
 {
    bson_t *new_cmd;
 
+   BSON_ASSERT_PARAM (ts);
+   BSON_ASSERT_PARAM (copy_into);
+
+   /* appname will only be changed from NULL, so a non-null pointer will never
+    * be invalidated after this fetch. */
+   const char *const appname =
+      bson_atomic_ptr_fetch ((void *) &ts->appname, bson_memory_order_relaxed);
+
    bson_mutex_lock (&ts->handshake_cmd_mtx);
    /* If this is the first time using the node or if it's the first time
     * using it after a failure, build handshake doc */
@@ -328,7 +336,7 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
    bson_mutex_unlock (&ts->handshake_cmd_mtx);
    new_cmd =
       _build_handshake_cmd (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd,
-                            ts->appname,
+                            appname,
                             ts->uri,
                             ts->loadbalanced);
    bson_mutex_lock (&ts->handshake_cmd_mtx);

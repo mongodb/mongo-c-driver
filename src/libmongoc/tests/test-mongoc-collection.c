@@ -1871,7 +1871,7 @@ test_index_compound (void)
 static void
 test_index_geo (void *unused)
 {
-   mongoc_server_description_t *description;
+   mongoc_server_description_t const *description;
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
@@ -1914,11 +1914,11 @@ test_index_geo (void *unused)
    opt.geo_options = &geo_opt;
 
    /* TODO this hack is needed for single-threaded tests */
-   id = mc_tpld_servers_const (mc_tpld_unsafe_get_mutable (client->topology))
+   id = mc_tpld_servers_const (mc_tpld_unsafe_get_const (client->topology))
            ->items[0]
            .id;
-   description = mongoc_topology_server_by_id (
-      client->topology->_shared_descr_.ptr, id, &error);
+   description = mongoc_topology_description_server_by_id_const (
+      mc_tpld_unsafe_get_const (client->topology), id, &error);
    ASSERT_OR_PRINT (description, error);
 
    if (description->max_wire_version > 0) {
@@ -1953,7 +1953,6 @@ test_index_geo (void *unused)
    }
 
    bson_destroy (&keys);
-   mongoc_server_description_destroy (description);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);

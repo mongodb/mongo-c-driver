@@ -15,11 +15,11 @@
 
 
 static void
-_topology_has_description (mongoc_topology_description_t *topology,
+_topology_has_description (const mongoc_topology_description_t *topology,
                            bson_t *server,
                            const char *address)
 {
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
    bson_iter_t server_iter;
    const char *server_type;
    const char *set_name;
@@ -163,6 +163,7 @@ test_sdam_cb (bson_t *test)
    bson_iter_t servers_iter;
    bson_iter_t outcome_iter;
    bson_iter_t iter;
+   mongoc_topology_description_t *td;
    const char *set_name;
    const char *hostname;
 
@@ -192,8 +193,8 @@ test_sdam_cb (bson_t *test)
       bson_iter_init (&outcome_iter, &outcome);
 
       while (bson_iter_next (&outcome_iter)) {
-         mongoc_topology_description_t *td =
-            mc_tpld_unsafe_get_mutable (client->topology);
+         mongoc_topology_description_t const *td =
+            mc_tpld_unsafe_get_const (client->topology);
          if (strcmp ("servers", bson_iter_key (&outcome_iter)) == 0) {
             bson_iter_bson (&outcome_iter, &servers);
             ASSERT_CMPINT (bson_count_keys (&servers),
@@ -207,10 +208,7 @@ test_sdam_cb (bson_t *test)
                hostname = bson_iter_key (&servers_iter);
                bson_iter_bson (&servers_iter, &server);
 
-               _topology_has_description (
-                  mc_tpld_unsafe_get_mutable (client->topology),
-                  &server,
-                  hostname);
+               _topology_has_description (td, &server, hostname);
             }
 
          } else if (strcmp ("setName", bson_iter_key (&outcome_iter)) == 0) {
@@ -398,9 +396,6 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
       if (!ret) {
          MONGOC_DEBUG ("error disabling failpoint: %s", error.message);
       }
-      mc_tpld_drop_ref (&td);
-      td = mc_tpld_take_ref (client->topology);
-      servers = mc_tpld_servers_const (td.ptr);
    }
 
    mc_tpld_drop_ref (&td);

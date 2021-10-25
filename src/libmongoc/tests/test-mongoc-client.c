@@ -1953,6 +1953,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
 
       bson_destroy (&reply);
 
+      /* td may be invalidated by client_command_simple */
       td = mc_tpld_unsafe_get_mutable (topology);
       ASSERT_CMPINT (
          discovered_nodes_len, ==, (int) mc_tpld_servers_const (td)->items_len);
@@ -1970,15 +1971,13 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    }
 
    if (connection_option == RECONNECT) {
-      td = mc_tpld_unsafe_get_mutable (topology);
       id = mongoc_set_find_id (mc_tpld_servers_const (td),
                                host_equals,
                                (void *) mock_server_get_host_and_port (server));
       ASSERT_CMPINT (id, !=, 0);
       bson_set_error (
          &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "err");
-      mongoc_topology_description_invalidate_server (
-         mc_tpld_unsafe_get_mutable (topology), id, &error);
+      mongoc_topology_description_invalidate_server (td, id, &error);
       if (rs) {
          ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
       } else {
@@ -1995,6 +1994,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
 
       bson_destroy (&reply);
 
+      /* td may be invalidated by client_command_simple */
       td = mc_tpld_unsafe_get_mutable (topology);
       ASSERT_CMPINT (
          discovered_nodes_len, ==, (int) mc_tpld_servers_const (td)->items_len);
@@ -2791,7 +2791,7 @@ _test_mongoc_client_select_server_error (bool pooled)
 
    /* Server Selection Spec: "With topology type Single, the single server is
     * always suitable for reads if it is available." */
-   tdtype = mc_tpld_unsafe_get_mutable (client->topology)->type;
+   tdtype = _mongoc_topology_get_type (client->topology);
    if (tdtype == MONGOC_TOPOLOGY_SINGLE || tdtype == MONGOC_TOPOLOGY_SHARDED) {
       ASSERT (sd);
       server_type = mongoc_server_description_type (sd);
@@ -3946,7 +3946,7 @@ test_mongoc_client_recv_network_error (void)
    future_t *future;
    request_t *request;
    bson_error_t error;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
    int generation;
    mongoc_rpc_t rpc;
    mongoc_buffer_t buffer;
@@ -3969,12 +3969,11 @@ test_mongoc_client_recv_network_error (void)
    future_destroy (future);
 
    /* The server should be a standalone. */
-   sd = mongoc_topology_server_by_id (
-      mc_tpld_unsafe_get_mutable (client->topology), 1, &error);
+   sd = mongoc_topology_description_server_by_id_const (
+      mc_tpld_unsafe_get_const (client->topology), 1, &error);
    ASSERT_OR_PRINT (sd, error);
    generation = mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
    BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
-   mongoc_server_description_destroy (sd);
    mock_server_destroy (server);
 
    /* A network error when calling _mongoc_client_recv should mark the server
@@ -3990,7 +3989,7 @@ test_mongoc_client_recv_network_error (void)
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (!_mongoc_client_recv (client, &rpc, &buffer, stream, &error));
 
-   sd = mongoc_topology_server_by_id (
+   sd = mongoc_topology_description_server_by_id_const (
       mc_tpld_unsafe_get_mutable (client->topology), 1, &error);
    ASSERT_OR_PRINT (sd, error);
    ASSERT_CMPINT (
@@ -3999,7 +3998,6 @@ test_mongoc_client_recv_network_error (void)
       generation + 1);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
 
-   mongoc_server_description_destroy (sd);
    mongoc_client_destroy (client);
    _mongoc_buffer_destroy (&buffer);
    mongoc_server_stream_cleanup (stream);

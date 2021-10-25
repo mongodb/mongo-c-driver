@@ -647,7 +647,9 @@ _update_topology_description (mongoc_server_monitor_t *server_monitor,
       _mongoc_topology_update_cluster_time (topology, hello_response);
    }
 
-   if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
+   if (bson_atomic_int_fetch ((int const *) &topology->scanner_state,
+                              bson_memory_order_relaxed) ==
+       MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
       return;
    }
 
@@ -916,7 +918,7 @@ exit:
       tdmod = mc_tpld_modify_begin (server_monitor->topology);
       /* clear_connection_pool() is a no-op if 'description->id' was already
        * removed. */
-      _mongoc_topology_clear_connection_pool (
+      _mongoc_topology_description_clear_connection_pool (
          tdmod.new_td,
          server_monitor->description->id,
          &server_monitor->description->service_id);
@@ -1147,7 +1149,8 @@ static BSON_THREAD_FUN (_server_monitor_rtt_thread, server_monitor_void)
             mc_tpld_modify_commit (tdmod);
          } else {
             /* If the server description has been removed, the RTT thread will
-             * be terminated by background monitoring soon. */
+             * be terminated by background monitoring soon, so we have nothing
+             * to do but wait until we are about to be stopped. */
             mc_tpld_modify_drop (tdmod);
          }
       }

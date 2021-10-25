@@ -1322,7 +1322,7 @@ mongoc_cursor_more (mongoc_cursor_t *cursor)
 void
 mongoc_cursor_get_host (mongoc_cursor_t *cursor, mongoc_host_list_t *host)
 {
-   mongoc_server_description_t *description;
+   mongoc_server_description_t const *description;
    mc_shared_tpld td;
 
    BSON_ASSERT (cursor);
@@ -1336,16 +1336,14 @@ mongoc_cursor_get_host (mongoc_cursor_t *cursor, mongoc_host_list_t *host)
    }
 
    td = mc_tpld_take_ref (cursor->client->topology);
-   description =
-      mongoc_topology_server_by_id (td.ptr, cursor->server_id, &cursor->error);
+   description = mongoc_topology_description_server_by_id_const (
+      td.ptr, cursor->server_id, &cursor->error);
    mc_tpld_drop_ref (&td);
    if (!description) {
       return;
    }
 
    *host = description->host;
-
-   mongoc_server_description_destroy (description);
 
    EXIT;
 }

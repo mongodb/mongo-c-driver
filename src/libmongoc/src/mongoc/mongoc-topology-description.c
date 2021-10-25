@@ -866,20 +866,8 @@ mongoc_topology_description_has_data_node (
  *
  *-------------------------------------------------------------------------
  */
-
-mongoc_server_description_t *
-mongoc_topology_description_select (mongoc_topology_description_t *topology,
-                                    mongoc_ss_optype_t optype,
-                                    const mongoc_read_prefs_t *read_pref,
-                                    int64_t local_threshold_ms)
-{
-   return (
-      mongoc_server_description_t *) (mongoc_topology_description_select_const (
-      topology, optype, read_pref, local_threshold_ms));
-}
-
 mongoc_server_description_t const *
-mongoc_topology_description_select_const (
+mongoc_topology_description_select (
    const mongoc_topology_description_t *topology,
    mongoc_ss_optype_t optype,
    const mongoc_read_prefs_t *read_pref,
@@ -961,7 +949,7 @@ mongoc_topology_description_server_by_id_const (
 {
    const mongoc_server_description_t *sd;
 
-   BSON_ASSERT (td);
+   BSON_ASSERT_PARAM (td);
 
    sd = mongoc_set_get_const (mc_tpld_servers_const (td), id);
    if (!sd) {
@@ -1972,13 +1960,13 @@ _mongoc_topology_description_check_compatible (
    mongoc_topology_description_t *td)
 {
    size_t i;
-   mongoc_set_t *const servers = mc_tpld_servers (td);
+   mongoc_set_t const *const servers = mc_tpld_servers_const (td);
 
    memset (&td->compatibility_error, 0, sizeof (bson_error_t));
 
    for (i = 0; i < servers->items_len; i++) {
-      mongoc_server_description_t *const sd =
-         mongoc_set_get_item (servers, (int) i);
+      mongoc_server_description_t const *const sd =
+         mongoc_set_get_item_const (servers, (int) i);
       if (sd->type == MONGOC_SERVER_UNKNOWN ||
           sd->type == MONGOC_SERVER_POSSIBLE_PRIMARY) {
          continue;
@@ -2275,8 +2263,7 @@ mongoc_topology_description_get_servers (
    mongoc_server_description_t **sds =
       bson_malloc0 (sizeof (mongoc_server_description_t *) * set->items_len);
 
-   BSON_ASSERT (td);
-   BSON_ASSERT (n);
+   BSON_ASSERT_PARAM (n);
 
    *n = 0;
 
@@ -2335,4 +2322,27 @@ mongoc_topology_description_reconcile (mongoc_topology_description_t *td,
    ctx.td = td;
    mongoc_set_for_each (
       mc_tpld_servers (td), _remove_if_not_in_host_list_cb, &ctx);
+}
+
+
+void
+_mongoc_topology_description_clear_connection_pool (
+   mongoc_topology_description_t *td,
+   uint32_t server_id,
+   const bson_oid_t *service_id)
+{
+   mongoc_server_description_t *sd;
+   bson_error_t error;
+
+   BSON_ASSERT (service_id);
+
+   sd = mongoc_topology_description_server_by_id (td, server_id, &error);
+   if (!sd) {
+      /* Server removed, ignore and ignore error. */
+      return;
+   }
+
+   TRACE ("clearing pool for server: %s", sd->host.host_and_port);
+
+   mongoc_generation_map_increment (sd->generation_map, service_id);
 }

@@ -2159,13 +2159,13 @@ node_not_found (const mongoc_topology_description_t *td,
                 uint32_t server_id,
                 bson_error_t *error /* OUT */)
 {
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
 
    if (!error) {
       return;
    }
 
-   sd = mongoc_topology_server_by_id (td, server_id, error);
+   sd = mongoc_topology_description_server_by_id_const (td, server_id, error);
 
    if (!sd) {
       return;
@@ -2180,8 +2180,6 @@ node_not_found (const mongoc_topology_description_t *td,
                       "Could not find node %s",
                       sd->host.host_and_port);
    }
-
-   mongoc_server_description_destroy (sd);
 }
 
 
@@ -2191,9 +2189,9 @@ stream_not_found (const mongoc_topology_description_t *td,
                   const char *connection_address,
                   bson_error_t *error /* OUT */)
 {
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
 
-   sd = mongoc_topology_server_by_id (td, server_id, error);
+   sd = mongoc_topology_description_server_by_id_const (td, server_id, error);
 
    if (error) {
       if (sd && sd->error.code) {
@@ -2205,10 +2203,6 @@ stream_not_found (const mongoc_topology_description_t *td,
                          "Could not find stream for node %s",
                          connection_address);
       }
-   }
-
-   if (sd) {
-      mongoc_server_description_destroy (sd);
    }
 }
 
@@ -2242,7 +2236,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
    mongoc_server_stream_t *ret_server_stream;
    bson_error_t err_local;
    /* if fetch_stream fails we need a place to receive error details and pass
-    * them to mongoc_topology_invalidate_server. */
+    * them to mongoc_topology_description_invalidate_server. */
    bson_error_t *err_ptr = error ? error : &err_local;
    mc_tpld_modification tdmod;
    mc_shared_tpld td;
@@ -2275,7 +2269,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       /* When establishing a new connection in load balanced mode, drivers MUST
        * NOT perform SDAM error handling for any errors that occur before the
        * MongoDB Handshake. */
-      if (td.ptr->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
+      if (tdmod.new_td->type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
          mc_tpld_modify_drop (tdmod);
          ret_server_stream = NULL;
          goto done;
@@ -2287,7 +2281,7 @@ _mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
       /* This is not load balanced mode, so there are no service IDs associated
        * with connections. Pass kZeroServiceId to clear the entire connection
        * pool to this server. */
-      _mongoc_topology_clear_connection_pool (
+      _mongoc_topology_description_clear_connection_pool (
          tdmod.new_td, server_id, &kZeroServiceId);
 
       if (!topology->single_threaded) {
@@ -2456,7 +2450,7 @@ _cluster_fetch_stream_single (mongoc_cluster_t *cluster,
    }
 
    if (handshake_sd->type == MONGOC_SERVER_UNKNOWN) {
-      memcpy (error, &handshake_sd->error, sizeof *error);
+      *error = handshake_sd->error;
       mongoc_server_description_destroy (handshake_sd);
       return NULL;
    }
@@ -2477,7 +2471,7 @@ _cluster_fetch_stream_single (mongoc_cluster_t *cluster,
 #endif
 
       if (!scanner_node->stream) {
-         memcpy (error, &handshake_sd->error, sizeof *error);
+         *error = handshake_sd->error;
          mongoc_server_description_destroy (handshake_sd);
          return NULL;
       }
@@ -2488,9 +2482,7 @@ _cluster_fetch_stream_single (mongoc_cluster_t *cluster,
                                       handshake_sd,
                                       &scanner_node->sasl_supported_mechs,
                                       &handshake_sd->error)) {
-         if (error) {
-            *error = handshake_sd->error;
-         }
+         *error = handshake_sd->error;
          mongoc_server_description_destroy (handshake_sd);
          return NULL;
       }
@@ -2532,8 +2524,6 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
    const mongoc_server_description_t *sd;
    bool ret = false;
    bson_error_t error;
-   /* Grab the topology description *now*, since we need to check if the server
-    * is still valid */
    mc_shared_tpld td = mc_tpld_take_ref (topology);
 
    if (!server_stream) {
@@ -2547,6 +2537,8 @@ mongoc_cluster_stream_valid (mongoc_cluster_t *cluster,
       goto done;
    }
 
+   /* Check that the server stream is still valid for the given server, and that
+    * the server is still registered. */
    sd = mongoc_topology_description_server_by_id_const (
       td.ptr, server_stream->sd->id, &error);
    if (!sd ||

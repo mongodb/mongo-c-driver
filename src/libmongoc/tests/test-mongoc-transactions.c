@@ -979,7 +979,7 @@ test_selected_server_is_pinned_to_mongos (void *ctx)
 
    /* get a valid server id that's different from the pinned server id */
    servers =
-      mc_tpld_servers_const (mc_tpld_unsafe_get_mutable (client->topology));
+      mc_tpld_servers_const (mc_tpld_unsafe_get_const (client->topology));
    for (i = 0; i < servers->items_len; i++) {
       sd = mongoc_set_get_item_const (servers, i);
       if (sd && sd->id != actual_id) {

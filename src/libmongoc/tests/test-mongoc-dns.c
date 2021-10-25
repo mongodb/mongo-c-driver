@@ -490,7 +490,7 @@ check_topology_description (mongoc_topology_description_t *td,
       }
    }
 
-   if (nhosts != mc_tpld_servers_const (td)->items_len) {
+   if (nhosts != servers->items_len) {
       dump_topology_description (td);
       dump_hosts (hosts);
       test_error ("topology description had extra hosts");
@@ -701,11 +701,9 @@ _prose_test_9 (bool pooled)
       _prose_loadbalanced_ping (client);
    }
 
-   bson_mutex_lock (&topology->tpld_modification_mtx);
    expected_hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
    check_topology_description (mc_tpld_unsafe_get_mutable (client->topology),
                                expected_hosts);
-   bson_mutex_unlock (&topology->tpld_modification_mtx);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);

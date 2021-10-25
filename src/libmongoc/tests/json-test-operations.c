@@ -2112,7 +2112,7 @@ _get_total_pool_cleared_event (json_test_ctx_t *ctx)
    uint32_t total = 0;
 
    /* Go get total generation counts. */
-   td = mc_tpld_unsafe_get_mutable (ctx->client->topology);
+   td = mc_tpld_unsafe_get_const (ctx->client->topology);
    for (i = 0; i < mc_tpld_servers_const (td)->items_len; i++) {
       const mongoc_server_description_t *sd;
 

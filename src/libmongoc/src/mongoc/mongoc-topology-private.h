@@ -114,7 +114,7 @@ typedef struct _mongoc_topology_t {
 
    /* topology->uri is initialized as a copy of the client/pool's URI.
     * For a "mongodb+srv://" URI, topology->uri is then updated in
-    * mongoc_topology_new() after initial seedlist discovery..
+    * mongoc_topology_new() after initial seedlist discovery.
     */
    mongoc_uri_t *uri;
    mongoc_topology_scanner_t *scanner;
@@ -204,7 +204,7 @@ mongoc_topology_compatible (const mongoc_topology_description_t *td,
                             bson_error_t *error);
 
 /**
- * @brief Select a server descriptoin for an operation. May scan and update the
+ * @brief Select a server description for an operation. May scan and update the
  * topology.
  *
  * A server description might be returned that matches the given `optype` and
@@ -252,24 +252,6 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   bson_error_t *error);
 
 /**
- * @brief Obtain a copy of the server description that matches the given ID
- *
- * @param topology The topology to inspect
- * @param id The ID of a server description.
- * @param error An output parameter for any error information.
- * @return mongoc_server_description_t* A copy of a server description, or NULL
- * in case of error.
- *
- * @note The returned object is a COPY, and should be released with
- * `mongoc_server_description_destroy()`
- */
-mongoc_server_description_t *
-mongoc_topology_server_by_id (const mongoc_topology_description_t *topology,
-                              uint32_t id,
-                              bson_error_t *error);
-
-
-/**
  * @brief Return a new mongoc_host_list_t for the given server matching the
  * given ID.
  *
@@ -278,7 +260,8 @@ mongoc_topology_server_by_id (const mongoc_topology_description_t *topology,
  * @param error Output error information
  * @return mongoc_host_list_t* A new host list, or NULL on error
  *
- * @note The returned list should be freed with `bson_free()`
+ * @note The returned list should be freed with
+ * `_mongoc_host_list_destroy_all()`
  */
 mongoc_host_list_t *
 _mongoc_topology_host_by_id (const mongoc_topology_description_t *topology,
@@ -292,7 +275,7 @@ _mongoc_topology_host_by_id (const mongoc_topology_description_t *topology,
  * @note Only applicable to a client pool (single-threaded clients reuse
  * monitoring connections).
  *
- * @param topology The topology that will be udpated.
+ * @param topology The topology that will be updated.
  * @param sd The server description that contains the hello response.
  * @return true If the server is valid in the topology.
  * @return false If the server was already removed from the topology.
@@ -368,13 +351,13 @@ typedef enum {
 /**
  * @brief Handle an error from an app connection
  *
- * The error may be a "not primary" or "node is recovering" error.
+ * Processes network errors, timeouts, and command replies.
  *
  * @param topology The topology that will be updated
  * @param server_id The ID of the server on which the error occurred.
  * @param handshake_complete Whether the handshake was complete for this server
- * @param type The type of error that occurred
- * @param reply If a command error, a reply associated with the error. Otherwise
+ * @param type The type of error to process
+ * @param reply If checking for a command error, the server reply. Otherwise
  * NULL
  * @param why An error that will be attached to the server description
  * @param max_wire_version
@@ -397,25 +380,6 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
                                    uint32_t max_wire_version,
                                    uint32_t generation,
                                    const bson_oid_t *service_id);
-
-/**
- * @brief Invalidate open connnections to a server.
- *
- * Pooled clients with open connections will discover the invalidation
- * the next time they fetch a stream to the server.
- *
- * @param td The topology description that will be updated.
- * @param server_id The ID of the server to invalidate.
- * @param service_id A service ID for load-balanced deployments. Use
- * kZeroServiceID if not applicable.
- *
- * @note Not applicable to single-threaded clients, which only maintain a
- * single connection per server, and therefor have no connection pool.
- */
-void
-_mongoc_topology_clear_connection_pool (mongoc_topology_description_t *td,
-                                        uint32_t server_id,
-                                        const bson_oid_t *service_id);
 
 void
 mongoc_topology_rescan_srv (mongoc_topology_t *topology);
@@ -553,16 +517,20 @@ void mc_tpld_modify_drop (mc_tpld_modification);
  * @brief Obtain a pointer-to-mutable mongoc_topology_description_t for the
  * given topology.
  *
- * This call is "unsafe" in that modifications should be performed using
- * mc_tpld_modify_begin() and mc_tpld_modify_commit().
- *
- * The returned pointer can be invalidated by a concurrent modification to the
- * topology description.
+ * This call is "unsafe" as the returned pointer may be invalidated by
+ * concurrent modifications done using mc_tpld_modify_begin() and
+ * mc_tpld_modify_commit().
  *
  * To obtain a safe pointer to the topology description, use mc_tpld_take_ref().
  */
 static BSON_INLINE mongoc_topology_description_t *
 mc_tpld_unsafe_get_mutable (mongoc_topology_t *tpl)
+{
+   return tpl->_shared_descr_._sptr_.ptr;
+}
+
+static BSON_INLINE const mongoc_topology_description_t *
+mc_tpld_unsafe_get_const (const mongoc_topology_t *tpl)
 {
    return tpl->_shared_descr_._sptr_.ptr;
 }

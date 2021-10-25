@@ -67,7 +67,9 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
        * topology tpld_modification_mtx for the scan. The topology may have shut
        * down in that time. */
       bson_mutex_lock (&topology->tpld_modification_mtx);
-      if (topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
+      if (bson_atomic_int_fetch ((int *) &topology->scanner_state,
+                                 bson_memory_order_relaxed) !=
+          MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
          bson_mutex_unlock (&topology->tpld_modification_mtx);
          break;
       }
@@ -259,7 +261,9 @@ _mongoc_topology_background_monitoring_request_scan (
 
    BSON_ASSERT (!topology->single_threaded);
 
-   if (topology->scanner_state == MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
+   if (bson_atomic_int_fetch ((const int *) &topology->scanner_state,
+                              bson_memory_order_relaxed) ==
+       MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN) {
       return;
    }
 
@@ -289,14 +293,17 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
 
    BSON_ASSERT (!topology->single_threaded);
 
-   if (topology->scanner_state != MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
+   if (bson_atomic_int_fetch ((const int *) &topology->scanner_state,
+                              bson_memory_order_relaxed) !=
+       MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
       return;
    }
 
-   bson_mutex_lock (&topology->tpld_modification_mtx);
-
-   topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN;
    TRACE ("%s", "background monitoring stopping");
+   bson_mutex_lock (&topology->tpld_modification_mtx);
+   bson_atomic_int_exchange ((int *) &topology->scanner_state,
+                             MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN,
+                             bson_memory_order_relaxed);
 
    /* Signal SRV polling to shut down (if it is started). */
    if (topology->is_srv_polling) {
@@ -340,7 +347,9 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    mongoc_set_destroy (topology->rtt_monitors);
    topology->server_monitors = mongoc_set_new (1, NULL, NULL);
    topology->rtt_monitors = mongoc_set_new (1, NULL, NULL);
-   topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_OFF;
+   bson_atomic_int_exchange ((int *) &topology->scanner_state,
+                             MONGOC_TOPOLOGY_SCANNER_OFF,
+                             bson_memory_order_relaxed);
    mongoc_cond_broadcast (&topology->cond_client);
    bson_mutex_unlock (&topology->tpld_modification_mtx);
 }

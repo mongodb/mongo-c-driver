@@ -2602,7 +2602,7 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
    }
 
    /* see if there's a known writable server - do no I/O or retries */
-   selected_server = mongoc_topology_description_select_const (
+   selected_server = mongoc_topology_description_select (
       td.ptr, MONGOC_SS_WRITE, read_prefs, topology->local_threshold_msec);
 
    if (selected_server) {
@@ -2806,11 +2806,14 @@ mongoc_server_description_t *
 mongoc_client_get_server_description (mongoc_client_t *client,
                                       uint32_t server_id)
 {
+   mongoc_server_description_t *ret;
    mc_shared_tpld td = mc_tpld_take_ref (client->topology);
-   mongoc_server_description_t *sd = mongoc_topology_server_by_id (
-      td.ptr, server_id, NULL /* <- the error info isn't useful */);
+   mongoc_server_description_t const *sd =
+      mongoc_topology_description_server_by_id_const (
+         td.ptr, server_id, NULL /* <- the error info isn't useful */);
+   ret = mongoc_server_description_new_copy (sd);
    mc_tpld_drop_ref (&td);
-   return sd;
+   return ret;
 }
 
 

@@ -33,14 +33,14 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
 {
    uint32_t server_id;
    uint32_t generation;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
    bson_error_t error;
 
    server_id = mongoc_cursor_get_hint (cursor);
 
    bson_mutex_lock (&client->topology->tpld_modification_mtx);
-   sd = mongoc_topology_description_server_by_id (
-      mc_tpld_unsafe_get_mutable (client->topology), server_id, &error);
+   sd = mongoc_topology_description_server_by_id_const (
+      mc_tpld_unsafe_get_const (client->topology), server_id, &error);
    ASSERT_OR_PRINT (sd, error);
    generation = mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
    bson_mutex_unlock (&client->topology->tpld_modification_mtx);

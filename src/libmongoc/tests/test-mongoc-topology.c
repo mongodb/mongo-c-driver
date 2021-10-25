@@ -1056,8 +1056,8 @@ test_invalid_server_id (void)
 
    client = test_framework_new_default_client ();
 
-   BSON_ASSERT (!mongoc_topology_server_by_id (
-      mc_tpld_unsafe_get_mutable (client->topology), 99999, &error));
+   BSON_ASSERT (!mongoc_topology_description_server_by_id_const (
+      mc_tpld_unsafe_get_const (client->topology), 99999, &error));
    ASSERT_STARTSWITH (error.message, "Could not find description for node");
 
    mongoc_client_destroy (client);
@@ -1211,7 +1211,7 @@ test_rtt (void *ctx)
    future_t *future;
    request_t *request;
    bson_error_t error;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
    int64_t rtt_msec;
 
    if (!TestSuite_CheckMockServerAllowed ()) {
@@ -1246,8 +1246,8 @@ test_rtt (void *ctx)
    request_destroy (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
-   sd = mongoc_topology_server_by_id (
-      mc_tpld_unsafe_get_mutable (client->topology), 1, NULL);
+   sd = mongoc_topology_description_server_by_id_const (
+      mc_tpld_unsafe_get_const (client->topology), 1, NULL);
    ASSERT (sd);
 
    /* assert, with plenty of slack, that rtt was calculated in ms, not usec */
@@ -1255,7 +1255,6 @@ test_rtt (void *ctx)
    ASSERT_CMPINT64 (rtt_msec, >, (int64_t) 900);  /* 900 ms */
    ASSERT_CMPINT64 (rtt_msec, <, (int64_t) 9000); /* 9 seconds */
 
-   mongoc_server_description_destroy (sd);
    future_destroy (future);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
@@ -1276,7 +1275,7 @@ test_add_and_scan_failure (void)
    future_t *future;
    request_t *request;
    bson_error_t error;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -1302,17 +1301,15 @@ test_add_and_scan_failure (void)
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
 
-   sd = mongoc_topology_server_by_id (
-      mc_tpld_unsafe_get_mutable (client->topology), 1, NULL);
+   sd = mongoc_topology_description_server_by_id_const (
+      mc_tpld_unsafe_get_const (client->topology), 1, NULL);
    ASSERT (sd);
    ASSERT_CMPSTR (mongoc_server_description_type (sd), "RSPrimary");
-   mongoc_server_description_destroy (sd);
 
-   sd = mongoc_topology_server_by_id (
-      mc_tpld_unsafe_get_mutable (client->topology), 2, NULL);
+   sd = mongoc_topology_description_server_by_id_const (
+      mc_tpld_unsafe_get_const (client->topology), 2, NULL);
    ASSERT (sd);
    ASSERT_CMPSTR (mongoc_server_description_type (sd), "Unknown");
-   mongoc_server_description_destroy (sd);
 
    future_destroy (future);
    mongoc_client_pool_push (pool, client);
@@ -1676,7 +1673,7 @@ test_compatible_null_error_pointer (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;
-   mongoc_topology_description_t *td;
+   mongoc_topology_description_t const *td;
    bson_error_t error;
 
    /* incompatible */
@@ -1684,7 +1681,7 @@ test_compatible_null_error_pointer (void)
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
-   td = mc_tpld_unsafe_get_mutable (client->topology);
+   td = mc_tpld_unsafe_get_const (client->topology);
 
    /* trigger connection, fails due to incompatibility */
    ASSERT (!mongoc_client_command_simple (
@@ -1699,7 +1696,7 @@ test_compatible_null_error_pointer (void)
       error, MONGOC_ERROR_PROTOCOL, MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION, "");
 
    /* null error pointer is ok */
-   td = mc_tpld_unsafe_get_mutable (client->topology);
+   td = mc_tpld_unsafe_get_const (client->topology);
    ASSERT (!mongoc_topology_compatible (
       td, NULL /* read prefs */, NULL /* error */));
 
@@ -1762,7 +1759,7 @@ test_cluster_time_updated_during_handshake ()
    mongoc_server_description_destroy (sd);
 
    /* check the cluster time stored on the topology description. */
-   ASSERT_MATCH (&mc_tpld_unsafe_get_mutable (client->topology)->cluster_time,
+   ASSERT_MATCH (&mc_tpld_unsafe_get_const (client->topology)->cluster_time,
                  cluster_time);
    bson_free (cluster_time);
    cluster_time = cluster_time_fmt (2);
@@ -1784,7 +1781,7 @@ test_cluster_time_updated_during_handshake ()
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
 
    ASSERT_OR_PRINT (r, error);
-   ASSERT_MATCH (&mc_tpld_unsafe_get_mutable (client->topology)->cluster_time,
+   ASSERT_MATCH (&mc_tpld_unsafe_get_const (client->topology)->cluster_time,
                  cluster_time);
    bson_free (cluster_time);
    mongoc_client_pool_push (pool, client);
@@ -2434,81 +2431,6 @@ test_hello_ok_pooled ()
    _test_hello_ok (true);
 }
 
-/* Test that _mongoc_topology_clear_connection_pool increments the generation.
- */
-static void
-test_topology_pool_clear (void)
-{
-   mongoc_topology_t *topology;
-   mongoc_uri_t *uri;
-
-   uri = mongoc_uri_new ("mongodb://localhost:27017,localhost:27018");
-   topology = mongoc_topology_new (uri, true);
-
-   ASSERT_CMPUINT32 (
-      0,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (
-         mc_tpld_unsafe_get_mutable (topology), 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (
-      0,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (
-         mc_tpld_unsafe_get_mutable (topology), 2, &kZeroServiceId));
-   _mongoc_topology_clear_connection_pool (
-      mc_tpld_unsafe_get_mutable (topology), 1, &kZeroServiceId);
-   ASSERT_CMPUINT32 (
-      1,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (
-         mc_tpld_unsafe_get_mutable (topology), 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (
-      0,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (
-         mc_tpld_unsafe_get_mutable (topology), 2, &kZeroServiceId));
-
-   mongoc_uri_destroy (uri);
-   mongoc_topology_destroy (topology);
-}
-
-static void
-test_topology_pool_clear_by_serviceid (void)
-{
-   mongoc_topology_t *topology;
-   mongoc_uri_t *uri;
-   bson_oid_t oid_a;
-   bson_oid_t oid_b;
-
-   uri = mongoc_uri_new ("mongodb://localhost:27017");
-   topology = mongoc_topology_new (uri, true);
-
-   bson_oid_init_from_string (&oid_a, "AAAAAAAAAAAAAAAAAAAAAAAA");
-   bson_oid_init_from_string (&oid_b, "BBBBBBBBBBBBBBBBBBBBBBBB");
-
-   ASSERT_CMPUINT32 (0,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        mc_tpld_unsafe_get_mutable (topology), 1, &oid_a));
-   ASSERT_CMPUINT32 (0,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        mc_tpld_unsafe_get_mutable (topology), 1, &oid_b));
-   _mongoc_topology_clear_connection_pool (
-      mc_tpld_unsafe_get_mutable (topology), 1, &oid_a);
-   ASSERT_CMPUINT32 (1,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        mc_tpld_unsafe_get_mutable (topology), 1, &oid_a));
-   ASSERT_CMPUINT32 (0,
-                     ==,
-                     _mongoc_topology_get_connection_pool_generation (
-                        mc_tpld_unsafe_get_mutable (topology), 1, &oid_b));
-
-   mongoc_uri_destroy (uri);
-   mongoc_topology_destroy (topology);
-}
-
 void
 test_topology_install (TestSuite *suite)
 {
@@ -2675,9 +2597,4 @@ test_topology_install (TestSuite *suite)
       suite, "/Topology/hello_ok/single", test_hello_ok_single);
    TestSuite_AddMockServerTest (
       suite, "/Topology/hello_ok/pooled", test_hello_ok_pooled);
-
-   TestSuite_Add (suite, "/Topology/pool_clear", test_topology_pool_clear);
-   TestSuite_Add (suite,
-                  "/Topology/pool_clear_by_serviceid",
-                  test_topology_pool_clear_by_serviceid);
 }

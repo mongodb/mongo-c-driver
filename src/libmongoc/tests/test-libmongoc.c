@@ -1106,7 +1106,7 @@ test_framework_get_unix_domain_socket_uri_str ()
  *--------------------------------------------------------------------------
  */
 static void
-call_hello_with_host_and_port (char *host_and_port, bson_t *reply)
+call_hello_with_host_and_port (const char *host_and_port, bson_t *reply)
 {
    char *user;
    char *password;
@@ -2010,11 +2010,11 @@ test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id)
 {
    bson_t reply;
    bson_iter_t iter;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
    bson_error_t error;
    bool ret;
 
-   sd = mongoc_topology_server_by_id (
+   sd = mongoc_topology_description_server_by_id_const (
       client->topology->_shared_descr_.ptr, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
 
@@ -2024,8 +2024,6 @@ test_framework_server_is_secondary (mongoc_client_t *client, uint32_t server_id)
          bson_iter_as_bool (&iter);
 
    bson_destroy (&reply);
-
-   mongoc_server_description_destroy (sd);
 
    return ret;
 }

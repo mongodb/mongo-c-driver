@@ -134,17 +134,17 @@ optype_from_test (const char *op)
  *
  *-----------------------------------------------------------------------
  */
-mongoc_server_description_t *
-server_description_by_hostname (mongoc_topology_description_t *topology,
+const mongoc_server_description_t *
+server_description_by_hostname (const mongoc_topology_description_t *topology,
                                 const char *address)
 {
    const mongoc_set_t *set = mc_tpld_servers_const (topology);
-   mongoc_server_description_t *server_iter;
+   const mongoc_server_description_t *server_iter;
    int i;
 
    for (i = 0; i < set->items_len; i++) {
-      server_iter = (mongoc_server_description_t *) mongoc_set_get_item_const (
-         mc_tpld_servers_const (topology), i);
+      server_iter =
+         mongoc_set_get_item_const (mc_tpld_servers_const (topology), i);
 
       if (strcasecmp (address, server_iter->connection_address) == 0) {
          return server_iter;
@@ -182,7 +182,7 @@ void
 process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 {
    mongoc_topology_description_t *td;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
    bson_iter_t phase_field_iter;
    const char *hostname;
 
@@ -208,6 +208,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          bson_iter_init_find (&hello_field_iter, &hello, "0");
          hostname = bson_iter_utf8 (&hello_field_iter, NULL);
+         /* Each handle_hello can invalidate the topology */
          td = mc_tpld_unsafe_get_mutable (topology);
          sd = server_description_by_hostname (td, hostname);
 
@@ -254,6 +255,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 
          bson_iter_init_find (&app_error_field_iter, &app_error, "address");
          hostname = bson_iter_utf8 (&app_error_field_iter, NULL);
+         /* Each handle_app_error can invalidate the topology */
          td = mc_tpld_unsafe_get_mutable (topology);
          sd = server_description_by_hostname (td, hostname);
 
