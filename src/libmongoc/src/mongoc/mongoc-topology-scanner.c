@@ -311,13 +311,13 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
                                             bson_t *copy_into)
 {
    bson_t *new_cmd;
-
+   const char *appname;
    BSON_ASSERT_PARAM (ts);
    BSON_ASSERT_PARAM (copy_into);
 
    /* appname will only be changed from NULL, so a non-null pointer will never
     * be invalidated after this fetch. */
-   const char *const appname =
+   appname =
       bson_atomic_ptr_fetch ((void *) &ts->appname, bson_memory_order_relaxed);
 
    bson_mutex_lock (&ts->handshake_cmd_mtx);
