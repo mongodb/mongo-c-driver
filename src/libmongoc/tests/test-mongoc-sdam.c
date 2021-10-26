@@ -163,7 +163,6 @@ test_sdam_cb (bson_t *test)
    bson_iter_t servers_iter;
    bson_iter_t outcome_iter;
    bson_iter_t iter;
-   mongoc_topology_description_t *td;
    const char *set_name;
    const char *hostname;
 
