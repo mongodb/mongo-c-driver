@@ -72,7 +72,7 @@ all_functions = OD([
         python -m virtualenv venv
         cd venv
         . bin/activate
-        ./bin/pip install sphinx
+        ./bin/pip install sphinx docutils==0.17.1
         cd ..
 
         export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
