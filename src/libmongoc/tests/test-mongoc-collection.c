@@ -1942,6 +1942,9 @@ test_index_geo (void *unused)
 
    opt.geo_options = &geo_opt;
 
+   description = mongoc_topology_description_server_by_id_const (
+      mc_tpld_unsafe_get_const (client->topology), id, &error);
+   ASSERT_OR_PRINT (description, error);
    if (description->max_wire_version > 0) {
       ASSERT_OR_PRINT (
          mongoc_collection_create_index (collection, &keys, &opt, &error),
