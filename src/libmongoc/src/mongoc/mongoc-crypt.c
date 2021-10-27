@@ -422,15 +422,8 @@ _get_stream (const char *endpoint,
    bool ret = false;
    mongoc_ssl_opt_t ssl_opt_copy = {0};
    mongoc_host_list_t host;
-   char *host_and_port = NULL;
 
-   if (!strchr (endpoint, ':')) {
-      host_and_port = bson_strdup_printf ("%s:443", endpoint);
-   } else {
-      host_and_port = (char *) endpoint; /* we promise not to modify */
-   }
-
-   if (!_mongoc_host_list_from_string_with_err (&host, host_and_port, error)) {
+   if (!_mongoc_host_list_from_string_with_err (&host, endpoint, error)) {
       goto fail;
    }
 
@@ -452,9 +445,6 @@ _get_stream (const char *endpoint,
    ret = true;
 fail:
    _mongoc_ssl_opts_cleanup (&ssl_opt_copy, true /* free_internal */);
-   if (host_and_port != endpoint) {
-      bson_free (host_and_port);
-   }
    if (!ret) {
       if (tls_stream) {
          /* destroys base_stream too */
