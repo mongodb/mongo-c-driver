@@ -214,7 +214,7 @@ pkg-config --modversion libssl || true
 
 if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    # Build libmongocrypt, using the previously fetched installed source.
-   git clone https://github.com/kevinAlbs/libmongocrypt --branch kmip_libmongocrypt_support.333 
+   git clone https://github.com/kevinAlbs/libmongocrypt --branch default_ports.352
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
    $CMAKE -DBUILD_VERSION=1.3.0-pre -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" ../
