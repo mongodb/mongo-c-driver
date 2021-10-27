@@ -118,6 +118,7 @@ _handle_signal (int signum)
 {
    const char *s = "\nProcess was interrupted by the delivery of a signal.\n";
    const char *sigstr;
+   size_t n;
    switch (signum) {
    case SIGABRT:
       sigstr = "SIGABRT - Abnormal termination";
@@ -136,10 +137,10 @@ _handle_signal (int signum)
    }
 #ifdef BSON_OS_UNIX
    /* On POSIX these APIs are signal-safe */
-   write (STDERR_FILENO, s, strlen (s));
-   write (STDERR_FILENO, "  ", 2);
-   write (STDERR_FILENO, sigstr, strlen (sigstr));
-   write (STDERR_FILENO, "\n", 1);
+   n = write (STDERR_FILENO, s, strlen (s));
+   n = write (STDERR_FILENO, "  ", 2);
+   n = write (STDERR_FILENO, sigstr, strlen (sigstr));
+   n = write (STDERR_FILENO, "\n", 1);
    fsync (STDERR_FILENO);
 #else
    /* On Windows these APIs are signal-safe */
@@ -147,6 +148,7 @@ _handle_signal (int signum)
    fflush (stderr);
 #endif
    _Exit (signum);
+   (void) n;
 }
 
 
