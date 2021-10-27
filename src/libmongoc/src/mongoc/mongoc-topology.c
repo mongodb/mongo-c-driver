@@ -523,6 +523,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       topology->server_monitors = mongoc_set_new (1, NULL, NULL);
       topology->rtt_monitors = mongoc_set_new (1, NULL, NULL);
       bson_mutex_init (&topology->apm_mutex);
+      bson_mutex_init (&topology->srv_polling_mtx);
       mongoc_cond_init (&topology->srv_polling_cond);
    }
 
@@ -610,6 +611,7 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
       mongoc_set_destroy (topology->server_monitors);
       mongoc_set_destroy (topology->rtt_monitors);
       bson_mutex_destroy (&topology->apm_mutex);
+      bson_mutex_destroy (&topology->srv_polling_mtx);
       mongoc_cond_destroy (&topology->srv_polling_cond);
    }
    _mongoc_topology_description_monitor_closed (topology->_shared_descr_.ptr);
@@ -1241,6 +1243,10 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
          goto done;
       }
 
+      /* tlpd_modification_mtx is used to synchronize updates to the topology.
+       * Take that lock to do a wait on the topology to become up-to-date and
+       * synchronize with a condition variable that will be signalled upon
+       * topology changes. */
       bson_mutex_lock (&topology->tpld_modification_mtx);
       /* Now that we have the lock, check again, since a scan may have
        * occurred while we were waiting on the lock. */

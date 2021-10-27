@@ -684,11 +684,9 @@ _prose_test_9 (bool pooled)
       topology = client->topology;
    }
 
-   bson_mutex_lock (&topology->tpld_modification_mtx);
    _mongoc_topology_set_rr_resolver (topology, _mock_resolver);
    _mongoc_topology_set_srv_polling_rescan_interval_ms (topology,
                                                         RESCAN_INTERVAL_MS);
-   bson_mutex_unlock (&topology->tpld_modification_mtx);
 
    if (pooled) {
       client = mongoc_client_pool_pop (pool);

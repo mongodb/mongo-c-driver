@@ -64,21 +64,21 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
       }
 
       /* Check for shutdown again here. mongoc_topology_rescan_srv unlocks the
-       * topology tpld_modification_mtx for the scan. The topology may have shut
+       * topology srv_polling_mtx for the scan. The topology may have shut
        * down in that time. */
-      bson_mutex_lock (&topology->tpld_modification_mtx);
+      bson_mutex_lock (&topology->srv_polling_mtx);
       if (bson_atomic_int_fetch ((int *) &topology->scanner_state,
                                  bson_memory_order_relaxed) !=
           MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
-         bson_mutex_unlock (&topology->tpld_modification_mtx);
+         bson_mutex_unlock (&topology->srv_polling_mtx);
          break;
       }
 
       /* If shutting down, stop. */
       mongoc_cond_timedwait (&topology->srv_polling_cond,
-                             &topology->tpld_modification_mtx,
+                             &topology->srv_polling_mtx,
                              sleep_duration_ms);
-      bson_mutex_unlock (&topology->tpld_modification_mtx);
+      bson_mutex_unlock (&topology->srv_polling_mtx);
    }
    BSON_THREAD_RETURN;
 }
@@ -300,16 +300,18 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
    }
 
    TRACE ("%s", "background monitoring stopping");
-   bson_mutex_lock (&topology->tpld_modification_mtx);
+
+   /* Tell the srv polling thread to stop */
+   bson_mutex_lock (&topology->srv_polling_mtx);
    bson_atomic_int_exchange ((int *) &topology->scanner_state,
                              MONGOC_TOPOLOGY_SCANNER_SHUTTING_DOWN,
                              bson_memory_order_relaxed);
 
-   /* Signal SRV polling to shut down (if it is started). */
    if (topology->is_srv_polling) {
+      /* Signal the srv poller to break out of waiting */
       mongoc_cond_signal (&topology->srv_polling_cond);
    }
-   bson_mutex_unlock (&topology->tpld_modification_mtx);
+   bson_mutex_unlock (&topology->srv_polling_mtx);
 
    /* Signal all server monitors to shut down. */
    for (i = 0; i < topology->server_monitors->items_len; i++) {
@@ -342,6 +344,10 @@ _mongoc_topology_background_monitoring_stop (mongoc_topology_t *topology)
       COMMON_PREFIX (thread_join) (topology->srv_polling_thread);
    }
 
+   /* Signal clients that are waiting on server selection to stop immediately,
+    * as there will be no servers available.
+    * This uses the tpld_modification_mtx as that is the mutex used with the
+    * condition variable that will wait the waiting client threads. */
    bson_mutex_lock (&topology->tpld_modification_mtx);
    mongoc_set_destroy (topology->server_monitors);
    mongoc_set_destroy (topology->rtt_monitors);

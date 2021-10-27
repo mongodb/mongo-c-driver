@@ -133,17 +133,34 @@ typedef struct _mongoc_topology_t {
    int64_t srv_polling_last_scan_ms;
    /* For multi-threaded, srv polling occurs in a separate thread. */
    bson_thread_t srv_polling_thread;
+   bson_mutex_t srv_polling_mtx;
    mongoc_cond_t srv_polling_cond;
+
+   /**
+    * @brief Signal for background monitoring threads to signal stop/shutdown
+    */
+   mongoc_topology_scanner_state_t scanner_state;
 
    /**
     * @brief This lock is held in order to serialize operations that modify the
     * topology description. It *should not* be held while performing read-only
     * operations on the topology.
+    *
+    * This mutex is also used by server selection to synchronize with threads
+    * that may update the topology following a failed server selection. It is
+    * used in conjunction with `cond_client`.
     */
    bson_mutex_t tpld_modification_mtx;
 
+   /**
+    * @brief Condition variable used to signal client threads that the topology
+    * has been updated by another thread. This CV should be used with
+    * tpld_modification_mtx, as it signals modifications to the topology.
+    *
+    * Note that mc_tpld_modify_begin/commit/drop will acquire/release
+    * tpld_modification_mtx as well.
+    */
    mongoc_cond_t cond_client;
-   mongoc_topology_scanner_state_t scanner_state;
 
    bool single_threaded;
    bool stale;
