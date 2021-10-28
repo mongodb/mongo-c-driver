@@ -38,6 +38,7 @@ static bson_once_t g_shared_ptr_mtx_init_once = BSON_ONCE_INIT;
 static BSON_ONCE_FUN (_init_mtx)
 {
    bson_mutex_init (&g_shared_ptr_mtx);
+   BSON_ONCE_RETURN;
 }
 
 static void

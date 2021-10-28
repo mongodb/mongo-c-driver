@@ -34,7 +34,7 @@ my_value_free_v (void *ptr)
 }
 
 static void
-test_simple ()
+test_simple (void)
 {
    int destroyed_value = 0;
    mongoc_shared_ptr ptr = MONGOC_SHARED_PTR_NULL;
