@@ -15,25 +15,29 @@ function (mongoc_add_platform_compile_options)
       set (is_msvc "$<C_COMPILER_ID:MSVC>")
       if (CMAKE_MATCH_1 STREQUAL "gnu-like")
          add_compile_options ("$<${is_gnu_like}:${CMAKE_MATCH_2}>")
-      else ()
+      elseif (CMAKE_MATCH_1 STREQUAL "msvc")
          add_compile_options ("$<${is_msvc}:${CMAKE_MATCH_2}>")
+      else ()
+         message (SEND_ERROR "Invalid option to mongoc_add_platform_compile_options(): '${opt}'")
       endif ()
    endforeach ()
 endfunction ()
+
+set(is_c_lang "$<COMPILE_LANGUAGE:C>")
 
 # Warnings that should always be unconditional hard errors, as the code is
 # almost definitely broken
 mongoc_add_platform_compile_options (
      # Implicit function or variable declarations
-     gnu-like:-Werror=implicit msvc:/we4013 msvc:/we4431
+     gnu-like:$<${is_c_lang}:-Werror=implicit> msvc:/we4013 msvc:/we4431
      # Missing return types/statements
      gnu-like:-Werror=return-type msvc:/we4716
      # Incompatible pointer types
-     gnu-like:-Werror=incompatible-pointer-types msvc:/we4113
+     gnu-like:$<${is_c_lang}:-Werror=incompatible-pointer-types> msvc:/we4113
      # Integral/pointer conversions
-     gnu-like:-Werror=int-conversion msvc:/we4047
+     gnu-like:$<${is_c_lang}:-Werror=int-conversion> msvc:/we4047
      # Discarding qualifiers
-     gnu-like:-Werror=discarded-qualifiers msvc:/we4090
+     gnu-like:$<${is_c_lang}:-Werror=discarded-qualifiers> msvc:/we4090
      # Definite use of uninitialized value
      gnu-like:-Werror=uninitialized msvc:/we4700
 
