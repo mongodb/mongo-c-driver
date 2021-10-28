@@ -26,22 +26,27 @@
  * those were superseded by write commands in 2.6. */
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
 /* define a count function for each counter. */
-#define COUNTER(id, category, name, description)                \
-   uint32_t prev_##id;                                          \
-   uint32_t count_##id (void)                                   \
-   {                                                            \
-      uint32_t _sum = 0;                                        \
-      uint32_t _i;                                              \
-      for (_i = 0; _i < _mongoc_get_cpu_count (); _i++) {       \
-         _sum += __mongoc_counter_##id.cpus[_i]                 \
-                    .slots[COUNTER_##id % SLOTS_PER_CACHELINE]; \
-      }                                                         \
-      return _sum;                                              \
+#define COUNTER(id, category, name, description)                               \
+   uint32_t prev_##id;                                                         \
+   uint32_t count_##id (void)                                                  \
+   {                                                                           \
+      uint32_t _sum = 0;                                                       \
+      uint32_t _i;                                                             \
+      for (_i = 0; _i < _mongoc_get_cpu_count (); _i++) {                      \
+         const int64_t *counter =                                              \
+            &BSON_CONCAT (__mongoc_counter_, id)                               \
+                .cpus[_mongoc_sched_getcpu ()]                                 \
+                .slots[BSON_CONCAT (COUNTER_, id) % SLOTS_PER_CACHELINE];      \
+         _sum += bson_atomic_int64_fetch (counter, bson_memory_order_seq_cst); \
+      }                                                                        \
+      return _sum;                                                             \
    }
 #include "mongoc/mongoc-counters.defs"
 #undef COUNTER
 
-#define RESET(id) prev_##id = count_##id ();
+#define RESET(id)               \
+   bson_atomic_int32_exchange ( \
+      &prev_##id, count_##id (), bson_memory_order_seq_cst)
 
 #define DIFF_AND_RESET(id, cmp, expected)     \
    do {                                       \
@@ -49,8 +54,8 @@
       uint32_t new_count = count_##id ();     \
       uint32_t _diff = new_count - old_count; \
       ASSERT_CMPINT32 (_diff, cmp, expected); \
-      RESET (id)                              \
-   } while (0);
+      RESET (id);                             \
+   } while (0)
 
 static void
 reset_all_counters ()
