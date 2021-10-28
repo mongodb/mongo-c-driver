@@ -1967,12 +1967,15 @@ mc_tpld_modify_begin (mongoc_topology_t *tpl)
 void
 mc_tpld_modify_commit (mc_tpld_modification mod)
 {
+   mongoc_shared_ptr old_sptr =
+      mongoc_shared_ptr_copy (mod.topology->_shared_descr_._sptr_);
    mongoc_shared_ptr new_sptr =
       mongoc_shared_ptr_create (mod.new_td, _topo_descr_destroy_and_free);
    mongoc_atomic_shared_ptr_store (&mod.topology->_shared_descr_._sptr_,
                                    new_sptr);
    bson_mutex_unlock (&mod.topology->tpld_modification_mtx);
    mongoc_shared_ptr_reset_null (&new_sptr);
+   mongoc_shared_ptr_reset_null (&old_sptr);
 }
 
 void
