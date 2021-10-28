@@ -350,6 +350,7 @@ test_topology_reconcile_from_handshake (void *ctx)
    bson_error_t error;
    int count;
    mongoc_topology_scanner_node_t *node;
+   mc_shared_tpld td = MC_SHARED_TPL_DESCR_NULL;
    mongoc_async_cmd_t *cmd;
 
    bson_mutex_init (&data.mutex);
@@ -390,10 +391,9 @@ test_topology_reconcile_from_handshake (void *ctx)
    ASSERT_OR_PRINT (r, error);
 
    /* added server descriptions */
-   ASSERT_CMPSIZE_T (
-      mc_tpld_servers_const (mc_tpld_unsafe_get_const (topology))->items_len,
-      >,
-      (size_t) 1);
+   mc_tpld_renew_ref (&td, topology);
+   ASSERT_CMPSIZE_T (mc_tpld_servers_const (td.ptr)->items_len, >, (size_t) 1);
+   mc_tpld_drop_ref (&td);
 
    /* didn't add nodes yet, since we're not in the scanner loop */
    DL_COUNT (topology->scanner->nodes, node, count);
@@ -406,7 +406,9 @@ test_topology_reconcile_from_handshake (void *ctx)
    ASSERT_CMPINT (count, ==, 0);
 
    /* allow pool to start scanner thread */
-   topology->scanner_state = MONGOC_TOPOLOGY_SCANNER_OFF;
+   bson_atomic_int_exchange ((int *) &topology->scanner_state,
+                             MONGOC_TOPOLOGY_SCANNER_OFF,
+                             bson_memory_order_seq_cst);
    mongoc_client_pool_push (pool, client);
    client = mongoc_client_pool_pop (pool);
 
