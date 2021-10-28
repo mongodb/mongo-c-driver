@@ -497,10 +497,8 @@ _test_topology_invalidate_server (bool pooled)
 
    ASSERT_CMPINT64 (sd->round_trip_time_msec, !=, (int64_t) -1);
 
-   bson_set_error (
-      &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "error");
+   _mongoc_topology_invalidate_server (client->topology, id);
    td = mc_tpld_unsafe_get_mutable (client->topology);
-   mongoc_topology_description_invalidate_server (td, id, &error);
    sd = mongoc_set_get_const (mc_tpld_servers_const (td), id);
    BSON_ASSERT (sd);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);

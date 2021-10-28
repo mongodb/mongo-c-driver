@@ -1795,11 +1795,7 @@ _test_cmd_on_unknown_serverid (bool pooled)
    ASSERT_OR_PRINT (ret, error);
 
    /* Invalidate the server, giving it the server type MONGOC_SERVER_UNKNOWN */
-   bson_set_error (
-      &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
-   mongoc_topology_description_invalidate_server (
-      mc_tpld_unsafe_get_mutable (client->topology), 1, &error);
-   memset (&error, 0, sizeof (error));
+   _mongoc_topology_invalidate_server (client->topology, 1);
 
    /* The next command is attempted directly on the unknown server and should
     * result in an error. */

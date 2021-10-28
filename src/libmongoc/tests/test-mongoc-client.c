@@ -1975,9 +1975,8 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
                                host_equals,
                                (void *) mock_server_get_host_and_port (server));
       ASSERT_CMPINT (id, !=, 0);
-      bson_set_error (
-         &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "err");
-      mongoc_topology_description_invalidate_server (td, id, &error);
+      _mongoc_topology_invalidate_server (topology, id);
+      td = mc_tpld_unsafe_get_mutable (topology);
       if (rs) {
          ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
       } else {
@@ -4021,8 +4020,7 @@ test_mongoc_client_get_handshake_hello_response_single (void)
       0 != strcmp ("Unknown", mongoc_server_description_type (monitor_sd)));
 
    /* Invalidate the server. */
-   mongoc_topology_description_invalidate_server (
-      mc_tpld_unsafe_get_mutable (client->topology), monitor_sd->id, &error);
+   _mongoc_topology_invalidate_server (client->topology, monitor_sd->id);
 
    /* Get the new invalidated server description from monitoring. */
    invalidated_sd =
@@ -4074,8 +4072,7 @@ test_mongoc_client_get_handshake_hello_response_pooled (void)
    ASSERT_OR_PRINT (ret, error);
 
    /* Invalidate the server. */
-   mongoc_topology_description_invalidate_server (
-      mc_tpld_unsafe_get_mutable (client->topology), monitor_sd->id, &error);
+   _mongoc_topology_invalidate_server (client->topology, monitor_sd->id);
 
    /* Get the new invalidated server description from monitoring. */
    invalidated_sd =

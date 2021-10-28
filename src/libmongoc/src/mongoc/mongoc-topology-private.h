@@ -546,10 +546,44 @@ mc_tpld_unsafe_get_mutable (mongoc_topology_t *tpl)
    return tpl->_shared_descr_._sptr_.ptr;
 }
 
+/**
+ * @brief Obtain a pointer-to-const mongoc_topology_description_t for the
+ * given topology.
+ *
+ * This call is "unsafe" as the returned pointer may be invalidated by
+ * concurrent modifications done using mc_tpld_modify_begin() and
+ * mc_tpld_modify_commit().
+ *
+ * To obtain a safe pointer to the topology description, use mc_tpld_take_ref().
+ *
+ * @return const mongoc_topology_description_t* Pointer to the topology
+ * description for the given topology.
+ */
 static BSON_INLINE const mongoc_topology_description_t *
 mc_tpld_unsafe_get_const (const mongoc_topology_t *tpl)
 {
    return tpl->_shared_descr_._sptr_.ptr;
+}
+
+/**
+ * @brief Directly invalidate a server in the topology by its ID.
+ *
+ * This is useful for testing purposes, as it provides thread-safe direct
+ * topology modification for testing purposes.
+ *
+ * @param td The topology to modify.
+ * @param server_id The ID of a server in the topology.
+ */
+static BSON_INLINE void
+_mongoc_topology_invalidate_server (mongoc_topology_t *td, uint32_t server_id)
+{
+   bson_error_t error;
+   mc_tpld_modification tdmod = mc_tpld_modify_begin (td);
+   bson_set_error (
+      &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_CONNECT, "invalidated");
+   mongoc_topology_description_invalidate_server (
+      tdmod.new_td, server_id, &error);
+   mc_tpld_modify_commit (tdmod);
 }
 
 #endif
