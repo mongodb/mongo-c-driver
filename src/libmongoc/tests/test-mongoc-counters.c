@@ -27,11 +27,11 @@
 #ifdef MONGOC_ENABLE_SHM_COUNTERS
 /* define a count function for each counter. */
 #define COUNTER(id, category, name, description)                               \
-   uint32_t prev_##id;                                                         \
-   uint32_t count_##id (void)                                                  \
+   int32_t prev_##id;                                                          \
+   int32_t count_##id (void)                                                   \
    {                                                                           \
-      uint32_t _sum = 0;                                                       \
-      uint32_t _i;                                                             \
+      int32_t _sum = 0;                                                        \
+      int32_t _i;                                                              \
       for (_i = 0; _i < _mongoc_get_cpu_count (); _i++) {                      \
          const int64_t *counter =                                              \
             &BSON_CONCAT (__mongoc_counter_, id)                               \
@@ -50,9 +50,9 @@
 
 #define DIFF_AND_RESET(id, cmp, expected)     \
    do {                                       \
-      uint32_t old_count = prev_##id;         \
-      uint32_t new_count = count_##id ();     \
-      uint32_t _diff = new_count - old_count; \
+      int32_t old_count = prev_##id;          \
+      int32_t new_count = count_##id ();      \
+      int32_t _diff = new_count - old_count;  \
       ASSERT_CMPINT32 (_diff, cmp, expected); \
       RESET (id);                             \
    } while (0)
