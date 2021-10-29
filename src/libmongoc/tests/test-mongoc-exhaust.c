@@ -35,13 +35,15 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
    uint32_t generation;
    mongoc_server_description_t const *sd;
    bson_error_t error;
+   mc_shared_tpld td = mc_tpld_take_ref (client->topology);
 
    server_id = mongoc_cursor_get_hint (cursor);
 
    sd = mongoc_topology_description_server_by_id_const (
-      mc_tpld_unsafe_get_const (client->topology), server_id, &error);
+      td.ptr, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
    generation = mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
+   mc_tpld_drop_ref (&td);
 
    return generation;
 }

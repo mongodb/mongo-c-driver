@@ -2158,7 +2158,7 @@ mongoc_topology_description_handle_hello (
  */
 bool
 mongoc_topology_description_has_readable_server (
-   mongoc_topology_description_t *td, const mongoc_read_prefs_t *prefs)
+   const mongoc_topology_description_t *td, const mongoc_read_prefs_t *prefs)
 {
    bson_error_t error;
 
@@ -2186,7 +2186,7 @@ mongoc_topology_description_has_readable_server (
  */
 bool
 mongoc_topology_description_has_writable_server (
-   mongoc_topology_description_t *td)
+   const mongoc_topology_description_t *td)
 {
    bson_error_t error;
 

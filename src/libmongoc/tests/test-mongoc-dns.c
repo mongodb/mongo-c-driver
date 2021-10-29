@@ -651,6 +651,7 @@ _prose_test_9 (bool pooled)
    mongoc_client_t *client;
    mongoc_host_list_t *expected_hosts;
    mongoc_topology_t *topology;
+   mc_tpld_modification tdmod;
 #define RESCAN_INTERVAL_MS 500
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
@@ -700,8 +701,12 @@ _prose_test_9 (bool pooled)
    }
 
    expected_hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
-   check_topology_description (mc_tpld_unsafe_get_mutable (client->topology),
-                               expected_hosts);
+   /* We don't intend to modify the topology, but we need a writeable instance
+    * in a thread-safe manner. Open a modification to get a writeable copy. */
+   tdmod = mc_tpld_modify_begin (client->topology);
+   check_topology_description (tdmod.new_td, expected_hosts);
+   /* Just throw the modification. It will be a no-op anyway. */
+   mc_tpld_modify_drop (tdmod);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);

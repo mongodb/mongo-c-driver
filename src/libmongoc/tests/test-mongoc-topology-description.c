@@ -15,7 +15,7 @@ _test_has_readable_writable_server (bool pooled)
 {
    mongoc_client_t *client = NULL;
    mongoc_client_pool_t *pool = NULL;
-   mongoc_topology_description_t *td;
+   mc_shared_tpld td;
    mongoc_read_prefs_t *prefs;
    bool r;
    bson_error_t error;
@@ -28,15 +28,15 @@ _test_has_readable_writable_server (bool pooled)
       client = test_framework_new_default_client ();
       topology = client->topology;
    }
-   td = mc_tpld_unsafe_get_mutable (topology);
+   td = mc_tpld_take_ref (topology);
 
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
    mongoc_read_prefs_set_tags (prefs, tmp_bson ("[{'tag': 'does-not-exist'}]"));
 
    /* not yet connected */
-   ASSERT (!mongoc_topology_description_has_writable_server (td));
-   ASSERT (!mongoc_topology_description_has_readable_server (td, NULL));
-   ASSERT (!mongoc_topology_description_has_readable_server (td, prefs));
+   ASSERT (!mongoc_topology_description_has_writable_server (td.ptr));
+   ASSERT (!mongoc_topology_description_has_readable_server (td.ptr, NULL));
+   ASSERT (!mongoc_topology_description_has_readable_server (td.ptr, prefs));
 
    /* get a client if necessary, and trigger connection */
    if (pooled) {
@@ -47,18 +47,18 @@ _test_has_readable_writable_server (bool pooled)
       client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (r, error);
 
-   td = mc_tpld_unsafe_get_mutable (topology);
-   ASSERT (mongoc_topology_description_has_writable_server (td));
-   ASSERT (mongoc_topology_description_has_readable_server (td, NULL));
+   mc_tpld_renew_ref (&td, topology);
+   ASSERT (mongoc_topology_description_has_writable_server (td.ptr));
+   ASSERT (mongoc_topology_description_has_readable_server (td.ptr, NULL));
 
    if (test_framework_is_replset ()) {
       /* prefs still don't match any server */
-      td = mc_tpld_unsafe_get_mutable (topology);
-      ASSERT (!mongoc_topology_description_has_readable_server (td, prefs));
+      mc_tpld_renew_ref (&td, topology);
+      ASSERT (!mongoc_topology_description_has_readable_server (td.ptr, prefs));
    } else {
       /* topology type single ignores read preference */
-      td = mc_tpld_unsafe_get_mutable (topology);
-      ASSERT (mongoc_topology_description_has_readable_server (td, prefs));
+      mc_tpld_renew_ref (&td, topology);
+      ASSERT (mongoc_topology_description_has_readable_server (td.ptr, prefs));
    }
 
    mongoc_read_prefs_destroy (prefs);
@@ -69,6 +69,7 @@ _test_has_readable_writable_server (bool pooled)
    } else {
       mongoc_client_destroy (client);
    }
+   mc_tpld_drop_ref (&td);
 }
 
 
