@@ -35,7 +35,7 @@
       for (_i = 0; _i < _mongoc_get_cpu_count (); _i++) {                      \
          const int64_t *counter =                                              \
             &BSON_CONCAT (__mongoc_counter_, id)                               \
-                .cpus[_mongoc_sched_getcpu ()]                                 \
+                .cpus[_i]                                                      \
                 .slots[BSON_CONCAT (COUNTER_, id) % SLOTS_PER_CACHELINE];      \
          _sum += bson_atomic_int64_fetch (counter, bson_memory_order_seq_cst); \
       }                                                                        \
