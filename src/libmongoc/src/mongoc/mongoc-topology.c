@@ -1466,7 +1466,7 @@ _mongoc_topology_update_cluster_time (mongoc_topology_t *topology,
 
    /* This func is called frequently and repeatedly, but the cluster time itself
     * is infrequently updated. mc_tpld_modify_begin() is very expensive, so we
-    * only want to actualyl call it if we anticipate performing an update to the
+    * only want to actually call it if we anticipate performing an update to the
     * cluster time.
     *
     * Check that the cluster time has actually changed from what we have on
