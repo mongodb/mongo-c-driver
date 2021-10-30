@@ -1442,7 +1442,7 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Case 11: KMIP overriding invalid endpoint with valid endpoint. */
+   /* Case 11: KMIP overriding with valid endpoint. */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("keyId", "1", "endpoint", valid_kmip_endpoint);
@@ -1469,6 +1469,25 @@ test_custom_endpoint (void *unused)
    bson_value_destroy (&keyid);
    bson_value_destroy (&ciphertext);
    bson_value_destroy (&plaintext);
+
+   bson_destroy (masterkey);
+   mongoc_client_encryption_destroy (client_encryption);
+   mongoc_client_encryption_destroy (client_encryption_invalid);
+
+   /* Case 12: KMIP overriding with invalid endpoint. */
+   _endpoint_setup (
+      keyvault_client, &client_encryption, &client_encryption_invalid);
+   masterkey = BCON_NEW ("keyId", "1", "endpoint", "doesnotexist.local:5698");
+   mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
+                                                        masterkey);
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption, "kmip", datakey_opts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
+   BSON_ASSERT (!res);
+   bson_value_destroy (&keyid);
 
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
