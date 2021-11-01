@@ -102,8 +102,7 @@ typedef union mc_shared_tpld {
 } mc_shared_tpld;
 
 /** A null-pointer initializer for an `mc_shared_tpld` */
-#define MC_SHARED_TPL_DESCR_NULL \
-   ((mc_shared_tpld){._sptr_ = MONGOC_SHARED_PTR_NULL})
+#define MC_SHARED_TPLD_NULL ((mc_shared_tpld){._sptr_ = MONGOC_SHARED_PTR_NULL})
 
 typedef struct _mongoc_topology_t {
    /**
@@ -148,7 +147,8 @@ typedef struct _mongoc_topology_t {
     *
     * This mutex is also used by server selection to synchronize with threads
     * that may update the topology following a failed server selection. It is
-    * used in conjunction with `cond_client`.
+    * used in conjunction with `cond_client`. This protects _shared_descr_, as
+    * well as the server_monitors and rtt_monitors.
     */
    bson_mutex_t tpld_modification_mtx;
 
@@ -568,8 +568,8 @@ mc_tpld_unsafe_get_const (const mongoc_topology_t *tpl)
 /**
  * @brief Directly invalidate a server in the topology by its ID.
  *
- * This is useful for testing purposes, as it provides thread-safe direct
- * topology modification for testing purposes.
+ * This is intended for testing purposes, as it provides thread-safe
+ * direct topology modification.
  *
  * @param td The topology to modify.
  * @param server_id The ID of a server in the topology.

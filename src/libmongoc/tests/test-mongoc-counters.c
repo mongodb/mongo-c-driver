@@ -31,7 +31,7 @@
    int32_t count_##id (void)                                                   \
    {                                                                           \
       int32_t _sum = 0;                                                        \
-      int32_t _i;                                                              \
+      uint32_t _i;                                                             \
       for (_i = 0; _i < _mongoc_get_cpu_count (); _i++) {                      \
          const int64_t *counter =                                              \
             &BSON_CONCAT (__mongoc_counter_, id)                               \

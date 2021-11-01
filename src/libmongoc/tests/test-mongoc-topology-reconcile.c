@@ -42,8 +42,8 @@ static bool
 has_server_description (const mongoc_topology_t *topology,
                         const char *host_and_port)
 {
-   const mongoc_set_t *servers =
-      mc_tpld_servers_const (mc_tpld_unsafe_get_const (topology));
+   mc_shared_tpld td = mc_tpld_take_ref (topology);
+   const mongoc_set_t *servers = mc_tpld_servers_const (td.ptr);
    bool found = false;
    int i;
    const mongoc_server_description_t *sd;
@@ -56,6 +56,7 @@ has_server_description (const mongoc_topology_t *topology,
       }
    }
 
+   mc_tpld_drop_ref (&td);
    return found;
 }
 
@@ -350,7 +351,7 @@ test_topology_reconcile_from_handshake (void *ctx)
    bson_error_t error;
    int count;
    mongoc_topology_scanner_node_t *node;
-   mc_shared_tpld td = MC_SHARED_TPL_DESCR_NULL;
+   mc_shared_tpld td = MC_SHARED_TPLD_NULL;
    mongoc_async_cmd_t *cmd;
 
    bson_mutex_init (&data.mutex);

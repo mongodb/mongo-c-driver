@@ -2316,26 +2316,6 @@ done:
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_stream_for_server --
- *
- *       Fetch the stream for @server_id. If @reconnect_ok and there is no
- *       valid stream, attempts to reconnect; if not @reconnect_ok then only
- *       an existing stream can be returned, or NULL.
- *
- * Returns:
- *       A mongoc_server_stream_t, or NULL
- *
- * Side effects:
- *       May add a node or reconnect one, if @reconnect_ok.
- *       Authenticates the stream if needed.
- *       Sets @error and initializes @reply on error.
- *
- *--------------------------------------------------------------------------
- */
-
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_server (mongoc_cluster_t *cluster,
                                   uint32_t server_id,
@@ -2814,25 +2794,6 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    RETURN (server_stream);
 }
 
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_stream_for_reads --
- *
- *       Internal server selection.
- *
- * Returns:
- *       A mongoc_server_stream_t on which you must call
- *       mongoc_server_stream_cleanup, or NULL on failure (sets @error)
- *
- * Side effects:
- *       Sets @error and initializes @reply on error.
- *       May add new nodes to @cluster->nodes.
- *
- *--------------------------------------------------------------------------
- */
-
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
@@ -2849,24 +2810,6 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
    return _mongoc_cluster_stream_for_optype (
       cluster, MONGOC_SS_READ, prefs_override, cs, reply, error);
 }
-
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_cluster_stream_for_writes --
- *
- *       Get a stream for write operations.
- *
- * Returns:
- *       A mongoc_server_stream_t on which you must call
- *       mongoc_server_stream_cleanup, or NULL on failure (sets @error)
- *
- * Side effects:
- *       Sets @error and initializes @reply on error.
- *       May add new nodes to @cluster->nodes.
- *
- *--------------------------------------------------------------------------
- */
 
 mongoc_server_stream_t *
 mongoc_cluster_stream_for_writes (mongoc_cluster_t *cluster,

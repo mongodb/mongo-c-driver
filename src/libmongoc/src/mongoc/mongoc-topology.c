@@ -257,7 +257,7 @@ _server_session_should_prune (mongoc_server_session_t *session,
 }
 
 static void
-_topo_descr_destroy_and_free (void *tpl_descr)
+_tpld_destroy_and_free (void *tpl_descr)
 {
    mongoc_topology_description_t *td = tpl_descr;
    mongoc_topology_description_destroy (td);
@@ -321,7 +321,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
 
    topology->_shared_descr_._sptr_ = mongoc_shared_ptr_create (
       bson_malloc0 (sizeof (mongoc_topology_description_t)),
-      _topo_descr_destroy_and_free);
+      _tpld_destroy_and_free);
    mongoc_topology_description_init (mc_tpld_unsafe_get_mutable (topology),
                                      heartbeat);
 
@@ -1100,8 +1100,6 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
    BSON_ASSERT (topology);
    ts = topology->scanner;
 
-   /* It isn't strictly necessary to lock here, because if the topology
-    * is invalid, it will never become valid. Lock anyway for consistency. */
    if (!mongoc_topology_scanner_valid (ts)) {
       if (error) {
          mongoc_topology_scanner_get_error (ts, error);
@@ -1970,7 +1968,7 @@ mc_tpld_modify_commit (mc_tpld_modification mod)
    mongoc_shared_ptr old_sptr =
       mongoc_shared_ptr_copy (mod.topology->_shared_descr_._sptr_);
    mongoc_shared_ptr new_sptr =
-      mongoc_shared_ptr_create (mod.new_td, _topo_descr_destroy_and_free);
+      mongoc_shared_ptr_create (mod.new_td, _tpld_destroy_and_free);
    mongoc_atomic_shared_ptr_store (&mod.topology->_shared_descr_._sptr_,
                                    new_sptr);
    bson_mutex_unlock (&mod.topology->tpld_modification_mtx);
