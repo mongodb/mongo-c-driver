@@ -728,6 +728,8 @@ prose_test_9_pooled (void *unused)
    _prose_test_9 (true);
 }
 
+/* cb_stats_t tracks counters for the test_invalid_topology_pooled and
+ * test_invalid_topology_single tests. */
 typedef struct {
    int num_topology_opening;
    int num_topology_closed;
@@ -735,24 +737,32 @@ typedef struct {
    int num_server_closed;
 } cb_stats_t;
 
+/* invalid_topology_opening is used as a callback for the
+ * test_invalid_topology_pooled and test_invalid_topology_single tests. */
 static void
 invalid_topology_opening (const mongoc_apm_topology_opening_t *event) {
    cb_stats_t *stats = (cb_stats_t*) mongoc_apm_topology_opening_get_context (event);
    stats->num_topology_opening++;
 }
 
+/* invalid_topology_closed is used as a callback for the
+ * test_invalid_topology_pooled and test_invalid_topology_single tests. */
 static void
 invalid_topology_closed (const mongoc_apm_topology_closed_t *event) {
    cb_stats_t *stats = (cb_stats_t*) mongoc_apm_topology_closed_get_context (event);
    stats->num_topology_closed++;
 }
 
+/* invalid_server_closed is used as a callback for the
+ * test_invalid_topology_pooled and test_invalid_topology_single tests. */
 static void
 invalid_server_closed (const mongoc_apm_server_closed_t *event) {
    cb_stats_t *stats = (cb_stats_t*) mongoc_apm_server_closed_get_context (event);
    stats->num_server_closed++;
 }
 
+/* invalid_server_opening is used as a callback for the
+ * test_invalid_topology_pooled and test_invalid_topology_single tests. */
 static void
 invalid_server_opening (const mongoc_apm_server_opening_t *event) {
    cb_stats_t *stats = (cb_stats_t*) mongoc_apm_server_opening_get_context (event);
