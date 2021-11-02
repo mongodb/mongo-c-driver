@@ -136,9 +136,11 @@ typedef struct _mongoc_topology_t {
    mongoc_cond_t srv_polling_cond;
 
    /**
-    * @brief Signal for background monitoring threads to signal stop/shutdown
+    * @brief Signal for background monitoring threads to signal stop/shutdown.
+    *
+    * The values stored are mongoc_topology_scanner_state_t values
     */
-   mongoc_topology_scanner_state_t scanner_state;
+   int scanner_state;
 
    /**
     * @brief This lock is held in order to serialize operations that modify the
