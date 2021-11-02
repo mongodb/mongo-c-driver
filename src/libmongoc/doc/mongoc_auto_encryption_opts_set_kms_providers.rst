@@ -27,7 +27,8 @@ The format for "aws" is as follows:
 
    aws: {
       accessKeyId: String,
-      secretAccessKey: String
+      secretAccessKey: String,
+      tls : Document
    }
 
 The format for "local" is as follows:
@@ -46,7 +47,8 @@ The format for "azure" is as follows:
       tenantId: String,
       clientId: String,
       clientSecret: String,
-      identityPlatformEndpoint: Optional<String> // Defaults to login.microsoftonline.com
+      identityPlatformEndpoint: Optional<String>, // Defaults to login.microsoftonline.com
+      tls : Document
    }
 
 The format for "gcp" is as follows:
@@ -57,6 +59,7 @@ The format for "gcp" is as follows:
       email: String,
       privateKey: byte[] or String, // May be passed as a base64 encoded string.
       endpoint: Optional<String> // Defaults to oauth2.googleapis.com
+      tls : Document,
    }
 
 The format for "kmip" is as follows:
@@ -68,7 +71,7 @@ The format for "kmip" is as follows:
       tls : Document
    }
 
-The keys of "kmip.tls" may be the following TLS options:
+The keys of the "tls" document may be the following TLS options:
 
 - MONGOC_URI_TLSCERTIFICATEKEYFILE
 - MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD
