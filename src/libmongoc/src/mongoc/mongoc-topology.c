@@ -563,7 +563,12 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
       bson_mutex_destroy (&topology->apm_mutex);
       mongoc_cond_destroy (&topology->srv_polling_cond);
    }
-   _mongoc_topology_description_monitor_closed (&topology->description);
+
+   if (topology->valid) {
+      /* Do not emit a topology_closed event. A topology opening event was not
+       * emitted. */
+      _mongoc_topology_description_monitor_closed (&topology->description);
+   }
 
    mongoc_uri_destroy (topology->uri);
    mongoc_topology_description_destroy (&topology->description);
