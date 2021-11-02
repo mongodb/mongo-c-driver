@@ -173,7 +173,7 @@ functions:
       file_location: mongo-c-driver/report.json
 
   "send dashboard data" :
-    command: json.send
+    command: perf.send
     params:
       name: perf
       file: mongo-c-driver/results.json
