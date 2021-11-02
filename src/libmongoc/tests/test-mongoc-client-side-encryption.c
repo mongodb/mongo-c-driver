@@ -2659,6 +2659,197 @@ test_kmip_tls_options (void *unused)
    bson_free (mongoc_test_kmip_tls_certificate_key_file);
 }
 
+static mongoc_client_encryption_t *
+_tls_test_make_client_encryption (mongoc_client_t *keyvault_client, bool with_tls)
+{
+   bson_t *kms_providers;
+   mongoc_client_encryption_opts_t *client_encryption_opts;
+   bson_error_t error;
+   mongoc_client_encryption_t *client_encryption;
+
+   char *mongoc_test_aws_access_key_id =
+      test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+   char *mongoc_test_aws_secret_access_key =
+      test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+   char *mongoc_test_azure_tenant_id =
+      test_framework_getenv ("MONGOC_TEST_AZURE_TENANT_ID");
+   char *mongoc_test_azure_client_id =
+      test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_ID");
+   char *mongoc_test_azure_client_secret =
+      test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
+   char *mongoc_test_gcp_email =
+      test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
+   char *mongoc_test_gcp_privatekey =
+      test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
+   char *mongoc_test_kmip_endpoint =
+      test_framework_getenv ("MONGOC_TEST_KMIP_ENDPOINT");
+   char *mongoc_test_kmip_tls_ca_file =
+      test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CA_FILE");
+   char *mongoc_test_kmip_tls_certificate_key_file =
+      test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE");
+
+   kms_providers =
+      tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s' }}",
+                mongoc_test_aws_access_key_id,
+                mongoc_test_aws_secret_access_key);
+   bson_concat (
+      kms_providers,
+      tmp_bson (
+         "{'azure': {'tenantId': '%s', 'clientId': '%s', 'clientSecret': '%s', "
+         "'identityPlatformEndpoint': '127.0.0.1:8002'}}",
+         mongoc_test_azure_tenant_id,
+         mongoc_test_azure_client_id,
+         mongoc_test_azure_client_secret));
+   bson_concat (kms_providers,
+                tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
+                          "'endpoint': '127.0.0.1:8002'}}",
+                          mongoc_test_gcp_email,
+                          mongoc_test_gcp_privatekey));
+   bson_concat (kms_providers,
+                tmp_bson ("{'kmip': { 'endpoint': 'localhost:5698' }}",
+                          mongoc_test_kmip_endpoint,
+                          mongoc_test_kmip_tls_ca_file,
+                          mongoc_test_kmip_tls_certificate_key_file));
+
+   client_encryption_opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
+                                                    kms_providers);
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      client_encryption_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
+                                                      keyvault_client);
+   
+   client_encryption = mongoc_client_encryption_new (client_encryption_opts, &error);
+   ASSERT_OR_PRINT (client_encryption, error);
+
+
+   mongoc_client_encryption_opts_destroy (client_encryption_opts);
+   bson_free (mongoc_test_aws_access_key_id);
+   bson_free (mongoc_test_aws_secret_access_key);
+   bson_free (mongoc_test_azure_tenant_id);
+   bson_free (mongoc_test_azure_client_id);
+   bson_free (mongoc_test_azure_client_secret);
+   bson_free (mongoc_test_gcp_email);
+   bson_free (mongoc_test_gcp_privatekey);
+   bson_free (mongoc_test_kmip_endpoint);
+   bson_free (mongoc_test_kmip_tls_ca_file);
+   bson_free (mongoc_test_kmip_tls_certificate_key_file);
+
+   return client_encryption;
+}
+
+static void
+test_kms_tls_options (void *unused)
+{
+   mongoc_client_t *keyvault_client;
+   mongoc_client_encryption_t *client_encryption = NULL;
+   mongoc_client_encryption_t *client_encryption_with_tls = NULL;
+   bson_value_t keyid;
+   mongoc_client_encryption_datakey_opts_t *dkopts;
+   bson_error_t error;
+   bool res;
+
+   keyvault_client = test_framework_new_default_client ();
+   client_encryption = _tls_test_make_client_encryption (keyvault_client, false /* with_tls */);
+   client_encryption_with_tls = _tls_test_make_client_encryption (keyvault_client, true /* with_tls */);
+
+   /* AWS - no TLS. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson ("{ 'region': 'us-east-1', 'key': 'arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': '127.0.0.1:8002' }"));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "aws", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* AWS - with TLS. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson ("{ 'region': 'us-east-1', 'key': 'arn:aws:kms:us-east-1:579766882180:key/89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': '127.0.0.1:8002' }"));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "aws", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Azure - no TLS. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "azure", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Azure - with TLS. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson ("{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "azure", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "HTTP status=404");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* GCP - no TLS. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', 'keyName': 'kn' }"));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "gcp", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* GCP - with TLS. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', 'keyName': 'kn' }"));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "gcp", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "HTTP status=404");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* KMIP - no TLS. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson ("{}"));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "kmip", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "TLS handshake failed");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* KMIP - with TLS. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts, tmp_bson ("{}"));
+   res = mongoc_client_encryption_create_datakey (client_encryption, "kmip", dkopts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
+   bson_value_destroy (&keyid);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   mongoc_client_encryption_destroy (client_encryption_with_tls);
+   mongoc_client_encryption_destroy (client_encryption);
+   mongoc_client_destroy (keyvault_client);   
+}
+
+static void
+test_kms_tls_options_local (void *unused) {
+   /* Assert that attempting to configure TLS options with the local provider is an error. */
+   bson_t *kms_providers;
+   mongoc_client_encryption_opts_t *client_encryption_opts;
+   bson_error_t error;
+   mongoc_client_encryption_t *client_encryption;
+   mongoc_client_t *keyvault_client;
+
+   keyvault_client = test_framework_new_default_client ();
+   kms_providers = _make_local_kms_provider (NULL);
+   client_encryption_opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
+                                                    kms_providers);
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      client_encryption_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
+                                                      keyvault_client);
+   
+   client_encryption = mongoc_client_encryption_new (client_encryption_opts, &error);
+   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG, "TLS options not permitted for local provider");
+   ASSERT (!client_encryption);
+
+   bson_destroy (kms_providers);
+   mongoc_client_encryption_opts_destroy (client_encryption_opts);
+   mongoc_client_destroy (keyvault_client);
+}
+
 /* Required CA certificates may not be registered on system. See BUILD-14068. */
 int
 test_framework_skip_kms_tls_tests (void)
@@ -2794,6 +2985,24 @@ test_client_side_encryption_install (TestSuite *suite)
       suite,
       "/client_side_encryption/kmip_tls_options",
       test_kmip_tls_options,
+      NULL,
+      NULL,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_8,
+      test_framework_skip_if_offline /* requires AWS, Azure, and GCP */);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/kms_tls_options",
+      test_kms_tls_options,
+      NULL,
+      NULL,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_8,
+      test_framework_skip_if_offline /* requires AWS, Azure, and GCP */);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/kms_tls_options/local",
+      test_kms_tls_options_local,
       NULL,
       NULL,
       test_framework_skip_if_no_client_side_encryption,
