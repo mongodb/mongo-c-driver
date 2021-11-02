@@ -2599,66 +2599,6 @@ test_kms_tls_cert_wrong_host (void *unused)
    mongoc_client_destroy (client);
 }
 
-static void
-test_kmip_tls_options (void *unused)
-{
-   bson_error_t error;
-   bson_t *kms_providers;
-   mongoc_client_encryption_opts_t *client_encryption_opts;
-   mongoc_client_t *keyvault_client;
-   char *mongoc_test_kmip_endpoint =
-      test_framework_getenv ("MONGOC_TEST_KMIP_ENDPOINT");
-   char *mongoc_test_kmip_tls_ca_file =
-      test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CA_FILE");
-   char *mongoc_test_kmip_tls_certificate_key_file =
-      test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE");
-   mongoc_client_encryption_t *client_encryption;
-   mongoc_client_encryption_datakey_opts_t *dkopts;
-   bson_value_t keyid;
-   bool ret;
-
-   keyvault_client = test_framework_new_default_client ();
-
-   kms_providers =
-      tmp_bson ("{'kmip': { 'endpoint': '%s', 'tls': {  'tlsCAFile': '%s' }}}",
-                mongoc_test_kmip_endpoint,
-                mongoc_test_kmip_tls_ca_file);
-
-   client_encryption_opts = mongoc_client_encryption_opts_new ();
-   mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
-                                                    kms_providers);
-   mongoc_client_encryption_opts_set_keyvault_namespace (
-      client_encryption_opts, "keyvault", "datakeys");
-   mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
-                                                      keyvault_client);
-   client_encryption =
-      mongoc_client_encryption_new (client_encryption_opts, &error);
-   ASSERT_OR_PRINT (client_encryption, error);
-
-
-   dkopts = mongoc_client_encryption_datakey_opts_new ();
-
-   mongoc_client_encryption_datakey_opts_set_masterkey (
-      dkopts, tmp_bson ("{ 'keyId': '1' }"));
-
-   ret = mongoc_client_encryption_create_datakey (
-      client_encryption, "kmip", dkopts, &keyid, &error);
-
-   ASSERT (!ret);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_SOCKET,
-                          "TLS Handshake Failed");
-
-   mongoc_client_encryption_datakey_opts_destroy (dkopts);
-   mongoc_client_encryption_destroy (client_encryption);
-   mongoc_client_destroy (keyvault_client);
-   mongoc_client_encryption_opts_destroy (client_encryption_opts);
-   bson_free (mongoc_test_kmip_endpoint);
-   bson_free (mongoc_test_kmip_tls_ca_file);
-   bson_free (mongoc_test_kmip_tls_certificate_key_file);
-}
-
 static mongoc_client_encryption_t *
 _tls_test_make_client_encryption (mongoc_client_t *keyvault_client, bool with_tls)
 {
@@ -2981,15 +2921,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
-   TestSuite_AddFull (
-      suite,
-      "/client_side_encryption/kmip_tls_options",
-      test_kmip_tls_options,
-      NULL,
-      NULL,
-      test_framework_skip_if_no_client_side_encryption,
-      test_framework_skip_if_max_wire_version_less_than_8,
-      test_framework_skip_if_offline /* requires AWS, Azure, and GCP */);
    TestSuite_AddFull (
       suite,
       "/client_side_encryption/kms_tls_options",
