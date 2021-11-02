@@ -344,7 +344,7 @@ all_functions = OD([
         export OBSOLETE_TLS='${obsolete_tls}'
         export VALGRIND='${valgrind}'
         export ATLAS_SERVERLESS_SRV='${atlas_serverless_srv}'
-        export ATLAS_SERVERLESS='${atlas_serverless}
+        export ATLAS_SERVERLESS='${atlas_serverless}'
         sh .evergreen/run-auth-tests.sh
         ''', silent=True),
     )),

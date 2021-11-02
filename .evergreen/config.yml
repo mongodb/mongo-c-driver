@@ -458,7 +458,7 @@ functions:
   - command: shell.exec
     type: test
     params:
-      silent: false
+      silent: true
       working_dir: mongoc
       shell: bash
       script: |-
@@ -483,7 +483,7 @@ functions:
         export OBSOLETE_TLS='${obsolete_tls}'
         export VALGRIND='${valgrind}'
         export ATLAS_SERVERLESS_SRV='${atlas_serverless_srv}'
-        export ATLAS_SERVERLESS='${atlas_serverless}
+        export ATLAS_SERVERLESS='${atlas_serverless}'
         sh .evergreen/run-auth-tests.sh
   run mock server tests:
   - command: shell.exec
