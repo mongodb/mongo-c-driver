@@ -2848,48 +2848,6 @@ test_kms_tls_options (void *unused)
    mongoc_client_destroy (keyvault_client);
 }
 
-static void
-test_kms_tls_options_local (void *unused)
-{
-   /* Assert that attempting to configure TLS options with the local provider is
-    * an error. */
-   bson_t *kms_providers;
-   mongoc_client_encryption_opts_t *client_encryption_opts;
-   bson_error_t error = {0};
-   mongoc_client_encryption_t *client_encryption;
-   mongoc_client_t *keyvault_client;
-
-   keyvault_client = test_framework_new_default_client ();
-   kms_providers = BCON_NEW ("local",
-                             "{",
-                             "key",
-                             BCON_BIN (0, (uint8_t *) LOCAL_MASTERKEY, 96),
-                             "tls",
-                             "{",
-                             "tlsCaFile",
-                             "foo.pem",
-                             "}",
-                             "}");
-
-   client_encryption_opts = mongoc_client_encryption_opts_new ();
-   mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
-                                                    kms_providers);
-   mongoc_client_encryption_opts_set_keyvault_namespace (
-      client_encryption_opts, "keyvault", "datakeys");
-   mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
-                                                      keyvault_client);
-
-   client_encryption =
-      mongoc_client_encryption_new (client_encryption_opts, &error);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "Unexpected field: 'tls'");
-   ASSERT (!client_encryption);
-
-   bson_destroy (kms_providers);
-   mongoc_client_encryption_opts_destroy (client_encryption_opts);
-   mongoc_client_destroy (keyvault_client);
-}
-
 /* Required CA certificates may not be registered on system. See BUILD-14068. */
 int
 test_framework_skip_kms_tls_tests (void)
@@ -3025,15 +2983,6 @@ test_client_side_encryption_install (TestSuite *suite)
       suite,
       "/client_side_encryption/kms_tls_options",
       test_kms_tls_options,
-      NULL,
-      NULL,
-      test_framework_skip_if_no_client_side_encryption,
-      test_framework_skip_if_max_wire_version_less_than_8,
-      test_framework_skip_if_offline /* requires AWS, Azure, and GCP */);
-   TestSuite_AddFull (
-      suite,
-      "/client_side_encryption/kms_tls_options/local",
-      test_kms_tls_options_local,
       NULL,
       NULL,
       test_framework_skip_if_no_client_side_encryption,
