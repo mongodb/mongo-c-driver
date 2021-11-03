@@ -2745,7 +2745,7 @@ test_kms_tls_options (void *unused)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_SOCKET,
-                          "TLS handshake failed");
+                          "");
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
@@ -2775,7 +2775,7 @@ test_kms_tls_options (void *unused)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_SOCKET,
-                          "TLS handshake failed");
+                          "");
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
@@ -2803,7 +2803,7 @@ test_kms_tls_options (void *unused)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_SOCKET,
-                          "TLS handshake failed");
+                          "");
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
@@ -2829,7 +2829,7 @@ test_kms_tls_options (void *unused)
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_SOCKET,
-                          "TLS handshake failed");
+                          "");
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
