@@ -32,6 +32,9 @@
 struct __mongoc_crypt_t {
    mongocrypt_t *handle;
    mongoc_ssl_opt_t kmip_tls_opt;
+   mongoc_ssl_opt_t aws_tls_opt;
+   mongoc_ssl_opt_t azure_tls_opt;
+   mongoc_ssl_opt_t gcp_tls_opt;
 };
 
 static void
@@ -473,10 +476,18 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
    while (kms_ctx) {
       mongoc_iovec_t iov;
       const mongoc_ssl_opt_t *ssl_opt;
+      const char* provider;
 
-      if (0 == strcmp ("kmip",
-                       mongocrypt_kms_ctx_get_kms_provider (kms_ctx, NULL))) {
+      provider = mongocrypt_kms_ctx_get_kms_provider (kms_ctx, NULL);
+
+      if (0 == strcmp ("kmip", provider)) {
          ssl_opt = &state_machine->crypt->kmip_tls_opt;
+      } else if (0 == strcmp ("aws", provider)) {
+         ssl_opt = &state_machine->crypt->aws_tls_opt;
+      } else if (0 == strcmp ("azure", provider)) {
+         ssl_opt = &state_machine->crypt->azure_tls_opt;
+      } else if (0 == strcmp ("gcp", provider)) {
+         ssl_opt = &state_machine->crypt->gcp_tls_opt;
       } else {
          ssl_opt = mongoc_ssl_opt_get_default ();
       }
@@ -688,18 +699,26 @@ fail:
    return ret;
 }
 
-/* _parse_kms_providers parses and removes the kmip.tls subdocument out of the kms_providers if present.
+/* _parse_tls_options parses the subdocument in @kms_providers identified by
+ * @provider and checks for "tls" options.
+ *
+ * Pre-conditions:
+ * - @kms_providers_for_libmongocrypt is initialized.
  * Post-conditions:
- * - kms_providers_for_libmongocrypt is always initialized.
- * - kmip_ssl_opt must be freed with _mongoc_ssl_opts_cleanup. */
+ * - @tls_opt is always initialized. If no TLS options are parsed, it is
+ * initialized with mongoc_ssl_opt_get_default().
+ * - If @provider exists in @kms_providers, it is appended to
+ * @kms_provider_for_libmongocrypt with the optional "tls" document removed.
+ * - tls_opt must be freed with _mongoc_ssl_opts_cleanup. */
 static bool
-_parse_kms_providers (const bson_t *kms_providers,
-                      bson_t *kms_providers_for_libmongocrypt,
-                      mongoc_ssl_opt_t *kmip_tls_opt,
-                      bson_error_t *error)
+_parse_tls_options (const bson_t *kms_providers,
+                    bson_t *kms_providers_for_libmongocrypt,
+                    const char* provider,
+                    mongoc_ssl_opt_t *tls_opt,
+                    bson_error_t *error)
 {
    bson_t kmip;
-   bson_t kmip_tls;
+   bson_t tls_bson;
    bson_t child;
    bson_iter_t iter;
    const uint8_t *data;
@@ -707,35 +726,33 @@ _parse_kms_providers (const bson_t *kms_providers,
    bson_string_t *errmsg;
    bool ok = false;
 
-   /* No change is needed if kms_providers does not contain the kmip.tls subdocument. */
-   if (!bson_has_field (kms_providers, "kmip.tls")) {
-      printf ("no kmip.tls\n");
-      bson_init_static (kms_providers_for_libmongocrypt,
-                        bson_get_data (kms_providers),
-                        kms_providers->len);
-      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default(), kmip_tls_opt, false /* copy internal */);
+   /* No change is needed if kms_providers does not contain the provider
+    * subdocument. */
+   if (!bson_has_field (kms_providers, provider)) {
+      MONGOC_DEBUG ("no provider: %s", provider);
+      _mongoc_ssl_opts_copy_to (
+         mongoc_ssl_opt_get_default (), tls_opt, false /* copy internal */);
       return true;
    }
 
    errmsg = bson_string_new (NULL);
 
-   bson_init (kms_providers_for_libmongocrypt);
-
-   if (!bson_iter_init_find (&iter, kms_providers, "kmip")) {
+   if (!bson_iter_init_find (&iter, kms_providers, provider)) {
       bson_set_error (error,
                       MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
                       MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "Could not iterate to KMS providers kmip document");
+                      "Could not iterate to KMS providers %s document",
+                      provider);
       goto fail;
    }
 
    if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
-      bson_set_error (
-         error,
-         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-         "Expected KMS providers kmip.tls to be a document, got: %s",
-         _mongoc_bson_type_to_str (bson_iter_type (&iter)));
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                      "Expected KMS providers %s to be a document, got: %s",
+                      provider,
+                      _mongoc_bson_type_to_str (bson_iter_type (&iter)));
       goto fail;
    }
 
@@ -743,33 +760,42 @@ _parse_kms_providers (const bson_t *kms_providers,
    bson_init_static (&kmip, data, len);
 
    bson_iter_recurse (&iter, &iter);
-   if (!bson_iter_find (&iter, "tls")) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "Could not find tls document");
-      goto fail;
+   if (bson_iter_find (&iter, "tls")) {
+      MONGOC_DEBUG ("found TLS options for provider: %s", provider);
+      if (!BSON_ITER_HOLDS_DOCUMENT (&iter)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "Expected %s.tls to be a document, got: %s",
+                         provider,
+                         _mongoc_bson_type_to_str (bson_iter_type (&iter)));
+         goto fail;
+      }
+
+      bson_iter_document (&iter, &len, &data);
+      bson_init_static (&tls_bson, data, len);
+
+      if (!_mongoc_ssl_opts_from_bson (tls_opt, &tls_bson, errmsg)) {
+         bson_set_error (error,
+                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                         "Error parsing %s.tls: %s",
+                         provider,
+                         errmsg->str);
+         goto fail;
+      }
+   } else {
+       _mongoc_ssl_opts_copy_to (
+         mongoc_ssl_opt_get_default (), tls_opt, false /* copy internal */);
    }
 
-   bson_iter_document (&iter, &len, &data);
-   bson_init_static (&kmip_tls, data, len);
-
-   /* Copy kms_providers to kms_providers_for_libmongocrypt excluding
-    * "kmip.tls". */
-   bson_copy_to_excluding_noinit (
-      kms_providers, kms_providers_for_libmongocrypt, "kmip", NULL);
-   BSON_APPEND_DOCUMENT_BEGIN (kms_providers_for_libmongocrypt, "kmip", &child);
+   /* Copy kms_provider document to kms_providers_for_libmongocrypt excluding
+    * the "tls" field. */
+   BSON_APPEND_DOCUMENT_BEGIN (
+      kms_providers_for_libmongocrypt, provider, &child);
    bson_copy_to_excluding_noinit (&kmip, &child, "tls", NULL);
    bson_append_document_end (kms_providers_for_libmongocrypt, &child);
 
-   if (!_mongoc_ssl_opts_from_bson (kmip_tls_opt, &kmip_tls, errmsg)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "Error parsing kmip.tls: %s",
-                      errmsg->str);
-      goto fail;
-   }
    ok = true;
 fail:
    bson_string_free (errmsg, true /* free_segment */);
@@ -792,16 +818,49 @@ _mongoc_crypt_new (const bson_t *kms_providers,
    mongocrypt_binary_t *schema_map_bin = NULL;
    mongocrypt_binary_t *kms_providers_bin = NULL;
    bool success = false;
-   bson_t kms_providers_for_libmongocrypt;
+   bson_t kms_providers_for_libmongocrypt = BSON_INITIALIZER;
 
    /* Create the handle to libmongocrypt. */
    crypt = bson_malloc0 (sizeof (*crypt));
    crypt->handle = mongocrypt_new ();
 
-   if (!_parse_kms_providers (kms_providers,
-                              &kms_providers_for_libmongocrypt,
-                              &crypt->kmip_tls_opt,
-                              error)) {
+   bson_copy_to_excluding_noinit (kms_providers,
+                                  &kms_providers_for_libmongocrypt,
+                                  "kmip",
+                                  "aws",
+                                  "azure",
+                                  "gcp",
+                                  NULL);
+
+   if (!_parse_tls_options (kms_providers,
+                            &kms_providers_for_libmongocrypt,
+                            "kmip",
+                            &crypt->kmip_tls_opt,
+                            error)) {
+      goto fail;
+   }
+
+   if (!_parse_tls_options (kms_providers,
+                            &kms_providers_for_libmongocrypt,
+                            "aws",
+                            &crypt->aws_tls_opt,
+                            error)) {
+      goto fail;
+   }
+
+   if (!_parse_tls_options (kms_providers,
+                            &kms_providers_for_libmongocrypt,
+                            "azure",
+                            &crypt->azure_tls_opt,
+                            error)) {
+      goto fail;
+   }
+
+   if (!_parse_tls_options (kms_providers,
+                            &kms_providers_for_libmongocrypt,
+                            "gcp",
+                            &crypt->gcp_tls_opt,
+                            error)) {
       goto fail;
    }
 
@@ -853,6 +912,9 @@ _mongoc_crypt_destroy (_mongoc_crypt_t *crypt)
    }
    mongocrypt_destroy (crypt->handle);
    _mongoc_ssl_opts_cleanup (&crypt->kmip_tls_opt, true /* free_internal */);
+   _mongoc_ssl_opts_cleanup (&crypt->aws_tls_opt, true /* free_internal */);
+   _mongoc_ssl_opts_cleanup (&crypt->azure_tls_opt, true /* free_internal */);
+   _mongoc_ssl_opts_cleanup (&crypt->gcp_tls_opt, true /* free_internal */);
    bson_free (crypt);
 }
 
