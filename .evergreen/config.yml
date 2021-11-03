@@ -458,7 +458,7 @@ functions:
   - command: shell.exec
     type: test
     params:
-      silent: true
+      silent: false
       working_dir: mongoc
       shell: bash
       script: |-
