@@ -2987,5 +2987,8 @@ test_client_side_encryption_install (TestSuite *suite)
       NULL,
       test_framework_skip_if_no_client_side_encryption,
       test_framework_skip_if_max_wire_version_less_than_8,
-      test_framework_skip_if_offline /* requires AWS, Azure, and GCP */);
+      test_framework_skip_if_offline /* requires AWS, Azure, and GCP */,
+      /* Do not run on Windows due to CDRIVER-4181. Tests use a literal IP with
+         a TLS connection. */
+      test_framework_skip_if_windows);
 }
