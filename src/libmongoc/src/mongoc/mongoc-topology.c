@@ -614,7 +614,13 @@ mongoc_topology_destroy (mongoc_topology_t *topology)
       bson_mutex_destroy (&topology->srv_polling_mtx);
       mongoc_cond_destroy (&topology->srv_polling_cond);
    }
-   _mongoc_topology_description_monitor_closed (topology->_shared_descr_.ptr);
+
+   if (topology->valid) {
+      /* Do not emit a topology_closed event. A topology opening event was not
+       * emitted. */
+      _mongoc_topology_description_monitor_closed (
+         mc_tpld_unsafe_get_const (topology));
+   }
 
    mongoc_uri_destroy (topology->uri);
    mongoc_shared_ptr_reset_null (&topology->_shared_descr_._sptr_);

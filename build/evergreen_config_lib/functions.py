@@ -558,11 +558,13 @@ all_functions = OD([
     )),
     ('run kms servers', Function(
         shell_exec(r'''
+        echo "Starting mock KMS servers..."
         cd ./drivers-evergreen-tools/.evergreen/csfle
         . ./activate_venv.sh
         python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 7999 &
         python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 8000 &
         python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 8001 &
+        echo "Starting mock KMS servers... done."
         ''', test=False, background=True),
     )),
     ('start load balancer', Function(
