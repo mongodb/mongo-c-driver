@@ -2599,9 +2599,12 @@ test_kms_tls_cert_wrong_host (void *unused)
    mongoc_client_destroy (client);
 }
 
+typedef enum {
+   NO_TLS, WITH_TLS, INVALID_HOSTNAME, EXPIRED
+} tls_test_ce_t;
 static mongoc_client_encryption_t *
 _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
-                                  bool with_tls)
+                                  tls_test_ce_t test_ce)
 {
    bson_t *kms_providers;
    mongoc_client_encryption_opts_t *client_encryption_opts;
@@ -2622,21 +2625,17 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
       test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
    char *mongoc_test_gcp_privatekey =
       test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
-   char *mongoc_test_kmip_endpoint =
-      test_framework_getenv ("MONGOC_TEST_KMIP_ENDPOINT");
    /* TODO: consider making a separate environment variable MONGOC_TEST_KMS_TLS_OPTIONS_CA_FILE */
    char *ca_file = test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CA_FILE");
    /* TODO: consider making a separate environment variable MONGOC_TEST_KMS_TLS_OPTIONS_CERTIFICATE_KEY_FILE */
    char *certificate_key_file =
       test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE");
 
-   if (with_tls) {
+   if (test_ce == WITH_TLS) {
       kms_providers = tmp_bson (
          "{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s', "
          "'tls': {'tlsCaFile': '%s', 'tlsCertificateKeyFile': '%s' } }}",
-         mongoc_test_aws_access_key_id,
-         mongoc_test_aws_secret_access_key,
-         ca_file,
+         mongoc_test_aws_access_key_id, mongoc_test_aws_secret_access_key, ca_file,
          certificate_key_file);
       bson_concat (
          kms_providers,
@@ -2660,16 +2659,15 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
                    certificate_key_file));
       bson_concat (
          kms_providers,
-         tmp_bson ("{'kmip': { 'endpoint': '%s', 'tls': {'tlsCaFile': '%s', "
+         tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:5698', 'tls': {'tlsCaFile': '%s', "
                    "'tlsCertificateKeyFile': '%s' }  }}",
-                   mongoc_test_kmip_endpoint,
                    ca_file,
                    certificate_key_file));
-   } else {
+   } else if (test_ce == NO_TLS) {
       kms_providers =
-         tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s' }}",
+         tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s', 'tls': {'tlsCaFile': '%s'} } }",
                    mongoc_test_aws_access_key_id,
-                   mongoc_test_aws_secret_access_key);
+                   mongoc_test_aws_secret_access_key, ca_file);
       bson_concat (kms_providers,
                    tmp_bson ("{'azure': {'tenantId': '%s', 'clientId': '%s', "
                              "'clientSecret': '%s', "
@@ -2683,8 +2681,45 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
                              mongoc_test_gcp_email,
                              mongoc_test_gcp_privatekey));
       bson_concat (kms_providers,
-                   tmp_bson ("{'kmip': { 'endpoint': 'localhost:5698' }}",
-                             mongoc_test_kmip_endpoint));
+                   tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:5698' }}"));
+   } else if (test_ce == EXPIRED) {
+      kms_providers =
+         tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s', 'tls': {'tlsCaFile': '%s'} } }",
+                   mongoc_test_aws_access_key_id,
+                   mongoc_test_aws_secret_access_key, ca_file);
+      bson_concat (kms_providers,
+                   tmp_bson ("{'azure': {'tenantId': '%s', 'clientId': '%s', "
+                             "'clientSecret': '%s', "
+                             "'identityPlatformEndpoint': '127.0.0.1:8000', 'tls': {'tlsCaFile': '%s'}}}",
+                             mongoc_test_azure_tenant_id,
+                             mongoc_test_azure_client_id,
+                             mongoc_test_azure_client_secret, ca_file));
+      bson_concat (kms_providers,
+                   tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
+                             "'endpoint': '127.0.0.1:8000', 'tls': {'tlsCaFile': '%s'}}}",
+                             mongoc_test_gcp_email,
+                             mongoc_test_gcp_privatekey, ca_file));
+      bson_concat (kms_providers,
+                   tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:8000', 'tls': {'tlsCaFile': '%s'} }}", ca_file));
+   } else if (test_ce == INVALID_HOSTNAME) {
+      kms_providers =
+         tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s', 'tls': {'tlsCaFile': '%s'} } }",
+                   mongoc_test_aws_access_key_id,
+                   mongoc_test_aws_secret_access_key, ca_file);
+      bson_concat (kms_providers,
+                   tmp_bson ("{'azure': {'tenantId': '%s', 'clientId': '%s', "
+                             "'clientSecret': '%s', "
+                             "'identityPlatformEndpoint': '127.0.0.1:8001', 'tls': {'tlsCaFile': '%s'}}}",
+                             mongoc_test_azure_tenant_id,
+                             mongoc_test_azure_client_id,
+                             mongoc_test_azure_client_secret, ca_file));
+      bson_concat (kms_providers,
+                   tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
+                             "'endpoint': '127.0.0.1:8001', 'tls': {'tlsCaFile': '%s'}}}",
+                             mongoc_test_gcp_email,
+                             mongoc_test_gcp_privatekey, ca_file));
+      bson_concat (kms_providers,
+                   tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:8001', 'tls': {'tlsCaFile': '%s'} }}", ca_file));
    }
 
    client_encryption_opts = mongoc_client_encryption_opts_new ();
@@ -2708,31 +2743,68 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
    bson_free (mongoc_test_azure_client_secret);
    bson_free (mongoc_test_gcp_email);
    bson_free (mongoc_test_gcp_privatekey);
-   bson_free (mongoc_test_kmip_endpoint);
    bson_free (ca_file);
    bson_free (certificate_key_file);
 
    return client_encryption;
 }
 
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+#define ASSERT_EXPIRED(error) \
+   ASSERT_CONTAINS (error.message, "certificate has expired");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+#define ASSERT_EXPIRED(error) \
+   ASSERT_CONTAINS (error.message, "CSSMERR_TP_CERT_EXPIRED");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+#define ASSERT_EXPIRED(error) \
+   ASSERT_CONTAINS (error.message, "certificate has expired");
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#define ASSERT_EXPIRED(error) \
+   ASSERT_CONTAINS (error.message, "certificate has expired");
+#else
+#define ASSERT_EXPIRED(error)
+#endif
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+#define ASSERT_INVALID_HOSTNAME(error) \
+   ASSERT_CONTAINS (error.message, "IP address mismatch");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+#define ASSERT_INVALID_HOSTNAME(error) \
+   ASSERT_CONTAINS (error.message, "Host name mismatch");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+#define ASSERT_INVALID_HOSTNAME(error) \
+   ASSERT_CONTAINS (error.message, "hostname doesn't match certificate");
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#define ASSERT_INVALID_HOSTNAME(error) \
+   ASSERT_CONTAINS (error.message, "not present in server certificate");
+#else
+#define ASSERT_INVALID_HOSTNAME(error)
+#endif
+
 static void
 test_kms_tls_options (void *unused)
 {
    mongoc_client_t *keyvault_client;
-   mongoc_client_encryption_t *client_encryption = NULL;
+   mongoc_client_encryption_t *client_encryption_no_tls = NULL;
    mongoc_client_encryption_t *client_encryption_with_tls = NULL;
+   mongoc_client_encryption_t *client_encryption_expired = NULL;
+   mongoc_client_encryption_t *client_encryption_invalid_hostname = NULL;
    bson_value_t keyid;
    mongoc_client_encryption_datakey_opts_t *dkopts;
    bson_error_t error;
    bool res;
 
    keyvault_client = test_framework_new_default_client ();
-   client_encryption =
-      _tls_test_make_client_encryption (keyvault_client, false /* with_tls */);
+   client_encryption_no_tls =
+      _tls_test_make_client_encryption (keyvault_client, NO_TLS);
    client_encryption_with_tls =
-      _tls_test_make_client_encryption (keyvault_client, true /* with_tls */);
+      _tls_test_make_client_encryption (keyvault_client, WITH_TLS);
+   client_encryption_expired =
+      _tls_test_make_client_encryption (keyvault_client, EXPIRED);
+   client_encryption_invalid_hostname =
+      _tls_test_make_client_encryption (keyvault_client, INVALID_HOSTNAME);
 
-   /* AWS - no TLS. */
+   /* Case 1: AWS - no TLS. */
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -2741,7 +2813,7 @@ test_kms_tls_options (void *unused)
                 "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
                 "'127.0.0.1:8002' }"));
    res = mongoc_client_encryption_create_datakey (
-      client_encryption, "aws", dkopts, &keyid, &error);
+      client_encryption_no_tls, "aws", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_SOCKET,
@@ -2764,14 +2836,42 @@ test_kms_tls_options (void *unused)
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
-   /* Azure - no TLS. */
+   /* AWS - expired. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'region': 'us-east-1', 'key': "
+                "'arn:aws:kms:us-east-1:579766882180:key/"
+                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
+                "'127.0.0.1:8000' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_expired, "aws", dkopts, &keyid, &error);
+   ASSERT_EXPIRED (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* AWS - invalid hostname. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'region': 'us-east-1', 'key': "
+                "'arn:aws:kms:us-east-1:579766882180:key/"
+                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
+                "'127.0.0.1:8001' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_invalid_hostname, "aws", dkopts, &keyid, &error);
+   ASSERT_INVALID_HOSTNAME (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Case 2: Azure - no TLS. */
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
       tmp_bson (
          "{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (
-      client_encryption, "azure", dkopts, &keyid, &error);
+      client_encryption_no_tls, "azure", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_SOCKET,
@@ -2792,14 +2892,38 @@ test_kms_tls_options (void *unused)
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
-   /* GCP - no TLS. */
+   /* Azure - expired. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson (
+         "{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_expired, "azure", dkopts, &keyid, &error);
+   ASSERT_EXPIRED (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Azure - invalid hostname. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson (
+         "{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_invalid_hostname, "azure", dkopts, &keyid, &error);
+   ASSERT_INVALID_HOSTNAME (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Case 3: GCP - no TLS. */
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
       tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', "
                 "'keyName': 'kn' }"));
    res = mongoc_client_encryption_create_datakey (
-      client_encryption, "gcp", dkopts, &keyid, &error);
+      client_encryption_no_tls, "gcp", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_SOCKET,
@@ -2820,12 +2944,36 @@ test_kms_tls_options (void *unused)
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
-   /* KMIP - no TLS. */
+   /* GCP - expired. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', "
+                "'keyName': 'kn' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_expired, "gcp", dkopts, &keyid, &error);
+   ASSERT_EXPIRED (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* GCP - invalid hostname. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', "
+                "'keyName': 'kn' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_invalid_hostname, "gcp", dkopts, &keyid, &error);
+   ASSERT_INVALID_HOSTNAME (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Case 4: KMIP - no TLS. */
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
                                                         tmp_bson ("{}"));
    res = mongoc_client_encryption_create_datakey (
-      client_encryption, "kmip", dkopts, &keyid, &error);
+      client_encryption_no_tls, "kmip", dkopts, &keyid, &error);
    ASSERT_ERROR_CONTAINS (error,
                           MONGOC_ERROR_STREAM,
                           MONGOC_ERROR_STREAM_SOCKET,
@@ -2843,8 +2991,30 @@ test_kms_tls_options (void *unused)
    bson_value_destroy (&keyid);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
+   /* KMIP - expired. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
+                                                        tmp_bson ("{}"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_expired, "kmip", dkopts, &keyid, &error);
+   ASSERT_EXPIRED (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* KMIP - invalid hostname. */
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
+                                                        tmp_bson ("{}"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_invalid_hostname, "kmip", dkopts, &keyid, &error);
+   ASSERT_INVALID_HOSTNAME (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   mongoc_client_encryption_destroy (client_encryption_invalid_hostname);
+   mongoc_client_encryption_destroy (client_encryption_expired);
    mongoc_client_encryption_destroy (client_encryption_with_tls);
-   mongoc_client_encryption_destroy (client_encryption);
+   mongoc_client_encryption_destroy (client_encryption_no_tls);
    mongoc_client_destroy (keyvault_client);
 }
 
