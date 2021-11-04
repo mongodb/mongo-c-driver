@@ -1740,8 +1740,7 @@ _handle_sdam_app_error_command (mongoc_topology_t *topology,
       return false;
    }
 
-   if (generation <
-       mongoc_generation_map_get (mut_sd->generation_map, service_id)) {
+   if (generation < mc_tpl_sd_get_generation (mut_sd, service_id)) {
       /* Our view of the server description is stale. Ignore it. */
       mc_tpld_modify_drop (tdmod);
       bson_destroy (&incoming_topology_version);
@@ -1828,8 +1827,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       goto ignore_error;
    }
 
-   if (generation <
-       mongoc_generation_map_get (sd->generation_map, service_id)) {
+   if (generation < mc_tpl_sd_get_generation (sd, service_id)) {
       /* This is a stale connection. Ignore. */
       goto ignore_error;
    }
@@ -1855,8 +1853,7 @@ _mongoc_topology_handle_app_error (mongoc_topology_t *topology,
       sd = mongoc_topology_description_server_by_id_const (
          tdmod.new_td, server_id, NULL);
       /* Check if the server has already been invalidated */
-      if (!sd || generation < mongoc_generation_map_get (sd->generation_map,
-                                                         service_id)) {
+      if (!sd || generation < mc_tpl_sd_get_generation (sd, service_id)) {
          mc_tpld_modify_drop (tdmod);
          goto ignore_error;
       }
@@ -1950,7 +1947,7 @@ _mongoc_topology_get_connection_pool_generation (
       return 0;
    }
 
-   return mongoc_generation_map_get (sd->generation_map, service_id);
+   return mc_tpl_sd_get_generation (sd, service_id);
 }
 
 mc_tpld_modification

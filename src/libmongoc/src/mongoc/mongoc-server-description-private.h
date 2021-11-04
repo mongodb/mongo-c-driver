@@ -117,13 +117,50 @@ struct _mongoc_server_description_t {
     * It represents the generation number for this connection. */
    uint32_t generation;
 
-   /* generation_map stores all generations for all service IDs associated with
-    * this server. generation_map is only accessed on the server description for
-    * monitoring. In non-load-balanced mode, there are no service IDs. The only
-    * server generation is mapped from kZeroServiceID */
-   mongoc_generation_map_t *generation_map;
+   /* _generation_map_ stores all generations for all service IDs associated
+    * with this server. _generation_map_ is only accessed on the server
+    * description for monitoring. In non-load-balanced mode, there are no
+    * service IDs. The only server generation is mapped from kZeroServiceID */
+   mongoc_generation_map_t *_generation_map_;
    bson_oid_t service_id;
 };
+
+/** Get a mutable pointer to the server's generation map */
+static BSON_INLINE mongoc_generation_map_t *
+mc_tpl_sd_generation_map (mongoc_server_description_t *sd)
+{
+   return sd->_generation_map_;
+}
+
+/** Get a const pointer to the server's generation map */
+static BSON_INLINE const mongoc_generation_map_t *
+mc_tpl_sd_generation_map_const (const mongoc_server_description_t *sd)
+{
+   return sd->_generation_map_;
+}
+
+/**
+ * @brief Increment the generation number on the given server for the associated
+ * service ID.
+ */
+static BSON_INLINE void
+mc_tpl_sd_increment_generation (mongoc_server_description_t *sd,
+                                const bson_oid_t *service_id)
+{
+   mongoc_generation_map_increment (mc_tpl_sd_generation_map (sd), service_id);
+}
+
+/**
+ * @brief Get the generation number of the given server description for the
+ * associated service ID.
+ */
+static BSON_INLINE uint32_t
+mc_tpl_sd_get_generation (const mongoc_server_description_t *sd,
+                          const bson_oid_t *service_id)
+{
+   return mongoc_generation_map_get (mc_tpl_sd_generation_map_const (sd),
+                                     service_id);
+}
 
 void
 mongoc_server_description_init (mongoc_server_description_t *sd,

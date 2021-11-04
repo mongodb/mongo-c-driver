@@ -42,7 +42,7 @@ get_generation (mongoc_client_t *client, mongoc_cursor_t *cursor)
    sd = mongoc_topology_description_server_by_id_const (
       td.ptr, server_id, &error);
    ASSERT_OR_PRINT (sd, error);
-   generation = mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
+   generation = mc_tpl_sd_get_generation (sd, &kZeroServiceId);
    mc_tpld_drop_ref (&td);
 
    return generation;

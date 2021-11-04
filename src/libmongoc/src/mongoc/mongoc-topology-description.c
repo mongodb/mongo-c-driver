@@ -2344,5 +2344,5 @@ _mongoc_topology_description_clear_connection_pool (
 
    TRACE ("clearing pool for server: %s", sd->host.host_and_port);
 
-   mongoc_generation_map_increment (sd->generation_map, service_id);
+   mc_tpl_sd_increment_generation (sd, service_id);
 }

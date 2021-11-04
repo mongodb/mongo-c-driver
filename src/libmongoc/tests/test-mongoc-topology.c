@@ -446,7 +446,6 @@ _test_topology_invalidate_server (bool pooled)
 {
    mongoc_server_description_t *fake_sd;
    const mongoc_server_description_t *sd;
-   mongoc_topology_description_t *td;
    mongoc_uri_t *uri;
    mongoc_client_t *client;
    mongoc_client_pool_t *pool = NULL;
@@ -458,6 +457,8 @@ _test_topology_invalidate_server (bool pooled)
    checks_t checks;
    int server_count;
    mongoc_apm_callbacks_t *callbacks;
+   mc_shared_tpld td;
+   mc_tpld_modification tdmod;
 
    checks_init (&checks);
    uri = test_framework_get_uri ();
@@ -483,8 +484,6 @@ _test_topology_invalidate_server (bool pooled)
       test_framework_set_ssl_opts (client);
    }
 
-   td = mc_tpld_unsafe_get_mutable (client->topology);
-
    /* call explicitly */
    server_stream = mongoc_cluster_stream_for_reads (
       &client->cluster, NULL, NULL, NULL, &error);
@@ -498,8 +497,8 @@ _test_topology_invalidate_server (bool pooled)
    ASSERT_CMPINT64 (sd->round_trip_time_msec, !=, (int64_t) -1);
 
    _mongoc_topology_invalidate_server (client->topology, id);
-   td = mc_tpld_unsafe_get_mutable (client->topology);
-   sd = mongoc_set_get_const (mc_tpld_servers_const (td), id);
+   td = mc_tpld_take_ref (client->topology);
+   sd = mongoc_set_get_const (mc_tpld_servers_const (td.ptr), id);
    BSON_ASSERT (sd);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
    ASSERT_CMPINT64 (sd->round_trip_time_msec, ==, (int64_t) -1);
@@ -513,13 +512,16 @@ _test_topology_invalidate_server (bool pooled)
       fake_sd, fake_host_list.host_and_port, fake_id);
 
    fake_sd->type = MONGOC_SERVER_STANDALONE;
-   mongoc_set_add (mc_tpld_servers (td), fake_id, fake_sd);
+   tdmod = mc_tpld_modify_begin (client->topology);
+   mongoc_set_add (mc_tpld_servers (tdmod.new_td), fake_id, fake_sd);
    mongoc_topology_scanner_add (
       client->topology->scanner, &fake_host_list, fake_id, false);
+   mc_tpld_modify_commit (tdmod);
    BSON_ASSERT (!mongoc_cluster_stream_for_server (
       &client->cluster, fake_id, true, NULL, NULL, &error));
-   td = mc_tpld_unsafe_get_mutable (client->topology);
-   sd = mongoc_set_get (mc_tpld_servers (td), fake_id);
+
+   mc_tpld_renew_ref (&td, client->topology);
+   sd = mongoc_set_get_const (mc_tpld_servers_const (td.ptr), fake_id);
    /* A single threaded client, during reconnect, will scan ALL servers.
     * When it receives a response from one of those nodes, showing that
     * "fakeaddress" is not in the host list, it will remove the
@@ -549,6 +551,7 @@ _test_topology_invalidate_server (bool pooled)
    }
    mongoc_apm_callbacks_destroy (callbacks);
    checks_cleanup (&checks);
+   mc_tpld_drop_ref (&td);
 }
 
 static void
@@ -573,7 +576,9 @@ test_invalid_cluster_node (void *ctx)
    mongoc_cluster_t *cluster;
    mongoc_server_stream_t *server_stream;
    uint32_t id;
-   mongoc_server_description_t *sd;
+   const mongoc_server_description_t *sd;
+   mc_shared_tpld td = MC_SHARED_TPLD_NULL;
+   mc_tpld_modification tdmod;
 
    /* use client pool, this test is only valid when multi-threaded */
    pool = test_framework_new_default_client_pool ();
@@ -591,16 +596,19 @@ test_invalid_cluster_node (void *ctx)
    BSON_ASSERT (cluster_node);
    BSON_ASSERT (cluster_node->stream);
 
-   sd = mongoc_topology_description_server_by_id (
-      mc_tpld_unsafe_get_mutable (client->topology), id, &error);
+   td = mc_tpld_take_ref (client->topology);
+   sd = mongoc_topology_description_server_by_id_const (td.ptr, id, &error);
    ASSERT_OR_PRINT (sd, error);
    /* Both generations match, and are the first generation. */
    ASSERT_CMPINT32 (cluster_node->handshake_sd->generation, ==, 0);
-   ASSERT_CMPINT32 (
-      mongoc_generation_map_get (sd->generation_map, &kZeroServiceId), ==, 0);
+   ASSERT_CMPINT32 (mc_tpl_sd_get_generation (sd, &kZeroServiceId), ==, 0);
 
    /* update the server's generation, simulating a connection pool clearing */
-   mongoc_generation_map_increment (sd->generation_map, &kZeroServiceId);
+   tdmod = mc_tpld_modify_begin (client->topology);
+   mc_tpl_sd_increment_generation (
+      mongoc_topology_description_server_by_id (tdmod.new_td, id, &error),
+      &kZeroServiceId);
+   mc_tpld_modify_commit (tdmod);
 
    /* cluster discards node and creates new one with the current generation */
    server_stream = mongoc_cluster_stream_for_server (
@@ -612,6 +620,7 @@ test_invalid_cluster_node (void *ctx)
    mongoc_server_stream_cleanup (server_stream);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);
+   mc_tpld_drop_ref (&td);
 }
 
 static void
@@ -658,7 +667,7 @@ test_max_wire_version_race_condition (void *ctx)
    sd = mongoc_set_get (
       mc_tpld_servers (mc_tpld_unsafe_get_mutable (client->topology)), id);
    BSON_ASSERT (sd);
-   mongoc_generation_map_increment (sd->generation_map, &kZeroServiceId);
+   mc_tpl_sd_increment_generation (sd, &kZeroServiceId);
    mongoc_server_description_reset (sd);
 
    /* new stream, ensure that we can still auth with cached wire version */

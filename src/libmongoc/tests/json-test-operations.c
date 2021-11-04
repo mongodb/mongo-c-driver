@@ -2116,7 +2116,7 @@ _get_total_pool_cleared_event (json_test_ctx_t *ctx)
       const mongoc_server_description_t *sd;
 
       sd = mongoc_set_get_item_const (mc_tpld_servers_const (td.ptr), i);
-      total += mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
+      total += mc_tpl_sd_get_generation (sd, &kZeroServiceId);
    }
    mc_tpld_drop_ref (&td);
    return total;

@@ -3971,7 +3971,7 @@ test_mongoc_client_recv_network_error (void)
    sd = mongoc_topology_description_server_by_id_const (
       mc_tpld_unsafe_get_const (client->topology), 1, &error);
    ASSERT_OR_PRINT (sd, error);
-   generation = mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
+   generation = mc_tpl_sd_get_generation (sd, &kZeroServiceId);
    BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
    mock_server_destroy (server);
 
@@ -3992,9 +3992,7 @@ test_mongoc_client_recv_network_error (void)
       mc_tpld_unsafe_get_mutable (client->topology), 1, &error);
    ASSERT_OR_PRINT (sd, error);
    ASSERT_CMPINT (
-      mongoc_generation_map_get (sd->generation_map, &kZeroServiceId),
-      ==,
-      generation + 1);
+      mc_tpl_sd_get_generation (sd, &kZeroServiceId), ==, generation + 1);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
 
    mongoc_client_destroy (client);
