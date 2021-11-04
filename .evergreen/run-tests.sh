@@ -143,6 +143,7 @@ if [ "$CLIENT_SIDE_ENCRYPTION" = "on" ]; then
    wait_for_kms_server 8000
    wait_for_kms_server 8001
    wait_for_kms_server 5698
+   wait_for_kms_server 8002
    echo "Waiting for mock KMS servers to start... done."
 fi
 
