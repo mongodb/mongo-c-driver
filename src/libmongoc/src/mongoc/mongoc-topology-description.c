@@ -1385,6 +1385,7 @@ _mongoc_topology_description_invalidate_primaries_cb (void *item, void *ctx)
       mongoc_server_description_set_state (server, MONGOC_SERVER_UNKNOWN);
       mongoc_server_description_set_set_version (server, MONGOC_NO_SET_VERSION);
       mongoc_server_description_set_election_id (server, NULL);
+      mongoc_server_description_reset (server);
    }
    return true;
 }
