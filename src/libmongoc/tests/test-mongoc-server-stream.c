@@ -152,6 +152,7 @@ test_server_stream_ties_server_description_single (void *unused)
    future_t *future;
    bson_error_t error;
    mongoc_server_description_t *sd;
+   mc_tpld_modification tdmod;
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -179,12 +180,10 @@ test_server_stream_ties_server_description_single (void *unused)
    /* Muck with the topology description. */
    /* Pass in a zeroed out error. */
    memset (&error, 0, sizeof (bson_error_t));
+   tdmod = mc_tpld_modify_begin (client->topology);
    mongoc_topology_description_handle_hello (
-      mc_tpld_unsafe_get_mutable (client->topology),
-      1,
-      tmp_bson (HELLO_PRE_OPMSG),
-      0,
-      &error);
+      tdmod.new_td, 1, tmp_bson (HELLO_PRE_OPMSG), 0, &error);
+   mc_tpld_modify_commit (tdmod);
 
    /* Send another command, it should still use OP_MSG. */
    future = future_client_command_simple (client,

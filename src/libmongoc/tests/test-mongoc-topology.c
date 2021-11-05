@@ -633,6 +633,7 @@ test_max_wire_version_race_condition (void *ctx)
    bson_error_t error;
    mongoc_server_stream_t *server_stream;
    uint32_t id;
+   mc_tpld_modification tdmod;
    bool r;
 
    /* connect directly and add our user, test is only valid with auth */
@@ -663,12 +664,12 @@ test_max_wire_version_race_condition (void *ctx)
    mongoc_server_stream_cleanup (server_stream);
 
    /* "disconnect": increment generation and reset server description */
-
-   sd = mongoc_set_get (
-      mc_tpld_servers (mc_tpld_unsafe_get_mutable (client->topology)), id);
+   tdmod = mc_tpld_modify_begin (client->topology);
+   sd = mongoc_set_get (mc_tpld_servers (tdmod.new_td), id);
    BSON_ASSERT (sd);
    mc_tpl_sd_increment_generation (sd, &kZeroServiceId);
    mongoc_server_description_reset (sd);
+   mc_tpld_modify_commit (tdmod);
 
    /* new stream, ensure that we can still auth with cached wire version */
    server_stream = mongoc_cluster_stream_for_server (
@@ -2128,6 +2129,7 @@ test_slow_server_pooled (void)
    checks_t checks;
    bool ret;
    bson_error_t error;
+   mc_tpld_modification tdmod;
 
    checks_init (&checks);
    primary = mock_server_new ();
@@ -2164,8 +2166,9 @@ test_slow_server_pooled (void)
    mongoc_client_pool_set_apm_callbacks (pool, callbacks, &checks);
 
    /* Set a shorter heartbeat frequencies for faster responses. */
-   mc_tpld_unsafe_get_mutable (_mongoc_client_pool_get_topology (pool))
-      ->heartbeat_msec = 10;
+   tdmod = mc_tpld_modify_begin (_mongoc_client_pool_get_topology (pool));
+   tdmod.new_td->heartbeat_msec = 10;
+   mc_tpld_modify_commit (tdmod);
    _mongoc_client_pool_get_topology (pool)->min_heartbeat_frequency_msec = 10;
 
    client = mongoc_client_pool_pop (pool);

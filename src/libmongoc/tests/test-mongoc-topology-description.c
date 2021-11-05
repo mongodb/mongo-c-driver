@@ -111,26 +111,34 @@ test_get_servers (void)
 {
    mongoc_uri_t *uri;
    mongoc_topology_t *topology;
-   mongoc_topology_description_t *td;
    const mongoc_server_description_t *sd_a;
    const mongoc_server_description_t *sd_c;
    mongoc_server_description_t **sds;
+   mc_tpld_modification tdmod;
    size_t n;
 
    uri = mongoc_uri_new ("mongodb://a,b,c");
    topology = mongoc_topology_new (uri, true /* single-threaded */);
-   td = mc_tpld_unsafe_get_mutable (topology);
+   tdmod = mc_tpld_modify_begin (topology);
 
    /* servers "a" and "c" are mongos, but "b" remains unknown */
-   sd_a = _sd_for_host (td, "a");
+   sd_a = _sd_for_host (tdmod.new_td, "a");
    mongoc_topology_description_handle_hello (
-      td, sd_a->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+      tdmod.new_td,
+      sd_a->id,
+      tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"),
+      100,
+      NULL);
 
-   sd_c = _sd_for_host (td, "c");
+   sd_c = _sd_for_host (tdmod.new_td, "c");
    mongoc_topology_description_handle_hello (
-      td, sd_c->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+      tdmod.new_td,
+      sd_c->id,
+      tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"),
+      100,
+      NULL);
 
-   sds = mongoc_topology_description_get_servers (td, &n);
+   sds = mongoc_topology_description_get_servers (tdmod.new_td, &n);
    ASSERT_CMPSIZE_T ((size_t) 2, ==, n);
 
    /* we don't care which order the servers are returned */
@@ -143,6 +151,7 @@ test_get_servers (void)
    }
 
    mongoc_server_descriptions_destroy_all (sds, n);
+   mc_tpld_modify_drop (tdmod);
    mongoc_topology_destroy (topology);
    mongoc_uri_destroy (uri);
 }
@@ -167,22 +176,23 @@ test_topology_version_equal (void)
 {
    mongoc_uri_t *uri;
    mongoc_topology_t *topology;
-   mongoc_topology_description_t *td;
    const mongoc_server_description_t *sd;
    mongoc_apm_callbacks_t *callbacks;
    int num_calls = 0;
+   mc_tpld_modification tdmod;
 
    uri = mongoc_uri_new ("mongodb://host");
    topology = mongoc_topology_new (uri, true /* single-threaded */);
-   td = mc_tpld_unsafe_get_mutable (topology);
+   tdmod = mc_tpld_modify_begin (topology);
 
    callbacks = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_changed_cb (callbacks, _topology_changed);
-   mongoc_topology_set_apm_callbacks (topology, td, callbacks, &num_calls);
+   mongoc_topology_set_apm_callbacks (
+      topology, tdmod.new_td, callbacks, &num_calls);
 
-   sd = _sd_for_host (td, "host");
+   sd = _sd_for_host (tdmod.new_td, "host");
    mongoc_topology_description_handle_hello (
-      td,
+      tdmod.new_td,
       sd->id,
       tmp_bson ("{'ok': 1, 'topologyVersion': " TV_2 " }"),
       100,
@@ -193,7 +203,7 @@ test_topology_version_equal (void)
    /* The subsequent hello has a topologyVersion that compares less, so the
     * hello skips. */
    mongoc_topology_description_handle_hello (
-      td,
+      tdmod.new_td,
       sd->id,
       tmp_bson ("{'ok': 1, 'topologyVersion': " TV_1 " }"),
       100,
@@ -202,6 +212,7 @@ test_topology_version_equal (void)
    ASSERT_CMPINT (num_calls, ==, 1);
 
    mongoc_apm_callbacks_destroy (callbacks);
+   mc_tpld_modify_drop (tdmod);
    mongoc_topology_destroy (topology);
    mongoc_uri_destroy (uri);
 }
@@ -211,26 +222,35 @@ test_topology_description_new_copy (void)
 {
    mongoc_uri_t *uri;
    mongoc_topology_t *topology;
-   mongoc_topology_description_t *td, *td_copy;
+   mongoc_topology_description_t *td_copy;
    const mongoc_server_description_t *sd_a;
    const mongoc_server_description_t *sd_c;
    mongoc_server_description_t **sds;
+   mc_tpld_modification tdmod;
    size_t n;
 
    uri = mongoc_uri_new ("mongodb://a,b,c");
    topology = mongoc_topology_new (uri, true /* single-threaded */);
-   td = mc_tpld_unsafe_get_mutable (topology);
+   tdmod = mc_tpld_modify_begin (topology);
 
-   td_copy = mongoc_topology_description_new_copy (td);
+   td_copy = mongoc_topology_description_new_copy (tdmod.new_td);
 
    /* servers "a" and "c" are mongos, but "b" remains unknown */
-   sd_a = _sd_for_host (td, "a");
+   sd_a = _sd_for_host (tdmod.new_td, "a");
    mongoc_topology_description_handle_hello (
-      td, sd_a->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+      tdmod.new_td,
+      sd_a->id,
+      tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"),
+      100,
+      NULL);
 
-   sd_c = _sd_for_host (td, "c");
+   sd_c = _sd_for_host (tdmod.new_td, "c");
    mongoc_topology_description_handle_hello (
-      td, sd_c->id, tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"), 100, NULL);
+      tdmod.new_td,
+      sd_c->id,
+      tmp_bson ("{'ok': 1, 'msg': 'isdbgrid'}"),
+      100,
+      NULL);
 
    /* td was copied before original was updated */
    sds = mongoc_topology_description_get_servers (td_copy, &n);
@@ -239,8 +259,9 @@ test_topology_description_new_copy (void)
    mongoc_server_descriptions_destroy_all (sds, n);
    mongoc_topology_description_destroy (td_copy);
 
-   td_copy = mongoc_topology_description_new_copy (td);
+   td_copy = mongoc_topology_description_new_copy (tdmod.new_td);
 
+   mc_tpld_modify_drop (tdmod);
    mongoc_topology_destroy (topology);
    mongoc_uri_destroy (uri);
 
@@ -259,32 +280,33 @@ static void
 test_topology_pool_clear (void)
 {
    mongoc_topology_t *topology;
-   mongoc_topology_description_t *td;
+   mc_tpld_modification tdmod;
    mongoc_uri_t *uri;
 
    uri = mongoc_uri_new ("mongodb://localhost:27017,localhost:27018");
    topology = mongoc_topology_new (uri, true);
 
-   td = mc_tpld_unsafe_get_mutable (topology);
-   ASSERT_CMPUINT32 (
-      0,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (td, 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (
-      0,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (td, 2, &kZeroServiceId));
-   _mongoc_topology_description_clear_connection_pool (td, 1, &kZeroServiceId);
-   ASSERT_CMPUINT32 (
-      1,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (td, 1, &kZeroServiceId));
-   ASSERT_CMPUINT32 (
-      0,
-      ==,
-      _mongoc_topology_get_connection_pool_generation (td, 2, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        tdmod.new_td, 1, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        tdmod.new_td, 2, &kZeroServiceId));
+   _mongoc_topology_description_clear_connection_pool (
+      tdmod.new_td, 1, &kZeroServiceId);
+   ASSERT_CMPUINT32 (1,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        tdmod.new_td, 1, &kZeroServiceId));
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        tdmod.new_td, 2, &kZeroServiceId));
 
    mongoc_uri_destroy (uri);
+   mc_tpld_modify_drop (tdmod);
    mongoc_topology_destroy (topology);
 }
 
@@ -295,7 +317,7 @@ test_topology_pool_clear_by_serviceid (void)
    mongoc_uri_t *uri;
    bson_oid_t oid_a;
    bson_oid_t oid_b;
-   mongoc_topology_description_t *td;
+   mc_tpld_modification tdmod;
 
    uri = mongoc_uri_new ("mongodb://localhost:27017");
    topology = mongoc_topology_new (uri, true);
@@ -303,18 +325,27 @@ test_topology_pool_clear_by_serviceid (void)
    bson_oid_init_from_string (&oid_a, "AAAAAAAAAAAAAAAAAAAAAAAA");
    bson_oid_init_from_string (&oid_b, "BBBBBBBBBBBBBBBBBBBBBBBB");
 
-   td = mc_tpld_unsafe_get_mutable (topology);
-   ASSERT_CMPUINT32 (
-      0, ==, _mongoc_topology_get_connection_pool_generation (td, 1, &oid_a));
-   ASSERT_CMPUINT32 (
-      0, ==, _mongoc_topology_get_connection_pool_generation (td, 1, &oid_b));
-   _mongoc_topology_description_clear_connection_pool (td, 1, &oid_a);
-   ASSERT_CMPUINT32 (
-      1, ==, _mongoc_topology_get_connection_pool_generation (td, 1, &oid_a));
-   ASSERT_CMPUINT32 (
-      0, ==, _mongoc_topology_get_connection_pool_generation (td, 1, &oid_b));
+   tdmod = mc_tpld_modify_begin (topology);
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        tdmod.new_td, 1, &oid_a));
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        tdmod.new_td, 1, &oid_b));
+   _mongoc_topology_description_clear_connection_pool (tdmod.new_td, 1, &oid_a);
+   ASSERT_CMPUINT32 (1,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        tdmod.new_td, 1, &oid_a));
+   ASSERT_CMPUINT32 (0,
+                     ==,
+                     _mongoc_topology_get_connection_pool_generation (
+                        tdmod.new_td, 1, &oid_b));
 
    mongoc_uri_destroy (uri);
+   mc_tpld_modify_drop (tdmod);
    mongoc_topology_destroy (topology);
 }
 

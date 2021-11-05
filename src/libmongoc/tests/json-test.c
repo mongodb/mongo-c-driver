@@ -181,8 +181,6 @@ server_description_by_hostname (const mongoc_topology_description_t *topology,
 void
 process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
 {
-   mongoc_topology_description_t *td;
-   mongoc_server_description_t const *sd;
    bson_iter_t phase_field_iter;
    const char *hostname;
 
@@ -204,16 +202,18 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
       bson_iter_init (&hello_iter, &hellos);
 
       while (bson_iter_next (&hello_iter)) {
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
+         mongoc_server_description_t const *sd;
          bson_iter_bson (&hello_iter, &hello);
 
          bson_iter_init_find (&hello_field_iter, &hello, "0");
          hostname = bson_iter_utf8 (&hello_field_iter, NULL);
          /* Each handle_hello can invalidate the topology */
-         td = mc_tpld_unsafe_get_mutable (topology);
-         sd = server_description_by_hostname (td, hostname);
+         sd = server_description_by_hostname (tdmod.new_td, hostname);
 
          /* if server has been removed from topology, skip */
          if (!sd) {
+            mc_tpld_modify_drop (tdmod);
             continue;
          }
 
@@ -223,13 +223,14 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
          /* send hello through the topology description's handler */
          capture_logs (true);
          mongoc_topology_description_handle_hello (
-            td, sd->id, &response, 1, NULL);
-         if (mc_tpld_servers_const (td)->items_len == 0) {
+            tdmod.new_td, sd->id, &response, 1, NULL);
+         if (mc_tpld_servers_const (tdmod.new_td)->items_len == 0) {
             ASSERT_CAPTURED_LOG ("topology",
                                  MONGOC_LOG_LEVEL_WARNING,
                                  "Last server removed from topology");
          }
          capture_logs (false);
+         mc_tpld_modify_commit (tdmod);
       }
    } else if (bson_iter_init_find (
                  &phase_field_iter, phase, "applicationErrors")) {
@@ -250,17 +251,19 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
          _mongoc_sdam_app_error_type_t type = 0;
          bson_t response;
          bson_error_t err;
+         mongoc_server_description_t const *sd;
+         mc_shared_tpld td = mc_tpld_take_ref (topology);
 
          bson_iter_bson (&app_error_iter, &app_error);
 
          bson_iter_init_find (&app_error_field_iter, &app_error, "address");
          hostname = bson_iter_utf8 (&app_error_field_iter, NULL);
          /* Each handle_app_error can invalidate the topology */
-         td = mc_tpld_unsafe_get_mutable (topology);
-         sd = server_description_by_hostname (td, hostname);
+         sd = server_description_by_hostname (td.ptr, hostname);
 
          /* if server has been removed from topology, skip */
          if (!sd) {
+            mc_tpld_drop_ref (&td);
             continue;
          }
 
@@ -321,6 +324,7 @@ process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology)
                                             max_wire_version,
                                             generation,
                                             &kZeroServiceId);
+         mc_tpld_drop_ref (&td);
       }
    }
 }

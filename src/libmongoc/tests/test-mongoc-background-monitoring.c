@@ -232,8 +232,10 @@ tf_new (tf_flags_t flags)
    mongoc_apm_callbacks_destroy (callbacks);
 
    if (flags & TF_FAST_HEARTBEAT) {
-      mc_tpld_unsafe_get_mutable (_mongoc_client_pool_get_topology (tf->pool))
-         ->heartbeat_msec = FAST_HEARTBEAT_MS;
+      mc_tpld_modification tdmod =
+         mc_tpld_modify_begin (_mongoc_client_pool_get_topology (tf->pool));
+      tdmod.new_td->heartbeat_msec = FAST_HEARTBEAT_MS;
+      mc_tpld_modify_commit (tdmod);
       /* A fast heartbeat implies a fast min heartbeat. */
       flags |= TF_FAST_MIN_HEARTBEAT;
    }
@@ -309,17 +311,16 @@ tf_destroy (test_fixture_t *tf)
 static void
 _signal_shutdown (test_fixture_t *tf)
 {
-   bson_mutex_lock (&tf->client->topology->tpld_modification_mtx);
+   mc_tpld_modification tdmod = mc_tpld_modify_begin (tf->client->topology);
    /* Ignore the "Last server removed from topology" warning. */
    capture_logs (true);
    /* remove the server description from the topology description. */
-   mongoc_topology_description_reconcile (
-      mc_tpld_unsafe_get_mutable (tf->client->topology), NULL);
+   mongoc_topology_description_reconcile (tdmod.new_td, NULL);
    capture_logs (false);
    /* remove the server monitor from the set of server monitors. */
-   _mongoc_topology_background_monitoring_reconcile (
-      tf->client->topology, mc_tpld_unsafe_get_mutable (tf->client->topology));
-   bson_mutex_unlock (&tf->client->topology->tpld_modification_mtx);
+   _mongoc_topology_background_monitoring_reconcile (tf->client->topology,
+                                                     tdmod.new_td);
+   mc_tpld_modify_commit (tdmod);
 }
 
 static void
@@ -327,18 +328,16 @@ _add_server_monitor (test_fixture_t *tf)
 {
    uint32_t id;
    const mongoc_uri_t *uri;
+   mc_tpld_modification tdmod = mc_tpld_modify_begin (tf->client->topology);
 
    uri = mock_server_get_uri (tf->server);
-   bson_mutex_lock (&tf->client->topology->tpld_modification_mtx);
    /* remove the server description from the topology description. */
    mongoc_topology_description_add_server (
-      mc_tpld_unsafe_get_mutable (tf->client->topology),
-      mongoc_uri_get_hosts (uri)->host_and_port,
-      &id);
+      tdmod.new_td, mongoc_uri_get_hosts (uri)->host_and_port, &id);
    /* add the server monitor from the set of server monitors. */
-   _mongoc_topology_background_monitoring_reconcile (
-      tf->client->topology, mc_tpld_unsafe_get_mutable (tf->client->topology));
-   bson_mutex_unlock (&tf->client->topology->tpld_modification_mtx);
+   _mongoc_topology_background_monitoring_reconcile (tf->client->topology,
+                                                     tdmod.new_td);
+   mc_tpld_modify_commit (tdmod);
 }
 
 static void

@@ -169,10 +169,13 @@ test_loadbalanced_sessions_do_not_expire (void *unused)
    bson_error_t error;
    bson_t *session1_lsid;
    bson_t *session2_lsid;
+   mc_tpld_modification tdmod;
 
    client = test_framework_new_default_client ();
    /* Mock a timeout so session expiration applies. */
-   mc_tpld_unsafe_get_mutable (client->topology)->session_timeout_minutes = 1;
+   tdmod = mc_tpld_modify_begin (client->topology);
+   tdmod.new_td->session_timeout_minutes = 1;
+   mc_tpld_modify_commit (tdmod);
 
    /* Start two sessions, to ensure that pooled sessions remain in the pool when
     * the pool is accessed. */

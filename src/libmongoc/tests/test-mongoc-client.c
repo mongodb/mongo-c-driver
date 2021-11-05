@@ -1876,12 +1876,12 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    mongoc_topology_t *topology;
-   mongoc_topology_description_t *td;
    mongoc_read_prefs_t *primary_pref;
    uint32_t discovered_nodes_len;
    bson_t reply;
    bson_error_t error;
    uint32_t id;
+   mc_shared_tpld td = MC_SHARED_TPLD_NULL;
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -1954,14 +1954,15 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
       bson_destroy (&reply);
 
       /* td may be invalidated by client_command_simple */
-      td = mc_tpld_unsafe_get_mutable (topology);
-      ASSERT_CMPINT (
-         discovered_nodes_len, ==, (int) mc_tpld_servers_const (td)->items_len);
+      mc_tpld_renew_ref (&td, topology);
+      ASSERT_CMPINT (discovered_nodes_len,
+                     ==,
+                     (int) mc_tpld_servers_const (td.ptr)->items_len);
 
       if (rs) {
-         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
+         ASSERT_CMPINT (td.ptr->type, ==, MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
       } else {
-         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_SHARDED);
+         ASSERT_CMPINT (td.ptr->type, ==, MONGOC_TOPOLOGY_SHARDED);
       }
 
       if (pooled) {
@@ -1971,16 +1972,16 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    }
 
    if (connection_option == RECONNECT) {
-      id = mongoc_set_find_id (mc_tpld_servers_const (td),
+      id = mongoc_set_find_id (mc_tpld_servers_const (td.ptr),
                                host_equals,
                                (void *) mock_server_get_host_and_port (server));
       ASSERT_CMPINT (id, !=, 0);
       _mongoc_topology_invalidate_server (topology, id);
-      td = mc_tpld_unsafe_get_mutable (topology);
+      mc_tpld_renew_ref (&td, topology);
       if (rs) {
-         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
+         ASSERT_CMPINT (td.ptr->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
       } else {
-         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_SHARDED);
+         ASSERT_CMPINT (td.ptr->type, ==, MONGOC_TOPOLOGY_SHARDED);
       }
 
       ASSERT_OR_PRINT (mongoc_client_command_simple (client,
@@ -1994,9 +1995,10 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
       bson_destroy (&reply);
 
       /* td may be invalidated by client_command_simple */
-      td = mc_tpld_unsafe_get_mutable (topology);
-      ASSERT_CMPINT (
-         discovered_nodes_len, ==, (int) mc_tpld_servers_const (td)->items_len);
+      mc_tpld_renew_ref (&td, topology);
+      ASSERT_CMPINT (discovered_nodes_len,
+                     ==,
+                     (int) mc_tpld_servers_const (td.ptr)->items_len);
 
       if (pooled) {
          ASSERT_CMPINT ((int) client->cluster.nodes->items_len, ==, 1);
@@ -2021,6 +2023,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    }
 
    mock_server_destroy (server);
+   mc_tpld_drop_ref (&td);
 }
 
 
@@ -3950,6 +3953,7 @@ test_mongoc_client_recv_network_error (void)
    mongoc_rpc_t rpc;
    mongoc_buffer_t buffer;
    mongoc_server_stream_t *stream;
+   mc_shared_tpld td;
 
    server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
@@ -3988,8 +3992,8 @@ test_mongoc_client_recv_network_error (void)
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (!_mongoc_client_recv (client, &rpc, &buffer, stream, &error));
 
-   sd = mongoc_topology_description_server_by_id_const (
-      mc_tpld_unsafe_get_mutable (client->topology), 1, &error);
+   td = mc_tpld_take_ref (client->topology);
+   sd = mongoc_topology_description_server_by_id_const (td.ptr, 1, &error);
    ASSERT_OR_PRINT (sd, error);
    ASSERT_CMPINT (
       mc_tpl_sd_get_generation (sd, &kZeroServiceId), ==, generation + 1);
@@ -3998,6 +4002,7 @@ test_mongoc_client_recv_network_error (void)
    mongoc_client_destroy (client);
    _mongoc_buffer_destroy (&buffer);
    mongoc_server_stream_cleanup (stream);
+   mc_tpld_drop_ref (&td);
 }
 
 void

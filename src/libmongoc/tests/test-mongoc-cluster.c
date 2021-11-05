@@ -45,15 +45,17 @@ test_get_max_bson_obj_size (void)
    mongoc_client_t *client;
    int32_t max_bson_obj_size = 16;
    uint32_t id;
+   mc_tpld_modification tdmod;
 
    /* single-threaded */
    client = test_framework_new_default_client ();
    BSON_ASSERT (client);
 
    id = server_id_for_reads (&client->cluster);
-   sd = mongoc_set_get (
-      mc_tpld_servers (mc_tpld_unsafe_get_mutable (client->topology)), id);
+   tdmod = mc_tpld_modify_begin (client->topology);
+   sd = mongoc_set_get (mc_tpld_servers (tdmod.new_td), id);
    sd->max_bson_obj_size = max_bson_obj_size;
+   mc_tpld_modify_commit (tdmod);
    BSON_ASSERT (max_bson_obj_size ==
                 mongoc_cluster_get_max_bson_obj_size (&client->cluster));
 
@@ -82,14 +84,16 @@ test_get_max_msg_size (void)
    mongoc_client_t *client;
    int32_t max_msg_size = 32;
    uint32_t id;
+   mc_tpld_modification tdmod;
 
    /* single-threaded */
    client = test_framework_new_default_client ();
    id = server_id_for_reads (&client->cluster);
 
-   sd = mongoc_set_get (
-      mc_tpld_servers (mc_tpld_unsafe_get_mutable (client->topology)), id);
+   tdmod = mc_tpld_modify_begin (client->topology);
+   sd = mongoc_set_get (mc_tpld_servers (tdmod.new_td), id);
    sd->max_msg_size = max_msg_size;
+   mc_tpld_modify_commit (tdmod);
    BSON_ASSERT (max_msg_size ==
                 mongoc_cluster_get_max_msg_size (&client->cluster));
 
@@ -1838,6 +1842,7 @@ test_cluster_stream_invalidation_single (void)
    mongoc_server_description_t *sd;
    bson_error_t error;
    mongoc_server_stream_t *stream;
+   mc_tpld_modification tdmod;
 
    client = test_framework_new_default_client ();
    /* Select a server to start monitoring. */
@@ -1851,10 +1856,10 @@ test_cluster_stream_invalidation_single (void)
       &client->cluster, NULL /* session */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
+   tdmod = mc_tpld_modify_begin (client->topology);
    _mongoc_topology_description_clear_connection_pool (
-      mc_tpld_unsafe_get_mutable (client->topology),
-      mongoc_server_description_id (sd),
-      &kZeroServiceId);
+      tdmod.new_td, mongoc_server_description_id (sd), &kZeroServiceId);
+   mc_tpld_modify_commit (tdmod);
    BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);
 
@@ -1888,6 +1893,7 @@ test_cluster_stream_invalidation_pooled (void)
    mongoc_server_description_t *sd;
    bson_error_t error;
    mongoc_server_stream_t *stream;
+   mc_tpld_modification tdmod;
 
    pool = test_framework_new_default_client_pool ();
    client = mongoc_client_pool_pop (pool);
@@ -1902,10 +1908,10 @@ test_cluster_stream_invalidation_pooled (void)
       &client->cluster, NULL /* session */, NULL /* reply */, &error);
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (mongoc_cluster_stream_valid (&client->cluster, stream));
+   tdmod = mc_tpld_modify_begin (client->topology);
    _mongoc_topology_description_clear_connection_pool (
-      mc_tpld_unsafe_get_mutable (client->topology),
-      mongoc_server_description_id (sd),
-      &kZeroServiceId);
+      tdmod.new_td, mongoc_server_description_id (sd), &kZeroServiceId);
+   mc_tpld_modify_commit (tdmod);
    BSON_ASSERT (!mongoc_cluster_stream_valid (&client->cluster, stream));
    mongoc_server_stream_cleanup (stream);
 
