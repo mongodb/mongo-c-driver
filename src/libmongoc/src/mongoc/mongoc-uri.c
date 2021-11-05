@@ -3118,10 +3118,14 @@ mongoc_uri_finalize_loadbalanced (const mongoc_uri_t *uri, bson_error_t *error)
       return true;
    }
 
-   if (!uri->hosts || (uri->hosts && uri->hosts->next)) {
-      MONGOC_URI_ERROR (error,
-                        "URI with \"%s\" enabled must contain exactly one host",
-                        MONGOC_URI_LOADBALANCED);
+   /* Load Balancer Spec: When `loadBalanced=true` is provided in the connection
+    * string, the driver MUST throw an exception if the connection string
+    * contains more than one host/port. */
+   if (uri->hosts && uri->hosts->next) {
+      MONGOC_URI_ERROR (
+         error,
+         "URI with \"%s\" enabled must must not contain more than one host",
+         MONGOC_URI_LOADBALANCED);
       return false;
    }
 
