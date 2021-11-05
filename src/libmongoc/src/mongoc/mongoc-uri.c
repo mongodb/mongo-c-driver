@@ -1132,7 +1132,8 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
                                MONGOC_ERROR_COMMAND,
                                MONGOC_ERROR_COMMAND_INVALID_ARG,
                                "Failed to set %s to %d",
-                               canon, bval);
+                               canon,
+                               bval);
                return false;
             }
          } else {
@@ -2316,8 +2317,7 @@ mongoc_uri_unescape (const char *escaped_string)
 #else
              (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
-             ||
-             0 == hex) {
+             || 0 == hex) {
             bson_string_free (str, true);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
