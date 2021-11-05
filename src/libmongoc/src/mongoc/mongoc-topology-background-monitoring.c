@@ -67,7 +67,7 @@ static BSON_THREAD_FUN (srv_polling_run, topology_void)
        * topology srv_polling_mtx for the scan. The topology may have shut
        * down in that time. */
       bson_mutex_lock (&topology->srv_polling_mtx);
-      if (bson_atomic_int_fetch ((int *) &topology->scanner_state,
+      if (bson_atomic_int_fetch (&topology->scanner_state,
                                  bson_memory_order_relaxed) !=
           MONGOC_TOPOLOGY_SCANNER_BG_RUNNING) {
          bson_mutex_unlock (&topology->srv_polling_mtx);
