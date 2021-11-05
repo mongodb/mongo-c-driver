@@ -285,6 +285,7 @@ test_topology_pool_clear (void)
 
    uri = mongoc_uri_new ("mongodb://localhost:27017,localhost:27018");
    topology = mongoc_topology_new (uri, true);
+   tdmod = mc_tpld_modify_begin (topology);
 
    ASSERT_CMPUINT32 (0,
                      ==,
