@@ -129,6 +129,7 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
    BSON_ASSERT (dst);
 
    bson_oid_copy (&src->topology_id, &dst->topology_id);
+   bson_oid_copy (&src->max_election_id, &dst->max_election_id);
    dst->opened = src->opened;
    dst->type = src->type;
    dst->heartbeat_msec = src->heartbeat_msec;
