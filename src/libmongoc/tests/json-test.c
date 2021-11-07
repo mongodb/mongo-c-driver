@@ -1404,7 +1404,6 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
    bson_error_t error;
    bool ret;
    bson_t extra;
-   bson_t tls_opts = BSON_INITIALIZER;
 
    if (!bson_has_field (test, "clientOptions.autoEncryptOpts")) {
       return;
@@ -1415,6 +1414,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 
    if (bson_iter_init_find (&iter, &opts, "kmsProviders")) {
       bson_t kms_providers;
+      bson_t tls_opts = BSON_INITIALIZER;
       bson_t tmp;
 
       bson_iter_bson (&iter, &tmp);
