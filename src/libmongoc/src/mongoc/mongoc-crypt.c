@@ -381,10 +381,6 @@ _state_need_mongo_keys (_state_machine_t *state_machine, bson_error_t *error)
    /* 2. Feed all resulting documents back (if any) with repeated calls to
     * mongocrypt_ctx_mongo_feed. */
    while (mongoc_cursor_next (cursor, &key_bson)) {
-      char *doc = bson_as_json (key_bson, NULL);
-      MONGOC_DEBUG ("_state_need_mongo_keys got document: %s", doc);
-      bson_free (doc);
-
       mongocrypt_binary_destroy (key_bin);
       key_bin = mongocrypt_binary_new_from_data (
          (uint8_t *) bson_get_data (key_bson), key_bson->len);
@@ -613,25 +609,6 @@ fail:
    return ret;
 }
 
-static const char *state_to_string (mongocrypt_ctx_state_t state) {
-   switch (state) {
-      case MONGOCRYPT_CTX_ERROR:
-      return "MONGOCRYPT_CTX_ERROR";
-      case MONGOCRYPT_CTX_NEED_MONGO_COLLINFO:
-      return "MONGOCRYPT_CTX_NEED_MONGO_COLLINFO";
-      case MONGOCRYPT_CTX_NEED_MONGO_MARKINGS:
-      return "MONGOCRYPT_CTX_NEED_MONGO_MARKINGS";
-      case MONGOCRYPT_CTX_NEED_MONGO_KEYS:
-      return "MONGOCRYPT_CTX_NEED_MONGO_KEYS";
-      case MONGOCRYPT_CTX_NEED_KMS:
-      return "MONGOCRYPT_CTX_NEED_KMS";
-      case MONGOCRYPT_CTX_READY:
-      return "MONGOCRYPT_CTX_READY";
-      case MONGOCRYPT_CTX_DONE:
-      return "MONGOCRYPT_CTX_DONE";
-   }
-}
-
 /*--------------------------------------------------------------------------
  *
  * _mongoc_cse_run_state_machine --
@@ -654,7 +631,6 @@ _state_machine_run (_state_machine_t *state_machine,
 
    bson_init (result);
    while (true) {
-      MONGOC_DEBUG ("%s: state is %s\n", state_machine->db_name ? state_machine->db_name : "NULL", state_to_string (mongocrypt_ctx_state (state_machine->ctx)));
       switch (mongocrypt_ctx_state (state_machine->ctx)) {
       default:
       case MONGOCRYPT_CTX_ERROR:

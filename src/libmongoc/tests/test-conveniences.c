@@ -121,7 +121,7 @@ tmp_bson (const char *json, ...)
       doc = bson_new_from_json ((const uint8_t *) double_quoted, -1, &error);
 
       if (!doc) {
-         fprintf (stderr, "%s\n", error.message);
+         fprintf (stderr, "%s: %s\n", error.message, json);
          abort ();
       }
 

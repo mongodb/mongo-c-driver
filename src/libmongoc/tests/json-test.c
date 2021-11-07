@@ -1708,8 +1708,6 @@ run_json_general_test (const json_test_config_t *config)
          continue;
       }
 
-      MONGOC_DEBUG ("running test: %s", description);
-
       if (bson_has_field (&test, "skipReason")) {
          fprintf (stderr,
                   " - %s SKIPPED, reason: %s\n",

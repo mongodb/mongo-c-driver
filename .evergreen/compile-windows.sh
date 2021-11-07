@@ -130,9 +130,9 @@ export MONGOC_TEST_SKIP_LIVE=on
 export MONGOC_TEST_SKIP_SLOW=on
 
 # We are done here if we don't want to run the tests.
-# if [ "$SKIP_MOCK_TESTS" = "ON" ]; then
-exit 0
-# fi
+if [ "$SKIP_MOCK_TESTS" = "ON" ]; then
+   exit 0
+fi
 
 export MONGOC_TEST_SERVER_LOG=stdout
 

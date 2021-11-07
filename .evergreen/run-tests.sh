@@ -1,6 +1,5 @@
 #!/bin/sh
 set -o errexit  # Exit the script with error if any of the commands fail
-set -o xtrace
 
 
 COMPRESSORS=${COMPRESSORS:-nocompressors}
@@ -119,9 +118,6 @@ check_mongocryptd() {
    fi
 }
 
-# TODO: run all tests.
-TEST_ARGS="$TEST_ARGS -l /client_side_encryption/*"
-
 export MONGOC_TEST_MONITORING_VERBOSE=on
 
 # Ensure mock KMS servers are running before starting tests.
@@ -176,7 +172,7 @@ case "$OS" in
       check_mongocryptd
 
       chmod +x src/libmongoc/Debug/test-libmongoc.exe
-      ./src/libmongoc/Debug/test-libmongoc.exe --no-fork $TEST_ARGS -d
+      ./src/libmongoc/Debug/test-libmongoc.exe $TEST_ARGS -d
       ;;
 
    *)

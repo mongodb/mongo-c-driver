@@ -153,7 +153,7 @@ succeeded_cb (const mongoc_apm_command_succeeded_t *event)
       char *reply_json;
 
       reply_json = bson_as_canonical_extended_json (event->reply, NULL);
-      MONGOC_DEBUG ("<-- %s COMMAND SUCCEEDED: %s\n", mongoc_apm_command_succeeded_get_command_name (event), reply_json);
+      MONGOC_DEBUG ("<-- COMMAND SUCCEEDED: %s\n", reply_json);
       bson_free (reply_json);
    }
 
