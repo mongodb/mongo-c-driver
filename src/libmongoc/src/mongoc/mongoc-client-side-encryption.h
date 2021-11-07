@@ -57,8 +57,8 @@ mongoc_auto_encryption_opts_set_kms_providers (
    mongoc_auto_encryption_opts_t *opts, const bson_t *kms_providers);
 
 MONGOC_EXPORT (void)
-mongoc_auto_encryption_opts_set_tls_opts (
-   mongoc_auto_encryption_opts_t *opts, const bson_t *tls_opts);
+mongoc_auto_encryption_opts_set_tls_opts (mongoc_auto_encryption_opts_t *opts,
+                                          const bson_t *tls_opts);
 
 MONGOC_EXPORT (void)
 mongoc_auto_encryption_opts_set_schema_map (mongoc_auto_encryption_opts_t *opts,

@@ -260,14 +260,14 @@ _make_local_kms_provider (bson_t *kms_providers)
 }
 
 static bson_t *
-_make_kmip_kms_provider (bson_t *kms_providers) {
+_make_kmip_kms_provider (bson_t *kms_providers)
+{
    if (!kms_providers) {
       kms_providers = bson_new ();
    }
 
-   bson_concat (
-      kms_providers,
-      tmp_bson ("{ 'kmip': { 'endpoint': 'localhost:5698' } }"));
+   bson_concat (kms_providers,
+                tmp_bson ("{ 'kmip': { 'endpoint': 'localhost:5698' } }"));
 
 
    return kms_providers;
@@ -589,8 +589,8 @@ test_datakey_and_double_encryption_creating_and_using (
                    "'global','keyRing': 'key-ring-csfle','keyName': "
                    "'key-name-csfle'}"));
    } else if (0 == strcmp (kms_provider, "kmip")) {
-      mongoc_client_encryption_datakey_opts_set_masterkey (
-         opts, tmp_bson ("{}"));
+      mongoc_client_encryption_datakey_opts_set_masterkey (opts,
+                                                           tmp_bson ("{}"));
    }
 
    altname = bson_strdup_printf ("%s_altname", kms_provider);
@@ -1061,9 +1061,8 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
                           "'endpoint': 'oauth2.googleapis.com:443'}}",
                           mongoc_test_gcp_email,
                           mongoc_test_gcp_privatekey));
-   bson_concat (
-      kms_providers,
-      tmp_bson ("{'kmip': { 'endpoint': 'localhost:5698' }}"));
+   bson_concat (kms_providers,
+                tmp_bson ("{'kmip': { 'endpoint': 'localhost:5698' }}"));
    tls_opts = tmp_bson (
       "{'kmip': {  'tlsCAFile': '%s', 'tlsCertificateKeyFile': '%s' }}",
       mongoc_test_kmip_tls_ca_file,
@@ -1182,7 +1181,8 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Case 2: Custom endpoint, with the same as the default. Expect to succeed */
+   /* Case 2: Custom endpoint, with the same as the default. Expect to succeed
+    */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("region",
@@ -1210,7 +1210,8 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Case 3: Custom endpoint, with the same as the default but port included. Expect to
+   /* Case 3: Custom endpoint, with the same as the default but port included.
+    * Expect to
     * succeed */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
@@ -1239,7 +1240,8 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Case 4: Custom endpoint, with the same as the default but wrong port included.
+   /* Case 4: Custom endpoint, with the same as the default but wrong port
+    * included.
     * Expect to fail with socket error */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
@@ -1509,7 +1511,6 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (datakey_opts);
    mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);
    mongoc_client_destroy (keyvault_client);
-   
 }
 
 typedef struct {
@@ -1839,7 +1840,8 @@ _test_corpus (bool local_schema)
    client_encryption_opts = mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
                                                     kms_providers);
-   mongoc_client_encryption_opts_set_tls_opts (client_encryption_opts, tls_opts);
+   mongoc_client_encryption_opts_set_tls_opts (client_encryption_opts,
+                                               tls_opts);
    mongoc_client_encryption_opts_set_keyvault_namespace (
       client_encryption_opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
@@ -2616,9 +2618,7 @@ test_kms_tls_cert_wrong_host (void *unused)
    mongoc_client_destroy (client);
 }
 
-typedef enum {
-   NO_TLS, WITH_TLS, INVALID_HOSTNAME, EXPIRED
-} tls_test_ce_t;
+typedef enum { NO_TLS, WITH_TLS, INVALID_HOSTNAME, EXPIRED } tls_test_ce_t;
 static mongoc_client_encryption_t *
 _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
                                   tls_test_ce_t test_ce)
@@ -2869,10 +2869,8 @@ test_kms_tls_options (void *unused)
                 "'127.0.0.1:8002' }"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption_no_tls, "aws", dkopts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_SOCKET,
-                          "");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
@@ -2927,10 +2925,8 @@ test_kms_tls_options (void *unused)
          "{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption_no_tls, "azure", dkopts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_SOCKET,
-                          "");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
@@ -2979,10 +2975,8 @@ test_kms_tls_options (void *unused)
                 "'keyName': 'kn' }"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption_no_tls, "gcp", dkopts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_SOCKET,
-                          "");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
@@ -3029,10 +3023,8 @@ test_kms_tls_options (void *unused)
                                                         tmp_bson ("{}"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption_no_tls, "kmip", dkopts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_STREAM,
-                          MONGOC_ERROR_STREAM_SOCKET,
-                          "");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 

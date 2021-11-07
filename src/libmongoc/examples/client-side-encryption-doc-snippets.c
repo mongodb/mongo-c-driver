@@ -3,7 +3,9 @@
 #include <stdlib.h>
 
 /* Includes code snippets for RST documentation. */
-int main (int argc, char** argv) {
+int
+main (int argc, char **argv)
+{
    mongoc_init ();
 
    {

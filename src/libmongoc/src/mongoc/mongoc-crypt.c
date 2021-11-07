@@ -472,7 +472,7 @@ _state_need_kms (_state_machine_t *state_machine, bson_error_t *error)
    while (kms_ctx) {
       mongoc_iovec_t iov;
       const mongoc_ssl_opt_t *ssl_opt;
-      const char* provider;
+      const char *provider;
 
       provider = mongocrypt_kms_ctx_get_kms_provider (kms_ctx, NULL);
 
@@ -868,8 +868,7 @@ _mongoc_crypt_new (const bson_t *kms_providers,
       crypt->handle, _log_callback, NULL /* context */);
 
    kms_providers_bin = mongocrypt_binary_new_from_data (
-      (uint8_t *) bson_get_data (kms_providers),
-      kms_providers->len);
+      (uint8_t *) bson_get_data (kms_providers), kms_providers->len);
    if (!mongocrypt_setopt_kms_providers (crypt->handle, kms_providers_bin)) {
       _crypt_check_error (crypt->handle, error, true);
       goto fail;

@@ -120,8 +120,9 @@ mongoc_auto_encryption_opts_set_kms_providers (
 }
 
 void
-mongoc_auto_encryption_opts_set_tls_opts (
-   mongoc_auto_encryption_opts_t *opts, const bson_t *tls_opts) {
+mongoc_auto_encryption_opts_set_tls_opts (mongoc_auto_encryption_opts_t *opts,
+                                          const bson_t *tls_opts)
+{
    if (!opts) {
       return;
    }
@@ -243,7 +244,8 @@ mongoc_client_encryption_opts_set_kms_providers (
 
 void
 mongoc_client_encryption_opts_set_tls_opts (
-   mongoc_client_encryption_opts_t *opts, const bson_t *tls_opts) {
+   mongoc_client_encryption_opts_t *opts, const bson_t *tls_opts)
+{
    if (!opts) {
       return;
    }
@@ -1275,8 +1277,8 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
       GOTO (fail);
    }
 
-   client->topology->crypt =
-      _mongoc_crypt_new (opts->kms_providers, opts->schema_map, opts->tls_opts, error);
+   client->topology->crypt = _mongoc_crypt_new (
+      opts->kms_providers, opts->schema_map, opts->tls_opts, error);
    if (!client->topology->crypt) {
       GOTO (fail);
    }
@@ -1403,8 +1405,8 @@ _mongoc_cse_client_pool_enable_auto_encryption (
       GOTO (fail);
    }
 
-   topology->crypt =
-      _mongoc_crypt_new (opts->kms_providers, opts->schema_map, opts->tls_opts, error);
+   topology->crypt = _mongoc_crypt_new (
+      opts->kms_providers, opts->schema_map, opts->tls_opts, error);
    if (!topology->crypt) {
       GOTO (fail);
    }
@@ -1485,8 +1487,8 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    mongoc_collection_set_write_concern (client_encryption->keyvault_coll, wc);
 
    client_encryption->kms_providers = bson_copy (opts->kms_providers);
-   client_encryption->crypt =
-      _mongoc_crypt_new (opts->kms_providers, NULL /* schema_map */, opts->tls_opts, error);
+   client_encryption->crypt = _mongoc_crypt_new (
+      opts->kms_providers, NULL /* schema_map */, opts->tls_opts, error);
    if (!client_encryption->crypt) {
       goto fail;
    }
