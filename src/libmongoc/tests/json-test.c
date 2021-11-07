@@ -1404,6 +1404,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
    bson_error_t error;
    bool ret;
    bson_t extra;
+   bson_t tls_opts = BSON_INITIALIZER;
 
    if (!bson_has_field (test, "clientOptions.autoEncryptOpts")) {
       return;
@@ -1527,11 +1528,13 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 
          bson_concat (
             &kms_providers,
-            tmp_bson ("{ 'kmip': { 'endpoint': '%s', 'tls': {  'tlsCAFile': "
-                      "'%s', 'tlsCertificateKeyFile': '%s' } } }",
-                      kmip_endpoint,
-                      kmip_tls_ca_file,
-                      kmip_tls_certificate_key_file));
+            tmp_bson ("{ 'kmip': { 'endpoint': '%s' }}", kmip_endpoint));
+
+         bson_concat (&tls_opts,
+                      tmp_bson ("{'kmip': {  'tlsCAFile': '%s', "
+                                "'tlsCertificateKeyFile': '%s' } }",
+                                kmip_tls_ca_file,
+                                kmip_tls_certificate_key_file));
 
          bson_free (kmip_endpoint);
          bson_free (kmip_tls_ca_file);
@@ -1540,7 +1543,9 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 
       mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                      &kms_providers);
+      mongoc_auto_encryption_opts_set_tls_opts (auto_encryption_opts, &tls_opts);
       bson_destroy (&kms_providers);
+      bson_destroy (&tls_opts);
    }
 
    if (bson_iter_init_find (&iter, &opts, "schemaMap")) {
