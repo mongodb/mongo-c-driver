@@ -248,7 +248,6 @@ For GCP:
 
 For KMIP:
 
-* `MONGOC_TEST_KMIP_ENDPOINT=<string>`
 * `MONGOC_TEST_KMIP_TLS_CA_FILE=<string>`
 * `MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE=<string>`
 
@@ -257,14 +256,21 @@ start mongocryptd on port 27020 and set the following:
 
 * `MONGOC_TEST_MONGOCRYPTD_BYPASS_SPAWN=on`
 
-KMS TLS tests for Client-Side Field Level Encryption require mock KMS servers to be running in the background according to the instructions given in the Client Side Encryption Tests specification.
-The set of mock KMS servers running in the background and their corresponding port number, CA file, and cert file must be as follows:
+KMS TLS tests for Client-Side Field Level Encryption require mock KMS servers to be running in the background.
 
-| Port | CA File | Cert File |
-| --- | --- | --- |
-| 7999 | ca.pem | server.pem |
-| 8000 | ca.pem | expired.pem |
-| 8001 | ca.pem | wrong-host.pem |
+The [Setup instructions](https://github.com/mongodb/specifications/tree/master/source/client-side-encryption/tests#setup-3) given in the Client Side Encryption Tests specification provide additional information.
+
+The mock server scripts are located in the [mongodb-labs/drivers-evergreen-tools](https://github.com/mongodb-labs/drivers-evergreen-tools) in the [csfle directory](https://github.com/mongodb-labs/drivers-evergreen-tools/tree/master/.evergreen/csfle). The mock servers use certificates located in the [x509gen](https://github.com/mongodb-labs/drivers-evergreen-tools/tree/master/.evergreen/x509gen) directory.
+
+The set of mock KMS servers running in the background and their corresponding invocation command must be as follows:
+
+| Port | CA File | Cert File | Command |
+| --- | --- | --- | --- |
+| 7999 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 7999
+| 8000 | ca.pem | expired.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 8000
+| 8001 | ca.pem | wrong-host.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 8001
+| 8002 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8002 --require_client_cert
+| 5698 | ca.pem | server.pem | python -u kms_kmip_server.py
 
 KMS TLS tests for Client-Side Field Level Encryption can be skipped by defining:
 
