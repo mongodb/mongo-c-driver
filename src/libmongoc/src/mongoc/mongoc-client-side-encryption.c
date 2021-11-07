@@ -118,6 +118,15 @@ mongoc_auto_encryption_opts_set_kms_providers (
 }
 
 void
+mongoc_auto_encryption_opts_set_tls_opts (
+   mongoc_auto_encryption_opts_t *opts, const bson_t *tls_opts) {
+   if (!opts) {
+      return;
+   }
+   /* TODO */
+}
+
+void
 mongoc_auto_encryption_opts_set_schema_map (mongoc_auto_encryption_opts_t *opts,
                                             const bson_t *schema_map)
 {
@@ -222,6 +231,15 @@ mongoc_client_encryption_opts_set_kms_providers (
    if (kms_providers) {
       opts->kms_providers = bson_copy (kms_providers);
    }
+}
+
+void
+mongoc_client_encryption_opts_set_tls_opts (
+   mongoc_client_encryption_opts_t *opts, const bson_t *tls_opts) {
+   if (!opts) {
+      return;
+   }
+   /* TODO */
 }
 
 /*--------------------------------------------------------------------------

@@ -57,6 +57,10 @@ mongoc_auto_encryption_opts_set_kms_providers (
    mongoc_auto_encryption_opts_t *opts, const bson_t *kms_providers);
 
 MONGOC_EXPORT (void)
+mongoc_auto_encryption_opts_set_tls_opts (
+   mongoc_auto_encryption_opts_t *opts, const bson_t *tls_opts);
+
+MONGOC_EXPORT (void)
 mongoc_auto_encryption_opts_set_schema_map (mongoc_auto_encryption_opts_t *opts,
                                             const bson_t *schema_map);
 
@@ -93,6 +97,10 @@ mongoc_client_encryption_opts_set_keyvault_namespace (
 MONGOC_EXPORT (void)
 mongoc_client_encryption_opts_set_kms_providers (
    mongoc_client_encryption_opts_t *opts, const bson_t *kms_providers);
+
+MONGOC_EXPORT (void)
+mongoc_client_encryption_opts_set_tls_opts (
+   mongoc_client_encryption_opts_t *opts, const bson_t *tls_opts);
 
 MONGOC_EXPORT (mongoc_client_encryption_t *)
 mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
