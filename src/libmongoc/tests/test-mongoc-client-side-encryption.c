@@ -3018,6 +3018,54 @@ test_kms_tls_options (void *unused)
    mongoc_client_destroy (keyvault_client);
 }
 
+static void
+test_kms_tls_options_extra_rejected (void *unused)
+{
+   mongoc_client_encryption_t *ce;
+   mongoc_client_encryption_opts_t *ce_opts =
+      mongoc_client_encryption_opts_new ();
+   mongoc_client_t *keyvault_client;
+   bson_error_t error;
+   bson_t *kms_providers =
+      tmp_bson ("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}");
+
+   keyvault_client = test_framework_new_default_client ();
+
+   /* Test that the "local" KMS provider is rejected. */
+   ce_opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      ce_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (ce_opts, keyvault_client);
+   mongoc_client_encryption_opts_set_kms_providers (ce_opts, kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (
+      ce_opts, tmp_bson ("{'local': {'tlsCaFile': 'ca.pem'}}"));
+   ce = mongoc_client_encryption_new (ce_opts, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                          "TODO");
+   ASSERT (NULL == ce);
+   mongoc_client_encryption_opts_destroy (ce_opts);
+
+   /* Test that unsupported TLS options are rejected. */
+   ce_opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      ce_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (ce_opts, keyvault_client);
+   mongoc_client_encryption_opts_set_kms_providers (ce_opts, kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (
+      ce_opts, tmp_bson ("{'local': {'tlsInsecure': true}}"));
+   ce = mongoc_client_encryption_new (ce_opts, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                          "TODO");
+   ASSERT (NULL == ce);
+   mongoc_client_encryption_opts_destroy (ce_opts);
+
+   mongoc_client_destroy (keyvault_client);
+}
+
 /* Required CA certificates may not be registered on system. See BUILD-14068. */
 int
 test_framework_skip_kms_tls_tests (void)
@@ -3162,4 +3210,10 @@ test_client_side_encryption_install (TestSuite *suite)
          a TLS connection. */
       test_framework_skip_if_windows);
 
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/kms_tls_options/extra_rejected",
+                      test_kms_tls_options_extra_rejected,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption);
 }
