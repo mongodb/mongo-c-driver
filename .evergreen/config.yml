@@ -769,8 +769,7 @@ functions:
       script: |-
         set -o errexit
         if [ ! -d "drivers-evergreen-tools" ]; then
-            # TODO: switch back to "mongodb-labs" and remove "--branch kms_kmip_server.1353"
-            git clone git@github.com:kevinAlbs/drivers-evergreen-tools.git --branch kms_kmip_server.1353 --depth=1
+            git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
         fi
   run kms servers:
   - command: shell.exec

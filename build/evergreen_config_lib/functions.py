@@ -556,8 +556,7 @@ all_functions = OD([
     ('clone drivers-evergreen-tools', Function(
         shell_exec(r'''
         if [ ! -d "drivers-evergreen-tools" ]; then
-            # TODO: switch back to "mongodb-labs" and remove "--branch kms_kmip_server.1353"
-            git clone git@github.com:kevinAlbs/drivers-evergreen-tools.git --branch kms_kmip_server.1353 --depth=1
+            git clone git@github.com:mongodb-labs/drivers-evergreen-tools.git --depth=1
         fi
         ''', test=False)
     )),
