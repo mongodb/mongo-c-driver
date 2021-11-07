@@ -675,6 +675,10 @@ fail:
    return ret;
 }
 
+/* _parse_one_tls_opts parses one TLS document.
+ * @iter is an iterator at the start of a KMS provider key/value pair.
+ * @out_opt is written to on success, and left unmodified on error.
+ * Returns false and sets @error on error. */
 static bool
 _parse_one_tls_opts (bson_iter_t *iter,
                      mongoc_ssl_opt_t *out_opt,
@@ -749,6 +753,12 @@ fail:
    return ok;
 }
 
+/* _parse_all_tls_opts initializes TLS options for all KMS providers.
+ * @tls_opts is the BSON document passed through
+ * mongoc_client_encryption_opts_set_tls_opts or
+ * mongoc_auto_encryption_opts_set_tls_opts.
+ * Defaults to using mongoc_ssl_opt_get_default() if options are not passed for
+ * a provider. Returns false and sets @error on error. */
 static bool
 _parse_all_tls_opts (_mongoc_crypt_t *crypt,
                      const bson_t *tls_opts,
@@ -756,18 +766,6 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
 {
    bson_iter_t iter;
    bool ok = false;
-
-   if (!tls_opts) {
-      return true;
-   }
-
-   if (!bson_iter_init (&iter, tls_opts)) {
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "Error starting iteration of TLS options");
-      goto fail;
-   }
 
    _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
                              &crypt->aws_tls_opt,
@@ -785,6 +783,17 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
                              &crypt->kmip_tls_opt,
                              false /* copy internal */);
 
+   if (!tls_opts) {
+      return true;
+   }
+
+   if (!bson_iter_init (&iter, tls_opts)) {
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                      "Error starting iteration of TLS options");
+      goto fail;
+   }
 
    while (bson_iter_next (&iter)) {
       const char *key;
