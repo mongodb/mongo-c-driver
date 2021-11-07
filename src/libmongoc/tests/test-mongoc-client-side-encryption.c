@@ -261,24 +261,14 @@ _make_local_kms_provider (bson_t *kms_providers)
 
 static bson_t *
 _make_kmip_kms_provider (bson_t *kms_providers) {
-   char *kmip_endpoint;
-
    if (!kms_providers) {
       kms_providers = bson_new ();
    }
 
-   kmip_endpoint = test_framework_getenv ("MONGOC_TEST_KMIP_ENDPOINT");
-   if (!kmip_endpoint) {
-      test_error (
-         "Set MONGOC_TEST_KMIP_ENDPOINT to enable CSFLE tests.");
-   }
-
    bson_concat (
       kms_providers,
-      tmp_bson ("{ 'kmip': { 'endpoint': '%s' } }",
-                  kmip_endpoint));
+      tmp_bson ("{ 'kmip': { 'endpoint': 'localhost:5698' } }"));
 
-   bson_free (kmip_endpoint);
 
    return kms_providers;
 }
@@ -1048,8 +1038,6 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
       test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
    char *mongoc_test_gcp_privatekey =
       test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
-   char *mongoc_test_kmip_endpoint =
-      test_framework_getenv ("MONGOC_TEST_KMIP_ENDPOINT");
    char *mongoc_test_kmip_tls_ca_file =
       test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CA_FILE");
    char *mongoc_test_kmip_tls_certificate_key_file =
@@ -1075,7 +1063,7 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
                           mongoc_test_gcp_privatekey));
    bson_concat (
       kms_providers,
-      tmp_bson ("{'kmip': { 'endpoint': '%s' }}", mongoc_test_kmip_endpoint));
+      tmp_bson ("{'kmip': { 'endpoint': 'localhost:5698' }}"));
    tls_opts = tmp_bson (
       "{'kmip': {  'tlsCAFile': '%s', 'tlsCertificateKeyFile': '%s' }}",
       mongoc_test_kmip_tls_ca_file,
@@ -1137,7 +1125,6 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
    bson_free (mongoc_test_azure_client_secret);
    bson_free (mongoc_test_gcp_email);
    bson_free (mongoc_test_gcp_privatekey);
-   bson_free (mongoc_test_kmip_endpoint);
    bson_free (mongoc_test_kmip_tls_ca_file);
    bson_free (mongoc_test_kmip_tls_certificate_key_file);
 }
@@ -1157,7 +1144,6 @@ test_custom_endpoint (void *unused)
    bson_value_t ciphertext;
    bson_value_t plaintext;
    mongoc_client_encryption_encrypt_opts_t *encrypt_opts;
-   char *valid_kmip_endpoint = test_framework_getenv ("MONGOC_TEST_KMIP_ENDPOINT");
 
    keyvault_client = test_framework_new_default_client ();
 
@@ -1472,7 +1458,7 @@ test_custom_endpoint (void *unused)
    /* Case 11: KMIP overriding with valid endpoint. */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
-   masterkey = BCON_NEW ("keyId", "1", "endpoint", valid_kmip_endpoint);
+   masterkey = BCON_NEW ("keyId", "1", "endpoint", "localhost:5698");
    mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
                                                         masterkey);
    res = mongoc_client_encryption_create_datakey (
@@ -1523,7 +1509,6 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (datakey_opts);
    mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);
    mongoc_client_destroy (keyvault_client);
-   bson_free (valid_kmip_endpoint);
    
 }
 

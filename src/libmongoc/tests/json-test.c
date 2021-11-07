@@ -1509,26 +1509,21 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
       }
 
       if (bson_has_field (&opts, "kmsProviders.kmip")) {
-         char *kmip_endpoint;
          char *kmip_tls_ca_file;
          char *kmip_tls_certificate_key_file;
 
-         kmip_endpoint = test_framework_getenv ("MONGOC_TEST_KMIP_ENDPOINT");
          kmip_tls_ca_file =
             test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CA_FILE");
          kmip_tls_certificate_key_file =
             test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE");
-         if (!kmip_endpoint || !kmip_tls_ca_file ||
-             !kmip_tls_certificate_key_file) {
+         if (!kmip_tls_ca_file || !kmip_tls_certificate_key_file) {
             test_error (
-               "Set MONGOC_TEST_KMIP_ENDPOINT, MONGOC_TEST_KMIP_TLS_CA_FILE, "
-               "and MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE to enable "
-               "CSFLE tests.");
+               "Set MONGOC_TEST_KMIP_TLS_CA_FILE, and MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE to enable CSFLE tests.");
          }
 
          bson_concat (
             &kms_providers,
-            tmp_bson ("{ 'kmip': { 'endpoint': '%s' }}", kmip_endpoint));
+            tmp_bson ("{ 'kmip': { 'endpoint': 'localhost:5698' }}"));
 
          bson_concat (&tls_opts,
                       tmp_bson ("{'kmip': {  'tlsCAFile': '%s', "
@@ -1536,7 +1531,6 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
                                 kmip_tls_ca_file,
                                 kmip_tls_certificate_key_file));
 
-         bson_free (kmip_endpoint);
          bson_free (kmip_tls_ca_file);
          bson_free (kmip_tls_certificate_key_file);
       }

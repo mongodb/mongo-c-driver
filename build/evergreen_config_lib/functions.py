@@ -311,7 +311,6 @@ all_functions = OD([
           export MONGOC_TEST_GCP_EMAIL="${client_side_encryption_gcp_email}"
           export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
 
-          export MONGOC_TEST_KMIP_ENDPOINT=localhost:5698
           export MONGOC_TEST_KMIP_TLS_CA_FILE=../drivers-evergreen-tools/.evergreen/x509gen/ca.pem
           export MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE=../drivers-evergreen-tools/.evergreen/x509gen/client.pem
         fi
