@@ -3018,42 +3018,6 @@ test_kms_tls_options (void *unused)
    mongoc_client_destroy (keyvault_client);
 }
 
-/* test_kms_tls_options_doc_snippets includes small snippets of usage for RST
- * documentation. */
-static void
-test_kms_tls_options_doc_snippets (void *unused)
-{
-   {
-      /* BEGIN:mongoc_auto_encryption_opts_set_tls_opts. */
-      mongoc_auto_encryption_opts_t *ae_opts =
-         mongoc_auto_encryption_opts_new ();
-      bson_t *tls_opts = bson_new ();
-
-      BCON_APPEND (tls_opts, "kmip", "{", MONGOC_URI_TLSCAFILE, "ca1.pem", "}");
-      BCON_APPEND (tls_opts, "aws", "{", MONGOC_URI_TLSCAFILE, "ca2.pem", "}");
-      mongoc_auto_encryption_opts_set_tls_opts (ae_opts, tls_opts);
-      /* END:mongoc_auto_encryption_opts_set_tls_opts. */
-
-      bson_destroy (tls_opts);
-      mongoc_auto_encryption_opts_destroy (ae_opts);
-   }
-
-   {
-      /* BEGIN:mongoc_client_encryption_opts_set_tls_opts. */
-      mongoc_client_encryption_opts_t *ce_opts =
-         mongoc_client_encryption_opts_new ();
-      bson_t *tls_opts = bson_new ();
-
-      BCON_APPEND (tls_opts, "kmip", "{", MONGOC_URI_TLSCAFILE, "ca1.pem", "}");
-      BCON_APPEND (tls_opts, "aws", "{", MONGOC_URI_TLSCAFILE, "ca2.pem", "}");
-      mongoc_client_encryption_opts_set_tls_opts (ce_opts, tls_opts);
-      /* END:mongoc_client_encryption_opts_set_tls_opts. */
-
-      bson_destroy (tls_opts);
-      mongoc_client_encryption_opts_destroy (ce_opts);
-   }
-}
-
 /* Required CA certificates may not be registered on system. See BUILD-14068. */
 int
 test_framework_skip_kms_tls_tests (void)
@@ -3198,10 +3162,4 @@ test_client_side_encryption_install (TestSuite *suite)
          a TLS connection. */
       test_framework_skip_if_windows);
 
-   TestSuite_AddFull (suite,
-                      "/client_side_encryption/kms_tls_options/doc_snippets",
-                      test_kms_tls_options_doc_snippets,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_client_side_encryption);
 }

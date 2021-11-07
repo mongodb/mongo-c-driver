@@ -39,7 +39,7 @@ The BSON document for TLS options may contain the following keys:
 - ``MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD``
 - ``MONGOC_URI_TLSCAFILE``
 
-.. literalinclude:: ../tests/test-mongoc-client-side-encryption.c
+.. literalinclude:: ../examples/client-side-encryption-doc-snippets.c
    :caption: Example use
    :start-after: BEGIN:mongoc_client_encryption_opts_set_tls_opts
    :end-before: END:mongoc_client_encryption_opts_set_tls_opts
