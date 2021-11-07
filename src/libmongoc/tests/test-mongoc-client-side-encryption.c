@@ -2643,11 +2643,7 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
       test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
    char *mongoc_test_gcp_privatekey =
       test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
-   /* TODO: consider making a separate environment variable
-    * MONGOC_TEST_KMS_TLS_OPTIONS_CA_FILE */
    char *ca_file = test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CA_FILE");
-   /* TODO: consider making a separate environment variable
-    * MONGOC_TEST_KMS_TLS_OPTIONS_CERTIFICATE_KEY_FILE */
    char *certificate_key_file =
       test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE");
 
