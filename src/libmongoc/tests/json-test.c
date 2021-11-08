@@ -1514,8 +1514,8 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 
          kmip_tls_ca_file =
             test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
-         kmip_tls_certificate_key_file =
-            test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+         kmip_tls_certificate_key_file = test_framework_getenv (
+            "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
          if (!kmip_tls_ca_file || !kmip_tls_certificate_key_file) {
             test_error ("Set MONGOC_TEST_CSFLE_TLS_CA_FILE, and "
                         "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE to enable "
@@ -1526,7 +1526,7 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
                       tmp_bson ("{ 'kmip': { 'endpoint': 'localhost:5698' }}"));
 
          bson_concat (&tls_opts,
-                      tmp_bson ("{'kmip': {  'tlsCAFile': '%s', "
+                      tmp_bson ("{'kmip': { 'tlsCAFile': '%s', "
                                 "'tlsCertificateKeyFile': '%s' } }",
                                 kmip_tls_ca_file,
                                 kmip_tls_certificate_key_file));
