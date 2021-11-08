@@ -805,32 +805,42 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
          if (!_parse_one_tls_opts (&iter, &crypt->aws_tls_opt, error)) {
             goto fail;
          }
-      } else if (0 == strcmp (key, "azure")) {
+         continue;
+      }
+
+      if (0 == strcmp (key, "azure")) {
          _mongoc_ssl_opts_cleanup (&crypt->azure_tls_opt,
                                    false /* free internal */);
          if (!_parse_one_tls_opts (&iter, &crypt->azure_tls_opt, error)) {
             goto fail;
          }
-      } else if (0 == strcmp (key, "gcp")) {
+         continue;
+      }
+
+      if (0 == strcmp (key, "gcp")) {
          _mongoc_ssl_opts_cleanup (&crypt->gcp_tls_opt,
                                    false /* free internal */);
          if (!_parse_one_tls_opts (&iter, &crypt->gcp_tls_opt, error)) {
             goto fail;
          }
-      } else if (0 == strcmp (key, "kmip")) {
+         continue;
+      }
+
+      if (0 == strcmp (key, "kmip")) {
          _mongoc_ssl_opts_cleanup (&crypt->kmip_tls_opt,
                                    false /* free internal */);
          if (!_parse_one_tls_opts (&iter, &crypt->kmip_tls_opt, error)) {
             goto fail;
          }
-      } else {
-         bson_set_error (error,
-                         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                         "Cannot configure TLS options for KMS provider: %s",
-                         key);
-         goto fail;
+         continue;
       }
+
+      bson_set_error (error,
+                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                      "Cannot configure TLS options for KMS provider: %s",
+                      key);
+      goto fail;
    }
 
    ok = true;
