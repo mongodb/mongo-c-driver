@@ -1038,9 +1038,9 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
       test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
    char *mongoc_test_gcp_privatekey =
       test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
-   char *MONGOC_TEST_CSFLE_TLS_CA_FILE =
+   char *ca_file =
       test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
-   char *MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE =
+   char *certificate_key_file =
       test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
 
 
@@ -1065,8 +1065,8 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
                 tmp_bson ("{'kmip': { 'endpoint': 'localhost:5698' }}"));
    tls_opts = tmp_bson (
       "{'kmip': {  'tlsCAFile': '%s', 'tlsCertificateKeyFile': '%s' }}",
-      MONGOC_TEST_CSFLE_TLS_CA_FILE,
-      MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE);
+      ca_file,
+      certificate_key_file);
 
    kms_providers_invalid =
       tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s'}}",
@@ -1124,8 +1124,8 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
    bson_free (mongoc_test_azure_client_secret);
    bson_free (mongoc_test_gcp_email);
    bson_free (mongoc_test_gcp_privatekey);
-   bson_free (MONGOC_TEST_CSFLE_TLS_CA_FILE);
-   bson_free (MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE);
+   bson_free (ca_file);
+   bson_free (certificate_key_file);
 }
 
 static void
