@@ -2856,6 +2856,7 @@ test_kms_tls_options (void *unused)
       _tls_test_make_client_encryption (keyvault_client, INVALID_HOSTNAME);
 
    /* Case 1: AWS - no client cert. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -2871,6 +2872,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* AWS - with TLS. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -2888,6 +2890,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* AWS - expired. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -2902,6 +2905,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* AWS - invalid hostname. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -2916,6 +2920,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* Case 2: Azure - no client cert. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -2929,6 +2934,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* Azure - with TLS. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -2944,6 +2950,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* Azure - expired. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -2956,6 +2963,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* Azure - invalid hostname. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -2968,6 +2976,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* Case 3: GCP - no client cert. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -2981,6 +2990,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* GCP - with TLS. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -2996,6 +3006,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* GCP - expired. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -3008,6 +3019,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* GCP - invalid hostname. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (
       dkopts,
@@ -3020,6 +3032,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* Case 4: KMIP - no client cert. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
                                                         tmp_bson ("{}"));
@@ -3031,6 +3044,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* KMIP - with TLS. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
                                                         tmp_bson ("{}"));
@@ -3041,6 +3055,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* KMIP - expired. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
                                                         tmp_bson ("{}"));
@@ -3051,6 +3066,7 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
    /* KMIP - invalid hostname. */
+   memset (&error, 0, sizeof (bson_error_t));
    dkopts = mongoc_client_encryption_datakey_opts_new ();
    mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
                                                         tmp_bson ("{}"));
