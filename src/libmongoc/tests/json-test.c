@@ -1513,12 +1513,12 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          char *kmip_tls_certificate_key_file;
 
          kmip_tls_ca_file =
-            test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CA_FILE");
+            test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
          kmip_tls_certificate_key_file =
-            test_framework_getenv ("MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE");
+            test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
          if (!kmip_tls_ca_file || !kmip_tls_certificate_key_file) {
-            test_error ("Set MONGOC_TEST_KMIP_TLS_CA_FILE, and "
-                        "MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE to enable "
+            test_error ("Set MONGOC_TEST_CSFLE_TLS_CA_FILE, and "
+                        "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE to enable "
                         "CSFLE tests.");
          }
 

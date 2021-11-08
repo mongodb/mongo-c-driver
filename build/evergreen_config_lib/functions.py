@@ -311,8 +311,8 @@ all_functions = OD([
           export MONGOC_TEST_GCP_EMAIL="${client_side_encryption_gcp_email}"
           export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
 
-          export MONGOC_TEST_KMIP_TLS_CA_FILE=../drivers-evergreen-tools/.evergreen/x509gen/ca.pem
-          export MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE=../drivers-evergreen-tools/.evergreen/x509gen/client.pem
+          export MONGOC_TEST_CSFLE_TLS_CA_FILE=../drivers-evergreen-tools/.evergreen/x509gen/ca.pem
+          export MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE=../drivers-evergreen-tools/.evergreen/x509gen/client.pem
         fi
         export LOADBALANCED=${LOADBALANCED}
         export SINGLE_MONGOS_LB_URI="${SINGLE_MONGOS_LB_URI}"

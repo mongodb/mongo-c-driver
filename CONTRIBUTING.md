@@ -246,11 +246,6 @@ For GCP:
 * `MONGOC_TEST_GCP_EMAIL=<string>`
 * `MONGOC_TEST_GCP_PRIVATEKEY=<string>`
 
-For KMIP:
-
-* `MONGOC_TEST_KMIP_TLS_CA_FILE=<string>`
-* `MONGOC_TEST_KMIP_TLS_CERTIFICATE_KEY_FILE=<string>`
-
 Tests of Client-Side Field Level Encryption spawn an extra process, "mongocryptd", by default. To bypass this spawning,
 start mongocryptd on port 27020 and set the following:
 
@@ -271,6 +266,11 @@ The set of mock KMS servers running in the background and their corresponding in
 | 8001 | ca.pem | wrong-host.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 8001
 | 8002 | ca.pem | server.pem | python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8002 --require_client_cert
 | 5698 | ca.pem | server.pem | python -u kms_kmip_server.py
+
+The path to `ca.pem` and `client.pem` must be passed through the following environment variables:
+
+* `MONGOC_TEST_CSFLE_TLS_CA_FILE=<string>`
+* `MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE=<string>`
 
 KMS TLS tests for Client-Side Field Level Encryption can be skipped by defining:
 
