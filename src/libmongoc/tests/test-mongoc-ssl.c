@@ -115,7 +115,19 @@ test_mongoc_ssl_opts_from_bson (void)
       {
          "test unrecognized option",
          "{'foo': true }",
-         "unexpected option: foo" /* expect_error */,
+         "unexpected BOOL option: foo" /* expect_error */,
+         NULL /* pem_file */,
+         NULL /* pem_pwd */,
+         NULL /* ca_file */,
+         false /* weak_cert_validation */,
+         false /* allow_invalid_hostname */,
+         false /* disable_ocsp_endpoint_check */,
+         false /* disable_certificate_revocation_check */
+      },
+      {
+         "test wrong value type",
+         "{'tlsCaFile': true }",
+         "unexpected BOOL option: tlsCaFile" /* expect_error */,
          NULL /* pem_file */,
          NULL /* pem_pwd */,
          NULL /* ca_file */,
@@ -129,12 +141,11 @@ test_mongoc_ssl_opts_from_bson (void)
 
    for (test = tests; test->bson != NULL; test++) {
       mongoc_ssl_opt_t ssl_opt = {0};
-      bson_string_t *errmsg;
-      bool ok;
+      bson_string_t *errmsg = bson_string_new (NULL);
+      bool ok =
+         _mongoc_ssl_opts_from_bson (&ssl_opt, tmp_bson (test->bson), errmsg);
 
       MONGOC_DEBUG ("testcase: %s", test->bson);
-      errmsg = bson_string_new (NULL);
-      ok = _mongoc_ssl_opts_from_bson (&ssl_opt, tmp_bson (test->bson), errmsg);
       if (test->expect_error) {
          ASSERT_CONTAINS (errmsg->str, test->expect_error);
          ASSERT (!ok);
