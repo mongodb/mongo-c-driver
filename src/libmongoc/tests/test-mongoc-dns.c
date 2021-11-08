@@ -129,10 +129,15 @@ hosts_count (const bson_t *test)
    bson_iter_t hosts;
    int c = 0;
 
-   BSON_ASSERT (bson_iter_init_find (&iter, test, "hosts"));
-   BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
-   while (bson_iter_next (&hosts)) {
-      c++;
+   if (bson_iter_init_find (&iter, test, "hosts")) {
+      BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
+      while (bson_iter_next (&hosts)) {
+         c++;
+      }
+   }
+
+   else if (bson_iter_init_find (&iter, test, "numHosts")) {
+      c = bson_iter_as_int64 (&iter);
    }
 
    return c;
@@ -147,22 +152,36 @@ _host_list_matches (const bson_t *test, context_t *ctx)
    const char *host_and_port;
    bool ret = true;
 
-   BSON_ASSERT (bson_iter_init_find (&iter, test, "hosts"));
-   BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
+   if (bson_iter_init_find (&iter, test, "hosts")) {
+      BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
 
-   bson_mutex_lock (&ctx->mutex);
-   BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
-   while (bson_iter_next (&hosts)) {
-      host_and_port = bson_iter_utf8 (&hosts, NULL);
-      if (!host_list_contains (ctx->hosts, host_and_port)) {
-         ret = false;
-         break;
+      bson_mutex_lock (&ctx->mutex);
+      BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
+      while (bson_iter_next (&hosts)) {
+         host_and_port = bson_iter_utf8 (&hosts, NULL);
+         if (!host_list_contains (ctx->hosts, host_and_port)) {
+            ret = false;
+            break;
+         }
       }
+
+      _mongoc_host_list_destroy_all (ctx->hosts);
+      ctx->hosts = NULL;
+      bson_mutex_unlock (&ctx->mutex);
    }
 
-   _mongoc_host_list_destroy_all (ctx->hosts);
-   ctx->hosts = NULL;
-   bson_mutex_unlock (&ctx->mutex);
+   else if (bson_iter_init_find (&iter, test, "numHosts")) {
+      const int expected = bson_iter_as_int64 (&iter);
+      int actual = 0;
+
+      bson_mutex_lock (&ctx->mutex);
+      actual = _mongoc_host_list_length (ctx->hosts);
+      _mongoc_host_list_destroy_all (ctx->hosts);
+      ctx->hosts = NULL;
+      bson_mutex_unlock (&ctx->mutex);
+
+      ret = expected == actual;
+   }
 
    return ret;
 }
@@ -407,6 +426,14 @@ test_all_spec_tests (TestSuite *suite)
 
    test_framework_resolve_path (
       JSON_DIR "/initial_dns_seedlist_discovery/load-balanced", resolved);
+   install_json_test_suite_with_check (suite,
+                                       resolved,
+                                       test_dns,
+                                       test_dns_check_loadbalanced,
+                                       test_framework_skip_if_no_crypto);
+
+   test_framework_resolve_path (
+      JSON_DIR "/initial_dns_seedlist_discovery/sharded", resolved);
    install_json_test_suite_with_check (suite,
                                        resolved,
                                        test_dns,
