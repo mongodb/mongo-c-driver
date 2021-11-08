@@ -56,6 +56,7 @@ _mongoc_ssl_opts_cleanup (mongoc_ssl_opt_t *opt, bool free_internal);
  * from a BSON document. It is used to parse TLS options for the KMIP KMS
  * provider in CSFLE.
  * - ssl_opt must be a zero'd out ssl_opt struct.
+ * - errmsg must be an initialized bson_string_t.
  * - Returns false on error and appends to errmsg. */
 bool
 _mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt,
