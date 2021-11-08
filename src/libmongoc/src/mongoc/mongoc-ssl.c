@@ -23,6 +23,7 @@
 #include "mongoc-ssl-private.h"
 #include "mongoc-log.h"
 #include "mongoc-uri.h"
+#include "mongoc-util-private.h"
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
 #include "mongoc-openssl-private.h"
@@ -194,90 +195,72 @@ _mongoc_ssl_opts_from_bson (mongoc_ssl_opt_t *ssl_opt,
    ssl_opt->internal = bson_malloc0 (sizeof (_mongoc_internal_tls_opts_t));
 
    if (!bson_iter_init (&iter, bson)) {
-      bson_string_append (errmsg, "error iterating BSON SSL options");
+      bson_string_append (errmsg,
+                          "error initializing iterator to BSON SSL options");
       return false;
    }
 
    while (bson_iter_next (&iter)) {
       const char *key = bson_iter_key (&iter);
 
-      if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE)) {
-         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+      if (BSON_ITER_HOLDS_UTF8 (&iter)) {
+         if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE)) {
+            ssl_opt->pem_file = bson_strdup (bson_iter_utf8 (&iter, NULL));
+         } else if (0 == bson_strcasecmp (
+                            key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD)) {
+            ssl_opt->pem_pwd = bson_strdup (bson_iter_utf8 (&iter, NULL));
+         } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCAFILE)) {
+            ssl_opt->ca_file = bson_strdup (bson_iter_utf8 (&iter, NULL));
+         } else {
             bson_string_append_printf (
-               errmsg, "error, got non UTF-8 '%s'", key);
+               errmsg,
+               "unexpected %s option '%s'",
+               _mongoc_bson_type_to_str (bson_iter_type (&iter)),
+               key);
             return false;
          }
-         ssl_opt->pem_file = bson_strdup (bson_iter_utf8 (&iter, NULL));
-      } else if (0 == bson_strcasecmp (
-                         key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD)) {
-         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
+      } else if (BSON_ITER_HOLDS_BOOL (&iter)) {
+         if (0 ==
+             bson_strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES)) {
+            /* If MONGOC_URI_TLSINSECURE was parsed, weak_cert_validation must
+             * remain true. */
+            ssl_opt->weak_cert_validation =
+               ssl_opt->weak_cert_validation || bson_iter_bool (&iter);
+         } else if (0 == bson_strcasecmp (
+                            key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES)) {
+            /* If MONGOC_URI_TLSINSECURE was parsed, allow_invalid_hostname must
+             * remain true. */
+            ssl_opt->allow_invalid_hostname =
+               ssl_opt->allow_invalid_hostname || bson_iter_bool (&iter);
+         } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSINSECURE)) {
+            if (bson_iter_bool (&iter)) {
+               ssl_opt->weak_cert_validation = true;
+               ssl_opt->allow_invalid_hostname = true;
+            }
+         } else if (0 ==
+                    bson_strcasecmp (
+                       key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK)) {
+            ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)
+               ->tls_disable_certificate_revocation_check =
+               bson_iter_bool (&iter);
+         } else if (0 == bson_strcasecmp (
+                            key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK)) {
+            ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)
+               ->tls_disable_ocsp_endpoint_check = bson_iter_bool (&iter);
+         } else {
             bson_string_append_printf (
-               errmsg, "error, expected UTF-8 '%s'", key);
+               errmsg,
+               "unexpected %s option: %s",
+               _mongoc_bson_type_to_str (bson_iter_type (&iter)),
+               key);
             return false;
          }
-         ssl_opt->pem_pwd = bson_strdup (bson_iter_utf8 (&iter, NULL));
-      } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCAFILE)) {
-         if (!BSON_ITER_HOLDS_UTF8 (&iter)) {
-            bson_string_append_printf (
-               errmsg, "error, expected UTF-8 '%s'", key);
-            return false;
-         }
-         ssl_opt->ca_file = bson_strdup (bson_iter_utf8 (&iter, NULL));
-      } else if (0 == bson_strcasecmp (
-                         key, MONGOC_URI_TLSALLOWINVALIDCERTIFICATES)) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            bson_string_append_printf (
-               errmsg, "error, expected boolean '%s'", key);
-            return false;
-         }
-
-         /* If MONGOC_URI_TLSINSECURE was parsed, weak_cert_validation must
-          * remain true. */
-         ssl_opt->weak_cert_validation =
-            ssl_opt->weak_cert_validation || bson_iter_bool (&iter);
-      } else if (0 ==
-                 bson_strcasecmp (key, MONGOC_URI_TLSALLOWINVALIDHOSTNAMES)) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            bson_string_append_printf (
-               errmsg, "error, expected boolean '%s'", key);
-            return false;
-         }
-         /* If MONGOC_URI_TLSINSECURE was parsed, allow_invalid_hostname must
-          * remain true. */
-         ssl_opt->allow_invalid_hostname =
-            ssl_opt->allow_invalid_hostname || bson_iter_bool (&iter);
-      } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSINSECURE)) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            bson_string_append_printf (
-               errmsg, "error, expected boolean '%s'", key);
-            return false;
-         }
-
-         if (bson_iter_bool (&iter)) {
-            ssl_opt->weak_cert_validation = true;
-            ssl_opt->allow_invalid_hostname = true;
-         }
-      } else if (0 ==
-                 bson_strcasecmp (
-                    key, MONGOC_URI_TLSDISABLECERTIFICATEREVOCATIONCHECK)) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            bson_string_append_printf (
-               errmsg, "error, expected boolean '%s'", key);
-            return false;
-         }
-         ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)
-            ->tls_disable_certificate_revocation_check = bson_iter_bool (&iter);
-      } else if (0 == bson_strcasecmp (
-                         key, MONGOC_URI_TLSDISABLEOCSPENDPOINTCHECK)) {
-         if (!BSON_ITER_HOLDS_BOOL (&iter)) {
-            bson_string_append_printf (
-               errmsg, "error, expected boolean '%s'", key);
-            return false;
-         }
-         ((_mongoc_internal_tls_opts_t *) ssl_opt->internal)
-            ->tls_disable_ocsp_endpoint_check = bson_iter_bool (&iter);
       } else {
-         bson_string_append_printf (errmsg, "unexpected option: %s", key);
+         bson_string_append_printf (
+            errmsg,
+            "unexpected %s option: %s",
+            _mongoc_bson_type_to_str (bson_iter_type (&iter)),
+            key);
          return false;
       }
    }
