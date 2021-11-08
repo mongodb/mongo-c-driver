@@ -2842,6 +2842,8 @@ test_kms_tls_options (void *unused)
    mongoc_client_encryption_datakey_opts_t *dkopts;
    bson_error_t error;
    bool res;
+   const int mongocrypt_errno =
+      1; /* libmongocrypt returns all errors with code 1. */
 
    keyvault_client = test_framework_new_default_client ();
    client_encryption_no_client_cert =
@@ -2878,8 +2880,10 @@ test_kms_tls_options (void *unused)
                 "'127.0.0.1:8002' }"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption_with_tls, "aws", dkopts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "parse error");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          mongocrypt_errno,
+                          "parse error");
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
@@ -2932,8 +2936,10 @@ test_kms_tls_options (void *unused)
          "{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption_with_tls, "azure", dkopts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "HTTP status=404");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          mongocrypt_errno,
+                          "HTTP status=404");
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
@@ -2982,8 +2988,10 @@ test_kms_tls_options (void *unused)
                 "'keyName': 'kn' }"));
    res = mongoc_client_encryption_create_datakey (
       client_encryption_with_tls, "gcp", dkopts, &keyid, &error);
-   ASSERT_ERROR_CONTAINS (
-      error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "HTTP status=404");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          mongocrypt_errno,
+                          "HTTP status=404");
    ASSERT (!res);
    mongoc_client_encryption_datakey_opts_destroy (dkopts);
 
