@@ -1211,8 +1211,7 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
    /* Case 3: Custom endpoint, with the same as the default but port included.
-    * Expect to
-    * succeed */
+    * Expect to succeed */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("region",
