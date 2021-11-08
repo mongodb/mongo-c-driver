@@ -217,7 +217,7 @@ if [ "$COMPILE_LIBMONGOCRYPT" = "ON" ]; then
    git clone https://github.com/mongodb/libmongocrypt
    mkdir libmongocrypt/cmake-build
    cd libmongocrypt/cmake-build
-   $CMAKE -DBUILD_VERSION=1.3.0-pre -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" ../
+   $CMAKE -DENABLE_SHARED_BSON=ON -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH" ../
    make install
    cd ../../
    else
