@@ -2624,7 +2624,7 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
 {
    bson_t *kms_providers;
    mongoc_client_encryption_opts_t *client_encryption_opts;
-   bson_error_t error;
+   bson_error_t error = {0};
    mongoc_client_encryption_t *client_encryption;
    bson_t *tls_opts;
 
