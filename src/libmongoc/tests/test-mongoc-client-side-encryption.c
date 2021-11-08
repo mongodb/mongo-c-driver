@@ -2713,8 +2713,7 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
       kms_providers =
          tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s' }}",
                    mongoc_test_aws_access_key_id,
-                   mongoc_test_aws_secret_access_key,
-                   ca_file);
+                   mongoc_test_aws_secret_access_key);
       tls_opts = tmp_bson ("{'aws': {'tlsCaFile': '%s'} }", ca_file);
 
       bson_concat (kms_providers,
@@ -2743,8 +2742,7 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
       kms_providers =
          tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s' } }",
                    mongoc_test_aws_access_key_id,
-                   mongoc_test_aws_secret_access_key,
-                   ca_file);
+                   mongoc_test_aws_secret_access_key);
       tls_opts = tmp_bson ("{'aws': {'tlsCaFile': '%s'} }", ca_file);
 
       bson_concat (kms_providers,
@@ -2753,8 +2751,7 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
                              "'identityPlatformEndpoint': '127.0.0.1:8001' }}",
                              mongoc_test_azure_tenant_id,
                              mongoc_test_azure_client_id,
-                             mongoc_test_azure_client_secret,
-                             ca_file));
+                             mongoc_test_azure_client_secret));
       bson_concat (tls_opts,
                    tmp_bson ("{'azure': {'tlsCaFile': '%s'} }", ca_file));
 
@@ -2762,14 +2759,13 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
                    tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
                              "'endpoint': '127.0.0.1:8001' }}",
                              mongoc_test_gcp_email,
-                             mongoc_test_gcp_privatekey,
-                             ca_file));
+                             mongoc_test_gcp_privatekey));
       bson_concat (tls_opts,
                    tmp_bson ("{'gcp': {'tlsCaFile': '%s'} }", ca_file));
 
       bson_concat (
          kms_providers,
-         tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:8001' }}", ca_file));
+         tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:8001' }}"));
       bson_concat (tls_opts,
                    tmp_bson ("{'kmip': {'tlsCaFile': '%s'} }", ca_file));
    }
@@ -2787,7 +2783,6 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
    client_encryption =
       mongoc_client_encryption_new (client_encryption_opts, &error);
    ASSERT_OR_PRINT (client_encryption, error);
-
 
    mongoc_client_encryption_opts_destroy (client_encryption_opts);
    bson_free (mongoc_test_aws_access_key_id);
