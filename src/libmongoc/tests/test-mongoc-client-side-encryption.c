@@ -1038,8 +1038,7 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
       test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
    char *mongoc_test_gcp_privatekey =
       test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
-   char *ca_file =
-      test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+   char *ca_file = test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
    char *certificate_key_file =
       test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
 
@@ -2617,7 +2616,12 @@ test_kms_tls_cert_wrong_host (void *unused)
    mongoc_client_destroy (client);
 }
 
-typedef enum { NO_CLIENT_CERT, WITH_TLS, INVALID_HOSTNAME, EXPIRED } tls_test_ce_t;
+typedef enum {
+   NO_CLIENT_CERT,
+   WITH_TLS,
+   INVALID_HOSTNAME,
+   EXPIRED
+} tls_test_ce_t;
 static mongoc_client_encryption_t *
 _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
                                   tls_test_ce_t test_ce)
@@ -2763,9 +2767,8 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
       bson_concat (tls_opts,
                    tmp_bson ("{'gcp': {'tlsCaFile': '%s'} }", ca_file));
 
-      bson_concat (
-         kms_providers,
-         tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:8001' }}"));
+      bson_concat (kms_providers,
+                   tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:8001' }}"));
       bson_concat (tls_opts,
                    tmp_bson ("{'kmip': {'tlsCaFile': '%s'} }", ca_file));
    }
