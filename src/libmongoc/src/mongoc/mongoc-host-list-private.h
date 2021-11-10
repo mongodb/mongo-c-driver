@@ -53,7 +53,7 @@ _mongoc_host_list_from_hostport_with_err (mongoc_host_list_t *host_list,
                                           bson_error_t *error);
 
 int
-_mongoc_host_list_length (mongoc_host_list_t *list);
+_mongoc_host_list_length (const mongoc_host_list_t *list);
 
 bool
 _mongoc_host_list_compare_one (const mongoc_host_list_t *host_a,

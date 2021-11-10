@@ -131,9 +131,9 @@ _mongoc_host_list_copy_all (const mongoc_host_list_t *src)
 }
 
 int
-_mongoc_host_list_length (mongoc_host_list_t *list)
+_mongoc_host_list_length (const mongoc_host_list_t *list)
 {
-   mongoc_host_list_t *tmp;
+   const mongoc_host_list_t *tmp;
    int counter = 0;
 
    tmp = list;
