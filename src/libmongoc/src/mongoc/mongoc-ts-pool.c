@@ -36,8 +36,7 @@ struct mongoc_ts_pool {
    int32_t size;
    bson_mutex_t mtx;
    /* Number of elements that the pool has given to users.
-    * If AUTO_POOL_ENABLED is zero, this member is unused
-    */
+    * If AUDIT_POOL_ENABLED is zero, this member is unused */
    int32_t outstanding_items;
 };
 

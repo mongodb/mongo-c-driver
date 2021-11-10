@@ -197,6 +197,36 @@
       }                                                    \
    } while (0)
 
+/**
+ * @brief Assert the expression `Assertion`, and evaluates to `Value` on
+ * success.
+ */
+#define BSON_ASSERT_INLINE(Assertion, Value)                              \
+   ((void) ((Assertion) ? (0)                                             \
+                        : ((fprintf (stderr,                              \
+                                     "%s:%d %s(): Assertion '%s' failed", \
+                                     __FILE__,                            \
+                                     __LINE__,                            \
+                                     BSON_FUNC,                           \
+                                     #Assertion),                         \
+                            abort ()),                                    \
+                           0)),                                           \
+    Value)
+
+/**
+ * @brief Assert that the given pointer is non-NULL, while also evaluating to
+ * that pointer.
+ *
+ * Can be used to inline assertions with a pointer dereference:
+ *
+ * ```
+ * foo* f = get_foo();
+ * bar* b = BSON_ASSERT_PTR_INLINE(f)->bar_value;
+ * ```
+ */
+#define BSON_ASSERT_PTR_INLINE(Pointer) \
+   BSON_ASSERT_INLINE ((Pointer) != NULL, (Pointer))
+
 /* Used for asserting parameters to provide a more precise error message */
 #define BSON_ASSERT_PARAM(param)                                         \
    do {                                                                  \

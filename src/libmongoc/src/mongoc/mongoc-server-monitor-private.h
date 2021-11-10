@@ -29,13 +29,8 @@ typedef struct _mongoc_server_monitor_t mongoc_server_monitor_t;
 
 mongoc_server_monitor_t *
 mongoc_server_monitor_new (mongoc_topology_t *topology,
+                           mongoc_topology_description_t *td,
                            mongoc_server_description_t *init_description);
-
-mongoc_server_description_t *
-mongoc_server_monitor_check_server (
-   mongoc_server_monitor_t *server_monitor,
-   const mongoc_server_description_t *previous_description,
-   bool *cancelled);
 
 void
 mongoc_server_monitor_request_cancel (mongoc_server_monitor_t *server_monitor);

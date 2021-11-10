@@ -72,13 +72,12 @@ assemble_path (const char *parent_path,
 mongoc_topology_description_type_t
 topology_type_from_test (const char *type);
 
-mongoc_server_description_t *
-server_description_by_hostname (mongoc_topology_description_t *topology,
+const mongoc_server_description_t *
+server_description_by_hostname (const mongoc_topology_description_t *topology,
                                 const char *address);
 
 void
-process_sdam_test_hello_responses (bson_t *phase,
-                                      mongoc_topology_t *topology);
+process_sdam_test_hello_responses (bson_t *phase, mongoc_topology_t *topology);
 
 void
 test_server_selection_logic_cb (bson_t *test);

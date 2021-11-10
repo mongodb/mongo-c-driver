@@ -40,6 +40,7 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
    /* output from cyrus */
    uint8_t *outbuf = NULL;
    uint32_t outbuf_len = 0;
+   mc_shared_tpld td = MC_SHARED_TPLD_NULL;
 
    bson_t cmd;
    bson_t reply;
@@ -82,13 +83,8 @@ _mongoc_cluster_auth_node_cyrus (mongoc_cluster_t *cluster,
 
       TRACE ("SASL: authenticating (step %d)", sasl.step);
 
-      server_stream = _mongoc_cluster_create_server_stream (
-         cluster->client->topology, sd, stream, error);
-
-      if (!server_stream) {
-         bson_destroy (&cmd);
-         goto failure;
-      }
+      mc_tpld_renew_ref (&td, cluster->client->topology);
+      server_stream = _mongoc_cluster_create_server_stream (td.ptr, sd, stream);
 
       if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
          mongoc_server_stream_cleanup (server_stream);
@@ -146,6 +142,7 @@ failure:
    bson_free (outbuf);
    _mongoc_cyrus_destroy (&sasl);
    mongoc_cmd_parts_cleanup (&parts);
+   mc_tpld_drop_ref (&td);
 
    return ret;
 }

@@ -132,7 +132,7 @@ mongoc_shared_ptr_copy (mongoc_shared_ptr const ptr)
    mongoc_shared_ptr ret = ptr;
    if (!mongoc_shared_ptr_is_null (ptr)) {
       bson_atomic_int_fetch_add (
-         &ret._aux->refcount, 1, bson_memory_order_relaxed);
+         &ret._aux->refcount, 1, bson_memory_order_acquire);
    }
    return ret;
 }
@@ -148,7 +148,7 @@ mongoc_shared_ptr_reset_null (mongoc_shared_ptr *const ptr)
    }
    /* Decrement the reference count by one */
    prevcount = bson_atomic_int_fetch_sub (
-      &ptr->_aux->refcount, 1, bson_memory_order_relaxed);
+      &ptr->_aux->refcount, 1, bson_memory_order_acq_rel);
    if (prevcount == 1) {
       /* We just decremented from one to zero, so this is the last instance.
        * Release the managed data. */

@@ -124,8 +124,8 @@ _init_hello (mongoc_topology_scanner_t *ts)
 {
    bson_init (&ts->hello_cmd);
    bson_init (&ts->legacy_hello_cmd);
-   bson_init (&ts->handshake_cmd);
    bson_init (&ts->cluster_time);
+   ts->handshake_cmd = NULL;
 
    _add_hello (ts);
 }
@@ -133,9 +133,16 @@ _init_hello (mongoc_topology_scanner_t *ts)
 static void
 _reset_hello (mongoc_topology_scanner_t *ts)
 {
+   bson_t *prev_cmd;
    bson_reinit (&ts->hello_cmd);
    bson_reinit (&ts->legacy_hello_cmd);
-   bson_reinit (&ts->handshake_cmd);
+
+   bson_mutex_lock (&ts->handshake_cmd_mtx);
+   prev_cmd = ts->handshake_cmd;
+   ts->handshake_cmd = NULL;
+   ts->handshake_state = HANDSHAKE_CMD_UNINITIALIZED;
+   bson_mutex_unlock (&ts->handshake_cmd_mtx);
+   bson_destroy (prev_cmd);
 
    _add_hello (ts);
 }
@@ -244,29 +251,35 @@ _mongoc_topology_scanner_parse_speculative_authentication (
    bson_copy_to (&auth_response, speculative_authenticate);
 }
 
-static bool
-_build_handshake_cmd (mongoc_topology_scanner_t *ts)
+static bson_t *
+_build_handshake_cmd (const bson_t *basis_cmd,
+                      const char *appname,
+                      const mongoc_uri_t *uri,
+                      bool is_loadbalanced)
 {
-   bson_t *doc = &ts->handshake_cmd;
+   bson_t *doc = bson_copy (basis_cmd);
    bson_t subdoc;
    bson_iter_t iter;
    const char *key;
    int keylen;
-   bool res;
    const bson_t *compressors;
    int count = 0;
    char buf[16];
-
-   bson_destroy (doc);
-   bson_copy_to (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd, doc);
+   bool subdoc_okay;
 
    BSON_APPEND_DOCUMENT_BEGIN (doc, HANDSHAKE_FIELD, &subdoc);
-   res = _mongoc_handshake_build_doc_with_application (&subdoc, ts->appname);
+   subdoc_okay =
+      _mongoc_handshake_build_doc_with_application (&subdoc, appname);
    bson_append_document_end (doc, &subdoc);
 
+   if (!subdoc_okay) {
+      bson_destroy (doc);
+      return NULL;
+   }
+
    BSON_APPEND_ARRAY_BEGIN (doc, "compression", &subdoc);
-   if (ts->uri) {
-      compressors = mongoc_uri_get_compressors (ts->uri);
+   if (uri) {
+      compressors = mongoc_uri_get_compressors (uri);
 
       if (bson_iter_init (&iter, compressors)) {
          while (bson_iter_next (&iter)) {
@@ -278,12 +291,12 @@ _build_handshake_cmd (mongoc_topology_scanner_t *ts)
    }
    bson_append_array_end (doc, &subdoc);
 
-   if (ts->loadbalanced) {
+   if (is_loadbalanced) {
       BSON_APPEND_BOOL (doc, "loadBalanced", true);
    }
 
    /* Return whether the handshake doc fit the size limit */
-   return res;
+   return doc;
 }
 
 const bson_t *
@@ -293,28 +306,67 @@ _mongoc_topology_scanner_get_monitoring_cmd (mongoc_topology_scanner_t *ts,
    return hello_ok || ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd;
 }
 
-/* Caller must lock topology->mutex to protect handshake_cmd. This
- * is called at the start of the scan in _mongoc_topology_run_background, when a
- * node is added in _mongoc_topology_reconcile_add_nodes, or when running a
- * hello directly on a node in _mongoc_stream_run_hello. */
-const bson_t *
-_mongoc_topology_scanner_get_handshake_cmd (mongoc_topology_scanner_t *ts)
+void
+_mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
+                                            bson_t *copy_into)
 {
+   bson_t *new_cmd;
+   const char *appname;
+   BSON_ASSERT_PARAM (ts);
+   BSON_ASSERT_PARAM (copy_into);
+
+   /* appname will only be changed from NULL, so a non-null pointer will never
+    * be invalidated after this fetch. */
+   appname =
+      bson_atomic_ptr_fetch ((void *) &ts->appname, bson_memory_order_relaxed);
+
+   bson_mutex_lock (&ts->handshake_cmd_mtx);
    /* If this is the first time using the node or if it's the first time
     * using it after a failure, build handshake doc */
-   if (bson_empty (&ts->handshake_cmd)) {
-      ts->handshake_ok_to_send = _build_handshake_cmd (ts);
-      if (!ts->handshake_ok_to_send) {
-         MONGOC_WARNING ("Handshake doc too big, not including in hello");
-      }
+   if (ts->handshake_state != HANDSHAKE_CMD_UNINITIALIZED) {
+      /* We're good to just return the handshake now */
+      goto after_init;
    }
 
+   /* There is not yet a handshake command associated with this scanner.
+    * Initialize one and set it now. */
+   /* Note: Don't hold the mutex while we build our command */
+   /* Construct a new handshake command to be sent */
+   BSON_ASSERT (ts->handshake_cmd == NULL);
+   bson_mutex_unlock (&ts->handshake_cmd_mtx);
+   new_cmd =
+      _build_handshake_cmd (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd,
+                            appname,
+                            ts->uri,
+                            ts->loadbalanced);
+   bson_mutex_lock (&ts->handshake_cmd_mtx);
+   if (ts->handshake_state != HANDSHAKE_CMD_UNINITIALIZED) {
+      /* Someone else updated the handshake_cmd while we were building ours.
+       * Defer to their copy and just destroy the one we created. */
+      bson_destroy (new_cmd);
+      goto after_init;
+   }
+   BSON_ASSERT (ts->handshake_cmd == NULL);
+   /* We're still the one updating the command */
+   ts->handshake_cmd = new_cmd;
+   /* The "_build" may have failed. */
+   /* Even if new_cmd is NULL, this is still what we want */
+   ts->handshake_state =
+      new_cmd == NULL ? HANDSHAKE_CMD_TOO_BIG : HANDSHAKE_CMD_OKAY;
+   if (ts->handshake_state == HANDSHAKE_CMD_TOO_BIG) {
+      MONGOC_WARNING ("Handshake doc too big, not including in hello");
+   }
+
+after_init:
    /* If the doc turned out to be too big */
-   if (!ts->handshake_ok_to_send) {
-      return ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd;
+   if (ts->handshake_state == HANDSHAKE_CMD_TOO_BIG) {
+      bson_t *ret = ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd;
+      bson_copy_to (ret, copy_into);
+   } else {
+      BSON_ASSERT (ts->handshake_cmd != NULL);
+      bson_copy_to (ts->handshake_cmd, copy_into);
    }
-
-   return &ts->handshake_cmd;
+   bson_mutex_unlock (&ts->handshake_cmd_mtx);
 }
 
 static void
@@ -329,10 +381,11 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
 
    if (node->last_used != -1 && node->last_failed == -1) {
       /* The node's been used before and not failed recently */
-      bson_copy_to (_mongoc_topology_scanner_get_monitoring_cmd (ts, node->hello_ok),
-                    &cmd);
+      bson_copy_to (
+         _mongoc_topology_scanner_get_monitoring_cmd (ts, node->hello_ok),
+         &cmd);
    } else {
-      bson_copy_to (_mongoc_topology_scanner_get_handshake_cmd (ts), &cmd);
+      _mongoc_topology_scanner_dup_handshake_cmd (ts, &cmd);
    }
 
    if (node->ts->negotiate_sasl_supported_mechs &&
@@ -396,10 +449,11 @@ mongoc_topology_scanner_new (
    ts->uri = uri;
    ts->appname = NULL;
    ts->api = NULL;
-   ts->handshake_ok_to_send = false;
+   ts->handshake_state = HANDSHAKE_CMD_UNINITIALIZED;
    ts->connect_timeout_msec = connect_timeout_msec;
    /* may be overridden for testing. */
    ts->dns_cache_timeout_ms = DNS_CACHE_TIMEOUT_MS;
+   bson_mutex_init (&ts->handshake_cmd_mtx);
 
    _init_hello (ts);
 
@@ -439,9 +493,10 @@ mongoc_topology_scanner_destroy (mongoc_topology_scanner_t *ts)
    mongoc_async_destroy (ts->async);
    bson_destroy (&ts->hello_cmd);
    bson_destroy (&ts->legacy_hello_cmd);
-   bson_destroy (&ts->handshake_cmd);
+   bson_destroy (ts->handshake_cmd);
    bson_destroy (&ts->cluster_time);
    mongoc_server_api_destroy (ts->api);
+   bson_mutex_destroy (&ts->handshake_cmd_mtx);
 
    /* This field can be set by a mongoc_client */
    bson_free ((char *) ts->appname);
@@ -1104,8 +1159,6 @@ mongoc_topology_scanner_in_cooldown (mongoc_topology_scanner_t *ts,
  *      should be called once before calling mongoc_topology_scanner_work()
  *      to complete the scan.
  *
- *      The topology mutex must be held by the caller.
- *
  *      If "obey_cooldown" is true, this is a single-threaded blocking scan
  *      that must obey the Server Discovery And Monitoring Spec's cooldownMS:
  *
@@ -1235,18 +1288,23 @@ bool
 _mongoc_topology_scanner_set_appname (mongoc_topology_scanner_t *ts,
                                       const char *appname)
 {
+   char *s;
+   const char *prev;
    if (!_mongoc_handshake_appname_is_valid (appname)) {
       MONGOC_ERROR ("Cannot set appname: %s is invalid", appname);
       return false;
    }
 
-   if (ts->appname != NULL) {
-      MONGOC_ERROR ("Cannot set appname more than once");
-      return false;
+   s = bson_strdup (appname);
+   prev = bson_atomic_ptr_compare_exchange_strong (
+      (void *) &ts->appname, NULL, s, bson_memory_order_relaxed);
+   if (prev == NULL) {
+      return true;
    }
 
-   ts->appname = bson_strdup (appname);
-   return true;
+   MONGOC_ERROR ("Cannot set appname more than once");
+   bson_free (s);
+   return false;
 }
 
 /*
@@ -1386,7 +1444,6 @@ _jumpstart_other_acmds (mongoc_topology_scanner_node_t *node,
    }
 }
 
-/* Caller must lock topology->mutex to protect handshake_cmd. */
 void
 _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
                                          const mongoc_server_api_t *api)
@@ -1399,12 +1456,11 @@ _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
    _reset_hello (ts);
 }
 
-/* This must be called before the handshake command is constructed. Caller does
- * not need to lock the topology->mutex. */
+/* This must be called before the handshake command is constructed. */
 void
 _mongoc_topology_scanner_set_loadbalanced (mongoc_topology_scanner_t *ts,
                                            bool val)
 {
-   BSON_ASSERT (bson_empty (&ts->handshake_cmd));
+   BSON_ASSERT (ts->handshake_cmd == NULL);
    ts->loadbalanced = true;
 }
