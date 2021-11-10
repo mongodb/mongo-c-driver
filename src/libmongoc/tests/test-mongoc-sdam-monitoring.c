@@ -134,10 +134,11 @@ td_to_bson (const mongoc_topology_description_t *td, bson_t *bson)
    bson_t server;
    char str[16];
    const char *key;
+   mongoc_set_t const *servers_set = mc_tpld_servers_const (td);
 
-   for (i = 0; i < td->servers->items_len; i++) {
+   for (i = 0; i < servers_set->items_len; i++) {
       bson_uint32_to_string ((uint32_t) i, &key, str, sizeof str);
-      sd_to_bson (mongoc_set_get_item (td->servers, (int) i), &server);
+      sd_to_bson (mongoc_set_get_item_const (servers_set, (int) i), &server);
       BSON_APPEND_DOCUMENT (&servers, key, &server);
       bson_destroy (&server);
    }
@@ -494,7 +495,9 @@ test_sdam_monitoring_cb (bson_t *test)
          /* Force the topology opening and server opening events. This test
           * doesn't exercise this code path naturally, see below in
           * _test_topology_events for a non-hacky test of this event */
-         _mongoc_topology_description_monitor_opening (&topology->description);
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (topology);
+         _mongoc_topology_description_monitor_opening (tdmod.new_td);
+         mc_tpld_modify_commit (tdmod);
          first_phase = false;
       } else {
          /* clear the stored events. */

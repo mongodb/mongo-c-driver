@@ -226,9 +226,7 @@ static void
 _start_scanner_if_needed (mongoc_client_pool_t *pool)
 {
    if (!pool->topology->single_threaded) {
-      bson_mutex_lock (&pool->topology->mutex);
       _mongoc_topology_background_monitoring_start (pool->topology);
-      bson_mutex_unlock (&pool->topology->mutex);
    }
 }
 
@@ -446,30 +444,30 @@ mongoc_client_pool_set_apm_callbacks (mongoc_client_pool_t *pool,
                                       mongoc_apm_callbacks_t *callbacks,
                                       void *context)
 {
-   mongoc_topology_t *topology;
-
-   topology = pool->topology;
+   mongoc_topology_t *const topology = BSON_ASSERT_PTR_INLINE (pool)->topology;
+   mc_tpld_modification tdmod;
 
    if (pool->apm_callbacks_set) {
       MONGOC_ERROR ("Can only set callbacks once");
       return false;
    }
 
-   bson_mutex_lock (&topology->mutex);
+   tdmod = mc_tpld_modify_begin (topology);
 
    if (callbacks) {
-      memcpy (&topology->description.apm_callbacks,
+      memcpy (&tdmod.new_td->apm_callbacks,
               callbacks,
               sizeof (mongoc_apm_callbacks_t));
       memcpy (&pool->apm_callbacks, callbacks, sizeof (mongoc_apm_callbacks_t));
    }
 
-   mongoc_topology_set_apm_callbacks (topology, callbacks, context);
-   topology->description.apm_context = context;
+   mongoc_topology_set_apm_callbacks (
+      topology, tdmod.new_td, callbacks, context);
+   tdmod.new_td->apm_context = context;
    pool->apm_context = context;
    pool->apm_callbacks_set = true;
 
-   bson_mutex_unlock (&topology->mutex);
+   mc_tpld_modify_commit (tdmod);
 
    return true;
 }
@@ -540,8 +538,8 @@ mongoc_client_pool_set_server_api (mongoc_client_pool_t *pool,
    }
 
    pool->api = mongoc_server_api_copy (api);
-   bson_mutex_lock (&pool->topology->mutex);
+
    _mongoc_topology_scanner_set_server_api (pool->topology->scanner, api);
-   bson_mutex_unlock (&pool->topology->mutex);
+
    return true;
 }

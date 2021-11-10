@@ -15,11 +15,11 @@
 
 
 static void
-_topology_has_description (mongoc_topology_description_t *topology,
+_topology_has_description (const mongoc_topology_description_t *topology,
                            bson_t *server,
                            const char *address)
 {
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
    bson_iter_t server_iter;
    const char *server_type;
    const char *set_name;
@@ -95,10 +95,9 @@ _topology_has_description (mongoc_topology_description_t *topology,
          BSON_ASSERT (bson_iter_find (&iter, "generation") &&
                       BSON_ITER_HOLDS_INT32 (&iter));
          expected_generation = bson_iter_int32 (&iter);
-         ASSERT_CMPINT32 (
-            expected_generation,
-            ==,
-            mongoc_generation_map_get (sd->generation_map, &kZeroServiceId));
+         ASSERT_CMPINT32 (expected_generation,
+                          ==,
+                          mc_tpl_sd_get_generation (sd, &kZeroServiceId));
       } else if (strcmp ("logicalSessionTimeoutMinutes",
                          bson_iter_key (&server_iter)) == 0) {
          if (BSON_ITER_HOLDS_NULL (&server_iter)) {
@@ -153,7 +152,6 @@ static void
 test_sdam_cb (bson_t *test)
 {
    mongoc_client_t *client;
-   mongoc_topology_description_t *td;
    bson_t phase;
    bson_t phases;
    bson_t servers;
@@ -164,13 +162,14 @@ test_sdam_cb (bson_t *test)
    bson_iter_t servers_iter;
    bson_iter_t outcome_iter;
    bson_iter_t iter;
+   mc_tpld_modification tdmod;
+   mc_shared_tpld td = MC_SHARED_TPLD_NULL;
    const char *set_name;
    const char *hostname;
 
    /* parse out the uri and use it to create a client */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "uri"));
    client = test_framework_client_new (bson_iter_utf8 (&iter, NULL), NULL);
-   td = &client->topology->description;
 
    /* for each phase, parse and validate */
    BSON_ASSERT (bson_iter_init_find (&iter, test, "phases"));
@@ -180,7 +179,9 @@ test_sdam_cb (bson_t *test)
    /* LoadBalanced topologies change the server from Unknown to LoadBalancer
     * when SDAM monitoring begins. Force an opening, which would occur on the
     * first operation on the client. */
-   _mongoc_topology_description_monitor_opening (td);
+   tdmod = mc_tpld_modify_begin (client->topology);
+   _mongoc_topology_description_monitor_opening (tdmod.new_td);
+   mc_tpld_modify_commit (tdmod);
 
    while (bson_iter_next (&phase_iter)) {
       bson_iter_bson (&phase_iter, &phase);
@@ -193,10 +194,12 @@ test_sdam_cb (bson_t *test)
       bson_iter_init (&outcome_iter, &outcome);
 
       while (bson_iter_next (&outcome_iter)) {
+         mc_tpld_renew_ref (&td, client->topology);
          if (strcmp ("servers", bson_iter_key (&outcome_iter)) == 0) {
             bson_iter_bson (&outcome_iter, &servers);
-            ASSERT_CMPINT (
-               bson_count_keys (&servers), ==, (int) td->servers->items_len);
+            ASSERT_CMPINT (bson_count_keys (&servers),
+                           ==,
+                           mc_tpld_servers_const (td.ptr)->items_len);
 
             bson_iter_init (&servers_iter, &servers);
 
@@ -205,39 +208,39 @@ test_sdam_cb (bson_t *test)
                hostname = bson_iter_key (&servers_iter);
                bson_iter_bson (&servers_iter, &server);
 
-               _topology_has_description (td, &server, hostname);
+               _topology_has_description (td.ptr, &server, hostname);
             }
-
          } else if (strcmp ("setName", bson_iter_key (&outcome_iter)) == 0) {
             set_name = bson_iter_utf8 (&outcome_iter, NULL);
             if (set_name) {
-               BSON_ASSERT (td->set_name);
-               ASSERT_CMPSTR (td->set_name, set_name);
+               BSON_ASSERT (td.ptr->set_name);
+               ASSERT_CMPSTR (td.ptr->set_name, set_name);
             } else {
-               if (td->set_name) {
-                  test_error ("expected NULL setName, got: %s", td->set_name);
+               if (td.ptr->set_name) {
+                  test_error ("expected NULL setName, got: %s",
+                              td.ptr->set_name);
                }
             }
          } else if (strcmp ("topologyType", bson_iter_key (&outcome_iter)) ==
                     0) {
-            ASSERT_CMPSTR (mongoc_topology_description_type (td),
+            ASSERT_CMPSTR (mongoc_topology_description_type (td.ptr),
                            bson_iter_utf8 (&outcome_iter, NULL));
          } else if (strcmp ("logicalSessionTimeoutMinutes",
                             bson_iter_key (&outcome_iter)) == 0) {
             if (BSON_ITER_HOLDS_NULL (&outcome_iter)) {
-               ASSERT_CMPINT64 (td->session_timeout_minutes,
+               ASSERT_CMPINT64 (td.ptr->session_timeout_minutes,
                                 ==,
                                 (int64_t) MONGOC_NO_SESSIONS);
             } else {
-               ASSERT_CMPINT64 (td->session_timeout_minutes,
+               ASSERT_CMPINT64 (td.ptr->session_timeout_minutes,
                                 ==,
                                 bson_iter_as_int64 (&outcome_iter));
             }
          } else if (strcmp ("compatible", bson_iter_key (&outcome_iter)) == 0) {
             if (bson_iter_as_bool (&outcome_iter)) {
-               ASSERT_CMPINT (0, ==, td->compatibility_error.domain);
+               ASSERT_CMPINT (0, ==, td.ptr->compatibility_error.domain);
             } else {
-               ASSERT_ERROR_CONTAINS (td->compatibility_error,
+               ASSERT_ERROR_CONTAINS (td.ptr->compatibility_error,
                                       MONGOC_ERROR_PROTOCOL,
                                       MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
                                       "");
@@ -245,14 +248,15 @@ test_sdam_cb (bson_t *test)
          } else if (strcmp ("maxSetVersion", bson_iter_key (&outcome_iter)) ==
                     0) {
             if (BSON_ITER_HOLDS_NULL (&outcome_iter)) {
-               if (td->max_set_version != MONGOC_NO_SET_VERSION) {
+               if (td.ptr->max_set_version != MONGOC_NO_SET_VERSION) {
                   test_error ("ERROR: expected unset value for maxSetVersion "
                               "but got: %" PRId64,
-                              td->max_set_version);
+                              td.ptr->max_set_version);
                }
             } else {
-               ASSERT_CMPINT64 (
-                  bson_iter_as_int64 (&outcome_iter), ==, td->max_set_version);
+               ASSERT_CMPINT64 (bson_iter_as_int64 (&outcome_iter),
+                                ==,
+                                td.ptr->max_set_version);
             }
          } else if (strcmp ("maxElectionId", bson_iter_key (&outcome_iter)) ==
                     0) {
@@ -265,12 +269,12 @@ test_sdam_cb (bson_t *test)
                expected_oid = &zeroed;
             }
 
-            if (!bson_oid_equal (expected_oid, &td->max_election_id)) {
+            if (!bson_oid_equal (expected_oid, &td.ptr->max_election_id)) {
                char expected_oid_str[25];
                char actual_oid_str[25];
 
                bson_oid_to_string (expected_oid, expected_oid_str);
-               bson_oid_to_string (&td->max_election_id, actual_oid_str);
+               bson_oid_to_string (&td.ptr->max_election_id, actual_oid_str);
                test_error ("ERROR: Expected topology description's "
                            "maxElectionId to be %s, but was %s",
                            expected_oid_str,
@@ -279,15 +283,15 @@ test_sdam_cb (bson_t *test)
          } else if (strcmp ("logicalSessionTimeoutMinutes",
                             bson_iter_key (&outcome_iter)) == 0) {
             if (BSON_ITER_HOLDS_NULL (&outcome_iter)) {
-               if (td->session_timeout_minutes != MONGOC_NO_SESSIONS) {
+               if (td.ptr->session_timeout_minutes != MONGOC_NO_SESSIONS) {
                   test_error ("ERROR: expected unset value for "
                               "logicalSessionTimeoutMinutes but got: %" PRId64,
-                              td->session_timeout_minutes);
+                              td.ptr->session_timeout_minutes);
                }
             } else {
                ASSERT_CMPINT64 (bson_iter_as_int64 (&outcome_iter),
                                 ==,
-                                td->session_timeout_minutes);
+                                td.ptr->session_timeout_minutes);
             }
          } else {
             fprintf (stderr,
@@ -297,6 +301,7 @@ test_sdam_cb (bson_t *test)
          }
       }
    }
+   mc_tpld_drop_ref (&td);
    mongoc_client_destroy (client);
 }
 
@@ -368,14 +373,16 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
 {
    int i;
    uint32_t server_id;
-   mongoc_set_t *servers;
+   const mongoc_set_t *servers;
    bson_t cmd;
    bson_error_t error;
+   mc_shared_tpld td;
 
    bson_init (&cmd);
    BCON_APPEND (&cmd, "configureFailPoint", "failCommand", "mode", "off");
 
-   servers = client->topology->description.servers;
+   td = mc_tpld_take_ref (client->topology);
+   servers = mc_tpld_servers_const (td.ptr);
 
    for (i = 0; i < servers->items_len; i++) {
       bool ret;
@@ -393,6 +400,7 @@ deactivate_failpoints_on_all_servers (mongoc_client_t *client)
       }
    }
 
+   mc_tpld_drop_ref (&td);
    bson_destroy (&cmd);
 }
 
@@ -861,9 +869,8 @@ test_prose_rtt (void *unused)
     * RTT_TEST_TIMEOUT_SEC seconds, consider it a failure. */
    satisfied = false;
    start_us = bson_get_monotonic_time ();
-   while (!satisfied &&
-          bson_get_monotonic_time () <
-             start_us + RTT_TEST_TIMEOUT_SEC * 1000 * 1000) {
+   while (!satisfied && bson_get_monotonic_time () <
+                           start_us + RTT_TEST_TIMEOUT_SEC * 1000 * 1000) {
       mongoc_server_description_t *sd;
 
       sd = mongoc_client_select_server (

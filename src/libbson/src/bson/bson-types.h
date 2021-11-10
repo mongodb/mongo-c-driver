@@ -129,10 +129,10 @@ typedef struct _bson_json_opts_t bson_json_opts_t;
 #ifdef BSON_MEMCHECK
 BSON_ALIGNED_BEGIN (128)
 typedef struct _bson_t {
-   uint32_t flags;       /* Internal flags for the bson_t. */
-   uint32_t len;         /* Length of BSON data. */
-   char *canary;         /* For valgrind check */
-   uint8_t padding[120 - sizeof (char*)];
+   uint32_t flags; /* Internal flags for the bson_t. */
+   uint32_t len;   /* Length of BSON data. */
+   char *canary;   /* For valgrind check */
+   uint8_t padding[120 - sizeof (char *)];
 } bson_t BSON_ALIGNED_END (128);
 #else
 BSON_ALIGNED_BEGIN (128)
@@ -142,7 +142,6 @@ typedef struct _bson_t {
    uint8_t padding[120]; /* Padding for stack allocation. */
 } bson_t BSON_ALIGNED_END (128);
 #endif
-
 
 /**
  * BSON_INITIALIZER:
@@ -155,13 +154,9 @@ typedef struct _bson_t {
  * ]|
  */
 #ifdef BSON_MEMCHECK
-#define BSON_INITIALIZER \
-   {                     \
-      3, 5,              \
-      bson_malloc (1),   \
-      {                  \
-         5               \
-      },                 \
+#define BSON_INITIALIZER          \
+   {                              \
+      3, 5, bson_malloc (1), {5}, \
    }
 #else
 #define BSON_INITIALIZER \
