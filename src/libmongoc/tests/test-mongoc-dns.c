@@ -743,47 +743,58 @@ typedef struct {
 /* invalid_topology_opening is used as a callback for the
  * test_invalid_topology_pooled and test_invalid_topology_single tests. */
 static void
-invalid_topology_opening (const mongoc_apm_topology_opening_t *event) {
-   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_topology_opening_get_context (event);
+invalid_topology_opening (const mongoc_apm_topology_opening_t *event)
+{
+   cb_stats_t *stats =
+      (cb_stats_t *) mongoc_apm_topology_opening_get_context (event);
    stats->num_topology_opening++;
 }
 
 /* invalid_topology_closed is used as a callback for the
  * test_invalid_topology_pooled and test_invalid_topology_single tests. */
 static void
-invalid_topology_closed (const mongoc_apm_topology_closed_t *event) {
-   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_topology_closed_get_context (event);
+invalid_topology_closed (const mongoc_apm_topology_closed_t *event)
+{
+   cb_stats_t *stats =
+      (cb_stats_t *) mongoc_apm_topology_closed_get_context (event);
    stats->num_topology_closed++;
 }
 
 /* invalid_server_closed is used as a callback for the
  * test_invalid_topology_pooled and test_invalid_topology_single tests. */
 static void
-invalid_server_closed (const mongoc_apm_server_closed_t *event) {
-   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_server_closed_get_context (event);
+invalid_server_closed (const mongoc_apm_server_closed_t *event)
+{
+   cb_stats_t *stats =
+      (cb_stats_t *) mongoc_apm_server_closed_get_context (event);
    stats->num_server_closed++;
 }
 
 /* invalid_server_opening is used as a callback for the
  * test_invalid_topology_pooled and test_invalid_topology_single tests. */
 static void
-invalid_server_opening (const mongoc_apm_server_opening_t *event) {
-   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_server_opening_get_context (event);
+invalid_server_opening (const mongoc_apm_server_opening_t *event)
+{
+   cb_stats_t *stats =
+      (cb_stats_t *) mongoc_apm_server_opening_get_context (event);
    stats->num_server_opening++;
 }
 
 /* CDRIVER-4184 Test that an invalid topology does not emit a topology_closed
  * event. */
 static void
-test_invalid_topology_pooled (void *unused) {
+test_invalid_topology_pooled (void *unused)
+{
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    mongoc_apm_callbacks_t *cbs;
    cb_stats_t stats = {0};
 
-   /* TXT record for test20.test.build.10gen.cc resolves to "loadBalanced=true". */
-   uri = mongoc_uri_new ("mongodb+srv://test20.test.build.10gen.cc/?replicaSet=rs0");
+   /* TXT record for test20.test.build.10gen.cc resolves to "loadBalanced=true".
+    */
+   uri = mongoc_uri_new (
+      "mongodb+srv://test20.test.build.10gen.cc/?replicaSet=rs0");
    pool = mongoc_client_pool_new (uri);
    cbs = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_opening_cb (cbs, invalid_topology_opening);
@@ -792,9 +803,10 @@ test_invalid_topology_pooled (void *unused) {
    mongoc_apm_set_server_closed_cb (cbs, invalid_server_closed);
    mongoc_client_pool_set_apm_callbacks (pool, cbs, &stats);
 
-   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
+   ASSERT_CMPINT (stats.num_topology_opening, ==, 0);
 
-   /* Pop a client to attempt to start monitoring. Monitoring emits the topology_opening event on valid topologies. */
+   /* Pop a client to attempt to start monitoring. Monitoring emits the
+    * topology_opening event on valid topologies. */
    client = mongoc_client_pool_pop (pool);
    mongoc_client_pool_push (pool, client);
 
@@ -802,16 +814,17 @@ test_invalid_topology_pooled (void *unused) {
    mongoc_client_pool_destroy (pool);
    mongoc_uri_destroy (uri);
 
-   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
-   ASSERT_CMPINT(stats.num_server_opening, ==, 0);
-   ASSERT_CMPINT(stats.num_server_closed, ==, 0);
-   ASSERT_CMPINT(stats.num_topology_closed, ==, 0);
+   ASSERT_CMPINT (stats.num_topology_opening, ==, 0);
+   ASSERT_CMPINT (stats.num_server_opening, ==, 0);
+   ASSERT_CMPINT (stats.num_server_closed, ==, 0);
+   ASSERT_CMPINT (stats.num_topology_closed, ==, 0);
 }
 
 /* CDRIVER-4184 Test that an invalid topology does not emit a topology_closed
  * event. */
 static void
-test_invalid_topology_single (void *unused) {
+test_invalid_topology_single (void *unused)
+{
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    mongoc_apm_callbacks_t *cbs;
@@ -819,8 +832,10 @@ test_invalid_topology_single (void *unused) {
    bson_error_t error;
    mongoc_server_description_t *sd;
 
-   /* TXT records for test20.test.build.10gen.cc resolve to loadBalanced=true. */
-   uri = mongoc_uri_new ("mongodb+srv://test20.test.build.10gen.cc/?replicaSet=true");
+   /* TXT records for test20.test.build.10gen.cc resolve to loadBalanced=true.
+    */
+   uri = mongoc_uri_new (
+      "mongodb+srv://test20.test.build.10gen.cc/?replicaSet=true");
    client = mongoc_client_new_from_uri (uri);
    cbs = mongoc_apm_callbacks_new ();
    mongoc_apm_set_topology_opening_cb (cbs, invalid_topology_opening);
@@ -829,27 +844,27 @@ test_invalid_topology_single (void *unused) {
    mongoc_apm_set_server_closed_cb (cbs, invalid_server_closed);
    mongoc_client_set_apm_callbacks (client, cbs, &stats);
 
-   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
+   ASSERT_CMPINT (stats.num_topology_opening, ==, 0);
 
    /* Perform server selection. Server selection emits the topology_opening
     * event on valid topologies. */
    sd = mongoc_client_select_server (
       client, false /* for_writes */, NULL /* read_prefs */, &error);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_SERVER_SELECTION,
-      MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-      "URI with \"loadbalanced\" enabled must not contain option \"replicaset\"");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_SERVER_SELECTION,
+                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          "URI with \"loadbalanced\" enabled must not contain "
+                          "option \"replicaset\"");
    ASSERT (!sd);
 
    mongoc_apm_callbacks_destroy (cbs);
    mongoc_client_destroy (client);
    mongoc_uri_destroy (uri);
 
-   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
-   ASSERT_CMPINT(stats.num_server_opening, ==, 0);
-   ASSERT_CMPINT(stats.num_server_closed, ==, 0);
-   ASSERT_CMPINT(stats.num_topology_closed, ==, 0);
+   ASSERT_CMPINT (stats.num_topology_opening, ==, 0);
+   ASSERT_CMPINT (stats.num_server_opening, ==, 0);
+   ASSERT_CMPINT (stats.num_server_closed, ==, 0);
+   ASSERT_CMPINT (stats.num_topology_closed, ==, 0);
 }
 
 void
