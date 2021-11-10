@@ -27,7 +27,7 @@ mongoc_set_new (size_t nitems, mongoc_set_item_dtor dtor, void *dtor_ctx)
 {
    mongoc_set_t *set = (mongoc_set_t *) bson_malloc (sizeof (*set));
 
-   set->items_allocated = nitems;
+   set->items_allocated = BSON_MAX (nitems, 1);
    set->items = (mongoc_set_item_t *) bson_malloc (sizeof (*set->items) *
                                                    set->items_allocated);
    set->items_len = 0;
@@ -208,7 +208,9 @@ mongoc_set_for_each_with_id (mongoc_set_t *set,
 
 
 static mongoc_set_item_t *
-_mongoc_set_find (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
+_mongoc_set_find (const mongoc_set_t *set,
+                  mongoc_set_for_each_const_cb_t cb,
+                  void *ctx)
 {
    size_t i;
    size_t items_len;
@@ -232,7 +234,8 @@ mongoc_set_find_item (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
 {
    mongoc_set_item_t *item;
 
-   if ((item = _mongoc_set_find (set, cb, ctx))) {
+   if ((item =
+           _mongoc_set_find (set, (mongoc_set_for_each_const_cb_t) cb, ctx))) {
       return item->item;
    }
 
@@ -241,9 +244,11 @@ mongoc_set_find_item (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
 
 
 uint32_t
-mongoc_set_find_id (mongoc_set_t *set, mongoc_set_for_each_cb_t cb, void *ctx)
+mongoc_set_find_id (const mongoc_set_t *set,
+                    mongoc_set_for_each_const_cb_t cb,
+                    void *ctx)
 {
-   mongoc_set_item_t *item;
+   const mongoc_set_item_t *item;
 
    if ((item = _mongoc_set_find (set, cb, ctx))) {
       return item->id;

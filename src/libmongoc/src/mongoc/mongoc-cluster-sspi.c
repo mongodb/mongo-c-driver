@@ -150,7 +150,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 {
    mongoc_cmd_parts_t parts;
    mongoc_sspi_client_state_t *state;
-   SEC_CHAR* buf = NULL;
+   SEC_CHAR *buf = NULL;
    bson_iter_t iter;
    uint32_t buflen;
    bson_t reply;
@@ -223,10 +223,9 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
       }
 
       server_stream = _mongoc_cluster_create_server_stream (
-         cluster->client->topology, sd, stream, error);
+         cluster->client->topology, sd, stream);
 
-      if (!server_stream ||
-          !mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
+      if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
          mongoc_server_stream_cleanup (server_stream);
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);

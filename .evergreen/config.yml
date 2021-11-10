@@ -85,7 +85,7 @@ functions:
         python -m virtualenv venv
         cd venv
         . bin/activate
-        ./bin/pip install sphinx
+        ./bin/pip install sphinx docutils==0.17.1
         cd ..
         export MONGOC_TEST_FUTURE_TIMEOUT_MS=30000
         export MONGOC_TEST_SKIP_LIVE=on
@@ -483,7 +483,7 @@ functions:
         export OBSOLETE_TLS='${obsolete_tls}'
         export VALGRIND='${valgrind}'
         export ATLAS_SERVERLESS_SRV='${atlas_serverless_srv}'
-        export ATLAS_SERVERLESS='${atlas_serverless}
+        export ATLAS_SERVERLESS='${atlas_serverless}'
         sh .evergreen/run-auth-tests.sh
   run mock server tests:
   - command: shell.exec

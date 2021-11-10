@@ -19,6 +19,8 @@
 #ifndef MONGOC_SHARED_H
 #define MONGOC_SHARED_H
 
+#include <bson/bson.h>
+
 #include <stddef.h>
 
 /**
@@ -59,9 +61,10 @@ typedef struct mongoc_shared_ptr {
  * @brief A "null" pointer constant for a mongoc_shared_ptr.
  */
 #define MONGOC_SHARED_PTR_NULL \
-   {                           \
-      NULL, NULL               \
-   }
+   ((mongoc_shared_ptr){       \
+      .ptr = NULL,             \
+      ._aux = NULL,            \
+   })
 
 /**
  * @brief Reassign a shared pointer to manage the given resource
@@ -183,7 +186,7 @@ mongoc_shared_ptr_use_count (mongoc_shared_ptr ptr);
  * @return true If the pointer is managing a resource
  * @return false Otherwise
  */
-static int
+static BSON_INLINE int
 mongoc_shared_ptr_is_null (mongoc_shared_ptr ptr)
 {
    return ptr._aux == 0;

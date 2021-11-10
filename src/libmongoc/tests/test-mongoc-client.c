@@ -272,8 +272,8 @@ test_client_cmd_write_concern (void)
          "'writeConcern' : {'w' : 99 }}";
    future = future_client_command_simple (
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
-   request =
-      mock_server_receives_command (server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
+   request = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
    BSON_ASSERT (request);
 
    mock_server_replies_ok_and_destroys (request);
@@ -285,8 +285,8 @@ test_client_cmd_write_concern (void)
    /* standalone response */
    future = future_client_command_simple (
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
-   request =
-      mock_server_receives_command (server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
+   request = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
    BSON_ASSERT (request);
 
    mock_server_replies_simple (
@@ -302,8 +302,8 @@ test_client_cmd_write_concern (void)
    /* replicaset response */
    future = future_client_command_simple (
       client, "test", tmp_bson (cmd), NULL, &reply, &error);
-   request =
-      mock_server_receives_command (server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
+   request = mock_server_receives_command (
+      server, "test", MONGOC_QUERY_SECONDARY_OK, cmd);
    mock_server_replies_simple (
       request,
       "{ 'ok' : 1, 'n': 1, "
@@ -1239,8 +1239,8 @@ test_command_with_opts_read_prefs (void)
    future = future_client_read_command_with_opts (
       client, "admin", cmd, NULL, NULL /* opts */, NULL, &error);
 
-   /* Server Selection Spec: "For mode 'secondary', drivers MUST set the secondaryOk
-    * wire protocol flag and MUST also use $readPreference".
+   /* Server Selection Spec: "For mode 'secondary', drivers MUST set the
+    * secondaryOk wire protocol flag and MUST also use $readPreference".
     */
    request = mock_server_receives_command (
       server,
@@ -1855,13 +1855,10 @@ responder (request_t *request, void *data)
 
 /* mongoc_set_for_each callback */
 static bool
-host_equals (void *item, void *ctx)
+host_equals (const void *item, void *ctx)
 {
-   mongoc_server_description_t *sd;
-   const char *host_and_port;
-
-   sd = (mongoc_server_description_t *) item;
-   host_and_port = (const char *) ctx;
+   const mongoc_server_description_t *sd = item;
+   const char *host_and_port = ctx;
 
    return !strcasecmp (sd->host.host_and_port, host_and_port);
 }
@@ -1879,12 +1876,12 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    mongoc_client_pool_t *pool = NULL;
    mongoc_client_t *client;
    mongoc_topology_t *topology;
-   mongoc_topology_description_t *td;
    mongoc_read_prefs_t *primary_pref;
    uint32_t discovered_nodes_len;
    bson_t reply;
    bson_error_t error;
    uint32_t id;
+   mc_shared_tpld td = MC_SHARED_TPLD_NULL;
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -1937,7 +1934,6 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    }
 
    topology = client->topology;
-   td = &topology->description;
 
    /* a mongos load-balanced connection never removes down nodes */
    discovered_nodes_len = rs ? 1 : 4;
@@ -1957,12 +1953,16 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
 
       bson_destroy (&reply);
 
-      ASSERT_CMPINT (discovered_nodes_len, ==, (int) td->servers->items_len);
+      /* td may be invalidated by client_command_simple */
+      mc_tpld_renew_ref (&td, topology);
+      ASSERT_CMPINT (discovered_nodes_len,
+                     ==,
+                     (int) mc_tpld_servers_const (td.ptr)->items_len);
 
       if (rs) {
-         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
+         ASSERT_CMPINT (td.ptr->type, ==, MONGOC_TOPOLOGY_RS_WITH_PRIMARY);
       } else {
-         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_SHARDED);
+         ASSERT_CMPINT (td.ptr->type, ==, MONGOC_TOPOLOGY_SHARDED);
       }
 
       if (pooled) {
@@ -1972,17 +1972,16 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    }
 
    if (connection_option == RECONNECT) {
-      id = mongoc_set_find_id (td->servers,
+      id = mongoc_set_find_id (mc_tpld_servers_const (td.ptr),
                                host_equals,
                                (void *) mock_server_get_host_and_port (server));
       ASSERT_CMPINT (id, !=, 0);
-      bson_set_error (
-         &error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "err");
-      mongoc_topology_invalidate_server (topology, id, &error);
+      _mongoc_topology_invalidate_server (topology, id);
+      mc_tpld_renew_ref (&td, topology);
       if (rs) {
-         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
+         ASSERT_CMPINT (td.ptr->type, ==, MONGOC_TOPOLOGY_RS_NO_PRIMARY);
       } else {
-         ASSERT_CMPINT (td->type, ==, MONGOC_TOPOLOGY_SHARDED);
+         ASSERT_CMPINT (td.ptr->type, ==, MONGOC_TOPOLOGY_SHARDED);
       }
 
       ASSERT_OR_PRINT (mongoc_client_command_simple (client,
@@ -1995,7 +1994,11 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
 
       bson_destroy (&reply);
 
-      ASSERT_CMPINT (discovered_nodes_len, ==, (int) td->servers->items_len);
+      /* td may be invalidated by client_command_simple */
+      mc_tpld_renew_ref (&td, topology);
+      ASSERT_CMPINT (discovered_nodes_len,
+                     ==,
+                     (int) mc_tpld_servers_const (td.ptr)->items_len);
 
       if (pooled) {
          ASSERT_CMPINT ((int) client->cluster.nodes->items_len, ==, 1);
@@ -2020,6 +2023,7 @@ test_seed_list (bool rs, connection_option_t connection_option, bool pooled)
    }
 
    mock_server_destroy (server);
+   mc_tpld_drop_ref (&td);
 }
 
 
@@ -2512,7 +2516,8 @@ static void
 test_mongoc_client_ssl_disabled (void)
 {
    capture_logs (true);
-   ASSERT (NULL == test_framework_client_new ("mongodb://host/?ssl=true", NULL));
+   ASSERT (NULL ==
+           test_framework_client_new ("mongodb://host/?ssl=true", NULL));
 }
 #endif
 
@@ -2788,7 +2793,7 @@ _test_mongoc_client_select_server_error (bool pooled)
 
    /* Server Selection Spec: "With topology type Single, the single server is
     * always suitable for reads if it is available." */
-   tdtype = client->topology->description.type;
+   tdtype = _mongoc_topology_get_type (client->topology);
    if (tdtype == MONGOC_TOPOLOGY_SINGLE || tdtype == MONGOC_TOPOLOGY_SHARDED) {
       ASSERT (sd);
       server_type = mongoc_server_description_type (sd);
@@ -3014,8 +3019,8 @@ _cmd (mock_server_t *server,
 
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'cmd': 1}"), NULL, NULL, error);
-   request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
    ASSERT (request);
 
    if (server_replies) {
@@ -3943,11 +3948,12 @@ test_mongoc_client_recv_network_error (void)
    future_t *future;
    request_t *request;
    bson_error_t error;
-   mongoc_server_description_t *sd;
+   mongoc_server_description_t const *sd;
    int generation;
    mongoc_rpc_t rpc;
    mongoc_buffer_t buffer;
    mongoc_server_stream_t *stream;
+   mc_shared_tpld td;
 
    server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
@@ -3966,11 +3972,11 @@ test_mongoc_client_recv_network_error (void)
    future_destroy (future);
 
    /* The server should be a standalone. */
-   sd = mongoc_topology_server_by_id (client->topology, 1, &error);
+   sd = mongoc_topology_description_server_by_id_const (
+      mc_tpld_unsafe_get_const (client->topology), 1, &error);
    ASSERT_OR_PRINT (sd, error);
-   generation = mongoc_generation_map_get (sd->generation_map, &kZeroServiceId);
+   generation = mc_tpl_sd_get_generation (sd, &kZeroServiceId);
    BSON_ASSERT (sd->type == MONGOC_SERVER_STANDALONE);
-   mongoc_server_description_destroy (sd);
    mock_server_destroy (server);
 
    /* A network error when calling _mongoc_client_recv should mark the server
@@ -3986,18 +3992,17 @@ test_mongoc_client_recv_network_error (void)
    ASSERT_OR_PRINT (stream, error);
    BSON_ASSERT (!_mongoc_client_recv (client, &rpc, &buffer, stream, &error));
 
-   sd = mongoc_topology_server_by_id (client->topology, 1, &error);
+   td = mc_tpld_take_ref (client->topology);
+   sd = mongoc_topology_description_server_by_id_const (td.ptr, 1, &error);
    ASSERT_OR_PRINT (sd, error);
    ASSERT_CMPINT (
-      mongoc_generation_map_get (sd->generation_map, &kZeroServiceId),
-      ==,
-      generation + 1);
+      mc_tpl_sd_get_generation (sd, &kZeroServiceId), ==, generation + 1);
    BSON_ASSERT (sd->type == MONGOC_SERVER_UNKNOWN);
 
-   mongoc_server_description_destroy (sd);
    mongoc_client_destroy (client);
    _mongoc_buffer_destroy (&buffer);
    mongoc_server_stream_cleanup (stream);
+   mc_tpld_drop_ref (&td);
 }
 
 void
@@ -4018,7 +4023,7 @@ test_mongoc_client_get_handshake_hello_response_single (void)
       0 != strcmp ("Unknown", mongoc_server_description_type (monitor_sd)));
 
    /* Invalidate the server. */
-   mongoc_topology_invalidate_server (client->topology, monitor_sd->id, &error);
+   _mongoc_topology_invalidate_server (client->topology, monitor_sd->id);
 
    /* Get the new invalidated server description from monitoring. */
    invalidated_sd =
@@ -4070,7 +4075,7 @@ test_mongoc_client_get_handshake_hello_response_pooled (void)
    ASSERT_OR_PRINT (ret, error);
 
    /* Invalidate the server. */
-   mongoc_topology_invalidate_server (client->topology, monitor_sd->id, &error);
+   _mongoc_topology_invalidate_server (client->topology, monitor_sd->id);
 
    /* Get the new invalidated server description from monitoring. */
    invalidated_sd =
@@ -4439,10 +4444,12 @@ test_client_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Client/get_handshake_hello_response/pooled",
                       test_mongoc_client_get_handshake_hello_response_pooled);
-   TestSuite_AddLive (suite,
-                      "/Client/get_handshake_establishes_connection/single",
-                      test_mongoc_client_get_handshake_establishes_connection_single);
-   TestSuite_AddLive (suite,
-                      "/Client/get_handshake_establishes_connection/pooled",
-                      test_mongoc_client_get_handshake_establishes_connection_pooled);
+   TestSuite_AddLive (
+      suite,
+      "/Client/get_handshake_establishes_connection/single",
+      test_mongoc_client_get_handshake_establishes_connection_single);
+   TestSuite_AddLive (
+      suite,
+      "/Client/get_handshake_establishes_connection/pooled",
+      test_mongoc_client_get_handshake_establishes_connection_pooled);
 }

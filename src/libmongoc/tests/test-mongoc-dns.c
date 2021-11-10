@@ -448,15 +448,15 @@ dump_hosts (mongoc_host_list_t *hosts)
 }
 
 static void
-dump_topology_description (mongoc_topology_description_t *td)
+dump_topology_description (const mongoc_topology_description_t *td)
 {
    size_t i;
-   mongoc_server_description_t *sd;
+   const mongoc_server_description_t *sd;
+   const mongoc_set_t *servers = mc_tpld_servers_const (td);
 
    MONGOC_DEBUG ("topology hosts:");
-   for (i = 0; i < td->servers->items_len; ++i) {
-      sd = (mongoc_server_description_t *) mongoc_set_get_item (td->servers,
-                                                                (int) i);
+   for (i = 0; i < servers->items_len; ++i) {
+      sd = mongoc_set_get_item_const (servers, (int) i);
       MONGOC_DEBUG ("- %s", sd->host.host_and_port);
    }
 }
@@ -467,6 +467,7 @@ check_topology_description (mongoc_topology_description_t *td,
 {
    int nhosts = 0;
    mongoc_host_list_t *host;
+   const mongoc_set_t *servers = mc_tpld_servers_const (td);
 
    for (host = hosts; host; host = host->next) {
       uint32_t server_count;
@@ -474,10 +475,10 @@ check_topology_description (mongoc_topology_description_t *td,
       nhosts++;
       /* Check that "host" is already in the topology description by upserting
        * it, and ensuring that the number of servers remains constant. */
-      server_count = td->servers->items_len;
+      server_count = servers->items_len;
       BSON_ASSERT (mongoc_topology_description_add_server (
          td, host->host_and_port, NULL));
-      if (server_count != td->servers->items_len) {
+      if (server_count != servers->items_len) {
          dump_topology_description (td);
          dump_hosts (hosts);
          test_error ("topology description did not have host: %s",
@@ -485,7 +486,7 @@ check_topology_description (mongoc_topology_description_t *td,
       }
    }
 
-   if (nhosts != td->servers->items_len) {
+   if (nhosts != servers->items_len) {
       dump_topology_description (td);
       dump_hosts (hosts);
       test_error ("topology description had extra hosts");
@@ -646,6 +647,7 @@ _prose_test_9 (bool pooled)
    mongoc_client_t *client;
    mongoc_host_list_t *expected_hosts;
    mongoc_topology_t *topology;
+   mc_tpld_modification tdmod;
 #define RESCAN_INTERVAL_MS 500
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
@@ -679,11 +681,9 @@ _prose_test_9 (bool pooled)
       topology = client->topology;
    }
 
-   bson_mutex_lock (&topology->mutex);
    _mongoc_topology_set_rr_resolver (topology, _mock_resolver);
    _mongoc_topology_set_srv_polling_rescan_interval_ms (topology,
                                                         RESCAN_INTERVAL_MS);
-   bson_mutex_unlock (&topology->mutex);
 
    if (pooled) {
       client = mongoc_client_pool_pop (pool);
@@ -696,10 +696,13 @@ _prose_test_9 (bool pooled)
       _prose_loadbalanced_ping (client);
    }
 
-   bson_mutex_lock (&topology->mutex);
    expected_hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
-   check_topology_description (&client->topology->description, expected_hosts);
-   bson_mutex_unlock (&topology->mutex);
+   /* We don't intend to modify the topology, but we need a writeable instance
+    * in a thread-safe manner. Open a modification to get a writeable copy. */
+   tdmod = mc_tpld_modify_begin (client->topology);
+   check_topology_description (tdmod.new_td, expected_hosts);
+   /* Just throw the modification. It will be a no-op anyway. */
+   mc_tpld_modify_drop (tdmod);
 
    if (pooled) {
       mongoc_client_pool_push (pool, client);
@@ -722,6 +725,127 @@ static void
 prose_test_9_pooled (void *unused)
 {
    _prose_test_9 (true);
+}
+
+/* cb_stats_t tracks counters for the test_invalid_topology_pooled and
+ * test_invalid_topology_single tests. */
+typedef struct {
+   int num_topology_opening;
+   int num_topology_closed;
+   int num_server_opening;
+   int num_server_closed;
+} cb_stats_t;
+
+/* invalid_topology_opening is used as a callback for the
+ * test_invalid_topology_pooled and test_invalid_topology_single tests. */
+static void
+invalid_topology_opening (const mongoc_apm_topology_opening_t *event) {
+   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_topology_opening_get_context (event);
+   stats->num_topology_opening++;
+}
+
+/* invalid_topology_closed is used as a callback for the
+ * test_invalid_topology_pooled and test_invalid_topology_single tests. */
+static void
+invalid_topology_closed (const mongoc_apm_topology_closed_t *event) {
+   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_topology_closed_get_context (event);
+   stats->num_topology_closed++;
+}
+
+/* invalid_server_closed is used as a callback for the
+ * test_invalid_topology_pooled and test_invalid_topology_single tests. */
+static void
+invalid_server_closed (const mongoc_apm_server_closed_t *event) {
+   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_server_closed_get_context (event);
+   stats->num_server_closed++;
+}
+
+/* invalid_server_opening is used as a callback for the
+ * test_invalid_topology_pooled and test_invalid_topology_single tests. */
+static void
+invalid_server_opening (const mongoc_apm_server_opening_t *event) {
+   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_server_opening_get_context (event);
+   stats->num_server_opening++;
+}
+
+/* CDRIVER-4184 Test that an invalid topology does not emit a topology_closed
+ * event. */
+static void
+test_invalid_topology_pooled (void *unused) {
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   mongoc_apm_callbacks_t *cbs;
+   cb_stats_t stats = {0};
+
+   /* TXT record for test20.test.build.10gen.cc resolves to "loadBalanced=true". */
+   uri = mongoc_uri_new ("mongodb+srv://test20.test.build.10gen.cc/?replicaSet=rs0");
+   pool = mongoc_client_pool_new (uri);
+   cbs = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_topology_opening_cb (cbs, invalid_topology_opening);
+   mongoc_apm_set_topology_closed_cb (cbs, invalid_topology_closed);
+   mongoc_apm_set_server_opening_cb (cbs, invalid_server_opening);
+   mongoc_apm_set_server_closed_cb (cbs, invalid_server_closed);
+   mongoc_client_pool_set_apm_callbacks (pool, cbs, &stats);
+
+   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
+
+   /* Pop a client to attempt to start monitoring. Monitoring emits the topology_opening event on valid topologies. */
+   client = mongoc_client_pool_pop (pool);
+   mongoc_client_pool_push (pool, client);
+
+   mongoc_apm_callbacks_destroy (cbs);
+   mongoc_client_pool_destroy (pool);
+   mongoc_uri_destroy (uri);
+
+   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
+   ASSERT_CMPINT(stats.num_server_opening, ==, 0);
+   ASSERT_CMPINT(stats.num_server_closed, ==, 0);
+   ASSERT_CMPINT(stats.num_topology_closed, ==, 0);
+}
+
+/* CDRIVER-4184 Test that an invalid topology does not emit a topology_closed
+ * event. */
+static void
+test_invalid_topology_single (void *unused) {
+   mongoc_client_t *client;
+   mongoc_uri_t *uri;
+   mongoc_apm_callbacks_t *cbs;
+   cb_stats_t stats = {0};
+   bson_error_t error;
+   mongoc_server_description_t *sd;
+
+   /* TXT records for test20.test.build.10gen.cc resolve to loadBalanced=true. */
+   uri = mongoc_uri_new ("mongodb+srv://test20.test.build.10gen.cc/?replicaSet=true");
+   client = mongoc_client_new_from_uri (uri);
+   cbs = mongoc_apm_callbacks_new ();
+   mongoc_apm_set_topology_opening_cb (cbs, invalid_topology_opening);
+   mongoc_apm_set_topology_closed_cb (cbs, invalid_topology_closed);
+   mongoc_apm_set_server_opening_cb (cbs, invalid_server_opening);
+   mongoc_apm_set_server_closed_cb (cbs, invalid_server_closed);
+   mongoc_client_set_apm_callbacks (client, cbs, &stats);
+
+   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
+
+   /* Perform server selection. Server selection emits the topology_opening
+    * event on valid topologies. */
+   sd = mongoc_client_select_server (
+      client, false /* for_writes */, NULL /* read_prefs */, &error);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_SERVER_SELECTION,
+      MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+      "URI with \"loadbalanced\" enabled must not contain option \"replicaset\"");
+   ASSERT (!sd);
+
+   mongoc_apm_callbacks_destroy (cbs);
+   mongoc_client_destroy (client);
+   mongoc_uri_destroy (uri);
+
+   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
+   ASSERT_CMPINT(stats.num_server_opening, ==, 0);
+   ASSERT_CMPINT(stats.num_server_closed, ==, 0);
+   ASSERT_CMPINT(stats.num_topology_closed, ==, 0);
 }
 
 void
@@ -763,6 +887,22 @@ test_dns_install (TestSuite *suite)
       suite,
       "/initial_dns_seedlist_discovery/srv_polling/prose_test_9/pooled",
       prose_test_9_pooled,
+      NULL,
+      NULL,
+      test_dns_check_loadbalanced);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/load-balanced/invalid_topology/pooled",
+      test_invalid_topology_pooled,
+      NULL,
+      NULL,
+      test_dns_check_loadbalanced);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/load-balanced/invalid_topology/single",
+      test_invalid_topology_single,
       NULL,
       NULL,
       test_dns_check_loadbalanced);
