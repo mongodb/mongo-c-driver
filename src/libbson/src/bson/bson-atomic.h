@@ -47,15 +47,15 @@ enum bson_memory_order {
 #define MSVC_MEMORDER_SUFFIX(X)
 #endif
 
-#if defined(USE_LEGACY_GCC_ATOMICS) || (!defined(__clang__) && \
-   __GNUC__ == 4 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 9)
+#if defined(USE_LEGACY_GCC_ATOMICS) || \
+   (!defined(__clang__) && __GNUC__ == 4)
 #define BSON_USE_LEGACY_GCC_ATOMICS
 #else
 #undef BSON_USE_LEGACY_GCC_ATOMICS
 #endif
 
 /* Not all GCC-like compilers support the current __atomic built-ins.  Older
- * GCC (pre-4.9) used different built-ins named with the __sync prefix.  When
+ * GCC (pre-5) used different built-ins named with the __sync prefix.  When
  * compiling with such older GCC versions, it is necessary to use the applicable
  * functions, which requires redefining BSON_IF_GNU_LIKE and defining the
  * additional BSON_IF_GNU_LEGACY_ATOMICS macro here. */
