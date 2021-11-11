@@ -728,12 +728,13 @@ _parse_one_tls_opts (bson_iter_t *iter,
          continue;
       }
 
-      bson_set_error (error,
-                      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-                      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-                      "Error setting TLS options for %s: %s is prohibited",
-                      kms_provider,
-                      key);
+      bson_set_error (
+         error,
+         MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+         MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+         "Error setting TLS option %s for %s. Insecure TLS options prohibited.",
+         key,
+         kms_provider);
       goto fail;
    }
 

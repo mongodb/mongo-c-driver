@@ -3126,11 +3126,11 @@ test_kms_tls_options_extra_rejected (void *unused)
    mongoc_client_encryption_opts_set_tls_opts (
       ce_opts, tmp_bson ("{'aws': {'tlsInsecure': true}}"));
    ce = mongoc_client_encryption_new (ce_opts, &error);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-      "Error setting TLS options for aws: tlsInsecure is prohibited");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                          "Error setting TLS option tlsInsecure for aws. "
+                          "Insecure TLS options prohibited");
    ASSERT (NULL == ce);
    mongoc_client_encryption_opts_destroy (ce_opts);
 
@@ -3144,11 +3144,11 @@ test_kms_tls_options_extra_rejected (void *unused)
    mongoc_client_encryption_opts_set_tls_opts (
       ce_opts, tmp_bson ("{'aws': {'extra': true}}"));
    ce = mongoc_client_encryption_new (ce_opts, &error);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
-      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
-      "Error setting TLS options for aws: extra is prohibited");
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                          "Error setting TLS option extra for aws. Insecure "
+                          "TLS options prohibited");
    ASSERT (NULL == ce);
    mongoc_client_encryption_opts_destroy (ce_opts);
 
