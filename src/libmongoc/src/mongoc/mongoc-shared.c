@@ -32,25 +32,13 @@ _release_aux (_mongoc_shared_ptr_aux *aux)
    bson_free (aux);
 }
 
-static bson_mutex_t g_shared_ptr_mtx;
+static bson_shared_mutex_t g_shared_ptr_lk;
 static bson_once_t g_shared_ptr_mtx_init_once = BSON_ONCE_INIT;
 
 static BSON_ONCE_FUN (_init_mtx)
 {
-   bson_mutex_init (&g_shared_ptr_mtx);
+   bson_shared_mutex_init (&g_shared_ptr_lk);
    BSON_ONCE_RETURN;
-}
-
-static void
-_shared_ptr_lock ()
-{
-   bson_mutex_lock (&g_shared_ptr_mtx);
-}
-
-static void
-_shared_ptr_unlock ()
-{
-   bson_mutex_unlock (&g_shared_ptr_mtx);
 }
 
 void
@@ -105,11 +93,11 @@ mongoc_atomic_shared_ptr_store (mongoc_shared_ptr *const out,
    /* We are effectively "copying" the 'from' */
    (void) mongoc_shared_ptr_copy (from);
 
-   _shared_ptr_lock ();
+   bson_shared_mutex_lock_exclusive (&g_shared_ptr_lk);
    /* Do the exchange. Quick! */
    prev = *out;
    *out = from;
-   _shared_ptr_unlock ();
+   bson_shared_mutex_unlock_exclusive (&g_shared_ptr_lk);
 
    /* Free the pointer that we just overwrote */
    mongoc_shared_ptr_reset_null (&prev);
@@ -120,9 +108,9 @@ mongoc_atomic_shared_ptr_load (mongoc_shared_ptr const *ptr)
 {
    mongoc_shared_ptr r;
    BSON_ASSERT_PARAM (ptr);
-   _shared_ptr_lock ();
+   bson_shared_mutex_lock_shared (&g_shared_ptr_lk);
    r = mongoc_shared_ptr_copy (*ptr);
-   _shared_ptr_unlock ();
+   bson_shared_mutex_unlock_shared (&g_shared_ptr_lk);
    return r;
 }
 
