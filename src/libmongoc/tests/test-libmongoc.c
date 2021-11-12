@@ -2636,7 +2636,7 @@ test_framework_skip_if_no_client_side_encryption (void)
    bool has_creds = true;
 
    for (iter = required_env_vars; *iter != NULL; iter++) {
-      char* val;
+      char *val;
 
       val = test_framework_getenv (*iter);
       if (!val) {
