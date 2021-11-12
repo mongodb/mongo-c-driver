@@ -499,6 +499,16 @@ test_framework_getenv (const char *name)
    return _mongoc_getenv (name);
 }
 
+char *
+test_framework_getenv_required (const char *name)
+{
+   char *ret = _mongoc_getenv (name);
+   if (!ret) {
+      test_error ("Expected environment variable: %s to be set", name);
+   }
+   return ret;
+}
+
 /* Returns false if unable to set environment variable. Which may occur if
  * test-libmongoc lacks permissions to do so. */
 bool
