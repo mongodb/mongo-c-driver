@@ -294,15 +294,11 @@ _make_kms_providers (bool with_aws, bool with_local)
 }
 
 static bson_t *
-_make_tls_opts (bool with_kmip)
+_make_tls_opts (void)
 {
    bson_t *tls_opts = bson_new ();
    char *kmip_tls_ca_file;
    char *kmip_tls_certificate_key_file;
-
-   if (!with_kmip) {
-      return tls_opts;
-   }
 
    kmip_tls_ca_file = test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
    kmip_tls_certificate_key_file =
@@ -749,7 +745,7 @@ test_datakey_and_double_encryption (void *unused)
     * client_encrypted) */
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
    kms_providers = _make_kms_providers (true /* aws */, true /* local */);
-   tls_opts = _make_tls_opts (true /* kmip */);
+   tls_opts = _make_tls_opts ();
    _check_bypass (auto_encryption_opts);
    mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                   kms_providers);
@@ -1826,7 +1822,7 @@ _test_corpus (bool local_schema)
    kms_providers = _make_kms_providers (true /* aws */, true /* local */);
    mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                   kms_providers);
-   tls_opts = _make_tls_opts (true /* kmip */);
+   tls_opts = _make_tls_opts ();
    mongoc_auto_encryption_opts_set_tls_opts (auto_encryption_opts, tls_opts);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
       auto_encryption_opts, "keyvault", "datakeys");
