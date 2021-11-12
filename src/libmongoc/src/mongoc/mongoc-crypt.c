@@ -722,9 +722,13 @@ _parse_one_tls_opts (bson_iter_t *iter,
       if (0 ==
           bson_strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD)) {
          continue;
-      } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE)) {
+      }
+
+      if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE)) {
          continue;
-      } else if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCAFILE)) {
+      }
+
+      if (0 == bson_strcasecmp (key, MONGOC_URI_TLSCAFILE)) {
          continue;
       }
 
