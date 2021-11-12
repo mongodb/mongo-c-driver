@@ -1109,6 +1109,40 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
    bson_free (certificate_key_file);
 }
 
+/* Use the returned UUID of the key to explicitly encrypt and decrypt the
+ * string "test" to validate it works. */
+#define TEST_ENCRYPT_DECRYPT(keyid, client_encryption, res, error)           \
+   do {                                                                      \
+      bson_value_t ciphertext;                                               \
+      bson_value_t plaintext;                                                \
+      bson_value_t test;                                                     \
+      mongoc_client_encryption_encrypt_opts_t *encrypt_opts;                 \
+                                                                             \
+      test.value_type = BSON_TYPE_UTF8;                                      \
+      test.value.v_utf8.str = "test";                                        \
+      test.value.v_utf8.len = 4;                                             \
+                                                                             \
+      encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();           \
+      mongoc_client_encryption_encrypt_opts_set_algorithm (                  \
+         encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);  \
+      mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, keyid); \
+      res = mongoc_client_encryption_encrypt (                               \
+         client_encryption, &test, encrypt_opts, &ciphertext, &error);       \
+      ASSERT_OR_PRINT (res, error);                                          \
+      res = mongoc_client_encryption_decrypt (                               \
+         client_encryption, &ciphertext, &plaintext, &error);                \
+      ASSERT_OR_PRINT (res, error);                                          \
+      if (plaintext.value_type != BSON_TYPE_UTF8) {                          \
+         test_error (                                                        \
+            "expected decrypted result to be value type UTF-8, got %s",      \
+            _mongoc_bson_type_to_str (plaintext.value_type));                \
+      }                                                                      \
+      ASSERT_CMPSTR (plaintext.value.v_utf8.str, test.value.v_utf8.str);     \
+      bson_value_destroy (&ciphertext);                                      \
+      bson_value_destroy (&plaintext);                                       \
+      mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);          \
+   } while (0)
+
 static void
 test_custom_endpoint (void *unused)
 {
@@ -1120,21 +1154,10 @@ test_custom_endpoint (void *unused)
    bool res;
    bson_t *masterkey;
    bson_value_t keyid;
-   bson_value_t test;
-   bson_value_t ciphertext;
-   bson_value_t plaintext;
-   mongoc_client_encryption_encrypt_opts_t *encrypt_opts;
 
    keyvault_client = test_framework_new_default_client ();
 
    datakey_opts = mongoc_client_encryption_datakey_opts_new ();
-   test.value_type = BSON_TYPE_UTF8;
-   test.value.v_utf8.str = "test";
-   test.value.v_utf8.len = 4;
-
-   encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
-   mongoc_client_encryption_encrypt_opts_set_algorithm (
-      encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
 
    /* Case 1: No endpoint, expect to succeed. */
    _endpoint_setup (
@@ -1149,15 +1172,8 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   ASSERT_OR_PRINT (res, error);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1178,15 +1194,8 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   ASSERT_OR_PRINT (res, error);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1207,15 +1216,8 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   ASSERT_OR_PRINT (res, error);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1304,15 +1306,8 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "azure", datakey_opts, &keyid, &error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   ASSERT_OR_PRINT (res, error);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1346,15 +1341,8 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "gcp", datakey_opts, &keyid, &error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   ASSERT_OR_PRINT (res, error);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1405,23 +1393,8 @@ test_custom_endpoint (void *unused)
       client_encryption, "kmip", datakey_opts, &keyid, &error);
    ASSERT_OR_PRINT (res, error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
-   res = mongoc_client_encryption_decrypt (
-      client_encryption, &ciphertext, &plaintext, &error);
-   ASSERT_OR_PRINT (res, error);
-   if (plaintext.value_type != BSON_TYPE_UTF8) {
-      test_error ("expected decrypted result to be value type UTF-8, got %s",
-                  _mongoc_bson_type_to_str (plaintext.value_type));
-   }
-   ASSERT_CMPSTR (plaintext.value.v_utf8.str, test.value.v_utf8.str);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
-   bson_value_destroy (&plaintext);
 
    /* Attempt to use client_encryption_invalid with the same masterKey. Expect
     * an error. */
@@ -1447,23 +1420,8 @@ test_custom_endpoint (void *unused)
       client_encryption, "kmip", datakey_opts, &keyid, &error);
    ASSERT_OR_PRINT (res, error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
-   res = mongoc_client_encryption_decrypt (
-      client_encryption, &ciphertext, &plaintext, &error);
-   ASSERT_OR_PRINT (res, error);
-   if (plaintext.value_type != BSON_TYPE_UTF8) {
-      test_error ("expected decrypted result to be value type UTF-8, got %s",
-                  _mongoc_bson_type_to_str (plaintext.value_type));
-   }
-   ASSERT_CMPSTR (plaintext.value.v_utf8.str, test.value.v_utf8.str);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
-   bson_value_destroy (&plaintext);
 
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
@@ -1489,7 +1447,6 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
    mongoc_client_encryption_datakey_opts_destroy (datakey_opts);
-   mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);
    mongoc_client_destroy (keyvault_client);
 }
 
