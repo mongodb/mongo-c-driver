@@ -35,7 +35,7 @@ The format for "local" is as follows:
 .. code-block:: javascript
 
    local: {
-      key: byte[96] or String // The master key used to encrypt/decrypt data keys. May be passed as a base64 encoded string.
+      key: <96 byte BSON binary of subtype 0> or String /* The master key used to encrypt/decrypt data keys. May be passed as a base64 encoded string. */
    }
 
 The format for "azure" is as follows:
@@ -46,7 +46,7 @@ The format for "azure" is as follows:
       tenantId: String,
       clientId: String,
       clientSecret: String,
-      identityPlatformEndpoint: Optional<String> // Defaults to login.microsoftonline.com
+      identityPlatformEndpoint: Optional<String> /* Defaults to login.microsoftonline.com */
    }
 
 The format for "gcp" is as follows:
@@ -55,8 +55,8 @@ The format for "gcp" is as follows:
 
    gcp: {
       email: String,
-      privateKey: byte[] or String, // May be passed as a base64 encoded string.
-      endpoint: Optional<String> // Defaults to oauth2.googleapis.com
+      privateKey: byte[] or String, /* May be passed as a base64 encoded string. */
+      endpoint: Optional<String> /* Defaults to oauth2.googleapis.com */
    }
 
 The format for "kmip" is as follows:

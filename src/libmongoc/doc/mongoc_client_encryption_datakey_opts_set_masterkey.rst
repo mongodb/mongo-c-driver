@@ -33,8 +33,8 @@ The format of ``masterkey`` for "aws" is as follows:
 
    {
       region: String,
-      key: String, // The Amazon Resource Name (ARN) to the AWS customer master key (CMK).
-      endpoint: Optional<String> // An alternate host identifier to send KMS requests to. May include port number. Defaults to "kms.<region>.amazonaws.com"
+      key: String, /* The Amazon Resource Name (ARN) to the AWS customer master key (CMK). */
+      endpoint: Optional<String> /* An alternate host identifier to send KMS requests to. May include port number. Defaults to "kms.<region>.amazonaws.com" */
    }
 
 The format of ``masterkey`` for "azure" is as follows:
@@ -42,9 +42,9 @@ The format of ``masterkey`` for "azure" is as follows:
 .. code-block:: javascript
 
    {
-      keyVaultEndpoint: String, // Host with optional port. Example: "example.vault.azure.net".
+      keyVaultEndpoint: String, /* Host with optional port. Example: "example.vault.azure.net". */
       keyName: String,
-      keyVersion: Optional<String> // A specific version of the named key, defaults to using the key's primary version.
+      keyVersion: Optional<String> /* A specific version of the named key, defaults to using the key's primary version. */
    }
 
 The format of ``masterkey`` for "gcp" is as follows:
@@ -56,8 +56,8 @@ The format of ``masterkey`` for "gcp" is as follows:
       location: String,
       keyRing: String,
       keyName: String,
-      keyVersion: Optional<String>, // A specific version of the named key, defaults to using the key's primary version.
-      endpoint: Optional<String> // Host with optional port. Defaults to "cloudkms.googleapis.com".
+      keyVersion: Optional<String>, /* A specific version of the named key, defaults to using the key's primary version. */
+      endpoint: Optional<String> /* Host with optional port. Defaults to "cloudkms.googleapis.com". */
    }
 
 The format of ``masterkey`` for "kmip" is as follows:
@@ -66,5 +66,5 @@ The format of ``masterkey`` for "kmip" is as follows:
 
    {
       keyId: Optional<String>,
-      endpoint: Optional<String> // Host with optional port.
+      endpoint: Optional<String> /* Host with optional port. */
    }
