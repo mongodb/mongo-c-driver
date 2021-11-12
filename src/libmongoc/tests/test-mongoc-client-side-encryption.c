@@ -147,15 +147,9 @@ _make_aws_kms_provider (bson_t *kms_providers)
    char *aws_access_key_id;
 
    aws_secret_access_key =
-      test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
-   aws_access_key_id = test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
-   if (!aws_secret_access_key || !aws_access_key_id) {
-      fprintf (stderr,
-               "Set MONGOC_TEST_AWS_SECRET_ACCESS_KEY and "
-               "MONGOC_TEST_AWS_ACCESS_KEY_ID environment variables to run "
-               "CSFLE tests.");
-      abort ();
-   }
+      test_framework_getenv_required ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+   aws_access_key_id =
+      test_framework_getenv_required ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
 
    if (!kms_providers) {
       kms_providers = bson_new ();
@@ -180,18 +174,12 @@ _make_azure_kms_provider (bson_t *kms_providers)
    char *azure_client_id;
    char *azure_client_secret;
 
-   azure_tenant_id = test_framework_getenv ("MONGOC_TEST_AZURE_TENANT_ID");
-   azure_client_id = test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_ID");
+   azure_tenant_id =
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_TENANT_ID");
+   azure_client_id =
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_ID");
    azure_client_secret =
-      test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
-
-   if (!azure_tenant_id || !azure_client_id || !azure_client_secret) {
-      fprintf (
-         stderr,
-         "Set MONGOC_TEST_AZURE_TENANT_ID, MONGOC_TEST_AZURE_CLIENT_ID, and "
-         "MONGOC_TEST_AZURE_CLIENT_SECRET to enable CSFLE tests.");
-      abort ();
-   }
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_SECRET");
 
    if (!kms_providers) {
       kms_providers = bson_new ();
@@ -218,8 +206,9 @@ _make_gcp_kms_provider (bson_t *kms_providers)
    char *gcp_privatekey;
 
 
-   gcp_email = test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
-   gcp_privatekey = test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
+   gcp_email = test_framework_getenv_required ("MONGOC_TEST_GCP_EMAIL");
+   gcp_privatekey =
+      test_framework_getenv_required ("MONGOC_TEST_GCP_PRIVATEKEY");
 
    if (!gcp_email || !gcp_privatekey) {
       fprintf (stderr,
@@ -300,14 +289,10 @@ _make_tls_opts (void)
    char *kmip_tls_ca_file;
    char *kmip_tls_certificate_key_file;
 
-   kmip_tls_ca_file = test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
-   kmip_tls_certificate_key_file =
-      test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
-   if (!kmip_tls_ca_file || !kmip_tls_certificate_key_file) {
-      test_error (
-         "Set MONGOC_TEST_CSFLE_TLS_CA_FILE, and "
-         "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE to enable CSFLE tests.");
-   }
+   kmip_tls_ca_file =
+      test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+   kmip_tls_certificate_key_file = test_framework_getenv_required (
+      "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
 
    bson_concat (
       tls_opts,
@@ -1021,22 +1006,23 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
    bson_error_t error;
 
    char *mongoc_test_aws_access_key_id =
-      test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+      test_framework_getenv_required ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
    char *mongoc_test_aws_secret_access_key =
-      test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+      test_framework_getenv_required ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
    char *mongoc_test_azure_tenant_id =
-      test_framework_getenv ("MONGOC_TEST_AZURE_TENANT_ID");
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_TENANT_ID");
    char *mongoc_test_azure_client_id =
-      test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_ID");
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_ID");
    char *mongoc_test_azure_client_secret =
-      test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_SECRET");
    char *mongoc_test_gcp_email =
-      test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
+      test_framework_getenv_required ("MONGOC_TEST_GCP_EMAIL");
    char *mongoc_test_gcp_privatekey =
-      test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
-   char *ca_file = test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
-   char *certificate_key_file =
-      test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+      test_framework_getenv_required ("MONGOC_TEST_GCP_PRIVATEKEY");
+   char *ca_file =
+      test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+   char *certificate_key_file = test_framework_getenv_required (
+      "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
 
 
    kms_providers =
@@ -2630,22 +2616,23 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
    bson_t *tls_opts;
 
    char *mongoc_test_aws_access_key_id =
-      test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+      test_framework_getenv_required ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
    char *mongoc_test_aws_secret_access_key =
-      test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+      test_framework_getenv_required ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
    char *mongoc_test_azure_tenant_id =
-      test_framework_getenv ("MONGOC_TEST_AZURE_TENANT_ID");
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_TENANT_ID");
    char *mongoc_test_azure_client_id =
-      test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_ID");
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_ID");
    char *mongoc_test_azure_client_secret =
-      test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_SECRET");
    char *mongoc_test_gcp_email =
-      test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
+      test_framework_getenv_required ("MONGOC_TEST_GCP_EMAIL");
    char *mongoc_test_gcp_privatekey =
-      test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
-   char *ca_file = test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
-   char *certificate_key_file =
-      test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+      test_framework_getenv_required ("MONGOC_TEST_GCP_PRIVATEKEY");
+   char *ca_file =
+      test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+   char *certificate_key_file = test_framework_getenv_required (
+      "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
 
    if (test_ce == WITH_TLS) {
       kms_providers =
