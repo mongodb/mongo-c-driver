@@ -676,8 +676,11 @@ fail:
 }
 
 /* _parse_one_tls_opts parses one TLS document.
- * @iter is an iterator at the start of a KMS provider key/value pair.
- * @out_opt is written to on success, and left unmodified on error.
+ * Pre-conditions:
+ * - @iter is an iterator at the start of a KMS provider key/value pair.
+ * - @out_opt must not be initialized.
+ * Post-conditions:
+ * - @out_opt is always initialized.
  * Returns false and sets @error on error. */
 static bool
 _parse_one_tls_opts (bson_iter_t *iter,
@@ -694,6 +697,7 @@ _parse_one_tls_opts (bson_iter_t *iter,
 
    errmsg = bson_string_new (NULL);
    kms_provider = bson_iter_key (iter);
+   memset (out_opt, 0, sizeof (mongoc_ssl_opt_t));
 
    if (!BSON_ITER_HOLDS_DOCUMENT (iter)) {
       bson_set_error (error,
@@ -771,22 +775,10 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
 {
    bson_iter_t iter;
    bool ok = false;
-
-   _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
-                             &crypt->aws_tls_opt,
-                             false /* copy internal */);
-
-   _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
-                             &crypt->azure_tls_opt,
-                             false /* copy internal */);
-
-   _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
-                             &crypt->gcp_tls_opt,
-                             false /* copy internal */);
-
-   _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
-                             &crypt->kmip_tls_opt,
-                             false /* copy internal */);
+   bool has_aws = false;
+   bool has_azure = false;
+   bool has_gcp = false;
+   bool has_kmip = false;
 
    if (!tls_opts) {
       return true;
@@ -805,8 +797,15 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
 
       key = bson_iter_key (&iter);
       if (0 == strcmp (key, "aws")) {
-         _mongoc_ssl_opts_cleanup (&crypt->aws_tls_opt,
-                                   false /* free internal */);
+         if (has_aws) {
+            bson_set_error (error,
+                           MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                           MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                           "Error parsing duplicate TLS options for %s", key);
+            goto fail;
+         }
+
+         has_aws = true;
          if (!_parse_one_tls_opts (&iter, &crypt->aws_tls_opt, error)) {
             goto fail;
          }
@@ -814,8 +813,15 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
       }
 
       if (0 == strcmp (key, "azure")) {
-         _mongoc_ssl_opts_cleanup (&crypt->azure_tls_opt,
-                                   false /* free internal */);
+         if (has_azure) {
+            bson_set_error (error,
+                           MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                           MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                           "Error parsing duplicate TLS options for %s", key);
+            goto fail;
+         }
+
+         has_azure = true;
          if (!_parse_one_tls_opts (&iter, &crypt->azure_tls_opt, error)) {
             goto fail;
          }
@@ -823,8 +829,15 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
       }
 
       if (0 == strcmp (key, "gcp")) {
-         _mongoc_ssl_opts_cleanup (&crypt->gcp_tls_opt,
-                                   false /* free internal */);
+         if (has_gcp) {
+            bson_set_error (error,
+                           MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                           MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                           "Error parsing duplicate TLS options for %s", key);
+            goto fail;
+         }
+
+         has_gcp = true;
          if (!_parse_one_tls_opts (&iter, &crypt->gcp_tls_opt, error)) {
             goto fail;
          }
@@ -832,8 +845,15 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
       }
 
       if (0 == strcmp (key, "kmip")) {
-         _mongoc_ssl_opts_cleanup (&crypt->kmip_tls_opt,
-                                   false /* free internal */);
+         if (has_kmip) {
+            bson_set_error (error,
+                           MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                           MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                           "Error parsing duplicate TLS options for %s", key);
+            goto fail;
+         }
+
+         has_kmip = true;
          if (!_parse_one_tls_opts (&iter, &crypt->kmip_tls_opt, error)) {
             goto fail;
          }
@@ -848,6 +868,33 @@ _parse_all_tls_opts (_mongoc_crypt_t *crypt,
       goto fail;
    }
 
+   /* Configure with default TLS options. The mongoc_ssl_opt_t returned by
+    * mongoc_ssl_opt_get_default may contain non-NULL fields if
+    * MONGOC_SSL_DEFAULT_TRUST_FILE or MONGOC_SSL_DEFAULT_TRUST_DIR are defined.
+    */
+   if (!has_aws) {
+      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
+                                &crypt->aws_tls_opt,
+                                false /* copy internal */);
+   }
+
+   if (!has_azure) {
+      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
+                                &crypt->azure_tls_opt,
+                                false /* copy internal */);
+   }
+
+   if (!has_gcp) {
+      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
+                                &crypt->gcp_tls_opt,
+                                false /* copy internal */);
+   }
+
+   if (!has_kmip) {
+      _mongoc_ssl_opts_copy_to (mongoc_ssl_opt_get_default (),
+                                &crypt->kmip_tls_opt,
+                                false /* copy internal */);
+   }
    ok = true;
 fail:
    return ok;

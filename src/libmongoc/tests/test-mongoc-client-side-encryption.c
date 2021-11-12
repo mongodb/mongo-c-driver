@@ -3152,6 +3152,25 @@ test_kms_tls_options_extra_rejected (void *unused)
    ASSERT (NULL == ce);
    mongoc_client_encryption_opts_destroy (ce_opts);
 
+   /* Test that TLS options for duplicate providers are rejected. */
+   memset (&error, 0, sizeof (bson_error_t));
+   ce_opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      ce_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (ce_opts, keyvault_client);
+   mongoc_client_encryption_opts_set_kms_providers (ce_opts, kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (
+      ce_opts,
+      tmp_bson (
+         "{'aws': {'tlsCAFile': 'foo.pem'}, 'aws': {'tlsCAFile': 'foo.pem'}}"));
+   ce = mongoc_client_encryption_new (ce_opts, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                          "Error parsing duplicate TLS options for aws");
+   ASSERT (NULL == ce);
+   mongoc_client_encryption_opts_destroy (ce_opts);
+
    mongoc_client_destroy (keyvault_client);
 }
 
