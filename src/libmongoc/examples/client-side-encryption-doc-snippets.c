@@ -4,7 +4,7 @@
 
 /* Includes code snippets for RST documentation. */
 int
-main (int argc, char **argv)
+main (void)
 {
    mongoc_init ();
 
