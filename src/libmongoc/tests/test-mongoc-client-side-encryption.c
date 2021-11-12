@@ -2622,6 +2622,7 @@ typedef enum {
    INVALID_HOSTNAME,
    EXPIRED
 } tls_test_ce_t;
+
 static mongoc_client_encryption_t *
 _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
                                   tls_test_ce_t test_ce)
