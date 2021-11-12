@@ -2621,18 +2621,31 @@ test_framework_skip_if_no_failpoint (void)
 int
 test_framework_skip_if_no_client_side_encryption (void)
 {
-   char *aws_secret_access_key;
-   char *aws_access_key_id;
-   bool has_creds;
+   const char *required_env_vars[] = {
+      "MONGOC_TEST_AWS_SECRET_ACCESS_KEY",
+      "MONGOC_TEST_AWS_ACCESS_KEY_ID",
+      "MONGOC_TEST_AZURE_TENANT_ID",
+      "MONGOC_TEST_AZURE_CLIENT_ID",
+      "MONGOC_TEST_AZURE_CLIENT_SECRET",
+      "MONGOC_TEST_GCP_EMAIL",
+      "MONGOC_TEST_GCP_PRIVATEKEY",
+      "MONGOC_TEST_CSFLE_TLS_CA_FILE",
+      "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE",
+      NULL};
+   const char **iter;
+   bool has_creds = true;
 
-   aws_secret_access_key =
-      test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
-   aws_access_key_id = test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+   for (iter = required_env_vars; *iter != NULL; iter++) {
+      char* val;
 
-   has_creds = (NULL != aws_secret_access_key) && (NULL != aws_access_key_id);
-
-   bson_free (aws_secret_access_key);
-   bson_free (aws_access_key_id);
+      val = test_framework_getenv (*iter);
+      if (!val) {
+         MONGOC_DEBUG ("%s not defined", *iter);
+         has_creds = false;
+         break;
+      }
+      bson_free (val);
+   }
 
    if (has_creds) {
 #ifdef MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION
