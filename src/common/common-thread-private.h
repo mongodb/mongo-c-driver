@@ -160,7 +160,7 @@ bson_shared_mutex_lock_shared (bson_shared_mutex_t *mtx)
 static BSON_INLINE void
 bson_shared_mutex_lock_exclusive (bson_shared_mutex_t *mtx)
 {
-   BSON_IF_WINDOWS (AcquireSRWLockShared (&mtx->native);)
+   BSON_IF_WINDOWS (AcquireSRWLockExclusive (&mtx->native);)
    BSON_IF_POSIX (pthread_rwlock_wrlock (&mtx->native);)
 }
 
