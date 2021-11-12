@@ -366,13 +366,16 @@ if (ENABLE_SHM_COUNTERS STREQUAL "AUTO")
    if (UNIX AND NOT APPLE)
       set (ENABLE_SHM_COUNTERS ON)
    endif ()
+   if (APPLE AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64")
+      set (ENABLE_SHM_COUNTERS ON)
+   endif ()
 endif ()
 
 if (ENABLE_SHM_COUNTERS STREQUAL "ON")
-   if (APPLE OR NOT UNIX)
+   if (( NOT ${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm64" AND APPLE ) OR NOT UNIX)
       message (
          FATAL_ERROR
-         "Shared memory performance counters not supported on Mac or Windows")
+	 "Shared memory performance counters only supported on arm64 Mac and Linux")
    endif ()
    set (MONGOC_ENABLE_SHM_COUNTERS 1)
    find_library(RT_LIBRARY rt HINTS /usr/lib32)
