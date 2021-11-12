@@ -119,6 +119,16 @@ mongoc_auto_encryption_opts_set_kms_providers (
    }
 }
 
+/* _bson_copy_or_null returns a copy of @bson or NULL if @bson is NULL */
+static bson_t *
+_bson_copy_or_null (const bson_t *bson)
+{
+   if (bson) {
+      return bson_copy (bson);
+   }
+   return NULL;
+}
+
 void
 mongoc_auto_encryption_opts_set_tls_opts (mongoc_auto_encryption_opts_t *opts,
                                           const bson_t *tls_opts)
@@ -127,10 +137,7 @@ mongoc_auto_encryption_opts_set_tls_opts (mongoc_auto_encryption_opts_t *opts,
       return;
    }
    bson_destroy (opts->tls_opts);
-   opts->tls_opts = NULL;
-   if (tls_opts) {
-      opts->tls_opts = bson_copy (tls_opts);
-   }
+   opts->tls_opts = _bson_copy_or_null (tls_opts);
 }
 
 void
@@ -250,10 +257,7 @@ mongoc_client_encryption_opts_set_tls_opts (
       return;
    }
    bson_destroy (opts->tls_opts);
-   opts->tls_opts = NULL;
-   if (tls_opts) {
-      opts->tls_opts = bson_copy (tls_opts);
-   }
+   opts->tls_opts = _bson_copy_or_null (tls_opts);
 }
 
 /*--------------------------------------------------------------------------
