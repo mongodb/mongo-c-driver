@@ -26,6 +26,8 @@
 #include <strings.h>
 #endif
 
+#include <stdint.h>
+
 /* string comparison functions for Windows */
 #ifdef _WIN32
 #define strcasecmp _stricmp
@@ -156,6 +158,30 @@ _mongoc_document_is_pipeline (const bson_t *document);
  */
 char *
 _mongoc_getenv (const char *name);
+
+/* Returns a uniformly-distributed random integer in the range [min, max].
+ *
+ * The size of the range [min, max] must not equal the size of the representable
+ * range of uint32_t (`min == 0 && max == UINT32_MAX` must not be true).
+ */
+uint32_t
+_mongoc_rand_uint32_t (uint32_t min, uint32_t max);
+
+/* Returns a uniformly-distributed random integer in the range [min, max].
+ *
+ * The size of the range [min, max] must not equal the size of the representable
+ * range of uint64_t (`min == 0 && max == UINT64_MAX` must not be true).
+ */
+uint64_t
+_mongoc_rand_uint64_t (uint64_t min, uint64_t max);
+
+/* Returns a uniformly-distributed random integer in the range [min, max].
+ *
+ * The size of the range [min, max] must not equal the size of the representable
+ * range of size_t (`min == 0 && max == SIZE_MAX` must not be true).
+ */
+size_t
+_mongoc_rand_size_t (size_t min, size_t max);
 
 BSON_END_DECLS
 

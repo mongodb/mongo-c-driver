@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "common-md5-private.h"
+#include "mongoc-rand-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-client.h"
 #include "mongoc-client-session-private.h"
@@ -626,3 +627,154 @@ _mongoc_getenv (const char *name)
 
 #endif
 }
+
+/* Nearly Divisionless (Algorithm 5): https://arxiv.org/abs/1805.10941 */
+static uint32_t
+_mongoc_rand_nduid32 (uint32_t s, uint32_t (*rand32) (void))
+{
+   const uint64_t limit = UINT32_MAX; /* 2^L */
+   uint64_t x, m, l;
+
+   x = rand32 ();
+   m = x * s;
+   l = m % limit;
+
+   if (l < s) {
+      const uint64_t t = (limit - s) % s;
+
+      while (l < t) {
+         x = rand32 ();
+         m = x * s;
+         l = m % limit;
+      }
+   }
+
+   return (uint32_t) (m / limit);
+}
+
+/* Java Algorithm (Algorithm 4): https://arxiv.org/abs/1805.10941
+ * The 64-bit version of the nearly divisionless algorithm requires 128-bit
+ * integer arithmetic. Instead of trying to deal with cross-platform support for
+ * `__int128`, fallback to using the Java algorithm for 64-bit instead. */
+static uint64_t
+_mongoc_rand_java64 (uint64_t s, uint64_t (*rand64) (void))
+{
+   const uint64_t limit = UINT64_MAX; /* 2^L */
+   uint64_t x, r;
+
+   x = rand64 ();
+   r = x % s;
+
+   while ((x - r) > (limit - s)) {
+      x = rand64 ();
+      r = x % s;
+   }
+
+   return r;
+}
+
+#if defined(MONGOC_ENABLE_CRYPTO)
+/* Attempt to use `_mongoc_rand_bytes` if available. */
+
+static uint32_t
+_mongoc_simple_rand_uint32_t (void)
+{
+   uint32_t res;
+
+   (void) _mongoc_rand_bytes ((uint8_t *) &res, sizeof (res));
+
+   return res;
+}
+
+static uint64_t
+_mongoc_simple_rand_uint64_t (void)
+{
+   uint64_t res;
+
+   (void) _mongoc_rand_bytes ((uint8_t *) &res, sizeof (res));
+
+   return res;
+}
+
+#else
+/* Otherwise, fallback to rudimentary use of `rand()`. */
+
+static uint32_t
+_mongoc_simple_rand_uint32_t (void)
+{
+   /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
+    * 32767 (2^15). */
+   return (((uint32_t) rand () & 0x7FFFu) << 0u) |
+          (((uint32_t) rand () & 0x7FFFu) << 15u) |
+          (((uint32_t) rand () & 0x0003u) << 30u);
+}
+
+static uint64_t
+_mongoc_simple_rand_uint64_t (void)
+{
+   /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
+    * 32767 (2^15). */
+   return (((uint64_t) rand () & 0x7FFFu) << 0u) |
+          (((uint64_t) rand () & 0x7FFFu) << 15u) |
+          (((uint64_t) rand () & 0x7FFFu) << 30u) |
+          (((uint64_t) rand () & 0x7FFFu) << 45u) |
+          (((uint64_t) rand () & 0x0003u) << 60u);
+}
+
+#endif /* defined(MONGOC_ENABLE_CRYPTO) */
+
+uint32_t
+_mongoc_rand_uint32_t (uint32_t min, uint32_t max)
+{
+   BSON_ASSERT (min <= max);
+   BSON_ASSERT (min != 0u && max != UINT32_MAX);
+
+   return _mongoc_rand_nduid32 (max - min + 1u, _mongoc_simple_rand_uint32_t) +
+          min;
+}
+
+uint64_t
+_mongoc_rand_uint64_t (uint64_t min, uint64_t max)
+{
+   BSON_ASSERT (min <= max);
+   BSON_ASSERT (min != 0u && max != UINT64_MAX);
+
+   return _mongoc_rand_java64 (max - min + 1u, _mongoc_simple_rand_uint64_t) +
+          min;
+}
+
+#if SIZE_MAX == UINT64_MAX
+BSON_STATIC_ASSERT2 (_mongoc_simple_rand_size_t,
+                     sizeof (size_t) == sizeof (uint64_t));
+
+size_t
+_mongoc_rand_size_t (size_t min, size_t max)
+{
+   BSON_ASSERT (min <= max);
+   BSON_ASSERT (min != 0u || max != UINT64_MAX);
+
+   return _mongoc_rand_java64 (max - min + 1u, _mongoc_simple_rand_uint64_t) +
+          min;
+}
+
+#elif SIZE_MAX == UINT32_MAX
+
+BSON_STATIC_ASSERT2 (_mongoc_simple_rand_size_t,
+                     sizeof (size_t) == sizeof (uint32_t));
+
+size_t
+_mongoc_rand_size_t (size_t min, size_t max)
+{
+   BSON_ASSERT (min <= max);
+   BSON_ASSERT (min != 0u || max != UINT32_MAX);
+
+   return _mongoc_rand_nduid32 (max - min + 1u, _mongoc_simple_rand_uint32_t) +
+          min;
+}
+
+#else
+
+#error \
+   "Implementation of _mongoc_simple_rand_size_t() requires size_t be exactly 32-bit or 64-bit"
+
+#endif
