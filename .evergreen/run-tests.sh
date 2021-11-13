@@ -45,6 +45,7 @@ if [ "$SSL" != "nossl" ]; then
             sudo cp -v src/libmongoc/tests/x509gen/ca.pem /usr/share/pki/ca-trust-source/anchors/cdriver.crt || true
             if [ -f /usr/share/pki/ca-trust-source/anchors/cdriver.crt ]; then
                echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors... done."
+               sudo update-ca-trust enable --verbose
                sudo update-ca-trust extract --verbose
             else
                echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors... failed."

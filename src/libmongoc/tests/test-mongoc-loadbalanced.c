@@ -169,10 +169,13 @@ test_loadbalanced_sessions_do_not_expire (void *unused)
    bson_error_t error;
    bson_t *session1_lsid;
    bson_t *session2_lsid;
+   mc_tpld_modification tdmod;
 
    client = test_framework_new_default_client ();
    /* Mock a timeout so session expiration applies. */
-   client->topology->description.session_timeout_minutes = 1;
+   tdmod = mc_tpld_modify_begin (client->topology);
+   tdmod.new_td->session_timeout_minutes = 1;
+   mc_tpld_modify_commit (tdmod);
 
    /* Start two sessions, to ensure that pooled sessions remain in the pool when
     * the pool is accessed. */
@@ -667,7 +670,8 @@ test_post_handshake_error_clears_pool (void)
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
-   /* client_2_serviceid_a also opens a new connection and receives the same service ID. */
+   /* client_2_serviceid_a also opens a new connection and receives the same
+    * service ID. */
    future = future_client_command_simple (client_2_serviceid_a,
                                           "admin",
                                           tmp_bson ("{'ping': 1}"),
@@ -687,7 +691,8 @@ test_post_handshake_error_clears_pool (void)
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
 
-   /* client_3_serviceid_b also opens a new connection, but receives a different service ID. */
+   /* client_3_serviceid_b also opens a new connection, but receives a different
+    * service ID. */
    future = future_client_command_simple (client_3_serviceid_b,
                                           "admin",
                                           tmp_bson ("{'ping': 1}"),
@@ -721,20 +726,22 @@ test_post_handshake_error_clears_pool (void)
    mock_server_hangs_up (request);
    request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));
-   ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to send");
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "Failed to send");
    future_destroy (future);
 
    /* Assert that the server is NOT marked Unknown. */
-   monitor_sd = mongoc_client_select_server (client_1_serviceid_a, true, NULL /* read prefs */, &error);
+   monitor_sd = mongoc_client_select_server (
+      client_1_serviceid_a, true, NULL /* read prefs */, &error);
    ASSERT_CMPSTR ("LoadBalancer", mongoc_server_description_type (monitor_sd));
 
    /* This should have invalidated the connection for client_2_serviceid_a. */
    future = future_client_command_simple (client_2_serviceid_a,
-                                       "admin",
-                                       tmp_bson ("{'ping': 1}"),
-                                       NULL /* read prefs */,
-                                       NULL /* reply */,
-                                       &error);
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
    /* A new connection is opened. */
    request =
       mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
@@ -750,11 +757,11 @@ test_post_handshake_error_clears_pool (void)
 
    /* But the connection for client_3_serviceid_b should still be OK. */
    future = future_client_command_simple (client_3_serviceid_b,
-                                       "admin",
-                                       tmp_bson ("{'ping': 1}"),
-                                       NULL /* read prefs */,
-                                       NULL /* reply */,
-                                       &error);
+                                          "admin",
+                                          tmp_bson ("{'ping': 1}"),
+                                          NULL /* read prefs */,
+                                          NULL /* reply */,
+                                          &error);
    /* The "ping" command is sent. */
    request = mock_server_receives_msg (server, 0, tmp_bson ("{'ping': 1}"));
    BSON_ASSERT (request);

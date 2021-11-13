@@ -40,11 +40,11 @@ mongoc_topology_description_new_copy (
 
 MONGOC_EXPORT (bool)
 mongoc_topology_description_has_readable_server (
-   mongoc_topology_description_t *td, const mongoc_read_prefs_t *prefs);
+   const mongoc_topology_description_t *td, const mongoc_read_prefs_t *prefs);
 
 MONGOC_EXPORT (bool)
 mongoc_topology_description_has_writable_server (
-   mongoc_topology_description_t *td);
+   const mongoc_topology_description_t *td);
 
 MONGOC_EXPORT (const char *)
 mongoc_topology_description_type (const mongoc_topology_description_t *td);

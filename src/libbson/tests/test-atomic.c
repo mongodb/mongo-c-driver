@@ -22,37 +22,42 @@
 #define ATOMIC(Kind, Operation) BSON_CONCAT4 (bson_atomic_, Kind, _, Operation)
 
 
-#define TEST_KIND_WITH_MEMORDER(Kind, TypeName, MemOrder, Assert)             \
-   do {                                                                       \
-      TypeName got;                                                           \
-      TypeName value = 0;                                                     \
-      got = ATOMIC (Kind, fetch) (&value, MemOrder);                          \
-      Assert (got, ==, 0);                                                    \
-      got = ATOMIC (Kind, fetch_add) (&value, 42, MemOrder);                  \
-      Assert (got, ==, 0);                                                    \
-      Assert (value, ==, 42);                                                 \
-      got = ATOMIC (Kind, fetch_sub) (&value, 7, MemOrder);                   \
-      Assert (got, ==, 42);                                                   \
-      Assert (value, ==, 35);                                                 \
-      got = ATOMIC (Kind, exchange) (&value, 77, MemOrder);                   \
-      Assert (got, ==, 35);                                                   \
-      Assert (value, ==, 77);                                                 \
-      /* Compare-exchange fail: */                                            \
-      got = ATOMIC (Kind, compare_exchange_strong) (&value, 4, 9, MemOrder);  \
-      Assert (got, ==, 77);                                                   \
-      Assert (value, ==, 77);                                                 \
-      /* Compare-exchange succeed: */                                         \
-      got = ATOMIC (Kind, compare_exchange_strong) (&value, 77, 9, MemOrder); \
-      Assert (got, ==, 77);                                                   \
-      Assert (value, ==, 9);                                                  \
-      /* Compare-exchange fail: */                                            \
-      got = ATOMIC (Kind, compare_exchange_weak) (&value, 8, 12, MemOrder);   \
-      Assert (got, ==, 9);                                                    \
-      Assert (value, ==, 9);                                                  \
-      /* Compare-exchange succeed: */                                         \
-      got = ATOMIC (Kind, compare_exchange_weak) (&value, 9, 53, MemOrder);   \
-      Assert (got, ==, 9);                                                    \
-      Assert (value, ==, 53);                                                 \
+#define TEST_KIND_WITH_MEMORDER(Kind, TypeName, MemOrder, Assert)              \
+   do {                                                                        \
+      int i;                                                                   \
+      TypeName got;                                                            \
+      TypeName value = 0;                                                      \
+      got = ATOMIC (Kind, fetch) (&value, MemOrder);                           \
+      Assert (got, ==, 0);                                                     \
+      got = ATOMIC (Kind, fetch_add) (&value, 42, MemOrder);                   \
+      Assert (got, ==, 0);                                                     \
+      Assert (value, ==, 42);                                                  \
+      got = ATOMIC (Kind, fetch_sub) (&value, 7, MemOrder);                    \
+      Assert (got, ==, 42);                                                    \
+      Assert (value, ==, 35);                                                  \
+      got = ATOMIC (Kind, exchange) (&value, 77, MemOrder);                    \
+      Assert (got, ==, 35);                                                    \
+      Assert (value, ==, 77);                                                  \
+      /* Compare-exchange fail: */                                             \
+      got = ATOMIC (Kind, compare_exchange_strong) (&value, 4, 9, MemOrder);   \
+      Assert (got, ==, 77);                                                    \
+      Assert (value, ==, 77);                                                  \
+      /* Compare-exchange succeed: */                                          \
+      got = ATOMIC (Kind, compare_exchange_strong) (&value, 77, 9, MemOrder);  \
+      Assert (got, ==, 77);                                                    \
+      Assert (value, ==, 9);                                                   \
+      /* Compare-exchange fail: */                                             \
+      got = ATOMIC (Kind, compare_exchange_weak) (&value, 8, 12, MemOrder);    \
+      Assert (got, ==, 9);                                                     \
+      Assert (value, ==, 9);                                                   \
+      /* Compare-exchange-weak succeed: */                                     \
+      /* 'weak' may fail spuriously, so it must *eventually* succeed */        \
+      for (i = 0; i < 10000 && value != 53; ++i) {                             \
+         got = ATOMIC (Kind, compare_exchange_weak) (&value, 9, 53, MemOrder); \
+         Assert (got, ==, 9);                                                  \
+      }                                                                        \
+      /* Check that it evenutally succeeded */                                 \
+      Assert (value, ==, 53);                                                  \
    } while (0)
 
 #define TEST_INTEGER_KIND(Kind, TypeName, Assert)            \

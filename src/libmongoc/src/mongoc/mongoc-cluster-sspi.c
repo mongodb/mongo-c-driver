@@ -150,7 +150,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 {
    mongoc_cmd_parts_t parts;
    mongoc_sspi_client_state_t *state;
-   SEC_CHAR* buf = NULL;
+   SEC_CHAR *buf = NULL;
    bson_iter_t iter;
    uint32_t buflen;
    bson_t reply;
@@ -161,6 +161,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
    int step;
    mongoc_server_stream_t *server_stream;
    bool ret = false;
+   mc_shared_tpld td = MC_SHARED_TPLD_NULL;
 
    state = _mongoc_cluster_sspi_new (cluster->uri, stream, sd->host.host);
 
@@ -222,11 +223,10 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
          }
       }
 
-      server_stream = _mongoc_cluster_create_server_stream (
-         cluster->client->topology, sd, stream, error);
+      mc_tpld_renew_ref (&td, cluster->client->topology);
+      server_stream = _mongoc_cluster_create_server_stream (td.ptr, sd, stream);
 
-      if (!server_stream ||
-          !mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
+      if (!mongoc_cmd_parts_assemble (&parts, server_stream, error)) {
          mongoc_server_stream_cleanup (server_stream);
          mongoc_cmd_parts_cleanup (&parts);
          bson_destroy (&cmd);
@@ -276,6 +276,7 @@ _mongoc_cluster_auth_node_sspi (mongoc_cluster_t *cluster,
 
    ret = true;
 failure:
+   mc_tpld_drop_ref (&td);
    bson_free (buf);
    bson_free (state);
    return ret;

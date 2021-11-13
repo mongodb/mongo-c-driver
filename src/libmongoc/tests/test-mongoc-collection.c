@@ -1871,7 +1871,7 @@ test_index_compound (void)
 static void
 test_index_geo (void *unused)
 {
-   mongoc_server_description_t *description;
+   mongoc_server_description_t const *description;
    mongoc_collection_t *collection;
    mongoc_database_t *database;
    mongoc_client_t *client;
@@ -1914,8 +1914,11 @@ test_index_geo (void *unused)
    opt.geo_options = &geo_opt;
 
    /* TODO this hack is needed for single-threaded tests */
-   id = client->topology->description.servers->items[0].id;
-   description = mongoc_topology_server_by_id (client->topology, id, &error);
+   id = mc_tpld_servers_const (mc_tpld_unsafe_get_const (client->topology))
+           ->items[0]
+           .id;
+   description = mongoc_topology_description_server_by_id_const (
+      mc_tpld_unsafe_get_const (client->topology), id, &error);
    ASSERT_OR_PRINT (description, error);
 
    if (description->max_wire_version > 0) {
@@ -1939,6 +1942,9 @@ test_index_geo (void *unused)
 
    opt.geo_options = &geo_opt;
 
+   description = mongoc_topology_description_server_by_id_const (
+      mc_tpld_unsafe_get_const (client->topology), id, &error);
+   ASSERT_OR_PRINT (description, error);
    if (description->max_wire_version > 0) {
       ASSERT_OR_PRINT (
          mongoc_collection_create_index (collection, &keys, &opt, &error),
@@ -1950,7 +1956,6 @@ test_index_geo (void *unused)
    }
 
    bson_destroy (&keys);
-   mongoc_server_description_destroy (description);
    mongoc_collection_destroy (collection);
    mongoc_database_destroy (database);
    mongoc_client_destroy (client);
@@ -2588,7 +2593,8 @@ test_estimated_document_count (void)
    request_t *request;
    bson_error_t error;
    bson_t reply;
-   const char *server_reply = "{'cursor': { 'firstBatch': [{'n': 123}]}, 'ok': 1}";
+   const char *server_reply =
+      "{'cursor': { 'firstBatch': [{'n': 123}]}, 'ok': 1}";
 
    server = mock_server_with_auto_hello (WIRE_VERSION_MAX);
    mock_server_run (server);
