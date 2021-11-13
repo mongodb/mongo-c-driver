@@ -2570,7 +2570,7 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
    mongoc_client_encryption_opts_t *client_encryption_opts;
    bson_error_t error = {0};
    mongoc_client_encryption_t *client_encryption;
-   bson_t *tls_opts;
+   bson_t *tls_opts = NULL;
 
    char *mongoc_test_aws_access_key_id =
       test_framework_getenv_required ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
