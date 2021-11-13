@@ -1101,6 +1101,7 @@ if (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
    mongoc_add_example (client-side-encryption-server-schema TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-server-schema.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
    mongoc_add_example (client-side-encryption-explicit TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-explicit.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
    mongoc_add_example (client-side-encryption-auto-decryption TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
+   mongoc_add_example (client-side-encryption-doc-snippets TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-doc-snippets.c)
 endif ()
 
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)

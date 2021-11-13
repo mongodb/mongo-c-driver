@@ -141,16 +141,16 @@ Deprecated SSL Options
 
 The following options have been deprecated and may be removed from future releases of libmongoc.
 
-========================================== ================================= ======================================= =================================
-Constant                                   Key                               Deprecated For                          Key
-========================================== ================================= ======================================= =================================
-MONGOC_URI_SSL                             ssl                               MONGOC_URI_TLS                          tls
-MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE     sslclientcertificatekeyfile       MONGOC_URI_TLSCERTIFICATEKEYFILE        tlscertificatekeyfile
-MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD sslclientcertificatekeypassword   MONGOC_URI_TLSCERTIFICATEKEYPASSWORD    tlscertificatekeypassword
-MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE     sslcertificateauthorityfile       MONGOC_URI_TLSCAFILE                    tlscafile
-MONGOC_URI_SSLALLOWINVALIDCERTIFICATES     sslallowinvalidcertificates       MONGOC_URI_TLSALLOWINVALIDCERTIFICATES  tlsallowinvalidcertificates
-MONGOC_URI_SSLALLOWINVALIDHOSTNAMES        sslallowinvalidhostnames          MONGOC_URI_TLSALLOWINVALIDHOSTNAMES     tlsallowinvalidhostnames
-========================================== ================================= ======================================= =================================
+========================================== ================================= =========================================== =================================
+Constant                                   Key                               Deprecated For                              Key
+========================================== ================================= =========================================== =================================
+MONGOC_URI_SSL                             ssl                               MONGOC_URI_TLS                              tls
+MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE     sslclientcertificatekeyfile       MONGOC_URI_TLSCERTIFICATEKEYFILE            tlscertificatekeyfile
+MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD sslclientcertificatekeypassword   MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD    tlscertificatekeypassword
+MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE     sslcertificateauthorityfile       MONGOC_URI_TLSCAFILE                        tlscafile
+MONGOC_URI_SSLALLOWINVALIDCERTIFICATES     sslallowinvalidcertificates       MONGOC_URI_TLSALLOWINVALIDCERTIFICATES      tlsallowinvalidcertificates
+MONGOC_URI_SSLALLOWINVALIDHOSTNAMES        sslallowinvalidhostnames          MONGOC_URI_TLSALLOWINVALIDHOSTNAMES         tlsallowinvalidhostnames
+========================================== ================================= =========================================== =================================
 
 
 .. _sdam_uri_options:
