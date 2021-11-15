@@ -158,14 +158,14 @@ bson_shared_mutex_lock_shared (bson_shared_mutex_t *mtx)
 }
 
 static BSON_INLINE void
-bson_shared_mutex_lock_exclusive (bson_shared_mutex_t *mtx)
+bson_shared_mutex_lock (bson_shared_mutex_t *mtx)
 {
    BSON_IF_WINDOWS (AcquireSRWLockExclusive (&mtx->native);)
    BSON_IF_POSIX (pthread_rwlock_wrlock (&mtx->native);)
 }
 
 static BSON_INLINE void
-bson_shared_mutex_unlock_exclusive (bson_shared_mutex_t *mtx)
+bson_shared_mutex_unlock (bson_shared_mutex_t *mtx)
 {
    BSON_IF_WINDOWS (ReleaseSRWLockExclusive (&mtx->native);)
    BSON_IF_POSIX (pthread_rwlock_unlock (&mtx->native);)
