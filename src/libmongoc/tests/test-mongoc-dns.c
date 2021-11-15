@@ -1,13 +1,15 @@
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-client-pool-private.h>
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-client-pool-private.h"
 #include "mongoc/mongoc.h"
 #include "mongoc/mongoc-host-list-private.h"
+#include "mongoc/mongoc-thread-private.h"
+#include "mongoc/mongoc-uri-private.h"
+#include "mongoc/utlist.h"
+
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc/mongoc-ssl.h"
 #include "mongoc/mongoc-ssl-private.h"
 #endif
-#include "mongoc/mongoc-thread-private.h"
-#include "mongoc/mongoc-uri-private.h"
 
 #include "json-test.h"
 #include "test-libmongoc.h"
@@ -446,7 +448,9 @@ dump_hosts (mongoc_host_list_t *hosts)
    mongoc_host_list_t *host;
 
    MONGOC_DEBUG ("hosts:");
-   for (host = hosts; host; host = hosts->next) {
+
+   LL_FOREACH (hosts, host)
+   {
       MONGOC_DEBUG ("- %s", host->host_and_port);
    }
 }
