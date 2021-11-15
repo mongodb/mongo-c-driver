@@ -518,6 +518,9 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       topology->valid = false;
    }
 
+   td->max_hosts =
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 0);
+
    /*
     * Set topology type from URI:
     *   + if directConnection=true
@@ -595,10 +598,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       size_t hl_array_size = 0u;
       uint32_t id = 0u;
 
-      const mongoc_host_list_t *const *hl_array = _mongoc_apply_srv_max_hosts (
-         hl,
-         mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 0),
-         &hl_array_size);
+      const mongoc_host_list_t *const *hl_array =
+         _mongoc_apply_srv_max_hosts (hl, td->max_hosts, &hl_array_size);
 
       for (idx = 0u; idx < hl_array_size; ++idx) {
          const mongoc_host_list_t *const elem = hl_array[idx];
