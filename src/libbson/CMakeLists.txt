@@ -55,11 +55,6 @@ else ()
    set (BSON_HAVE_SNPRINTF 1)
 endif ()
 
-CHECK_FUNCTION_EXISTS (reallocf BSON_HAVE_REALLOCF)
-if (NOT BSON_HAVE_REALLOCF)
-   set (BSON_HAVE_REALLOCF 0)
-endif ()
-
 CHECK_STRUCT_HAS_MEMBER ("struct timespec" tv_sec time.h BSON_HAVE_TIMESPEC)
 if (NOT BSON_HAVE_TIMESPEC)
    message (STATUS "    no timespec struct")
