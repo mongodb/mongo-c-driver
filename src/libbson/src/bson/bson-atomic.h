@@ -428,14 +428,12 @@ bson_thrd_yield (void);
 
 #if (defined(_MSC_VER) && !defined(_M_IX86)) || (defined(__LP64__) && __LP64__)
 /* (64-bit intrinsics are only available in x64) */
-#pragma message ("DEFCHECK: using int64 intrinsics")
 #ifdef _MSC_VER
 DECL_ATOMIC_INTEGRAL (int64, __int64, 64)
 #else
 DECL_ATOMIC_STDINT (int64, 64)
 #endif
 #else
-#pragma message ("DEFCHECK: using int64 emulation")
 static BSON_INLINE int64_t
 bson_atomic_int64_fetch (const int64_t volatile *val,
                          enum bson_memory_order order)
