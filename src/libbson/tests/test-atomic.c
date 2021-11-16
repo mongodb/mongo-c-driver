@@ -482,6 +482,36 @@ test_integers_intemul (void)
    TEST_INTEGER_KIND (intemul, int, ASSERT_CMPINT);
 }
 
+static void
+test_integers_int64 (void)
+{
+   TEST_INTEGER_KIND (int64, int64_t, ASSERT_CMPINT64);
+}
+
+static void
+test_integers_int32 (void)
+{
+   TEST_INTEGER_KIND (int32, int32_t, ASSERT_CMPINT32);
+}
+
+static void
+test_integers_int16 (void)
+{
+   TEST_INTEGER_KIND (int16, int16_t, ASSERT_CMPINT);
+}
+
+static void
+test_integers_int8 (void)
+{
+   TEST_INTEGER_KIND (int8, int8_t, ASSERT_CMPINT);
+}
+
+static void
+test_integers_int (void)
+{
+   TEST_INTEGER_KIND (int, int, ASSERT_CMPINT);
+}
+
 #if defined(__s390__)
 #pragma message("DEFCHECK: __s390__ defined")
 #endif
@@ -498,6 +528,11 @@ void
 test_atomic_install (TestSuite *suite)
 {
    TestSuite_Add (suite, "/atomic/integers", test_integers);
+   TestSuite_Add (suite, "/atomic/integers/int64", test_integers_int64);
+   TestSuite_Add (suite, "/atomic/integers/int32", test_integers_int32);
+   TestSuite_Add (suite, "/atomic/integers/int16", test_integers_int16);
+   TestSuite_Add (suite, "/atomic/integers/int8", test_integers_int8);
+   TestSuite_Add (suite, "/atomic/integers/int", test_integers_int);
    TestSuite_Add (suite, "/atomic/pointers", test_pointers);
    TestSuite_Add (suite, "/atomic/thread_fence", test_thread_fence);
    TestSuite_Add (suite, "/atomic/thread_yield", test_thrd_yield);
