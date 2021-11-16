@@ -222,6 +222,8 @@ NOT tested, enable them with:
 
 * `MONGOC_TEST_DNS_LOADBALANCED=on` assumes a load balanced sharded cluster is running with mongoses on ports 27017 and 27018 and TLS enabled. The load balancer can be listening on any port.
 
+* `MONGOC_TEST_DNS_SRV_POLLING=on` assumes a sharded cluster is running with mongoses on ports 27017, 27018, 27019, and 27020 and TLS enabled.
+
 The mock server timeout threshold for future functions can be set with:
 
 * `MONGOC_TEST_FUTURE_TIMEOUT_MS=<int>`

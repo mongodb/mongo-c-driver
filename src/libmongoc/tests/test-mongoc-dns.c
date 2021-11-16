@@ -385,6 +385,12 @@ test_dns_check_loadbalanced (void)
    return test_framework_getenv_bool ("MONGOC_TEST_DNS_LOADBALANCED") ? 1 : 0;
 }
 
+static int
+test_dns_check_srv_polling (void)
+{
+   return test_framework_getenv_bool ("MONGOC_TEST_DNS_SRV_POLLING") ? 1 : 0;
+}
+
 
 /* ensure mongoc_topology_select_server_id handles a NULL error pointer in the
  * code path it follows when the topology scanner is invalid */
@@ -664,6 +670,9 @@ _prose_loadbalanced_ping (mongoc_client_t *client)
    bson_destroy (cmd);
 }
 
+/* SRV Polling Tests Spec: rescanSRVIntervalMS */
+#define RESCAN_INTERVAL_MS 500
+
 /*
    Implements prose test 9 as described in the SRV polling test README:
    Test that SRV polling is not done for load balanced clusters. Connect to
@@ -683,7 +692,7 @@ _prose_test_9 (bool pooled)
    mongoc_host_list_t *expected_hosts;
    mongoc_topology_t *topology;
    mc_tpld_modification tdmod;
-#define RESCAN_INTERVAL_MS 500
+
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
 
@@ -760,6 +769,460 @@ static void
 prose_test_9_pooled (void *unused)
 {
    _prose_test_9 (true);
+}
+
+static bool
+_mock_rr_resolver_prose_test_10 (const char *service,
+                                 mongoc_rr_type_t rr_type,
+                                 mongoc_rr_data_t *rr_data,
+                                 size_t initial_buffer_size,
+                                 bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (service);
+   BSON_ASSERT_PARAM (rr_data);
+   BSON_ASSERT_PARAM (error);
+
+   /* Silence unused parameter warning. */
+   BSON_ASSERT (initial_buffer_size >= 0u);
+
+   if (rr_type == MONGOC_RR_SRV) {
+      rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                                   "localhost.test.build.10gen.cc:27019",
+                                   "localhost.test.build.10gen.cc:27020");
+      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->min_ttl = 0u;
+      rr_data->txt_record_opts = NULL;
+   }
+
+   error->code = 0u;
+
+   return true;
+}
+
+static void
+_prose_test_10 (bool pooled)
+{
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_topology_t *topology;
+   mc_tpld_modification tdmod;
+
+   uri = mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
+
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 0);
+   mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      topology = _mongoc_client_pool_get_topology (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      topology = client->topology;
+   }
+
+   _mongoc_topology_set_rr_resolver (topology, _mock_rr_resolver_prose_test_10);
+   _mongoc_topology_set_srv_polling_rescan_interval_ms (topology,
+                                                        RESCAN_INTERVAL_MS);
+
+#ifdef MONGOC_ENABLE_SSL
+   {
+      mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
+      ssl_opts.allow_invalid_hostname = true;
+
+      if (pooled) {
+         mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
+      } else {
+         mongoc_client_set_ssl_opts (client, &ssl_opts);
+      }
+   }
+#endif
+
+   {
+      mongoc_host_list_t *expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                     "localhost.test.build.10gen.cc:27018");
+
+      if (pooled) {
+         client = mongoc_client_pool_pop (pool);
+      }
+
+      tdmod = mc_tpld_modify_begin (client->topology);
+      check_topology_description (tdmod.new_td, expected);
+      mc_tpld_modify_drop (tdmod);
+
+      if (pooled) {
+         mongoc_client_pool_push (pool, client);
+      }
+
+      _mongoc_host_list_destroy_all (expected);
+   }
+
+   _mongoc_usleep (2000 * RESCAN_INTERVAL_MS);
+
+   if (!pooled) {
+      _prose_loadbalanced_ping (client);
+   }
+
+   {
+      mongoc_host_list_t *expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                     "localhost.test.build.10gen.cc:27019",
+                     "localhost.test.build.10gen.cc:27020");
+
+      if (pooled) {
+         client = mongoc_client_pool_pop (pool);
+      }
+
+      tdmod = mc_tpld_modify_begin (client->topology);
+      check_topology_description (tdmod.new_td, expected);
+      mc_tpld_modify_drop (tdmod);
+
+      if (pooled) {
+         mongoc_client_pool_push (pool, client);
+      }
+
+      _mongoc_host_list_destroy_all (expected);
+   }
+
+   if (pooled) {
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_uri_destroy (uri);
+}
+
+static void
+prose_test_10_single (void *unused)
+{
+   _prose_test_10 (false);
+}
+
+static void
+prose_test_10_pooled (void *unused)
+{
+   _prose_test_10 (true);
+}
+
+static bool
+_mock_rr_resolver_prose_test_11 (const char *service,
+                                 mongoc_rr_type_t rr_type,
+                                 mongoc_rr_data_t *rr_data,
+                                 size_t initial_buffer_size,
+                                 bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (service);
+   BSON_ASSERT_PARAM (rr_data);
+   BSON_ASSERT_PARAM (error);
+
+   /* Silence unused parameter warning. */
+   BSON_ASSERT (initial_buffer_size >= 0u);
+
+   if (rr_type == MONGOC_RR_SRV) {
+      rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27019",
+                                   "localhost.test.build.10gen.cc:27020");
+      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->min_ttl = 0u;
+      rr_data->txt_record_opts = NULL;
+   }
+
+   error->code = 0u;
+
+   return true;
+}
+
+static void
+_prose_test_11 (bool pooled)
+{
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_topology_t *topology;
+   mc_tpld_modification tdmod;
+
+   uri = mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
+
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 2);
+   mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      topology = _mongoc_client_pool_get_topology (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      topology = client->topology;
+   }
+
+   _mongoc_topology_set_rr_resolver (topology, _mock_rr_resolver_prose_test_11);
+   _mongoc_topology_set_srv_polling_rescan_interval_ms (topology,
+                                                        RESCAN_INTERVAL_MS);
+
+#ifdef MONGOC_ENABLE_SSL
+   {
+      mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
+      ssl_opts.allow_invalid_hostname = true;
+
+      if (pooled) {
+         mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
+      } else {
+         mongoc_client_set_ssl_opts (client, &ssl_opts);
+      }
+   }
+#endif
+
+   {
+      mongoc_host_list_t *expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                     "localhost.test.build.10gen.cc:27018");
+
+      if (pooled) {
+         client = mongoc_client_pool_pop (pool);
+      }
+
+      tdmod = mc_tpld_modify_begin (client->topology);
+      check_topology_description (tdmod.new_td, expected);
+      mc_tpld_modify_drop (tdmod);
+
+      if (pooled) {
+         mongoc_client_pool_push (pool, client);
+      }
+
+      _mongoc_host_list_destroy_all (expected);
+   }
+
+   _mongoc_usleep (2000 * RESCAN_INTERVAL_MS);
+
+   if (!pooled) {
+      _prose_loadbalanced_ping (client);
+   }
+
+   {
+      mongoc_host_list_t *expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27019",
+                     "localhost.test.build.10gen.cc:27020");
+
+      if (pooled) {
+         client = mongoc_client_pool_pop (pool);
+      }
+
+      tdmod = mc_tpld_modify_begin (client->topology);
+      check_topology_description (tdmod.new_td, expected);
+      mc_tpld_modify_drop (tdmod);
+
+      if (pooled) {
+         mongoc_client_pool_push (pool, client);
+      }
+
+      _mongoc_host_list_destroy_all (expected);
+   }
+
+   if (pooled) {
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_uri_destroy (uri);
+}
+
+static void
+prose_test_11_single (void *unused)
+{
+   _prose_test_11 (false);
+}
+
+static void
+prose_test_11_pooled (void *unused)
+{
+   _prose_test_11 (true);
+}
+
+static bool
+_mock_rr_resolver_prose_test_12 (const char *service,
+                                 mongoc_rr_type_t rr_type,
+                                 mongoc_rr_data_t *rr_data,
+                                 size_t initial_buffer_size,
+                                 bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (service);
+   BSON_ASSERT_PARAM (rr_data);
+   BSON_ASSERT_PARAM (error);
+
+   /* Silence unused parameter warning. */
+   BSON_ASSERT (initial_buffer_size >= 0u);
+
+   if (rr_type == MONGOC_RR_SRV) {
+      rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                                   "localhost.test.build.10gen.cc:27019",
+                                   "localhost.test.build.10gen.cc:27020");
+      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->min_ttl = 0u;
+      rr_data->txt_record_opts = NULL;
+   }
+
+   error->code = 0u;
+
+   return true;
+}
+
+typedef struct {
+   size_t num_existing;
+   size_t num_new_valid;
+} _prose_test_12_ctx_t;
+
+static bool
+_prose_test_12_cb (const void *sd_void, void *ctx_void)
+{
+   const mongoc_server_description_t *sd;
+   _prose_test_12_ctx_t *ctx;
+   const mongoc_host_list_t *host;
+
+   BSON_ASSERT_PARAM (sd_void);
+   BSON_ASSERT_PARAM (ctx_void);
+
+   sd = sd_void;
+   ctx = ctx_void;
+   host = &sd->host;
+
+   ASSERT_CMPSTR (host->host, "localhost.test.build.10gen.cc");
+
+   if (host->port == 27017u) {
+      ++ctx->num_existing;
+   }
+
+   else {
+      ASSERT (host->port == 27019 || host->port == 27020);
+      ++ctx->num_new_valid;
+   }
+
+   return true;
+}
+
+static void
+_prose_test_12 (bool pooled)
+{
+   mongoc_uri_t *uri;
+   mongoc_client_pool_t *pool;
+   mongoc_client_t *client;
+   mongoc_topology_t *topology;
+   mongoc_host_list_t *hosts;
+
+   uri = mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
+
+   mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 2);
+   mongoc_uri_set_option_as_int32 (
+      uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+
+   if (pooled) {
+      pool = mongoc_client_pool_new (uri);
+      topology = _mongoc_client_pool_get_topology (pool);
+   } else {
+      client = mongoc_client_new_from_uri (uri);
+      topology = client->topology;
+   }
+
+   _mongoc_topology_set_rr_resolver (topology, _mock_rr_resolver_prose_test_12);
+   _mongoc_topology_set_srv_polling_rescan_interval_ms (topology,
+                                                        RESCAN_INTERVAL_MS);
+
+#ifdef MONGOC_ENABLE_SSL
+   {
+      mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
+      ssl_opts.allow_invalid_hostname = true;
+
+      if (pooled) {
+         mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
+      } else {
+         mongoc_client_set_ssl_opts (client, &ssl_opts);
+      }
+   }
+#endif
+
+   {
+      mongoc_host_list_t *expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                     "localhost.test.build.10gen.cc:27018");
+
+      if (pooled) {
+         client = mongoc_client_pool_pop (pool);
+      }
+
+      {
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (client->topology);
+         check_topology_description (tdmod.new_td, expected);
+         mc_tpld_modify_drop (tdmod);
+      }
+
+      if (pooled) {
+         mongoc_client_pool_push (pool, client);
+      }
+
+      _mongoc_host_list_destroy_all (expected);
+   }
+
+   _mongoc_usleep (2000 * RESCAN_INTERVAL_MS);
+
+   if (!pooled) {
+      _prose_loadbalanced_ping (client);
+   }
+
+   {
+      _prose_test_12_ctx_t ctx;
+
+      if (pooled) {
+         client = mongoc_client_pool_pop (pool);
+      }
+
+      {
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (client->topology);
+         const mongoc_set_t *servers = mc_tpld_servers_const (tdmod.new_td);
+
+         ctx.num_existing = 0u;
+         ctx.num_new_valid = 0u;
+
+         mongoc_set_for_each_const (servers, _prose_test_12_cb, &ctx);
+
+         mc_tpld_modify_drop (tdmod);
+      }
+
+      ASSERT_WITH_MSG (
+         ctx.num_existing > 0u,
+         "hosts that have not changed must be left alone and unchanged");
+      ASSERT_WITH_MSG (ctx.num_existing == 1u,
+                       "only a single host should have remained, but found %zu",
+                       ctx.num_existing);
+
+      ASSERT_WITH_MSG (ctx.num_new_valid == 1u,
+                       "exactly one valid new hosts should have been added");
+
+      if (pooled) {
+         mongoc_client_pool_push (pool, client);
+      }
+   }
+
+   if (pooled) {
+      mongoc_client_pool_destroy (pool);
+   } else {
+      mongoc_client_destroy (client);
+   }
+
+   mongoc_uri_destroy (uri);
+}
+
+static void
+prose_test_12_single (void *unused)
+{
+   _prose_test_12 (false);
+}
+
+static void
+prose_test_12_pooled (void *unused)
+{
+   _prose_test_12 (true);
 }
 
 /* cb_stats_t tracks counters for the test_invalid_topology_pooled and
@@ -931,7 +1394,7 @@ test_dns_install (TestSuite *suite)
       prose_test_9_single,
       NULL,
       NULL,
-      test_dns_check_loadbalanced);
+      test_dns_check_srv_polling);
 
    TestSuite_AddFull (
       suite,
@@ -939,7 +1402,55 @@ test_dns_install (TestSuite *suite)
       prose_test_9_pooled,
       NULL,
       NULL,
-      test_dns_check_loadbalanced);
+      test_dns_check_srv_polling);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/single",
+      prose_test_10_single,
+      NULL,
+      NULL,
+      test_dns_check_srv_polling);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/pooled",
+      prose_test_10_pooled,
+      NULL,
+      NULL,
+      test_dns_check_srv_polling);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/single",
+      prose_test_11_single,
+      NULL,
+      NULL,
+      test_dns_check_srv_polling);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/pooled",
+      prose_test_11_pooled,
+      NULL,
+      NULL,
+      test_dns_check_srv_polling);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/single",
+      prose_test_12_single,
+      NULL,
+      NULL,
+      test_dns_check_srv_polling);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/pooled",
+      prose_test_12_pooled,
+      NULL,
+      NULL,
+      test_dns_check_srv_polling);
 
    TestSuite_AddFull (
       suite,
