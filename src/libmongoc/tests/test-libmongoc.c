@@ -2659,16 +2659,6 @@ test_framework_skip_if_no_setenv (void)
    return 1;
 }
 
-void
-test_framework_resolve_path (const char *path, char *resolved)
-{
-   if (!realpath (path, resolved)) {
-      MONGOC_ERROR ("Cannot resolve path %s\n", path);
-      MONGOC_ERROR ("Run test-libmongoc in repository root directory.\n");
-      ASSERT (false);
-   }
-}
-
 bool
 test_framework_is_serverless (void)
 {

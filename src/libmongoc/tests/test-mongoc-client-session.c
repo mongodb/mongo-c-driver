@@ -2795,8 +2795,6 @@ test_sessions_snapshot_prose_test_1 (void *ctx)
 void
 test_session_install (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
    TestSuite_Add (suite, "/Session/opts/clone", test_session_opts_clone);
    TestSuite_Add (suite,
                   "/Session/opts/causal_consistency_and_snapshot",
@@ -3151,9 +3149,9 @@ test_session_install (TestSuite *suite)
       false,
       false);
 
-   ASSERT (realpath (JSON_DIR "/sessions/legacy", resolved));
    install_json_test_suite_with_check (suite,
-                                       resolved,
+                                       JSON_DIR,
+                                       "sessions/legacy",
                                        test_sessions_spec_cb,
                                        test_framework_skip_if_no_sessions);
 

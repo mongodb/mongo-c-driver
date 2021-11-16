@@ -2426,12 +2426,10 @@ test_framework_skip_kms_tls_tests (void)
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   ASSERT (realpath (JSON_DIR "/client_side_encryption", resolved));
    install_json_test_suite_with_check (
       suite,
-      resolved,
+      JSON_DIR,
+      "client_side_encryption",
       test_client_side_encryption_cb,
       test_framework_skip_if_no_client_side_encryption);
    /* Prose tests from the spec. */

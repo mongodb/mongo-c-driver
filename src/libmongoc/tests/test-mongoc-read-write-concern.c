@@ -233,13 +233,12 @@ test_rw_concern_document (bson_t *scenario)
 void
 test_read_write_concern_install (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   ASSERT (
-      realpath (JSON_DIR "/read_write_concern/connection-string", resolved));
-   install_json_test_suite (suite, resolved, &test_rw_concern_uri);
-
-   test_framework_resolve_path (JSON_DIR "/read_write_concern/document",
-                                resolved);
-   install_json_test_suite (suite, resolved, &test_rw_concern_document);
+   install_json_test_suite (suite,
+                            JSON_DIR,
+                            "read_write_concern/connection-string",
+                            &test_rw_concern_uri);
+   install_json_test_suite (suite,
+                            JSON_DIR,
+                            "read_write_concern/document",
+                            &test_rw_concern_document);
 }

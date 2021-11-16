@@ -72,6 +72,6 @@ register_failpoint (test_t *test,
 
 /* Run a directory of test files through the unified test runner. */
 void
-run_unified_tests (TestSuite *suite, const char *path);
+run_unified_tests (TestSuite *suite, const char *base, const char *subdir);
 
 #endif /* UNIFIED_RUNNER_H */
