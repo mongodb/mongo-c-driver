@@ -7,14 +7,20 @@
 ]]
 function (mongoc_add_platform_compile_options)
    foreach (opt IN LISTS ARGV)
-      if (NOT opt MATCHES "^(gnu-like|msvc):(.*)")
+      if (NOT opt MATCHES "^(gnu-like|gnu|clang|msvc):(.*)")
          message (SEND_ERROR "Invalid option '${opt}' (Should be prefixed by 'msvc:' or 'gnu-like:'")
          continue ()
       endif ()
-      set (is_gnu_like "$<OR:$<C_COMPILER_ID:GNU>,$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>>")
+      set (is_gnu "$<C_COMPILER_ID:GNU>")
+      set (is_clang "$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>>")
+      set (is_gnu_like "$<OR:${is_gnu},${is_clang}>")
       set (is_msvc "$<C_COMPILER_ID:MSVC>")
       if (CMAKE_MATCH_1 STREQUAL "gnu-like")
          add_compile_options ("$<${is_gnu_like}:${CMAKE_MATCH_2}>")
+      elseif (CMAKE_MATCH_1 STREQUAL gnu)
+         add_compile_options ("$<${is_gnu}:${CMAKE_MATCH_2}>")
+      elseif (CMAKE_MATCH_1 STREQUAL clang)
+         add_compile_options ("$<${is_clang}:${CMAKE_MATCH_2}>")
       elseif (CMAKE_MATCH_1 STREQUAL "msvc")
          add_compile_options ("$<${is_msvc}:${CMAKE_MATCH_2}>")
       else ()
@@ -44,7 +50,9 @@ mongoc_add_platform_compile_options (
      # Integral/pointer conversions
      gnu-like:$<${is_c_lang}:-Werror=int-conversion> msvc:/we4047
      # Discarding qualifiers
-     gnu-like:$<${is_c_lang}:-Werror=discarded-qualifiers> msvc:/we4090
+     gnu:$<${is_c_lang}:-Werror=discarded-qualifiers>
+     clang:$<${is_c_lang}:-Werror=ignored-qualifiers>
+     msvc:/we4090
      # Definite use of uninitialized value
      gnu-like:-Werror=uninitialized msvc:/we4700
 
