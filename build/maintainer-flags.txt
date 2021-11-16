@@ -10,7 +10,6 @@
 -Wno-strict-aliasing
 -Wno-uninitialized
 -Wredundant-decls
--Wreturn-type
 -Wshadow
 -Wswitch-default
 -Wswitch-enum

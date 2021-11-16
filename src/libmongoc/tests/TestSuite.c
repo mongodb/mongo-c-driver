@@ -452,7 +452,8 @@ _print_getlasterror_win (const char *msg)
                   NULL,
                   GetLastError (),
                   MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  &err_msg,
+                  /* FormatMessage is weird about this param. */
+                  (LPTSTR) &err_msg,
                   0,
                   NULL);
 

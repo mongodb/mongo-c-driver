@@ -2079,7 +2079,7 @@ _test_multi_threaded (bool external_key_vault)
 }
 
 static void
-test_multi_threaded ()
+test_multi_threaded (void *ctx_unused)
 {
    _test_multi_threaded (true);
    _test_multi_threaded (false);
