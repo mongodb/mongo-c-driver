@@ -47,42 +47,73 @@ enum bson_memory_order {
 #define MSVC_MEMORDER_SUFFIX(X)
 #endif
 
+#if defined(USE_LEGACY_GCC_ATOMICS) || \
+   (!defined(__clang__) && __GNUC__ == 4)
+#define BSON_USE_LEGACY_GCC_ATOMICS
+#else
+#undef BSON_USE_LEGACY_GCC_ATOMICS
+#endif
 
-#define DEF_ATOMIC_OP(MSVC_Intrinsic, GNU_Intrinsic, Order, ...)             \
+/* Not all GCC-like compilers support the current __atomic built-ins.  Older
+ * GCC (pre-5) used different built-ins named with the __sync prefix.  When
+ * compiling with such older GCC versions, it is necessary to use the applicable
+ * functions, which requires redefining BSON_IF_GNU_LIKE and defining the
+ * additional BSON_IF_GNU_LEGACY_ATOMICS macro here. */
+#ifdef BSON_USE_LEGACY_GCC_ATOMICS
+#undef BSON_IF_GNU_LIKE
+#define BSON_IF_GNU_LIKE(...)
+#define BSON_IF_GNU_LEGACY_ATOMICS(...) __VA_ARGS__
+#else
+#define BSON_IF_GNU_LEGACY_ATOMICS(...)
+#endif
+
+#define DEF_ATOMIC_OP(MSVC_Intrinsic, GNU_Intrinsic, GNU_Legacy_Intrinsic, Order, ...) \
    do {                                                                      \
       switch (Order) {                                                       \
       case bson_memory_order_acq_rel:                                        \
          BSON_IF_MSVC (return MSVC_Intrinsic (__VA_ARGS__);)                 \
          BSON_IF_GNU_LIKE (                                                  \
             return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_ACQ_REL);)           \
+         BSON_IF_GNU_LEGACY_ATOMICS (                                        \
+            return GNU_Legacy_Intrinsic (__VA_ARGS__);)                      \
       case bson_memory_order_seq_cst:                                        \
          BSON_IF_MSVC (return MSVC_Intrinsic (__VA_ARGS__);)                 \
          BSON_IF_GNU_LIKE (                                                  \
             return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_SEQ_CST);)           \
+         BSON_IF_GNU_LEGACY_ATOMICS (                                        \
+            return GNU_Legacy_Intrinsic (__VA_ARGS__);)                      \
       case bson_memory_order_acquire:                                        \
          BSON_IF_MSVC (                                                      \
             return BSON_CONCAT (MSVC_Intrinsic,                              \
                                 MSVC_MEMORDER_SUFFIX (_acq)) (__VA_ARGS__);) \
          BSON_IF_GNU_LIKE (                                                  \
             return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_ACQUIRE);)           \
+         BSON_IF_GNU_LEGACY_ATOMICS (                                        \
+            return GNU_Legacy_Intrinsic (__VA_ARGS__);)                      \
       case bson_memory_order_consume:                                        \
          BSON_IF_MSVC (                                                      \
             return BSON_CONCAT (MSVC_Intrinsic,                              \
                                 MSVC_MEMORDER_SUFFIX (_acq)) (__VA_ARGS__);) \
          BSON_IF_GNU_LIKE (                                                  \
             return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_CONSUME);)           \
+         BSON_IF_GNU_LEGACY_ATOMICS (                                        \
+            return GNU_Legacy_Intrinsic (__VA_ARGS__);)                      \
       case bson_memory_order_release:                                        \
          BSON_IF_MSVC (                                                      \
             return BSON_CONCAT (MSVC_Intrinsic,                              \
                                 MSVC_MEMORDER_SUFFIX (_rel)) (__VA_ARGS__);) \
          BSON_IF_GNU_LIKE (                                                  \
             return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_RELEASE);)           \
+         BSON_IF_GNU_LEGACY_ATOMICS (                                        \
+            return GNU_Legacy_Intrinsic (__VA_ARGS__);)                      \
       case bson_memory_order_relaxed:                                        \
          BSON_IF_MSVC (                                                      \
             return BSON_CONCAT (MSVC_Intrinsic,                              \
                                 MSVC_MEMORDER_SUFFIX (_nf)) (__VA_ARGS__);)  \
          BSON_IF_GNU_LIKE (                                                  \
             return GNU_Intrinsic (__VA_ARGS__, __ATOMIC_RELAXED);)           \
+         BSON_IF_GNU_LEGACY_ATOMICS (                                        \
+            return GNU_Legacy_Intrinsic (__VA_ARGS__);)                      \
       default:                                                               \
          BSON_UNREACHABLE ("Invalid bson_memory_order value");               \
       }                                                                      \
@@ -102,6 +133,12 @@ enum bson_memory_order {
                                              false, /* Not weak */          \
                                              GNU_MemOrder,                  \
                                              GNU_MemOrder);)                \
+      BSON_IF_GNU_LEGACY_ATOMICS (                                          \
+         __typeof__ (ExpectActualVar) _val;                                 \
+         _val = __sync_val_compare_and_swap (Ptr,                           \
+                                             ExpectActualVar,               \
+                                             NewValue);                     \
+         ExpectActualVar = _val;)                                           \
    } while (0)
 
 
@@ -118,6 +155,12 @@ enum bson_memory_order {
                                              true, /* Yes weak */           \
                                              GNU_MemOrder,                  \
                                              GNU_MemOrder);)                \
+      BSON_IF_GNU_LEGACY_ATOMICS (                                          \
+         __typeof__ (ExpectActualVar) _val;                                 \
+         _val = __sync_val_compare_and_swap (Ptr,                           \
+                                             ExpectActualVar,               \
+                                             NewValue);                     \
+         ExpectActualVar = _val;)                                           \
    } while (0)
 
 
@@ -127,6 +170,7 @@ enum bson_memory_order {
    {                                                                          \
       DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchangeAdd, VCIntrinSuffix),   \
                      __atomic_fetch_add,                                      \
+                     __sync_fetch_and_add,                                    \
                      ord,                                                     \
                      a,                                                       \
                      addend);                                                 \
@@ -139,7 +183,9 @@ enum bson_memory_order {
       BSON_IF_MSVC (                                                          \
          return bson_atomic_##NamePart##_fetch_add (a, -subtrahend, ord);)    \
       BSON_IF_GNU_LIKE (                                                      \
-         DEF_ATOMIC_OP (~, __atomic_fetch_sub, ord, a, subtrahend);)          \
+         DEF_ATOMIC_OP (~, __atomic_fetch_sub, ~, ord, a, subtrahend);)       \
+      BSON_IF_GNU_LEGACY_ATOMICS (                                            \
+         DEF_ATOMIC_OP (~, ~, __sync_fetch_and_sub, ord, a, subtrahend);)     \
    }                                                                          \
                                                                               \
    static BSON_INLINE Type bson_atomic_##NamePart##_fetch (                   \
@@ -164,6 +210,7 @@ enum bson_memory_order {
          default:                                                             \
             BSON_UNREACHABLE ("Invalid bson_memory_order value");             \
       })                                                                      \
+      BSON_IF_GNU_LEGACY_ATOMICS ({ __sync_synchronize (); return *a; })      \
    }                                                                          \
                                                                               \
    static BSON_INLINE Type bson_atomic_##NamePart##_exchange (                \
@@ -171,6 +218,7 @@ enum bson_memory_order {
    {                                                                          \
       BSON_IF_MSVC (                                                          \
          DEF_ATOMIC_OP (BSON_CONCAT (_InterlockedExchange, VCIntrinSuffix),   \
+                        ~,                                                    \
                         ~,                                                    \
                         ord,                                                  \
                         a,                                                    \
@@ -192,6 +240,8 @@ enum bson_memory_order {
          default:                                                             \
             BSON_UNREACHABLE ("Invalid bson_memory_order value");             \
       })                                                                      \
+      BSON_IF_GNU_LEGACY_ATOMICS (                                            \
+         return __sync_val_compare_and_swap (a, *a, value);)                  \
    }                                                                          \
                                                                               \
    static BSON_INLINE Type bson_atomic_##NamePart##_compare_exchange_strong ( \
@@ -285,7 +335,7 @@ enum bson_memory_order {
 #define DECL_ATOMIC_STDINT(Name, VCSuffix) \
    DECL_ATOMIC_INTEGRAL (Name, Name##_t, VCSuffix)
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined (BSON_USE_LEGACY_GCC_ATOMICS)
 /* MSVC expects precise types for their atomic intrinsics. */
 DECL_ATOMIC_INTEGRAL (int8, char, 8);
 DECL_ATOMIC_INTEGRAL (int16, short, 16)
@@ -388,8 +438,23 @@ bson_atomic_ptr_exchange (void *volatile *ptr,
                           void *new_value,
                           enum bson_memory_order ord)
 {
-   DEF_ATOMIC_OP (
-      _InterlockedExchangePointer, __atomic_exchange_n, ord, ptr, new_value);
+   /* The older __sync_val_compare_and_swap also takes oldval */
+#if defined(BSON_USE_LEGACY_GCC_ATOMICS)
+   DEF_ATOMIC_OP (_InterlockedExchangePointer,
+                  ,
+                  __sync_val_compare_and_swap,
+                  ord,
+                  ptr,
+                  *ptr,
+                  new_value);
+#else
+   DEF_ATOMIC_OP (_InterlockedExchangePointer,
+                  __atomic_exchange_n,
+                  ,
+                  ord,
+                  ptr,
+                  new_value);
+#endif
 }
 
 static BSON_INLINE void *
@@ -500,7 +565,15 @@ bson_atomic_thread_fence ()
 {
    BSON_IF_MSVC (MemoryBarrier ();)
    BSON_IF_GNU_LIKE (__sync_synchronize ();)
+   BSON_IF_GNU_LEGACY_ATOMICS (__sync_synchronize ();)
 }
+
+#ifdef BSON_USE_LEGACY_GCC_ATOMICS
+#undef BSON_IF_GNU_LIKE
+#define BSON_IF_GNU_LIKE(...) __VA_ARGS__
+#endif
+#undef BSON_IF_GNU_LEGACY_ATOMICS
+#undef BSON_USE_LEGACY_GCC_ATOMICS
 
 BSON_GNUC_DEPRECATED_FOR ("bson_atomic_thread_fence")
 BSON_EXPORT (void) bson_memory_barrier (void);
