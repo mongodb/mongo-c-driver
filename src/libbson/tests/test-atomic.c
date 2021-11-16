@@ -512,6 +512,96 @@ test_integers_int (void)
    TEST_INTEGER_KIND (int, int, ASSERT_CMPINT);
 }
 
+#define TEST_KIND_WITH_MEMORDER_FETCH(Kind, TypeName, MemOrder, Assert) \
+   do {                                                                 \
+      TypeName got;                                                     \
+      TypeName value = 0;                                               \
+      got = ATOMIC (Kind, fetch) (&value, MemOrder);                    \
+      Assert (got, ==, 0);                                              \
+   } while (0)
+
+
+#define TEST_KIND_WITH_MEMORDER_FETCH_ADD(Kind, TypeName, MemOrder, Assert) \
+   do {                                                                     \
+      TypeName got;                                                         \
+      TypeName value = 0;                                                   \
+      got = ATOMIC (Kind, fetch_add) (&value, 42, MemOrder);                \
+      Assert (got, ==, 0);                                                  \
+      Assert (value, ==, 42);                                               \
+   } while (0)
+
+
+#define TEST_KIND_WITH_MEMORDER_FETCH_SUB(Kind, TypeName, MemOrder, Assert) \
+   do {                                                                     \
+      TypeName got;                                                         \
+      TypeName value = 42;                                                  \
+      got = ATOMIC (Kind, fetch_sub) (&value, 7, MemOrder);                 \
+      Assert (got, ==, 42);                                                 \
+      Assert (value, ==, 35);                                               \
+   } while (0)
+
+
+#define TEST_KIND_WITH_MEMORDER_EXCHANGE(Kind, TypeName, MemOrder, Assert) \
+   do {                                                                    \
+      TypeName got;                                                        \
+      TypeName value = 35;                                                 \
+      got = ATOMIC (Kind, exchange) (&value, 77, MemOrder);                \
+      Assert (got, ==, 35);                                                \
+      Assert (value, ==, 77);                                              \
+   } while (0)
+
+
+#define TEST_KIND_WITH_MEMORDER_COMPARE_EXCHANGE_STRONG(                      \
+   Kind, TypeName, MemOrder, Assert)                                          \
+   do {                                                                       \
+      TypeName got;                                                           \
+      TypeName value = 77;                                                    \
+      /* Compare-exchange fail: */                                            \
+      got = ATOMIC (Kind, compare_exchange_strong) (&value, 4, 9, MemOrder);  \
+      Assert (got, ==, 77);                                                   \
+      Assert (value, ==, 77);                                                 \
+      /* Compare-exchange succeed: */                                         \
+      got = ATOMIC (Kind, compare_exchange_strong) (&value, 77, 9, MemOrder); \
+      Assert (got, ==, 77);                                                   \
+      Assert (value, ==, 9);                                                  \
+   } while (0)
+
+
+#define TEST_KIND_WITH_MEMORDER_COMPARE_EXCHANGE_WEAK(                         \
+   Kind, TypeName, MemOrder, Assert)                                           \
+   do {                                                                        \
+      int i;                                                                   \
+      TypeName got;                                                            \
+      TypeName value = 9;                                                      \
+      /* Compare-exchange-weak succeed: */                                     \
+      /* 'weak' may fail spuriously, so it must *eventually* succeed */        \
+      for (i = 0; i < 10000 && value != 53; ++i) {                             \
+         got = ATOMIC (Kind, compare_exchange_weak) (&value, 9, 53, MemOrder); \
+         Assert (got, ==, 9);                                                  \
+      }                                                                        \
+      /* Check that it evenutally succeeded */                                 \
+      Assert (value, ==, 53);                                                  \
+   } while (0)
+
+static void test_integers_int32_fetch (void) {
+   TEST_KIND_WITH_MEMORDER_FETCH (int32, int32_t, bson_memory_order_relaxed, ASSERT_CMPINT32);
+}
+static void test_integers_int32_fetch_add (void) {
+   TEST_KIND_WITH_MEMORDER_FETCH_ADD (int32, int32_t, bson_memory_order_relaxed, ASSERT_CMPINT32);
+}
+static void test_integers_int32_fetch_sub (void) {
+   TEST_KIND_WITH_MEMORDER_FETCH_SUB (int32, int32_t, bson_memory_order_relaxed, ASSERT_CMPINT32);
+}
+static void test_integers_int32_exchange (void) {
+   TEST_KIND_WITH_MEMORDER_EXCHANGE (int32, int32_t, bson_memory_order_relaxed, ASSERT_CMPINT32);
+}
+static void test_integers_int32_compare_exchange_strong (void) {
+   TEST_KIND_WITH_MEMORDER_COMPARE_EXCHANGE_STRONG (int32, int32_t, bson_memory_order_relaxed, ASSERT_CMPINT32);
+}
+static void test_integers_int32_compare_exchange_weak (void) {
+   TEST_KIND_WITH_MEMORDER_COMPARE_EXCHANGE_WEAK (int32, int32_t, bson_memory_order_relaxed, ASSERT_CMPINT32);
+}
+
 #if defined(__s390__)
 #pragma message("DEFCHECK: __s390__ defined")
 #endif
@@ -540,4 +630,10 @@ test_atomic_install (TestSuite *suite)
    TestSuite_Add (suite, "/atomic/integers/int16emul", test_integers_int16emul);
    TestSuite_Add (suite, "/atomic/integers/int8emul", test_integers_int8emul);
    TestSuite_Add (suite, "/atomic/integers/intemul", test_integers_intemul);
+   TestSuite_Add (suite, "/atomic/integers/int32/fetch", test_integers_int32_fetch);
+   TestSuite_Add (suite, "/atomic/integers/int32/fetch_add", test_integers_int32_fetch_add);
+   TestSuite_Add (suite, "/atomic/integers/int32/fetch_sub", test_integers_int32_fetch_sub);
+   TestSuite_Add (suite, "/atomic/integers/int32/exchange", test_integers_int32_exchange);
+   TestSuite_Add (suite, "/atomic/integers/int32/compare_exchange_strong", test_integers_int32_compare_exchange_strong);
+   TestSuite_Add (suite, "/atomic/integers/int32/compare_exchange_weak", test_integers_int32_compare_exchange_weak);
 }
