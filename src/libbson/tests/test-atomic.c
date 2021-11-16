@@ -260,6 +260,228 @@ test_integers_int32emul (void) {
    TEST_INTEGER_KIND (int32emul, int32_t, ASSERT_CMPINT32);
 }
 
+static int16_t
+bson_atomic_int16emul_fetch_add (volatile int16_t *p,
+                                 int16_t n,
+                                 enum bson_memory_order _unused)
+{
+   int16_t ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   *p += n;
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int16_t
+bson_atomic_int16emul_exchange (volatile int16_t *p,
+                                int16_t n,
+                                enum bson_memory_order _unused)
+{
+   int16_t ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   *p = n;
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int16_t
+bson_atomic_int16emul_compare_exchange_strong (volatile int16_t *p,
+                                               int16_t expect_value,
+                                               int16_t new_value,
+                                               enum bson_memory_order _unused)
+{
+   int16_t ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   if (ret == expect_value) {
+      *p = new_value;
+   }
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int16_t
+bson_atomic_int16emul_compare_exchange_weak (volatile int16_t *p,
+                                             int16_t expect_value,
+                                             int16_t new_value,
+                                             enum bson_memory_order order)
+{
+   /* We're emulating. We can't do a weak version. */
+   return bson_atomic_int16emul_compare_exchange_strong (
+      p, expect_value, new_value, order);
+}
+
+static int16_t
+bson_atomic_int16emul_fetch (const int16_t volatile *val,
+                             enum bson_memory_order order)
+{
+   return bson_atomic_int16emul_fetch_add ((int16_t volatile *) val, 0, order);
+}
+
+static int16_t
+bson_atomic_int16emul_fetch_sub (int16_t volatile *val,
+                                 int16_t v,
+                                 enum bson_memory_order order)
+{
+   return bson_atomic_int16emul_fetch_add (val, -v, order);
+}
+
+static void
+test_integers_int16emul (void)
+{
+   TEST_INTEGER_KIND (int16emul, int16_t, ASSERT_CMPINT);
+}
+
+static int8_t
+bson_atomic_int8emul_fetch_add (volatile int8_t *p,
+                                int8_t n,
+                                enum bson_memory_order _unused)
+{
+   int8_t ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   *p += n;
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int8_t
+bson_atomic_int8emul_exchange (volatile int8_t *p,
+                               int8_t n,
+                               enum bson_memory_order _unused)
+{
+   int8_t ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   *p = n;
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int8_t
+bson_atomic_int8emul_compare_exchange_strong (volatile int8_t *p,
+                                              int8_t expect_value,
+                                              int8_t new_value,
+                                              enum bson_memory_order _unused)
+{
+   int8_t ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   if (ret == expect_value) {
+      *p = new_value;
+   }
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int8_t
+bson_atomic_int8emul_compare_exchange_weak (volatile int8_t *p,
+                                            int8_t expect_value,
+                                            int8_t new_value,
+                                            enum bson_memory_order order)
+{
+   /* We're emulating. We can't do a weak version. */
+   return bson_atomic_int8emul_compare_exchange_strong (
+      p, expect_value, new_value, order);
+}
+
+static int8_t
+bson_atomic_int8emul_fetch (const int8_t volatile *val,
+                            enum bson_memory_order order)
+{
+   return bson_atomic_int8emul_fetch_add ((int8_t volatile *) val, 0, order);
+}
+
+static int8_t
+bson_atomic_int8emul_fetch_sub (int8_t volatile *val,
+                                int8_t v,
+                                enum bson_memory_order order)
+{
+   return bson_atomic_int8emul_fetch_add (val, -v, order);
+}
+
+static void
+test_integers_int8emul (void)
+{
+   TEST_INTEGER_KIND (int8emul, int8_t, ASSERT_CMPINT);
+}
+
+static int
+bson_atomic_intemul_fetch_add (volatile int *p,
+                               int n,
+                               enum bson_memory_order _unused)
+{
+   int ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   *p += n;
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int
+bson_atomic_intemul_exchange (volatile int *p,
+                              int n,
+                              enum bson_memory_order _unused)
+{
+   int ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   *p = n;
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int
+bson_atomic_intemul_compare_exchange_strong (volatile int *p,
+                                             int expect_value,
+                                             int new_value,
+                                             enum bson_memory_order _unused)
+{
+   int ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   if (ret == expect_value) {
+      *p = new_value;
+   }
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int
+bson_atomic_intemul_compare_exchange_weak (volatile int *p,
+                                           int expect_value,
+                                           int new_value,
+                                           enum bson_memory_order order)
+{
+   /* We're emulating. We can't do a weak version. */
+   return bson_atomic_intemul_compare_exchange_strong (
+      p, expect_value, new_value, order);
+}
+
+static int
+bson_atomic_intemul_fetch (const int volatile *val,
+                           enum bson_memory_order order)
+{
+   return bson_atomic_intemul_fetch_add ((int volatile *) val, 0, order);
+}
+
+static int
+bson_atomic_intemul_fetch_sub (int volatile *val,
+                               int v,
+                               enum bson_memory_order order)
+{
+   return bson_atomic_intemul_fetch_add (val, -v, order);
+}
+
+static void
+test_integers_intemul (void)
+{
+   TEST_INTEGER_KIND (intemul, int, ASSERT_CMPINT);
+}
+
 void
 test_atomic_install (TestSuite *suite)
 {
@@ -268,4 +490,7 @@ test_atomic_install (TestSuite *suite)
    TestSuite_Add (suite, "/atomic/thread_fence", test_thread_fence);
    TestSuite_Add (suite, "/atomic/thread_yield", test_thrd_yield);
    TestSuite_Add (suite, "/atomic/integers/int32emul", test_integers_int32emul);
+   TestSuite_Add (suite, "/atomic/integers/int16emul", test_integers_int16emul);
+   TestSuite_Add (suite, "/atomic/integers/int8emul", test_integers_int8emul);
+   TestSuite_Add (suite, "/atomic/integers/intemul", test_integers_intemul);
 }
