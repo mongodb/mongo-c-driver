@@ -1062,7 +1062,7 @@ mock_server_receives_legacy_hello (mock_server_t *server,
 request_t *
 mock_server_receives_hello (mock_server_t *server)
 {
-   return mock_server_receives_command (
+   return mock_server_receives_command ( 
       server,
       "admin",
       MONGOC_QUERY_SECONDARY_OK,

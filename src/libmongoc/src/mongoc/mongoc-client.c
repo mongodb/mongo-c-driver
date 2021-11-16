@@ -3146,6 +3146,14 @@ mongoc_client_set_server_api (mongoc_client_t *client,
    return true;
 }
 
+/* Returns true if a specific server API has been set: */
+bool mongoc_client_uses_server_api(mongoc_client_t *client)
+{
+ BSON_ASSERT_PARAM(client);
+
+ return NULL != client->api;
+}
+
 mongoc_server_description_t *
 mongoc_client_get_handshake_description (mongoc_client_t *client,
                                          uint32_t server_id,
