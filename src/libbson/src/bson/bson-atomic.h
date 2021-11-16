@@ -67,7 +67,8 @@ enum bson_memory_order {
 #define BSON_IF_GNU_LEGACY_ATOMICS(...)
 #endif
 
-/* CDRIVER-4229 zSeries with gcc 4.8.4 produces illegal instructions for int and int32 atomic intrinsics. */
+/* CDRIVER-4229 zSeries with gcc 4.8.4 produces illegal instructions for int and
+ * int32 atomic intrinsics. */
 #if defined(__s390__) || defined(__s390x__) || defined(__zarch__)
 #define BSON_EMULATE_INT32
 #define BSON_EMULATE_INT
