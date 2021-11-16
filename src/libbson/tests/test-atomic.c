@@ -482,6 +482,18 @@ test_integers_intemul (void)
    TEST_INTEGER_KIND (intemul, int, ASSERT_CMPINT);
 }
 
+#if defined(__s390__)
+#pragma message("DEFCHECK: __s390__ defined")
+#endif
+
+#if defined(__s390x__)
+#pragma message("DEFCHECK: __s390x__ defined")
+#endif
+
+#if defined(__zarch__)
+#pragma message("DEFCHECK: __zarch__ defined")
+#endif
+
 void
 test_atomic_install (TestSuite *suite)
 {
