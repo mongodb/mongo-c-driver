@@ -148,6 +148,118 @@ test_thrd_yield (void)
    bson_thrd_yield ();
 }
 
+
+/**
+ * Emulate atomic operations with a spin lock and regular arithmetic operations on systems that do not support compiler intrinsics.
+ */
+static int8_t gEmulAtomicLock = 0;
+
+static void
+_lock_emul_atomic ()
+{
+   int i;
+   if (bson_atomic_int8_compare_exchange_weak (
+          &gEmulAtomicLock, 0, 1, bson_memory_order_acquire) == 0) {
+      /* Successfully took the spinlock */
+      return;
+   }
+   /* Failed. Try taking ten more times, then begin sleeping. */
+   for (i = 0; i < 10; ++i) {
+      if (bson_atomic_int8_compare_exchange_weak (
+             &gEmulAtomicLock, 0, 1, bson_memory_order_acquire) == 0) {
+         /* Succeeded in taking the lock */
+         return;
+      }
+   }
+   /* Still don't have the lock. Spin and yield */
+   while (bson_atomic_int8_compare_exchange_weak (
+             &gEmulAtomicLock, 0, 1, bson_memory_order_acquire) != 0) {
+      bson_thrd_yield ();
+   }
+}
+
+static void
+_unlock_emul_atomic ()
+{
+   int64_t rv = bson_atomic_int8_exchange (
+      &gEmulAtomicLock, 0, bson_memory_order_release);
+   BSON_ASSERT (rv == 1 && "Released atomic lock while not holding it");
+}
+
+static int32_t
+bson_atomic_int32emul_fetch_add (volatile int32_t *p,
+                                   int32_t n,
+                                   enum bson_memory_order _unused)
+{
+   int32_t ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   *p += n;
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int32_t
+bson_atomic_int32emul_exchange (volatile int32_t *p,
+                                  int32_t n,
+                                  enum bson_memory_order _unused)
+{
+   int32_t ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   *p = n;
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int32_t
+bson_atomic_int32emul_compare_exchange_strong (volatile int32_t *p,
+                                                 int32_t expect_value,
+                                                 int32_t new_value,
+                                                 enum bson_memory_order _unused)
+{
+   int32_t ret;
+   _lock_emul_atomic ();
+   ret = *p;
+   if (ret == expect_value) {
+      *p = new_value;
+   }
+   _unlock_emul_atomic ();
+   return ret;
+}
+
+static int32_t
+bson_atomic_int32emul_compare_exchange_weak (volatile int32_t *p,
+                                               int32_t expect_value,
+                                               int32_t new_value,
+                                               enum bson_memory_order order)
+{
+   /* We're emulating. We can't do a weak version. */
+   return bson_atomic_int32emul_compare_exchange_strong (
+      p, expect_value, new_value, order);
+}
+
+static int32_t
+bson_atomic_int32emul_fetch (const int32_t volatile *val,
+                         enum bson_memory_order order)
+{
+   return bson_atomic_int32emul_fetch_add (
+      (int32_t volatile *) val, 0, order);
+}
+
+static int32_t
+bson_atomic_int32emul_fetch_sub (int32_t volatile *val,
+                             int32_t v,
+                             enum bson_memory_order order)
+{
+   return bson_atomic_int32emul_fetch_add (val, -v, order);
+}
+
+static void
+test_integers_int32emul (void) {
+   TEST_INTEGER_KIND (int32emul, int32_t, ASSERT_CMPINT32);
+}
+
 void
 test_atomic_install (TestSuite *suite)
 {
@@ -155,4 +267,5 @@ test_atomic_install (TestSuite *suite)
    TestSuite_Add (suite, "/atomic/pointers", test_pointers);
    TestSuite_Add (suite, "/atomic/thread_fence", test_thread_fence);
    TestSuite_Add (suite, "/atomic/thread_yield", test_thrd_yield);
+   TestSuite_Add (suite, "/atomic/integers/int32emul", test_integers_int32emul);
 }
