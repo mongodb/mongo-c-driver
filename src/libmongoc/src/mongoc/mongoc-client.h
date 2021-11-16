@@ -281,6 +281,8 @@ MONGOC_EXPORT (bool)
 mongoc_client_set_server_api (mongoc_client_t *client,
                               const mongoc_server_api_t *api,
                               bson_error_t *error);
+MONGOC_EXPORT (bool)
+mongoc_client_uses_server_api (mongoc_client_t *client); 
 
 MONGOC_EXPORT (mongoc_server_description_t *)
 mongoc_client_get_handshake_description (mongoc_client_t *client,

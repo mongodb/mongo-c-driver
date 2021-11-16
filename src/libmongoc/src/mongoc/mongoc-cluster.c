@@ -639,6 +639,53 @@ fail_no_events:
    return retval;
 }
 
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_should_use_op_msg --
+ *
+ * Returns:
+ *       true if op_msg should be used to transport the given command
+ *
+ * Side effects:
+ *      none
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool _mongoc_should_use_op_msg(const mongoc_cluster_t *cluster, const mongoc_cmd_t *cmd)
+{
+ /* If we're running a newer wire protocol OR have manually selected a server protocol,
+ always select OP_MSG: */
+
+ return (WIRE_VERSION_OP_MSG <= cmd->server_stream->sd->max_wire_version) || 
+        mongoc_client_uses_server_api(cluster->client);
+}
+
+/*
+ *--------------------------------------------------------------------------
+ *
+ * _mongoc_cluster_run_command_selected_mech_private --
+ *      selects legacy op_query transport or op_msg, as appropriate
+ *
+ * Returns:
+ *       true if successful; otherwise false and @error is set.
+ *
+ * Side effects:
+ *  as per mongoc_cluster_run_command_opquery() or mongoc_cluster_run_opmsg()
+ *
+ *--------------------------------------------------------------------------
+ */
+static bool _mongoc_cluster_run_command_selected_mech_private(
+        mongoc_cluster_t *cluster,
+        mongoc_cmd_t *cmd,
+        bson_t *reply,
+        bson_error_t *error)
+{
+ if(!_mongoc_should_use_op_msg(cluster, cmd))
+  return mongoc_cluster_run_command_opquery(cluster, cmd, -1 /* no compression */, reply, error);
+
+ return mongoc_cluster_run_opmsg(cluster, cmd, reply, error);
+}
 
 /*
  *--------------------------------------------------------------------------
@@ -666,7 +713,7 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
                                     bson_error_t *error)
 {
    bool retval;
-   const mongoc_server_stream_t *server_stream;
+   const mongoc_server_stream_t *server_stream = cmd->server_stream;
    bson_t reply_local;
    bson_error_t error_local;
 
@@ -677,14 +724,10 @@ mongoc_cluster_run_command_private (mongoc_cluster_t *cluster,
    if (!reply) {
       reply = &reply_local;
    }
-   server_stream = cmd->server_stream;
-   if (server_stream->sd->max_wire_version >= WIRE_VERSION_OP_MSG) {
-      retval = mongoc_cluster_run_opmsg (cluster, cmd, reply, error);
-   } else {
-      retval =
-         mongoc_cluster_run_command_opquery (cluster, cmd, -1, reply, error);
-   }
-   _handle_not_primary_error (cluster, server_stream, reply);
+
+   retval = _mongoc_cluster_run_command_selected_mech_private(cluster, cmd, reply, error);
+
+    _handle_not_primary_error (cluster, server_stream, reply);
    if (reply == &reply_local) {
       bson_destroy (&reply_local);
    }
@@ -811,9 +854,6 @@ _stream_run_hello (mongoc_cluster_t *cluster,
       _mongoc_cluster_create_server_stream (td.ptr, &empty_sd, stream);
    mongoc_server_description_cleanup (&empty_sd);
 
-   /* Always use OP_QUERY for the handshake, regardless of whether the last
-    * known hello indicates the server supports a newer wire protocol.
-    */
    memset (&hello_cmd, 0, sizeof (hello_cmd));
    hello_cmd.db_name = "admin";
    hello_cmd.command = &command;
@@ -821,6 +861,8 @@ _stream_run_hello (mongoc_cluster_t *cluster,
    hello_cmd.query_flags = MONGOC_QUERY_SECONDARY_OK;
    hello_cmd.server_stream = server_stream;
 
+/* JFW what about hello_cmd SASL? Looks like they never performed encryption when called via
+mongoc_cluster_run_command_private() anyway! */
    if (!mongoc_cluster_run_command_private (
           cluster, &hello_cmd, &reply, error)) {
       if (negotiate_sasl_supported_mechs) {
