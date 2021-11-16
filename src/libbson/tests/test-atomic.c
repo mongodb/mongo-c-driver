@@ -62,29 +62,51 @@
 
 #define TEST_INTEGER_KIND(Kind, TypeName, Assert)            \
    do {                                                      \
+      MONGOC_ERROR ("  memory order: relaxed ... begin");    \
       TEST_KIND_WITH_MEMORDER (                              \
          Kind, TypeName, bson_memory_order_relaxed, Assert); \
+      MONGOC_ERROR ("  memory order: relaxed ... end");      \
+      MONGOC_ERROR ("  memory order: acq_rel ... begin");    \
       TEST_KIND_WITH_MEMORDER (                              \
          Kind, TypeName, bson_memory_order_acq_rel, Assert); \
+      MONGOC_ERROR ("  memory order: acq_rel ... end");      \
+      MONGOC_ERROR ("  memory order: acquire ... begin");    \
       TEST_KIND_WITH_MEMORDER (                              \
          Kind, TypeName, bson_memory_order_acquire, Assert); \
+      MONGOC_ERROR ("  memory order: acquire ... end");      \
+      MONGOC_ERROR ("  memory order: release ... begin");    \
       TEST_KIND_WITH_MEMORDER (                              \
          Kind, TypeName, bson_memory_order_release, Assert); \
+      MONGOC_ERROR ("  memory order: release ... end");      \
+      MONGOC_ERROR ("  memory order: consume ... begin");    \
       TEST_KIND_WITH_MEMORDER (                              \
          Kind, TypeName, bson_memory_order_consume, Assert); \
+      MONGOC_ERROR ("  memory order: consume ... end");      \
+      MONGOC_ERROR ("  memory order: seq_cst ... begin");    \
       TEST_KIND_WITH_MEMORDER (                              \
          Kind, TypeName, bson_memory_order_seq_cst, Assert); \
+      MONGOC_ERROR ("  memory order: seq_cst ... end");      \
    } while (0)
 
 
 static void
 test_integers (void)
 {
+   MONGOC_ERROR ("test_integers: int64 ... begin");
    TEST_INTEGER_KIND (int64, int64_t, ASSERT_CMPINT64);
+   MONGOC_ERROR ("test_integers: int64 ... end");
+   MONGOC_ERROR ("test_integers: int32 ... begin");
    TEST_INTEGER_KIND (int32, int32_t, ASSERT_CMPINT32);
+   MONGOC_ERROR ("test_integers: int32 ... end");
+   MONGOC_ERROR ("test_integers: int16 ... begin");
    TEST_INTEGER_KIND (int16, int16_t, ASSERT_CMPINT);
+   MONGOC_ERROR ("test_integers: int16 ... end");
+   MONGOC_ERROR ("test_integers: int8 ... begin");
    TEST_INTEGER_KIND (int8, int8_t, ASSERT_CMPINT);
+   MONGOC_ERROR ("test_integers: int8 ... end");
+   MONGOC_ERROR ("test_integers: int ... begin");
    TEST_INTEGER_KIND (int, int, ASSERT_CMPINT);
+   MONGOC_ERROR ("test_integers: int ... end");
 }
 
 
