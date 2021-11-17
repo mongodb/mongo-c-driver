@@ -2420,6 +2420,24 @@ _make_kms_certificate_client_encryption (mongoc_client_t *client,
       bson_destroy (kms_providers);
    }
 
+   {
+      char *tls_ca_file =
+         test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+      char *tls_cert_key_file = test_framework_getenv_required (
+         "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+      bson_t *tls_opts = tmp_bson ("{ 'aws': { '%s': '%s', '%s': '%s' } }",
+                                   MONGOC_URI_TLSCAFILE,
+                                   tls_ca_file,
+                                   MONGOC_URI_TLSCERTIFICATEKEYFILE,
+                                   tls_cert_key_file);
+
+      mongoc_client_encryption_opts_set_tls_opts (client_encryption_opts,
+                                                  tls_opts);
+
+      bson_free (tls_cert_key_file);
+      bson_free (tls_ca_file);
+   }
+
    mongoc_client_encryption_opts_set_keyvault_namespace (
       client_encryption_opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
@@ -2437,15 +2455,23 @@ _make_kms_certificate_client_encryption (mongoc_client_t *client,
 static void
 test_kms_tls_cert_valid (void *unused)
 {
-   bson_error_t error;
    const int32_t connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
    const int is_client = 1;
 
+   bson_error_t error;
    mongoc_host_list_t host;
+   mongoc_stream_t *base_stream;
+   mongoc_ssl_opt_t ssl_opts;
+   mongoc_stream_t *tls_stream;
+
+   char *tls_ca_file =
+      test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+   char *tls_cert_key_file = test_framework_getenv_required (
+      "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
 
 #if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
-   /* Certificate verification fails with Secure Channel given "127.0.0.1:7999"
-    * with error: "hostname doesn't match certificate". */
+   /* Certificate verification fails with Secure Channel given
+    * "127.0.0.1:7999" with error: "hostname doesn't match certificate". */
    ASSERT_OR_PRINT (
       _mongoc_host_list_from_string_with_err (&host, "localhost:7999", &error),
       error);
@@ -2455,14 +2481,14 @@ test_kms_tls_cert_valid (void *unused)
       error);
 #endif
 
-   mongoc_stream_t *base_stream =
-      mongoc_client_connect_tcp (connecttimeoutms, &host, &error);
+   base_stream = mongoc_client_connect_tcp (connecttimeoutms, &host, &error);
    ASSERT_OR_PRINT (base_stream, error);
 
-   mongoc_ssl_opt_t ssl_opts;
-   memcpy (&ssl_opts, mongoc_ssl_opt_get_default (), sizeof ssl_opts);
+   ssl_opts = *test_framework_get_ssl_opts ();
+   ssl_opts.ca_file = tls_ca_file;
+   ssl_opts.pem_file = tls_cert_key_file;
 
-   mongoc_stream_t *tls_stream = mongoc_stream_tls_new_with_hostname (
+   tls_stream = mongoc_stream_tls_new_with_hostname (
       base_stream, host.host, &ssl_opts, is_client);
 
    ASSERT_OR_PRINT (mongoc_stream_tls_handshake_block (
@@ -2470,6 +2496,9 @@ test_kms_tls_cert_valid (void *unused)
                     error);
 
    mongoc_stream_destroy (tls_stream); /* Also destroys base_stream. */
+
+   bson_free (tls_cert_key_file);
+   bson_free (tls_ca_file);
 }
 
 static void
@@ -3114,13 +3143,6 @@ test_kms_tls_options_extra_rejected (void *unused)
    mongoc_client_destroy (keyvault_client);
 }
 
-/* Required CA certificates may not be registered on system. See BUILD-14068. */
-int
-test_framework_skip_kms_tls_tests (void)
-{
-   return test_framework_getenv_bool ("MONGOC_TEST_SKIP_KMS_TLS_TESTS") ? 0 : 1;
-}
-
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
@@ -3204,7 +3226,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_kms_tls_tests,
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/expired",
@@ -3212,7 +3233,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_kms_tls_tests,
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/wrong_host",
@@ -3220,7 +3240,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_kms_tls_tests,
                       test_framework_skip_if_max_wire_version_less_than_8);
 
    /* Other, C driver specific, tests. */
