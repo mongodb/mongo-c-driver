@@ -1,3 +1,8 @@
+libbson 1.20.0
+==============
+
+No changes since 1.19.2; release to keep pace with libmongoc's version.
+
 libbson 1.19.1
 ==============
 
