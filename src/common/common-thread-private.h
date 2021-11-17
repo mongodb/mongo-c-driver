@@ -105,7 +105,7 @@ typedef struct {
 #define bson_once_t INIT_ONCE
 #define bson_thread_t HANDLE
 #define BSON_THREAD_FUN(_function_name, _arg_name) \
-   unsigned(__stdcall _function_name) (void *(_arg_name))
+   unsigned (__stdcall _function_name) (void *(_arg_name))
 #define BSON_THREAD_FUN_TYPE(_function_name) \
    unsigned (__stdcall * _function_name) (void *)
 #define BSON_THREAD_RETURN return 0
@@ -122,6 +122,61 @@ int COMMON_PREFIX (thread_create) (bson_thread_t *thread,
 #if defined(MONGOC_ENABLE_DEBUG_ASSERTIONS) && defined(BSON_OS_UNIX)
 bool COMMON_PREFIX (mutex_is_locked) (bson_mutex_t *mutex);
 #endif
+
+/**
+ * @brief A shared mutex (a read-write lock)
+ *
+ * A shared mutex can be locked in 'shared' mode or 'exclusive' mode. Only one
+ * thread may hold exclusive mode at a time. Any number of threads may hold
+ * the lock in shared mode simultaneously. No thread can hold in exclusive mode
+ * while another thread holds in shared mode, and vice-versa.
+ */
+typedef struct bson_shared_mutex_t {
+   BSON_IF_WINDOWS (SRWLOCK native;)
+   BSON_IF_POSIX (pthread_rwlock_t native;)
+} bson_shared_mutex_t;
+
+static BSON_INLINE void
+bson_shared_mutex_init (bson_shared_mutex_t *mtx)
+{
+   BSON_IF_WINDOWS (InitializeSRWLock (&mtx->native));
+   BSON_IF_POSIX (pthread_rwlock_init (&mtx->native, NULL));
+}
+
+static BSON_INLINE void
+bson_shared_mutex_destroy (bson_shared_mutex_t *mtx)
+{
+   BSON_IF_WINDOWS ((void) mtx;)
+   BSON_IF_POSIX (pthread_rwlock_destroy (&mtx->native);)
+}
+
+static BSON_INLINE void
+bson_shared_mutex_lock_shared (bson_shared_mutex_t *mtx)
+{
+   BSON_IF_WINDOWS (AcquireSRWLockShared (&mtx->native);)
+   BSON_IF_POSIX (pthread_rwlock_rdlock (&mtx->native);)
+}
+
+static BSON_INLINE void
+bson_shared_mutex_lock (bson_shared_mutex_t *mtx)
+{
+   BSON_IF_WINDOWS (AcquireSRWLockExclusive (&mtx->native);)
+   BSON_IF_POSIX (pthread_rwlock_wrlock (&mtx->native);)
+}
+
+static BSON_INLINE void
+bson_shared_mutex_unlock (bson_shared_mutex_t *mtx)
+{
+   BSON_IF_WINDOWS (ReleaseSRWLockExclusive (&mtx->native);)
+   BSON_IF_POSIX (pthread_rwlock_unlock (&mtx->native);)
+}
+
+static BSON_INLINE void
+bson_shared_mutex_unlock_shared (bson_shared_mutex_t *mtx)
+{
+   BSON_IF_WINDOWS (ReleaseSRWLockShared (&mtx->native);)
+   BSON_IF_POSIX (pthread_rwlock_unlock (&mtx->native);)
+}
 
 BSON_END_DECLS
 
