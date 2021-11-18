@@ -195,7 +195,7 @@ _mongoc_simple_rand_uint64_t (void);
 /* Returns a uniformly-distributed random size_t generated using `rand()`.
  * Note: may invoke `srand()`, which may not be thread-safe. Concurrent calls to
  * `_mongoc_simple_rand_*()` functions, however, is thread-safe. */
-uint64_t
+size_t
 _mongoc_simple_rand_size_t (void);
 
 /* Returns a uniformly-distributed random integer in the range [min, max].

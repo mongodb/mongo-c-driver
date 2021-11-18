@@ -776,10 +776,10 @@ _mongoc_rand_uint64_t (uint64_t min, uint64_t max, uint64_t (*rand) (void))
 BSON_STATIC_ASSERT2 (_mongoc_simple_rand_size_t,
                      sizeof (size_t) == sizeof (uint64_t));
 
-uint64_t
+size_t
 _mongoc_simple_rand_size_t (void)
 {
-   return (uint64_t) _mongoc_simple_rand_uint64_t ();
+   return (size_t) _mongoc_simple_rand_uint64_t ();
 }
 
 size_t
@@ -797,10 +797,10 @@ _mongoc_rand_size_t (size_t min, size_t max, size_t (*rand) (void))
 BSON_STATIC_ASSERT2 (_mongoc_simple_rand_size_t,
                      sizeof (size_t) == sizeof (uint32_t));
 
-uint32_t
+size_t
 _mongoc_simple_rand_size_t (void)
 {
-   return (uint32_t) _mongoc_simple_rand_uint32_t ();
+   return (size_t) _mongoc_simple_rand_uint32_t ();
 }
 
 size_t
