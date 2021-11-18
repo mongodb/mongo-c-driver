@@ -3129,7 +3129,7 @@ mongoc_uri_finalize_loadbalanced (const mongoc_uri_t *uri, bson_error_t *error)
    if (uri->hosts && uri->hosts->next) {
       MONGOC_URI_ERROR (
          error,
-         "URI with \"%s\" enabled must must not contain more than one host",
+         "URI with \"%s\" enabled must not contain more than one host",
          MONGOC_URI_LOADBALANCED);
       return false;
    }
