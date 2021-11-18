@@ -440,11 +440,14 @@ test_all_spec_tests (TestSuite *suite)
 
    test_framework_resolve_path (
       JSON_DIR "/initial_dns_seedlist_discovery/sharded", resolved);
-   install_json_test_suite_with_check (suite,
-                                       resolved,
-                                       test_dns,
-                                       test_dns_check_loadbalanced,
-                                       test_framework_skip_if_no_crypto);
+   install_json_test_suite_with_check (
+      suite,
+      resolved,
+      test_dns,
+      /* Topology of load-balancer tests satisfy topology requirements of
+       * sharded tests, even though a load balancer is not required. */
+      test_dns_check_loadbalanced,
+      test_framework_skip_if_no_crypto);
 }
 
 extern bool
