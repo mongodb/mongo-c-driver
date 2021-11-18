@@ -2417,6 +2417,11 @@ mongoc_topology_description_reconcile (mongoc_topology_description_t *td,
 
       mongoc_set_for_each (servers, _remove_if_not_in_host_list_cb, &ctx);
    }
+
+   /* At this point, the number of hosts in the host list should not exceed
+    * srvMaxHosts. */
+   BSON_ASSERT (td->max_hosts == 0 ||
+                servers->items_len <= (size_t) td->max_hosts);
 }
 
 
