@@ -1,3 +1,20 @@
+libmongoc 1.20.0
+================
+
+Features:
+
+  * Improve multi-threaded performance of client pool.
+  * Support KMIP as a provider for Client-Side Field Level Encryption (CSFLE).
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+  * Ezra Chung
+  * Colby Pike
+  * Jesse Williamson
+  * Jeremy Mikola
+  * Kaitlin Mahar
+
 mongo-c-driver 1.19.2
 =====================
 
