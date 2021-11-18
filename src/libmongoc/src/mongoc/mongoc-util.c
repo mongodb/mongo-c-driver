@@ -20,7 +20,10 @@
 
 #include <string.h>
 
+#include "bson/bson.h"
+
 #include "common-md5-private.h"
+#include "common-thread-private.h"
 #include "mongoc-rand-private.h"
 #include "mongoc-util-private.h"
 #include "mongoc-client.h"
@@ -674,6 +677,7 @@ _mongoc_rand_java64 (uint64_t s, uint64_t (*rand64) (void))
 }
 
 #if defined(MONGOC_ENABLE_CRYPTO)
+
 /* Attempt to use `_mongoc_rand_bytes` if available. */
 
 static uint32_t
@@ -699,9 +703,28 @@ _mongoc_simple_rand_uint64_t (void)
 #else
 /* Otherwise, fallback to rudimentary use of `rand()`. */
 
+static BSON_ONCE_FUN (_mongoc_simple_rand_init)
+{
+   struct timeval tv;
+   unsigned int seed = 0;
+
+   bson_gettimeofday (&tv);
+
+   seed ^= (unsigned int) tv.tv_sec;
+   seed ^= (unsigned int) tv.tv_usec;
+
+   srand (seed);
+
+   BSON_ONCE_RETURN;
+}
+
+static bson_once_t _mongoc_simple_rand_init_once = BSON_ONCE_INIT;
+
 static uint32_t
 _mongoc_simple_rand_uint32_t (void)
 {
+   bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
+
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
    return (((uint32_t) rand () & 0x7FFFu) << 0u) |
@@ -712,6 +735,8 @@ _mongoc_simple_rand_uint32_t (void)
 static uint64_t
 _mongoc_simple_rand_uint64_t (void)
 {
+   bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
+
    /* Ensure *all* bits are random, as RAND_MAX is only required to be at least
     * 32767 (2^15). */
    return (((uint64_t) rand () & 0x7FFFu) << 0u) |
