@@ -3,7 +3,7 @@ libbson 1.20.0
 
 Features:
 
-  * Improve atomics API
+  * Improve atomics API.
 
 Thanks to everyone who contributed to the development of this release.
 
