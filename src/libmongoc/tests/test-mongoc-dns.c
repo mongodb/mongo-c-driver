@@ -660,7 +660,7 @@ _mock_rr_resolver_prose_test_9 (const char *service,
 }
 
 static void
-_prose_loadbalanced_ping (mongoc_client_t *client)
+_prose_test_ping (mongoc_client_t *client)
 {
    bson_error_t error;
    bson_t *cmd = BCON_NEW ("ping", BCON_INT32 (1));
@@ -784,7 +784,7 @@ _prose_test_update_srv_single (void *resource)
    client = resource;
 
    _mongoc_usleep (2000 * RESCAN_INTERVAL_MS);
-   _prose_loadbalanced_ping (client);
+   _prose_test_ping (client);
 }
 
 static void
