@@ -804,7 +804,7 @@ _mongoc_simple_rand_size_t (void)
 }
 
 size_t
-_mongoc_rand_size_t (size_t min, size_t max)
+_mongoc_rand_size_t (size_t min, size_t max, size_t (*rand) (void))
 {
    BSON_ASSERT (min <= max);
    BSON_ASSERT (min != 0u || max != UINT32_MAX);
