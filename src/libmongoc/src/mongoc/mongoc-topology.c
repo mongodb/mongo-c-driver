@@ -302,7 +302,7 @@ _mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
    /* Initial DNS Seedlist Discovery Spec: If `srvMaxHosts` is greater than zero
     * and less than the number of hosts in the DNS result, the driver MUST
     * randomly select that many hosts and use them to populate the seedlist.
-    * Drivers SHOULD use the `Fisher-Yates shuffle`_ for randomization. */
+    * Drivers SHOULD use the `Fisher-Yates shuffle` for randomization. */
    for (idx = hl_size - 1u; idx > 0u; --idx) {
       /* 0 <= swap_pos <= idx */
       const size_t swap_pos = _mongoc_rand_size_t (0u, idx);
