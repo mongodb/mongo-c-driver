@@ -104,6 +104,7 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
 
    BSON_ASSERT (acmd);
 
+fprintf(stderr, "JFW: mongoc_async_cmd_run()\n"), fflush(stderr);
    /* if we have successfully connected to the node, call the callback. */
    if (acmd->state == MONGOC_ASYNC_CMD_SEND) {
       acmd->cb (acmd, MONGOC_ASYNC_CMD_CONNECTED, NULL, 0);

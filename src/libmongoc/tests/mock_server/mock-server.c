@@ -1024,6 +1024,7 @@ mock_server_receives_legacy_hello (mock_server_t *server,
       bson_strdup_printf ("{'%s': 1, 'maxAwaitTimeMS': { '$exists': false }}",
                           request->command_name);
 
+fprintf(stderr, "JFW: mock_server_receives_legacy_hello() about to check matching query\n"), fflush(stderr);
    if (!request_matches_query (request,
                                "admin.$cmd",
                                MONGOC_QUERY_SECONDARY_OK,

@@ -106,6 +106,7 @@ _jumpstart_other_acmds (mongoc_topology_scanner_node_t *node,
 static void
 _add_hello (mongoc_topology_scanner_t *ts)
 {
+fprintf(stderr, "JFW: _add_hello()\n"), fflush(stderr);
    mongoc_server_api_t *api = ts->api;
 
    BSON_APPEND_INT32 (&ts->hello_cmd, "hello", 1);
@@ -114,6 +115,7 @@ _add_hello (mongoc_topology_scanner_t *ts)
    BSON_APPEND_INT32 (&ts->legacy_hello_cmd, HANDSHAKE_CMD_LEGACY_HELLO, 1);
    BSON_APPEND_BOOL (&ts->legacy_hello_cmd, "helloOk", true);
 
+/* JFW: interesting check here... */
    if (api) {
       _mongoc_cmd_append_server_api (&ts->hello_cmd, api);
    }
@@ -303,6 +305,7 @@ const bson_t *
 _mongoc_topology_scanner_get_monitoring_cmd (mongoc_topology_scanner_t *ts,
                                              bool hello_ok)
 {
+fprintf(stderr, "JFW: _mongoc_topology_scanner_get_monitoring_cmd() also choosing between new and legacy\n"), fflush(stderr);
    return hello_ok || ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd;
 }
 
@@ -334,6 +337,8 @@ _mongoc_topology_scanner_dup_handshake_cmd (mongoc_topology_scanner_t *ts,
    /* Construct a new handshake command to be sent */
    BSON_ASSERT (ts->handshake_cmd == NULL);
    bson_mutex_unlock (&ts->handshake_cmd_mtx);
+
+fprintf(stderr, "JFW: looks like setting either new or old handshake\n"), fflush(stderr);
    new_cmd =
       _build_handshake_cmd (ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd,
                             appname,

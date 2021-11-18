@@ -69,6 +69,7 @@
 #include "mongoc-opts-private.h"
 #endif
 
+#include <stdio.h>
 
 #undef MONGOC_LOG_DOMAIN
 #define MONGOC_LOG_DOMAIN "client"
@@ -1856,6 +1857,7 @@ _mongoc_client_command_with_stream (mongoc_client_t *client,
          client, parts, server_stream, reply, error));
    }
 
+fprintf(stderr, "JFW: about to call mongoc_cluster_run_command_monitored()\n"), fflush(stderr);
    RETURN (mongoc_cluster_run_command_monitored (
       &client->cluster, &parts->assembled, reply, error));
 }
@@ -1897,6 +1899,7 @@ mongoc_client_command_simple (mongoc_client_t *client,
    server_stream =
       mongoc_cluster_stream_for_reads (cluster, read_prefs, NULL, reply, error);
 
+fprintf(stderr, "JFW: about to call _mongoc_client_command_with_stream(); server_stream == %d\n", (NULL != server_stream)), fflush(stderr);
    if (server_stream) {
       ret = _mongoc_client_command_with_stream (
          client, &parts, read_prefs, server_stream, reply, error);
@@ -1973,6 +1976,8 @@ _mongoc_client_command_with_opts (mongoc_client_t *client,
    BSON_ASSERT (client);
    BSON_ASSERT (db_name);
    BSON_ASSERT (command);
+
+fprintf(stderr, "JFW: _mongoc_client_command_with_opts()\n"), fflush(stderr);
 
    command_name = _mongoc_get_command_name (command);
    cluster = &client->cluster;
@@ -2193,6 +2198,7 @@ mongoc_client_read_write_command_with_opts (
    bson_t *reply,
    bson_error_t *error)
 {
+fprintf(stderr, "JFW: read_write\n");
    return _mongoc_client_command_with_opts (client,
                                             db_name,
                                             command,
@@ -2217,6 +2223,7 @@ mongoc_client_command_with_opts (mongoc_client_t *client,
                                  bson_t *reply,
                                  bson_error_t *error)
 {
+fprintf(stderr, "JFW: client_command\n");
    return _mongoc_client_command_with_opts (client,
                                             db_name,
                                             command,
@@ -2242,6 +2249,7 @@ mongoc_client_command_simple_with_server_id (
    bson_t *reply,
    bson_error_t *error)
 {
+fprintf(stderr, "JFW: client_command_simple_with_server_id\n");
    mongoc_server_stream_t *server_stream;
    mongoc_cmd_parts_t parts;
    bool ret;
@@ -2264,6 +2272,7 @@ mongoc_client_command_simple_with_server_id (
          &parts, client, db_name, MONGOC_QUERY_NONE, command);
       parts.read_prefs = read_prefs;
 
+fprintf(stderr, "JFW: about to call _mongoc_client_command_with_stream()\n"), fflush(stderr);
       ret = _mongoc_client_command_with_stream (
          client, &parts, read_prefs, server_stream, reply, error);
 
@@ -3139,6 +3148,9 @@ mongoc_client_set_server_api (mongoc_client_t *client,
 
    client->api = mongoc_server_api_copy (api);
    _mongoc_topology_scanner_set_server_api (client->topology->scanner, api);
+
+fprintf(stderr, "JFW: ok, just set the server api!\n");
+fflush(stderr);
    return true;
 }
 

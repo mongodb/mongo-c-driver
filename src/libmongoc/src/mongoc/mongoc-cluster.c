@@ -3497,7 +3497,7 @@ mongoc_cluster_run_opmsg (mongoc_cluster_t *cluster,
       _mongoc_buffer_destroy (&buffer);
       return false;
    }
-
+fprintf(stderr, "JFW: sent message (via op_msg)...\n"), fflush(stderr);
    /* If acknowledged, wait for a server response. Otherwise, exit early */
    if (cmd->is_acknowledged) {
       ok = _mongoc_buffer_append_from_stream (

@@ -211,8 +211,9 @@ request_matches_query (const request_t *request,
       goto done;
    }
 
+fprintf(stderr, "JFW: request opcode check\n"), fflush(stderr);
    if (request->opcode != MONGOC_OPCODE_QUERY) {
-      test_error ("request's opcode does not match QUERY: %s", doc_as_json);
+      test_error ("request's opcode (%d) does not match QUERY: %s", request->opcode, doc_as_json);
       goto done;
    }
 
