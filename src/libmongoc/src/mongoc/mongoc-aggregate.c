@@ -276,12 +276,9 @@ _mongoc_aggregate (mongoc_client_t *client,
       has_write_key = _has_write_key (&iter);
    }
 
-   if (has_write_key && cursor->read_prefs->mode != MONGOC_READ_PRIMARY) {
-      mongoc_read_prefs_destroy (cursor->read_prefs);
-      cursor->read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-      MONGOC_WARNING ("$out or $merge stage specified. Overriding read "
-                      "preference to primary.");
-   }
+   /* This has an important effect on server selection when
+    * readPreferences=secondary. Keep track of this fact for later use. */
+   cursor->is_aggr_with_write_stage = has_write_key;
 
    /* server id isn't enough. ensure we're connected & know wire version */
    server_stream = _mongoc_cursor_fetch_stream (cursor);

@@ -62,7 +62,11 @@ struct _mongoc_topology_description_t {
    void *apm_context;
 };
 
-typedef enum { MONGOC_SS_READ, MONGOC_SS_WRITE } mongoc_ss_optype_t;
+typedef enum {
+   MONGOC_SS_READ,
+   MONGOC_SS_WRITE,
+   MONGOC_SS_AGGREGATE_WITH_WRITE
+} mongoc_ss_optype_t;
 
 void
 mongoc_topology_description_init (mongoc_topology_description_t *description,

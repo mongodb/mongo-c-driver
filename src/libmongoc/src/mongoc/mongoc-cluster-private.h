@@ -106,6 +106,16 @@ mongoc_cluster_try_recv (mongoc_cluster_t *cluster,
                          bson_error_t *error);
 
 /**
+ * @brief Flag telling whether an aggregate operation has a write stage or not
+ */
+typedef enum aggr_with_write_stage_flag {
+   /** The operation is not an aggregate with a write stage */
+   NOT_AGGR_WITH_WRITE_STAGE,
+   /** The intended operation is an aggregate with a write stage */
+   AGGR_WITH_WRITE_STAGE
+} aggr_with_write_stage_flag;
+
+/**
  * @brief Obtain a server stream appropriate for read operations on the
  * cluster.
  *
@@ -122,6 +132,7 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
                                  mongoc_client_session_t *cs,
                                  bson_t *reply,
+                                 aggr_with_write_stage_flag with_write_stage,
                                  bson_error_t *error);
 
 /**

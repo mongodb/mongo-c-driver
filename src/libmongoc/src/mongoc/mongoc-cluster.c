@@ -2799,6 +2799,7 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
                                  const mongoc_read_prefs_t *read_prefs,
                                  mongoc_client_session_t *cs,
                                  bson_t *reply,
+                                 aggr_with_write_stage_flag with_write_stage,
                                  bson_error_t *error)
 {
    const mongoc_read_prefs_t *prefs_override = read_prefs;
@@ -2808,7 +2809,14 @@ mongoc_cluster_stream_for_reads (mongoc_cluster_t *cluster,
    }
 
    return _mongoc_cluster_stream_for_optype (
-      cluster, MONGOC_SS_READ, prefs_override, cs, reply, error);
+      cluster,
+      with_write_stage == NOT_AGGR_WITH_WRITE_STAGE
+         ? MONGOC_SS_READ
+         : MONGOC_SS_AGGREGATE_WITH_WRITE,
+      prefs_override,
+      cs,
+      reply,
+      error);
 }
 
 mongoc_server_stream_t *

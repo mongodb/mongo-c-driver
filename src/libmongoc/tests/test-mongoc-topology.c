@@ -181,7 +181,7 @@ test_topology_client_creation (void)
 
    /* ensure that we are sharing streams with the client */
    server_stream = mongoc_cluster_stream_for_reads (
-      &client_a->cluster, NULL, NULL, NULL, &error);
+      &client_a->cluster, NULL, NULL, NULL, NOT_AGGR_WITH_WRITE_STAGE, &error);
 
    ASSERT_OR_PRINT (server_stream, error);
    node = mongoc_topology_scanner_get_node (client_a->topology->scanner,
@@ -486,7 +486,7 @@ _test_topology_invalidate_server (bool pooled)
 
    /* call explicitly */
    server_stream = mongoc_cluster_stream_for_reads (
-      &client->cluster, NULL, NULL, NULL, &error);
+      &client->cluster, NULL, NULL, NULL, NOT_AGGR_WITH_WRITE_STAGE, &error);
    ASSERT_OR_PRINT (server_stream, error);
    sd = server_stream->sd;
    id = server_stream->sd->id;
@@ -587,7 +587,7 @@ test_invalid_cluster_node (void *ctx)
 
    /* load stream into cluster */
    server_stream = mongoc_cluster_stream_for_reads (
-      &client->cluster, NULL, NULL, NULL, &error);
+      &client->cluster, NULL, NULL, NULL, NOT_AGGR_WITH_WRITE_STAGE, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
    mongoc_server_stream_cleanup (server_stream);
@@ -658,7 +658,7 @@ test_max_wire_version_race_condition (void *ctx)
 
    /* load stream into cluster */
    server_stream = mongoc_cluster_stream_for_reads (
-      &client->cluster, NULL, NULL, NULL, &error);
+      &client->cluster, NULL, NULL, NULL, NOT_AGGR_WITH_WRITE_STAGE, &error);
    ASSERT_OR_PRINT (server_stream, error);
    id = server_stream->sd->id;
    mongoc_server_stream_cleanup (server_stream);
