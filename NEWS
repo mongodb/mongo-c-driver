@@ -16,6 +16,18 @@ Thanks to everyone who contributed to the development of this release.
 
 --Kevin Albertson
 
+mongo-c-driver 1.19.2
+=====================
+
+Announcing libmongoc 1.19.2.
+
+Bug fixes:
+
+* Fix assert on invalid URI options in client pools connected to load balanced clusters when a topology closed callback is registered.
+
+Thanks to everyone who contributed to the development of this release.
+
+--Kevin Albertson
 
 mongo-c-driver 1.19.0
 =====================
