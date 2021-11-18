@@ -479,7 +479,7 @@ mock_rs_receives_query (mock_rs_t *rs,
 
    if (request &&
        !request_matches_query (
-          request, ns, flags, skip, n_return, query_json, fields_json, false)) {
+          request, ns, flags, skip, n_return, query_json, fields_json, false, true)) {
       request_destroy (request);
       return NULL;
    }
@@ -566,7 +566,7 @@ mock_rs_receives_command (mock_rs_t *rs,
 
    if (request &&
        !request_matches_query (
-          request, ns, flags, 0, 1, formatted_command_json, NULL, true)) {
+          request, ns, flags, 0, 1, formatted_command_json, NULL, true, true)) {
       bson_free (formatted_command_json);
       request_destroy (request);
       return NULL;

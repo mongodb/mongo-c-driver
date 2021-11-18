@@ -131,7 +131,8 @@ mock_server_receives_command (mock_server_t *server,
 
 request_t *
 mock_server_receives_legacy_hello (mock_server_t *server,
-                                   const char *match_json);
+                                   const char *match_json,
+                                   const bool validate_opcode);
 
 request_t *
 mock_server_receives_hello (mock_server_t *server);

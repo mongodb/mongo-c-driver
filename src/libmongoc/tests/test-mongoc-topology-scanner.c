@@ -182,7 +182,7 @@ test_topology_scanner_discovery (void)
       client->topology, MONGOC_SS_READ, secondary_pref, &error);
 
    /* a single scan discovers *and* checks the secondary */
-   request = mock_server_receives_legacy_hello (primary, NULL);
+   request = mock_server_receives_legacy_hello (primary, NULL, true);
    mock_server_replies_simple (request, primary_response);
    request_destroy (request);
 
@@ -190,7 +190,7 @@ test_topology_scanner_discovery (void)
    _mongoc_usleep (250 * 1000);
 
    /* a check of the secondary is scheduled in this scan */
-   request = mock_server_receives_legacy_hello (secondary, NULL);
+   request = mock_server_receives_legacy_hello (secondary, NULL, true);
    mock_server_replies_simple (request, secondary_response);
 
    /* scan completes */
@@ -262,14 +262,14 @@ test_topology_scanner_oscillate (void)
       client->topology, MONGOC_SS_READ, primary_pref, &error);
 
    /* a single scan discovers servers 0 and 1 */
-   request = mock_server_receives_legacy_hello (server0, NULL);
+   request = mock_server_receives_legacy_hello (server0, NULL, true);
    mock_server_replies_simple (request, server0_response);
    request_destroy (request);
 
    /* let client process that response */
    _mongoc_usleep (250 * 1000);
 
-   request = mock_server_receives_legacy_hello (server1, NULL);
+   request = mock_server_receives_legacy_hello (server1, NULL, true);
    mock_server_replies_simple (request, server1_response);
 
    /* we don't schedule another check of server0 */

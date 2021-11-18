@@ -244,7 +244,7 @@ _test_topology_reconcile_sharded (bool pooled)
       client->topology, MONGOC_SS_READ, primary_read_prefs, &error);
 
    /* mongos */
-   request = mock_server_receives_legacy_hello (mongos, NULL);
+   request = mock_server_receives_legacy_hello (mongos, NULL, true);
    mock_server_replies_simple (
       request,
       "{'ok': 1, 'isWritablePrimary': true, 'minWireVersion': "
@@ -256,7 +256,7 @@ _test_topology_reconcile_sharded (bool pooled)
    _mongoc_usleep (1000 * 1000);
 
    /* replica set secondary - topology removes it */
-   request = mock_server_receives_legacy_hello (secondary, NULL);
+   request = mock_server_receives_legacy_hello (secondary, NULL, true);
    secondary_response =
       bson_strdup_printf ("{'ok': 1, "
                           " 'setName': 'rs',"

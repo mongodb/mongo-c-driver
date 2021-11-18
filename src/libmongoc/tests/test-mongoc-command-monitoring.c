@@ -1292,14 +1292,14 @@ _test_service_id (bool is_loadbalanced)
 
    if (is_loadbalanced) {
       request =
-         mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+         mock_server_receives_legacy_hello (server, "{'loadBalanced': true}", true);
       mock_server_replies_simple (
          request,
          "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid', "
          "'serviceId': {'$oid': 'AAAAAAAAAAAAAAAAAAAAAAAA'}}");
    } else {
       request = mock_server_receives_legacy_hello (
-         server, "{'loadBalanced': { '$exists': false }}");
+         server, "{'loadBalanced': { '$exists': false }}", true);
       mock_server_replies_simple (
          request,
          "{'ismaster': true, 'maxWireVersion': 13, 'msg': 'isdbgrid'}");

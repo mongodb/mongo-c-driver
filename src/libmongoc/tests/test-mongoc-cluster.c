@@ -347,7 +347,7 @@ _test_write_disconnect (void)
     */
    future = future_client_command_simple (
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_legacy_hello (server, NULL, true);
    hello = bson_strdup_printf ("{'ok': 1.0,"
                                " 'isWritablePrimary': true,"
                                " 'minWireVersion': 2,"
@@ -930,12 +930,12 @@ _test_cluster_time_comparison (bool pooled)
    future = future_ping (client, &error);
 
    /* timestamp is 1 */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_legacy_hello (server, NULL, true);
    replies_with_cluster_time (request, 1, 1, hello);
 
    if (pooled) {
       /* a pooled client handshakes its own connection */
-      request = mock_server_receives_legacy_hello (server, NULL);
+      request = mock_server_receives_legacy_hello (server, NULL, true);
       replies_with_cluster_time (request, 1, 1, hello);
    }
 
@@ -965,7 +965,8 @@ _test_cluster_time_comparison (bool pooled)
          mock_server_receives_legacy_hello (server,
                                             "{'$clusterTime': "
                                             "{'clusterTime': {'$timestamp': "
-                                            "{'t': 2, 'i': 2}}}}");
+                                            "{'t': 2, 'i': 2}}}}",
+                                            true);
 
       replies_with_cluster_time (request, 2, 1, hello);
 
@@ -979,7 +980,8 @@ _test_cluster_time_comparison (bool pooled)
          mock_server_receives_legacy_hello (server,
                                             "{'$clusterTime': "
                                             "{'clusterTime': {'$timestamp': "
-                                            "{'t': 2, 'i': 2}}}}");
+                                            "{'t': 2, 'i': 2}}}}",
+                                            true);
 
       replies_with_cluster_time (request, 2, 1, hello);
       request = receives_with_cluster_time (server, 2, 2, ping);
@@ -1462,7 +1464,7 @@ _test_cluster_hello_fails (bool hangup)
       client, "test", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    /* the client adds a cluster node, creating a stream to the server, and then
     * sends a hello request. */
-   request = mock_server_receives_legacy_hello (mock_server, NULL);
+   request = mock_server_receives_legacy_hello (mock_server, NULL, true);
    /* CDRIVER-2576: the server replies with an error, so
     * _mongoc_stream_run_hello returns NULL, which
     * _mongoc_cluster_run_hello must check. */

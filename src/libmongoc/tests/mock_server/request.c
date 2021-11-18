@@ -162,7 +162,8 @@ request_matches_query (const request_t *request,
                        int32_t n_return,
                        const char *query_json,
                        const char *fields_json,
-                       bool is_command)
+                       bool is_command,
+                       bool validate_opcode)
 {
    const mongoc_rpc_t *rpc;
    const bson_t *doc;
@@ -212,7 +213,7 @@ request_matches_query (const request_t *request,
    }
 
 fprintf(stderr, "JFW: request opcode check\n"), fflush(stderr);
-   if (request->opcode != MONGOC_OPCODE_QUERY) {
+   if (validate_opcode && (request->opcode != MONGOC_OPCODE_QUERY)) {
       test_error ("request's opcode (%d) does not match QUERY: %s", request->opcode, doc_as_json);
       goto done;
    }

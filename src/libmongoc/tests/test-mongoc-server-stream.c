@@ -56,7 +56,7 @@ test_server_stream_ties_server_description_pooled (void *unused)
 
    /* Respond to the monitoring legacy hello with wire version pre 3.6 (before
     * OP_MSG). */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_legacy_hello (server, NULL, true);
    mock_server_replies_simple (request, HELLO_PRE_OPMSG);
    request_destroy (request);
 
@@ -68,7 +68,7 @@ test_server_stream_ties_server_description_pooled (void *unused)
                                           NULL /* reply */,
                                           &error);
    /* The first command on a pooled client creates a new connection. */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_legacy_hello (server, NULL, true);
    mock_server_replies_simple (request, HELLO_PRE_OPMSG);
    request_destroy (request);
    /* Check that the mock server receives an OP_QUERY. */
@@ -87,7 +87,7 @@ test_server_stream_ties_server_description_pooled (void *unused)
                                           NULL /* reply */,
                                           &error);
    /* The first command on a pooled client creates a new connection. */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_legacy_hello (server, NULL, true);
    mock_server_replies_simple (request, HELLO_POST_OPMSG);
    request_destroy (request);
    /* Check that the mock server receives an OP_MSG. */
@@ -167,7 +167,7 @@ test_server_stream_ties_server_description_single (void *unused)
                                           NULL /* reply */,
                                           &error);
    /* The first command on a client creates a new connection. */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_legacy_hello (server, NULL, true);
    mock_server_replies_simple (request, HELLO_POST_OPMSG);
    request_destroy (request);
    /* Check that the mock server receives an OP_MSG. */

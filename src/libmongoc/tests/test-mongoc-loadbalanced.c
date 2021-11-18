@@ -455,7 +455,7 @@ test_loadbalanced_handshake_sends_loadbalanced (void)
                                           NULL /* reply */,
                                           &error);
    request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}", true);
    mock_server_replies_simple (request, LB_HELLO);
    request_destroy (request);
 
@@ -512,7 +512,7 @@ test_loadbalanced_handshake_rejects_non_loadbalanced (void)
                                           NULL /* reply */,
                                           &error);
    request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}", true);
    mock_server_replies_simple (request, NON_LB_HELLO);
    request_destroy (request);
    BSON_ASSERT (!future_get_bool (future));
@@ -561,7 +561,7 @@ test_pre_handshake_error_does_not_clear_pool (void)
                                           &error);
    /* A new connection is opened. */
    request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}", true);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO);
    request_destroy (request);
@@ -582,7 +582,7 @@ test_pre_handshake_error_does_not_clear_pool (void)
                                           &error);
    /* A new connection is opened. */
    request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}", true);
    BSON_ASSERT (request);
    capture_logs (true); /* hide Failed to buffer logs. */
    mock_server_hangs_up (request);
@@ -659,7 +659,7 @@ test_post_handshake_error_clears_pool (void)
                                           &error);
    /* A new connection is opened. */
    request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}", true);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_A);
    request_destroy (request);
@@ -680,7 +680,7 @@ test_post_handshake_error_clears_pool (void)
                                           &error);
    /* A new connection is opened. */
    request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}", true);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_A);
    request_destroy (request);
@@ -701,7 +701,7 @@ test_post_handshake_error_clears_pool (void)
                                           &error);
    /* A new connection is opened. */
    request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}", true);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_B);
    request_destroy (request);
@@ -744,7 +744,7 @@ test_post_handshake_error_clears_pool (void)
                                           &error);
    /* A new connection is opened. */
    request =
-      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}");
+      mock_server_receives_legacy_hello (server, "{'loadBalanced': true}", true);
    BSON_ASSERT (request);
    mock_server_replies_simple (request, LB_HELLO_A);
    request_destroy (request);

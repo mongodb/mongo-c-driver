@@ -930,9 +930,10 @@ mock_server_receives_command (mock_server_t *server,
 
    request = mock_server_receives_request (server);
 
+fprintf(stderr, "JFW: mock_server_receives_commands(), about to test request_matches_query():\n"), fflush(stderr);
    if (request &&
        !request_matches_query (
-          request, ns, flags, 0, 1, formatted_command_json, NULL, true)) {
+          request, ns, flags, 0, 1, formatted_command_json, NULL, true, true)) {
       request_destroy (request);
       request = NULL;
    }
@@ -1003,7 +1004,8 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
 
 request_t *
 mock_server_receives_legacy_hello (mock_server_t *server,
-                                   const char *match_json)
+                                   const char *match_json,
+                                   const bool validate_opcode)
 {
    request_t *request;
    char *formatted_command_json;
@@ -1032,7 +1034,8 @@ fprintf(stderr, "JFW: mock_server_receives_legacy_hello() about to check matchin
                                1,
                                match_json ? match_json : formatted_command_json,
                                NULL,
-                               true)) {
+                               true,
+                               validate_opcode)) {
       request_destroy (request);
       request = NULL;
    }
@@ -1104,7 +1107,7 @@ mock_server_receives_query (mock_server_t *server,
 
    if (request &&
        !request_matches_query (
-          request, ns, flags, skip, n_return, query_json, fields_json, false)) {
+          request, ns, flags, skip, n_return, query_json, fields_json, false, true)) {
       request_destroy (request);
       return NULL;
    }

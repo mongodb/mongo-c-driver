@@ -42,7 +42,6 @@ typedef struct _request_t {
    sync_queue_t *replies;
 } request_t;
 
-
 request_t *
 request_new (const mongoc_buffer_t *buffer,
              int32_t msg_len,
@@ -65,7 +64,8 @@ request_matches_query (const request_t *request,
                        int32_t n_return,
                        const char *query_json,
                        const char *fields_json,
-                       bool is_command);
+                       bool is_command,
+		       bool check_opcode);		/* should we validate the legacy opcode? (rather than op_msg) */
 
 bool
 request_matches_insert (const request_t *request,

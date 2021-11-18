@@ -714,7 +714,7 @@ _test_heartbeat_events (bool pooled, bool succeeded)
       client, "admin", tmp_bson ("{'foo': 1}"), NULL, NULL, &error);
 
    /* topology scanner calls hello once */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_legacy_hello (server, NULL, true);
 
    if (succeeded) {
       mock_server_replies (
@@ -732,7 +732,7 @@ _test_heartbeat_events (bool pooled, bool succeeded)
 
    /* pooled client opens new socket, handshakes it by calling hello again */
    if (pooled && succeeded) {
-      request = mock_server_receives_legacy_hello (server, NULL);
+      request = mock_server_receives_legacy_hello (server, NULL, true);
       mock_server_replies (
          request,
          MONGOC_REPLY_NONE,
@@ -952,7 +952,7 @@ test_no_duplicates (void)
    client = mongoc_client_pool_pop (pool);
 
    /* Topology scanning thread starts, and sends a hello. */
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_legacy_hello (server, NULL, true);
    mock_server_replies_simple (request, first_hello_response);
    request_destroy (request);
 
@@ -964,7 +964,7 @@ test_no_duplicates (void)
                                           NULL /* read prefs */,
                                           NULL /* reply */,
                                           &error);
-   request = mock_server_receives_legacy_hello (server, NULL);
+   request = mock_server_receives_legacy_hello (server, NULL, true);
    mock_server_replies_simple (request, second_hello_response);
    request_destroy (request);
    request = mock_server_receives_msg (
