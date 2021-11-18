@@ -727,7 +727,7 @@ uint32_t
 _mongoc_rand_uint32_t (uint32_t min, uint32_t max)
 {
    BSON_ASSERT (min <= max);
-   BSON_ASSERT (min != 0u && max != UINT32_MAX);
+   BSON_ASSERT (min != 0u || max != UINT32_MAX);
 
    return _mongoc_rand_nduid32 (max - min + 1u, _mongoc_simple_rand_uint32_t) +
           min;
@@ -737,7 +737,7 @@ uint64_t
 _mongoc_rand_uint64_t (uint64_t min, uint64_t max)
 {
    BSON_ASSERT (min <= max);
-   BSON_ASSERT (min != 0u && max != UINT64_MAX);
+   BSON_ASSERT (min != 0u || max != UINT64_MAX);
 
    return _mongoc_rand_java64 (max - min + 1u, _mongoc_simple_rand_uint64_t) +
           min;
