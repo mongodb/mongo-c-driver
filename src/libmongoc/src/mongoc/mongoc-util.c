@@ -678,10 +678,8 @@ _mongoc_rand_java64 (uint64_t s, uint64_t (*rand64) (void))
 
 #if defined(MONGOC_ENABLE_CRYPTO)
 
-/* Attempt to use `_mongoc_rand_bytes` if available. */
-
-static uint32_t
-_mongoc_simple_rand_uint32_t (void)
+uint32_t
+_mongoc_crypto_rand_uint32_t (void)
 {
    uint32_t res;
 
@@ -690,8 +688,8 @@ _mongoc_simple_rand_uint32_t (void)
    return res;
 }
 
-static uint64_t
-_mongoc_simple_rand_uint64_t (void)
+uint64_t
+_mongoc_crypto_rand_uint64_t (void)
 {
    uint64_t res;
 
@@ -700,8 +698,17 @@ _mongoc_simple_rand_uint64_t (void)
    return res;
 }
 
-#else
-/* Otherwise, fallback to rudimentary use of `rand()`. */
+size_t
+_mongoc_crypto_rand_size_t (void)
+{
+   size_t res;
+
+   (void) _mongoc_rand_bytes ((uint8_t *) &res, sizeof (res));
+
+   return res;
+}
+
+#endif /* defined(MONGOC_ENABLE_CRYPTO) */
 
 static BSON_ONCE_FUN (_mongoc_simple_rand_init)
 {
@@ -720,7 +727,7 @@ static BSON_ONCE_FUN (_mongoc_simple_rand_init)
 
 static bson_once_t _mongoc_simple_rand_init_once = BSON_ONCE_INIT;
 
-static uint32_t
+uint32_t
 _mongoc_simple_rand_uint32_t (void)
 {
    bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
@@ -732,7 +739,7 @@ _mongoc_simple_rand_uint32_t (void)
           (((uint32_t) rand () & 0x0003u) << 30u);
 }
 
-static uint64_t
+uint64_t
 _mongoc_simple_rand_uint64_t (void)
 {
    bson_once (&_mongoc_simple_rand_init_once, _mongoc_simple_rand_init);
@@ -746,39 +753,42 @@ _mongoc_simple_rand_uint64_t (void)
           (((uint64_t) rand () & 0x0003u) << 60u);
 }
 
-#endif /* defined(MONGOC_ENABLE_CRYPTO) */
-
 uint32_t
-_mongoc_rand_uint32_t (uint32_t min, uint32_t max)
+_mongoc_rand_uint32_t (uint32_t min, uint32_t max, uint32_t (*rand) (void))
 {
    BSON_ASSERT (min <= max);
    BSON_ASSERT (min != 0u || max != UINT32_MAX);
 
-   return _mongoc_rand_nduid32 (max - min + 1u, _mongoc_simple_rand_uint32_t) +
-          min;
+   return _mongoc_rand_nduid32 (max - min + 1u, rand) + min;
 }
 
 uint64_t
-_mongoc_rand_uint64_t (uint64_t min, uint64_t max)
+_mongoc_rand_uint64_t (uint64_t min, uint64_t max, uint64_t (*rand) (void))
 {
    BSON_ASSERT (min <= max);
    BSON_ASSERT (min != 0u || max != UINT64_MAX);
 
-   return _mongoc_rand_java64 (max - min + 1u, _mongoc_simple_rand_uint64_t) +
-          min;
+   return _mongoc_rand_java64 (max - min + 1u, rand) + min;
 }
 
 #if SIZE_MAX == UINT64_MAX
+
 BSON_STATIC_ASSERT2 (_mongoc_simple_rand_size_t,
                      sizeof (size_t) == sizeof (uint64_t));
 
+uint64_t
+_mongoc_simple_rand_size_t (void)
+{
+   return (uint64_t) _mongoc_simple_rand_uint64_t ();
+}
+
 size_t
-_mongoc_rand_size_t (size_t min, size_t max)
+_mongoc_rand_size_t (size_t min, size_t max, size_t (*rand) (void))
 {
    BSON_ASSERT (min <= max);
    BSON_ASSERT (min != 0u || max != UINT64_MAX);
 
-   return _mongoc_rand_java64 (max - min + 1u, _mongoc_simple_rand_uint64_t) +
+   return _mongoc_rand_java64 (max - min + 1u, (uint64_t (*) (void)) rand) +
           min;
 }
 
@@ -787,13 +797,19 @@ _mongoc_rand_size_t (size_t min, size_t max)
 BSON_STATIC_ASSERT2 (_mongoc_simple_rand_size_t,
                      sizeof (size_t) == sizeof (uint32_t));
 
+uint32_t
+_mongoc_simple_rand_size_t (void)
+{
+   return (uint32_t) _mongoc_simple_rand_uint32_t ();
+}
+
 size_t
 _mongoc_rand_size_t (size_t min, size_t max)
 {
    BSON_ASSERT (min <= max);
    BSON_ASSERT (min != 0u || max != UINT32_MAX);
 
-   return _mongoc_rand_nduid32 (max - min + 1u, _mongoc_simple_rand_uint32_t) +
+   return _mongoc_rand_nduid32 (max - min + 1u, (uint32_t (*) (void)) rand) +
           min;
 }
 

@@ -159,29 +159,77 @@ _mongoc_document_is_pipeline (const bson_t *document);
 char *
 _mongoc_getenv (const char *name);
 
+/* Returns a uniformly-distributed uint32_t generated using
+ * `_mongoc_rand_bytes()` if a source of cryptographic randomness is available
+ * (defined only if `MONGOC_ENABLE_CRYPTO` is defined).
+ */
+uint32_t
+_mongoc_crypto_rand_uint32_t (void);
+
+/* Returns a uniformly-distributed uint64_t generated using
+ * `_mongoc_rand_bytes()` if a source of cryptographic randomness is available
+ * (defined only if `MONGOC_ENABLE_CRYPTO` is defined).
+ */
+uint64_t
+_mongoc_crypto_rand_uint64_t (void);
+
+/* Returns a uniformly-distributed size_t generated using
+ * `_mongoc_rand_bytes()` if a source of cryptographic randomness is available
+ * (defined only if `MONGOC_ENABLE_CRYPTO` is defined).
+ */
+size_t
+_mongoc_crypto_rand_size_t (void);
+
+/* Returns a uniformly-distributed random uint32_t generated using `rand()`.
+ * Note: may invoke `srand()`, which may not be thread-safe. Concurrent calls to
+ * `_mongoc_simple_rand_*()` functions, however, is thread-safe. */
+uint32_t
+_mongoc_simple_rand_uint32_t (void);
+
+/* Returns a uniformly-distributed random uint64_t generated using `rand()`.
+ * Note: may invoke `srand()`, which may not be thread-safe. Concurrent calls to
+ * `_mongoc_simple_rand_*()` functions, however, is thread-safe. */
+uint64_t
+_mongoc_simple_rand_uint64_t (void);
+
+/* Returns a uniformly-distributed random size_t generated using `rand()`.
+ * Note: may invoke `srand()`, which may not be thread-safe. Concurrent calls to
+ * `_mongoc_simple_rand_*()` functions, however, is thread-safe. */
+uint64_t
+_mongoc_simple_rand_size_t (void);
+
 /* Returns a uniformly-distributed random integer in the range [min, max].
  *
  * The size of the range [min, max] must not equal the size of the representable
  * range of uint32_t (`min == 0 && max == UINT32_MAX` must not be true).
+ *
+ * The generator `rand` must return a random integer uniformly distributed in
+ * the full range of representable values of uint32_t.
  */
 uint32_t
-_mongoc_rand_uint32_t (uint32_t min, uint32_t max);
+_mongoc_rand_uint32_t (uint32_t min, uint32_t max, uint32_t (*rand) (void));
 
 /* Returns a uniformly-distributed random integer in the range [min, max].
  *
  * The size of the range [min, max] must not equal the size of the representable
  * range of uint64_t (`min == 0 && max == UINT64_MAX` must not be true).
+ *
+ * The generator `rand` must return a random integer uniformly distributed in
+ * the full range of representable values of uint64_t.
  */
 uint64_t
-_mongoc_rand_uint64_t (uint64_t min, uint64_t max);
+_mongoc_rand_uint64_t (uint64_t min, uint64_t max, uint64_t (*rand) (void));
 
 /* Returns a uniformly-distributed random integer in the range [min, max].
  *
  * The size of the range [min, max] must not equal the size of the representable
  * range of size_t (`min == 0 && max == SIZE_MAX` must not be true).
+ *
+ * The generator `rand` must return a random integer uniformly distributed in
+ * the full range of representable values of size_t.
  */
 size_t
-_mongoc_rand_size_t (size_t min, size_t max);
+_mongoc_rand_size_t (size_t min, size_t max, size_t (*rand) (void));
 
 BSON_END_DECLS
 
