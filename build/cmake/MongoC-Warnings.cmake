@@ -8,7 +8,7 @@
 function (mongoc_add_platform_compile_options)
    foreach (opt IN LISTS ARGV)
       if (NOT opt MATCHES "^(gnu-like|gnu|clang|msvc):(.*)")
-         message (SEND_ERROR "Invalid option '${opt}' (Should be prefixed by 'msvc:' or 'gnu-like:'")
+         message (SEND_ERROR "Invalid option '${opt}' (Should be prefixed by 'msvc:', 'gnu:', 'clang:', or 'gnu-like:'")
          continue ()
       endif ()
       set (is_gnu "$<C_COMPILER_ID:GNU>")
