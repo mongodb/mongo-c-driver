@@ -1,3 +1,12 @@
+set (__is_gnu "$<C_COMPILER_ID:GNU>")
+set (__is_clang "$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>>")
+set (__is_gnu_like "$<OR:${__is_gnu},${__is_clang}>")
+set (__is_msvc "$<C_COMPILER_ID:MSVC>")
+
+# "Old" GNU is GCC < 5, which is missing several warning options
+set (__is_old_gnu "$<AND:${__is_gnu},$<VERSION_LESS:$<C_COMPILER_VERSION>,5>>")
+set (__not_old_gnu "$<NOT:${__is_old_gnu}>")
+
 #[[
    Define additional compile options, conditional on the compiler being used.
    Each option should be prefixed by `gnu-like:` or `msvc:`. Those options will be
@@ -11,18 +20,14 @@ function (mongoc_add_platform_compile_options)
          message (SEND_ERROR "Invalid option '${opt}' (Should be prefixed by 'msvc:', 'gnu:', 'clang:', or 'gnu-like:'")
          continue ()
       endif ()
-      set (is_gnu "$<C_COMPILER_ID:GNU>")
-      set (is_clang "$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>>")
-      set (is_gnu_like "$<OR:${is_gnu},${is_clang}>")
-      set (is_msvc "$<C_COMPILER_ID:MSVC>")
       if (CMAKE_MATCH_1 STREQUAL "gnu-like")
-         add_compile_options ("$<${is_gnu_like}:${CMAKE_MATCH_2}>")
+         add_compile_options ("$<${__is_gnu_like}:${CMAKE_MATCH_2}>")
       elseif (CMAKE_MATCH_1 STREQUAL gnu)
-         add_compile_options ("$<${is_gnu}:${CMAKE_MATCH_2}>")
+         add_compile_options ("$<${__is_gnu}:${CMAKE_MATCH_2}>")
       elseif (CMAKE_MATCH_1 STREQUAL clang)
-         add_compile_options ("$<${is_clang}:${CMAKE_MATCH_2}>")
+         add_compile_options ("$<${__is_clang}:${CMAKE_MATCH_2}>")
       elseif (CMAKE_MATCH_1 STREQUAL "msvc")
-         add_compile_options ("$<${is_msvc}:${CMAKE_MATCH_2}>")
+         add_compile_options ("$<${__is_msvc}:${CMAKE_MATCH_2}>")
       else ()
          message (SEND_ERROR "Invalid option to mongoc_add_platform_compile_options(): '${opt}'")
       endif ()
@@ -46,11 +51,11 @@ mongoc_add_platform_compile_options (
      # Missing return types/statements
      gnu-like:-Werror=return-type msvc:/we4716
      # Incompatible pointer types
-     gnu-like:$<${is_c_lang}:-Werror=incompatible-pointer-types> msvc:/we4113
+     gnu-like:$<$<AND:${is_c_lang},${__not_old_gnu}>:-Werror=incompatible-pointer-types> msvc:/we4113
      # Integral/pointer conversions
-     gnu-like:$<${is_c_lang}:-Werror=int-conversion> msvc:/we4047
+     gnu-like:$<$<AND:${is_c_lang},${__not_old_gnu}>:-Werror=int-conversion> msvc:/we4047
      # Discarding qualifiers
-     gnu:$<${is_c_lang}:-Werror=discarded-qualifiers>
+     gnu:$<$<AND:${is_c_lang},${__not_old_gnu}>:-Werror=discarded-qualifiers>
      clang:$<${is_c_lang}:-Werror=ignored-qualifiers>
      msvc:/we4090
      # Definite use of uninitialized value
