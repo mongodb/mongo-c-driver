@@ -285,6 +285,8 @@ if (ENABLE_MONGOC)
       ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
       ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
    )
+   add_library (zlib_obj OBJECT "${ZLIB_SOURCES}")
+   set_property (TARGET zlib_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
 
    set (MONGOC_ENABLE_ICU 0)
 
