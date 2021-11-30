@@ -88,6 +88,16 @@ _mongoc_uri_init_scram (const mongoc_uri_t *uri,
 bool
 mongoc_uri_finalize_loadbalanced (const mongoc_uri_t *uri, bson_error_t *error);
 
+/* mongoc_uri_finalize_srv validates constraints for SRV URI options.
+ * For example, it is invalid to have loadBalanced=true with srvMaxHosts=1.
+ * This is expected to be called whenever URI options may change (e.g.
+ * parsing a new URI or applying TXT records).
+ * Returns false and sets @error on failure.
+ * Returns true and does not modify @error on success.
+ */
+bool
+mongoc_uri_finalize_srv (const mongoc_uri_t *uri, bson_error_t *error);
+
 BSON_END_DECLS
 
 

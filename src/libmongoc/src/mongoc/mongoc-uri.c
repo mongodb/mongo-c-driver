@@ -735,7 +735,8 @@ mongoc_uri_option_is_int32 (const char *key)
           !strcasecmp (key, MONGOC_URI_MAXIDLETIMEMS) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUEMULTIPLE) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
-          !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL);
+          !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) ||
+          !strcasecmp (key, MONGOC_URI_SRVMAXHOSTS);
 }
 
 bool
@@ -1132,7 +1133,8 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
                                MONGOC_ERROR_COMMAND,
                                MONGOC_ERROR_COMMAND_INVALID_ARG,
                                "Failed to set %s to %d",
-                               canon, bval);
+                               canon,
+                               bval);
                return false;
             }
          } else {
@@ -1568,6 +1570,10 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    }
 
    if (!mongoc_uri_finalize_loadbalanced (uri, error)) {
+      goto error;
+   }
+
+   if (!mongoc_uri_finalize_srv (uri, error)) {
       goto error;
    }
 
@@ -2316,8 +2322,7 @@ mongoc_uri_unescape (const char *escaped_string)
 #else
              (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
-             ||
-             0 == hex) {
+             || 0 == hex) {
             bson_string_free (str, true);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
@@ -3118,10 +3123,14 @@ mongoc_uri_finalize_loadbalanced (const mongoc_uri_t *uri, bson_error_t *error)
       return true;
    }
 
-   if (!uri->hosts || (uri->hosts && uri->hosts->next)) {
-      MONGOC_URI_ERROR (error,
-                        "URI with \"%s\" enabled must contain exactly one host",
-                        MONGOC_URI_LOADBALANCED);
+   /* Load Balancer Spec: When `loadBalanced=true` is provided in the connection
+    * string, the driver MUST throw an exception if the connection string
+    * contains more than one host/port. */
+   if (uri->hosts && uri->hosts->next) {
+      MONGOC_URI_ERROR (
+         error,
+         "URI with \"%s\" enabled must not contain more than one host",
+         MONGOC_URI_LOADBALANCED);
       return false;
    }
 
@@ -3143,6 +3152,64 @@ mongoc_uri_finalize_loadbalanced (const mongoc_uri_t *uri, bson_error_t *error)
          MONGOC_URI_LOADBALANCED,
          MONGOC_URI_DIRECTCONNECTION);
       return false;
+   }
+
+   return true;
+}
+
+bool
+mongoc_uri_finalize_srv (const mongoc_uri_t *uri, bson_error_t *error)
+{
+   /* Initial DNS Seedlist Discovery Spec: The driver MUST report an error if
+    * either the `srvServiceName` or `srvMaxHosts` URI options are specified
+    * with a non-SRV URI */
+   if (!uri->is_srv && mongoc_uri_has_option (uri, MONGOC_URI_SRVMAXHOSTS)) {
+      MONGOC_URI_ERROR (error,
+                        "%s must not be specified with a non-SRV URI",
+                        MONGOC_URI_SRVMAXHOSTS);
+      return false;
+   }
+
+   if (uri->is_srv) {
+      const int32_t max_hosts =
+         mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 0);
+
+      /* Initial DNS Seedless Discovery Spec: This option requires a
+       * non-negative integer and defaults to zero (i.e. no limit). */
+      if (max_hosts < 0) {
+         MONGOC_URI_ERROR (error,
+                           "%s is required to be a non-negative integer, but "
+                           "has value %" PRId32,
+                           MONGOC_URI_SRVMAXHOSTS,
+                           max_hosts);
+         return false;
+      }
+
+      if (max_hosts > 0) {
+         /* Initial DNS Seedless Discovery spec: If srvMaxHosts is a positive
+          * integer, the driver MUST throw an error if the connection string
+          * contains a `replicaSet` option. */
+         if (mongoc_uri_has_option (uri, MONGOC_URI_REPLICASET)) {
+            MONGOC_URI_ERROR (error,
+                              "%s must not be specified with %s",
+                              MONGOC_URI_SRVMAXHOSTS,
+                              MONGOC_URI_REPLICASET);
+            return false;
+         }
+
+         /* Initial DNS Seedless Discovery Spec: If srvMaxHosts is a positive
+          * integer, the driver MUST throw an error if the connection string
+          * contains a `loadBalanced` option with a value of `true`.
+          */
+         if (mongoc_uri_get_option_as_bool (
+                uri, MONGOC_URI_LOADBALANCED, false)) {
+            MONGOC_URI_ERROR (error,
+                              "%s must not be specified with %s=true",
+                              MONGOC_URI_SRVMAXHOSTS,
+                              MONGOC_URI_LOADBALANCED);
+            return false;
+         }
+      }
    }
 
    return true;
