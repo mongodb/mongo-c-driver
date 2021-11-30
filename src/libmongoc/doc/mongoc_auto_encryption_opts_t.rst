@@ -34,4 +34,5 @@ Synopsis
     mongoc_auto_encryption_opts_set_schema_map
     mongoc_auto_encryption_opts_set_bypass_auto_encryption
     mongoc_auto_encryption_opts_set_extra
+    mongoc_auto_encryption_opts_set_tls_opts
 

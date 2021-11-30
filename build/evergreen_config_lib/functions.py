@@ -310,6 +310,9 @@ all_functions = OD([
 
           export MONGOC_TEST_GCP_EMAIL="${client_side_encryption_gcp_email}"
           export MONGOC_TEST_GCP_PRIVATEKEY="${client_side_encryption_gcp_privatekey}"
+
+          export MONGOC_TEST_CSFLE_TLS_CA_FILE=../drivers-evergreen-tools/.evergreen/x509gen/ca.pem
+          export MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE=../drivers-evergreen-tools/.evergreen/x509gen/client.pem
         fi
         export LOADBALANCED=${LOADBALANCED}
         export SINGLE_MONGOS_LB_URI="${SINGLE_MONGOS_LB_URI}"
@@ -564,6 +567,8 @@ all_functions = OD([
         python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 7999 &
         python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/expired.pem --port 8000 &
         python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/wrong-host.pem --port 8001 &
+        python -u kms_http_server.py --ca_file ../x509gen/ca.pem --cert_file ../x509gen/server.pem --port 8002 --require_client_cert &
+        python -u kms_kmip_server.py &
         echo "Starting mock KMS servers... done."
         ''', test=False, background=True),
     )),

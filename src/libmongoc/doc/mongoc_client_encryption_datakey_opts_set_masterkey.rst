@@ -23,16 +23,48 @@ Parameters
 Description
 -----------
 
-Setting the masterkey is required if using AWS KMS, and ``masterkey`` must have the form:
+Setting the masterkey is required when creating a data key with the KMS providers: ``aws``, ``azure``, ``gcp``, and ``kmip``.
+
+Setting the masterkey is prohibited with the KMS provider ``local``.
+
+The format of ``masterkey`` for "aws" is as follows:
 
 .. code-block:: javascript
 
    {
-      region: <string>, // Required.
-      key: <string>, // Required. The Amazon Resource Name (ARN) to the AWS customer master key (CMK).
-      endpoint: <string> // Optional. An alternate host identifier to send KMS requests to. May include port number.
+      region: String,
+      key: String, /* The Amazon Resource Name (ARN) to the AWS customer master key (CMK). */
+      endpoint: Optional<String> /* An alternate host identifier to send KMS requests to. May include port number. Defaults to "kms.<region>.amazonaws.com" */
    }
 
-The value of "endpoint" is a host name with optional port number separated by a colon. E.g. "kms.us-east-1.amazonaws.com" or "kms.us-east-1.amazonaws.com:443"
+The format of ``masterkey`` for "azure" is as follows:
 
-This function is only applicable for the "aws" KMS provider. It is not applicable for creating data keys with the "local" KMS provider (as configured in :symbol:`mongoc_client_encryption_opts_set_kms_providers()`).
+.. code-block:: javascript
+
+   {
+      keyVaultEndpoint: String, /* Host with optional port. Example: "example.vault.azure.net". */
+      keyName: String,
+      keyVersion: Optional<String> /* A specific version of the named key, defaults to using the key's primary version. */
+   }
+
+The format of ``masterkey`` for "gcp" is as follows:
+
+.. code-block:: javascript
+
+   {
+      projectId: String,
+      location: String,
+      keyRing: String,
+      keyName: String,
+      keyVersion: Optional<String>, /* A specific version of the named key, defaults to using the key's primary version. */
+      endpoint: Optional<String> /* Host with optional port. Defaults to "cloudkms.googleapis.com". */
+   }
+
+The format of ``masterkey`` for "kmip" is as follows:
+
+.. code-block:: javascript
+
+   {
+      keyId: Optional<String>,
+      endpoint: Optional<String> /* Host with optional port. */
+   }

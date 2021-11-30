@@ -28,11 +28,7 @@
 static bson_mem_vtable_t gMemVtable = {
    malloc,
    calloc,
-#ifdef BSON_HAVE_REALLOCF
-   reallocf,
-#else
    realloc,
-#endif
    free,
 };
 
@@ -299,11 +295,7 @@ bson_mem_restore_vtable (void)
    bson_mem_vtable_t vtable = {
       malloc,
       calloc,
-#ifdef BSON_HAVE_REALLOCF
-      reallocf,
-#else
       realloc,
-#endif
       free,
    };
 
