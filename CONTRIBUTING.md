@@ -274,10 +274,6 @@ The path to `ca.pem` and `client.pem` must be passed through the following envir
 * `MONGOC_TEST_CSFLE_TLS_CA_FILE=<string>`
 * `MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE=<string>`
 
-KMS TLS tests for Client-Side Field Level Encryption can be skipped by defining:
-
-* `MONGOC_TEST_SKIP_KMS_TLS_TESTS=on`
-
 Specification tests may be filtered by their description:
 
 * `MONGOC_JSON_SUBTEST=<string>`
