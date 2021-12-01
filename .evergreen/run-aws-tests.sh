@@ -9,7 +9,7 @@
 # Optional environment variables:
 #
 # DRIVERS_TOOLS
-#   The path to clone of git://github.com/mongodb-labs/drivers-evergreen-tools.git.
+#   The path to clone of https://github.com/mongodb-labs/drivers-evergreen-tools.git.
 #   Defaults to $(pwd)../drivers-evergreen-tools
 # CDRIVER_BUILD
 #   The path to the build of mongo-c-driver (e.g. mongo-c-driver/cmake-build).
