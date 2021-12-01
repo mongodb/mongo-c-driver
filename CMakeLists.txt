@@ -287,6 +287,8 @@ if (ENABLE_MONGOC)
    )
    add_library (zlib_obj OBJECT "${ZLIB_SOURCES}")
    set_property (TARGET zlib_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+   # Disable all warnings for compiling Zlib
+   target_compile_options (zlib_obj PRIVATE -w)
 
    set (MONGOC_ENABLE_ICU 0)
 
