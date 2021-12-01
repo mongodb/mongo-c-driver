@@ -755,7 +755,7 @@ mongoc_topology_description_suitable_servers (
             "Rejected [%s] [%s] for read mode [%s] with topology type Single",
             mongoc_server_description_type (server),
             server->host.host_and_port,
-            _mongoc_read_mode_as_str (read_mode));
+            _mongoc_read_mode_as_str (effective_read_mode));
       }
       goto DONE;
    }
@@ -803,7 +803,7 @@ mongoc_topology_description_suitable_servers (
                   TRACE ("Rejected [%s] [%s] for mode [%s] with RS topology",
                          mongoc_server_description_type (candidates[i]),
                          candidates[i]->host.host_and_port,
-                         _mongoc_read_mode_as_str (read_mode));
+                         _mongoc_read_mode_as_str (effective_read_mode));
                   candidates[i] = NULL;
                }
             }
@@ -824,7 +824,7 @@ mongoc_topology_description_suitable_servers (
             mongoc_set_for_each_const (
                td_servers,
                _mongoc_topology_description_has_primary_cb,
-               &data.primary);
+               (void *) &data.primary);
             if (data.primary) {
                _mongoc_array_append_val (set, data.primary);
                goto DONE;
@@ -1914,7 +1914,6 @@ transition_t gSDAMTransitionTable
        NULL,
        _mongoc_topology_description_check_if_has_primary}};
 
-#ifdef MONGOC_TRACE
 /*
  *--------------------------------------------------------------------------
  *
@@ -1932,9 +1931,9 @@ transition_t gSDAMTransitionTable
  *--------------------------------------------------------------------------
  */
 static const char *
-_mongoc_topology_description_type (mongoc_topology_description_t *topology)
+_tpld_type_str (mongoc_topology_description_type_t type)
 {
-   switch (topology->type) {
+   switch (type) {
    case MONGOC_TOPOLOGY_UNKNOWN:
       return "Unknown";
    case MONGOC_TOPOLOGY_SHARDED:
@@ -1953,7 +1952,6 @@ _mongoc_topology_description_type (mongoc_topology_description_t *topology)
       return "Invalid";
    }
 }
-#endif
 
 
 /*
@@ -2173,12 +2171,12 @@ mongoc_topology_description_handle_hello (
 
    if (gSDAMTransitionTable[sd->type][topology->type]) {
       TRACE ("Topology description %s handling server description %s",
-             _mongoc_topology_description_type (topology),
+             _tpld_type_str (topology->type),
              mongoc_server_description_type (sd));
       gSDAMTransitionTable[sd->type][topology->type](topology, sd);
    } else {
       TRACE ("Topology description %s ignoring server description %s",
-             _mongoc_topology_description_type (topology),
+             _tpld_type_str (topology->type),
              mongoc_server_description_type (sd));
    }
 
