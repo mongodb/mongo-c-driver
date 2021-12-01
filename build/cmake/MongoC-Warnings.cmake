@@ -1,3 +1,11 @@
+#[[
+   This file sets warning options for the directories in which it is include()'d
+
+   These warnings are intended to be ported to each supported platform, and
+   especially for high-value warnings that are very likely to catch latent bugs
+   early in the process before the code is even run.
+]]
+
 set (__is_gnu "$<C_COMPILER_ID:GNU>")
 set (__is_clang "$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>>")
 set (__is_gnu_like "$<OR:${__is_gnu},${__is_clang}>")
@@ -43,7 +51,7 @@ else ()
    set (is_c_lang "$<COMPILE_LANGUAGE:C>")
 endif ()
 
-# Warnings that should always be unconditional hard errors, as the code is
+# Thes below warnings should always be unconditional hard errors, as the code is
 # almost definitely broken
 mongoc_add_platform_compile_options (
      # Implicit function or variable declarations
