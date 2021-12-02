@@ -420,12 +420,13 @@ test_null_error_pointer (void *ctx)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   install_json_test_suite_with_check (suite,
-                                       JSON_DIR,
-                                       "initial_dns_seedlist_discovery",
-                                       test_dns,
-                                       test_dns_check_replset,
-                                       test_framework_skip_if_no_crypto);
+   install_json_test_suite_with_check (
+      suite,
+      JSON_DIR,
+      "initial_dns_seedlist_discovery/replica-set",
+      test_dns,
+      test_dns_check_replset,
+      test_framework_skip_if_no_crypto);
 
    install_json_test_suite_with_check (
       suite,
