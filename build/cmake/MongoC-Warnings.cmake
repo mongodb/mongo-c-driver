@@ -17,8 +17,8 @@ set (__not_old_gnu "$<NOT:${__is_old_gnu}>")
 
 #[[
    Define additional compile options, conditional on the compiler being used.
-   Each option should be prefixed by `gnu-like:` or `msvc:`. Those options will be
-   enabled for GCC/Clang or MSVC respectively.
+   Each option should be prefixed by `gnu:`, `clang:`, `msvc:`, or `gnu-like:`.
+   Those options will be conditionally enabled for GCC, Clang, or MSVC.
 
    These options are attached to the source directory and its children.
 ]]
@@ -51,7 +51,7 @@ else ()
    set (is_c_lang "$<COMPILE_LANGUAGE:C>")
 endif ()
 
-# Thes below warnings should always be unconditional hard errors, as the code is
+# These below warnings should always be unconditional hard errors, as the code is
 # almost definitely broken
 mongoc_add_platform_compile_options (
      # Implicit function or variable declarations
