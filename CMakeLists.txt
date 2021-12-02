@@ -84,6 +84,9 @@ include (CCache)
 # Link with LLD, if possible
 include (LLDLinker)
 
+find_package (MongoDB)
+mongodb_setup_fixtures ()
+
 set (BUILD_VERSION "0.0.0" CACHE STRING "Library version (for both libbson and libmongoc)")
 
 include (ParseVersion)
