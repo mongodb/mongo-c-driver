@@ -75,7 +75,18 @@ endif ()
 if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
    message (STATUS "Enabling zlib compression (bundled)")
+   add_library (zlib_obj OBJECT "${ZLIB_SOURCES}")
+   set_property (TARGET zlib_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+   # This tells the bundled zlib where to find its generated headers
+   target_include_directories (zlib_obj
+      BEFORE PUBLIC
+      "${SOURCE_DIR}/src/zlib-1.2.11"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.2.11"
+   )
+   # Disable all warnings for compiling Zlib
+   target_compile_options (zlib_obj PRIVATE -w)
    set (SOURCES ${SOURCES} $<TARGET_OBJECTS:zlib_obj>)
+   # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
       "${SOURCE_DIR}/src/zlib-1.2.11"
