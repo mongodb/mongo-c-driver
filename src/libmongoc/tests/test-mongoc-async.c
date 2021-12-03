@@ -326,7 +326,7 @@ test_hello_delay_initializer (mongoc_async_cmd_t *acmd)
 }
 
 static void
-test_hello_delay ()
+test_hello_delay (void)
 {
    /* test that a delayed cmd works. */
    mock_server_t *server = mock_server_with_auto_hello (WIRE_VERSION_MAX);

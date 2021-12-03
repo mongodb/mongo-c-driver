@@ -107,7 +107,7 @@ typedef struct {
 #define BSON_THREAD_FUN(_function_name, _arg_name) \
    unsigned (__stdcall _function_name) (void *(_arg_name))
 #define BSON_THREAD_FUN_TYPE(_function_name) \
-   unsigned (__stdcall * _function_name) (void *)
+   unsigned(__stdcall * _function_name) (void *)
 #define BSON_THREAD_RETURN return 0
 #endif
 

@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.1)
 
 project (libmongoc C)
 
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../build/cmake)
+include (MongoC-Warnings)
 
 include (InstallRequiredSystemLibraries)
 include (CheckStructHasMember)
@@ -45,9 +45,6 @@ if (NOT ENABLE_ZSTD MATCHES "ON|AUTO|OFF")
    message (FATAL_ERROR "ENABLE_ZSTD option must be ON, AUTO, or OFF")
 endif ()
 
-# Disable warnings on bundled zlib source files.
-set_source_files_properties (${ZLIB_SOURCES} PROPERTIES COMPILE_FLAGS -w)
-
 # Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
 # will look for zconf.h in that location.
 configure_file (
@@ -78,7 +75,7 @@ endif ()
 if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
    message (STATUS "Enabling zlib compression (bundled)")
-   set (SOURCES ${SOURCES} ${ZLIB_SOURCES})
+   set (SOURCES ${SOURCES} $<TARGET_OBJECTS:zlib_obj>)
    set (
       ZLIB_INCLUDE_DIRS
       "${SOURCE_DIR}/src/zlib-1.2.11"

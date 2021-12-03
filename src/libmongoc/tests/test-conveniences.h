@@ -39,7 +39,7 @@ test_conveniences_init ();
  * Called automatically at process exit.
  */
 void
-test_conveniences_cleanup ();
+test_conveniences_cleanup (void);
 
 /* Return a bson_t representation from a single-quoted JSON string, with
  * possible printf format directives.

@@ -130,6 +130,8 @@ endif ()
 include (LoadVersion)
 LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
 
+# Enable "maintainer flags," which are supplementary but not mandatory.
+# (As opposed to MongoC-Warnings.cmake, which are required warnings)
 include (MaintainerFlags)
 
 if ( (ENABLE_BUILD_DEPENDECIES STREQUAL OFF) AND (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR) )
@@ -285,6 +287,10 @@ if (ENABLE_MONGOC)
       ${SOURCE_DIR}/src/zlib-1.2.11/gzread.c
       ${SOURCE_DIR}/src/zlib-1.2.11/gzwrite.c
    )
+   add_library (zlib_obj OBJECT "${ZLIB_SOURCES}")
+   set_property (TARGET zlib_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+   # Disable all warnings for compiling Zlib
+   target_compile_options (zlib_obj PRIVATE -w)
 
    set (MONGOC_ENABLE_ICU 0)
 
