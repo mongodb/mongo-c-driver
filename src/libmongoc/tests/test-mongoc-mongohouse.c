@@ -294,12 +294,9 @@ test_mongohouse_no_auth (void *ctx_unused)
 void
 test_mongohouse_install (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   test_framework_resolve_path (JSON_DIR "/mongohouse", resolved);
-
    install_json_test_suite_with_check (suite,
-                                       resolved,
+                                       JSON_DIR,
+                                       "mongohouse",
                                        &test_mongohouse_cb,
                                        test_framework_skip_if_no_mongohouse);
 

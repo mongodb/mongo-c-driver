@@ -1656,14 +1656,11 @@ done:
 }
 
 void
-run_unified_tests (TestSuite *suite, const char *path)
+run_unified_tests (TestSuite *suite, const char *base, const char *subdir)
 {
-   char resolved[PATH_MAX];
-
-   ASSERT (realpath (path, resolved));
-
    install_json_test_suite_with_check (suite,
-                                       resolved,
+                                       base,
+                                       subdir,
                                        &run_one_test_file,
                                        TestSuite_CheckLive,
                                        test_framework_skip_if_no_crypto);
@@ -1672,17 +1669,17 @@ run_unified_tests (TestSuite *suite, const char *path)
 void
 test_install_unified (TestSuite *suite)
 {
-   run_unified_tests (suite, JSON_DIR "/unified");
+   run_unified_tests (suite, JSON_DIR, "unified");
 
-   run_unified_tests (suite, JSON_DIR "/crud/unified");
+   run_unified_tests (suite, JSON_DIR, "crud/unified");
 
-   run_unified_tests (suite, JSON_DIR "/transactions/unified");
+   run_unified_tests (suite, JSON_DIR, "transactions/unified");
 
-   run_unified_tests (suite, JSON_DIR "/collection-management");
+   run_unified_tests (suite, JSON_DIR, "collection-management");
 
-   run_unified_tests (suite, JSON_DIR "/sessions/unified");
+   run_unified_tests (suite, JSON_DIR, "sessions/unified");
 
-   run_unified_tests (suite, JSON_DIR "/change_streams/unified");
+   run_unified_tests (suite, JSON_DIR, "change_streams/unified");
 
-   run_unified_tests (suite, JSON_DIR "/load_balancers");
+   run_unified_tests (suite, JSON_DIR, "load_balancers");
 }

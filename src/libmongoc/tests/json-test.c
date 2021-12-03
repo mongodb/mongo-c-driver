@@ -1915,7 +1915,8 @@ _skip_if_unsupported (const char *test_name, bson_t *original)
  */
 void
 _install_json_test_suite_with_check (TestSuite *suite,
-                                     const char *dir_path,
+                                     const char *base,
+                                     const char *subdir,
                                      test_hook callback,
                                      ...)
 {
@@ -1926,9 +1927,21 @@ _install_json_test_suite_with_check (TestSuite *suite,
    char *skip_json;
    char *ext;
    va_list ap;
+   char joined[PATH_MAX];
+   char resolved[PATH_MAX];
+
+   snprintf (joined, PATH_MAX, "%s/%s", base, subdir);
+   ASSERT (realpath (joined, resolved));
+
+   if (suite->ctest_run) {
+      const char *found = strstr (suite->ctest_run, subdir);
+      if (found != suite->ctest_run && found != suite->ctest_run + 1) {
+         return;
+      }
+   }
 
    num_tests =
-      collect_tests_from_dir (&test_paths[0], dir_path, 0, MAX_NUM_TESTS);
+      collect_tests_from_dir (&test_paths[0], resolved, 0, MAX_NUM_TESTS);
 
    for (i = 0; i < num_tests; i++) {
       test = get_bson_from_json_file (test_paths[i]);
@@ -1971,9 +1984,10 @@ _install_json_test_suite_with_check (TestSuite *suite,
  */
 void
 install_json_test_suite (TestSuite *suite,
-                         const char *dir_path,
+                         const char *base,
+                         const char *subdir,
                          test_hook callback)
 {
    install_json_test_suite_with_check (
-      suite, dir_path, callback, TestSuite_CheckLive);
+      suite, base, subdir, callback, TestSuite_CheckLive);
 }

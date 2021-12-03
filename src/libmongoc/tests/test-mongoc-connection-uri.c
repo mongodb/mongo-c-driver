@@ -357,16 +357,11 @@ test_connection_uri_cb (bson_t *scenario)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   test_framework_resolve_path (JSON_DIR "/uri-options", resolved);
-   install_json_test_suite (suite, resolved, &test_connection_uri_cb);
-
-   test_framework_resolve_path (JSON_DIR "/connection_uri", resolved);
-   install_json_test_suite (suite, resolved, &test_connection_uri_cb);
-
-   test_framework_resolve_path (JSON_DIR "/auth", resolved);
-   install_json_test_suite (suite, resolved, &test_connection_uri_cb);
+   install_json_test_suite (
+      suite, JSON_DIR, "uri-options", &test_connection_uri_cb);
+   install_json_test_suite (
+      suite, JSON_DIR, "connection_uri", &test_connection_uri_cb);
+   install_json_test_suite (suite, JSON_DIR, "auth", &test_connection_uri_cb);
 }
 
 

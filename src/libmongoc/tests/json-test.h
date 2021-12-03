@@ -102,17 +102,20 @@ json_test_config_cleanup (json_test_config_t *config);
 
 void
 _install_json_test_suite_with_check (TestSuite *suite,
-                                     const char *dir_path,
+                                     const char *base,
+                                     const char *subdir,
                                      test_hook callback,
                                      ...);
 
 void
 install_json_test_suite (TestSuite *suite,
-                         const char *dir_path,
+                         const char *base,
+                         const char *subdir,
                          test_hook callback);
 
-#define install_json_test_suite_with_check(_suite, _dir_path, ...) \
-   _install_json_test_suite_with_check (_suite, _dir_path, __VA_ARGS__, NULL)
+#define install_json_test_suite_with_check(_suite, _base, _subdir, ...) \
+   _install_json_test_suite_with_check (                                \
+      _suite, _base, _subdir, __VA_ARGS__, NULL)
 
 void
 set_uri_opts_from_bson (mongoc_uri_t *uri, const bson_t *opts);
