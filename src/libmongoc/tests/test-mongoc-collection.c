@@ -3292,56 +3292,6 @@ test_aggregate_server_id_option (void *ctx)
    mongoc_client_destroy (client);
 }
 
-static void
-test_aggregate_is_sent_to_primary_w_dollar_out (void *ctx)
-{
-   mongoc_client_t *client;
-   mongoc_cursor_t *cursor;
-   bson_error_t error;
-   bson_t *pipeline;
-   mongoc_collection_t *collection;
-   mongoc_read_prefs_t *read_prefs;
-   const bson_t *doc = NULL;
-
-   capture_logs (true);
-
-   client = test_framework_new_default_client ();
-   BSON_ASSERT (client);
-
-   pipeline = tmp_bson ("{ 'pipeline': [ { '$out' : 'coll2' } ] }");
-   collection = mongoc_client_get_collection (client, "test", "coll");
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
-
-   cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_SECONDARY_OK, pipeline, NULL, read_prefs);
-
-   ASSERT (cursor);
-   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
-   BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_read_prefs_destroy (read_prefs);
-
-   read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
-   cursor = mongoc_collection_aggregate (
-      collection, MONGOC_QUERY_SECONDARY_OK, pipeline, NULL, read_prefs);
-
-   ASSERT (cursor);
-   BSON_ASSERT (!mongoc_cursor_next (cursor, &doc));
-   BSON_ASSERT (!mongoc_cursor_error (cursor, &error));
-
-   ASSERT_CAPTURED_LOG ("mongoc_collection_aggregate",
-                        MONGOC_LOG_LEVEL_WARNING,
-                        "Overriding read preference to primary.");
-
-   capture_logs (false);
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_client_destroy (client);
-   mongoc_collection_destroy (collection);
-   mongoc_read_prefs_destroy (read_prefs);
-}
-
 
 static void
 test_validate (void *ctx)
@@ -6649,12 +6599,6 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddMockServerTest (suite,
                                 "/Collection/aggregate_with_batch_size",
                                 test_aggregate_with_batch_size);
-   TestSuite_AddFull (suite,
-                      "/Collection/aggregate_is_sent_to_primary_w_dollar_out",
-                      test_aggregate_is_sent_to_primary_w_dollar_out,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_not_replset);
    TestSuite_AddFull (suite,
                       "/Collection/fam/no_error_on_retry",
                       test_fam_no_error_on_retry,
