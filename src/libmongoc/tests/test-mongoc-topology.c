@@ -714,7 +714,7 @@ test_cooldown_standalone (void)
    /* second selection doesn't try to call hello: we're in cooldown */
    start = bson_get_monotonic_time ();
    sd = mongoc_topology_select (
-      client->topology, MONGOC_SS_READ, primary_pref, &error);
+      client->topology, MONGOC_SS_READ, primary_pref, NULL, &error);
    BSON_ASSERT (!sd);
    /* waited less than 500ms (minHeartbeatFrequencyMS), in fact
     * didn't wait at all since all nodes are in cooldown */
@@ -2009,7 +2009,7 @@ test_last_server_removed_warning (void)
 
    capture_logs (true);
    description = mongoc_topology_select (
-      client->topology, MONGOC_SS_READ, read_prefs, &error);
+      client->topology, MONGOC_SS_READ, read_prefs, NULL, &error);
    ASSERT_CAPTURED_LOG ("topology",
                         MONGOC_LOG_LEVEL_WARNING,
                         "Last server removed from topology");

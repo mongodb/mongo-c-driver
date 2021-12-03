@@ -143,8 +143,11 @@ test_getmore_iteration (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
-   primary_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL /* read prefs */, &error);
+   primary_id = mongoc_topology_select_server_id (client->topology,
+                                                  MONGOC_SS_WRITE,
+                                                  NULL /* read prefs */,
+                                                  NULL /* chosen read mode */,
+                                                  &error);
    ASSERT_OR_PRINT (primary_id, error);
    conn_count = _connection_count (client, primary_id);
 
@@ -217,8 +220,11 @@ test_not_primary_keep_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
-   primary_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL /* read prefs */, &error);
+   primary_id = mongoc_topology_select_server_id (client->topology,
+                                                  MONGOC_SS_WRITE,
+                                                  NULL /* read prefs */,
+                                                  NULL /* chosen read mode */,
+                                                  &error);
    ASSERT_OR_PRINT (primary_id, error);
    conn_count = _connection_count (client, primary_id);
    res = mongoc_database_command_simple (
@@ -283,8 +289,11 @@ test_not_primary_reset_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
-   primary_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL /* read prefs */, &error);
+   primary_id = mongoc_topology_select_server_id (client->topology,
+                                                  MONGOC_SS_WRITE,
+                                                  NULL /* read prefs */,
+                                                  NULL /* chosen read mode */,
+                                                  &error);
    ASSERT_OR_PRINT (primary_id, error);
    conn_count = _connection_count (client, primary_id);
    res = mongoc_database_command_simple (
@@ -353,8 +362,11 @@ test_shutdown_reset_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
-   primary_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL /* read prefs */, &error);
+   primary_id = mongoc_topology_select_server_id (client->topology,
+                                                  MONGOC_SS_WRITE,
+                                                  NULL /* read prefs */,
+                                                  NULL /* chosen read mode */,
+                                                  &error);
    ASSERT_OR_PRINT (primary_id, error);
    conn_count = _connection_count (client, primary_id);
    res = mongoc_database_command_simple (
@@ -420,8 +432,11 @@ test_interrupted_shutdown_reset_pool (mongoc_client_t *client)
    /* Store the primary ID. After step down, the primary may be a different
     * server. We must execute serverStatus against the same server to check
     * connection counts. */
-   primary_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL /* read prefs */, &error);
+   primary_id = mongoc_topology_select_server_id (client->topology,
+                                                  MONGOC_SS_WRITE,
+                                                  NULL /* read prefs */,
+                                                  NULL /* chosen read mode */,
+                                                  &error);
    ASSERT_OR_PRINT (primary_id, error);
    conn_count = _connection_count (client, primary_id);
    res = mongoc_database_command_simple (

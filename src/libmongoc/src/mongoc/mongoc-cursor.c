@@ -655,6 +655,8 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
    ENTRY;
 
    if (cursor->server_id) {
+      /* We already did server selection once before. Reuse the prior
+       * selection to create a new stream in a new stream. */
       server_stream =
          mongoc_cluster_stream_for_server (&cursor->client->cluster,
                                            cursor->server_id,
@@ -662,6 +664,9 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
                                            cursor->client_session,
                                            &reply,
                                            &cursor->error);
+      /* Also restore the effective read mode that was used on that prior
+       * selection */
+      server_stream->effective_read_mode = cursor->effective_read_mode;
    } else {
       server_stream =
          mongoc_cluster_stream_for_reads (&cursor->client->cluster,
@@ -672,7 +677,10 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
                                           &cursor->error);
 
       if (server_stream) {
+         /* Remember the selected server_id and the effective read mode so that
+          * we can re-create an equivalent server_stream at a later time */
          cursor->server_id = server_stream->sd->id;
+         cursor->effective_read_mode = server_stream->effective_read_mode;
       }
    }
 

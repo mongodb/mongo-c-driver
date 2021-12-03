@@ -484,6 +484,7 @@ static void
 _mongoc_try_mode_secondary (mongoc_array_t *set, /* OUT */
                             const mongoc_topology_description_t *topology,
                             const mongoc_read_prefs_t *read_pref,
+                            mongoc_read_mode_t *chosen_read_mode,
                             size_t local_threshold_ms)
 {
    mongoc_read_prefs_t *secondary;
@@ -491,8 +492,12 @@ _mongoc_try_mode_secondary (mongoc_array_t *set, /* OUT */
    secondary = mongoc_read_prefs_copy (read_pref);
    mongoc_read_prefs_set_mode (secondary, MONGOC_READ_SECONDARY);
 
-   mongoc_topology_description_suitable_servers (
-      set, MONGOC_SS_READ, topology, secondary, local_threshold_ms);
+   mongoc_topology_description_suitable_servers (set,
+                                                 MONGOC_SS_READ,
+                                                 topology,
+                                                 secondary,
+                                                 chosen_read_mode,
+                                                 local_threshold_ms);
 
    mongoc_read_prefs_destroy (secondary);
 }
@@ -720,6 +725,7 @@ mongoc_topology_description_suitable_servers (
    mongoc_ss_optype_t optype,
    const mongoc_topology_description_t *topology,
    const mongoc_read_prefs_t *read_pref,
+   mongoc_read_mode_t *chosen_read_mode,
    size_t local_threshold_ms)
 {
    mongoc_suitable_data_t data;
@@ -732,6 +738,10 @@ mongoc_topology_description_suitable_servers (
       mongoc_read_prefs_get_mode (read_pref);
    const mongoc_read_mode_t effective_read_mode =
       _calc_effective_read_mode (topology, optype, given_read_mode);
+
+   if (chosen_read_mode) {
+      *chosen_read_mode = effective_read_mode;
+   }
 
    candidates = bson_malloc0 (sizeof (*candidates) * td_servers->items_len);
 
@@ -786,7 +796,7 @@ mongoc_topology_description_suitable_servers (
          if (data.read_mode == MONGOC_READ_SECONDARY_PREFERRED) {
             /* try read_mode SECONDARY */
             _mongoc_try_mode_secondary (
-               set, topology, read_pref, local_threshold_ms);
+               set, topology, read_pref, chosen_read_mode, local_threshold_ms);
 
             /* otherwise fall back to primary */
             if (!set->len && data.primary) {
@@ -930,6 +940,7 @@ mongoc_topology_description_select (
    const mongoc_topology_description_t *topology,
    mongoc_ss_optype_t optype,
    const mongoc_read_prefs_t *read_pref,
+   mongoc_read_mode_t *chosen_read_mode,
    int64_t local_threshold_ms)
 {
    mongoc_array_t suitable_servers;
@@ -952,8 +963,12 @@ mongoc_topology_description_select (
    _mongoc_array_init (&suitable_servers,
                        sizeof (mongoc_server_description_t *));
 
-   mongoc_topology_description_suitable_servers (
-      &suitable_servers, optype, topology, read_pref, local_threshold_ms);
+   mongoc_topology_description_suitable_servers (&suitable_servers,
+                                                 optype,
+                                                 topology,
+                                                 read_pref,
+                                                 chosen_read_mode,
+                                                 local_threshold_ms);
    if (suitable_servers.len != 0) {
       rand_n = _mongoc_rand_simple ((unsigned *) &topology->rand_seed);
       sd = _mongoc_array_index (&suitable_servers,
@@ -2225,8 +2240,8 @@ mongoc_topology_description_has_readable_server (
    }
 
    /* local threshold argument doesn't matter */
-   return mongoc_topology_description_select (td, MONGOC_SS_READ, prefs, 0) !=
-          NULL;
+   return mongoc_topology_description_select (
+             td, MONGOC_SS_READ, prefs, NULL, 0) != NULL;
 }
 
 /*
@@ -2252,8 +2267,8 @@ mongoc_topology_description_has_writable_server (
       return false;
    }
 
-   return mongoc_topology_description_select (td, MONGOC_SS_WRITE, NULL, 0) !=
-          NULL;
+   return mongoc_topology_description_select (
+             td, MONGOC_SS_WRITE, NULL, NULL, 0) != NULL;
 }
 
 /*

@@ -2603,8 +2603,12 @@ mongoc_client_kill_cursor (mongoc_client_t *client, int64_t cursor_id)
    }
 
    /* see if there's a known writable server - do no I/O or retries */
-   selected_server = mongoc_topology_description_select (
-      td.ptr, MONGOC_SS_WRITE, read_prefs, topology->local_threshold_msec);
+   selected_server =
+      mongoc_topology_description_select (td.ptr,
+                                          MONGOC_SS_WRITE,
+                                          read_prefs,
+                                          NULL /* chosen read mode */,
+                                          topology->local_threshold_msec);
 
    if (selected_server) {
       server_id = selected_server->id;
@@ -2867,7 +2871,8 @@ mongoc_client_select_server (mongoc_client_t *client,
       return NULL;
    }
 
-   sd = mongoc_topology_select (client->topology, optype, prefs, error);
+   sd = mongoc_topology_select (
+      client->topology, optype, prefs, NULL /* chosen read mode */, error);
    if (!sd) {
       return NULL;
    }
@@ -2879,7 +2884,8 @@ mongoc_client_select_server (mongoc_client_t *client,
 
    /* check failed, retry once */
    mongoc_server_description_destroy (sd);
-   sd = mongoc_topology_select (client->topology, optype, prefs, error);
+   sd = mongoc_topology_select (
+      client->topology, optype, prefs, NULL /* chosen read mode */, error);
    if (sd) {
       return sd;
    }
@@ -3014,8 +3020,8 @@ _mongoc_client_end_sessions (mongoc_client_t *client)
 
    while (!mongoc_server_session_pool_is_empty (t->session_pool)) {
       prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY_PREFERRED);
-      server_id =
-         mongoc_topology_select_server_id (t, MONGOC_SS_READ, prefs, &error);
+      server_id = mongoc_topology_select_server_id (
+         t, MONGOC_SS_READ, prefs, NULL /* chosen read mode */, &error);
 
       mongoc_read_prefs_destroy (prefs);
       if (!server_id) {

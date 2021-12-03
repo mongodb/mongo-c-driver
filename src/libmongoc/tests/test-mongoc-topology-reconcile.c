@@ -71,7 +71,7 @@ selects_server (mongoc_client_t *client,
    bool result;
 
    sd = mongoc_topology_select (
-      client->topology, MONGOC_SS_READ, read_prefs, &error);
+      client->topology, MONGOC_SS_READ, read_prefs, NULL, &error);
 
    if (!sd) {
       fprintf (stderr, "%s\n", error.message);

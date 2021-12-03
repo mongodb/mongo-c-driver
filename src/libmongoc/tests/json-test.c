@@ -502,6 +502,7 @@ test_server_selection_logic_cb (bson_t *test)
       op,
       &topology,
       read_prefs,
+      NULL,
       MONGOC_TOPOLOGY_LOCAL_THRESHOLD_MS);
 
    /* check each server in expected_servers is in selected_servers */
@@ -1178,7 +1179,7 @@ execute_test (const json_test_config_t *config,
 
    /* Select a primary for testing */
    server_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL, &error);
+      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
 
    json_test_ctx_init (&ctx, test, client, db, collection, config);
@@ -1759,7 +1760,7 @@ run_json_general_test (const json_test_config_t *config)
 
       /* clean up in case a previous test aborted */
       server_id = mongoc_topology_select_server_id (
-         client->topology, MONGOC_SS_WRITE, NULL, &error);
+         client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
       ASSERT_OR_PRINT (server_id, error);
       deactivate_fail_points (client, server_id);
       r = mongoc_client_command_with_opts (client,

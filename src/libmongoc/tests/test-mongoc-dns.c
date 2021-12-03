@@ -377,6 +377,7 @@ test_null_error_pointer (void *ctx)
    ASSERT (!mongoc_topology_select_server_id (client->topology,
                                               MONGOC_SS_READ,
                                               NULL /* read prefs */,
+                                              NULL /* chosen read mode */,
                                               NULL /* error */));
 
    mongoc_client_destroy (client);

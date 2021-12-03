@@ -957,10 +957,11 @@ mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t *topology,
                         mongoc_ss_optype_t optype,
                         const mongoc_read_prefs_t *read_prefs,
+                        mongoc_read_mode_t *chosen_read_mode,
                         bson_error_t *error)
 {
-   uint32_t server_id =
-      mongoc_topology_select_server_id (topology, optype, read_prefs, error);
+   uint32_t server_id = mongoc_topology_select_server_id (
+      topology, optype, read_prefs, chosen_read_mode, error);
 
    if (server_id) {
       /* new copy of the server description */
@@ -1000,8 +1001,12 @@ _mongoc_topology_select_server_id_loadbalanced (mongoc_topology_t *topology,
       mc_tpld_modify_commit (tdmod);
       mc_tpld_renew_ref (&td, topology);
    }
-   selected_server = mongoc_topology_description_select (
-      td.ptr, MONGOC_SS_WRITE, NULL /* read prefs */, 0 /* local threshold */);
+   selected_server =
+      mongoc_topology_description_select (td.ptr,
+                                          MONGOC_SS_WRITE,
+                                          NULL /* read prefs */,
+                                          NULL /* chosen read mode */,
+                                          0 /* local threshold */);
 
    if (!selected_server) {
       _mongoc_server_selection_error (
@@ -1079,6 +1084,7 @@ uint32_t
 mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
                                   const mongoc_read_prefs_t *read_prefs,
+                                  mongoc_read_mode_t *chosen_read_mode,
                                   bson_error_t *error)
 {
    static const char *timeout_msg =
@@ -1194,7 +1200,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
          }
 
          selected_server = mongoc_topology_description_select (
-            td.ptr, optype, read_prefs, local_threshold_ms);
+            td.ptr, optype, read_prefs, chosen_read_mode, local_threshold_ms);
 
          if (selected_server) {
             server_id = selected_server->id;
@@ -1240,7 +1246,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
       }
 
       selected_server = mongoc_topology_description_select (
-         td.ptr, optype, read_prefs, local_threshold_ms);
+         td.ptr, optype, read_prefs, chosen_read_mode, local_threshold_ms);
 
       if (selected_server) {
          server_id = selected_server->id;
@@ -1256,7 +1262,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
        * occurred while we were waiting on the lock. */
       mc_tpld_renew_ref (&td, topology);
       selected_server = mongoc_topology_description_select (
-         td.ptr, optype, read_prefs, local_threshold_ms);
+         td.ptr, optype, read_prefs, chosen_read_mode, local_threshold_ms);
       if (selected_server) {
          server_id = selected_server->id;
          bson_mutex_unlock (&topology->tpld_modification_mtx);
@@ -1525,8 +1531,11 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
    if (!loadbalanced && timeout == MONGOC_NO_SESSIONS) {
       /* if needed, connect and check for session timeout again */
       if (!mongoc_topology_description_has_data_node (td.ptr)) {
-         if (!mongoc_topology_select_server_id (
-                topology, MONGOC_SS_READ, NULL, error)) {
+         if (!mongoc_topology_select_server_id (topology,
+                                                MONGOC_SS_READ,
+                                                NULL /* read prefs */,
+                                                NULL /* chosen read mode */,
+                                                error)) {
             ss = NULL;
             goto done;
          }

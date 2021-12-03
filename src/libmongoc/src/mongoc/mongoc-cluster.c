@@ -2707,6 +2707,7 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
                                   mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
                                   const mongoc_read_prefs_t *read_prefs,
+                                  mongoc_read_mode_t *chosen_read_mode,
                                   bson_error_t *error)
 {
    uint32_t server_id;
@@ -2715,14 +2716,14 @@ _mongoc_cluster_select_server_id (mongoc_client_session_t *cs,
       server_id = cs->server_id;
       if (!server_id) {
          server_id = mongoc_topology_select_server_id (
-            topology, optype, read_prefs, error);
+            topology, optype, read_prefs, chosen_read_mode, error);
          if (server_id) {
             _mongoc_client_session_pin (cs, server_id);
          }
       }
    } else {
-      server_id =
-         mongoc_topology_select_server_id (topology, optype, read_prefs, error);
+      server_id = mongoc_topology_select_server_id (
+         topology, optype, read_prefs, chosen_read_mode, error);
       /* Transactions Spec: Additionally, any non-transaction operation using a
        * pinned ClientSession MUST unpin the session and the operation MUST
        * perform normal server selection. */
@@ -2763,13 +2764,14 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    mongoc_server_stream_t *server_stream;
    uint32_t server_id;
    mongoc_topology_t *topology = cluster->client->topology;
+   mongoc_read_mode_t chosen_read_mode = (mongoc_read_mode_t) 0;
 
    ENTRY;
 
    BSON_ASSERT (cluster);
 
    server_id = _mongoc_cluster_select_server_id (
-      cs, topology, optype, read_prefs, error);
+      cs, topology, optype, read_prefs, &chosen_read_mode, error);
 
    if (!server_id) {
       _mongoc_bson_init_with_transient_txn_error (cs, reply);
@@ -2779,7 +2781,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    if (!mongoc_cluster_check_interval (cluster, server_id)) {
       /* Server Selection Spec: try once more */
       server_id = _mongoc_cluster_select_server_id (
-         cs, topology, optype, read_prefs, error);
+         cs, topology, optype, read_prefs, &chosen_read_mode, error);
 
       if (!server_id) {
          _mongoc_bson_init_with_transient_txn_error (cs, reply);
@@ -2790,6 +2792,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    /* connect or reconnect to server if necessary */
    server_stream = _mongoc_cluster_stream_for_server (
       cluster, server_id, true /* reconnect_ok */, cs, reply, error);
+   server_stream->effective_read_mode = chosen_read_mode;
 
    RETURN (server_stream);
 }
