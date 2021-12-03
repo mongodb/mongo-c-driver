@@ -2792,7 +2792,9 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    /* connect or reconnect to server if necessary */
    server_stream = _mongoc_cluster_stream_for_server (
       cluster, server_id, true /* reconnect_ok */, cs, reply, error);
-   server_stream->effective_read_mode = chosen_read_mode;
+   if (server_stream) {
+      server_stream->effective_read_mode = chosen_read_mode;
+   }
 
    RETURN (server_stream);
 }
