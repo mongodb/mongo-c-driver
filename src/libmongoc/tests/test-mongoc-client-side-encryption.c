@@ -2741,6 +2741,8 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
                    tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:8001' }}"));
       bson_concat (tls_opts,
                    tmp_bson ("{'kmip': {'tlsCaFile': '%s'} }", ca_file));
+   } else {
+      BSON_UNREACHABLE ("Invalid value for test_ce");
    }
 
    client_encryption_opts = mongoc_client_encryption_opts_new ();

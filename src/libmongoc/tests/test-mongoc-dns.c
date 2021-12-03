@@ -436,6 +436,7 @@ test_all_spec_tests (TestSuite *suite)
       test_dns,
       test_dns_check_loadbalanced,
       test_framework_skip_if_no_crypto);
+
    install_json_test_suite_with_check (
       suite,
       JSON_DIR,
