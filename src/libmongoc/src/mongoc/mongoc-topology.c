@@ -35,6 +35,8 @@
 
 #include "utlist.h"
 
+#include <stdint.h>
+
 static void
 _topology_collect_errors (const mongoc_topology_description_t *topology,
                           bson_error_t *error_out);
@@ -263,6 +265,59 @@ _tpld_destroy_and_free (void *tpl_descr)
    mongoc_topology_description_destroy (td);
 }
 
+const mongoc_host_list_t **
+_mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
+                             const int32_t max_hosts,
+                             size_t *const hl_array_size)
+{
+   size_t hl_size;
+   size_t idx;
+   const mongoc_host_list_t **hl_array;
+
+   BSON_ASSERT (max_hosts >= 0);
+   BSON_ASSERT_PARAM (hl_array_size);
+
+   hl_size = (size_t) _mongoc_host_list_length (hl);
+
+   if (hl_size == 0) {
+      *hl_array_size = 0;
+      return NULL;
+   }
+
+   hl_array = bson_malloc (hl_size * sizeof (mongoc_host_list_t *));
+
+   for (idx = 0u; hl; hl = hl->next) {
+      hl_array[idx++] = hl;
+   }
+
+   if (max_hosts == 0 ||             /* Unlimited. */
+       hl_size == 1u ||              /* Trivial case. */
+       hl_size <= (size_t) max_hosts /* Already satisfies limit. */
+   ) {
+      /* No random shuffle or selection required. */
+      *hl_array_size = hl_size;
+      return hl_array;
+   }
+
+   /* Initial DNS Seedlist Discovery Spec: If `srvMaxHosts` is greater than zero
+    * and less than the number of hosts in the DNS result, the driver MUST
+    * randomly select that many hosts and use them to populate the seedlist.
+    * Drivers SHOULD use the `Fisher-Yates shuffle` for randomization. */
+   for (idx = hl_size - 1u; idx > 0u; --idx) {
+      /* 0 <= swap_pos <= idx */
+      const size_t swap_pos =
+         _mongoc_rand_size_t (0u, idx, _mongoc_simple_rand_size_t);
+
+      const mongoc_host_list_t *tmp = hl_array[swap_pos];
+      hl_array[swap_pos] = hl_array[idx];
+      hl_array[idx] = tmp;
+   }
+
+   *hl_array_size = max_hosts;
+
+   return hl_array;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -285,9 +340,9 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    int64_t heartbeat;
    mongoc_topology_t *topology;
    mongoc_topology_description_type_t init_type;
+   mongoc_topology_description_t *td;
    const char *service;
    char *prefixed_service;
-   uint32_t id;
    const mongoc_host_list_t *hl;
    mongoc_rr_data_t rr_data;
    bool has_directconnection;
@@ -322,11 +377,10 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    topology->_shared_descr_._sptr_ = mongoc_shared_ptr_create (
       bson_malloc0 (sizeof (mongoc_topology_description_t)),
       _tpld_destroy_and_free);
-   mongoc_topology_description_init (mc_tpld_unsafe_get_mutable (topology),
-                                     heartbeat);
+   td = mc_tpld_unsafe_get_mutable (topology);
+   mongoc_topology_description_init (td, heartbeat);
 
-   mc_tpld_unsafe_get_mutable (topology)->set_name =
-      bson_strdup (mongoc_uri_get_replica_set (uri));
+   td->set_name = bson_strdup (mongoc_uri_get_replica_set (uri));
 
    topology->uri = mongoc_uri_copy (uri);
    topology->cse_state = MONGOC_CSE_DISABLED;
@@ -461,6 +515,13 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       topology->valid = false;
    }
 
+   if (!mongoc_uri_finalize_srv (topology->uri, &topology->scanner->error)) {
+      topology->valid = false;
+   }
+
+   td->max_hosts =
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 0);
+
    /*
     * Set topology type from URI:
     *   + if directConnection=true
@@ -517,7 +578,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       }
    }
 
-   mc_tpld_unsafe_get_mutable (topology)->type = init_type;
+   td->type = init_type;
 
    if (!topology->single_threaded) {
       topology->server_monitors = mongoc_set_new (1, NULL, NULL);
@@ -533,16 +594,27 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       return topology;
    }
 
-   while (hl) {
-      mongoc_topology_description_add_server (
-         mc_tpld_unsafe_get_mutable (topology), hl->host_and_port, &id);
-      mongoc_topology_scanner_add (topology->scanner, hl, id, false);
+   {
+      size_t idx = 0u;
+      size_t hl_array_size = 0u;
+      uint32_t id = 0u;
 
-      hl = hl->next;
+      const mongoc_host_list_t *const *hl_array =
+         _mongoc_apply_srv_max_hosts (hl, td->max_hosts, &hl_array_size);
+
+      for (idx = 0u; idx < hl_array_size; ++idx) {
+         const mongoc_host_list_t *const elem = hl_array[idx];
+
+         mongoc_topology_description_add_server (td, elem->host_and_port, &id);
+         mongoc_topology_scanner_add (topology->scanner, elem, id, false);
+      }
+
+      bson_free ((void *) hl_array);
    }
 
    return topology;
 }
+
 /*
  *-------------------------------------------------------------------------
  *

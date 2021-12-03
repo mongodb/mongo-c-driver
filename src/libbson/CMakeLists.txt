@@ -10,6 +10,8 @@ if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC_BUILD)
    )
 endif ()
 
+include (MongoC-Warnings)
+
 set (BSON_OUTPUT_BASENAME "bson" CACHE STRING "Output bson library base name")
 
 include (CheckFunctionExists)
@@ -33,6 +35,9 @@ set (BSON_API_VERSION 1.0)
 set (CPACK_PACKAGE_VERSION_MAJOR ${BSON_MAJOR_VERSION})
 set (CPACK_PACKAGE_VERSION_MINOR ${BSON_MINOR_VERSION})
 
+# Enable X/Open 7.0 / POSIX 2008
+add_compile_options($<$<NOT:$<PLATFORM_ID:Windows>>:-D_XOPEN_SOURCE=700>)
+
 include (CPack)
 TEST_BIG_ENDIAN (BSON_BIG_ENDIAN)
 
@@ -50,11 +55,6 @@ if (NOT BSON_HAVE_SNPRINTF)
    set (BSON_HAVE_SNPRINTF 0)
 else ()
    set (BSON_HAVE_SNPRINTF 1)
-endif ()
-
-CHECK_FUNCTION_EXISTS (reallocf BSON_HAVE_REALLOCF)
-if (NOT BSON_HAVE_REALLOCF)
-   set (BSON_HAVE_REALLOCF 0)
 endif ()
 
 CHECK_STRUCT_HAS_MEMBER ("struct timespec" tv_sec time.h BSON_HAVE_TIMESPEC)

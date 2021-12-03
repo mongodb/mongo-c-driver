@@ -47,6 +47,7 @@ struct _mongoc_topology_description_t {
    bson_oid_t max_election_id;
    bson_error_t compatibility_error;
    uint32_t max_server_id;
+   int32_t max_hosts; /* srvMaxHosts */
    bool stale;
    unsigned int rand_seed;
 

@@ -101,6 +101,7 @@ MONGOC_URI_SOCKETTIMEOUTMS                 sockettimeoutms                   300
 MONGOC_URI_REPLICASET                      replicaset                        Empty (no replicaset)             The name of the Replica Set that the driver should connect to.
 MONGOC_URI_ZLIBCOMPRESSIONLEVEL            zlibcompressionlevel              -1                                When the MONGOC_URI_COMPRESSORS includes "zlib" this options configures the zlib compression level, when the zlib compressor is used to compress client data.
 MONGOC_URI_LOADBALANCED                    loadbalanced                      false                             If true, this indicates the driver is connecting to a MongoDB cluster behind a load balancer.
+MONGOC_URI_SRVMAXHOSTS                     srvmaxhosts                       0                                 If zero, the number of hosts in DNS results is unlimited. If greater than zero, the number of hosts in DNS results is limited to being less than or equal to the given value.
 ========================================== ================================= ================================= ============================================================================================================================================================================================================================================
 
 Setting any of the \*timeoutMS options above to ``0`` will be interpreted as "use the default value".
@@ -141,16 +142,16 @@ Deprecated SSL Options
 
 The following options have been deprecated and may be removed from future releases of libmongoc.
 
-========================================== ================================= ======================================= =================================
-Constant                                   Key                               Deprecated For                          Key
-========================================== ================================= ======================================= =================================
-MONGOC_URI_SSL                             ssl                               MONGOC_URI_TLS                          tls
-MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE     sslclientcertificatekeyfile       MONGOC_URI_TLSCERTIFICATEKEYFILE        tlscertificatekeyfile
-MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD sslclientcertificatekeypassword   MONGOC_URI_TLSCERTIFICATEKEYPASSWORD    tlscertificatekeypassword
-MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE     sslcertificateauthorityfile       MONGOC_URI_TLSCAFILE                    tlscafile
-MONGOC_URI_SSLALLOWINVALIDCERTIFICATES     sslallowinvalidcertificates       MONGOC_URI_TLSALLOWINVALIDCERTIFICATES  tlsallowinvalidcertificates
-MONGOC_URI_SSLALLOWINVALIDHOSTNAMES        sslallowinvalidhostnames          MONGOC_URI_TLSALLOWINVALIDHOSTNAMES     tlsallowinvalidhostnames
-========================================== ================================= ======================================= =================================
+========================================== ================================= =========================================== =================================
+Constant                                   Key                               Deprecated For                              Key
+========================================== ================================= =========================================== =================================
+MONGOC_URI_SSL                             ssl                               MONGOC_URI_TLS                              tls
+MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE     sslclientcertificatekeyfile       MONGOC_URI_TLSCERTIFICATEKEYFILE            tlscertificatekeyfile
+MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD sslclientcertificatekeypassword   MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD    tlscertificatekeypassword
+MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE     sslcertificateauthorityfile       MONGOC_URI_TLSCAFILE                        tlscafile
+MONGOC_URI_SSLALLOWINVALIDCERTIFICATES     sslallowinvalidcertificates       MONGOC_URI_TLSALLOWINVALIDCERTIFICATES      tlsallowinvalidcertificates
+MONGOC_URI_SSLALLOWINVALIDHOSTNAMES        sslallowinvalidhostnames          MONGOC_URI_TLSALLOWINVALIDHOSTNAMES         tlsallowinvalidhostnames
+========================================== ================================= =========================================== =================================
 
 
 .. _sdam_uri_options:

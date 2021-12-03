@@ -150,6 +150,7 @@ _mongoc_topology_description_copy_to (const mongoc_topology_description_t *src,
            &src->compatibility_error,
            sizeof (bson_error_t));
    dst->max_server_id = src->max_server_id;
+   dst->max_hosts = src->max_hosts;
    dst->stale = src->stale;
    memcpy (&dst->apm_callbacks,
            &src->apm_callbacks,
@@ -2355,10 +2356,33 @@ mongoc_topology_description_get_servers (
 
 typedef struct {
    mongoc_host_list_t *host_list;
+   size_t num_missing;
+} _count_num_hosts_to_remove_ctx_t;
+
+static bool
+_count_num_hosts_to_remove (void *sd_void, void *ctx_void)
+{
+   mongoc_server_description_t *sd;
+   _count_num_hosts_to_remove_ctx_t *ctx;
+   mongoc_host_list_t *host_list;
+
+   sd = sd_void;
+   ctx = ctx_void;
+   host_list = ctx->host_list;
+
+   if (!_mongoc_host_list_contains_one (host_list, &sd->host)) {
+      ++ctx->num_missing;
+   }
+
+   return true;
+}
+
+typedef struct {
+   mongoc_host_list_t *host_list;
    mongoc_topology_description_t *td;
 } _remove_if_not_in_host_list_ctx_t;
 
-bool
+static bool
 _remove_if_not_in_host_list_cb (void *sd_void, void *ctx_void)
 {
    _remove_if_not_in_host_list_ctx_t *ctx;
@@ -2382,19 +2406,93 @@ void
 mongoc_topology_description_reconcile (mongoc_topology_description_t *td,
                                        mongoc_host_list_t *host_list)
 {
-   mongoc_host_list_t *host;
-   _remove_if_not_in_host_list_ctx_t ctx;
+   mongoc_set_t *servers;
+   size_t host_list_length;
+   size_t num_missing;
 
-   LL_FOREACH (host_list, host)
+   BSON_ASSERT_PARAM (td);
+
+   servers = mc_tpld_servers (td);
+   host_list_length = _mongoc_host_list_length (host_list);
+
+   /* Avoid removing all servers in topology, even temporarily, by deferring
+    * actual removal until after new hosts have been added. */
    {
-      /* "add" is really an "upsert" */
-      mongoc_topology_description_add_server (td, host->host_and_port, NULL);
+      _count_num_hosts_to_remove_ctx_t ctx;
+
+      ctx.host_list = host_list;
+      ctx.num_missing = 0u;
+
+      mongoc_set_for_each (servers, _count_num_hosts_to_remove, &ctx);
+
+      num_missing = ctx.num_missing;
    }
 
-   ctx.host_list = host_list;
-   ctx.td = td;
-   mongoc_set_for_each (
-      mc_tpld_servers (td), _remove_if_not_in_host_list_cb, &ctx);
+   /* Polling SRV Records for mongos Discovery Spec: If srvMaxHosts is zero or
+    * greater than or equal to the number of valid hosts, each valid new host
+    * MUST be added to the topology as Unknown. */
+   if (td->max_hosts == 0 || (size_t) td->max_hosts >= host_list_length) {
+      mongoc_host_list_t *host;
+
+      LL_FOREACH (host_list, host)
+      {
+         /* "add" is really an "upsert" */
+         mongoc_topology_description_add_server (td, host->host_and_port, NULL);
+      }
+   }
+
+   /* Polling SRV Records for mongos Discovery Spec: If srvMaxHosts is greater
+    * than zero and less than the number of valid hosts, valid new hosts MUST be
+    * randomly selected and added to the topology as Unknown until the topology
+    * has srvMaxHosts hosts. */
+   else {
+      const size_t max_with_missing = td->max_hosts + num_missing;
+
+      size_t idx = 0u;
+      size_t hl_array_size = 0u;
+
+      /* Polling SRV Records for mongos Discovery Spec: Drivers MUST use the
+       * same randomization algorithm as they do for initial selection.
+       * Do not limit size of results yet (pass host_list_length) as we want to
+       * update any existing hosts in the topology, but add new hosts.
+       */
+      const mongoc_host_list_t *const *hl_array = _mongoc_apply_srv_max_hosts (
+         host_list, host_list_length, &hl_array_size);
+
+      for (idx = 0u;
+           servers->items_len < max_with_missing && idx < hl_array_size;
+           ++idx) {
+         const mongoc_host_list_t *const elem = hl_array[idx];
+
+         /* "add" is really an "upsert" */
+         mongoc_topology_description_add_server (td, elem->host_and_port, NULL);
+      }
+
+      /* There should not be a situation where all items in the valid host list
+       * were traversed without the number of hosts in the topology reaching
+       * srvMaxHosts. */
+      BSON_ASSERT (servers->items_len == max_with_missing);
+
+      bson_free ((void *) hl_array);
+   }
+
+   /* Polling SRV Records for mongos Discovery Spec: For all verified host
+    * names, as returned through the DNS SRV query, the driver MUST remove
+    * all hosts that are part of the topology, but are no longer in the
+    * returned set of valid hosts. */
+   {
+      _remove_if_not_in_host_list_ctx_t ctx;
+
+      ctx.host_list = host_list;
+      ctx.td = td;
+
+      mongoc_set_for_each (servers, _remove_if_not_in_host_list_cb, &ctx);
+   }
+
+   /* At this point, the number of hosts in the host list should not exceed
+    * srvMaxHosts. */
+   BSON_ASSERT (td->max_hosts == 0 ||
+                servers->items_len <= (size_t) td->max_hosts);
 }
 
 

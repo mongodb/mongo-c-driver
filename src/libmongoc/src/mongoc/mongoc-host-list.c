@@ -131,9 +131,9 @@ _mongoc_host_list_copy_all (const mongoc_host_list_t *src)
 }
 
 int
-_mongoc_host_list_length (mongoc_host_list_t *list)
+_mongoc_host_list_length (const mongoc_host_list_t *list)
 {
-   mongoc_host_list_t *tmp;
+   const mongoc_host_list_t *tmp;
    int counter = 0;
 
    tmp = list;
@@ -240,8 +240,7 @@ _mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                          "If present, port should immediately follow the \"]\""
-                         "in an IPv6 address"
-                         );
+                         "in an IPv6 address");
          return false;
       }
 
@@ -259,8 +258,7 @@ _mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_,
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Missing matching bracket \"[\""
-                         );
+                         "Missing matching bracket \"[\"");
          return false;
       }
 
@@ -278,8 +276,7 @@ _mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_,
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Bad address, \":\" should not be first character"
-                        );
+                         "Bad address, \":\" should not be first character");
          return false;
       }
 
@@ -287,8 +284,7 @@ _mongoc_host_list_from_string_with_err (mongoc_host_list_t *link_,
          bson_set_error (error,
                          MONGOC_ERROR_COMMAND,
                          MONGOC_ERROR_COMMAND_INVALID_ARG,
-                         "Port could not be parsed"
-                        );
+                         "Port could not be parsed");
          return false;
       }
 

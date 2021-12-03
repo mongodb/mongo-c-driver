@@ -194,6 +194,16 @@ test_mongoc_ssl_opts_from_bson (void)
    }
 }
 
+/* Test that it is safe to call _mongoc_ssl_opts_cleanup on a zero'd struct. */
+static void
+test_mongoc_ssl_opts_cleanup_zero (void)
+{
+   mongoc_ssl_opt_t ssl_opt = {0};
+
+   _mongoc_ssl_opts_cleanup (&ssl_opt, true /* free_internal */);
+   _mongoc_ssl_opts_cleanup (&ssl_opt, false /* free_internal */);
+}
+
 #endif /* MONGOC_ENABLE_SSL */
 
 void
@@ -201,5 +211,6 @@ test_ssl_install (TestSuite *suite)
 {
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_Add (suite, "/ssl_opt/from_bson", test_mongoc_ssl_opts_from_bson);
+   TestSuite_Add (suite, "/ssl_opt/cleanup", test_mongoc_ssl_opts_cleanup_zero);
 #endif /* MONGOC_ENABLE_SSL */
 }

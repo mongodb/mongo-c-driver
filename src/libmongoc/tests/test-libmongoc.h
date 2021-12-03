@@ -41,6 +41,8 @@ int64_t
 get_future_timeout_ms (void);
 char *
 test_framework_getenv (const char *name);
+char *
+test_framework_getenv_required (const char *name);
 bool
 test_framework_getenv_bool (const char *name);
 int64_t

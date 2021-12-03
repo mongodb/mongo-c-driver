@@ -88,15 +88,6 @@
 
 
 /*
- * Define to 1 if you have reallocf available on your platform.
- */
-#define BSON_HAVE_REALLOCF @BSON_HAVE_REALLOCF@
-#if BSON_HAVE_REALLOCF != 1
-# undef BSON_HAVE_REALLOCF
-#endif
-
-
-/*
  * Define to 1 if you have struct timespec available on your platform.
  */
 #define BSON_HAVE_TIMESPEC @BSON_HAVE_TIMESPEC@
