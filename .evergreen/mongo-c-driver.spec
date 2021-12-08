@@ -10,10 +10,13 @@
 %global gh_project   mongo-c-driver
 %global libname      libmongoc
 %global libver       1.0
-%global up_version   1.19.2
+%global up_version   1.20.0
 #global up_prever    rc0
 # disabled as require a MongoDB server
 %bcond_with          tests
+
+# disable for bootstrap (libmongocrypt needs libbson)
+%bcond_without       libmongocrypt
 
 Name:      mongo-c-driver
 Summary:   Client library written in C for MongoDB
@@ -27,6 +30,7 @@ Source0:   https://github.com/%{gh_owner}/%{gh_project}/releases/download/%{up_v
 
 BuildRequires: cmake >= 3.1
 BuildRequires: gcc
+BuildRequires: gcc-c++
 BuildRequires: make
 # pkg-config may pull compat-openssl10
 BuildRequires: openssl-devel
@@ -39,7 +43,9 @@ BuildRequires: pkgconfig(libzstd)
 BuildRequires: mongodb-server
 BuildRequires: openssl
 %endif
-BuildRequires: cmake(mongocrypt)
+%if %{with libmongocrypt}
+BuildRequires: cmake(mongocrypt) >= 1.3.0
+%endif
 BuildRequires: perl-interpreter
 # From man pages
 BuildRequires: python3
@@ -69,7 +75,9 @@ Requires:   %{name}%{?_isa} = %{version}-%{release}
 Requires:   pkgconfig
 Requires:   cmake-filesystem
 Requires:   pkgconfig(libzstd)
+%if %{with libmongocrypt}
 Requires:   cmake(mongocrypt)
+%endif
 
 %description devel
 This package contains the header files and development libraries
@@ -128,7 +136,11 @@ Documentation: http://mongoc.org/libbson/%{version}/
 %endif
     -DENABLE_EXAMPLES:BOOL=OFF \
     -DENABLE_UNINSTALL:BOOL=OFF \
+%if %{with libmongocrypt}
     -DENABLE_CLIENT_SIDE_ENCRYPTION:BOOL=ON \
+%else
+    -DENABLE_CLIENT_SIDE_ENCRYPTION:BOOL=OFF \
+%endif
     -DCMAKE_SKIP_RPATH:BOOL=ON \
     -S .
 
@@ -224,6 +236,9 @@ exit $ret
 
 
 %changelog
+* Thu Nov 18 2021 Remi Collet <remi@remirepo.net> - 1.20.0-1
+- update to 1.20.0
+
 * Thu Nov  4 2021 Remi Collet <remi@remirepo.net> - 1.19.2-1
 - update to 1.19.2
 

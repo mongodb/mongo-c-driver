@@ -1,14 +1,17 @@
 --- mongo-c-driver.spec.orig	2021-11-04 16:34:50.350572049 -0400
 +++ mongo-c-driver.spec	2021-11-04 16:37:54.962271319 -0400
-@@ -10,14 +10,14 @@
+@@ -10,17 +10,17 @@
  %global gh_project   mongo-c-driver
  %global libname      libmongoc
  %global libver       1.0
--%global up_version   1.19.2
-+%global up_version   1.20.0
+-%global up_version   1.20.0
++%global up_version   1.21.0
  #global up_prever    rc0
  # disabled as require a MongoDB server
  %bcond_with          tests
+ 
+ # disable for bootstrap (libmongocrypt needs libbson)
+ %bcond_without       libmongocrypt
  
  Name:      mongo-c-driver
  Summary:   Client library written in C for MongoDB
@@ -17,27 +20,3 @@
  Release:   1%{?dist}
  # See THIRD_PARTY_NOTICES
  License:   ASL 2.0 and ISC and MIT and zlib
-@@ -39,7 +39,6 @@
- BuildRequires: mongodb-server
- BuildRequires: openssl
- %endif
--BuildRequires: cmake(mongocrypt)
- BuildRequires: perl-interpreter
- # From man pages
- BuildRequires: python3
-@@ -69,7 +68,6 @@
- Requires:   pkgconfig
- Requires:   cmake-filesystem
- Requires:   pkgconfig(libzstd)
--Requires:   cmake(mongocrypt)
- 
- %description devel
- This package contains the header files and development libraries
-@@ -128,7 +126,6 @@
- %endif
-     -DENABLE_EXAMPLES:BOOL=OFF \
-     -DENABLE_UNINSTALL:BOOL=OFF \
--    -DENABLE_CLIENT_SIDE_ENCRYPTION:BOOL=ON \
-     -DCMAKE_SKIP_RPATH:BOOL=ON \
-     -S .
- 
