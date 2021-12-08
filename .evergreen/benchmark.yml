@@ -53,8 +53,7 @@ variables:
           ./mongodb/bin/mongod --dbpath `pwd`/db --logpath `pwd`/db/db.log --fork
 
   benchmark_common: &benchmark_common
-    <<: *compile_unix
-    <<: *start_mongod_command
+    <<: [ *compile_unix, *start_mongod_command ]
 
 #######################################
 #            Functions                #
@@ -261,9 +260,7 @@ buildvariants:
 - name: c-driver-benchmark-compile
   display_name: "C Driver Benchmark Compile"
   expansions:
-    <<: *cflags_64
-    <<: *mongo_v32
-    <<: *benchmark_common
+    <<: [ *cflags_64, *mongo_v32, *benchmark_common ]
   run_on:
      - rhel62-small
   tasks: *benchmark_compile
@@ -271,9 +268,7 @@ buildvariants:
 - name: c-driver-benchmark-mongo32
   display_name: "C Driver Benchmark Mongo 3.2"
   expansions:
-    <<: *cflags_64
-    <<: *mongo_v32
-    <<: *benchmark_common
+    <<: [ *cflags_64, *mongo_v32, *benchmark_common ]
   run_on:
      - centos6-perf
   tasks: *benchmark_tests
@@ -281,9 +276,7 @@ buildvariants:
 - name: c-driver-benchmark-mongo44
   display_name: "C Driver Benchmark Mongo 4.4"
   expansions:
-    <<: *cflags_64
-    <<: *mongo_v44
-    <<: *benchmark_common
+    <<: [ *cflags_64, *mongo_v44, *benchmark_common ]
   run_on:
      - centos6-perf
   tasks: *benchmark_tests
