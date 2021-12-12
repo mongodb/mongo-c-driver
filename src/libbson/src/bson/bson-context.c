@@ -229,8 +229,7 @@ _get_rand (unsigned int *pseed)
    /* ms's runtime is multithreaded by default, so no rand_r */
    /* no rand_r on android either */
    result = rand ();
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__) || \
-   defined(__OpenBSD__) || defined(__APPLE__)
+#elif defined(BSON_HAVE_ARC4RANDOM_BUF)
    arc4random_buf (&result, sizeof (result));
 #else
    result = rand_r (pseed);
