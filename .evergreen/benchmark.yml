@@ -303,7 +303,7 @@ buildvariants:
 - name: c-driver-benchmark-mongo50-ubuntu1804
   display_name: "C Driver Benchmark Mongo 5.0 (Ubuntu 18.04)"
   expansions:
-    <<: [ *cflags_64, *mongo_v44, *benchmark_common ]
+    <<: [ *cflags_64, *mongo_v50_ubuntu, *benchmark_common ]
     file: c-binaries-ubuntu1804
     compile_variant: c-driver-benchmark-mongo50-ubuntu1804
   run_on:
