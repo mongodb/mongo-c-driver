@@ -629,7 +629,8 @@ _mongoc_cmd_parts_assemble_mongod (mongoc_cmd_parts_t *parts,
       case MONGOC_TOPOLOGY_LOAD_BALANCED:
       case MONGOC_TOPOLOGY_DESCRIPTION_TYPES:
       default:
-         /* must not call this function w/ sharded, load balanced, or unknown topology type */
+         /* must not call this function w/ sharded, load balanced, or unknown
+          * topology type */
          BSON_ASSERT (false);
       }
    } /* if (!parts->is_write_command) */
@@ -1024,7 +1025,8 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
       ret = true;
    } else if (server_type == MONGOC_SERVER_MONGOS ||
               server_stream->topology_type == MONGOC_TOPOLOGY_LOAD_BALANCED) {
-      /* TODO (CDRIVER-4117) remove the check of the topology description type. */
+      /* TODO (CDRIVER-4117) remove the check of the topology description type.
+       */
       _mongoc_cmd_parts_assemble_mongos (parts, server_stream);
       ret = true;
    } else {
