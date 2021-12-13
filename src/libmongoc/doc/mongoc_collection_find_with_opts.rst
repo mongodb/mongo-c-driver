@@ -132,7 +132,7 @@ Option                   BSON type           Option               BSON type
 ``allowDiskUse``         bool
 =======================  ==================  ===================  ==================
 
-All options are documented in the reference page for `the "find" command`_ in the MongoDB server manual, except for "maxAwaitTimeMS" and "sessionId".
+All options are documented in the reference page for `the "find" command`_ in the MongoDB server manual, except for "maxAwaitTimeMS", "sessionId", and "exhaust".
 
 "maxAwaitTimeMS" is the maximum amount of time for the server to wait on new documents to satisfy a query, if "tailable" and "awaitData" are both true.
 If no new documents are found, the tailable cursor receives an empty batch. The "maxAwaitTimeMS" option is ignored for MongoDB older than 3.4.
@@ -140,6 +140,8 @@ If no new documents are found, the tailable cursor receives an empty batch. The 
 To add a "sessionId", construct a :symbol:`mongoc_client_session_t` with :symbol:`mongoc_client_start_session`. You can begin a transaction with :symbol:`mongoc_client_session_start_transaction`, optionally with a :symbol:`mongoc_transaction_opt_t` that overrides the options inherited from ``collection``. Then use :symbol:`mongoc_client_session_append` to add the session to ``opts``. See the example code for :symbol:`mongoc_client_session_t`.
 
 To add a "readConcern", construct a :symbol:`mongoc_read_concern_t` with :symbol:`mongoc_read_concern_new` and configure it with :symbol:`mongoc_read_concern_set_level`. Then use :symbol:`mongoc_read_concern_append` to add the read concern to ``opts``.
+
+"exhaust" requests the construction of an exhaust cursor. For MongoDB servers before 5.1, this option converts the command into a legacy OP_QUERY message. For MongoDB servers 5.1 and newer, this option is ignored and a normal cursor is constructed instead.
 
 For some options like "collation", the driver returns an error if the server version is too old to support the feature.
 Any fields in ``opts`` that are not listed here are passed to the server unmodified.
@@ -153,7 +155,7 @@ The ``snapshot`` boolean option is removed in MongoDB 4.0. The ``maxScan`` optio
 
 .. seealso::
 
-  | `The "find" command`_ in the MongoDB Manual. All options listed there are supported by the C Driver.  For MongoDB servers before 3.2, or for exhaust queries, the driver transparently converts the query to a legacy OP_QUERY message.
+  | `The "find" command`_ in the MongoDB Manual. All options listed there are supported by the C Driver.  For MongoDB servers before 3.2, the driver transparently converts the query to a legacy OP_QUERY message.
 
 .. _the "find" command: https://docs.mongodb.org/master/reference/command/find/
 
