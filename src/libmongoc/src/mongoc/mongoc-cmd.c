@@ -181,7 +181,8 @@ mongoc_cmd_parts_append_opts (mongoc_cmd_parts_t *parts,
          parts->assembled.session = cs;
          continue;
       } else if (BSON_ITER_IS_KEY (iter, "serverId") ||
-                 BSON_ITER_IS_KEY (iter, "maxAwaitTimeMS")) {
+                 BSON_ITER_IS_KEY (iter, "maxAwaitTimeMS") ||
+                 BSON_ITER_IS_KEY (iter, "exhaust")) {
          continue;
       }
 

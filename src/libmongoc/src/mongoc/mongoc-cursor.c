@@ -963,6 +963,11 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
          _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
+      if (_mongoc_cursor_get_opt_bool (cursor, "exhaust")) {
+         MONGOC_WARNING (
+            "exhaust cursors not supported with OP_MSG, using normal "
+            "cursor instead");
+      }
    }
 
    if (parts.assembled.session) {
@@ -1003,6 +1008,12 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
           cursor, server_stream, &parts.user_query_flags)) {
       _mongoc_bson_init_if_set (reply);
       GOTO (done);
+   }
+
+   /* Exhaust cursors with OP_MSG not yet supported. Fallback to normal cursor.
+    */
+   if (parts.user_query_flags & MONGOC_QUERY_EXHAUST) {
+      parts.user_query_flags ^= MONGOC_QUERY_EXHAUST;
    }
 
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
