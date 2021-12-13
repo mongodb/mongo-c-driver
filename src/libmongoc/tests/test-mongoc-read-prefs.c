@@ -792,6 +792,7 @@ test_read_prefs_mongos_max_staleness (void)
    mongoc_collection_t *collection;
    mongoc_read_prefs_t *prefs;
    mongoc_cursor_t *cursor;
+   bson_error_t error;
    const bson_t *doc;
    future_t *future;
    request_t *request;
@@ -805,30 +806,32 @@ test_read_prefs_mongos_max_staleness (void)
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
    mongoc_read_prefs_set_max_staleness_seconds (prefs, 120);
 
-   /* exhaust cursor is required so the driver downgrades the OP_QUERY find
-    * command to an OP_QUERY legacy find */
    cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
+      collection, tmp_bson ("{'a': 1}"), NULL, prefs);
+   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_query (
-      server,
-      "test.test",
-      MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
-      0,
-      0,
-      "{'$query': {'a': 1},"
-      " '$readPreference': {'mode': 'secondaryPreferred',"
-      "                     'maxStalenessSeconds': 120}}",
-      "{}");
-
-   mock_server_replies_to_find (request,
-                                MONGOC_QUERY_EXHAUST |
-                                   MONGOC_QUERY_SECONDARY_OK,
-                                0,
-                                1,
-                                "test.test",
-                                "{}",
-                                false);
+   request = mock_server_receives_command (server,
+                                           "test",
+                                           MONGOC_QUERY_SECONDARY_OK,
+                                           "{'$query': {"
+                                           "     'find': 'test',"
+                                           "     'filter': { 'a': 1 }"
+                                           " },"
+                                           " '$readPreference': {"
+                                           "     'mode': 'secondaryPreferred',"
+                                           "     'maxStalenessSeconds': 120"
+                                           " }"
+                                           "}",
+                                           "{}");
+   ASSERT (request);
+   mock_server_replies_simple (request,
+                               "{'ok': 1,"
+                               " 'cursor': {"
+                               "    'id': 0,"
+                               "    'ns': 'test.test',"
+                               "    'firstBatch': [{}]"
+                               " }"
+                               "}");
 
    /* mongoc_cursor_next returned true */
    BSON_ASSERT (future_get_bool (future));
