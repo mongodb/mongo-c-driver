@@ -700,9 +700,10 @@ _calc_effective_read_mode (const mongoc_topology_description_t *td,
       }
       return requested_read_mode;
    }
+   default:
+      BSON_UNREACHABLE (
+         "Invalid mongoc_ss_optype_t for _calc_effective_read_mode()");
    }
-   BSON_UNREACHABLE (
-      "Invalid mongoc_ss_optype_t for _calc_effective_read_mode()");
 }
 
 /*
@@ -841,6 +842,8 @@ mongoc_topology_description_suitable_servers (
             }
          }
       } break;
+      default:
+         BSON_UNREACHABLE ("Invalid optype");
       }
    }
 
