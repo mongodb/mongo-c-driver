@@ -1857,7 +1857,6 @@ transition_t gSDAMTransitionTable
        NULL,
        _mongoc_topology_description_check_if_has_primary}};
 
-#ifdef MONGOC_TRACE
 /*
  *--------------------------------------------------------------------------
  *
@@ -1896,7 +1895,6 @@ _mongoc_topology_description_type (mongoc_topology_description_t *topology)
       return "Invalid";
    }
 }
-#endif
 
 
 /*
