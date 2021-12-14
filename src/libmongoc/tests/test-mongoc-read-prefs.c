@@ -460,8 +460,8 @@ test_read_prefs_standalone_primary (void)
    mongoc_read_prefs_t *read_prefs;
 
    /* Server Selection Spec: for topology type single and server types other
-    * than mongos, "clients MUST always set the secondaryOk wire protocol flag
-    * on reads to ensure that any server type can handle the request."
+    * than mongos, "clients MUST always set the secondaryOk wire protocol flag on
+    * reads to ensure that any server type can handle the request."
     * */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
@@ -792,7 +792,6 @@ test_read_prefs_mongos_max_staleness (void)
    mongoc_collection_t *collection;
    mongoc_read_prefs_t *prefs;
    mongoc_cursor_t *cursor;
-   bson_error_t error;
    const bson_t *doc;
    future_t *future;
    request_t *request;
@@ -806,32 +805,29 @@ test_read_prefs_mongos_max_staleness (void)
    prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY_PREFERRED);
    mongoc_read_prefs_set_max_staleness_seconds (prefs, 120);
 
+   /* exhaust cursor is required so the driver downgrades the OP_QUERY find
+    * command to an OP_QUERY legacy find */
    cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{'a': 1}"), NULL, prefs);
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (server,
-                                           "test",
-                                           MONGOC_QUERY_SECONDARY_OK,
-                                           "{'$query': {"
-                                           "     'find': 'test',"
-                                           "     'filter': { 'a': 1 }"
-                                           " },"
-                                           " '$readPreference': {"
-                                           "     'mode': 'secondaryPreferred',"
-                                           "     'maxStalenessSeconds': 120"
-                                           " }"
-                                           "}",
-                                           "{}");
-   ASSERT (request);
-   mock_server_replies_simple (request,
-                               "{'ok': 1,"
-                               " 'cursor': {"
-                               "    'id': 0,"
-                               "    'ns': 'test.test',"
-                               "    'firstBatch': [{}]"
-                               " }"
-                               "}");
+   request = mock_server_receives_query (
+      server,
+      "test.test",
+      MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
+      0,
+      0,
+      "{'$query': {'a': 1},"
+      " '$readPreference': {'mode': 'secondaryPreferred',"
+      "                     'maxStalenessSeconds': 120}}",
+      "{}");
+
+   mock_server_replies_to_find (request,
+                                MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
+                                0,
+                                1,
+                                "test.test",
+                                "{}",
+                                false);
 
    /* mongoc_cursor_next returned true */
    BSON_ASSERT (future_get_bool (future));
@@ -855,14 +851,12 @@ test_read_prefs_mongos_hedged_reads (void)
    bson_t hedge_doc = BSON_INITIALIZER;
    mongoc_read_prefs_t *prefs;
    mongoc_cursor_t *cursor;
-   bson_error_t error;
    const bson_t *doc;
    future_t *future;
    request_t *request;
 
    server = mock_mongos_new (WIRE_VERSION_HEDGED_READS);
    mock_server_run (server);
-   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -872,28 +866,32 @@ test_read_prefs_mongos_hedged_reads (void)
 
    mongoc_read_prefs_set_hedge (prefs, &hedge_doc);
 
+   /* exhaust cursor is required so the driver downgrades the OP_QUERY find
+    * command to an OP_QUERY legacy find */
    cursor = mongoc_collection_find_with_opts (
-      collection, tmp_bson ("{'a': 1}"), NULL, prefs);
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
+      collection, tmp_bson ("{'a': 1}"), tmp_bson ("{'exhaust': true}"), prefs);
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_msg (server,
-                                MONGOC_MSG_NONE,
-                                tmp_bson ("{"
-                                          "  'find': 'test',"
-                                          "  '$db': 'test',"
-                                          "  '$readPreference': {"
-                                          "    'mode': 'secondaryPreferred',"
-                                          "    'hedge': { 'enabled': true }"
-                                          "  }"
-                                          "}"));
-   ASSERT (request);
-   mock_server_replies_to_find (
-      request, MONGOC_QUERY_NONE, 0, 1, "test.test", "{}", true);
+   request = mock_server_receives_query (
+      server,
+      "test.test",
+      MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
+      0,
+      0,
+      "{'$query': {'a': 1},"
+      " '$readPreference': {'mode': 'secondaryPreferred',"
+      "                     'hedge': {'enabled': true}}}",
+      "{}");
+
+   mock_server_replies_to_find (request,
+                                MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
+                                0,
+                                1,
+                                "test.test",
+                                "{}",
+                                false);
 
    /* mongoc_cursor_next returned true */
    BSON_ASSERT (future_get_bool (future));
-   ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    request_destroy (request);
    future_destroy (future);
