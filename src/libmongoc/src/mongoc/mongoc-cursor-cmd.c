@@ -51,7 +51,7 @@ _getmore_type (mongoc_cursor_t *cursor)
 
    if (
       /* Server version 5.1 and newer do not support OP_GETMORE. */
-      wire_version > WIRE_VERSION_SNAPSHOT_READS ||
+      wire_version > WIRE_VERSION_5_0 ||
       /* Fallback to legacy OP_GETMORE wire protocol messages if exhaust cursor
          requested with server version 3.6 or newer . */
       (wire_version >= WIRE_VERSION_FIND_CMD &&

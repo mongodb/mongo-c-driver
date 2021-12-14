@@ -47,7 +47,7 @@ _prime (mongoc_cursor_t *cursor)
    /* set all mongoc_impl_t function pointers. */
    if (
       /* Server version 5.1 and newer do not support OP_QUERY. */
-      wire_version > WIRE_VERSION_SNAPSHOT_READS ||
+      wire_version > WIRE_VERSION_5_0 ||
       /* Fallback to legacy OP_QUERY wire protocol messages if exhaust cursor
          requested with server version 3.6 or newer. */
       (wire_version >= WIRE_VERSION_FIND_CMD &&
