@@ -301,6 +301,55 @@ test_exhaust_cursor_pool (void *context)
 }
 
 static void
+test_exhaust_cursor_fallback (void *unused)
+{
+   mongoc_client_t *client;
+   mongoc_collection_t *collection;
+   bson_error_t error;
+   mongoc_cursor_t *cursor;
+   const bson_t *doc;
+
+   client = test_framework_new_default_client ();
+   ASSERT (client);
+
+   collection = get_test_collection (client, "test_exhaust_cursor_fallback");
+   ASSERT (collection);
+
+   (void) mongoc_collection_drop (collection, &error);
+   ASSERT_OR_PRINT (mongoc_collection_insert_one (
+                       collection, tmp_bson ("{'a': 1}"), NULL, NULL, &error),
+                    error);
+
+
+   cursor = mongoc_collection_find_with_opts (
+      collection, tmp_bson ("{}"), tmp_bson ("{'exhaust': true}"), NULL);
+   ASSERT (cursor);
+
+   /* Cursor should be a normal cursor despite exhaust option. */
+   ASSERT (!cursor->in_exhaust);
+   ASSERT (!cursor->client->in_exhaust);
+
+   /* Warning message is generated on call to mongoc_cursor_next() during which
+    * server wire version is discovered, not on call to
+    * mongoc_collection_find_with_opts(). */
+   capture_logs (true);
+   ASSERT_OR_PRINT (mongoc_cursor_next (cursor, &doc),
+                    (mongoc_cursor_error (cursor, &error), error));
+   ASSERT_CAPTURED_LOG (
+      "cursor",
+      MONGOC_LOG_LEVEL_WARNING,
+      "exhaust cursors not supported with OP_MSG, using normal cursor instead");
+   capture_logs (false);
+
+   ASSERT_MATCH (doc, "{'a': 1}");
+   ASSERT (!mongoc_cursor_next (cursor, &doc));
+
+   mongoc_cursor_destroy (cursor);
+   mongoc_collection_destroy (collection);
+   mongoc_client_destroy (client);
+}
+
+static void
 test_exhaust_cursor_multi_batch (void *context)
 {
    mongoc_client_t *client;
@@ -682,6 +731,13 @@ test_exhaust_install (TestSuite *suite)
                       NULL,
                       skip_if_mongos,
                       test_framework_skip_if_no_legacy_opcodes);
+   TestSuite_AddFull (suite,
+                      "/Client/exhaust_cursor/fallback",
+                      test_exhaust_cursor_fallback,
+                      NULL,
+                      NULL,
+                      skip_if_mongos,
+                      test_framework_skip_if_max_wire_version_less_than_14);
    TestSuite_AddLive (suite,
                       "/Client/set_max_await_time_ms",
                       test_cursor_set_max_await_time_ms);
