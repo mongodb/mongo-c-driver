@@ -963,7 +963,7 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
          _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
-      if (_mongoc_cursor_get_opt_bool (cursor, "exhaust")) {
+      if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
          MONGOC_WARNING (
             "exhaust cursors not supported with OP_MSG, using normal "
             "cursor instead");
