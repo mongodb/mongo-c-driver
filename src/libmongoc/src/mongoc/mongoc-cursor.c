@@ -1010,7 +1010,9 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
       GOTO (done);
    }
 
-   /* Exhaust cursors with OP_MSG not yet supported. Fallback to normal cursor.
+   /* Exhaust cursors with OP_MSG not yet supported; fallback to normal cursor.
+    * user_query_flags is unused in OP_MSG, so this technically has no effect,
+    * but is done anyways to ensure the query flags match handling of options.
     */
    if (parts.user_query_flags & MONGOC_QUERY_EXHAUST) {
       parts.user_query_flags ^= MONGOC_QUERY_EXHAUST;
