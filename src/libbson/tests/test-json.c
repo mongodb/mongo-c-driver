@@ -3427,186 +3427,245 @@ test_bson_as_json_with_opts_all_types (void)
 void
 test_json_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/bson/as_json/x1000", test_bson_as_json_x1000);
-   TestSuite_Add (suite, "/bson/as_json/multi", test_bson_as_json_multi);
-   TestSuite_Add (suite, "/bson/as_json/string", test_bson_as_json_string);
-   TestSuite_Add (suite, "/bson/as_json/int32", test_bson_as_json_int32);
-   TestSuite_Add (suite, "/bson/as_json/int64", test_bson_as_json_int64);
-   TestSuite_Add (suite, "/bson/as_json/double", test_bson_as_json_double);
+   TestSuite_Add (suite, "/bson/as_json/x1000", "", test_bson_as_json_x1000);
+   TestSuite_Add (suite, "/bson/as_json/multi", "", test_bson_as_json_multi);
+   TestSuite_Add (suite, "/bson/as_json/string", "", test_bson_as_json_string);
+   TestSuite_Add (suite, "/bson/as_json/int32", "", test_bson_as_json_int32);
+   TestSuite_Add (suite, "/bson/as_json/int64", "", test_bson_as_json_int64);
+   TestSuite_Add (suite, "/bson/as_json/double", "", test_bson_as_json_double);
 #if defined(NAN) && defined(INFINITY)
    TestSuite_Add (suite,
                   "/bson/as_json/double/nonfinite",
+                  "",
                   test_bson_as_json_double_nonfinite);
 #endif
-   TestSuite_Add (suite, "/bson/as_json/code", test_bson_as_json_code);
+   TestSuite_Add (suite, "/bson/as_json/code", "", test_bson_as_json_code);
    TestSuite_Add (
-      suite, "/bson/as_json/date_time", test_bson_as_json_date_time);
-   TestSuite_Add (suite, "/bson/as_json/regex", test_bson_as_json_regex);
-   TestSuite_Add (suite, "/bson/as_json/symbol", test_bson_as_json_symbol);
-   TestSuite_Add (suite, "/bson/as_json/utf8", test_bson_as_json_utf8);
+      suite, "/bson/as_json/date_time", "", test_bson_as_json_date_time);
+   TestSuite_Add (suite, "/bson/as_json/regex", "", test_bson_as_json_regex);
+   TestSuite_Add (suite, "/bson/as_json/symbol", "", test_bson_as_json_symbol);
+   TestSuite_Add (suite, "/bson/as_json/utf8", "", test_bson_as_json_utf8);
    TestSuite_Add (
-      suite, "/bson/as_json/dbpointer", test_bson_as_json_dbpointer);
+      suite, "/bson/as_json/dbpointer", "", test_bson_as_json_dbpointer);
    TestSuite_Add (suite,
                   "/bson/as_canonical_extended_json/dbpointer",
+                  "",
                   test_bson_as_canonical_extended_json_dbpointer);
+   TestSuite_Add (suite,
+                  "/bson/as_json/stack_overflow",
+                  "",
+                  test_bson_as_json_stack_overflow);
+   TestSuite_Add (suite, "/bson/as_json/corrupt", "", test_bson_corrupt);
    TestSuite_Add (
-      suite, "/bson/as_json/stack_overflow", test_bson_as_json_stack_overflow);
-   TestSuite_Add (suite, "/bson/as_json/corrupt", test_bson_corrupt);
-   TestSuite_Add (suite, "/bson/as_json/corrupt_utf8", test_bson_corrupt_utf8);
+      suite, "/bson/as_json/corrupt_utf8", "", test_bson_corrupt_utf8);
    TestSuite_Add (
-      suite, "/bson/as_json/corrupt_binary", test_bson_corrupt_binary);
-   TestSuite_Add (suite, "/bson/as_json_spacing", test_bson_as_json_spacing);
-   TestSuite_Add (suite, "/bson/array_as_json", test_bson_array_as_json);
+      suite, "/bson/as_json/corrupt_binary", "", test_bson_corrupt_binary);
    TestSuite_Add (
-      suite, "/bson/json/allow_multiple", test_bson_json_allow_multiple);
+      suite, "/bson/as_json_spacing", "", test_bson_as_json_spacing);
+   TestSuite_Add (suite, "/bson/array_as_json", "", test_bson_array_as_json);
    TestSuite_Add (
-      suite, "/bson/json/read/buffering", test_bson_json_read_buffering);
-   TestSuite_Add (suite, "/bson/json/read", test_bson_json_read);
-   TestSuite_Add (suite, "/bson/json/inc", test_bson_json_inc);
-   TestSuite_Add (suite, "/bson/json/array", test_bson_json_array);
+      suite, "/bson/json/allow_multiple", "", test_bson_json_allow_multiple);
    TestSuite_Add (
-      suite, "/bson/json/array/single", test_bson_json_array_single);
-   TestSuite_Add (suite, "/bson/json/array/int64", test_bson_json_array_int64);
+      suite, "/bson/json/read/buffering", "", test_bson_json_read_buffering);
+   TestSuite_Add (suite, "/bson/json/read", "", test_bson_json_read);
+   TestSuite_Add (suite, "/bson/json/inc", "", test_bson_json_inc);
+   TestSuite_Add (suite, "/bson/json/array", "", test_bson_json_array);
    TestSuite_Add (
-      suite, "/bson/json/array/subdoc", test_bson_json_array_subdoc);
-   TestSuite_Add (suite, "/bson/json/date", test_bson_json_date);
-   TestSuite_Add (suite, "/bson/json/date/legacy", test_bson_json_date_legacy);
+      suite, "/bson/json/array/single", "", test_bson_json_array_single);
    TestSuite_Add (
-      suite, "/bson/json/date/long", test_bson_json_date_numberlong);
-   TestSuite_Add (suite, "/bson/json/timestamp", test_bson_json_timestamp);
-   TestSuite_Add (suite, "/bson/json/read/empty", test_bson_json_read_empty);
+      suite, "/bson/json/array/int64", "", test_bson_json_array_int64);
+   TestSuite_Add (
+      suite, "/bson/json/array/subdoc", "", test_bson_json_array_subdoc);
+   TestSuite_Add (suite, "/bson/json/date", "", test_bson_json_date);
+   TestSuite_Add (
+      suite, "/bson/json/date/legacy", "", test_bson_json_date_legacy);
+   TestSuite_Add (
+      suite, "/bson/json/date/long", "", test_bson_json_date_numberlong);
+   TestSuite_Add (suite, "/bson/json/timestamp", "", test_bson_json_timestamp);
+   TestSuite_Add (
+      suite, "/bson/json/read/empty", "", test_bson_json_read_empty);
    TestSuite_Add (suite,
                   "/bson/json/read/missing_complex",
+                  "",
                   test_bson_json_read_missing_complex);
    TestSuite_Add (suite,
                   "/bson/json/read/invalid_binary",
+                  "",
                   test_bson_json_read_invalid_binary);
+   TestSuite_Add (suite,
+                  "/bson/json/read/invalid_json",
+                  "",
+                  test_bson_json_read_invalid_json);
    TestSuite_Add (
-      suite, "/bson/json/read/invalid_json", test_bson_json_read_invalid_json);
-   TestSuite_Add (suite, "/bson/json/read/bad_cb", test_bson_json_read_bad_cb);
+      suite, "/bson/json/read/bad_cb", "", test_bson_json_read_bad_cb);
    TestSuite_Add (
-      suite, "/bson/json/read/invalid", test_bson_json_read_invalid);
+      suite, "/bson/json/read/invalid", "", test_bson_json_read_invalid);
    TestSuite_Add (suite,
                   "/bson/json/read/invalid_base64",
+                  "",
                   test_bson_json_read_invalid_base64);
    TestSuite_Add (
-      suite, "/bson/json/read/raw_utf8", test_bson_json_read_raw_utf8);
-   TestSuite_Add (
-      suite, "/bson/json/read/corrupt_utf8", test_bson_json_read_corrupt_utf8);
+      suite, "/bson/json/read/raw_utf8", "", test_bson_json_read_raw_utf8);
+   TestSuite_Add (suite,
+                  "/bson/json/read/corrupt_utf8",
+                  "",
+                  test_bson_json_read_corrupt_utf8);
    TestSuite_Add (suite,
                   "/bson/json/read/corrupt_document",
+                  "",
                   test_bson_json_read_corrupt_document);
    TestSuite_Add (
-      suite, "/bson/json/read/decimal128", test_bson_json_read_decimal128);
+      suite, "/bson/json/read/decimal128", "", test_bson_json_read_decimal128);
    TestSuite_Add (
-      suite, "/bson/json/read/dbpointer", test_bson_json_read_dbpointer);
-   TestSuite_Add (
-      suite, "/bson/json/read/legacy_regex", test_bson_json_read_legacy_regex);
+      suite, "/bson/json/read/dbpointer", "", test_bson_json_read_dbpointer);
+   TestSuite_Add (suite,
+                  "/bson/json/read/legacy_regex",
+                  "",
+                  test_bson_json_read_legacy_regex);
    TestSuite_Add (suite,
                   "/bson/json/read/regex_options_order",
+                  "",
                   test_bson_json_read_regex_options_order);
-   TestSuite_Add (suite, "/bson/json/read/binary", test_bson_json_read_binary);
+   TestSuite_Add (
+      suite, "/bson/json/read/binary", "", test_bson_json_read_binary);
    TestSuite_Add (suite,
                   "/bson/json/read/legacy_binary",
+                  "",
                   test_bson_json_read_legacy_binary);
    TestSuite_Add (
-      suite, "/bson/json/read/file", test_json_reader_new_from_file);
+      suite, "/bson/json/read/file", "", test_json_reader_new_from_file);
+   TestSuite_Add (suite,
+                  "/bson/json/read/bad_path",
+                  "",
+                  test_json_reader_new_from_bad_path);
    TestSuite_Add (
-      suite, "/bson/json/read/bad_path", test_json_reader_new_from_bad_path);
-   TestSuite_Add (
-      suite, "/bson/json/read/$numberLong", test_bson_json_number_long);
+      suite, "/bson/json/read/$numberLong", "", test_bson_json_number_long);
    TestSuite_Add (suite,
                   "/bson/json/read/$numberLong/zero",
+                  "",
                   test_bson_json_number_long_zero);
-   TestSuite_Add (suite, "/bson/json/read/code", test_bson_json_code);
+   TestSuite_Add (suite, "/bson/json/read/code", "", test_bson_json_code);
    TestSuite_Add (
-      suite, "/bson/json/read/code/errors", test_bson_json_code_errors);
-   TestSuite_Add (suite, "/bson/json/read/dbref", test_bson_json_dbref);
-   TestSuite_Add (suite, "/bson/json/read/uescape", test_bson_json_uescape);
+      suite, "/bson/json/read/code/errors", "", test_bson_json_code_errors);
+   TestSuite_Add (suite, "/bson/json/read/dbref", "", test_bson_json_dbref);
+   TestSuite_Add (suite, "/bson/json/read/uescape", "", test_bson_json_uescape);
    TestSuite_Add (
-      suite, "/bson/json/read/uescape/key", test_bson_json_uescape_key);
+      suite, "/bson/json/read/uescape/key", "", test_bson_json_uescape_key);
    TestSuite_Add (
-      suite, "/bson/json/read/uescape/bad", test_bson_json_uescape_bad);
-   TestSuite_Add (suite, "/bson/json/read/int32", test_bson_json_int32);
-   TestSuite_Add (suite, "/bson/json/read/int64", test_bson_json_int64);
-   TestSuite_Add (suite, "/bson/json/read/double", test_bson_json_double);
+      suite, "/bson/json/read/uescape/bad", "", test_bson_json_uescape_bad);
+   TestSuite_Add (suite, "/bson/json/read/int32", "", test_bson_json_int32);
+   TestSuite_Add (suite, "/bson/json/read/int64", "", test_bson_json_int64);
+   TestSuite_Add (suite, "/bson/json/read/double", "", test_bson_json_double);
+   TestSuite_Add (suite,
+                  "/bson/json/read/double/overflow",
+                  "",
+                  test_bson_json_double_overflow);
+   TestSuite_Add (suite, "/bson/json/read/double/nan", "", test_bson_json_nan);
    TestSuite_Add (
-      suite, "/bson/json/read/double/overflow", test_bson_json_double_overflow);
-   TestSuite_Add (suite, "/bson/json/read/double/nan", test_bson_json_nan);
+      suite, "/bson/json/read/double/infinity", "", test_bson_json_infinity);
+   TestSuite_Add (suite, "/bson/json/read/null", "", test_bson_json_null);
+   TestSuite_Add (suite,
+                  "/bson/json/read/empty_final",
+                  "",
+                  test_bson_json_empty_final_object);
    TestSuite_Add (
-      suite, "/bson/json/read/double/infinity", test_bson_json_infinity);
-   TestSuite_Add (suite, "/bson/json/read/null", test_bson_json_null);
+      suite, "/bson/as_json/decimal128", "", test_bson_as_json_decimal128);
+   TestSuite_Add (suite,
+                  "/bson/json/read/$numberDecimal",
+                  "",
+                  test_bson_json_number_decimal);
+   TestSuite_Add (suite, "/bson/json/errors", "", test_bson_json_errors);
+   TestSuite_Add (suite, "/bson/integer/width", "", test_bson_integer_width);
    TestSuite_Add (
-      suite, "/bson/json/read/empty_final", test_bson_json_empty_final_object);
+      suite, "/bson/json/read/null_in_str", "", test_bson_json_null_in_str);
    TestSuite_Add (
-      suite, "/bson/as_json/decimal128", test_bson_as_json_decimal128);
-   TestSuite_Add (
-      suite, "/bson/json/read/$numberDecimal", test_bson_json_number_decimal);
-   TestSuite_Add (suite, "/bson/json/errors", test_bson_json_errors);
-   TestSuite_Add (suite, "/bson/integer/width", test_bson_integer_width);
-   TestSuite_Add (
-      suite, "/bson/json/read/null_in_str", test_bson_json_null_in_str);
-   TestSuite_Add (
-      suite, "/bson/as_json/multi_object", test_bson_as_json_multi_object);
+      suite, "/bson/as_json/multi_object", "", test_bson_as_json_multi_object);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/double",
+                  "",
                   test_bson_as_json_with_opts_double);
-   TestSuite_Add (
-      suite, "/bson/as_json_with_opts/utf8", test_bson_as_json_with_opts_utf8);
+   TestSuite_Add (suite,
+                  "/bson/as_json_with_opts/utf8",
+                  "",
+                  test_bson_as_json_with_opts_utf8);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/document",
+                  "",
                   test_bson_as_json_with_opts_document);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/array",
+                  "",
                   test_bson_as_json_with_opts_array);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/binary",
+                  "",
                   test_bson_as_json_with_opts_binary);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/undefined",
+                  "",
                   test_bson_as_json_with_opts_undefined);
-   TestSuite_Add (
-      suite, "/bson/as_json_with_opts/oid", test_bson_as_json_with_opts_oid);
-   TestSuite_Add (
-      suite, "/bson/as_json_with_opts/bool", test_bson_as_json_with_opts_bool);
+   TestSuite_Add (suite,
+                  "/bson/as_json_with_opts/oid",
+                  "",
+                  test_bson_as_json_with_opts_oid);
+   TestSuite_Add (suite,
+                  "/bson/as_json_with_opts/bool",
+                  "",
+                  test_bson_as_json_with_opts_bool);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/date_time",
+                  "",
                   test_bson_as_json_with_opts_date_time);
-   TestSuite_Add (
-      suite, "/bson/as_json_with_opts/null", test_bson_as_json_with_opts_null);
+   TestSuite_Add (suite,
+                  "/bson/as_json_with_opts/null",
+                  "",
+                  test_bson_as_json_with_opts_null);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/regex",
+                  "",
                   test_bson_as_json_with_opts_regex);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/dbpointer",
+                  "",
                   test_bson_as_json_with_opts_dbpointer);
-   TestSuite_Add (
-      suite, "/bson/as_json_with_opts/code", test_bson_as_json_with_opts_code);
+   TestSuite_Add (suite,
+                  "/bson/as_json_with_opts/code",
+                  "",
+                  test_bson_as_json_with_opts_code);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/symbol",
+                  "",
                   test_bson_as_json_with_opts_symbol);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/codewscope",
+                  "",
                   test_bson_as_json_with_opts_codewscope);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/int32",
+                  "",
                   test_bson_as_json_with_opts_int32);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/int64",
+                  "",
                   test_bson_as_json_with_opts_int64);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/timestamp",
+                  "",
                   test_bson_as_json_with_opts_timestamp);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/minkey",
+                  "",
                   test_bson_as_json_with_opts_minkey);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/maxkey",
+                  "",
                   test_bson_as_json_with_opts_maxkey);
    TestSuite_Add (suite,
                   "/bson/as_json_with_opts/decimal128",
+                  "",
                   test_bson_as_json_with_opts_decimal128);
    TestSuite_Add (suite,
-		  "/bson/as_json_with_opts/all_types",
-		  test_bson_as_json_with_opts_all_types);
+                  "/bson/as_json_with_opts/all_types",
+                  "",
+                  test_bson_as_json_with_opts_all_types);
 }

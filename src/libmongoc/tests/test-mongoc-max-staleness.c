@@ -357,12 +357,14 @@ test_client_max_staleness_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
    TestSuite_Add (
-      suite, "/Client/max_staleness", test_mongoc_client_max_staleness);
+      suite, "/Client/max_staleness", "", test_mongoc_client_max_staleness);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/max_staleness/mongos",
+                                "",
                                 test_mongos_max_staleness_read_pref);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date",
+                      "",
                       test_last_write_date,
                       NULL,
                       NULL,
@@ -370,6 +372,7 @@ test_client_max_staleness_install (TestSuite *suite)
                       test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date/pooled",
+                      "",
                       test_last_write_date_pooled,
                       NULL,
                       NULL,
@@ -377,12 +380,14 @@ test_client_max_staleness_install (TestSuite *suite)
                       test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date_absent",
+                      "",
                       test_last_write_date_absent,
                       NULL,
                       NULL,
                       test_framework_skip_if_rs_version_5);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date_absent/pooled",
+                      "",
                       test_last_write_date_absent_pooled,
                       NULL,
                       NULL,

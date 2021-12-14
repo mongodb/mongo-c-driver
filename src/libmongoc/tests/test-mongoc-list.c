@@ -49,5 +49,5 @@ test_mongoc_list_basic (void)
 void
 test_list_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/List/Basic", test_mongoc_list_basic);
+   TestSuite_Add (suite, "/List/Basic", "", test_mongoc_list_basic);
 }

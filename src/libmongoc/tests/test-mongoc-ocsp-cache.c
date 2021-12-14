@@ -182,10 +182,11 @@ test_mongoc_cache_remove_expired_cert (void)
 void
 test_ocsp_cache_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/OCSPCache/insert", test_mongoc_cache_insert);
-   TestSuite_Add (suite, "/OCSPCache/update", test_mongoc_cache_update);
+   TestSuite_Add (suite, "/OCSPCache/insert", "", test_mongoc_cache_insert);
+   TestSuite_Add (suite, "/OCSPCache/update", "", test_mongoc_cache_update);
    TestSuite_Add (suite,
                   "/OCSPCache/remove_expired_cert",
+                  "",
                   test_mongoc_cache_remove_expired_cert);
 }
 #else

@@ -627,13 +627,15 @@ test_scram_install (TestSuite *suite)
 #ifdef MONGOC_ENABLE_SSL
    TestSuite_Add (suite,
                   "/scram/username_not_set",
+                  "",
                   test_mongoc_scram_step_username_not_set);
-   TestSuite_Add (suite, "/scram/sasl_prep", test_mongoc_scram_sasl_prep);
+   TestSuite_Add (suite, "/scram/sasl_prep", "", test_mongoc_scram_sasl_prep);
    TestSuite_Add (
-      suite, "/scram/iteration_count", test_mongoc_scram_iteration_count);
+      suite, "/scram/iteration_count", "", test_mongoc_scram_iteration_count);
 #endif
    TestSuite_AddFull (suite,
                       "/scram/auth_tests",
+                      "",
                       test_mongoc_scram_auth,
                       NULL /* dtor */,
                       NULL /* ctx */,
@@ -643,6 +645,7 @@ test_scram_install (TestSuite *suite)
                       TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/scram/saslprep_auth",
+                      "",
                       test_mongoc_saslprep_auth,
                       NULL /* dtor */,
                       NULL /* ctx */,
@@ -653,6 +656,7 @@ test_scram_install (TestSuite *suite)
                       TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/scram/saslprep_auth_no_icu",
+                      "",
                       test_mongoc_saslprep_auth_no_icu,
                       NULL /* dtor */,
                       NULL /* ctx */,

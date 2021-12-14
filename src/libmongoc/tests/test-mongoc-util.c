@@ -67,7 +67,7 @@ test_lowercase_utf8 (void)
 void
 test_util_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Util/command_name", test_command_name);
-   TestSuite_Add (suite, "/Util/rand_simple", test_rand_simple);
-   TestSuite_Add (suite, "/Util/lowercase_utf8", test_lowercase_utf8);
+   TestSuite_Add (suite, "/Util/command_name", "", test_command_name);
+   TestSuite_Add (suite, "/Util/rand_simple", "", test_rand_simple);
+   TestSuite_Add (suite, "/Util/lowercase_utf8", "", test_lowercase_utf8);
 }

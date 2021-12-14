@@ -269,23 +269,30 @@ test_explicit_read_concern_prohibited (void)
 void
 test_read_concern_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/ReadConcern/append", test_read_concern_append);
-   TestSuite_Add (suite, "/ReadConcern/basic", test_read_concern_basic);
+   TestSuite_Add (suite, "/ReadConcern/append", "", test_read_concern_append);
+   TestSuite_Add (suite, "/ReadConcern/basic", "", test_read_concern_basic);
    TestSuite_Add (suite,
                   "/ReadConcern/bson_omits_defaults",
+                  "",
                   test_read_concern_bson_omits_defaults);
-   TestSuite_Add (
-      suite, "/ReadConcern/always_mutable", test_read_concern_always_mutable);
+   TestSuite_Add (suite,
+                  "/ReadConcern/always_mutable",
+                  "",
+                  test_read_concern_always_mutable);
    TestSuite_AddMockServerTest (suite,
                                 "/ReadConcern/allowed/inherited",
+                                "",
                                 test_inherited_read_concern_allowed);
    TestSuite_AddMockServerTest (suite,
                                 "/ReadConcern/allowed/explicit",
+                                "",
                                 test_explicit_read_concern_allowed);
    TestSuite_AddMockServerTest (suite,
                                 "/ReadConcern/prohibited/inherited",
+                                "",
                                 test_inherited_read_concern_prohibited);
    TestSuite_AddMockServerTest (suite,
                                 "/ReadConcern/prohibited/explicit",
+                                "",
                                 test_explicit_read_concern_prohibited);
 }

@@ -21,6 +21,7 @@ test_usleep_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
                       "/Sleep/basic",
+                      "",
                       test_mongoc_usleep_basic,
                       NULL /* dtor */,
                       NULL /* dtor */,

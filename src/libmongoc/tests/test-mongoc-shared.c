@@ -121,6 +121,6 @@ test_aliased (void)
 void
 test_shared_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/shared/simple", test_simple);
-   TestSuite_Add (suite, "/shared/aliased", test_aliased);
+   TestSuite_Add (suite, "/shared/simple", "", test_simple);
+   TestSuite_Add (suite, "/shared/aliased", "", test_aliased);
 }

@@ -309,20 +309,24 @@ TestSuite_AddHelper (void *ctx)
 void
 TestSuite_Add (TestSuite *suite, /* IN */
                const char *name, /* IN */
+               const char *meta, /* IN */
                TestFunc func)    /* IN */
 {
    TestSuite_AddFullWithTestFn (
-      suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckDummy);
+      suite, name, meta, TestSuite_AddHelper, NULL, func, TestSuite_CheckDummy);
 }
 
 
 void
 TestSuite_AddLive (TestSuite *suite, /* IN */
-                   const char *name, /* IN */
+                   const char *name,
+                   const char *meta, /* IN */
                    TestFunc func)    /* IN */
 {
+   char *meta1 = bson_strdup_printf ("%s%s", meta, " uses-live-server");
    TestSuite_AddFullWithTestFn (
-      suite, name, TestSuite_AddHelper, NULL, func, TestSuite_CheckLive);
+      suite, name, meta1, TestSuite_AddHelper, NULL, func, TestSuite_CheckLive);
+   bson_free (meta1);
 }
 
 
@@ -344,6 +348,7 @@ _TestSuite_AddCheck (Test *test, CheckFunc check, const char *name)
 Test *
 _V_TestSuite_AddFull (TestSuite *suite,
                       const char *name,
+                      const char *meta,
                       TestFuncWC func,
                       TestFuncDtor dtor,
                       void *ctx,
@@ -356,6 +361,7 @@ _V_TestSuite_AddFull (TestSuite *suite,
    test = (Test *) calloc (1, sizeof *test);
    test->name = bson_strdup (name);
    test->func = func;
+   test->meta = bson_strdup (meta);
    test->num_checks = 0;
 
    while ((check = va_arg (ap, CheckFunc))) {
@@ -381,36 +387,40 @@ _V_TestSuite_AddFull (TestSuite *suite,
 
 
 void
-_TestSuite_AddMockServerTest (TestSuite *suite,
-                              const char *name,
-                              TestFunc func,
-                              ...)
+_TestSuite_AddMockServerTest (
+   TestSuite *suite, const char *name, const char *meta, TestFunc func, ...)
 {
    Test *test;
    va_list ap;
 
+   char *meta1 = bson_strdup_printf ("%s%s", meta, " uses-mock-server");
+
    va_start (ap, func);
-   test = _V_TestSuite_AddFull (suite, name, (TestFuncWC) func, NULL, NULL, ap);
+   test = _V_TestSuite_AddFull (
+      suite, name, meta1, (TestFuncWC) func, NULL, NULL, ap);
    va_end (ap);
 
    _TestSuite_AddCheck (test, TestSuite_CheckMockServerAllowed, name);
+   bson_free (meta1);
 }
 
 
 void
 TestSuite_AddWC (TestSuite *suite,  /* IN */
                  const char *name,  /* IN */
+                 const char *meta,  /* IN */
                  TestFuncWC func,   /* IN */
                  TestFuncDtor dtor, /* IN */
                  void *ctx)         /* IN */
 {
-   TestSuite_AddFull (suite, name, func, dtor, ctx, TestSuite_CheckDummy);
+   TestSuite_AddFull (suite, name, meta, func, dtor, ctx, TestSuite_CheckDummy);
 }
 
 
 void
 _TestSuite_AddFull (TestSuite *suite,  /* IN */
                     const char *name,  /* IN */
+                    const char *meta,  /* IN */
                     TestFuncWC func,   /* IN */
                     TestFuncDtor dtor, /* IN */
                     void *ctx,
@@ -419,7 +429,7 @@ _TestSuite_AddFull (TestSuite *suite,  /* IN */
    va_list ap;
 
    va_start (ap, ctx);
-   _V_TestSuite_AddFull (suite, name, func, dtor, ctx, ap);
+   _V_TestSuite_AddFull (suite, name, meta, func, dtor, ctx, ap);
    va_end (ap);
 }
 
@@ -750,7 +760,8 @@ TestSuite_PrintTests (TestSuite *suite) /* IN */
 
    printf ("\nTests:\n");
    for (iter = suite->tests; iter; iter = iter->next) {
-      printf ("%s%s\n", suite->name, iter->name);
+      printf (
+         "%s%s %s\n", suite->name, iter->name, iter->meta ? iter->meta : "");
    }
 
    printf ("\n");
@@ -1075,6 +1086,7 @@ TestSuite_Destroy (TestSuite *suite)
          test->dtor (test->ctx);
       }
       free (test->name);
+      free (test->meta);
       free (test);
    }
 

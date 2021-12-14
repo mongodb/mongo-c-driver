@@ -40,5 +40,5 @@ test_array (void)
 void
 test_array_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Array/Basic", test_array);
+   TestSuite_Add (suite, "/Array/Basic", "", test_array);
 }

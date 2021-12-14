@@ -34,5 +34,5 @@ test_bson_error_basic (void)
 void
 test_bson_error_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/bson/error/basic", test_bson_error_basic);
+   TestSuite_Add (suite, "/bson/error/basic", "", test_bson_error_basic);
 }

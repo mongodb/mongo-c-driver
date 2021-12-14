@@ -1002,6 +1002,7 @@ install_inheritance_tests (TestSuite *suite,
 
       TestSuite_AddFull (suite,
                          name,
+                         "",
                          test_func_inherits_opts,
                          NULL,
                          test,

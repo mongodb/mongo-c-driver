@@ -662,24 +662,37 @@ test_mongoc_rpc_buffer_iov (void)
 void
 test_rpc_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Rpc/delete/gather", test_mongoc_rpc_delete_gather);
-   TestSuite_Add (suite, "/Rpc/delete/scatter", test_mongoc_rpc_delete_scatter);
    TestSuite_Add (
-      suite, "/Rpc/get_more/gather", test_mongoc_rpc_get_more_gather);
+      suite, "/Rpc/delete/gather", "", test_mongoc_rpc_delete_gather);
    TestSuite_Add (
-      suite, "/Rpc/get_more/scatter", test_mongoc_rpc_get_more_scatter);
-   TestSuite_Add (suite, "/Rpc/insert/gather", test_mongoc_rpc_insert_gather);
-   TestSuite_Add (suite, "/Rpc/insert/scatter", test_mongoc_rpc_insert_scatter);
+      suite, "/Rpc/delete/scatter", "", test_mongoc_rpc_delete_scatter);
    TestSuite_Add (
-      suite, "/Rpc/kill_cursors/gather", test_mongoc_rpc_kill_cursors_gather);
+      suite, "/Rpc/get_more/gather", "", test_mongoc_rpc_get_more_gather);
    TestSuite_Add (
-      suite, "/Rpc/kill_cursors/scatter", test_mongoc_rpc_kill_cursors_scatter);
-   TestSuite_Add (suite, "/Rpc/query/gather", test_mongoc_rpc_query_gather);
-   TestSuite_Add (suite, "/Rpc/query/scatter", test_mongoc_rpc_query_scatter);
-   TestSuite_Add (suite, "/Rpc/reply/gather", test_mongoc_rpc_reply_gather);
-   TestSuite_Add (suite, "/Rpc/reply/scatter", test_mongoc_rpc_reply_scatter);
-   TestSuite_Add (suite, "/Rpc/reply/scatter2", test_mongoc_rpc_reply_scatter2);
-   TestSuite_Add (suite, "/Rpc/update/gather", test_mongoc_rpc_update_gather);
-   TestSuite_Add (suite, "/Rpc/update/scatter", test_mongoc_rpc_update_scatter);
-   TestSuite_Add (suite, "/Rpc/buffer/iov", test_mongoc_rpc_buffer_iov);
+      suite, "/Rpc/get_more/scatter", "", test_mongoc_rpc_get_more_scatter);
+   TestSuite_Add (
+      suite, "/Rpc/insert/gather", "", test_mongoc_rpc_insert_gather);
+   TestSuite_Add (
+      suite, "/Rpc/insert/scatter", "", test_mongoc_rpc_insert_scatter);
+   TestSuite_Add (suite,
+                  "/Rpc/kill_cursors/gather",
+                  "",
+                  test_mongoc_rpc_kill_cursors_gather);
+   TestSuite_Add (suite,
+                  "/Rpc/kill_cursors/scatter",
+                  "",
+                  test_mongoc_rpc_kill_cursors_scatter);
+   TestSuite_Add (suite, "/Rpc/query/gather", "", test_mongoc_rpc_query_gather);
+   TestSuite_Add (
+      suite, "/Rpc/query/scatter", "", test_mongoc_rpc_query_scatter);
+   TestSuite_Add (suite, "/Rpc/reply/gather", "", test_mongoc_rpc_reply_gather);
+   TestSuite_Add (
+      suite, "/Rpc/reply/scatter", "", test_mongoc_rpc_reply_scatter);
+   TestSuite_Add (
+      suite, "/Rpc/reply/scatter2", "", test_mongoc_rpc_reply_scatter2);
+   TestSuite_Add (
+      suite, "/Rpc/update/gather", "", test_mongoc_rpc_update_gather);
+   TestSuite_Add (
+      suite, "/Rpc/update/scatter", "", test_mongoc_rpc_update_scatter);
+   TestSuite_Add (suite, "/Rpc/buffer/iov", "", test_mongoc_rpc_buffer_iov);
 }

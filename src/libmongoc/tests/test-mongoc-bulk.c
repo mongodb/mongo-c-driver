@@ -4756,188 +4756,249 @@ test_bulk_bypass_document_validation (void)
 void
 test_bulk_install (TestSuite *suite)
 {
-   TestSuite_AddLive (suite, "/BulkOperation/basic", test_bulk);
-   TestSuite_AddLive (suite, "/BulkOperation/opts", test_opts);
-   TestSuite_AddMockServerTest (suite, "/BulkOperation/error", test_bulk_error);
+   TestSuite_AddLive (suite, "/BulkOperation/basic", "", test_bulk);
+   TestSuite_AddLive (suite, "/BulkOperation/opts", "", test_opts);
    TestSuite_AddMockServerTest (
-      suite, "/BulkOperation/error/unordered", test_bulk_error_unordered);
+      suite, "/BulkOperation/error", "", test_bulk_error);
+   TestSuite_AddMockServerTest (
+      suite, "/BulkOperation/error/unordered", "", test_bulk_error_unordered);
    TestSuite_AddLive (
-      suite, "/BulkOperation/insert_ordered", test_insert_ordered);
+      suite, "/BulkOperation/insert_ordered", "", test_insert_ordered);
    TestSuite_AddLive (
-      suite, "/BulkOperation/insert_unordered", test_insert_unordered);
+      suite, "/BulkOperation/insert_unordered", "", test_insert_unordered);
    TestSuite_AddLive (
-      suite, "/BulkOperation/insert_check_keys", test_insert_check_keys);
+      suite, "/BulkOperation/insert_check_keys", "", test_insert_check_keys);
    TestSuite_AddLive (
-      suite, "/BulkOperation/update_ordered", test_update_ordered);
+      suite, "/BulkOperation/update_ordered", "", test_update_ordered);
    TestSuite_AddLive (
-      suite, "/BulkOperation/update_unordered", test_update_unordered);
+      suite, "/BulkOperation/update_unordered", "", test_update_unordered);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_one_check_keys",
+                      "",
                       test_update_one_check_keys);
    TestSuite_AddLive (
-      suite, "/BulkOperation/update_check_keys", test_update_check_keys);
+      suite, "/BulkOperation/update_check_keys", "", test_update_check_keys);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_one_with_opts_check_keys",
+                      "",
                       test_update_one_with_opts_check_keys);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_many_with_opts_check_keys",
+                      "",
                       test_update_many_with_opts_check_keys);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_one_invalid_first",
+                      "",
                       test_update_one_invalid_first);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/update_invalid_first", test_update_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_invalid_first",
+                      "",
+                      test_update_invalid_first);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_one_with_opts_invalid_first",
+                      "",
                       test_update_one_with_opts_invalid_first);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_many_with_opts_invalid_first",
+                      "",
                       test_update_many_with_opts_invalid_first);
    TestSuite_AddLive (suite,
                       "/BulkOperation/replace_one_invalid_first",
+                      "",
                       test_replace_one_invalid_first);
    TestSuite_AddLive (suite,
                       "/BulkOperation/replace_one_with_opts_invalid_first",
+                      "",
                       test_replace_one_with_opts_invalid_first);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_one_invalid_second",
+                      "",
                       test_update_one_invalid_second);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_invalid_second",
+                      "",
                       test_update_invalid_second);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_one_with_opts_invalid_second",
+                      "",
                       test_update_one_with_opts_invalid_second);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_many_with_opts_invalid_second",
+                      "",
                       test_update_many_with_opts_invalid_second);
    TestSuite_AddLive (suite,
                       "/BulkOperation/replace_one_invalid_second",
+                      "",
                       test_replace_one_invalid_second);
    TestSuite_AddLive (suite,
                       "/BulkOperation/replace_one_with_opts_invalid_second",
+                      "",
                       test_replace_one_with_opts_invalid_second);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/insert_invalid_first", test_insert_invalid_first);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/insert_invalid_first",
+                      "",
+                      test_insert_invalid_first);
    TestSuite_AddLive (suite,
                       "/BulkOperation/insert_invalid_second",
+                      "",
                       test_insert_invalid_second);
    TestSuite_AddLive (suite,
                       "/BulkOperation/insert_with_opts_invalid_first",
+                      "",
                       test_insert_with_opts_invalid_first);
    TestSuite_AddLive (suite,
                       "/BulkOperation/insert_with_opts_invalid_second",
+                      "",
                       test_insert_with_opts_invalid_second);
    TestSuite_AddLive (suite,
                       "/BulkOperation/insert_with_opts_validate",
+                      "",
                       test_insert_with_opts_validate);
    TestSuite_AddLive (suite,
                       "/BulkOperation/remove_one_after_invalid",
+                      "",
                       test_remove_one_after_invalid);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/remove_after_invalid", test_remove_after_invalid);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/remove_after_invalid",
+                      "",
+                      test_remove_after_invalid);
    TestSuite_AddLive (suite,
                       "/BulkOperation/remove_one_with_opts_after_invalid",
+                      "",
                       test_remove_one_with_opts_after_invalid);
    TestSuite_AddLive (suite,
                       "/BulkOperation/remove_many_with_opts_after_invalid",
+                      "",
                       test_remove_many_with_opts_after_invalid);
    TestSuite_AddLive (
-      suite, "/BulkOperation/upsert_ordered", test_upsert_ordered);
+      suite, "/BulkOperation/upsert_ordered", "", test_upsert_ordered);
    TestSuite_AddLive (
-      suite, "/BulkOperation/upsert_unordered", test_upsert_unordered);
+      suite, "/BulkOperation/upsert_unordered", "", test_upsert_unordered);
    TestSuite_AddFull (suite,
                       "/BulkOperation/upsert_unordered_oversized",
+                      "",
                       test_upsert_unordered_oversized,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/BulkOperation/upsert_large",
+                      "",
                       test_upsert_large,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/BulkOperation/upsert_huge",
+                      "",
                       test_upsert_huge,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite,
                       "/BulkOperation/upserted_index_ordered",
+                      "",
                       test_upserted_index_ordered);
    TestSuite_AddLive (suite,
                       "/BulkOperation/upserted_index_unordered",
+                      "",
                       test_upserted_index_unordered);
    TestSuite_AddLive (
-      suite, "/BulkOperation/update_one_ordered", test_update_one_ordered);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/update_one_unordered", test_update_one_unordered);
+      suite, "/BulkOperation/update_one_ordered", "", test_update_one_ordered);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update_one_unordered",
+                      "",
+                      test_update_one_unordered);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_with_opts_validate",
+                      "",
                       test_update_with_opts_validate);
    TestSuite_AddFull (suite,
                       "/BulkOperation/update_arrayfilters",
+                      "",
                       test_update_arrayfilters,
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_6);
    TestSuite_AddFull (suite,
                       "/BulkOperation/update_arrayfilters/unsupported",
+                      "",
                       test_update_arrayfilters_unsupported,
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_more_than_5);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/update/hint/validate", test_update_hint_validate);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/delete/hint/validate", test_delete_hint_validate);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/replace_one_ordered", test_replace_one_ordered);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/update/hint/validate",
+                      "",
+                      test_update_hint_validate);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/delete/hint/validate",
+                      "",
+                      test_delete_hint_validate);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/replace_one_ordered",
+                      "",
+                      test_replace_one_ordered);
    TestSuite_AddLive (suite,
                       "/BulkOperation/replace_one_unordered",
+                      "",
                       test_replace_one_unordered);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/replace_one/keys", test_replace_one_check_keys);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/replace_one/keys",
+                      "",
+                      test_replace_one_check_keys);
    TestSuite_AddLive (suite,
                       "/BulkOperation/replace_one_with_opts/keys",
+                      "",
                       test_replace_one_with_opts_check_keys);
    TestSuite_AddLive (suite,
                       "/BulkOperation/replace_one_with_opts_validate",
+                      "",
                       test_replace_one_with_opts_validate);
-   TestSuite_AddLive (suite, "/BulkOperation/index_offset", test_index_offset);
    TestSuite_AddLive (
-      suite, "/BulkOperation/single_ordered_bulk", test_single_ordered_bulk);
+      suite, "/BulkOperation/index_offset", "", test_index_offset);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/single_ordered_bulk",
+                      "",
+                      test_single_ordered_bulk);
    TestSuite_AddLive (suite,
                       "/BulkOperation/insert_continue_on_error",
+                      "",
                       test_insert_continue_on_error);
    TestSuite_AddLive (suite,
                       "/BulkOperation/update_continue_on_error",
+                      "",
                       test_update_continue_on_error);
    TestSuite_AddLive (suite,
                       "/BulkOperation/remove_continue_on_error",
+                      "",
                       test_remove_continue_on_error);
    TestSuite_AddLive (suite,
                       "/BulkOperation/single_error_ordered_bulk",
+                      "",
                       test_single_error_ordered_bulk);
    TestSuite_AddLive (suite,
                       "/BulkOperation/multiple_error_ordered_bulk",
+                      "",
                       test_multiple_error_ordered_bulk);
    TestSuite_AddLive (suite,
                       "/BulkOperation/single_unordered_bulk",
+                      "",
                       test_single_unordered_bulk);
    TestSuite_AddLive (suite,
                       "/BulkOperation/single_error_unordered_bulk",
+                      "",
                       test_single_error_unordered_bulk);
    TestSuite_AddFull (suite,
                       "/BulkOperation/oversized/ordered",
+                      "",
                       test_oversized_bulk_op_ordered,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/BulkOperation/oversized/unordered",
+                      "",
                       test_oversized_bulk_op_unordered,
                       NULL,
                       NULL,
@@ -4945,124 +5006,156 @@ test_bulk_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/write_command/ordered",
+      "",
       test_write_concern_write_command_ordered);
    TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/write_command/ordered/multi_err",
+      "",
       test_write_concern_write_command_ordered_multi_err);
    TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/write_command/unordered",
+      "",
       test_write_concern_write_command_unordered);
    TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/write_command/unordered/multi_err",
+      "",
       test_write_concern_write_command_unordered_multi_err);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/writes/unordered/error",
+                                "",
                                 test_unordered_bulk_writes_with_error);
    TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/error/write_command/v1",
+      "",
       test_write_concern_error_write_command_v1);
    TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/write_concern/error/write_command/v2",
+      "",
       test_write_concern_error_write_command_v2);
    TestSuite_AddLive (suite,
                       "/BulkOperation/multiple_error_unordered_bulk",
+                      "",
                       test_multiple_error_unordered_bulk);
    TestSuite_AddMockServerTest (
       suite,
       "/BulkOperation/wtimeout_duplicate_key/write_commands",
+      "",
       test_wtimeout_plus_duplicate_key_err_write_commands);
    TestSuite_AddFull (suite,
                       "/BulkOperation/large_inserts_ordered",
+                      "",
                       test_large_inserts_ordered,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/BulkOperation/large_inserts_unordered",
+                      "",
                       test_large_inserts_unordered,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/BulkOperation/numerous_ordered",
+                      "",
                       test_numerous_ordered,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddFull (suite,
                       "/BulkOperation/numerous_unordered",
+                      "",
                       test_numerous_unordered,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (suite,
                       "/BulkOperation/CDRIVER-372_ordered",
+                      "",
                       test_bulk_edge_case_372_ordered);
    TestSuite_AddLive (suite,
                       "/BulkOperation/CDRIVER-372_unordered",
+                      "",
                       test_bulk_edge_case_372_unordered);
-   TestSuite_AddLive (suite, "/BulkOperation/new", test_bulk_new);
+   TestSuite_AddLive (suite, "/BulkOperation/new", "", test_bulk_new);
+   TestSuite_AddLive (suite,
+                      "/BulkOperation/OP_MSG/max_batch_size",
+                      "",
+                      test_bulk_max_batch_size);
    TestSuite_AddLive (
-      suite, "/BulkOperation/OP_MSG/max_batch_size", test_bulk_max_batch_size);
-   TestSuite_AddLive (
-      suite, "/BulkOperation/OP_MSG/max_msg_size", test_bulk_max_msg_size);
-   TestSuite_AddLive (suite, "/BulkOperation/split", test_bulk_split);
+      suite, "/BulkOperation/OP_MSG/max_msg_size", "", test_bulk_max_msg_size);
+   TestSuite_AddLive (suite, "/BulkOperation/split", "", test_bulk_split);
    TestSuite_AddFull (suite,
                       "/BulkOperation/write_concern/split",
+                      "",
                       test_bulk_write_concern_split,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_getlasterror);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/hint/single/command/secondary",
+                                "",
                                 test_hint_single_command_secondary);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/hint/single/command/primary",
+                                "",
                                 test_hint_single_command_primary);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/hint/pooled/command/secondary",
+                                "",
                                 test_hint_pooled_command_secondary);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/hint/pooled/command/primary",
+                                "",
                                 test_hint_pooled_command_primary);
-   TestSuite_AddLive (suite, "/BulkOperation/reply_w0", test_bulk_reply_w0);
+   TestSuite_AddLive (suite, "/BulkOperation/reply_w0", "", test_bulk_reply_w0);
    TestSuite_AddLive (suite,
                       "/BulkOperation/invalid_write_concern",
+                      "",
                       test_bulk_invalid_write_concern);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/opts/collation/w0/wire5",
+                                "",
                                 test_bulk_collation_w0_wire5);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/opts/collation/w0/wire4",
+                                "",
                                 test_bulk_collation_w0_wire4);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/opts/collation/w1/wire5",
+                                "",
                                 test_bulk_collation_w1_wire5);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/opts/collation/w1/wire4",
+                                "",
                                 test_bulk_collation_w1_wire4);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/opts/collation/multi/w0/wire5",
+                                "",
                                 test_bulk_collation_multi_w0_wire5);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/opts/collation/multi/w0/wire4",
+                                "",
                                 test_bulk_collation_multi_w0_wire4);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/opts/collation/multi/w1/wire5",
+                                "",
                                 test_bulk_collation_multi_w1_wire5);
    TestSuite_AddMockServerTest (suite,
                                 "/BulkOperation/opts/collation/multi/w1/wire4",
+                                "",
                                 test_bulk_collation_multi_w1_wire4);
    TestSuite_Add (suite,
                   "/BulkOperation/update_one/error_message",
+                  "",
                   test_bulk_update_one_error_message);
-   TestSuite_Add (suite, "/BulkOperation/opts/parse", test_bulk_opts_parse);
-   TestSuite_Add (suite, "/BulkOperation/no_client", test_bulk_no_client);
+   TestSuite_Add (suite, "/BulkOperation/opts/parse", "", test_bulk_opts_parse);
+   TestSuite_Add (suite, "/BulkOperation/no_client", "", test_bulk_no_client);
    TestSuite_AddLive (
-      suite, "/BulkOperation/bypass", test_bulk_bypass_document_validation);
+      suite, "/BulkOperation/bypass", "", test_bulk_bypass_document_validation);
 }

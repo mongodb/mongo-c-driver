@@ -445,18 +445,25 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_FIND(prefix, fn)               \
    TestSuite_AddFullWithTestFn (suite,             \
                                 prefix "/find",    \
+                                "",                \
                                 fn,                \
                                 NULL,              \
                                 _make_find_cursor, \
                                 TestSuite_CheckLive);
 
-#define TEST_CURSOR_CMD(prefix, fn) \
-   TestSuite_AddFullWithTestFn (    \
-      suite, prefix "/cmd", fn, NULL, _make_cmd_cursor, TestSuite_CheckLive);
+#define TEST_CURSOR_CMD(prefix, fn)               \
+   TestSuite_AddFullWithTestFn (suite,            \
+                                prefix "/cmd",    \
+                                "",               \
+                                fn,               \
+                                NULL,             \
+                                _make_cmd_cursor, \
+                                TestSuite_CheckLive);
 
 #define TEST_CURSOR_CMD_DEPRECATED(prefix, fn)               \
    TestSuite_AddFullWithTestFn (suite,                       \
                                 prefix "/cmd_deprecated",    \
+                                "",                          \
                                 fn,                          \
                                 NULL,                        \
                                 _make_cmd_deprecated_cursor, \
@@ -465,6 +472,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_ARRAY(prefix, fn)               \
    TestSuite_AddFullWithTestFn (suite,              \
                                 prefix "/array",    \
+                                "",                 \
                                 fn,                 \
                                 NULL,               \
                                 _make_array_cursor, \
@@ -473,6 +481,7 @@ _make_array_cursor (mongoc_collection_t *coll)
 #define TEST_CURSOR_AGG(prefix, fn)                        \
    TestSuite_AddFullWithTestFn (suite,                     \
                                 prefix "/agg",             \
+                                "",                        \
                                 fn,                        \
                                 NULL,                      \
                                 _make_cmd_cursor_from_agg, \
@@ -699,16 +708,18 @@ test_kill_cursor_live (void)
       cursor = _mongoc_cursor_find_new (
          client, collection->ns, b, NULL, NULL, NULL, NULL);
       /* override the typical priming, and immediately transition to an OPQUERY
-      * find cursor. */
+       * find cursor. */
       cursor->impl.destroy (&cursor->impl);
       _mongoc_cursor_impl_find_opquery_init (cursor, b);
 
       cursor->cursor_id = ctx.cursor_id;
-      cursor->state = END_OF_BATCH; /* meaning, "finished reading first batch" */
+      cursor->state =
+         END_OF_BATCH; /* meaning, "finished reading first batch" */
       r = mongoc_cursor_next (cursor, &doc);
       ASSERT (!r);
       ASSERT (mongoc_cursor_error (cursor, &error));
-      ASSERT_ERROR_CONTAINS (error, MONGOC_ERROR_CURSOR, 16, "cursor is invalid");
+      ASSERT_ERROR_CONTAINS (
+         error, MONGOC_ERROR_CURSOR, 16, "cursor is invalid");
 
       mongoc_cursor_destroy (cursor);
    } else {
@@ -1575,8 +1586,8 @@ mongoc_query_flags_t expected_flag[] = {
    MONGOC_QUERY_SECONDARY_OK,
 };
 
-/* test that mongoc_cursor_set_hint sets secondaryOk for mongos only if read pref
- * is secondaryPreferred. */
+/* test that mongoc_cursor_set_hint sets secondaryOk for mongos only if read
+ * pref is secondaryPreferred. */
 static void
 test_cursor_hint_mongos (void)
 {
@@ -1881,8 +1892,8 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor,
    }
 
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    ASSERT (match_bson (request_get_doc (request, 0), &find_cmd, true));
 
@@ -2139,8 +2150,8 @@ test_empty_final_batch (void)
     * one document in first batch
     */
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    mock_server_replies_to_find (
       request, MONGOC_QUERY_SECONDARY_OK, 1234, 0, "db.coll", "{}", true);
@@ -2153,11 +2164,16 @@ test_empty_final_batch (void)
     * empty batch with nonzero cursor id
     */
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
 
-   mock_server_replies_to_find (
-      request, MONGOC_QUERY_SECONDARY_OK, 1234, 0, "db.coll", "" /* empty */, true);
+   mock_server_replies_to_find (request,
+                                MONGOC_QUERY_SECONDARY_OK,
+                                1234,
+                                0,
+                                "db.coll",
+                                "" /* empty */,
+                                true);
 
    ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -2168,8 +2184,8 @@ test_empty_final_batch (void)
     * final batch, empty with zero cursor id
     */
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_command (server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_command (
+      server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
 
    ASSERT_CMPINT64 (
       bson_lookup_int64 (request_get_doc (request, 0), "batchSize"),
@@ -2353,97 +2369,104 @@ void
 test_cursor_install (TestSuite *suite)
 {
    test_common_cursor_functions_install (suite);
-   TestSuite_AddLive (suite, "/Cursor/limit", test_limit);
-   TestSuite_AddLive (suite,
-                      ""
-                      "/Cursor/kill/live",
-                      test_kill_cursor_live);
+   TestSuite_AddLive (suite, "/Cursor/limit", "", test_limit);
+   TestSuite_AddLive (suite, "/Cursor/kill/live", "", test_kill_cursor_live);
    TestSuite_AddMockServerTest (
-      suite, "/Cursor/kill/single", test_kill_cursors_single);
+      suite, "/Cursor/kill/single", "", test_kill_cursors_single);
    TestSuite_AddMockServerTest (
-      suite, "/Cursor/kill/pooled", test_kill_cursors_pooled);
+      suite, "/Cursor/kill/pooled", "", test_kill_cursors_pooled);
    TestSuite_AddMockServerTest (
-      suite, "/Cursor/kill/single/cmd", test_kill_cursors_single_cmd);
+      suite, "/Cursor/kill/single/cmd", "", test_kill_cursors_single_cmd);
    TestSuite_AddMockServerTest (
-      suite, "/Cursor/kill/pooled/cmd", test_kill_cursors_pooled_cmd);
+      suite, "/Cursor/kill/pooled/cmd", "", test_kill_cursors_pooled_cmd);
    TestSuite_AddMockServerTest (suite,
                                 "/Cursor/client_kill_cursor/with_primary",
+                                "",
                                 test_client_kill_cursor_with_primary);
    TestSuite_AddMockServerTest (suite,
                                 "/Cursor/client_kill_cursor/without_primary",
+                                "",
                                 test_client_kill_cursor_without_primary);
    TestSuite_AddMockServerTest (
       suite,
       "/Cursor/client_kill_cursor/with_primary/wv4",
+      "",
       test_client_kill_cursor_with_primary_wire_version_4);
    TestSuite_AddMockServerTest (
       suite,
       "/Cursor/client_kill_cursor/without_primary/wv4",
+      "",
       test_client_kill_cursor_without_primary_wire_version_4);
    TestSuite_AddLive (
-      suite, "/Cursor/empty_collection", test_cursor_empty_collection);
+      suite, "/Cursor/empty_collection", "", test_cursor_empty_collection);
    TestSuite_AddLive (
-      suite, "/Cursor/new_from_agg", test_cursor_new_from_aggregate);
+      suite, "/Cursor/new_from_agg", "", test_cursor_new_from_aggregate);
    TestSuite_AddLive (suite,
                       "/Cursor/new_from_agg_no_initial",
+                      "",
                       test_cursor_new_from_aggregate_no_initial);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_find",
+                      "",
                       test_cursor_new_from_find,
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_find_batches",
+                      "",
                       test_cursor_new_from_find_batches,
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
-   TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/new_tailable_await", test_cursor_new_tailable_await);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/int64_t_maxtimems", test_cursor_int64_t_maxtimems);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/new_ignores_fields", test_cursor_new_ignores_fields);
    TestSuite_AddLive (
-      suite, "/Cursor/new_invalid_filter", test_cursor_new_invalid_filter);
+      suite, "/Cursor/new_invalid", "", test_cursor_new_invalid);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/new_tailable_await", "", test_cursor_new_tailable_await);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/int64_t_maxtimems", "", test_cursor_int64_t_maxtimems);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/new_ignores_fields", "", test_cursor_new_ignores_fields);
    TestSuite_AddLive (
-      suite, "/Cursor/new_invalid_opts", test_cursor_new_invalid_opts);
-   TestSuite_AddLive (suite, "/Cursor/new_static", test_cursor_new_static);
-   TestSuite_AddLive (suite, "/Cursor/hint/errors", test_cursor_hint_errors);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/single/secondary", test_hint_single_secondary);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/single/primary", test_hint_single_primary);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/pooled/secondary", test_hint_pooled_secondary);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/pooled/primary", test_hint_pooled_primary);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/mongos", test_cursor_hint_mongos);
-   TestSuite_AddMockServerTest (
-      suite, "/Cursor/hint/mongos/cmd", test_cursor_hint_mongos_cmd);
+      suite, "/Cursor/new_invalid_filter", "", test_cursor_new_invalid_filter);
    TestSuite_AddLive (
-      suite, "/Cursor/hint/no_warmup/single", test_hint_no_warmup_single);
+      suite, "/Cursor/new_invalid_opts", "", test_cursor_new_invalid_opts);
+   TestSuite_AddLive (suite, "/Cursor/new_static", "", test_cursor_new_static);
    TestSuite_AddLive (
-      suite, "/Cursor/hint/no_warmup/pooled", test_hint_no_warmup_pooled);
-   TestSuite_AddLive (suite, "/Cursor/tailable/alive", test_tailable_alive);
+      suite, "/Cursor/hint/errors", "", test_cursor_hint_errors);
    TestSuite_AddMockServerTest (
-      suite, "/Cursor/n_return/find_cmd", test_n_return_find_cmd);
+      suite, "/Cursor/hint/single/secondary", "", test_hint_single_secondary);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/single/primary", "", test_hint_single_primary);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/pooled/secondary", "", test_hint_pooled_secondary);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/pooled/primary", "", test_hint_pooled_primary);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/mongos", "", test_cursor_hint_mongos);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/hint/mongos/cmd", "", test_cursor_hint_mongos_cmd);
+   TestSuite_AddLive (
+      suite, "/Cursor/hint/no_warmup/single", "", test_hint_no_warmup_single);
+   TestSuite_AddLive (
+      suite, "/Cursor/hint/no_warmup/pooled", "", test_hint_no_warmup_pooled);
+   TestSuite_AddLive (suite, "/Cursor/tailable/alive", "", test_tailable_alive);
+   TestSuite_AddMockServerTest (
+      suite, "/Cursor/n_return/find_cmd", "", test_n_return_find_cmd);
    TestSuite_AddMockServerTest (suite,
                                 "/Cursor/n_return/find_cmd/with_opts",
+                                "",
                                 test_n_return_find_cmd_with_opts);
    TestSuite_AddLive (
-      suite, "/Cursor/empty_final_batch_live", test_empty_final_batch_live);
+      suite, "/Cursor/empty_final_batch_live", "", test_empty_final_batch_live);
    TestSuite_AddMockServerTest (
-      suite, "/Cursor/empty_final_batch", test_empty_final_batch);
+      suite, "/Cursor/empty_final_batch", "", test_empty_final_batch);
    TestSuite_AddLive (
-      suite, "/Cursor/error_document/query", test_error_document_query);
+      suite, "/Cursor/error_document/query", "", test_error_document_query);
    TestSuite_AddLive (
-      suite, "/Cursor/error_document/getmore", test_error_document_getmore);
+      suite, "/Cursor/error_document/getmore", "", test_error_document_getmore);
    TestSuite_AddLive (
-      suite, "/Cursor/error_document/command", test_error_document_command);
+      suite, "/Cursor/error_document/command", "", test_error_document_command);
    TestSuite_AddLive (
-      suite, "/Cursor/find_error/is_alive", test_find_error_is_alive);
+      suite, "/Cursor/find_error/is_alive", "", test_find_error_is_alive);
 }

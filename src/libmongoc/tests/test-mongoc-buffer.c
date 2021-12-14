@@ -38,5 +38,5 @@ test_mongoc_buffer_basic (void)
 void
 test_buffer_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Buffer/Basic", test_mongoc_buffer_basic);
+   TestSuite_Add (suite, "/Buffer/Basic", "", test_mongoc_buffer_basic);
 }

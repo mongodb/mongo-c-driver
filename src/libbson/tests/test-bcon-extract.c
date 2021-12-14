@@ -489,34 +489,42 @@ test_iter (void)
 void
 test_bcon_extract_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/bson/bcon/extract/test_utf8", test_utf8);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_double", test_double);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_decimal128", test_decimal128);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_binary", test_binary);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_undefined", test_undefined);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_oid", test_oid);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_bool", test_bool);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_date_time", test_date_time);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_null", test_null);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_regex", test_regex);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_dbpointer", test_dbpointer);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_code", test_code);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_symbol", test_symbol);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_codewscope", test_codewscope);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_int32", test_int32);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_timestamp", test_timestamp);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_int64", test_int64);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_maxkey", test_maxkey);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_minkey", test_minkey);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_utf8", "", test_utf8);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_double", "", test_double);
    TestSuite_Add (
-      suite, "/bson/bcon/extract/test_bson_document", test_bson_document);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_bson_array", test_bson_array);
+      suite, "/bson/bcon/extract/test_decimal128", "", test_decimal128);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_binary", "", test_binary);
    TestSuite_Add (
-      suite, "/bson/bcon/extract/test_inline_array", test_inline_array);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_inline_doc", test_inline_doc);
+      suite, "/bson/bcon/extract/test_undefined", "", test_undefined);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_oid", "", test_oid);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_bool", "", test_bool);
    TestSuite_Add (
-      suite, "/bson/bcon/extract/test_extract_ctx", test_extract_ctx);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_nested", test_nested);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_skip", test_skip);
-   TestSuite_Add (suite, "/bson/bcon/extract/test_iter", test_iter);
+      suite, "/bson/bcon/extract/test_date_time", "", test_date_time);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_null", "", test_null);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_regex", "", test_regex);
+   TestSuite_Add (
+      suite, "/bson/bcon/extract/test_dbpointer", "", test_dbpointer);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_code", "", test_code);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_symbol", "", test_symbol);
+   TestSuite_Add (
+      suite, "/bson/bcon/extract/test_codewscope", "", test_codewscope);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_int32", "", test_int32);
+   TestSuite_Add (
+      suite, "/bson/bcon/extract/test_timestamp", "", test_timestamp);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_int64", "", test_int64);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_maxkey", "", test_maxkey);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_minkey", "", test_minkey);
+   TestSuite_Add (
+      suite, "/bson/bcon/extract/test_bson_document", "", test_bson_document);
+   TestSuite_Add (
+      suite, "/bson/bcon/extract/test_bson_array", "", test_bson_array);
+   TestSuite_Add (
+      suite, "/bson/bcon/extract/test_inline_array", "", test_inline_array);
+   TestSuite_Add (
+      suite, "/bson/bcon/extract/test_inline_doc", "", test_inline_doc);
+   TestSuite_Add (
+      suite, "/bson/bcon/extract/test_extract_ctx", "", test_extract_ctx);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_nested", "", test_nested);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_skip", "", test_skip);
+   TestSuite_Add (suite, "/bson/bcon/extract/test_iter", "", test_iter);
 }

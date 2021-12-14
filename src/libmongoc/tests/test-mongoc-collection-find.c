@@ -1200,66 +1200,79 @@ void
 test_collection_find_install (TestSuite *suite)
 {
    TestSuite_AddLive (
-      suite, "/Collection/find/dollar_query", test_dollar_query);
-   TestSuite_AddLive (suite, "/Collection/find/dollar_or", test_dollar_or);
+      suite, "/Collection/find/dollar_query", "", test_dollar_query);
+   TestSuite_AddLive (suite, "/Collection/find/dollar_or", "", test_dollar_or);
    TestSuite_AddLive (suite,
                       "/Collection/find/mixed_dollar_nondollar",
+                      "",
                       test_mixed_dollar_nondollar);
    TestSuite_AddLive (
-      suite, "/Collection/find/key_named_filter", test_key_named_filter);
+      suite, "/Collection/find/key_named_filter", "", test_key_named_filter);
    TestSuite_AddLive (suite,
                       "/Collection/find/key_named_filter/$query",
+                      "",
                       test_key_named_filter_with_dollar_query);
-   TestSuite_AddLive (
-      suite, "/Collection/find/subdoc_named_filter", test_subdoc_named_filter);
+   TestSuite_AddLive (suite,
+                      "/Collection/find/subdoc_named_filter",
+                      "",
+                      test_subdoc_named_filter);
    TestSuite_AddLive (suite,
                       "/Collection/find/subdoc_named_filter/$query",
+                      "",
                       test_subdoc_named_filter_with_dollar_query);
-   TestSuite_AddLive (suite, "/Collection/find/newoption", test_newoption);
-   TestSuite_AddLive (suite, "/Collection/find/orderby", test_orderby);
-   TestSuite_AddLive (suite, "/Collection/find/fields", test_fields);
+   TestSuite_AddLive (suite, "/Collection/find/newoption", "", test_newoption);
+   TestSuite_AddLive (suite, "/Collection/find/orderby", "", test_orderby);
+   TestSuite_AddLive (suite, "/Collection/find/fields", "", test_fields);
    TestSuite_AddFull (suite,
                       "/Collection/find/modifiers/maxscan",
+                      "",
                       test_maxscan,
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_more_than_6);
    TestSuite_AddLive (
-      suite, "/Collection/find/modifiers/maxtimems", test_maxtimems);
-   TestSuite_AddLive (suite, "/Collection/find/comment", test_comment);
-   TestSuite_AddLive (suite, "/Collection/find/hint", test_hint);
-   TestSuite_AddLive (suite, "/Collection/find/max", test_max);
-   TestSuite_AddLive (suite, "/Collection/find/min", test_min);
-   TestSuite_AddLive (suite, "/Collection/find/modifiers/bool", test_snapshot);
-   TestSuite_AddLive (suite, "/Collection/find/showdiskloc", test_diskloc);
-   TestSuite_AddLive (suite, "/Collection/find/returnkey", test_returnkey);
-   TestSuite_AddLive (suite, "/Collection/find/skip", test_skip);
-   TestSuite_AddLive (suite, "/Collection/find/batch_size", test_batch_size);
-   TestSuite_AddLive (suite, "/Collection/find/limit", test_limit);
+      suite, "/Collection/find/modifiers/maxtimems", "", test_maxtimems);
+   TestSuite_AddLive (suite, "/Collection/find/comment", "", test_comment);
+   TestSuite_AddLive (suite, "/Collection/find/hint", "", test_hint);
+   TestSuite_AddLive (suite, "/Collection/find/max", "", test_max);
+   TestSuite_AddLive (suite, "/Collection/find/min", "", test_min);
    TestSuite_AddLive (
-      suite, "/Collection/find/negative_limit", test_negative_limit);
-   TestSuite_Add (
-      suite, "/Collection/find/unrecognized", test_unrecognized_dollar_option);
-   TestSuite_AddLive (suite, "/Collection/find/flags", test_query_flags);
+      suite, "/Collection/find/modifiers/bool", "", test_snapshot);
+   TestSuite_AddLive (suite, "/Collection/find/showdiskloc", "", test_diskloc);
+   TestSuite_AddLive (suite, "/Collection/find/returnkey", "", test_returnkey);
+   TestSuite_AddLive (suite, "/Collection/find/skip", "", test_skip);
+   TestSuite_AddLive (
+      suite, "/Collection/find/batch_size", "", test_batch_size);
+   TestSuite_AddLive (suite, "/Collection/find/limit", "", test_limit);
+   TestSuite_AddLive (
+      suite, "/Collection/find/negative_limit", "", test_negative_limit);
+   TestSuite_Add (suite,
+                  "/Collection/find/unrecognized",
+                  "",
+                  test_unrecognized_dollar_option);
+   TestSuite_AddLive (suite, "/Collection/find/flags", "", test_query_flags);
    TestSuite_AddMockServerTest (
-      suite, "/Collection/find/exhaust", test_exhaust);
+      suite, "/Collection/find/exhaust", "", test_exhaust);
    TestSuite_AddMockServerTest (
-      suite, "/Collection/getmore/batch_size", test_getmore_batch_size);
+      suite, "/Collection/getmore/batch_size", "", test_getmore_batch_size);
    TestSuite_AddFull (suite,
                       "/Collection/getmore/invalid_reply",
+                      "",
                       test_getmore_invalid_reply,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
    TestSuite_AddMockServerTest (
-      suite, "/Collection/getmore/await", test_getmore_await);
+      suite, "/Collection/getmore/await", "", test_getmore_await);
    TestSuite_AddLive (suite,
                       "/Collection/tailable/timeout/single",
+                      "",
                       test_tailable_timeout_single);
 #ifndef MONGOC_ENABLE_SSL_SECURE_TRANSPORT
 #ifndef MONGOC_ENABLE_SSL_SECURE_CHANNEL
    TestSuite_AddLive (suite,
                       "/Collection/tailable/timeout/pooled",
+                      "",
                       test_tailable_timeout_pooled);
 #endif
 #endif

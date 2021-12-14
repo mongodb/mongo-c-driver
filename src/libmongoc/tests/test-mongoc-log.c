@@ -185,18 +185,20 @@ test_mongoc_log_trace_disabled (void *context)
 void
 test_log_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Log/basic", test_mongoc_log_handler);
+   TestSuite_Add (suite, "/Log/basic", "", test_mongoc_log_handler);
    TestSuite_AddFull (suite,
                       "/Log/trace/enabled",
+                      "",
                       test_mongoc_log_trace_enabled,
                       NULL,
                       NULL,
                       should_run_trace_tests);
    TestSuite_AddFull (suite,
                       "/Log/trace/disabled",
+                      "",
                       test_mongoc_log_trace_disabled,
                       NULL,
                       NULL,
                       should_not_run_trace_tests);
-   TestSuite_Add (suite, "/Log/null", test_mongoc_log_null);
+   TestSuite_Add (suite, "/Log/null", "", test_mongoc_log_null);
 }

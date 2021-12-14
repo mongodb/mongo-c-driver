@@ -1130,69 +1130,91 @@ void
 test_monitoring_install (TestSuite *suite)
 {
    /* Tests for initial connection. */
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/connect/succeeds",
+                                "",
+                                test_connect_succeeds);
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/connect/succeeds", test_connect_succeeds);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/connect/hangup", test_connect_hangup);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/connect/badreply", test_connect_badreply);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/connect/shutdown", test_connect_shutdown);
+      suite, "/server_monitor_thread/connect/hangup", "", test_connect_hangup);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/connect/badreply",
+                                "",
+                                test_connect_badreply);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/connect/shutdown",
+                                "",
+                                test_connect_shutdown);
    TestSuite_AddMockServerTest (suite,
                                 "/server_monitor_thread/connect/requestscan",
+                                "",
                                 test_connect_requestscan);
 
    /* Tests for retry. */
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/retry/succeeds", test_retry_succeeds);
+      suite, "/server_monitor_thread/retry/succeeds", "", test_retry_succeeds);
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/retry/hangup", test_retry_hangup);
+      suite, "/server_monitor_thread/retry/hangup", "", test_retry_hangup);
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/retry/badreply", test_retry_badreply);
+      suite, "/server_monitor_thread/retry/badreply", "", test_retry_badreply);
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/retry/shutdown", test_retry_shutdown);
+      suite, "/server_monitor_thread/retry/shutdown", "", test_retry_shutdown);
 
    /* Tests for streaming. */
    TestSuite_AddMockServerTest (suite,
                                 "/server_monitor_thread/streaming/succeeds",
+                                "",
                                 test_streaming_succeeds);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/streaming/hangup", test_streaming_hangup);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/streaming/hangup",
+                                "",
+                                test_streaming_hangup);
    TestSuite_AddMockServerTest (suite,
                                 "/server_monitor_thread/streaming/badreply",
+                                "",
                                 test_streaming_badreply);
    TestSuite_AddMockServerTest (suite,
                                 "/server_monitor_thread/streaming/shutdown",
+                                "",
                                 test_streaming_shutdown);
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/streaming/cancel", test_streaming_cancel);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/streaming/cancel",
+                                "",
+                                test_streaming_cancel);
 
    /* Tests for moretocome. */
    TestSuite_AddMockServerTest (suite,
                                 "/server_monitor_thread/moretocome/succeeds",
+                                "",
                                 test_moretocome_succeeds);
    TestSuite_AddMockServerTest (suite,
                                 "/server_monitor_thread/moretocome/hangup",
+                                "",
                                 test_moretocome_hangup);
    TestSuite_AddMockServerTest (suite,
                                 "/server_monitor_thread/moretocome/badreply",
+                                "",
                                 test_moretocome_badreply);
    TestSuite_AddMockServerTest (suite,
                                 "/server_monitor_thread/moretocome/shutdown",
+                                "",
                                 test_moretocome_shutdown);
    TestSuite_AddMockServerTest (suite,
                                 "/server_monitor_thread/moretocome/cancel",
+                                "",
                                 test_moretocome_cancel);
 
    /* Test flip flopping. */
    TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/flip_flop", test_flip_flop);
+      suite, "/server_monitor_thread/flip_flop", "", test_flip_flop);
 
    /* Test repeated scan requests. */
    TestSuite_AddMockServerTest (suite,
                                 "/server_monitor_thread/repeated_requestscan",
+                                "",
                                 test_repeated_requestscan);
 
-   TestSuite_AddMockServerTest (
-      suite, "/server_monitor_thread/sleep_after_scan", test_sleep_after_scan);
+   TestSuite_AddMockServerTest (suite,
+                                "/server_monitor_thread/sleep_after_scan",
+                                "",
+                                test_sleep_after_scan);
 }

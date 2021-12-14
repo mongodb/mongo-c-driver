@@ -622,5 +622,5 @@ test_apm_matching (void)
 void
 test_apm_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/apm_test_matching", test_apm_matching);
+   TestSuite_Add (suite, "/apm_test_matching", "", test_apm_matching);
 }

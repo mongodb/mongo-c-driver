@@ -310,22 +310,28 @@ test_reader_reset (void)
 void
 test_reader_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/bson/reader/new_from_data", test_reader_from_data);
+   TestSuite_Add (
+      suite, "/bson/reader/new_from_data", "", test_reader_from_data);
    TestSuite_Add (suite,
                   "/bson/reader/new_from_data_overflow",
+                  "",
                   test_reader_from_data_overflow);
    TestSuite_Add (suite,
                   "/bson/reader/new_from_data_document_length_too_large",
+                  "",
                   test_reader_from_data_document_length_too_large);
    TestSuite_Add (suite,
                   "/bson/reader/new_from_data_document_length_too_small",
+                  "",
                   test_reader_from_data_document_length_too_small);
    TestSuite_Add (
-      suite, "/bson/reader/new_from_handle", test_reader_from_handle);
-   TestSuite_Add (suite, "/bson/reader/tell", test_reader_tell);
+      suite, "/bson/reader/new_from_handle", "", test_reader_from_handle);
+   TestSuite_Add (suite, "/bson/reader/tell", "", test_reader_tell);
    TestSuite_Add (suite,
                   "/bson/reader/new_from_handle_corrupt",
+                  "",
                   test_reader_from_handle_corrupt);
-   TestSuite_Add (suite, "/bson/reader/grow_buffer", test_reader_grow_buffer);
-   TestSuite_Add (suite, "/bson/reader/reset", test_reader_reset);
+   TestSuite_Add (
+      suite, "/bson/reader/grow_buffer", "", test_reader_grow_buffer);
+   TestSuite_Add (suite, "/bson/reader/reset", "", test_reader_reset);
 }

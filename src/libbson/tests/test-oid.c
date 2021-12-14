@@ -564,31 +564,33 @@ test_bson_hostnames (void)
 void
 test_oid_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/bson/oid/init", test_bson_oid_init);
+   TestSuite_Add (suite, "/bson/oid/init", "", test_bson_oid_init);
    TestSuite_Add (
-      suite, "/bson/oid/init_from_string", test_bson_oid_init_from_string);
+      suite, "/bson/oid/init_from_string", "", test_bson_oid_init_from_string);
    TestSuite_Add (
-      suite, "/bson/oid/init_sequence", test_bson_oid_init_sequence);
+      suite, "/bson/oid/init_sequence", "", test_bson_oid_init_sequence);
    TestSuite_Add (suite,
                   "/bson/oid/init_sequence_thread_safe",
+                  "",
                   test_bson_oid_init_sequence_thread_safe);
 #ifdef BSON_HAVE_SYSCALL_TID
    TestSuite_Add (suite,
                   "/bson/oid/init_sequence_with_tid",
+                  "",
                   test_bson_oid_init_sequence_with_tid);
 #endif
    TestSuite_Add (
-      suite, "/bson/oid/init_with_threads", test_bson_oid_init_with_threads);
-   TestSuite_Add (suite, "/bson/oid/hash", test_bson_oid_hash);
-   TestSuite_Add (suite, "/bson/oid/compare", test_bson_oid_compare);
-   TestSuite_Add (suite, "/bson/oid/copy", test_bson_oid_copy);
-   TestSuite_Add (suite, "/bson/oid/get_time_t", test_bson_oid_get_time_t);
+      suite, "/bson/oid/init_with_threads", "", test_bson_oid_init_with_threads);
+   TestSuite_Add (suite, "/bson/oid/hash", "", test_bson_oid_hash);
+   TestSuite_Add (suite, "/bson/oid/compare", "", test_bson_oid_compare);
+   TestSuite_Add (suite, "/bson/oid/copy", "", test_bson_oid_copy);
+   TestSuite_Add (suite, "/bson/oid/get_time_t", "", test_bson_oid_get_time_t);
    TestSuite_Add (
-      suite, "/bson/oid/counter_overflow", test_bson_oid_counter_overflow);
+      suite, "/bson/oid/counter_overflow", "", test_bson_oid_counter_overflow);
 #ifndef _WIN32
    if (!TestSuite_NoFork (suite)) {
-      TestSuite_Add (suite, "/bson/oid/after_fork", test_bson_oid_after_fork);
+      TestSuite_Add (suite, "/bson/oid/after_fork", "", test_bson_oid_after_fork);
    }
 #endif
-   TestSuite_Add (suite, "/bson/oid/hostnames", test_bson_hostnames);
+   TestSuite_Add (suite, "/bson/oid/hostnames", "", test_bson_hostnames);
 }

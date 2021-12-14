@@ -83,5 +83,5 @@ void
 test_client_cmd_install (TestSuite *suite)
 {
    TestSuite_AddMockServerTest (
-      suite, "/Client/cmd/options", test_client_cmd_options);
+      suite, "/Client/cmd/options", "", test_client_cmd_options);
 }

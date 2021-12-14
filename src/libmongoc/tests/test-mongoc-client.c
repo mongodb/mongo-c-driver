@@ -4151,21 +4151,23 @@ test_client_install (TestSuite *suite)
    if (test_framework_getenv_bool ("MONGOC_CHECK_IPV6")) {
       /* try to validate ipv6 too */
       TestSuite_AddLive (
-         suite, "/Client/ipv6/single", test_mongoc_client_ipv6_single);
+         suite, "/Client/ipv6/single", "", test_mongoc_client_ipv6_single);
 
       /* try to validate ipv6 too */
       TestSuite_AddLive (
-         suite, "/Client/ipv6/single", test_mongoc_client_ipv6_pooled);
+         suite, "/Client/ipv6/single", "", test_mongoc_client_ipv6_pooled);
    }
 
    TestSuite_AddFull (suite,
                       "/Client/authenticate",
+                      "",
                       test_mongoc_client_authenticate,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
    TestSuite_AddFull (suite,
                       "/Client/speculative_auth_failure/single",
+                      "",
                       test_mongoc_client_single_speculative_auth_failure,
                       NULL,
                       NULL,
@@ -4173,6 +4175,7 @@ test_client_install (TestSuite *suite)
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/Client/speculative_auth_failure/pooled",
+                      "",
                       test_mongoc_client_pooled_speculative_auth_failure,
                       NULL,
                       NULL,
@@ -4180,276 +4183,351 @@ test_client_install (TestSuite *suite)
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/Client/authenticate_cached/pool",
+                      "",
                       test_mongoc_client_authenticate_cached_pooled,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
    TestSuite_AddFull (suite,
                       "/Client/authenticate_cached/client",
+                      "",
                       test_mongoc_client_authenticate_cached_single,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
    TestSuite_AddFull (suite,
                       "/Client/authenticate_failure",
+                      "",
                       test_mongoc_client_authenticate_failure,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
    TestSuite_AddFull (suite,
                       "/Client/authenticate_timeout",
+                      "",
                       test_mongoc_client_authenticate_timeout,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_auth);
-   TestSuite_AddLive (suite, "/Client/command", test_mongoc_client_command);
-   TestSuite_AddLive (
-      suite, "/Client/command_defaults", test_mongoc_client_command_defaults);
-   TestSuite_AddLive (
-      suite, "/Client/command_secondary", test_mongoc_client_command_secondary);
+   TestSuite_AddLive (suite, "/Client/command", "", test_mongoc_client_command);
+   TestSuite_AddLive (suite,
+                      "/Client/command_defaults",
+                      "",
+                      test_mongoc_client_command_defaults);
+   TestSuite_AddLive (suite,
+                      "/Client/command_secondary",
+                      "",
+                      test_mongoc_client_command_secondary);
    TestSuite_AddMockServerTest (
-      suite, "/Client/command_w_server_id", test_client_cmd_w_server_id);
+      suite, "/Client/command_w_server_id", "", test_client_cmd_w_server_id);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/command_w_server_id/sharded",
+                                "",
                                 test_client_cmd_w_server_id_sharded);
    TestSuite_AddFull (suite,
                       "/Client/command_w_server_id/option",
+                      "",
                       test_server_id_option,
                       NULL,
                       NULL,
                       test_framework_skip_if_auth);
    TestSuite_AddFull (suite,
                       "/Client/command_w_write_concern",
+                      "",
                       test_client_cmd_w_write_concern,
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_5);
-   TestSuite_AddMockServerTest (
-      suite, "/Client/command/write_concern", test_client_cmd_write_concern);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command/write_concern",
+                                "",
+                                test_client_cmd_write_concern);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/command/write_concern_fam",
+                                "",
                                 test_client_cmd_write_concern_fam);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/command/read_prefs/simple/single",
+                                "",
                                 test_command_simple_read_prefs_single);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/command/read_prefs/simple/pooled",
+                                "",
                                 test_command_simple_read_prefs_pooled);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/command/read_prefs/single",
+                                "",
                                 test_command_read_prefs_single);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/command/read_prefs/pooled",
+                                "",
                                 test_command_read_prefs_pooled);
    TestSuite_AddLive (
-      suite, "/Client/command_not_found/cursor", test_command_not_found);
-   TestSuite_AddLive (
-      suite, "/Client/command_not_found/simple", test_command_not_found_simple);
+      suite, "/Client/command_not_found/cursor", "", test_command_not_found);
+   TestSuite_AddLive (suite,
+                      "/Client/command_not_found/simple",
+                      "",
+                      test_command_not_found_simple);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/command_with_opts/read_prefs",
+                                "",
                                 test_command_with_opts_read_prefs);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/command_with_opts/read_write",
+                                "",
                                 test_read_write_cmd_with_opts);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command_with_opts/legacy",
+                                "",
+                                test_command_with_opts_legacy);
    TestSuite_AddMockServerTest (
-      suite, "/Client/command_with_opts/legacy", test_command_with_opts_legacy);
+      suite, "/Client/command_with_opts", "", test_command_with_opts);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/command_with_opts/op_msg",
+                                "",
+                                test_command_with_opts_op_msg);
    TestSuite_AddMockServerTest (
-      suite, "/Client/command_with_opts", test_command_with_opts);
+      suite, "/Client/command_with_opts/read", "", test_read_command_with_opts);
+   TestSuite_AddLive (suite, "/Client/command/empty", "", test_command_empty);
    TestSuite_AddMockServerTest (
-      suite, "/Client/command_with_opts/op_msg", test_command_with_opts_op_msg);
+      suite, "/Client/command/no_errmsg", "", test_command_no_errmsg);
    TestSuite_AddMockServerTest (
-      suite, "/Client/command_with_opts/read", test_read_command_with_opts);
-   TestSuite_AddLive (suite, "/Client/command/empty", test_command_empty);
-   TestSuite_AddMockServerTest (
-      suite, "/Client/command/no_errmsg", test_command_no_errmsg);
-   TestSuite_AddMockServerTest (
-      suite, "/Client/unavailable_seeds", test_unavailable_seeds);
+      suite, "/Client/unavailable_seeds", "", test_unavailable_seeds);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/rs_seeds_no_connect/single",
+                                "",
                                 test_rs_seeds_no_connect_single);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/rs_seeds_no_connect/pooled",
+                                "",
                                 test_rs_seeds_no_connect_pooled);
-   TestSuite_AddMockServerTest (
-      suite, "/Client/rs_seeds_connect/single", test_rs_seeds_connect_single);
-   TestSuite_AddMockServerTest (
-      suite, "/Client/rs_seeds_connect/pooled", test_rs_seeds_connect_pooled);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/rs_seeds_connect/single",
+                                "",
+                                test_rs_seeds_connect_single);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/rs_seeds_connect/pooled",
+                                "",
+                                test_rs_seeds_connect_pooled);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/rs_seeds_reconnect/single",
+                                "",
                                 test_rs_seeds_reconnect_single);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/rs_seeds_reconnect/pooled",
+                                "",
                                 test_rs_seeds_reconnect_pooled);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/mongos_seeds_no_connect/single",
+                                "",
                                 test_mongos_seeds_no_connect_single);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/mongos_seeds_no_connect/pooled",
+                                "",
                                 test_mongos_seeds_no_connect_pooled);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/mongos_seeds_connect/single",
+                                "",
                                 test_mongos_seeds_connect_single);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/mongos_seeds_connect/pooled",
+                                "",
                                 test_mongos_seeds_connect_pooled);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/mongos_seeds_reconnect/single",
+                                "",
                                 test_mongos_seeds_reconnect_single);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/mongos_seeds_reconnect/pooled",
+                                "",
                                 test_mongos_seeds_reconnect_pooled);
    TestSuite_AddFull (suite,
                       "/Client/recovering",
+                      "",
                       test_recovering,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-   TestSuite_AddLive (suite, "/Client/server_status", test_server_status);
+   TestSuite_AddLive (suite, "/Client/server_status", "", test_server_status);
    TestSuite_AddMockServerTest (
-      suite, "/Client/database_names", test_get_database_names);
+      suite, "/Client/database_names", "", test_get_database_names);
    TestSuite_AddFull (suite,
                       "/Client/connect/uds",
+                      "",
                       test_mongoc_client_unix_domain_socket,
                       NULL,
                       NULL,
                       test_framework_skip_if_no_uds);
    TestSuite_AddMockServerTest (
-      suite, "/Client/mismatched_me", test_mongoc_client_mismatched_me);
+      suite, "/Client/mismatched_me", "", test_mongoc_client_mismatched_me);
 
    TestSuite_AddMockServerTest (
-      suite, "/Client/handshake/pool", test_mongoc_handshake_pool);
+      suite, "/Client/handshake/pool", "", test_mongoc_handshake_pool);
    TestSuite_Add (suite,
                   "/Client/application_handshake",
+                  "",
                   test_mongoc_client_application_handshake);
    TestSuite_AddFull (suite,
                       "/Client/sends_handshake_single",
+                      "",
                       test_client_sends_handshake_single,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
    TestSuite_Add (suite,
                   "/Client/sends_handshake_pooled",
+                  "",
                   test_client_sends_handshake_pooled);
    TestSuite_AddMockServerTest (
-      suite, "/Client/appname_single_uri", test_client_appname_single_uri);
+      suite, "/Client/appname_single_uri", "", test_client_appname_single_uri);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/appname_single_no_uri",
+                                "",
                                 test_client_appname_single_no_uri);
    TestSuite_AddMockServerTest (
-      suite, "/Client/appname_pooled_uri", test_client_appname_pooled_uri);
+      suite, "/Client/appname_pooled_uri", "", test_client_appname_pooled_uri);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/appname_pooled_no_uri",
+                                "",
                                 test_client_appname_pooled_no_uri);
    TestSuite_AddMockServerTest (
-      suite, "/Client/wire_version", test_wire_version);
+      suite, "/Client/wire_version", "", test_wire_version);
 #ifdef MONGOC_ENABLE_SSL
-   TestSuite_AddLive (suite, "/Client/ssl_opts/single", test_ssl_single);
-   TestSuite_AddLive (suite, "/Client/ssl_opts/pooled", test_ssl_pooled);
-   TestSuite_Add (suite, "/Client/set_ssl_opts", test_set_ssl_opts);
-   TestSuite_Add (suite, "/Client/ssl_opts_override", test_ssl_opts_override);
+   TestSuite_AddLive (suite, "/Client/ssl_opts/single", "", test_ssl_single);
+   TestSuite_AddLive (suite, "/Client/ssl_opts/pooled", "", test_ssl_pooled);
+   TestSuite_Add (suite, "/Client/set_ssl_opts", "", test_set_ssl_opts);
+   TestSuite_Add (
+      suite, "/Client/ssl_opts_override", "", test_ssl_opts_override);
    TestSuite_Add (suite,
                   "/Client/ssl_opts_padding_not_null/single",
+                  "",
                   test_ssl_opts_padding_not_null);
-   TestSuite_AddLive (suite, "/Client/ssl_hang", test_client_buildinfo_hang);
+   TestSuite_AddLive (
+      suite, "/Client/ssl_hang", "", test_client_buildinfo_hang);
 
 #if defined(MONGOC_ENABLE_SSL_OPENSSL) || \
    defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    TestSuite_AddMockServerTest (suite,
                                 "/Client/ssl_opts/copies_single",
+                                "",
                                 test_ssl_client_single_copies_args);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/ssl_opts/copies_pooled",
+                                "",
                                 test_ssl_client_pooled_copies_args);
    TestSuite_AddMockServerTest (
-      suite, "/Client/ssl/reconnect/single", test_ssl_reconnect_single);
+      suite, "/Client/ssl/reconnect/single", "", test_ssl_reconnect_single);
    TestSuite_AddMockServerTest (
-      suite, "/Client/ssl/reconnect/pooled", test_ssl_reconnect_pooled);
+      suite, "/Client/ssl/reconnect/pooled", "", test_ssl_reconnect_pooled);
 
 #endif
 #else
    /* No SSL support at all */
    TestSuite_Add (
-      suite, "/Client/ssl_disabled", test_mongoc_client_ssl_disabled);
+      suite, "/Client/ssl_disabled", "", test_mongoc_client_ssl_disabled);
 #endif
 
    TestSuite_AddMockServerTest (suite,
                                 "/Client/client_reset/sessions",
+                                "",
                                 test_client_reset_sessions,
                                 test_framework_skip_if_no_crypto);
 
    TestSuite_AddMockServerTest (
-      suite, "/Client/client_reset/cursors", test_client_reset_cursors);
-   TestSuite_AddMockServerTest (
-      suite, "/Client/client_reset/connections", test_client_reset_connections);
+      suite, "/Client/client_reset/cursors", "", test_client_reset_cursors);
+   TestSuite_AddMockServerTest (suite,
+                                "/Client/client_reset/connections",
+                                "",
+                                test_client_reset_connections);
 
    TestSuite_AddLive (suite,
                       "/Client/get_description/single",
+                      "",
                       test_mongoc_client_get_description_single);
    TestSuite_AddLive (suite,
                       "/Client/get_description/pooled",
+                      "",
                       test_mongoc_client_get_description_pooled);
    TestSuite_AddLive (suite,
                       "/Client/descriptions/single",
+                      "",
                       test_mongoc_client_descriptions_single);
    TestSuite_AddFull (suite,
                       "/Client/descriptions/pooled",
+                      "",
                       test_mongoc_client_descriptions_pooled,
                       NULL,
                       NULL,
                       TestSuite_CheckLive);
    TestSuite_AddLive (suite,
                       "/Client/select_server/single",
+                      "",
                       test_mongoc_client_select_server_single);
    TestSuite_AddLive (suite,
                       "/Client/select_server/pooled",
+                      "",
                       test_mongoc_client_select_server_pooled);
    TestSuite_AddLive (suite,
                       "/Client/select_server/err/single",
+                      "",
                       test_mongoc_client_select_server_error_single);
    TestSuite_AddLive (suite,
                       "/Client/select_server/err/pooled",
+                      "",
                       test_mongoc_client_select_server_error_pooled);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/select_server/retry/succeed",
+                                "",
                                 test_mongoc_client_select_server_retry_succeed);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/select_server/retry/fail",
+                                "",
                                 test_mongoc_client_select_server_retry_fail);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/fetch_stream/retry/succeed",
+                                "",
                                 test_mongoc_client_fetch_stream_retry_succeed);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/fetch_stream/retry/fail",
+                                "",
                                 test_mongoc_client_fetch_stream_retry_fail);
    TestSuite_AddFull (suite,
                       "/Client/null_error_pointer/single",
+                      "",
                       test_null_error_pointer_single,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Client/null_error_pointer/pooled",
+                      "",
                       test_null_error_pointer_pooled,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow);
-   TestSuite_Add (suite, "/Client/get_database", test_get_database);
-   TestSuite_Add (suite, "/Client/invalid_server_id", test_invalid_server_id);
+   TestSuite_Add (suite, "/Client/get_database", "", test_get_database);
+   TestSuite_Add (
+      suite, "/Client/invalid_server_id", "", test_invalid_server_id);
    TestSuite_AddMockServerTest (suite,
                                 "/Client/recv_network_error",
+                                "",
                                 test_mongoc_client_recv_network_error);
    TestSuite_AddLive (suite,
                       "/Client/get_handshake_hello_response/single",
+                      "",
                       test_mongoc_client_get_handshake_hello_response_single);
    TestSuite_AddLive (suite,
                       "/Client/get_handshake_hello_response/pooled",
+                      "",
                       test_mongoc_client_get_handshake_hello_response_pooled);
    TestSuite_AddLive (
       suite,
       "/Client/get_handshake_establishes_connection/single",
+      "",
       test_mongoc_client_get_handshake_establishes_connection_single);
    TestSuite_AddLive (
       suite,
       "/Client/get_handshake_establishes_connection/pooled",
+      "",
       test_mongoc_client_get_handshake_establishes_connection_pooled);
 }

@@ -653,6 +653,7 @@ typedef struct _TestFnCtx TestFnCtx;
 struct _Test {
    Test *next;
    char *name;
+   char *meta;
    TestFuncWC func;
    TestFuncDtor dtor;
    void *ctx;
@@ -691,29 +692,35 @@ struct _TestFnCtx {
 void
 TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv);
 void
-TestSuite_Add (TestSuite *suite, const char *name, TestFunc func);
+TestSuite_Add (TestSuite *suite,
+               const char *name,
+               const char *meta,
+               TestFunc func);
 int
 TestSuite_CheckLive (void);
 void
-TestSuite_AddLive (TestSuite *suite, const char *name, TestFunc func);
+TestSuite_AddLive (TestSuite *suite,
+                   const char *name,
+                   const char *meta,
+                   TestFunc func);
 int
 TestSuite_CheckMockServerAllowed (void);
 void
-_TestSuite_AddMockServerTest (TestSuite *suite,
-                              const char *name,
-                              TestFunc func,
-                              ...);
-#define TestSuite_AddMockServerTest(_suite, _name, ...) \
-   _TestSuite_AddMockServerTest (_suite, _name, __VA_ARGS__, NULL)
+_TestSuite_AddMockServerTest (
+   TestSuite *suite, const char *name, const char *meta, TestFunc func, ...);
+#define TestSuite_AddMockServerTest(_suite, _name, _meta, ...) \
+   _TestSuite_AddMockServerTest (_suite, _name, _meta, __VA_ARGS__, NULL)
 void
 TestSuite_AddWC (TestSuite *suite,
                  const char *name,
+                 const char *meta,
                  TestFuncWC func,
                  TestFuncDtor dtor,
                  void *ctx);
 Test *
 _V_TestSuite_AddFull (TestSuite *suite,
                       const char *name,
+                      const char *meta,
                       TestFuncWC func,
                       TestFuncDtor dtor,
                       void *ctx,
@@ -721,6 +728,7 @@ _V_TestSuite_AddFull (TestSuite *suite,
 void
 _TestSuite_AddFull (TestSuite *suite,
                     const char *name,
+                    const char *meta,
                     TestFuncWC func,
                     TestFuncDtor dtor,
                     void *ctx,
@@ -729,19 +737,20 @@ void
 _TestSuite_TestFnCtxDtor (void *ctx);
 #define TestSuite_AddFull(_suite, _name, _func, _dtor, _ctx, ...) \
    _TestSuite_AddFull (_suite, _name, _func, _dtor, _ctx, __VA_ARGS__, NULL)
-#define TestSuite_AddFullWithTestFn(                \
-   _suite, _name, _func, _dtor, _test_fn, ...)      \
-   do {                                             \
-      TestFnCtx *ctx = malloc (sizeof (TestFnCtx)); \
-      ctx->test_fn = (TestFunc) (_test_fn);         \
-      ctx->dtor = _dtor;                            \
-      _TestSuite_AddFull (_suite,                   \
-                          _name,                    \
-                          _func,                    \
-                          _TestSuite_TestFnCtxDtor, \
-                          ctx,                      \
-                          __VA_ARGS__,              \
-                          NULL);                    \
+#define TestSuite_AddFullWithTestFn(                  \
+   _suite, _name, _meta, _func, _dtor, _test_fn, ...) \
+   do {                                               \
+      TestFnCtx *ctx = malloc (sizeof (TestFnCtx));   \
+      ctx->test_fn = (TestFunc) (_test_fn);           \
+      ctx->dtor = _dtor;                              \
+      _TestSuite_AddFull (_suite,                     \
+                          _name,                      \
+                          _meta,                      \
+                          _func,                      \
+                          _TestSuite_TestFnCtxDtor,   \
+                          ctx,                        \
+                          __VA_ARGS__,                \
+                          NULL);                      \
    } while (0)
 int
 TestSuite_Run (TestSuite *suite);

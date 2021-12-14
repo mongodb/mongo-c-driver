@@ -91,7 +91,7 @@ test_ts_pool_special (void)
 void
 test_ts_pool_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Util/ts-pool-empty", test_ts_pool_empty);
-   TestSuite_Add (suite, "/Util/ts-pool", test_ts_pool_simple);
-   TestSuite_Add (suite, "/Util/ts-pool-special", test_ts_pool_special);
+   TestSuite_Add (suite, "/Util/ts-pool-empty", "", test_ts_pool_empty);
+   TestSuite_Add (suite, "/Util/ts-pool", "", test_ts_pool_simple);
+   TestSuite_Add (suite, "/Util/ts-pool-special", "", test_ts_pool_special);
 }

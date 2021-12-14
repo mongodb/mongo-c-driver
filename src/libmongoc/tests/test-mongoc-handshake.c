@@ -935,40 +935,53 @@ test_handshake_install (TestSuite *suite)
 {
    TestSuite_Add (suite,
                   "/MongoDB/handshake/appname_in_uri",
+                  "",
                   test_mongoc_handshake_appname_in_uri);
    TestSuite_Add (suite,
                   "/MongoDB/handshake/appname_frozen_single",
+                  "",
                   test_mongoc_handshake_appname_frozen_single);
    TestSuite_Add (suite,
                   "/MongoDB/handshake/appname_frozen_pooled",
+                  "",
                   test_mongoc_handshake_appname_frozen_pooled);
 
    TestSuite_AddMockServerTest (suite,
                                 "/MongoDB/handshake/success",
+                                "",
                                 test_mongoc_handshake_data_append_success);
    TestSuite_AddMockServerTest (suite,
                                 "/MongoDB/handshake/null_args",
+                                "",
                                 test_mongoc_handshake_data_append_null_args);
    TestSuite_Add (suite,
                   "/MongoDB/handshake/big_platform",
+                  "",
                   test_mongoc_handshake_big_platform);
    TestSuite_Add (suite,
                   "/MongoDB/handshake/oversized_platform",
+                  "",
                   test_mongoc_handshake_oversized_platform);
    TestSuite_Add (suite,
                   "/MongoDB/handshake/failure",
+                  "",
                   test_mongoc_handshake_data_append_after_cmd);
    TestSuite_AddMockServerTest (
-      suite, "/MongoDB/handshake/too_big", test_mongoc_handshake_too_big);
-   TestSuite_Add (
-      suite, "/MongoDB/handshake/oversized_flags", test_mongoc_oversized_flags);
+      suite, "/MongoDB/handshake/too_big", "", test_mongoc_handshake_too_big);
+   TestSuite_Add (suite,
+                  "/MongoDB/handshake/oversized_flags",
+                  "",
+                  test_mongoc_oversized_flags);
    TestSuite_AddMockServerTest (suite,
                                 "/MongoDB/handshake/cannot_send",
+                                "",
                                 test_mongoc_handshake_cannot_send);
    TestSuite_Add (suite,
                   "/MongoDB/handshake/platform_config",
+                  "",
                   test_handshake_platform_config);
    TestSuite_Add (suite,
                   "/MongoDB/handshake/race_condition",
+                  "",
                   test_mongoc_handshake_race_condition);
 }

@@ -271,12 +271,14 @@ test_aws_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
                       "/aws/obtain_credentials",
+                      "",
                       test_obtain_credentials,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_aws);
    TestSuite_AddFull (suite,
                       "/aws/obtain_credentials_from_env",
+                      "",
                       test_obtain_credentials_from_env,
                       NULL /* dtor */,
                       NULL /* ctx */,
@@ -284,6 +286,7 @@ test_aws_install (TestSuite *suite)
                       test_framework_skip_if_no_setenv);
    TestSuite_AddFull (suite,
                       "/aws/derive_region",
+                      "",
                       test_derive_region,
                       NULL /* dtor */,
                       NULL /* ctx */,

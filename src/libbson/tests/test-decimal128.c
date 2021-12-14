@@ -773,43 +773,58 @@ test_decimal128_install (TestSuite *suite)
 {
    TestSuite_Add (suite,
                   "/bson/decimal128/to_string/infinity",
+                  "",
                   test_decimal128_to_string__infinity);
-   TestSuite_Add (
-      suite, "/bson/decimal128/to_string/nan", test_decimal128_to_string__nan);
+   TestSuite_Add (suite,
+                  "/bson/decimal128/to_string/nan",
+                  "",
+                  test_decimal128_to_string__nan);
    TestSuite_Add (suite,
                   "/bson/decimal128/to_string/regular",
+                  "",
                   test_decimal128_to_string__regular);
    TestSuite_Add (suite,
                   "/bson/decimal128/to_string/scientific",
+                  "",
                   test_decimal128_to_string__scientific);
    TestSuite_Add (suite,
                   "/bson/decimal128/to_string/zero",
+                  "",
                   test_decimal128_to_string__zeros);
    TestSuite_Add (suite,
                   "/bson/decimal128/from_string/invalid",
+                  "",
                   test_decimal128_from_string__invalid_inputs);
    TestSuite_Add (suite,
                   "/bson/decimal128/from_string/nan",
+                  "",
                   test_decimal128_from_string__nan);
    TestSuite_Add (suite,
                   "/bson/decimal128/from_string/infinity",
+                  "",
                   test_decimal128_from_string__infinity);
    TestSuite_Add (suite,
                   "/bson/decimal128/from_string/basic",
+                  "",
                   test_decimal128_from_string__simple);
    TestSuite_Add (suite,
                   "/bson/decimal128/from_string/scientific",
+                  "",
                   test_decimal128_from_string__scientific);
    TestSuite_Add (suite,
                   "/bson/decimal128/from_string/large",
+                  "",
                   test_decimal128_from_string__large);
    TestSuite_Add (suite,
                   "/bson/decimal128/from_string/exponent_normalization",
+                  "",
                   test_decimal128_from_string__exponent_normalization);
    TestSuite_Add (suite,
                   "/bson/decimal128/from_string/zero",
+                  "",
                   test_decimal128_from_string__zeros);
    TestSuite_Add (suite,
                   "/bson/decimal128/from_string/with_length",
+                  "",
                   test_decimal128_from_string_w_len__special);
 }

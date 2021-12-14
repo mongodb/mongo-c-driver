@@ -1557,44 +1557,52 @@ test_write_failure (void)
 void
 test_gridfs_install (TestSuite *suite)
 {
-   TestSuite_AddLive (suite, "/gridfs_old/create", test_create);
+   TestSuite_AddLive (suite, "/gridfs_old/create", "", test_create);
    TestSuite_AddLive (
-      suite, "/gridfs_old/create_from_stream", test_create_from_stream);
-   TestSuite_AddLive (suite, "/gridfs_old/list", test_list);
-   TestSuite_AddLive (suite, "/gridfs_old/find_one_empty", test_find_one_empty);
-   TestSuite_AddLive (suite, "/gridfs_old/find_with_opts", test_find_with_opts);
+      suite, "/gridfs_old/create_from_stream", "", test_create_from_stream);
+   TestSuite_AddLive (suite, "/gridfs_old/list", "", test_list);
+   TestSuite_AddLive (
+      suite, "/gridfs_old/find_one_empty", "", test_find_one_empty);
+   TestSuite_AddLive (
+      suite, "/gridfs_old/find_with_opts", "", test_find_with_opts);
    TestSuite_AddMockServerTest (suite,
                                 "/gridfs_old/find_one_with_opts/limit",
+                                "",
                                 test_find_one_with_opts_limit);
-   TestSuite_AddLive (suite, "/gridfs_old/properties", test_properties);
-   TestSuite_AddLive (suite, "/gridfs_old/empty", test_empty);
-   TestSuite_AddLive (suite, "/gridfs_old/read", test_read);
-   TestSuite_AddLive (suite, "/gridfs_old/seek", test_seek);
-   TestSuite_AddLive (suite, "/gridfs_old/stream", test_stream);
-   TestSuite_AddLive (suite, "/gridfs_old/remove", test_remove);
-   TestSuite_AddLive (suite, "/gridfs_old/write", test_write);
+   TestSuite_AddLive (suite, "/gridfs_old/properties", "", test_properties);
+   TestSuite_AddLive (suite, "/gridfs_old/empty", "", test_empty);
+   TestSuite_AddLive (suite, "/gridfs_old/read", "", test_read);
+   TestSuite_AddLive (suite, "/gridfs_old/seek", "", test_seek);
+   TestSuite_AddLive (suite, "/gridfs_old/stream", "", test_stream);
+   TestSuite_AddLive (suite, "/gridfs_old/remove", "", test_remove);
+   TestSuite_AddLive (suite, "/gridfs_old/write", "", test_write);
    TestSuite_AddLive (
-      suite, "/gridfs_old/write_at_boundary", test_write_at_boundary);
-   TestSuite_AddLive (suite, "/gridfs_old/write_past_end", test_write_past_end);
+      suite, "/gridfs_old/write_at_boundary", "", test_write_at_boundary);
+   TestSuite_AddLive (
+      suite, "/gridfs_old/write_past_end", "", test_write_past_end);
    TestSuite_AddFull (suite,
                       "/gridfs_old/test_long_seek",
+                      "",
                       test_long_seek,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
    TestSuite_AddLive (
-      suite, "/gridfs_old/remove_by_filename", test_remove_by_filename);
+      suite, "/gridfs_old/remove_by_filename", "", test_remove_by_filename);
    TestSuite_AddFull (suite,
                       "/gridfs_old/missing_chunk",
+                      "",
                       test_missing_chunk,
                       NULL,
                       NULL,
                       test_framework_skip_if_slow_or_live);
-   TestSuite_AddLive (suite, "/gridfs_old/oversize_chunk", test_oversize);
-   TestSuite_AddLive (suite, "/gridfs_old/missing_file", test_missing_file);
-   TestSuite_AddLive (suite, "/gridfs_old/file_set_id", test_set_id);
+   TestSuite_AddLive (suite, "/gridfs_old/oversize_chunk", "", test_oversize);
+   TestSuite_AddLive (suite, "/gridfs_old/missing_file", "", test_missing_file);
+   TestSuite_AddLive (suite, "/gridfs_old/file_set_id", "", test_set_id);
+   TestSuite_AddMockServerTest (suite,
+                                "/gridfs_old/inherit_client_config",
+                                "",
+                                test_inherit_client_config);
    TestSuite_AddMockServerTest (
-      suite, "/gridfs_old/inherit_client_config", test_inherit_client_config);
-   TestSuite_AddMockServerTest (
-      suite, "/gridfs_old/write_failure", test_write_failure);
+      suite, "/gridfs_old/write_failure", "", test_write_failure);
 }

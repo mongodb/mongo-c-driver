@@ -88,5 +88,5 @@ test_set_new (void)
 void
 test_set_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Set/new", test_set_new);
+   TestSuite_Add (suite, "/Set/new", "", test_set_new);
 }

@@ -378,9 +378,10 @@ test_bson_iso8601_leap_year (void)
 void
 test_iso8601_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/bson/iso8601/utc", test_bson_iso8601_utc);
-   TestSuite_Add (suite, "/bson/iso8601/local", test_bson_iso8601_local);
-   TestSuite_Add (suite, "/bson/iso8601/invalid", test_bson_iso8601_invalid);
+   TestSuite_Add (suite, "/bson/iso8601/utc", "", test_bson_iso8601_utc);
+   TestSuite_Add (suite, "/bson/iso8601/local", "", test_bson_iso8601_local);
    TestSuite_Add (
-      suite, "/bson/iso8601/leap_year", test_bson_iso8601_leap_year);
+      suite, "/bson/iso8601/invalid", "", test_bson_iso8601_invalid);
+   TestSuite_Add (
+      suite, "/bson/iso8601/leap_year", "", test_bson_iso8601_leap_year);
 }

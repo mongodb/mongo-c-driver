@@ -917,24 +917,28 @@ test_sdam_install (TestSuite *suite)
    test_all_spec_tests (suite);
    TestSuite_AddFull (suite,
                       "/server_discovery_and_monitoring/topology/discovery",
+                      "",
                       test_topology_discovery,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_not_replset);
    TestSuite_AddFull (suite,
                       "/server_discovery_and_monitoring/directconnection",
+                      "",
                       test_direct_connection,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_not_replset);
    TestSuite_AddFull (suite,
                       "/server_discovery_and_monitoring/existing/behavior",
+                      "",
                       test_existing_behavior,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_not_replset);
    TestSuite_AddFull (suite,
                       "/server_discovery_and_monitoring/prose/rtt",
+                      "",
                       test_prose_rtt,
                       NULL /* dtor */,
                       NULL /* ctx */,

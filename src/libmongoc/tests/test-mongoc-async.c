@@ -372,9 +372,9 @@ test_hello_delay ()
 void
 test_async_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (suite, "/Async/hello", test_hello);
+   TestSuite_AddMockServerTest (suite, "/Async/hello", "", test_hello);
 #if defined(MONGOC_ENABLE_SSL_OPENSSL)
-   TestSuite_AddMockServerTest (suite, "/Async/hello_ssl", test_hello_ssl);
+   TestSuite_AddMockServerTest (suite, "/Async/hello_ssl", "", test_hello_ssl);
 #else
    /* Skip this test on OpenSSL since was having issues connecting. */
    /* Skip on Windows until CDRIVER-3519 is resolved. */
@@ -386,5 +386,5 @@ test_async_install (TestSuite *suite)
                       test_framework_skip_if_not_single,
                       test_framework_skip_if_windows);
 #endif
-   TestSuite_AddMockServerTest (suite, "/Async/delay", test_hello_delay);
+   TestSuite_AddMockServerTest (suite, "/Async/delay", "", test_hello_delay);
 }

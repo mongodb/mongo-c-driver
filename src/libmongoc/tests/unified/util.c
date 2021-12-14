@@ -161,7 +161,7 @@ void
 test_bson_util_install (TestSuite *suite)
 {
    TestSuite_Add (
-      suite, "/unified/selftest/util/copy_and_sort", test_copy_and_sort);
+      suite, "/unified/selftest/util/copy_and_sort", "", test_copy_and_sort);
 }
 
 /* TODO (CDRIVER-3525) add test support for CMAP events once the C driver

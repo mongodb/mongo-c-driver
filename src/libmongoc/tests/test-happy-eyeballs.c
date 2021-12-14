@@ -580,6 +580,7 @@ test_happy_eyeballs_install (TestSuite *suite)
       char *name = bson_strdup_printf ("/TOPOLOGY/happy_eyeballs/%d", i);
       TestSuite_AddFull (suite,
                          name,
+                         "",
                          _run_testcase,
                          NULL,
                          he_testcases + i,
@@ -589,6 +590,7 @@ test_happy_eyeballs_install (TestSuite *suite)
    }
    TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/happy_eyeballs/dns_cache/",
+                                "",
                                 test_happy_eyeballs_dns_cache,
                                 test_framework_skip_if_no_dual_ip_hostname);
 }

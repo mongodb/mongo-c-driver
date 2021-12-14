@@ -2857,7 +2857,7 @@ main (int argc, char *argv[])
 #endif
 
    TestSuite_Init (&suite, "", argc, argv);
-   TestSuite_Add (&suite, "/TestSuite/version_cmp", test_version_cmp);
+   TestSuite_Add (&suite, "/TestSuite/version_cmp", "", test_version_cmp);
 
    /* libbson */
 

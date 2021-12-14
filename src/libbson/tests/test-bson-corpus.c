@@ -326,5 +326,5 @@ test_bson_corpus_install (TestSuite *suite)
 {
    install_json_test_suite_with_check (
       suite, BSON_JSON_DIR "/bson_corpus", test_bson_corpus_cb);
-   TestSuite_Add (suite, "/bson_corpus/prose_1", test_bson_corpus_prose_1);
+   TestSuite_Add (suite, "/bson_corpus/prose_1", "", test_bson_corpus_prose_1);
 }

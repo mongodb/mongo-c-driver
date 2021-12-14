@@ -789,18 +789,21 @@ test_loadbalanced_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
                       "/loadbalanced/sessions/supported",
+                      "",
                       test_loadbalanced_sessions_supported,
                       NULL /* ctx */,
                       NULL /* dtor */,
                       skip_if_not_loadbalanced);
    TestSuite_AddFull (suite,
                       "/loadbalanced/sessions/do_not_expire",
+                      "",
                       test_loadbalanced_sessions_do_not_expire,
                       NULL /* ctx */,
                       NULL /* dtor */,
                       skip_if_not_loadbalanced);
    TestSuite_AddFull (suite,
                       "/loadbalanced/client_uri_validation",
+                      "",
                       test_loadbalanced_client_uri_validation,
                       NULL /* ctx */,
                       NULL /* dtor */,
@@ -808,6 +811,7 @@ test_loadbalanced_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/loadbalanced/connect/single",
+                      "",
                       test_loadbalanced_connect_single,
                       NULL /* ctx */,
                       NULL /* dtor */,
@@ -815,6 +819,7 @@ test_loadbalanced_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/loadbalanced/connect/pooled",
+                      "",
                       test_loadbalanced_connect_pooled,
                       NULL /* ctx */,
                       NULL /* dtor */,
@@ -823,6 +828,7 @@ test_loadbalanced_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/loadbalanced/server_selection_establishes_connection/single",
+      "",
       test_loadbalanced_server_selection_establishes_connection_single,
       NULL /* ctx */,
       NULL /* dtor */,
@@ -830,6 +836,7 @@ test_loadbalanced_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/loadbalanced/cooldown_is_bypassed/single",
+                      "",
                       test_loadbalanced_cooldown_is_bypassed_single,
                       NULL /* dtor */,
                       NULL /* ctx */,
@@ -838,20 +845,24 @@ test_loadbalanced_install (TestSuite *suite)
 
    TestSuite_AddMockServerTest (suite,
                                 "/loadbalanced/handshake_sends_loadbalanced",
+                                "",
                                 test_loadbalanced_handshake_sends_loadbalanced);
 
    TestSuite_AddMockServerTest (
       suite,
       "/loadbalanced/handshake_rejects_non_loadbalanced",
+      "",
       test_loadbalanced_handshake_rejects_non_loadbalanced);
 
    TestSuite_AddMockServerTest (
       suite,
       "/loadbalanced/pre_handshake_error_does_not_clear_pool",
+      "",
       test_pre_handshake_error_does_not_clear_pool);
 
    TestSuite_AddMockServerTest (
       suite,
       "/loadbalanced/post_handshake_error_clears_pool",
+      "",
       test_post_handshake_error_clears_pool);
 }

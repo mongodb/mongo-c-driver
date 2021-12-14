@@ -418,34 +418,37 @@ test_stream_tls_install (TestSuite *suite)
 {
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
    !defined(MONGOC_ENABLE_SSL_LIBRESSL)
-   TestSuite_Add (suite, "/TLS/commonName", test_mongoc_tls_common_name);
-   TestSuite_Add (suite, "/TLS/altname", test_mongoc_tls_altname);
-   TestSuite_Add (suite, "/TLS/basic", test_mongoc_tls_basic);
+   TestSuite_Add (suite, "/TLS/commonName", "", test_mongoc_tls_common_name);
+   TestSuite_Add (suite, "/TLS/altname", "", test_mongoc_tls_altname);
+   TestSuite_Add (suite, "/TLS/basic", "", test_mongoc_tls_basic);
    TestSuite_Add (suite,
                   "/TLS/allow_invalid_hostname",
+                  "",
                   test_mongoc_tls_allow_invalid_hostname);
-   TestSuite_Add (suite, "/TLS/wild", test_mongoc_tls_wild);
-   TestSuite_Add (suite, "/TLS/no_verify", test_mongoc_tls_no_verify);
-   TestSuite_Add (suite, "/TLS/bad_verify", test_mongoc_tls_bad_verify);
-   TestSuite_Add (suite, "/TLS/no_certs", test_mongoc_tls_no_certs);
+   TestSuite_Add (suite, "/TLS/wild", "", test_mongoc_tls_wild);
+   TestSuite_Add (suite, "/TLS/no_verify", "", test_mongoc_tls_no_verify);
+   TestSuite_Add (suite, "/TLS/bad_verify", "", test_mongoc_tls_bad_verify);
+   TestSuite_Add (suite, "/TLS/no_certs", "", test_mongoc_tls_no_certs);
 
-   TestSuite_Add (suite, "/TLS/expired", test_mongoc_tls_expired);
+   TestSuite_Add (suite, "/TLS/expired", "", test_mongoc_tls_expired);
 
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
-   TestSuite_Add (suite, "/TLS/ip", test_mongoc_tls_ip);
-   TestSuite_Add (suite, "/TLS/password", test_mongoc_tls_password);
-   TestSuite_Add (suite, "/TLS/bad_password", test_mongoc_tls_bad_password);
-   TestSuite_Add (
-      suite, "/TLS/weak_cert_validation", test_mongoc_tls_weak_cert_validation);
-   TestSuite_Add (suite, "/TLS/crl", test_mongoc_tls_crl);
+   TestSuite_Add (suite, "/TLS/ip", "", test_mongoc_tls_ip);
+   TestSuite_Add (suite, "/TLS/password", "", test_mongoc_tls_password);
+   TestSuite_Add (suite, "/TLS/bad_password", "", test_mongoc_tls_bad_password);
+   TestSuite_Add (suite,
+                  "/TLS/weak_cert_validation",
+                  "",
+                  test_mongoc_tls_weak_cert_validation);
+   TestSuite_Add (suite, "/TLS/crl", "", test_mongoc_tls_crl);
 #endif
 
 #if !defined(__APPLE__) && !defined(_WIN32) && \
    defined(MONGOC_ENABLE_SSL_OPENSSL) && OPENSSL_VERSION_NUMBER >= 0x10000000L
-   TestSuite_Add (suite, "/TLS/trust_dir", test_mongoc_tls_trust_dir);
+   TestSuite_Add (suite, "/TLS/trust_dir", "", test_mongoc_tls_trust_dir);
 #endif
 
    TestSuite_AddLive (
-      suite, "/TLS/insecure_nowarning", test_mongoc_tls_insecure_nowarning);
+      suite, "/TLS/insecure_nowarning", "", test_mongoc_tls_insecure_nowarning);
 #endif
 }

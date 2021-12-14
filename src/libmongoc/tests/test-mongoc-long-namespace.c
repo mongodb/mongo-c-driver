@@ -574,11 +574,13 @@ unsupported_long_db (void)
 void
 test_long_namespace_install (TestSuite *suite)
 {
+   const char *common_meta = "uses-live-server";
    /* MongoDB 4.4 (wire version 9) introduced support for long namespaces in
     * SERVER-32959 */
    TestSuite_AddFullWithTestFn (
       suite,
       "/long_namespace/client_command",
+      common_meta,
       run_test,
       NULL /* dtor */,
       client_command,
@@ -587,6 +589,7 @@ test_long_namespace_install (TestSuite *suite)
    TestSuite_AddFullWithTestFn (
       suite,
       "/long_namespace/database_command",
+      common_meta,
       run_test,
       NULL /* dtor */,
       database_command,
@@ -595,6 +598,7 @@ test_long_namespace_install (TestSuite *suite)
    TestSuite_AddFullWithTestFn (
       suite,
       "/long_namespace/collection_command",
+      common_meta,
       run_test,
       NULL /* dtor */,
       collection_command,
@@ -603,6 +607,7 @@ test_long_namespace_install (TestSuite *suite)
    TestSuite_AddFullWithTestFn (
       suite,
       "/long_namespace/crud",
+      common_meta,
       run_test,
       NULL /* dtor */,
       crud,
@@ -611,6 +616,7 @@ test_long_namespace_install (TestSuite *suite)
    TestSuite_AddFullWithTestFn (
       suite,
       "/long_namespace/getmore",
+      common_meta,
       run_test,
       NULL /* dtor */,
       getmore,
@@ -618,6 +624,7 @@ test_long_namespace_install (TestSuite *suite)
 
    TestSuite_AddFullWithTestFn (suite,
                                 "/long_namespace/change_stream",
+                                common_meta,
                                 run_test,
                                 NULL /* dtor */,
                                 change_stream,
@@ -627,6 +634,7 @@ test_long_namespace_install (TestSuite *suite)
    TestSuite_AddFullWithTestFn (
       suite,
       "/long_namespace/collection_rename",
+      common_meta,
       run_test,
       NULL /* dtor */,
       collection_rename,
@@ -635,11 +643,14 @@ test_long_namespace_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/long_namespace/unsupported_long_coll",
+                      common_meta,
                       unsupported_long_coll,
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_max_wire_version_more_than_8);
 
-   TestSuite_AddLive (
-      suite, "/long_namespace/unsupported_long_db", unsupported_long_db);
+   TestSuite_AddLive (suite,
+                      "/long_namespace/unsupported_long_db",
+                      common_meta,
+                      unsupported_long_db);
 }

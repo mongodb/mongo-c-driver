@@ -300,6 +300,7 @@ test_retryable_reads_install (TestSuite *suite)
    /* Since we need failpoints, require wire version 7 */
    TestSuite_AddFull (suite,
                       "/retryable_reads/cmd_helpers",
+                      "",
                       test_cmd_helpers,
                       NULL,
                       NULL,
@@ -308,6 +309,7 @@ test_retryable_reads_install (TestSuite *suite)
                       test_framework_skip_if_no_failpoint);
    TestSuite_AddFull (suite,
                       "/retryable_reads/retry_off",
+                      "",
                       test_retry_reads_off,
                       NULL,
                       NULL,

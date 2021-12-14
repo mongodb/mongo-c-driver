@@ -3157,6 +3157,7 @@ test_client_side_encryption_install (TestSuite *suite)
    /* Prose tests from the spec. */
    TestSuite_AddFull (suite,
                       "/client_side_encryption/datakey_and_double_encryption",
+                      "",
                       test_datakey_and_double_encryption,
                       NULL,
                       NULL,
@@ -3166,6 +3167,7 @@ test_client_side_encryption_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/client_side_encryption/external_key_vault",
+      "",
       test_external_key_vault,
       NULL,
       NULL,
@@ -3175,6 +3177,7 @@ test_client_side_encryption_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/client_side_encryption/bson_size_limits_and_batch_splitting",
+      "",
       test_bson_size_limits_and_batch_splitting,
       NULL,
       NULL,
@@ -3182,6 +3185,7 @@ test_client_side_encryption_install (TestSuite *suite)
       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/views_are_prohibited",
+                      "",
                       test_views_are_prohibited,
                       NULL,
                       NULL,
@@ -3189,6 +3193,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/corpus",
+                      "",
                       test_corpus,
                       NULL,
                       NULL,
@@ -3198,6 +3203,7 @@ test_client_side_encryption_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/client_side_encryption/custom_endpoint",
+      "",
       test_custom_endpoint,
       NULL,
       NULL,
@@ -3207,6 +3213,7 @@ test_client_side_encryption_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "mongocryptdBypassSpawn",
+                      "",
                       test_bypass_spawning_via_mongocryptdBypassSpawn,
                       NULL,
                       NULL,
@@ -3215,6 +3222,7 @@ test_client_side_encryption_install (TestSuite *suite)
    TestSuite_AddFull (suite,
                       "/client_side_encryption/bypass_spawning_mongocryptd/"
                       "bypassAutoEncryption",
+                      "",
                       test_bypass_spawning_via_bypassAutoEncryption,
                       NULL,
                       NULL,
@@ -3222,6 +3230,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/valid",
+                      "",
                       test_kms_tls_cert_valid,
                       NULL,
                       NULL,
@@ -3229,6 +3238,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/expired",
+                      "",
                       test_kms_tls_cert_expired,
                       NULL,
                       NULL,
@@ -3236,6 +3246,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/wrong_host",
+                      "",
                       test_kms_tls_cert_wrong_host,
                       NULL,
                       NULL,
@@ -3245,6 +3256,7 @@ test_client_side_encryption_install (TestSuite *suite)
    /* Other, C driver specific, tests. */
    TestSuite_AddFull (suite,
                       "/client_side_encryption/single_and_pool_mismatches",
+                      "",
                       test_invalid_single_and_pool_mismatches,
                       NULL,
                       NULL,
@@ -3252,6 +3264,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/multi_threaded",
+                      "",
                       test_multi_threaded,
                       NULL,
                       NULL,
@@ -3259,6 +3272,7 @@ test_client_side_encryption_install (TestSuite *suite)
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/malformed_explicit",
+                      "",
                       test_malformed_explicit,
                       NULL,
                       NULL,
@@ -3267,6 +3281,7 @@ test_client_side_encryption_install (TestSuite *suite)
    TestSuite_AddFull (
       suite,
       "/client_side_encryption/kms_tls_options",
+      "",
       test_kms_tls_options,
       NULL,
       NULL,
@@ -3279,6 +3294,7 @@ test_client_side_encryption_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls_options/extra_rejected",
+                      "",
                       test_kms_tls_options_extra_rejected,
                       NULL,
                       NULL,

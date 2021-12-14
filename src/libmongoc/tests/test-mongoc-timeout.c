@@ -157,9 +157,9 @@ test_mongoc_timeout_destroy (void)
 void
 test_timeout_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Timeout/new", test_mongoc_timeout_new);
-   TestSuite_Add (suite, "/Timeout/set", test_mongoc_timeout_set);
-   TestSuite_Add (suite, "/Timeout/get", test_mongoc_timeout_get);
-   TestSuite_Add (suite, "/Timeout/copy", test_mongoc_timeout_copy);
-   TestSuite_Add (suite, "/Timeout/destroy", test_mongoc_timeout_destroy);
+   TestSuite_Add (suite, "/Timeout/new", "", test_mongoc_timeout_new);
+   TestSuite_Add (suite, "/Timeout/set", "", test_mongoc_timeout_set);
+   TestSuite_Add (suite, "/Timeout/get", "", test_mongoc_timeout_get);
+   TestSuite_Add (suite, "/Timeout/copy", "", test_mongoc_timeout_copy);
+   TestSuite_Add (suite, "/Timeout/destroy", "", test_mongoc_timeout_destroy);
 }

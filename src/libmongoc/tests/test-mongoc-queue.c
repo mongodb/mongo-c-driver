@@ -52,6 +52,6 @@ test_mongoc_queue_pop_tail (void)
 void
 test_queue_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/Queue/basic", test_mongoc_queue_basic);
-   TestSuite_Add (suite, "/Queue/pop_tail", test_mongoc_queue_pop_tail);
+   TestSuite_Add (suite, "/Queue/basic", "", test_mongoc_queue_basic);
+   TestSuite_Add (suite, "/Queue/pop_tail", "", test_mongoc_queue_pop_tail);
 }

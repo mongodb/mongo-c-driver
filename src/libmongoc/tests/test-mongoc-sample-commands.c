@@ -3964,9 +3964,10 @@ test_with_txn_example (void *unused)
 void
 test_samples_install (TestSuite *suite)
 {
-   TestSuite_AddLive (suite, "/Samples", test_sample_commands);
+   TestSuite_AddLive (suite, "/Samples", "", test_sample_commands);
    TestSuite_AddFull (suite,
                       "/Samples/with_txn",
+                      "",
                       test_with_txn_example,
                       NULL,
                       NULL,

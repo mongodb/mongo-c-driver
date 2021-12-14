@@ -678,37 +678,45 @@ test_retryable_writes_install (TestSuite *suite)
    test_all_spec_tests (suite);
    TestSuite_AddMockServerTest (suite,
                                 "/retryable_writes/failover",
+                                "",
                                 test_rs_failover,
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/command_with_opts",
+                      "",
                       test_command_with_opts,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_rs_version_6);
    TestSuite_AddMockServerTest (suite,
                                 "/retryable_writes/insert_one_unacknowledged",
+                                "",
                                 test_insert_one_unacknowledged,
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest (suite,
                                 "/retryable_writes/update_one_unacknowledged",
+                                "",
                                 test_update_one_unacknowledged,
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest (suite,
                                 "/retryable_writes/delete_one_unacknowledged",
+                                "",
                                 test_delete_one_unacknowledged,
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest (suite,
                                 "/retryable_writes/remove_unacknowledged",
+                                "",
                                 test_remove_unacknowledged,
                                 test_framework_skip_if_no_crypto);
    TestSuite_AddMockServerTest (
       suite,
       "/retryable_writes/bulk_operation_execute_unacknowledged",
+      "",
       test_bulk_operation_execute_unacknowledged,
       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/no_crypto",
+                      "",
                       test_retry_no_crypto,
                       NULL,
                       NULL,
@@ -716,10 +724,12 @@ test_retryable_writes_install (TestSuite *suite)
    TestSuite_AddMockServerTest (
       suite,
       "/retryable_writes/unsupported_storage_engine_error",
+      "",
       test_unsupported_storage_engine_error,
       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/retryable_writes/bulk_tracks_new_server",
+                      "",
                       test_bulk_retry_tracks_new_server,
                       NULL /* dtor */,
                       NULL /* ctx */,

@@ -752,33 +752,45 @@ _test_invalid_wc_server_error (void *unused)
 void
 test_write_command_install (TestSuite *suite)
 {
-   TestSuite_AddLive (suite, "/WriteCommand/split_insert", test_split_insert);
    TestSuite_AddLive (
-      suite, "/WriteCommand/bypass_not_sent", test_bypass_not_sent);
+      suite, "/WriteCommand/split_insert", "", test_split_insert);
    TestSuite_AddLive (
-      suite, "/WriteCommand/invalid_write_concern", test_invalid_write_concern);
+      suite, "/WriteCommand/bypass_not_sent", "", test_bypass_not_sent);
+   TestSuite_AddLive (suite,
+                      "/WriteCommand/invalid_write_concern",
+                      "",
+                      test_invalid_write_concern);
    TestSuite_AddFull (suite,
                       "/WriteCommand/bypass_validation",
+                      "",
                       test_bypass_validation,
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_4);
    TestSuite_AddMockServerTest (suite,
                                 "/WriteCommand/split_opquery_with_options",
+                                "",
                                 test_split_opquery_with_options);
    TestSuite_AddMockServerTest (suite,
                                 "/WriteCommand/insert_disconnect_mid_batch",
+                                "",
                                 test_opmsg_disconnect_mid_batch);
-   TestSuite_AddMockServerTest (
-      suite, "/WriteCommand/w0_legacy_insert_many", test_w0_legacy_insert_many);
-   TestSuite_AddMockServerTest (
-      suite, "/WriteCommand/w0_legacy_update_one", test_w0_legacy_update_one);
+   TestSuite_AddMockServerTest (suite,
+                                "/WriteCommand/w0_legacy_insert_many",
+                                "",
+                                test_w0_legacy_insert_many);
+   TestSuite_AddMockServerTest (suite,
+                                "/WriteCommand/w0_legacy_update_one",
+                                "",
+                                test_w0_legacy_update_one);
    TestSuite_AddMockServerTest (
       suite,
       "/WriteCommand/w0_legacy_update_and_replace_validation",
+      "",
       test_w0_legacy_update_and_replace_validation);
    TestSuite_AddFull (suite,
                       "/WriteCommand/invalid_wc_server_error",
+                      "",
                       _test_invalid_wc_server_error,
                       NULL,
                       NULL,

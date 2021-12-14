@@ -663,6 +663,7 @@ test_exhaust_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/single",
+                      "",
                       test_exhaust_cursor_single,
                       NULL,
                       NULL,
@@ -670,6 +671,7 @@ test_exhaust_install (TestSuite *suite)
                       test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/pool",
+                      "",
                       test_exhaust_cursor_pool,
                       NULL,
                       NULL,
@@ -677,6 +679,7 @@ test_exhaust_install (TestSuite *suite)
                       test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/batches",
+                      "",
                       test_exhaust_cursor_multi_batch,
                       NULL,
                       NULL,
@@ -684,45 +687,56 @@ test_exhaust_install (TestSuite *suite)
                       test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddLive (suite,
                       "/Client/set_max_await_time_ms",
+                      "",
                       test_cursor_set_max_await_time_ms);
    TestSuite_AddMockServerTest (
       suite,
       "/Client/exhaust_cursor/err/network/1st_batch/single",
+      "",
       test_exhaust_network_err_1st_batch_single);
    TestSuite_AddMockServerTest (
       suite,
       "/Client/exhaust_cursor/err/network/1st_batch/pooled",
+      "",
       test_exhaust_network_err_1st_batch_pooled);
    TestSuite_AddMockServerTest (
       suite,
       "/Client/exhaust_cursor/err/server/1st_batch/single",
+      "",
       test_exhaust_server_err_1st_batch_single);
    TestSuite_AddMockServerTest (
       suite,
       "/Client/exhaust_cursor/err/server/1st_batch/pooled",
+      "",
       test_exhaust_server_err_1st_batch_pooled);
    TestSuite_AddMockServerTest (
       suite,
       "/Client/exhaust_cursor/err/network/2nd_batch/single",
+      "",
       test_exhaust_network_err_2nd_batch_single);
    TestSuite_AddMockServerTest (
       suite,
       "/Client/exhaust_cursor/err/network/2nd_batch/pooled",
+      "",
       test_exhaust_network_err_2nd_batch_pooled);
    TestSuite_AddMockServerTest (
       suite,
       "/Client/exhaust_cursor/err/server/2nd_batch/single",
+      "",
       test_exhaust_server_err_2nd_batch_single);
    TestSuite_AddMockServerTest (
       suite,
       "/Client/exhaust_cursor/err/server/2nd_batch/pooled",
+      "",
       test_exhaust_server_err_2nd_batch_pooled);
 #ifndef _WIN32
    /* Skip on Windows, since "fork" is not available and this test is not
     * particularly platform dependent. */
    if (!TestSuite_NoFork (suite)) {
-      TestSuite_AddLive (
-         suite, "/Client/exhaust_cursor/after_reset", test_exhaust_in_child);
+      TestSuite_AddLive (suite,
+                         "/Client/exhaust_cursor/after_reset",
+                         "",
+                         test_exhaust_in_child);
    }
 #endif /* _WIN32 */
 }

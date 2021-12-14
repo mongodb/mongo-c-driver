@@ -711,33 +711,43 @@ void
 test_topology_scanner_install (TestSuite *suite)
 {
    TestSuite_AddMockServerTest (
-      suite, "/TOPOLOGY/scanner", test_topology_scanner);
+      suite, "/TOPOLOGY/scanner", "", test_topology_scanner);
 #ifdef MONGOC_ENABLE_SSL_OPENSSL
    TestSuite_AddMockServerTest (
-      suite, "/TOPOLOGY/scanner_ssl", test_topology_scanner_ssl);
+      suite, "/TOPOLOGY/scanner_ssl", "", test_topology_scanner_ssl);
 #endif
-   TestSuite_AddMockServerTest (
-      suite, "/TOPOLOGY/scanner_discovery", test_topology_scanner_discovery);
-   TestSuite_AddMockServerTest (
-      suite, "/TOPOLOGY/scanner_oscillate", test_topology_scanner_oscillate);
+   TestSuite_AddMockServerTest (suite,
+                                "/TOPOLOGY/scanner_discovery",
+                                "",
+                                test_topology_scanner_discovery);
+   TestSuite_AddMockServerTest (suite,
+                                "/TOPOLOGY/scanner_oscillate",
+                                "",
+                                test_topology_scanner_oscillate);
    TestSuite_Add (suite,
                   "/TOPOLOGY/scanner_connection_error",
+                  "",
                   test_topology_scanner_connection_error);
    TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/scanner_socket_timeout",
+                                "",
                                 test_topology_scanner_socket_timeout);
    TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/blocking_initiator",
+                                "",
                                 test_topology_scanner_blocking_initiator);
    TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/dns",
+                                "",
                                 test_topology_scanner_dns,
                                 test_framework_skip_if_no_dual_ip_hostname);
    TestSuite_AddMockServerTest (suite,
                                 "/TOPOLOGY/retired_fails_to_initiate",
+                                "",
                                 test_topology_retired_fails_to_initiate);
    TestSuite_AddFull (suite,
                       "/TOPOLOGY/scanner/renegotiate/single",
+                      "",
                       test_topology_scanner_does_not_renegotiate_single,
                       NULL,
                       NULL,
@@ -745,6 +755,7 @@ test_topology_scanner_install (TestSuite *suite)
                       test_framework_skip_if_valgrind);
    TestSuite_AddFull (suite,
                       "/TOPOLOGY/scanner/renegotiate/pooled",
+                      "",
                       test_topology_scanner_does_not_renegotiate_pooled,
                       NULL,
                       NULL,

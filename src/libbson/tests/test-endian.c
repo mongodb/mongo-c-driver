@@ -53,7 +53,7 @@ test_swap64 (void)
 void
 test_endian_install (TestSuite *suite)
 {
-   TestSuite_Add (suite, "/endian/swap16", test_swap16);
-   TestSuite_Add (suite, "/endian/swap32", test_swap32);
-   TestSuite_Add (suite, "/endian/swap64", test_swap64);
+   TestSuite_Add (suite, "/endian/swap16", "", test_swap16);
+   TestSuite_Add (suite, "/endian/swap32", "", test_swap32);
+   TestSuite_Add (suite, "/endian/swap64", "", test_swap64);
 }

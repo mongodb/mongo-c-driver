@@ -147,5 +147,5 @@ test_interrupt (void)
 void
 test_interrupt_install (TestSuite *suite)
 {
-   TestSuite_AddMockServerTest (suite, "/interrupt", test_interrupt);
+   TestSuite_AddMockServerTest (suite, "/interrupt", "", test_interrupt);
 }
