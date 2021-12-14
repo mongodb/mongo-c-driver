@@ -559,19 +559,15 @@ get_topology_type (mongoc_client_t *client)
       return "load-balanced";
    }
 
-/* TODO: JFW: we need a way to get the version dynamically here so tests don't break on version bump: */
    if(mongoc_client_uses_server_api(client)) {
-fprintf(stderr, "JFW: get_topology_type(): true\n"), fflush(stderr);
    ret = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'hello': 1},{'apiVersion': 1}"), NULL, &reply, &error);
    }
    else {
-fprintf(stderr, "JFW: get_topology_type(): false\n"), fflush(stderr);
    ret = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'hello': 1}"), NULL, &reply, &error);
    }
 
-/* JFW: the above may mean this is no longer needed: */
    if (!ret) {
       bson_destroy (&reply);
       ret = mongoc_client_command_simple (
