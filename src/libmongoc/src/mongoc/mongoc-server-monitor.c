@@ -111,12 +111,12 @@ static BSON_GNUC_PRINTF (3, 4) void _server_monitor_log (
    bson_free (msg);
 }
 
-#ifdef MONGOC_TRACE
-#define MONITOR_LOG(sm, ...) \
-   _server_monitor_log (sm, MONGOC_LOG_LEVEL_TRACE, __VA_ARGS__)
-#else
-#define MONITOR_LOG(sm, ...) (void) 0
-#endif
+#define MONITOR_LOG(sm, ...)                                            \
+   do {                                                                 \
+      if (MONGOC_TRACE_ENABLED) {                                       \
+         _server_monitor_log (sm, MONGOC_LOG_LEVEL_TRACE, __VA_ARGS__); \
+      }                                                                 \
+   } while (0)
 
 /* TODO CDRIVER-3710 use MONGOC_LOG_LEVEL_ERROR */
 #define MONITOR_LOG_ERROR(sm, ...) \
