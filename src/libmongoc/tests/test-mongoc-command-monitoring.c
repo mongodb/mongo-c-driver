@@ -104,13 +104,11 @@ test_command_monitoring_cb (bson_t *scenario)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   run_unified_tests (suite, JSON_DIR "/command_monitoring/unified");
-
-   test_framework_resolve_path (JSON_DIR "/command_monitoring/legacy",
-                                resolved);
-   install_json_test_suite (suite, resolved, &test_command_monitoring_cb);
+   run_unified_tests (suite, JSON_DIR, "command_monitoring/unified");
+   install_json_test_suite (suite,
+                            JSON_DIR,
+                            "command_monitoring/legacy",
+                            &test_command_monitoring_cb);
 }
 
 

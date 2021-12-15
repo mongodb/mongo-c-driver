@@ -563,7 +563,7 @@ test_write_concern_unacknowledged (void)
    /* In the next insert_many, before CDRIVER-2902 was fixed, we would read that
     * old reply. */
    r = mongoc_collection_insert_many (coll, docs, 2, NULL, &reply, &error);
-   bson_free (docs);
+   bson_free ((void *) docs);
    ASSERT_OR_PRINT (r, error);
 
    /* The replies are distinguished by the insertedCount. */

@@ -2218,7 +2218,7 @@ _test_multi_threaded (bool external_key_vault)
 }
 
 static void
-test_multi_threaded ()
+test_multi_threaded (void *ctx_unused)
 {
    _test_multi_threaded (true);
    _test_multi_threaded (false);
@@ -2741,6 +2741,8 @@ _tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
                    tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:8001' }}"));
       bson_concat (tls_opts,
                    tmp_bson ("{'kmip': {'tlsCaFile': '%s'} }", ca_file));
+   } else {
+      BSON_UNREACHABLE ("Invalid value for test_ce");
    }
 
    client_encryption_opts = mongoc_client_encryption_opts_new ();
@@ -3146,12 +3148,10 @@ test_kms_tls_options_extra_rejected (void *unused)
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   ASSERT (realpath (JSON_DIR "/client_side_encryption", resolved));
    install_json_test_suite_with_check (
       suite,
-      resolved,
+      JSON_DIR,
+      "client_side_encryption",
       test_client_side_encryption_cb,
       test_framework_skip_if_no_client_side_encryption);
    /* Prose tests from the spec. */

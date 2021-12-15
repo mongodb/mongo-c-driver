@@ -133,6 +133,8 @@ endif ()
 include (LoadVersion)
 LoadVersion (${PROJECT_SOURCE_DIR}/VERSION_CURRENT MONGOC)
 
+# Enable "maintainer flags," which are supplementary but not mandatory.
+# (As opposed to MongoC-Warnings.cmake, which are required warnings)
 include (MaintainerFlags)
 
 if ( (ENABLE_BUILD_DEPENDECIES STREQUAL OFF) AND (NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR) )

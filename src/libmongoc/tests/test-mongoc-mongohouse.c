@@ -151,7 +151,6 @@ cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 
    /* Store cursor information from our initial find. */
    if (strcmp (cmd, "find") == 0) {
-
       BSON_ASSERT (!test->parsed_cursor);
 
       bson_iter_init (&iter, reply);
@@ -163,7 +162,7 @@ cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
       BSON_ASSERT (bson_iter_find_descendant (&iter, "cursor.ns", &child_iter));
       BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&child_iter));
 
-      test->cursor_ns = bson_strdup(bson_iter_utf8(&child_iter, NULL));
+      test->cursor_ns = bson_strdup (bson_iter_utf8 (&child_iter, NULL));
       BSON_ASSERT (NULL != test->cursor_ns);
 
       test->parsed_cursor = true;
@@ -194,7 +193,7 @@ cmd_succeeded_cb (const mongoc_apm_command_succeeded_t *event)
 /* Test that the driver properly constructs and issues a killCursors command to
  * ADL. */
 static void
-test_mongohouse_kill_cursors ()
+test_mongohouse_kill_cursors (void *ctx_unused)
 {
    mongoc_apm_callbacks_t *callbacks;
    mongoc_collection_t *coll;
@@ -273,7 +272,7 @@ _run_ping_test (const char *connection_string)
 /* Test that the driver can establish a connection to ADL with authentication.
    Test both SCRAM-SHA-1 and SCRAM-SHA-256. */
 static void
-test_mongohouse_auth ()
+test_mongohouse_auth (void *ctx_unused)
 {
    /* SCRAM-SHA-1 */
    _run_ping_test (
@@ -286,7 +285,7 @@ test_mongohouse_auth ()
 
 /* Test that the driver can connect to ADL without authentication. */
 static void
-test_mongohouse_no_auth ()
+test_mongohouse_no_auth (void *ctx_unused)
 {
    _run_ping_test ("mongodb://localhost:27017");
 }
@@ -295,12 +294,9 @@ test_mongohouse_no_auth ()
 void
 test_mongohouse_install (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   test_framework_resolve_path (JSON_DIR "/mongohouse", resolved);
-
    install_json_test_suite_with_check (suite,
-                                       resolved,
+                                       JSON_DIR,
+                                       "mongohouse",
                                        &test_mongohouse_cb,
                                        test_framework_skip_if_no_mongohouse);
 

@@ -10,6 +10,8 @@ if (ENABLE_TESTS AND NOT MONGOC_ENABLE_STATIC_BUILD)
    )
 endif ()
 
+include (MongoC-Warnings)
+
 set (BSON_OUTPUT_BASENAME "bson" CACHE STRING "Output bson library base name")
 
 include (CheckFunctionExists)
@@ -34,7 +36,17 @@ set (CPACK_PACKAGE_VERSION_MAJOR ${BSON_MAJOR_VERSION})
 set (CPACK_PACKAGE_VERSION_MINOR ${BSON_MINOR_VERSION})
 
 # Enable X/Open 7.0 / POSIX 2008
-add_compile_options($<$<NOT:$<PLATFORM_ID:Windows>>:-D_XOPEN_SOURCE=700>)
+if (NOT WIN32)
+   add_compile_options(-D_XOPEN_SOURCE=700)
+   # Add to CMAKE_REQUIRED_DEFINITIONS to apply to CHECK_SYMBOL_EXISTS.
+   set (CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS} -D_XOPEN_SOURCE=700")
+endif ()
+# Enable macOS extensions for strlcpy and arc4random.
+if (APPLE)
+   add_compile_options(-D_DARWIN_C_SOURCE=1)
+   # Add to CMAKE_REQUIRED_DEFINITIONS to apply to CHECK_SYMBOL_EXISTS.
+   set (CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS} -D_DARWIN_C_SOURCE=1")
+endif ()
 
 include (CPack)
 TEST_BIG_ENDIAN (BSON_BIG_ENDIAN)
@@ -71,6 +83,13 @@ else ()
    set (BSON_HAVE_GMTIME_R 1)
 endif ()
 
+CHECK_SYMBOL_EXISTS (arc4random_buf stdlib.h BSON_HAVE_ARC4RANDOM_BUF)
+if (NOT BSON_HAVE_ARC4RANDOM_BUF)
+   set (BSON_HAVE_ARC4RANDOM_BUF 0)
+else ()
+   set (BSON_HAVE_ARC4RANDOM_BUF 1)
+endif ()
+
 CHECK_FUNCTION_EXISTS (rand_r BSON_HAVE_RAND_R)
 if (NOT BSON_HAVE_RAND_R)
    set (BSON_HAVE_RAND_R 0)
@@ -98,9 +117,10 @@ else ()
    set (BSON_HAVE_STRLCPY 1)
 endif ()
 
+CHECK_INCLUDE_FILE (stdbool.h BSON_HAVE_STDBOOL_H)
+
 if (MSVC)
    set (BSON_HAVE_CLOCK_GETTIME 0)
-   set (BSON_HAVE_STDBOOL_H 0)
    set (BSON_HAVE_STRNLEN 0)
    set (BSON_HAVE_SYSCALL_TID 0)
 else ()
@@ -111,10 +131,6 @@ else ()
    check_symbol_exists (strnlen string.h BSON_HAVE_STRNLEN)
    if (NOT BSON_HAVE_STRNLEN)
       set (BSON_HAVE_STRNLEN 0)
-   endif ()
-   CHECK_INCLUDE_FILE (stdbool.h BSON_HAVE_STDBOOL_H)
-   if (NOT BSON_HAVE_STDBOOL_H)
-      set (BSON_HAVE_STDBOOL_H 0)
    endif ()
    CHECK_SYMBOL_EXISTS (SYS_gettid sys/syscall.h BSON_HAVE_SYSCALL_TID)
    check_symbol_exists (syscall unistd.h _TMP_HAVE_SYSCALL)

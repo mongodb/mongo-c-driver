@@ -358,6 +358,10 @@ _V_TestSuite_AddFull (TestSuite *suite,
    Test *test;
    Test *iter;
 
+   if (suite->ctest_run && (0 != strcmp (suite->ctest_run, name))) {
+      return NULL;
+   }
+
    test = (Test *) calloc (1, sizeof *test);
    test->name = bson_strdup (name);
    test->func = func;
@@ -400,7 +404,9 @@ _TestSuite_AddMockServerTest (
       suite, name, meta1, (TestFuncWC) func, NULL, NULL, ap);
    va_end (ap);
 
-   _TestSuite_AddCheck (test, TestSuite_CheckMockServerAllowed, name);
+   if (test) {
+      _TestSuite_AddCheck (test, TestSuite_CheckMockServerAllowed, name);
+   }
    bson_free (meta1);
 }
 
@@ -456,7 +462,8 @@ _print_getlasterror_win (const char *msg)
                   NULL,
                   GetLastError (),
                   MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  &err_msg,
+                  /* FormatMessage is weird about this param. */
+                  (LPTSTR) &err_msg,
                   0,
                   NULL);
 

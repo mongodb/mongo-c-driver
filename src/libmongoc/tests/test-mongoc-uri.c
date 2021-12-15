@@ -1931,7 +1931,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
 }
 
 static void
-test_mongoc_uri_tls ()
+test_mongoc_uri_tls (void)
 {
    bson_error_t err = {0};
    mongoc_uri_t *uri;
@@ -1991,7 +1991,7 @@ test_mongoc_uri_tls ()
 }
 
 static void
-test_mongoc_uri_ssl ()
+test_mongoc_uri_ssl (void)
 {
    mongoc_uri_t *uri;
 
@@ -2645,7 +2645,7 @@ test_mongoc_uri_int_options (void)
 }
 
 static void
-test_one_tls_option_enables_tls ()
+test_one_tls_option_enables_tls (void)
 {
    const char *opts[] = {MONGOC_URI_TLS "=true",
                          MONGOC_URI_TLSCERTIFICATEKEYFILE "=file.pem",
@@ -2685,7 +2685,7 @@ test_one_tls_option_enables_tls ()
 }
 
 static void
-test_casing_options ()
+test_casing_options (void)
 {
    mongoc_uri_t *uri;
    bson_error_t error;

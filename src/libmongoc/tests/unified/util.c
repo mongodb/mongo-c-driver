@@ -80,12 +80,12 @@ bson_copy_and_sort (const bson_t *in)
       i++;
    }
 
-   qsort (keys, nkeys, sizeof (const char *), cmp_key);
+   qsort ((void *) keys, nkeys, sizeof (const char *), cmp_key);
    for (i = 0; i < nkeys; i++) {
       BSON_ASSERT (bson_iter_init_find (&iter, in, keys[i]));
       BSON_APPEND_VALUE (out, keys[i], bson_iter_value (&iter));
    }
-   bson_free (keys);
+   bson_free ((void *) keys);
    return out;
 }
 
