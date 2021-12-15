@@ -762,7 +762,7 @@ test_write_command_install (TestSuite *suite)
                       test_invalid_write_concern);
    TestSuite_AddFull (suite,
                       "/WriteCommand/bypass_validation",
-                      "",
+                      "uses-live-server",
                       test_bypass_validation,
                       NULL,
                       NULL,
@@ -790,7 +790,7 @@ test_write_command_install (TestSuite *suite)
       test_w0_legacy_update_and_replace_validation);
    TestSuite_AddFull (suite,
                       "/WriteCommand/invalid_wc_server_error",
-                      "",
+                      "uses-live-server",
                       _test_invalid_wc_server_error,
                       NULL,
                       NULL,

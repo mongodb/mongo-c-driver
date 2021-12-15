@@ -1224,7 +1224,7 @@ test_database_install (TestSuite *suite)
                                 test_aggregate_inherit_database);
    TestSuite_AddFull (suite,
                       "/Database/create_with_write_concern",
-                      "",
+                      "uses-live-server",
                       test_create_with_write_concern,
                       NULL,
                       NULL,

@@ -629,7 +629,7 @@ test_find_and_modify_install (TestSuite *suite)
       test_find_and_modify_write_concern_wire_pre_32);
    TestSuite_AddFull (suite,
                       "/find_and_modify/find_and_modify/write_concern_failure",
-                      "",
+                      "uses-live-server",
                       test_find_and_modify_write_concern_wire_32_failure,
                       NULL,
                       NULL,

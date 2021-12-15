@@ -663,7 +663,7 @@ test_exhaust_install (TestSuite *suite)
 {
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/single",
-                      "",
+                      "uses-live-server",
                       test_exhaust_cursor_single,
                       NULL,
                       NULL,
@@ -671,7 +671,7 @@ test_exhaust_install (TestSuite *suite)
                       test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/pool",
-                      "",
+                      "uses-live-server",
                       test_exhaust_cursor_pool,
                       NULL,
                       NULL,
@@ -679,7 +679,7 @@ test_exhaust_install (TestSuite *suite)
                       test_framework_skip_if_no_legacy_opcodes);
    TestSuite_AddFull (suite,
                       "/Client/exhaust_cursor/batches",
-                      "",
+                      "uses-live-server",
                       test_exhaust_cursor_multi_batch,
                       NULL,
                       NULL,

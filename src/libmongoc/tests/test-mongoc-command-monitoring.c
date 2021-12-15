@@ -1414,7 +1414,7 @@ test_command_monitoring_install (TestSuite *suite)
                       test_client_cmd_op_ids);
    TestSuite_AddFull (suite,
                       "/command_monitoring/killcursors_deprecated",
-                      "",
+                      "uses-live-server",
                       test_killcursors_deprecated,
                       NULL /* dtor */,
                       NULL /* ctx */,

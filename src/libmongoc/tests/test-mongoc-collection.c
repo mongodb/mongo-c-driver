@@ -6419,14 +6419,14 @@ test_collection_install (TestSuite *suite)
 
    TestSuite_AddFull (suite,
                       "/Collection/aggregate/write_concern",
-                      "",
+                      "uses-live-server",
                       test_aggregate_w_write_concern,
                       NULL,
                       NULL,
                       test_framework_skip_if_max_wire_version_less_than_5);
    TestSuite_AddFull (suite,
                       "/Collection/read_prefs_is_valid",
-                      "",
+                      "uses-live-server",
                       test_read_prefs_is_valid,
                       NULL,
                       NULL,
@@ -6440,7 +6440,7 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/insert/null_string", "", test_insert_null);
    TestSuite_AddFull (suite,
                       "/Collection/insert/oversize",
-                      "",
+                      "uses-live-server",
                       test_insert_oversize,
                       NULL,
                       NULL,
@@ -6470,7 +6470,7 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/index_compound", "", test_index_compound);
    TestSuite_AddFull (suite,
                       "/Collection/index_geo",
-                      "",
+                      "uses-live-server",
                       test_index_geo,
                       NULL,
                       NULL,
@@ -6480,7 +6480,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/regex", "", test_regex);
    TestSuite_AddFull (suite,
                       "/Collection/decimal128",
-                      "",
+                      "uses-live-server",
                       test_decimal128,
                       NULL,
                       NULL,
@@ -6488,7 +6488,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/update", "", test_update);
    TestSuite_AddFull (suite,
                       "/Collection/update_pipeline",
-                      "",
+                      "uses-live-server",
                       test_update_pipeline,
                       NULL,
                       NULL,
@@ -6498,7 +6498,7 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/update/upsert", "", test_update_upsert);
    TestSuite_AddFull (suite,
                       "/Collection/update/oversize",
-                      "",
+                      "uses-live-server",
                       test_update_oversize,
                       NULL,
                       NULL,
@@ -6507,7 +6507,7 @@ test_collection_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/remove/multi", "", test_remove_multi);
    TestSuite_AddFull (suite,
                       "/Collection/remove/oversize",
-                      "",
+                      "uses-live-server",
                       test_remove_oversize,
                       NULL,
                       NULL,
@@ -6529,7 +6529,7 @@ test_collection_install (TestSuite *suite)
                                 test_count_with_collation_ok);
    TestSuite_AddFull (suite,
                       "/Collection/count/read_concern_live",
-                      "",
+                      "uses-live-server",
                       test_count_read_concern_live,
                       NULL,
                       NULL,
@@ -6544,7 +6544,7 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/aggregate/large", "", test_aggregate_large);
    TestSuite_AddFull (suite,
                       "/Collection/aggregate/secondary",
-                      "",
+                      "uses-live-server",
                       test_aggregate_secondary,
                       NULL,
                       NULL,
@@ -6559,7 +6559,7 @@ test_collection_install (TestSuite *suite)
                                 test_aggregate_read_concern);
    TestSuite_AddFull (suite,
                       "/Collection/aggregate/bypass_document_validation",
-                      "",
+                      "uses-live-server",
                       test_aggregate_bypass,
                       NULL,
                       NULL,
@@ -6582,14 +6582,14 @@ test_collection_install (TestSuite *suite)
                                 test_aggregate_w_server_id_sharded);
    TestSuite_AddFull (suite,
                       "/Collection/aggregate_w_server_id/option",
-                      "",
+                      "uses-live-server",
                       test_aggregate_server_id_option,
                       NULL,
                       NULL,
                       test_framework_skip_if_auth);
    TestSuite_AddFull (suite,
                       "/Collection/validate",
-                      "",
+                      "uses-live-server",
                       test_validate,
                       NULL,
                       NULL,
@@ -6602,7 +6602,7 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/find_read_concern", "", test_find_read_concern);
    TestSuite_AddFull (suite,
                       "/Collection/getmore_read_concern_live",
-                      "",
+                      "uses-live-server",
                       test_getmore_read_concern_live,
                       NULL,
                       NULL,
@@ -6620,7 +6620,7 @@ test_collection_install (TestSuite *suite)
       test_find_and_modify_write_concern_wire_pre_32);
    TestSuite_AddFull (suite,
                       "/Collection/large_return",
-                      "",
+                      "uses-live-server",
                       test_large_return,
                       NULL,
                       NULL,
@@ -6636,7 +6636,7 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/batch_size", "", test_find_batch_size);
    TestSuite_AddFull (suite,
                       "/Collection/command_fully_qualified",
-                      "",
+                      "uses-live-server",
                       test_command_fq,
                       NULL,
                       NULL,
@@ -6649,7 +6649,7 @@ test_collection_install (TestSuite *suite)
       suite, "/Collection/insert/duplicate_key", "", test_insert_duplicate_key);
    TestSuite_AddFull (suite,
                       "/Collection/create_index/fail",
-                      "",
+                      "uses-live-server",
                       test_create_index_fail,
                       NULL,
                       NULL,
@@ -6697,14 +6697,14 @@ test_collection_install (TestSuite *suite)
                                 test_aggregate_with_batch_size);
    TestSuite_AddFull (suite,
                       "/Collection/aggregate_is_sent_to_primary_w_dollar_out",
-                      "",
+                      "uses-live-server",
                       test_aggregate_is_sent_to_primary_w_dollar_out,
                       NULL,
                       NULL,
                       test_framework_skip_if_not_replset);
    TestSuite_AddFull (suite,
                       "/Collection/fam/no_error_on_retry",
-                      "",
+                      "uses-live-server",
                       test_fam_no_error_on_retry,
                       NULL,
                       NULL,

@@ -28,7 +28,7 @@ string (REPLACE "\n" ";" lines "${tests_out}")
 
 function (_register_test name ctest_run)
     # Define the test. Use `--ctest-run` to tell it that CTest is in control.
-    add_test ("${name}" "${TEST_LIBMONGOC_EXE}" --ctest-run "${line}" ${ARGN})
+    add_test ("${name}" "${TEST_LIBMONGOC_EXE}" --ctest-run "${ctest_run}" ${ARGN})
     set_tests_properties ("${name}" PROPERTIES
         # test-libmongoc expects to execute in the root of the source directory
         WORKING_DIRECTORY "${SRC_ROOT}"
@@ -47,17 +47,27 @@ foreach (line IN LISTS lines)
         continue ()
     endif ()
     # The new test name is prefixed with 'mongoc'
-    set (test "mongoc${line}")
-    if (NOT _MDB_TEST_FIXTURES_AUTO_USE)
-        _register_test ("${test}" "${line}")
+    separate_arguments (listing UNIX_COMMAND "${line}")
+    list (GET listing 0 test_name)
+    set (meta "${listing}")
+    list (REMOVE_AT meta 0)
+    set (test "mongoc${test_name}")
+    if (NOT _MDB_TEST_FIXTURES_AUTO_USE OR NOT (meta MATCHES "uses-live-server"))
+        _register_test ("${test}" "${test_name}")
+        set_tests_properties ("${test}" PROPERTIES
+            TIMEOUT 15
+            LABELS "${meta}"
+            )
     else ()
         foreach (fxt IN LISTS _MDB_TEST_FIXTURES_AUTO_USE)
             set (qualname "${fxt}/${test}")
-            _register_test ("${qualname}" "${line}")
+            _register_test ("${qualname}" "${test_name}")
             set_tests_properties ("${qualname}" PROPERTIES
                 FIXTURES_REQUIRED "${fxt}"
                 RESOURCE_LOCK "${fxt}"
                 ENVIRONMENT "MONGOC_TEST_URI=mongodb://localhost:${_MDB_FIXTURE_${fxt}_PORT}"
+                TIMEOUT 15
+                LABELS "${meta}"
                 )
         endforeach ()
     endif ()

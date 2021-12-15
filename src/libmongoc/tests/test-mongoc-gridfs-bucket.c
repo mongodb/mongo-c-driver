@@ -1160,7 +1160,7 @@ test_gridfs_bucket_install (TestSuite *suite)
                       test_framework_skip_if_no_auth);
    TestSuite_AddFull (suite,
                       "/gridfs/find_w_session",
-                      "",
+                      "uses-live-server",
                       test_find_w_session,
                       NULL,
                       NULL,
@@ -1168,7 +1168,7 @@ test_gridfs_bucket_install (TestSuite *suite)
                       test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/gridfs/find",
-                      "",
+                      "uses-live-server",
                       test_find,
                       NULL,
                       NULL,

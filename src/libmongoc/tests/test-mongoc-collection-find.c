@@ -1225,7 +1225,7 @@ test_collection_find_install (TestSuite *suite)
    TestSuite_AddLive (suite, "/Collection/find/fields", "", test_fields);
    TestSuite_AddFull (suite,
                       "/Collection/find/modifiers/maxscan",
-                      "",
+                      "uses-live-server",
                       test_maxscan,
                       NULL,
                       NULL,

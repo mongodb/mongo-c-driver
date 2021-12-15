@@ -1053,7 +1053,7 @@ test_collection_find_with_opts_install (TestSuite *suite)
                       test_server_id_option);
    TestSuite_AddFull (suite,
                       "/Collection/find_with_opts/collation/error",
-                      "",
+                      "uses-live-server",
                       test_find_with_opts_collation_error,
                       NULL,
                       NULL,
