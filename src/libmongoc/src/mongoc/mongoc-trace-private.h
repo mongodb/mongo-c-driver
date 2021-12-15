@@ -26,108 +26,113 @@
 
 #include "mongoc-log.h"
 #include "mongoc-log-private.h"
+#include "mongoc-config.h"
 
 
 BSON_BEGIN_DECLS
 
-
-#ifdef MONGOC_TRACE
-#define TRACE(msg, ...)                   \
-   do {                                   \
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE, \
-                  MONGOC_LOG_DOMAIN,      \
-                  "TRACE: %s():%d " msg,  \
-                  BSON_FUNC,              \
-                  __LINE__,               \
-                  __VA_ARGS__);           \
+#define TRACE(msg, ...)                      \
+   do {                                      \
+      if (MONGOC_TRACE_ENABLED) {            \
+         mongoc_log (MONGOC_LOG_LEVEL_TRACE, \
+                     MONGOC_LOG_DOMAIN,      \
+                     "TRACE: %s():%d " msg,  \
+                     BSON_FUNC,              \
+                     __LINE__,               \
+                     __VA_ARGS__);           \
+      }                                      \
    } while (0)
-#define ENTRY                             \
-   do {                                   \
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE, \
-                  MONGOC_LOG_DOMAIN,      \
-                  "ENTRY: %s():%d",       \
-                  BSON_FUNC,              \
-                  __LINE__);              \
+#define ENTRY                                \
+   do {                                      \
+      if (MONGOC_TRACE_ENABLED) {            \
+         mongoc_log (MONGOC_LOG_LEVEL_TRACE, \
+                     MONGOC_LOG_DOMAIN,      \
+                     "ENTRY: %s():%d",       \
+                     BSON_FUNC,              \
+                     __LINE__);              \
+      }                                      \
    } while (0)
-#define EXIT                              \
-   do {                                   \
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE, \
-                  MONGOC_LOG_DOMAIN,      \
-                  " EXIT: %s():%d",       \
-                  BSON_FUNC,              \
-                  __LINE__);              \
-      return;                             \
+#define EXIT                                 \
+   do {                                      \
+      if (MONGOC_TRACE_ENABLED) {            \
+         mongoc_log (MONGOC_LOG_LEVEL_TRACE, \
+                     MONGOC_LOG_DOMAIN,      \
+                     " EXIT: %s():%d",       \
+                     BSON_FUNC,              \
+                     __LINE__);              \
+      }                                      \
+      return;                                \
    } while (0)
-#define RETURN(ret)                       \
-   do {                                   \
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE, \
-                  MONGOC_LOG_DOMAIN,      \
-                  " EXIT: %s():%d",       \
-                  BSON_FUNC,              \
-                  __LINE__);              \
-      return ret;                         \
+#define RETURN(ret)                          \
+   do {                                      \
+      if (MONGOC_TRACE_ENABLED) {            \
+         mongoc_log (MONGOC_LOG_LEVEL_TRACE, \
+                     MONGOC_LOG_DOMAIN,      \
+                     " EXIT: %s():%d",       \
+                     BSON_FUNC,              \
+                     __LINE__);              \
+      }                                      \
+      return ret;                            \
    } while (0)
-#define GOTO(label)                       \
-   do {                                   \
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE, \
-                  MONGOC_LOG_DOMAIN,      \
-                  " GOTO: %s():%d %s",    \
-                  BSON_FUNC,              \
-                  __LINE__,               \
-                  #label);                \
-      goto label;                         \
+#define GOTO(label)                          \
+   do {                                      \
+      if (MONGOC_TRACE_ENABLED) {            \
+         mongoc_log (MONGOC_LOG_LEVEL_TRACE, \
+                     MONGOC_LOG_DOMAIN,      \
+                     " GOTO: %s():%d %s",    \
+                     BSON_FUNC,              \
+                     __LINE__,               \
+                     #label);                \
+      }                                      \
+      goto label;                            \
    } while (0)
-#define DUMP_BYTES(_n, _b, _l)                            \
-   do {                                                   \
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE,                 \
-                  MONGOC_LOG_DOMAIN,                      \
-                  "TRACE: %s():%d %s = %p [%d]",          \
-                  BSON_FUNC,                              \
-                  __LINE__,                               \
-                  #_n,                                    \
-                  _b,                                     \
-                  (int) _l);                              \
-      mongoc_log_trace_bytes (MONGOC_LOG_DOMAIN, _b, _l); \
+#define DUMP_BYTES(_n, _b, _l)                               \
+   do {                                                      \
+      if (MONGOC_TRACE_ENABLED) {                            \
+         mongoc_log (MONGOC_LOG_LEVEL_TRACE,                 \
+                     MONGOC_LOG_DOMAIN,                      \
+                     "TRACE: %s():%d %s = %p [%d]",          \
+                     BSON_FUNC,                              \
+                     __LINE__,                               \
+                     #_n,                                    \
+                     _b,                                     \
+                     (int) _l);                              \
+         mongoc_log_trace_bytes (MONGOC_LOG_DOMAIN, _b, _l); \
+      }                                                      \
    } while (0)
-#define DUMP_BSON(_bson)                                            \
+#define DUMP_BSON(_bson)                                               \
+   do {                                                                \
+      if (MONGOC_TRACE_ENABLED) {                                      \
+         char *_bson_str;                                              \
+         if (_bson) {                                                  \
+            _bson_str = bson_as_canonical_extended_json (_bson, NULL); \
+         } else {                                                      \
+            _bson_str = bson_strdup ("<NULL>");                        \
+         }                                                             \
+         mongoc_log (MONGOC_LOG_LEVEL_TRACE,                           \
+                     MONGOC_LOG_DOMAIN,                                \
+                     "TRACE: %s():%d %s = %s",                         \
+                     BSON_FUNC,                                        \
+                     __LINE__,                                         \
+                     #_bson,                                           \
+                     _bson_str);                                       \
+         bson_free (_bson_str);                                        \
+      }                                                                \
+   } while (0)
+#define DUMP_IOVEC(_n, _iov, _iovcnt)                               \
    do {                                                             \
-      char *_bson_str;                                              \
-      if (_bson) {                                                  \
-         _bson_str = bson_as_canonical_extended_json (_bson, NULL); \
-      } else {                                                      \
-         _bson_str = bson_strdup ("<NULL>");                        \
+      if (MONGOC_TRACE_ENABLED) {                                   \
+         mongoc_log (MONGOC_LOG_LEVEL_TRACE,                        \
+                     MONGOC_LOG_DOMAIN,                             \
+                     "TRACE: %s():%d %s = %p [%d]",                 \
+                     BSON_FUNC,                                     \
+                     __LINE__,                                      \
+                     #_n,                                           \
+                     (void *) _iov,                                 \
+                     (int) _iovcnt);                                \
+         mongoc_log_trace_iovec (MONGOC_LOG_DOMAIN, _iov, _iovcnt); \
       }                                                             \
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE,                           \
-                  MONGOC_LOG_DOMAIN,                                \
-                  "TRACE: %s():%d %s = %s",                         \
-                  BSON_FUNC,                                        \
-                  __LINE__,                                         \
-                  #_bson,                                           \
-                  _bson_str);                                       \
-      bson_free (_bson_str);                                        \
    } while (0)
-#define DUMP_IOVEC(_n, _iov, _iovcnt)                            \
-   do {                                                          \
-      mongoc_log (MONGOC_LOG_LEVEL_TRACE,                        \
-                  MONGOC_LOG_DOMAIN,                             \
-                  "TRACE: %s():%d %s = %p [%d]",                 \
-                  BSON_FUNC,                                     \
-                  __LINE__,                                      \
-                  #_n,                                           \
-                  (void *) _iov,                                 \
-                  (int) _iovcnt);                                \
-      mongoc_log_trace_iovec (MONGOC_LOG_DOMAIN, _iov, _iovcnt); \
-   } while (0)
-#else
-#define TRACE(msg, ...) (void) 0
-#define ENTRY
-#define EXIT return
-#define RETURN(ret) return ret
-#define GOTO(label) goto label
-#define DUMP_BYTES(_n, _b, _l)
-#define DUMP_IOVEC(_n, _iov, _iovcnt)
-#define DUMP_BSON(_bson)
-#endif
 
 
 BSON_END_DECLS

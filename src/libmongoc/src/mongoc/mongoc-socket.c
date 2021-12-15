@@ -437,7 +437,7 @@ _mongoc_socket_setkeepalive_windows (SOCKET sd)
    }
 }
 #else
-#ifdef MONGOC_TRACE
+
 static const char *
 _mongoc_socket_sockopt_value_to_name (int value)
 {
@@ -463,7 +463,7 @@ _mongoc_socket_sockopt_value_to_name (int value)
       return "Unknown option name";
    }
 }
-#endif
+
 static void
 _mongoc_socket_set_sockopt_if_less (int sd, int name, int value)
 {

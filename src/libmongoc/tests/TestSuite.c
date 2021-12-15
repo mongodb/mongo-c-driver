@@ -181,11 +181,11 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          suite->flags |= TEST_NOFORK;
       } else if ((0 == strcmp ("-t", argv[i])) ||
                  (0 == strcmp ("--trace", argv[i]))) {
-#ifdef MONGOC_TRACE
+         if (!MONGOC_TRACE_ENABLED) {
+            test_error (
+               "-t requires mongoc compiled with -DENABLE_TRACING=ON.");
+         }
          suite->flags |= TEST_TRACE;
-#else
-         test_error ("-t requires mongoc compiled with -DENABLE_TRACING=ON.");
-#endif
       } else if (0 == strcmp ("-F", argv[i])) {
          if (argc - 1 == i) {
             test_error ("-F requires a filename argument.");
@@ -651,14 +651,12 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
 
 
    if (suite->flags & TEST_NOFORK) {
-#ifdef MONGOC_TRACE
       if (suite->flags & TEST_TRACE) {
          mongoc_log_set_handler (mongoc_log_default_handler, NULL);
          mongoc_log_trace_enable ();
       } else {
          mongoc_log_trace_disable ();
       }
-#endif
 
       srand (test->seed);
       test_conveniences_init ();
