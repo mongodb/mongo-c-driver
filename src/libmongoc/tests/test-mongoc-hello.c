@@ -23,24 +23,15 @@
 #include "mock_server/request.h"
 #include "test-conveniences.h"
 
-/* In order for these tests to pass, in addition to a successful non-terminating
-test, all of the following should /also/ be true: */
-bool
-_test_mongoc_should_check_hello ()
-{
-   return test_framework_max_wire_version_at_least (WIRE_VERSION_OP_MSG);
-}
-
-/* Example test of the first hello / isMaster sent on a mongoc_client_t.
- * TODO: test with a mongoc_client_pool_t, which uses a separate code-path. */
+// Example test of the first hello / isMaster sent on a mongoc_client_t.
 bool
 _test_mongoc_hello_impl (int requested_server_api_version)
 {
    mock_server_t *server;
    mongoc_client_t *client;
-   bson_t *ping;
-   bson_error_t error;
    future_t *future;
+   bson_error_t error;
+   bson_t *ping;
    request_t *request;
    bool ret;
 
@@ -54,7 +45,13 @@ _test_mongoc_hello_impl (int requested_server_api_version)
    if (-1 != requested_server_api_version) {
       requested_server_api =
          mongoc_server_api_new (requested_server_api_version);
+      ASSERT (requested_server_api);
    }
+
+   MONGOC_DEBUG (
+      "using requested_server_api_version == %d; requested_server_api = %p\n",
+      requested_server_api_version,
+      (void *) requested_server_api);
 
    server = mock_server_new ();
    mock_server_run (server);
@@ -65,13 +62,21 @@ _test_mongoc_hello_impl (int requested_server_api_version)
 
    ping = BCON_NEW ("ping", BCON_INT32 (1));
 
-   /* Use a "future" function to send a ping command in the background. */
+   // Use a "future" function to send a ping command in the background. 
    future = future_client_command_simple (
-      client, "db", ping, NULL /* read_prefs */, NULL /* reply */, &error);
+      client, "db", ping, NULL, NULL, &error);
 
    /* Since this is the first command, a new connection is opened. */
-   request = mock_server_receives_legacy_hello (server, "{'isMaster': 1}");
+   if(-1 != requested_server_api_version) {
+   	request = mock_server_receives_hello(server);
+   }
+   else {
+	// legacy API:
+   	request = mock_server_receives_legacy_hello (server, "{'isMaster': 1}");
+   } 
+ 
    ASSERT (request);
+
    mock_server_replies_simple (
       request, "{'ok': 1, 'isWritablePrimary': true, 'maxWireVersion': 14 }");
    request_destroy (request);
@@ -86,8 +91,9 @@ _test_mongoc_hello_impl (int requested_server_api_version)
 
    ret = future_get_bool (future);
    ASSERT (ret);
-   future_destroy (future);
 
+   // Tidy up:
+   future_destroy (future);
    bson_destroy (ping);
    mongoc_client_destroy (client);
    mock_server_destroy (server);
@@ -99,56 +105,89 @@ _test_mongoc_hello_impl (int requested_server_api_version)
 void
 test_mongoc_hello ()
 {
-   /* Be sure the test didn't pass when it should /not/ have: */
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
 
-   // Check with the default protocol version (which here may come from the
-   // environment):
-   ASSERT (_test_mongoc_should_check_hello () && _test_mongoc_hello_impl (-1));
+   // Always check with the default protocol version (which here may come from the
+   // environment; this is "legacy hello" in this test):
+   _test_mongoc_hello_impl (-1);
 
-   // Check with a specific protocol version:
-   ASSERT (_test_mongoc_should_check_hello () &&
-           _test_mongoc_hello_impl (MONGOC_SERVER_API_V1));
+   // Check with non-legacy hello:
+   _test_mongoc_hello_impl (MONGOC_SERVER_API_V1);
 }
 
 bool
 _test_mongoc_hello_client_pool_impl (int requested_server_api_version)
 {
+   mock_server_t *server;
+   mongoc_uri_t *test_uri;
    mongoc_client_pool_t *pool;
    mongoc_client_t
-      *cl3; /* the command client, which we'll push back into the pool */
-   bson_t *cmd;
-   bson_error_t err;
-   bool cmd_result;
+      *client; /* the command client, which we'll push back into the pool */
+   request_t *request;
+//   bson_t *cmd;
+//   bson_error_t err;
+//   bool cmd_result;
 
    mongoc_server_api_t *requested_server_api = NULL;
-
-   mongoc_uri_t *test_uri = test_framework_get_uri ();
 
    if (-1 != requested_server_api_version) {
       requested_server_api =
          mongoc_server_api_new (requested_server_api_version);
+      ASSERT (requested_server_api);
    }
+
+   MONGOC_DEBUG (
+      "using requested_server_api_version == %d; requested_server_api = %p\n",
+      requested_server_api_version,
+      (void *) requested_server_api);
+
+   server = mock_server_new ();
+   mock_server_run (server);
+
+   test_uri = mongoc_uri_copy (mock_server_get_uri (server));
+/*
+// JFW: don't use the mock server:
+//   test_uri = test_framework_get_uri ();
+*/
+
+fprintf(stderr, "JFW: 0\n"), fflush(stderr);
 
    pool =
       test_framework_client_pool_new_from_uri (test_uri, requested_server_api);
-
    BSON_ASSERT (pool);
+
+// See test_mongoc_handshake_data_append_success() for a more thorough exercise:
+
+fprintf(stderr, "JFW: 1\n"), fflush(stderr);
    test_framework_set_pool_ssl_opts (pool);
 
-   /* Now, set up a couple of clients, and a ping: */
-   (void) mongoc_client_pool_pop (pool);
-   (void) mongoc_client_pool_pop (pool);
+   client = mongoc_client_pool_pop (pool);
 
+fprintf(stderr, "JFW: 2\n"), fflush(stderr);
+   if(-1 != requested_server_api_version) {
+   	request = mock_server_receives_hello(server);
+   }
+   else {
+	// legacy API:
+   	request = mock_server_receives_legacy_hello (server, "{'isMaster': 1}");
+   } 
+fprintf(stderr, "JFW: 3\n"), fflush(stderr);
+   ASSERT (request);
+
+/*
    cmd = BCON_NEW ("ping", BCON_INT32 (1));
 
-   cl3 = mongoc_client_pool_pop (pool);
-
+fprintf(stderr, "JFW: send cmdsimple\n"), fflush(stderr);
    cmd_result =
-      mongoc_client_command_simple (cl3, "admin", cmd, NULL, NULL, &err);
+      mongoc_client_command_simple (client, "admin", cmd, NULL, NULL, &err);
+fprintf(stderr, "JFW: GOT cmdsimple\n"), fflush(stderr);
 
    ASSERT_OR_PRINT (cmd_result, err);
+*/
 
-   mongoc_client_pool_push (pool, cl3);
+   mongoc_client_pool_push (pool, client);
 
    // Tidy up:
    mongoc_client_pool_destroy (pool);
@@ -168,14 +207,13 @@ present: */
 void
 test_mongoc_hello_client_pool ()
 {
-   // Check with the default protocol version (which here may come from the
-   // environment):
-   ASSERT (_test_mongoc_should_check_hello () &&
-           _test_mongoc_hello_client_pool_impl (-1));
+   if (!TestSuite_CheckMockServerAllowed ()) {
+      return;
+   }
 
-   // Check with a specific protocol version:
-   ASSERT (_test_mongoc_should_check_hello () &&
-           _test_mongoc_hello_client_pool_impl (MONGOC_SERVER_API_V1));
+   _test_mongoc_hello_client_pool_impl (-1);
+
+   _test_mongoc_hello_client_pool_impl (MONGOC_SERVER_API_V1);
 }
 
 void
