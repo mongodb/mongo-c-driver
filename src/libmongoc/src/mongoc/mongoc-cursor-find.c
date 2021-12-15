@@ -32,7 +32,7 @@ _mongoc_cursor_impl_find_opquery_init (mongoc_cursor_t *cursor, bson_t *filter);
 static mongoc_cursor_state_t
 _prime (mongoc_cursor_t *cursor)
 {
-   bool use_find_command;
+   int32_t wire_version;
    mongoc_server_stream_t *server_stream;
    data_find_t *data = (data_find_t *) cursor->impl.data;
 
@@ -41,15 +41,17 @@ _prime (mongoc_cursor_t *cursor)
    if (!server_stream) {
       return DONE;
    }
-   /* find_getmore_killcursors spec:
-    * "The find command does not support the exhaust flag from OP_QUERY." */
-   use_find_command =
-      server_stream->sd->max_wire_version >= WIRE_VERSION_FIND_CMD &&
-      !_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST);
+   wire_version = server_stream->sd->max_wire_version;
    mongoc_server_stream_cleanup (server_stream);
 
    /* set all mongoc_impl_t function pointers. */
-   if (use_find_command) {
+   if (
+      /* Server version 5.1 and newer do not support OP_QUERY. */
+      wire_version > WIRE_VERSION_5_0 ||
+      /* Fallback to legacy OP_QUERY wire protocol messages if exhaust cursor
+         requested with server version 3.6 or newer. */
+      (wire_version >= WIRE_VERSION_FIND_CMD &&
+       !_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST))) {
       _mongoc_cursor_impl_find_cmd_init (cursor, &data->filter /* stolen */);
    } else {
       _mongoc_cursor_impl_find_opquery_init (cursor,

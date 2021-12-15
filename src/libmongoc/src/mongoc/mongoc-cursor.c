@@ -963,6 +963,11 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
          _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
+      if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
+         MONGOC_WARNING (
+            "exhaust cursors not supported with OP_MSG, using normal "
+            "cursor instead");
+      }
    }
 
    if (parts.assembled.session) {
@@ -1003,6 +1008,14 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
           cursor, server_stream, &parts.user_query_flags)) {
       _mongoc_bson_init_if_set (reply);
       GOTO (done);
+   }
+
+   /* Exhaust cursors with OP_MSG not yet supported; fallback to normal cursor.
+    * user_query_flags is unused in OP_MSG, so this technically has no effect,
+    * but is done anyways to ensure the query flags match handling of options.
+    */
+   if (parts.user_query_flags & MONGOC_QUERY_EXHAUST) {
+      parts.user_query_flags ^= MONGOC_QUERY_EXHAUST;
    }
 
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
