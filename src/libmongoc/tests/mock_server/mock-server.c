@@ -946,7 +946,7 @@ mock_server_receives_command (mock_server_t *server,
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_receives_msg --
+ * mock_eerver_receives_msg --
  *
  *       Pop a client OP_MSG request if one is enqueued, or wait up to
  *       request_timeout_ms for the client to send a request. Pass varargs

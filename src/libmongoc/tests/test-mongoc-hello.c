@@ -74,14 +74,14 @@ _test_mongoc_hello_impl (int requested_server_api_version)
 	// legacy API:
    	request = mock_server_receives_legacy_hello (server, "{'isMaster': 1}");
    } 
- 
    ASSERT (request);
 
+   // Note that this basically works against the mock server as there's no "real" legacy mode:
    mock_server_replies_simple (
       request, "{'ok': 1, 'isWritablePrimary': true, 'maxWireVersion': 14 }");
    request_destroy (request);
 
-   /* Now expect the ping command. */
+   // Now expect the ping command that we launched earlier:
    request = mock_server_receives_msg (
       server, MONGOC_MSG_NONE, tmp_bson ("{'ping': 1}"));
    ASSERT (request);
@@ -123,12 +123,8 @@ _test_mongoc_hello_client_pool_impl (int requested_server_api_version)
    mock_server_t *server;
    mongoc_uri_t *test_uri;
    mongoc_client_pool_t *pool;
-   mongoc_client_t
-      *client; /* the command client, which we'll push back into the pool */
+   mongoc_client_t *client; 
    request_t *request;
-//   bson_t *cmd;
-//   bson_error_t err;
-//   bool cmd_result;
 
    mongoc_server_api_t *requested_server_api = NULL;
 
@@ -147,46 +143,32 @@ _test_mongoc_hello_client_pool_impl (int requested_server_api_version)
    mock_server_run (server);
 
    test_uri = mongoc_uri_copy (mock_server_get_uri (server));
-/*
-// JFW: don't use the mock server:
-//   test_uri = test_framework_get_uri ();
-*/
-
-fprintf(stderr, "JFW: 0\n"), fflush(stderr);
 
    pool =
       test_framework_client_pool_new_from_uri (test_uri, requested_server_api);
    BSON_ASSERT (pool);
 
-// See test_mongoc_handshake_data_append_success() for a more thorough exercise:
-
-fprintf(stderr, "JFW: 1\n"), fflush(stderr);
    test_framework_set_pool_ssl_opts (pool);
 
    client = mongoc_client_pool_pop (pool);
+   ASSERT(client);
 
-fprintf(stderr, "JFW: 2\n"), fflush(stderr);
+   // Popping the client should have triggered a connection:
    if(-1 != requested_server_api_version) {
+        // a specific API version has been requested:
    	request = mock_server_receives_hello(server);
    }
    else {
 	// legacy API:
    	request = mock_server_receives_legacy_hello (server, "{'isMaster': 1}");
    } 
-fprintf(stderr, "JFW: 3\n"), fflush(stderr);
-   ASSERT (request);
 
-/*
-   cmd = BCON_NEW ("ping", BCON_INT32 (1));
+   // Check the response from "hello":
+   mock_server_replies_simple (
+      request, "{'ok': 1, 'isWritablePrimary': true, 'maxWireVersion': 14 }");
+   request_destroy (request);
 
-fprintf(stderr, "JFW: send cmdsimple\n"), fflush(stderr);
-   cmd_result =
-      mongoc_client_command_simple (client, "admin", cmd, NULL, NULL, &err);
-fprintf(stderr, "JFW: GOT cmdsimple\n"), fflush(stderr);
-
-   ASSERT_OR_PRINT (cmd_result, err);
-*/
-
+   // Return the client to the pool: 
    mongoc_client_pool_push (pool, client);
 
    // Tidy up:
@@ -198,12 +180,6 @@ fprintf(stderr, "JFW: GOT cmdsimple\n"), fflush(stderr);
    return true;
 }
 
-/* Wrap the underlying test to be sure that it does not /accidentally/ pass when
-it shouldn't. For example, here we want to run the same test whether or not the
-target wire protocol version is supposed to support OP_MSG, but it should
-already FAIL before it reaches this point; we are performing a final check,
-which is to say that it should never pass when the right features aren't
-present: */
 void
 test_mongoc_hello_client_pool ()
 {
@@ -212,7 +188,6 @@ test_mongoc_hello_client_pool ()
    }
 
    _test_mongoc_hello_client_pool_impl (-1);
-
    _test_mongoc_hello_client_pool_impl (MONGOC_SERVER_API_V1);
 }
 
