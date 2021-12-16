@@ -86,7 +86,8 @@ mongoc_async_cmd_new (mongoc_async_t *async,
                       const bson_t *cmd,
                       mongoc_async_cmd_cb_t cb,
                       void *cb_data,
-                      int64_t timeout_msec);
+                      int64_t timeout_msec,
+                      bool force_legacy_hello);
 
 void
 mongoc_async_cmd_destroy (mongoc_async_cmd_t *acmd);

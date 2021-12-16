@@ -155,7 +155,8 @@ test_hello_impl (bool with_ssl)
                             &q,
                             &test_hello_helper,
                             (void *) &results[i],
-                            TIMEOUT);
+                            TIMEOUT,
+			    force_legacy_hello_yes);
    }
 
    future = future_async_run (async);
@@ -354,7 +355,8 @@ test_hello_delay ()
                          &hello_cmd,
                          &test_hello_delay_callback,
                          &stream_with_result,
-                         TIMEOUT);
+                         TIMEOUT,
+                         true);  /* force legacy hello */
 
    mongoc_async_run (async);
 

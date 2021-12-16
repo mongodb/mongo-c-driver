@@ -34,6 +34,8 @@
 
 BSON_BEGIN_DECLS
 
+typedef enum { force_legacy_hello_no, force_legacy_hello_yes } force_legacy_hello_t;
+
 typedef void (*mongoc_topology_scanner_setup_err_cb_t) (
    uint32_t id, void *data, const bson_error_t *error /* IN */);
 
