@@ -462,7 +462,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
          MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS;
 
       /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
-      prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
+      prefixed_service = bson_strdup_printf (
+         "_%s._tcp.%s", mongoc_uri_get_srv_service_name (uri), service);
       if (!topology->rr_resolver (prefixed_service,
                                   MONGOC_RR_SRV,
                                   &rr_data,
@@ -814,7 +815,8 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    TRACE ("%s", "Polling for SRV records");
 
    /* Go forth and query... */
-   prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
+   prefixed_service = bson_strdup_printf (
+      "_%s._tcp.%s", mongoc_uri_get_srv_service_name (topology->uri), service);
 
    ret = topology->rr_resolver (prefixed_service,
                                 MONGOC_RR_SRV,
