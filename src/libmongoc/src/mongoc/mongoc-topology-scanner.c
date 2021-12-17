@@ -374,12 +374,13 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
                   mongoc_stream_t *stream,
                   bool is_setup_done,
                   struct addrinfo *dns_result,
-                  int64_t initiate_delay_ms)
+                  int64_t initiate_delay_ms,
+                  bool use_handshake)
 {
    mongoc_topology_scanner_t *ts = node->ts;
    bson_t cmd;
 
-   if (node->last_used != -1 && node->last_failed == -1) {
+   if (node->last_used != -1 && node->last_failed == -1 && !use_handshake) {
       /* The node's been used before and not failed recently */
       bson_copy_to (
          _mongoc_topology_scanner_get_monitoring_cmd (ts, node->hello_ok),
@@ -946,11 +947,21 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node,
    }
 
    if (node->successful_dns_result) {
-      _begin_hello_cmd (node, NULL, false, node->successful_dns_result, 0);
+      _begin_hello_cmd (node,
+                        NULL /* stream */,
+                        false /* is_setup_done */,
+                        node->successful_dns_result,
+                        0 /* initiate_delay_ms */,
+                        true /* use_handshake */);
    } else {
       LL_FOREACH2 (node->dns_results, iter, ai_next)
       {
-         _begin_hello_cmd (node, NULL, false, iter, delay);
+         _begin_hello_cmd (node,
+                           NULL /* stream */,
+                           false /* is_setup_done */,
+                           iter,
+                           delay,
+                           true /* use_handshake */);
          /* each subsequent DNS result will have an additional 250ms delay. */
          delay += HAPPY_EYEBALLS_DELAY_MS;
       }
@@ -1017,7 +1028,8 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
                         stream,
                         false /* is_setup_done */,
                         NULL /* dns result */,
-                        0 /* delay */);
+                        0 /* delay */,
+                        true /* use_handshake */);
       RETURN (true);
    }
    bson_set_error (error,
@@ -1055,7 +1067,12 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 
    /* if there is already a working stream, push it back to be re-scanned. */
    if (node->stream) {
-      _begin_hello_cmd (node, node->stream, true /* is_setup_done */, NULL, 0);
+      _begin_hello_cmd (node,
+                        node->stream,
+                        true /* is_setup_done */,
+                        NULL /* dns_result */,
+                        0 /* initiate_delay_ms */,
+                        false /* use_handshake */);
       node->stream = NULL;
       return;
    }
@@ -1067,7 +1084,12 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
          node->ts->uri, &node->host, node->ts->initiator_context, error);
       if (stream) {
          success = true;
-         _begin_hello_cmd (node, stream, false, NULL, 0);
+         _begin_hello_cmd (node,
+                           stream,
+                           false /* is_setup_done */,
+                           NULL /* dns_result */,
+                           0 /* initiate_delay_ms */,
+                           true /* use_handshake */);
       }
    } else {
       if (node->host.family == AF_UNIX) {
