@@ -366,7 +366,7 @@
  * Set if tracing is enabled. Logs things like network communication and
  * entry/exit of certain functions.
  */
-#cmakedefine01 MONGOC_TRACE
+#define MONGOC_TRACE @MONGOC_TRACE@
 
 enum {
    /**
