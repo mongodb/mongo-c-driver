@@ -2268,9 +2268,9 @@ mongoc_uri_get_service (const mongoc_uri_t *uri)
 const char *
 mongoc_uri_get_srv_service_name (const mongoc_uri_t *uri)
 {
-   BSON_ASSERT_PARAM (uri);
-
    bson_iter_t iter;
+
+   BSON_ASSERT_PARAM (uri);
 
    if (bson_iter_init_find_case (
           &iter, &uri->options, MONGOC_URI_SRVSERVICENAME) &&
