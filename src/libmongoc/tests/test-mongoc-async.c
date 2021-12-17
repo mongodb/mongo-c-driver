@@ -80,7 +80,7 @@ test_hello_helper (mongoc_async_cmd_t *acmd,
 
 
 static void
-test_hello_impl (bool with_ssl)
+test_hello_impl (bool with_ssl, force_legacy_hello_t force_legacy_hello)
 {
    mock_server_t *servers[NSERVERS];
    mongoc_async_t *async;
@@ -92,7 +92,7 @@ test_hello_impl (bool with_ssl)
    int i;
    int offset;
    int server_id;
-   bson_t q = BSON_INITIALIZER;
+   bson_t q = BSON_INITIALIZER;	/* "q" is the query (command) we will run */
    future_t *future;
    request_t *request;
    char *reply;
@@ -106,7 +106,13 @@ test_hello_impl (bool with_ssl)
       return;
    }
 
-   BSON_ASSERT (BSON_APPEND_INT32 (&q, HANDSHAKE_CMD_LEGACY_HELLO, 1));
+   if(force_legacy_hello_no == force_legacy_hello) {
+       BSON_ASSERT (BSON_APPEND_INT32 (&q, "hello", 1));
+   }
+   else
+   {
+       BSON_ASSERT (BSON_APPEND_INT32 (&q, HANDSHAKE_CMD_LEGACY_HELLO, 1));
+   }
 
    for (i = 0; i < NSERVERS; i++) {
       servers[i] = mock_server_new ();
@@ -156,7 +162,7 @@ test_hello_impl (bool with_ssl)
                             &test_hello_helper,
                             (void *) &results[i],
                             TIMEOUT,
-			    force_legacy_hello_yes);
+			    force_legacy_hello);
    }
 
    future = future_async_run (async);
@@ -205,7 +211,8 @@ test_hello_impl (bool with_ssl)
 static void
 test_hello (void)
 {
-   test_hello_impl (false);
+   test_hello_impl (false, force_legacy_hello_no);
+   test_hello_impl (false, force_legacy_hello_yes);
 }
 
 
@@ -213,7 +220,8 @@ test_hello (void)
 static void
 test_hello_ssl (void)
 {
-   test_hello_impl (true);
+   test_hello_impl (true, force_legacy_hello_no);
+   test_hello_impl (true, force_legacy_hello_yes);
 }
 #else
 
@@ -297,7 +305,8 @@ test_large_hello (void *ctx)
                          &q,
                          &test_large_hello_helper,
                          NULL,
-                         TIMEOUT);
+                         TIMEOUT,
+                         force_legacy_hello_yes);
 
    mongoc_async_run (async);
    mongoc_async_destroy (async);
@@ -356,7 +365,7 @@ test_hello_delay ()
                          &test_hello_delay_callback,
                          &stream_with_result,
                          TIMEOUT,
-                         true);  /* force legacy hello */
+                         force_legacy_hello_yes); 
 
    mongoc_async_run (async);
 
