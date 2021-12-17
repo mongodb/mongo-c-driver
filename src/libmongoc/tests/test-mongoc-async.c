@@ -53,6 +53,39 @@ get_localhost_stream (uint16_t port)
 
 
 static void
+test_legacy_hello_helper (mongoc_async_cmd_t *acmd,
+                   mongoc_async_cmd_result_t result,
+                   const bson_t *bson,
+                   int64_t duration_usec)
+{
+   struct result *r = (struct result *) acmd->data;
+   bson_iter_t iter;
+   bson_error_t *error = &acmd->error;
+
+   /* ignore the connected event. */
+   if (result == MONGOC_ASYNC_CMD_CONNECTED) {
+      return;
+   }
+
+   if (result != MONGOC_ASYNC_CMD_SUCCESS) {
+      fprintf (stderr, "error: %s\n", error->message);
+   }
+   ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
+
+/* JFW: large_hello_helper does it a bit differently:
+   ASSERT_HAS_FIELD (bson, HANDSHAKE_RESPONSE_LEGACY_HELLO);
+   BSON_ASSERT (bson_iter_init_find (&iter, bson, HANDSHAKE_RESPONSE_LEGACY_HELLO));
+   BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
+*/
+
+   BSON_ASSERT (bson_iter_init_find (&iter, bson, "serverId"));
+   BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
+
+   r->server_id = bson_iter_int32 (&iter);
+   r->finished = true;
+}
+
+static void
 test_hello_helper (mongoc_async_cmd_t *acmd,
                    mongoc_async_cmd_result_t result,
                    const bson_t *bson,
@@ -72,12 +105,13 @@ test_hello_helper (mongoc_async_cmd_t *acmd,
    }
    ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
+// JFW: check that this is still returned (the calling unit test relies on these being consecutive)
    BSON_ASSERT (bson_iter_init_find (&iter, bson, "serverId"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
+
    r->server_id = bson_iter_int32 (&iter);
    r->finished = true;
 }
-
 
 static void
 test_hello_impl (bool with_ssl, force_legacy_hello_t force_legacy_hello)
@@ -92,10 +126,12 @@ test_hello_impl (bool with_ssl, force_legacy_hello_t force_legacy_hello)
    int i;
    int offset;
    int server_id;
-   bson_t q = BSON_INITIALIZER;	/* "q" is the query (command) we will run */
+   bson_t q = BSON_INITIALIZER;	/* 'q' is the query/command we will run */
    future_t *future;
    request_t *request;
    char *reply;
+
+   void (*test_helper_fn) (mongoc_async_cmd_t *, mongoc_async_cmd_result_t, const bson_t *, int64_t) = NULL;
 
 #ifdef MONGOC_ENABLE_SSL
    mongoc_ssl_opt_t sopt = {0};
@@ -108,10 +144,12 @@ test_hello_impl (bool with_ssl, force_legacy_hello_t force_legacy_hello)
 
    if(force_legacy_hello_no == force_legacy_hello) {
        BSON_ASSERT (BSON_APPEND_INT32 (&q, "hello", 1));
+       test_helper_fn = &test_hello_helper;
    }
    else
    {
        BSON_ASSERT (BSON_APPEND_INT32 (&q, HANDSHAKE_CMD_LEGACY_HELLO, 1));
+       test_helper_fn = &test_legacy_hello_helper;
    }
 
    for (i = 0; i < NSERVERS; i++) {
@@ -159,7 +197,7 @@ test_hello_impl (bool with_ssl, force_legacy_hello_t force_legacy_hello)
                             setup_ctx,
                             "admin",
                             &q,
-                            &test_hello_helper,
+                            *test_helper_fn,
                             (void *) &results[i],
                             TIMEOUT,
 			    force_legacy_hello);
@@ -174,16 +212,22 @@ test_hello_impl (bool with_ssl, force_legacy_hello_t force_legacy_hello)
       request = mock_server_receives_command (
          servers[server_id], "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
 
-      /* use "serverId" field to distinguish among responses */
-      reply = bson_strdup_printf ("{'ok': 1,"
-                                  " '"HANDSHAKE_RESPONSE_LEGACY_HELLO"': true,"
-                                  " 'minWireVersion': 0,"
-                                  " 'maxWireVersion': 1000,"
-                                  " 'serverId': %d}",
-                                  server_id);
+      if(force_legacy_hello_yes == force_legacy_hello) {
+      	/* use "serverId" field to distinguish among responses */
+      	reply = bson_strdup_printf ("{'ok': 1,"
+      	                            " '"HANDSHAKE_RESPONSE_LEGACY_HELLO"': true,"
+      	                            " 'minWireVersion': 0,"
+      	                            " 'maxWireVersion': 1000,"
+      	                            " 'serverId': %d}",
+      	                            server_id);
 
-      mock_server_replies_simple (request, reply);
-      bson_free (reply);
+      	mock_server_replies_simple (request, reply);
+      	bson_free (reply);
+      } 
+      else {
+	fprintf(stderr, "JFW: skipping handshake response\n"), fflush(stderr);
+      }
+
       request_destroy (request);
    }
 
