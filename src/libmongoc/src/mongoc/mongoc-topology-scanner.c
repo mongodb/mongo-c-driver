@@ -322,8 +322,7 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
                   mongoc_stream_t *stream,
                   bool is_setup_done,
                   struct addrinfo *dns_result,
-                  int64_t initiate_delay_ms,
-                  force_legacy_hello_t force_legacy_hello)
+                  int64_t initiate_delay_ms)
 {
    mongoc_topology_scanner_t *ts = node->ts;
    bson_t cmd;
@@ -372,8 +371,7 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
                          &cmd,
                          &_async_handler,
                          node,
-                         ts->connect_timeout_msec,
-                         true /* force legacy hello (OP_QUERY) */);
+                         ts->connect_timeout_msec);
 
    bson_destroy (&cmd);
 }
@@ -893,11 +891,11 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node,
    }
 
    if (node->successful_dns_result) {
-      _begin_hello_cmd (node, NULL, false, node->successful_dns_result, 0, false);
+      _begin_hello_cmd (node, NULL, false, node->successful_dns_result, 0);
    } else {
       LL_FOREACH2 (node->dns_results, iter, ai_next)
       {
-         _begin_hello_cmd (node, NULL, false, iter, delay, force_legacy_hello_yes);
+         _begin_hello_cmd (node, NULL, false, iter, delay);
          /* each subsequent DNS result will have an additional 250ms delay. */
          delay += HAPPY_EYEBALLS_DELAY_MS;
       }
@@ -964,8 +962,7 @@ mongoc_topology_scanner_node_connect_unix (mongoc_topology_scanner_node_t *node,
                         stream,
                         false /* is_setup_done */,
                         NULL /* dns result */,
-                        0 /* delay */,
-                        force_legacy_hello_yes);
+                        0 /* delay */);
       RETURN (true);
    }
    bson_set_error (error,
@@ -1003,7 +1000,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
 
    /* if there is already a working stream, push it back to be re-scanned. */
    if (node->stream) {
-      _begin_hello_cmd (node, node->stream, true /* is_setup_done */, NULL, 0, force_legacy_hello_yes);
+      _begin_hello_cmd (node, node->stream, true /* is_setup_done */, NULL, 0);
       node->stream = NULL;
       return;
    }
@@ -1015,7 +1012,7 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
          node->ts->uri, &node->host, node->ts->initiator_context, error);
       if (stream) {
          success = true;
-         _begin_hello_cmd (node, stream, false, NULL, 0, force_legacy_hello_yes);
+         _begin_hello_cmd (node, stream, false, NULL, 0);
       }
    } else {
       if (node->host.family == AF_UNIX) {

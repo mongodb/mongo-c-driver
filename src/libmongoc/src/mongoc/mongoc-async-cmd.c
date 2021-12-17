@@ -134,24 +134,20 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
 }
 
 void
-_mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname, bool force_legacy_hello)
+_mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname)
 {
    acmd->ns = bson_strdup_printf ("%s.$cmd", dbname);
 
    acmd->rpc.header.msg_len = 0;
    acmd->rpc.header.request_id = ++acmd->async->request_id;
    acmd->rpc.header.response_to = 0;
-   acmd->rpc.header.opcode = MONGOC_OPCODE_MSG;
+   acmd->rpc.header.opcode = MONGOC_OPCODE_QUERY;
    acmd->rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
    acmd->rpc.query.collection = acmd->ns;
    acmd->rpc.query.skip = 0;
    acmd->rpc.query.n_return = -1;
    acmd->rpc.query.query = bson_get_data (&acmd->cmd);
    acmd->rpc.query.fields = NULL;
-
-   if(force_legacy_hello) {
-   	acmd->rpc.header.opcode = MONGOC_OPCODE_QUERY;
-   }
 
    /* This will always be hello, which are not allowed to be compressed */
    _mongoc_rpc_gather (&acmd->rpc, &acmd->array);
@@ -188,8 +184,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
                       const bson_t *cmd,
                       mongoc_async_cmd_cb_t cb,
                       void *cb_data,
-                      int64_t timeout_msec,
-                      bool force_legacy_hello)
+                      int64_t timeout_msec)
 {
    mongoc_async_cmd_t *acmd;
 
@@ -213,7 +208,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
    _mongoc_array_init (&acmd->array, sizeof (mongoc_iovec_t));
    _mongoc_buffer_init (&acmd->buffer, NULL, 0, NULL, NULL);
 
-   _mongoc_async_cmd_init_send (acmd, dbname, force_legacy_hello);
+   _mongoc_async_cmd_init_send (acmd, dbname);
 
    _mongoc_async_cmd_state_start (acmd, is_setup_done);
 
