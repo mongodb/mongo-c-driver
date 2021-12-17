@@ -3265,9 +3265,8 @@ mongoc_uri_finalize_srv (const mongoc_uri_t *uri, bson_error_t *error)
       }
 
       if (option) {
-         MONGOC_URI_ERROR (error,
-                           "%s must not be specified with a non-SRV URI",
-                           MONGOC_URI_SRVMAXHOSTS);
+         MONGOC_URI_ERROR (
+            error, "%s must not be specified with a non-SRV URI", option);
          return false;
       }
    }
