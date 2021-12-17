@@ -4145,6 +4145,65 @@ test_mongoc_client_get_handshake_establishes_connection_pooled (void)
    mongoc_client_pool_destroy (pool);
 }
 
+/* Regression test for CDRIVER-4207. */
+void
+test_mongoc_client_resends_handshake_on_network_error (void)
+{
+   mongoc_client_t *client;
+   mock_server_t *server;
+   future_t *future;
+   request_t *request;
+   bson_error_t error;
+   bson_t *ping = tmp_bson ("{'ping': 1}");
+
+   server = mock_server_new ();
+   mock_server_run (server);
+   client = mongoc_client_new_from_uri (mock_server_get_uri (server));
+   mongoc_client_set_appname (client, "foo");
+
+   /* Send a "ping" command. */
+   future = future_client_command_simple (
+      client, "db", ping, NULL /* read_prefs */, NULL /* reply */, &error);
+   /* The first command on the new connection is handshake. It uses the legacy
+    * hello and includes the client.application.name. */
+   request = mock_server_receives_legacy_hello (
+      server,
+      "{'" HANDSHAKE_CMD_LEGACY_HELLO
+      "': 1, 'client': {'application': {'name': 'foo'}}}");
+   mock_server_replies_simple (request, "{'ok': 1, 'maxWireVersion': 14 }");
+   request_destroy (request);
+   request = mock_server_receives_msg (
+      server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+   mock_server_hangs_up (request);
+   future_wait (future);
+   future_destroy (future);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_SOCKET,
+                          "socket error or timeout");
+   request_destroy (request);
+
+   /* Send another "ping" command. */
+   future = future_client_command_simple (
+      client, "db", ping, NULL /* read_prefs */, NULL /* reply */, &error);
+   /* Expect the new connection to send the full handshake. */
+   request = mock_server_receives_legacy_hello (
+      server,
+      "{'" HANDSHAKE_CMD_LEGACY_HELLO
+      "': 1, 'client': {'application': {'name': 'foo'}}}");
+   mock_server_replies_simple (request, "{'ok': 1, 'maxWireVersion': 14 }");
+   request_destroy (request);
+
+   request = mock_server_receives_msg (
+      server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT (future_get_bool (future));
+   future_destroy (future);
+
+   mongoc_client_destroy (client);
+   mock_server_destroy (server);
+}
+
 void
 test_client_install (TestSuite *suite)
 {
@@ -4452,4 +4511,8 @@ test_client_install (TestSuite *suite)
       suite,
       "/Client/get_handshake_establishes_connection/pooled",
       test_mongoc_client_get_handshake_establishes_connection_pooled);
+   TestSuite_AddMockServerTest (
+      suite,
+      "/Client/resends_handshake_on_network_error",
+      test_mongoc_client_resends_handshake_on_network_error);
 }
