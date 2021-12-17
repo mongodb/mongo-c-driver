@@ -948,16 +948,20 @@ mongoc_topology_scanner_node_setup_tcp (mongoc_topology_scanner_node_t *node,
 
    if (node->successful_dns_result) {
       _begin_hello_cmd (node,
-                        NULL,
-                        false,
+                        NULL /* stream */,
+                        false /* is_setup_done */,
                         node->successful_dns_result,
-                        0,
+                        0 /* initiate_delay_ms */,
                         true /* use_handshake */);
    } else {
       LL_FOREACH2 (node->dns_results, iter, ai_next)
       {
-         _begin_hello_cmd (
-            node, NULL, false, iter, delay, true /* use_handshake */);
+         _begin_hello_cmd (node,
+                           NULL /* stream */,
+                           false /* is_setup_done */,
+                           iter,
+                           delay,
+                           true /* use_handshake */);
          /* each subsequent DNS result will have an additional 250ms delay. */
          delay += HAPPY_EYEBALLS_DELAY_MS;
       }
@@ -1066,8 +1070,8 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
       _begin_hello_cmd (node,
                         node->stream,
                         true /* is_setup_done */,
-                        NULL,
-                        0,
+                        NULL /* dns_result */,
+                        0 /* initiate_delay_ms */,
                         false /* use_handshake */);
       node->stream = NULL;
       return;
@@ -1080,8 +1084,12 @@ mongoc_topology_scanner_node_setup (mongoc_topology_scanner_node_t *node,
          node->ts->uri, &node->host, node->ts->initiator_context, error);
       if (stream) {
          success = true;
-         _begin_hello_cmd (
-            node, stream, false, NULL, 0, true /* use_handshake */);
+         _begin_hello_cmd (node,
+                           stream,
+                           false /* is_setup_done */,
+                           NULL /* dns_result */,
+                           0 /* initiate_delay_ms */,
+                           true /* use_handshake */);
       }
    } else {
       if (node->host.family == AF_UNIX) {
