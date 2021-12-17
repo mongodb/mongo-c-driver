@@ -2255,13 +2255,20 @@ mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri)
 
 
 const char *
-mongoc_uri_get_service (const mongoc_uri_t *uri)
+mongoc_uri_get_srv_hostname (const mongoc_uri_t *uri)
 {
    if (uri->is_srv) {
       return uri->srv;
    }
 
    return NULL;
+}
+
+
+const char *
+mongoc_uri_get_service (const mongoc_uri_t *uri)
+{
+   return mongoc_uri_get_srv_hostname (uri);
 }
 
 

@@ -1,15 +1,15 @@
-:man_page: mongoc_uri_get_service
+:man_page: mongoc_uri_get_srv_hostname
 
-mongoc_uri_get_service()
-========================
+mongoc_uri_get_srv_hostname()
+=============================
 
 Synopsis
 --------
 
 .. code-block:: c
 
-  const char *
-  mongoc_uri_get_service (const mongoc_uri_t *uri)
+  MONGOC_EXPORT (const char *)
+  mongoc_uri_get_srv_hostname (const mongoc_uri_t *uri)
      BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_srv_hostname);
 
 Parameters
@@ -17,12 +17,8 @@ Parameters
 
 * ``uri``: A :symbol:`mongoc_uri_t`.
 
-Deprecated
-----------
-
-This function is deprecated and should not be used in new code.
-
-Please use :symbol:`mongoc_uri_get_srv_hostname()` instead.
+Description
+-----------
 
 Returns the SRV host and domain name of a MongoDB URI.
 
