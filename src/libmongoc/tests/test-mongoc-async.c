@@ -77,7 +77,6 @@ test_legacy_hello_helper (mongoc_async_cmd_t *acmd,
    BSON_ASSERT (bson_iter_init_find (&iter, bson, HANDSHAKE_RESPONSE_LEGACY_HELLO));
    BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
 */
-
    BSON_ASSERT (bson_iter_init_find (&iter, bson, "serverId"));
    BSON_ASSERT (BSON_ITER_HOLDS_INT32 (&iter));
 
@@ -101,7 +100,7 @@ test_hello_helper (mongoc_async_cmd_t *acmd,
    }
 
    if (result != MONGOC_ASYNC_CMD_SUCCESS) {
-      fprintf (stderr, "error: %s\n", error->message);
+      fprintf (stderr, "error (test_hello_helper): %s\n", error->message);
    }
    ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
@@ -225,7 +224,11 @@ test_hello_impl (bool with_ssl, force_legacy_hello_t force_legacy_hello)
       	bson_free (reply);
       } 
       else {
-	fprintf(stderr, "JFW: skipping handshake response\n"), fflush(stderr);
+      	reply = bson_strdup_printf ("{'ok': 1,"
+      	                            " 'minWireVersion': 0,"
+      	                            " 'maxWireVersion': 1000,"
+      	                            " 'serverId': %d}",
+      	                            server_id);
       }
 
       request_destroy (request);
