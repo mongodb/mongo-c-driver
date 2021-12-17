@@ -19,7 +19,7 @@ Parameters
 Description
 -----------
 
-Returns the SRV service name of a MongoDB URI.
+Returns the SRV host and domain name of a MongoDB URI.
 
 Returns
 -------
