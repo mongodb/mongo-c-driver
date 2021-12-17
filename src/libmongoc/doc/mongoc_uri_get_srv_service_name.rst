@@ -1,7 +1,7 @@
 :man_page: mongoc_uri_get_srv_service_name
 
 mongoc_uri_get_srv_service_name()
-========================
+=================================
 
 Synopsis
 --------
