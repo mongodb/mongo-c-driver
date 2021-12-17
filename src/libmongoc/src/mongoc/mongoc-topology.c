@@ -341,8 +341,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    mongoc_topology_t *topology;
    mongoc_topology_description_type_t init_type;
    mongoc_topology_description_t *td;
-   const char *service;
-   char *prefixed_service;
+   const char *srv_hostname;
    const mongoc_host_list_t *hl;
    mongoc_rr_data_t rr_data;
    bool has_directconnection;
@@ -448,8 +447,10 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       }
    }
 
-   service = mongoc_uri_get_service (uri);
-   if (service) {
+   srv_hostname = mongoc_uri_get_srv_hostname (uri);
+   if (srv_hostname) {
+      char *prefixed_hostname;
+
       memset (&rr_data, 0, sizeof (mongoc_rr_data_t));
       /* Set the default resource record resolver */
       topology->rr_resolver = _mongoc_client_get_rr;
@@ -462,9 +463,9 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
          MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS;
 
       /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
-      prefixed_service = bson_strdup_printf (
-         "_%s._tcp.%s", mongoc_uri_get_srv_service_name (uri), service);
-      if (!topology->rr_resolver (prefixed_service,
+      prefixed_hostname = bson_strdup_printf (
+         "_%s._tcp.%s", mongoc_uri_get_srv_service_name (uri), srv_hostname);
+      if (!topology->rr_resolver (prefixed_hostname,
                                   MONGOC_RR_SRV,
                                   &rr_data,
                                   MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -475,7 +476,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       /* Failure to find TXT records will not return an error (since it is only
        * for options). But _mongoc_client_get_rr may return an error if
        * there is more than one TXT record returned. */
-      if (!topology->rr_resolver (service,
+      if (!topology->rr_resolver (srv_hostname,
                                   MONGOC_RR_TXT,
                                   &rr_data,
                                   MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -505,7 +506,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       topology->valid = true;
    srv_fail:
       bson_free (rr_data.txt_record_opts);
-      bson_free (prefixed_service);
+      bson_free (prefixed_hostname);
       _mongoc_host_list_destroy_all (rr_data.hosts);
    } else {
       topology->valid = true;
@@ -557,7 +558,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
          _mongoc_topology_bypass_cooldown (topology);
       }
       _mongoc_topology_scanner_set_loadbalanced (topology->scanner, true);
-   } else if (service && !has_directconnection) {
+   } else if (srv_hostname && !has_directconnection) {
       init_type = MONGOC_TOPOLOGY_UNKNOWN;
    } else if (has_directconnection) {
       if (directconnection) {
@@ -764,10 +765,10 @@ mongoc_topology_apply_scanned_srv_hosts (mongoc_uri_t *uri,
 bool
 mongoc_topology_should_rescan_srv (mongoc_topology_t *topology)
 {
-   const char *service = mongoc_uri_get_service (topology->uri);
+   const char *srv_hostname = mongoc_uri_get_srv_hostname (topology->uri);
    mongoc_topology_description_type_t type;
 
-   if (!service) {
+   if (!srv_hostname) {
       /* Only rescan if we have a mongodb+srv:// URI. */
       return false;
    }
@@ -795,8 +796,8 @@ void
 mongoc_topology_rescan_srv (mongoc_topology_t *topology)
 {
    mongoc_rr_data_t rr_data = {0};
-   const char *service;
-   char *prefixed_service = NULL;
+   const char *srv_hostname;
+   char *prefixed_hostname = NULL;
    int64_t scan_time_ms;
    bool ret;
    mc_shared_tpld td;
@@ -804,7 +805,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
 
    BSON_ASSERT (mongoc_topology_should_rescan_srv (topology));
 
-   service = mongoc_uri_get_service (topology->uri);
+   srv_hostname = mongoc_uri_get_srv_hostname (topology->uri);
    scan_time_ms = topology->srv_polling_last_scan_ms +
                   topology->srv_polling_rescan_interval_ms;
    if (bson_get_monotonic_time () / 1000 < scan_time_ms) {
@@ -815,10 +816,12 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    TRACE ("%s", "Polling for SRV records");
 
    /* Go forth and query... */
-   prefixed_service = bson_strdup_printf (
-      "_%s._tcp.%s", mongoc_uri_get_srv_service_name (topology->uri), service);
+   prefixed_hostname =
+      bson_strdup_printf ("_%s._tcp.%s",
+                          mongoc_uri_get_srv_service_name (topology->uri),
+                          srv_hostname);
 
-   ret = topology->rr_resolver (prefixed_service,
+   ret = topology->rr_resolver (prefixed_hostname,
                                 MONGOC_RR_SRV,
                                 &rr_data,
                                 MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -858,7 +861,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
 
 done:
    mc_tpld_drop_ref (&td);
-   bson_free (prefixed_service);
+   bson_free (prefixed_hostname);
    _mongoc_host_list_destroy_all (rr_data.hosts);
 }
 

@@ -105,7 +105,7 @@ mongoc_uri_do_unescape (char **str)
                       "Invalid host \"%s\" returned for service \"%s\": " \
                       "host must be subdomain of service name",           \
                       host,                                               \
-                      service);                                           \
+                      srv_hostname);                                      \
       return false;                                                       \
    } while (0)
 
@@ -146,27 +146,27 @@ mongoc_uri_validate_srv_result (const mongoc_uri_t *uri,
                                 const char *host,
                                 bson_error_t *error)
 {
-   const char *service;
-   const char *service_root;
+   const char *srv_hostname;
+   const char *srv_host;
 
-   service = mongoc_uri_get_service (uri);
-   BSON_ASSERT (service);
+   srv_hostname = mongoc_uri_get_srv_hostname (uri);
+   BSON_ASSERT (srv_hostname);
 
    if (!valid_hostname (host)) {
       VALIDATE_SRV_ERR ();
    }
 
-   service_root = strchr (service, '.');
-   BSON_ASSERT (service_root);
+   srv_host = strchr (srv_hostname, '.');
+   BSON_ASSERT (srv_host);
 
    /* host must be descendent of service root: if service is
     * "a.foo.co" host can be like "a.foo.co", "b.foo.co", "a.b.foo.co", etc.
     */
-   if (strlen (host) < strlen (service_root)) {
+   if (strlen (host) < strlen (srv_host)) {
       VALIDATE_SRV_ERR ();
    }
 
-   if (!ends_with (host, service_root)) {
+   if (!ends_with (host, srv_host)) {
       VALIDATE_SRV_ERR ();
    }
 
