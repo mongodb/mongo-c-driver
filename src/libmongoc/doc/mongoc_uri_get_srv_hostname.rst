@@ -1,16 +1,15 @@
 :man_page: mongoc_uri_get_srv_hostname
 
 mongoc_uri_get_srv_hostname()
-====================================
+=============================
 
 Synopsis
 --------
 
 .. code-block:: c
 
-  MONGOC_EXPORT (const char *)
-  mongoc_uri_get_srv_hostname (const mongoc_uri_t *uri)
-     BSON_GNUC_DEPRECATED_FOR (mongoc_uri_get_srv_hostname);
+  const char *
+  mongoc_uri_get_srv_hostname (const mongoc_uri_t *uri);
 
 Parameters
 ----------
