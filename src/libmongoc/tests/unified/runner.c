@@ -559,8 +559,15 @@ get_topology_type (mongoc_client_t *client)
       return "load-balanced";
    }
 
+   if(mongoc_client_uses_server_api(client)) {
+   ret = mongoc_client_command_simple (
+      client, "admin", tmp_bson ("{'hello': 1},{'apiVersion': 1}"), NULL, &reply, &error);
+   }
+   else {
    ret = mongoc_client_command_simple (
       client, "admin", tmp_bson ("{'hello': 1}"), NULL, &reply, &error);
+   }
+
    if (!ret) {
       bson_destroy (&reply);
       ret = mongoc_client_command_simple (

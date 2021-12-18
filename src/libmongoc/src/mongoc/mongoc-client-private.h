@@ -42,8 +42,8 @@
 BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
-#define WIRE_VERSION_MIN 3
-#define WIRE_VERSION_MAX 13
+#define WIRE_VERSION_MIN 3  /* a.k.a. minWireVersion */
+#define WIRE_VERSION_MAX 14 /* a.k.a. maxWireVersion */
 
 /* first version that supported "find" and "getMore" commands */
 #define WIRE_VERSION_FIND_CMD 4
@@ -240,6 +240,10 @@ mongoc_client_connect (bool buffered,
                        const mongoc_uri_t *uri,
                        const mongoc_host_list_t *host,
                        bson_error_t *error);
+
+MONGOC_EXPORT (bool)
+mongoc_client_uses_server_api (mongoc_client_t *client); 
+
 BSON_END_DECLS
 
 #endif /* MONGOC_CLIENT_PRIVATE_H */

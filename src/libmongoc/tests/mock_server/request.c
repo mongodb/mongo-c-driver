@@ -22,7 +22,6 @@
 #include "../test-conveniences.h"
 #include "../TestSuite.h"
 
-
 static bool
 is_command_ns (const char *ns);
 

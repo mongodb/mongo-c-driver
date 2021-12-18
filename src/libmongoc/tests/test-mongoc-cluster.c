@@ -1708,7 +1708,6 @@ _test_hello_on_unknown (char *hello)
       client, "db", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
    ASSERT_OR_PRINT (ret, error);
 
-
    mongoc_uri_destroy (uri);
    mongoc_client_pool_push (pool, client);
    mongoc_client_pool_destroy (pool);

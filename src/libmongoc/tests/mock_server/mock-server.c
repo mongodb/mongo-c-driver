@@ -946,7 +946,7 @@ mock_server_receives_command (mock_server_t *server,
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_receives_msg --
+ * mock_eerver_receives_msg --
  *
  *       Pop a client OP_MSG request if one is enqueued, or wait up to
  *       request_timeout_ms for the client to send a request. Pass varargs
@@ -986,7 +986,7 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_receives_hello --
+ * mock_server_receives_legacy_hello --
  *
  *       Pop a client non-streaming hello call if one is enqueued,
  *       or wait up to request_timeout_ms for the client to send a request.
@@ -1062,7 +1062,7 @@ mock_server_receives_legacy_hello (mock_server_t *server,
 request_t *
 mock_server_receives_hello (mock_server_t *server)
 {
-   return mock_server_receives_command (
+   return mock_server_receives_command ( 
       server,
       "admin",
       MONGOC_QUERY_SECONDARY_OK,
