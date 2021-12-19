@@ -107,7 +107,10 @@ _mongoc_sched_getcpu (void)
 {
    uintptr_t tls;
    unsigned core_id;
+   /* Get the current thread ID, not the core ID.
+    * Getting the core ID requires privileged execution. */
    __asm__ volatile("mrs %x0, tpidrro_el0" : "=r"(tls));
+   /* In ARM, only 8 cores are manageable. */
    core_id = tls & ((1 << 3) - 1);
    return core_id;
 }
