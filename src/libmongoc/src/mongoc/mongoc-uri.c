@@ -2272,6 +2272,11 @@ mongoc_uri_get_service (const mongoc_uri_t *uri)
 }
 
 
+/* Initial DNS Seedlist Discovery Spec: `srvServiceName` requires a string value
+ * and defaults to "mongodb". */
+static const char *const mongoc_default_srv_service_name = "mongodb";
+
+
 const char *
 mongoc_uri_get_srv_service_name (const mongoc_uri_t *uri)
 {
@@ -2285,7 +2290,7 @@ mongoc_uri_get_srv_service_name (const mongoc_uri_t *uri)
       return bson_iter_utf8 (&iter, NULL);
    }
 
-   return "mongodb";
+   return mongoc_default_srv_service_name;
 }
 
 
