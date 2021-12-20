@@ -2285,8 +2285,8 @@ mongoc_uri_get_srv_service_name (const mongoc_uri_t *uri)
    BSON_ASSERT_PARAM (uri);
 
    if (bson_iter_init_find_case (
-          &iter, &uri->options, MONGOC_URI_SRVSERVICENAME) &&
-       BSON_ITER_HOLDS_UTF8 (&iter)) {
+          &iter, &uri->options, MONGOC_URI_SRVSERVICENAME)) {
+      BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
       return bson_iter_utf8 (&iter, NULL);
    }
 
