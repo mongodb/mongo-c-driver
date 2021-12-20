@@ -615,7 +615,7 @@ static bool
 mongoc_uri_check_srv_service_name (mongoc_uri_t *uri, const char *str)
 {
    /* 63 character DNS query limit, excluding prepended underscore. */
-   const size_t mongoc_srv_service_name_max = 62;
+   const size_t mongoc_srv_service_name_max = 62u;
 
    size_t length = 0u;
    size_t num_alpha = 0u;
@@ -636,11 +636,11 @@ mongoc_uri_check_srv_service_name (mongoc_uri_t *uri, const char *str)
    }
 
    /* RFC 6335: MUST be at least 1 character. */
-   if (length == 0) {
+   if (length == 0u) {
       return false;
    }
 
-   for (i = 0; i < length; ++i) {
+   for (i = 0u; i < length; ++i) {
       const char c = str[i];
 
       /* RFC 6335: MUST contain only US-ASCII letters 'A' - 'Z' and 'a' - 'z',
