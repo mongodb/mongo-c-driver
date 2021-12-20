@@ -154,7 +154,7 @@ BSON_STATIC_ASSERT2 (mongoc_cmd_rw,
  * There is no reason these should be in mongoc-client. */
 #define MONGOC_RR_DEFAULT_BUFFER_SIZE 1024
 bool
-_mongoc_client_get_rr (const char *service,
+_mongoc_client_get_rr (const char *hostname,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
                        size_t initial_buffer_size,
