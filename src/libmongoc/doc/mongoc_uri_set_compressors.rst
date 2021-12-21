@@ -43,3 +43,6 @@ Returns false if the option cannot be set, for example if ``compressors`` is not
 Logs a warning to stderr with the :doc:`MONGOC_WARNING <logging>` macro
 if compressor is not available.
 
+.. seealso::
+
+  | :symbol:`mongoc_uri_finalize_options`

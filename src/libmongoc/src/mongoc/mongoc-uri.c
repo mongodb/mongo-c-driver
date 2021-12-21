@@ -1400,11 +1400,11 @@ mongoc_uri_finalize_tls (mongoc_uri_t *uri, bson_error_t *error)
 
 static bool
 mongoc_uri_finalize_auth (mongoc_uri_t *uri,
-                          bson_error_t *error,
-                          bool require_auth)
+                          bson_error_t *error)
 {
    bson_iter_t iter;
    const char *source = NULL;
+   bool require_auth = uri->username != NULL;
 
    if (bson_iter_init_find_case (
           &iter, &uri->credentials, MONGOC_URI_AUTHSOURCE)) {
@@ -1569,7 +1569,6 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
    char *before_slash = NULL;
    const char *tmp;
-   bool require_auth = false;
 
    if (!bson_utf8_validate (str, strlen (str), false /* allow_null */)) {
       MONGOC_URI_ERROR (error, "%s", "Invalid UTF-8 in URI");
@@ -1624,24 +1623,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
    /* TODO (CDRIVER-3723) Consider moving all "finalize" calls into one function
     * that is additionally called after initial SRV and TXT records are applied
     * in mongoc_topology_new. */
-   if (!mongoc_uri_finalize_tls (uri, error)) {
-      goto error;
-   }
-
-   require_auth = uri->username != NULL;
-   if (!mongoc_uri_finalize_auth (uri, error, require_auth)) {
-      goto error;
-   }
-
-   if (!mongoc_uri_finalize_directconnection (uri, error)) {
-      goto error;
-   }
-
-   if (!mongoc_uri_finalize_loadbalanced (uri, error)) {
-      goto error;
-   }
-
-   if (!mongoc_uri_finalize_srv (uri, error)) {
+   if (!mongoc_uri_finalize_options (uri, error)) {
       goto error;
    }
 
@@ -3316,6 +3298,34 @@ mongoc_uri_finalize_srv (const mongoc_uri_t *uri, bson_error_t *error)
             return false;
          }
       }
+   }
+
+   return true;
+}
+
+bool
+mongoc_uri_finalize_options (mongoc_uri_t *uri, bson_error_t *error)
+{
+   BSON_ASSERT (uri);
+
+   if (!mongoc_uri_finalize_tls (uri, error)) {
+      return false;
+   }
+
+   if (!mongoc_uri_finalize_auth (uri, error)) {
+      return false;
+   }
+
+   if (!mongoc_uri_finalize_directconnection (uri, error)) {
+      return false;
+   }
+
+   if (!mongoc_uri_finalize_loadbalanced (uri, error)) {
+      return false;
+   }
+
+   if (!mongoc_uri_finalize_srv (uri, error)) {
+      return false;
    }
 
    return true;

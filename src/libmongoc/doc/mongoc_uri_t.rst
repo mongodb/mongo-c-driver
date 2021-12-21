@@ -283,6 +283,7 @@ MONGOC_URI_SAFE                            safe                              {tr
 
     mongoc_uri_copy
     mongoc_uri_destroy
+    mongoc_uri_finalize_options
     mongoc_uri_get_auth_mechanism
     mongoc_uri_get_auth_source
     mongoc_uri_get_compressors

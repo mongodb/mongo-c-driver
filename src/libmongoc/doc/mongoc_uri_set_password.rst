@@ -27,3 +27,6 @@ Returns
 
 Returns false if the option cannot be set, for example if ``password`` is not valid UTF-8.
 
+.. seealso::
+
+  | :symbol:`mongoc_uri_finalize_options`

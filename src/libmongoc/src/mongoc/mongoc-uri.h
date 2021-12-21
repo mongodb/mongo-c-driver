@@ -225,6 +225,8 @@ mongoc_uri_get_read_concern (const mongoc_uri_t *uri);
 MONGOC_EXPORT (void)
 mongoc_uri_set_read_concern (mongoc_uri_t *uri,
                              const mongoc_read_concern_t *rc);
+MONGOC_EXPORT (bool)
+mongoc_uri_finalize_options (mongoc_uri_t *uri, bson_error_t *error);
 
 BSON_END_DECLS
 

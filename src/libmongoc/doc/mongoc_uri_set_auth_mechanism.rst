@@ -32,3 +32,7 @@ Returns false if the option cannot be set, for example if ``value`` is not valid
 .. only:: html
 
   .. include:: includes/seealso/authmechanism.txt
+
+.. seealso::
+
+  | :symbol:`mongoc_uri_finalize_options`

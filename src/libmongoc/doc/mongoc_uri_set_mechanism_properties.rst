@@ -52,3 +52,6 @@ Example
 
   .. include:: includes/seealso/authmechanism.txt
 
+.. seealso::
+
+  | :symbol:`mongoc_uri_finalize_options`

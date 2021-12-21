@@ -34,3 +34,6 @@ Returns
 
 True if successfully set (the named option is a known option of string type).
 
+.. seealso::
+
+  | :symbol:`mongoc_uri_finalize_options`

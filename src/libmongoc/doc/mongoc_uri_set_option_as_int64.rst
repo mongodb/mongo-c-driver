@@ -40,3 +40,4 @@ True if successfully set (the named option is a known option of type int64).
 
   | :symbol:`mongoc_uri_set_option_as_int32()`
 
+  | :symbol:`mongoc_uri_finalize_options`

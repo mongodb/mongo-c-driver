@@ -23,3 +23,6 @@ Description
 
 Sets a MongoDB URI's read preferences, after the URI has been parsed from a string.
 
+.. seealso::
+
+  | :symbol:`mongoc_uri_finalize_options`
