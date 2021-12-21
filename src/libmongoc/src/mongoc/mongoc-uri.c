@@ -1404,7 +1404,7 @@ mongoc_uri_finalize_auth (mongoc_uri_t *uri,
 {
    bson_iter_t iter;
    const char *source = NULL;
-   bool require_auth = uri->username != NULL;
+   const bool require_auth = uri->username != NULL;
 
    if (bson_iter_init_find_case (
           &iter, &uri->credentials, MONGOC_URI_AUTHSOURCE)) {
