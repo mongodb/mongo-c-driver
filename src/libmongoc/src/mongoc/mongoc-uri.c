@@ -1620,9 +1620,8 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       }
    }
 
-   /* TODO (CDRIVER-3723) Consider moving all "finalize" calls into one function
-    * that is additionally called after initial SRV and TXT records are applied
-    * in mongoc_topology_new. */
+   /* TODO (CDRIVER-3723) Consider calling mongoc_uri_finalize_options after 
+    * initial SRV and TXT records are applied in mongoc_topology_new. */
    if (!mongoc_uri_finalize_options (uri, error)) {
       goto error;
    }
@@ -3306,7 +3305,7 @@ mongoc_uri_finalize_srv (const mongoc_uri_t *uri, bson_error_t *error)
 bool
 mongoc_uri_finalize_options (mongoc_uri_t *uri, bson_error_t *error)
 {
-   BSON_ASSERT (uri);
+   BSON_ASSERT_PARAM (uri);
 
    if (!mongoc_uri_finalize_tls (uri, error)) {
       return false;
