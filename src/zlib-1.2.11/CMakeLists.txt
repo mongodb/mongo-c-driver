@@ -27,6 +27,7 @@ check_include_file(stddef.h    HAVE_STDDEF_H)
 #
 # Check to see if we have large file support
 #
+cmake_push_check_state()
 set(CMAKE_REQUIRED_DEFINITIONS -D_LARGEFILE64_SOURCE=1)
 # We add these other definitions here because CheckTypeSize.cmake
 # in CMake 2.4.x does not automatically do so and we want
@@ -44,7 +45,7 @@ check_type_size(off64_t OFF64_T)
 if(HAVE_OFF64_T)
    add_definitions(-D_LARGEFILE64_SOURCE=1)
 endif()
-set(CMAKE_REQUIRED_DEFINITIONS) # clear variable
+cmake_pop_check_state()
 
 #
 # Check for fseeko
