@@ -253,7 +253,6 @@ if (MSVC)
    add_definitions (-D_CRT_SECURE_NO_WARNINGS)
 endif ()
 
-add_definitions (-D_GNU_SOURCE)
 add_definitions (-D_DEFAULT_SOURCE)
 
 if (ENABLE_MONGOC)
