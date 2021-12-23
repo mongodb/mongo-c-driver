@@ -161,7 +161,7 @@ _mongoc_client_get_rr (const char *hostname,
                        bson_error_t *error);
 
 mongoc_client_t *
-_mongoc_client_new_from_uri (mongoc_topology_t *topology);
+_mongoc_client_new_from_topology (mongoc_topology_t *topology);
 
 bool
 _mongoc_client_set_apm_callbacks_private (mongoc_client_t *client,

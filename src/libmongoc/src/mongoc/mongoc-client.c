@@ -982,48 +982,36 @@ _mongoc_client_recv (mongoc_client_t *client,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_client_new --
- *
- *       Create a new mongoc_client_t using the URI provided.
- *
- *       @uri should be a MongoDB URI string such as "mongodb://localhost/"
- *       More information on the format can be found at
- *       http://docs.mongodb.org/manual/reference/connection-string/
- *
- * Returns:
- *       A newly allocated mongoc_client_t or NULL if @uri_string is
- *       invalid.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
 mongoc_client_t *
 mongoc_client_new (const char *uri_string)
 {
-   mongoc_topology_t *topology;
+   mongoc_client_t *client;
+   bson_error_t error = {0};
+
+   if (!(client = mongoc_client_new_with_error (uri_string, &error)) &&
+       0 != strcmp (error.message, "")) {
+      MONGOC_ERROR ("%s", error.message);
+   }
+
+   return client;
+}
+
+
+mongoc_client_t *
+mongoc_client_new_with_error (const char *uri_string, bson_error_t *error)
+{
    mongoc_client_t *client;
    mongoc_uri_t *uri;
-
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
    }
 
-   if (!(uri = mongoc_uri_new (uri_string))) {
+   if (!(uri = mongoc_uri_new_with_error (uri_string, error))) {
       return NULL;
    }
 
-   topology = mongoc_topology_new (uri, true);
-
-   client = _mongoc_client_new_from_uri (topology);
-   if (!client) {
-      mongoc_topology_destroy (topology);
-   }
+   client = mongoc_client_new_from_uri_with_error (uri, error);
    mongoc_uri_destroy (uri);
 
    return client;
@@ -1084,54 +1072,49 @@ mongoc_client_set_ssl_opts (mongoc_client_t *client,
 #endif
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_client_new_from_uri --
- *
- *       Create a new mongoc_client_t for a mongoc_uri_t.
- *
- * Returns:
- *       A newly allocated mongoc_client_t.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
 mongoc_client_t *
 mongoc_client_new_from_uri (const mongoc_uri_t *uri)
+{
+   mongoc_client_t *client;
+   bson_error_t error = {0};
+
+   if (!(client = mongoc_client_new_from_uri_with_error (uri, &error)) &&
+       0 != strcmp (error.message, "")) {
+      MONGOC_ERROR ("%s", error.message);
+   }
+
+   return client;
+}
+
+
+mongoc_client_t *
+mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
+                                       bson_error_t *error)
 {
    mongoc_topology_t *topology;
 
    topology = mongoc_topology_new (uri, true);
 
+   if (!topology->valid) {
+      if (error) {
+         memcpy (error, &topology->scanner->error, sizeof (bson_error_t));
+      }
+
+      mongoc_topology_destroy (topology);
+
+      return NULL;
+   }
+
    /* topology->uri may be different from uri: if this is a mongodb+srv:// URI
     * then mongoc_topology_new has fetched SRV and TXT records and updated its
     * uri from them.
     */
-   return _mongoc_client_new_from_uri (topology);
+   return _mongoc_client_new_from_topology (topology);
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_client_new_from_uri --
- *
- *       Create a new mongoc_client_t for a given topology object.
- *
- * Returns:
- *       A newly allocated mongoc_client_t.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
 
 mongoc_client_t *
-_mongoc_client_new_from_uri (mongoc_topology_t *topology)
+_mongoc_client_new_from_topology (mongoc_topology_t *topology)
 {
    mongoc_client_t *client;
    const mongoc_read_prefs_t *read_prefs;
@@ -1140,6 +1123,7 @@ _mongoc_client_new_from_uri (mongoc_topology_t *topology)
    const char *appname;
 
    BSON_ASSERT (topology);
+   BSON_ASSERT (topology->valid);
 
 #ifndef MONGOC_ENABLE_SSL
    if (mongoc_uri_get_tls (topology->uri)) {
