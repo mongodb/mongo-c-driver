@@ -238,7 +238,7 @@ cmake_policy (SET CMP0042 NEW)
 # https://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
 # Enable features from POSIX.1-2008 as well as certain BSD and SVID features.
 add_definitions (-D_DEFAULT_SOURCE)
-list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_DEFAULT_SOURCE")
+list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_DEFAULT_SOURCE)
 
 add_subdirectory (src/common)
 
