@@ -988,8 +988,7 @@ mongoc_client_new (const char *uri_string)
    mongoc_client_t *client;
    bson_error_t error = {0};
 
-   if (!(client = mongoc_client_new_with_error (uri_string, &error)) &&
-       0 != strcmp (error.message, "")) {
+   if (!(client = mongoc_client_new_with_error (uri_string, &error))) {
       MONGOC_ERROR ("%s", error.message);
    }
 
@@ -1078,8 +1077,7 @@ mongoc_client_new_from_uri (const mongoc_uri_t *uri)
    mongoc_client_t *client;
    bson_error_t error = {0};
 
-   if (!(client = mongoc_client_new_from_uri_with_error (uri, &error)) &&
-       0 != strcmp (error.message, "")) {
+   if (!(client = mongoc_client_new_from_uri_with_error (uri, &error))) {
       MONGOC_ERROR ("%s", error.message);
    }
 
@@ -1123,7 +1121,11 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    const char *appname;
 
    BSON_ASSERT (topology);
-   BSON_ASSERT (topology->valid);
+   
+   if (!topology->valid) {
+      MONGOC_ERROR ("cannot construct client from invalid topology");
+      return NULL;
+   }
 
 #ifndef MONGOC_ENABLE_SSL
    if (mongoc_uri_get_tls (topology->uri)) {
