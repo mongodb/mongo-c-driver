@@ -57,9 +57,15 @@ test_mongoc_client_max_staleness (void)
    capture_logs (true);
    ASSERT (!test_framework_client_new (
       "mongodb://a/?" MONGOC_URI_MAXSTALENESSSECONDS "=120", NULL));
+   ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=120",
+                        MONGOC_LOG_LEVEL_WARNING,
+                        "Invalid readPreferences");
+
+   capture_logs (true);
    ASSERT (!test_framework_client_new (
       "mongodb://a/?" MONGOC_URI_READPREFERENCE
-      "=primary&" MONGOC_URI_MAXSTALENESSSECONDS "=120", NULL));
+      "=primary&" MONGOC_URI_MAXSTALENESSSECONDS "=120",
+      NULL));
    ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=120",
                         MONGOC_LOG_LEVEL_WARNING,
                         "Invalid readPreferences");
@@ -92,7 +98,8 @@ test_mongoc_client_max_staleness (void)
    capture_logs (true);
    ASSERT (!test_framework_client_new (
       "mongodb://a/?" MONGOC_URI_READPREFERENCE
-      "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS "=10.5", NULL));
+      "=secondary&" MONGOC_URI_MAXSTALENESSSECONDS "=10.5",
+      NULL));
 
    ASSERT_CAPTURED_LOG (MONGOC_URI_MAXSTALENESSSECONDS "=10.5",
                         MONGOC_LOG_LEVEL_WARNING,
