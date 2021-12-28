@@ -1084,6 +1084,22 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
    mongoc_client_t *client;
    mongoc_topology_t *topology;
 
+
+   ENTRY;
+
+   BSON_ASSERT (uri);
+
+#ifndef MONGOC_ENABLE_SSL
+   if (mongoc_uri_get_tls (uri)) {
+      bson_set_error (
+         error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_COMMAND_INVALID_ARG,
+         "Can't create SSL client, SSL not enabled in this build.");
+      RETURN (NULL);
+   }
+#endif
+
    topology = mongoc_topology_new (uri, true);
 
    if (!topology->valid) {
@@ -1093,7 +1109,7 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
 
       mongoc_topology_destroy (topology);
 
-      return NULL;
+      RETURN (NULL);
    }
 
    /* topology->uri may be different from uri: if this is a mongodb+srv:// URI
@@ -1104,7 +1120,7 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
       mongoc_topology_destroy (topology);
    }
 
-   return client;
+   RETURN (client);
 }
 
 
@@ -1126,13 +1142,6 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
       MONGOC_ERROR ("Cannot construct client from invalid topology.");
       return NULL;
    }
-
-#ifndef MONGOC_ENABLE_SSL
-   if (mongoc_uri_get_tls (topology->uri)) {
-      MONGOC_ERROR ("Can't create SSL client, SSL not enabled in this build.");
-      return NULL;
-   }
-#endif
 
    client = (mongoc_client_t *) bson_malloc0 (sizeof *client);
    client->uri = mongoc_uri_copy (topology->uri);
