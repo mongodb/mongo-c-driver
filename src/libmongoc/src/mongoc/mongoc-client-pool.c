@@ -102,8 +102,7 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    mongoc_client_pool_t *pool;
    bson_error_t error = {0};
 
-   if (!(pool = mongoc_client_pool_new_with_error (uri, &error)) &&
-       0 != strcmp (error.message, "")) {
+   if (!(pool = mongoc_client_pool_new_with_error (uri, &error))) {
       MONGOC_ERROR ("%s", error.message);
    }
 
