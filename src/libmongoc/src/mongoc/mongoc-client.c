@@ -994,7 +994,8 @@ mongoc_client_new (const char *uri_string)
    }
 
    if (!(uri = mongoc_uri_new_with_error (uri_string, &error))) {
-      MONGOC_ERROR ("%s", error.message);
+      /* Log URI errors as a warning for consistency with mongoc_uri_new */
+      MONGOC_WARNING ("Error parsing URI: '%s'", error.message);
       return NULL;
    }
 
