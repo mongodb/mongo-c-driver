@@ -74,7 +74,6 @@ Example
     mongoc_client_new
     mongoc_client_new_from_uri
     mongoc_client_new_from_uri_with_error
-    mongoc_client_new_with_error
     mongoc_client_read_command_with_opts
     mongoc_client_read_write_command_with_opts
     mongoc_client_reset

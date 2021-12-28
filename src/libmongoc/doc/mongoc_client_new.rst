@@ -25,6 +25,5 @@ A newly allocated :symbol:`mongoc_client_t` that should be freed with :symbol:`m
 
 .. seealso::
 
-  | :symbol:`mongoc_client_new_with_error()`
   | :symbol:`mongoc_client_new_from_uri()`
 
