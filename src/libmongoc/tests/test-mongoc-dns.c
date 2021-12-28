@@ -392,24 +392,6 @@ test_dns_check_srv_polling (void)
 }
 
 
-/* ensure mongoc_topology_select_server_id handles a NULL error pointer in the
- * code path it follows when the topology scanner is invalid */
-static void
-test_null_error_pointer (void *ctx)
-{
-   mongoc_client_t *client;
-
-   client =
-      test_framework_client_new ("mongodb+srv://doesntexist.example.com", NULL);
-   ASSERT (!mongoc_topology_select_server_id (client->topology,
-                                              MONGOC_SS_READ,
-                                              NULL /* read prefs */,
-                                              NULL /* error */));
-
-   mongoc_client_destroy (client);
-}
-
-
 /*
  *-----------------------------------------------------------------------
  *
@@ -1361,12 +1343,6 @@ void
 test_dns_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_AddFull (suite,
-                      "/initial_dns_seedlist_discovery/null_error_pointer",
-                      test_null_error_pointer,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/initial_dns_seedlist_discovery/srv_polling/mocked",
                       test_srv_polling_mocked,
