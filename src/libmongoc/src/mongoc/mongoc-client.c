@@ -1080,6 +1080,7 @@ mongoc_client_t *
 mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
                                        bson_error_t *error)
 {
+   mongoc_client_t *client;
    mongoc_topology_t *topology;
 
    topology = mongoc_topology_new (uri, true);
@@ -1098,7 +1099,11 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
     * then mongoc_topology_new has fetched SRV and TXT records and updated its
     * uri from them.
     */
-   return _mongoc_client_new_from_topology (topology);
+   if (!(client = _mongoc_client_new_from_topology (topology))) {
+      mongoc_topology_destroy (topology);
+   }
+
+   return client;
 }
 
 
@@ -1114,7 +1119,10 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    BSON_ASSERT (topology);
 
    if (!topology->valid) {
-      MONGOC_ERROR ("cannot construct client from invalid topology");
+      /* This should not be reached if mongoc_client_new_from_uri_with_error and
+       * mongoc_client_pool_new_with_error raise errors when mongoc_topology_new
+       * returns an invalid topology. */
+      MONGOC_ERROR ("Cannot construct client from invalid topology.");
       return NULL;
    }
 
