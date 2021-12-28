@@ -993,12 +993,12 @@ mongoc_client_new (const char *uri_string)
       uri_string = "mongodb://127.0.0.1/";
    }
 
-   if (!(uri = mongoc_uri_new_with_error (uri_string, error))) {
+   if (!(uri = mongoc_uri_new_with_error (uri_string, &error))) {
       MONGOC_ERROR ("%s", error.message);
       return NULL;
    }
 
-   if (!(client = mongoc_client_new_from_uri_with_error (uri, error))) {
+   if (!(client = mongoc_client_new_from_uri_with_error (uri, &error))) {
       MONGOC_ERROR ("%s", error.message);
    }
 
