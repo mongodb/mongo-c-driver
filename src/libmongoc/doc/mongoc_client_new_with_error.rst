@@ -25,10 +25,6 @@ Returns
 
 A newly allocated :symbol:`mongoc_client_t` that should be freed with :symbol:`mongoc_client_destroy()` when no longer in use. On error, ``NULL`` is returned and ``error`` will be populated with the error description.
 
-.. warning::
-
-  Failure to handle the result of this function is a programming error.
-
 .. seealso::
 
   | :symbol:`mongoc_client_new_from_uri_with_error()`

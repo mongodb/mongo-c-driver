@@ -26,6 +26,3 @@ Returns
 
 A newly allocated :symbol:`mongoc_client_pool_t` that should be freed with :symbol:`mongoc_client_pool_destroy()` when no longer in use. On error, ``NULL`` is returned and ``error`` will be populated with the error description.
 
-.. warning::
-
-  Failure to handle the result of this function is a programming error.
