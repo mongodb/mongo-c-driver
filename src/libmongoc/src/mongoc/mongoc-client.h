@@ -105,9 +105,6 @@ typedef mongoc_stream_t *(*mongoc_stream_initiator_t) (
 MONGOC_EXPORT (mongoc_client_t *)
 mongoc_client_new (const char *uri_string) BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_client_t *)
-mongoc_client_new_with_error (const char *uri_string,
-                              bson_error_t *error) BSON_GNUC_WARN_UNUSED_RESULT;
-MONGOC_EXPORT (mongoc_client_t *)
 mongoc_client_new_from_uri (const mongoc_uri_t *uri)
    BSON_GNUC_WARN_UNUSED_RESULT;
 MONGOC_EXPORT (mongoc_client_t *)

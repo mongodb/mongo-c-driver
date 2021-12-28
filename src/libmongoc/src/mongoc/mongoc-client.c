@@ -986,31 +986,22 @@ mongoc_client_t *
 mongoc_client_new (const char *uri_string)
 {
    mongoc_client_t *client;
-   bson_error_t error = {0};
-
-   if (!(client = mongoc_client_new_with_error (uri_string, &error))) {
-      MONGOC_ERROR ("%s", error.message);
-   }
-
-   return client;
-}
-
-
-mongoc_client_t *
-mongoc_client_new_with_error (const char *uri_string, bson_error_t *error)
-{
-   mongoc_client_t *client;
    mongoc_uri_t *uri;
+   bson_error_t error = {0};
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
    }
 
    if (!(uri = mongoc_uri_new_with_error (uri_string, error))) {
+      MONGOC_ERROR ("%s", error.message);
       return NULL;
    }
 
-   client = mongoc_client_new_from_uri_with_error (uri, error);
+   if (!(client = mongoc_client_new_from_uri_with_error (uri, error))) {
+      MONGOC_ERROR ("%s", error.message);
+   }
+
    mongoc_uri_destroy (uri);
 
    return client;
@@ -1121,7 +1112,7 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    const char *appname;
 
    BSON_ASSERT (topology);
-   
+
    if (!topology->valid) {
       MONGOC_ERROR ("cannot construct client from invalid topology");
       return NULL;
