@@ -144,7 +144,7 @@ mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
 
       mongoc_topology_destroy (topology);
 
-      return NULL;
+      RETURN (NULL);
    }
 
    pool = (mongoc_client_pool_t *) bson_malloc0 (sizeof *pool);
