@@ -1,6 +1,5 @@
 #!/bin/sh
 set -o errexit  # Exit the script with error if any of the commands fail
-set -o xtrace
 
 # Supported/used environment variables:
 # Options for this script:
@@ -247,10 +246,10 @@ if [ "$ANALYZE" = "ON" ]; then
    # Put clang static analyzer results in scan/ and fail build if warnings found.
    SCAN_BUILD="$SCAN_BUILD_COMMAND -o scan --status-bugs"
 else
-   $CMAKE -DCMAKE_VERBOSE_MAKEFILE=ON $CONFIGURE_FLAGS .
+   $CMAKE $CONFIGURE_FLAGS .
 fi
 
-$SCAN_BUILD make -j1 all
+$SCAN_BUILD make -j8 all
 
 . $DIR/add-build-dirs-to-paths.sh
 if [ -n "$SSL_VERSION" ]; then
