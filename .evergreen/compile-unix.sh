@@ -196,7 +196,7 @@ case "$CC" in
    ;;
 esac
 
-if [ "darwin" = "$OS" -a "arm64" = "$MARCH" ];
+if [ "darwin" = "$OS" -a "arm64" = "$MARCH" ]; then
    CONFIGURE_FLAGS="$CONFIGURE_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64"
 fi
 
