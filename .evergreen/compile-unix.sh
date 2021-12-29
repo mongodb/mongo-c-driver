@@ -246,7 +246,7 @@ else
    $CMAKE -DCMAKE_VERBOSE_MAKEFILE=ON $CONFIGURE_FLAGS .
 fi
 
-$SCAN_BUILD make -j8 all
+$SCAN_BUILD make -j1 all
 
 . $DIR/add-build-dirs-to-paths.sh
 if [ -n "$SSL_VERSION" ]; then
