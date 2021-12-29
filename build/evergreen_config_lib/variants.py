@@ -671,5 +671,10 @@ all_variants = [
         ['debug-compile-nosasl-openssl',
          'debug-compile-nosasl-nossl',
          '.versioned-api'],
-        {})
+        {}),
+    Variant('macos_m1',
+        'macOS m1 (Apple LLVM)',
+        'macos-1100-arm64',
+        ['debug-compile-sasl-darwinssl'],
+        {'CC': 'clang'}),
 ]
