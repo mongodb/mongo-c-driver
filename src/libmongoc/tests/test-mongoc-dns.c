@@ -271,6 +271,15 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
+      if (!expect_error) {
+         BSON_ASSERT (pool);
+      }
+
+      if (!pool) {
+         /* expected failure, e.g. SRV lookup or URI finalization failed */
+         goto cleanup;
+      }
+
       /* before we set SSL on so that we can connect to the test replica set,
        * assert that the URI has SSL on by default, and SSL off if "ssl=false"
        * is in the URI string */
@@ -286,6 +295,16 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri, NULL);
+
+      if (!expect_error) {
+         BSON_ASSERT (client);
+      }
+
+      if (!client) {
+         /* expected failure, e.g. SRV lookup or URI finalization failed */
+         goto cleanup;
+      }
+
       BSON_ASSERT (mongoc_uri_get_tls (client->uri) == expect_ssl);
 #ifdef MONGOC_ENABLE_SSL
       mongoc_client_set_ssl_opts (client, &ssl_opts);
@@ -360,6 +379,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       mongoc_client_destroy (client);
    }
 
+cleanup:
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_uri_destroy (uri);
 }
