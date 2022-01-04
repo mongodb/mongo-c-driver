@@ -2518,6 +2518,9 @@ test_mongoc_client_ssl_disabled (void)
    capture_logs (true);
    ASSERT (NULL ==
            test_framework_client_new ("mongodb://host/?ssl=true", NULL));
+   ASSERT_CAPTURED_LOG ("mongoc_client_new",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "SSL not enabled in this build.");
 }
 #endif
 

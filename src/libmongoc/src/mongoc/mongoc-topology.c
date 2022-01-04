@@ -512,12 +512,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       topology->valid = true;
    }
 
-   if (!mongoc_uri_finalize_loadbalanced (topology->uri,
-                                          &topology->scanner->error)) {
-      topology->valid = false;
-   }
-
-   if (!mongoc_uri_finalize_srv (topology->uri, &topology->scanner->error)) {
+   if (!mongoc_uri_finalize (topology->uri, &topology->scanner->error)) {
       topology->valid = false;
    }
 
@@ -544,7 +539,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       mongoc_uri_get_option_as_bool (uri, MONGOC_URI_DIRECTCONNECTION, false);
    hl = mongoc_uri_get_hosts (topology->uri);
    /* If loadBalanced is enabled, directConnection is disabled. This was
-    * validated in mongoc_uri_finalize_loadbalanced. */
+    * validated in mongoc_uri_finalize_loadbalanced, which is called by
+    * mongoc_uri_finalize. */
    if (mongoc_uri_get_option_as_bool (
           topology->uri, MONGOC_URI_LOADBALANCED, false)) {
       init_type = MONGOC_TOPOLOGY_LOAD_BALANCED;

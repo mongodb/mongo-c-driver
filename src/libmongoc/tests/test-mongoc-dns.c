@@ -271,6 +271,15 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
+      if (!expect_error) {
+         BSON_ASSERT (pool);
+      }
+
+      if (!pool) {
+         /* expected failure, e.g. SRV lookup or URI finalization failed */
+         goto cleanup;
+      }
+
       /* before we set SSL on so that we can connect to the test replica set,
        * assert that the URI has SSL on by default, and SSL off if "ssl=false"
        * is in the URI string */
@@ -286,6 +295,16 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri, NULL);
+
+      if (!expect_error) {
+         BSON_ASSERT (client);
+      }
+
+      if (!client) {
+         /* expected failure, e.g. SRV lookup or URI finalization failed */
+         goto cleanup;
+      }
+
       BSON_ASSERT (mongoc_uri_get_tls (client->uri) == expect_ssl);
 #ifdef MONGOC_ENABLE_SSL
       mongoc_client_set_ssl_opts (client, &ssl_opts);
@@ -360,6 +379,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       mongoc_client_destroy (client);
    }
 
+cleanup:
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_uri_destroy (uri);
 }
@@ -389,24 +409,6 @@ static int
 test_dns_check_srv_polling (void)
 {
    return test_framework_getenv_bool ("MONGOC_TEST_DNS_SRV_POLLING") ? 1 : 0;
-}
-
-
-/* ensure mongoc_topology_select_server_id handles a NULL error pointer in the
- * code path it follows when the topology scanner is invalid */
-static void
-test_null_error_pointer (void *ctx)
-{
-   mongoc_client_t *client;
-
-   client =
-      test_framework_client_new ("mongodb+srv://doesntexist.example.com", NULL);
-   ASSERT (!mongoc_topology_select_server_id (client->topology,
-                                              MONGOC_SS_READ,
-                                              NULL /* read prefs */,
-                                              NULL /* error */));
-
-   mongoc_client_destroy (client);
 }
 
 
@@ -1221,152 +1223,10 @@ prose_test_12_pooled (void *unused)
    _prose_test_12 (&_prose_test_pooled_fns);
 }
 
-/* cb_stats_t tracks counters for the test_invalid_topology_pooled and
- * test_invalid_topology_single tests. */
-typedef struct {
-   int num_topology_opening;
-   int num_topology_closed;
-   int num_server_opening;
-   int num_server_closed;
-} cb_stats_t;
-
-/* invalid_topology_opening is used as a callback for the
- * test_invalid_topology_pooled and test_invalid_topology_single tests. */
-static void
-invalid_topology_opening (const mongoc_apm_topology_opening_t *event)
-{
-   cb_stats_t *stats =
-      (cb_stats_t *) mongoc_apm_topology_opening_get_context (event);
-   stats->num_topology_opening++;
-}
-
-/* invalid_topology_closed is used as a callback for the
- * test_invalid_topology_pooled and test_invalid_topology_single tests. */
-static void
-invalid_topology_closed (const mongoc_apm_topology_closed_t *event)
-{
-   cb_stats_t *stats =
-      (cb_stats_t *) mongoc_apm_topology_closed_get_context (event);
-   stats->num_topology_closed++;
-}
-
-/* invalid_server_closed is used as a callback for the
- * test_invalid_topology_pooled and test_invalid_topology_single tests. */
-static void
-invalid_server_closed (const mongoc_apm_server_closed_t *event)
-{
-   cb_stats_t *stats =
-      (cb_stats_t *) mongoc_apm_server_closed_get_context (event);
-   stats->num_server_closed++;
-}
-
-/* invalid_server_opening is used as a callback for the
- * test_invalid_topology_pooled and test_invalid_topology_single tests. */
-static void
-invalid_server_opening (const mongoc_apm_server_opening_t *event)
-{
-   cb_stats_t *stats =
-      (cb_stats_t *) mongoc_apm_server_opening_get_context (event);
-   stats->num_server_opening++;
-}
-
-/* CDRIVER-4184 Test that an invalid topology does not emit a topology_closed
- * event. */
-static void
-test_invalid_topology_pooled (void *unused)
-{
-   mongoc_client_pool_t *pool;
-   mongoc_client_t *client;
-   mongoc_uri_t *uri;
-   mongoc_apm_callbacks_t *cbs;
-   cb_stats_t stats = {0};
-
-   /* TXT record for test20.test.build.10gen.cc resolves to "loadBalanced=true".
-    */
-   uri = mongoc_uri_new (
-      "mongodb+srv://test20.test.build.10gen.cc/?replicaSet=rs0");
-   pool = mongoc_client_pool_new (uri);
-   cbs = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_topology_opening_cb (cbs, invalid_topology_opening);
-   mongoc_apm_set_topology_closed_cb (cbs, invalid_topology_closed);
-   mongoc_apm_set_server_opening_cb (cbs, invalid_server_opening);
-   mongoc_apm_set_server_closed_cb (cbs, invalid_server_closed);
-   mongoc_client_pool_set_apm_callbacks (pool, cbs, &stats);
-
-   ASSERT_CMPINT (stats.num_topology_opening, ==, 0);
-
-   /* Pop a client to attempt to start monitoring. Monitoring emits the
-    * topology_opening event on valid topologies. */
-   client = mongoc_client_pool_pop (pool);
-   mongoc_client_pool_push (pool, client);
-
-   mongoc_apm_callbacks_destroy (cbs);
-   mongoc_client_pool_destroy (pool);
-   mongoc_uri_destroy (uri);
-
-   ASSERT_CMPINT (stats.num_topology_opening, ==, 0);
-   ASSERT_CMPINT (stats.num_server_opening, ==, 0);
-   ASSERT_CMPINT (stats.num_server_closed, ==, 0);
-   ASSERT_CMPINT (stats.num_topology_closed, ==, 0);
-}
-
-/* CDRIVER-4184 Test that an invalid topology does not emit a topology_closed
- * event. */
-static void
-test_invalid_topology_single (void *unused)
-{
-   mongoc_client_t *client;
-   mongoc_uri_t *uri;
-   mongoc_apm_callbacks_t *cbs;
-   cb_stats_t stats = {0};
-   bson_error_t error;
-   mongoc_server_description_t *sd;
-
-   /* TXT records for test20.test.build.10gen.cc resolve to loadBalanced=true.
-    */
-   uri = mongoc_uri_new (
-      "mongodb+srv://test20.test.build.10gen.cc/?replicaSet=true");
-   client = mongoc_client_new_from_uri (uri);
-   cbs = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_topology_opening_cb (cbs, invalid_topology_opening);
-   mongoc_apm_set_topology_closed_cb (cbs, invalid_topology_closed);
-   mongoc_apm_set_server_opening_cb (cbs, invalid_server_opening);
-   mongoc_apm_set_server_closed_cb (cbs, invalid_server_closed);
-   mongoc_client_set_apm_callbacks (client, cbs, &stats);
-
-   ASSERT_CMPINT (stats.num_topology_opening, ==, 0);
-
-   /* Perform server selection. Server selection emits the topology_opening
-    * event on valid topologies. */
-   sd = mongoc_client_select_server (
-      client, false /* for_writes */, NULL /* read_prefs */, &error);
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_SERVER_SELECTION,
-                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-                          "URI with \"loadbalanced\" enabled must not contain "
-                          "option \"replicaset\"");
-   ASSERT (!sd);
-
-   mongoc_apm_callbacks_destroy (cbs);
-   mongoc_client_destroy (client);
-   mongoc_uri_destroy (uri);
-
-   ASSERT_CMPINT (stats.num_topology_opening, ==, 0);
-   ASSERT_CMPINT (stats.num_server_opening, ==, 0);
-   ASSERT_CMPINT (stats.num_server_closed, ==, 0);
-   ASSERT_CMPINT (stats.num_topology_closed, ==, 0);
-}
-
 void
 test_dns_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_AddFull (suite,
-                      "/initial_dns_seedlist_discovery/null_error_pointer",
-                      test_null_error_pointer,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/initial_dns_seedlist_discovery/srv_polling/mocked",
                       test_srv_polling_mocked,
@@ -1447,20 +1307,4 @@ test_dns_install (TestSuite *suite)
       NULL,
       NULL,
       test_dns_check_srv_polling);
-
-   TestSuite_AddFull (
-      suite,
-      "/initial_dns_seedlist_discovery/load-balanced/invalid_topology/pooled",
-      test_invalid_topology_pooled,
-      NULL,
-      NULL,
-      test_dns_check_loadbalanced);
-
-   TestSuite_AddFull (
-      suite,
-      "/initial_dns_seedlist_discovery/load-balanced/invalid_topology/single",
-      test_invalid_topology_single,
-      NULL,
-      NULL,
-      test_dns_check_loadbalanced);
 }
