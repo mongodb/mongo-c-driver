@@ -1112,13 +1112,8 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
       RETURN (NULL);
    }
 
-   /* topology->uri may be different from uri: if this is a mongodb+srv:// URI
-    * then mongoc_topology_new has fetched SRV and TXT records and updated its
-    * uri from them.
-    */
-   if (!(client = _mongoc_client_new_from_topology (topology))) {
-      mongoc_topology_destroy (topology);
-   }
+   client = _mongoc_client_new_from_topology (topology);
+   BSON_ASSERT (client);
 
    RETURN (client);
 }
@@ -1134,14 +1129,7 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
    const char *appname;
 
    BSON_ASSERT (topology);
-
-   if (!topology->valid) {
-      /* This should not be reached if mongoc_client_new_from_uri_with_error and
-       * mongoc_client_pool_new_with_error raise errors when mongoc_topology_new
-       * returns an invalid topology. */
-      MONGOC_ERROR ("Cannot construct client from invalid topology.");
-      return NULL;
-   }
+   BSON_ASSERT (topology->valid);
 
    client = (mongoc_client_t *) bson_malloc0 (sizeof *client);
    client->uri = mongoc_uri_copy (topology->uri);
