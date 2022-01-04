@@ -309,6 +309,7 @@ again:
           * is invalid, which mongoc_client_pool_new_with_error should already
           * have checked. */
          client = _mongoc_client_new_from_topology (pool->topology);
+         BSON_ASSERT (client);
          _initialize_new_client (pool, client);
          pool->size++;
       } else {
@@ -355,6 +356,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
           * is invalid, which mongoc_client_pool_new_with_error should already
           * have checked. */
          client = _mongoc_client_new_from_topology (pool->topology);
+         BSON_ASSERT (client);
          _initialize_new_client (pool, client);
          pool->size++;
       }
