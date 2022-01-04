@@ -1119,6 +1119,7 @@ mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
 }
 
 
+/* precondition: topology is valid */
 mongoc_client_t *
 _mongoc_client_new_from_topology (mongoc_topology_t *topology)
 {
