@@ -1,3 +1,16 @@
+libmongoc 1.20.1
+================
+
+Bug fixes:
+
+  * Fix bug where first hello command on a single-threaded client may not include full handshake.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Kevin Albertson
+
+
+
 libmongoc 1.20.0
 ================
 
