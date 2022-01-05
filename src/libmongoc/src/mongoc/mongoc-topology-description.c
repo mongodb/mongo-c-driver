@@ -1935,7 +1935,7 @@ transition_t gSDAMTransitionTable
 /*
  *--------------------------------------------------------------------------
  *
- * _mongoc_topology_description_type --
+ * _tpld_type_str --
  *
  *      Get this topology's type, one of the types defined in the Server
  *      Discovery And Monitoring Spec.
