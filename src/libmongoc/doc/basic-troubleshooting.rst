@@ -23,7 +23,7 @@ If available, the counters can be accessed outside of the application process vi
 This means that you can graph statistics about your application process easily from tools like Munin or Nagios.
 Your author often uses ``watch --interval=0.5 -d mongoc-stat $PID`` to monitor an application.
 
-Performance counters are only available on Linux platforms supporting shared memory segments.
+Performance counters are only available on Linux platforms and macOS arm64 platforms supporting shared memory segments.
 On supported platforms they are enabled by default.
 Applications can be built without the counters by specifying the cmake option ``-DENABLE_SHM_COUNTERS=OFF``. Additionally, if
 performance counters are already compiled, they can be disabled at runtime by specifying the environment variable ``MONGOC_DISABLE_SHM``.

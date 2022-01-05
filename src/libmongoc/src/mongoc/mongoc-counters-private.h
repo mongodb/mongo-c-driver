@@ -101,6 +101,19 @@ _mongoc_sched_getcpu (void)
 }
 #elif defined(MONGOC_HAVE_SCHED_GETCPU)
 #define _mongoc_sched_getcpu sched_getcpu
+#elif defined(__APPLE__) && defined(__aarch64__)
+static BSON_INLINE unsigned
+_mongoc_sched_getcpu (void)
+{
+   uintptr_t tls;
+   unsigned core_id;
+   /* Get the current thread ID, not the core ID.
+    * Getting the core ID requires privileged execution. */
+   __asm__ volatile("mrs %x0, tpidrro_el0" : "=r"(tls));
+   /* In ARM, only 8 cores are manageable. */
+   core_id = tls & 0x07u;
+   return core_id;
+}
 #else
 #define _mongoc_sched_getcpu() (0)
 #endif
