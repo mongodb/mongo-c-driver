@@ -697,7 +697,6 @@ _mock_rs_receives_msg (mock_rs_t *rs, uint32_t flags, ...)
    return request;
 }
 
-
 /*--------------------------------------------------------------------------
  *
  * mock_rs_hangs_up --

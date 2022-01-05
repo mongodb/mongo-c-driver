@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2013-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -985,12 +985,37 @@ _mongoc_rpc_scatter_reply_header_only (mongoc_rpc_t *rpc,
 bool
 _mongoc_rpc_get_first_document (mongoc_rpc_t *rpc, bson_t *reply)
 {
+   if (rpc->header.opcode == MONGOC_OPCODE_MSG) {
+      return _mongoc_rpc_reply_get_first_msg (&rpc->msg, reply);
+   }
+
    if (rpc->header.opcode == MONGOC_OPCODE_REPLY &&
        _mongoc_rpc_reply_get_first (&rpc->reply, reply)) {
       return true;
    }
 
    return false;
+}
+
+/* Reply to a first OP_MSG with another OP_MSG: */
+bool
+_mongoc_rpc_reply_get_first_msg (mongoc_rpc_msg_t *reply_msg, bson_t *bson_reply)
+{
+  /* Note that mongo_rpc_reply_t is a union, with a mongo_rpc_msg_t field; see the *.def files
+  and MongoDB Wire Protocol documentation for details. */
+
+bson_t *bt;
+int32_t document_len;
+
+BSON_ASSERT(0 == reply_msg->sections[0].payload_type);
+
+// As per the Wire Protocol documentation, each sectoin has a 32 bit length field:
+memcpy(&document_len, reply_msg->sections[0].payload.bson_document, 4);
+document_len = BSON_UINT32_FROM_LE (document_len);
+
+   bson_init_static (bson_reply, reply_msg->sections[0].payload.bson_document, document_len);
+
+ return true;
 }
 
 bool

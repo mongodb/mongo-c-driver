@@ -2305,7 +2305,7 @@ _test_hello_versioned_api (bool pooled)
    mongoc_uri_t *uri;
    mongoc_client_pool_t *pool;
    mongoc_client_t *client;
-   char *hello;
+   char *hello_reply; /* the server's reply to the OP_MSG hello request */
    future_t *future;
    request_t *request;
    bson_error_t error;
@@ -2321,12 +2321,20 @@ _test_hello_versioned_api (bool pooled)
 
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, api);
+
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri, api);
    }
 
-   hello = bson_strdup_printf ("{'ok': 1,"
+   /* For client pools, the first handshake happens when the client is popped.
+    * For non-pooled clients, we send a ping command to trigger a handshake. */
+   if (!pooled) {
+      future = future_client_command_simple (
+         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
+   }
+
+   hello_reply = bson_strdup_printf ("{'ok': 1,"
                                " 'isWritablePrimary': true,"
                                " 'setName': 'rs',"
                                " 'minWireVersion': %d,"
@@ -2336,22 +2344,19 @@ _test_hello_versioned_api (bool pooled)
                                WIRE_VERSION_MAX,
                                mock_server_get_host_and_port (server));
 
-   /* For client pools, the first handshake happens when the client is popped.
-    * For non-pooled clients, send a ping command to trigger a handshake. */
-   if (!pooled) {
-      future = future_client_command_simple (
-         client, "admin", tmp_bson ("{'ping': 1}"), NULL, NULL, &error);
-   }
-
-   request = mock_server_receives_hello (server);
+request = mock_server_receives_hello_op_msg (server);
    BSON_ASSERT (request);
    BSON_ASSERT (bson_has_field (request_get_doc (request, 0), "apiVersion"));
-   mock_server_replies_simple (request, hello);
+   BSON_ASSERT (bson_has_field (request_get_doc (request, 0), "helloOk"));
+   mock_server_replies_simple (request, hello_reply); 
    request_destroy (request);
 
    if (!pooled) {
       request = mock_server_receives_msg (
          server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
+
+//JFW:      request = mock_server_receives_msg ( server, MONGOC_QUERY_NONE, tmp_bson ("{'ping': 1}"));
+
       mock_server_replies_ok_and_destroys (request);
       BSON_ASSERT (future_get_bool (future));
       future_destroy (future);
@@ -2367,7 +2372,7 @@ _test_hello_versioned_api (bool pooled)
    mongoc_server_api_destroy (api);
    mongoc_uri_destroy (uri);
    mock_server_destroy (server);
-   bson_free (hello);
+   bson_free (hello_reply);
 }
 
 static void

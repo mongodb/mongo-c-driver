@@ -319,11 +319,56 @@ _server_monitor_polling_hello (mongoc_server_monitor_t *server_monitor,
    bson_copy_to (hello, &cmd);
 
    _server_monitor_append_cluster_time (server_monitor, &cmd);
+
    ret = _server_monitor_send_and_recv_opquery (
       server_monitor, &cmd, hello_response, error);
    bson_destroy (&cmd);
    return ret;
 }
+static bool
+_server_monitor_awaitable_hello_send_msg (mongoc_server_monitor_t *server_monitor,
+                                      bson_t *cmd,
+                                      bson_error_t *error)
+{
+   mongoc_rpc_t rpc = {0};
+   mongoc_array_t array_to_write;
+   mongoc_iovec_t *iovec;
+   int niovec;
+
+   rpc.header.msg_len = 0;
+   rpc.header.request_id = server_monitor->request_id++;
+   rpc.header.response_to = 0;
+   rpc.header.opcode = MONGOC_OPCODE_MSG;
+   rpc.msg.flags = 0; 
+   rpc.msg.n_sections = 1;
+   rpc.msg.sections[0].payload_type = 0;
+   rpc.msg.sections[0].payload.bson_document = bson_get_data (cmd);
+
+   _mongoc_array_init (&array_to_write, sizeof (mongoc_iovec_t));
+   _mongoc_rpc_gather (&rpc, &array_to_write);
+
+   iovec = (mongoc_iovec_t *) array_to_write.data;
+   niovec = array_to_write.len;
+   _mongoc_rpc_swab_to_le (&rpc);
+
+   MONITOR_LOG (server_monitor,
+                "sending with timeout %" PRId64,
+                server_monitor->connect_timeout_ms);
+
+   if (!_mongoc_stream_writev_full (server_monitor->stream,
+                                    iovec,
+                                    niovec,
+                                    server_monitor->connect_timeout_ms,
+                                    error)) {
+      MONITOR_LOG_ERROR (
+         server_monitor, "failed to write awaitable hello: %s", error->message);
+      _mongoc_array_destroy (&array_to_write);
+      return false;
+   }
+   _mongoc_array_destroy (&array_to_write);
+   return true;
+}
+
 
 static bool
 _server_monitor_awaitable_hello_send (mongoc_server_monitor_t *server_monitor,
@@ -490,7 +535,6 @@ _server_monitor_awaitable_hello_recv (mongoc_server_monitor_t *server_monitor,
    bson_t reply_local;
    int64_t expire_at_ms;
    int64_t timeout_ms;
-
    expire_at_ms = _now_ms () + server_monitor->heartbeat_frequency_ms +
                   server_monitor->connect_timeout_ms;
    _mongoc_buffer_init (&buffer, NULL, 0, NULL, NULL);
@@ -731,7 +775,6 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
 
    BSON_ASSERT (!server_monitor->stream);
    bson_init (hello_response);
-
    server_monitor->more_to_come = false;
 
    /* Using an initiator isn't really necessary. Users can't set them on
@@ -768,10 +811,21 @@ _server_monitor_setup_connection (mongoc_server_monitor_t *server_monitor,
    _mongoc_topology_dup_handshake_cmd (server_monitor->topology, &cmd);
    _server_monitor_append_cluster_time (server_monitor, &cmd);
    bson_destroy (hello_response);
+
+   /* If the user has select a versioned API, we'll assume OPCODE_MSG; otherwise,
+   we'll start by trying the legacy OPCODE_QUERY: */
+   if (NULL != server_monitor->topology->scanner->api) {
+if(!_server_monitor_awaitable_hello_send_msg(server_monitor, &cmd, error)) {
+ GOTO (fail);
+}
+}
+else
+{
    if (!_server_monitor_send_and_recv_opquery (
           server_monitor, &cmd, hello_response, error)) {
       GOTO (fail);
    }
+}
 
    ret = true;
 fail:

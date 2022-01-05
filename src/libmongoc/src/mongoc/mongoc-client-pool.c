@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2013-2022 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -305,6 +305,7 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 again:
    if (!(client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
+         // JFW: client = _mongoc_client_new_from_uri (pool->topology);
          client = _mongoc_client_new_from_topology (pool->topology);
          BSON_ASSERT (client);
          _initialize_new_client (pool, client);
@@ -349,6 +350,7 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 
    if (!(client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
+         // JFW: client = _mongoc_client_new_from_uri (pool->topology);
          client = _mongoc_client_new_from_topology (pool->topology);
          BSON_ASSERT (client);
          _initialize_new_client (pool, client);

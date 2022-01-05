@@ -1,11 +1,12 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2014-2022 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
+ *
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +24,7 @@
 #include "mongoc-error.h"
 #include "mongoc-opcode.h"
 #include "mongoc-rpc-private.h"
+#include "mongoc-flags-private.h"
 #include "mongoc-stream-private.h"
 #include "mongoc-server-description-private.h"
 #include "mongoc-topology-scanner-private.h"
@@ -134,20 +136,38 @@ mongoc_async_cmd_run (mongoc_async_cmd_t *acmd)
 }
 
 void
-_mongoc_async_cmd_init_send (mongoc_async_cmd_t *acmd, const char *dbname)
+_mongoc_async_cmd_init_send (const mongoc_opcode_t cmd_opcode, mongoc_async_cmd_t *acmd, const char *dbname)
 {
+   acmd->rpc.header.msg_len = 0; 
+   acmd->rpc.header.request_id = ++acmd->async->request_id; /* in _server_monitor_awaitable_hello_send(), this is postfix++ */
+   acmd->rpc.header.response_to = 0;
+
+   if(MONGOC_OPCODE_QUERY == cmd_opcode) {
+
    acmd->ns = bson_strdup_printf ("%s.$cmd", dbname);
 
-   acmd->rpc.header.msg_len = 0;
-   acmd->rpc.header.request_id = ++acmd->async->request_id;
-   acmd->rpc.header.response_to = 0;
-   acmd->rpc.header.opcode = MONGOC_OPCODE_QUERY;
+   acmd->rpc.header.opcode = MONGOC_OPCODE_QUERY;    
    acmd->rpc.query.flags = MONGOC_QUERY_SECONDARY_OK;
    acmd->rpc.query.collection = acmd->ns;
    acmd->rpc.query.skip = 0;
    acmd->rpc.query.n_return = -1;
    acmd->rpc.query.query = bson_get_data (&acmd->cmd);
    acmd->rpc.query.fields = NULL;
+   }
+
+
+if(MONGOC_OPCODE_MSG == cmd_opcode) { 
+
+   acmd->rpc.header.opcode = MONGOC_OPCODE_MSG;    
+
+   acmd->rpc.msg.msg_len = 0;
+   acmd->rpc.msg.flags = 0; /* JFW: other flags, like MONGOC_MSG_EXHAUST_ALLOWED, as per _server_monitor_awaitable_hello_send(), fail validation */
+   acmd->rpc.msg.n_sections = 1;
+   acmd->rpc.msg.sections[0].payload_type = 0;
+   acmd->rpc.msg.sections[0].payload.bson_document = bson_get_data (&acmd->cmd);
+}
+
+_mongoc_array_init(&acmd->array, sizeof(mongoc_iovec_t)); 
 
    /* This will always be hello, which are not allowed to be compressed */
    _mongoc_rpc_gather (&acmd->rpc, &acmd->array);
@@ -182,6 +202,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
                       void *setup_ctx,
                       const char *dbname,
                       const bson_t *cmd,
+                      const mongoc_opcode_t cmd_opcode, /* OP_QUERY or OP_MSG */
                       mongoc_async_cmd_cb_t cb,
                       void *cb_data,
                       int64_t timeout_msec)
@@ -208,7 +229,7 @@ mongoc_async_cmd_new (mongoc_async_t *async,
    _mongoc_array_init (&acmd->array, sizeof (mongoc_iovec_t));
    _mongoc_buffer_init (&acmd->buffer, NULL, 0, NULL, NULL);
 
-   _mongoc_async_cmd_init_send (acmd, dbname);
+   _mongoc_async_cmd_init_send (cmd_opcode, acmd, dbname);
 
    _mongoc_async_cmd_state_start (acmd, is_setup_done);
 

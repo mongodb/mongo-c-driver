@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 MongoDB, Inc.
+ * Copyright 2015-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -868,6 +868,7 @@ request_assert_no_duplicate_keys (request_t *request)
 }
 
 
+/* Note that mock-rs.c has another, similar function of the same name: */
 request_t *
 mock_server_receives_request (mock_server_t *server)
 {
@@ -967,7 +968,7 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
    va_list args;
    bool r;
 
-   request = mock_server_receives_request (server);
+   request = mock_server_receives_request (server); 
 
    va_start (args, flags);
    r = request_matches_msgv (request, flags, &args);
@@ -980,7 +981,6 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
 
    return request;
 }
-
 
 /*--------------------------------------------------------------------------
  *
@@ -1024,6 +1024,20 @@ mock_server_receives_bulk_msg (mock_server_t *server,
       r = request_matches_msg (request, MONGOC_MSG_NONE, docs, n_docs);
       bson_free ((bson_t **) docs);
    }
+=======
+request_t *
+_mock_server_receives_single_msg (mock_server_t *server, uint32_t flags, bson_t *doc)
+{
+   request_t *request;
+   va_list args;
+   bool r;
+
+   bson_t *docs[] = { doc, NULL };
+
+   request = mock_server_receives_request (server);
+
+   r = request_matches_msg (request, flags, (const bson_t **)docs, 1);
+>>>>>>> 9afbe6e46 (DNM: appears to be switching between OPCODE_QUERY and OPCODE_MSG but breaking)
 
    if (!r) {
       request_destroy (request);
@@ -1035,7 +1049,48 @@ mock_server_receives_bulk_msg (mock_server_t *server,
 
 /*--------------------------------------------------------------------------
  *
- * mock_server_receives_hello --
+ * mock_server_receives_query --
+ *
+ *       Pop a client request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does
+ *       not match.
+ *
+ * Side effects:
+ *       Logs if the current request is not a query (using OP_QUERY) 
+ *       matching ns, flags, skip, n_return, query_json, and fields_json.
+ *
+ *--------------------------------------------------------------------------
+ */
+
+request_t *
+mock_server_receives_query (mock_server_t *server,
+                            const char *ns,
+                            mongoc_query_flags_t flags,
+                            uint32_t skip,
+                            int32_t n_return,
+                            const char *query_json,
+                            const char *fields_json)
+{
+   request_t *request;
+
+   request = mock_server_receives_request (server);
+
+   if (request &&
+       !request_matches_query (
+          request, ns, flags, skip, n_return, query_json, fields_json, false)) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_legacy_hello --
  *
  *       Pop a client non-streaming hello call if one is enqueued,
  *       or wait up to request_timeout_ms for the client to send a request.
@@ -1045,7 +1100,8 @@ mock_server_receives_bulk_msg (mock_server_t *server,
  *       request is not a hello command.
  *
  * Side effects:
- *       Logs if the current request is not a hello command.
+ *       Logs if the current request is not a legacy hello command ("isMaster")
+ *       using OP_QUERY.
  *
  *--------------------------------------------------------------------------
  */
@@ -1073,6 +1129,7 @@ mock_server_receives_legacy_hello (mock_server_t *server,
       bson_strdup_printf ("{'%s': 1, 'maxAwaitTimeMS': { '$exists': false }}",
                           request->command_name);
 
+   /* request_matches_query() always checks for OPCODE_QUERY, used by legacy hello: */
    if (!request_matches_query (request,
                                "admin.$cmd",
                                MONGOC_QUERY_SECONDARY_OK,
@@ -1103,7 +1160,7 @@ mock_server_receives_legacy_hello (mock_server_t *server,
  *       request is not a hello command.
  *
  * Side effects:
- *       Logs if the current request is not a hello command.
+ *       Logs if the current request is a hello command using OP_QUERY.
  *
  *--------------------------------------------------------------------------
  */
@@ -1111,6 +1168,8 @@ mock_server_receives_legacy_hello (mock_server_t *server,
 request_t *
 mock_server_receives_hello (mock_server_t *server)
 {
+   /* Note that mock_server_receives_command() expects JSON documents, not BSON
+   documents, unlike _mock_server_receives_msg(): */
    return mock_server_receives_command (
       server,
       "admin",
@@ -1118,48 +1177,37 @@ mock_server_receives_hello (mock_server_t *server)
       "{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");
 }
 
-
 /*--------------------------------------------------------------------------
  *
- * mock_server_receives_query --
+ * mock_server_receives_hello_op_msg --
  *
- *       Pop a client request if one is enqueued, or wait up to
- *       request_timeout_ms for the client to send a request.
+ *       Pop a client non-streaming hello call if one is enqueued,
+ *       or wait up to request_timeout_ms for the client to send a request.
  *
  * Returns:
- *       A request you must request_destroy, or NULL if the request does
- *       not match.
+ *       A request you must request_destroy, or NULL if the current
+ *       request is not a hello command.
  *
  * Side effects:
- *       Logs if the current request is not a query matching ns, flags,
- *       skip, n_return, query_json, and fields_json.
+ *       Logs if the current request is a hello command using OP_MSG.
  *
  *--------------------------------------------------------------------------
  */
 
 request_t *
-mock_server_receives_query (mock_server_t *server,
-                            const char *ns,
-                            mongoc_query_flags_t flags,
-                            uint32_t skip,
-                            int32_t n_return,
-                            const char *query_json,
-                            const char *fields_json)
+mock_server_receives_hello_op_msg (mock_server_t *server)
 {
-   request_t *request;
+/*   bson_t *msg = tmp_bson("{'hello': 1, 'helloOk': true, 'maxAwaitTimeMS': { '$exists': false }}");  */
+   bson_t *msg = tmp_bson("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}");  
 
-   request = mock_server_receives_request (server);
+   return _mock_server_receives_single_msg(server, 0, msg);
 
-   if (request &&
-       !request_matches_query (
-          request, ns, flags, skip, n_return, query_json, fields_json, false)) {
-      request_destroy (request);
-      return NULL;
-   }
-
-   return request;
+/*
+   JFW: against the above inputs this winds up segfaulting, with the wrong number of documents reported by
+   request_matches_msgv()-- :
+   return _mock_server_receives_msg( server, 0, tmp_bson("{'hello': 1, 'maxAwaitTimeMS': { '$exists': false }}"));
+*/
 }
-
 
 /*--------------------------------------------------------------------------
  *

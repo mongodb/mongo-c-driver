@@ -174,6 +174,37 @@ _test_mongoc_server_api_client_pool_once (void)
    mongoc_uri_destroy (uri);
 }
 
+static void
+_test_mongoc_client_uses_server_api (void)
+{
+   mongoc_client_t *client0; /* versioned */
+   mongoc_client_t *client1; /* not versioned */
+   mongoc_server_api_t *api;
+   bson_error_t error;
+
+   client0 = mongoc_client_new ("mongodb://localhost");
+   client1 = mongoc_client_new ("mongodb://localhost");
+
+   /* Neither client should have an API set: */
+   BSON_ASSERT (!client0->api);
+   BSON_ASSERT (!client1->api);
+
+   /* Set the API on one and only one client: */
+   api = mongoc_server_api_new (MONGOC_SERVER_API_V1);
+   ASSERT_OR_PRINT (mongoc_client_set_server_api (client0, api, &error), error);
+
+   /* Check to see that we can distinguish whether or not the API was set via our function
+   under test: */
+   ASSERT(mongoc_client_uses_server_api(client0));
+   ASSERT(!mongoc_client_uses_server_api(client1));
+
+   /* Tidy up: */
+   mongoc_server_api_destroy (api);
+   mongoc_client_destroy (client0);
+
+   mongoc_client_destroy (client1);
+}
+ 
 void
 test_client_versioned_api_install (TestSuite *suite)
 {
@@ -189,4 +220,6 @@ test_client_versioned_api_install (TestSuite *suite)
    TestSuite_Add (suite, "/VersionedApi/copy", _test_mongoc_server_api_copy);
    TestSuite_Add (
       suite, "/VersionedApi/setters", _test_mongoc_server_api_setters);
+   TestSuite_Add (
+      suite, "VersionedApi/private/client_uses_server_api", _test_mongoc_client_uses_server_api);
 }

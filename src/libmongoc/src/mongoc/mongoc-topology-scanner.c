@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 MongoDB, Inc.
+ * Copyright 2014-present MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -299,11 +299,17 @@ _build_handshake_cmd (const bson_t *basis_cmd,
    return doc;
 }
 
+bool
+_mongoc_topology_scanner_uses_versioned_api (const mongoc_topology_scanner_t *ts)
+{
+ return ts->api;
+}
+
 const bson_t *
 _mongoc_topology_scanner_get_monitoring_cmd (mongoc_topology_scanner_t *ts,
                                              bool hello_ok)
 {
-   return hello_ok || ts->api ? &ts->hello_cmd : &ts->legacy_hello_cmd;
+   return hello_ok || _mongoc_topology_scanner_uses_versioned_api(ts) ? &ts->hello_cmd : &ts->legacy_hello_cmd;
 }
 
 void
@@ -378,7 +384,14 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
                   bool use_handshake)
 {
    mongoc_topology_scanner_t *ts = node->ts;
+   mongoc_opcode_t cmd_opcode_type = MONGOC_OPCODE_QUERY;
    bson_t cmd;
+
+   /* If we're asked to use a specific API version, we should send our
+   hello handshake via op_msg rather than the legacy op_query: */
+   if(_mongoc_topology_scanner_uses_versioned_api(ts)) {
+       cmd_opcode_type = MONGOC_OPCODE_MSG;
+   }
 
    if (node->last_used != -1 && node->last_failed == -1 && !use_handshake) {
       /* The node's been used before and not failed recently */
@@ -423,6 +436,7 @@ _begin_hello_cmd (mongoc_topology_scanner_node_t *node,
                          node->host.host,
                          "admin",
                          &cmd,
+                         cmd_opcode_type,
                          &_async_handler,
                          node,
                          ts->connect_timeout_msec);
@@ -1472,7 +1486,6 @@ _mongoc_topology_scanner_set_server_api (mongoc_topology_scanner_t *ts,
 {
    BSON_ASSERT (ts);
    BSON_ASSERT (api);
-
    mongoc_server_api_destroy (ts->api);
    ts->api = mongoc_server_api_copy (api);
    _reset_hello (ts);

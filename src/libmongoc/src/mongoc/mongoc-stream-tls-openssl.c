@@ -546,10 +546,12 @@ _mongoc_stream_tls_openssl_check_closed (mongoc_stream_t *stream) /* IN */
 static bool
 _mongoc_stream_tls_openssl_cert_verify_failed (SSL *ssl, bson_error_t *error)
 {
+   long verify_result;
+
    BSON_ASSERT_PARAM (ssl);
    BSON_ASSERT_PARAM (error);
 
-   const long verify_result = SSL_get_verify_result (ssl);
+   verify_result = SSL_get_verify_result (ssl);
 
    if (verify_result == X509_V_OK) {
       return false;

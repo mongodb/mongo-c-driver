@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 MongoDB, Inc.
+ * Copyright 2013-2022 MongoDB, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1131,6 +1131,13 @@ _mongoc_client_new_from_topology (mongoc_topology_t *topology)
 
    BSON_ASSERT (topology);
    BSON_ASSERT (topology->valid);
+
+#ifndef MONGOC_ENABLE_SSL
+   if (mongoc_uri_get_tls (topology->uri)) {
+      MONGOC_ERROR ("Can't create SSL client, SSL not enabled in this build.");
+      return NULL;
+   }
+#endif
 
    client = (mongoc_client_t *) bson_malloc0 (sizeof *client);
    client->uri = mongoc_uri_copy (topology->uri);
@@ -3141,6 +3148,14 @@ mongoc_client_set_server_api (mongoc_client_t *client,
    client->api = mongoc_server_api_copy (api);
    _mongoc_topology_scanner_set_server_api (client->topology->scanner, api);
    return true;
+}
+
+/* Returns true if a specific server API has been set: */
+bool mongoc_client_uses_server_api(mongoc_client_t *client)
+{
+ BSON_ASSERT_PARAM(client);
+
+ return NULL != client->api;
 }
 
 mongoc_server_description_t *
