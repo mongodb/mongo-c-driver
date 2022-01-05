@@ -111,7 +111,7 @@ _mongoc_sched_getcpu (void)
     * Getting the core ID requires privileged execution. */
    __asm__ volatile("mrs %x0, tpidrro_el0" : "=r"(tls));
    /* In ARM, only 8 cores are manageable. */
-   core_id = tls & ((1 << 3) - 1);
+   core_id = tls & 0x07u;
    return core_id;
 }
 #else
