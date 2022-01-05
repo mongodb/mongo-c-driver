@@ -103,13 +103,13 @@ _mongoc_client_killcursors_command (mongoc_cluster_t *cluster,
 
 #ifdef MONGOC_HAVE_DNSAPI
 
-typedef bool (*mongoc_rr_callback_t) (const char *service,
+typedef bool (*mongoc_rr_callback_t) (const char *hostname,
                                       PDNS_RECORD pdns,
                                       mongoc_rr_data_t *rr_data,
                                       bson_error_t *error);
 
 static bool
-srv_callback (const char *service,
+srv_callback (const char *hostname,
               PDNS_RECORD pdns,
               mongoc_rr_data_t *rr_data,
               bson_error_t *error)
@@ -132,7 +132,7 @@ srv_callback (const char *service,
 
 /* rr_data is unused, but here to match srv_callback signature */
 static bool
-txt_callback (const char *service,
+txt_callback (const char *hostname,
               PDNS_RECORD pdns,
               mongoc_rr_data_t *rr_data,
               bson_error_t *error)
@@ -178,7 +178,7 @@ txt_callback (const char *service,
  */
 
 static bool
-_mongoc_get_rr_dnsapi (const char *service,
+_mongoc_get_rr_dnsapi (const char *hostname,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
                        bson_error_t *error)
@@ -209,7 +209,7 @@ _mongoc_get_rr_dnsapi (const char *service,
       callback = txt_callback;
    }
 
-   res = DnsQuery_UTF8 (service,
+   res = DnsQuery_UTF8 (hostname,
                         nst,
                         DNS_QUERY_BYPASS_CACHE,
                         NULL /* IP Address */,
@@ -229,17 +229,17 @@ _mongoc_get_rr_dnsapi (const char *service,
                          0)) {
          DNS_ERROR ("Failed to look up %s record \"%s\": %s",
                     rr_type_name,
-                    service,
+                    hostname,
                     (char *) lpMsgBuf);
       }
 
       DNS_ERROR ("Failed to look up %s record \"%s\": Unknown error",
                  rr_type_name,
-                 service);
+                 hostname);
    }
 
    if (!pdns) {
-      DNS_ERROR ("No %s records for \"%s\"", rr_type_name, service);
+      DNS_ERROR ("No %s records for \"%s\"", rr_type_name, hostname);
    }
 
    i = 0;
@@ -252,7 +252,7 @@ _mongoc_get_rr_dnsapi (const char *service,
             /* Initial DNS Seedlist Discovery Spec: a client "MUST raise an
             error when multiple TXT records are encountered". */
             callback_success = false;
-            DNS_ERROR ("Multiple TXT records for \"%s\"", service);
+            DNS_ERROR ("Multiple TXT records for \"%s\"", hostname);
          }
 
          if (rr_data) {
@@ -261,7 +261,7 @@ _mongoc_get_rr_dnsapi (const char *service,
             }
          }
 
-         if (!callback (service, pdns, rr_data, error)) {
+         if (!callback (hostname, pdns, rr_data, error)) {
             callback_success = false;
             GOTO (done);
          }
@@ -275,7 +275,7 @@ _mongoc_get_rr_dnsapi (const char *service,
 
    rr_data->count = i;
    if (i == 0) {
-      DNS_ERROR ("No matching %s records for \"%s\"", rr_type_name, service);
+      DNS_ERROR ("No matching %s records for \"%s\"", rr_type_name, hostname);
    }
    dns_success = true;
 
@@ -293,7 +293,7 @@ done:
 
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
 
-typedef bool (*mongoc_rr_callback_t) (const char *service,
+typedef bool (*mongoc_rr_callback_t) (const char *hostname,
                                       ns_msg *ns_answer,
                                       ns_rr *rr,
                                       mongoc_rr_data_t *rr_data,
@@ -318,7 +318,7 @@ _mongoc_hstrerror (int code)
 }
 
 static bool
-srv_callback (const char *service,
+srv_callback (const char *hostname,
               ns_msg *ns_answer,
               ns_rr *rr,
               mongoc_rr_data_t *rr_data,
@@ -345,7 +345,7 @@ srv_callback (const char *service,
 
    if (size < 1) {
       DNS_ERROR ("Invalid record in SRV answer for \"%s\": \"%s\"",
-                 service,
+                 hostname,
                  _mongoc_hstrerror (h_errno));
    }
 
@@ -360,7 +360,7 @@ done:
 }
 
 static bool
-txt_callback (const char *service,
+txt_callback (const char *hostname,
               ns_msg *ns_answer,
               ns_rr *rr,
               mongoc_rr_data_t *rr_data,
@@ -375,7 +375,7 @@ txt_callback (const char *service,
 
    total = (uint16_t) ns_rr_rdlen (*rr);
    if (total < 1 || total > 255) {
-      DNS_ERROR ("Invalid TXT record size %hu for \"%s\"", total, service);
+      DNS_ERROR ("Invalid TXT record size %hu for \"%s\"", total, hostname);
    }
 
    /* a TXT record has one or more strings, each up to 255 chars, each is
@@ -426,7 +426,7 @@ done:
  */
 
 static bool
-_mongoc_get_rr_search (const char *service,
+_mongoc_get_rr_search (const char *hostname,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
                        size_t initial_buffer_size,
@@ -483,26 +483,26 @@ _mongoc_get_rr_search (const char *service,
       /* thread-safe */
       res_ninit (&state);
       size =
-         res_nsearch (&state, service, ns_c_in, nst, search_buf, buffer_size);
+         res_nsearch (&state, hostname, ns_c_in, nst, search_buf, buffer_size);
 #elif defined(MONGOC_HAVE_RES_SEARCH)
-      size = res_search (service, ns_c_in, nst, search_buf, buffer_size);
+      size = res_search (hostname, ns_c_in, nst, search_buf, buffer_size);
 #endif
 
       if (size < 0) {
          DNS_ERROR ("Failed to look up %s record \"%s\": %s",
                     rr_type_name,
-                    service,
+                    hostname,
                     _mongoc_hstrerror (h_errno));
       }
    } while (size >= buffer_size);
 
    if (ns_initparse (search_buf, size, &ns_answer)) {
-      DNS_ERROR ("Invalid %s answer for \"%s\"", rr_type_name, service);
+      DNS_ERROR ("Invalid %s answer for \"%s\"", rr_type_name, hostname);
    }
 
    n = ns_msg_count (ns_answer, ns_s_an);
    if (!n) {
-      DNS_ERROR ("No %s records for \"%s\"", rr_type_name, service);
+      DNS_ERROR ("No %s records for \"%s\"", rr_type_name, hostname);
    }
 
    rr_data->count = n;
@@ -512,7 +512,7 @@ _mongoc_get_rr_search (const char *service,
          DNS_ERROR ("Invalid record %d of %s answer for \"%s\": \"%s\"",
                     i,
                     rr_type_name,
-                    service,
+                    hostname,
                     _mongoc_hstrerror (h_errno));
       }
 
@@ -532,7 +532,7 @@ _mongoc_get_rr_search (const char *service,
          /* Initial DNS Seedlist Discovery Spec: a client "MUST raise an error
           * when multiple TXT records are encountered". */
          callback_success = false;
-         DNS_ERROR ("Multiple TXT records for \"%s\"", service);
+         DNS_ERROR ("Multiple TXT records for \"%s\"", hostname);
       }
 
       num_matching_records++;
@@ -542,14 +542,14 @@ _mongoc_get_rr_search (const char *service,
          rr_data->min_ttl = ttl;
       }
 
-      if (!callback (service, &ns_answer, &resource_record, rr_data, error)) {
+      if (!callback (hostname, &ns_answer, &resource_record, rr_data, error)) {
          callback_success = false;
          GOTO (done);
       }
    }
 
    if (num_matching_records == 0) {
-      DNS_ERROR ("No matching %s records for \"%s\"", rr_type_name, service);
+      DNS_ERROR ("No matching %s records for \"%s\"", rr_type_name, hostname);
    }
 
    dns_success = true;
@@ -595,7 +595,7 @@ done:
  */
 
 bool
-_mongoc_client_get_rr (const char *service,
+_mongoc_client_get_rr (const char *hostname,
                        mongoc_rr_type_t rr_type,
                        mongoc_rr_data_t *rr_data,
                        size_t initial_buffer_size,
@@ -604,10 +604,10 @@ _mongoc_client_get_rr (const char *service,
    BSON_ASSERT (rr_data);
 
 #ifdef MONGOC_HAVE_DNSAPI
-   return _mongoc_get_rr_dnsapi (service, rr_type, rr_data, error);
+   return _mongoc_get_rr_dnsapi (hostname, rr_type, rr_data, error);
 #elif (defined(MONGOC_HAVE_RES_NSEARCH) || defined(MONGOC_HAVE_RES_SEARCH))
    return _mongoc_get_rr_search (
-      service, rr_type, rr_data, initial_buffer_size, error);
+      hostname, rr_type, rr_data, initial_buffer_size, error);
 #else
    bson_set_error (error,
                    MONGOC_ERROR_STREAM,
@@ -982,48 +982,27 @@ _mongoc_client_recv (mongoc_client_t *client,
 }
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_client_new --
- *
- *       Create a new mongoc_client_t using the URI provided.
- *
- *       @uri should be a MongoDB URI string such as "mongodb://localhost/"
- *       More information on the format can be found at
- *       http://docs.mongodb.org/manual/reference/connection-string/
- *
- * Returns:
- *       A newly allocated mongoc_client_t or NULL if @uri_string is
- *       invalid.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
 mongoc_client_t *
 mongoc_client_new (const char *uri_string)
 {
-   mongoc_topology_t *topology;
    mongoc_client_t *client;
    mongoc_uri_t *uri;
-
+   bson_error_t error = {0};
 
    if (!uri_string) {
       uri_string = "mongodb://127.0.0.1/";
    }
 
-   if (!(uri = mongoc_uri_new (uri_string))) {
+   if (!(uri = mongoc_uri_new_with_error (uri_string, &error))) {
+      /* Log URI errors as a warning for consistency with mongoc_uri_new */
+      MONGOC_WARNING ("Error parsing URI: '%s'", error.message);
       return NULL;
    }
 
-   topology = mongoc_topology_new (uri, true);
-
-   client = _mongoc_client_new_from_uri (topology);
-   if (!client) {
-      mongoc_topology_destroy (topology);
+   if (!(client = mongoc_client_new_from_uri_with_error (uri, &error))) {
+      MONGOC_ERROR ("%s", error.message);
    }
+
    mongoc_uri_destroy (uri);
 
    return client;
@@ -1084,54 +1063,65 @@ mongoc_client_set_ssl_opts (mongoc_client_t *client,
 #endif
 
 
-/*
- *--------------------------------------------------------------------------
- *
- * mongoc_client_new_from_uri --
- *
- *       Create a new mongoc_client_t for a mongoc_uri_t.
- *
- * Returns:
- *       A newly allocated mongoc_client_t.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
-
 mongoc_client_t *
 mongoc_client_new_from_uri (const mongoc_uri_t *uri)
 {
+   mongoc_client_t *client;
+   bson_error_t error = {0};
+
+   if (!(client = mongoc_client_new_from_uri_with_error (uri, &error))) {
+      MONGOC_ERROR ("%s", error.message);
+   }
+
+   return client;
+}
+
+
+mongoc_client_t *
+mongoc_client_new_from_uri_with_error (const mongoc_uri_t *uri,
+                                       bson_error_t *error)
+{
+   mongoc_client_t *client;
    mongoc_topology_t *topology;
+
+
+   ENTRY;
+
+   BSON_ASSERT (uri);
+
+#ifndef MONGOC_ENABLE_SSL
+   if (mongoc_uri_get_tls (uri)) {
+      bson_set_error (
+         error,
+         MONGOC_ERROR_COMMAND,
+         MONGOC_ERROR_COMMAND_INVALID_ARG,
+         "Can't create SSL client, SSL not enabled in this build.");
+      RETURN (NULL);
+   }
+#endif
 
    topology = mongoc_topology_new (uri, true);
 
-   /* topology->uri may be different from uri: if this is a mongodb+srv:// URI
-    * then mongoc_topology_new has fetched SRV and TXT records and updated its
-    * uri from them.
-    */
-   return _mongoc_client_new_from_uri (topology);
+   if (!topology->valid) {
+      if (error) {
+         memcpy (error, &topology->scanner->error, sizeof (bson_error_t));
+      }
+
+      mongoc_topology_destroy (topology);
+
+      RETURN (NULL);
+   }
+
+   client = _mongoc_client_new_from_topology (topology);
+   BSON_ASSERT (client);
+
+   RETURN (client);
 }
 
-/*
- *--------------------------------------------------------------------------
- *
- * _mongoc_client_new_from_uri --
- *
- *       Create a new mongoc_client_t for a given topology object.
- *
- * Returns:
- *       A newly allocated mongoc_client_t.
- *
- * Side effects:
- *       None.
- *
- *--------------------------------------------------------------------------
- */
 
+/* precondition: topology is valid */
 mongoc_client_t *
-_mongoc_client_new_from_uri (mongoc_topology_t *topology)
+_mongoc_client_new_from_topology (mongoc_topology_t *topology)
 {
    mongoc_client_t *client;
    const mongoc_read_prefs_t *read_prefs;
@@ -1140,13 +1130,7 @@ _mongoc_client_new_from_uri (mongoc_topology_t *topology)
    const char *appname;
 
    BSON_ASSERT (topology);
-
-#ifndef MONGOC_ENABLE_SSL
-   if (mongoc_uri_get_tls (topology->uri)) {
-      MONGOC_ERROR ("Can't create SSL client, SSL not enabled in this build.");
-      return NULL;
-   }
-#endif
+   BSON_ASSERT (topology->valid);
 
    client = (mongoc_client_t *) bson_malloc0 (sizeof *client);
    client->uri = mongoc_uri_copy (topology->uri);

@@ -35,6 +35,7 @@ Example
     mongoc_client_pool_max_size
     mongoc_client_pool_min_size
     mongoc_client_pool_new
+    mongoc_client_pool_new_with_error
     mongoc_client_pool_pop
     mongoc_client_pool_push
     mongoc_client_pool_set_apm_callbacks

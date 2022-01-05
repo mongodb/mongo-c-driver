@@ -102,6 +102,8 @@ run_uri_test (const char *uri_string,
           strstr (uri_string, "w=-2") || strstr (uri_string, "wTimeoutMS=-2") ||
           strstr (uri_string, "zlibCompressionLevel=-2") ||
           strstr (uri_string, "zlibCompressionLevel=10") ||
+          (!strstr (uri_string, "mongodb+srv") &&
+           strstr (uri_string, "srvServiceName=customname")) ||
           strstr (uri_string, "srvMaxHosts=-1") ||
           strstr (uri_string, "srvMaxHosts=foo")) {
          MONGOC_WARNING ("Error parsing URI: '%s'", error.message);

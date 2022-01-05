@@ -81,7 +81,7 @@ MONGOC_DECL_SPECIAL_TS_POOL (
    NULL,
    NULL)
 
-typedef bool (*_mongoc_rr_resolver_fn) (const char *service,
+typedef bool (*_mongoc_rr_resolver_fn) (const char *hostname,
                                         mongoc_rr_type_t rr_type,
                                         mongoc_rr_data_t *rr_data,
                                         size_t initial_buffer_size,
