@@ -53,16 +53,15 @@ test_rtt_calculation_cb (bson_t *test)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
    /* RTT calculation */
-   test_framework_resolve_path (JSON_DIR "/server_selection/rtt", resolved);
-   install_json_test_suite (suite, resolved, &test_rtt_calculation_cb);
+   install_json_test_suite (
+      suite, JSON_DIR, "server_selection/rtt", &test_rtt_calculation_cb);
 
    /* SS logic */
-   test_framework_resolve_path (JSON_DIR "/server_selection/server_selection",
-                                resolved);
-   install_json_test_suite (suite, resolved, &test_server_selection_logic_cb);
+   install_json_test_suite (suite,
+                            JSON_DIR,
+                            "server_selection/server_selection",
+                            &test_server_selection_logic_cb);
 }
 
 void

@@ -47,15 +47,15 @@ enum bson_memory_order {
 #define MSVC_MEMORDER_SUFFIX(X)
 #endif
 
-#if defined(USE_LEGACY_GCC_ATOMICS) || (!defined(__clang__) && \
-   __GNUC__ == 4 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 9)
+#if defined(USE_LEGACY_GCC_ATOMICS) || \
+   (!defined(__clang__) && __GNUC__ == 4)
 #define BSON_USE_LEGACY_GCC_ATOMICS
 #else
 #undef BSON_USE_LEGACY_GCC_ATOMICS
 #endif
 
 /* Not all GCC-like compilers support the current __atomic built-ins.  Older
- * GCC (pre-4.9) used different built-ins named with the __sync prefix.  When
+ * GCC (pre-5) used different built-ins named with the __sync prefix.  When
  * compiling with such older GCC versions, it is necessary to use the applicable
  * functions, which requires redefining BSON_IF_GNU_LIKE and defining the
  * additional BSON_IF_GNU_LEGACY_ATOMICS macro here. */
@@ -65,6 +65,13 @@ enum bson_memory_order {
 #define BSON_IF_GNU_LEGACY_ATOMICS(...) __VA_ARGS__
 #else
 #define BSON_IF_GNU_LEGACY_ATOMICS(...)
+#endif
+
+/* CDRIVER-4229 zSeries with gcc 4.8.4 produces illegal instructions for int and
+ * int32 atomic intrinsics. */
+#if defined(__s390__) || defined(__s390x__) || defined(__zarch__)
+#define BSON_EMULATE_INT32
+#define BSON_EMULATE_INT
 #endif
 
 #define DEF_ATOMIC_OP(MSVC_Intrinsic, GNU_Intrinsic, GNU_Legacy_Intrinsic, Order, ...) \
@@ -339,14 +346,22 @@ enum bson_memory_order {
 /* MSVC expects precise types for their atomic intrinsics. */
 DECL_ATOMIC_INTEGRAL (int8, char, 8);
 DECL_ATOMIC_INTEGRAL (int16, short, 16)
+#if !defined (BSON_EMULATE_INT32)
 DECL_ATOMIC_INTEGRAL (int32, long, )
+#endif
+#if !defined (BSON_EMULATE_INT)
 DECL_ATOMIC_INTEGRAL (int, long, )
+#endif
 #else
 /* Other compilers that we support provide generic intrinsics */
 DECL_ATOMIC_STDINT (int8, 8)
 DECL_ATOMIC_STDINT (int16, 16)
+#if !defined (BSON_EMULATE_INT32)
 DECL_ATOMIC_STDINT (int32, )
+#endif
+#if !defined (BSON_EMULATE_INT)
 DECL_ATOMIC_INTEGRAL (int, int, )
+#endif
 #endif
 
 BSON_EXPORT (int64_t)
@@ -368,6 +383,46 @@ _bson_emul_atomic_int64_compare_exchange_weak (int64_t volatile *val,
                                                int64_t expect_value,
                                                int64_t new_value,
                                                enum bson_memory_order);
+
+BSON_EXPORT (int32_t)
+_bson_emul_atomic_int32_fetch_add (int32_t volatile *val,
+                                   int32_t v,
+                                   enum bson_memory_order);
+BSON_EXPORT (int32_t)
+_bson_emul_atomic_int32_exchange (int32_t volatile *val,
+                                  int32_t v,
+                                  enum bson_memory_order);
+BSON_EXPORT (int32_t)
+_bson_emul_atomic_int32_compare_exchange_strong (int32_t volatile *val,
+                                                 int32_t expect_value,
+                                                 int32_t new_value,
+                                                 enum bson_memory_order);
+
+BSON_EXPORT (int32_t)
+_bson_emul_atomic_int32_compare_exchange_weak (int32_t volatile *val,
+                                               int32_t expect_value,
+                                               int32_t new_value,
+                                               enum bson_memory_order);
+
+BSON_EXPORT (int)
+_bson_emul_atomic_int_fetch_add (int volatile *val,
+                                 int v,
+                                 enum bson_memory_order);
+BSON_EXPORT (int)
+_bson_emul_atomic_int_exchange (int volatile *val,
+                                int v,
+                                enum bson_memory_order);
+BSON_EXPORT (int)
+_bson_emul_atomic_int_compare_exchange_strong (int volatile *val,
+                                               int expect_value,
+                                               int new_value,
+                                               enum bson_memory_order);
+
+BSON_EXPORT (int)
+_bson_emul_atomic_int_compare_exchange_weak (int volatile *val,
+                                             int expect_value,
+                                             int new_value,
+                                             enum bson_memory_order);
 
 BSON_EXPORT (void)
 bson_thrd_yield (void);
@@ -432,6 +487,112 @@ bson_atomic_int64_compare_exchange_weak (int64_t volatile *val,
       val, expect_value, new_value, order);
 }
 #endif
+
+#if defined(BSON_EMULATE_INT32)
+static BSON_INLINE int32_t
+bson_atomic_int32_fetch (const int32_t volatile *val,
+                         enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int32_fetch_add (
+      (int32_t volatile *) val, 0, order);
+}
+
+static BSON_INLINE int32_t
+bson_atomic_int32_fetch_add (int32_t volatile *val,
+                             int32_t v,
+                             enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int32_fetch_add (val, v, order);
+}
+
+static BSON_INLINE int32_t
+bson_atomic_int32_fetch_sub (int32_t volatile *val,
+                             int32_t v,
+                             enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int32_fetch_add (val, -v, order);
+}
+
+static BSON_INLINE int32_t
+bson_atomic_int32_exchange (int32_t volatile *val,
+                            int32_t v,
+                            enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int32_exchange (val, v, order);
+}
+
+static BSON_INLINE int32_t
+bson_atomic_int32_compare_exchange_strong (int32_t volatile *val,
+                                           int32_t expect_value,
+                                           int32_t new_value,
+                                           enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int32_compare_exchange_strong (
+      val, expect_value, new_value, order);
+}
+
+static BSON_INLINE int32_t
+bson_atomic_int32_compare_exchange_weak (int32_t volatile *val,
+                                         int32_t expect_value,
+                                         int32_t new_value,
+                                         enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int32_compare_exchange_weak (
+      val, expect_value, new_value, order);
+}
+#endif /* BSON_EMULATE_INT32 */
+
+#if defined(BSON_EMULATE_INT)
+static BSON_INLINE int
+bson_atomic_int_fetch (const int volatile *val, enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int_fetch_add ((int volatile *) val, 0, order);
+}
+
+static BSON_INLINE int
+bson_atomic_int_fetch_add (int volatile *val,
+                           int v,
+                           enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int_fetch_add (val, v, order);
+}
+
+static BSON_INLINE int
+bson_atomic_int_fetch_sub (int volatile *val,
+                           int v,
+                           enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int_fetch_add (val, -v, order);
+}
+
+static BSON_INLINE int
+bson_atomic_int_exchange (int volatile *val,
+                          int v,
+                          enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int_exchange (val, v, order);
+}
+
+static BSON_INLINE int
+bson_atomic_int_compare_exchange_strong (int volatile *val,
+                                         int expect_value,
+                                         int new_value,
+                                         enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int_compare_exchange_strong (
+      val, expect_value, new_value, order);
+}
+
+static BSON_INLINE int
+bson_atomic_int_compare_exchange_weak (int volatile *val,
+                                       int expect_value,
+                                       int new_value,
+                                       enum bson_memory_order order)
+{
+   return _bson_emul_atomic_int_compare_exchange_weak (
+      val, expect_value, new_value, order);
+}
+#endif /* BSON_EMULATE_INT */
 
 static BSON_INLINE void *
 bson_atomic_ptr_exchange (void *volatile *ptr,
@@ -583,6 +744,9 @@ BSON_EXPORT (int32_t) bson_atomic_int_add (volatile int32_t *p, int32_t n);
 
 BSON_GNUC_DEPRECATED_FOR ("bson_atomic_int64_fetch_add")
 BSON_EXPORT (int64_t) bson_atomic_int64_add (volatile int64_t *p, int64_t n);
+
+#undef BSON_EMULATE_INT32
+#undef BSON_EMULATE_INT
 
 BSON_END_DECLS
 

@@ -105,7 +105,7 @@ mongoc_uri_do_unescape (char **str)
                       "Invalid host \"%s\" returned for service \"%s\": " \
                       "host must be subdomain of service name",           \
                       host,                                               \
-                      service);                                           \
+                      srv_hostname);                                      \
       return false;                                                       \
    } while (0)
 
@@ -146,27 +146,27 @@ mongoc_uri_validate_srv_result (const mongoc_uri_t *uri,
                                 const char *host,
                                 bson_error_t *error)
 {
-   const char *service;
-   const char *service_root;
+   const char *srv_hostname;
+   const char *srv_host;
 
-   service = mongoc_uri_get_service (uri);
-   BSON_ASSERT (service);
+   srv_hostname = mongoc_uri_get_srv_hostname (uri);
+   BSON_ASSERT (srv_hostname);
 
    if (!valid_hostname (host)) {
       VALIDATE_SRV_ERR ();
    }
 
-   service_root = strchr (service, '.');
-   BSON_ASSERT (service_root);
+   srv_host = strchr (srv_hostname, '.');
+   BSON_ASSERT (srv_host);
 
    /* host must be descendent of service root: if service is
     * "a.foo.co" host can be like "a.foo.co", "b.foo.co", "a.b.foo.co", etc.
     */
-   if (strlen (host) < strlen (service_root)) {
+   if (strlen (host) < strlen (srv_host)) {
       VALIDATE_SRV_ERR ();
    }
 
-   if (!ends_with (host, service_root)) {
+   if (!ends_with (host, srv_host)) {
       VALIDATE_SRV_ERR ();
    }
 
@@ -610,6 +610,67 @@ mongoc_uri_parse_auth_mechanism_properties (mongoc_uri_t *uri, const char *str)
    return true;
 }
 
+
+static bool
+mongoc_uri_check_srv_service_name (mongoc_uri_t *uri, const char *str)
+{
+   /* 63 character DNS query limit, excluding prepended underscore. */
+   const size_t mongoc_srv_service_name_max = 62u;
+
+   size_t length = 0u;
+   size_t num_alpha = 0u;
+   size_t i = 0u;
+   char prev = '\0';
+
+   BSON_ASSERT_PARAM (uri);
+   BSON_ASSERT_PARAM (str);
+
+   length = strlen (str);
+
+   /* Initial DNS Seedlist Discovery Spec: This option specifies a valid SRV
+    * service name according to RFC 6335, with the exception that it may exceed
+    * 15 characters as long as the 63rd (62nd with prepended underscore)
+    * character DNS query limit is not surpassed. */
+   if (length > mongoc_srv_service_name_max) {
+      return false;
+   }
+
+   /* RFC 6335: MUST be at least 1 character. */
+   if (length == 0u) {
+      return false;
+   }
+
+   for (i = 0u; i < length; ++i) {
+      const char c = str[i];
+
+      /* RFC 6335: MUST contain only US-ASCII letters 'A' - 'Z' and 'a' - 'z',
+       * digits '0' - '9', and hyphens ('-', ASCII 0x2D or decimal 45). */
+      if (!isalpha (c) && !isdigit (c) && c != '-') {
+         return false;
+      }
+
+      /* RFC 6335: hyphens MUST NOT be adjacent to other hyphens. */
+      if (c == '-' && prev == '-') {
+         return false;
+      }
+
+      num_alpha += isalpha (c) ? 1u : 0u;
+      prev = c;
+   }
+
+   /* RFC 6335: MUST contain at least one letter ('A' - 'Z' or 'a' - 'z') */
+   if (num_alpha == 0u) {
+      return false;
+   }
+
+   /* RFC 6335: MUST NOT begin or end with a hyphen. */
+   if (str[0] == '-' || str[length - 1u] == '-') {
+      return false;
+   }
+
+   return true;
+}
+
 static bool
 mongoc_uri_parse_tags (mongoc_uri_t *uri, /* IN */
                        const char *str)   /* IN */
@@ -735,7 +796,8 @@ mongoc_uri_option_is_int32 (const char *key)
           !strcasecmp (key, MONGOC_URI_MAXIDLETIMEMS) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUEMULTIPLE) ||
           !strcasecmp (key, MONGOC_URI_WAITQUEUETIMEOUTMS) ||
-          !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL);
+          !strcasecmp (key, MONGOC_URI_ZLIBCOMPRESSIONLEVEL) ||
+          !strcasecmp (key, MONGOC_URI_SRVMAXHOSTS);
 }
 
 bool
@@ -773,6 +835,7 @@ mongoc_uri_option_is_utf8 (const char *key)
    return !strcasecmp (key, MONGOC_URI_APPNAME) ||
           !strcasecmp (key, MONGOC_URI_REPLICASET) ||
           !strcasecmp (key, MONGOC_URI_READPREFERENCE) ||
+          !strcasecmp (key, MONGOC_URI_SRVSERVICENAME) ||
           !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILE) ||
           !strcasecmp (key, MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD) ||
           !strcasecmp (key, MONGOC_URI_TLSCAFILE) ||
@@ -1132,7 +1195,8 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
                                MONGOC_ERROR_COMMAND,
                                MONGOC_ERROR_COMMAND_INVALID_ARG,
                                "Failed to set %s to %d",
-                               canon, bval);
+                               canon,
+                               bval);
                return false;
             }
          } else {
@@ -1171,6 +1235,12 @@ mongoc_uri_apply_options (mongoc_uri_t *uri,
             goto UNSUPPORTED_VALUE;
          }
          bson_free (tmp);
+
+      } else if (!strcmp (key, MONGOC_URI_SRVSERVICENAME)) {
+         if (!mongoc_uri_check_srv_service_name (uri, value)) {
+            goto UNSUPPORTED_VALUE;
+         }
+         mongoc_uri_bson_append_or_replace_key (&uri->options, canon, value);
 
       } else if (!strcmp (key, MONGOC_URI_AUTHMECHANISMPROPERTIES)) {
          if (bson_has_field (&uri->credentials, key)) {
@@ -1329,12 +1399,11 @@ mongoc_uri_finalize_tls (mongoc_uri_t *uri, bson_error_t *error)
 
 
 static bool
-mongoc_uri_finalize_auth (mongoc_uri_t *uri,
-                          bson_error_t *error,
-                          bool require_auth)
+mongoc_uri_finalize_auth (mongoc_uri_t *uri, bson_error_t *error)
 {
    bson_iter_t iter;
    const char *source = NULL;
+   const bool require_auth = uri->username != NULL;
 
    if (bson_iter_init_find_case (
           &iter, &uri->credentials, MONGOC_URI_AUTHSOURCE)) {
@@ -1499,7 +1568,6 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
 {
    char *before_slash = NULL;
    const char *tmp;
-   bool require_auth = false;
 
    if (!bson_utf8_validate (str, strlen (str), false /* allow_null */)) {
       MONGOC_URI_ERROR (error, "%s", "Invalid UTF-8 in URI");
@@ -1551,23 +1619,7 @@ mongoc_uri_parse (mongoc_uri_t *uri, const char *str, bson_error_t *error)
       }
    }
 
-   /* TODO (CDRIVER-3723) Consider moving all "finalize" calls into one function
-    * that is additionally called after initial SRV and TXT records are applied
-    * in mongoc_topology_new. */
-   if (!mongoc_uri_finalize_tls (uri, error)) {
-      goto error;
-   }
-
-   require_auth = uri->username != NULL;
-   if (!mongoc_uri_finalize_auth (uri, error, require_auth)) {
-      goto error;
-   }
-
-   if (!mongoc_uri_finalize_directconnection (uri, error)) {
-      goto error;
-   }
-
-   if (!mongoc_uri_finalize_loadbalanced (uri, error)) {
+   if (!mongoc_uri_finalize (uri, error)) {
       goto error;
    }
 
@@ -2181,13 +2233,42 @@ mongoc_uri_get_local_threshold_option (const mongoc_uri_t *uri)
 
 
 const char *
-mongoc_uri_get_service (const mongoc_uri_t *uri)
+mongoc_uri_get_srv_hostname (const mongoc_uri_t *uri)
 {
    if (uri->is_srv) {
       return uri->srv;
    }
 
    return NULL;
+}
+
+
+const char *
+mongoc_uri_get_service (const mongoc_uri_t *uri)
+{
+   return mongoc_uri_get_srv_hostname (uri);
+}
+
+
+/* Initial DNS Seedlist Discovery Spec: `srvServiceName` requires a string value
+ * and defaults to "mongodb". */
+static const char *const mongoc_default_srv_service_name = "mongodb";
+
+
+const char *
+mongoc_uri_get_srv_service_name (const mongoc_uri_t *uri)
+{
+   bson_iter_t iter;
+
+   BSON_ASSERT_PARAM (uri);
+
+   if (bson_iter_init_find_case (
+          &iter, &uri->options, MONGOC_URI_SRVSERVICENAME)) {
+      BSON_ASSERT (BSON_ITER_HOLDS_UTF8 (&iter));
+      return bson_iter_utf8 (&iter, NULL);
+   }
+
+   return mongoc_default_srv_service_name;
 }
 
 
@@ -2316,8 +2397,7 @@ mongoc_uri_unescape (const char *escaped_string)
 #else
              (1 != sscanf (&ptr[1], "%02x", &hex))
 #endif
-             ||
-             0 == hex) {
+             || 0 == hex) {
             bson_string_free (str, true);
             MONGOC_WARNING ("Invalid %% escape sequence");
             return NULL;
@@ -3111,17 +3191,21 @@ _mongoc_uri_init_scram (const mongoc_uri_t *uri,
 }
 #endif
 
-bool
+static bool
 mongoc_uri_finalize_loadbalanced (const mongoc_uri_t *uri, bson_error_t *error)
 {
    if (!mongoc_uri_get_option_as_bool (uri, MONGOC_URI_LOADBALANCED, false)) {
       return true;
    }
 
-   if (!uri->hosts || (uri->hosts && uri->hosts->next)) {
-      MONGOC_URI_ERROR (error,
-                        "URI with \"%s\" enabled must contain exactly one host",
-                        MONGOC_URI_LOADBALANCED);
+   /* Load Balancer Spec: When `loadBalanced=true` is provided in the connection
+    * string, the driver MUST throw an exception if the connection string
+    * contains more than one host/port. */
+   if (uri->hosts && uri->hosts->next) {
+      MONGOC_URI_ERROR (
+         error,
+         "URI with \"%s\" enabled must not contain more than one host",
+         MONGOC_URI_LOADBALANCED);
       return false;
    }
 
@@ -3142,6 +3226,106 @@ mongoc_uri_finalize_loadbalanced (const mongoc_uri_t *uri, bson_error_t *error)
          "URI with \"%s\" enabled must not contain option \"%s\" enabled",
          MONGOC_URI_LOADBALANCED,
          MONGOC_URI_DIRECTCONNECTION);
+      return false;
+   }
+
+   return true;
+}
+
+static bool
+mongoc_uri_finalize_srv (const mongoc_uri_t *uri, bson_error_t *error)
+{
+   /* Initial DNS Seedlist Discovery Spec: The driver MUST report an error if
+    * either the `srvServiceName` or `srvMaxHosts` URI options are specified
+    * with a non-SRV URI. */
+   if (!uri->is_srv) {
+      const char *option = NULL;
+
+      if (mongoc_uri_has_option (uri, MONGOC_URI_SRVSERVICENAME)) {
+         option = MONGOC_URI_SRVSERVICENAME;
+      } else if (mongoc_uri_has_option (uri, MONGOC_URI_SRVMAXHOSTS)) {
+         option = MONGOC_URI_SRVMAXHOSTS;
+      }
+
+      if (option) {
+         MONGOC_URI_ERROR (
+            error, "%s must not be specified with a non-SRV URI", option);
+         return false;
+      }
+   }
+
+   if (uri->is_srv) {
+      const int32_t max_hosts =
+         mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 0);
+
+      /* Initial DNS Seedless Discovery Spec: This option requires a
+       * non-negative integer and defaults to zero (i.e. no limit). */
+      if (max_hosts < 0) {
+         MONGOC_URI_ERROR (error,
+                           "%s is required to be a non-negative integer, but "
+                           "has value %" PRId32,
+                           MONGOC_URI_SRVMAXHOSTS,
+                           max_hosts);
+         return false;
+      }
+
+      if (max_hosts > 0) {
+         /* Initial DNS Seedless Discovery spec: If srvMaxHosts is a positive
+          * integer, the driver MUST throw an error if the connection string
+          * contains a `replicaSet` option. */
+         if (mongoc_uri_has_option (uri, MONGOC_URI_REPLICASET)) {
+            MONGOC_URI_ERROR (error,
+                              "%s must not be specified with %s",
+                              MONGOC_URI_SRVMAXHOSTS,
+                              MONGOC_URI_REPLICASET);
+            return false;
+         }
+
+         /* Initial DNS Seedless Discovery Spec: If srvMaxHosts is a positive
+          * integer, the driver MUST throw an error if the connection string
+          * contains a `loadBalanced` option with a value of `true`.
+          */
+         if (mongoc_uri_get_option_as_bool (
+                uri, MONGOC_URI_LOADBALANCED, false)) {
+            MONGOC_URI_ERROR (error,
+                              "%s must not be specified with %s=true",
+                              MONGOC_URI_SRVMAXHOSTS,
+                              MONGOC_URI_LOADBALANCED);
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+/* This should be called whenever URI options change (e.g. parsing a new URI
+ * string, after setting one or more options explicitly, applying TXT records).
+ * While the primary purpose of this function is to validate the URI, it may
+ * also alter the URI (e.g. implicitly enable TLS when SRV is used). Returns
+ * true on success; otherwise, returns false and sets @error. */
+bool
+mongoc_uri_finalize (mongoc_uri_t *uri, bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (uri);
+
+   if (!mongoc_uri_finalize_tls (uri, error)) {
+      return false;
+   }
+
+   if (!mongoc_uri_finalize_auth (uri, error)) {
+      return false;
+   }
+
+   if (!mongoc_uri_finalize_directconnection (uri, error)) {
+      return false;
+   }
+
+   if (!mongoc_uri_finalize_loadbalanced (uri, error)) {
+      return false;
+   }
+
+   if (!mongoc_uri_finalize_srv (uri, error)) {
       return false;
    }
 

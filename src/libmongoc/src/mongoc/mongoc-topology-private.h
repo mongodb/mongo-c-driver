@@ -81,7 +81,7 @@ MONGOC_DECL_SPECIAL_TS_POOL (
    NULL,
    NULL)
 
-typedef bool (*_mongoc_rr_resolver_fn) (const char *service,
+typedef bool (*_mongoc_rr_resolver_fn) (const char *hostname,
                                         mongoc_rr_type_t rr_type,
                                         mongoc_rr_data_t *rr_data,
                                         size_t initial_buffer_size,
@@ -587,5 +587,17 @@ _mongoc_topology_invalidate_server (mongoc_topology_t *td, uint32_t server_id)
       tdmod.new_td, server_id, &error);
    mc_tpld_modify_commit (tdmod);
 }
+
+/* Return an array view to `max_hosts` or fewer elements of `hl`, or NULL if
+ * `hl` is empty. The size of the returned array is written to `hl_array_size`
+ * even if `hl` is empty.
+ *
+ * The returned array must be freed with `bson_free()`. The elements of the
+ * array must not be freed, as they are still owned by `hl`.
+ */
+const mongoc_host_list_t **
+_mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
+                             int32_t max_hosts,
+                             size_t *hl_array_size);
 
 #endif

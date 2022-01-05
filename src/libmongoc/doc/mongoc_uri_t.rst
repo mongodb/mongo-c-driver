@@ -101,6 +101,7 @@ MONGOC_URI_SOCKETTIMEOUTMS                 sockettimeoutms                   300
 MONGOC_URI_REPLICASET                      replicaset                        Empty (no replicaset)             The name of the Replica Set that the driver should connect to.
 MONGOC_URI_ZLIBCOMPRESSIONLEVEL            zlibcompressionlevel              -1                                When the MONGOC_URI_COMPRESSORS includes "zlib" this options configures the zlib compression level, when the zlib compressor is used to compress client data.
 MONGOC_URI_LOADBALANCED                    loadbalanced                      false                             If true, this indicates the driver is connecting to a MongoDB cluster behind a load balancer.
+MONGOC_URI_SRVMAXHOSTS                     srvmaxhosts                       0                                 If zero, the number of hosts in DNS results is unlimited. If greater than zero, the number of hosts in DNS results is limited to being less than or equal to the given value.
 ========================================== ================================= ================================= ============================================================================================================================================================================================================================================
 
 Setting any of the \*timeoutMS options above to ``0`` will be interpreted as "use the default value".
@@ -112,7 +113,7 @@ Authentication Options
 Constant                                   Key                               Description
 ========================================== ================================= =========================================================================================================================================================================================================================
 MONGOC_URI_AUTHMECHANISM                   authmechanism                     Specifies the mechanism to use when authenticating as the provided user. See :doc:`Authentication <authentication>` for supported values.
-MONGOC_URI_AUTHMECHANISMPROPERTIES         authmechanismproperties           Certain authentication mechanisms have additional options that can be configured. These options should be provided as comma separated option_key:option_value pair and provided as authMechanismProperties.
+MONGOC_URI_AUTHMECHANISMPROPERTIES         authmechanismproperties           Certain authentication mechanisms have additional options that can be configured. These options should be provided as comma separated option_key:option_value pair and provided as authMechanismProperties. Specifying the same option_key multiple times has undefined behavior.
 MONGOC_URI_AUTHSOURCE                      authsource                        The authSource defines the database that should be used to authenticate to. It is unnecessary to provide this option the database name is the same as the database used in the URI.
 ========================================== ================================= =========================================================================================================================================================================================================================
 
@@ -141,16 +142,16 @@ Deprecated SSL Options
 
 The following options have been deprecated and may be removed from future releases of libmongoc.
 
-========================================== ================================= ======================================= =================================
-Constant                                   Key                               Deprecated For                          Key
-========================================== ================================= ======================================= =================================
-MONGOC_URI_SSL                             ssl                               MONGOC_URI_TLS                          tls
-MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE     sslclientcertificatekeyfile       MONGOC_URI_TLSCERTIFICATEKEYFILE        tlscertificatekeyfile
-MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD sslclientcertificatekeypassword   MONGOC_URI_TLSCERTIFICATEKEYPASSWORD    tlscertificatekeypassword
-MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE     sslcertificateauthorityfile       MONGOC_URI_TLSCAFILE                    tlscafile
-MONGOC_URI_SSLALLOWINVALIDCERTIFICATES     sslallowinvalidcertificates       MONGOC_URI_TLSALLOWINVALIDCERTIFICATES  tlsallowinvalidcertificates
-MONGOC_URI_SSLALLOWINVALIDHOSTNAMES        sslallowinvalidhostnames          MONGOC_URI_TLSALLOWINVALIDHOSTNAMES     tlsallowinvalidhostnames
-========================================== ================================= ======================================= =================================
+========================================== ================================= =========================================== =================================
+Constant                                   Key                               Deprecated For                              Key
+========================================== ================================= =========================================== =================================
+MONGOC_URI_SSL                             ssl                               MONGOC_URI_TLS                              tls
+MONGOC_URI_SSLCLIENTCERTIFICATEKEYFILE     sslclientcertificatekeyfile       MONGOC_URI_TLSCERTIFICATEKEYFILE            tlscertificatekeyfile
+MONGOC_URI_SSLCLIENTCERTIFICATEKEYPASSWORD sslclientcertificatekeypassword   MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD    tlscertificatekeypassword
+MONGOC_URI_SSLCERTIFICATEAUTHORITYFILE     sslcertificateauthorityfile       MONGOC_URI_TLSCAFILE                        tlscafile
+MONGOC_URI_SSLALLOWINVALIDCERTIFICATES     sslallowinvalidcertificates       MONGOC_URI_TLSALLOWINVALIDCERTIFICATES      tlsallowinvalidcertificates
+MONGOC_URI_SSLALLOWINVALIDHOSTNAMES        sslallowinvalidhostnames          MONGOC_URI_TLSALLOWINVALIDHOSTNAMES         tlsallowinvalidhostnames
+========================================== ================================= =========================================== =================================
 
 
 .. _sdam_uri_options:
@@ -301,6 +302,8 @@ MONGOC_URI_SAFE                            safe                              {tr
     mongoc_uri_get_service
     mongoc_uri_get_ssl
     mongoc_uri_get_string
+    mongoc_uri_get_srv_hostname
+    mongoc_uri_get_srv_service_name
     mongoc_uri_get_tls
     mongoc_uri_get_username
     mongoc_uri_get_write_concern

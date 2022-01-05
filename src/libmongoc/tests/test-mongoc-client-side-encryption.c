@@ -147,15 +147,9 @@ _make_aws_kms_provider (bson_t *kms_providers)
    char *aws_access_key_id;
 
    aws_secret_access_key =
-      test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
-   aws_access_key_id = test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
-   if (!aws_secret_access_key || !aws_access_key_id) {
-      fprintf (stderr,
-               "Set MONGOC_TEST_AWS_SECRET_ACCESS_KEY and "
-               "MONGOC_TEST_AWS_ACCESS_KEY_ID environment variables to run "
-               "CSFLE tests.");
-      abort ();
-   }
+      test_framework_getenv_required ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+   aws_access_key_id =
+      test_framework_getenv_required ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
 
    if (!kms_providers) {
       kms_providers = bson_new ();
@@ -180,18 +174,12 @@ _make_azure_kms_provider (bson_t *kms_providers)
    char *azure_client_id;
    char *azure_client_secret;
 
-   azure_tenant_id = test_framework_getenv ("MONGOC_TEST_AZURE_TENANT_ID");
-   azure_client_id = test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_ID");
+   azure_tenant_id =
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_TENANT_ID");
+   azure_client_id =
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_ID");
    azure_client_secret =
-      test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
-
-   if (!azure_tenant_id || !azure_client_id || !azure_client_secret) {
-      fprintf (
-         stderr,
-         "Set MONGOC_TEST_AZURE_TENANT_ID, MONGOC_TEST_AZURE_CLIENT_ID, and "
-         "MONGOC_TEST_AZURE_CLIENT_SECRET to enable CSFLE tests.");
-      abort ();
-   }
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_SECRET");
 
    if (!kms_providers) {
       kms_providers = bson_new ();
@@ -218,8 +206,9 @@ _make_gcp_kms_provider (bson_t *kms_providers)
    char *gcp_privatekey;
 
 
-   gcp_email = test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
-   gcp_privatekey = test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
+   gcp_email = test_framework_getenv_required ("MONGOC_TEST_GCP_EMAIL");
+   gcp_privatekey =
+      test_framework_getenv_required ("MONGOC_TEST_GCP_PRIVATEKEY");
 
    if (!gcp_email || !gcp_privatekey) {
       fprintf (stderr,
@@ -259,6 +248,20 @@ _make_local_kms_provider (bson_t *kms_providers)
    return kms_providers;
 }
 
+static bson_t *
+_make_kmip_kms_provider (bson_t *kms_providers)
+{
+   if (!kms_providers) {
+      kms_providers = bson_new ();
+   }
+
+   bson_concat (kms_providers,
+                tmp_bson ("{ 'kmip': { 'endpoint': 'localhost:5698' } }"));
+
+
+   return kms_providers;
+}
+
 /* Convenience helper for creating KMS providers doc */
 static bson_t *
 _make_kms_providers (bool with_aws, bool with_local)
@@ -269,6 +272,7 @@ _make_kms_providers (bool with_aws, bool with_local)
       _make_aws_kms_provider (kms_providers);
       _make_azure_kms_provider (kms_providers);
       _make_gcp_kms_provider (kms_providers);
+      _make_kmip_kms_provider (kms_providers);
    }
 
    if (with_local) {
@@ -276,6 +280,30 @@ _make_kms_providers (bool with_aws, bool with_local)
    }
 
    return kms_providers;
+}
+
+static bson_t *
+_make_tls_opts (void)
+{
+   bson_t *tls_opts = bson_new ();
+   char *kmip_tls_ca_file;
+   char *kmip_tls_certificate_key_file;
+
+   kmip_tls_ca_file =
+      test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+   kmip_tls_certificate_key_file = test_framework_getenv_required (
+      "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+
+   bson_concat (
+      tls_opts,
+      tmp_bson (
+         "{ 'kmip': {  'tlsCAFile': '%s', 'tlsCertificateKeyFile': '%s' } }",
+         kmip_tls_ca_file,
+         kmip_tls_certificate_key_file));
+
+   bson_free (kmip_tls_ca_file);
+   bson_free (kmip_tls_certificate_key_file);
+   return tls_opts;
 }
 
 typedef struct {
@@ -541,6 +569,9 @@ test_datakey_and_double_encryption_creating_and_using (
          tmp_bson ("{'projectId': 'devprod-drivers','location': "
                    "'global','keyRing': 'key-ring-csfle','keyName': "
                    "'key-name-csfle'}"));
+   } else if (0 == strcmp (kms_provider, "kmip")) {
+      mongoc_client_encryption_datakey_opts_set_masterkey (opts,
+                                                           tmp_bson ("{}"));
    }
 
    altname = bson_strdup_printf ("%s_altname", kms_provider);
@@ -671,6 +702,7 @@ test_datakey_and_double_encryption (void *unused)
    mongoc_collection_t *coll;
    bson_error_t error;
    bson_t *kms_providers;
+   bson_t *tls_opts;
    mongoc_auto_encryption_opts_t *auto_encryption_opts;
    mongoc_client_encryption_opts_t *client_encryption_opts;
    bson_t *schema_map;
@@ -698,9 +730,11 @@ test_datakey_and_double_encryption (void *unused)
     * client_encrypted) */
    auto_encryption_opts = mongoc_auto_encryption_opts_new ();
    kms_providers = _make_kms_providers (true /* aws */, true /* local */);
+   tls_opts = _make_tls_opts ();
    _check_bypass (auto_encryption_opts);
    mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                   kms_providers);
+   mongoc_auto_encryption_opts_set_tls_opts (auto_encryption_opts, tls_opts);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
       auto_encryption_opts, "keyvault", "datakeys");
    schema_map = get_bson_from_json_file (
@@ -718,6 +752,8 @@ test_datakey_and_double_encryption (void *unused)
    client_encryption_opts = mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
                                                     kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (client_encryption_opts,
+                                               tls_opts);
    mongoc_client_encryption_opts_set_keyvault_namespace (
       client_encryption_opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
@@ -734,8 +770,11 @@ test_datakey_and_double_encryption (void *unused)
       client_encryption, client, client_encrypted, "azure", &test_ctx);
    test_datakey_and_double_encryption_creating_and_using (
       client_encryption, client, client_encrypted, "gcp", &test_ctx);
+   test_datakey_and_double_encryption_creating_and_using (
+      client_encryption, client, client_encrypted, "kmip", &test_ctx);
 
    bson_destroy (kms_providers);
+   bson_destroy (tls_opts);
    bson_destroy (schema_map);
    mongoc_client_encryption_opts_destroy (client_encryption_opts);
    mongoc_auto_encryption_opts_destroy (auto_encryption_opts);
@@ -959,6 +998,7 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
                  mongoc_client_encryption_t **client_encryption,
                  mongoc_client_encryption_t **client_encryption_invalid)
 {
+   bson_t *tls_opts;
    bson_t *kms_providers;
    bson_t *kms_providers_invalid;
    mongoc_client_encryption_opts_t *client_encryption_opts;
@@ -966,49 +1006,75 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
    bson_error_t error;
 
    char *mongoc_test_aws_access_key_id =
-      test_framework_getenv ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+      test_framework_getenv_required ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
    char *mongoc_test_aws_secret_access_key =
-      test_framework_getenv ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+      test_framework_getenv_required ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
    char *mongoc_test_azure_tenant_id =
-      test_framework_getenv ("MONGOC_TEST_AZURE_TENANT_ID");
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_TENANT_ID");
    char *mongoc_test_azure_client_id =
-      test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_ID");
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_ID");
    char *mongoc_test_azure_client_secret =
-      test_framework_getenv ("MONGOC_TEST_AZURE_CLIENT_SECRET");
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_SECRET");
    char *mongoc_test_gcp_email =
-      test_framework_getenv ("MONGOC_TEST_GCP_EMAIL");
+      test_framework_getenv_required ("MONGOC_TEST_GCP_EMAIL");
    char *mongoc_test_gcp_privatekey =
-      test_framework_getenv ("MONGOC_TEST_GCP_PRIVATEKEY");
+      test_framework_getenv_required ("MONGOC_TEST_GCP_PRIVATEKEY");
+   char *ca_file =
+      test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+   char *certificate_key_file = test_framework_getenv_required (
+      "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+
 
    kms_providers =
-      tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s'}, "
-                "'azure': {'tenantId': '%s', 'clientId': '%s', "
-                "'clientSecret': '%s', 'identityPlatformEndpoint': "
-                "'login.microsoftonline.com:443'}, 'gcp': { 'email': '%s', "
-                "'privateKey': '%s', 'endpoint': 'oauth2.googleapis.com:443'}}",
+      tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s'}}",
                 mongoc_test_aws_access_key_id,
-                mongoc_test_aws_secret_access_key,
-                mongoc_test_azure_tenant_id,
-                mongoc_test_azure_client_id,
-                mongoc_test_azure_client_secret,
-                mongoc_test_gcp_email,
-                mongoc_test_gcp_privatekey);
-   kms_providers_invalid = tmp_bson (
-      "{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s'}, 'azure': "
-      "{'tenantId': '%s', 'clientId': '%s', 'clientSecret': '%s', "
-      "'identityPlatformEndpoint': 'example.com:443'}, 'gcp': { 'email': '%s', "
-      "'privateKey': '%s', 'endpoint': 'example.com'}}",
-      mongoc_test_aws_access_key_id,
-      mongoc_test_aws_secret_access_key,
-      mongoc_test_azure_tenant_id,
-      mongoc_test_azure_client_id,
-      mongoc_test_azure_client_secret,
-      mongoc_test_gcp_email,
-      mongoc_test_gcp_privatekey);
+                mongoc_test_aws_secret_access_key);
+   bson_concat (
+      kms_providers,
+      tmp_bson (
+         "{'azure': {'tenantId': '%s', 'clientId': '%s', 'clientSecret': '%s', "
+         "'identityPlatformEndpoint': 'login.microsoftonline.com:443'}}",
+         mongoc_test_azure_tenant_id,
+         mongoc_test_azure_client_id,
+         mongoc_test_azure_client_secret));
+   bson_concat (kms_providers,
+                tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
+                          "'endpoint': 'oauth2.googleapis.com:443'}}",
+                          mongoc_test_gcp_email,
+                          mongoc_test_gcp_privatekey));
+   bson_concat (kms_providers,
+                tmp_bson ("{'kmip': { 'endpoint': 'localhost:5698' }}"));
+   tls_opts = tmp_bson (
+      "{'kmip': {  'tlsCAFile': '%s', 'tlsCertificateKeyFile': '%s' }}",
+      ca_file,
+      certificate_key_file);
+
+   kms_providers_invalid =
+      tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s'}}",
+                mongoc_test_aws_access_key_id,
+                mongoc_test_aws_secret_access_key);
+   bson_concat (
+      kms_providers_invalid,
+      tmp_bson (
+         "{'azure': {'tenantId': '%s', 'clientId': '%s', 'clientSecret': '%s', "
+         "'identityPlatformEndpoint': 'example.com:443'}}",
+         mongoc_test_azure_tenant_id,
+         mongoc_test_azure_client_id,
+         mongoc_test_azure_client_secret));
+   bson_concat (kms_providers_invalid,
+                tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
+                          "'endpoint': 'example.com'}}",
+                          mongoc_test_gcp_email,
+                          mongoc_test_gcp_privatekey));
+   bson_concat (
+      kms_providers_invalid,
+      tmp_bson ("{'kmip': { 'endpoint': 'doesnotexist.local:5698' }}"));
 
    client_encryption_opts = mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
                                                     kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (client_encryption_opts,
+                                               tls_opts);
    mongoc_client_encryption_opts_set_keyvault_namespace (
       client_encryption_opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
@@ -1020,6 +1086,8 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
    client_encryption_opts_invalid = mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (
       client_encryption_opts_invalid, kms_providers_invalid);
+   mongoc_client_encryption_opts_set_tls_opts (client_encryption_opts_invalid,
+                                               tls_opts);
    mongoc_client_encryption_opts_set_keyvault_namespace (
       client_encryption_opts_invalid, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (
@@ -1037,7 +1105,43 @@ _endpoint_setup (mongoc_client_t *keyvault_client,
    bson_free (mongoc_test_azure_client_secret);
    bson_free (mongoc_test_gcp_email);
    bson_free (mongoc_test_gcp_privatekey);
+   bson_free (ca_file);
+   bson_free (certificate_key_file);
 }
+
+/* Use the returned UUID of the key to explicitly encrypt and decrypt the
+ * string "test" to validate it works. */
+#define TEST_ENCRYPT_DECRYPT(keyid, client_encryption, res, error)           \
+   do {                                                                      \
+      bson_value_t ciphertext;                                               \
+      bson_value_t plaintext;                                                \
+      bson_value_t test;                                                     \
+      mongoc_client_encryption_encrypt_opts_t *encrypt_opts;                 \
+                                                                             \
+      test.value_type = BSON_TYPE_UTF8;                                      \
+      test.value.v_utf8.str = "test";                                        \
+      test.value.v_utf8.len = 4;                                             \
+                                                                             \
+      encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();           \
+      mongoc_client_encryption_encrypt_opts_set_algorithm (                  \
+         encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);  \
+      mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, keyid); \
+      res = mongoc_client_encryption_encrypt (                               \
+         client_encryption, &test, encrypt_opts, &ciphertext, &error);       \
+      ASSERT_OR_PRINT (res, error);                                          \
+      res = mongoc_client_encryption_decrypt (                               \
+         client_encryption, &ciphertext, &plaintext, &error);                \
+      ASSERT_OR_PRINT (res, error);                                          \
+      if (plaintext.value_type != BSON_TYPE_UTF8) {                          \
+         test_error (                                                        \
+            "expected decrypted result to be value type UTF-8, got %s",      \
+            _mongoc_bson_type_to_str (plaintext.value_type));                \
+      }                                                                      \
+      ASSERT_CMPSTR (plaintext.value.v_utf8.str, test.value.v_utf8.str);     \
+      bson_value_destroy (&ciphertext);                                      \
+      bson_value_destroy (&plaintext);                                       \
+      mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);          \
+   } while (0)
 
 static void
 test_custom_endpoint (void *unused)
@@ -1050,22 +1154,12 @@ test_custom_endpoint (void *unused)
    bool res;
    bson_t *masterkey;
    bson_value_t keyid;
-   bson_value_t test;
-   bson_value_t ciphertext;
-   mongoc_client_encryption_encrypt_opts_t *encrypt_opts;
 
    keyvault_client = test_framework_new_default_client ();
 
    datakey_opts = mongoc_client_encryption_datakey_opts_new ();
-   test.value_type = BSON_TYPE_UTF8;
-   test.value.v_utf8.str = "test";
-   test.value.v_utf8.len = 4;
 
-   encrypt_opts = mongoc_client_encryption_encrypt_opts_new ();
-   mongoc_client_encryption_encrypt_opts_set_algorithm (
-      encrypt_opts, MONGOC_AEAD_AES_256_CBC_HMAC_SHA_512_DETERMINISTIC);
-
-   /* No endpoint, expect to succeed. */
+   /* Case 1: No endpoint, expect to succeed. */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("region",
@@ -1078,20 +1172,14 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   ASSERT_OR_PRINT (res, error);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Custom endpoint, with the same as the default. Expect to succeed */
+   /* Case 2: Custom endpoint, with the same as the default. Expect to succeed
+    */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("region",
@@ -1106,21 +1194,14 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   ASSERT_OR_PRINT (res, error);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Custom endpoint, with the same as the default but port included. Expect to
-    * succeed */
+   /* Case 3: Custom endpoint, with the same as the default but port included.
+    * Expect to succeed */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("region",
@@ -1135,20 +1216,14 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "aws", datakey_opts, &keyid, &error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   ASSERT_OR_PRINT (res, error);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Custom endpoint, with the same as the default but wrong port included.
+   /* Case 4: Custom endpoint, with the same as the default but wrong port
+    * included.
     * Expect to fail with socket error */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
@@ -1173,7 +1248,7 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Custom endpoint, but wrong region. */
+   /* Case 5: Custom endpoint, but wrong region. */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("region",
@@ -1196,7 +1271,7 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Custom endpoint to example.com. */
+   /* Case 6: Custom endpoint to example.com. */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("region",
@@ -1219,7 +1294,7 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* Azure successful case */
+   /* Case 7: Azure successful case */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("keyVaultEndpoint",
@@ -1231,15 +1306,8 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "azure", datakey_opts, &keyid, &error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   ASSERT_OR_PRINT (res, error);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1255,7 +1323,7 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* GCP successful case. */
+   /* Case 8: GCP successful case. */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("projectId",
@@ -1273,15 +1341,8 @@ test_custom_endpoint (void *unused)
    res = mongoc_client_encryption_create_datakey (
       client_encryption, "gcp", datakey_opts, &keyid, &error);
 
-   /* Use the returned UUID of the key to explicitly encrypt and decrypt the
-    * string "test" to validate it works. */
-   ASSERT_OR_PRINT (res, error);
-   mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &keyid);
-   res = mongoc_client_encryption_encrypt (
-      client_encryption, &test, encrypt_opts, &ciphertext, &error);
-   ASSERT_OR_PRINT (res, error);
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
    bson_value_destroy (&keyid);
-   bson_value_destroy (&ciphertext);
    bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
@@ -1297,7 +1358,7 @@ test_custom_endpoint (void *unused)
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
 
-   /* GCP invalid key endpoint. */
+   /* Case 9: GCP invalid key endpoint. */
    _endpoint_setup (
       keyvault_client, &client_encryption, &client_encryption_invalid);
    masterkey = BCON_NEW ("projectId",
@@ -1318,12 +1379,75 @@ test_custom_endpoint (void *unused)
       error, MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION, 1, "Invalid KMS response");
    BSON_ASSERT (!res);
 
-   mongoc_client_encryption_datakey_opts_destroy (datakey_opts);
+   bson_destroy (masterkey);
    mongoc_client_encryption_destroy (client_encryption);
    mongoc_client_encryption_destroy (client_encryption_invalid);
-   mongoc_client_encryption_encrypt_opts_destroy (encrypt_opts);
-   mongoc_client_destroy (keyvault_client);
+
+   /* Case 10: KMIP no endpoint. */
+   _endpoint_setup (
+      keyvault_client, &client_encryption, &client_encryption_invalid);
+   masterkey = BCON_NEW ("keyId", "1");
+   mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
+                                                        masterkey);
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption, "kmip", datakey_opts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
+   bson_value_destroy (&keyid);
+
+   /* Attempt to use client_encryption_invalid with the same masterKey. Expect
+    * an error. */
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_invalid, "kmip", datakey_opts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
+   bson_value_destroy (&keyid);
+
    bson_destroy (masterkey);
+   mongoc_client_encryption_destroy (client_encryption);
+   mongoc_client_encryption_destroy (client_encryption_invalid);
+
+   /* Case 11: KMIP overriding with valid endpoint. */
+   _endpoint_setup (
+      keyvault_client, &client_encryption, &client_encryption_invalid);
+   masterkey = BCON_NEW ("keyId", "1", "endpoint", "localhost:5698");
+   mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
+                                                        masterkey);
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption, "kmip", datakey_opts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
+
+   TEST_ENCRYPT_DECRYPT (&keyid, client_encryption, res, error);
+   bson_value_destroy (&keyid);
+
+   bson_destroy (masterkey);
+   mongoc_client_encryption_destroy (client_encryption);
+   mongoc_client_encryption_destroy (client_encryption_invalid);
+
+   /* Case 12: KMIP overriding with invalid endpoint. */
+   _endpoint_setup (
+      keyvault_client, &client_encryption, &client_encryption_invalid);
+   masterkey = BCON_NEW ("keyId", "1", "endpoint", "doesnotexist.local:5698");
+   mongoc_client_encryption_datakey_opts_set_masterkey (datakey_opts,
+                                                        masterkey);
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption, "kmip", datakey_opts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_STREAM,
+                          MONGOC_ERROR_STREAM_NAME_RESOLUTION,
+                          "Failed to resolve");
+   BSON_ASSERT (!res);
+   bson_value_destroy (&keyid);
+
+   bson_destroy (masterkey);
+   mongoc_client_encryption_destroy (client_encryption);
+   mongoc_client_encryption_destroy (client_encryption_invalid);
+
+   mongoc_client_encryption_datakey_opts_destroy (datakey_opts);
+   mongoc_client_destroy (keyvault_client);
 }
 
 typedef struct {
@@ -1387,6 +1511,8 @@ _corpus_field_destroy (corpus_field_t *field)
    "\x01\x95\x11\x10\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 #define GCP_UUID \
    "\x18\x23\xc0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+#define KMIP_UUID \
+   "\x28\xc2\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
 static void
 _corpus_copy_field (mongoc_client_encryption_t *client_encryption,
@@ -1402,7 +1528,8 @@ _corpus_copy_field (mongoc_client_encryption_t *client_encryption,
 
    if (0 == strcmp ("_id", key) || 0 == strcmp ("altname_aws", key) ||
        0 == strcmp ("altname_local", key) ||
-       0 == strcmp ("altname_azure", key) || 0 == strcmp ("altname_gcp", key)) {
+       0 == strcmp ("altname_azure", key) || 0 == strcmp ("altname_gcp", key) ||
+       0 == strcmp ("altname_kmip", key)) {
       bson_append_value (corpus_copied, key, -1, bson_iter_value (iter));
       return;
    }
@@ -1437,6 +1564,8 @@ _corpus_copy_field (mongoc_client_encryption_t *client_encryption,
          uuid.value.v_binary.data = (uint8_t *) AZURE_UUID;
       } else if (0 == strcmp ("gcp", field->kms)) {
          uuid.value.v_binary.data = (uint8_t *) GCP_UUID;
+      } else if (0 == strcmp ("kmip", field->kms)) {
+         uuid.value.v_binary.data = (uint8_t *) KMIP_UUID;
       }
       mongoc_client_encryption_encrypt_opts_set_keyid (encrypt_opts, &uuid);
    } else if (0 == strcmp ("altname", field->identifier)) {
@@ -1484,7 +1613,8 @@ _corpus_check_encrypted (mongoc_client_encryption_t *client_encryption,
    key = bson_iter_key (expected_iter);
    if (0 == strcmp ("_id", key) || 0 == strcmp ("altname_aws", key) ||
        0 == strcmp ("altname_local", key) ||
-       0 == strcmp ("altname_azure", key) || 0 == strcmp ("altname_gcp", key)) {
+       0 == strcmp ("altname_azure", key) || 0 == strcmp ("altname_gcp", key) ||
+       0 == strcmp ("altname_kmip", key)) {
       return;
    }
 
@@ -1576,6 +1706,7 @@ _test_corpus (bool local_schema)
    bson_iter_t iter;
    mongoc_cursor_t *cursor;
    bson_t *schema_map;
+   bson_t *tls_opts;
 
    /* Create a MongoClient without encryption enabled */
    client = test_framework_new_default_client ();
@@ -1601,8 +1732,8 @@ _test_corpus (bool local_schema)
       ASSERT_OR_PRINT (res, error);
    }
 
-   /* Drop the collection keyvault.datakeys. Insert the documents
-    * corpus/corpus-key-local.json and corpus-key-aws.json */
+   /* Drop the collection keyvault.datakeys. Insert the key documents for each
+    * KMS provider. */
    mongoc_collection_destroy (coll);
    coll = mongoc_client_get_collection (client, "keyvault", "datakeys");
    (void) mongoc_collection_drop (coll, NULL);
@@ -1621,6 +1752,9 @@ _test_corpus (bool local_schema)
    _insert_from_file (coll,
                       "./src/libmongoc/tests/client_side_encryption_prose/"
                       "corpus/corpus-key-local.json");
+   _insert_from_file (coll,
+                      "./src/libmongoc/tests/client_side_encryption_prose/"
+                      "corpus/corpus-key-kmip.json");
 
    /* Create a MongoClient configured with auto encryption */
    client_encrypted = test_framework_new_default_client ();
@@ -1631,6 +1765,8 @@ _test_corpus (bool local_schema)
    kms_providers = _make_kms_providers (true /* aws */, true /* local */);
    mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                   kms_providers);
+   tls_opts = _make_tls_opts ();
+   mongoc_auto_encryption_opts_set_tls_opts (auto_encryption_opts, tls_opts);
    mongoc_auto_encryption_opts_set_keyvault_namespace (
       auto_encryption_opts, "keyvault", "datakeys");
    res = mongoc_client_enable_auto_encryption (
@@ -1641,6 +1777,8 @@ _test_corpus (bool local_schema)
    client_encryption_opts = mongoc_client_encryption_opts_new ();
    mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
                                                     kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (client_encryption_opts,
+                                               tls_opts);
    mongoc_client_encryption_opts_set_keyvault_namespace (
       client_encryption_opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
@@ -1708,6 +1846,7 @@ _test_corpus (bool local_schema)
    mongoc_client_destroy (client_encrypted);
    mongoc_client_encryption_opts_destroy (client_encryption_opts);
    mongoc_client_encryption_destroy (client_encryption);
+   bson_destroy (tls_opts);
    bson_destroy (kms_providers);
    mongoc_write_concern_destroy (wc);
    mongoc_collection_destroy (coll);
@@ -2079,7 +2218,7 @@ _test_multi_threaded (bool external_key_vault)
 }
 
 static void
-test_multi_threaded ()
+test_multi_threaded (void *ctx_unused)
 {
    _test_multi_threaded (true);
    _test_multi_threaded (false);
@@ -2281,6 +2420,24 @@ _make_kms_certificate_client_encryption (mongoc_client_t *client,
       bson_destroy (kms_providers);
    }
 
+   {
+      char *tls_ca_file =
+         test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+      char *tls_cert_key_file = test_framework_getenv_required (
+         "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+      bson_t *tls_opts = tmp_bson ("{ 'aws': { '%s': '%s', '%s': '%s' } }",
+                                   MONGOC_URI_TLSCAFILE,
+                                   tls_ca_file,
+                                   MONGOC_URI_TLSCERTIFICATEKEYFILE,
+                                   tls_cert_key_file);
+
+      mongoc_client_encryption_opts_set_tls_opts (client_encryption_opts,
+                                                  tls_opts);
+
+      bson_free (tls_cert_key_file);
+      bson_free (tls_ca_file);
+   }
+
    mongoc_client_encryption_opts_set_keyvault_namespace (
       client_encryption_opts, "keyvault", "datakeys");
    mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
@@ -2298,15 +2455,23 @@ _make_kms_certificate_client_encryption (mongoc_client_t *client,
 static void
 test_kms_tls_cert_valid (void *unused)
 {
-   bson_error_t error;
    const int32_t connecttimeoutms = MONGOC_DEFAULT_CONNECTTIMEOUTMS;
    const int is_client = 1;
 
+   bson_error_t error;
    mongoc_host_list_t host;
+   mongoc_stream_t *base_stream;
+   mongoc_ssl_opt_t ssl_opts;
+   mongoc_stream_t *tls_stream;
+
+   char *tls_ca_file =
+      test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+   char *tls_cert_key_file = test_framework_getenv_required (
+      "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
 
 #if defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
-   /* Certificate verification fails with Secure Channel given "127.0.0.1:7999"
-    * with error: "hostname doesn't match certificate". */
+   /* Certificate verification fails with Secure Channel given
+    * "127.0.0.1:7999" with error: "hostname doesn't match certificate". */
    ASSERT_OR_PRINT (
       _mongoc_host_list_from_string_with_err (&host, "localhost:7999", &error),
       error);
@@ -2316,14 +2481,14 @@ test_kms_tls_cert_valid (void *unused)
       error);
 #endif
 
-   mongoc_stream_t *base_stream =
-      mongoc_client_connect_tcp (connecttimeoutms, &host, &error);
+   base_stream = mongoc_client_connect_tcp (connecttimeoutms, &host, &error);
    ASSERT_OR_PRINT (base_stream, error);
 
-   mongoc_ssl_opt_t ssl_opts;
-   memcpy (&ssl_opts, mongoc_ssl_opt_get_default (), sizeof ssl_opts);
+   ssl_opts = *test_framework_get_ssl_opts ();
+   ssl_opts.ca_file = tls_ca_file;
+   ssl_opts.pem_file = tls_cert_key_file;
 
-   mongoc_stream_t *tls_stream = mongoc_stream_tls_new_with_hostname (
+   tls_stream = mongoc_stream_tls_new_with_hostname (
       base_stream, host.host, &ssl_opts, is_client);
 
    ASSERT_OR_PRINT (mongoc_stream_tls_handshake_block (
@@ -2331,6 +2496,9 @@ test_kms_tls_cert_valid (void *unused)
                     error);
 
    mongoc_stream_destroy (tls_stream); /* Also destroys base_stream. */
+
+   bson_free (tls_cert_key_file);
+   bson_free (tls_ca_file);
 }
 
 static void
@@ -2416,22 +2584,574 @@ test_kms_tls_cert_wrong_host (void *unused)
    mongoc_client_destroy (client);
 }
 
-/* Required CA certificates may not be registered on system. See BUILD-14068. */
-int
-test_framework_skip_kms_tls_tests (void)
+typedef enum {
+   NO_CLIENT_CERT,
+   WITH_TLS,
+   INVALID_HOSTNAME,
+   EXPIRED
+} tls_test_ce_t;
+
+static mongoc_client_encryption_t *
+_tls_test_make_client_encryption (mongoc_client_t *keyvault_client,
+                                  tls_test_ce_t test_ce)
 {
-   return test_framework_getenv_bool ("MONGOC_TEST_SKIP_KMS_TLS_TESTS") ? 0 : 1;
+   bson_t *kms_providers;
+   mongoc_client_encryption_opts_t *client_encryption_opts;
+   bson_error_t error = {0};
+   mongoc_client_encryption_t *client_encryption;
+   bson_t *tls_opts = NULL;
+
+   char *mongoc_test_aws_access_key_id =
+      test_framework_getenv_required ("MONGOC_TEST_AWS_ACCESS_KEY_ID");
+   char *mongoc_test_aws_secret_access_key =
+      test_framework_getenv_required ("MONGOC_TEST_AWS_SECRET_ACCESS_KEY");
+   char *mongoc_test_azure_tenant_id =
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_TENANT_ID");
+   char *mongoc_test_azure_client_id =
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_ID");
+   char *mongoc_test_azure_client_secret =
+      test_framework_getenv_required ("MONGOC_TEST_AZURE_CLIENT_SECRET");
+   char *mongoc_test_gcp_email =
+      test_framework_getenv_required ("MONGOC_TEST_GCP_EMAIL");
+   char *mongoc_test_gcp_privatekey =
+      test_framework_getenv_required ("MONGOC_TEST_GCP_PRIVATEKEY");
+   char *ca_file =
+      test_framework_getenv_required ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+   char *certificate_key_file = test_framework_getenv_required (
+      "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+
+   if (test_ce == WITH_TLS) {
+      kms_providers =
+         tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s' }}",
+                   mongoc_test_aws_access_key_id,
+                   mongoc_test_aws_secret_access_key);
+
+      tls_opts = tmp_bson (
+         "{'aws': {'tlsCaFile': '%s', 'tlsCertificateKeyFile': '%s' }}",
+         ca_file,
+         certificate_key_file);
+      bson_concat (kms_providers,
+                   tmp_bson ("{'azure': {'tenantId': '%s', 'clientId': '%s', "
+                             "'clientSecret': '%s', "
+                             "'identityPlatformEndpoint': '127.0.0.1:8002' }}",
+                             mongoc_test_azure_tenant_id,
+                             mongoc_test_azure_client_id,
+                             mongoc_test_azure_client_secret));
+      bson_concat (
+         tls_opts,
+         tmp_bson (
+            "{'azure': {'tlsCaFile': '%s', 'tlsCertificateKeyFile': '%s' }}",
+            ca_file,
+            certificate_key_file));
+
+      bson_concat (kms_providers,
+                   tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
+                             "'endpoint': '127.0.0.1:8002' }}",
+                             mongoc_test_gcp_email,
+                             mongoc_test_gcp_privatekey));
+      bson_concat (
+         tls_opts,
+         tmp_bson (
+            "{'gcp': {'tlsCaFile': '%s', 'tlsCertificateKeyFile': '%s' }}",
+            ca_file,
+            certificate_key_file));
+
+      bson_concat (kms_providers,
+                   tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:5698'}}"));
+      bson_concat (
+         tls_opts,
+         tmp_bson (
+            "{'kmip': {'tlsCaFile': '%s', 'tlsCertificateKeyFile': '%s' }}",
+            ca_file,
+            certificate_key_file));
+   } else if (test_ce == NO_CLIENT_CERT) {
+      kms_providers =
+         tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s' }}",
+                   mongoc_test_aws_access_key_id,
+                   mongoc_test_aws_secret_access_key);
+      bson_concat (kms_providers,
+                   tmp_bson ("{'azure': {'tenantId': '%s', 'clientId': '%s', "
+                             "'clientSecret': '%s', "
+                             "'identityPlatformEndpoint': '127.0.0.1:8002'}}",
+                             mongoc_test_azure_tenant_id,
+                             mongoc_test_azure_client_id,
+                             mongoc_test_azure_client_secret));
+      bson_concat (kms_providers,
+                   tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
+                             "'endpoint': '127.0.0.1:8002'}}",
+                             mongoc_test_gcp_email,
+                             mongoc_test_gcp_privatekey));
+      bson_concat (kms_providers,
+                   tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:5698' }}"));
+   } else if (test_ce == EXPIRED) {
+      kms_providers =
+         tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s' }}",
+                   mongoc_test_aws_access_key_id,
+                   mongoc_test_aws_secret_access_key);
+      tls_opts = tmp_bson ("{'aws': {'tlsCaFile': '%s'} }", ca_file);
+
+      bson_concat (kms_providers,
+                   tmp_bson ("{'azure': {'tenantId': '%s', 'clientId': '%s', "
+                             "'clientSecret': '%s', "
+                             "'identityPlatformEndpoint': '127.0.0.1:8000'}}",
+                             mongoc_test_azure_tenant_id,
+                             mongoc_test_azure_client_id,
+                             mongoc_test_azure_client_secret));
+      bson_concat (tls_opts,
+                   tmp_bson ("{'azure': {'tlsCaFile': '%s'} }", ca_file));
+
+      bson_concat (kms_providers,
+                   tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
+                             "'endpoint': '127.0.0.1:8000'}}",
+                             mongoc_test_gcp_email,
+                             mongoc_test_gcp_privatekey));
+      bson_concat (tls_opts,
+                   tmp_bson ("{'gcp': {'tlsCaFile': '%s'} }", ca_file));
+
+      bson_concat (kms_providers,
+                   tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:8000' }}"));
+      bson_concat (tls_opts,
+                   tmp_bson ("{'kmip': {'tlsCaFile': '%s'} }", ca_file));
+   } else if (test_ce == INVALID_HOSTNAME) {
+      kms_providers =
+         tmp_bson ("{'aws': {'accessKeyId': '%s', 'secretAccessKey': '%s' } }",
+                   mongoc_test_aws_access_key_id,
+                   mongoc_test_aws_secret_access_key);
+      tls_opts = tmp_bson ("{'aws': {'tlsCaFile': '%s'} }", ca_file);
+
+      bson_concat (kms_providers,
+                   tmp_bson ("{'azure': {'tenantId': '%s', 'clientId': '%s', "
+                             "'clientSecret': '%s', "
+                             "'identityPlatformEndpoint': '127.0.0.1:8001' }}",
+                             mongoc_test_azure_tenant_id,
+                             mongoc_test_azure_client_id,
+                             mongoc_test_azure_client_secret));
+      bson_concat (tls_opts,
+                   tmp_bson ("{'azure': {'tlsCaFile': '%s'} }", ca_file));
+
+      bson_concat (kms_providers,
+                   tmp_bson ("{'gcp': { 'email': '%s', 'privateKey': '%s', "
+                             "'endpoint': '127.0.0.1:8001' }}",
+                             mongoc_test_gcp_email,
+                             mongoc_test_gcp_privatekey));
+      bson_concat (tls_opts,
+                   tmp_bson ("{'gcp': {'tlsCaFile': '%s'} }", ca_file));
+
+      bson_concat (kms_providers,
+                   tmp_bson ("{'kmip': { 'endpoint': '127.0.0.1:8001' }}"));
+      bson_concat (tls_opts,
+                   tmp_bson ("{'kmip': {'tlsCaFile': '%s'} }", ca_file));
+   } else {
+      BSON_UNREACHABLE ("Invalid value for test_ce");
+   }
+
+   client_encryption_opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_kms_providers (client_encryption_opts,
+                                                    kms_providers);
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      client_encryption_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (client_encryption_opts,
+                                                      keyvault_client);
+   mongoc_client_encryption_opts_set_tls_opts (client_encryption_opts,
+                                               tls_opts);
+
+   client_encryption =
+      mongoc_client_encryption_new (client_encryption_opts, &error);
+   ASSERT_OR_PRINT (client_encryption, error);
+
+   mongoc_client_encryption_opts_destroy (client_encryption_opts);
+   bson_free (mongoc_test_aws_access_key_id);
+   bson_free (mongoc_test_aws_secret_access_key);
+   bson_free (mongoc_test_azure_tenant_id);
+   bson_free (mongoc_test_azure_client_id);
+   bson_free (mongoc_test_azure_client_secret);
+   bson_free (mongoc_test_gcp_email);
+   bson_free (mongoc_test_gcp_privatekey);
+   bson_free (ca_file);
+   bson_free (certificate_key_file);
+
+   return client_encryption;
+}
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+#define ASSERT_EXPIRED(error) \
+   ASSERT_CONTAINS (error.message, "certificate has expired");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+#define ASSERT_EXPIRED(error) \
+   ASSERT_CONTAINS (error.message, "CSSMERR_TP_CERT_EXPIRED");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+#define ASSERT_EXPIRED(error) \
+   ASSERT_CONTAINS (error.message, "certificate has expired");
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#define ASSERT_EXPIRED(error) \
+   ASSERT_CONTAINS (error.message, "certificate has expired");
+#else
+#define ASSERT_EXPIRED(error)
+#endif
+
+#if defined(MONGOC_ENABLE_SSL_OPENSSL)
+#define ASSERT_INVALID_HOSTNAME(error) \
+   ASSERT_CONTAINS (error.message, "IP address mismatch");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
+#define ASSERT_INVALID_HOSTNAME(error) \
+   ASSERT_CONTAINS (error.message, "Host name mismatch");
+#elif defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL)
+#define ASSERT_INVALID_HOSTNAME(error) \
+   ASSERT_CONTAINS (error.message, "hostname doesn't match certificate");
+#elif defined(MONGOC_ENABLE_SSL_LIBRESSL)
+#define ASSERT_INVALID_HOSTNAME(error) \
+   ASSERT_CONTAINS (error.message, "not present in server certificate");
+#else
+#define ASSERT_INVALID_HOSTNAME(error)
+#endif
+
+static void
+test_kms_tls_options (void *unused)
+{
+   mongoc_client_t *keyvault_client;
+   mongoc_client_encryption_t *client_encryption_no_client_cert = NULL;
+   mongoc_client_encryption_t *client_encryption_with_tls = NULL;
+   mongoc_client_encryption_t *client_encryption_expired = NULL;
+   mongoc_client_encryption_t *client_encryption_invalid_hostname = NULL;
+   bson_value_t keyid;
+   mongoc_client_encryption_datakey_opts_t *dkopts;
+   bson_error_t error;
+   bool res;
+   const int mongocrypt_errno =
+      1; /* libmongocrypt returns all errors with code 1. */
+
+   keyvault_client = test_framework_new_default_client ();
+   client_encryption_no_client_cert =
+      _tls_test_make_client_encryption (keyvault_client, NO_CLIENT_CERT);
+   client_encryption_with_tls =
+      _tls_test_make_client_encryption (keyvault_client, WITH_TLS);
+   client_encryption_expired =
+      _tls_test_make_client_encryption (keyvault_client, EXPIRED);
+   client_encryption_invalid_hostname =
+      _tls_test_make_client_encryption (keyvault_client, INVALID_HOSTNAME);
+
+   /* Case 1: AWS - no client cert. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'region': 'us-east-1', 'key': "
+                "'arn:aws:kms:us-east-1:579766882180:key/"
+                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
+                "'127.0.0.1:8002' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_no_client_cert, "aws", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* AWS - with TLS. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'region': 'us-east-1', 'key': "
+                "'arn:aws:kms:us-east-1:579766882180:key/"
+                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
+                "'127.0.0.1:8002' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_with_tls, "aws", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          mongocrypt_errno,
+                          "parse error");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* AWS - expired. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'region': 'us-east-1', 'key': "
+                "'arn:aws:kms:us-east-1:579766882180:key/"
+                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
+                "'127.0.0.1:8000' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_expired, "aws", dkopts, &keyid, &error);
+   ASSERT_EXPIRED (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* AWS - invalid hostname. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'region': 'us-east-1', 'key': "
+                "'arn:aws:kms:us-east-1:579766882180:key/"
+                "89fcc2c4-08b0-4bd9-9f25-e30687b580d0', 'endpoint': "
+                "'127.0.0.1:8001' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_invalid_hostname, "aws", dkopts, &keyid, &error);
+   ASSERT_INVALID_HOSTNAME (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Case 2: Azure - no client cert. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson (
+         "{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_no_client_cert, "azure", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Azure - with TLS. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson (
+         "{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_with_tls, "azure", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          mongocrypt_errno,
+                          "HTTP status=404");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Azure - expired. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson (
+         "{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_expired, "azure", dkopts, &keyid, &error);
+   ASSERT_EXPIRED (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Azure - invalid hostname. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson (
+         "{ 'keyVaultEndpoint': 'doesnotexist.local', 'keyName': 'foo' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_invalid_hostname, "azure", dkopts, &keyid, &error);
+   ASSERT_INVALID_HOSTNAME (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Case 3: GCP - no client cert. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', "
+                "'keyName': 'kn' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_no_client_cert, "gcp", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* GCP - with TLS. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', "
+                "'keyName': 'kn' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_with_tls, "gcp", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          mongocrypt_errno,
+                          "HTTP status=404");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* GCP - expired. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', "
+                "'keyName': 'kn' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_expired, "gcp", dkopts, &keyid, &error);
+   ASSERT_EXPIRED (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* GCP - invalid hostname. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (
+      dkopts,
+      tmp_bson ("{ 'projectId': 'pid', 'location': 'l', 'keyRing': 'kr', "
+                "'keyName': 'kn' }"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_invalid_hostname, "gcp", dkopts, &keyid, &error);
+   ASSERT_INVALID_HOSTNAME (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* Case 4: KMIP - no client cert. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
+                                                        tmp_bson ("{}"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_no_client_cert, "kmip", dkopts, &keyid, &error);
+   ASSERT_ERROR_CONTAINS (
+      error, MONGOC_ERROR_STREAM, MONGOC_ERROR_STREAM_SOCKET, "");
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* KMIP - with TLS. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
+                                                        tmp_bson ("{}"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_with_tls, "kmip", dkopts, &keyid, &error);
+   ASSERT_OR_PRINT (res, error);
+   bson_value_destroy (&keyid);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* KMIP - expired. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
+                                                        tmp_bson ("{}"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_expired, "kmip", dkopts, &keyid, &error);
+   ASSERT_EXPIRED (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   /* KMIP - invalid hostname. */
+   memset (&error, 0, sizeof (bson_error_t));
+   dkopts = mongoc_client_encryption_datakey_opts_new ();
+   mongoc_client_encryption_datakey_opts_set_masterkey (dkopts,
+                                                        tmp_bson ("{}"));
+   res = mongoc_client_encryption_create_datakey (
+      client_encryption_invalid_hostname, "kmip", dkopts, &keyid, &error);
+   ASSERT_INVALID_HOSTNAME (error);
+   ASSERT (!res);
+   mongoc_client_encryption_datakey_opts_destroy (dkopts);
+
+   mongoc_client_encryption_destroy (client_encryption_invalid_hostname);
+   mongoc_client_encryption_destroy (client_encryption_expired);
+   mongoc_client_encryption_destroy (client_encryption_with_tls);
+   mongoc_client_encryption_destroy (client_encryption_no_client_cert);
+   mongoc_client_destroy (keyvault_client);
+}
+
+static void
+test_kms_tls_options_extra_rejected (void *unused)
+{
+   mongoc_client_encryption_t *ce;
+   mongoc_client_encryption_opts_t *ce_opts;
+   mongoc_client_t *keyvault_client;
+   bson_error_t error;
+   bson_t *kms_providers =
+      tmp_bson ("{'aws': {'accessKeyId': 'foo', 'secretAccessKey': 'bar'}}");
+
+   keyvault_client = test_framework_new_default_client ();
+
+   /* Test that the "local" KMS provider is rejected. */
+   ce_opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      ce_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (ce_opts, keyvault_client);
+   mongoc_client_encryption_opts_set_kms_providers (ce_opts, kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (
+      ce_opts, tmp_bson ("{'local': {'tlsCaFile': 'ca.pem'}}"));
+   ce = mongoc_client_encryption_new (ce_opts, &error);
+   ASSERT_ERROR_CONTAINS (
+      error,
+      MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+      MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+      "Cannot configure TLS options for KMS provider: local");
+   ASSERT (NULL == ce);
+   mongoc_client_encryption_opts_destroy (ce_opts);
+
+   /* Test that insecure TLS options are rejected. */
+   memset (&error, 0, sizeof (bson_error_t));
+   ce_opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      ce_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (ce_opts, keyvault_client);
+   mongoc_client_encryption_opts_set_kms_providers (ce_opts, kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (
+      ce_opts, tmp_bson ("{'aws': {'tlsInsecure': true}}"));
+   ce = mongoc_client_encryption_new (ce_opts, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                          "Error setting TLS option tlsInsecure for aws. "
+                          "Insecure TLS options prohibited");
+   ASSERT (NULL == ce);
+   mongoc_client_encryption_opts_destroy (ce_opts);
+
+   /* Test that extra TLS options are rejected. */
+   memset (&error, 0, sizeof (bson_error_t));
+   ce_opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      ce_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (ce_opts, keyvault_client);
+   mongoc_client_encryption_opts_set_kms_providers (ce_opts, kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (
+      ce_opts, tmp_bson ("{'aws': {'extra': true}}"));
+   ce = mongoc_client_encryption_new (ce_opts, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                          "Error setting TLS option extra for aws. Insecure "
+                          "TLS options prohibited");
+   ASSERT (NULL == ce);
+   mongoc_client_encryption_opts_destroy (ce_opts);
+
+   /* Test that TLS options for duplicate providers are rejected. */
+   memset (&error, 0, sizeof (bson_error_t));
+   ce_opts = mongoc_client_encryption_opts_new ();
+   mongoc_client_encryption_opts_set_keyvault_namespace (
+      ce_opts, "keyvault", "datakeys");
+   mongoc_client_encryption_opts_set_keyvault_client (ce_opts, keyvault_client);
+   mongoc_client_encryption_opts_set_kms_providers (ce_opts, kms_providers);
+   mongoc_client_encryption_opts_set_tls_opts (
+      ce_opts,
+      tmp_bson (
+         "{'aws': {'tlsCAFile': 'foo.pem'}, 'aws': {'tlsCAFile': 'foo.pem'}}"));
+   ce = mongoc_client_encryption_new (ce_opts, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_CLIENT_SIDE_ENCRYPTION,
+                          MONGOC_ERROR_CLIENT_INVALID_ENCRYPTION_ARG,
+                          "Error parsing duplicate TLS options for aws");
+   ASSERT (NULL == ce);
+   mongoc_client_encryption_opts_destroy (ce_opts);
+
+   mongoc_client_destroy (keyvault_client);
 }
 
 void
 test_client_side_encryption_install (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   ASSERT (realpath (JSON_DIR "/client_side_encryption", resolved));
    install_json_test_suite_with_check (
       suite,
-      resolved,
+      JSON_DIR,
+      "client_side_encryption",
       test_client_side_encryption_cb,
       test_framework_skip_if_no_client_side_encryption);
    /* Prose tests from the spec. */
@@ -2506,7 +3226,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_kms_tls_tests,
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/expired",
@@ -2514,7 +3233,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_kms_tls_tests,
                       test_framework_skip_if_max_wire_version_less_than_8);
    TestSuite_AddFull (suite,
                       "/client_side_encryption/kms_tls/wrong_host",
@@ -2522,7 +3240,6 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
-                      test_framework_skip_kms_tls_tests,
                       test_framework_skip_if_max_wire_version_less_than_8);
 
    /* Other, C driver specific, tests. */
@@ -2547,4 +3264,23 @@ test_client_side_encryption_install (TestSuite *suite)
                       NULL,
                       test_framework_skip_if_no_client_side_encryption,
                       test_framework_skip_if_max_wire_version_less_than_8);
+   TestSuite_AddFull (
+      suite,
+      "/client_side_encryption/kms_tls_options",
+      test_kms_tls_options,
+      NULL,
+      NULL,
+      test_framework_skip_if_no_client_side_encryption,
+      test_framework_skip_if_max_wire_version_less_than_8,
+      test_framework_skip_if_offline /* requires AWS, Azure, and GCP */,
+      /* Do not run on Windows due to CDRIVER-4181. Tests use a literal IP with
+         a TLS connection. */
+      test_framework_skip_if_windows);
+
+   TestSuite_AddFull (suite,
+                      "/client_side_encryption/kms_tls_options/extra_rejected",
+                      test_kms_tls_options_extra_rejected,
+                      NULL,
+                      NULL,
+                      test_framework_skip_if_no_client_side_encryption);
 }

@@ -1,13 +1,15 @@
-#include <mongoc/mongoc-util-private.h>
-#include <mongoc/mongoc-client-pool-private.h>
+#include "mongoc/mongoc-util-private.h"
+#include "mongoc/mongoc-client-pool-private.h"
 #include "mongoc/mongoc.h"
 #include "mongoc/mongoc-host-list-private.h"
+#include "mongoc/mongoc-thread-private.h"
+#include "mongoc/mongoc-uri-private.h"
+#include "mongoc/utlist.h"
+
 #ifdef MONGOC_ENABLE_SSL
 #include "mongoc/mongoc-ssl.h"
 #include "mongoc/mongoc-ssl-private.h"
 #endif
-#include "mongoc/mongoc-thread-private.h"
-#include "mongoc/mongoc-uri-private.h"
 
 #include "json-test.h"
 #include "test-libmongoc.h"
@@ -127,10 +129,15 @@ hosts_count (const bson_t *test)
    bson_iter_t hosts;
    int c = 0;
 
-   BSON_ASSERT (bson_iter_init_find (&iter, test, "hosts"));
-   BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
-   while (bson_iter_next (&hosts)) {
-      c++;
+   if (bson_iter_init_find (&iter, test, "hosts")) {
+      BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
+      while (bson_iter_next (&hosts)) {
+         c++;
+      }
+   }
+
+   else if (bson_iter_init_find (&iter, test, "numHosts")) {
+      c = bson_iter_as_int64 (&iter);
    }
 
    return c;
@@ -145,22 +152,36 @@ _host_list_matches (const bson_t *test, context_t *ctx)
    const char *host_and_port;
    bool ret = true;
 
-   BSON_ASSERT (bson_iter_init_find (&iter, test, "hosts"));
-   BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
+   if (bson_iter_init_find (&iter, test, "hosts")) {
+      BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
 
-   bson_mutex_lock (&ctx->mutex);
-   BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
-   while (bson_iter_next (&hosts)) {
-      host_and_port = bson_iter_utf8 (&hosts, NULL);
-      if (!host_list_contains (ctx->hosts, host_and_port)) {
-         ret = false;
-         break;
+      bson_mutex_lock (&ctx->mutex);
+      BSON_ASSERT (bson_iter_recurse (&iter, &hosts));
+      while (bson_iter_next (&hosts)) {
+         host_and_port = bson_iter_utf8 (&hosts, NULL);
+         if (!host_list_contains (ctx->hosts, host_and_port)) {
+            ret = false;
+            break;
+         }
       }
+
+      _mongoc_host_list_destroy_all (ctx->hosts);
+      ctx->hosts = NULL;
+      bson_mutex_unlock (&ctx->mutex);
    }
 
-   _mongoc_host_list_destroy_all (ctx->hosts);
-   ctx->hosts = NULL;
-   bson_mutex_unlock (&ctx->mutex);
+   else if (bson_iter_init_find (&iter, test, "numHosts")) {
+      const int expected = bson_iter_as_int64 (&iter);
+      int actual = 0;
+
+      bson_mutex_lock (&ctx->mutex);
+      actual = _mongoc_host_list_length (ctx->hosts);
+      _mongoc_host_list_destroy_all (ctx->hosts);
+      ctx->hosts = NULL;
+      bson_mutex_unlock (&ctx->mutex);
+
+      ret = expected == actual;
+   }
 
    return ret;
 }
@@ -250,6 +271,15 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
    if (pooled) {
       pool = test_framework_client_pool_new_from_uri (uri, NULL);
 
+      if (!expect_error) {
+         BSON_ASSERT (pool);
+      }
+
+      if (!pool) {
+         /* expected failure, e.g. SRV lookup or URI finalization failed */
+         goto cleanup;
+      }
+
       /* before we set SSL on so that we can connect to the test replica set,
        * assert that the URI has SSL on by default, and SSL off if "ssl=false"
        * is in the URI string */
@@ -265,6 +295,16 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       client = mongoc_client_pool_pop (pool);
    } else {
       client = test_framework_client_new_from_uri (uri, NULL);
+
+      if (!expect_error) {
+         BSON_ASSERT (client);
+      }
+
+      if (!client) {
+         /* expected failure, e.g. SRV lookup or URI finalization failed */
+         goto cleanup;
+      }
+
       BSON_ASSERT (mongoc_uri_get_tls (client->uri) == expect_ssl);
 #ifdef MONGOC_ENABLE_SSL
       mongoc_client_set_ssl_opts (client, &ssl_opts);
@@ -339,6 +379,7 @@ _test_dns_maybe_pooled (bson_t *test, bool pooled)
       mongoc_client_destroy (client);
    }
 
+cleanup:
    mongoc_apm_callbacks_destroy (callbacks);
    mongoc_uri_destroy (uri);
 }
@@ -364,22 +405,10 @@ test_dns_check_loadbalanced (void)
    return test_framework_getenv_bool ("MONGOC_TEST_DNS_LOADBALANCED") ? 1 : 0;
 }
 
-
-/* ensure mongoc_topology_select_server_id handles a NULL error pointer in the
- * code path it follows when the topology scanner is invalid */
-static void
-test_null_error_pointer (void *ctx)
+static int
+test_dns_check_srv_polling (void)
 {
-   mongoc_client_t *client;
-
-   client =
-      test_framework_client_new ("mongodb+srv://doesntexist.example.com", NULL);
-   ASSERT (!mongoc_topology_select_server_id (client->topology,
-                                              MONGOC_SS_READ,
-                                              NULL /* read prefs */,
-                                              NULL /* error */));
-
-   mongoc_client_destroy (client);
+   return test_framework_getenv_bool ("MONGOC_TEST_DNS_SRV_POLLING") ? 1 : 0;
 }
 
 
@@ -393,23 +422,31 @@ test_null_error_pointer (void *ctx)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
+   install_json_test_suite_with_check (
+      suite,
+      JSON_DIR,
+      "initial_dns_seedlist_discovery/replica-set",
+      test_dns,
+      test_dns_check_replset,
+      test_framework_skip_if_no_crypto);
 
-   test_framework_resolve_path (
-      JSON_DIR "/initial_dns_seedlist_discovery/replica-set", resolved);
-   install_json_test_suite_with_check (suite,
-                                       resolved,
-                                       test_dns,
-                                       test_dns_check_replset,
-                                       test_framework_skip_if_no_crypto);
+   install_json_test_suite_with_check (
+      suite,
+      JSON_DIR,
+      "initial_dns_seedlist_discovery/load-balanced",
+      test_dns,
+      test_dns_check_loadbalanced,
+      test_framework_skip_if_no_crypto);
 
-   test_framework_resolve_path (
-      JSON_DIR "/initial_dns_seedlist_discovery/load-balanced", resolved);
-   install_json_test_suite_with_check (suite,
-                                       resolved,
-                                       test_dns,
-                                       test_dns_check_loadbalanced,
-                                       test_framework_skip_if_no_crypto);
+   install_json_test_suite_with_check (
+      suite,
+      JSON_DIR,
+      "/initial_dns_seedlist_discovery/sharded",
+      test_dns,
+      /* Topology of load-balancer tests satisfy topology requirements of
+       * sharded tests, even though a load balancer is not required. */
+      test_dns_check_loadbalanced,
+      test_framework_skip_if_no_crypto);
 }
 
 extern bool
@@ -446,7 +483,9 @@ dump_hosts (mongoc_host_list_t *hosts)
    mongoc_host_list_t *host;
 
    MONGOC_DEBUG ("hosts:");
-   for (host = hosts; host; host = hosts->next) {
+
+   LL_FOREACH (hosts, host)
+   {
       MONGOC_DEBUG ("- %s", host->host_and_port);
    }
 }
@@ -609,18 +648,18 @@ test_small_initial_buffer (void *unused)
 }
 
 bool
-_mock_resolver (const char *service,
-                mongoc_rr_type_t rr_type,
-                mongoc_rr_data_t *rr_data,
-                size_t initial_buffer_size,
-                bson_error_t *error)
+_mock_rr_resolver_prose_test_9 (const char *service,
+                                mongoc_rr_type_t rr_type,
+                                mongoc_rr_data_t *rr_data,
+                                size_t initial_buffer_size,
+                                bson_error_t *error)
 {
    test_error ("Expected mock resolver to not be called");
    return true;
 }
 
 static void
-_prose_loadbalanced_ping (mongoc_client_t *client)
+_prose_test_ping (mongoc_client_t *client)
 {
    bson_error_t error;
    bson_t *cmd = BCON_NEW ("ping", BCON_INT32 (1));
@@ -633,235 +672,561 @@ _prose_loadbalanced_ping (mongoc_client_t *client)
    bson_destroy (cmd);
 }
 
-/*
-   Implements prose test 9 as described in the SRV polling test README:
-   Test that SRV polling is not done for load balanced clusters. Connect to
-   mongodb+srv://test3.test.build.10gen.cc/?loadBalanced=true, mock the addition
-   of the following DNS record, wait until 2*rescanSRVIntervalMS, and assert
-   that the final topology description only contains one server
-   (localhost.test.build.10gen.cc. at port 27017).
-   _mongodb._tcp.test3.test.build.10gen.cc. 86400 IN SRV 27018
-   localhost.test.build.10gen.cc.
-*/
-static void
-_prose_test_9 (bool pooled)
-{
-   mongoc_client_pool_t *pool;
-   mongoc_uri_t *uri;
-   mongoc_client_t *client;
-   mongoc_host_list_t *expected_hosts;
-   mongoc_topology_t *topology;
-   mc_tpld_modification tdmod;
+/* SRV Polling Tests Spec: rescanSRVIntervalMS */
 #define RESCAN_INTERVAL_MS 500
-#ifdef MONGOC_ENABLE_SSL
-   mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
 
-   ssl_opts.allow_invalid_hostname = true;
-#endif
+static void *
+_prose_test_init_resource_single (const mongoc_uri_t *uri,
+                                  _mongoc_rr_resolver_fn fn)
+{
+   mongoc_client_t *client;
+   mongoc_topology_t *topology;
 
+   BSON_ASSERT_PARAM (uri);
+   BSON_ASSERT_PARAM (fn);
 
-   uri = mongoc_uri_new ("mongodb+srv://test3.test.build.10gen.cc");
-   mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
-   /* Single-threaded clients will only enter SRV polling during monitoring in
-    * mongoc_topology_scan_once. Reducing the heartbeatFrequencyMS will exercise
-    * the code path that would poll for SRV records. That should be bypassed
-    * because of the load balanced topology type. */
-   mongoc_uri_set_option_as_int32 (
-      uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+   client = mongoc_client_new_from_uri (uri);
+   topology = client->topology;
 
-   if (pooled) {
-      pool = mongoc_client_pool_new (uri);
-      topology = _mongoc_client_pool_get_topology (pool);
-
-#ifdef MONGOC_ENABLE_SSL
-      mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
-#endif
-
-   } else {
-      client = mongoc_client_new_from_uri (uri);
-#ifdef MONGOC_ENABLE_SSL
-      mongoc_client_set_ssl_opts (client, &ssl_opts);
-#endif
-      topology = client->topology;
-   }
-
-   _mongoc_topology_set_rr_resolver (topology, _mock_resolver);
+   _mongoc_topology_set_rr_resolver (topology, fn);
    _mongoc_topology_set_srv_polling_rescan_interval_ms (topology,
                                                         RESCAN_INTERVAL_MS);
 
-   if (pooled) {
-      client = mongoc_client_pool_pop (pool);
+#if defined(MONGOC_ENABLE_SSL)
+   {
+      mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
+      ssl_opts.allow_invalid_hostname = true;
+      mongoc_client_set_ssl_opts (client, &ssl_opts);
+   }
+#endif /* defined(MONGOC_ENABLE_SSL) */
+
+   return client;
+}
+
+static void *
+_prose_test_init_resource_pooled (const mongoc_uri_t *uri,
+                                  _mongoc_rr_resolver_fn fn)
+{
+   mongoc_client_pool_t *pool;
+   mongoc_topology_t *topology;
+
+   BSON_ASSERT_PARAM (uri);
+   BSON_ASSERT_PARAM (fn);
+
+   pool = mongoc_client_pool_new (uri);
+   topology = _mongoc_client_pool_get_topology (pool);
+
+   _mongoc_topology_set_rr_resolver (topology, fn);
+   _mongoc_topology_set_srv_polling_rescan_interval_ms (topology,
+                                                        RESCAN_INTERVAL_MS);
+
+#if defined(MONGOC_ENABLE_SSL)
+   {
+      mongoc_ssl_opt_t ssl_opts = *test_framework_get_ssl_opts ();
+      ssl_opts.allow_invalid_hostname = true;
+      mongoc_client_pool_set_ssl_opts (pool, &ssl_opts);
+   }
+#endif /* defined(MONGOC_ENABLE_SSL) */
+
+   return pool;
+}
+
+static void
+_prose_test_free_resource_single (void *resource)
+{
+   mongoc_client_destroy ((mongoc_client_t *) resource);
+}
+
+static void
+_prose_test_free_resource_pooled (void *resource)
+{
+   mongoc_client_pool_destroy ((mongoc_client_pool_t *) resource);
+}
+
+static mongoc_client_t *
+_prose_test_get_client_single (void *resource)
+{
+   BSON_ASSERT_PARAM (resource);
+   return (mongoc_client_t *) resource;
+}
+
+static mongoc_client_t *
+_prose_test_get_client_pooled (void *resource)
+{
+   BSON_ASSERT_PARAM (resource);
+   return mongoc_client_pool_pop (((mongoc_client_pool_t *) resource));
+}
+
+static void
+_prose_test_release_client_single (void *resource, mongoc_client_t *client)
+{
+   BSON_ASSERT_PARAM (resource);
+   BSON_ASSERT_PARAM (client);
+   /* Nothing to do. */
+}
+
+static void
+_prose_test_release_client_pooled (void *resource, mongoc_client_t *client)
+{
+   BSON_ASSERT_PARAM (resource);
+   BSON_ASSERT_PARAM (client);
+   mongoc_client_pool_push ((mongoc_client_pool_t *) resource, client);
+}
+
+static void
+_prose_test_update_srv_single (void *resource)
+{
+   mongoc_client_t *client;
+
+   BSON_ASSERT_PARAM (resource);
+
+   client = resource;
+
+   _mongoc_usleep (2000 * RESCAN_INTERVAL_MS);
+
+   /* Avoid ping given `loadBalanced=true`; see prose test 9. */
+   if (!mongoc_uri_get_option_as_bool (
+          client->uri, MONGOC_URI_LOADBALANCED, false)) {
+      _prose_test_ping (client);
+   }
+}
+
+static void
+_prose_test_update_srv_pooled (void *resource)
+{
+   BSON_ASSERT_PARAM (resource);
+
+   _mongoc_usleep (2000 * RESCAN_INTERVAL_MS);
+}
+
+typedef struct {
+   void *(*init_resource) (const mongoc_uri_t *uri, _mongoc_rr_resolver_fn fn);
+   void (*free_resource) (void *);
+   mongoc_client_t *(*get_client) (void *resource);
+   void (*release_client) (void *resource, mongoc_client_t *client);
+   void (*update_srv) (void *);
+} _prose_test_fns_t;
+
+static const _prose_test_fns_t _prose_test_single_fns = {
+   _prose_test_init_resource_single,
+   _prose_test_free_resource_single,
+   _prose_test_get_client_single,
+   _prose_test_release_client_single,
+   _prose_test_update_srv_single};
+
+static const _prose_test_fns_t _prose_test_pooled_fns = {
+   _prose_test_init_resource_pooled,
+   _prose_test_free_resource_pooled,
+   _prose_test_get_client_pooled,
+   _prose_test_release_client_pooled,
+   _prose_test_update_srv_pooled};
+
+static void
+_prose_test_9 (const _prose_test_fns_t *fns)
+{
+   void *resource;
+
+   BSON_ASSERT_PARAM (fns);
+
+   {
+      mongoc_uri_t *const uri =
+         mongoc_uri_new ("mongodb+srv://test3.test.build.10gen.cc");
+
+      mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
+      mongoc_uri_set_option_as_int32 (
+         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+
+      resource = fns->init_resource (uri, _mock_rr_resolver_prose_test_9);
+
+      mongoc_uri_destroy (uri);
    }
 
-   _mongoc_usleep (2 * RESCAN_INTERVAL_MS * 1000);
-   /* For single-threaded, perform an operation since SRV polling occurs as a
-    * part of topology scanning. */
-   if (!pooled) {
-      _prose_loadbalanced_ping (client);
+   {
+      mongoc_host_list_t *const expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
+      mongoc_client_t *const client = fns->get_client (resource);
+
+      {
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (client->topology);
+         check_topology_description (tdmod.new_td, expected);
+         mc_tpld_modify_drop (tdmod);
+      }
+
+      fns->release_client (resource, client);
+      _mongoc_host_list_destroy_all (expected);
    }
 
-   expected_hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
-   /* We don't intend to modify the topology, but we need a writeable instance
-    * in a thread-safe manner. Open a modification to get a writeable copy. */
-   tdmod = mc_tpld_modify_begin (client->topology);
-   check_topology_description (tdmod.new_td, expected_hosts);
-   /* Just throw the modification. It will be a no-op anyway. */
-   mc_tpld_modify_drop (tdmod);
+   fns->update_srv (resource);
 
-   if (pooled) {
-      mongoc_client_pool_push (pool, client);
-      mongoc_client_pool_destroy (pool);
-   } else {
-      mongoc_client_destroy (client);
+   {
+      mongoc_host_list_t *const expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017");
+      mongoc_client_t *const client = fns->get_client (resource);
+
+      {
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (client->topology);
+         check_topology_description (tdmod.new_td, expected);
+         mc_tpld_modify_drop (tdmod);
+      }
+
+      fns->release_client (resource, client);
+      _mongoc_host_list_destroy_all (expected);
    }
 
-   mongoc_uri_destroy (uri);
-   _mongoc_host_list_destroy_all (expected_hosts);
+   fns->free_resource (resource);
 }
 
 static void
 prose_test_9_single (void *unused)
 {
-   _prose_test_9 (false);
+   _prose_test_9 (&_prose_test_single_fns);
 }
 
 static void
 prose_test_9_pooled (void *unused)
 {
-   _prose_test_9 (true);
+   _prose_test_9 (&_prose_test_pooled_fns);
 }
 
-/* cb_stats_t tracks counters for the test_invalid_topology_pooled and
- * test_invalid_topology_single tests. */
+static bool
+_mock_rr_resolver_prose_test_10 (const char *service,
+                                 mongoc_rr_type_t rr_type,
+                                 mongoc_rr_data_t *rr_data,
+                                 size_t initial_buffer_size,
+                                 bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (service);
+   BSON_ASSERT_PARAM (rr_data);
+   BSON_ASSERT_PARAM (error);
+
+   /* Silence unused parameter warning. */
+   BSON_ASSERT (initial_buffer_size >= 0u);
+
+   if (rr_type == MONGOC_RR_SRV) {
+      rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                                   "localhost.test.build.10gen.cc:27019",
+                                   "localhost.test.build.10gen.cc:27020");
+      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->min_ttl = 0u;
+      rr_data->txt_record_opts = NULL;
+   }
+
+   error->code = 0u;
+
+   return true;
+}
+
+static void
+_prose_test_10 (const _prose_test_fns_t *fns)
+{
+   void *resource;
+
+   BSON_ASSERT_PARAM (fns);
+
+   {
+      mongoc_uri_t *const uri =
+         mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
+
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 0);
+      mongoc_uri_set_option_as_int32 (
+         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+
+      resource = fns->init_resource (uri, _mock_rr_resolver_prose_test_10);
+
+      mongoc_uri_destroy (uri);
+   }
+
+   {
+      mongoc_host_list_t *const expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                     "localhost.test.build.10gen.cc:27018");
+      mongoc_client_t *const client = fns->get_client (resource);
+
+      {
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (client->topology);
+         check_topology_description (tdmod.new_td, expected);
+         mc_tpld_modify_drop (tdmod);
+      }
+
+      fns->release_client (resource, client);
+      _mongoc_host_list_destroy_all (expected);
+   }
+
+   fns->update_srv (resource);
+
+   {
+      mongoc_host_list_t *const expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                     "localhost.test.build.10gen.cc:27019",
+                     "localhost.test.build.10gen.cc:27020");
+      mongoc_client_t *const client = fns->get_client (resource);
+
+      {
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (client->topology);
+         check_topology_description (tdmod.new_td, expected);
+         mc_tpld_modify_drop (tdmod);
+      }
+
+      fns->release_client (resource, client);
+      _mongoc_host_list_destroy_all (expected);
+   }
+
+   fns->free_resource (resource);
+}
+
+static void
+prose_test_10_single (void *unused)
+{
+   _prose_test_10 (&_prose_test_single_fns);
+}
+
+static void
+prose_test_10_pooled (void *unused)
+{
+   _prose_test_10 (&_prose_test_pooled_fns);
+}
+
+static bool
+_mock_rr_resolver_prose_test_11 (const char *service,
+                                 mongoc_rr_type_t rr_type,
+                                 mongoc_rr_data_t *rr_data,
+                                 size_t initial_buffer_size,
+                                 bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (service);
+   BSON_ASSERT_PARAM (rr_data);
+   BSON_ASSERT_PARAM (error);
+
+   /* Silence unused parameter warning. */
+   BSON_ASSERT (initial_buffer_size >= 0u);
+
+   if (rr_type == MONGOC_RR_SRV) {
+      rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27019",
+                                   "localhost.test.build.10gen.cc:27020");
+      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->min_ttl = 0u;
+      rr_data->txt_record_opts = NULL;
+   }
+
+   error->code = 0u;
+
+   return true;
+}
+
+static void
+_prose_test_11 (const _prose_test_fns_t *fns)
+{
+   void *resource;
+
+   BSON_ASSERT_PARAM (fns);
+
+   {
+      mongoc_uri_t *const uri =
+         mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
+
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 2);
+      mongoc_uri_set_option_as_int32 (
+         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+
+      resource = fns->init_resource (uri, _mock_rr_resolver_prose_test_11);
+
+      mongoc_uri_destroy (uri);
+   }
+
+   {
+      mongoc_host_list_t *const expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                     "localhost.test.build.10gen.cc:27018");
+      mongoc_client_t *const client = fns->get_client (resource);
+
+      {
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (client->topology);
+         check_topology_description (tdmod.new_td, expected);
+         mc_tpld_modify_drop (tdmod);
+      }
+
+      fns->release_client (resource, client);
+      _mongoc_host_list_destroy_all (expected);
+   }
+
+   fns->update_srv (resource);
+
+   {
+      mongoc_host_list_t *const expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27019",
+                     "localhost.test.build.10gen.cc:27020");
+      mongoc_client_t *const client = fns->get_client (resource);
+
+      {
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (client->topology);
+         check_topology_description (tdmod.new_td, expected);
+         mc_tpld_modify_drop (tdmod);
+      }
+
+      fns->release_client (resource, client);
+      _mongoc_host_list_destroy_all (expected);
+   }
+
+   fns->free_resource (resource);
+}
+
+static void
+prose_test_11_single (void *unused)
+{
+   _prose_test_11 (&_prose_test_single_fns);
+}
+
+static void
+prose_test_11_pooled (void *unused)
+{
+   _prose_test_11 (&_prose_test_pooled_fns);
+}
+
+static bool
+_mock_rr_resolver_prose_test_12 (const char *service,
+                                 mongoc_rr_type_t rr_type,
+                                 mongoc_rr_data_t *rr_data,
+                                 size_t initial_buffer_size,
+                                 bson_error_t *error)
+{
+   BSON_ASSERT_PARAM (service);
+   BSON_ASSERT_PARAM (rr_data);
+   BSON_ASSERT_PARAM (error);
+
+   /* Silence unused parameter warning. */
+   BSON_ASSERT (initial_buffer_size >= 0u);
+
+   if (rr_type == MONGOC_RR_SRV) {
+      rr_data->hosts = MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                                   "localhost.test.build.10gen.cc:27019",
+                                   "localhost.test.build.10gen.cc:27020");
+      rr_data->count = _mongoc_host_list_length (rr_data->hosts);
+      rr_data->min_ttl = 0u;
+      rr_data->txt_record_opts = NULL;
+   }
+
+   error->code = 0u;
+
+   return true;
+}
+
 typedef struct {
-   int num_topology_opening;
-   int num_topology_closed;
-   int num_server_opening;
-   int num_server_closed;
-} cb_stats_t;
+   size_t num_existing;
+   size_t num_new_valid;
+} _prose_test_12_ctx_t;
 
-/* invalid_topology_opening is used as a callback for the
- * test_invalid_topology_pooled and test_invalid_topology_single tests. */
-static void
-invalid_topology_opening (const mongoc_apm_topology_opening_t *event) {
-   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_topology_opening_get_context (event);
-   stats->num_topology_opening++;
+static bool
+_prose_test_12_cb (const void *sd_void, void *ctx_void)
+{
+   const mongoc_server_description_t *sd;
+   _prose_test_12_ctx_t *ctx;
+   const mongoc_host_list_t *host;
+
+   BSON_ASSERT_PARAM (sd_void);
+   BSON_ASSERT_PARAM (ctx_void);
+
+   sd = sd_void;
+   ctx = ctx_void;
+   host = &sd->host;
+
+   ASSERT_CMPSTR (host->host, "localhost.test.build.10gen.cc");
+
+   if (host->port == 27017u) {
+      ++ctx->num_existing;
+   }
+
+   else {
+      ASSERT (host->port == 27019 || host->port == 27020);
+      ++ctx->num_new_valid;
+   }
+
+   return true;
 }
 
-/* invalid_topology_closed is used as a callback for the
- * test_invalid_topology_pooled and test_invalid_topology_single tests. */
 static void
-invalid_topology_closed (const mongoc_apm_topology_closed_t *event) {
-   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_topology_closed_get_context (event);
-   stats->num_topology_closed++;
+_prose_test_12 (const _prose_test_fns_t *fns)
+{
+   void *resource;
+
+   BSON_ASSERT_PARAM (fns);
+
+   {
+      mongoc_uri_t *const uri =
+         mongoc_uri_new ("mongodb+srv://test1.test.build.10gen.cc");
+
+      mongoc_uri_set_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 2);
+      mongoc_uri_set_option_as_int32 (
+         uri, MONGOC_URI_HEARTBEATFREQUENCYMS, RESCAN_INTERVAL_MS);
+
+      resource = fns->init_resource (uri, _mock_rr_resolver_prose_test_12);
+
+      mongoc_uri_destroy (uri);
+   }
+
+   {
+      mongoc_host_list_t *const expected =
+         MAKE_HOSTS ("localhost.test.build.10gen.cc:27017",
+                     "localhost.test.build.10gen.cc:27018");
+      mongoc_client_t *const client = fns->get_client (resource);
+
+      {
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (client->topology);
+         check_topology_description (tdmod.new_td, expected);
+         mc_tpld_modify_drop (tdmod);
+      }
+
+      fns->release_client (resource, client);
+      _mongoc_host_list_destroy_all (expected);
+   }
+
+   fns->update_srv (resource);
+
+   {
+      mongoc_client_t *const client = fns->get_client (resource);
+      _prose_test_12_ctx_t ctx;
+
+      ctx.num_existing = 0u;
+      ctx.num_new_valid = 0u;
+
+      {
+         mc_tpld_modification tdmod = mc_tpld_modify_begin (client->topology);
+         const mongoc_set_t *servers = mc_tpld_servers_const (tdmod.new_td);
+         mongoc_set_for_each_const (servers, _prose_test_12_cb, &ctx);
+         mc_tpld_modify_drop (tdmod);
+      }
+
+      ASSERT_WITH_MSG (
+         ctx.num_existing > 0u,
+         "hosts that have not changed must be left alone and unchanged");
+      ASSERT_WITH_MSG (ctx.num_existing == 1u,
+                       "only a single host should have remained, but found %zu",
+                       ctx.num_existing);
+
+      ASSERT_WITH_MSG (ctx.num_new_valid == 1u,
+                       "exactly one valid new hosts should have been added");
+
+      fns->release_client (resource, client);
+   }
+
+   fns->free_resource (resource);
 }
 
-/* invalid_server_closed is used as a callback for the
- * test_invalid_topology_pooled and test_invalid_topology_single tests. */
 static void
-invalid_server_closed (const mongoc_apm_server_closed_t *event) {
-   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_server_closed_get_context (event);
-   stats->num_server_closed++;
+prose_test_12_single (void *unused)
+{
+   _prose_test_12 (&_prose_test_single_fns);
 }
 
-/* invalid_server_opening is used as a callback for the
- * test_invalid_topology_pooled and test_invalid_topology_single tests. */
 static void
-invalid_server_opening (const mongoc_apm_server_opening_t *event) {
-   cb_stats_t *stats = (cb_stats_t*) mongoc_apm_server_opening_get_context (event);
-   stats->num_server_opening++;
-}
-
-/* CDRIVER-4184 Test that an invalid topology does not emit a topology_closed
- * event. */
-static void
-test_invalid_topology_pooled (void *unused) {
-   mongoc_client_pool_t *pool;
-   mongoc_client_t *client;
-   mongoc_uri_t *uri;
-   mongoc_apm_callbacks_t *cbs;
-   cb_stats_t stats = {0};
-
-   /* TXT record for test20.test.build.10gen.cc resolves to "loadBalanced=true". */
-   uri = mongoc_uri_new ("mongodb+srv://test20.test.build.10gen.cc/?replicaSet=rs0");
-   pool = mongoc_client_pool_new (uri);
-   cbs = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_topology_opening_cb (cbs, invalid_topology_opening);
-   mongoc_apm_set_topology_closed_cb (cbs, invalid_topology_closed);
-   mongoc_apm_set_server_opening_cb (cbs, invalid_server_opening);
-   mongoc_apm_set_server_closed_cb (cbs, invalid_server_closed);
-   mongoc_client_pool_set_apm_callbacks (pool, cbs, &stats);
-
-   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
-
-   /* Pop a client to attempt to start monitoring. Monitoring emits the topology_opening event on valid topologies. */
-   client = mongoc_client_pool_pop (pool);
-   mongoc_client_pool_push (pool, client);
-
-   mongoc_apm_callbacks_destroy (cbs);
-   mongoc_client_pool_destroy (pool);
-   mongoc_uri_destroy (uri);
-
-   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
-   ASSERT_CMPINT(stats.num_server_opening, ==, 0);
-   ASSERT_CMPINT(stats.num_server_closed, ==, 0);
-   ASSERT_CMPINT(stats.num_topology_closed, ==, 0);
-}
-
-/* CDRIVER-4184 Test that an invalid topology does not emit a topology_closed
- * event. */
-static void
-test_invalid_topology_single (void *unused) {
-   mongoc_client_t *client;
-   mongoc_uri_t *uri;
-   mongoc_apm_callbacks_t *cbs;
-   cb_stats_t stats = {0};
-   bson_error_t error;
-   mongoc_server_description_t *sd;
-
-   /* TXT records for test20.test.build.10gen.cc resolve to loadBalanced=true. */
-   uri = mongoc_uri_new ("mongodb+srv://test20.test.build.10gen.cc/?replicaSet=true");
-   client = mongoc_client_new_from_uri (uri);
-   cbs = mongoc_apm_callbacks_new ();
-   mongoc_apm_set_topology_opening_cb (cbs, invalid_topology_opening);
-   mongoc_apm_set_topology_closed_cb (cbs, invalid_topology_closed);
-   mongoc_apm_set_server_opening_cb (cbs, invalid_server_opening);
-   mongoc_apm_set_server_closed_cb (cbs, invalid_server_closed);
-   mongoc_client_set_apm_callbacks (client, cbs, &stats);
-
-   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
-
-   /* Perform server selection. Server selection emits the topology_opening
-    * event on valid topologies. */
-   sd = mongoc_client_select_server (
-      client, false /* for_writes */, NULL /* read_prefs */, &error);
-   ASSERT_ERROR_CONTAINS (
-      error,
-      MONGOC_ERROR_SERVER_SELECTION,
-      MONGOC_ERROR_SERVER_SELECTION_FAILURE,
-      "URI with \"loadbalanced\" enabled must not contain option \"replicaset\"");
-   ASSERT (!sd);
-
-   mongoc_apm_callbacks_destroy (cbs);
-   mongoc_client_destroy (client);
-   mongoc_uri_destroy (uri);
-
-   ASSERT_CMPINT(stats.num_topology_opening, ==, 0);
-   ASSERT_CMPINT(stats.num_server_opening, ==, 0);
-   ASSERT_CMPINT(stats.num_server_closed, ==, 0);
-   ASSERT_CMPINT(stats.num_topology_closed, ==, 0);
+prose_test_12_pooled (void *unused)
+{
+   _prose_test_12 (&_prose_test_pooled_fns);
 }
 
 void
 test_dns_install (TestSuite *suite)
 {
    test_all_spec_tests (suite);
-   TestSuite_AddFull (suite,
-                      "/initial_dns_seedlist_discovery/null_error_pointer",
-                      test_null_error_pointer,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_no_crypto);
    TestSuite_AddFull (suite,
                       "/initial_dns_seedlist_discovery/srv_polling/mocked",
                       test_srv_polling_mocked,
@@ -885,7 +1250,7 @@ test_dns_install (TestSuite *suite)
       prose_test_9_single,
       NULL,
       NULL,
-      test_dns_check_loadbalanced);
+      test_dns_check_srv_polling);
 
    TestSuite_AddFull (
       suite,
@@ -893,21 +1258,53 @@ test_dns_install (TestSuite *suite)
       prose_test_9_pooled,
       NULL,
       NULL,
-      test_dns_check_loadbalanced);
+      test_dns_check_srv_polling);
 
    TestSuite_AddFull (
       suite,
-      "/initial_dns_seedlist_discovery/load-balanced/invalid_topology/pooled",
-      test_invalid_topology_pooled,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/single",
+      prose_test_10_single,
       NULL,
       NULL,
-      test_dns_check_loadbalanced);
+      test_dns_check_srv_polling);
 
    TestSuite_AddFull (
       suite,
-      "/initial_dns_seedlist_discovery/load-balanced/invalid_topology/single",
-      test_invalid_topology_single,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_10/pooled",
+      prose_test_10_pooled,
       NULL,
       NULL,
-      test_dns_check_loadbalanced);
+      test_dns_check_srv_polling);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/single",
+      prose_test_11_single,
+      NULL,
+      NULL,
+      test_dns_check_srv_polling);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_11/pooled",
+      prose_test_11_pooled,
+      NULL,
+      NULL,
+      test_dns_check_srv_polling);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/single",
+      prose_test_12_single,
+      NULL,
+      NULL,
+      test_dns_check_srv_polling);
+
+   TestSuite_AddFull (
+      suite,
+      "/initial_dns_seedlist_discovery/srv_polling/prose_test_12/pooled",
+      prose_test_12_pooled,
+      NULL,
+      NULL,
+      test_dns_check_srv_polling);
 }

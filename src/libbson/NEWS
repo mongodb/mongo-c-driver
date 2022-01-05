@@ -1,3 +1,26 @@
+libbson 1.20.0
+==============
+
+Features:
+
+  * Improve atomics API.
+
+Thanks to everyone who contributed to the development of this release.
+
+  * Colby Pike
+  * Kevin Albertson
+  * Roberto C. Sánchez
+  * Ezra Chung
+
+libbson 1.19.2
+==============
+
+Announcing libbson 1.19.2.
+
+No changes since 1.19.1; release to keep pace with libmongoc's version.
+
+--Kevin Albertson
+
 libbson 1.19.1
 ==============
 

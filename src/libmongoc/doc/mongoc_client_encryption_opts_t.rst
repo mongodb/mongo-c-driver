@@ -26,6 +26,7 @@ Used to set options for :symbol:`mongoc_client_encryption_new()`.
     mongoc_client_encryption_opts_set_keyvault_client
     mongoc_client_encryption_opts_set_keyvault_namespace
     mongoc_client_encryption_opts_set_kms_providers
+    mongoc_client_encryption_opts_set_tls_opts
 
 .. seealso::
 

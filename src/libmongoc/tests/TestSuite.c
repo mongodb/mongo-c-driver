@@ -181,11 +181,11 @@ TestSuite_Init (TestSuite *suite, const char *name, int argc, char **argv)
          suite->flags |= TEST_NOFORK;
       } else if ((0 == strcmp ("-t", argv[i])) ||
                  (0 == strcmp ("--trace", argv[i]))) {
-#ifdef MONGOC_TRACE
+         if (!MONGOC_TRACE_ENABLED) {
+            test_error (
+               "-t requires mongoc compiled with -DENABLE_TRACING=ON.");
+         }
          suite->flags |= TEST_TRACE;
-#else
-         test_error ("-t requires mongoc compiled with -DENABLE_TRACING=ON.");
-#endif
       } else if (0 == strcmp ("-F", argv[i])) {
          if (argc - 1 == i) {
             test_error ("-F requires a filename argument.");
@@ -353,6 +353,10 @@ _V_TestSuite_AddFull (TestSuite *suite,
    Test *test;
    Test *iter;
 
+   if (suite->ctest_run && (0 != strcmp (suite->ctest_run, name))) {
+      return NULL;
+   }
+
    test = (Test *) calloc (1, sizeof *test);
    test->name = bson_strdup (name);
    test->func = func;
@@ -393,7 +397,9 @@ _TestSuite_AddMockServerTest (TestSuite *suite,
    test = _V_TestSuite_AddFull (suite, name, (TestFuncWC) func, NULL, NULL, ap);
    va_end (ap);
 
-   _TestSuite_AddCheck (test, TestSuite_CheckMockServerAllowed, name);
+   if (test) {
+      _TestSuite_AddCheck (test, TestSuite_CheckMockServerAllowed, name);
+   }
 }
 
 
@@ -446,7 +452,8 @@ _print_getlasterror_win (const char *msg)
                   NULL,
                   GetLastError (),
                   MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  &err_msg,
+                  /* FormatMessage is weird about this param. */
+                  (LPTSTR) &err_msg,
                   0,
                   NULL);
 
@@ -644,14 +651,12 @@ TestSuite_RunTest (TestSuite *suite, /* IN */
 
 
    if (suite->flags & TEST_NOFORK) {
-#ifdef MONGOC_TRACE
       if (suite->flags & TEST_TRACE) {
          mongoc_log_set_handler (mongoc_log_default_handler, NULL);
          mongoc_log_trace_enable ();
       } else {
          mongoc_log_trace_disable ();
       }
-#endif
 
       srand (test->seed);
       test_conveniences_init ();

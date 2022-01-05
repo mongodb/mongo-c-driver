@@ -1419,11 +1419,12 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
 
    if (bson_iter_init_find (&iter, &opts, "kmsProviders")) {
       bson_t kms_providers;
+      bson_t tls_opts = BSON_INITIALIZER;
       bson_t tmp;
 
       bson_iter_bson (&iter, &tmp);
       bson_copy_to_excluding (
-         &tmp, &kms_providers, "aws", "azure", "gcp", NULL);
+         &tmp, &kms_providers, "aws", "azure", "gcp", "kmip", NULL);
 
       /* AWS credentials are set from environment variables. */
       if (bson_has_field (&opts, "kmsProviders.aws")) {
@@ -1512,9 +1513,39 @@ set_auto_encryption_opts (mongoc_client_t *client, bson_t *test)
          bson_free (gcp_privatekey);
       }
 
+      if (bson_has_field (&opts, "kmsProviders.kmip")) {
+         char *kmip_tls_ca_file;
+         char *kmip_tls_certificate_key_file;
+
+         kmip_tls_ca_file =
+            test_framework_getenv ("MONGOC_TEST_CSFLE_TLS_CA_FILE");
+         kmip_tls_certificate_key_file = test_framework_getenv (
+            "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE");
+         if (!kmip_tls_ca_file || !kmip_tls_certificate_key_file) {
+            test_error ("Set MONGOC_TEST_CSFLE_TLS_CA_FILE, and "
+                        "MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE to enable "
+                        "CSFLE tests.");
+         }
+
+         bson_concat (&kms_providers,
+                      tmp_bson ("{ 'kmip': { 'endpoint': 'localhost:5698' }}"));
+
+         bson_concat (&tls_opts,
+                      tmp_bson ("{'kmip': { 'tlsCAFile': '%s', "
+                                "'tlsCertificateKeyFile': '%s' } }",
+                                kmip_tls_ca_file,
+                                kmip_tls_certificate_key_file));
+
+         bson_free (kmip_tls_ca_file);
+         bson_free (kmip_tls_certificate_key_file);
+      }
+
       mongoc_auto_encryption_opts_set_kms_providers (auto_encryption_opts,
                                                      &kms_providers);
+      mongoc_auto_encryption_opts_set_tls_opts (auto_encryption_opts,
+                                                &tls_opts);
       bson_destroy (&kms_providers);
+      bson_destroy (&tls_opts);
    }
 
    if (bson_iter_init_find (&iter, &opts, "schemaMap")) {
@@ -1884,7 +1915,8 @@ _skip_if_unsupported (const char *test_name, bson_t *original)
  */
 void
 _install_json_test_suite_with_check (TestSuite *suite,
-                                     const char *dir_path,
+                                     const char *base,
+                                     const char *subdir,
                                      test_hook callback,
                                      ...)
 {
@@ -1895,9 +1927,21 @@ _install_json_test_suite_with_check (TestSuite *suite,
    char *skip_json;
    char *ext;
    va_list ap;
+   char joined[PATH_MAX];
+   char resolved[PATH_MAX];
+
+   snprintf (joined, PATH_MAX, "%s/%s", base, subdir);
+   ASSERT (realpath (joined, resolved));
+
+   if (suite->ctest_run) {
+      const char *found = strstr (suite->ctest_run, subdir);
+      if (found != suite->ctest_run && found != suite->ctest_run + 1) {
+         return;
+      }
+   }
 
    num_tests =
-      collect_tests_from_dir (&test_paths[0], dir_path, 0, MAX_NUM_TESTS);
+      collect_tests_from_dir (&test_paths[0], resolved, 0, MAX_NUM_TESTS);
 
    for (i = 0; i < num_tests; i++) {
       test = get_bson_from_json_file (test_paths[i]);
@@ -1940,9 +1984,10 @@ _install_json_test_suite_with_check (TestSuite *suite,
  */
 void
 install_json_test_suite (TestSuite *suite,
-                         const char *dir_path,
+                         const char *base,
+                         const char *subdir,
                          test_hook callback)
 {
    install_json_test_suite_with_check (
-      suite, dir_path, callback, TestSuite_CheckLive);
+      suite, base, subdir, callback, TestSuite_CheckLive);
 }

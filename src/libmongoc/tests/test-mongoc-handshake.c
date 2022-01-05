@@ -740,7 +740,7 @@ _get_bit (char *config_str, uint32_t bit)
 }
 
 void
-test_handshake_platform_config ()
+test_handshake_platform_config (void)
 {
    /* Parse the config string, and check that it matches the defined flags. */
    char *config_str = _mongoc_handshake_get_config_hex_string ();
@@ -872,9 +872,9 @@ test_handshake_platform_config ()
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS));
 #endif
 
-#ifdef MONGOC_TRACE
-   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_TRACE));
-#endif
+   if (MONGOC_TRACE_ENABLED) {
+      BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_TRACE));
+   }
 
 #ifdef MONGOC_ENABLE_ICU
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_ICU));

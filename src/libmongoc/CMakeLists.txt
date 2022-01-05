@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.1)
 
 project (libmongoc C)
 
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../build/cmake)
+include (MongoC-Warnings)
 
 include (InstallRequiredSystemLibraries)
 include (CheckStructHasMember)
@@ -45,9 +45,6 @@ if (NOT ENABLE_ZSTD MATCHES "ON|AUTO|OFF")
    message (FATAL_ERROR "ENABLE_ZSTD option must be ON, AUTO, or OFF")
 endif ()
 
-# Disable warnings on bundled zlib source files.
-set_source_files_properties (${ZLIB_SOURCES} PROPERTIES COMPILE_FLAGS -w)
-
 # Copy zconf.h.in to zconf.h; even when using system zlib, the 'dist' target
 # will look for zconf.h in that location.
 configure_file (
@@ -78,7 +75,18 @@ endif ()
 if ( (ENABLE_ZLIB STREQUAL "BUNDLED")
    OR (ENABLE_ZLIB STREQUAL "AUTO" AND NOT ZLIB_FOUND) )
    message (STATUS "Enabling zlib compression (bundled)")
-   set (SOURCES ${SOURCES} ${ZLIB_SOURCES})
+   add_library (zlib_obj OBJECT "${ZLIB_SOURCES}")
+   set_property (TARGET zlib_obj PROPERTY POSITION_INDEPENDENT_CODE TRUE)
+   # This tells the bundled zlib where to find its generated headers
+   target_include_directories (zlib_obj
+      BEFORE PUBLIC
+      "${SOURCE_DIR}/src/zlib-1.2.11"
+      "${CMAKE_BINARY_DIR}/src/zlib-1.2.11"
+   )
+   # Disable all warnings for compiling Zlib
+   target_compile_options (zlib_obj PRIVATE -w)
+   set (SOURCES ${SOURCES} $<TARGET_OBJECTS:zlib_obj>)
+   # This tells mongoc_shared/mongoc_static where to find generated zlib headers
    set (
       ZLIB_INCLUDE_DIRS
       "${SOURCE_DIR}/src/zlib-1.2.11"
@@ -91,6 +99,12 @@ if (NOT ENABLE_ZLIB STREQUAL "OFF")
    include (CheckIncludeFiles)
    check_include_files ("unistd.h" HAVE_UNISTD_H)
    check_include_files ("stdarg.h" HAVE_STDARG_H)
+   if (HAVE_UNISTD_H)
+      add_definitions (-DHAVE_UNISTD_H)
+   endif ()
+   if (HAVE_STDARG_H)
+      add_definitions (-DHAVE_STDARG_H)
+   endif ()
    set (MONGOC_ENABLE_COMPRESSION 1)
    set (MONGOC_ENABLE_COMPRESSION_ZLIB 1)
 else ()
@@ -343,10 +357,10 @@ set (MONGOC_CC ${CMAKE_C_COMPILER})
 set (MONGOC_USER_SET_CFLAGS ${CMAKE_C_FLAGS})
 set (MONGOC_USER_SET_LDFLAGS ${CMAKE_EXE_LINKER_FLAGS})
 
-set (MONGOC_TRACE 0)
-
 if (ENABLE_TRACING)
    set (MONGOC_TRACE 1)
+else ()
+   set (MONGOC_TRACE 0)
 endif ()
 
 # Sets SNAPPY_LIBRARIES and SNAPPY_INCLUDE_DIRS.
@@ -1104,6 +1118,7 @@ if (MONGOC_ENABLE_CLIENT_SIDE_ENCRYPTION)
    mongoc_add_example (client-side-encryption-server-schema TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-server-schema.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
    mongoc_add_example (client-side-encryption-explicit TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-explicit.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
    mongoc_add_example (client-side-encryption-auto-decryption TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-auto-decryption.c ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-helpers.c)
+   mongoc_add_example (client-side-encryption-doc-snippets TRUE ${PROJECT_SOURCE_DIR}/examples/client-side-encryption-doc-snippets.c)
 endif ()
 
 file (COPY ${PROJECT_SOURCE_DIR}/tests/binary DESTINATION ${PROJECT_BINARY_DIR}/tests)

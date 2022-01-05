@@ -282,11 +282,9 @@ test_retry_reads_off (void *ctx)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   test_framework_resolve_path (JSON_DIR "/retryable_reads", resolved);
    install_json_test_suite_with_check (suite,
-                                       resolved,
+                                       JSON_DIR,
+                                       "retryable_reads",
                                        test_retryable_reads_cb,
                                        TestSuite_CheckLive,
                                        test_framework_skip_if_no_failpoint,

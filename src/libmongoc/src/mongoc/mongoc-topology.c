@@ -35,6 +35,8 @@
 
 #include "utlist.h"
 
+#include <stdint.h>
+
 static void
 _topology_collect_errors (const mongoc_topology_description_t *topology,
                           bson_error_t *error_out);
@@ -263,6 +265,59 @@ _tpld_destroy_and_free (void *tpl_descr)
    mongoc_topology_description_destroy (td);
 }
 
+const mongoc_host_list_t **
+_mongoc_apply_srv_max_hosts (const mongoc_host_list_t *hl,
+                             const int32_t max_hosts,
+                             size_t *const hl_array_size)
+{
+   size_t hl_size;
+   size_t idx;
+   const mongoc_host_list_t **hl_array;
+
+   BSON_ASSERT (max_hosts >= 0);
+   BSON_ASSERT_PARAM (hl_array_size);
+
+   hl_size = (size_t) _mongoc_host_list_length (hl);
+
+   if (hl_size == 0) {
+      *hl_array_size = 0;
+      return NULL;
+   }
+
+   hl_array = bson_malloc (hl_size * sizeof (mongoc_host_list_t *));
+
+   for (idx = 0u; hl; hl = hl->next) {
+      hl_array[idx++] = hl;
+   }
+
+   if (max_hosts == 0 ||             /* Unlimited. */
+       hl_size == 1u ||              /* Trivial case. */
+       hl_size <= (size_t) max_hosts /* Already satisfies limit. */
+   ) {
+      /* No random shuffle or selection required. */
+      *hl_array_size = hl_size;
+      return hl_array;
+   }
+
+   /* Initial DNS Seedlist Discovery Spec: If `srvMaxHosts` is greater than zero
+    * and less than the number of hosts in the DNS result, the driver MUST
+    * randomly select that many hosts and use them to populate the seedlist.
+    * Drivers SHOULD use the `Fisher-Yates shuffle` for randomization. */
+   for (idx = hl_size - 1u; idx > 0u; --idx) {
+      /* 0 <= swap_pos <= idx */
+      const size_t swap_pos =
+         _mongoc_rand_size_t (0u, idx, _mongoc_simple_rand_size_t);
+
+      const mongoc_host_list_t *tmp = hl_array[swap_pos];
+      hl_array[swap_pos] = hl_array[idx];
+      hl_array[idx] = tmp;
+   }
+
+   *hl_array_size = max_hosts;
+
+   return hl_array;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -285,9 +340,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    int64_t heartbeat;
    mongoc_topology_t *topology;
    mongoc_topology_description_type_t init_type;
-   const char *service;
-   char *prefixed_service;
-   uint32_t id;
+   mongoc_topology_description_t *td;
+   const char *srv_hostname;
    const mongoc_host_list_t *hl;
    mongoc_rr_data_t rr_data;
    bool has_directconnection;
@@ -322,11 +376,10 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    topology->_shared_descr_._sptr_ = mongoc_shared_ptr_create (
       bson_malloc0 (sizeof (mongoc_topology_description_t)),
       _tpld_destroy_and_free);
-   mongoc_topology_description_init (mc_tpld_unsafe_get_mutable (topology),
-                                     heartbeat);
+   td = mc_tpld_unsafe_get_mutable (topology);
+   mongoc_topology_description_init (td, heartbeat);
 
-   mc_tpld_unsafe_get_mutable (topology)->set_name =
-      bson_strdup (mongoc_uri_get_replica_set (uri));
+   td->set_name = bson_strdup (mongoc_uri_get_replica_set (uri));
 
    topology->uri = mongoc_uri_copy (uri);
    topology->cse_state = MONGOC_CSE_DISABLED;
@@ -394,8 +447,10 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       }
    }
 
-   service = mongoc_uri_get_service (uri);
-   if (service) {
+   srv_hostname = mongoc_uri_get_srv_hostname (uri);
+   if (srv_hostname) {
+      char *prefixed_hostname;
+
       memset (&rr_data, 0, sizeof (mongoc_rr_data_t));
       /* Set the default resource record resolver */
       topology->rr_resolver = _mongoc_client_get_rr;
@@ -408,8 +463,9 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
          MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS;
 
       /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
-      prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
-      if (!topology->rr_resolver (prefixed_service,
+      prefixed_hostname = bson_strdup_printf (
+         "_%s._tcp.%s", mongoc_uri_get_srv_service_name (uri), srv_hostname);
+      if (!topology->rr_resolver (prefixed_hostname,
                                   MONGOC_RR_SRV,
                                   &rr_data,
                                   MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -420,7 +476,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       /* Failure to find TXT records will not return an error (since it is only
        * for options). But _mongoc_client_get_rr may return an error if
        * there is more than one TXT record returned. */
-      if (!topology->rr_resolver (service,
+      if (!topology->rr_resolver (srv_hostname,
                                   MONGOC_RR_TXT,
                                   &rr_data,
                                   MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -450,16 +506,18 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       topology->valid = true;
    srv_fail:
       bson_free (rr_data.txt_record_opts);
-      bson_free (prefixed_service);
+      bson_free (prefixed_hostname);
       _mongoc_host_list_destroy_all (rr_data.hosts);
    } else {
       topology->valid = true;
    }
 
-   if (!mongoc_uri_finalize_loadbalanced (topology->uri,
-                                          &topology->scanner->error)) {
+   if (!mongoc_uri_finalize (topology->uri, &topology->scanner->error)) {
       topology->valid = false;
    }
+
+   td->max_hosts =
+      mongoc_uri_get_option_as_int32 (uri, MONGOC_URI_SRVMAXHOSTS, 0);
 
    /*
     * Set topology type from URI:
@@ -481,7 +539,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       mongoc_uri_get_option_as_bool (uri, MONGOC_URI_DIRECTCONNECTION, false);
    hl = mongoc_uri_get_hosts (topology->uri);
    /* If loadBalanced is enabled, directConnection is disabled. This was
-    * validated in mongoc_uri_finalize_loadbalanced. */
+    * validated in mongoc_uri_finalize_loadbalanced, which is called by
+    * mongoc_uri_finalize. */
    if (mongoc_uri_get_option_as_bool (
           topology->uri, MONGOC_URI_LOADBALANCED, false)) {
       init_type = MONGOC_TOPOLOGY_LOAD_BALANCED;
@@ -495,7 +554,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
          _mongoc_topology_bypass_cooldown (topology);
       }
       _mongoc_topology_scanner_set_loadbalanced (topology->scanner, true);
-   } else if (service && !has_directconnection) {
+   } else if (srv_hostname && !has_directconnection) {
       init_type = MONGOC_TOPOLOGY_UNKNOWN;
    } else if (has_directconnection) {
       if (directconnection) {
@@ -517,7 +576,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       }
    }
 
-   mc_tpld_unsafe_get_mutable (topology)->type = init_type;
+   td->type = init_type;
 
    if (!topology->single_threaded) {
       topology->server_monitors = mongoc_set_new (1, NULL, NULL);
@@ -533,16 +592,27 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       return topology;
    }
 
-   while (hl) {
-      mongoc_topology_description_add_server (
-         mc_tpld_unsafe_get_mutable (topology), hl->host_and_port, &id);
-      mongoc_topology_scanner_add (topology->scanner, hl, id, false);
+   {
+      size_t idx = 0u;
+      size_t hl_array_size = 0u;
+      uint32_t id = 0u;
 
-      hl = hl->next;
+      const mongoc_host_list_t *const *hl_array =
+         _mongoc_apply_srv_max_hosts (hl, td->max_hosts, &hl_array_size);
+
+      for (idx = 0u; idx < hl_array_size; ++idx) {
+         const mongoc_host_list_t *const elem = hl_array[idx];
+
+         mongoc_topology_description_add_server (td, elem->host_and_port, &id);
+         mongoc_topology_scanner_add (topology->scanner, elem, id, false);
+      }
+
+      bson_free ((void *) hl_array);
    }
 
    return topology;
 }
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -691,10 +761,10 @@ mongoc_topology_apply_scanned_srv_hosts (mongoc_uri_t *uri,
 bool
 mongoc_topology_should_rescan_srv (mongoc_topology_t *topology)
 {
-   const char *service = mongoc_uri_get_service (topology->uri);
+   const char *srv_hostname = mongoc_uri_get_srv_hostname (topology->uri);
    mongoc_topology_description_type_t type;
 
-   if (!service) {
+   if (!srv_hostname) {
       /* Only rescan if we have a mongodb+srv:// URI. */
       return false;
    }
@@ -722,8 +792,8 @@ void
 mongoc_topology_rescan_srv (mongoc_topology_t *topology)
 {
    mongoc_rr_data_t rr_data = {0};
-   const char *service;
-   char *prefixed_service = NULL;
+   const char *srv_hostname;
+   char *prefixed_hostname = NULL;
    int64_t scan_time_ms;
    bool ret;
    mc_shared_tpld td;
@@ -731,7 +801,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
 
    BSON_ASSERT (mongoc_topology_should_rescan_srv (topology));
 
-   service = mongoc_uri_get_service (topology->uri);
+   srv_hostname = mongoc_uri_get_srv_hostname (topology->uri);
    scan_time_ms = topology->srv_polling_last_scan_ms +
                   topology->srv_polling_rescan_interval_ms;
    if (bson_get_monotonic_time () / 1000 < scan_time_ms) {
@@ -742,9 +812,12 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    TRACE ("%s", "Polling for SRV records");
 
    /* Go forth and query... */
-   prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
+   prefixed_hostname =
+      bson_strdup_printf ("_%s._tcp.%s",
+                          mongoc_uri_get_srv_service_name (topology->uri),
+                          srv_hostname);
 
-   ret = topology->rr_resolver (prefixed_service,
+   ret = topology->rr_resolver (prefixed_hostname,
                                 MONGOC_RR_SRV,
                                 &rr_data,
                                 MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -784,7 +857,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
 
 done:
    mc_tpld_drop_ref (&td);
-   bson_free (prefixed_service);
+   bson_free (prefixed_hostname);
    _mongoc_host_list_destroy_all (rr_data.hosts);
 }
 

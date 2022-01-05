@@ -1728,7 +1728,7 @@ cluster_time_fmt (int t)
 }
 
 static void
-test_cluster_time_updated_during_handshake ()
+test_cluster_time_updated_during_handshake (void)
 {
    mock_server_t *server;
    mongoc_uri_t *uri;
@@ -2023,7 +2023,7 @@ test_last_server_removed_warning (void)
 }
 
 static void
-test_request_scan_on_error ()
+test_request_scan_on_error (void)
 {
 #define TEST_POOLED(msg, should_scan, should_mark_unknown, server_err) \
    _test_request_scan_on_error (                                       \
@@ -2290,13 +2290,13 @@ _test_hello_versioned_api (bool pooled)
 }
 
 static void
-test_hello_versioned_api_single ()
+test_hello_versioned_api_single (void)
 {
    _test_hello_versioned_api (false);
 }
 
 static void
-test_hello_versioned_api_pooled ()
+test_hello_versioned_api_pooled (void)
 {
    _test_hello_versioned_api (true);
 }
@@ -2304,14 +2304,14 @@ test_hello_versioned_api_pooled ()
 static void
 _test_hello_ok (bool pooled)
 {
-   mock_server_t *server;
-   mongoc_uri_t *uri;
-   mongoc_client_pool_t *pool;
-   mongoc_client_t *client;
-   char *hello;
-   char *hello_not_ok;
-   future_t *future;
-   request_t *request;
+   mock_server_t *server = NULL;
+   mongoc_uri_t *uri = NULL;
+   mongoc_client_pool_t *pool = NULL;
+   mongoc_client_t *client = NULL;
+   char *hello = NULL;
+   char *hello_not_ok = NULL;
+   future_t *future = NULL;
+   request_t *request = NULL;
    bson_error_t error;
 
    server = mock_server_new ();
@@ -2430,13 +2430,13 @@ _test_hello_ok (bool pooled)
 }
 
 static void
-test_hello_ok_single ()
+test_hello_ok_single (void)
 {
    _test_hello_ok (false);
 }
 
 static void
-test_hello_ok_pooled ()
+test_hello_ok_pooled (void)
 {
    _test_hello_ok (true);
 }

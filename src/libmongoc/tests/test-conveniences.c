@@ -60,7 +60,7 @@ test_conveniences_init ()
 
 
 void
-test_conveniences_cleanup ()
+test_conveniences_cleanup (void)
 {
    int i;
    bson_t *doc;
@@ -121,7 +121,8 @@ tmp_bson (const char *json, ...)
       doc = bson_new_from_json ((const uint8_t *) double_quoted, -1, &error);
 
       if (!doc) {
-         fprintf (stderr, "%s\n", error.message);
+         fprintf (
+            stderr, "tmp_bson error %s: parsing: %s\n", error.message, json);
          abort ();
       }
 

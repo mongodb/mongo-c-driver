@@ -905,11 +905,12 @@ test_mongoc_host_list_from_string (void)
                         "Could not parse address");
 
    capture_logs (true);
-   ASSERT (!_mongoc_host_list_from_string (&host_list, "[::1]extra_chars:27017"));
+   ASSERT (
+      !_mongoc_host_list_from_string (&host_list, "[::1]extra_chars:27017"));
    ASSERT_CAPTURED_LOG ("_mongoc_host_list_from_string",
                         MONGOC_LOG_LEVEL_ERROR,
                         "If present, port should immediately follow the \"]\""
-                           "in an IPv6 address");
+                        "in an IPv6 address");
 
    /* normal parsing, host and port are split, host is downcased */
    ASSERT (_mongoc_host_list_from_string (&host_list, "localHOST:27019"));
@@ -1930,7 +1931,7 @@ test_mongoc_uri_tls_ssl (const char *tls,
 }
 
 static void
-test_mongoc_uri_tls ()
+test_mongoc_uri_tls (void)
 {
    bson_error_t err = {0};
    mongoc_uri_t *uri;
@@ -1990,7 +1991,7 @@ test_mongoc_uri_tls ()
 }
 
 static void
-test_mongoc_uri_ssl ()
+test_mongoc_uri_ssl (void)
 {
    mongoc_uri_t *uri;
 
@@ -2096,7 +2097,7 @@ test_mongoc_uri_srv (void)
 
    uri = mongoc_uri_new ("mongodb+srv://c.d.com");
    BSON_ASSERT (uri);
-   ASSERT_CMPSTR (mongoc_uri_get_service (uri), "c.d.com");
+   ASSERT_CMPSTR (mongoc_uri_get_srv_hostname (uri), "c.d.com");
    BSON_ASSERT (mongoc_uri_get_hosts (uri) == NULL);
 
    /* tls is set to true when we use SRV */
@@ -2136,7 +2137,7 @@ test_mongoc_uri_srv (void)
    /* trailing dot is OK */
    uri = mongoc_uri_new ("mongodb+srv://service.consul.");
    BSON_ASSERT (uri);
-   ASSERT_CMPSTR (mongoc_uri_get_service (uri), "service.consul.");
+   ASSERT_CMPSTR (mongoc_uri_get_srv_hostname (uri), "service.consul.");
    BSON_ASSERT (mongoc_uri_get_hosts (uri) == NULL);
 
    INVALID (uri, ".consul.");
@@ -2644,7 +2645,7 @@ test_mongoc_uri_int_options (void)
 }
 
 static void
-test_one_tls_option_enables_tls ()
+test_one_tls_option_enables_tls (void)
 {
    const char *opts[] = {MONGOC_URI_TLS "=true",
                          MONGOC_URI_TLSCERTIFICATEKEYFILE "=file.pem",
@@ -2684,18 +2685,20 @@ test_one_tls_option_enables_tls ()
 }
 
 static void
-test_casing_options ()
+test_casing_options (void)
 {
-   mongoc_uri_t* uri;
+   mongoc_uri_t *uri;
    bson_error_t error;
 
-   uri = mongoc_uri_new("mongodb://localhost:27017/");
+   uri = mongoc_uri_new ("mongodb://localhost:27017/");
    mongoc_uri_set_option_as_bool (uri, "TLS", true);
-   mongoc_uri_parse_options(uri, "ssl=false", false, &error);
-   ASSERT_ERROR_CONTAINS(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG,
+   mongoc_uri_parse_options (uri, "ssl=false", false, &error);
+   ASSERT_ERROR_CONTAINS (error,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "conflicts");
 
-   mongoc_uri_destroy(uri);
+   mongoc_uri_destroy (uri);
 }
 
 void
@@ -2731,5 +2734,5 @@ test_uri_install (TestSuite *suite)
    TestSuite_Add (suite,
                   "/Uri/one_tls_option_enables_tls",
                   test_one_tls_option_enables_tls);
-   TestSuite_Add(suite, "/Uri/options_casing", test_casing_options);
+   TestSuite_Add (suite, "/Uri/options_casing", test_casing_options);
 }

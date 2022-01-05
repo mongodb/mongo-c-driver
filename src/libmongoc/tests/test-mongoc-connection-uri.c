@@ -101,7 +101,11 @@ run_uri_test (const char *uri_string,
           strstr (uri_string, "heartbeatFrequencyMS=-2") ||
           strstr (uri_string, "w=-2") || strstr (uri_string, "wTimeoutMS=-2") ||
           strstr (uri_string, "zlibCompressionLevel=-2") ||
-          strstr (uri_string, "zlibCompressionLevel=10")) {
+          strstr (uri_string, "zlibCompressionLevel=10") ||
+          (!strstr (uri_string, "mongodb+srv") &&
+           strstr (uri_string, "srvServiceName=customname")) ||
+          strstr (uri_string, "srvMaxHosts=-1") ||
+          strstr (uri_string, "srvMaxHosts=foo")) {
          MONGOC_WARNING ("Error parsing URI: '%s'", error.message);
          return;
       }
@@ -355,16 +359,11 @@ test_connection_uri_cb (bson_t *scenario)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   test_framework_resolve_path (JSON_DIR "/uri-options", resolved);
-   install_json_test_suite (suite, resolved, &test_connection_uri_cb);
-
-   test_framework_resolve_path (JSON_DIR "/connection_uri", resolved);
-   install_json_test_suite (suite, resolved, &test_connection_uri_cb);
-
-   test_framework_resolve_path (JSON_DIR "/auth", resolved);
-   install_json_test_suite (suite, resolved, &test_connection_uri_cb);
+   install_json_test_suite (
+      suite, JSON_DIR, "uri-options", &test_connection_uri_cb);
+   install_json_test_suite (
+      suite, JSON_DIR, "connection_uri", &test_connection_uri_cb);
+   install_json_test_suite (suite, JSON_DIR, "auth", &test_connection_uri_cb);
 }
 
 

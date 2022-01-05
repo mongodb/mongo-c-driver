@@ -21,5 +21,9 @@ Parameters
 Returns
 -------
 
-A newly allocated :symbol:`mongoc_client_pool_t` that should be freed with :symbol:`mongoc_client_pool_destroy()` when no longer in use.
+A newly allocated :symbol:`mongoc_client_pool_t` that should be freed with :symbol:`mongoc_client_pool_destroy()` when no longer in use. On error, ``NULL`` is returned and an error may be logged.
+
+.. seealso::
+
+  | :symbol:`mongoc_client_pool_new_with_error()`
 

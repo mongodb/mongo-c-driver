@@ -10,7 +10,7 @@
    * - MONGOC_URI_TLSCERTIFICATEKEYFILE
      - tlscertificatekeyfile
      - Path to PEM formatted Private Key, with its Public Certificate concatenated at the end.
-   * - MONGOC_URI_TLSCERTIFICATEKEYPASSWORD
+   * - MONGOC_URI_TLSCERTIFICATEKEYFILEPASSWORD
      - tlscertificatekeypassword
      - The password, if any, to use to unlock encrypted Private Key.
    * - MONGOC_URI_TLSCAFILE

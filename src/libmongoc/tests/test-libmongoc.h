@@ -41,6 +41,8 @@ int64_t
 get_future_timeout_ms (void);
 char *
 test_framework_getenv (const char *name);
+char *
+test_framework_getenv_required (const char *name);
 bool
 test_framework_getenv_bool (const char *name);
 int64_t
@@ -236,9 +238,6 @@ test_framework_skip_if_no_client_side_encryption (void);
 
 int
 test_framework_skip_if_time_sensitive (void);
-
-void
-test_framework_resolve_path (const char *path, char *resolved);
 
 int
 test_framework_skip_if_no_aws (void);

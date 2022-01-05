@@ -282,7 +282,7 @@ _batch_size_test (bson_t *pipeline,
 }
 
 static void
-test_aggregate_with_batch_size ()
+test_aggregate_with_batch_size (void)
 {
    bson_t *pipeline_dollar_out;
    bson_t *pipeline_dollar_merge;
@@ -1687,7 +1687,7 @@ test_index (void)
 }
 
 static void
-test_index_w_write_concern ()
+test_index_w_write_concern (void)
 {
    mongoc_collection_t *collection;
    mongoc_database_t *database;

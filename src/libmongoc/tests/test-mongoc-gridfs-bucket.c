@@ -877,10 +877,7 @@ test_gridfs_cb (bson_t *scenario)
 static void
 test_all_spec_tests (TestSuite *suite)
 {
-   char resolved[PATH_MAX];
-
-   test_framework_resolve_path (JSON_DIR "/gridfs", resolved);
-   install_json_test_suite (suite, resolved, &test_gridfs_cb);
+   install_json_test_suite (suite, JSON_DIR, "gridfs", &test_gridfs_cb);
 }
 
 static void

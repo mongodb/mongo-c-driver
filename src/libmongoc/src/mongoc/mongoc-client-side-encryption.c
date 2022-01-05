@@ -40,6 +40,7 @@ struct _mongoc_auto_encryption_opts_t {
    char *keyvault_db;
    char *keyvault_coll;
    bson_t *kms_providers;
+   bson_t *tls_opts;
    bson_t *schema_map;
    bool bypass_auto_encryption;
    bson_t *extra;
@@ -62,6 +63,7 @@ mongoc_auto_encryption_opts_destroy (mongoc_auto_encryption_opts_t *opts)
    bson_destroy (opts->schema_map);
    bson_free (opts->keyvault_db);
    bson_free (opts->keyvault_coll);
+   bson_destroy (opts->tls_opts);
    bson_free (opts);
 }
 
@@ -117,6 +119,27 @@ mongoc_auto_encryption_opts_set_kms_providers (
    }
 }
 
+/* _bson_copy_or_null returns a copy of @bson or NULL if @bson is NULL */
+static bson_t *
+_bson_copy_or_null (const bson_t *bson)
+{
+   if (bson) {
+      return bson_copy (bson);
+   }
+   return NULL;
+}
+
+void
+mongoc_auto_encryption_opts_set_tls_opts (mongoc_auto_encryption_opts_t *opts,
+                                          const bson_t *tls_opts)
+{
+   if (!opts) {
+      return;
+   }
+   bson_destroy (opts->tls_opts);
+   opts->tls_opts = _bson_copy_or_null (tls_opts);
+}
+
 void
 mongoc_auto_encryption_opts_set_schema_map (mongoc_auto_encryption_opts_t *opts,
                                             const bson_t *schema_map)
@@ -165,6 +188,7 @@ struct _mongoc_client_encryption_opts_t {
    char *keyvault_db;
    char *keyvault_coll;
    bson_t *kms_providers;
+   bson_t *tls_opts;
 };
 
 mongoc_client_encryption_opts_t *
@@ -182,6 +206,7 @@ mongoc_client_encryption_opts_destroy (mongoc_client_encryption_opts_t *opts)
    bson_free (opts->keyvault_db);
    bson_free (opts->keyvault_coll);
    bson_destroy (opts->kms_providers);
+   bson_destroy (opts->tls_opts);
    bson_free (opts);
 }
 
@@ -222,6 +247,17 @@ mongoc_client_encryption_opts_set_kms_providers (
    if (kms_providers) {
       opts->kms_providers = bson_copy (kms_providers);
    }
+}
+
+void
+mongoc_client_encryption_opts_set_tls_opts (
+   mongoc_client_encryption_opts_t *opts, const bson_t *tls_opts)
+{
+   if (!opts) {
+      return;
+   }
+   bson_destroy (opts->tls_opts);
+   opts->tls_opts = _bson_copy_or_null (tls_opts);
 }
 
 /*--------------------------------------------------------------------------
@@ -1245,8 +1281,8 @@ _mongoc_cse_client_enable_auto_encryption (mongoc_client_t *client,
       GOTO (fail);
    }
 
-   client->topology->crypt =
-      _mongoc_crypt_new (opts->kms_providers, opts->schema_map, error);
+   client->topology->crypt = _mongoc_crypt_new (
+      opts->kms_providers, opts->schema_map, opts->tls_opts, error);
    if (!client->topology->crypt) {
       GOTO (fail);
    }
@@ -1389,8 +1425,8 @@ _mongoc_cse_client_pool_enable_auto_encryption (
       GOTO (fail);
    }
 
-   topology->crypt =
-      _mongoc_crypt_new (opts->kms_providers, opts->schema_map, error);
+   topology->crypt = _mongoc_crypt_new (
+      opts->kms_providers, opts->schema_map, opts->tls_opts, error);
    if (!topology->crypt) {
       GOTO (fail);
    }
@@ -1478,8 +1514,8 @@ mongoc_client_encryption_new (mongoc_client_encryption_opts_t *opts,
    mongoc_collection_set_write_concern (client_encryption->keyvault_coll, wc);
 
    client_encryption->kms_providers = bson_copy (opts->kms_providers);
-   client_encryption->crypt =
-      _mongoc_crypt_new (opts->kms_providers, NULL /* schema_map */, error);
+   client_encryption->crypt = _mongoc_crypt_new (
+      opts->kms_providers, NULL /* schema_map */, opts->tls_opts, error);
    if (!client_encryption->crypt) {
       goto fail;
    }

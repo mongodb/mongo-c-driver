@@ -3476,7 +3476,8 @@ _test_numerous (bool ordered)
    TEST_NUMEROUS (remove_one (bulk, doc), "{'q': {'_id': 1}, 'limit': 1}");
    TEST_NUMEROUS (replace_one (bulk, doc, tmp_bson ("{}"), false),
                   "{'q': {'_id': 1}, 'u': {}}");
-   TEST_NUMEROUS (update_one (bulk, doc, tmp_bson ("{'$set': {'x': 1}}"), NULL),
+   TEST_NUMEROUS (
+      update_one (bulk, doc, tmp_bson ("{'$set': {'x': 1}}"), false),
                   "{'q': {'_id': 1}, 'u': {'$set': {'x': 1}}}");
    TEST_NUMEROUS (update_many_with_opts (
                      bulk, doc, tmp_bson ("{'$set': {'x': 1}}"), NULL, NULL),

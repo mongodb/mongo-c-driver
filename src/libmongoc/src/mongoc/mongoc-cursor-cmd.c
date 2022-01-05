@@ -37,7 +37,7 @@ static getmore_type_t
 _getmore_type (mongoc_cursor_t *cursor)
 {
    mongoc_server_stream_t *server_stream;
-   bool use_cmd;
+   int32_t wire_version;
    data_cmd_t *data = (data_cmd_t *) cursor->impl.data;
    if (data->getmore_type != UNKNOWN) {
       return data->getmore_type;
@@ -46,10 +46,21 @@ _getmore_type (mongoc_cursor_t *cursor)
    if (!server_stream) {
       return UNKNOWN;
    }
-   use_cmd = server_stream->sd->max_wire_version >= WIRE_VERSION_FIND_CMD &&
-             !_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST);
-   data->getmore_type = use_cmd ? GETMORE_CMD : OP_GETMORE;
+   wire_version = server_stream->sd->max_wire_version;
    mongoc_server_stream_cleanup (server_stream);
+
+   if (
+      /* Server version 5.1 and newer do not support OP_GETMORE. */
+      wire_version > WIRE_VERSION_5_0 ||
+      /* Fallback to legacy OP_GETMORE wire protocol messages if exhaust cursor
+         requested with server version 3.6 or newer . */
+      (wire_version >= WIRE_VERSION_FIND_CMD &&
+       !_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST))) {
+      data->getmore_type = GETMORE_CMD;
+   } else {
+      data->getmore_type = OP_GETMORE;
+   }
+
    return data->getmore_type;
 }
 

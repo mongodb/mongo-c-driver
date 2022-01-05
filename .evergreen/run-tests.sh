@@ -31,41 +31,9 @@ fi
 if [ "$SSL" != "nossl" ]; then
    export MONGOC_TEST_SSL_WEAK_CERT_VALIDATION="off"
    export MONGOC_TEST_SSL_PEM_FILE="src/libmongoc/tests/x509gen/client.pem"
-
-   case "$OS" in
-      cygwin*)
-         certutil.exe -addstore "Root" "src\libmongoc\tests\x509gen\ca.pem"
-         ;;
-      darwin*)
-         sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain src/libmongoc/tests/x509gen/ca.pem
-         ;;
-      *)
-         if [ -f /etc/redhat-release ]; then
-            echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors..."
-            sudo cp -v src/libmongoc/tests/x509gen/ca.pem /usr/share/pki/ca-trust-source/anchors/cdriver.crt || true
-            if [ -f /usr/share/pki/ca-trust-source/anchors/cdriver.crt ]; then
-               echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors... done."
-               sudo update-ca-trust enable --verbose
-               sudo update-ca-trust extract --verbose
-            else
-               echo "Copying CA certificate to /usr/share/pki/ca-trust-source/anchors... failed."
-               export MONGOC_TEST_SKIP_KMS_TLS_TESTS=on
-               export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
-            fi
-         else
-            echo "Copying CA certificate to /usr/local/share/ca-certificates..."
-            sudo cp -v src/libmongoc/tests/x509gen/ca.pem /usr/local/share/ca-certificates/cdriver.crt || true
-            if [ -f /usr/local/share/ca-certificates/cdriver.crt ]; then
-               echo "Copying CA certificate to /usr/local/share/ca-certificates... done."
-               sudo update-ca-certificates --verbose
-            else
-               echo "Copying CA certificate to /usr/local/share/ca-certificates... failed."
-               export MONGOC_TEST_SKIP_KMS_TLS_TESTS=on
-               export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
-            fi
-         fi
-         ;;
-   esac
+   export MONGOC_TEST_SSL_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
+   export MONGOC_TEST_CSFLE_TLS_CERTIFICATE_KEY_FILE="src/libmongoc/tests/x509gen/client.pem"
+   export MONGOC_TEST_CSFLE_TLS_CA_FILE="src/libmongoc/tests/x509gen/ca.pem"
 fi
 
 export MONGOC_ENABLE_MAJORITY_READ_CONCERN=on
@@ -139,6 +107,8 @@ if [ "$CLIENT_SIDE_ENCRYPTION" = "on" ]; then
    wait_for_kms_server 7999
    wait_for_kms_server 8000
    wait_for_kms_server 8001
+   wait_for_kms_server 8002
+   wait_for_kms_server 5698
    echo "Waiting for mock KMS servers to start... done."
 fi
 
