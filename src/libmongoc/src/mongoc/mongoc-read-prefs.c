@@ -164,6 +164,11 @@ mongoc_read_prefs_is_valid (const mongoc_read_prefs_t *read_prefs)
       return false;
    }
 
+   if (read_prefs->mode == MONGOC_READ_UNSET) {
+      /* A mode is required */
+      return false;
+   }
+
    return true;
 }
 

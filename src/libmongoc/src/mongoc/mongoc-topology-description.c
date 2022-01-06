@@ -681,23 +681,33 @@ _calc_effective_read_mode (const mongoc_topology_description_t *td,
                            mongoc_ss_optype_t optype,
                            mongoc_read_mode_t requested_read_mode)
 {
-   if (requested_read_mode == MONGOC_READ_PRIMARY ||
-       requested_read_mode == MONGOC_READ_PRIMARY_PREFERRED) {
+   if (requested_read_mode == MONGOC_READ_PRIMARY) {
+      /* We never alter from a primary read mode. This early-return is just an
+       * optimization to skip scanning for old servers, as we would end up
+       * returning MONGOC_READ_PRIMARY regardless. */
       return requested_read_mode;
    }
    switch (optype) {
    case MONGOC_SS_WRITE:
+      /* We don't deal with write operations */
       return MONGOC_READ_UNSET;
    case MONGOC_SS_READ:
+      /* Maintain the requested read mode if it is a regular read operation */
       return requested_read_mode;
    case MONGOC_SS_AGGREGATE_WITH_WRITE: {
+      /* Check if any of the servers are too old to support the
+       * aggregate-with-write on a secondary server */
       bool any_too_old = false;
       mongoc_set_for_each_const (mc_tpld_servers_const (td),
                                  _check_any_server_less_than_wire_version_v5_0,
                                  &any_too_old);
       if (any_too_old) {
+         /* Force the read preference back to reading from a primary server, as
+          * one or more servers in the system may not support the operation */
          return MONGOC_READ_PRIMARY;
       }
+      /* We're okay to send an aggr-with-write to a secondary server, so permit
+       * the caller's read mode preference */
       return requested_read_mode;
    }
    default:
@@ -740,13 +750,27 @@ mongoc_topology_description_suitable_servers (
    data.primary = NULL;
    data.topology_type = topology->type;
    data.has_secondary = false;
-   data.read_mode =
-      _calc_effective_read_mode (topology, optype, given_read_mode);
    data.candidates_len = 0;
    data.candidates = bson_malloc0 (sizeof (mongoc_server_description_t *) *
                                    td_servers->items_len);
 
+   /* The "effective" read mode is the read mode that we should behave for, and
+    * depends on the user's provided read mode, the type of operation that the
+    * user wishes to perform, and the server versions that we are talking to.
+    *
+    * If the operation is a write operation, the "effective" read mode is UNSET
+    * and irrelevant.
+    *
+    * If the operation is a regular read, we just use the caller's read mode.
+    *
+    * If the operation is an aggregate that contains writing stages, we need to
+    * be more careful about selecting an appropriate server.
+    */
+   data.read_mode =
+      _calc_effective_read_mode (topology, optype, given_read_mode);
+
    if (chosen_read_mode) {
+      /* The caller wants to know what effective read mode we are using */
       *chosen_read_mode = data.read_mode;
    }
 
