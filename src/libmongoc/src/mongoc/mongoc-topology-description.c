@@ -730,28 +730,25 @@ mongoc_topology_description_suitable_servers (
    size_t local_threshold_ms)
 {
    mongoc_suitable_data_t data;
-   const mongoc_server_description_t **candidates;
 
    const mongoc_set_t *td_servers = mc_tpld_servers_const (topology);
    int64_t nearest = -1;
    int i;
    const mongoc_read_mode_t given_read_mode =
       mongoc_read_prefs_get_mode (read_pref);
-   const mongoc_read_mode_t effective_read_mode =
+
+   data.primary = NULL;
+   data.topology_type = topology->type;
+   data.has_secondary = false;
+   data.read_mode =
       _calc_effective_read_mode (topology, optype, given_read_mode);
+   data.candidates_len = 0;
+   data.candidates = bson_malloc0 (sizeof (mongoc_server_description_t *) *
+                                   td_servers->items_len);
 
    if (chosen_read_mode) {
-      *chosen_read_mode = effective_read_mode;
+      *chosen_read_mode = data.read_mode;
    }
-
-   candidates = bson_malloc0 (sizeof (*candidates) * td_servers->items_len);
-
-   data.read_mode = effective_read_mode;
-   data.topology_type = topology->type;
-   data.primary = NULL;
-   data.candidates = candidates;
-   data.candidates_len = 0;
-   data.has_secondary = false;
 
    /* Single server --
     * Either it is suitable or it isn't */
@@ -766,7 +763,7 @@ mongoc_topology_description_suitable_servers (
             "Rejected [%s] [%s] for read mode [%s] with topology type Single",
             mongoc_server_description_type (server),
             server->host.host_and_port,
-            _mongoc_read_mode_as_str (effective_read_mode));
+            _mongoc_read_mode_as_str (data.read_mode));
       }
       goto DONE;
    }
@@ -809,13 +806,13 @@ mongoc_topology_description_suitable_servers (
 
          if (data.read_mode == MONGOC_READ_SECONDARY) {
             for (i = 0; i < data.candidates_len; i++) {
-               if (candidates[i] &&
-                   candidates[i]->type != MONGOC_SERVER_RS_SECONDARY) {
+               if (data.candidates[i] &&
+                   data.candidates[i]->type != MONGOC_SERVER_RS_SECONDARY) {
                   TRACE ("Rejected [%s] [%s] for mode [%s] with RS topology",
-                         mongoc_server_description_type (candidates[i]),
-                         candidates[i]->host.host_and_port,
-                         _mongoc_read_mode_as_str (effective_read_mode));
-                  candidates[i] = NULL;
+                         mongoc_server_description_type (data.candidates[i]),
+                         data.candidates[i]->host.host_and_port,
+                         _mongoc_read_mode_as_str (data.read_mode));
+                  data.candidates[i] = NULL;
                }
             }
          }
@@ -872,22 +869,23 @@ mongoc_topology_description_suitable_servers (
     * Find the nearest, then select within the window */
 
    for (i = 0; i < data.candidates_len; i++) {
-      if (candidates[i] &&
-          (nearest == -1 || nearest > candidates[i]->round_trip_time_msec)) {
-         nearest = candidates[i]->round_trip_time_msec;
+      if (data.candidates[i] &&
+          (nearest == -1 ||
+           nearest > data.candidates[i]->round_trip_time_msec)) {
+         nearest = data.candidates[i]->round_trip_time_msec;
       }
    }
 
    for (i = 0; i < data.candidates_len; i++) {
-      if (candidates[i] && (candidates[i]->round_trip_time_msec <=
-                            nearest + local_threshold_ms)) {
-         _mongoc_array_append_val (set, candidates[i]);
+      if (data.candidates[i] && (data.candidates[i]->round_trip_time_msec <=
+                                 nearest + local_threshold_ms)) {
+         _mongoc_array_append_val (set, data.candidates[i]);
       }
    }
 
 DONE:
 
-   bson_free ((mongoc_server_description_t *) candidates);
+   bson_free ((mongoc_server_description_t *) data.candidates);
 
    return;
 }
