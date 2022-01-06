@@ -341,8 +341,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
    mongoc_topology_t *topology;
    mongoc_topology_description_type_t init_type;
    mongoc_topology_description_t *td;
-   const char *service;
-   char *prefixed_service;
+   const char *srv_hostname;
    const mongoc_host_list_t *hl;
    mongoc_rr_data_t rr_data;
    bool has_directconnection;
@@ -448,8 +447,10 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       }
    }
 
-   service = mongoc_uri_get_service (uri);
-   if (service) {
+   srv_hostname = mongoc_uri_get_srv_hostname (uri);
+   if (srv_hostname) {
+      char *prefixed_hostname;
+
       memset (&rr_data, 0, sizeof (mongoc_rr_data_t));
       /* Set the default resource record resolver */
       topology->rr_resolver = _mongoc_client_get_rr;
@@ -462,8 +463,9 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
          MONGOC_TOPOLOGY_MIN_RESCAN_SRV_INTERVAL_MS;
 
       /* a mongodb+srv URI. try SRV lookup, if no error then also try TXT */
-      prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
-      if (!topology->rr_resolver (prefixed_service,
+      prefixed_hostname = bson_strdup_printf (
+         "_%s._tcp.%s", mongoc_uri_get_srv_service_name (uri), srv_hostname);
+      if (!topology->rr_resolver (prefixed_hostname,
                                   MONGOC_RR_SRV,
                                   &rr_data,
                                   MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -474,7 +476,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       /* Failure to find TXT records will not return an error (since it is only
        * for options). But _mongoc_client_get_rr may return an error if
        * there is more than one TXT record returned. */
-      if (!topology->rr_resolver (service,
+      if (!topology->rr_resolver (srv_hostname,
                                   MONGOC_RR_TXT,
                                   &rr_data,
                                   MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -504,18 +506,13 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       topology->valid = true;
    srv_fail:
       bson_free (rr_data.txt_record_opts);
-      bson_free (prefixed_service);
+      bson_free (prefixed_hostname);
       _mongoc_host_list_destroy_all (rr_data.hosts);
    } else {
       topology->valid = true;
    }
 
-   if (!mongoc_uri_finalize_loadbalanced (topology->uri,
-                                          &topology->scanner->error)) {
-      topology->valid = false;
-   }
-
-   if (!mongoc_uri_finalize_srv (topology->uri, &topology->scanner->error)) {
+   if (!mongoc_uri_finalize (topology->uri, &topology->scanner->error)) {
       topology->valid = false;
    }
 
@@ -542,7 +539,8 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
       mongoc_uri_get_option_as_bool (uri, MONGOC_URI_DIRECTCONNECTION, false);
    hl = mongoc_uri_get_hosts (topology->uri);
    /* If loadBalanced is enabled, directConnection is disabled. This was
-    * validated in mongoc_uri_finalize_loadbalanced. */
+    * validated in mongoc_uri_finalize_loadbalanced, which is called by
+    * mongoc_uri_finalize. */
    if (mongoc_uri_get_option_as_bool (
           topology->uri, MONGOC_URI_LOADBALANCED, false)) {
       init_type = MONGOC_TOPOLOGY_LOAD_BALANCED;
@@ -556,7 +554,7 @@ mongoc_topology_new (const mongoc_uri_t *uri, bool single_threaded)
          _mongoc_topology_bypass_cooldown (topology);
       }
       _mongoc_topology_scanner_set_loadbalanced (topology->scanner, true);
-   } else if (service && !has_directconnection) {
+   } else if (srv_hostname && !has_directconnection) {
       init_type = MONGOC_TOPOLOGY_UNKNOWN;
    } else if (has_directconnection) {
       if (directconnection) {
@@ -763,10 +761,10 @@ mongoc_topology_apply_scanned_srv_hosts (mongoc_uri_t *uri,
 bool
 mongoc_topology_should_rescan_srv (mongoc_topology_t *topology)
 {
-   const char *service = mongoc_uri_get_service (topology->uri);
+   const char *srv_hostname = mongoc_uri_get_srv_hostname (topology->uri);
    mongoc_topology_description_type_t type;
 
-   if (!service) {
+   if (!srv_hostname) {
       /* Only rescan if we have a mongodb+srv:// URI. */
       return false;
    }
@@ -794,8 +792,8 @@ void
 mongoc_topology_rescan_srv (mongoc_topology_t *topology)
 {
    mongoc_rr_data_t rr_data = {0};
-   const char *service;
-   char *prefixed_service = NULL;
+   const char *srv_hostname;
+   char *prefixed_hostname = NULL;
    int64_t scan_time_ms;
    bool ret;
    mc_shared_tpld td;
@@ -803,7 +801,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
 
    BSON_ASSERT (mongoc_topology_should_rescan_srv (topology));
 
-   service = mongoc_uri_get_service (topology->uri);
+   srv_hostname = mongoc_uri_get_srv_hostname (topology->uri);
    scan_time_ms = topology->srv_polling_last_scan_ms +
                   topology->srv_polling_rescan_interval_ms;
    if (bson_get_monotonic_time () / 1000 < scan_time_ms) {
@@ -814,9 +812,12 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
    TRACE ("%s", "Polling for SRV records");
 
    /* Go forth and query... */
-   prefixed_service = bson_strdup_printf ("_mongodb._tcp.%s", service);
+   prefixed_hostname =
+      bson_strdup_printf ("_%s._tcp.%s",
+                          mongoc_uri_get_srv_service_name (topology->uri),
+                          srv_hostname);
 
-   ret = topology->rr_resolver (prefixed_service,
+   ret = topology->rr_resolver (prefixed_hostname,
                                 MONGOC_RR_SRV,
                                 &rr_data,
                                 MONGOC_RR_DEFAULT_BUFFER_SIZE,
@@ -856,7 +857,7 @@ mongoc_topology_rescan_srv (mongoc_topology_t *topology)
 
 done:
    mc_tpld_drop_ref (&td);
-   bson_free (prefixed_service);
+   bson_free (prefixed_hostname);
    _mongoc_host_list_destroy_all (rr_data.hosts);
 }
 
@@ -999,40 +1000,16 @@ _mongoc_server_selection_error (const char *msg,
    }
 }
 
-/*
- *-------------------------------------------------------------------------
- *
- * mongoc_topology_select --
- *
- *       Selects a server description for an operation based on @optype
- *       and @read_prefs.
- *
- *       NOTE: this method returns a copy of the original server
- *       description. Callers must own and clean up this copy.
- *
- * Parameters:
- *       @topology: The topology.
- *       @optype: Whether we are selecting for a read or write operation.
- *       @read_prefs: Required, the read preferences for the command.
- *       @error: Required, out pointer for error info.
- *
- * Returns:
- *       A mongoc_server_description_t, or NULL on failure, in which case
- *       @error will be set.
- *
- * Side effects:
- *       @error may be set. This function may update the topology description.
- *
- *-------------------------------------------------------------------------
- */
+
 mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t *topology,
                         mongoc_ss_optype_t optype,
                         const mongoc_read_prefs_t *read_prefs,
+                        mongoc_read_mode_t *chosen_read_mode,
                         bson_error_t *error)
 {
-   uint32_t server_id =
-      mongoc_topology_select_server_id (topology, optype, read_prefs, error);
+   uint32_t server_id = mongoc_topology_select_server_id (
+      topology, optype, read_prefs, chosen_read_mode, error);
 
    if (server_id) {
       /* new copy of the server description */
@@ -1072,8 +1049,12 @@ _mongoc_topology_select_server_id_loadbalanced (mongoc_topology_t *topology,
       mc_tpld_modify_commit (tdmod);
       mc_tpld_renew_ref (&td, topology);
    }
-   selected_server = mongoc_topology_description_select (
-      td.ptr, MONGOC_SS_WRITE, NULL /* read prefs */, 0 /* local threshold */);
+   selected_server =
+      mongoc_topology_description_select (td.ptr,
+                                          MONGOC_SS_WRITE,
+                                          NULL /* read prefs */,
+                                          NULL /* chosen read mode */,
+                                          0 /* local threshold */);
 
    if (!selected_server) {
       _mongoc_server_selection_error (
@@ -1135,22 +1116,12 @@ done:
    return selected_server_id;
 }
 
-/*
- *-------------------------------------------------------------------------
- *
- * mongoc_topology_select_server_id --
- *
- *       Alternative to mongoc_topology_select when you only need the id.
- *
- * Returns:
- *       A server id, or 0 on failure, in which case @error will be set.
- *
- *-------------------------------------------------------------------------
- */
+
 uint32_t
 mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,
                                   const mongoc_read_prefs_t *read_prefs,
+                                  mongoc_read_mode_t *chosen_read_mode,
                                   bson_error_t *error)
 {
    static const char *timeout_msg =
@@ -1266,7 +1237,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
          }
 
          selected_server = mongoc_topology_description_select (
-            td.ptr, optype, read_prefs, local_threshold_ms);
+            td.ptr, optype, read_prefs, chosen_read_mode, local_threshold_ms);
 
          if (selected_server) {
             server_id = selected_server->id;
@@ -1312,7 +1283,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
       }
 
       selected_server = mongoc_topology_description_select (
-         td.ptr, optype, read_prefs, local_threshold_ms);
+         td.ptr, optype, read_prefs, chosen_read_mode, local_threshold_ms);
 
       if (selected_server) {
          server_id = selected_server->id;
@@ -1328,7 +1299,7 @@ mongoc_topology_select_server_id (mongoc_topology_t *topology,
        * occurred while we were waiting on the lock. */
       mc_tpld_renew_ref (&td, topology);
       selected_server = mongoc_topology_description_select (
-         td.ptr, optype, read_prefs, local_threshold_ms);
+         td.ptr, optype, read_prefs, chosen_read_mode, local_threshold_ms);
       if (selected_server) {
          server_id = selected_server->id;
          bson_mutex_unlock (&topology->tpld_modification_mtx);
@@ -1597,8 +1568,11 @@ _mongoc_topology_pop_server_session (mongoc_topology_t *topology,
    if (!loadbalanced && timeout == MONGOC_NO_SESSIONS) {
       /* if needed, connect and check for session timeout again */
       if (!mongoc_topology_description_has_data_node (td.ptr)) {
-         if (!mongoc_topology_select_server_id (
-                topology, MONGOC_SS_READ, NULL, error)) {
+         if (!mongoc_topology_select_server_id (topology,
+                                                MONGOC_SS_READ,
+                                                NULL /* read prefs */,
+                                                NULL /* chosen read mode */,
+                                                error)) {
             ss = NULL;
             goto done;
          }

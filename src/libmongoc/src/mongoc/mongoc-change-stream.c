@@ -279,8 +279,12 @@ _make_cursor (mongoc_change_stream_t *stream)
       goto cleanup;
    }
 
-   server_stream = mongoc_cluster_stream_for_reads (
-      &stream->client->cluster, stream->read_prefs, cs, &reply, &stream->err);
+   server_stream = mongoc_cluster_stream_for_reads (&stream->client->cluster,
+                                                    stream->read_prefs,
+                                                    cs,
+                                                    &reply,
+                                                    NOT_AGGR_WITH_WRITE_STAGE,
+                                                    &stream->err);
    if (!server_stream) {
       bson_destroy (&stream->err_doc);
       bson_copy_to (&reply, &stream->err_doc);

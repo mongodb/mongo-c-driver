@@ -116,12 +116,9 @@ test_mongoc_log_null (void)
 static int
 should_run_trace_tests (void)
 {
-#ifdef MONGOC_TRACE
-   return 1;
-#else
-   return 0;
-#endif
+   return MONGOC_TRACE_ENABLED;
 }
+
 static int
 should_not_run_trace_tests (void)
 {

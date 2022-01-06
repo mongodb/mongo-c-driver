@@ -225,28 +225,20 @@ test_loadbalanced_client_uri_validation (void *unused)
    mongoc_client_t *client;
    mongoc_uri_t *uri;
    bson_error_t error;
-   bool ret;
 
    uri = mongoc_uri_new ("mongodb://localhost:27017");
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_LOADBALANCED, true);
    mongoc_uri_set_option_as_bool (uri, MONGOC_URI_DIRECTCONNECTION, true);
-   client = mongoc_client_new_from_uri (uri);
+   client = mongoc_client_new_from_uri_with_error (uri, &error);
 
-   ret = mongoc_client_command_simple (client,
-                                       "admin",
-                                       tmp_bson ("{'ping': 1}"),
-                                       NULL /* read prefs */,
-                                       NULL /* reply */,
-                                       &error);
+   BSON_ASSERT (!client);
    ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_SERVER_SELECTION,
-                          MONGOC_ERROR_SERVER_SELECTION_FAILURE,
+                          MONGOC_ERROR_COMMAND,
+                          MONGOC_ERROR_COMMAND_INVALID_ARG,
                           "URI with \"loadBalanced\" enabled must not contain "
                           "option \"directConnection\" enabled");
-   BSON_ASSERT (!ret);
 
    mongoc_uri_destroy (uri);
-   mongoc_client_destroy (client);
 }
 
 /* Test basic connectivity to a load balanced cluster. */

@@ -100,7 +100,7 @@ test_cmd_helpers (void *ctx)
 
    /* clean up in case a previous test aborted */
    server_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL, &error);
+      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
 
@@ -185,7 +185,7 @@ test_cmd_helpers (void *ctx)
    /* read/write agnostic command_simple_with_server_id helper must not retry.
     */
    server_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL, &error);
+      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    _set_failpoint (client);
    ASSERT (!mongoc_client_command_simple_with_server_id (
@@ -245,7 +245,7 @@ test_retry_reads_off (void *ctx)
 
    /* clean up in case a previous test aborted */
    server_id = mongoc_topology_select_server_id (
-      client->topology, MONGOC_SS_WRITE, NULL, &error);
+      client->topology, MONGOC_SS_WRITE, NULL, NULL, &error);
    ASSERT_OR_PRINT (server_id, error);
    deactivate_fail_points (client, server_id);
 

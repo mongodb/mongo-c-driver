@@ -1023,7 +1023,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-std=c11 -D_XOPEN_SOURCE=600"
+        export CFLAGS="-std=c11"
         export DEBUG="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -1041,7 +1041,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-std=c99 -D_XOPEN_SOURCE=600"
+        export CFLAGS="-std=c99"
         export DEBUG="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -1059,7 +1059,7 @@ tasks:
       shell: bash
       script: |-
         set -o errexit
-        export CFLAGS="-std=c89 -D_POSIX_C_SOURCE=200112L -pedantic"
+        export CFLAGS="-std=c89 -pedantic"
         export DEBUG="ON"
         CC='${CC}' MARCH='${MARCH}' sh .evergreen/compile.sh
   - func: upload build
@@ -27286,15 +27286,15 @@ buildvariants:
   tasks:
   - release-compile
   - debug-compile-nosasl-nossl
-  - .debug-compile !.sspi .openssl
-  - .debug-compile !.sspi .openssl-static
+  - .debug-compile !.sspi .openssl !.client-side-encryption
+  - .debug-compile !.sspi .openssl-static !.client-side-encryption
   - .debug-compile !.sspi .nossl
-  - .latest .openssl !.nosasl .server
-  - .latest .openssl-static !.nosasl .server
+  - .latest .openssl !.nosasl .server !.client-side-encryption
+  - .latest .openssl-static !.nosasl .server !.client-side-encryption
   - .latest .nossl
-  - .5.0 .openssl !.nosasl .server
-  - .4.4 .openssl !.nosasl .server
-  - .4.2 .openssl !.nosasl .server
+  - .5.0 .openssl !.nosasl .server !.client-side-encryption
+  - .4.4 .openssl !.nosasl .server !.client-side-encryption
+  - .4.2 .openssl !.nosasl .server !.client-side-encryption
   - test-dns-openssl
   batchtime: 1440
 - name: arm-ubuntu1804
@@ -27502,3 +27502,10 @@ buildvariants:
   - debug-compile-nosasl-openssl
   - debug-compile-nosasl-nossl
   - .versioned-api
+- name: macos_m1
+  display_name: macOS m1 (Apple LLVM)
+  expansions:
+    CC: clang
+  run_on: macos-1100-arm64
+  tasks:
+  - debug-compile-sasl-darwinssl

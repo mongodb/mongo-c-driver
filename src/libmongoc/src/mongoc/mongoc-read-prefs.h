@@ -34,6 +34,7 @@ typedef struct _mongoc_read_prefs_t mongoc_read_prefs_t;
 
 
 typedef enum {
+   MONGOC_READ_UNSET = 0,
    MONGOC_READ_PRIMARY = (1 << 0),
    MONGOC_READ_SECONDARY = (1 << 1),
    MONGOC_READ_PRIMARY_PREFERRED = (1 << 2) | MONGOC_READ_PRIMARY,

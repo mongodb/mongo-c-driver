@@ -251,6 +251,7 @@ _mongoc_cursor_new_with_opts (mongoc_client_t *client,
    cursor->client = client;
    cursor->state = UNPRIMED;
    cursor->client_generation = client->generation;
+   cursor->is_aggr_with_write_stage = NOT_AGGR_WITH_WRITE_STAGE;
 
    bson_init (&cursor->opts);
    bson_init (&cursor->error_doc);
@@ -654,6 +655,8 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
    ENTRY;
 
    if (cursor->server_id) {
+      /* We already did server selection once before. Reuse the prior
+       * selection to create a new stream on the same server. */
       server_stream =
          mongoc_cluster_stream_for_server (&cursor->client->cluster,
                                            cursor->server_id,
@@ -661,15 +664,23 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
                                            cursor->client_session,
                                            &reply,
                                            &cursor->error);
+      /* Also restore the effective read mode that was used on that prior
+       * selection */
+      server_stream->effective_read_mode = cursor->effective_read_mode;
    } else {
-      server_stream = mongoc_cluster_stream_for_reads (&cursor->client->cluster,
-                                                       cursor->read_prefs,
-                                                       cursor->client_session,
-                                                       &reply,
-                                                       &cursor->error);
+      server_stream =
+         mongoc_cluster_stream_for_reads (&cursor->client->cluster,
+                                          cursor->read_prefs,
+                                          cursor->client_session,
+                                          &reply,
+                                          cursor->is_aggr_with_write_stage,
+                                          &cursor->error);
 
       if (server_stream) {
+         /* Remember the selected server_id and the effective read mode so that
+          * we can re-create an equivalent server_stream at a later time */
          cursor->server_id = server_stream->sd->id;
+         cursor->effective_read_mode = server_stream->effective_read_mode;
       }
    }
 
@@ -963,6 +974,11 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
          _mongoc_bson_init_if_set (reply);
          GOTO (done);
       }
+      if (_mongoc_cursor_get_opt_bool (cursor, MONGOC_CURSOR_EXHAUST)) {
+         MONGOC_WARNING (
+            "exhaust cursors not supported with OP_MSG, using normal "
+            "cursor instead");
+      }
    }
 
    if (parts.assembled.session) {
@@ -1003,6 +1019,14 @@ _mongoc_cursor_run_command (mongoc_cursor_t *cursor,
           cursor, server_stream, &parts.user_query_flags)) {
       _mongoc_bson_init_if_set (reply);
       GOTO (done);
+   }
+
+   /* Exhaust cursors with OP_MSG not yet supported; fallback to normal cursor.
+    * user_query_flags is unused in OP_MSG, so this technically has no effect,
+    * but is done anyways to ensure the query flags match handling of options.
+    */
+   if (parts.user_query_flags & MONGOC_QUERY_EXHAUST) {
+      parts.user_query_flags ^= MONGOC_QUERY_EXHAUST;
    }
 
    /* we might use mongoc_cursor_set_hint to target a secondary but have no
@@ -1070,11 +1094,17 @@ retry:
 
       mongoc_server_stream_cleanup (server_stream);
 
-      server_stream = mongoc_cluster_stream_for_reads (&cursor->client->cluster,
-                                                       cursor->read_prefs,
-                                                       cursor->client_session,
-                                                       reply,
-                                                       &cursor->error);
+      BSON_ASSERT (cursor->is_aggr_with_write_stage ==
+                      NOT_AGGR_WITH_WRITE_STAGE &&
+                   "Cannot attempt a retry on an aggregate operation that "
+                   "contains write stages");
+      server_stream =
+         mongoc_cluster_stream_for_reads (&cursor->client->cluster,
+                                          cursor->read_prefs,
+                                          cursor->client_session,
+                                          reply,
+                                          NOT_AGGR_WITH_WRITE_STAGE,
+                                          &cursor->error);
 
       if (server_stream &&
           server_stream->sd->max_wire_version >= WIRE_VERSION_RETRY_READS) {

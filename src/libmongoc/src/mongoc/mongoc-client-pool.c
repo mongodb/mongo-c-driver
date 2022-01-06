@@ -99,6 +99,20 @@ _mongoc_client_pool_set_internal_tls_opts (
 mongoc_client_pool_t *
 mongoc_client_pool_new (const mongoc_uri_t *uri)
 {
+   mongoc_client_pool_t *pool;
+   bson_error_t error = {0};
+
+   if (!(pool = mongoc_client_pool_new_with_error (uri, &error))) {
+      MONGOC_ERROR ("%s", error.message);
+   }
+
+   return pool;
+}
+
+
+mongoc_client_pool_t *
+mongoc_client_pool_new_with_error (const mongoc_uri_t *uri, bson_error_t *error)
+{
    mongoc_topology_t *topology;
    mongoc_client_pool_t *pool;
    const bson_t *b;
@@ -112,11 +126,26 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
 
 #ifndef MONGOC_ENABLE_SSL
    if (mongoc_uri_get_tls (uri)) {
-      MONGOC_ERROR ("Can't create SSL client pool,"
-                    " SSL not enabled in this build.");
+      bson_set_error (error,
+                      MONGOC_ERROR_COMMAND,
+                      MONGOC_ERROR_COMMAND_INVALID_ARG,
+                      "Can't create SSL client pool, SSL not enabled in this "
+                      "build.");
       return NULL;
    }
 #endif
+
+   topology = mongoc_topology_new (uri, false);
+
+   if (!topology->valid) {
+      if (error) {
+         memcpy (error, &topology->scanner->error, sizeof (bson_error_t));
+      }
+
+      mongoc_topology_destroy (topology);
+
+      RETURN (NULL);
+   }
 
    pool = (mongoc_client_pool_t *) bson_malloc0 (sizeof *pool);
    bson_mutex_init (&pool->mutex);
@@ -126,8 +155,6 @@ mongoc_client_pool_new (const mongoc_uri_t *uri)
    pool->min_pool_size = 0;
    pool->max_pool_size = 100;
    pool->size = 0;
-
-   topology = mongoc_topology_new (uri, false);
    pool->topology = topology;
    pool->error_api_version = MONGOC_ERROR_API_VERSION_LEGACY;
 
@@ -278,7 +305,8 @@ mongoc_client_pool_pop (mongoc_client_pool_t *pool)
 again:
    if (!(client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
-         client = _mongoc_client_new_from_uri (pool->topology);
+         client = _mongoc_client_new_from_topology (pool->topology);
+         BSON_ASSERT (client);
          _initialize_new_client (pool, client);
          pool->size++;
       } else {
@@ -321,7 +349,8 @@ mongoc_client_pool_try_pop (mongoc_client_pool_t *pool)
 
    if (!(client = (mongoc_client_t *) _mongoc_queue_pop_head (&pool->queue))) {
       if (pool->size < pool->max_pool_size) {
-         client = _mongoc_client_new_from_uri (pool->topology);
+         client = _mongoc_client_new_from_topology (pool->topology);
+         BSON_ASSERT (client);
          _initialize_new_client (pool, client);
          pool->size++;
       }

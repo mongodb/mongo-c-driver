@@ -418,7 +418,12 @@ test_stream_tls_install (TestSuite *suite)
 {
 #if !defined(MONGOC_ENABLE_SSL_SECURE_CHANNEL) && \
    !defined(MONGOC_ENABLE_SSL_LIBRESSL)
+
+   /* Disable /TLS/commonName on macOS due to CDRIVER-4256. */
+#if !defined(MONGOC_ENABLE_SSL_SECURE_TRANSPORT)
    TestSuite_Add (suite, "/TLS/commonName", "", test_mongoc_tls_common_name);
+#endif
+
    TestSuite_Add (suite, "/TLS/altname", "", test_mongoc_tls_altname);
    TestSuite_Add (suite, "/TLS/basic", "", test_mongoc_tls_basic);
    TestSuite_Add (suite,

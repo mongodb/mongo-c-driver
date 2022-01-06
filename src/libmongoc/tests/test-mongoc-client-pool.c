@@ -253,6 +253,9 @@ test_mongoc_client_pool_ssl_disabled (void)
    ASSERT (uri);
    capture_logs (true);
    ASSERT (NULL == test_framework_client_pool_new_from_uri (uri, NULL));
+   ASSERT_CAPTURED_LOG ("mongoc_client_pool_new",
+                        MONGOC_LOG_LEVEL_ERROR,
+                        "SSL not enabled in this build.");
 
    mongoc_uri_destroy (uri);
 }

@@ -129,7 +129,7 @@ static void
 test_counters_op_msg (void *ctx)
 {
    mongoc_collection_t *coll;
-   mongoc_cursor_t *exhaust_cursor;
+   mongoc_cursor_t *cursor;
    const bson_t *bson;
    mongoc_client_t *client;
 
@@ -144,22 +144,15 @@ test_counters_op_msg (void *ctx)
    DIFF_AND_RESET (op_egress_total, ==, 4);
    DIFF_AND_RESET (op_ingress_msg, ==, 4);
    DIFF_AND_RESET (op_ingress_total, ==, 4);
-   /* an exhaust cursor still must use an OP_QUERY find. */
-   exhaust_cursor = mongoc_collection_find (coll,
-                                            MONGOC_QUERY_EXHAUST,
-                                            0 /* skip */,
-                                            0 /* limit */,
-                                            1 /* batch size */,
-                                            tmp_bson ("{}"),
-                                            NULL /* fields */,
-                                            NULL /* read prefs */);
-   while (mongoc_cursor_next (exhaust_cursor, &bson))
+   cursor =
+      mongoc_collection_find_with_opts (coll, tmp_bson ("{}"), NULL, NULL);
+   while (mongoc_cursor_next (cursor, &bson))
       ;
-   mongoc_cursor_destroy (exhaust_cursor);
-   DIFF_AND_RESET (op_egress_msg, ==, 0);
-   DIFF_AND_RESET (op_ingress_msg, ==, 0);
-   DIFF_AND_RESET (op_egress_query, ==, 1);
-   DIFF_AND_RESET (op_ingress_reply, >, 0);
+   mongoc_cursor_destroy (cursor);
+   DIFF_AND_RESET (op_egress_msg, >, 0);
+   DIFF_AND_RESET (op_ingress_msg, >, 0);
+   DIFF_AND_RESET (op_egress_query, ==, 0);
+   DIFF_AND_RESET (op_ingress_reply, ==, 0);
    DIFF_AND_RESET (op_egress_total, >, 0);
    DIFF_AND_RESET (op_ingress_total, >, 0);
    mongoc_collection_destroy (coll);

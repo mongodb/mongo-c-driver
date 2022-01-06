@@ -79,6 +79,8 @@ set (CMAKE_MODULE_PATH
 include (InstallRequiredSystemLibraries)
 include (GNUInstallDirs)
 
+include(MongoC-Warnings)
+
 # Enable CCache, if possible
 include (CCache)
 # Link with LLD, if possible
@@ -238,6 +240,11 @@ set (CMAKE_MACOSX_RPATH ON)
 # silence a CMake 3.11 warning that the old behavior is deprecated.
 cmake_policy (SET CMP0042 NEW)
 
+# https://www.gnu.org/software/libc/manual/html_node/Feature-Test-Macros.html
+# Enable features from POSIX.1-2008 as well as certain BSD and SVID features.
+add_definitions (-D_DEFAULT_SOURCE)
+list (APPEND CMAKE_REQUIRED_DEFINITIONS -D_DEFAULT_SOURCE)
+
 add_subdirectory (src/common)
 
 if (NOT USING_SYSTEM_BSON)
@@ -255,10 +262,6 @@ endif ()
 if (MSVC)
    add_definitions (-D_CRT_SECURE_NO_WARNINGS)
 endif ()
-
-add_definitions (-D_GNU_SOURCE)
-add_definitions (-D_BSD_SOURCE)
-add_definitions (-D_DEFAULT_SOURCE)
 
 if (ENABLE_MONGOC)
 

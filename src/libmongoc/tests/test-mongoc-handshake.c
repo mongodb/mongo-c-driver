@@ -872,9 +872,9 @@ test_handshake_platform_config (void)
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_SHM_COUNTERS));
 #endif
 
-#ifdef MONGOC_TRACE
-   BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_TRACE));
-#endif
+   if (MONGOC_TRACE_ENABLED) {
+      BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_TRACE));
+   }
 
 #ifdef MONGOC_ENABLE_ICU
    BSON_ASSERT (_get_bit (config_str, MONGOC_MD_FLAG_ENABLE_ICU));

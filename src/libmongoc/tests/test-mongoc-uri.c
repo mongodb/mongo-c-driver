@@ -2097,7 +2097,7 @@ test_mongoc_uri_srv (void)
 
    uri = mongoc_uri_new ("mongodb+srv://c.d.com");
    BSON_ASSERT (uri);
-   ASSERT_CMPSTR (mongoc_uri_get_service (uri), "c.d.com");
+   ASSERT_CMPSTR (mongoc_uri_get_srv_hostname (uri), "c.d.com");
    BSON_ASSERT (mongoc_uri_get_hosts (uri) == NULL);
 
    /* tls is set to true when we use SRV */
@@ -2137,7 +2137,7 @@ test_mongoc_uri_srv (void)
    /* trailing dot is OK */
    uri = mongoc_uri_new ("mongodb+srv://service.consul.");
    BSON_ASSERT (uri);
-   ASSERT_CMPSTR (mongoc_uri_get_service (uri), "service.consul.");
+   ASSERT_CMPSTR (mongoc_uri_get_srv_hostname (uri), "service.consul.");
    BSON_ASSERT (mongoc_uri_get_hosts (uri) == NULL);
 
    INVALID (uri, ".consul.");

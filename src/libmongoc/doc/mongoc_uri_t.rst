@@ -302,6 +302,8 @@ MONGOC_URI_SAFE                            safe                              {tr
     mongoc_uri_get_service
     mongoc_uri_get_ssl
     mongoc_uri_get_string
+    mongoc_uri_get_srv_hostname
+    mongoc_uri_get_srv_service_name
     mongoc_uri_get_tls
     mongoc_uri_get_username
     mongoc_uri_get_write_concern

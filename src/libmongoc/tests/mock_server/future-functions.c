@@ -1034,6 +1034,7 @@ BSON_THREAD_FUN (background_mongoc_topology_select, data)
          future_value_get_mongoc_topology_ptr (future_get_param (future, 0)),
          future_value_get_mongoc_ss_optype_t (future_get_param (future, 1)),
          future_value_get_const_mongoc_read_prefs_ptr (future_get_param (future, 2)),
+         NULL /* chosen read mode, unused here */,
          future_value_get_bson_error_ptr (future_get_param (future, 3))
       ));
 
