@@ -655,12 +655,12 @@ _mongoc_topology_description_validate_max_staleness (
 }
 
 static bool
-_check_any_server_less_than_wire_version_13 (const void *sd_,
-                                             void *any_too_old_)
+_check_any_server_less_than_wire_version_v5_0 (const void *sd_,
+                                               void *any_too_old_)
 {
    const mongoc_server_description_t *sd = sd_;
    bool *any_too_old = any_too_old_;
-   if (sd->max_wire_version < 13) {
+   if (sd->max_wire_version < WIRE_VERSION_5_0) {
       *any_too_old = true;
    }
    return true;
@@ -671,8 +671,8 @@ _check_any_server_less_than_wire_version_13 (const void *sd_,
  * requested and what is available in the topology.
  *
  * Per the CRUD spec, if the requested read mode is *not* primary, and *any*
- * server in the topology has a wire version <13, we must override the read
- * mode preference with "primary." Wire version 13 indicates support on a
+ * server in the topology has a wire version < server v5.0, we must override the
+ * read mode preference with "primary." Server v5.0 indicates support on a
  * secondary server for using aggregate pipelines that contain writing stages
  * (i.e. '$out' and '$merge').
  */
@@ -693,7 +693,7 @@ _calc_effective_read_mode (const mongoc_topology_description_t *td,
    case MONGOC_SS_AGGREGATE_WITH_WRITE: {
       bool any_too_old = false;
       mongoc_set_for_each_const (mc_tpld_servers_const (td),
-                                 _check_any_server_less_than_wire_version_13,
+                                 _check_any_server_less_than_wire_version_v5_0,
                                  &any_too_old);
       if (any_too_old) {
          return MONGOC_READ_PRIMARY;
