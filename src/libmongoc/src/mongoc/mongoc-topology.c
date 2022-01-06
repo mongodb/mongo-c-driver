@@ -1000,32 +1000,7 @@ _mongoc_server_selection_error (const char *msg,
    }
 }
 
-/*
- *-------------------------------------------------------------------------
- *
- * mongoc_topology_select --
- *
- *       Selects a server description for an operation based on @optype
- *       and @read_prefs.
- *
- *       NOTE: this method returns a copy of the original server
- *       description. Callers must own and clean up this copy.
- *
- * Parameters:
- *       @topology: The topology.
- *       @optype: Whether we are selecting for a read or write operation.
- *       @read_prefs: Required, the read preferences for the command.
- *       @error: Required, out pointer for error info.
- *
- * Returns:
- *       A mongoc_server_description_t, or NULL on failure, in which case
- *       @error will be set.
- *
- * Side effects:
- *       @error may be set. This function may update the topology description.
- *
- *-------------------------------------------------------------------------
- */
+
 mongoc_server_description_t *
 mongoc_topology_select (mongoc_topology_t *topology,
                         mongoc_ss_optype_t optype,
@@ -1141,18 +1116,7 @@ done:
    return selected_server_id;
 }
 
-/*
- *-------------------------------------------------------------------------
- *
- * mongoc_topology_select_server_id --
- *
- *       Alternative to mongoc_topology_select when you only need the id.
- *
- * Returns:
- *       A server id, or 0 on failure, in which case @error will be set.
- *
- *-------------------------------------------------------------------------
- */
+
 uint32_t
 mongoc_topology_select_server_id (mongoc_topology_t *topology,
                                   mongoc_ss_optype_t optype,

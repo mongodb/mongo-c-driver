@@ -656,7 +656,7 @@ _mongoc_cursor_fetch_stream (mongoc_cursor_t *cursor)
 
    if (cursor->server_id) {
       /* We already did server selection once before. Reuse the prior
-       * selection to create a new stream in a new stream. */
+       * selection to create a new stream on the same server. */
       server_stream =
          mongoc_cluster_stream_for_server (&cursor->client->cluster,
                                            cursor->server_id,
