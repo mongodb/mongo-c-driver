@@ -474,7 +474,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
       hedge = mongoc_read_prefs_get_hedge (parts->read_prefs);
    }
 
-   if (server_stream->effective_read_mode != (mongoc_read_mode_t) 0) {
+   if (server_stream->effective_read_mode != MONGOC_READ_UNSET) {
       /* Server selection may have overriden the read mode used to generate this
        * server stream. This has effects on the body of the message that we send
        * to the server */
@@ -827,7 +827,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    const char *cmd_name;
    bool is_get_more;
    const mongoc_read_prefs_t *prefs_ptr;
-   mongoc_read_mode_t mode = (mongoc_read_mode_t) 0;
+   mongoc_read_mode_t mode = MONGOC_READ_UNSET;
    bool ret = false;
 
    ENTRY;
@@ -887,7 +887,7 @@ mongoc_cmd_parts_assemble (mongoc_cmd_parts_t *parts,
    }
 
    mode = mongoc_read_prefs_get_mode (prefs_ptr);
-   if (server_stream->effective_read_mode != (mongoc_read_mode_t) 0) {
+   if (server_stream->effective_read_mode != MONGOC_READ_UNSET) {
       /* Server selection may have overriden the read mode used to generate this
        * server stream. This has effects on the body of the message that we send
        * to the server */

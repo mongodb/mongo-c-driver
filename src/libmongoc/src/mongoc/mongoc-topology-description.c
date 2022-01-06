@@ -687,7 +687,7 @@ _calc_effective_read_mode (const mongoc_topology_description_t *td,
    }
    switch (optype) {
    case MONGOC_SS_WRITE:
-      return (mongoc_read_mode_t) 0;
+      return MONGOC_READ_UNSET;
    case MONGOC_SS_READ:
       return requested_read_mode;
    case MONGOC_SS_AGGREGATE_WITH_WRITE: {

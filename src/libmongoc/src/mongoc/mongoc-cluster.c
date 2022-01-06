@@ -2764,7 +2764,7 @@ _mongoc_cluster_stream_for_optype (mongoc_cluster_t *cluster,
    mongoc_server_stream_t *server_stream;
    uint32_t server_id;
    mongoc_topology_t *topology = cluster->client->topology;
-   mongoc_read_mode_t chosen_read_mode = (mongoc_read_mode_t) 0;
+   mongoc_read_mode_t chosen_read_mode = MONGOC_READ_UNSET;
 
    ENTRY;
 

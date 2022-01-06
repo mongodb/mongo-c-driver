@@ -37,7 +37,7 @@ mongoc_server_stream_new (const mongoc_topology_description_t *td,
    bson_copy_to (&td->cluster_time, &server_stream->cluster_time);
    server_stream->sd = sd;         /* becomes owned */
    server_stream->stream = stream; /* merely borrowed */
-   server_stream->effective_read_mode = (mongoc_read_mode_t) 0;
+   server_stream->effective_read_mode = MONGOC_READ_UNSET;
 
    return server_stream;
 }
