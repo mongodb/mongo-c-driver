@@ -514,6 +514,7 @@ _mongoc_cmd_parts_assemble_mongos (mongoc_cmd_parts_t *parts,
    case MONGOC_READ_PRIMARY_PREFERRED:
    case MONGOC_READ_SECONDARY:
    case MONGOC_READ_NEAREST:
+   case MONGOC_READ_UNSET:
    default:
       parts->assembled.query_flags |= MONGOC_QUERY_SECONDARY_OK;
       add_read_prefs = true;

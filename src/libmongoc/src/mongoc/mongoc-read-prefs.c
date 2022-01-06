@@ -211,6 +211,7 @@ _mongoc_read_mode_as_str (mongoc_read_mode_t mode)
       return "secondaryPreferred";
    case MONGOC_READ_NEAREST:
       return "nearest";
+   case MONGOC_READ_UNSET:
    default:
       return "";
    }
