@@ -22,6 +22,9 @@ variables:
       mongo_url: "https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-3.2.10.tgz"
     mongo_v44: &mongo_v44
       mongo_url: "http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-rhel62-v4.4-latest.tgz"
+    mongo_v50_ubuntu: &mongo_v50_ubuntu
+      mongo_url: "http://downloads.10gen.com/linux/mongodb-linux-x86_64-enterprise-ubuntu1804-5.0.2.tgz"
+
 
   ## Common sets of CFLAGS
   cflags:
@@ -83,7 +86,7 @@ functions:
         set -o verbose
         set -o errexit
         rm -rf mongo-c-driver*
-        curl --retry 5 http://s3.amazonaws.com/mciuploads/mongo-c-driver/c-driver-benchmark-compile/${revision}/artifacts/${file}.tar.gz -o c-perf-binaries.tar.gz -sS --max-time 120
+        curl --retry 5 http://s3.amazonaws.com/mciuploads/mongo-c-driver/${compile_variant}/${revision}/artifacts/${file}.tar.gz -o c-perf-binaries.tar.gz -sS --max-time 120
         ${decompress} c-perf-binaries.tar.gz
         rm c-perf-binaries.tar.gz
 
@@ -141,7 +144,9 @@ functions:
 
         echo "Running Benchmark tests "
         start_time=$(date +%s)
-        LD_LIBRARY_PATH=`pwd`/mongoc/lib64:$LD_LIBRARY_PATH ./mongo-c-driver-performance/mongo-c-performance ./data
+        # centos6-perf installs into lib64
+        # ubuntu1804-large installs into lib
+        LD_LIBRARY_PATH=`pwd`/mongoc/lib64:`pwd`/mongoc/lib:$LD_LIBRARY_PATH ./mongo-c-driver-performance/mongo-c-performance ./data
         set +o errexit
         result=$?
 
@@ -231,7 +236,7 @@ tasks:
             aws_key: ${aws_key}
             aws_secret: ${aws_secret}
             local_file: mongo-c-driver.tar.gz
-            remote_file: mongo-c-driver/${build_variant}/${revision}/artifacts/c-perf-binaries.tar.gz
+            remote_file: mongo-c-driver/${build_variant}/${revision}/artifacts/${file}.tar.gz
             bucket: mciuploads
             permissions: public-read
             content_type: ${content_type|application/x-gzip}
@@ -242,8 +247,17 @@ tasks:
         name: compile
       commands:
         - func: "fetch artifacts"
-          vars:
-            file: c-perf-binaries
+        - func: "fetch mongodb"
+        - func: "fetch driver test data"
+        - func: "run benchmark tests"
+        - func: "attach benchmark test results"
+        - func: "send dashboard data"
+
+    - name: BenchMarkTestsUbuntu1804
+      depends_on:
+        - compile
+      commands:
+        - func: "fetch artifacts"
         - func: "fetch mongodb"
         - func: "fetch driver test data"
         - func: "run benchmark tests"
@@ -261,6 +275,7 @@ buildvariants:
   display_name: "C Driver Benchmark Compile"
   expansions:
     <<: [ *cflags_64, *mongo_v32, *benchmark_common ]
+    file: c-binaries-centos6
   run_on:
      - rhel62-small
   tasks: *benchmark_compile
@@ -269,6 +284,8 @@ buildvariants:
   display_name: "C Driver Benchmark Mongo 3.2"
   expansions:
     <<: [ *cflags_64, *mongo_v32, *benchmark_common ]
+    file: c-binaries-centos6
+    compile_variant: c-driver-benchmark-compile
   run_on:
      - centos6-perf
   tasks: *benchmark_tests
@@ -277,6 +294,20 @@ buildvariants:
   display_name: "C Driver Benchmark Mongo 4.4"
   expansions:
     <<: [ *cflags_64, *mongo_v44, *benchmark_common ]
+    file: c-binaries-centos6
+    compile_variant: c-driver-benchmark-compile
   run_on:
      - centos6-perf
   tasks: *benchmark_tests
+
+- name: c-driver-benchmark-mongo50-ubuntu1804
+  display_name: "C Driver Benchmark Mongo 5.0 (Ubuntu 18.04)"
+  expansions:
+    <<: [ *cflags_64, *mongo_v50_ubuntu, *benchmark_common ]
+    file: c-binaries-ubuntu1804
+    compile_variant: c-driver-benchmark-mongo50-ubuntu1804
+  run_on:
+     - ubuntu1804-large
+  tasks:
+    - name: "compile"
+    - name: "BenchMarkTestsUbuntu1804"
