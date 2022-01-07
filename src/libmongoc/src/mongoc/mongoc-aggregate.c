@@ -278,7 +278,8 @@ _mongoc_aggregate (mongoc_client_t *client,
 
    /* This has an important effect on server selection when
     * readPreferences=secondary. Keep track of this fact for later use. */
-   cursor->is_aggr_with_write_stage = has_write_key;
+   cursor->is_aggr_with_write_stage =
+      has_write_key ? AGGR_WITH_WRITE_STAGE : NOT_AGGR_WITH_WRITE_STAGE;
 
    /* server id isn't enough. ensure we're connected & know wire version */
    server_stream = _mongoc_cursor_fetch_stream (cursor);
