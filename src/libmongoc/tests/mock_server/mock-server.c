@@ -493,8 +493,8 @@ mock_server_remove_autoresponder (mock_server_t *server, int id)
 
 static bool
 auto_hello_generate_response (request_t *request,
-                                     void *data,
-                                     bson_t *hello_response)
+                              void *data,
+                              bson_t *hello_response)
 {
    const char *response_json = (const char *) data;
    char *quotes_replaced;

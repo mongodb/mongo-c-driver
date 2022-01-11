@@ -143,8 +143,10 @@ _check_find_command (mock_server_t *server,
     * Find, getMore And killCursors Commands Spec: "When sending a find command
     * rather than a legacy OP_QUERY find only the secondaryOk flag is honored".
     */
-   return mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, test_data->expected_find_command);
+   return mock_server_receives_command (server,
+                                        "db",
+                                        MONGOC_QUERY_SECONDARY_OK,
+                                        test_data->expected_find_command);
 }
 
 
@@ -320,7 +322,8 @@ static void
 test_int_modifiers (void)
 {
    const char *modifiers[] = {
-      "maxScan", "maxTimeMS",
+      "maxScan",
+      "maxTimeMS",
    };
 
    const char *mod;
@@ -358,7 +361,9 @@ static void
 test_index_spec_modifiers (void)
 {
    const char *modifiers[] = {
-      "hint", "min", "max",
+      "hint",
+      "min",
+      "max",
    };
 
    const char *mod;
@@ -593,7 +598,8 @@ test_exhaust (void)
     */
    request = mock_server_receives_request (server);
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SECONDARY_OK | MONGOC_QUERY_EXHAUST,
+                                MONGOC_QUERY_SECONDARY_OK |
+                                   MONGOC_QUERY_EXHAUST,
                                 0,
                                 0,
                                 "db.collection",

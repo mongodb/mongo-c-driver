@@ -110,8 +110,8 @@ make_uri (mongoc_array_t *servers)
 
 static char *
 hello_json (mock_rs_t *rs,
-               mongoc_server_description_type_t type,
-               const bson_t *tags)
+            mongoc_server_description_type_t type,
+            const bson_t *tags)
 {
    char *server_type;
    char *mongos_36_fields = "";

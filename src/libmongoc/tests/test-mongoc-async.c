@@ -168,12 +168,13 @@ test_hello_impl (bool with_ssl)
          servers[server_id], "admin", MONGOC_QUERY_SECONDARY_OK, NULL);
 
       /* use "serverId" field to distinguish among responses */
-      reply = bson_strdup_printf ("{'ok': 1,"
-                                  " '"HANDSHAKE_RESPONSE_LEGACY_HELLO"': true,"
-                                  " 'minWireVersion': 0,"
-                                  " 'maxWireVersion': 1000,"
-                                  " 'serverId': %d}",
-                                  server_id);
+      reply =
+         bson_strdup_printf ("{'ok': 1,"
+                             " '" HANDSHAKE_RESPONSE_LEGACY_HELLO "': true,"
+                             " 'minWireVersion': 0,"
+                             " 'maxWireVersion': 1000,"
+                             " 'serverId': %d}",
+                             server_id);
 
       mock_server_replies_simple (request, reply);
       bson_free (reply);
@@ -218,9 +219,9 @@ test_hello_ssl (void)
 
 static void
 test_large_hello_helper (mongoc_async_cmd_t *acmd,
-                            mongoc_async_cmd_result_t result,
-                            const bson_t *bson,
-                            int64_t duration_usec)
+                         mongoc_async_cmd_result_t result,
+                         const bson_t *bson,
+                         int64_t duration_usec)
 {
    bson_iter_t iter;
    bson_error_t *error = &acmd->error;
@@ -236,7 +237,8 @@ test_large_hello_helper (mongoc_async_cmd_t *acmd,
    ASSERT_CMPINT (result, ==, MONGOC_ASYNC_CMD_SUCCESS);
 
    ASSERT_HAS_FIELD (bson, HANDSHAKE_RESPONSE_LEGACY_HELLO);
-   BSON_ASSERT (bson_iter_init_find (&iter, bson, HANDSHAKE_RESPONSE_LEGACY_HELLO));
+   BSON_ASSERT (
+      bson_iter_init_find (&iter, bson, HANDSHAKE_RESPONSE_LEGACY_HELLO));
    BSON_ASSERT (BSON_ITER_HOLDS_BOOL (&iter) && bson_iter_bool (&iter));
 }
 

@@ -460,8 +460,8 @@ test_read_prefs_standalone_primary (void)
    mongoc_read_prefs_t *read_prefs;
 
    /* Server Selection Spec: for topology type single and server types other
-    * than mongos, "clients MUST always set the secondaryOk wire protocol flag on
-    * reads to ensure that any server type can handle the request."
+    * than mongos, "clients MUST always set the secondaryOk wire protocol flag
+    * on reads to ensure that any server type can handle the request."
     * */
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_PRIMARY);
 
@@ -822,7 +822,8 @@ test_read_prefs_mongos_max_staleness (void)
       "{}");
 
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
+                                MONGOC_QUERY_EXHAUST |
+                                   MONGOC_QUERY_SECONDARY_OK,
                                 0,
                                 1,
                                 "test.test",
@@ -883,7 +884,8 @@ test_read_prefs_mongos_hedged_reads (void)
       "{}");
 
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_EXHAUST | MONGOC_QUERY_SECONDARY_OK,
+                                MONGOC_QUERY_EXHAUST |
+                                   MONGOC_QUERY_SECONDARY_OK,
                                 0,
                                 1,
                                 "test.test",

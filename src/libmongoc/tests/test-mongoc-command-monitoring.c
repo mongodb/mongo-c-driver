@@ -1013,7 +1013,7 @@ test_client_cmd_op_ids (void)
 
 
 static void
-test_killcursors_deprecated (void* unused)
+test_killcursors_deprecated (void *unused)
 {
    cmd_test_t test;
    mongoc_client_t *client;

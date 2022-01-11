@@ -13,10 +13,10 @@
 
 static void
 auto_hello (mock_server_t *server,
-               int32_t max_wire_version,
-               int32_t max_message_size,
-               int32_t max_bson_size,
-               int32_t max_batch_size)
+            int32_t max_wire_version,
+            int32_t max_message_size,
+            int32_t max_bson_size,
+            int32_t max_batch_size)
 {
    char *response = bson_strdup_printf ("{'isWritablePrimary': true, "
                                         " 'maxWireVersion': %d,"
