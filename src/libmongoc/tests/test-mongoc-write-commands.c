@@ -762,7 +762,7 @@ test_write_command_install (TestSuite *suite)
                       test_bypass_validation,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_4);
+                      TestSuite_CheckLive);
    TestSuite_AddMockServerTest (suite,
                                 "/WriteCommand/split_opquery_with_options",
                                 test_split_opquery_with_options);

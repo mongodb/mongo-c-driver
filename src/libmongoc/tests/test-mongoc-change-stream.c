@@ -81,10 +81,8 @@ test_framework_skip_if_not_single_version_5 (void)
    if (!TestSuite_CheckLive ()) {
       return 0;
    }
-   return (test_framework_max_wire_version_at_least (5) &&
-           !test_framework_is_replset () && !test_framework_is_mongos ())
-             ? 1
-             : 0;
+   return (!test_framework_is_replset () && !test_framework_is_mongos ()) ? 1
+                                                                          : 0;
 }
 
 static mongoc_collection_t *

@@ -188,83 +188,6 @@ test_counters_op_compressed (void *ctx)
 
 
 static void
-test_counters_op_query (void *ctx)
-{
-   mongoc_collection_t *coll;
-   mongoc_cursor_t *cursor;
-   const bson_t *bson;
-   mongoc_client_t *client;
-
-   client = _client_new_disable_ss (false);
-   /* with WIRE_VERSION < 6, commands are sent over OP_QUERY with db.$cmd. */
-   _ping (client);
-   DIFF_AND_RESET (op_egress_query, ==, 1);
-   DIFF_AND_RESET (op_egress_total, ==, 1);
-   DIFF_AND_RESET (op_ingress_reply, ==, 1);
-   DIFF_AND_RESET (op_ingress_total, ==, 1);
-   coll = _drop_and_populate_coll (client);
-   DIFF_AND_RESET (op_egress_query, ==, 4);
-   DIFF_AND_RESET (op_egress_total, ==, 4);
-   DIFF_AND_RESET (op_ingress_reply, ==, 4);
-   DIFF_AND_RESET (op_ingress_total, ==, 4);
-   cursor = mongoc_collection_find_with_opts (
-      coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 1}"), NULL);
-   while (mongoc_cursor_next (cursor, &bson))
-      ;
-   mongoc_cursor_destroy (cursor);
-   DIFF_AND_RESET (op_egress_query, >, 0);
-   DIFF_AND_RESET (op_ingress_reply, >, 0);
-   DIFF_AND_RESET (op_egress_total, >, 0);
-   DIFF_AND_RESET (op_ingress_total, >, 0);
-   mongoc_collection_destroy (coll);
-   mongoc_client_destroy (client);
-}
-
-
-static void
-test_counters_op_getmore_killcursors (void *ctx)
-{
-   mongoc_collection_t *coll;
-   mongoc_cursor_t *cursor;
-   const bson_t *bson;
-   mongoc_client_t *client;
-
-   client = _client_new_disable_ss (false);
-   coll = _drop_and_populate_coll (client);
-   DIFF_AND_RESET (op_egress_query, ==, 4);
-   DIFF_AND_RESET (op_egress_total, ==, 4);
-   DIFF_AND_RESET (op_ingress_reply, ==, 4);
-   DIFF_AND_RESET (op_ingress_total, ==, 4);
-   /* do *not* use batchSize 1 here. that returns one doc and closes. */
-   cursor = mongoc_collection_find_with_opts (
-      coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 2}"), NULL);
-   while (mongoc_cursor_next (cursor, &bson))
-      ;
-   mongoc_cursor_destroy (cursor);
-   DIFF_AND_RESET (op_egress_query, ==, 1);
-   DIFF_AND_RESET (op_ingress_reply, ==, 2);
-   DIFF_AND_RESET (op_egress_total, ==, 2);
-   DIFF_AND_RESET (op_ingress_total, ==, 2);
-   DIFF_AND_RESET (op_egress_getmore, ==, 1);
-   DIFF_AND_RESET (op_egress_killcursors, ==, 0);
-   cursor = mongoc_collection_find_with_opts (
-      coll, tmp_bson ("{}"), tmp_bson ("{'batchSize': 2}"), NULL);
-   /* only iterate once so the server keeps the cursor alive and cursor_destroy
-    * sends a killCursors cmd. */
-   BSON_ASSERT (mongoc_cursor_next (cursor, &bson));
-   mongoc_cursor_destroy (cursor);
-   DIFF_AND_RESET (op_egress_query, ==, 1);
-   DIFF_AND_RESET (op_ingress_reply, ==, 1);
-   DIFF_AND_RESET (op_egress_total, ==, 2);
-   DIFF_AND_RESET (op_ingress_total, ==, 1);
-   DIFF_AND_RESET (op_egress_getmore, ==, 0);
-   DIFF_AND_RESET (op_egress_killcursors, ==, 1);
-   mongoc_collection_destroy (coll);
-   mongoc_client_destroy (client);
-}
-
-
-static void
 test_counters_cursors (void)
 {
    mongoc_collection_t *coll;
@@ -561,7 +484,6 @@ test_counters_install (TestSuite *suite)
                       test_counters_op_msg,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_6,
                       test_framework_skip_if_auth,
                       test_framework_skip_if_compressors);
    TestSuite_AddFull (suite,
@@ -569,27 +491,7 @@ test_counters_install (TestSuite *suite)
                       test_counters_op_compressed,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_6,
                       test_framework_skip_if_no_compressors,
-                      test_framework_skip_if_auth);
-   /* test before OP_MSG. */
-   TestSuite_AddFull (suite,
-                      "/counters/op_query",
-                      test_counters_op_query,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_less_than_4,
-                      test_framework_skip_if_max_wire_version_more_than_5,
-                      test_framework_skip_if_compressors,
-                      test_framework_skip_if_auth);
-   /* test before the getMore and killCursors commands were introduced. */
-   TestSuite_AddFull (suite,
-                      "/counters/op_getmore_killcursors",
-                      test_counters_op_getmore_killcursors,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_more_than_3,
-                      test_framework_skip_if_compressors,
                       test_framework_skip_if_auth);
    TestSuite_AddLive (suite, "/counters/cursors", test_counters_cursors);
    TestSuite_AddLive (suite, "/counters/clients", test_counters_clients);

@@ -90,29 +90,37 @@ _get_gridfs (mock_server_t *server,
    /* gridfs ensures two indexes */
    future = future_client_get_gridfs (client, "db", NULL, &error);
 
-   request = mock_server_receives_command (
-      server, "db", flags, "{'listIndexes': 'fs.chunks'}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'listIndexes': 'fs.chunks'}"));
    mock_server_replies_simple (
       request,
       "{ 'ok' : 0, 'errmsg' : 'ns does not exist: db.fs.chunks', 'code' : 26, "
       "'codeName' : 'NamespaceNotFound' }");
    request_destroy (request);
 
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_NONE, "{'createIndexes': 'fs.chunks'}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'createIndexes': 'fs.chunks'}"));
 
    mock_server_replies_ok_and_destroys (request);
 
-   request = mock_server_receives_command (
-      server, "db", flags, "{'listIndexes': 'fs.files'}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'listIndexes': 'fs.files'}"));
    mock_server_replies_simple (
       request,
       "{ 'ok' : 0, 'errmsg' : 'ns does not exist: db.fs.files', 'code' : 26, "
       "'codeName' : 'NamespaceNotFound' }");
    request_destroy (request);
 
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_NONE, "{'createIndexes': 'fs.files'}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'createIndexes': 'fs.files'}"));
 
    mock_server_replies_ok_and_destroys (request);
 
@@ -418,7 +426,7 @@ test_find_one_with_opts_limit (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -429,14 +437,13 @@ test_find_one_with_opts_limit (void)
    future =
       future_gridfs_find_one_with_opts (gridfs, tmp_bson ("{}"), NULL, &error);
 
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'find': 'fs.files', 'filter': {}, 'limit': 1}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'find': 'fs.files', 'filter': {}, 'limit': 1}"));
 
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SECONDARY_OK,
+                                MONGOC_QUERY_NONE,
                                 0 /* cursor_id */,
                                 1 /* num returned */,
                                 "db.fs.files",
@@ -453,14 +460,13 @@ test_find_one_with_opts_limit (void)
    future = future_gridfs_find_one_with_opts (
       gridfs, tmp_bson ("{}"), tmp_bson ("{'limit': 2}"), &error);
 
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'find': 'fs.files', 'filter': {}, 'limit': 1}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db', 'find': 'fs.files', 'filter': {}, 'limit': 1}"));
 
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SECONDARY_OK,
+                                MONGOC_QUERY_NONE,
                                 0 /* cursor_id */,
                                 1 /* num returned */,
                                 "db.fs.files",

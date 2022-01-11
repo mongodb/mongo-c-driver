@@ -35,20 +35,6 @@ auto_hello (mock_server_t *server,
 }
 
 
-int
-should_run_fam_wc (void)
-{
-   if (!TestSuite_CheckLive ()) {
-      return 0;
-   }
-   if (test_framework_is_replset ()) {
-      return test_framework_max_wire_version_at_least (
-         WIRE_VERSION_FAM_WRITE_CONCERN);
-   }
-   return 0;
-}
-
-
 static void
 test_find_and_modify_bypass (bool bypass)
 {
@@ -74,10 +60,10 @@ test_find_and_modify_bypass (bool bypass)
       mongoc_client_get_collection (client, "test", "test_find_and_modify");
 
    auto_hello (server,
-               WIRE_VERSION_FAM_WRITE_CONCERN, /* max_wire_version */
-               48000000,                       /* max_message_size */
-               16777216,                       /* max_bson_size */
-               1000);                          /* max_write_batch_size */
+               WIRE_VERSION_MIN, /* max_wire_version */
+               48000000,         /* max_message_size */
+               16777216,         /* max_bson_size */
+               1000);            /* max_write_batch_size */
 
    BSON_APPEND_INT32 (&doc, "superduper", 77889);
 
@@ -96,24 +82,24 @@ test_find_and_modify_bypass (bool bypass)
       collection, &doc, opts, &reply, &error);
 
    if (bypass) {
-      request = mock_server_receives_command (
+      request = mock_server_receives_msg (
          server,
-         "test",
-         MONGOC_QUERY_NONE,
-         "{ 'findAndModify' : 'test_find_and_modify', "
-         "'query' : { 'superduper' : 77889 },"
-         "'update' : { '$set' : { 'superduper' : 1234 } },"
-         "'new' : true,"
-         "'bypassDocumentValidation' : true }");
+         MONGOC_MSG_NONE,
+         tmp_bson ("{'$db': 'test',"
+                   " 'findAndModify': 'test_find_and_modify',"
+                   " 'query': {'superduper': 77889},"
+                   " 'update': {'$set': {'superduper': 1234}},"
+                   " 'new': true,"
+                   " 'bypassDocumentValidation': true}"));
    } else {
-      request = mock_server_receives_command (
+      request = mock_server_receives_msg (
          server,
-         "test",
-         MONGOC_QUERY_NONE,
-         "{ 'findAndModify' : 'test_find_and_modify', "
-         "'query' : { 'superduper' : 77889 },"
-         "'update' : { '$set' : { 'superduper' : 1234 } },"
-         "'new' : true }");
+         MONGOC_MSG_NONE,
+         tmp_bson ("{'$db': 'test',"
+                   " 'findAndModify': 'test_find_and_modify', "
+                   "'query': {'superduper': 77889},"
+                   "'update': {'$set': {'superduper': 1234}},"
+                   "'new': true }"));
    }
 
    mock_server_replies_simple (request, "{ 'value' : null, 'ok' : 1 }");
@@ -440,7 +426,7 @@ test_find_and_modify_opts_write_concern (void)
    w3 = mongoc_write_concern_new ();
    mongoc_write_concern_set_w (w3, 3);
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_FAM_WRITE_CONCERN);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -454,11 +440,12 @@ test_find_and_modify_opts_write_concern (void)
 
    future = future_collection_find_and_modify_with_opts (
       collection, tmp_bson ("{}"), opts, NULL, &error);
-   request = mock_server_receives_command (
-      server,
-      "db",
-      MONGOC_QUERY_NONE,
-      "{'findAndModify': 'collection', 'writeConcern': {'w': 2}}");
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'db',"
+                                          " 'findAndModify': 'collection',"
+                                          " 'writeConcern': {'w': 2}}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
@@ -469,11 +456,12 @@ test_find_and_modify_opts_write_concern (void)
       collection, tmp_bson ("{}"), opts, NULL, &error);
 
    /* still w: 2 */
-   request = mock_server_receives_command (
-      server,
-      "db",
-      MONGOC_QUERY_NONE,
-      "{'findAndModify': 'collection', 'writeConcern': {'w': 2}}");
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'db',"
+                                          " 'findAndModify': 'collection',"
+                                          " 'writeConcern': {'w': 2}}"));
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
    future_destroy (future);
@@ -488,7 +476,7 @@ test_find_and_modify_opts_write_concern (void)
 
 
 static void
-test_find_and_modify_collation (int wire)
+test_find_and_modify_collation (void)
 {
    mock_server_t *server;
    mongoc_client_t *client;
@@ -499,7 +487,7 @@ test_find_and_modify_collation (int wire)
    request_t *request;
    bson_t *collation;
 
-   server = mock_server_with_auto_hello (wire);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -517,30 +505,18 @@ test_find_and_modify_collation (int wire)
    opts = mongoc_find_and_modify_opts_new ();
    BSON_ASSERT (mongoc_find_and_modify_opts_append (opts, collation));
 
-   if (wire >= WIRE_VERSION_COLLATION) {
-      future = future_collection_find_and_modify_with_opts (
-         collection, tmp_bson ("{}"), opts, NULL, &error);
+   future = future_collection_find_and_modify_with_opts (
+      collection, tmp_bson ("{}"), opts, NULL, &error);
 
-      request = mock_server_receives_command (
-         server,
-         "db",
-         MONGOC_QUERY_NONE,
-         "{'findAndModify': 'collection',"
-         " 'collation': { 'locale': 'en_US', 'caseFirst': 'lower'}"
-         "}");
-      mock_server_replies_ok_and_destroys (request);
-      ASSERT_OR_PRINT (future_get_bool (future), error);
-      future_destroy (future);
-   } else {
-      bool ok = mongoc_collection_find_and_modify_with_opts (
-         collection, tmp_bson ("{}"), opts, NULL, &error);
-
-      ASSERT_ERROR_CONTAINS (error,
-                             MONGOC_ERROR_COMMAND,
-                             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                             "The selected server does not support collation");
-      ASSERT (!ok);
-   }
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'findAndModify': 'collection',"
+                " 'collation': {'locale': 'en_US', 'caseFirst': 'lower'}}"));
+   mock_server_replies_ok_and_destroys (request);
+   ASSERT_OR_PRINT (future_get_bool (future), error);
+   future_destroy (future);
 
    bson_destroy (collation);
    mongoc_find_and_modify_opts_destroy (opts);
@@ -548,19 +524,6 @@ test_find_and_modify_collation (int wire)
    mongoc_client_destroy (client);
 
    mock_server_destroy (server);
-}
-
-static void
-test_find_and_modify_collation_ok (void)
-{
-   test_find_and_modify_collation (WIRE_VERSION_COLLATION);
-}
-
-
-static void
-test_find_and_modify_collation_fail (void)
-{
-   test_find_and_modify_collation (WIRE_VERSION_COLLATION - 1);
 }
 
 
@@ -628,18 +591,14 @@ test_find_and_modify_install (TestSuite *suite)
                       test_find_and_modify_write_concern_wire_32_failure,
                       NULL,
                       NULL,
-                      should_run_fam_wc);
+                      test_framework_skip_if_not_replset);
    TestSuite_AddMockServerTest (
       suite, "/find_and_modify/opts", test_find_and_modify_opts);
    TestSuite_AddMockServerTest (suite,
                                 "/find_and_modify/opts/write_concern",
                                 test_find_and_modify_opts_write_concern);
-   TestSuite_AddMockServerTest (suite,
-                                "/find_and_modify/collation/ok",
-                                test_find_and_modify_collation_ok);
-   TestSuite_AddMockServerTest (suite,
-                                "/find_and_modify/collation/fail",
-                                test_find_and_modify_collation_fail);
+   TestSuite_AddMockServerTest (
+      suite, "/find_and_modify/collation", test_find_and_modify_collation);
    TestSuite_AddLive (
       suite, "/find_and_modify/hint", test_find_and_modify_hint);
 }

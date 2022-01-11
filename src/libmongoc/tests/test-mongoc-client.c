@@ -44,7 +44,7 @@ test_client_cmd_w_server_id (void)
    future_t *future;
    request_t *request;
 
-   rs = mock_rs_with_auto_hello (WIRE_VERSION_READ_CONCERN,
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN,
                                  true /* has primary */,
                                  1 /* secondary   */,
                                  0 /* arbiters    */);
@@ -63,12 +63,13 @@ test_client_cmd_w_server_id (void)
                                                   &error);
 
    /* recognized that wire version is recent enough for readConcern */
-   request = mock_rs_receives_command (rs,
-                                       "db",
-                                       MONGOC_QUERY_SECONDARY_OK,
-                                       "{'ping': 1,"
-                                       " 'readConcern': {'level': 'local'},"
-                                       " 'serverId': {'$exists': false}}");
+   request =
+      mock_rs_receives_msg (rs,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'$db': 'db',"
+                                      " 'ping': 1,"
+                                      " 'readConcern': {'level': 'local'},"
+                                      " 'serverId': {'$exists': false}}"));
 
    ASSERT (mock_rs_request_is_to_secondary (rs, request));
    mock_rs_replies_simple (request, "{'ok': 1}");
@@ -330,7 +331,7 @@ test_client_cmd_write_concern_fam (void)
    request_t *request;
    mock_server_t *server;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_FAM_WRITE_CONCERN - 1);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -342,33 +343,11 @@ test_client_cmd_write_concern_fam (void)
    future = future_client_read_write_command_with_opts (
       client, "test", fam, NULL, NULL, &reply, &error);
 
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "test",
-      MONGOC_QUERY_NONE,
-      "{'findAndModify': 'collection', 'writeConcern': {'$exists': false}}");
-
-   mock_server_replies_ok_and_destroys (request);
-   BSON_ASSERT (future_get_bool (future));
-   future_destroy (future);
-   mock_server_destroy (server);
-   mongoc_client_destroy (client);
-   bson_destroy (&reply);
-
-   server = mock_server_with_auto_hello (WIRE_VERSION_FAM_WRITE_CONCERN);
-   mock_server_run (server);
-   client =
-      test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
-   mongoc_client_set_write_concern (client, wc);
-
-   future = future_client_read_write_command_with_opts (
-      client, "test", fam, NULL, NULL, &reply, &error);
-
-   request = mock_server_receives_command (
-      server,
-      "test",
-      MONGOC_QUERY_NONE,
-      "{'findAndModify': 'collection', 'writeConcern': {'w': 2}}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'test', 'findAndModify': 'collection', "
+                "'writeConcern': {'w': 2}}"));
 
    mock_server_replies_ok_and_destroys (request);
    BSON_ASSERT (future_get_bool (future));
@@ -1215,8 +1194,9 @@ test_command_with_opts_read_prefs (void)
    future_t *future;
    request_t *request;
 
-   server = mock_mongos_new (WIRE_VERSION_READ_CONCERN);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    read_prefs = mongoc_read_prefs_new (MONGOC_READ_SECONDARY);
@@ -1227,8 +1207,8 @@ test_command_with_opts_read_prefs (void)
    future = future_client_write_command_with_opts (
       client, "admin", cmd, NULL /* opts */, NULL, &error);
 
-   request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_NONE, "{'create': 'db'}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'create': 'db'}"));
 
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -1242,12 +1222,12 @@ test_command_with_opts_read_prefs (void)
    /* Server Selection Spec: "For mode 'secondary', drivers MUST set the
     * secondaryOk wire protocol flag and MUST also use $readPreference".
     */
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "admin",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'$query': {'count': 'collection'},"
-      " '$readPreference': {'mode': 'secondary'}}");
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'admin',"
+                " 'count': 'collection',"
+                " '$readPreference': {'mode': 'secondary'}}"));
 
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -1259,13 +1239,13 @@ test_command_with_opts_read_prefs (void)
    future = future_client_read_write_command_with_opts (
       client, "admin", cmd, NULL, opts, NULL, &error);
 
-   request =
-      mock_server_receives_command (server,
-                                    "admin",
-                                    MONGOC_QUERY_NONE,
-                                    "{'whatever': 1,"
-                                    " 'readConcern': {'level': 'majority'},"
-                                    " '$readPreference': {'$exists': false}}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'admin',"
+                " 'whatever': 1,"
+                " 'readConcern': {'level': 'majority'},"
+                " '$readPreference': {'$exists': false}}"));
 
    mock_server_replies_ok_and_destroys (request);
    ASSERT_OR_PRINT (future_get_bool (future), error);
@@ -3712,7 +3692,7 @@ test_client_reset_cursors (void)
    bson_error_t error;
    const bson_t *doc;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_KILLCURSORS_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -3725,8 +3705,8 @@ test_client_reset_cursors (void)
       coll, MONGOC_QUERY_NONE, 0, 0, 0, tmp_bson (NULL), NULL, NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (
-      server, "test", MONGOC_QUERY_SECONDARY_OK, "{'find': 'test'}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'test', 'find': 'test'}"));
 
    mock_server_replies_simple (request,
                                "{'ok': 1,"
@@ -3760,13 +3740,12 @@ test_client_reset_cursors (void)
    future = future_database_command_simple (
       database, tmp_bson ("{'ping': 1}"), NULL, NULL, NULL);
 
-   request = mock_server_receives_command (
-      server, "admin", MONGOC_QUERY_SECONDARY_OK, "{'ping': 1}");
-   mock_server_replies_simple (request, "{'ok': 1}");
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'admin', 'ping': 1}"));
+   mock_server_replies_ok_and_destroys (request);
 
    ASSERT (future_get_bool (future));
 
-   request_destroy (request);
    future_destroy (future);
    mongoc_client_destroy (client);
    mongoc_collection_destroy (coll);
@@ -4285,7 +4264,7 @@ test_client_install (TestSuite *suite)
                       test_client_cmd_w_write_concern,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_5);
+                      TestSuite_CheckLive);
    TestSuite_AddMockServerTest (
       suite, "/Client/command/write_concern", test_client_cmd_write_concern);
    TestSuite_AddMockServerTest (suite,

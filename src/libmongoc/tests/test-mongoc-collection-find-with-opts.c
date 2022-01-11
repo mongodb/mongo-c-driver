@@ -582,7 +582,7 @@ test_exhaust (void)
    const bson_t *doc;
    bson_error_t error;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -637,7 +637,7 @@ test_getmore_cmd_await (void)
    /*
     * "find" command
     */
-   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
@@ -646,14 +646,14 @@ test_getmore_cmd_await (void)
       collection, tmp_bson (NULL), opts, NULL);
 
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{'find': 'collection',"
-                                    " 'filter': {},"
-                                    " 'maxTimeMS': {'$exists': false},"
-                                    " 'maxAwaitTimeMS': {'$exists': false}}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'find': 'collection',"
+                " 'filter': {},"
+                " 'maxTimeMS': {'$exists': false},"
+                " 'maxAwaitTimeMS': {'$exists': false}}"));
 
    ASSERT (request);
    mock_server_replies_simple (request,
@@ -671,14 +671,14 @@ test_getmore_cmd_await (void)
     * "getMore" command
     */
    future = future_cursor_next (cursor, &doc);
-   request =
-      mock_server_receives_command (server,
-                                    "db",
-                                    MONGOC_QUERY_SECONDARY_OK,
-                                    "{'getMore': {'$numberLong': '123'},"
-                                    " 'collection': 'collection',"
-                                    " 'maxAwaitTimeMS': {'$exists': false},"
-                                    " 'maxTimeMS': {'$numberLong': '9999'}}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'getMore': {'$numberLong': '123'},"
+                " 'collection': 'collection',"
+                " 'maxAwaitTimeMS': {'$exists': false},"
+                " 'maxTimeMS': {'$numberLong': '9999'}}"));
 
    ASSERT (request);
    mock_server_replies_simple (request,
@@ -755,7 +755,7 @@ test_find_cmd_w_server_id (void)
    request_t *request;
    bson_error_t error;
 
-   rs = mock_rs_with_auto_hello (WIRE_VERSION_READ_CONCERN,
+   rs = mock_rs_with_auto_hello (WIRE_VERSION_MIN,
                                  true /* has primary  */,
                                  1 /* secondary    */,
                                  0 /* arbiters     */);
@@ -772,13 +772,14 @@ test_find_cmd_w_server_id (void)
    future = future_cursor_next (cursor, &doc);
 
    /* recognized that wire version is recent enough for readConcern */
-   request = mock_rs_receives_command (rs,
-                                       "db",
-                                       MONGOC_QUERY_SECONDARY_OK,
-                                       "{'find': 'collection', "
-                                       " 'filter': {},"
-                                       " 'readConcern': {'level': 'local'},"
-                                       " 'serverId': {'$exists': false}}");
+   request =
+      mock_rs_receives_msg (rs,
+                            MONGOC_MSG_NONE,
+                            tmp_bson ("{'$db': 'db',"
+                                      " 'find': 'collection', "
+                                      " 'filter': {},"
+                                      " 'readConcern': {'level': 'local'},"
+                                      " 'serverId': {'$exists': false}}"));
 
    ASSERT (mock_rs_request_is_to_secondary (rs, request));
    mock_rs_replies_simple (request,
@@ -853,8 +854,9 @@ test_find_cmd_w_server_id_sharded (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_mongos_new (WIRE_VERSION_READ_CONCERN);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "db", "collection");
@@ -867,13 +869,14 @@ test_find_cmd_w_server_id_sharded (void)
 
    /* recognized that wire version is recent enough for readConcern */
    /* does NOT set secondaryOk, since this is a sharded topology */
-   request = mock_server_receives_command (server,
-                                           "db",
-                                           MONGOC_QUERY_NONE,
-                                           "{'find': 'collection', "
-                                           " 'filter': {},"
-                                           " 'readConcern': {'level': 'local'},"
-                                           " 'serverId': {'$exists': false}}");
+   request =
+      mock_server_receives_msg (server,
+                                MONGOC_MSG_NONE,
+                                tmp_bson ("{'$db': 'db',"
+                                          " 'find': 'collection', "
+                                          " 'filter': {},"
+                                          " 'readConcern': {'level': 'local'},"
+                                          " 'serverId': {'$exists': false}}"));
 
    mock_rs_replies_simple (request,
                            "{'ok': 1,"
@@ -926,38 +929,6 @@ test_server_id_option (void)
       collection, q, tmp_bson ("{'serverId': 1}"), NULL);
 
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
-
-   mongoc_cursor_destroy (cursor);
-   mongoc_collection_destroy (collection);
-   mongoc_client_destroy (client);
-}
-
-static void
-test_find_with_opts_collation_error (void *ctx)
-{
-   mongoc_client_t *client;
-   mongoc_collection_t *collection;
-   bson_t *q;
-   bson_t *opts;
-   const bson_t *doc;
-   bson_error_t error;
-   mongoc_cursor_t *cursor;
-
-   client = test_framework_new_default_client ();
-   collection = mongoc_client_get_collection (client, "db", "collection");
-   q = tmp_bson (NULL);
-   opts = tmp_bson ("{'collation': {'locale': 'is'}}");
-   cursor = mongoc_collection_find_with_opts (collection, q, opts, NULL);
-
-   while (mongoc_cursor_next (cursor, &doc)) {
-      ASSERT (false);
-   }
-
-   ASSERT (mongoc_cursor_error (cursor, &error));
-   ASSERT_ERROR_CONTAINS (error,
-                          MONGOC_ERROR_COMMAND,
-                          MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
-                          "The selected server does not support collation");
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
@@ -1044,10 +1015,4 @@ test_collection_find_with_opts_install (TestSuite *suite)
    TestSuite_AddLive (suite,
                       "/Collection/find_with_opts/server_id/option",
                       test_server_id_option);
-   TestSuite_AddFull (suite,
-                      "/Collection/find_with_opts/collation/error",
-                      test_find_with_opts_collation_error,
-                      NULL,
-                      NULL,
-                      test_framework_skip_if_max_wire_version_more_than_4);
 }

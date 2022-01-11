@@ -371,25 +371,25 @@ test_client_max_staleness_install (TestSuite *suite)
                       test_last_write_date,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_5,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date/pooled",
                       test_last_write_date_pooled,
                       NULL,
                       NULL,
-                      test_framework_skip_if_not_rs_version_5,
+                      test_framework_skip_if_not_replset,
                       test_framework_skip_if_slow);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date_absent",
                       test_last_write_date_absent,
                       NULL,
                       NULL,
-                      test_framework_skip_if_rs_version_5);
+                      test_framework_skip_if_replset);
    TestSuite_AddFull (suite,
                       "/Client/last_write_date_absent/pooled",
                       test_last_write_date_absent_pooled,
                       NULL,
                       NULL,
-                      test_framework_skip_if_rs_version_5);
+                      test_framework_skip_if_replset);
 }

@@ -2969,9 +2969,6 @@ test_sample_aggregation (mongoc_database_t *db)
    mongoc_collection_destroy (collection);
 
 
-   /* Need MongoDB 3.6 to use unrelated subqueries */
-   if(test_framework_skip_if_max_wire_version_less_than_6 ()){
-
    /* Start Aggregation Example 4 */
    collection = mongoc_database_get_collection (db, "air_alliances");
    pipeline = BCON_NEW ("pipeline", "[",
@@ -3030,9 +3027,6 @@ test_sample_aggregation (mongoc_database_t *db)
 
    mongoc_cursor_destroy (cursor);
    mongoc_collection_destroy (collection);
-   /* End Aggregation Example 4 */
-
-   }
 
    ASSERT_NO_CAPTURED_LOGS ("sample aggregation examples");
 }

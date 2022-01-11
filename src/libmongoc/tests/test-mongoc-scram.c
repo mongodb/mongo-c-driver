@@ -638,7 +638,6 @@ test_scram_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_auth,
-                      test_framework_skip_if_max_wire_version_less_than_6,
                       _skip_if_no_sha256,
                       TestSuite_CheckLive);
    TestSuite_AddFull (suite,
@@ -647,7 +646,6 @@ test_scram_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_auth,
-                      test_framework_skip_if_max_wire_version_less_than_6,
                       _skip_if_no_sha256,
                       skip_if_no_icu,
                       TestSuite_CheckLive);
@@ -657,7 +655,6 @@ test_scram_install (TestSuite *suite)
                       NULL /* dtor */,
                       NULL /* ctx */,
                       test_framework_skip_if_no_auth,
-                      test_framework_skip_if_max_wire_version_less_than_6,
                       _skip_if_no_sha256,
                       skip_if_icu,
                       TestSuite_CheckLive);

@@ -187,9 +187,6 @@ test_framework_skip_if_valgrind (void);
    int test_framework_skip_if_rs_version_##wv (void);                 \
    int test_framework_skip_if_not_rs_version_##wv (void);
 
-WIRE_VERSION_CHECK_DECLS (3)
-WIRE_VERSION_CHECK_DECLS (4)
-WIRE_VERSION_CHECK_DECLS (5)
 WIRE_VERSION_CHECK_DECLS (6)
 WIRE_VERSION_CHECK_DECLS (7)
 WIRE_VERSION_CHECK_DECLS (8)

@@ -612,11 +612,6 @@ killcursors_succeeded (const mongoc_apm_command_succeeded_t *event)
       (killcursors_test_t *) mongoc_apm_command_succeeded_get_context (event);
    ctx->succeeded_count++;
 
-   if (!test_framework_max_wire_version_at_least (
-          WIRE_VERSION_KILLCURSORS_CMD)) {
-      return;
-   }
-
    reply = mongoc_apm_command_succeeded_get_reply (event);
 
 #define ASSERT_EMPTY(_fieldname)                                   \
@@ -1129,7 +1124,7 @@ test_cursor_new_tailable_await (void)
    future_t *future;
    request_t *request;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -1154,15 +1149,15 @@ test_cursor_new_tailable_await (void)
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (server,
-                                           "db",
-                                           MONGOC_QUERY_SECONDARY_OK,
-                                           "{'getMore': {'$numberLong': '123'},"
-                                           " 'collection': 'collection',"
-                                           " 'maxTimeMS': 100"
-                                           "}");
+   request = mock_server_receives_msg (
+      server,
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'getMore': {'$numberLong': '123'},"
+                " 'collection': 'collection',"
+                " 'maxTimeMS': {'$numberLong': '100'}}"));
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SECONDARY_OK,
+                                MONGOC_QUERY_NONE,
                                 0 /* cursor id */,
                                 1 /* number returned */,
                                 "db.collection",
@@ -1193,7 +1188,7 @@ test_cursor_int64_t_maxtimems (void)
    bson_t *max_await_time_ms;
    uint64_t ms_int64 = UINT32_MAX + (uint64_t) 1;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -1221,17 +1216,16 @@ test_cursor_int64_t_maxtimems (void)
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (
+   request = mock_server_receives_msg (
       server,
-      "db",
-      MONGOC_QUERY_SECONDARY_OK,
-      "{'getMore': {'$numberLong': '123'},"
-      " 'collection': 'collection',"
-      " 'maxTimeMS': {'$numberLong': '%" PRIu64 "'}"
-      "}",
-      ms_int64);
+      MONGOC_MSG_NONE,
+      tmp_bson ("{'$db': 'db',"
+                " 'getMore': {'$numberLong': '123'},"
+                " 'collection': 'collection',"
+                " 'maxTimeMS': {'$numberLong': '%" PRIu64 "'}}",
+                ms_int64));
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SECONDARY_OK,
+                                MONGOC_QUERY_NONE,
                                 0 /* cursor id */,
                                 1 /* number returned */,
                                 "db.collection",
@@ -1258,7 +1252,7 @@ test_cursor_new_ignores_fields (void)
    const bson_t *doc;
    bson_error_t error;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -1639,8 +1633,9 @@ test_cursor_hint_mongos_cmd (void)
    future_t *future;
    request_t *request;
 
-   server = mock_mongos_new (WIRE_VERSION_FIND_CMD);
+   server = mock_mongos_new (WIRE_VERSION_MIN);
    mock_server_run (server);
+   mock_server_auto_endsessions (server);
    client =
       test_framework_client_new_from_uri (mock_server_get_uri (server), NULL);
    collection = mongoc_client_get_collection (client, "test", "test");
@@ -1656,8 +1651,10 @@ test_cursor_hint_mongos_cmd (void)
 
       future = future_cursor_next (cursor, &doc);
 
-      request = mock_server_receives_command (
-         server, "test", expected_flag[i], 0, 0, "{'find': 'test'}", NULL);
+      request = mock_server_receives_msg (
+         server,
+         MONGOC_MSG_NONE,
+         tmp_bson ("{'$db': 'test', 'find': 'test', 'filter': {}}"));
 
       mock_server_replies_simple (request,
                                   "{'ok': 1,"
@@ -1883,8 +1880,8 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor,
    }
 
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db'}"));
 
    ASSERT (match_bson (request_get_doc (request, 0), &find_cmd, true));
 
@@ -1905,8 +1902,8 @@ _test_cursor_n_return_find_cmd (mongoc_cursor_t *cursor,
    for (reply_no = 1; reply_no < 3; reply_no++) {
       /* expect getMore command, send reply_length[reply_no] docs to client */
       future = future_cursor_next (cursor, &doc);
-      request = mock_server_receives_command (
-         server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+      request = mock_server_receives_msg (
+         server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db'}"));
 
       bson_reinit (&getmore_cmd);
       BSON_APPEND_INT64 (&getmore_cmd, "getMore", 123);
@@ -2000,7 +1997,7 @@ _test_cursor_n_return (bool find_with_opts)
    bson_t opts = BSON_INITIALIZER;
    mongoc_cursor_t *cursor;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
 
    mock_server_run (server);
 
@@ -2125,7 +2122,7 @@ test_empty_final_batch (void)
    request_t *request;
    bson_error_t error;
 
-   server = mock_server_with_auto_hello (WIRE_VERSION_FIND_CMD);
+   server = mock_server_with_auto_hello (WIRE_VERSION_MIN);
    mock_server_run (server);
 
    client =
@@ -2141,11 +2138,11 @@ test_empty_final_batch (void)
     * one document in first batch
     */
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db'}"));
 
    mock_server_replies_to_find (
-      request, MONGOC_QUERY_SECONDARY_OK, 1234, 0, "db.coll", "{}", true);
+      request, MONGOC_QUERY_NONE, 1234, 0, "db.coll", "{}", true);
 
    ASSERT (future_get_bool (future));
    future_destroy (future);
@@ -2155,16 +2152,11 @@ test_empty_final_batch (void)
     * empty batch with nonzero cursor id
     */
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db'}"));
 
-   mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SECONDARY_OK,
-                                1234,
-                                0,
-                                "db.coll",
-                                "" /* empty */,
-                                true);
+   mock_server_replies_to_find (
+      request, MONGOC_QUERY_NONE, 1234, 0, "db.coll", "" /* empty */, true);
 
    ASSERT (!future_get_bool (future));
    ASSERT_OR_PRINT (!mongoc_cursor_error (cursor, &error), error);
@@ -2175,8 +2167,8 @@ test_empty_final_batch (void)
     * final batch, empty with zero cursor id
     */
    future = future_cursor_next (cursor, &doc);
-   request = mock_server_receives_command (
-      server, "db", MONGOC_QUERY_SECONDARY_OK, NULL);
+   request = mock_server_receives_msg (
+      server, MONGOC_MSG_NONE, tmp_bson ("{'$db': 'db'}"));
 
    ASSERT_CMPINT64 (
       bson_lookup_int64 (request_get_doc (request, 0), "batchSize"),
@@ -2184,7 +2176,7 @@ test_empty_final_batch (void)
       (int64_t) 1);
 
    mock_server_replies_to_find (request,
-                                MONGOC_QUERY_SECONDARY_OK,
+                                MONGOC_QUERY_NONE,
                                 0 /* cursor id */,
                                 0,
                                 "db.coll",
@@ -2399,13 +2391,13 @@ test_cursor_install (TestSuite *suite)
                       test_cursor_new_from_find,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_4);
+                      TestSuite_CheckLive);
    TestSuite_AddFull (suite,
                       "/Cursor/new_from_find_batches",
                       test_cursor_new_from_find_batches,
                       NULL,
                       NULL,
-                      test_framework_skip_if_max_wire_version_less_than_4);
+                      TestSuite_CheckLive);
    TestSuite_AddLive (suite, "/Cursor/new_invalid", test_cursor_new_invalid);
    TestSuite_AddMockServerTest (
       suite, "/Cursor/new_tailable_await", test_cursor_new_tailable_await);
