@@ -42,7 +42,7 @@
 BSON_BEGIN_DECLS
 
 /* protocol versions this driver can speak */
-#define WIRE_VERSION_MIN 3  /* a.k.a. minWireVersion */
+#define WIRE_VERSION_MIN 6  /* a.k.a. minWireVersion */
 #define WIRE_VERSION_MAX 14 /* a.k.a. maxWireVersion */
 
 /* first version that supported "find" and "getMore" commands */
