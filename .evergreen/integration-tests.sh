@@ -3,7 +3,7 @@
 #
 # Specify the following environment variables:
 #
-# MONGODB_VERSION: latest, 4.2, 4.0, 3.6, 3.4, 3.2, 3.0, 2.6, 2.4
+# MONGODB_VERSION: latest, 4.2, 4.0, 3.6
 # TOPOLOGY: server, replica_set, sharded_cluster
 # AUTH: auth, noauth
 # AUTHSOURCE
