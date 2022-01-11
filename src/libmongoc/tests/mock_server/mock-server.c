@@ -981,6 +981,58 @@ _mock_server_receives_msg (mock_server_t *server, uint32_t flags, ...)
    return request;
 }
 
+
+/*--------------------------------------------------------------------------
+ *
+ * mock_server_receives_bulk_msg --
+ *
+ *       Pop a client OP_MSG request if one is enqueued, or wait up to
+ *       request_timeout_ms for the client to send a request. Pass varargs
+ *       list of bson_t pointers, which are matched to the series of
+ *       documents in the request, regardless of section boundaries.
+ *
+ * Returns:
+ *       A request you must request_destroy, or NULL if the request does not
+ *       match.
+ *
+ * Side effects:
+ *       Logs and aborts if the current request is not an OP_MSG matching
+ *       flags and expected pattern and number of documents.
+ *
+ *--------------------------------------------------------------------------
+ */
+request_t *
+mock_server_receives_bulk_msg (mock_server_t *server,
+                               uint32_t flags,
+                               const bson_t *msg_pattern,
+                               const bson_t *doc_pattern,
+                               size_t n_docs)
+{
+   request_t *request;
+   bool r;
+
+   request = mock_server_receives_request (server);
+
+   {
+      const bson_t **docs;
+      size_t i;
+      docs = bson_malloc (n_docs * sizeof (bson_t *));
+      docs[0] = msg_pattern;
+      for (i = 1; i < n_docs; ++i) {
+         docs[i] = doc_pattern;
+      }
+      r = request_matches_msg (request, MONGOC_MSG_NONE, docs, n_docs);
+      bson_free ((bson_t **) docs);
+   }
+
+   if (!r) {
+      request_destroy (request);
+      return NULL;
+   }
+
+   return request;
+}
+
 /*--------------------------------------------------------------------------
  *
  * mock_server_receives_hello --
