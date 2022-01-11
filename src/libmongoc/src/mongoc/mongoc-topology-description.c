@@ -1989,9 +1989,11 @@ _mongoc_topology_description_check_compatible (
             MONGOC_ERROR_PROTOCOL,
             MONGOC_ERROR_PROTOCOL_BAD_WIRE_VERSION,
             "Server at %s reports wire version %d, but this"
-            " version of libmongoc requires at least 3 (MongoDB 3.0)",
+            " version of libmongoc requires at least %d (MongoDB %s)",
             sd->host.host_and_port,
-            sd->max_wire_version);
+            sd->max_wire_version,
+            WIRE_VERSION_MIN,
+            _mongoc_wire_version_to_server_version (WIRE_VERSION_MIN));
       }
    }
 }

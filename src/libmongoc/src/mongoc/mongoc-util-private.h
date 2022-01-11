@@ -100,6 +100,9 @@ _mongoc_bson_init_if_set (bson_t *bson);
 const char *
 _mongoc_bson_type_to_str (bson_type_t t);
 
+const char *
+_mongoc_wire_version_to_server_version (int32_t version);
+
 bool
 _mongoc_get_server_id_from_opts (const bson_t *opts,
                                  mongoc_error_domain_t domain,
