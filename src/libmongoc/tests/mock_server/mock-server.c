@@ -169,16 +169,19 @@ mock_server_with_auto_hello (int32_t max_wire_version)
 {
    mock_server_t *server = mock_server_new ();
 
-   char *hello = bson_strdup_printf ("{'ok': 1.0,"
-                                     " 'isWritablePrimary': true,"
-                                     " 'minWireVersion': 0,"
-                                     " 'maxWireVersion': %d}",
-                                     max_wire_version);
+   ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
+                    "max_wire_version %" PRId32
+                    " must be greater than or equal to minimum wire version %d",
+                    max_wire_version,
+                    WIRE_VERSION_MIN);
 
-   BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_hello (server, hello);
-
-   bson_free (hello);
+   mock_server_auto_hello (server,
+                           "{'ok': 1.0,"
+                           " 'isWritablePrimary': true,"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d}",
+                           WIRE_VERSION_MIN,
+                           max_wire_version);
 
    return server;
 }
@@ -205,36 +208,30 @@ mock_server_t *
 mock_mongos_new (int32_t max_wire_version)
 {
    mock_server_t *server = mock_server_new ();
-   char *mongos_36_fields = "";
-   char *hello;
 
-   if (max_wire_version >= WIRE_VERSION_OP_MSG) {
-      mongos_36_fields =
-         ","
-         "'$clusterTime': {"
-         "  'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
-         "  'signature': {"
-         "    'hash': {'$binary': {'subType': '0', 'base64': ''}},"
-         "    'keyId': {'$numberLong': '6446735049323708417'}"
-         "  },"
-         "  'operationTime': {'$timestamp': {'t': 1, 'i': 1}}"
-         "},"
-         "'logicalSessionTimeoutMinutes': 30";
-   }
+   ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
+                    "max_wire_version %" PRId32
+                    " must be greater than or equal to minimum wire version %d",
+                    max_wire_version,
+                    WIRE_VERSION_MIN);
 
-   hello = bson_strdup_printf ("{'ok': 1.0,"
-                               " 'isWritablePrimary': true,"
-                               " 'msg': 'isdbgrid',"
-                               " 'minWireVersion': 2,"
-                               " 'maxWireVersion': %d"
-                               " %s}",
-                               max_wire_version,
-                               mongos_36_fields);
-
-   BSON_ASSERT (max_wire_version > 0);
-   mock_server_auto_hello (server, hello);
-
-   bson_free (hello);
+   mock_server_auto_hello (
+      server,
+      "{'ok': 1.0,"
+      " 'isWritablePrimary': true,"
+      " 'msg': 'isdbgrid',"
+      " 'minWireVersion': %d,"
+      " 'maxWireVersion': %d,"
+      " '$clusterTime': {"
+      "   'clusterTime': {'$timestamp': {'t': 1, 'i': 1}},"
+      "   'signature': {"
+      "     'hash': {'$binary': {'subType': '0', 'base64': ''}},"
+      "     'keyId': {'$numberLong': '6446735049323708417'}"
+      "   },"
+      "   'operationTime': {'$timestamp': {'t': 1, 'i': 1}}},"
+      " 'logicalSessionTimeoutMinutes': 30}",
+      WIRE_VERSION_MIN,
+      max_wire_version);
 
    return server;
 }
@@ -553,7 +550,7 @@ auto_hello (request_t *request, void *data)
       BSON_APPEND_INT32 (&response, "minWireVersion", WIRE_VERSION_MIN);
    }
    if (!bson_iter_init_find (&iter, &response, "maxWireVersion")) {
-      BSON_APPEND_INT32 (&response, "maxWireVersion", WIRE_VERSION_OP_MSG - 1);
+      BSON_APPEND_INT32 (&response, "maxWireVersion", WIRE_VERSION_MAX);
    }
 
    response_json = bson_as_json (&response, 0);
@@ -2125,8 +2122,12 @@ rs_response_to_hello (
    bson_string_t *hosts;
    bool first;
    mock_server_t *host;
-   const char *session_timeout;
-   char *hello;
+
+   ASSERT_WITH_MSG (max_wire_version >= WIRE_VERSION_MIN,
+                    "max_wire_version %" PRId32
+                    " must be greater than or equal to minimum wire version %d",
+                    max_wire_version,
+                    WIRE_VERSION_MIN);
 
    hosts = bson_string_new ("");
 
@@ -2146,32 +2147,24 @@ rs_response_to_hello (
 
    va_end (ap);
 
-   if (max_wire_version >= 6) {
-      session_timeout = ", 'logicalSessionTimeoutMinutes': 30";
-      mock_server_auto_endsessions (server);
-   } else {
-      session_timeout = "";
-   }
+   mock_server_auto_endsessions (server);
 
-   hello = bson_strdup_printf ("{'ok': 1, "
-                               " 'setName': 'rs',"
-                               " 'isWritablePrimary': %s,"
-                               " 'secondary': %s,"
-                               " 'tags': {%s},"
-                               " 'minWireVersion': 3,"
-                               " 'maxWireVersion': %d,"
-                               " 'hosts': [%s]"
-                               " %s"
-                               "}",
-                               primary ? "true" : "false",
-                               primary ? "false" : "true",
-                               has_tags ? "'key': 'value'" : "",
-                               max_wire_version,
-                               hosts->str,
-                               session_timeout);
+   mock_server_auto_hello (server,
+                           "{'ok': 1, "
+                           " 'setName': 'rs',"
+                           " 'isWritablePrimary': %s,"
+                           " 'secondary': %s,"
+                           " 'tags': {%s},"
+                           " 'minWireVersion': %d,"
+                           " 'maxWireVersion': %d,"
+                           " 'hosts': [%s],"
+                           " 'logicalSessionTimeoutMinutes': 30}",
+                           primary ? "true" : "false",
+                           primary ? "false" : "true",
+                           has_tags ? "'key': 'value'" : "",
+                           WIRE_VERSION_MIN,
+                           max_wire_version,
+                           hosts->str);
 
-   mock_server_auto_hello (server, "%s", hello);
-
-   bson_free (hello);
    bson_string_free (hosts, true);
 }
